@@ -1,88 +1,262 @@
-```markdown
-# Perplexity-Tools Development Patterns
+---
+name: perplexity-tools-conventions
+description: Development conventions and patterns for Perplexity-Tools. Python project with mixed commits.
+---
 
-> Auto-generated skill from repository analysis
+# Perplexity Tools Conventions
+
+> Generated from [diazMelgarejo/Perplexity-Tools](https://github.com/diazMelgarejo/Perplexity-Tools) on 2026-03-23
 
 ## Overview
-This skill teaches you the core development patterns and conventions used in the Perplexity-Tools Python codebase. You'll learn about file organization, import/export styles, commit message standards, and how to write and run tests. This guide is designed to help you contribute effectively and maintain consistency across the project.
 
-## Coding Conventions
+This skill teaches Claude the development patterns and conventions used in Perplexity-Tools.
 
-### File Naming
-- Use **snake_case** for all file names.
-  - Example: `data_parser.py`, `utils_helper.py`
+## Tech Stack
 
-### Import Style
-- Use **relative imports** within the package.
-  - Example:
-    ```python
-    from .utils import parse_data
-    ```
+- **Primary Language**: Python
+- **Architecture**: hybrid module organization
+- **Test Location**: separate
 
-### Export Style
-- Use **named exports** by explicitly listing exported functions/classes in `__all__`.
-  - Example:
-    ```python
-    __all__ = ['parse_data', 'DataLoader']
-    ```
+## When to Use This Skill
 
-### Commit Messages
-- Follow **conventional commit** patterns.
-- Use prefixes like `docs` for documentation changes.
-- Keep commit messages concise (average ~69 characters).
-  - Example:
-    ```
-    docs: update README with installation instructions
-    ```
+Activate this skill when:
+- Making changes to this repository
+- Adding new features following established patterns
+- Writing tests that match project conventions
+- Creating commits with proper message format
 
-## Workflows
+## Commit Conventions
 
-### Documentation Updates
-**Trigger:** When updating or adding documentation  
-**Command:** `/update-docs`
+Follow these commit message conventions based on 16 analyzed commits.
 
-1. Make your documentation changes in the relevant `.md` or docstring files.
-2. Stage your changes:
-    ```
-    git add <file>
-    ```
-3. Commit using the `docs` prefix:
-    ```
-    git commit -m "docs: <brief description of doc update>"
-    ```
-4. Push your changes:
-    ```
-    git push
-    ```
+### Commit Style: Mixed Style
 
-### Adding New Python Modules
-**Trigger:** When creating a new feature or utility module  
-**Command:** `/add-module`
+### Prefixes Used
 
-1. Create a new Python file using snake_case naming (e.g., `my_feature.py`).
-2. Use relative imports to access other modules.
-    ```python
-    from .utils import helper_function
-    ```
-3. Define your functions/classes and add them to `__all__` if you want them exported.
-    ```python
-    __all__ = ['my_function']
-    ```
-4. Write or update tests as needed (see Testing Patterns).
-5. Commit your changes with an appropriate conventional commit message.
-6. Push your changes.
+- `feat`
+- `fix`
+- `modified`
+- `docs`
 
-## Testing Patterns
+### Message Guidelines
 
-- Test files follow the pattern `*.test.*` (e.g., `utils.test.py`).
-- The testing framework is **unknown**; check existing test files for conventions.
-- Place tests alongside or near the modules they test.
-- Example test file name: `data_parser.test.py`
-- To run tests, use the standard Python test runner or the project's preferred tool (check project docs or ask a maintainer).
+- Average message length: ~64 characters
+- Keep first line concise and descriptive
+- Use imperative mood ("Add feature" not "Added feature")
 
-## Commands
-| Command        | Purpose                                  |
-|----------------|------------------------------------------|
-| /update-docs   | Update or add project documentation      |
-| /add-module    | Add a new Python module to the codebase  |
+
+*Commit message example*
+
+```text
+Fix: pass DELL_SSH_KEY (-i flag) through all SSH/SCP calls in autoresearch_bridge
 ```
+
+*Commit message example*
+
+```text
+feat: add /autoresearch/sync + /autoresearch/gpu_status endpoints to fastapi_app.py
+```
+
+*Commit message example*
+
+```text
+modified:   orchestrator/fastapi_app.py
+```
+
+*Commit message example*
+
+```text
+docs(v0.9.0.0): Add comprehensive README with architecture, cost analysis, integration
+```
+
+*Commit message example*
+
+```text
+Merge branch 'v0.9.4.0' into main — release v0.9.4.0
+```
+
+*Commit message example*
+
+```text
+Add autoresearch Tasks, AutoResearch Integration, and ECC Tools Runtime Sync to SKILL.md
+```
+
+*Commit message example*
+
+```text
+feat: add qwen3-coder-14b + qwen3-30b-autoresearch-critic to config/models.yml
+```
+
+*Commit message example*
+
+```text
+feat: add autoresearch + ml-experiment routes to config/routing.yml
+```
+
+## Architecture
+
+### Project Structure: Single Package
+
+This project uses **hybrid** module organization.
+
+### Guidelines
+
+- This project uses a hybrid organization
+- Follow existing patterns when adding new code
+
+## Code Style
+
+### Language: Python
+
+### Naming Conventions
+
+| Element | Convention |
+|---------|------------|
+| Files | snake_case |
+| Functions | camelCase |
+| Classes | PascalCase |
+| Constants | SCREAMING_SNAKE_CASE |
+
+### Import Style: Relative Imports
+
+### Export Style: Named Exports
+
+
+*Preferred import style*
+
+```typescript
+// Use relative imports
+import { Button } from '../components/Button'
+import { useAuth } from './hooks/useAuth'
+```
+
+*Preferred export style*
+
+```typescript
+// Use named exports
+export function calculateTotal() { ... }
+export const TAX_RATE = 0.1
+export interface Order { ... }
+```
+
+## Common Workflows
+
+These workflows were detected from analyzing commit patterns.
+
+### Feature Development
+
+Standard feature implementation workflow
+
+**Frequency**: ~21 times per month
+
+**Steps**:
+1. Add feature implementation
+2. Add tests for feature
+3. Update documentation
+
+**Files typically involved**:
+- `**/*.test.*`
+- `**/api/**`
+
+**Example commit sequence**:
+```
+Add files via upload
+feat(v0.9.0.0): Add SKILL.md - model selection, routing, fallback logic
+docs(v0.9.0.0): Add comprehensive README with architecture, cost analysis, integration
+```
+
+### Add New Api Endpoint
+
+Adds a new API endpoint to the FastAPI application, often for new orchestration features or agent management.
+
+**Frequency**: ~2 times per month
+
+**Steps**:
+1. Edit or create endpoint in orchestrator/fastapi_app.py
+2. Update config/routing.yml to include new route (if needed)
+3. Optionally, update SKILL.md or docs to document the endpoint
+
+**Files typically involved**:
+- `orchestrator/fastapi_app.py`
+- `config/routing.yml`
+- `SKILL.md`
+
+**Example commit sequence**:
+```
+Edit or create endpoint in orchestrator/fastapi_app.py
+Update config/routing.yml to include new route (if needed)
+Optionally, update SKILL.md or docs to document the endpoint
+```
+
+### Integrate New Agent Or Model
+
+Integrates a new agent or model into the orchestration system, including config and documentation updates.
+
+**Frequency**: ~2 times per month
+
+**Steps**:
+1. Add or update entry in config/models.yml
+2. Update orchestrator/model_registry.py or related orchestrator files
+3. Document in SKILL.md and/or README
+4. Optionally, update config/routing.yml if new routes are needed
+
+**Files typically involved**:
+- `config/models.yml`
+- `orchestrator/model_registry.py`
+- `SKILL.md`
+- `README.md`
+- `config/routing.yml`
+
+**Example commit sequence**:
+```
+Add or update entry in config/models.yml
+Update orchestrator/model_registry.py or related orchestrator files
+Document in SKILL.md and/or README
+Optionally, update config/routing.yml if new routes are needed
+```
+
+### Feature Development With Documentation
+
+Implements a new orchestration or agent feature, with code, documentation, and test updates.
+
+**Frequency**: ~2 times per month
+
+**Steps**:
+1. Implement feature in orchestrator/*.py (e.g., new bridge, sync, or tracker modules)
+2. Add or update tests (e.g., orchestrator/ecc_tools_sync_test.py)
+3. Update documentation (SKILL.md, docs/*.md)
+4. Update .gitignore or vendor/.gitkeep if new directories/files are added
+
+**Files typically involved**:
+- `orchestrator/*.py`
+- `orchestrator/*_test.py`
+- `SKILL.md`
+- `docs/*.md`
+- `.gitignore`
+- `vendor/.gitkeep`
+
+**Example commit sequence**:
+```
+Implement feature in orchestrator/*.py (e.g., new bridge, sync, or tracker modules)
+Add or update tests (e.g., orchestrator/ecc_tools_sync_test.py)
+Update documentation (SKILL.md, docs/*.md)
+Update .gitignore or vendor/.gitkeep if new directories/files are added
+```
+
+
+## Best Practices
+
+Based on analysis of the codebase, follow these practices:
+
+### Do
+
+- Use snake_case for file names
+- Prefer named exports
+
+### Don't
+
+- Don't deviate from established patterns without discussion
+
+---
+
+*This skill was auto-generated by [ECC Tools](https://ecc.tools). Review and customize as needed for your team.*
