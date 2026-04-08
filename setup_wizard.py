@@ -186,6 +186,9 @@ def _ensure_alphaclaw() -> None:
     asyncio.run(_wait_for_gateway())
 
 
+# ---------------------------------------------------------------------------
+# Main wizard flow
+# ---------------------------------------------------------------------------
 def run_wizard(args: argparse.Namespace) -> None:
     print("\n" + "=" * 60)
     print("    Perplexity-Tools Setup Wizard")
@@ -196,6 +199,7 @@ def run_wizard(args: argparse.Namespace) -> None:
     _resolve_perplexity_key()
     print()
 
+    # 1. Detect existing software
     if not args.skip_scan:
         print("[1/5] Scanning for existing AI software...\n")
         ollama_exists, ollama_ver = detect_ollama()
@@ -212,11 +216,13 @@ def run_wizard(args: argparse.Namespace) -> None:
     _ensure_alphaclaw()
     print()
 
+    # 2. Detect hardware profile
     print("[3/5] Detecting hardware profile...\n")
     profile = detect_hardware_profile()
     print(f"  Detected profile: {profile}")
     print("  See hardware/SKILL.md for profile details.\n")
 
+    # 3. Recommend installation path
     print("[4/5] Recommended installation path:\n")
     if args.advanced:
         print("  → Advanced mode: showing distributed setup first.\n")
@@ -240,10 +246,23 @@ def run_wizard(args: argparse.Namespace) -> None:
             print("      https://ollama.ai/download")
         print()
 
+    # 4. Advanced: distributed setup
     if args.advanced or input("Configure distributed multi-node setup? [y/N]: ").strip().lower() == "y":
         print("\n  ⚠️  Advanced: Distributed Mac + Windows Setup")
-        print("     Next steps: configure routing and agent_launcher.py --configure")
+        print("     Caveats:")
+        print("       - Requires both machines on same LAN")
+        print("       - Windows must have Ollama + Qwen3.5-35B-A3B installed")
+        print("       - Network latency may add overhead")
+        print()
+        print("     Next steps: configure routing and ")
+        print("       1. On Windows: install Ollama, run:")
+        print("          ollama pull frob/qwen3.5:35b-a3b-instruct-ud-q4_K_M")
+        print("          ollama create qwen3.5-35b-a3b-win -f hardware/Modelfile.win-rtx3080")
+        print("       2. On Mac: run agent_launcher.py to configure IPs")
+        print("          python agent_launcher.py --configure")
+        print()
 
+    # 5. Install Python dependencies
     print("\n[5/5] Python dependencies + environment...\n")
     if Path("requirements.txt").exists():
         install_deps = input("  Install Python dependencies from requirements.txt? [Y/n]: ").strip().lower()
