@@ -55,6 +55,14 @@ LOCAL_REPO_PATH: Path = Path(
 SWARM_STATE_FILE: Path = LOCAL_REPO_PATH / "swarm_state.md"
 
 
+def _progress(label: str, elapsed: int, total: int) -> None:
+    bar_width = 36
+    filled = int(bar_width * min(elapsed, total) / total)
+    bar = "█" * filled + "░" * (bar_width - filled)
+    pct = int(100 * min(elapsed, total) / total)
+    print(f"\r  [{label}] [{bar}] {pct:3d}%  ", end="", flush=True)
+
+
 # ── data types ────────────────────────────────────────────────────────────────
 
 @dataclass
@@ -76,14 +84,9 @@ class SwarmState:
 # ── idempotent sync (called by orchestrator before EVERY autoresearch run) ─────
 
 def sync_autoresearch_idempotent() -> SyncResult:
-    """Pull latest karpathy/autoresearch on the Windows GPU runner.
-
-    Idempotent: safe to call on every orchestration cycle.
-    Uses `git fetch + reset --hard origin/main` so the runner always
-    runs the latest upstream code without merge conflicts.
-
-    Returns SyncResult with HEAD sha for logging.
-    """
+    """Pull latest karpathy/autoresearch on the Windows GPU runner."""
+    print("[autoresearch] → Syncing autoresearch on GPU runner…")
+    _progress("autoresearch", 1, 9)
     cmd = (
         f"cd {GPU_REPO_PATH} && "
         "git fetch origin && "
@@ -91,6 +94,7 @@ def sync_autoresearch_idempotent() -> SyncResult:
         "git rev-parse HEAD"
     )
     try:
+        _progress("autoresearch", 4, 9)
         result = subprocess.run(
             ["ssh", *_SSH_OPTS, GPU_BOX, cmd],
             capture_output=True,
@@ -98,8 +102,12 @@ def sync_autoresearch_idempotent() -> SyncResult:
             timeout=SSH_TIMEOUT,
         )
         if result.returncode != 0:
+            print()
             return SyncResult(ok=False, error=result.stderr.strip())
-        sha = result.stdout.strip().splitlines()[-1]  # last line = HEAD sha
+        _progress("autoresearch", 9, 9)
+        print()
+        sha = result.stdout.strip().splitlines()[-1]
+        print(f"[autoresearch] ✓ synced  sha={sha[:7]}")
         return SyncResult(ok=True, sha=sha)
     except subprocess.TimeoutExpired:
         return SyncResult(ok=False, error=f"SSH timeout after {SSH_TIMEOUT}s")
@@ -110,19 +118,22 @@ def sync_autoresearch_idempotent() -> SyncResult:
 # ── bootstrap: ensure the repo exists on the GPU runner (first-run only) ──────
 
 def bootstrap_autoresearch_on_runner() -> SyncResult:
-    """Clone autoresearch on the Windows GPU runner if it does not exist yet.
-
-    Idempotent: if the directory already exists, falls through to a normal sync.
-    """
+    """Clone autoresearch on the Windows GPU runner if it does not exist yet."""
+    print("[autoresearch] → Bootstrapping runner repo…")
+    _progress("bootstrap", 1, 4)
     check_cmd = f"if not exist {GPU_REPO_PATH} git clone {AUTORESEARCH_REMOTE} {GPU_REPO_PATH}"
     try:
+        _progress("bootstrap", 3, 4)
         subprocess.run(
             ["ssh", *_SSH_OPTS, GPU_BOX, check_cmd],
             capture_output=True,
             text=True,
             timeout=SSH_TIMEOUT,
         )
+        _progress("bootstrap", 4, 4)
+        print()
     except Exception as exc:  # noqa: BLE001
+        print()
         return SyncResult(ok=False, error=f"Bootstrap failed: {exc}")
     return sync_autoresearch_idempotent()
 
