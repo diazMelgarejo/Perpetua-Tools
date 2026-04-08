@@ -84,7 +84,14 @@ class SwarmState:
 # ── idempotent sync (called by orchestrator before EVERY autoresearch run) ─────
 
 def sync_autoresearch_idempotent() -> SyncResult:
-    """Pull latest karpathy/autoresearch on the Windows GPU runner."""
+    """Pull latest karpathy/autoresearch on the Windows GPU runner.
+
+    Idempotent: safe to call on every orchestration cycle.
+    Uses `git fetch + reset --hard origin/main` so the runner always
+    runs the latest upstream code without merge conflicts.
+
+    Returns SyncResult with HEAD sha for logging.
+    """
     print("[autoresearch] → Syncing autoresearch on GPU runner…")
     _progress("autoresearch", 1, 9)
     cmd = (
@@ -118,7 +125,10 @@ def sync_autoresearch_idempotent() -> SyncResult:
 # ── bootstrap: ensure the repo exists on the GPU runner (first-run only) ──────
 
 def bootstrap_autoresearch_on_runner() -> SyncResult:
-    """Clone autoresearch on the Windows GPU runner if it does not exist yet."""
+    """Clone autoresearch on the Windows GPU runner if it does not exist yet.
+
+    Idempotent: if the directory already exists, falls through to a normal sync.
+    """
     print("[autoresearch] → Bootstrapping runner repo…")
     _progress("bootstrap", 1, 4)
     check_cmd = f"if not exist {GPU_REPO_PATH} git clone {AUTORESEARCH_REMOTE} {GPU_REPO_PATH}"
