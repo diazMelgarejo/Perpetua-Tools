@@ -3,6 +3,23 @@
 setup_wizard.py
 ---------------
 Idempotent installation wizard for Perplexity-Tools multi-agent orchestration.
+
+Detects existing AI software (Ollama, LM Studio, MLX, Python env) and reuses
+it without redundant installations. Guides users through hardware-aware setup
+with tiered recommendations:
+  Priority 1 (Entry): Easiest path for beginners (Ollama on Mac, LM Studio)
+  Priority 2 (Advanced): Distributed multi-node setup with explicit caveats
+
+Usage:
+    python setup_wizard.py              # guided installation
+    python setup_wizard.py --skip-scan  # skip existing software detection
+    python setup_wizard.py --advanced   # show advanced options first
+
+References:
+    hardware/SKILL.md        - hardware profiles and role matrix
+    agent_launcher.py        - hardware detection and routing
+    .env.example             - environment variable template
+
 """
 
 import os
