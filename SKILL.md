@@ -1,6 +1,6 @@
 # SKILL.md — Perplexity-Tools Model Selection Skill
 
-**Version:** `v0.9.9.1` · **Updated:** 2026-04-04
+**Version:** `v0.9.9.4` · **Updated:** 2026-04-08
 **Repo:** https://github.com/diazMelgarejo/Perplexity-Tools · **Branch:** `main`
 
 **Layering (all interoperable and independently configurable):**
@@ -229,6 +229,11 @@ This repo (**Perplexity-Tools**) is the **top-level orchestrator and instance ma
 ---
 
 ## Changelog
+
+### v0.9.9.4 (2026-04-08)
+- **Gateway lifecycle ownership**: AlphaClaw bootstrap + setup-time gateway readiness flow consolidated in Perplexity-Tools.
+- **Perplexity onboarding**: setup wizard validates/saves `PERPLEXITY_API_KEY` with shared helper before runtime.
+- **Client ergonomics**: OpenAI-compatible Perplexity singleton retained and smoke-test script refreshed.
 
 ### v0.9.9.1 (2026-04-04)
 - **LM Studio promoted to primary backend**: Win=Qwen3.5-27B (gpu_offload=40, context 16384); Mac=Qwen3.5-9B-MLX-4bit (context 4096 conservative)

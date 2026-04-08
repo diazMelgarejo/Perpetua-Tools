@@ -74,15 +74,15 @@ class PerplexityClient:
         stream: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
+        # Keep legacy signature compatibility while making stream behavior explicit.
+        if stream:
+            raise ValueError("Use stream() for streaming responses")
         r = self._sync.chat.completions.create(
             model=model or self.DEFAULT_MODEL,
             messages=messages,
             temperature=temperature,
-            stream=stream,
             **kwargs,
         )
-        if stream:
-            raise ValueError("Use stream() for streaming responses")
         return {"choices": [{"message": {"content": r.choices[0].message.content}}]}
 
     async def chat_async(
