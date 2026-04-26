@@ -149,6 +149,7 @@ python3 ~/.openclaw/scripts/discover.py --status | head -4
 - DON'T use `.105` from Mac itself — LAN IPs are for cross-node calls only
 - DON'T `git mv` a directory with no tracked files — use `rm -rf` for empty artifact dirs
 - DON'T commit until repo `scripts/git/check_identity.sh` (or equivalent) reports an approved identity
+- DON'T merge Gemini CLI commits — bad author identities (`<forbidden>`, `nimbosa`)
 - DON'T skip session state backup before major branch operations
 
 ---
