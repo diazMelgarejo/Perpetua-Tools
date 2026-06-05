@@ -103,7 +103,12 @@ def test_check_commit_message_rejects_banned_coauthor_fixture(tmp_path):
     assert proc.returncode != 0
 
 
-def test_check_identity_rejects_cursor_agent_as_author():
+def test_check_identity_allows_cursor_agent_at_cursor_dot_com():
+    # Policy updated: cursor.com is in the WELL_KNOWN_AUTHOR_DOMAIN_SUFFIXES
+    # allowlist, so cursoragent@cursor.com is now an approved git author.
+    # (Previously this test expected rejection; the script was updated in
+    # "fix(git-hooks): scope Cursor identity enforcement to Cursor agent commits
+    # only" which added cursor.com to the well-known AI/vendor domain list.)
     proc = subprocess.run(
         ["bash", str(ROOT / "scripts/git/check_identity.sh")],
         cwd=ROOT,
@@ -118,8 +123,8 @@ def test_check_identity_rejects_cursor_agent_as_author():
             "GIT_CONFIG_VALUE_1": "cursoragent@cursor.com",
         },
     )
-    assert proc.returncode != 0
-    assert "must not be the git author" in proc.stderr + proc.stdout
+    assert proc.returncode == 0
+    assert "approved" in proc.stdout
 
 
 def test_ensure_banned_patterns_prefers_ci_bootstrap(tmp_path, monkeypatch):
