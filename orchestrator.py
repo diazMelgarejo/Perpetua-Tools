@@ -227,7 +227,7 @@ async def log_perplexity_usage(tokens_used: int):
         logger.warning(f"Usage logging failed (Redis error): {e}")
 
 
-async def call_perplexity(prompt: str, model: str = "claude-3-5-sonnet-thinking"):
+async def call_perplexity(prompt: str, model: str = "claude-opus-4-8"):
     # sec: refuse to call if API key is missing
     if not PERPLEXITY_API_KEY:
         logger.warning("PERPLEXITY_API_KEY not configured; skipping cloud call")

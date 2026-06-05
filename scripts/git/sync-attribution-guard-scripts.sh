@@ -30,6 +30,7 @@ for rel in \
   neutralize-cursor-coauthor-hook.sh \
   expunge-all-workspace-repos.sh \
   verify-git-guards.sh \
+  verify-guard-parity.sh \
   scan-tracked-banned-tokens.sh; do
   [[ -f "$SCRIPT_DIR/$rel" ]] || continue
   install -m 0755 "$SCRIPT_DIR/$rel" "$target/scripts/git/$rel"
