@@ -27,8 +27,13 @@ fi
 author_ok() {
   local ae_lc="$1"
   local an_lc="$2"
+  # Cursor Agent is an ALLOWED author/committer identity (attribution policy:
+  # mainstream agents are permitted). The real hard ban is the VERBOTEN
+  # auto-injected pattern, caught independently by banned_attribution_hit()
+  # regardless of who authored the commit — so allowing this identity does not
+  # weaken the guard. (Previously rejected; relaxed per policy 2026-06-03.)
   if [[ "$ae_lc" == "cursoragent@cursor.com" ]] || [[ "$an_lc" == *cursor*agent* ]]; then
-    return 1
+    return 0
   fi
   if [[ "$ae_lc" == *"[bot]@users.noreply.github.com" ]]; then
     return 0

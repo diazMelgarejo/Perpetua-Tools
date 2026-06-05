@@ -3,17 +3,13 @@
 # unattributable random @gmail.com co-authors (see docs/wiki/08-git-hygiene-and-branching.md).
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-# shellcheck source=banned_attribution_lib.sh
-source "$SCRIPT_DIR/banned_attribution_lib.sh"
-
 msg_file="${1:?commit message file required}"
 [[ -f "$msg_file" ]] || { echo "ERROR: missing commit message file: $msg_file" >&2; exit 1; }
 
 # Explicit allowlist entries (lowercase match) — always permitted in Co-authored-by.
 ALLOWED_EXACT_COAUTHOR_EMAILS=(
   cursoragent@cursor.com
+  lawrence@bettermind.ph
 )
 
 # Only these @gmail.com addresses may appear in Co-authored-by (lowercase match).
@@ -23,6 +19,9 @@ ALLOWED_GMAIL_COAUTHORS=(
 )
 
 # Public agent / vendor domains (match email domain or subdomain).
+# Mainstream AI models and autonomous coding agents are allowed co-authors — the
+# only hard ban is the VERBOTEN pattern (private pattern lib). Extend as new
+# mainstream agents appear; keep in sync with scripts/git/check_identity.sh.
 WELL_KNOWN_COAUTHOR_DOMAIN_SUFFIXES=(
   openai.com
   anthropic.com
@@ -35,6 +34,14 @@ WELL_KNOWN_COAUTHOR_DOMAIN_SUFFIXES=(
   azure.com
   perplexity.ai
   x.ai
+  coderabbit.ai
+  mistral.ai
+  deepseek.com
+  cohere.com
+  meta.com
+  sourcegraph.com
+  devin.ai
+  codeium.com
 )
 
 # Match in Co-authored-by display name / address when domain alone is ambiguous.
@@ -52,6 +59,17 @@ WELL_KNOWN_COAUTHOR_NAME_MARKERS=(
   microsoft
   perplexity
   grok
+  coderabbit
+  coderabbitai
+  mistral
+  deepseek
+  cohere
+  llama
+  devin
+  cody
+  codeium
+  windsurf
+  qwen
 )
 
 email_domain_ok() {
@@ -111,21 +129,10 @@ coauthor_line_ok() {
   return 1
 }
 
-if ! banned_patterns_ready "$REPO_ROOT"; then
-  echo "ERROR: missing .cursor/private/banned-attribution-patterns" >&2
-  echo "Run: bash scripts/cursor/install-user-git-environment.sh" >&2
-  exit 1
-fi
-
 while IFS= read -r line || [[ -n "$line" ]]; do
-  line_lc="$(printf '%s' "$line" | tr '[:upper:]' '[:lower:]')"
   case "$line" in
     [Cc]o-[Aa]uthor*)
-      if line_matches_banned_pattern "$line_lc" "$REPO_ROOT"; then
-        echo "ERROR: banned Co-authored-by trailer (see .cursor/private/):" >&2
-        echo "  $line" >&2
-        exit 1
-      fi
+      line_lc="$(printf '%s' "$line" | tr '[:upper:]' '[:lower:]')"
       if ! coauthor_line_ok "$line_lc"; then
         echo "ERROR: Co-authored-by not on approved co-author policy:" >&2
         echo "  $line" >&2

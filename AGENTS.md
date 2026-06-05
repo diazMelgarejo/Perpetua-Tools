@@ -65,3 +65,38 @@ content but get **new SHAs**.
   `PR(N+1)` is rebased on the previous PR branch before opening.
 - Rebasing or force-updating an existing remote branch requires explicit current
   user authorization.
+
+## Cursor Cloud: git commits
+
+Run on cloud VM boot:
+
+```bash
+bash scripts/git/apply-attribution-guard-all-repos.sh
+```
+
+Hook-free commit when needed:
+
+```bash
+bash scripts/git/commit-clean.sh -m "type(scope): summary"
+```
+
+See orama-system `docs/wiki/09-cursor-cloud-commit-attribution.md` (canonical).
+
+## Attribution guards: single source of truth — ZERO fragmentation
+
+**Applies to every agent.** The guard scripts here — `audit_attribution.sh`,
+`banned_attribution_lib.sh`, `check_commit_message.sh`, `check_identity.sh`,
+`daily-attribution-guard.sh` (+ deps) — are **byte-identical copies of orama's canonical
+versions** ([orama `scripts/git/`](https://github.com/diazMelgarejo/orama-system/tree/main/scripts/git)).
+
+- **NEVER hand-edit a guard script in this repo.** A stale fork once made PT's strict
+  `pre-push` reject the mainstream-AI co-authors (`coderabbitai`, `dependabot`,
+  `anthropic.com`) that orama already allows — blocking valid pushes.
+- To change policy: edit orama's canonical copy, then
+  `bash ../orama-system/scripts/git/sync-attribution-guard-scripts.sh .`.
+- `daily-attribution-guard.sh` is **self-contained** (derives its own `REPO_ROOT`) — never a
+  thin wrapper to another repo (would exec itself ⇒ infinite recursion).
+- **Mainstream AI models / autonomous agents are allowed** as author and `Co-authored-by`;
+  the only hard ban is the VERBOTEN pattern in the gitignored private lib.
+- Org-wide governance for future `oramasys/*` repos:
+  [orama `docs/v2/`](https://github.com/diazMelgarejo/orama-system/tree/main/docs/v2).

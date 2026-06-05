@@ -1253,3 +1253,24 @@ never merged. **Reviving any remote branch requires explicit user authorization*
 [`AGENTS.md`](../AGENTS.md) § Security PR stacking; not done unattended.
 
 **Cross-repo:** [orama LESSONS](../../orama-system/docs/LESSONS.md) · [AlphaClaw Lessons](../../AlphaClaw/docs/Lessons.MD) · tool [`scripts/git/reanchor_scan.sh`](../scripts/git/reanchor_scan.sh). periscope excluded (its `main`/`agentsview` are pure upstream mirrors, never rewritten by us).
+
+### 2026-06-05 (cont.) — attribution-guard fragmentation, unified to a single source
+
+Pushing the docs above tripped PT's `pre-push` (`.githooks/pre-push` → `audit_attribution.sh`
+with `GIT_AUDIT_STRICT=1`): strict mode audits the **full reachable history**, and PT's guard
+copies still flagged 79 mainstream-AI bot co-authors + 7 AI authors that **orama's allowlist
+already permits** (orama PR #71). Root cause: PT's `audit_attribution.sh`,
+`check_commit_message.sh`, `check_identity.sh` were **stale forks** of orama's canonical guards.
+
+Fixes (now reflected in [`CLAUDE.md` §6](../CLAUDE.md) + [`AGENTS.md`](../AGENTS.md)):
+- The orama sync tool `sync-attribution-guard-scripts.sh` **omitted `check_commit_message.sh`
+  and `check_identity.sh`** from its copy list → permanent drift. Added them.
+- Re-synced → all guard scripts **byte-identical orama↔PT** (`bad_author` 7→0,
+  `bad_coauthor` 79→3; push range clean=yes).
+- The sync wrote a *thin wrapper* for `daily-attribution-guard.sh` that, on PT itself, **execs
+  itself (infinite recursion)**. Backported orama's now-canonical **self-contained full impl**
+  (`REPO_ROOT`-derived) to all repos and dropped the wrapper special-case entirely.
+- **Rule:** never hand-edit a guard in a downstream repo. Edit orama's canonical copy, then
+  `bash ../orama-system/scripts/git/sync-attribution-guard-scripts.sh .`.
+
+**Cross-repo:** mirrored in orama [`docs/LESSONS.md` § 2026-06-05 (cont.)](../../orama-system/docs/LESSONS.md) · [GitHub](https://github.com/diazMelgarejo/orama-system/blob/main/docs/LESSONS.md). Org-wide zero-fragmentation governance plan: orama [`docs/v2/`](../../orama-system/docs/v2/).

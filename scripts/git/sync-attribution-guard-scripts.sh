@@ -24,19 +24,21 @@ for rel in \
   sync-banned-patterns-to-repo.sh \
   banned_attribution_lib.sh \
   audit_attribution.sh \
+  check_commit_message.sh \
+  check_identity.sh \
+  daily-attribution-guard.sh \
+  neutralize-cursor-coauthor-hook.sh \
+  expunge-all-workspace-repos.sh \
+  verify-git-guards.sh \
   scan-tracked-banned-tokens.sh; do
   [[ -f "$SCRIPT_DIR/$rel" ]] || continue
   install -m 0755 "$SCRIPT_DIR/$rel" "$target/scripts/git/$rel"
 done
 
-# Thin wrapper — full implementation lives in Perpetua-Tools (canonical).
-cat >"$target/scripts/git/daily-attribution-guard.sh" <<'WRAP'
-#!/usr/bin/env bash
-set -euo pipefail
-PT="${PERPETUA_TOOLS_PATH:-/agent/repos/Perpetua-Tools}"
-exec bash "$PT/scripts/git/daily-attribution-guard.sh"
-WRAP
-chmod +x "$target/scripts/git/daily-attribution-guard.sh"
+# daily-attribution-guard.sh is now a normal synced file (canonical full impl in the
+# copy list above) — self-contained, byte-identical in every repo, derives its own
+# REPO_ROOT. No thin wrapper: a wrapper hardcodes a path and, on its own target, would
+# exec itself (infinite recursion). Single source of truth, zero fragmentation.
 
 # Repo-local agent rules (Cursor Cloud) — no forbidden tokens in these files.
 mkdir -p "$target/.cursor/rules"
