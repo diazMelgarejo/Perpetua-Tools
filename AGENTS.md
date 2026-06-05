@@ -4,6 +4,29 @@ Follow `CLAUDE.md` for repository architecture, runtime boundaries, and
 workflow navigation. This file adds cross-agent guardrails that apply to all AI
 coding agents working in this repo.
 
+## History-rewrite & branch re-anchor — MANDATORY before judging any branch
+
+**Applies to every AI agent here — Claude, Codex, Cursor, CodeRabbit, Greptile, and any
+future agent.** This repo's `main` has been **rewritten**; pre-rewrite commits keep their
+content but get **new SHAs**.
+
+- **NEVER** judge orphan / behind / divergence with `git rev-list --count`, ahead/behind, or
+  `git merge-base`. Across a rewrite boundary they are SHA-graph proxies and are **meaningless** —
+  a branch can read "N behind" while its tip is byte-identical to a commit already in `main`.
+  "N behind + identical content" is a contradiction: **HALT**, it means a rewrite.
+- **ALWAYS** use the **tree-twin** test via the in-repo tool:
+  ```bash
+  scripts/git/reanchor_scan.sh . origin/main heads      # local branches
+  git cherry -v origin/main <tip> <base>                # + = missing from main, - = already in
+  ```
+- Canonical method: orama [git-reanchor SKILL.md § 5](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/git-reanchor/SKILL.md).
+  Why it recurs + branch salvage map: [`docs/LESSONS.md` § 2026-06-05](https://github.com/diazMelgarejo/Perpetua-Tools/blob/main/docs/LESSONS.md) ·
+  failure catalog [Failure Mode 7](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/afrp/failure-modes.md).
+- Reviving/force-updating a remote branch requires **explicit current-user authorization**
+  (see § Security PR stacking). Preserve old tips before any force-push.
+- Companion: orama [`AGENTS.md`](https://github.com/diazMelgarejo/orama-system/blob/main/AGENTS.md).
+  **periscope excluded** (its `main`/`agentsview` are pure upstream mirrors, never rewritten by us).
+
 ## Prime directives for agent-maintained records
 
 - Treat vulnerability memory, lessons, audits, and review ledgers as append-only
