@@ -1252,6 +1252,27 @@ PT clones, after the rewrite:
 never merged. **Reviving any remote branch requires explicit user authorization** per
 [`AGENTS.md`](../AGENTS.md) § Security PR stacking; not done unattended.
 
+> **AUDIT RESULT (2026-06-05, RESOLVED — no salvage PR needed).** Both a tree-twin graft and a
+> surgical 9-commit cherry-pick **conflicted from the first commit**. A 3-way diff-audit (each
+> commit's file vs its parent vs current `main`) showed **the work is already in main**, often
+> extended: `orchestrator/alphaclaw_manager.py` progress-prefix parse (`07cd00e`) = **0 diff**;
+> `install.sh` (`b2b7638`,`1d72630`) = **0 diff**; `tests/test_alphaclaw_manager.py` (`f4ab810`)
+> = **0 diff**; `packages/alphaclaw-adapter/src/index.js` pidFile fix (`061c0ee`) is present in
+> main **and superseded** by the fuller `startServer({port,alphaclawRoot,logFile,pidFile})`
+> signature + Gate-2 `configure({port})` lifecycle. The branch was merged-by-reimplementation
+> post-rewrite. **Lesson: across a rewrite, `git cherry +` means "no identical patch-id", NOT
+> "content missing" — always confirm with a 3-way file diff before spending salvage effort.**
+> Backup tag `backup/salvage-pt71-review-*` retained; local branch fix/pt71-review-v2 kept for
+> reference. Same audit applies to the other "missing-work" branches (fix/ci-69 MCPB, temp-recovery
+> IP-detection, recover/codex-plan queue-test): diff-audit before assuming a PR is needed.
+>
+> **Harmonization check (CIDF, additive principle).** Before closing, verified the branch holds
+> no additive content main lacks: `stop-server.test.cjs` = **14 test cases vs main's 31**
+> (0 unique-to-branch); `tests/test_alphaclaw_manager.py` = **24 vs 24** (0 unique-to-branch).
+> Main is a strict **superset**. So "combine/merge/harmonize" yields nothing to merge — closing
+> is CIDF-correct (verified-subsumed), not a wholesale discard. The orama rule held: we checked
+> for additive bits to harmonize *before* concluding done, rather than assuming.
+
 **Cross-repo:** [orama LESSONS](../../orama-system/docs/LESSONS.md) · [AlphaClaw Lessons](../../AlphaClaw/docs/Lessons.MD) · tool [`scripts/git/reanchor_scan.sh`](../scripts/git/reanchor_scan.sh). periscope excluded (its `main`/`agentsview` are pure upstream mirrors, never rewritten by us).
 
 ### 2026-06-05 (cont.) — attribution-guard fragmentation, unified to a single source
