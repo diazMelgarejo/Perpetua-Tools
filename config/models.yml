@@ -120,7 +120,13 @@ models:
     reasoning: online-research
 
   # ── ONLINE: Claude 4.5 Thinking ──────────────────────────────────────────
+  # `name` is the internal routing key (matched by agent_launcher + hardware
+  # routing tests; do NOT rename). `api_model` is the real Anthropic model ID
+  # sent to the API — `<family>-<major>-<minor>`, no `-thinking` suffix (that is
+  # a request param, not part of the ID). Without api_model, the bare name would
+  # 404 if dispatched directly. See docs/LESSONS.md 2026-06-06.
   - name: claude-4-5-thinking
+    api_model: claude-sonnet-4-5
     backend: anthropic
     device: cloud
     host: "https://api.anthropic.com"
