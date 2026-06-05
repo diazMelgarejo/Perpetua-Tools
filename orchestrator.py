@@ -227,7 +227,7 @@ async def log_perplexity_usage(tokens_used: int):
         logger.warning(f"Usage logging failed (Redis error): {e}")
 
 
-async def call_perplexity(prompt: str, model: str = "claude-4-6-sonnet-thinking"):
+async def call_perplexity(prompt: str, model: str = "claude-sonnet-4-6"):
     """Call the Perplexity AI chat completions endpoint with budget and key guards.
 
     Returns the assistant message text on success, or None when the API key is
