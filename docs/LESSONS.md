@@ -1218,3 +1218,38 @@ run once per major update). Now makes `gbrain search "HITL"` work cross-session.
 - Plan: [`docs/plans/2026-05-31-gate2-implementation-plan.md`](plans/2026-05-31-gate2-implementation-plan.md)
 
 **Cross-repo:** [orama LESSONS](../../orama-system/docs/LESSONS.md) · [AlphaClaw Lessons](../../AlphaClaw/docs/Lessons.MD)
+
+---
+
+## 2026-06-05 — PT `main` was rewritten; branch salvage map + the FM7 repeat
+
+**Context.** While re-anchoring branches across the stack, an agent (me) hand-rolled a
+`git rev-list --count` / `merge-base` ahead-behind table on PT and concluded "no orphans,
+nothing to do." The tell that broke it: a branch showed `479 behind` yet its tip was
+**byte-identical** to a commit in `main`. That is impossible unless `main` was **rewritten** —
+which it was. Ahead/behind and merge-base are SHA-graph proxies and are **meaningless across
+a rewrite boundary**. The correct test is the **tree-twin** (`%T` match), per the orama
+[git-reanchor SKILL.md](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/git-reanchor/SKILL.md) § 5.
+
+**Mandatory method for PT branch work** (canonical tool now in-repo):
+```bash
+scripts/git/reanchor_scan.sh . origin/main heads     # tree-twin scan of LOCAL branches
+git cherry -v origin/main <tip> <base>               # + = missing from main, - = already in
+```
+Never substitute `rev-list --count` / `merge-base` for orphan or divergence judgment here.
+Why this must be enforced at point-of-use, not memorized: see orama
+[LESSONS § 2026-06-05](../../orama-system/docs/LESSONS.md) · [GitHub](https://github.com/diazMelgarejo/orama-system/blob/main/docs/LESSONS.md#2026-06-05).
+
+**Branch salvage map (tree-twin + `git cherry`, 2026-06-05).** Local branches across the
+PT clones, after the rewrite:
+
+| Group | Branches | Action |
+|-------|----------|--------|
+| **Already in main** (tip tree-twin present, `cherry` all `-`) | `2026-04-25-perpetua-recovery`, `2026-06-01-073-fix-test-portability`, `tmp-pr42-test`, `wt-pr42`, `2026-05-27-009-fix4-5-path-boundary-mcp`, `2026-05-28-004-dependabot-security-bumps`, `cursor/critical-bug-investigation-0df5`, `feat/ip-aware-discovery`, `fix/pt71-clean` | none — work landed; delete local or re-anchor ref to twin |
+| **Missing work to salvage** (`cherry` has `+`) | **`fix/pt71-review-v2`** (9: `alphaclaw_manager` bootstrap-JSON progress-prefix parse, `startServer` pidFile ReferenceError fix + regression tests, `install.sh` exec-bit, remaining PT#71 review fixes) · **`fix/ci-69`** (MCPB `Claude-Desktop-LLM` submodule + fail-fast Ollama probe) · **`fix/ci-71`** (pidFile fix + progress-prefix parse) · **`fix/pt71-onto-main`** (subset of review-v2) · **`temp-recovery`** (3-tier priority IP detection) · **`recover/2026-05-31-codex-plan-revision`** (user-input-queue test isolation) | re-anchor onto twin (git-reanchor § 4), then open a reviewed PR for the `+` commits |
+
+`fix/pt71-review-v2` is the richest "missing link" — the finished PT#71 review work that
+never merged. **Reviving any remote branch requires explicit user authorization** per
+[`AGENTS.md`](../AGENTS.md) § Security PR stacking; not done unattended.
+
+**Cross-repo:** [orama LESSONS](../../orama-system/docs/LESSONS.md) · [AlphaClaw Lessons](../../AlphaClaw/docs/Lessons.MD) · tool [`scripts/git/reanchor_scan.sh`](../scripts/git/reanchor_scan.sh). periscope excluded (its `main`/`agentsview` are pure upstream mirrors, never rewritten by us).

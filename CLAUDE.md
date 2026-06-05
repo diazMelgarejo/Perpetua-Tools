@@ -119,6 +119,7 @@ As-built: [`../orama-system/docs/v2/`](../orama-system/docs/v2/)
 - Lockstep commits: changes to shared schema fields, exception classes, or policy keys commit to **both repos in the same session**
 - Never commit `.env`, `.env.local`
 - **No workstation paths in tracked files** (docs included): use `$OPENCLAW_ROOT`/`~`/`$REPO_ROOT`, never literal `/Users/<name>/…` or the `…/claude/OpenClaw` tree. CI enforces via `scripts/review/repo_hygiene.py` (same checker as orama) — run it before committing docs with shell commands. Rule: [`../orama-system/docs/wiki/08-git-hygiene-and-branching.md`](../orama-system/docs/wiki/08-git-hygiene-and-branching.md#portable-paths-in-tracked-files-no-workstation-leaks)
+- **History was rewritten — judging branches:** NEVER use ahead/behind, `rev-list --count`, or `merge-base` to decide if a branch is orphaned/divergent (meaningless across a rewrite). Run `scripts/git/reanchor_scan.sh . origin/main heads`. Protocol: [`AGENTS.md` § History-rewrite](AGENTS.md) · method [git-reanchor SKILL.md](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/git-reanchor/SKILL.md) · branch salvage map [LESSONS § 2026-06-05](docs/LESSONS.md).
 
 ---
 
