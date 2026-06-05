@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 # Run at session start (and optionally cron): neutralize injection, scan, verify hooks.
 # History rewrite + force-push never run unless ATTRIBUTION_EXPUNGE_AUTO=1 (explicit opt-in).
+#
+# CANONICAL, SELF-CONTAINED, IDENTICAL ACROSS ALL REPOS. Edit orama's copy, then
+# `scripts/git/sync-attribution-guard-scripts.sh <target>` to redistribute. Do NOT
+# replace this with a thin wrapper to another repo — that hardcodes a path and, run
+# against the wrapper's own target, execs itself (infinite recursion). It scans the
+# whole workspace from whichever repo invokes it, so every entrypoint is equivalent.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 WORKSPACE_ROOT="${WORKSPACE_ROOT:-/agent/repos}"
 LOG="${HOME:-}/.cursor/openclaw/attribution-guard.log"
 
@@ -13,8 +19,8 @@ mkdir -p "${HOME:-}/.cursor/openclaw"
   echo "=== $(date -u +%Y-%m-%dT%H:%M:%SZ) daily-attribution-guard ==="
 } >>"$LOG"
 
-if [[ -x "$PT_ROOT/scripts/cursor/install-user-git-environment.sh" ]]; then
-  bash "$PT_ROOT/scripts/cursor/install-user-git-environment.sh" >>"$LOG" 2>&1 || true
+if [[ -x "$REPO_ROOT/scripts/cursor/install-user-git-environment.sh" ]]; then
+  bash "$REPO_ROOT/scripts/cursor/install-user-git-environment.sh" >>"$LOG" 2>&1 || true
 fi
 
 if [[ -x "$SCRIPT_DIR/neutralize-cursor-coauthor-hook.sh" ]]; then
@@ -22,14 +28,14 @@ if [[ -x "$SCRIPT_DIR/neutralize-cursor-coauthor-hook.sh" ]]; then
 fi
 
 # shellcheck source=banned_attribution_lib.sh
-source "$PT_ROOT/scripts/git/banned_attribution_lib.sh"
+source "$REPO_ROOT/scripts/git/banned_attribution_lib.sh"
 total_hits=0
 for repo in "$WORKSPACE_ROOT"/*; do
   [[ -d "$repo/.git" ]] || continue
   bash "$SCRIPT_DIR/sync-banned-patterns-to-repo.sh" "$repo" >>"$LOG" 2>&1 || true
   if [[ -x "$repo/scripts/git/install-local-hooks.sh" ]]; then
     bash "$repo/scripts/git/install-local-hooks.sh" >>"$LOG" 2>&1 || true
-  elif [[ "$repo" != "$PT_ROOT" && -x "$PT_ROOT/scripts/git/install-local-hooks.sh" ]]; then
+  elif [[ "$repo" != "$REPO_ROOT" && -x "$REPO_ROOT/scripts/git/install-local-hooks.sh" ]]; then
     (cd "$repo" && git config --local core.hooksPath .githooks 2>/dev/null) || true
   fi
   hits=0
@@ -62,8 +68,8 @@ else
   echo "scan clean — no expunge required" >>"$LOG"
 fi
 
-if [[ -x "$PT_ROOT/scripts/git/verify-git-guards.sh" ]]; then
-  bash "$PT_ROOT/scripts/git/verify-git-guards.sh" >>"$LOG" 2>&1 || true
+if [[ -x "$REPO_ROOT/scripts/git/verify-git-guards.sh" ]]; then
+  bash "$REPO_ROOT/scripts/git/verify-git-guards.sh" >>"$LOG" 2>&1 || true
 fi
 
 echo "daily-attribution-guard complete (log: $LOG)"
