@@ -33,6 +33,15 @@ class ModelTarget:
     priority: int
     online: bool
     reasoning: str
+    # Real provider model ID to send to the API. Defaults to `name`; set it in
+    # models.yml only when the routing key differs from the wire ID (e.g.
+    # name=claude-4-5-thinking -> api_model=claude-sonnet-4-5). Dispatchers
+    # should send `api_model`, never `name`.
+    api_model: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.api_model:
+            self.api_model = self.name
 
 
 class ModelRegistry:
@@ -110,6 +119,7 @@ class ModelRegistry:
                     priority=item.get("priority", 100),
                     online=item.get("online", False),
                     reasoning=item.get("reasoning", "general"),
+                    api_model=item.get("api_model", ""),
                 )
             )
         return sorted(targets, key=lambda x: x.priority)
