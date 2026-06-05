@@ -228,6 +228,11 @@ async def log_perplexity_usage(tokens_used: int):
 
 
 async def call_perplexity(prompt: str, model: str = "claude-4-6-sonnet-thinking"):
+    """Call the Perplexity AI chat completions endpoint with budget and key guards.
+
+    Returns the assistant message text on success, or None when the API key is
+    missing, the daily spend budget is exceeded, or a network/API error occurs.
+    """
     # sec: refuse to call if API key is missing
     if not PERPLEXITY_API_KEY:
         logger.warning("PERPLEXITY_API_KEY not configured; skipping cloud call")
