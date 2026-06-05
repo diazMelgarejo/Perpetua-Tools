@@ -72,4 +72,17 @@ if [[ -x "$REPO_ROOT/scripts/git/verify-git-guards.sh" ]]; then
   bash "$REPO_ROOT/scripts/git/verify-git-guards.sh" >>"$LOG" 2>&1 || true
 fi
 
+# Zero-fragmentation enforcement (docs/v2/27): assert the canonical guard scripts
+# in every workspace repo are byte-identical to orama's. Warn-only here (the daily
+# guard never blocks); CI runs the same script as a hard gate. Catches a downstream
+# hand-edit before it silently diverges policy.
+if [[ -x "$REPO_ROOT/scripts/git/verify-guard-parity.sh" ]]; then
+  if bash "$REPO_ROOT/scripts/git/verify-guard-parity.sh" --workspace >>"$LOG" 2>&1; then
+    echo "guard-parity: PASS (all workspace repos byte-identical to canonical)" >>"$LOG"
+  else
+    echo "ALERT: guard-parity FAIL — a repo's guard scripts drifted from orama canonical." >>"$LOG"
+    echo "       Re-sync: bash <orama>/scripts/git/sync-attribution-guard-scripts.sh <repo>" >>"$LOG"
+  fi
+fi
+
 echo "daily-attribution-guard complete (log: $LOG)"
