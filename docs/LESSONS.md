@@ -1295,3 +1295,37 @@ Fixes (now reflected in [`CLAUDE.md` §6](../CLAUDE.md) + [`AGENTS.md`](../AGENT
   `bash ../orama-system/scripts/git/sync-attribution-guard-scripts.sh .`.
 
 **Cross-repo:** mirrored in orama [`docs/LESSONS.md` § 2026-06-05 (cont.)](../../orama-system/docs/LESSONS.md) · [GitHub](https://github.com/diazMelgarejo/orama-system/blob/main/docs/LESSONS.md). Org-wide zero-fragmentation governance plan: orama [`docs/v2/`](../../orama-system/docs/v2/).
+
+## 2026-06-06 — opus-4-8 migration + concurrent-agent collision (caught a 404 regression)
+
+During the `/claude-api migrate` task, a **parallel agent** (same approved identity
+`cyre <Lawrence@cyre.me>`) ran the *same* migration and pushed to PT `main` concurrently.
+What it got wrong, caught before harm:
+
+- **Malformed model IDs that would 404 at runtime** — `claude-4-6-sonnet-thinking`,
+  `claude-4-6-sonnet`, `claude-4-5-haiku` (in `orchestrator.py:call_perplexity` default +
+  `tests/test_alphaclaw_manager.py`). The correct order is `claude-<family>-<major>-<minor>`:
+  **`claude-sonnet-4-6`** / **`claude-haiku-4-5`**; `thinking` is a request param, never part
+  of the ID. Fixed forward (kept the sonnet/haiku choice, corrected the strings) — commit
+  `32f770c`. **Always validate every model-ID string against the real catalog — these
+  plausible-looking typos only fail when the API call actually fires.**
+- **Stray upstream tracking + racing dependabot push** — local `main` was tracking a dated
+  branch another agent created, so a bare `git push` falsely reported "up-to-date"; a
+  dependabot starlette bump (#107) landed on `origin/main` mid-push. Fix: explicit
+  `git push origin HEAD:main`, rebase onto the dep commit (no overlap), then **return the
+  shared checkout to `main`** so the next agent doesn't inherit a stray HEAD.
+
+**Rule (shared checkout):** before commit/push, run `git rev-parse --abbrev-ref HEAD` +
+`@{u}` — a fellow agent may have moved HEAD onto their branch. Land via explicit `HEAD:main`.
+
+**No destructive damage this session:** audited recent commits on both repos — all additive,
+approved identity, zero banned attribution, no force-push dropped any prior commit. The
+concurrent agent's other pushes (sed-portability hook fix, cursor-identity test update,
+posterity lesson) are benign. Guard-parity gate (`scripts/git/verify-guard-parity.sh`,
+synced from orama) verifies byte-identical guards across repos — currently PASS.
+
+**Cross-repo:** orama [`docs/LESSONS.md` § 2026-06-06 (cont.)](../../orama-system/docs/LESSONS.md) ·
+[GitHub](https://github.com/diazMelgarejo/orama-system/blob/main/docs/LESSONS.md). **Priorities
+next:** (P1) repair gbrain (`broken-config` → `/setup-gbrain`); (P2) resume tri-repo Gate 2→3
+(canonical plan: [`docs/2026-05-31-tri-repo-alignment-completion-plan.md`](2026-05-31-tri-repo-alignment-completion-plan.md));
+(P3) wire `verify-guard-parity.sh` into CI + `daily-attribution-guard.sh`.
