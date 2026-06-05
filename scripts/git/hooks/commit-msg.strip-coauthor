@@ -5,6 +5,16 @@ set -euo pipefail
 msg_file="${1:?commit message file required}"
 [[ -f "$msg_file" ]] || exit 0
 
+# Cross-platform in-place sed: BSD sed (macOS) requires `sed -i ''` while
+# GNU sed (Linux) uses `sed -i` without an extension argument.
+_sed_i() {
+  if sed --version 2>/dev/null | grep -q 'GNU sed'; then
+    sed -i "$@"
+  else
+    sed -i '' "$@"
+  fi
+}
+
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 LIB="${ROOT}/scripts/git/banned_attribution_lib.sh"
 if [[ -f "$LIB" ]]; then
@@ -13,17 +23,17 @@ if [[ -f "$LIB" ]]; then
   if banned_patterns_ready "$ROOT"; then
     while IFS= read -r token; do
       token_esc="$(printf '%s' "$token" | sed 's/[.[\*^$()+?{|]/\\&/g')"
-      sed -i "/${token_esc}/Id" "$msg_file" 2>/dev/null || true
+      _sed_i "/${token_esc}/Id" "$msg_file" 2>/dev/null || true
     done < <(list_banned_pattern_tokens "$ROOT")
   fi
 fi
 
-sed -i \
+_sed_i \
   -e '/^Co-authored-by:.*cursoragent@cursor\.com/Id' \
   -e '/^Co-authored-by:.*@bettermind\.ph/Id' \
   -e '/^Co-authored-by:.*[Cc]ursor[[:space:]]*</d' \
   -e '/^Made-with:.*[Cc]ursor/Id' \
   "$msg_file"
 
-sed -i -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$msg_file"
+_sed_i -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$msg_file"
 exit 0
