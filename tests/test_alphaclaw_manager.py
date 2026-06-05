@@ -155,8 +155,8 @@ def test_parse_bootstrap_json_handles_deeply_nested_structure():
                 "tls": {"enabled": False, "cert": None},
             },
             "agents": {
-                "manager": {"model": "claude-4-6-sonnet", "max_tokens": 8192},
-                "researcher": {"model": "claude-4-5-haiku", "max_tokens": 4096},
+                "manager": {"model": "claude-sonnet-4-6", "max_tokens": 8192},
+                "researcher": {"model": "claude-haiku-4-5", "max_tokens": 4096},
             },
         },
     }
