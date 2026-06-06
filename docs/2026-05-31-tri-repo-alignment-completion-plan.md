@@ -52,7 +52,7 @@ current `stopServer` gap — Work item #4) does **not** satisfy this goal.
 |------|--------|------|
 | Gate 0 | ✅ | repos renamed, PT `packages/` scaffold, code copied |
 | Gate 1 | ✅ | `packages/alphaclaw-adapter` (25 methods) + `orchestrator/alphaclaw_manager.py` |
-| Gate 2 | 🟡 | Blockers: `stopServer`, tests, mcpb paths, smoke |
+| Gate 2 | 🟡 | mcpb paths (#6) + `openclaw_config` wire (#7) ✅ done 2026-06-06. Remaining blockers: `stopServer()` + PID tests (#4), `local-agents`/`alphaclaw-mcp` test runs, live smoke (#1) — all need live AlphaClaw + `SETUP_PASSWORD`. |
 | Gate 3 | ❌ | `openclaw_bridge.py` bypasses PT (direct OpenClaw gateway) |
 | Gate 4 | ❌ | Align to **D1** (`0.9.9.9`) |
 
@@ -139,8 +139,8 @@ git ls-tree -r HEAD --name-only | rg '^lib/(mcp|agents)/'
 | 3 | Gate 3: orama → PT adapter (not direct `OPENCLAW_GATEWAY`) | **ACC** |
 | 4 | `stopServer()` + PID file + tests | **SAF** before #2 |
 | 5 | ✅ **Verified 2026-06-01:** `agent_launcher.py` present at PT root (38631B) | **ACC** |
-| 6 | Fix `mcpb-agents` — **confirmed broken 2026-06-01:** both `.mcpb` use `../../local-agents/src/orchestrator.js` (resolves to `PT/local-agents`, outside `packages/`) → `../local-agents/src/orchestrator.js`; empty `tools` too *(code pending)* | **ACC** |
-| 7 | Document entrypoints (D5 — done in this doc); wire `openclaw_config` in payload | **EFF** |
+| 6 | ✅ **RESOLVED 2026-06-06:** the broken hand-written `.mcpb` knockoffs were removed and replaced by real submodule-built MCPB (commit `aa91283` / #69; JSON knockoffs deleted). No `.mcpb` files remain in tracked source. Remaining `../../local-agents/src/orchestrator.js` imports live in `packages/alphaclaw-mcp/{src,build}/index.*` and are **correct** — from `alphaclaw-mcp/src/`, `../../local-agents/...` resolves to `packages/local-agents/src/orchestrator.js` (target verified present). Tools non-empty (15 ⊇ 14). | **ACC** |
+| 7 | ✅ **RESOLVED:** entrypoints documented (D5); `openclaw_config` + `role_routing` wired into `reconcile_gateway` payload (`orchestrator/alphaclaw_manager.py:80-81, 354-355`, commit `0bcc99e`). | **EFF** |
 | 8 | Gate 3 E2E + Gate 4 @ **0.9.9.9** | **ACC** |
 
 ---
