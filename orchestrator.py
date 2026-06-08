@@ -77,7 +77,8 @@ REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 MAX_DAILY_SPEND = float(os.getenv("MAX_DAILY_SPEND", 0.17))
 MAX_PERPLEXITY_CALLS_DAY = int(os.getenv("MAX_PERPLEXITY_CALLS_DAY", 5))
-ULTRATHINK_ENDPOINT = os.getenv("ULTRATHINK_ENDPOINT")
+ORAMASYS_ENDPOINT = os.getenv("ORAMASYS_ENDPOINT") or os.getenv("ULTRATHINK_ENDPOINT")
+ULTRATHINK_ENDPOINT = ORAMASYS_ENDPOINT
 
 # LM Studio (v1.0 RC primary local backend)
 LMS_WIN_ENDPOINTS: List[str] = [
@@ -311,19 +312,27 @@ async def call_ollama(prompt: str, model: str, endpoint: str):
             return None
 
 
-async def call_ultrathink(task: str):
-    if not ULTRATHINK_ENDPOINT:
+async def call_oramasys(task: str):
+    if not ORAMASYS_ENDPOINT:
         return None
-    # Bug fix: append /ultrathink path so the request hits the correct endpoint
-    url = ULTRATHINK_ENDPOINT.rstrip("/") + "/ultrathink"
+    endpoint = ORAMASYS_ENDPOINT.rstrip("/")
+    if endpoint.endswith("/oramasys"):
+        url = endpoint
+    elif endpoint.endswith("/ultrathink"):
+        url = endpoint[: -len("/ultrathink")] + "/oramasys"
+    else:
+        url = endpoint + "/oramasys"
     async with aiohttp.ClientSession() as session:
         try:
             async with session.post(url, json={"task_description": task}) as resp:
                 data = await resp.json()
                 return data['result']
         except Exception as e:
-            logger.error(f"UltraThink error: {e}")
+            logger.error(f"Oramasys error: {e}")
             return None
+
+
+call_ultrathink = call_oramasys
 
 
 @app.post("/reconcile", response_model=ReconcileResponse)
@@ -334,8 +343,11 @@ async def reconcile(req: ReconcileRequest, request: Request):
     """
     if not await _redis_available():
         return ReconcileResponse(approved=True, reason="Redis unavailable; skipping contention check")
-    # Check for existing sessions on the hardware in Redis
-    active_sessions = await r.keys(f"ultrathink:session:active:{req.hardware_profile}:*")
+    # Check for existing sessions on the hardware in Redis. Keep reading the
+    # legacy keyspace for one release so in-flight sessions remain visible.
+    active_sessions = await r.keys(f"oramasys:session:active:{req.hardware_profile}:*")
+    legacy_sessions = await r.keys(f"ultrathink:session:active:{req.hardware_profile}:*")
+    active_sessions = list({*active_sessions, *legacy_sessions})
     # RTX 3080 has a hard OLLAMA_NUM_PARALLEL=1 limit
     if req.hardware_profile == "win-rtx3080" and len(active_sessions) >= 1:
         return ReconcileResponse(
@@ -344,7 +356,7 @@ async def reconcile(req: ReconcileRequest, request: Request):
             suggested_model="qwen3.5-9b-mlx-4bit"
         )
     # Register this session attempt
-    await r.setex(f"ultrathink:session:active:{req.hardware_profile}:{req.session_id}", 300, "active")
+    await r.setex(f"oramasys:session:active:{req.hardware_profile}:{req.session_id}", 300, "active")
     return ReconcileResponse(approved=True)
 
 
@@ -359,10 +371,10 @@ async def orchestrate(req: OrchestrationRequest, request: Request):
             routing_log.append("Cloud failed, falling back to local Qwen3.5-35B research")
             result = await call_ollama(req.task_description, "qwen3.5:35b-a3b-q4_K_M", OLLAMA_WINDOWS_ENDPOINT)
     elif req.privacy_critical:
-        routing_log.append("Privacy critical: routing to UltraThink → LM Studio Win → LM Studio Mac → Ollama.")
-        result = await call_ultrathink(req.task_description)
+        routing_log.append("Privacy critical: routing to Oramasys → LM Studio Win → LM Studio Mac → Ollama.")
+        result = await call_oramasys(req.task_description)
         if not result:
-            routing_log.append("UltraThink unavailable, trying LM Studio Win agents.")
+            routing_log.append("Oramasys unavailable, trying LM Studio Win agents.")
             for ep in LMS_WIN_ENDPOINTS:
                 result = await call_lmstudio(req.task_description, endpoint=ep, model=LMS_WIN_MODEL)
                 if result:
