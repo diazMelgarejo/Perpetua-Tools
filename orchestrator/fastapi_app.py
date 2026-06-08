@@ -37,8 +37,8 @@ from orchestrator.cost_guard import CostGuard
 from orchestrator.ecc_tools_sync import get_sync_status, sync_ecc_tools
 from orchestrator.model_registry import ModelRegistry
 from orchestrator.orama_bridge import (
-    call_ultrathink_mcp_or_bridge,
-    parse_ultrathink_timeout,
+    call_oramasys_mcp_or_bridge,
+    parse_oramasys_timeout,
 )
 
 _startup_log = logging.getLogger("orchestrator.fastapi_app")
@@ -102,7 +102,7 @@ app = FastAPI(
     version="0.9.9.7",
     description=(
         "Top-level idempotent multi-agent orchestrator. "
-        "Repo #1 complements ultrathink-system with routing, runtime "
+        "Repo #1 complements orama-system with routing, runtime "
         "reconciliation, and control-plane state."
     ),
     lifespan=_lifespan,
@@ -132,7 +132,7 @@ async def _control_plane_auth_middleware(request: Request, call_next):
 tracker = AgentTracker()
 registry = ModelRegistry()
 cost_guard = CostGuard()
-_ULTRATHINK_TASK_TYPES = {"deep_reasoning", "code_analysis"}
+_ORAMASYS_TASK_TYPES = {"deep_reasoning", "code_analysis"}
 
 # ── User-input queue ──────────────────────────────────────────────────────────
 # Shared in-process queue; agents poll GET /user-input/next to consume tasks.
@@ -602,25 +602,29 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
     if budget_warning:
         response["budget_warning"] = budget_warning
 
-    if req.task_type in _ULTRATHINK_TASK_TYPES and route_cfg.get("endpoint"):
-        timeout = parse_ultrathink_timeout(route_cfg.get("timeout"))
+    if req.task_type in _ORAMASYS_TASK_TYPES and route_cfg.get("endpoint"):
+        timeout = parse_oramasys_timeout(route_cfg.get("timeout"))
         try:
-            response["ultrathink_bridge"] = {
+            bridge_result = {
                 "enabled": True,
-                **await call_ultrathink_mcp_or_bridge(
+                **await call_oramasys_mcp_or_bridge(
                     endpoint=str(route_cfg["endpoint"]),
                     timeout=timeout,
                     task=req.task,
                     task_type=req.task_type,
                 ),
             }
+            response["oramasys_bridge"] = bridge_result
+            response["ultrathink_bridge"] = bridge_result
         except Exception as exc:  # noqa: BLE001
-            _startup_log.warning("UltraThink bridge call failed: %s", exc)
-            response["ultrathink_bridge"] = {
+            _startup_log.warning("oramasys bridge call failed: %s", exc)
+            bridge_error = {
                 "enabled": True,
                 "error": str(exc),
                 "endpoint": os.path.expandvars(str(route_cfg["endpoint"])),
             }
+            response["oramasys_bridge"] = bridge_error
+            response["ultrathink_bridge"] = bridge_error
     return response
 
 
