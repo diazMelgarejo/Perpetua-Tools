@@ -1369,3 +1369,9 @@ synced from orama) verifies byte-identical guards across repos — currently PAS
 next:** (P1) repair gbrain (`broken-config` → `/setup-gbrain`); (P2) resume tri-repo Gate 2→3
 (canonical plan: [`docs/2026-05-31-tri-repo-alignment-completion-plan.md`](2026-05-31-tri-repo-alignment-completion-plan.md));
 (P3) wire `verify-guard-parity.sh` into CI + `daily-attribution-guard.sh`.
+
+## 2026-06-08 — Claude patch review: P0 oramasys rename without skill fragmentation
+
+Claude's attached recommendations were accepted only for the missing P0 contract pieces: PT now targets canonical `/oramasys`, uses `ORAMASYS_*` env keys with legacy `ULTRATHINK_*` fallbacks, and keeps legacy response keys only as a compatibility alias during the transition. The proposed extra oramasys method skill was intentionally not copied into PT/orama because the existing skill stack already carries the 5-stage method, CIDF, AFRP, CRG/gbrain frugality, and first-run references.
+
+Decision rule: consolidate knowledge into the canonical repo docs/skills instead of maintaining a parallel Claude-generated tree. When adding `mcp/oramasys`, preserve existing MCP server setup and follow the established GitHub/LM Studio stdio config pattern; do not overwrite `.cursor/mcp.json` or split bridge ownership. P1/P2 pipeline/version-bump work remains deferred until after P0 lands.

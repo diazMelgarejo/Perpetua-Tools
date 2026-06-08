@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import asyncio
 from pathlib import Path
@@ -77,11 +77,11 @@ def _load_orchestrator_module():
     return mod
 
 
-def test_call_ultrathink_appends_ultrathink_path(monkeypatch):
-    """Bug fix: call_ultrathink must POST to /ultrathink, not bare base URL.
+def test_call_oramasys_appends_ultrathink_path(monkeypatch):
+    """Bug fix: call_oramasys must POST to /oramasys, not bare base URL.
 
-    Before the fix: session.post(ULTRATHINK_ENDPOINT, ...)
-    After the fix:  session.post(ULTRATHINK_ENDPOINT.rstrip('/') + '/ultrathink', ...)
+    Before the fix: session.post(ORAMASYS_ENDPOINT, ...)
+    After the fix:  session.post(ORAMASYS_ENDPOINT.rstrip('/') + '/oramasys', ...)
     """
     import asyncio
     import aiohttp
@@ -101,14 +101,14 @@ def test_call_ultrathink_appends_ultrathink_path(monkeypatch):
         async def __aenter__(self): return self
         async def __aexit__(self, *a): pass
 
-    monkeypatch.setattr(orch_mod, "ULTRATHINK_ENDPOINT", "http://localhost:8001")
+    monkeypatch.setattr(orch_mod, "ORAMASYS_ENDPOINT", "http://localhost:8001")
     monkeypatch.setattr(aiohttp, "ClientSession", _FakeSession)
 
-    asyncio.run(orch_mod.call_ultrathink("test task"))
+    asyncio.run(orch_mod.call_oramasys("test task"))
 
     assert len(captured_urls) == 1, "Expected exactly one POST"
-    assert captured_urls[0] == "http://localhost:8001/ultrathink", (
-        f"Expected /ultrathink suffix, got: {captured_urls[0]}"
+    assert captured_urls[0] == "http://localhost:8001/oramasys", (
+        f"Expected /oramasys suffix, got: {captured_urls[0]}"
     )
 
 
@@ -119,7 +119,7 @@ def test_orchestrate_returns_empty_string_when_all_backends_fail(monkeypatch):
     After the fix:  status='success', result='' returned cleanly.
 
     fix(tests): slowapi's @limiter.limit decorator does a strict isinstance check
-    against starlette.requests.Request — a plain mock object won't pass.
+    against starlette.requests.Request â€” a plain mock object won't pass.
     Call the unwrapped handler via __wrapped__ to bypass the rate-limit layer
     entirely. The `request` param is only consumed by the decorator; the
     function body never references it, so passing None is safe.
@@ -133,7 +133,7 @@ def test_orchestrate_returns_empty_string_when_all_backends_fail(monkeypatch):
 
     monkeypatch.setattr(orch_mod, "call_perplexity", _none)
     monkeypatch.setattr(orch_mod, "call_ollama", _none)
-    monkeypatch.setattr(orch_mod, "call_ultrathink", _none)
+    monkeypatch.setattr(orch_mod, "call_oramasys", _none)
 
     class _FakeRedis:
         async def get(self, *a): return None
@@ -181,7 +181,7 @@ def test_orchestrator_starts_without_redis_package(monkeypatch):
 
     monkeypatch.setattr(orch_mod, "call_perplexity", _none)
     monkeypatch.setattr(orch_mod, "call_ollama", _none)
-    monkeypatch.setattr(orch_mod, "call_ultrathink", _none)
+    monkeypatch.setattr(orch_mod, "call_oramasys", _none)
 
     req = orch_mod.OrchestrationRequest(
         task_description="redis-absent test",
@@ -222,3 +222,4 @@ def test_reconcile_request_rejects_unsafe_hardware_profile():
             model_id="safe-model",
             hardware_profile="win-rtx3080:*",
         )
+

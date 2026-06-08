@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import sys
 from pathlib import Path
@@ -31,7 +31,7 @@ def _make_candidate(
     return candidate
 
 
-def test_orchestrate_calls_ultrathink_bridge_with_mapped_depth(monkeypatch):
+def test_orchestrate_calls_oramasys_bridge_with_mapped_depth(monkeypatch):
     monkeypatch.setenv("ORAMA_ENDPOINT", "http://localhost:8001")
 
     ultrathink_candidate = _make_candidate()
@@ -78,7 +78,7 @@ def test_orchestrate_calls_ultrathink_bridge_with_mapped_depth(monkeypatch):
         patch("orchestrator.orama_bridge.httpx.AsyncClient",
               return_value=mock_async_client_instance),
         # Ensure no MCP subprocess is attempted
-        patch.dict("os.environ", {"ULTRATHINK_MCP_SERVER_CMD": ""}),
+        patch.dict("os.environ", {"ORAMASYS_MCP_SERVER_CMD": ""}),
     ):
         from orchestrator.fastapi_app import app
 
@@ -95,10 +95,11 @@ def test_orchestrate_calls_ultrathink_bridge_with_mapped_depth(monkeypatch):
     assert response.status_code == 200, response.text
     body = response.json()
     # Verify HTTP path was taken (MCP cmd is unset)
-    assert body["ultrathink_bridge"]["transport"] == "http"
+    assert body["oramasys_bridge"]["transport"] == "http"
     # Verify the payload sent to HTTP bridge has correct contract mapping
     _, call_kwargs = mock_async_client_instance.post.call_args
     assert call_kwargs["json"]["optimize_for"] == "reliability"
     assert call_kwargs["json"]["reasoning_depth"] == "ultra"
-    assert body["ultrathink_bridge"]["request"]["reasoning_depth"] == "ultra"
-    assert body["ultrathink_bridge"]["response"]["reasoning_depth"] == "ultra"
+    assert body["oramasys_bridge"]["request"]["reasoning_depth"] == "ultra"
+    assert body["oramasys_bridge"]["response"]["reasoning_depth"] == "ultra"
+
