@@ -12,13 +12,20 @@
     "test": "vitest run tests/client.test.js",
     "test:boundary": "node --test tests/path-boundary.test.cjs"
   },
-  "keywords": ["ollama", "lmstudio", "local-agent", "mcp"],
+  "keywords": [
+    "ollama",
+    "lmstudio",
+    "local-agent",
+    "mcp"
+  ],
   "license": "MIT",
-  "engines": { "node": ">=22.14.0" },
+  "engines": {
+    "node": ">=22.14.0"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.1"
   },
   "devDependencies": {
-    "vitest": "^3.0.9"
+    "vitest": "^4.1.8"
   }
 }
