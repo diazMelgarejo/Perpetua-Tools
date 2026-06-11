@@ -13,6 +13,83 @@ def _probe(url: str, timeout: float = 2.5) -> Dict[str, Any]:
         return {"ok": False, "status_code": None, "url": url, "error": str(exc)}
 
 
+# ── live model-online derivation (replaces static models.yml `online:` flag) ──
+# A model is "online" when its endpoint is reachable AND, for listable local
+# backends, the model id is actually served. Cached per-endpoint with a short TTL
+# so list_models() stays cheap (one probe per unique endpoint per TTL window).
+import threading as _threading
+import time as _time
+
+_ENDPOINT_TTL = 20.0  # seconds
+_endpoint_cache: Dict[tuple, tuple] = {}  # (base,backend) -> (monotonic_ts, ok, frozenset[str])
+_endpoint_lock = _threading.Lock()
+_CLOUD_BACKENDS = {"perplexity", "openrouter", "anthropic", "online", "xai", "cloud"}
+
+
+def _served_model_ids(base: str, backend: str, timeout: float = 1.5) -> tuple:
+    """(reachable, {served model ids, lowercased}) for a local inference endpoint."""
+    base = base.rstrip("/")
+    try:
+        if backend == "ollama":
+            r = httpx.get(f"{base}/api/tags", timeout=timeout)
+            if r.status_code >= 400:
+                return (False, frozenset())
+            ms = r.json().get("models", []) or []
+            ids = {str(m.get("name", "")).lower() for m in ms} | {str(m.get("model", "")).lower() for m in ms}
+        else:  # lm-studio / mlx / OpenAI-compatible
+            r = httpx.get(f"{base}/v1/models", timeout=timeout)
+            if r.status_code >= 400:
+                return (False, frozenset())
+            ids = {str(m.get("id", "")).lower() for m in (r.json().get("data", []) or [])}
+        return (True, frozenset(i for i in ids if i))
+    except Exception:
+        return (False, frozenset())
+
+
+def endpoint_online(base: str, backend: str, model_id: str = "", ttl: float = _ENDPOINT_TTL) -> bool:
+    """Live-derived online status (cached). Endpoint reachable AND — for listable
+    local backends — the model id is served. Cloud backends: base reachability only.
+    Never raises; a failed probe simply reports offline.
+    """
+    cloud = backend in _CLOUD_BACKENDS
+    key = (base, backend)
+    now = _time.monotonic()
+    with _endpoint_lock:
+        cached = _endpoint_cache.get(key)
+    if not cached or (now - cached[0]) > ttl:
+        if cloud:
+            ok, served = _probe(base, timeout=1.5).get("ok", False), frozenset()
+        else:
+            ok, served = _served_model_ids(base, backend)
+        cached = (now, ok, served)
+        with _endpoint_lock:
+            _endpoint_cache[key] = cached
+    ok, served = cached[1], cached[2]
+    if not ok:
+        return False
+    if cloud or not served or not model_id:
+        return ok
+
+    def _norm(x: str) -> str:
+        # strip trailing quant/format tags (LM Studio lists the base id; the
+        # registry name often carries -Q4_K_M / -4bit / -gguf / -mlx etc.)
+        import re as _re
+        prev = None
+        while prev != x:
+            prev = x
+            x = _re.sub(r"[-_:](q\d[\w]*|\d+bit|f16|bf16|fp\d+|gguf|mlx)$", "", x)
+        return x
+
+    mid = model_id.lower()
+    nmid = _norm(mid)
+    for s in served:
+        if mid == s or s.startswith(mid + ":") or mid.startswith(s + ":"):
+            return True
+        if _norm(s) == nmid:
+            return True
+    return False
+
+
 def check_ollama(host: str = "http://localhost:11434") -> Dict[str, Any]:
     """Works for shared Ollama on Mac or Windows."""
     return _probe(f"{host.rstrip('/')}/api/tags")
