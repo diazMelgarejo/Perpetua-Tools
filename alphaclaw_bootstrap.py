@@ -5,16 +5,19 @@ alphaclaw_bootstrap.py — Perpetua-Tools
 Canonical AlphaClaw (@chrysb/alphaclaw) gateway install / commandeer / start
 logic. ultrathink-system delegates to this script via PT_HOME env var.
 
-Steps (all idempotent):
-  0. Probe all candidate ports for any running OpenClaw-compatible gateway
-     (commandeer if found — skip install and start).
-  1. Verify npm is available.
-  2. Install @chrysb/alphaclaw locally (npm install, no -g) if missing.
-  3. Write ~/.openclaw/openclaw.json from PT routing.json + env defaults.
-  4. Create agent workspaces from bin/agents/*/SOUL.md.
-  5. Start gateway via: npx alphaclaw start
-  6. Poll /health with ASCII progress bar (30 s timeout).
-  7. Ensure ~/autoresearch is cloned and uv-synced.
+Idempotency precedence (a running PT commandeers, else starts, else installs):
+  0. Probe candidate ports (incl AlphaClaw :18789 AND OpenClaw :19001) for a
+     running gateway -> commandeer it (covers a running AlphaClaw OR OpenClaw).
+  3. else, if @chrysb/alphaclaw is installed -> start it (npx alphaclaw start).
+  4. else, if the bare OpenClaw CLI is installed -> start its gateway
+     (openclaw gateway run; best-effort, falls through if it can't bind).
+  5. else -> npm-install @chrysb/alphaclaw, then start.
+Then: write ~/.openclaw/openclaw.json from PT routing.json, create agent
+workspaces, poll /health (30 s), ensure ~/autoresearch.
+
+NOTE: gateway start can be blocked by an OpenClaw version skew (AlphaClaw-bundled
+vs standalone `openclaw` vs the version that wrote openclaw.json) and by the
+ai.openclaw.gateway LaunchAgent state — align versions if /health never binds.
 
 Usage:
     python alphaclaw_bootstrap.py --bootstrap [--force]
@@ -46,8 +49,12 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 OPENCLAW_GATEWAY_PORT = int(os.getenv("OPENCLAW_GATEWAY_PORT", "18789"))
 
 _extra = [int(p) for p in os.getenv("OPENCLAW_EXTRA_PORTS", "").split(",") if p.strip()]
+# Probe AlphaClaw's default (18789) AND OpenClaw's native gateway (19001, also the
+# --dev port) so a running OpenClaw instance is discovered + commandeered rather
+# than missed — otherwise a live OpenClaw on 19001 would be ignored and we'd
+# needlessly start a second runtime.
 OPENCLAW_CANDIDATE_PORTS: list[int] = list(dict.fromkeys(
-    [OPENCLAW_GATEWAY_PORT, 11435, 8080, 3000, 4000, 9000] + _extra
+    [OPENCLAW_GATEWAY_PORT, 19001, 11435, 8080, 3000, 4000, 9000] + _extra
 ))
 
 # SOUL source: prefer PT's own bin/agents/, fall back to UTS_HOME/bin/agents/
@@ -273,6 +280,47 @@ def _is_alphaclaw_installed() -> bool:
         return True
     nm = ALPHACLAW_INSTALL_DIR / "node_modules" / "@chrysb" / "alphaclaw"
     return nm.exists()
+
+
+def _is_openclaw_installed() -> bool:
+    """True if the bare OpenClaw CLI (the runtime AlphaClaw wraps) is on PATH."""
+    return shutil.which("openclaw") is not None
+
+
+async def _start_openclaw_gateway(log_dir: Path, setup_password: str, timeout: int = 20) -> str | None:
+    """Best-effort start of the bare OpenClaw WebSocket gateway (`openclaw gateway run`).
+
+    Detached; polls the candidate ports for a reachable gateway. Returns the
+    gateway URL if one comes up within `timeout`, else None so the caller falls
+    through to starting the installed AlphaClaw wrapper (precedence step 4).
+    The HTTP readiness probe is best-effort — OpenClaw's gateway is WebSocket, so
+    on builds without an HTTP /health this returns None and we fall back cleanly.
+    """
+    openclaw_bin = shutil.which("openclaw")
+    if not openclaw_bin:
+        return None
+    print("[alphaclaw] → OpenClaw installed — starting bare OpenClaw gateway (openclaw gateway run)…")
+    log_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        _fh = open(log_dir / "openclaw-gateway.log", "a")  # noqa: SIM115 — detached log, kept open intentionally
+        subprocess.Popen(
+            [openclaw_bin, "gateway", "run"],
+            stdin=subprocess.DEVNULL,
+            env={**os.environ, "SETUP_PASSWORD": setup_password},
+            stdout=_fh,
+            stderr=subprocess.STDOUT,
+        )
+    except Exception as e:
+        print(f"[alphaclaw] ⚠ OpenClaw gateway start failed ({e}) — falling back to AlphaClaw")
+        return None
+    for _ in range(timeout):
+        url = await _find_any_gateway()
+        if url:
+            print(f"[alphaclaw] ✓ OpenClaw gateway reachable at {url}")
+            return url
+        await asyncio.sleep(1)
+    print(f"[alphaclaw] ⚠ OpenClaw gateway not reachable within {timeout}s — falling back to AlphaClaw")
+    return None
 
 
 # ── config + workspaces ───────────────────────────────────────────────────────
@@ -711,8 +759,36 @@ async def bootstrap_alphaclaw(force: bool = False) -> dict[str, object]:
             encoding="utf-8",
         )
 
-    # Step 2: install @chrysb/alphaclaw locally if missing
+    # Step 2: install @chrysb/alphaclaw locally if missing.
     if not _is_alphaclaw_installed():
+        # Precedence step 4: AlphaClaw is NOT installed -- if the bare OpenClaw CLI
+        # is, start its gateway first; only fall through to installing AlphaClaw
+        # (step 5) when OpenClaw cannot be brought up. (Step 3, "start installed
+        # AlphaClaw", is the else-branch below: skip install, go straight to start.)
+        if _is_openclaw_installed():
+            _oc_creds = _gather_alphaclaw_credentials(timeout=30)
+            _oc_url = await _start_openclaw_gateway(
+                ALPHACLAW_INSTALL_DIR / "logs", str(_oc_creds["password"])
+            )
+            if _oc_url:
+                os.environ["OPENCLAW_GATEWAY_URL"] = _oc_url
+                _oc_pt = _load_pt_state()
+                _oc_cfg = (
+                    _write_openclaw_config(config_dir, config_file)
+                    if (not config_file.exists() or force)
+                    else build_openclaw_config(_oc_pt)
+                )
+                _ensure_agent_workspaces(config_dir)
+                _ensure_autoresearch()
+                return asdict(
+                    AlphaClawBootstrapResult(
+                        ok=True, gateway_ready=True, gateway_url=_oc_url,
+                        runtime="openclaw",
+                        role_routing=build_role_routing(_oc_pt),
+                        openclaw_config=_oc_cfg,
+                    )
+                )
+            print("[alphaclaw] \u2192 OpenClaw gateway unavailable \u2014 installing AlphaClaw (step 5)")
         print(
             f"[alphaclaw] \u2192 Installing @chrysb/alphaclaw into"
             f" {ALPHACLAW_INSTALL_DIR}\u2026"
