@@ -42,6 +42,14 @@ from orchestrator.startup_intelligence import (
 from perpetua.discovery.backend import Backend, BackendHealth, BackendKind
 from perpetua.discovery.registry import BackendRegistry
 
+_platform_override = os.getenv("ORAMA_PLATFORM", "").strip().lower()
+RUNNING_ON_WINDOWS = _platform_override in {"win", "windows", "win32"} or (
+    not _platform_override and sys.platform.startswith("win")
+)
+RUNNING_ON_MAC = _platform_override in {"mac", "macos", "darwin"} or (
+    not _platform_override and sys.platform == "darwin"
+)
+
 try:
     import httpx
 except ImportError:
@@ -94,7 +102,13 @@ def _loopback_host_from_endpoint(endpoint: str, *, default_port: int) -> tuple[s
     return host, port
 
 
-_ollama_mac_endpoint = os.getenv("OLLAMA_MAC_ENDPOINT", "http://localhost:11434")
+_default_mac_host = os.getenv("MAC_IP") or os.getenv("MAC_LMS_HOST") or "192.168.254.110"
+_default_ollama_mac_endpoint = (
+    "http://localhost:11434"
+    if RUNNING_ON_MAC
+    else f"http://{_default_mac_host}:11434"
+)
+_ollama_mac_endpoint = os.getenv("OLLAMA_MAC_ENDPOINT", _default_ollama_mac_endpoint)
 # PT runs ON the Mac, so its own ("mac") ollama is always loopback. A stale LAN
 # IP from a previous subnet (e.g. 192.168.1.101) is never correct here — it only
 # breaks Mac-orchestrator selection (mac_ollama_ok=False -> manager falls off
@@ -102,7 +116,7 @@ _ollama_mac_endpoint = os.getenv("OLLAMA_MAC_ENDPOINT", "http://localhost:11434"
 # canonical value. Mirrors the Win endpoint's "live/canonical source beats stale
 # config" self-heal in lan_discovery.detect_active_tilting_ip.
 _p_mac = urlparse(_ollama_mac_endpoint if "://" in _ollama_mac_endpoint else f"http://{_ollama_mac_endpoint}")
-if _p_mac.hostname not in ("localhost", "127.0.0.1", "::1", None):
+if RUNNING_ON_MAC and _p_mac.hostname not in ("localhost", "127.0.0.1", "::1", None):
     _healed_mac = f"http://localhost:{_p_mac.port or 11434}"
     logging.getLogger(__name__).warning(
         "OLLAMA_MAC_ENDPOINT=%s is non-loopback; PT runs on the Mac so its ollama "
@@ -127,6 +141,46 @@ MAC_LMS_URL   = f"http://{MAC_LMS_HOST}:{MAC_LMS_PORT}"
 MAC_LMS_MODEL = (os.getenv("MAC_LMS_MODEL")
                  or os.getenv("LMS_MAC_MODEL")
                  or "Qwen3.5-9B-MLX-4bit")
+MAC_REQUIRED_OLLAMA_MODELS = tuple(
+    m.strip()
+    for m in os.getenv("MAC_REQUIRED_OLLAMA_MODELS", "qwen3.5:9b-nvfp4,bge-m3").split(",")
+    if m.strip()
+)
+
+
+def _served_model_present(served: list[str], required: str) -> bool:
+    required_l = required.lower()
+    for model in served:
+        model_l = str(model).lower()
+        if model_l == required_l or model_l.startswith(required_l + ":"):
+            return True
+    return False
+
+
+def _ensure_mac_ollama_models_present(served: list[str], base_url: str = LOCAL_MAC_URL) -> None:
+    """Fail closed unless the Mac host has localhost:11434 with required models."""
+    if not RUNNING_ON_MAC:
+        return
+    parsed = urlparse(base_url if "://" in base_url else f"http://{base_url}")
+    host = parsed.hostname or ""
+    port = parsed.port or 11434
+    if not _is_loopback_host(host) or port != 11434:
+        raise RuntimeError(
+            f"Mac Ollama must be localhost:11434 before manager selection; got {base_url}"
+        )
+    missing = [
+        model
+        for model in MAC_REQUIRED_OLLAMA_MODELS
+        if not _served_model_present(served, model)
+    ]
+    if missing:
+        _launcher_logger.critical(
+            "Mac Ollama is missing required manager/support model(s): %s",
+            ", ".join(missing),
+        )
+        raise RuntimeError(
+            "Mac Ollama missing required model(s): " + ", ".join(missing)
+        )
 
 
 def _pick_mac_manager(served: list, preferred: str) -> str:
@@ -142,9 +196,15 @@ def _pick_mac_manager(served: list, preferred: str) -> str:
     Never returns a NEVER_MAC model (a Win-only coder that leaked into a mac
     bucket via LAN discovery) — that would fail the hardware-affinity gate.
     """
-    from utils.hardware_policy import check_affinity, HardwareAffinityError
     if preferred and preferred in served:
-        return preferred
+        try:
+            check_affinity(preferred, "mac")
+            return preferred
+        except HardwareAffinityError:
+            logging.getLogger(__name__).warning(
+                "skipping preferred NEVER_MAC model %r for the Mac manager role",
+                preferred,
+            )
     for m in served:
         try:
             check_affinity(m, "mac")
@@ -162,9 +222,9 @@ _win_lms_eps = os.getenv("LM_STUDIO_WIN_ENDPOINTS", "").strip()
 _win_lms_first = _win_lms_eps.split(",")[0].strip() if _win_lms_eps else ""
 if not os.getenv("WINDOWS_IP") and _win_lms_first:
     _pw = urlparse(_win_lms_first)
-    _win_ip_default = _pw.hostname or "192.168.254.108"
+    _win_ip_default = _pw.hostname or ("localhost" if RUNNING_ON_WINDOWS else "192.168.254.108")
 else:
-    _win_ip_default = "192.168.254.108"
+    _win_ip_default = "localhost" if RUNNING_ON_WINDOWS else "192.168.254.108"
 
 WINDOWS_IP        = os.getenv("WINDOWS_IP",   _win_ip_default)
 WINDOWS_PORT      = int(os.getenv("WINDOWS_PORT", "11434"))
@@ -392,6 +452,10 @@ async def _fetch_models(
     mac_url: str,
     mac_lms_ok: bool,
     lms_url: str,
+    win_ok: bool = False,
+    win_url: str = "",
+    win_lms_ok: bool = False,
+    win_lms_url: str = "",
 ) -> dict[str, list[str]]:
     # (signature unchanged — internal callers still pass bool flags)
     """Query live local backends for their actual loaded model names.
@@ -421,6 +485,10 @@ async def _fetch_models(
         coros["mac-ollama"] = _ollama_tags(mac_url)
     if mac_lms_ok:
         coros["mac-lmstudio"] = _lms_models(lms_url)
+    if RUNNING_ON_WINDOWS and win_ok and win_url:
+        coros["win-ollama"] = _ollama_tags(win_url)
+    if RUNNING_ON_WINDOWS and win_lms_ok and win_lms_url:
+        coros["win-lmstudio"] = _lms_models(win_lms_url)
     if not coros:
         return {}
     gathered = await asyncio.gather(*coros.values(), return_exceptions=True)
@@ -667,21 +735,30 @@ async def initialize_environment() -> dict:
     (win_ok, _win_ol_lat), (lms_ok, _win_lms_lat) = await asyncio.gather(t_win_ol, t_win_lms)
     _log_backend("Win Ollama",    win_ok, REMOTE_WINDOWS_URL)
     _log_backend("Win LM Studio", lms_ok, REMOTE_WINDOWS_LMS_URL)
+    if RUNNING_ON_WINDOWS:
+        local_models.update(await _fetch_models(
+            False, "", False, "",
+            win_ok=win_ok,
+            win_url=REMOTE_WINDOWS_URL,
+            win_lms_ok=lms_ok,
+            win_lms_url=REMOTE_WINDOWS_LMS_URL,
+        ))
 
     # ── Step 4: device-identity guard ────────────────────────────────────
     # If a "remote" URL resolves to a local IP, the user mis-configured
     # WINDOWS_IP — do NOT spawn a second researcher on the same device.
     local_ips = _get_local_ips()
 
-    if win_ok and _is_local_endpoint(REMOTE_WINDOWS_URL, local_ips):
-        print(f"[agent_launcher] ⚠  Windows Ollama {REMOTE_WINDOWS_URL} is THIS device"
-              f" — ignoring (one role per device; local IPs: {sorted(local_ips)})")
-        win_ok = False
+    if not RUNNING_ON_WINDOWS:
+        if win_ok and _is_local_endpoint(REMOTE_WINDOWS_URL, local_ips):
+            print(f"[agent_launcher] ⚠  Windows Ollama {REMOTE_WINDOWS_URL} is THIS device"
+                  f" — ignoring (one role per device; local IPs: {sorted(local_ips)})")
+            win_ok = False
 
-    if lms_ok and _is_local_endpoint(REMOTE_WINDOWS_LMS_URL, local_ips):
-        print(f"[agent_launcher] ⚠  Windows LM Studio {REMOTE_WINDOWS_LMS_URL} is THIS device"
-              f" — ignoring (one role per device)")
-        lms_ok = False
+        if lms_ok and _is_local_endpoint(REMOTE_WINDOWS_LMS_URL, local_ips):
+            print(f"[agent_launcher] ⚠  Windows LM Studio {REMOTE_WINDOWS_LMS_URL} is THIS device"
+                  f" — ignoring (one role per device)")
+            lms_ok = False
 
     # If Mac Ollama AND Mac LM Studio are both on this device, Ollama takes
     # priority (avoid two simultaneous inference loads on the same GPU/CPU).
@@ -705,6 +782,8 @@ async def initialize_environment() -> dict:
     manager_affinity_alert: str | None = None
     _mac_ol = local_models.get("mac-ollama", [])
     _mac_lms = local_models.get("mac-lmstudio", [])
+    if mac_ok:
+        _ensure_mac_ollama_models_present(_mac_ol, LOCAL_MAC_URL)
     # Mac ollama-localhost is the highest-priority orchestrator when online;
     # affinity-safe pick (never a NEVER_MAC Win coder that leaked into the bucket).
     _mgr_model = (

@@ -9,6 +9,10 @@ from urllib.parse import urlparse
 
 import yaml
 
+from orchestrator.connectivity import endpoint_online as _endpoint_online
+
+_DISABLE_LIVE_PROBES = {"1", "true", "yes", "on"}
+
 
 def _expand_env_default(value: str) -> str:
     """Expand ${VAR:-default} in config strings (e.g. OLLAMA host)."""
@@ -23,8 +27,13 @@ def _expand_env_default(value: str) -> str:
 
 def _host_has_port(host: str) -> bool:
     """True if a host URL already carries a :port (e.g. http://1.2.3.4:1234)."""
-    rest = host.split("://", 1)[-1]
-    return ":" in rest
+    authority = host.split("://", 1)[-1].split("/", 1)[0]
+    if authority.startswith("["):
+        close = authority.find("]")
+        return close != -1 and len(authority) > close + 1 and authority[close + 1] == ":"
+    if authority.count(":") > 1:
+        return False
+    return ":" in authority
 
 
 @dataclass
@@ -102,7 +111,8 @@ class ModelRegistry:
         """
         device_name = item.get("device", "")
         dev_info = self.device_info(device_name)
-        if dev_info.get("identity_method") == "active_tilting":
+        live_disabled = os.getenv("PT_DISABLE_LIVE_MODEL_PROBES", "").strip().lower() in _DISABLE_LIVE_PROBES
+        if dev_info.get("identity_method") == "active_tilting" and not live_disabled:
             from orchestrator.lan_discovery import detect_active_tilting_ip
             return detect_active_tilting_ip()
         return _expand_env_default(str(item.get("host", "")))
@@ -122,11 +132,13 @@ class ModelRegistry:
             # (short TTL) so this stays cheap. models.yml `online:` is the seed
             # fallback if the live probe layer is unavailable.
             base = host if _host_has_port(host) else (f"{host}:{port}" if port else host)
-            try:
-                from orchestrator.connectivity import endpoint_online
-                online = endpoint_online(base, backend, item.get("api_model") or item["name"])
-            except Exception:
+            if os.getenv("PT_DISABLE_LIVE_MODEL_PROBES", "").strip().lower() in _DISABLE_LIVE_PROBES:
                 online = item.get("online", False)
+            else:
+                try:
+                    online = _endpoint_online(base, backend, item.get("api_model") or item["name"])
+                except Exception:
+                    online = item.get("online", False)
             targets.append(
                 ModelTarget(
                     name=item["name"],

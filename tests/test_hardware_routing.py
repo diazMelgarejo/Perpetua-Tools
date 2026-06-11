@@ -24,8 +24,9 @@ import utils.hardware_policy as _hw_policy_mod
 
 
 @pytest.fixture(autouse=True)
-def clear_policy_cache():
+def clear_policy_cache(monkeypatch):
     """Clear module-level _POLICY_CACHE before every test to prevent cross-test contamination."""
+    monkeypatch.setenv("PT_DISABLE_LIVE_MODEL_PROBES", "1")
     _hw_policy_mod._POLICY_CACHE = None
     yield
     _hw_policy_mod._POLICY_CACHE = None
@@ -141,6 +142,71 @@ def test_hardware_policy_filter_is_case_insensitive():
         "Qwen3.5-9B-MLX-4bit",
         "unknown-local-experiment",
     ]
+
+
+def test_pick_mac_manager_checks_preferred_affinity(monkeypatch):
+    import agent_launcher
+
+    def _fake_check(model_id, platform):
+        if model_id == "win-only":
+            raise HardwareAffinityError("NEVER_MAC")
+
+    monkeypatch.setattr("agent_launcher.check_affinity", _fake_check)
+
+    assert agent_launcher._pick_mac_manager(["win-only", "mac-ok"], "win-only") == "mac-ok"
+
+
+def test_mac_ollama_required_models_fail_closed(monkeypatch):
+    import agent_launcher
+
+    monkeypatch.setattr(agent_launcher, "RUNNING_ON_MAC", True)
+    monkeypatch.setattr(
+        agent_launcher,
+        "MAC_REQUIRED_OLLAMA_MODELS",
+        ("qwen3.5:9b-nvfp4", "bge-m3"),
+    )
+
+    with pytest.raises(RuntimeError, match="missing required model"):
+        agent_launcher._ensure_mac_ollama_models_present(
+            ["qwen3.5:9b-nvfp4"],
+            "http://localhost:11434",
+        )
+
+
+def test_mac_ollama_required_models_skip_on_windows_host(monkeypatch):
+    import agent_launcher
+
+    monkeypatch.setattr(agent_launcher, "RUNNING_ON_MAC", False)
+
+    agent_launcher._ensure_mac_ollama_models_present([], "http://192.168.254.110:11434")
+
+
+def test_windows_host_keeps_local_windows_backend(monkeypatch):
+    import agent_launcher
+
+    monkeypatch.setattr(agent_launcher, "RUNNING_ON_WINDOWS", True)
+    local_ips = frozenset({"localhost", "127.0.0.1"})
+
+    state = agent_launcher._build_routing_state(
+        mac_ok=False,
+        mac_lms_ok=False,
+        win_ok=False,
+        lms_ok=True,
+        local_models={"win-lmstudio": ["Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2"]},
+        mac_lms_is_local=False,
+        local_ips=local_ips,
+    )
+
+    assert state["coder_backend"] == "windows-lmstudio"
+
+
+def test_host_has_port_handles_bracketed_ipv6():
+    from orchestrator.model_registry import _host_has_port
+
+    assert _host_has_port("http://[::1]:8080") is True
+    assert _host_has_port("http://[::1]") is False
+    assert _host_has_port("[::1]:8080") is True
+    assert _host_has_port("[::1]") is False
 
 
 def test_orchestrate_hardware_selection(monkeypatch, client):

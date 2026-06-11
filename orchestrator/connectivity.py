@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re as _re
 from typing import Any, Dict
 
 import httpx
@@ -73,7 +74,6 @@ def endpoint_online(base: str, backend: str, model_id: str = "", ttl: float = _E
     def _norm(x: str) -> str:
         # strip trailing quant/format tags (LM Studio lists the base id; the
         # registry name often carries -Q4_K_M / -4bit / -gguf / -mlx etc.)
-        import re as _re
         prev = None
         while prev != x:
             prev = x

@@ -301,8 +301,9 @@ async def _start_openclaw_gateway(log_dir: Path, setup_password: str, timeout: i
         return None
     print("[alphaclaw] → OpenClaw installed — starting bare OpenClaw gateway (openclaw gateway run)…")
     log_dir.mkdir(parents=True, exist_ok=True)
+    _fh = None
     try:
-        _fh = open(log_dir / "openclaw-gateway.log", "a")  # noqa: SIM115 — detached log, kept open intentionally
+        _fh = open(log_dir / "openclaw-gateway.log", "ab")  # noqa: SIM115 - detached child inherits the handle
         subprocess.Popen(
             [openclaw_bin, "gateway", "run"],
             stdin=subprocess.DEVNULL,
@@ -313,6 +314,9 @@ async def _start_openclaw_gateway(log_dir: Path, setup_password: str, timeout: i
     except Exception as e:
         print(f"[alphaclaw] ⚠ OpenClaw gateway start failed ({e}) — falling back to AlphaClaw")
         return None
+    finally:
+        if _fh is not None:
+            _fh.close()
     for _ in range(timeout):
         url = await _find_any_gateway()
         if url:

@@ -363,8 +363,9 @@ def _read_discovery_win_url(max_age_s: int = _DISCOVERY_MAX_AGE_S) -> Optional[s
             ts = datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
             if (datetime.now(timezone.utc) - ts).total_seconds() > max_age_s:
                 return None
-        except Exception:
-            pass
+        except Exception as exc:
+            log.debug("invalid discovery snapshot timestamp %r: %s", stamp, exc)
+            return None
     return f"http://{ip}:{win.get('port', 1234)}"
 
 
