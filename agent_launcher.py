@@ -95,6 +95,20 @@ def _loopback_host_from_endpoint(endpoint: str, *, default_port: int) -> tuple[s
 
 
 _ollama_mac_endpoint = os.getenv("OLLAMA_MAC_ENDPOINT", "http://localhost:11434")
+# PT runs ON the Mac, so its own ("mac") ollama is always loopback. A stale LAN
+# IP from a previous subnet (e.g. 192.168.1.101) is never correct here — it only
+# breaks Mac-orchestrator selection (mac_ollama_ok=False -> manager falls off
+# ollama-localhost). Normalize any non-loopback mac endpoint to localhost, the
+# canonical value. Mirrors the Win endpoint's "live/canonical source beats stale
+# config" self-heal in lan_discovery.detect_active_tilting_ip.
+_p_mac = urlparse(_ollama_mac_endpoint if "://" in _ollama_mac_endpoint else f"http://{_ollama_mac_endpoint}")
+if _p_mac.hostname not in ("localhost", "127.0.0.1", "::1", None):
+    _healed_mac = f"http://localhost:{_p_mac.port or 11434}"
+    logging.getLogger(__name__).warning(
+        "OLLAMA_MAC_ENDPOINT=%s is non-loopback; PT runs on the Mac so its ollama "
+        "is localhost — normalizing to %s", _ollama_mac_endpoint, _healed_mac
+    )
+    _ollama_mac_endpoint = _healed_mac
 LOCAL_MAC_HOST, LOCAL_MAC_PORT = _loopback_host_from_endpoint(_ollama_mac_endpoint, default_port=11434)
 LOCAL_MAC_URL = _ollama_mac_endpoint if "://" in _ollama_mac_endpoint else f"http://{LOCAL_MAC_HOST}:{LOCAL_MAC_PORT}"
 MAC_MANAGER_MODEL = os.getenv("MAC_MANAGER_MODEL", "glm-5.1:cloud")
@@ -113,6 +127,34 @@ MAC_LMS_URL   = f"http://{MAC_LMS_HOST}:{MAC_LMS_PORT}"
 MAC_LMS_MODEL = (os.getenv("MAC_LMS_MODEL")
                  or os.getenv("LMS_MAC_MODEL")
                  or "Qwen3.5-9B-MLX-4bit")
+
+
+def _pick_mac_manager(served: list, preferred: str) -> str:
+    """Choose the Mac orchestrator/manager model with the correct priority.
+
+    Priority order:
+      1. the configured Mac orchestrator model (`preferred`) when it is actually
+         served — keeps Mac ollama-localhost as the highest-priority orchestrator
+         whenever it's online (rather than grabbing the first raw tag, which may
+         be an embedding model like bge-m3);
+      2. the first served Mac-affine model;
+      3. the configured default.
+    Never returns a NEVER_MAC model (a Win-only coder that leaked into a mac
+    bucket via LAN discovery) — that would fail the hardware-affinity gate.
+    """
+    from utils.hardware_policy import check_affinity, HardwareAffinityError
+    if preferred and preferred in served:
+        return preferred
+    for m in served:
+        try:
+            check_affinity(m, "mac")
+            return m
+        except HardwareAffinityError:
+            logging.getLogger(__name__).warning(
+                "skipping NEVER_MAC model %r for the Mac manager role", m
+            )
+            continue
+    return preferred
 
 # Windows — WINDOWS_IP exported by start.sh; if absent parse LM_STUDIO_WIN_ENDPOINTS
 # (first entry), then fall back to hard-coded LAN default.
@@ -461,14 +503,15 @@ def _build_routing_state(
         models = local_models.get(key, [])
         return models[0] if models else fallback
 
-    # Manager: Mac Ollama first, then Mac LM Studio
+    # Manager: Mac Ollama localhost is the highest-priority orchestrator whenever
+    # online+accessible; then Mac LM Studio. Affinity-safe (never a NEVER_MAC model).
     if mac_ok:
         manager_endpoint = LOCAL_MAC_URL
-        manager_model    = _first("mac-ollama", MAC_MANAGER_MODEL)
+        manager_model    = _pick_mac_manager(local_models.get("mac-ollama", []), MAC_MANAGER_MODEL)
         manager_backend  = "mac-ollama"
     else:
         manager_endpoint = MAC_LMS_URL
-        manager_model    = _first("mac-lmstudio", MAC_LMS_MODEL)
+        manager_model    = _pick_mac_manager(local_models.get("mac-lmstudio", []), MAC_LMS_MODEL)
         manager_backend  = "mac-lmstudio"
 
     mac_any = mac_ok or mac_lms_ok
@@ -662,10 +705,12 @@ async def initialize_environment() -> dict:
     manager_affinity_alert: str | None = None
     _mac_ol = local_models.get("mac-ollama", [])
     _mac_lms = local_models.get("mac-lmstudio", [])
+    # Mac ollama-localhost is the highest-priority orchestrator when online;
+    # affinity-safe pick (never a NEVER_MAC Win coder that leaked into the bucket).
     _mgr_model = (
-        (_mac_ol[0] if _mac_ol else MAC_MANAGER_MODEL)
+        _pick_mac_manager(_mac_ol, MAC_MANAGER_MODEL)
         if mac_ok
-        else (_mac_lms[0] if _mac_lms else MAC_LMS_MODEL)
+        else _pick_mac_manager(_mac_lms, MAC_LMS_MODEL)
     )
     try:
         check_affinity(_mgr_model, "mac")
