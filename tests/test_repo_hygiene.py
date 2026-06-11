@@ -191,6 +191,35 @@ def test_bidi_exceptions_are_exempt(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# scan_mojibake
+# ---------------------------------------------------------------------------
+
+def test_mojibake_is_blocked(tmp_path):
+    repo_hygiene = load_repo_hygiene()
+    doc = tmp_path / "docs" / "notes.md"
+    doc.parent.mkdir()
+    mojibake_emdash = chr(0x00E2) + chr(0x20AC) + chr(0x201D)
+    doc.write_text(f"broken {mojibake_emdash} dash\n", encoding="utf-8")
+
+    errors = repo_hygiene.scan_mojibake(tmp_path, ["docs/notes.md"])
+
+    assert len(errors) == 1
+    assert "UTF-8 mojibake" in errors[0]
+    assert "docs/notes.md:1" in errors[0]
+
+
+def test_valid_utf8_punctuation_passes_mojibake_scan(tmp_path):
+    repo_hygiene = load_repo_hygiene()
+    doc = tmp_path / "docs" / "notes.md"
+    doc.parent.mkdir()
+    doc.write_text("valid UTF-8 punctuation - em dash: \u2014\n", encoding="utf-8")
+
+    errors = repo_hygiene.scan_mojibake(tmp_path, ["docs/notes.md"])
+
+    assert errors == []
+
+
+# ---------------------------------------------------------------------------
 # generated artifact tracking
 # ---------------------------------------------------------------------------
 

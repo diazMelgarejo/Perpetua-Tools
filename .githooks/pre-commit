@@ -5,8 +5,18 @@ ROOT="$(git rev-parse --show-toplevel)"
 "$ROOT/scripts/git/ensure_hooks_installed.sh"
 
 # Full hygiene gate — same checks as CI (identity, forbidden tokens, paths, etc.).
-if [[ -f "$ROOT/scripts/review/repo_hygiene.py" ]] && command -v python3 >/dev/null 2>&1; then
-  exec python3 "$ROOT/scripts/review/repo_hygiene.py" "$ROOT"
+export PYTHONUTF8=1
+export PYTHONIOENCODING=utf-8
+if [[ -f "$ROOT/scripts/review/repo_hygiene.py" ]]; then
+  for py in \
+    "$ROOT/.venv/Scripts/python.exe" \
+    "$ROOT/.venv/bin/python" \
+    python3 \
+    python; do
+    if command -v "$py" >/dev/null 2>&1 && "$py" -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 9) else 1)" >/dev/null 2>&1; then
+      exec "$py" "$ROOT/scripts/review/repo_hygiene.py" "$ROOT"
+    fi
+  done
 fi
 
 exec "$ROOT/scripts/git/check_identity.sh"

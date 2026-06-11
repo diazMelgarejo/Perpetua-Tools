@@ -335,6 +335,90 @@ def pick_windows_lmstudio_host(
     return candidates[0]
 
 
+_OPENCLAW_DISCOVERY = Path.home() / ".openclaw" / "state" / "last_discovery.json"
+_DISCOVERY_MAX_AGE_S = 1800  # trust the watcher's snapshot for 30 min
+_last_synced_win_url: Optional[str] = None
+
+
+def _read_discovery_win_url(max_age_s: int = _DISCOVERY_MAX_AGE_S) -> Optional[str]:
+    """Return the Windows GPU endpoint from the live openclaw discovery snapshot.
+
+    Source of truth is ``~/.openclaw/state/last_discovery.json``, kept fresh by the
+    openclaw discovery watcher as DHCP reassigns the Win box. Returns
+    ``http://<ip>:<port>`` only when the win endpoint is reachable AND the snapshot
+    is fresh; otherwise None so callers fall back to env/probe. This is what makes
+    a stale ``LM_STUDIO_WIN_ENDPOINTS`` from a previous lease unable to win.
+    """
+    try:
+        data = json.loads(_OPENCLAW_DISCOVERY.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    win = (data.get("endpoints") or {}).get("win") or {}
+    ip = win.get("ip")
+    if not ip or ip in ("localhost", "127.0.0.1") or not win.get("reachable", False):
+        return None
+    stamp = data.get("watcher_heartbeat") or data.get("timestamp")
+    if stamp:
+        try:
+            ts = datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
+            if (datetime.now(timezone.utc) - ts).total_seconds() > max_age_s:
+                return None
+        except Exception as exc:
+            log.debug("invalid discovery snapshot timestamp %r: %s", stamp, exc)
+            return None
+    return f"http://{ip}:{win.get('port', 1234)}"
+
+
+def _sync_win_endpoint_env(url: str) -> None:
+    """Propagate the live Win endpoint to every holder var + the PT .env file.
+
+    Keeps ``LM_STUDIO_WIN_ENDPOINTS`` / ``LM_STUDIO_WIN_ENDPOINT`` /
+    ``WIN_OLLAMA_ENDPOINT`` / ``WIN_IP`` synchronized with live discovery so
+    ``config/models.yml`` ${...} defaults, ``alphaclaw_manager``'s WIN_IP, and
+    shell consumers never drift to a stale DHCP lease. Idempotent: a no-op once
+    the process env and .env already match ``url``.
+    """
+    global _last_synced_win_url
+    if url == _last_synced_win_url:
+        return
+    hostport = url[len("http://"):] if url.startswith("http://") else url
+    ip = hostport.split(":", 1)[0]
+    host_only = f"http://{ip}"
+    holders = {
+        "LM_STUDIO_WIN_ENDPOINTS": url,        # plural, host:port (detect_active_tilting_ip)
+        "LM_STUDIO_WIN_ENDPOINT": host_only,   # singular host-only (config/models.yml ${...})
+        "WIN_OLLAMA_ENDPOINT": host_only,      # same host; ollama port added by consumer
+        "WIN_IP": ip,                          # bare ip (alphaclaw_manager default)
+    }
+    for k, v in holders.items():
+        os.environ[k] = v
+    try:
+        env_path = Path(__file__).resolve().parents[1] / ".env"
+        lines = env_path.read_text(encoding="utf-8").splitlines() if env_path.is_file() else []
+        seen, changed, out = set(), False, []
+        for line in lines:
+            key = line.split("=", 1)[0].strip() if ("=" in line and not line.lstrip().startswith("#")) else None
+            if key in holders:
+                seen.add(key)
+                newline = f"{key}={holders[key]}"
+                changed = changed or (newline != line)
+                out.append(newline)
+            else:
+                out.append(line)
+        for k, v in holders.items():
+            if k not in seen:
+                out.append(f"{k}={v}")
+                changed = True
+        if changed:
+            tmp = env_path.parent / (env_path.name + ".sync.tmp")
+            tmp.write_text("\n".join(out) + "\n", encoding="utf-8")
+            tmp.replace(env_path)
+            log.info("synced Win endpoint to .env holders -> %s", url)
+    except Exception as exc:
+        log.warning("could not persist Win endpoint to .env (non-fatal): %s", exc)
+    _last_synced_win_url = url
+
+
 def detect_active_tilting_ip() -> str:
     """Derive the Windows GPU endpoint base URL from the local subnet at runtime.
 
@@ -342,16 +426,30 @@ def detect_active_tilting_ip() -> str:
     Uses NetworkAutoConfig.get_working_local_ip() and full Win probe with a
     25-second timeout threshold to prevent hanging the startup sequence.
 
-    Priority order (mirrors LAN_GPU_IP_OVERRIDE from the hardware matrix):
-      1. LAN_GPU_IP_OVERRIDE env var — absolute override, any subnet
-      2. LM_STUDIO_WIN_ENDPOINTS env var — backward-compat with existing .env files
-      3. UDP routing trick (no packets sent) — Live probe of outbound interface via NetworkAutoConfig (Option B)
-      4. Hardcoded 192.168.254.108 (fallback)
+    Priority order:
+      1. LAN_GPU_IP_OVERRIDE env var — explicit absolute manual override
+      2. Live discovery (~/.openclaw/state/last_discovery.json, fresh+reachable) —
+         authoritative source of truth; also SYNCS the holder env vars (.env) so
+         config/models.yml ${...}, WIN_IP, etc. track the current DHCP lease
+      3. LM_STUDIO_WIN_ENDPOINTS env var — backward-compat fallback (can go stale)
+      4. Live subnet probe via NetworkAutoConfig
+      5. Hardcoded 192.168.254.108 (last-resort fallback)
     """
-    for env_var in ("LAN_GPU_IP_OVERRIDE", "LM_STUDIO_WIN_ENDPOINTS"):
-        val = os.environ.get(env_var, "")
-        if val:
-            return val if val.startswith("http") else f"http://{val}"
+    # 1. Explicit manual override always wins.
+    override = os.environ.get("LAN_GPU_IP_OVERRIDE", "")
+    if override:
+        return override if override.startswith("http") else f"http://{override}"
+    # 2. Live discovery is authoritative — a stale LM_STUDIO_WIN_ENDPOINTS from a
+    #    previous DHCP lease must not override the box's current address. Syncing
+    #    keeps every other holder (.env, config/models.yml, WIN_IP) consistent.
+    disc = _read_discovery_win_url()
+    if disc:
+        _sync_win_endpoint_env(disc)
+        return disc
+    # 3. Backward-compat env (used only when discovery is stale/absent).
+    val = os.environ.get("LM_STUDIO_WIN_ENDPOINTS", "")
+    if val:
+        return val if val.startswith("http") else f"http://{val}"
     try:
         from packages.net_utils.network_autoconfig import NetworkAutoConfig
         import threading

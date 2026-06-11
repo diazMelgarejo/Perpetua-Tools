@@ -1,12 +1,12 @@
-﻿"""test_oramasys_bridge.py â€” HTTP bridge unit tests
+"""test_oramasys_bridge.py - HTTP bridge unit tests
 
 Tests the ultrathink HTTP bridge module independently:
   - Bridge fires when ultrathink route is selected and endpoint configured
   - Bridge failure surfaces error gracefully (no crash)
   - Bridge skipped when route does not select ultrathink
-  - Payload mapping (task_type â†’ optimize_for â†’ reasoning_depth) is correct
+  - Payload mapping (task_type -> optimize_for -> reasoning_depth) is correct
 
-All HTTP calls are mocked â€” runs fully offline in CI.
+All HTTP calls are mocked - runs fully offline in CI.
 """
 from __future__ import annotations
 

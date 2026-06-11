@@ -4,10 +4,10 @@ Tests for MCP-Optional transport: OramasysMCPClient and
 call_oramasys_mcp_or_bridge().
 
 Critical branches:
-1. MCP success â€” HTTP path is never touched.
-2. MCP failure (any exception) â†’ HTTP fallback with correct mapped payload.
-3. Stub response detection â†’ falls back to HTTP.
-4. ORAMASYS_MCP_SERVER_CMD unset â†’ HTTP only, no MCP attempt.
+1. MCP success - HTTP path is never touched.
+2. MCP failure (any exception) -> HTTP fallback with correct mapped payload.
+3. Stub response detection -> falls back to HTTP.
+4. ORAMASYS_MCP_SERVER_CMD unset -> HTTP only, no MCP attempt.
 """
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 
-# â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# Helpers ---------------------------------------------------------------------
 
 _GOOD_MCP_RESULT: Dict[str, Any] = {
     "task_id": "test-uuid-1234",
@@ -43,7 +43,7 @@ _HTTP_MOCK_RESPONSE = {
 }
 
 
-# â”€â”€ call_oramasys_mcp_or_bridge tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# call_oramasys_mcp_or_bridge tests ------------------------------------------
 
 class TestCallUltrathinkMcpOrBridge:
 
@@ -121,7 +121,7 @@ class TestCallUltrathinkMcpOrBridge:
 
     @pytest.mark.anyio
     async def test_stub_response_triggers_http_fallback(self, monkeypatch):
-        """Stub response (no 'result' key) raises ValueError â†’ HTTP fallback."""
+        """Stub response (no 'result' key) raises ValueError -> HTTP fallback."""
         monkeypatch.setenv("ORAMASYS_MCP_SERVER_CMD", "python fake_server.py")
 
         mock_client = MagicMock()
@@ -228,7 +228,7 @@ class TestCallUltrathinkMcpOrBridge:
         mock_async_client_instance.post.assert_called_once()
 
 
-# â”€â”€ OramasysMCPClient.call_solve unit tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# OramasysMCPClient.call_solve unit tests ------------------------------------
 
 class TestOramasysMCPClientCallSolve:
 
