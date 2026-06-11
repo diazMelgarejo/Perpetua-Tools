@@ -10,6 +10,7 @@ import argparse
 import fnmatch
 import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -56,6 +57,39 @@ BIDI_CONTROL_EXCEPTIONS = {
     "scripts/review/repo_hygiene.py",
     "tests/test_repo_hygiene.py",
 }
+# Mojibake (LINT-007): UTF-8 text mis-decoded as cp1252/latin-1 then re-saved.
+# Build by codepoint so this file contains no literal mojibake to self-trip on.
+_CP1252_HIGH_PUNCT = (
+    (0x2013, 0x2014),
+    (0x2018, 0x201E),
+    (0x2020, 0x2022),
+    (0x0152, 0x0153),
+    (0x0160, 0x0161),
+    (0x0178, 0x0178),
+    (0x017D, 0x017E),
+    (0x0192, 0x0192),
+    (0x02C6, 0x02C6),
+    (0x02DC, 0x02DC),
+)
+_CP1252_HIGH_SINGLE = (0x2026, 0x2030, 0x2039, 0x203A, 0x20AC, 0x2122)
+MOJIBAKE_RE = re.compile(
+    "["
+    + chr(0x00C2)
+    + "-"
+    + chr(0x00EF)
+    + "](?:["
+    + chr(0x0080)
+    + "-"
+    + chr(0x00BF)
+    + "]|["
+    + "".join(
+        chr(cp)
+        for start, end in _CP1252_HIGH_PUNCT
+        for cp in range(start, end + 1)
+    )
+    + "".join(chr(cp) for cp in _CP1252_HIGH_SINGLE)
+    + "])"
+)
 PRIVATE_GENERATED_TRACKED = {".env", ".env.local", ".paths"}
 # Paths exempt from GENERATED_ARTIFACT_PATTERNS.
 # Use sparingly — only for intentionally committed compiled outputs that are
@@ -106,8 +140,9 @@ WORKFLOW_WRITE_MARKERS = (
 
 
 def run_git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    git_exe = shutil.which("git") or shutil.which("git.cmd") or "git"
     return subprocess.run(
-        ["git", "-C", str(root), *args],
+        [git_exe, "-C", str(root), *args],
         check=False,
         text=True,
         stdout=subprocess.PIPE,
@@ -213,6 +248,29 @@ def scan_bidi_controls(root: Path, files: list[str]) -> list[str]:
     return errors
 
 
+def scan_mojibake(root: Path, files: list[str]) -> list[str]:
+    """Block UTF-8 mojibake byte pairs in tracked text (LINT-007)."""
+    errors: list[str] = []
+    for rel in files:
+        path = root / rel
+        if not path.is_file() or is_binary(path):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        for line_no, line in enumerate(text.splitlines(), 1):
+            match = MOJIBAKE_RE.search(line)
+            if match:
+                errors.append(
+                    f"UTF-8 mojibake in tracked file: {rel}:{line_no}: "
+                    f"U+{ord(match.group()[0]):04X} mis-decoded sequence "
+                    "(see docs/LESSONS.md 2026-06-10 / CIDF LINT-007)"
+                )
+                break
+    return errors
+
+
 def check_private_generated_tracking(files: list[str]) -> list[str]:
     return [
         f"private/generated config is tracked: {rel}"
@@ -298,6 +356,7 @@ def main() -> int:
     errors.extend(scan_forbidden_identity(root, files))
     errors.extend(scan_personal_paths(root, files))
     errors.extend(scan_bidi_controls(root, files))
+    errors.extend(scan_mojibake(root, files))
     errors.extend(check_private_generated_tracking(files))
     errors.extend(check_generated_artifact_tracking(files))
     errors.extend(check_git_internal_junk(root))

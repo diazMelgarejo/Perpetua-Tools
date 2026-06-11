@@ -119,7 +119,7 @@ def test_orchestrate_returns_empty_string_when_all_backends_fail(monkeypatch):
     After the fix:  status='success', result='' returned cleanly.
 
     fix(tests): slowapi's @limiter.limit decorator does a strict isinstance check
-    against starlette.requests.Request â€” a plain mock object won't pass.
+    against starlette.requests.Request - a plain mock object won't pass.
     Call the unwrapped handler via __wrapped__ to bypass the rate-limit layer
     entirely. The `request` param is only consumed by the decorator; the
     function body never references it, so passing None is safe.
@@ -132,6 +132,7 @@ def test_orchestrate_returns_empty_string_when_all_backends_fail(monkeypatch):
         return None
 
     monkeypatch.setattr(orch_mod, "call_perplexity", _none)
+    monkeypatch.setattr(orch_mod, "call_lmstudio", _none)
     monkeypatch.setattr(orch_mod, "call_ollama", _none)
     monkeypatch.setattr(orch_mod, "call_oramasys", _none)
 
@@ -180,6 +181,7 @@ def test_orchestrator_starts_without_redis_package(monkeypatch):
         return None
 
     monkeypatch.setattr(orch_mod, "call_perplexity", _none)
+    monkeypatch.setattr(orch_mod, "call_lmstudio", _none)
     monkeypatch.setattr(orch_mod, "call_ollama", _none)
     monkeypatch.setattr(orch_mod, "call_oramasys", _none)
 

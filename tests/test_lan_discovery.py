@@ -101,3 +101,25 @@ def test_detect_local_subnet_logs_warning_on_fallback(monkeypatch, caplog):
     assert "Failed to auto-detect local subnet" in caplog.text
 
 
+def test_read_discovery_win_url_rejects_malformed_timestamp(tmp_path, monkeypatch, caplog):
+    snapshot = tmp_path / "last_discovery.json"
+    snapshot.write_text(
+        json.dumps({
+            "watcher_heartbeat": "not-a-date",
+            "endpoints": {
+                "win": {
+                    "ip": "192.168.254.108",
+                    "port": 1234,
+                    "reachable": True,
+                }
+            },
+        }),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(lan_discovery, "_OPENCLAW_DISCOVERY", snapshot)
+    caplog.set_level("DEBUG", logger="orchestrator.lan_discovery")
+
+    assert lan_discovery._read_discovery_win_url() is None
+    assert "invalid discovery snapshot timestamp" in caplog.text
+
+
