@@ -389,6 +389,12 @@ def _sync_win_endpoint_env(url: str) -> None:
         "LM_STUDIO_WIN_ENDPOINT": host_only,   # singular host-only (config/models.yml ${...})
         "WIN_OLLAMA_ENDPOINT": host_only,      # same host; ollama port added by consumer
         "WIN_IP": ip,                          # bare ip (alphaclaw_manager default)
+        # Same physical Win RTX3080 box (a Dell; WINUSER@<ip>). Track its live IP so
+        # GPU / autoresearch consumers never drift to a stale DHCP lease (2026-06-12).
+        # Comprehensive sync: every Win-box endpoint follows live discovery, not just
+        # the canonical four. host:port form matches the existing .env values.
+        "GPU_BOX": f"{ip}:1234",               # LM Studio inference on the Win box
+        "DELL_ENDPOINT": f"{ip}:11434",        # Ollama on the same box
     }
     for k, v in holders.items():
         os.environ[k] = v

@@ -191,6 +191,26 @@ curl -s \
 # Expected: {"status":"ok"} or similar (any non-000 response)
 ```
 
+#### Gateway won't start / AlphaClaw manager says "Not onboarded" (verified 2026-06-12)
+
+The AlphaClaw manager (`:3000`) `POST /api/gateway/restart` → `{"error":"Not onboarded"}`
+is AlphaClaw's OWN read-only onboarding-marker gate (`~/.alphaclaw/onboarded.json`
+`{"readOnly":true}`) — SEPARATE from OpenClaw gateway readiness. Don't fight it;
+**drive the bundled `openclaw` CLI directly** (OpenClaw is public: docs.openclaw.ai):
+
+```bash
+# AlphaClaw is a sibling repo under the OpenClaw root — resolve relative to this repo (no hardcoded paths)
+OCMJS="$(git rev-parse --show-toplevel)/../../AlphaClaw/node_modules/openclaw/openclaw.mjs"   # bundled openclaw CLI (2026.5.28)
+# Needs gateway.mode=local in ~/.openclaw/openclaw.json (repair via `openclaw onboard --mode local`
+# or `openclaw setup` if a clobbered config lost it; or `--allow-unconfigured` for dev).
+node "$OCMJS" gateway --port 18789 --force          # start (foreground; nohup to detach)
+node "$OCMJS" gateway status --deep --json          # verify: port "busy" + listener pid
+# Durable LaunchAgent: node "$OCMJS" gateway install && node "$OCMJS" gateway restart --force
+#   (service ai.openclaw.gateway; keep service PATH minimal — doctor warns on version-manager PATHs)
+```
+Port precedence: `--port` → `OPENCLAW_GATEWAY_PORT` → `gateway.port` → 18789.
+Full lesson: PT/orama `docs/LESSONS.md` (2026-06-12). See also orama skills below.
+
 ### Model ID mismatch (agent fails to load model)
 
 OpenClaw agents ref mixed-case model IDs (e.g., `Qwen3.5-27B-…`); `discover.py` writes lowercase to providers.
@@ -356,10 +376,27 @@ cat ~/.openclaw/openclaw.json | python3 -c "import sys,json; d=json.load(sys.std
 
 ---
 
+## Related skills (orama-system — cross-reference)
+
+OpenClaw runtime operation spans repos. This skill (PT, L2 runtime/state authority)
+pairs with:
+
+| orama-system skill | Use for |
+|--------------------|---------|
+| `bin/orama-system/skills/openclaw-skills` (universal-skill-protocol) | Canonical OpenClaw operation protocol: search frugality, Windows coder policy, agent dispatch rules |
+| `.claude/skills/self-discovery` | Live cross-repo state snapshot (versions, branches, endpoints, gateway status) — sibling of PT's `self-discovery` |
+| `bin/orama-system/skills/mcp-orchestration` + `mcp-install` | Registering/operating the MCP servers (incl. `packages/alphaclaw-mcp`, the 14-tool gateway bridge) |
+| `bin/orama-system/skills/oramasys-method` | 5-stage methodology when a runtime problem needs systematic diagnosis |
+
+Companion: PT `model-routing-check` (endpoint/routing preflight — gateway must be
+live first). Lessons: PT + orama `docs/LESSONS.md` (gateway-start entry 2026-06-12).
+
+---
+
 ## Skill Version Guard
 
 ```python
-BUNDLED = '1.1.0'
+BUNDLED = '1.2.0'
 # Scripts/agents updating this file: skip write if installed version >= BUNDLED
 def _ver(path):
     for line in open(path):
