@@ -1448,3 +1448,13 @@ node <repo>/AlphaClaw/node_modules/openclaw/openclaw.mjs gateway --port 18789 --
 - **Windows encoding rule**: generated skill roots must be UTF-8 without BOM. In Windows PowerShell, set console/output encodings explicitly and use `[System.Text.UTF8Encoding]::new($false)` with `[System.IO.File]::WriteAllText(...)`. `Set-Content -Encoding utf8` can leave a BOM in Windows PowerShell 5.1; Python validators may also need `PYTHONUTF8=1`.
 - **Qwen/LM Studio testing**: use compact `/no_think` JSON prompts. Large canonical excerpts can time out on `qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2`; prefer deterministic path/frontmatter audits first, then ask Qwen to review the compact name/description manifest.
 - **Penultimate completion habit**: before declaring a long-running goal achieved, collect session lessons and update canonical skills/docs first, then refresh local wrappers if trigger text or canonical paths changed.
+
+---
+
+## [2026-06-12] PT-MCP should expose callable local LM Studio model metadata
+
+- **Fact**: LM Studio's OpenAI-compatible `/v1/models` endpoint returns the exact loaded local model IDs that PT-MCP callers need for delegated work. On this Windows host it exposed `qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2` plus the other loaded models at `http://127.0.0.1:1234`.
+- **Pattern**: keep legacy `ollama` and `lmstudio` string arrays for compatibility, but add structured `loaded` and `callable` metadata with `backend`, `baseUrl`, `chatCompletionsUrl`, `loaded`, and `callable`. New callers should select exact model IDs from `callable`; old callers should continue reading the arrays.
+- **Rationale**: exact local delegation should not depend on scraping CLI output, stale config defaults, or a hosted Codex subagent model menu. PT-MCP is the repo-controlled bridge that can expose live LM Studio state deterministically.
+- **Windows test lesson**: Node ESM imports on Windows must use `pathToFileURL(absPath).href` for absolute `C:\...` paths. Tests that spawn npm should prefer `process.execPath` plus `process.env.npm_execpath` when available, then fall back to `npm.cmd`; this follows LM Studio's bundled Node/npm layout without requiring a global npm shim.
+- **Build lesson**: package scripts should rely on npm's PATH injection (`"build": "tsc"`) instead of hardcoding `node_modules/.bin/tsc`; the hardcoded path is not portable in Windows PowerShell. If npm is used only to install missing dependencies in a pnpm-locked package, do not commit the generated `package-lock.json`.
