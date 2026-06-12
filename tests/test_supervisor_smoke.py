@@ -249,8 +249,9 @@ async def test_list_jobs_filtered_by_status(tmp_path):
     s1 = _echo_spec("job one")
     s2 = _echo_spec("job two")
     await sup.submit_job(s1)
+    await _await_job(sup, s1.job_id)
     await sup.submit_job(s2)
-    await asyncio.sleep(0.3)
+    await _await_job(sup, s2.job_id)
 
     succeeded = sup.list_jobs(status=JobStatus.SUCCEEDED)
     ids = {j["job_id"] for j in succeeded}
@@ -265,8 +266,9 @@ async def test_list_jobs_no_filter(tmp_path):
     s1 = _echo_spec("a")
     s2 = _echo_spec("b")
     await sup.submit_job(s1)
+    await _await_job(sup, s1.job_id)
     await sup.submit_job(s2)
-    await asyncio.sleep(0.3)
+    await _await_job(sup, s2.job_id)
 
     all_jobs = sup.list_jobs()
     ids = {j["job_id"] for j in all_jobs}

@@ -130,12 +130,6 @@ def _append_event(jobs_file: Path, job_id: str, event: dict) -> None:
     
     The written record combines an ISO UTC timestamp (`ts`), the provided `job_id`, and the key/value pairs from `event` (any `JobStatus` values are serialized to their `.value`). The append is performed under an exclusive file lock and flushed to stable storage to avoid interleaved lines and to make the entry durable on disk.
     """
-    try:
-        import fcntl as _fcntl
-    except ImportError as _exc:
-        raise RuntimeError(
-            "supervisor._append_event requires Unix (fcntl unavailable on this platform)"
-        ) from _exc
     import os as _os
     # Serialise JobStatus values to their string form
     serialisable = {
@@ -143,17 +137,45 @@ def _append_event(jobs_file: Path, job_id: str, event: dict) -> None:
         for k, v in event.items()
     }
     line = json.dumps({"ts": _now_iso(), "job_id": job_id, **serialisable}) + "\n"
-    with jobs_file.open("a", encoding="utf-8") as fh:
+    with jobs_file.open("a+", encoding="utf-8") as fh:
+        lock_release = _lock_jobs_file(fh)
         try:
-            _fcntl.flock(fh.fileno(), _fcntl.LOCK_EX)
+            fh.seek(0, _os.SEEK_END)
             fh.write(line)
             fh.flush()
             _os.fsync(fh.fileno())
         finally:
+            lock_release()
+
+
+def _lock_jobs_file(fh):
+    """Take an exclusive append lock with Unix and Windows stdlib primitives."""
+    try:
+        import fcntl as _fcntl
+
+        _fcntl.flock(fh.fileno(), _fcntl.LOCK_EX)
+
+        def _release() -> None:
             try:
                 _fcntl.flock(fh.fileno(), _fcntl.LOCK_UN)
             except OSError:
                 pass  # lock release on a closing fh is non-fatal
+
+        return _release
+    except ImportError:
+        import msvcrt as _msvcrt
+
+        fh.seek(0)
+        _msvcrt.locking(fh.fileno(), _msvcrt.LK_LOCK, 1)
+
+        def _release() -> None:
+            try:
+                fh.seek(0)
+                _msvcrt.locking(fh.fileno(), _msvcrt.LK_UNLCK, 1)
+            except OSError:
+                pass  # lock release on a closing fh is non-fatal
+
+        return _release
 
 
 def _load_events(jobs_file: Path) -> list[dict]:
