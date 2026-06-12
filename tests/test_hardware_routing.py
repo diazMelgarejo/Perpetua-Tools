@@ -22,6 +22,8 @@ from orchestrator.fastapi_app import app
 from utils.hardware_policy import HardwareAffinityError, check_affinity, filter_models_for_platform, load_policy
 import utils.hardware_policy as _hw_policy_mod
 
+QWEN_PRIORITY_MODEL = "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2"
+
 
 @pytest.fixture(autouse=True)
 def clear_policy_cache(monkeypatch):
@@ -45,7 +47,7 @@ def client():
             "manager_model": "glm-5.1:cloud",
             "manager_backend": "mac-ollama",
             "coder_endpoint": "http://192.168.254.100:1234",
-            "coder_model": "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2",
+            "coder_model": QWEN_PRIORITY_MODEL,
             "coder_backend": "windows-lmstudio",
             "distributed": True,
         }
@@ -93,12 +95,21 @@ def test_code_analysis_routing_by_hardware_profile(registry):
     first = chain[0]
     assert first.device == "win-rtx3080"
     assert "coding" in first.roles
-    assert first.name == "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2"
+    assert first.name == QWEN_PRIORITY_MODEL
+
+
+def test_coder_and_priority_subagent_route_to_exact_qwen(registry):
+    """Delegated coder lanes must prefer the exact live LM Studio Qwen id."""
+    for task_type in ("coder", "subagent", "priority-subagent"):
+        chain = registry.route_task(task_type, preferred_device="win-rtx3080")
+        assert chain[0].name == QWEN_PRIORITY_MODEL
+        assert chain[0].device == "win-rtx3080"
+        assert chain[0].backend == "lm-studio"
 
 
 def test_autoresearch_prefers_windows_lmstudio(registry):
     chain = registry.route_task("autoresearch", preferred_device="win-rtx3080")
-    assert chain[0].name == "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2"
+    assert chain[0].name == QWEN_PRIORITY_MODEL
     assert chain[0].device == "win-rtx3080"
     assert "autoresearch-coder" in chain[0].roles
 
@@ -192,7 +203,7 @@ def test_windows_host_keeps_local_windows_backend(monkeypatch):
         mac_lms_ok=False,
         win_ok=False,
         lms_ok=True,
-        local_models={"win-lmstudio": ["Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2"]},
+        local_models={"win-lmstudio": [QWEN_PRIORITY_MODEL]},
         mac_lms_is_local=False,
         local_ips=local_ips,
     )
@@ -227,7 +238,7 @@ def test_orchestrate_hardware_selection(monkeypatch, client):
     assert resp.status_code == 200
     data = resp.json()
     assert data["selected_model"]["device"] == "win-rtx3080"
-    assert data["selected_model"]["name"] == "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2"
+    assert data["selected_model"]["name"] == QWEN_PRIORITY_MODEL
 
     # Task type 'default' on mac-studio
     resp = client.post("/orchestrate", json={

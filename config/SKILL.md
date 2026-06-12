@@ -8,10 +8,11 @@ This document outlines the model registry and device configuration for the ECC-t
 
 ### Local Models
 
-- **Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2** (Canonical Model for Windows):
+- **qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2** (Canonical Model for Windows):
   - Backend: LM Studio
   - Device: Win-RTX3080
-  - Priority: 15
+  - Priority: 5
+  - Roles: coder, coding, subagent, priority-subagent, checker, refiner, executor, verifier
 
 - **qwen3.5:35b-a3b-q4_K_M** (Fallback Model):
   - Backend: Ollama
