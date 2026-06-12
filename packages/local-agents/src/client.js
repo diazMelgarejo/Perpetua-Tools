@@ -28,6 +28,13 @@ const { URL } = require("url");
 
 // ─── Configuration ─────────────────────────────────────────────────────────────
 
+function firstCsvValue(value) {
+  return String(value || "")
+    .split(",")
+    .map(v => v.trim())
+    .filter(Boolean)[0] || "";
+}
+
 const DEFAULTS = {
   ollama: {
     baseUrl:  process.env.OLLAMA_BASE_URL  || "http://127.0.0.1:11435",
@@ -35,7 +42,10 @@ const DEFAULTS = {
     timeoutMs: parseInt(process.env.OLLAMA_TIMEOUT_MS || "30000", 10),
   },
   lmstudio: {
-    baseUrl:  process.env.LMSTUDIO_BASE_URL || "http://192.168.254.101:1234",
+    baseUrl:  process.env.LMSTUDIO_BASE_URL ||
+      firstCsvValue(process.env.LM_STUDIO_WIN_ENDPOINTS) ||
+      process.env.LM_STUDIO_WIN_ENDPOINT ||
+      "http://127.0.0.1:1234",
     timeoutMs: parseInt(process.env.LMSTUDIO_TIMEOUT_MS || "30000", 10),
   },
 };
@@ -186,9 +196,26 @@ class LMStudioClient {
   }
 
   async listModels() {
+    return (await this.listModelDetails()).map(m => m.id);
+  }
+
+  async listModelDetails() {
     const r = await httpRequest("GET", `${this.baseUrl}/v1/models`, null, this.timeoutMs);
     if (!r.ok) throw new Error(`LM Studio listModels failed (${r.status})`);
-    return (r.data.data || []).map(m => m.id || String(m));
+    return (r.data.data || []).map(m => {
+      const id = m?.id || String(m);
+      return {
+        id,
+        model: id,
+        object: m?.object || "model",
+        owned_by: m?.owned_by,
+        backend: "lmstudio",
+        baseUrl: this.baseUrl,
+        chatCompletionsUrl: `${this.baseUrl}/v1/chat/completions`,
+        loaded: true,
+        callable: true,
+      };
+    });
   }
 
   async resolveModel() {
@@ -286,18 +313,43 @@ class LocalAgentClient {
 
   /**
    * List all models across both backends.
-   * @returns {Promise<{ollama: string[], lmstudio: string[]}>}
+   * Keeps legacy string arrays and adds structured loaded/callable metadata.
+   * @returns {Promise<{ollama: string[], lmstudio: string[], loaded: object, callable: object[], errors: object}>}
    */
   async listAllModels() {
-    const results = { ollama: [], lmstudio: [], errors: {} };
+    const results = {
+      ollama: [],
+      lmstudio: [],
+      loaded: { ollama: [], lmstudio: [] },
+      callable: [],
+      errors: {},
+    };
 
     await Promise.allSettled([
-      this.ollama.listModels().then(m => { results.ollama = m; }),
-      this.lmstudio.listModels().then(m => { results.lmstudio = m; }),
+      this.ollama.listModels().then(m => {
+        results.ollama = m;
+        results.loaded.ollama = m.map(model => ({
+          id: model,
+          model,
+          backend: "ollama",
+          baseUrl: this.ollama.baseUrl,
+          loaded: true,
+          callable: true,
+        }));
+      }),
+      this.lmstudio.listModelDetails().then(m => {
+        results.loaded.lmstudio = m;
+        results.lmstudio = m.map(model => model.id);
+      }),
     ]).then(settled => {
       if (settled[0].status === "rejected") results.errors.ollama   = settled[0].reason?.message;
       if (settled[1].status === "rejected") results.errors.lmstudio = settled[1].reason?.message;
     });
+
+    results.callable = [
+      ...results.loaded.ollama.filter(m => m.callable),
+      ...results.loaded.lmstudio.filter(m => m.callable),
+    ];
 
     return results;
   }
@@ -369,6 +421,7 @@ module.exports = {
   LocalAgentClient,
   OllamaClient,
   LMStudioClient,
+  firstCsvValue,
   askLocalAgentAboutCode,
   proposeCodeEdit,
   DEFAULTS,

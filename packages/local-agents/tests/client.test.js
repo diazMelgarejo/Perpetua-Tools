@@ -56,10 +56,17 @@ describe("LocalAgentClient — module structure", () => {
     expect(typeof mod.LocalAgentClient).toBe("function");
     expect(typeof mod.OllamaClient).toBe("function");
     expect(typeof mod.LMStudioClient).toBe("function");
+    expect(typeof mod.firstCsvValue).toBe("function");
     expect(typeof mod.askLocalAgentAboutCode).toBe("function");
     expect(typeof mod.proposeCodeEdit).toBe("function");
     expect(mod.DEFAULTS.ollama.baseUrl).toBe("http://127.0.0.1:11435");
-    expect(mod.DEFAULTS.lmstudio.baseUrl).toBe("http://192.168.254.101:1234");
+    expect(mod.DEFAULTS.lmstudio.baseUrl).toBe("http://127.0.0.1:1234");
+  });
+
+  it("firstCsvValue picks the first configured LM Studio endpoint", async () => {
+    const { firstCsvValue } = await import("../src/client.js");
+    expect(firstCsvValue(" http://one:1234, http://two:1234 ")).toBe("http://one:1234");
+    expect(firstCsvValue("")).toBe("");
   });
 
   it("DEFAULTS.ollama.models has GLM-5.1:cloud as first choice", async () => {
@@ -155,6 +162,22 @@ describe("LMStudioClient", () => {
     expect(model).toBe("mistral-7b-instruct");
   });
 
+  it("listModelDetails exposes loaded callable LM Studio metadata", async () => {
+    const client = new LMStudioClient({ baseUrl: "http://127.0.0.1:1234" });
+    client.listModelDetails = async () => [{
+      id: "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2",
+      model: "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2",
+      backend: "lmstudio",
+      baseUrl: "http://127.0.0.1:1234",
+      chatCompletionsUrl: "http://127.0.0.1:1234/v1/chat/completions",
+      loaded: true,
+      callable: true,
+    }];
+    const details = await client.listModelDetails();
+    expect(details[0].callable).toBe(true);
+    expect(details[0].chatCompletionsUrl).toMatch(/\/v1\/chat\/completions$/);
+  });
+
   it("resolveModel throws when no models loaded", async () => {
     const client = new LMStudioClient({});
     client.listModels = async () => [];
@@ -236,6 +259,26 @@ describe("LocalAgentClient — unified interface", () => {
 
     const health = await client.healthCheck();
     expect(health.anyAvailable).toBe(false);
+  });
+
+  it("listAllModels preserves legacy arrays and adds callable metadata", async () => {
+    const client = new LocalAgentClient();
+    client.ollama.listModels = async () => ["GLM-5.1:cloud"];
+    client.lmstudio.listModelDetails = async () => [{
+      id: "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2",
+      model: "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2",
+      backend: "lmstudio",
+      baseUrl: "http://127.0.0.1:1234",
+      chatCompletionsUrl: "http://127.0.0.1:1234/v1/chat/completions",
+      loaded: true,
+      callable: true,
+    }];
+
+    const models = await client.listAllModels();
+    expect(models.ollama).toEqual(["GLM-5.1:cloud"]);
+    expect(models.lmstudio).toEqual(["qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2"]);
+    expect(models.loaded.lmstudio[0].callable).toBe(true);
+    expect(models.callable.map(model => model.backend)).toEqual(["ollama", "lmstudio"]);
   });
 });
 

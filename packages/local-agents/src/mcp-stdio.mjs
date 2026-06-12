@@ -107,6 +107,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return toolResult({
         backend: BACKEND,
         models: models[BACKEND] || [],
+        loaded: models.loaded?.[BACKEND] || [],
+        callable: (models.callable || []).filter(model => model.backend === BACKEND),
         errors: models.errors || {},
       });
     }
