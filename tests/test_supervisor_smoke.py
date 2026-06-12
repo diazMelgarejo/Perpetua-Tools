@@ -40,6 +40,12 @@ def _make_sup(tmp_path: Path) -> OrchestrationSupervisor:
     return OrchestrationSupervisor(state_dir=tmp_path)
 
 
+async def _await_job(sup: OrchestrationSupervisor, job_id: str) -> None:
+    task = sup._active.get(job_id)
+    assert task is not None
+    await task
+
+
 # ── Basic lifecycle ───────────────────────────────────────────────────────────
 
 def test_submit_job_strips_client_win_endpoint(tmp_path):
@@ -89,7 +95,7 @@ async def test_artifact_file_written(tmp_path):
     sup = _make_sup(tmp_path)
     spec = _echo_spec("artifact test")
     job_id = await sup.submit_job(spec)
-    await asyncio.sleep(0.2)
+    await _await_job(sup, job_id)
 
     result_path = tmp_path / "jobs" / job_id / "result.json"
     assert result_path.exists(), f"Expected artifact at {result_path}"
@@ -104,7 +110,7 @@ async def test_status_has_artifact_key(tmp_path):
     sup = _make_sup(tmp_path)
     spec = _echo_spec("status artifact")
     job_id = await sup.submit_job(spec)
-    await asyncio.sleep(0.2)
+    await _await_job(sup, job_id)
 
     status = await sup.get_status(job_id)
     assert status["artifact"] is not None
@@ -118,8 +124,8 @@ async def test_jobs_jsonl_event_log(tmp_path):
     """All three mandatory transitions appear in jobs.jsonl."""
     sup = _make_sup(tmp_path)
     spec = _echo_spec()
-    await sup.submit_job(spec)
-    await asyncio.sleep(0.2)
+    job_id = await sup.submit_job(spec)
+    await _await_job(sup, job_id)
 
     events = _load_events(tmp_path / "jobs.jsonl")
     job_events = [e for e in events if e.get("job_id") == spec.job_id]
@@ -209,7 +215,7 @@ async def test_replay_creates_new_job(tmp_path):
     sup = _make_sup(tmp_path)
     spec = _echo_spec("replay me")
     original_id = await sup.submit_job(spec)
-    await asyncio.sleep(0.2)
+    await _await_job(sup, original_id)
 
     # Inject a FAILED event so replay is valid (replay works on any terminal state)
     _append_event(
@@ -220,7 +226,7 @@ async def test_replay_creates_new_job(tmp_path):
 
     new_id = await sup.replay(original_id)
     assert new_id != original_id
-    await asyncio.sleep(0.2)
+    await _await_job(sup, new_id)
 
     new_status = await sup.get_status(new_id)
     assert new_status["status"] == JobStatus.SUCCEEDED.value
