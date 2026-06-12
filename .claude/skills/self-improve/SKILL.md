@@ -61,6 +61,7 @@ From the session just completed, identify:
 3. **Decisions made** — architectural choices and their rationale
 4. **Errors resolved** — root cause + fix pattern for reuse
 5. **Skills updated** — which skills changed and why
+6. **Install/validation lessons** — Codex thin-wrapper policy, origin-sync rules, Windows encoding fixes, and local LM Studio test limits
 
 Format each learning as a dated, concise entry:
 
@@ -71,6 +72,20 @@ Format each learning as a dated, concise entry:
 - **Pattern**: <reusable approach>
 - **Rationale**: <why this was chosen over alternatives>
 ```
+
+---
+
+## Penultimate Lesson Capture Gate
+
+Before claiming a multi-step goal is complete, run one final lesson-capture pass:
+
+1. Identify reusable lessons from the just-finished work.
+2. Add durable lessons to `docs/LESSONS.md` or the relevant canonical skill.
+3. Update canonical in-repo skills first; local Codex installs must remain thin wrappers.
+4. If the lesson affects local Codex skill installs, update orama-system `bin/orama-system/skills/skillify/references/codex-thin-wrapper-installs.md` and then refresh wrappers.
+5. Re-run validation before declaring completion.
+
+Current Codex install rule: `~/.codex/skills/*` repo skills are wrappers only; they point to origin-synced canonical in-repo cards and do not cache upstream bodies.
 
 ---
 
