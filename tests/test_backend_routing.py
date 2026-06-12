@@ -34,7 +34,9 @@ class TestRoleBackendMap:
     def test_executor_python_coding_routes_to_win(self):
         b, m = resolve_role_backend("executor-agent", "python-coding")
         assert b == "lmstudio-win"
-        assert "Qwen3.5-27B" in m
+        # Match case-insensitively: the runtime-proven Win LM Studio model id is
+        # lowercase (qwen3.5-27b-…); docs may use the HF-capitalized form.
+        assert "qwen3.5-27b" in m.lower()
 
     def test_executor_test_writing_routes_to_win(self):
         b, _ = resolve_role_backend("executor-agent", "test-writing")
