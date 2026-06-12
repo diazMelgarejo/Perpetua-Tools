@@ -1429,3 +1429,11 @@ node <repo>/AlphaClaw/node_modules/openclaw/openclaw.mjs gateway --port 18789 --
 - **Pattern**: enforce "no workstation/absolute paths in tracked files" at WRITE time, not only at commit/CI. PreToolUse hook `~/.claude/hooks/no-workstation-paths.py` (matcher `Write|Edit`) blocks (exit 2) when an edit injects an absolute home path or a synced-tree path into a git-tracked, non-gitignored file; allows scratch/`/tmp` and gitignored files.
 - **Rule**: use repo-relative paths — `"$(git rev-parse --show-toplevel)/…"` or sibling `"../../<repo>/…"`. `repo_hygiene.py` (pre-commit + CI) remains the backstop.
 - **Why**: relying on memory failed (a workstation path re-leaked into a tracked skill); a deterministic harness guard is the durable fix. Fresh-install bootstrap imperative for the guard lives in the CIDF skill.
+
+---
+
+## [2026-06-12] Discovery must update ALL endpoint sinks at runtime
+
+- **Fact**: `discover.py` subnet-scans (`scan_subnet_async` over the LAN range) → auto-detects DHCP moves and updates openclaw.json/config/last_discovery. Stale cache = hadn't re-run; `--force` bypasses TTL.
+- **Bug fixed**: PT `.env` is synced separately by `lan_discovery._sync_win_endpoint_env`, which only knew 4 canonical keys → `GPU_BOX`/`DELL_ENDPOINT` (same Win RTX3080 box) drifted. Extended the holder map to cover them; now every Win-box ref follows live discovery.
+- **Gotcha**: set `PERPETUA_TOOLS_ROOT` after a tree move or `discover.py` skips PT hardware_policy (falls back to local filter).
