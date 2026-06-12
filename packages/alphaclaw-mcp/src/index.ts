@@ -446,7 +446,7 @@ const ALL_TOOL_DEFINITIONS = [
     },
     {
       name: "local_agent_list_models",
-      description: "List all AI models available across Ollama and LM Studio backends. Returns model names grouped by backend.",
+      description: "List loaded local AI models across Ollama and LM Studio. Returns legacy model-name arrays plus structured callable metadata for choosing exact local LM Studio model IDs.",
       inputSchema: { type: "object", properties: {}, required: [] },
       annotations: { readOnlyHint: true, destructiveHint: false },
     },

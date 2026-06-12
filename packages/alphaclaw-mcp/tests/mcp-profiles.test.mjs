@@ -8,11 +8,18 @@ import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = path.resolve(__dirname, "..");
 const BUILD_PROFILES = path.join(PKG_ROOT, "build", "mcp-profiles.js");
+
+function npmCommand(args) {
+  if (process.env.npm_execpath) {
+    return { command: process.execPath, args: [process.env.npm_execpath, ...args] };
+  }
+  return { command: process.platform === "win32" ? "npm.cmd" : "npm", args };
+}
 
 const {
   resolveMcpProfile,
@@ -22,7 +29,7 @@ const {
   READONLY_TOOL_NAMES,
   PROCESS_TOOL_NAMES,
   MUTATING_TOOL_NAMES,
-} = await import(BUILD_PROFILES);
+} = await import(pathToFileURL(BUILD_PROFILES).href);
 
 const ENV_KEYS = [
   "ALPHACLAW_MCP_PROFILE",
@@ -97,7 +104,8 @@ describe("mcp-profiles", () => {
 
 describe("index.ts list filter integration", () => {
   it("build output exists", () => {
-    const r = spawnSync("npm", ["run", "build"], { cwd: PKG_ROOT, encoding: "utf8" });
+    const cmd = npmCommand(["run", "build"]);
+    const r = spawnSync(cmd.command, cmd.args, { cwd: PKG_ROOT, encoding: "utf8" });
     assert.equal(r.status, 0, r.stderr || r.stdout);
   });
 });
