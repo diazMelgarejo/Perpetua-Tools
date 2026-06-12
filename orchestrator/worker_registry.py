@@ -22,6 +22,8 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Awaitable, Callable, Dict, Optional, Tuple
 
+WINDOWS_QWEN_PRIORITY_MODEL = "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2"
+
 
 # ── Constraint helper ─────────────────────────────────────────────────────────
 
@@ -58,15 +60,18 @@ def _get_constraint(spec: Any, key: str, default: Any = None) -> Any:
 
 ROLE_BACKEND_MAP: Dict[Tuple[str, Optional[str]], Tuple[str, str]] = {
     # (role, specialization)                   → (backend,        model)
-    ("executor-agent",   "python-coding"):      ("lmstudio-win",  "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2"),
-    ("executor-agent",   "test-writing"):       ("lmstudio-win",  "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2"),
-    ("executor-agent",   None):                 ("lmstudio-win",  "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2"),
+    ("coder",            None):                 ("lmstudio-win",  WINDOWS_QWEN_PRIORITY_MODEL),
+    ("priority-subagent", None):                ("lmstudio-win",  WINDOWS_QWEN_PRIORITY_MODEL),
+    ("subagent",         None):                 ("lmstudio-win",  WINDOWS_QWEN_PRIORITY_MODEL),
+    ("executor-agent",   "python-coding"):      ("lmstudio-win",  WINDOWS_QWEN_PRIORITY_MODEL),
+    ("executor-agent",   "test-writing"):       ("lmstudio-win",  WINDOWS_QWEN_PRIORITY_MODEL),
+    ("executor-agent",   None):                 ("lmstudio-win",  WINDOWS_QWEN_PRIORITY_MODEL),
     ("context-agent",    "market-research"):    ("ollama",        "qwen3.5:9b-nvfp4"),
     ("context-agent",    "m&a-research"):       ("ollama",        "qwen3.5:9b-nvfp4"),
     ("context-agent",    None):                 ("ollama",        "qwen3.5:9b-nvfp4"),
-    ("verifier-agent",   None):                 ("lmstudio-win",  "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2"),
+    ("verifier-agent",   None):                 ("lmstudio-win",  WINDOWS_QWEN_PRIORITY_MODEL),
     ("crystallizer-agent", None):               ("ollama",        "qwen3.5:9b-nvfp4"),
-    ("architect-agent",  None):                 ("lmstudio-win",  "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2"),
+    ("architect-agent",  None):                 ("lmstudio-win",  WINDOWS_QWEN_PRIORITY_MODEL),
     ("refiner-agent",    None):                 ("ollama",        "qwen3.5:9b-nvfp4"),
 }
 
@@ -365,7 +370,7 @@ async def _lmstudio_win_worker(spec: Any) -> dict:
     GPU lock: one heavy model at a time (enforced in LMStudioWinBackend; here
     the worker trusts the caller to serialize via the backend class).
 
-    Model: Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2 (default).
+    Model: qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2 (default).
     """
     import os
     import httpx

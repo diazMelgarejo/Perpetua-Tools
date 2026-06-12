@@ -11,6 +11,10 @@ routes:
     description: Code generation, review, debugging
     roles: [coding, top-level, fallback]
 
+  coder:
+    description: Explicit coder delegation tasks
+    roles: [coder, coding, subagent, fallback]
+
   strategy:
     description: Architecture, planning, system design
     roles: [strategy, architecture, mac_orchestrator, top-level, fallback]
@@ -29,7 +33,11 @@ routes:
 
   subagent:
     description: Subagent tasks delegated by top-level orchestrator
-    roles: [subagent, general, fallback]
+    roles: [priority-subagent, subagent, general, fallback]
+
+  priority-subagent:
+    description: High-priority delegated coder or verification tasks
+    roles: [priority-subagent, coder, coding, subagent, fallback]
 
   realtime:
     description: Live data, current events, monitoring

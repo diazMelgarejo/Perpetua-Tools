@@ -231,7 +231,7 @@ WINDOWS_PORT      = int(os.getenv("WINDOWS_PORT", "11434"))
 REMOTE_WINDOWS_URL   = f"http://{WINDOWS_IP}:{WINDOWS_PORT}"
 WINDOWS_CODER_MODEL  = os.getenv(
     "WINDOWS_CODER_MODEL",
-    "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2",  # verified Windows-only model
+    "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2",  # exact LM Studio model id
 )
 
 # ---------------------------------------------------------------------------
@@ -270,7 +270,7 @@ REMOTE_WINDOWS_LMS_URL = f"http://{WINDOWS_IP}:{WINDOWS_LMS_PORT}"
 LMS_API_TOKEN         = os.getenv("LM_STUDIO_API_TOKEN", "")
 WINDOWS_LMS_MODEL     = (os.getenv("WINDOWS_LMS_MODEL")
                          or os.getenv("LMS_WIN_MODEL")
-                         or "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2")
+                         or "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2")
 
 # Timeout in seconds — short to avoid blocking the launcher when Windows is asleep
 DETECT_TIMEOUT = int(os.getenv("AGENT_DETECT_TIMEOUT", "3"))

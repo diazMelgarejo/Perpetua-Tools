@@ -79,7 +79,7 @@ LMS_WIN    = os.getenv("LM_STUDIO_WIN_ENDPOINTS",  f"http://{WIN_IP}:1234")
 LMS_TOKEN  = os.getenv("LM_STUDIO_API_TOKEN", "lm-studio")
 MAC_MODEL  = os.getenv("MAC_LMS_MODEL", "Qwen3.5-9B-MLX-4bit")
 WIN_MODEL  = os.getenv("WINDOWS_LMS_MODEL",
-                        "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2")
+                        "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2")
 
 
 def _find_npx_v22plus() -> str:

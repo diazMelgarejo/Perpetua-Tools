@@ -88,7 +88,7 @@ LMS_WIN_ENDPOINTS: List[str] = [
 ]
 LMS_MAC_ENDPOINT: str = os.getenv("LM_STUDIO_MAC_ENDPOINT", "http://192.168.254.103:1234")
 LMS_API_TOKEN: str = os.getenv("LM_STUDIO_API_TOKEN", "")
-LMS_WIN_MODEL: str = os.getenv("LMS_WIN_MODEL", "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2")
+LMS_WIN_MODEL: str = os.getenv("LMS_WIN_MODEL", "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2")
 LMS_MAC_MODEL: str = os.getenv("LMS_MAC_MODEL", "Qwen3.5-9B-MLX-4bit")
 LMS_TIMEOUT: float = float(os.getenv("LM_STUDIO_TIMEOUT", "120"))
 
