@@ -1437,3 +1437,14 @@ node <repo>/AlphaClaw/node_modules/openclaw/openclaw.mjs gateway --port 18789 --
 - **Fact**: `discover.py` subnet-scans (`scan_subnet_async` over the LAN range) → auto-detects DHCP moves and updates openclaw.json/config/last_discovery. Stale cache = hadn't re-run; `--force` bypasses TTL.
 - **Bug fixed**: PT `.env` is synced separately by `lan_discovery._sync_win_endpoint_env`, which only knew 4 canonical keys → `GPU_BOX`/`DELL_ENDPOINT` (same Win RTX3080 box) drifted. Extended the holder map to cover them; now every Win-box ref follows live discovery.
 - **Gotcha**: set `PERPETUA_TOOLS_ROOT` after a tree move or `discover.py` skips PT hardware_policy (falls back to local filter).
+
+---
+
+## [2026-06-12] Codex skill installs are thin wrappers; canonical skills stay in repo
+
+- **Decision**: local Codex installs under `~/.codex/skills` must be thin wrappers only. They should contain a Codex-valid `SKILL.md` with trigger text, canonical repo root, canonical in-repo `SKILL.md` path, and an origin-sync rule. Do not copy canonical skill bodies, references, scripts, or assets into the local install.
+- **Canonical owner**: orama-system `bin/orama-system/skills/skillify/references/codex-thin-wrapper-installs.md` owns the detailed policy. Perpetua skills should cross-reference that rule instead of duplicating it.
+- **Origin rule**: before using a canonical card, run `git fetch origin --prune`. Run `git pull --ff-only` only when the repo is clean and on a tracking branch. If dirty or non-fast-forward, preserve local work, report drift, and read the current canonical card with that caveat.
+- **Windows encoding rule**: generated skill roots must be UTF-8 without BOM. In Windows PowerShell, set console/output encodings explicitly and use `[System.Text.UTF8Encoding]::new($false)` with `[System.IO.File]::WriteAllText(...)`. `Set-Content -Encoding utf8` can leave a BOM in Windows PowerShell 5.1; Python validators may also need `PYTHONUTF8=1`.
+- **Qwen/LM Studio testing**: use compact `/no_think` JSON prompts. Large canonical excerpts can time out on `qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2`; prefer deterministic path/frontmatter audits first, then ask Qwen to review the compact name/description manifest.
+- **Penultimate completion habit**: before declaring a long-running goal achieved, collect session lessons and update canonical skills/docs first, then refresh local wrappers if trigger text or canonical paths changed.
