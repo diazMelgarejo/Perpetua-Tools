@@ -42,7 +42,7 @@ from pathlib import Path
 
 # ── env / key paths ───────────────────────────────────────────────────────────
 
-_REPO_ROOT = Path(__file__).resolve().parent
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 ENV_PATH   = _REPO_ROOT / ".env"
 
 try:
