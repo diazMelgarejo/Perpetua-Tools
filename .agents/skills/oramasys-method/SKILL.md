@@ -1,6 +1,6 @@
 ---
 name: oramasys-method
-description: "name: oramasys-method"
+description: "Successor and drop-in replacement for the legacy ultrathink-system method. Applies the orama-system 5-stage methodology (Context Immersion → Visionary Architecture → Ruthless Refinement → Masterful Execution → Crystallize) with the AFRP…"
 ---
 
 # oramasys-method

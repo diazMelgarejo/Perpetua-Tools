@@ -1,6 +1,6 @@
 ---
 name: mcp-install
-description: "name: mcp-install"
+description: "Use when setting up the MCP orchestration stack on a new machine or verifying it is installed. Covers ai-cli-mcp (parallel background workers), the OpenClaw MCP registry, and an optional Gemini analyzer lane when explicitly requested…"
 ---
 
 # mcp-install

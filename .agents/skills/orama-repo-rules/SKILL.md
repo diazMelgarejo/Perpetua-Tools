@@ -1,6 +1,6 @@
 ---
 name: orama-repo-rules
-description: "**Trigger:** Start of every session, before any code change."
+description: "```bash"
 ---
 
 # orama-repo-rules

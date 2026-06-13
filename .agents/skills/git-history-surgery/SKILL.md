@@ -1,6 +1,6 @@
 ---
 name: git-history-surgery
-description: "name: git-history-surgery"
+description: "End-to-end git history surgery for the orama-system stack: scrub contaminated history, force-push safely, and recover/re-anchor branches after a rewrite using byte-identical tree twins. Invoke when: 'expunge git history', 'remove secret…"
 ---
 
 # git-history-surgery

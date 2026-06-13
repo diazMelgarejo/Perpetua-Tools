@@ -1,6 +1,6 @@
 ---
 name: orama-gstack
-description: "name: gstack"
+description: "gstack v1.12.2.0 integration sub-skill. Full routing table for web browsing, QA, shipping, planning reviews, design, DX audits, retros, and GBrain. Activates for: /browse, /qa, /ship, /review, /investigate, /design-review, /canary…"
 ---
 
 # gstack

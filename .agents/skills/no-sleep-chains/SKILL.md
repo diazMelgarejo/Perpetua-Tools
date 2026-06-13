@@ -1,6 +1,6 @@
 ---
 name: no-sleep-chains
-description: "name: no-sleep-chains"
+description: "Enforced rule for all agents: sleep N && <command> chains are blocked by the shell hook. Invoke this skill whenever you need to wait for a background process, a file to grow, or a condition to become true. Covers: background task output…"
 ---
 
 # no-sleep-chains

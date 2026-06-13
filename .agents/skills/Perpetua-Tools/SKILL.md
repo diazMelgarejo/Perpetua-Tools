@@ -1,6 +1,6 @@
 ---
 name: perpetua-tools
-description: "**Version:** `v0.9.9.7` · **Updated:** 2026-04-08"
+description: "This orchestrator is designed for **full hardware profile awareness** [web:40] across a distributed LAN environment. It adapts standard multi-agent orchestration strategies [web:23][web:25] (sequential, concurrent, routing) to physical…"
 ---
 
 # perpetua-tools

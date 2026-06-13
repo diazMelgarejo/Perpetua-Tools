@@ -1,6 +1,6 @@
 ---
 name: first-run-setup
-description: "name: first-run-setup"
+description: "Idempotent first-run bootstrap for the orama-system toolchain: Node, Python 3.13, Ollama models, code-review-graph, gbrain, unified embeddings, Claude Code profiles, and PreCompact hook. Use when setting up a new machine, after fresh…"
 ---
 
 # first-run-setup

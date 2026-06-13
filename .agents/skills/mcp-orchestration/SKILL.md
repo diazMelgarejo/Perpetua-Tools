@@ -1,6 +1,6 @@
 ---
 name: mcp-orchestration
-description: "Use when setting up Claude Code MCP tools, adding Claude Skills, using Gemini as a large-context reader, dispatching parallel AI CLI agents, connecting MCP tools to OpenClaw, or routing tasks to local/OpenRouter/Codex/Gemini agents. Trigger"
+description: "Use when setting up Claude Code MCP tools, adding Claude Skills, using Gemini as a large-context reader, dispatching parallel AI CLI agents, connecting MCP tools to OpenClaw, or routing tasks to local/OpenRouter/Codex/Gemini agents…"
 ---
 
 # mcp-orchestration

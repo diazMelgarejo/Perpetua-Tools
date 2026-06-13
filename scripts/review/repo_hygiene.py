@@ -125,6 +125,11 @@ SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str], str], ...] = (
         "Anthropic API key",
     ),
     (
+        "aws_access_key",
+        re.compile(r"\bAKIA[0-9A-Z]{16}\b"),
+        "AWS access key ID (AKIA...)",
+    ),
+    (
         "private_key",
         re.compile(r"-----BEGIN (RSA |EC |OPENSSH |PRIVATE )?PRIVATE KEY-----"),
         "Private key block",

@@ -1,6 +1,6 @@
 ---
 name: perpetua-startup-intelligence
-description: "name: startup-intelligence"
+description: "Startup scenario classification, probe retry, history-driven adaptive timeouts, cloud fallback, and .env.local override detection for Perpetua-Tools and orama-system. Use when startup fails to reach backends, when you need to understand…"
 ---
 
 # startup-intelligence

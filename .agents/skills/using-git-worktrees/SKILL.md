@@ -1,6 +1,6 @@
 ---
 name: using-git-worktrees
-description: "name: using-git-worktrees"
+description: "Git worktree lifecycle for parallel agents on the orama-system stack. Invoke when: starting parallel agent work, bootstrapping a worktree, asking 'should I use a worktree?', debugging port collisions, cleaning up a finished worktree, or…"
 ---
 
 # using-git-worktrees

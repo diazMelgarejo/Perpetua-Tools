@@ -1,6 +1,6 @@
 ---
 name: orama-system
-description: "name: orama-system"
+description: "Elegant problem-solving methodology with 5-stage process, AFRP pre-router gate, CIDF v1.2 content insertion framework, and 7-agent execution network. Activates for architectural thinking, systematic verification, content insertion…"
 ---
 
 # orama-system
