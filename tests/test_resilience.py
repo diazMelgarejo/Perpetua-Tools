@@ -62,13 +62,14 @@ def test_sync_returns_structured_error_when_vendor_clone_unavailable(monkeypatch
 # ---------------------------------------------------------------------------
 
 def _load_orchestrator_module():
-    """Load the top-level orchestrator.py by absolute path, bypassing the
-    orchestrator/ package that shadows it on sys.path."""
+    """Load the standalone orchestrator entrypoint by absolute path, bypassing the
+    orchestrator/ package that shadows it on sys.path. After the src/ layout move
+    the entrypoint lives at src/perpetua_tools/orchestrator.py."""
     import importlib.util
     import sys
     from pathlib import Path as _Path
 
-    py_file = _Path(__file__).parent.parent / "orchestrator.py"
+    py_file = _Path(__file__).parent.parent / "src" / "perpetua_tools" / "orchestrator.py"
     spec = importlib.util.spec_from_file_location("orchestrator_module", py_file)
     mod = importlib.util.module_from_spec(spec)
     # Register under a unique name so re-use within a session is consistent
