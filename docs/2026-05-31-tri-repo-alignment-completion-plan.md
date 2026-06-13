@@ -137,7 +137,7 @@ git ls-tree -r HEAD --name-only | rg '^lib/(mcp|agents)/'
 | 1 | Live smoke + `local-agents` tests | **SEC:** auth order D4; no password in logs |
 | 2 | Retire `lib/mcp` on **D3** branch only | **SAF** after #4 and #1 |
 | 3 | Gate 3: orama → PT adapter (not direct `OPENCLAW_GATEWAY`) | **ACC** |
-| 4 | `stopServer()` + PID file + tests | **SAF** before #2 |
+| 4 | ✅ **Done 2026-06-14 (`929b627`):** `stopServer()` + PID file + unit tests in `alphaclaw-adapter` | **SAF** |
 | 5 | ✅ **Verified 2026-06-01:** `agent_launcher.py` present at PT root (38631B) | **ACC** |
 | 6 | ✅ **RESOLVED 2026-06-06:** the broken hand-written `.mcpb` knockoffs were removed and replaced by real submodule-built MCPB (commit `aa91283` / #69; JSON knockoffs deleted). No `.mcpb` files remain in tracked source. Remaining `../../local-agents/src/orchestrator.js` imports live in `packages/alphaclaw-mcp/{src,build}/index.*` and are **correct** — from `alphaclaw-mcp/src/`, `../../local-agents/...` resolves to `packages/local-agents/src/orchestrator.js` (target verified present). Tools non-empty (15 ⊇ 14). | **ACC** |
 | 7 | ✅ **RESOLVED:** entrypoints documented (D5); `openclaw_config` + `role_routing` wired into `reconcile_gateway` payload (`orchestrator/alphaclaw_manager.py:80-81, 354-355`, commit `0bcc99e`). | **EFF** |
