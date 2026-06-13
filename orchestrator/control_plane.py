@@ -46,7 +46,7 @@ def load_runtime_payload(path: str | Path | None = None) -> dict[str, Any] | Non
 
 
 async def resolve_routing_state() -> dict[str, Any]:
-    import agent_launcher
+    import perpetua_tools.agent_launcher as agent_launcher
 
     routing_state = await agent_launcher.initialize_environment()
     agent_launcher.save_routing_state(routing_state)

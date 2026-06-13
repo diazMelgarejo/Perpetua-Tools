@@ -55,7 +55,7 @@ def load_policy(policy_path: Path | None = None, *, force_reload: bool = False) 
         return _POLICY_CACHE
 
     if policy_path is None:
-        policy_path = Path(__file__).resolve().parent.parent / "config" / "model_hardware_policy.yml"
+        policy_path = Path(__file__).resolve().parents[2] / "config" / "model_hardware_policy.yml"
 
     text = policy_path.read_text(encoding="utf-8")
     if yaml is not None:
@@ -68,7 +68,7 @@ def load_policy(policy_path: Path | None = None, *, force_reload: bool = False) 
         "mac_only": list(loaded.get("mac_only", []) or []),
         "shared": list(loaded.get("shared", []) or []),
     }
-    if policy_path == Path(__file__).resolve().parent.parent / "config" / "model_hardware_policy.yml":
+    if policy_path == Path(__file__).resolve().parents[2] / "config" / "model_hardware_policy.yml":
         _POLICY_CACHE = policy
     return policy
 
