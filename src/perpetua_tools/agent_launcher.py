@@ -60,9 +60,9 @@ except ImportError:
 # .env.local overrides .env (machine-local settings take precedence).
 try:
     from dotenv import load_dotenv as _load_dotenv
-    _here = Path(__file__).parent
-    _load_dotenv(_here / ".env",       override=False)
-    _load_dotenv(_here / ".env.local", override=True)
+    _repo_root = Path(__file__).resolve().parents[2]
+    _load_dotenv(_repo_root / ".env",       override=False)
+    _load_dotenv(_repo_root / ".env.local", override=True)
 except ImportError:
     pass  # python-dotenv not installed — rely on shell env vars
 
@@ -876,7 +876,7 @@ def _persist_detected_ips(state: dict) -> None:
 
     Only updates lines that already exist in each file (safe, non-destructive).
     """
-    _here = Path(__file__).parent
+    _here = Path(__file__).resolve().parents[2]
     mac_lms_url = state.get("mac_lmstudio_endpoint") or MAC_LMS_URL
     win_lms_url = state.get("lmstudio_endpoint") or REMOTE_WINDOWS_LMS_URL
 
