@@ -1,14 +1,14 @@
 ---
-name: no-sleep-chains
-description: "Enforced rule for all agents: sleep N && <command> chains are blocked by the shell hook. Invoke this skill whenever you need to wait for a background process, a file to grow, or a condition to become true. Covers: background task output…"
+name: shell-hygiene
+description: "Safe shell command execution for agents in this environment. Covers two enforced gotchas: (1) sleep N && <command> chains are blocked — wait on background processes, file growth, or conditions with Monitor until-loops / run_in_background…"
 ---
 
-# no-sleep-chains
+# shell-hygiene
 
 This is a thin wrapper. The canonical skill lives in this repo at the path below
 (resolve the repo root at runtime — paths are never hardcoded).
 
-- Canonical skill path (repo-relative): `bin/orama-system/skills/no-sleep-chains/SKILL.md`
+- Canonical skill path (repo-relative): `bin/orama-system/skills/shell-hygiene/SKILL.md`
 
 ## Before Use
 
@@ -16,7 +16,7 @@ Before relying on the canonical card, check whether the canonical repository can
 
 ```bash
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-cd "$ROOT/bin/orama-system/skills/no-sleep-chains"
+cd "$ROOT/bin/orama-system/skills/shell-hygiene"
 git fetch origin --prune
 git status --short --branch
 ```
@@ -31,7 +31,7 @@ If the worktree is dirty, the branch is not tracking origin, or fast-forward is 
 
 ## Load Canonical Skill
 
-Open and follow `bin/orama-system/skills/no-sleep-chains/SKILL.md` (relative to the repo root). Do not copy behavior from this wrapper.
+Open and follow `bin/orama-system/skills/shell-hygiene/SKILL.md` (relative to the repo root). Do not copy behavior from this wrapper.
 
 ## Windows UTF-8 Note
 
