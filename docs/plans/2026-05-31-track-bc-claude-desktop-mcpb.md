@@ -1,3 +1,5 @@
+> ✅ **RESOLVED 2026-06-14** — implemented (branch `cursor/claude-desktop-mcpb-submodule-74e2`): Claude-Desktop-LLM submodule + real MCPB.
+
 # Track B+C — Claude-Desktop-LLM submodule + real MCPB
 
 **Status:** Implemented on branch `cursor/claude-desktop-mcpb-submodule-74e2`  
