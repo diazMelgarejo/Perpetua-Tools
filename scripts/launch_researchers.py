@@ -413,7 +413,7 @@ async def run_researcher(
 
 async def main(task: str, loop_once: bool, interval: int, rounds: int) -> None:
     # Detect live backends via agent_launcher
-    from agent_launcher import initialize_environment
+    from perpetua_tools.agent_launcher import initialize_environment
 
     log.info("Probing backends via agent_launcher.initialize_environment() …")
     routing = await initialize_environment()
