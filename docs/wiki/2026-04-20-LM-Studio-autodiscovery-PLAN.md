@@ -1,3 +1,5 @@
+> ✅ **RESOLVED 2026-06-14** — LM Studio autodiscovery shipped (`orchestrator/lan_discovery.py`; self-corrects `config/devices.yml` to live IP).
+
 # LM Studio Auto-Discovery & Three-Repo Claude Code Automation — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
