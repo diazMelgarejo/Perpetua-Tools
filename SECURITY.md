@@ -1,7 +1,7 @@
-# Security Policy — Perpetua-Tools
+# Security Policy - Perpetua-Tools
 
 Companion to the cross-repo posture in
-[`../orama-system/docs/SECURITY-POLICY.md`](../orama-system/docs/SECURITY-POLICY.md).
+[`../../orama-system/SECURITY.md`](../../orama-system/SECURITY.md).
 This file states the credential and artifact hygiene contract enforced in this repo.
 
 ## Reporting
@@ -32,6 +32,23 @@ the gateway Bearer token is never copied into tracked files. Do not store secret
 Local development reads secrets from `.env`, which is git-ignored. `.env.example`
 documents the required keys with empty values and is the only env file committed.
 
+Gemini/Google keys must be read from environment variables such as
+`GEMINI_API_KEY`, `GOOGLE_API_KEY`, and `GOOGLE_GENERATIVE_AI_API_KEY`. If two
+Gemini accounts are required, use a deliberate secondary variable such as
+`GEMINI_API_KEY_2`; do not add typo aliases. Prefer Gemini auth keys or
+explicitly restricted keys, restrict them to the Gemini API where applicable,
+apply request-origin restrictions when possible, and enable billing/usage alerts.
+Never expose Gemini keys in production browser or mobile client code; route
+production calls through a backend service.
+
+### Control Plane and MCP Tokens
+Control-plane tokens, OmniRoute tokens, MCP bearer headers, and local gateway
+tokens are runtime secrets. Keep them in git-ignored local config, OS/editor
+secret storage, or process environment only. Do not copy bearer headers into
+tracked MCP config, examples, screenshots, issue bodies, logs, or rendered UI.
+Model-status and discovery probes must not forward control-plane bearer tokens to
+LM Studio, Ollama, discovered LAN hosts, or public model endpoints.
+
 ### Artifact Protection
 Generated logs, databases, recordings, browser traces, screenshots, hook logs
 (`.claude/hooks/.logs/`), and UI-capture artifacts are git-ignored. If an artifact is
@@ -44,7 +61,20 @@ Tracked files (docs included) must use repo-relative references
 cannot doxx the owner in this public repo.
 
 ## If a Secret Is Committed
-1. Rotate the secret immediately.
-2. Remove it from active code.
-3. Remove the file from Git tracking with `git rm --cached`.
-4. Treat Git history cleanup as secondary, after rotation.
+1. Generate and deploy a replacement credential first.
+2. Verify the replacement works.
+3. Disable or revoke the exposed credential.
+4. Audit provider usage, billing, and logs for unauthorized access.
+5. Remove the secret from active code.
+6. Remove any private tracked file from Git tracking with `git rm --cached`.
+7. Treat Git history cleanup as secondary, after rotation.
+
+## Enforcement
+
+- `.gitignore` blocks local secrets, runtime state, `/tasks/`, logs, databases,
+  traces, captures, and generated artifacts.
+- `scripts/review/repo_hygiene.py` scans tracked files for secret-shaped
+  literals, private artifacts, workstation paths, hidden Unicode controls, and
+  generated runtime files.
+- Local hooks and CI must run the same hygiene gate; provider-side secret
+  scanning is a backstop, not the primary control.
