@@ -44,6 +44,15 @@ jobs:
           fi
           bash scripts/cursor/sync-private-attribution-from-home.sh
 
+      - name: Verify docs/adr pointers in sync with orama docs/v2 (zero-fragmentation)
+        run: |
+          if [ -d orama-system ]; then
+            ORAMA_ROOT="$GITHUB_WORKSPACE/orama-system" \
+              bash scripts/check_docs_v2_pointer_sync.sh
+          else
+            echo "skip: orama-system not available in this CI run"
+          fi
+
       - name: Scan tracked files for banned tokens
         run: bash scripts/git/scan-tracked-banned-tokens.sh
 
