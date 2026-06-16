@@ -8,7 +8,9 @@
 #   but Mac hardware CANNOT run them (qwen3.5-27b is RTX 3080-only).
 # - Dispatching the same heavy model to both Mac LM Studio AND Win LM Studio
 #   simultaneously = "double barrel" = GPU contention → hardware damage risk.
-# - Win RTX 3080 (192.168.254.108:1234) exclusively runs heavy Win-native models.
+# - Win RTX 3080 (192.168.254.102:1234) exclusively runs heavy Win-native models.
+# - Win IP is DHCP-dynamic; lan_ip here is the last-confirmed value. Always probe via
+#   $LM_STUDIO_WIN_ENDPOINTS or ~/.openclaw/state/last_discovery.json before dispatch.
 # - Code enforcement: _MIRROR_BACKENDS in perpetua/discovery/selector.py.
 
 version: "0.9.9.8"
@@ -45,7 +47,7 @@ devices:
     default_backend: "lm-studio"
     primary_backend: "lm-studio"
     secondary_backend: "ollama"
-    lan_ip: "192.168.254.108"
+    lan_ip: "192.168.254.102"  # DHCP-dynamic; last confirmed 2026-06-17
     ports:
       - 1234   # LM Studio (PRIMARY — heavy reasoning models)
       - 11434  # Ollama (secondary)
