@@ -1,7 +1,7 @@
 # Security Policy - Perpetua-Tools
 
 Companion to the cross-repo posture in
-[`../../orama-system/SECURITY.md`](../../orama-system/SECURITY.md).
+[`orama-system/SECURITY.md`](https://github.com/diazMelgarejo/orama-system/blob/main/SECURITY.md).
 This file states the credential and artifact hygiene contract enforced in this repo.
 
 ## Reporting
