@@ -35,6 +35,5 @@ for cand in "${ORAMA_ROOT:-}" \
   [[ -f "$cand_abs/scripts/git/sync-docs-v2-pointers.sh" ]] || continue
   exec bash "$cand_abs/scripts/git/sync-docs-v2-pointers.sh" --check "$PT_ROOT"
 done
-
 echo "skip: orama-system not found as sibling (set ORAMA_ROOT to enable docs/v2 pointer sync check)" >&2
 exit 0
