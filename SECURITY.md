@@ -4,7 +4,10 @@ Companion to the cross-repo posture in
 [`orama-system/SECURITY.md`](https://github.com/diazMelgarejo/orama-system/blob/main/SECURITY.md).
 This file states the credential and artifact hygiene contract enforced in this repo.
 
-Last updated: 2026-06-17
+Last updated: 2026-06-18
+
+Runtime security alignment for MAESTRO/OWASP v2 is recorded in
+[`docs/adr/ADR-003-maestro-owasp-v2-security-foundation.md`](docs/adr/ADR-003-maestro-owasp-v2-security-foundation.md).
 
 ## Reporting
 
@@ -20,6 +23,10 @@ MCP packages, local-agent packages, and runtime configuration templates.
 Security controls must remain synchronized with the companion orama policy.
 If a defense-in-depth rule applies to both repos, update both policies in the
 same change or explain why this repo's surface differs.
+
+Local repo-owned threat IDs use the `PT-01`, `PT-02`, ... `PT-09` format.
+Do not insert an extra `T` after the repo prefix or use similar local IDs that
+visually collide with OWASP Agentic/MCP `T1`-style identifiers.
 
 ## Defense-in-Depth Operating Baseline
 
