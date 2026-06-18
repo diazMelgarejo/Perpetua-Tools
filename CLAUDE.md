@@ -182,3 +182,88 @@ orama-system/scripts/worktree-bootstrap.sh <repo-path> <branch> <slug> [gbrain-s
 ```
 
 **Hardware (2026-05-24):** 1 Win RTX3080 + Mac Ollama. PT is the inference chokepoint.
+
+---
+
+## § 9 — Dependency Vulnerability Triage: Frugality Rules & Resolution Decisions
+
+**Context:** GitHub flagged 21 Dependabot alerts (4 high, 10 moderate, 7 low)
+on `main` (2026-06-17). Triaged and fixed without spending a GitHub token.
+This section exists so the next session doesn't re-derive any of this.
+
+### Frugality rule: OSV.dev before GitHub Dependabot Alerts API
+
+The GitHub Dependabot Alerts API requires a token with `security_events`
+scope (classic PAT) or "Dependabot alerts: read" (fine-grained PAT) — a
+credential escalation. **Use the free, unauthenticated OSV.dev batch API
+first:**
+
+```bash
+# Python: extract pinned versions from uv.lock, batch-query OSV (PyPI ecosystem)
+# npm:    extract from package-lock.json / pnpm-lock.yaml, batch-query OSV (npm ecosystem)
+curl -s -X POST https://api.osv.dev/v1/querybatch \
+  -H "Content-Type: application/json" \
+  -d '{"queries": [{"package": {"name": "<pkg>", "ecosystem": "PyPI"}, "version": "<pinned>"}]}'
+```
+
+This queries the **exact pinned version already on disk** — more precise
+than a generic CVE feed, and got within 2 of GitHub's count (19 vs 21; the
+gap is the GitHub Actions ecosystem, not checked). Zero auth required.
+Full method + results: `docs/2026-06-17-dependabot-vulnerability-triage.md`.
+
+### Minimum dependency fix versions (decided 2026-06-17)
+
+| Package | Was | Fixed to | File | Status |
+|---|---|---|---|---|
+| `starlette` | 1.0.1 | **1.3.1** | `uv.lock` (transitive via `fastapi>=0.46.0`, no ceiling conflict) | Fixed |
+| `aiohttp` | 3.14.0 | **3.14.1** | `uv.lock` (direct, `requirements.txt` floor already `>=3.14.0`) | Fixed |
+| `hono` | 4.12.23 | **4.12.25** | `packages/local-agents/package.json` + lock (was transitive via `@modelcontextprotocol/sdk`, now pinned direct) | Fixed |
+| `js-yaml` | 4.1.1 | 4.2.0 | `vendor/ecc-tools/package-lock.json` | **Out of scope — submodule, see below** |
+| `markdown-it` | 14.1.1 | 14.2.0 | `vendor/ecc-tools/package-lock.json` | **Out of scope — submodule, see below** |
+
+**Treat these as the floor going forward** — don't let a future lockfile
+regen silently drop below these without re-checking OSV.
+
+### Resolution decision: never vendor-patch a tracked submodule directly
+
+`vendor/ecc-tools` is a git submodule pinned to
+`github.com/affaan-m/everything-claude-code` (commit
+`928076cc08cbb31e8549cea2883b4f51811de1c8` as of 2026-06-17). When a
+vulnerability is found inside a submodule's own lockfile, **the fix is to
+bump the submodule's pinned commit once upstream patches it — never edit
+files inside the submodule directly.** This follows the zero-fragmentation
+doctrine already established in `docs/v2/27-git-governance-zero-fragmentation.md`
+and `SECURITY.md`. Document the deferral explicitly in the triage doc and PR
+description; do not silently drop the finding.
+
+### Gotcha: multiple npm manifests, easy to fix the wrong one
+
+This repo has 4+ Python/npm dependency manifests
+(`packages/alphaclaw-mcp/pnpm-lock.yaml`, `packages/local-agents/package-lock.json`,
+`vendor/ecc-tools/package-lock.json` [submodule], plus a nested
+`vendor/ecc-tools/.opencode/package-lock.json`). **A package name match across
+manifests doesn't mean the same vulnerable version exists in all of them** —
+`hono` was already fixed in `alphaclaw-mcp` but stale in `local-agents`.
+Always `grep` the *exact* version string in the *specific* file before
+patching, and re-verify after with `git diff --stat` to catch wrong-file
+edits.
+
+### Gotcha: plain `git clone` does not initialize submodules
+
+`vendor/ecc-tools`, `vendor/Claude-Desktop-LLM`, and `packages/agentic-stack`
+are all submodules (see `.gitmodules`). A plain `git clone` leaves them as
+empty directories — files inside (e.g. `vendor/ecc-tools/package-lock.json`)
+won't appear until `git submodule update --init <path>`. If a fresh clone
+disagrees with an earlier session's findings about what's "in" a vendored
+path, this is almost always why — re-init before trusting a negative result.
+
+### Gotcha: working-tree clones can carry stray submodule gitlink noise
+
+If `git status`/`git diff` shows `vendor/ecc-tools` modified with no
+intentional edit, it's likely the on-disk submodule's checked-out HEAD
+differs from the recorded gitlink (common after a `submodule update --init`
+in an earlier session leaves residue across clones). Confirm via
+`git diff --submodule=log -- vendor/ecc-tools` — if it says "commits not
+present," it's clone noise, not a real change. **Exclude it from `git add`
+explicitly** rather than trying to "fix" it; don't let it ride into an
+unrelated commit.
