@@ -24,6 +24,8 @@ Those documents establish the strict guideline baseline for v2.0.0-STABLE and
 the v2.1 security target: MAESTRO layer tracing, OWASP Agentic/MCP threat
 coverage, local threat IDs, AIVSS candidate scoring, and runtime controls for
 MCP, memory, identity, and egress.
+The canonical online verification link index is maintained in orama
+`docs/v2/39-maestro-owasp-genai-reference.md` §10.
 
 ---
 
