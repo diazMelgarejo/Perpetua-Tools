@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "agentic_stack_version": "0.9.0",
+  "abs_target": "C:\\Users\\lab\\Downloads\\SKILLS.md\\ultrathink\\Perplexity-Tools",
+  "installed_at": "2026-06-18T13:11:50Z",
+  "adapters": {
+    "antigravity": {
+      "installed_at": "2026-06-18T13:11:50Z",
+      "files_written": [
+        "ANTIGRAVITY.md"
+      ],
+      "files_overwritten": [],
+      "files_alerted": [],
+      "file_results": [
+        {
+          "dst": "ANTIGRAVITY.md",
+          "result": "written_new"
+        }
+      ],
+      "post_install_results": []
+    }
+  }
+}
