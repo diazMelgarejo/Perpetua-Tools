@@ -147,7 +147,7 @@ call from anywhere under this worktree routes to that source by default —
 no `--source` flag needed.
 
 Two indexed corpora available via the `gbrain` CLI:
-- This worktree's code (auto-pinned via `.gbrain-source` → `gstack-code-ools-27e2b79c-df8a28`).
+- This worktree's code (auto-pinned via `.gbrain-source` → `gstack-code-078b0b90-f6179f`; supersedes `gstack-code-ools-27e2b79c-df8a28` (stale @2026-06-05, reindexed 2026-06-17).
 - `~/.gstack/` curated memory (registered as `gstack-brain-lawrencecyremelgarejo` source).
 
 Prefer gbrain when:
