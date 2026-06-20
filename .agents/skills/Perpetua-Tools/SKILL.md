@@ -8,7 +8,7 @@ description: "This orchestrator is designed for **full hardware profile awarenes
 This is a thin wrapper. The canonical skill lives in this repo at the path below
 (resolve the repo root at runtime — paths are never hardcoded).
 
-- Canonical skill path (repo-relative): `Perpetua-Tools/SKILL.md`
+- Canonical skill path (repo-relative): `SKILL.md`
 
 ## Before Use
 
@@ -16,7 +16,7 @@ Before relying on the canonical card, check whether the canonical repository can
 
 ```bash
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-cd "$ROOT/Perpetua-Tools"
+cd "$ROOT/."
 git fetch origin --prune
 git status --short --branch
 ```
@@ -31,7 +31,7 @@ If the worktree is dirty, the branch is not tracking origin, or fast-forward is 
 
 ## Load Canonical Skill
 
-Open and follow `Perpetua-Tools/SKILL.md` (relative to the repo root). Do not copy behavior from this wrapper.
+Open and follow `SKILL.md` (relative to the repo root). Do not copy behavior from this wrapper.
 
 ## Windows UTF-8 Note
 
