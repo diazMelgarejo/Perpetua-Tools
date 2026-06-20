@@ -1,14 +1,14 @@
 ---
-name: perpetua-startup-intelligence
-description: "Startup scenario classification, probe retry, history-driven adaptive timeouts, cloud fallback, and .env.local override detection for Perpetua-Tools and orama-system. Use when startup fails to reach backends, when you need to understand…"
+name: hermes-harness
+description: "Onboards Hermes Agent as a cross-harness operator shell for PT-orama and ECC workflows. Use when installing Hermes, importing ECC/orama skills into Hermes, configuring Nous Portal or LM Studio providers, adding Hermes beside OpenClaw, or…"
 ---
 
-# startup-intelligence
+# hermes-harness
 
 This is a thin wrapper. The canonical skill lives in this repo at the path below
 (resolve the repo root at runtime — paths are never hardcoded).
 
-- Canonical skill path (repo-relative): `hardware/startup-intelligence/SKILL.md`
+- Canonical skill path (repo-relative): `bin/orama-system/skills/hermes-harness/SKILL.md`
 
 ## Before Use
 
@@ -16,7 +16,7 @@ Before relying on the canonical card, check whether the canonical repository can
 
 ```bash
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-cd "$ROOT/hardware/startup-intelligence"
+cd "$ROOT/bin/orama-system/skills/hermes-harness"
 git fetch origin --prune
 git status --short --branch
 ```
@@ -31,7 +31,7 @@ If the worktree is dirty, the branch is not tracking origin, or fast-forward is 
 
 ## Load Canonical Skill
 
-Open and follow `hardware/startup-intelligence/SKILL.md` (relative to the repo root). Do not copy behavior from this wrapper.
+Open and follow `bin/orama-system/skills/hermes-harness/SKILL.md` (relative to the repo root). Do not copy behavior from this wrapper.
 
 ## Windows UTF-8 Note
 

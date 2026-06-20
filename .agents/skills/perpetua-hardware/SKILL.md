@@ -8,7 +8,7 @@ description: "All hardware-specific configuration lives here. `ModelRegistry` re
 This is a thin wrapper. The canonical skill lives in this repo at the path below
 (resolve the repo root at runtime — paths are never hardcoded).
 
-- Canonical skill path (repo-relative): `Perpetua-Tools/hardware/SKILL.md`
+- Canonical skill path (repo-relative): `hardware/SKILL.md`
 
 ## Before Use
 
@@ -16,7 +16,7 @@ Before relying on the canonical card, check whether the canonical repository can
 
 ```bash
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-cd "$ROOT/Perpetua-Tools/hardware"
+cd "$ROOT/hardware"
 git fetch origin --prune
 git status --short --branch
 ```
@@ -31,7 +31,7 @@ If the worktree is dirty, the branch is not tracking origin, or fast-forward is 
 
 ## Load Canonical Skill
 
-Open and follow `Perpetua-Tools/hardware/SKILL.md` (relative to the repo root). Do not copy behavior from this wrapper.
+Open and follow `hardware/SKILL.md` (relative to the repo root). Do not copy behavior from this wrapper.
 
 ## Windows UTF-8 Note
 
