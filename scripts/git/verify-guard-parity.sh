@@ -61,22 +61,8 @@ fi
 
 if [[ ${#targets[@]} -gt 0 ]]; then
   echo "== PARITY: downstream guard copies byte-identical to canonical =="
-  canon_repo="$(cd "$CANON/../.." && pwd)"
-  canon_parent="$(dirname "$canon_repo")"
   for repo in "${targets[@]}"; do
-    repo_abs="$(cd "$repo" 2>/dev/null && pwd)" || continue
-    [[ "$repo_abs" == "$canon_repo" ]] && continue  # skip self
-
-    # In GitHub Actions, optional companion checkouts may be absent or nested
-    # under the current checkout rather than cloned as sibling repositories.
-    # That layout cannot prove the zero-fragmentation invariant, so keep local
-    # workspace parity fail-closed while treating non-sibling CI targets as
-    # intentionally out of scope.
-    if [[ "${GITHUB_ACTIONS:-}" == "true" && "$(dirname "$repo_abs")" != "$canon_parent" ]]; then
-      echo "  SKIP $(basename "$repo_abs") (CI non-sibling checkout; parity requires sibling repos)"
-      continue
-    fi
-
+    [[ "$(cd "$repo" 2>/dev/null && pwd)" == "$(cd "$CANON/../.." && pwd)" ]] && continue  # skip self
     for g in "${CANONICAL_GUARDS[@]}"; do
       src="$CANON/$g"; dst="$repo/scripts/git/$g"
       [[ -f "$src" ]] || continue
