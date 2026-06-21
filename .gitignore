@@ -109,3 +109,4 @@ temp/
 
 # Runtime hook logs (never commit)
 .claude/hooks/.logs/
+vendor/oramaclaw/
