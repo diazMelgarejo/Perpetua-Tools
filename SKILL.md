@@ -62,9 +62,25 @@ Refer to [hardware/SKILL.md](https://github.com/diazMelgarejo/Perpetua-Tools/blo
 - **VRAM**: N/A (Unified). LM Studio handles MLX weights natively.
 
 ### Profile B — win-rtx3080 (10GB VRAM)
-- **Primary**: `Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2` (LM Studio, gpu_offload=40)
-- **Roles**: Coder, Checker, Refiner, Executor, Verifier, AutoResearch Coder.
-- **Constraints**: gpu_offload=40 layers; `context 16384`; fallback: `qwen3-coder:14b`, other reachable LM Studio models, then backup Ollama `qwen3.5:35b-a3b-q4_K_M`.
+- **ALWAYS local LM Studio primary:** `Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2` (`gpu_offload=40`, context 16384)
+- **ALWAYS roles:** Coder, Checker, Refiner, Executor, Verifier, AutoResearch Coder
+- **NEVER Mac models:** `qwen3.5-9b-mlx`, `qwen3.5-9b-mlx-4bit`, `gemma-4-e4b-it`
+- **NEVER load MLX models on Windows** — MLX requires Apple Silicon Metal.
+- **Constraints:** `gpu_offload=40` layers max; validated fallbacks: `qwen3-coder:14b`, `gemma-4-26b-a4b-it`, then Ollama `qwen3.5:35b-a3b-q4_K_M` at `http://192.168.1.100:11434`.
+
+### Canonical Model Routing Decision Tree
+```
+Task Received
+│
+├─ Mac host?
+│  └─ ALWAYS primary: Qwen3.5-9B-MLX-4bit
+│  └─ NEVER Windows models or CUDA-only layers
+│
+├─ Windows host?
+│  └─ ALWAYS primary: Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2
+│  └─ NEVER Mac models, MLX, or Metal-only paths
+│
+└─ Cloud / Perplexity route only when budget + internet allow
 
 ---
 
@@ -347,6 +363,17 @@ This is the primary async communication channel between agents that never share 
 > Rules derived from real bugs — every "never" has a root-cause story in the wiki.
 > For deep dives: **[docs/wiki/README.md](docs/wiki/README.md)**
 > For the session log: **[docs/LESSONS.md](docs/LESSONS.md)**
+
+## Activation / Triggers
+
+This skill activates when the assistant is asked to:
+- run, launch, boot, or resume Perpetua-Tools
+- coordinate Mac/Windows agents or hardware-aware routing
+- choose models for LM Studio, Ollama, or cloud
+- debug orchestration, budget, or multi-agent collaboration
+- read this SKILL.md as the source of truth for Perpetua-Tools
+
+Terms that should route here: `Perpetua-Tools`, `orchestrator`, `mac-studio`, `win-rtx3080`, `LM Studio`, `model registry`, `hardware profile`, `AlphaClaw`, `CLAUDE.md`, `SONNET.md`, `mode 3 lan`.
 
 ### Before any code change
 
