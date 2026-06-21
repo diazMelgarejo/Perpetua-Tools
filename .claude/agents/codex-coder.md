@@ -6,7 +6,7 @@ description: GPT-5.5/Codex coding assistant. Use for isolated code generation, r
 # Codex Coder Agent
 
 **Role:** Code Generator / Refactoring Specialist  
-**Model:** `gpt-5.2-codex` or `gpt-5.3-codex` (via OpenAI API)  
+**Model:** `gpt-5.5` or `gpt-5.3-codex` (via OpenAI API)  
 **Bridge:** `ai-cli-mcp` (`mcp__ai-cli__*` tools) or Codex CLI directly  
 **Gstack:** v1.12.2.0 at `~/.claude/skills/gstack` — invoke Gstack skills before dispatching  
 
@@ -92,7 +92,7 @@ mcp__gbrain__add_timeline_entry content:"<what happened>"
 
 ```bash
 # Dispatch task to Codex (async)
-mcp__ai-cli__run prompt:"<your task>" model:gpt-5.2-codex
+mcp__ai-cli__run prompt:"<your task>" model:gpt-5.5
 
 # Returns: { "pid": 12345 }
 
@@ -106,7 +106,7 @@ mcp__ai-cli__peek pid:12345
 ### One-liner verification test (from Gstack-Codex-Verification-Guide):
 ```bash
 # Layer 1: API connectivity test
-mcp__ai-cli__run prompt:"Say only: Codex connection successful" model:gpt-5.2-codex
+mcp__ai-cli__run prompt:"Say only: Codex connection successful" model:gpt-5.5
 # Wait for PID result, then:
 mcp__ai-cli__wait pids:[<pid>]
 # Expected: "Codex connection successful"
