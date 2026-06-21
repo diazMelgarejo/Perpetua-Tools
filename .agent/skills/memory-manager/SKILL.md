@@ -46,5 +46,6 @@ available. The index auto-rebuilds when files change.
 
 ## Self-rewrite hook
 Every 10 reflections, or when the same type of mistake appears 3+ times
-recently, this skill's approach to salience or distillation needs adjustment.
-Propose conservative edits and log the diff in `memory/semantic/DECISIONS.md`.
+recently, escalate observations about salience/distillation accuracy to a
+human review. Log the evidence in `memory/semantic/DECISIONS.md` and await
+human decision. Never modify this SKILL.md or alter your own behavior at runtime.

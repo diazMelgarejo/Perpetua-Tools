@@ -34,8 +34,10 @@ import sys
 import time
 from pathlib import Path
 
-# Allow running from repo root or scripts/
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+# Allow running from repo root or scripts/ in an uninstalled source checkout.
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+for _path in (_REPO_ROOT / "src", _REPO_ROOT):
+    sys.path.insert(0, str(_path))
 
 import httpx  # noqa: E402
 
@@ -413,7 +415,7 @@ async def run_researcher(
 
 async def main(task: str, loop_once: bool, interval: int, rounds: int) -> None:
     # Detect live backends via agent_launcher
-    from agent_launcher import initialize_environment
+    from perpetua_tools.agent_launcher import initialize_environment
 
     log.info("Probing backends via agent_launcher.initialize_environment() …")
     routing = await initialize_environment()

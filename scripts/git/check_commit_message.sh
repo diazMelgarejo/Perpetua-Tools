@@ -42,6 +42,7 @@ WELL_KNOWN_COAUTHOR_DOMAIN_SUFFIXES=(
   sourcegraph.com
   devin.ai
   codeium.com
+  nousresearch.com
 )
 
 # Match in Co-authored-by display name / address when domain alone is ambiguous.
@@ -70,6 +71,8 @@ WELL_KNOWN_COAUTHOR_NAME_MARKERS=(
   codeium
   windsurf
   qwen
+  hermes
+  nousresearch
 )
 
 email_domain_ok() {
