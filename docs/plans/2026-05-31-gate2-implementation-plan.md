@@ -1,3 +1,5 @@
+> ✅ **RESOLVED 2026-06-14** — implemented in `929b627`: #7 openclaw_config, #4 stopServer+PID+tests, #6 vitest + mcp-stdio, mcpb canonical paths.
+
 # Gate 2 Implementation Plan — Work Items #4, #6, #7
 
 > **Date:** 2026-05-31 · **Status:** in progress on `main`

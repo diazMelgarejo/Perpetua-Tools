@@ -1,3 +1,5 @@
+> 📄 **REFERENCE 2026-06-14** — design spec (input to a shipped execution plan), not an open work item.
+
 # LM Studio Auto-Discovery & Three-Repo Claude Code Automation
 
 **Date:** 2026-04-20  

@@ -156,19 +156,19 @@ def test_hardware_policy_filter_is_case_insensitive():
 
 
 def test_pick_mac_manager_checks_preferred_affinity(monkeypatch):
-    import agent_launcher
+    import perpetua_tools.agent_launcher as agent_launcher
 
     def _fake_check(model_id, platform):
         if model_id == "win-only":
             raise HardwareAffinityError("NEVER_MAC")
 
-    monkeypatch.setattr("agent_launcher.check_affinity", _fake_check)
+    monkeypatch.setattr("perpetua_tools.agent_launcher.check_affinity", _fake_check)
 
     assert agent_launcher._pick_mac_manager(["win-only", "mac-ok"], "win-only") == "mac-ok"
 
 
 def test_mac_ollama_required_models_fail_closed(monkeypatch):
-    import agent_launcher
+    import perpetua_tools.agent_launcher as agent_launcher
 
     monkeypatch.setattr(agent_launcher, "RUNNING_ON_MAC", True)
     monkeypatch.setattr(
@@ -185,7 +185,7 @@ def test_mac_ollama_required_models_fail_closed(monkeypatch):
 
 
 def test_mac_ollama_required_models_skip_on_windows_host(monkeypatch):
-    import agent_launcher
+    import perpetua_tools.agent_launcher as agent_launcher
 
     monkeypatch.setattr(agent_launcher, "RUNNING_ON_MAC", False)
 
@@ -193,7 +193,7 @@ def test_mac_ollama_required_models_skip_on_windows_host(monkeypatch):
 
 
 def test_windows_host_keeps_local_windows_backend(monkeypatch):
-    import agent_launcher
+    import perpetua_tools.agent_launcher as agent_launcher
 
     monkeypatch.setattr(agent_launcher, "RUNNING_ON_WINDOWS", True)
     local_ips = frozenset({"localhost", "127.0.0.1"})
@@ -301,10 +301,10 @@ def test_coder_routes_to_lmstudio_when_ollama_offline():
 
     async def run():
         with (
-            patch("agent_launcher.check_remote_worker",   new=AsyncMock(return_value=(False, None))),
-            patch("agent_launcher.check_lmstudio_worker", new=AsyncMock(return_value=(True, 0))),
+            patch("perpetua_tools.agent_launcher.check_remote_worker",   new=AsyncMock(return_value=(False, None))),
+            patch("perpetua_tools.agent_launcher.check_lmstudio_worker", new=AsyncMock(return_value=(True, 0))),
         ):
-            import agent_launcher
+            import perpetua_tools.agent_launcher as agent_launcher
             return await agent_launcher.initialize_environment()
 
     state = asyncio.run(run())
@@ -328,12 +328,12 @@ def test_affinity_violation_does_not_silent_fallback():
 
     async def run():
         with (
-            patch("agent_launcher.check_remote_worker", new=AsyncMock(return_value=(False, None))),
-            patch("agent_launcher.check_lmstudio_worker", new=AsyncMock(return_value=(True, 0))),
-            patch("agent_launcher.check_affinity", side_effect=HardwareAffinityError("NEVER_MAC")),
-            patch("agent_launcher._await_manager_override_async", new=_no_override),
+            patch("perpetua_tools.agent_launcher.check_remote_worker", new=AsyncMock(return_value=(False, None))),
+            patch("perpetua_tools.agent_launcher.check_lmstudio_worker", new=AsyncMock(return_value=(True, 0))),
+            patch("perpetua_tools.agent_launcher.check_affinity", side_effect=HardwareAffinityError("NEVER_MAC")),
+            patch("perpetua_tools.agent_launcher._await_manager_override_async", new=_no_override),
         ):
-            import agent_launcher
+            import perpetua_tools.agent_launcher as agent_launcher
             return await agent_launcher.initialize_environment()
 
     with pytest.raises(HardwareAffinityError, match="NEVER_MAC"):
@@ -444,7 +444,7 @@ def test_manager_affinity_violation_raises_when_no_override(monkeypatch):
     """P3.3a: When _await_manager_override_async returns False (timeout), manager must re-raise."""
     import asyncio
     from unittest.mock import AsyncMock
-    import agent_launcher
+    import perpetua_tools.agent_launcher as agent_launcher
 
     def _fake_check(model_id, platform):
         if platform == "mac":
@@ -457,10 +457,10 @@ def test_manager_affinity_violation_raises_when_no_override(monkeypatch):
     async def _no_override(exc, timeout=10.0):
         return False
 
-    monkeypatch.setattr("agent_launcher.check_remote_worker",   AsyncMock(return_value=(False, None)))
-    monkeypatch.setattr("agent_launcher.check_lmstudio_worker", _lms_win_only)
-    monkeypatch.setattr("agent_launcher.check_affinity",        _fake_check)
-    monkeypatch.setattr("agent_launcher._await_manager_override_async", _no_override)
+    monkeypatch.setattr("perpetua_tools.agent_launcher.check_remote_worker",   AsyncMock(return_value=(False, None)))
+    monkeypatch.setattr("perpetua_tools.agent_launcher.check_lmstudio_worker", _lms_win_only)
+    monkeypatch.setattr("perpetua_tools.agent_launcher.check_affinity",        _fake_check)
+    monkeypatch.setattr("perpetua_tools.agent_launcher._await_manager_override_async", _no_override)
 
     with pytest.raises(HardwareAffinityError):
         asyncio.run(agent_launcher.initialize_environment())
@@ -470,7 +470,7 @@ def test_manager_affinity_violation_degrades_gracefully_with_override(monkeypatc
     """P3.3b: When _await_manager_override_async returns True (operator override), manager degrades."""
     import asyncio
     from unittest.mock import AsyncMock
-    import agent_launcher
+    import perpetua_tools.agent_launcher as agent_launcher
 
     def _fake_check(model_id, platform):
         if platform == "mac":
@@ -483,10 +483,10 @@ def test_manager_affinity_violation_degrades_gracefully_with_override(monkeypatc
     async def _yes_override(exc, timeout=10.0):
         return True
 
-    monkeypatch.setattr("agent_launcher.check_remote_worker",   AsyncMock(return_value=(False, None)))
-    monkeypatch.setattr("agent_launcher.check_lmstudio_worker", _lms_win_only)
-    monkeypatch.setattr("agent_launcher.check_affinity",        _fake_check)
-    monkeypatch.setattr("agent_launcher._await_manager_override_async", _yes_override)
+    monkeypatch.setattr("perpetua_tools.agent_launcher.check_remote_worker",   AsyncMock(return_value=(False, None)))
+    monkeypatch.setattr("perpetua_tools.agent_launcher.check_lmstudio_worker", _lms_win_only)
+    monkeypatch.setattr("perpetua_tools.agent_launcher.check_affinity",        _fake_check)
+    monkeypatch.setattr("perpetua_tools.agent_launcher._await_manager_override_async", _yes_override)
 
     result = asyncio.run(agent_launcher.initialize_environment())
     assert result.get("manager_affinity_alert") is not None, (

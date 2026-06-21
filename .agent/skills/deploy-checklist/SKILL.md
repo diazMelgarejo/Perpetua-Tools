@@ -36,4 +36,6 @@ gated by a human approval step enforced in `protocols/permissions.md`.
   this checklist with the new step that would have caught it.
 
 ## Self-rewrite hook
-After any rollback, this checklist is missing a step. Add it.
+After any rollback, document the missing step and the rollback event in
+`memory/working/WORKSPACE.md`. Escalate to a human reviewer to update
+this checklist. Never modify this SKILL.md at runtime.

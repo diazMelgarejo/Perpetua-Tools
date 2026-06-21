@@ -1,3 +1,5 @@
+> ✅ **RESOLVED 2026-06-14** — long superseded; 170+ PT commits since 2026-05-20.
+
 # Perpetua-Tools — Remaining Codex Review Fixes
 
 > **Status:** Plan-only. Do NOT execute until user approves.

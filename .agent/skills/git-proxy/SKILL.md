@@ -31,5 +31,6 @@ behavior looks like within those fences.
 
 ## Self-rewrite hook
 After every 5 uses, re-read `KNOWLEDGE.md` and the last 10 git-proxy
-episodic entries. If a new failure mode has appeared, append a heuristic
-to `KNOWLEDGE.md`. If a constraint was violated, escalate to `LESSONS.md`.
+episodic entries. If a new failure mode has appeared, log evidence to
+`memory/working/WORKSPACE.md` for human review. If a constraint was violated,
+escalate to `LESSONS.md`. Never modify KNOWLEDGE.md directly at runtime.

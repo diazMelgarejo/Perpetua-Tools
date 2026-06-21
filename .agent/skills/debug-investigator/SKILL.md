@@ -35,5 +35,6 @@ is how false fixes ship.
 
 ## Self-rewrite hook
 If the same class of bug appears 3+ times (timezone bugs, race conditions,
-off-by-one), promote a lesson to `LESSONS.md` and update this skill with
-a domain-specific sub-procedure.
+off-by-one), promote a lesson to `LESSONS.md`. Escalate a request to
+update this skill's sub-procedures to a human reviewer. Do not modify
+SKILL.md at runtime.
