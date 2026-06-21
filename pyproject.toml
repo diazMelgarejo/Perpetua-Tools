@@ -46,7 +46,7 @@ dependencies = [
     # Database and caching
     "aiosqlite>=0.19",        # GossipBus async SQLite + FTS5 (RAG backport 2026-05-22)
     "redis>=5.0.1",
-    "python-multipart>=0.0.27",
+    "python-multipart>=0.0.31",
     "sqlalchemy>=2.0.25",
     # Data validation
     "pydantic>=2.6.0",
@@ -101,12 +101,12 @@ dev = [
 
 [project.scripts]
 pt-orchestrator = "orchestrator.fastapi_app:app"
-pt-setup = "setup_wizard:main"
-pt-launch = "agent_launcher:main"
+pt-setup = "perpetua_tools.setup_wizard:main"
+pt-launch = "perpetua_tools.agent_launcher:main"
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["orchestrator*"]
+where = [".", "src"]
+include = ["orchestrator*", "perpetua*", "perpetua_tools*", "utils*"]
 exclude = ["tests*", "vendor*", ".state*"]
 
 [tool.pytest.ini_options]
@@ -116,6 +116,7 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+pythonpath = ["src", "."]
 addopts = "-v --tb=short"
 
 [tool.mypy]

@@ -85,10 +85,15 @@ def load_hardware_skill(path: Path) -> str:
 
 def check_sync(models: dict, skill_text: str, fix_mode: bool) -> list[str]:
     failures: list[str] = []
+    # Model IDs are matched CASE-INSENSITIVELY: the runtime-proven LM Studio id is
+    # lowercase (the Win server serves lowercase; config/models.yml uses lowercase),
+    # while human docs use the HF-capitalized name. Both forms are valid (2026-06-12).
+    models_ci = {k.lower(): v for k, v in models.items()}
+    skill_lc = skill_text.lower()
 
     # 1. Each required LM Studio model must appear in hardware/SKILL.md
     for device, model_id in REQUIRED_LMS_MODELS.items():
-        if model_id not in skill_text:
+        if model_id.lower() not in skill_lc:
             failures.append(
                 f"MISSING in hardware/SKILL.md: '{model_id}' "
                 f"(required canonical model for {device})"
@@ -100,7 +105,7 @@ def check_sync(models: dict, skill_text: str, fix_mode: bool) -> list[str]:
                 )
 
         # Also verify it exists in models.yml
-        if model_id not in models:
+        if model_id.lower() not in models_ci:
             failures.append(
                 f"MISSING in config/models.yml: '{model_id}' "
                 f"(required canonical model for {device})"
@@ -108,9 +113,9 @@ def check_sync(models: dict, skill_text: str, fix_mode: bool) -> list[str]:
 
     # 2. For each required model, verify context_window alignment
     for device, model_id in REQUIRED_LMS_MODELS.items():
-        if model_id not in models:
+        if model_id.lower() not in models_ci:
             continue
-        yml_ctx = models[model_id].get("context_window")
+        yml_ctx = models_ci[model_id.lower()].get("context_window")
         if yml_ctx is None:
             continue
         # Search for the model's context in SKILL.md via pattern: 'context[_window]: <n>'
@@ -139,9 +144,9 @@ def check_sync(models: dict, skill_text: str, fix_mode: bool) -> list[str]:
 
     # 4. Backends must match between the two canonical models
     for device, model_id in REQUIRED_LMS_MODELS.items():
-        if model_id not in models:
+        if model_id.lower() not in models_ci:
             continue
-        yml_backend = models[model_id].get("backend", "")
+        yml_backend = models_ci[model_id.lower()].get("backend", "")
         if yml_backend != "lm-studio":
             failures.append(
                 f"BACKEND MISMATCH for '{model_id}': "

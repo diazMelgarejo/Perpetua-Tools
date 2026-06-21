@@ -68,6 +68,13 @@ repos:
         pass_filenames: false
         always_run: true
 
+      - id: docs-v2-pointer-sync
+        name: "docs/adr pointers in sync with orama docs/v2 (zero-fragmentation)"
+        entry: bash scripts/check_docs_v2_pointer_sync.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+
       - id: repo-hygiene
         name: "Repo hygiene — identity, paths, secrets (CI parity)"
         entry: python scripts/review/repo_hygiene.py .

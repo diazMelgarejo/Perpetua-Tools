@@ -1,3 +1,5 @@
+> ✅ **RESOLVED 2026-06-14** — RAG v1 backport shipped — this is the ship record.
+
 # RAG Memory Pipeline — v1 Backport Release Notes
 
 **Date:** 2026-05-22

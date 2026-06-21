@@ -91,6 +91,59 @@ MOJIBAKE_RE = re.compile(
     + "])"
 )
 PRIVATE_GENERATED_TRACKED = {".env", ".env.local", ".paths"}
+SECRET_PATTERN_EXCEPTIONS = {
+    "packages/alphaclaw-mcp/tests/path-boundary-mcp.test.mjs",
+    "packages/local-agents/tests/path-boundary.test.cjs",
+    "scripts/review/repo_hygiene.py",
+    "tests/test_control_plane_security.py",
+    "tests/test_repo_hygiene.py",
+}
+SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str], str], ...] = (
+    (
+        "google_api_key",
+        re.compile(r"AIza[0-9A-Za-z_-]{20,}"),
+        "Google API key (AIza...)",
+    ),
+    (
+        "telegram_bot_token",
+        re.compile(r"\b\d{8,10}:[A-Za-z0-9_-]{30,}\b"),
+        "Telegram bot token (bot_id:secret)",
+    ),
+    (
+        "github_pat",
+        re.compile(r"\bghp_[0-9A-Za-z]{20,}\b"),
+        "GitHub personal access token",
+    ),
+    (
+        "openai_api_key",
+        re.compile(r"\bsk-[A-Za-z0-9]{20,}\b"),
+        "OpenAI API key",
+    ),
+    (
+        "anthropic_api_key",
+        re.compile(r"\bsk-ant-[A-Za-z0-9_-]{20,}\b"),
+        "Anthropic API key",
+    ),
+    (
+        "aws_access_key",
+        re.compile(r"\bAKIA[0-9A-Z]{16}\b"),
+        "AWS access key ID (AKIA...)",
+    ),
+    (
+        "private_key",
+        re.compile(r"-----BEGIN (RSA |EC |OPENSSH |PRIVATE )?PRIVATE KEY-----"),
+        "Private key block",
+    ),
+)
+SECRET_PLACEHOLDER_MARKERS = (
+    "${env:",
+    "${ENV:",
+    "<YOUR_",
+    "<your_",
+    "REPLACE_ME",
+    "CHANGEME",
+    "xxx",
+)
 # Paths exempt from GENERATED_ARTIFACT_PATTERNS.
 # Use sparingly — only for intentionally committed compiled outputs that are
 # required for distribution without a build step (e.g., npm MCP packages).
@@ -124,6 +177,27 @@ GENERATED_ARTIFACT_PATTERNS = (
     "*.egg-info/*",
     "*.whl",
     "*.tar.gz",
+    "*.db",
+    "*.sqlite",
+    "*.sqlite3",
+    "*.duckdb",
+    "*.lmdb",
+    "*.mdb",
+    "*.har",
+    "*.webm",
+    "*.mp4",
+    "*.log",
+    "logs/*",
+    "data/*",
+    "runtime/*",
+    "state/*",
+    "sessions/*",
+    "screenshots/*",
+    "captures/*",
+    "ui-captures/*",
+    "recordings/*",
+    "playwright-report/*",
+    "test-results/*",
     "*.xcuserstate",
     "*.xcscmblueprint",
     "*.xcodeproj/xcuserdata/*",
@@ -289,6 +363,39 @@ def check_generated_artifact_tracking(files: list[str]) -> list[str]:
     return errors
 
 
+def _line_has_secret_placeholder(line: str) -> bool:
+    return any(marker in line for marker in SECRET_PLACEHOLDER_MARKERS)
+
+
+def scan_tracked_secrets(root: Path, files: list[str]) -> list[str]:
+    """Block committed API keys, bot tokens, private keys, and similar secrets."""
+    errors: list[str] = []
+    for rel in files:
+        if rel in SECRET_PATTERN_EXCEPTIONS:
+            continue
+        path = root / rel
+        if not path.is_file() or is_binary(path):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        for line_no, line in enumerate(text.splitlines(), 1):
+            if _line_has_secret_placeholder(line):
+                continue
+            for kind, pattern, label in SECRET_PATTERNS:
+                if pattern.search(line):
+                    errors.append(
+                        f"tracked secret pattern ({kind}): {rel}:{line_no} — {label}; "
+                        "use ${env:VAR} placeholders or move to .env"
+                    )
+                    break
+            else:
+                continue
+            break
+    return errors
+
+
 def check_git_internal_junk(root: Path) -> list[str]:
     git_dir = root / ".git"
     refs_dir = git_dir / "refs"
@@ -357,6 +464,7 @@ def main() -> int:
     errors.extend(scan_personal_paths(root, files))
     errors.extend(scan_bidi_controls(root, files))
     errors.extend(scan_mojibake(root, files))
+    errors.extend(scan_tracked_secrets(root, files))
     errors.extend(check_private_generated_tracking(files))
     errors.extend(check_generated_artifact_tracking(files))
     errors.extend(check_git_internal_junk(root))
