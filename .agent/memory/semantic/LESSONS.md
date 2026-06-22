@@ -91,6 +91,7 @@
 - Filesystem path is authoritative; pinned path beats compressed memory  <!-- status=accepted confidence=0.445 evidence=1 id=lesson_884b737ba7d1 -->
 - Skill absorption: hermes-harness should absorb hermes-agent and pt-orama-harness-integration; perpetua-hardware should absorb local-inference  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_cd13c287bd02 -->
 - Filesystem path is authoritative; pinned canonical path beats compressed recall  <!-- status=accepted confidence=0.495 evidence=1 id=lesson_110bcd19d96a -->
+- Canonical filesystem path must be treated as immutable source of truth across memory, writes, and recalls  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_ef98574d9256 -->
 
 ### 2026-04
 
