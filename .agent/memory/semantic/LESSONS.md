@@ -89,6 +89,8 @@
 - Use reanchor_scan / cherry for branch parity on rewritten main  <!-- status=accepted confidence=0.41 evidence=1 id=lesson_1a49775808a8 -->
 - Push rejected: recover by fresh-from-main branch plus cherry-pick, never merge  <!-- status=accepted confidence=0.49 evidence=1 id=lesson_859e6589c55f -->
 - Filesystem path is authoritative; pinned path beats compressed memory  <!-- status=accepted confidence=0.445 evidence=1 id=lesson_884b737ba7d1 -->
+- Skill absorption: hermes-harness should absorb hermes-agent and pt-orama-harness-integration; perpetua-hardware should absorb local-inference  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_cd13c287bd02 -->
+- Filesystem path is authoritative; pinned canonical path beats compressed recall  <!-- status=accepted confidence=0.495 evidence=1 id=lesson_110bcd19d96a -->
 
 ### 2026-04
 
