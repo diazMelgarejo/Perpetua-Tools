@@ -14,32 +14,32 @@
     "skill"
   ],
   "evidence_ids": [
-    "2026-06-22T20:44:30.297545"
+    "2026-06-22T20:58:32.196021"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
-  "staged_at": "2026-06-22T20:44:30.297545",
+  "staged_at": "2026-06-22T20:58:32.196021",
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-22T20:44:30.297545",
+      "ts": "2026-06-22T20:58:32.196021",
       "action": "staged",
       "reviewer": "learn"
     },
     {
-      "ts": "2026-06-22T12:44:30.369281+00:00",
+      "ts": "2026-06-22T12:58:32.259975+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
       "notes": "manual via learn.py at 2026-06-22T20:44:30.298628",
       "provisional": false,
       "evidence_snapshot": [
-        "2026-06-22T20:44:30.297545"
+        "2026-06-22T20:58:32.196021"
       ],
-      "lessons_sha": "f17839524bb4"
+      "lessons_sha": "6f47b4065003"
     }
   ],
   "rejection_count": 0,
-  "accepted_at": "2026-06-22T12:44:30.369281+00:00",
+  "accepted_at": "2026-06-22T12:58:32.259975+00:00",
   "reviewer": "learn.py",
   "rationale": "manual via learn.py at 2026-06-22T20:44:30.298628"
 }
