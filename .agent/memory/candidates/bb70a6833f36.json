@@ -1,0 +1,34 @@
+{
+  "id": "bb70a6833f36",
+  "key": "pattern_perpetua-hardware_hermes-harness_orama-system_bb70a6",
+  "name": "pattern_perpetua-hardware_hermes-harness_orama-system_bb70a6",
+  "claim": "FAILURE in skill-absorption-map: hermes-harness should absorb hermes-agent and pt-orama-harness-integration; perpetua-hardware should absorb local-inference",
+  "conditions": [
+    "absorption",
+    "enriched",
+    "hermes",
+    "hermes-harness",
+    "identified",
+    "orama-system",
+    "perpetua-hardware",
+    "saved",
+    "skill",
+    "targets"
+  ],
+  "evidence_ids": [
+    "2026-06-22T20:44:30.220619",
+    "2026-06-22T20:58:32.119023"
+  ],
+  "cluster_size": 2,
+  "canonical_salience": 11.2,
+  "staged_at": "2026-06-22T12:58:32.342470+00:00",
+  "status": "staged",
+  "decisions": [
+    {
+      "ts": "2026-06-22T12:58:32.342470+00:00",
+      "action": "staged",
+      "reviewer": "auto_dream"
+    }
+  ],
+  "rejection_count": 0
+}
