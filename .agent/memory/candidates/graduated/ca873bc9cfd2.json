@@ -1,0 +1,45 @@
+{
+  "id": "ca873bc9cfd2",
+  "key": "manual_ca873b",
+  "name": "manual_ca873b",
+  "claim": "When merging branches that both append to .agent memory (lessons.jsonl, episodic/AGENT_LEARNINGS.jsonl), resolve conflicts by UNION \u2014 keep both sides, dedup by lesson 'id' (jsonl) or by line (episodic) \u2014 then RE-RENDER LESSONS.md from lessons.jsonl via render_lessons.py (never hand-merge the rendered file, AGENTS.md Rule 5). Sanitize any leaked /Users/<name>/ paths to <user> placeholders first, or pre-commit repo_hygiene (LINT-006) blocks the merge commit. Use a throwaway git worktree to resolve without disturbing main's working tree.",
+  "conditions": [
+    ".agent",
+    "conflict",
+    "lessons.jsonl",
+    "lint-006",
+    "merge",
+    "render",
+    "union",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-06-22T16:30:00.957706"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T16:30:00.957706",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T16:30:00.957706",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T16:30:01.040280",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-06-22: merged origin/main into feat/perpetua-submodule-upgrade for PR #123; 3 .agent files conflicted (both sides appended lessons); union+re-render gave 61 lessons/32 episodic; commit was blocked by /Users/lab and /Users/user leaks in branch dream-cycle content until sanitized.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T16:30:00.957706"
+      ],
+      "lessons_sha": "cfa3e7db8cb5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T16:30:01.040275",
+  "reviewer": "learn.py",
+  "rationale": "2026-06-22: merged origin/main into feat/perpetua-submodule-upgrade for PR #123; 3 .agent files conflicted (both sides appended lessons); union+re-render gave 61 lessons/32 episodic; commit was blocked by /Users/lab and /Users/user leaks in branch dream-cycle content until sanitized."
+}
