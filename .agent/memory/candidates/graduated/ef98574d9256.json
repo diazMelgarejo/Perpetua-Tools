@@ -1,0 +1,48 @@
+{
+  "id": "ef98574d9256",
+  "key": "manual_ef9857",
+  "name": "manual_ef9857",
+  "claim": "Canonical filesystem path must be treated as immutable source of truth across memory, writes, and recalls",
+  "conditions": [
+    "across",
+    "canonical",
+    "filesystem",
+    "immutable",
+    "memory",
+    "path",
+    "recalls",
+    "source",
+    "treated",
+    "truth",
+    "writes"
+  ],
+  "evidence_ids": [
+    "2026-06-22T20:52:01.580233"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T20:52:01.580233",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T20:52:01.580233",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T12:52:01.707121+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Twelve path-correction failures prove this rule must be hard-coded in Hermes local memory",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T20:52:01.580233"
+      ],
+      "lessons_sha": "6f47b4065003"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T12:52:01.707121+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Twelve path-correction failures prove this rule must be hard-coded in Hermes local memory"
+}
