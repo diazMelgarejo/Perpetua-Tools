@@ -8,10 +8,13 @@ msg_file="${1:?commit message file required}"
 
 # Explicit allowlist entries (case-insensitive — stored lowercase, matched after tolower).
 # Add any personal/org domain here that is NOT covered by WELL_KNOWN_COAUTHOR_DOMAIN_SUFFIXES.
+# All Anthropic model variants (Claude Sonnet, Opus 4.8, Haiku, etc.) are explicitly authorized
+# via noreply@anthropic.com — never ban by model tier.
 ALLOWED_EXACT_COAUTHOR_EMAILS=(
   cursoragent@cursor.com
   lawrence@bettermind.ph
   lawrence@cyre.me
+  noreply@anthropic.com
 )
 
 # Only these @gmail.com / @googlemail.com addresses may appear in Co-authored-by.
