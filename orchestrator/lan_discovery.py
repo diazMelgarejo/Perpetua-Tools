@@ -384,20 +384,11 @@ def _sync_win_endpoint_env(url: str) -> None:
     hostport = url[len("http://"):] if url.startswith("http://") else url
     ip = hostport.split(":", 1)[0]
     host_only = f"http://{ip}"
-    # GPU_BOX is the autoresearch SSH target (user@host) for the same physical Win
-    # RTX3080 box that serves the coder model — NOT an inference endpoint. Preserve
-    # the existing ssh user, update only the host IP so it tracks the live box without
-    # breaking ssh. (2026-06-12: a prior sync wrongly set it to ip:port, which made
-    # `ssh ip:1234` fail with "cannot resolve hostname".)
-    prev_gpu = os.environ.get("GPU_BOX", "")
-    gpu_user = prev_gpu.split("@", 1)[0] if "@" in prev_gpu and prev_gpu.split("@", 1)[0] else "WINUSER"
     holders = {
         "LM_STUDIO_WIN_ENDPOINTS": url,        # plural, host:port (detect_active_tilting_ip)
         "LM_STUDIO_WIN_ENDPOINT": host_only,   # singular host-only (config/models.yml ${...})
         "WIN_OLLAMA_ENDPOINT": host_only,      # same host; ollama port added by consumer
         "WIN_IP": ip,                          # bare ip (alphaclaw_manager default)
-        "GPU_BOX": f"{gpu_user}@{ip}",         # SSH target (user@host) — autoresearch GPU runner
-        "DELL_ENDPOINT": f"{ip}:11434",        # Ollama inference on the same box
     }
     for k, v in holders.items():
         os.environ[k] = v

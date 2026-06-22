@@ -156,19 +156,19 @@ def test_hardware_policy_filter_is_case_insensitive():
 
 
 def test_pick_mac_manager_checks_preferred_affinity(monkeypatch):
-    import perpetua_tools.agent_launcher as agent_launcher
+    import agent_launcher
 
     def _fake_check(model_id, platform):
         if model_id == "win-only":
             raise HardwareAffinityError("NEVER_MAC")
 
-    monkeypatch.setattr("perpetua_tools.agent_launcher.check_affinity", _fake_check)
+    monkeypatch.setattr("agent_launcher.check_affinity", _fake_check)
 
     assert agent_launcher._pick_mac_manager(["win-only", "mac-ok"], "win-only") == "mac-ok"
 
 
 def test_mac_ollama_required_models_fail_closed(monkeypatch):
-    import perpetua_tools.agent_launcher as agent_launcher
+    import agent_launcher
 
     monkeypatch.setattr(agent_launcher, "RUNNING_ON_MAC", True)
     monkeypatch.setattr(
@@ -185,7 +185,7 @@ def test_mac_ollama_required_models_fail_closed(monkeypatch):
 
 
 def test_mac_ollama_required_models_skip_on_windows_host(monkeypatch):
-    import perpetua_tools.agent_launcher as agent_launcher
+    import agent_launcher
 
     monkeypatch.setattr(agent_launcher, "RUNNING_ON_MAC", False)
 
@@ -193,7 +193,7 @@ def test_mac_ollama_required_models_skip_on_windows_host(monkeypatch):
 
 
 def test_windows_host_keeps_local_windows_backend(monkeypatch):
-    import perpetua_tools.agent_launcher as agent_launcher
+    import agent_launcher
 
     monkeypatch.setattr(agent_launcher, "RUNNING_ON_WINDOWS", True)
     local_ips = frozenset({"localhost", "127.0.0.1"})
@@ -203,7 +203,7 @@ def test_windows_host_keeps_local_windows_backend(monkeypatch):
         mac_lms_ok=False,
         win_ok=False,
         lms_ok=True,
-        local_models={"win-lmstudio": [QWEN_PRIORITY_MODEL]},
+        local_models={"win-lmstudio": ["Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2"]},
         mac_lms_is_local=False,
         local_ips=local_ips,
     )

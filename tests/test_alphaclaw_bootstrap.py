@@ -4,7 +4,7 @@ import asyncio
 import builtins
 from pathlib import Path
 
-import perpetua_tools.alphaclaw_bootstrap as alphaclaw_bootstrap
+import alphaclaw_bootstrap
 
 
 def test_start_openclaw_gateway_closes_log_handle_when_popen_fails(tmp_path, monkeypatch):

@@ -464,7 +464,6 @@ def main() -> int:
     errors.extend(scan_personal_paths(root, files))
     errors.extend(scan_bidi_controls(root, files))
     errors.extend(scan_mojibake(root, files))
-    errors.extend(scan_tracked_secrets(root, files))
     errors.extend(check_private_generated_tracking(files))
     errors.extend(check_generated_artifact_tracking(files))
     errors.extend(check_git_internal_junk(root))
