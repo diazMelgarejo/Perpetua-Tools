@@ -15,7 +15,7 @@ Last dream: never -> updated now
 * Phase 4+: 14 themes from shell-hygiene rename, reanchor\_scan, sync\_version, git-hygiene wiki, session-checklist, windows-dev, check\_identity, expunge, reanchor-after-rewrite, windows bootstrap, repo\_hygiene tail → graduated
 * Total: 55 lessons graduated (0 staged, 0 rejected)
 * Latest episode: Phase 4+ blast complete, pain=3, importance=9
-* Seed file: %USERPROFILE%\\Downloads\\SKILLS.md\\ultrathink\\Cross-Repo-Memory-Seed.md (local-only)
+* Seed file: Cross-Repo-Memory-Seed.md (local-only, path not tracked)
 
 ## Status
 
