@@ -1,0 +1,68 @@
+{
+  "id": "10116c8a2fd5",
+  "key": "manual_10116c",
+  "name": "manual_10116c",
+  "claim": "Mask vs Fix principle: mask makes symptom disappear without removing root condition; fix removes condition so it cannot recur. Acceptable masks: time-boxed workaround for confirmed upstream bug. Unacceptable: resource leaks, concurrency bugs, security behavior. PR #69 singleFork was a mask \u2014 rejected upstream, removed in Vitest 4.",
+  "conditions": [
+    "acceptable",
+    "behavior",
+    "bug",
+    "bugs",
+    "cannot",
+    "concurrency",
+    "condition",
+    "confirmed",
+    "disappear",
+    "fix",
+    "leaks",
+    "makes",
+    "mask",
+    "masks",
+    "principle",
+    "recur",
+    "rejected",
+    "removed",
+    "removes",
+    "removing",
+    "resource",
+    "root",
+    "security",
+    "singlefork",
+    "symptom",
+    "time-boxed",
+    "unacceptable",
+    "upstream",
+    "vitest",
+    "without",
+    "workaround"
+  ],
+  "evidence_ids": [
+    "2026-06-22T12:24:41.639952"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T12:24:41.639952",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T12:24:41.639952",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T12:24:41.737105",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Mined from AlphaClaw/docs/wiki/10-root-cause-debugging.md Section 1. Concrete example: singleFork vs DatabaseSync.close() in afterEach.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T12:24:41.639952"
+      ],
+      "lessons_sha": "744c2619bcb7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T12:24:41.737105",
+  "reviewer": "learn.py",
+  "rationale": "Mined from AlphaClaw/docs/wiki/10-root-cause-debugging.md Section 1. Concrete example: singleFork vs DatabaseSync.close() in afterEach."
+}

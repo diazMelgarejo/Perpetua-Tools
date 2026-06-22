@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""
+r"""
 check_env_assignment.py
 
 Pre-commit hook: reject whitespace-POST-fixed env assignments in all text files.

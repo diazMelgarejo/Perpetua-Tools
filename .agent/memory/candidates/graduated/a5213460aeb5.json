@@ -1,0 +1,70 @@
+{
+  "id": "a5213460aeb5",
+  "key": "manual_a52134",
+  "name": "manual_a52134",
+  "claim": "AFRP Intent-Verification anti-handwaving: never assert 'done/fine/nothing needed' from a narrow proxy. If a proxy disagrees with user insistence, run the real method exhaustively. Three STOP-and-clarify triggers: (1) interpretation risk, (2) about to conclude nothing-to-do, (3) explicit instruction vs my guess (catastrophic assumption). ASK first.",
+  "conditions": [
+    "about",
+    "afrp",
+    "anti-handwaving",
+    "ask",
+    "assert",
+    "assumption",
+    "catastrophic",
+    "conclude",
+    "disagrees",
+    "done",
+    "exhaustively",
+    "explicit",
+    "fine",
+    "first",
+    "guess",
+    "insistence",
+    "instruction",
+    "intent-verification",
+    "interpretation",
+    "method",
+    "narrow",
+    "needed",
+    "never",
+    "nothing",
+    "nothing-to-do",
+    "proxy",
+    "real",
+    "risk",
+    "run",
+    "stop-and-clarify",
+    "three",
+    "triggers",
+    "user"
+  ],
+  "evidence_ids": [
+    "2026-06-22T12:16:25.150970"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T12:16:25.150970",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T12:16:25.150970",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T12:16:25.241495",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Mined from orama-system/bin/orama-system/afrp/SKILL.md \u00a7Intent-Verification Gate and LESSONS.md 2026-06-22. Three successive handwaved conclusions corrected by user. Trigger 3 earned on 2026-06-22.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T12:16:25.150970"
+      ],
+      "lessons_sha": "f8f56156eb9e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T12:16:25.241495",
+  "reviewer": "learn.py",
+  "rationale": "Mined from orama-system/bin/orama-system/afrp/SKILL.md \u00a7Intent-Verification Gate and LESSONS.md 2026-06-22. Three successive handwaved conclusions corrected by user. Trigger 3 earned on 2026-06-22."
+}

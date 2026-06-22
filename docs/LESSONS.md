@@ -6,6 +6,73 @@
 
 ---
 
+## 2026-06-22 — Full session: assumption failure, oramasys v2 src-layout, gbrain durability
+
+> **For manual merge with the `.agent/` memory system.** This is the human-readable
+> consolidation; the canonical machine records are PT `.agent/memory/semantic/LESSONS.md`
+> (lessons `2e154f1b55ab`, `d892d844cf60`, `0afc8c5f2778`, `a7374ba4b00d`, `36f924c161e1`,
+> `d0d49b68ab24`) and orama-system [`docs/LESSONS.md` §2026-06-22 (×2)](../../orama-system/docs/LESSONS.md).
+
+### 1. DO-NOT — catastrophic assumption (`.agents` vs explicit `.agent`)
+
+Told to write memory to `.agent/memory`, the AI silently "corrected" it to `.agents/memory`
+and committed there, on a **stale branch**, never reading `.agent/AGENTS.md` — which defined
+`.agent/` as the canonical structured brain (rendered `LESSONS.md` via `learn.py`, never
+hand-edited). Wrong commit erased by re-anchoring to `origin/main`. Compounding failures:
+overrode an explicit instruction with a guess; judged branch freshness by ahead/behind instead
+of comparing the HEAD **tree** to origin; let an iCloud-move tangent replace the stated #1 task.
+
+- **Enshrined as standards** (orama, ours): AFRP Intent-Verification **trigger 3** in
+  [`bin/orama-system/afrp/SKILL.md`](../../orama-system/bin/orama-system/afrp/SKILL.md);
+  **Target Verification (pre-insert)** in [`bin/orama-system/cidf/SKILL.md`](../../orama-system/bin/orama-system/cidf/SKILL.md).
+- **Rule:** take explicit names verbatim; read the area's `AGENTS.md`/`_index` first; verify you
+  are current (tree, not ahead/behind); ASK if it still seems wrong; keep the #1 task primary.
+
+### 2. oramasys v2 — clean src-layout adopted (the original #1 task)
+
+`perpetua-core` and `oramasys` moved to PyPA src-layout: `src/<pkg>/`, tests **inside**
+`src/tests/`, thin `/bin` (perpetua-core `bin/test`; oramasys `bin/serve`), `README`, minimal
+root. Verified **62 / 5** tests, merged + pushed (`perpetua-core 8c063f4`, `oramasys 0f5ba2b`).
+`agate` left as-is (spec repo). Why v2 now: v1 tangled concerns + clutter; v2 = clean-slate
+microkernel split (perpetua-core kernel ← oramasys graph/API, one-way boundary), locked clean
+while small. Full account: [`docs/2026-06-22-oramasys-v2-intent-and-interpretation-gap.md`](2026-06-22-oramasys-v2-intent-and-interpretation-gap.md)
+· decision: `.agent/memory/semantic/DECISIONS.md` §2026-06-22.
+
+### 3. gbrain sync durability — stop re-fixing it
+
+Two **recurring** root causes (don't re-diagnose): (a) `gbrain autopilot --repo .` is a launchd
+agent (`com.gbrain.autopilot`, `KeepAlive=true` — kill won't stop it, only `launchctl unload -w`)
+that jams on unacked parse failures and silently stales sources; (b) every repo move spawns a new
+per-path source and orphans the old one — left "pending removal" they resurface as
+`sync_freshness`/`multi_source_drift` every session. Durable fix:
+[`orama-system/scripts/gbrain/gbrain-selfheal.sh`](../../orama-system/scripts/gbrain/gbrain-selfheal.sh)
+(idempotent; wired into `start.sh` backgrounded; doctor 50→95). Archived 4 orphan sources
+(reversible; defs in `~/repo-backups/gbrain-stale-quarantine-20260622/`). Canonical procedure:
+[`gstack/SKILL.md` §GBrain Ops §2/§5/§6/§7](../../orama-system/bin/orama-system/gstack/SKILL.md).
+Gotcha: bare `gbrain sync` from a non-git cwd only acks failures then refuses — per-source sync
+must `cd` into the repo (or `--repo`) + `--source`.
+
+### 4. Cross-harness memory
+
+This session's knowledge was stored for retrieval everywhere: Claude Code file memory, a gbrain
+page (`lessons/gbrain-sync-durability`, retrievable from Claude Desktop which has the gbrain MCP),
+and a claude.ai Mem note. Pattern: gbrain is the shared cross-harness brain; the git-tracked
+orama skills + LESSONS travel with the repos.
+
+---
+
+## 2026-06-22 — Merged stray root `LESSONS.md` into the canonical `docs/LESSONS.md`
+
+**Housekeeping:** a stray `LESSONS.md` at the repo root (tracked, 16 lines, dated 2026-04-21/22)
+duplicated the lessons-log purpose. Its three entries were moved into this file **in date order**
+(placed below with the other April entries, after the 2026-04-20 entry), one example path de-doxed
+to a placeholder per LINT-006; the stray root file was then removed so `docs/LESSONS.md` is the
+single canonical human log. (Other `LESSONS.md` paths are intentional and distinct:
+`.agent/memory/semantic/LESSONS.md` = rendered `.agent` brain; `.claude/lessons/LESSONS.md` =
+ECC redirect.)
+
+---
+
 ## 2026-05-22 — RAG Memory Pipeline v1 Backport
 
 **Context:**
@@ -188,6 +255,26 @@ Import command: `/instinct-import .claude/homunculus/instincts/inherited/Perpetu
 → [docs/MIGRATION.md §Gate 1](MIGRATION.md)
 → [docs/adapter-interface-contract.md](adapter-interface-contract.md)
 → [docs/adr/ADR-001-three-repo-adapter-architecture.md](adr/ADR-001-three-repo-adapter-architecture.md)
+
+---
+
+> **🔖 Salvaged from the removed stray root `LESSONS.md` (merged 2026-06-22, kept in date order; originally synced from [AlphaClaw `feature/MacOS-post-install` → `7-Lessons.md`](https://github.com/diazMelgarejo/AlphaClaw/blob/feature/MacOS-post-install/7-Lessons.md)):**
+>
+> #### [2026-04-21] Configuration Portability: OS-Agnostic Paths
+> - **Problem**: Absolute paths (e.g., `/Users/<user>/…`) in `openclaw.json` break cross-platform deployments (Linux/Windows/macOS).
+> - **Solution**: Always use `${HOME}` variables in configuration templates. The AlphaClaw gateway and onboarding runtime MUST resolve these variables relative to the OS-specific home directory.
+> - **Action**: Enforce `${HOME}` in all `openclaw.json.template` and active configuration files. Avoid hardcoding usernames or absolute paths.
+>
+> #### [2026-04-21] Core Policy: Additive Ghost Orchestration
+> - **Additive Configuration**: Never overwrite `openclaw.json`. Always read, deep-merge (via spread), and write back.
+> - **Upstream Autonomy**: PT and Orama act as ghost orchestrators. They absorb and extend OpenClaw/AlphaClaw features without becoming structural dependencies.
+> - **Non-Destructive Injection**: Use native onboarding hooks (like `writeManagedImportOpenclawConfig`) to inject PT/Orama configs.
+> - **Portability**: Always use `${HOME}` variables for pathing to keep configurations OS-agnostic across Mac/Win/Linux.
+>
+> #### [2026-04-22] Symlink Portability & Validation
+> - **Requirement**: Git must track symlinks as Mode 120000. Use `git ls-files -s` to verify.
+> - **Automation**: Startup scripts (`start.sh`) MUST validate symlinks. If a link is missing or broken, the script should attempt to recreate it or provide clear instructions on where the missing sibling dependency should live.
+> - **Agnostic Pathing**: Always use relative paths in symlinks (e.g., `../sibling`) rather than absolute paths to ensure portability across different clones.
 
 ---
 
@@ -392,37 +479,6 @@ All lessons above are expanded with root causes, exact fixes, and verification c
 | 06 | [Startup IP Detection](wiki/06-startup-ip-detection.md) | stdin deadlock, load_dotenv, asyncio probing |
 | 07 | [Multi-Agent Collab](wiki/07-multi-agent-collab.md) | version registry, scope claims, orphan branches |
 | 08 | [macOS alphaclaw Compat](wiki/08-macos-alphaclaw-compat.md) | EACCES fixes, ~/.local/bin, setup_macos.py |
-
-## [2026-04-21] Configuration Portability: OS-Agnostic Paths
-
-*(synced from [AlphaClaw `feature/MacOS-post-install` → `7-Lessons.md`](https://github.com/diazMelgarejo/AlphaClaw/blob/feature/MacOS-post-install/7-Lessons.md))*
-
-- **Problem**: Absolute paths (e.g. `/Users/user/...`) in `openclaw.json` break cross-platform deployments.
-- **Solution**: Always use `${HOME}` variables in configuration templates. AlphaClaw gateway and onboarding runtime MUST resolve these relative to the OS-specific home directory.
-- **Rule**: Enforce `${HOME}` in all `openclaw.json.template` and active config files. No hardcoded usernames or absolute paths.
-
----
-
-## [2026-04-21] Core Policy: Additive Ghost Orchestration
-
-*(synced from [AlphaClaw `feature/MacOS-post-install` → `7-Lessons.md`](https://github.com/diazMelgarejo/AlphaClaw/blob/feature/MacOS-post-install/7-Lessons.md))*
-
-- **Additive Configuration**: Never overwrite `openclaw.json`. Always read → deep-merge (spread) → write back.
-- **Upstream Autonomy**: PT and orama act as ghost orchestrators — absorb and extend OpenClaw/AlphaClaw features without becoming structural dependencies.
-- **Non-Destructive Injection**: Use native onboarding hooks (e.g. `writeManagedImportOpenclawConfig`) to inject PT/orama configs.
-- **Portability**: Always use `${HOME}` for all path construction — OS-agnostic across Mac/Win/Linux.
-
----
-
-## [2026-04-22] Symlink Portability & Validation
-
-*(synced from [AlphaClaw `feature/MacOS-post-install` → `7-Lessons.md`](https://github.com/diazMelgarejo/AlphaClaw/blob/feature/MacOS-post-install/7-Lessons.md))*
-
-- **Requirement**: Git must track symlinks as Mode 120000. Use `git ls-files -s` to verify.
-- **Automation**: Startup scripts (`start.sh`) MUST validate symlinks. If a link is missing or broken, the script should attempt to recreate it or provide clear instructions on where the missing sibling dependency should live.
-- **Agnostic Pathing**: Always use relative paths in symlinks (e.g., `../sibling`) rather than absolute paths to ensure portability across different clones.
-
----
 
 ## 2026-04-26 — Claude — Cross-repo import pattern for hardware_policy
 

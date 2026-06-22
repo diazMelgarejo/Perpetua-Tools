@@ -139,6 +139,7 @@ def write_candidates(patterns, candidates_dir):
                 continue
 
         now = datetime.datetime.now().isoformat()
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
         decisions = prev.get("decisions", [])
         decisions.append({"ts": now, "action": "staged", "reviewer": "auto_dream"})
 

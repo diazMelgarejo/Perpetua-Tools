@@ -1,0 +1,46 @@
+{
+  "id": "859e6589c55f",
+  "key": "manual_859e65",
+  "name": "manual_859e65",
+  "claim": "Push rejected: recover by fresh-from-main branch plus cherry-pick, never merge",
+  "conditions": [
+    "branch",
+    "cherry-pick",
+    "fresh-from-main",
+    "merge",
+    "never",
+    "plus",
+    "push",
+    "recover",
+    "rejected"
+  ],
+  "evidence_ids": [
+    "2026-06-22T20:35:50.271774"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T20:35:50.271774",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T20:35:50.271774",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T12:35:50.363503+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Merging rewritten branches reintroduces same conflicts; fresh-from-main preserves clean graph",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T20:35:50.271774"
+      ],
+      "lessons_sha": "dac59e00a1f9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T12:35:50.363503+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Merging rewritten branches reintroduces same conflicts; fresh-from-main preserves clean graph"
+}

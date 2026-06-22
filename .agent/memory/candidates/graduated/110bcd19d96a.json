@@ -1,0 +1,45 @@
+{
+  "id": "110bcd19d96a",
+  "key": "manual_110bcd",
+  "name": "manual_110bcd",
+  "claim": "Filesystem path is authoritative; pinned canonical path beats compressed recall",
+  "conditions": [
+    "authoritative",
+    "beats",
+    "canonical",
+    "compressed",
+    "filesystem",
+    "path",
+    "pinned",
+    "recall"
+  ],
+  "evidence_ids": [
+    "2026-06-22T20:49:38.062952"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T20:49:38.062952",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T20:49:38.062952",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T12:49:38.134510+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Repeated wrong-path failures consumed time and risked mis-synced remote branches",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T20:49:38.062952"
+      ],
+      "lessons_sha": "c57284cbcebd"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T12:49:38.134510+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Repeated wrong-path failures consumed time and risked mis-synced remote branches"
+}

@@ -1,0 +1,55 @@
+{
+  "id": "f3f27933edc4",
+  "key": "manual_f3f279",
+  "name": "manual_f3f279",
+  "claim": "gbrain per-source sync must run from INSIDE that source's own git repo (its local_path). Use 'gbrain sync --repo <path> --source <id>' from a non-git cwd or neutral directory. A bare 'gbrain sync' from non-git cwd fails.",
+  "conditions": [
+    "bare",
+    "cwd",
+    "directory",
+    "fails",
+    "gbrain",
+    "git",
+    "inside",
+    "local_path",
+    "neutral",
+    "non-git",
+    "own",
+    "path",
+    "per-source",
+    "repo",
+    "run",
+    "source",
+    "sync",
+    "use"
+  ],
+  "evidence_ids": [
+    "2026-06-22T12:08:32.888978"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T12:08:32.888978",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T12:08:32.888978",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T12:08:32.979277",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Mined from PT docs/LESSONS.md 2026-05-27 and orama 2026-06-22: bare sync from non-git cwd triggers 'Not a git repository'. Autopilot launchd KeepAlive=true needs 'launchctl unload -w' \u2014 kill won't stick.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T12:08:32.888978"
+      ],
+      "lessons_sha": "a0e971a84f86"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T12:08:32.979277",
+  "reviewer": "learn.py",
+  "rationale": "Mined from PT docs/LESSONS.md 2026-05-27 and orama 2026-06-22: bare sync from non-git cwd triggers 'Not a git repository'. Autopilot launchd KeepAlive=true needs 'launchctl unload -w' \u2014 kill won't stick."
+}
