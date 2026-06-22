@@ -85,6 +85,13 @@
 - datetime.fromtimestamp() returns naive local time — always pass tz=datetime.timezone.utc for UTC-aware output. Subtracting a naive datetime from an aware one raises TypeError. Also: datetime.now() without tz= is naive; use datetime.now(datetime.timezone.utc) everywhere timestamps are compared or stored.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_3dc9dd3b6986 -->
 - When updating lesson claims in lessons.jsonl, also update the matching sentinel-below bullet in LESSONS.md. Otherwise migrate_legacy_bullets re-reads the old bullet text, finds it absent from existing_claims (since we changed the claim), and re-appends it with the same hash-based ID. _dedupe_by_id keeps the LAST entry per ID, so the re-migrated OLD text wins. Fix: (1) update sentinel bullets to match new claim text, (2) dedup lessons.jsonl keeping FIRST occurrence.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7a9bd3982e6f -->
 - CodeRabbit reviews every new push to a PR, creating new unresolved threads even after all previous ones were resolved. Always check review thread state after each push, not just once at the start. Merge is only safe when BOTH conditions are true: (a) mergeStateStatus is CLEAN or MERGEABLE, and (b) all review threads are resolved.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_c057cdc0f899 -->
+- Filesystem paths from compressed memory are not authoritative  <!-- status=accepted confidence=0.405 evidence=1 id=lesson_7b4fcefd8537 -->
+- Use reanchor_scan / cherry for branch parity on rewritten main  <!-- status=accepted confidence=0.41 evidence=1 id=lesson_1a49775808a8 -->
+- Push rejected: recover by fresh-from-main branch plus cherry-pick, never merge  <!-- status=accepted confidence=0.49 evidence=1 id=lesson_859e6589c55f -->
+- Filesystem path is authoritative; pinned path beats compressed memory  <!-- status=accepted confidence=0.445 evidence=1 id=lesson_884b737ba7d1 -->
+- Skill absorption: hermes-harness should absorb hermes-agent and pt-orama-harness-integration; perpetua-hardware should absorb local-inference  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_cd13c287bd02 -->
+- Filesystem path is authoritative; pinned canonical path beats compressed recall  <!-- status=accepted confidence=0.495 evidence=1 id=lesson_110bcd19d96a -->
+- Canonical filesystem path must be treated as immutable source of truth across memory, writes, and recalls  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_ef98574d9256 -->
 
 ### 2026-04
 
