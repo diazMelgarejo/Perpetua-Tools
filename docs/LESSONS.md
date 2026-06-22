@@ -6,6 +6,61 @@
 
 ---
 
+## 2026-06-22 — Full session: assumption failure, oramasys v2 src-layout, gbrain durability
+
+> **For manual merge with the `.agent/` memory system.** This is the human-readable
+> consolidation; the canonical machine records are PT `.agent/memory/semantic/LESSONS.md`
+> (lessons `2e154f1b55ab`, `d892d844cf60`, `0afc8c5f2778`, `a7374ba4b00d`, `36f924c161e1`,
+> `d0d49b68ab24`) and orama-system [`docs/LESSONS.md` §2026-06-22 (×2)](../../orama-system/docs/LESSONS.md).
+
+### 1. DO-NOT — catastrophic assumption (`.agents` vs explicit `.agent`)
+
+Told to write memory to `.agent/memory`, the AI silently "corrected" it to `.agents/memory`
+and committed there, on a **stale branch**, never reading `.agent/AGENTS.md` — which defined
+`.agent/` as the canonical structured brain (rendered `LESSONS.md` via `learn.py`, never
+hand-edited). Wrong commit erased by re-anchoring to `origin/main`. Compounding failures:
+overrode an explicit instruction with a guess; judged branch freshness by ahead/behind instead
+of comparing the HEAD **tree** to origin; let an iCloud-move tangent replace the stated #1 task.
+
+- **Enshrined as standards** (orama, ours): AFRP Intent-Verification **trigger 3** in
+  [`bin/orama-system/afrp/SKILL.md`](../../orama-system/bin/orama-system/afrp/SKILL.md);
+  **Target Verification (pre-insert)** in [`bin/orama-system/cidf/SKILL.md`](../../orama-system/bin/orama-system/cidf/SKILL.md).
+- **Rule:** take explicit names verbatim; read the area's `AGENTS.md`/`_index` first; verify you
+  are current (tree, not ahead/behind); ASK if it still seems wrong; keep the #1 task primary.
+
+### 2. oramasys v2 — clean src-layout adopted (the original #1 task)
+
+`perpetua-core` and `oramasys` moved to PyPA src-layout: `src/<pkg>/`, tests **inside**
+`src/tests/`, thin `/bin` (perpetua-core `bin/test`; oramasys `bin/serve`), `README`, minimal
+root. Verified **62 / 5** tests, merged + pushed (`perpetua-core 8c063f4`, `oramasys 0f5ba2b`).
+`agate` left as-is (spec repo). Why v2 now: v1 tangled concerns + clutter; v2 = clean-slate
+microkernel split (perpetua-core kernel ← oramasys graph/API, one-way boundary), locked clean
+while small. Full account: [`docs/2026-06-22-oramasys-v2-intent-and-interpretation-gap.md`](2026-06-22-oramasys-v2-intent-and-interpretation-gap.md)
+· decision: `.agent/memory/semantic/DECISIONS.md` §2026-06-22.
+
+### 3. gbrain sync durability — stop re-fixing it
+
+Two **recurring** root causes (don't re-diagnose): (a) `gbrain autopilot --repo .` is a launchd
+agent (`com.gbrain.autopilot`, `KeepAlive=true` — kill won't stop it, only `launchctl unload -w`)
+that jams on unacked parse failures and silently stales sources; (b) every repo move spawns a new
+per-path source and orphans the old one — left "pending removal" they resurface as
+`sync_freshness`/`multi_source_drift` every session. Durable fix:
+[`orama-system/scripts/gbrain/gbrain-selfheal.sh`](../../orama-system/scripts/gbrain/gbrain-selfheal.sh)
+(idempotent; wired into `start.sh` backgrounded; doctor 50→95). Archived 4 orphan sources
+(reversible; defs in `~/repo-backups/gbrain-stale-quarantine-20260622/`). Canonical procedure:
+[`gstack/SKILL.md` §GBrain Ops §2/§5/§6/§7](../../orama-system/bin/orama-system/gstack/SKILL.md).
+Gotcha: bare `gbrain sync` from a non-git cwd only acks failures then refuses — per-source sync
+must `cd` into the repo (or `--repo`) + `--source`.
+
+### 4. Cross-harness memory
+
+This session's knowledge was stored for retrieval everywhere: Claude Code file memory, a gbrain
+page (`lessons/gbrain-sync-durability`, retrievable from Claude Desktop which has the gbrain MCP),
+and a claude.ai Mem note. Pattern: gbrain is the shared cross-harness brain; the git-tracked
+orama skills + LESSONS travel with the repos.
+
+---
+
 ## 2026-05-22 — RAG Memory Pipeline v1 Backport
 
 **Context:**
