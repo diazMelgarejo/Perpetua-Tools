@@ -2,7 +2,7 @@
   "id": "ca873bc9cfd2",
   "key": "manual_ca873b",
   "name": "manual_ca873b",
-  "claim": "When merging branches that both append to .agent memory (lessons.jsonl, episodic/AGENT_LEARNINGS.jsonl), resolve conflicts by UNION \u2014 keep both sides, dedup by lesson 'id' (jsonl) or by line (episodic) \u2014 then RE-RENDER LESSONS.md from lessons.jsonl via render_lessons.py (never hand-merge the rendered file, AGENTS.md Rule 5). Sanitize any leaked /Users/<name>/ paths to <user> placeholders first, or pre-commit repo_hygiene (LINT-006) blocks the merge commit. Use a throwaway git worktree to resolve without disturbing main's working tree.",
+  "claim": "When merging branches that both append to .agent memory (lessons.jsonl, episodic/AGENT_LEARNINGS.jsonl), resolve conflicts by UNION \u2014 keep both sides, dedup by lesson 'id' (jsonl) or by line (episodic) \u2014 then RE-RENDER LESSONS.md from lessons.jsonl via render_lessons.py (never hand-merge the rendered file, AGENTS.md Rule 5). Sanitize any leaked workstation paths first using relative paths or env vars (not <user> placeholders), or pre-commit repo_hygiene (LINT-006) blocks the merge commit. Use a throwaway git worktree to resolve without disturbing main's working tree.",
   "conditions": [
     ".agent",
     "conflict",
