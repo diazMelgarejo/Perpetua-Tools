@@ -1,0 +1,46 @@
+{
+  "id": "1bb7057c6ea8",
+  "key": "manual_1bb705",
+  "name": "manual_1bb705",
+  "claim": "When a git pre-push hook runs from a deleted or removed worktree directory (getcwd fails), the hook exits non-zero with 'banned or unapproved attribution in commits to push' \u2014 even when NO actual banned pattern exists. The banned_attribution_lib.sh cannot resolve the repo root or patterns file, so it fails closed. The error message is misleading: the real cause is a dead working directory, not a real attribution violation. Fix: never delete a worktree before the git push completes; if a push fails with this message after a worktree cleanup, re-push from a live worktree or the canonical repo directory.",
+  "conditions": [
+    "attribution",
+    "banned",
+    "deleted",
+    "getcwd",
+    "hook",
+    "misleading-error",
+    "pre-push",
+    "removed",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-06-22T22:11:11.020066"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T22:11:11.020066",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T22:11:11.020066",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T14:11:11.120879+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-06-22: PT #127 branch push blocked with 'banned or unapproved attribution' after the /tmp/rebase-pt127 worktree was removed (git worktree remove --force) before the push command finished. The commits had Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com> which is explicitly allowed (anthropic.com in WELL_KNOWN_COAUTHOR_DOMAIN_SUFFIXES). Confirmed: re-pushing from a fresh worktree with the same commits (after squash) succeeded immediately.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T22:11:11.020066"
+      ],
+      "lessons_sha": "b79bcbc64396"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T14:11:11.120866+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-06-22: PT #127 branch push blocked with 'banned or unapproved attribution' after the /tmp/rebase-pt127 worktree was removed (git worktree remove --force) before the push command finished. The commits had Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com> which is explicitly allowed (anthropic.com in WELL_KNOWN_COAUTHOR_DOMAIN_SUFFIXES). Confirmed: re-pushing from a fresh worktree with the same commits (after squash) succeeded immediately."
+}
