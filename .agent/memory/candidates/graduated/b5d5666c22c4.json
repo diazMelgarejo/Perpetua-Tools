@@ -11,32 +11,32 @@
     "provenance"
   ],
   "evidence_ids": [
-    "2026-06-22T17:36:01.802658"
+    "2026-06-22T19:36:26.087870"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
-  "staged_at": "2026-06-22T17:36:01.802658",
+  "staged_at": "2026-06-22T19:36:26.087870",
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-22T17:36:01.802658",
+      "ts": "2026-06-22T19:36:26.087870",
       "action": "staged",
       "reviewer": "learn"
     },
     {
-      "ts": "2026-06-22T17:36:01.872643",
+      "ts": "2026-06-22T19:36:26.128456",
       "action": "graduated",
       "reviewer": "learn.py",
       "notes": "2026-06-22 PR #123: docs/LESSONS.md had the 3 AlphaClaw lessons twice (main bookmarked vs branch synced); kept main's bookmark, grafted provenance, removed dup.",
       "provisional": false,
       "evidence_snapshot": [
-        "2026-06-22T17:36:01.802658"
+        "2026-06-22T19:36:26.087870"
       ],
-      "lessons_sha": "3b835d71f7e2"
+      "lessons_sha": "573651184b21"
     }
   ],
   "rejection_count": 0,
-  "accepted_at": "2026-06-22T17:36:01.872639",
+  "accepted_at": "2026-06-22T19:36:26.128452",
   "reviewer": "learn.py",
   "rationale": "2026-06-22 PR #123: docs/LESSONS.md had the 3 AlphaClaw lessons twice (main bookmarked vs branch synced); kept main's bookmark, grafted provenance, removed dup."
 }
