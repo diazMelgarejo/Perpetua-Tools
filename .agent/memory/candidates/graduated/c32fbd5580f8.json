@@ -2,7 +2,7 @@
   "id": "c32fbd5580f8",
   "key": "manual_c32fbd",
   "name": "manual_c32fbd",
-  "claim": "Windows dev environment (lab machine): Node/npm anchored to LM Studio bin (C:\\Users\\lab\\.lmstudio\\.internal\\utils\\node.exe, C:\\Users\\lab\\.lmstudio\\tools\\npm, shims in C:\\Users\\lab\\.lmstudio\\bin). git resolved dynamically from GitHub Desktop (do not hardcode versioned path). Never symlink dev tools into versioned app install folders on Windows. Verify: git --version; node --version; npm --version.",
+  "claim": "Windows dev environment (lab machine): Node/npm anchored to LM Studio bin (C:\\Users\\<user>\\.lmstudio\\.internal\\utils\\node.exe, C:\\Users\\<user>\\.lmstudio\\tools\\npm, shims in C:\\Users\\<user>\\.lmstudio\\bin). git resolved dynamically from GitHub Desktop (do not hardcode versioned path). Never symlink dev tools into versioned app install folders on Windows. Verify: git --version; node --version; npm --version.",
   "conditions": [
     "anchored",
     "app",

@@ -13,7 +13,7 @@ import os, json, datetime, hashlib
 
 
 def _now():
-    return datetime.datetime.now().isoformat()
+    return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
 def _touch(candidate, action, reviewer, notes="", **fields):

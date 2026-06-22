@@ -200,7 +200,7 @@ def migrate_legacy_bullets(semantic_dir):
         accepted_at = datetime.datetime.fromtimestamp(
             os.path.getmtime(md_path)).isoformat()
     except OSError:
-        accepted_at = datetime.datetime.now().isoformat()
+        accepted_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
     migrated = 0
     for claim in bullets:
