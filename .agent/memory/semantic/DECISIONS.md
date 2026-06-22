@@ -30,3 +30,31 @@
 - Spec: https://github.com/diazMelgarejo/orama-system/blob/main/docs/superpowers/specs/2026-05-17-salvage-translation-design.md
 - Plan: `orama-system/docs/superpowers/plans/2026-05-17-salvage-translation-v1-discovery.md`
 - PROGRESS.md: https://github.com/oramasys/perpetua-core/blob/feat/salvage-plugins-rc1/PROGRESS.md
+
+## 2026-06-22: v2 repos adopt PyPA src-layout; why oramasys v2 is necessary now
+
+**Decision:** Both v2 Python repos move to src-layout — `src/<package>/`, tests **inside**
+`src/tests/`, thin `/bin` executables, minimal root (`README`/`LICENSE`/`pyproject`/`.gitignore`).
+Merged to `main` and pushed: `perpetua-core 8c063f4` (62 tests), `oramasys 0f5ba2b` (5 tests).
+`agate` left as-is (spec repo, no Python source). This is the structural half of the v2 thesis,
+locked in now while the salvage RC-1 tree is small and green.
+
+**Rationale:** v1-legacy (`diazMelgarejo/*`) tangled orchestration/state/policy/runtime in one
+cluttered top-level. v2 is a clean-slate **microkernel split** — `perpetua-core` (kernel: state,
+LLM/hardware policy, graph engine) ← `oramasys` (graph DSL + FastAPI surface), strict one-way
+import boundary; PT stays L2 state authority, orama L3 stateless. Adopting clean structure "from
+day one" is exactly the user's stated intent and prevents v2 re-accreting v1's mess. "At this
+point" because RC-1 salvage is complete (73 tests across 3 generations); cheapest moment to lock
+structure before further growth.
+
+**Alternatives considered:** Flat package-at-root with tests at root (the prior state — rejected,
+it is the clutter path v1 took). `tests/` outside `src/` per strict PyPA (rejected — user
+explicitly specified tests inside `/src`). Defer restructure to post-merge (rejected — accretion
+makes it costlier and contradicts the "from the beginning" intent).
+
+**Status:** active
+
+**Links:**
+- Full narrative (intent, the AI interpretation gap, and how it was closed): [`docs/2026-06-22-oramasys-v2-intent-and-interpretation-gap.md`](../../../docs/2026-06-22-oramasys-v2-intent-and-interpretation-gap.md)
+- Lessons (rendered): `.agent/memory/semantic/LESSONS.md` ids `2e154f1b55ab`, `d892d844cf60`, `0afc8c5f2778`, `a7374ba4b00d`
+- Standards: orama `bin/orama-system/afrp/SKILL.md` (Intent-Verification trigger 3), `.../cidf/SKILL.md` (Target Verification), orama `docs/LESSONS.md` §2026-06-22
