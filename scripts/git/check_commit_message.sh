@@ -50,9 +50,12 @@ WELL_KNOWN_COAUTHOR_DOMAIN_SUFFIXES=(
 )
 
 # Match in Co-authored-by display name / address when domain alone is ambiguous.
+# "claude" covers all tiers: Claude Opus 4.8, Sonnet 4.6, Haiku 4.5, Fable 5, etc.
+# "opus" added as an explicit belt-and-suspenders entry for Claude Opus 4.8.
 WELL_KNOWN_COAUTHOR_NAME_MARKERS=(
   codex
   claude
+  opus
   anthropic
   cursor
   cursoragent
