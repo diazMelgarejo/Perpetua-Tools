@@ -1,0 +1,47 @@
+{
+  "id": "f55e96698a39",
+  "key": "manual_f55e96",
+  "name": "manual_f55e96",
+  "claim": "Canonical repo clones must not exist under duplicate paths like /c/c/Users/<user>/...",
+  "conditions": [
+    "canonical",
+    "clones",
+    "duplicate",
+    "exist",
+    "lab",
+    "like",
+    "paths",
+    "repo",
+    "under",
+    "users"
+  ],
+  "evidence_ids": [
+    "2026-06-22T14:05:37.860390"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T14:05:37.860390",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T14:05:37.860390",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T14:05:37.943399",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Duplicate clones cause confusion about which copy is canonical; cleanup once per environment after initial clone",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T14:05:37.860390"
+      ],
+      "lessons_sha": "b4f6b7b35300"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T14:05:37.943399",
+  "reviewer": "learn.py",
+  "rationale": "Duplicate clones cause confusion about which copy is canonical; cleanup once per environment after initial clone"
+}

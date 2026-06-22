@@ -1,0 +1,70 @@
+{
+  "id": "5bf0e69248ee",
+  "key": "manual_5bf0e6",
+  "name": "manual_5bf0e6",
+  "claim": "Skill rename/migration pattern: when a skill is renamed (no-sleep-chains -> shell-hygiene, 2026-06-13), the old path becomes a redirect stub that must never be edited for content. Cross-references in sibling repos (AlphaClaw/docs/Lessons.MD) become stale and must be updated to the new canonical path. The canonical target is bin/orama-system/skill/<new-name>/SKILL.md relative to repo root.",
+  "conditions": [
+    "alphaclaw",
+    "become",
+    "becomes",
+    "bin",
+    "canonical",
+    "content",
+    "cross-references",
+    "docs",
+    "edited",
+    "lessons",
+    "migration",
+    "never",
+    "new",
+    "new-name",
+    "no-sleep-chains",
+    "old",
+    "orama-system",
+    "path",
+    "pattern",
+    "redirect",
+    "relative",
+    "rename",
+    "renamed",
+    "repo",
+    "repos",
+    "root",
+    "shell-hygiene",
+    "sibling",
+    "skill",
+    "stale",
+    "stub",
+    "target",
+    "updated"
+  ],
+  "evidence_ids": [
+    "2026-06-22T12:26:27.762328"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T12:26:27.762328",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T12:26:27.762328",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T12:26:27.857403",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Discovered during progressive disclosure: orama-system/bin/orama-system/skills/no-sleep-chains/SKILL.md is now a redirect stub; AlphaClaw Lessons.md still links to the old path. Pattern applies to all skill renames.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T12:26:27.762328"
+      ],
+      "lessons_sha": "b4ada076c7d3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T12:26:27.857403",
+  "reviewer": "learn.py",
+  "rationale": "Discovered during progressive disclosure: orama-system/bin/orama-system/skills/no-sleep-chains/SKILL.md is now a redirect stub; AlphaClaw Lessons.md still links to the old path. Pattern applies to all skill renames."
+}

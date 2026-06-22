@@ -1,0 +1,77 @@
+{
+  "id": "a8dafe878e84",
+  "key": "manual_a8dafe",
+  "name": "manual_a8dafe",
+  "claim": "Tree-twin re-anchor (correct fix after rewrite): build twin index (git log main --format='%H %T'), find deepest ancestor with same %T. Case A (exact tip twin): push --force-with-lease=old:old origin twin:branch. Case B (no tip twin): git rebase --onto twin base. Verify merge-base HEAD origin/main == twin SHA. Never flatten branches to main; re-anchor moves ref only, does not merge content.",
+  "conditions": [
+    "after",
+    "ancestor",
+    "base",
+    "branch",
+    "branches",
+    "build",
+    "case",
+    "content",
+    "correct",
+    "deepest",
+    "exact",
+    "find",
+    "fix",
+    "flatten",
+    "force-with-lease",
+    "format",
+    "git",
+    "head",
+    "index",
+    "log",
+    "main",
+    "merge",
+    "merge-base",
+    "moves",
+    "never",
+    "old",
+    "only",
+    "onto",
+    "origin",
+    "push",
+    "re-anchor",
+    "rebase",
+    "ref",
+    "rewrite",
+    "same",
+    "sha",
+    "tip",
+    "tree-twin",
+    "twin",
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-06-22T12:29:37.032676"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T12:29:37.032676",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T12:29:37.032676",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T12:29:37.122343",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Mined from orama-system/bin/orama-system/skill/git-history-surgery/references/reanchor-after-rewrite.md (112 lines). Canonical recovery from '600 behind' incident.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T12:29:37.032676"
+      ],
+      "lessons_sha": "b9a201b57d34"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T12:29:37.122343",
+  "reviewer": "learn.py",
+  "rationale": "Mined from orama-system/bin/orama-system/skill/git-history-surgery/references/reanchor-after-rewrite.md (112 lines). Canonical recovery from '600 behind' incident."
+}

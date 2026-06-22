@@ -10,12 +10,17 @@ SALIENCE_FLOOR = 2.0
 
 
 def decay_old_entries(entries, archive_dir):
-    cutoff = datetime.datetime.now() - datetime.timedelta(days=DECAY_DAYS)
+    # Make cutoff timezone-aware to match offset-aware timestamps from memory_reflect.py
+    cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=DECAY_DAYS)
     kept, archived = [], []
     for e in entries:
         ts_str = e.get("timestamp", "")
         try:
             ts = datetime.datetime.fromisoformat(ts_str)
+            # Normalize naive timestamps: treat as local time, convert to UTC
+            if ts.tzinfo is None:
+                local_tz = datetime.datetime.now().astimezone().tzinfo
+                ts = ts.replace(tzinfo=local_tz).astimezone(datetime.timezone.utc)
         except ValueError:
             kept.append(e)
             continue
