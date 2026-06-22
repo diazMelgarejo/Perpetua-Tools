@@ -1,0 +1,42 @@
+{
+  "id": "a7374ba4b00d",
+  "key": "manual_a7374b",
+  "name": "manual_a7374b",
+  "claim": "Do the user's stated #1 task first; do not let setup/cleanup tangents replace it. If you must pivot, name the original task explicitly and return to it \u2014 never silently drop it.",
+  "conditions": [
+    "distraction",
+    "original-task",
+    "pivot",
+    "priority",
+    "scope"
+  ],
+  "evidence_ids": [
+    "2026-06-22T09:21:23.909870"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T09:21:23.909870",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T09:21:23.909870",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T09:21:23.953860",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-06-22: the stated primary task was code review + clean /src /bin restructure of perpetua-core; I got absorbed in an iCloud-move/cleanup tangent and never did it. Getting distracted from the explicit primary task is itself a failure.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T09:21:23.909870"
+      ],
+      "lessons_sha": "fc154df86f46"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T09:21:23.953855",
+  "reviewer": "learn.py",
+  "rationale": "2026-06-22: the stated primary task was code review + clean /src /bin restructure of perpetua-core; I got absorbed in an iCloud-move/cleanup tangent and never did it. Getting distracted from the explicit primary task is itself a failure."
+}

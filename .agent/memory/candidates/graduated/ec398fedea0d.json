@@ -1,0 +1,50 @@
+{
+  "id": "ec398fedea0d",
+  "key": "manual_ec398f",
+  "name": "manual_ec398f",
+  "claim": "Nodes_modules/, __pycache__/, .venv/, dist/, build/ are never tracked. If git status hangs, check for committed node_modules.",
+  "conditions": [
+    "build",
+    "check",
+    "committed",
+    "dist",
+    "git",
+    "hangs",
+    "never",
+    "node_modules",
+    "nodes_modules",
+    "pycache__",
+    "status",
+    "tracked",
+    "venv"
+  ],
+  "evidence_ids": [
+    "2026-06-22T12:08:33.494869"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T12:08:33.494869",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T12:08:33.494869",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T12:08:33.585879",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Mined from PT docs/LESSONS.md 2026-04-27 (git write-hang root cause): tracked node_modules/ (3818 files) caused permanent git status hang. Fixed via .gitignore + git rm -r --cached.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T12:08:33.494869"
+      ],
+      "lessons_sha": "ed4b7aac7e9c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T12:08:33.585879",
+  "reviewer": "learn.py",
+  "rationale": "Mined from PT docs/LESSONS.md 2026-04-27 (git write-hang root cause): tracked node_modules/ (3818 files) caused permanent git status hang. Fixed via .gitignore + git rm -r --cached."
+}

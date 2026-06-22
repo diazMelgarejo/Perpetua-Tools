@@ -1,0 +1,57 @@
+{
+  "id": "f18c53cf68d3",
+  "key": "manual_f18c53",
+  "name": "manual_f18c53",
+  "claim": "Multi-agent pre-commit checklist: (1) git fetch origin main && git log --oneline HEAD..origin/main; (2) grep -rn '192.168.' excluding tests/.env/LESSONS; (3) python -m pytest -q. Run before opening PR.",
+  "conditions": [
+    "before",
+    "checklist",
+    "env",
+    "excluding",
+    "fetch",
+    "git",
+    "grep",
+    "head",
+    "lessons",
+    "log",
+    "main",
+    "multi-agent",
+    "oneline",
+    "opening",
+    "origin",
+    "pre-commit",
+    "pytest",
+    "python",
+    "run",
+    "tests"
+  ],
+  "evidence_ids": [
+    "2026-06-22T12:24:43.258993"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T12:24:43.258993",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T12:24:43.258993",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T12:24:43.349797",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Mined from orama-system/docs/wiki/06-multi-agent-collab.md Pre-Commit Checklist. Prevents LAN IP leak recurrence.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T12:24:43.258993"
+      ],
+      "lessons_sha": "4dc472e05994"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T12:24:43.349797",
+  "reviewer": "learn.py",
+  "rationale": "Mined from orama-system/docs/wiki/06-multi-agent-collab.md Pre-Commit Checklist. Prevents LAN IP leak recurrence."
+}
