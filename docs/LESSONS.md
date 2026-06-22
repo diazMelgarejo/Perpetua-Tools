@@ -484,7 +484,7 @@ All lessons above are expanded with root causes, exact fixes, and verification c
 
 *(synced from [AlphaClaw `feature/MacOS-post-install` → `7-Lessons.md`](https://github.com/diazMelgarejo/AlphaClaw/blob/feature/MacOS-post-install/7-Lessons.md))*
 
-- **Problem**: Absolute paths (e.g. `/Users/user/...`) in `openclaw.json` break cross-platform deployments.
+- **Problem**: Absolute paths (e.g. `/Users/<user>/...`) in `openclaw.json` break cross-platform deployments.
 - **Solution**: Always use `${HOME}` variables in configuration templates. AlphaClaw gateway and onboarding runtime MUST resolve these relative to the OS-specific home directory.
 - **Rule**: Enforce `${HOME}` in all `openclaw.json.template` and active config files. No hardcoded usernames or absolute paths.
 

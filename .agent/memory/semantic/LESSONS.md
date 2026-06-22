@@ -71,7 +71,10 @@
 - Hardware-affinity-gate import direction is one-way: orama imports from PT  <!-- status=accepted confidence=0.465 evidence=1 id=lesson_50a9bd077e0d -->
 - Hardware affinity rules must not be duplicated across repos  <!-- status=accepted confidence=0.395 evidence=1 id=lesson_137bc8593c03 -->
 - agate MVP design must preserve one-way import boundary  <!-- status=accepted confidence=0.37 evidence=1 id=lesson_5ed156eedf8b -->
-- Canonical repo clones must not exist under duplicate paths like /c/c/Users/lab/...  <!-- status=accepted confidence=0.51 evidence=1 id=lesson_f55e96698a39 -->
+- Canonical repo clones must not exist under duplicate paths like /c/c/Users/<user>/...  <!-- status=accepted confidence=0.51 evidence=1 id=lesson_f55e96698a39 -->
+- Recurring miss: I keep writing literal workstation paths (~/code/OpenClaw, the synced ~/Documents/.../OpenClaw tree) into TRACKED docs, then only fix them after the no-workstation-paths hook / LINT-006 blocks me. Write paths abstractly the FIRST time: $OPENCLAW_ROOT / $REPO_ROOT / repo-relative (../../<repo>/) / placeholders like <user>. Check the path-hygiene rule BEFORE writing a doc, not after the block.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_5b891b07e193 -->
+- qwen3-coder-14b is FULLY RETIRED. Replacements: qwen3.5-9b-mlx on all macOS systems; qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2 on all Windows and Linux systems. Never reintroduce qwen3-coder-14b or gemma4:e4b (check_no_hallucinated_models.py FORBIDDEN set; scans .py/.json/.yml/.yaml/.env incl. comments).  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_717c4032dfc2 -->
+- When a content checker flags a file your grep says is clean, replicate the checker's EXACT matching before concluding false-positive — it may lowercase (case-insensitive). Also: content guards scan COMMENTS too, so stale config comments with banned IDs trip them; keep config comments current.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_ec11f1ff55c0 -->
 
 ### 2026-04
 
