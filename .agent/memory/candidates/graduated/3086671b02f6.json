@@ -1,0 +1,66 @@
+{
+  "id": "3086671b02f6",
+  "key": "manual_308667",
+  "name": "manual_308667",
+  "claim": "Worker primitive contract: workers are one generic primitive. TaskEnvelope(role, specialization, intent, prompt, depth=0) in, WorkerResult(status, summary, artifacts, errors) out. depth ALWAYS 0 in V1 (no sub-workers) \u2014 enforced by field_validator at runtime, not convention. Write artifacts to disk before returning status=done.",
+  "conditions": [
+    "always",
+    "artifacts",
+    "before",
+    "contract",
+    "convention",
+    "depth",
+    "disk",
+    "done",
+    "enforced",
+    "errors",
+    "field_validator",
+    "generic",
+    "intent",
+    "one",
+    "out",
+    "primitive",
+    "prompt",
+    "returning",
+    "role",
+    "runtime",
+    "specialization",
+    "status",
+    "sub-workers",
+    "summary",
+    "taskenvelope",
+    "worker",
+    "workerresult",
+    "workers",
+    "write"
+  ],
+  "evidence_ids": [
+    "2026-06-22T12:16:26.373878"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T12:16:26.373878",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T12:16:26.373878",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T12:16:26.463329",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Mined from orama-system/docs/2026-05-14--UNIFIED-ABSORPTION-PLAN.md \u00a73-\u00a74 and \u00a75. Hard rule prevents worker recursion. JSON/Pydantic is canonical internal contract.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T12:16:26.373878"
+      ],
+      "lessons_sha": "6d0bb06f49d0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T12:16:26.463329",
+  "reviewer": "learn.py",
+  "rationale": "Mined from orama-system/docs/2026-05-14--UNIFIED-ABSORPTION-PLAN.md \u00a73-\u00a74 and \u00a75. Hard rule prevents worker recursion. JSON/Pydantic is canonical internal contract."
+}

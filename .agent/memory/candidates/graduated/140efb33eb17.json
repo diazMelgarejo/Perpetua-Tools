@@ -1,0 +1,67 @@
+{
+  "id": "140efb33eb17",
+  "key": "manual_140efb",
+  "name": "manual_140efb",
+  "claim": "Concurrent write coordination gap (v2.0): three repos have no agent write coordination \u2014 no branch-ownership registry, no per-repo/branch locks, no who-works-where state. Fix direction: worktree-per-agent enforced, PT-owned branch-ownership registry, per-repo/branch write locks with stale-takeover, pre-push gate rejecting other agents WIP commits. Human+agents are scheduled participants.",
+  "conditions": [
+    "agent",
+    "agents",
+    "branch",
+    "branch-ownership",
+    "commits",
+    "concurrent",
+    "coordination",
+    "direction",
+    "enforced",
+    "fix",
+    "gap",
+    "gate",
+    "human",
+    "locks",
+    "other",
+    "participants",
+    "per-repo",
+    "pre-push",
+    "pt-owned",
+    "registry",
+    "rejecting",
+    "repos",
+    "scheduled",
+    "stale-takeover",
+    "state",
+    "three",
+    "who-works-where",
+    "wip",
+    "worktree-per-agent",
+    "write"
+  ],
+  "evidence_ids": [
+    "2026-06-22T12:24:42.662294"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T12:24:42.662294",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T12:24:42.662294",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T12:24:42.752286",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Mined from Perpetua-Tools/docs/2026-05-31-tri-repo-alignment-completion-plan.md v2.0 section. Deepest gap surfaced during migration.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T12:24:42.662294"
+      ],
+      "lessons_sha": "cfbc7b22892a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T12:24:42.752286",
+  "reviewer": "learn.py",
+  "rationale": "Mined from Perpetua-Tools/docs/2026-05-31-tri-repo-alignment-completion-plan.md v2.0 section. Deepest gap surfaced during migration."
+}

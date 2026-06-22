@@ -1,0 +1,43 @@
+{
+  "id": "137bc8593c03",
+  "key": "manual_137bc8",
+  "name": "manual_137bc8",
+  "claim": "Hardware affinity rules must not be duplicated across repos",
+  "conditions": [
+    "across",
+    "affinity",
+    "duplicated",
+    "hardware",
+    "repos",
+    "rules"
+  ],
+  "evidence_ids": [
+    "2026-06-22T14:05:37.502904"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T14:05:37.502904",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T14:05:37.502904",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T14:05:37.595058",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Duplicating Mac/Windows NEVER lists causes drift; canonical enforcement lives in PT config/model_hardware_policy.yml",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T14:05:37.502904"
+      ],
+      "lessons_sha": "4d4e6888d30b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T14:05:37.595058",
+  "reviewer": "learn.py",
+  "rationale": "Duplicating Mac/Windows NEVER lists causes drift; canonical enforcement lives in PT config/model_hardware_policy.yml"
+}
