@@ -30,7 +30,7 @@
       "ts": "2026-06-22T16:30:01.040280",
       "action": "graduated",
       "reviewer": "learn.py",
-      "notes": "2026-06-22: merged origin/main into feat/perpetua-submodule-upgrade for PR #123; 3 .agent files conflicted (both sides appended lessons); union+re-render gave 61 lessons/32 episodic; commit was blocked by /Users/<user> leaks in branch dream-cycle content until sanitized.",
+      "notes": "2026-06-22: merged origin/main into feat/perpetua-submodule-upgrade for PR #123; 3 .agent files conflicted (both sides appended lessons); union+re-render gave 61 lessons/32 episodic; commit was blocked by workstation path leaks in branch dream-cycle content until sanitized.",
       "provisional": false,
       "evidence_snapshot": [
         "2026-06-22T16:30:00.957706"
@@ -41,5 +41,5 @@
   "rejection_count": 0,
   "accepted_at": "2026-06-22T16:30:01.040275",
   "reviewer": "learn.py",
-  "rationale": "2026-06-22: merged origin/main into feat/perpetua-submodule-upgrade for PR #123; 3 .agent files conflicted (both sides appended lessons); union+re-render gave 61 lessons/32 episodic; commit was blocked by /Users/<user> leaks in branch dream-cycle content until sanitized."
+  "rationale": "2026-06-22: merged origin/main into feat/perpetua-submodule-upgrade for PR #123; 3 .agent files conflicted (both sides appended lessons); union+re-render gave 61 lessons/32 episodic; commit was blocked by workstation path leaks in branch dream-cycle content until sanitized."
 }
