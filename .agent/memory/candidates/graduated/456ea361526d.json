@@ -1,0 +1,44 @@
+{
+  "id": "456ea361526d",
+  "key": "manual_456ea3",
+  "name": "manual_456ea3",
+  "claim": "When tracked files contain paths that look absolute (C:\\\\Users\\\\..., /Users/...), use relative paths instead (../../, ../) resolved from the file's own location within the repo. Never use username-containing placeholders like <user> or env vars that still expose directory structure (%USERPROFILE%\\Downloads\\...). The filename alone is sufficient when marked local-only; strip the parent path tree entirely. Standard: relative paths from the file's directory, or ~ for home, or $OPENCLAW_ROOT for the repo root. Applies to all tracked files including .agent/memory JSON and markdown.",
+  "conditions": [
+    "doxxing",
+    "memory",
+    "parent-path",
+    "paths",
+    "relative",
+    "tracked-files",
+    "workspace"
+  ],
+  "evidence_ids": [
+    "2026-06-22T19:45:16.837240"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T19:45:16.837240",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T19:45:16.837240",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T11:45:16.896851+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR #123 2026-06-22: WORKSPACE.md had C:\\\\Users\\\\lab\\\\Downloads\\\\SKILLS.md\\\\... \u2014 even after replacing with %USERPROFILE%\\\\Downloads\\\\..., the subdirectory tree \\\\Downloads\\\\SKILLS.md\\\\ultrathink\\\\ was still identifying. Correct form: ../Cross-Repo-Memory-Seed.md (relative from working/). Placeholder <user> still reveals path structure.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T19:45:16.837240"
+      ],
+      "lessons_sha": "2e20c05afb27"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T11:45:16.896354+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR #123 2026-06-22: WORKSPACE.md had C:\\\\Users\\\\lab\\\\Downloads\\\\SKILLS.md\\\\... \u2014 even after replacing with %USERPROFILE%\\\\Downloads\\\\..., the subdirectory tree \\\\Downloads\\\\SKILLS.md\\\\ultrathink\\\\ was still identifying. Correct form: ../Cross-Repo-Memory-Seed.md (relative from working/). Placeholder <user> still reveals path structure."
+}
