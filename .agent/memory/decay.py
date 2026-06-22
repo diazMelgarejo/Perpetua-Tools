@@ -10,6 +10,7 @@ SALIENCE_FLOOR = 2.0
 
 
 def decay_old_entries(entries, archive_dir):
+    cutoff = datetime.datetime.now() - datetime.timedelta(days=DECAY_DAYS)
     # Make cutoff timezone-aware to match offset-aware timestamps from memory_reflect.py
     cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=DECAY_DAYS)
     kept, archived = [], []

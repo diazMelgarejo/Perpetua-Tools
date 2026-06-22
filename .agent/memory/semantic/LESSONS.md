@@ -92,6 +92,7 @@
 - Skill absorption: hermes-harness should absorb hermes-agent and pt-orama-harness-integration; perpetua-hardware should absorb local-inference  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_cd13c287bd02 -->
 - Filesystem path is authoritative; pinned canonical path beats compressed recall  <!-- status=accepted confidence=0.495 evidence=1 id=lesson_110bcd19d96a -->
 - Canonical filesystem path must be treated as immutable source of truth across memory, writes, and recalls  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_ef98574d9256 -->
+- When a git pre-push hook runs from a deleted or removed worktree directory (getcwd fails), the hook exits non-zero with 'banned or unapproved attribution in commits to push' — even when NO actual banned pattern exists. The banned_attribution_lib.sh cannot resolve the repo root or patterns file, so it fails closed. The error message is misleading: the real cause is a dead working directory, not a real attribution violation. Fix: never delete a worktree before the git push completes; if a push fails with this message after a worktree cleanup, re-push from a live worktree or the canonical repo directory.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_1bb7057c6ea8 -->
 
 ### 2026-04
 
