@@ -52,7 +52,16 @@ This orchestrator is designed for **full hardware profile awareness** [web:40] a
 
 ---
 
-## Hardware Profiles (Summary)
+## Hardware Affinity (implemented in orama-system)
+
+> **Note:** The hardware-affinity-gate skill lives in `orama-system` at
+> `bin/orama-system/skills/hardware-affinity-gate/SKILL.md`, but that skill
+> **imports routing rules and scripts from Perpetua-Tools one-way**.
+> Perpetua-Tools owns the actual enforcement logic (`perpetua_core/policy.py`,
+> `config/model_hardware_policy.yml`, `selector.py`). Do not duplicate those
+> rules here.
+
+### Hardware Profiles (Summary)
 Refer to [hardware/SKILL.md](https://github.com/diazMelgarejo/Perpetua-Tools/blob/main/hardware/SKILL.md) for full specs.
 
 ### Profile A — mac-studio (16GB+ Unified Memory)
