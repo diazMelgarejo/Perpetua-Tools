@@ -87,6 +87,8 @@
 - CodeRabbit reviews every new push to a PR, creating new unresolved threads even after all previous ones were resolved. Always check review thread state after each push, not just once at the start. Merge is only safe when BOTH conditions are true: (a) mergeStateStatus is CLEAN or MERGEABLE, and (b) all review threads are resolved.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_c057cdc0f899 -->
 - Filesystem paths from compressed memory are not authoritative  <!-- status=accepted confidence=0.405 evidence=1 id=lesson_7b4fcefd8537 -->
 - Use reanchor_scan / cherry for branch parity on rewritten main  <!-- status=accepted confidence=0.41 evidence=1 id=lesson_1a49775808a8 -->
+- Push rejected: recover by fresh-from-main branch plus cherry-pick, never merge  <!-- status=accepted confidence=0.49 evidence=1 id=lesson_859e6589c55f -->
+- Filesystem path is authoritative; pinned path beats compressed memory  <!-- status=accepted confidence=0.445 evidence=1 id=lesson_884b737ba7d1 -->
 
 ### 2026-04
 
