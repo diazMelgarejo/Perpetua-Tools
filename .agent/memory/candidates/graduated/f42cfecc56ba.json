@@ -1,0 +1,66 @@
+{
+  "id": "f42cfecc56ba",
+  "key": "manual_f42cfe",
+  "name": "manual_f42cfe",
+  "claim": "Orphan branch recovery: symptoms = git merge-base HEAD origin/main exit 1; git rebase origin/main produces add/add conflicts on every file. Fix: git fetch origin main && git reset --hard origin/main; manually re-apply ~5 changed files. Prevention: always create feature branches from origin/main.",
+  "conditions": [
+    "add",
+    "always",
+    "branch",
+    "branches",
+    "changed",
+    "conflicts",
+    "create",
+    "every",
+    "exit",
+    "feature",
+    "fetch",
+    "file",
+    "files",
+    "fix",
+    "git",
+    "hard",
+    "head",
+    "main",
+    "manually",
+    "merge-base",
+    "origin",
+    "orphan",
+    "prevention",
+    "produces",
+    "re-apply",
+    "rebase",
+    "recovery",
+    "reset",
+    "symptoms"
+  ],
+  "evidence_ids": [
+    "2026-06-22T12:24:43.057085"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T12:24:43.057085",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T12:24:43.057085",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T12:24:43.147624",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Mined from orama-system/docs/wiki/06-multi-agent-collab.md Orphan Branch Recovery. Earned 2026-04-12.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T12:24:43.057085"
+      ],
+      "lessons_sha": "80795b1ab13c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T12:24:43.147624",
+  "reviewer": "learn.py",
+  "rationale": "Mined from orama-system/docs/wiki/06-multi-agent-collab.md Orphan Branch Recovery. Earned 2026-04-12."
+}

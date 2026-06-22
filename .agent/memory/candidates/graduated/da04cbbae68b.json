@@ -1,0 +1,46 @@
+{
+  "id": "da04cbbae68b",
+  "key": "manual_da04cb",
+  "name": "manual_da04cb",
+  "claim": "Never put literal workstation paths (/Users/<name>/...) in any tracked file \u2014 docs, scripts, memory, or config. Use relative paths (../../, ../filename), env vars ($OPENCLAW_ROOT, $REPO_ROOT), or ~ tilde. LINT-006 in repo_hygiene.py and CIDF Target Verification both enforce this as a pre-commit hard gate. The same rule applies to AI-generated memory content: use relative paths or strip the parent path tree; do NOT use <user> placeholder (it still exposes the directory structure).",
+  "conditions": [
+    "anti-doxxing",
+    "cidf",
+    "doxxing",
+    "lint-006",
+    "memory",
+    "relative-paths",
+    "repo_hygiene",
+    "tracked-files",
+    "workstation-paths"
+  ],
+  "evidence_ids": [
+    "2026-06-22T19:33:36.071175"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T19:33:36.071175",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T19:33:36.071175",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T19:33:36.136070",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "LINT-006 / CIDF anti-doxxing invariant: literal workstation paths in tracked files expose the developer's username and machine layout to anyone with repo access. Caught multiple times (2026-06-22 PR #123 dream-cycle content had /Users/lab and /Users/user). CI and pre-commit both block commits with violations.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T19:33:36.071175"
+      ],
+      "lessons_sha": "573651184b21"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T19:33:36.136063",
+  "reviewer": "learn.py",
+  "rationale": "LINT-006 / CIDF anti-doxxing invariant: literal workstation paths in tracked files expose the developer's username and machine layout to anyone with repo access. Caught multiple times (2026-06-22 PR #123 dream-cycle content had /Users/lab and /Users/user). CI and pre-commit both block commits with violations."
+}

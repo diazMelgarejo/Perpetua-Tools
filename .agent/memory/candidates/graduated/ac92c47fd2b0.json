@@ -1,0 +1,61 @@
+{
+  "id": "ac92c47fd2b0",
+  "key": "manual_ac92c4",
+  "name": "manual_ac92c4",
+  "claim": "Shell hygiene \u2014 sleep chains: sleep N && <command> and sleep N; <command> are blocked at the shell level. No workaround via shorter sleep chains (sleep 5 && sleep 5 && cmd also blocked). Enforcement is pre-execution; there is no escape hatch. Origin: 2026-05-16 npm install wait; re-triggered 2026-05-29 claude update wait.",
+  "conditions": [
+    "also",
+    "blocked",
+    "chains",
+    "claude",
+    "cmd",
+    "command",
+    "enforcement",
+    "escape",
+    "hatch",
+    "hygiene",
+    "install",
+    "level",
+    "npm",
+    "origin",
+    "pre-execution",
+    "re-triggered",
+    "shell",
+    "shorter",
+    "sleep",
+    "there",
+    "update",
+    "via",
+    "wait",
+    "workaround"
+  ],
+  "evidence_ids": [
+    "2026-06-22T12:26:27.124078"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T12:26:27.124078",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T12:26:27.124078",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T12:26:27.215724",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Mined from orama-system/bin/orama-system/skill/shell-hygiene/SKILL.md \u00a7The Rule. Enforced at shell hook boundary.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T12:26:27.124078"
+      ],
+      "lessons_sha": "94e67c88e434"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T12:26:27.215724",
+  "reviewer": "learn.py",
+  "rationale": "Mined from orama-system/bin/orama-system/skill/shell-hygiene/SKILL.md \u00a7The Rule. Enforced at shell hook boundary."
+}
