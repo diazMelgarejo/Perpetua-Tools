@@ -58,3 +58,18 @@ makes it costlier and contradicts the "from the beginning" intent).
 - Full narrative (intent, the AI interpretation gap, and how it was closed): [`docs/2026-06-22-oramasys-v2-intent-and-interpretation-gap.md`](../../../docs/2026-06-22-oramasys-v2-intent-and-interpretation-gap.md)
 - Lessons (rendered): `.agent/memory/semantic/LESSONS.md` ids `2e154f1b55ab`, `d892d844cf60`, `0afc8c5f2778`, `a7374ba4b00d`
 - Standards: orama `bin/orama-system/afrp/SKILL.md` (Intent-Verification trigger 3), `.../cidf/SKILL.md` (Target Verification), orama `docs/LESSONS.md` §2026-06-22
+
+## 2026-06-21: Markdown numbered lists in SKILL.md must use explicit numbers, not lazy-1
+
+**Decision:** All numbered steps in SKILL.md `## Procedure` sections must use explicit
+sequential numbers (1, 2, 3...), never the Markdown lazy-1 convention (all steps as `1.`).
+
+**Rationale:** Agent runtimes (Hermes, Codex, OpenCode) consume SKILL.md as raw text, not
+rendered HTML. When all steps are `1.`, step-tracking and procedure parsing break silently.
+Markdown auto-normalization is renderer-side only; raw consumers see the literal `1.`. Bug
+introduced by a reformat pass in commit 8101984; fixed in 122d7d7 for 9 files.
+
+**Alternatives considered:** Rely on renderer normalization — rejected because agent runtimes
+read raw text. Add a custom Markdown plugin — rejected as over-engineering for a simple convention.
+
+**Status:** active — consider adding a repo_hygiene.py check for all-1 procedure lists.
