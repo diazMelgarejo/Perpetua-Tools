@@ -1,48 +1,35 @@
 # Workspace (live task state)
 
-> Replace this template on your first real task. The dream cycle auto-archives
-> this file after 2 days of inactivity — don't keep long-lived notes here.
+Last updated: 2026-06-21 by claude-sonnet-4.6
 
 ## Current task
-_none_
+None active. Full session completed.
 
-## Open files
-- _(none)_
+## Completed this session
 
-## Active hypotheses
-- _(none)_
+| Task | Outcome | Ref |
+|---|---|---|
+| Merge feat/openclaw-codex-app-server → main | ✅ `d357da3` | orama-system |
+| gpt-5.2-codex → gpt-5.5 sweep (both repos) | ✅ `fd63792` / `8535f08` | both |
+| Centralize version to _version.py + sync_version.py | ✅ `9240685` | orama-system |
+| Standardize v1.1.0.0 across 25+ surfaces | ✅ `b11a05b` | orama-system |
+| LESSONS.md + git skills cross-linked to version system | ✅ `7d6bf2d` | orama-system |
+| PR #122 Perpetua-Tools merged (NEVER/ALWAYS routing + RA1) | ✅ `575eabe` | Perpetua-Tools |
+| perpetua-core RC-1 as-built → docs/v2/15 + 04 + 06 | ✅ `b700c2f` | orama-system |
+| Phase 2 marked complete; OQ12/17/19 resolved | ✅ `b700c2f` | orama-system |
+| PR #105 openclaw-skills numbering fix | ✅ `122d7d7` | orama-system PR branch |
+| Memory written to PT .agent/memory | ✅ this commit | Perpetua-Tools |
 
-## Checkpoints
-- [ ] _(none)_
+## Open gates (human action required)
+
+- **perpetua-core push gate**: Mac Ollama (`localhost:11434`) + Win LM Studio
+  (`192.168.254.103:1234`) hardware review → then push `feat/salvage-plugins-rc1`
+  → `perpetua-core` main → tag `v0.2.0-alpha`
+- **PR #105**: pushed fix `122d7d7` to `experiment/pt-orama-self-reflection`.
+  CI + review needed before merge.
+- **REVIEW_QUEUE.md**: 4 pending candidates (c094d281, b387cb3f, bb70a683, 60d83655).
+  Oldest: 2026-06-22. Review before next substantive session.
 
 ## Next step
-_(what would you do if interrupted and resumed tomorrow?)_
-# Workspace — Cross-Repo Progressive Disclosure
-
-## Active Phase
-
-Post-Phase-4 — dreaming/testing recall/graduate gates.
-
-Last dream: never -> updated now
-
-
-## Completed
-
-* Phase 1: 9 stable rules from LESSONS.md → graduated
-* Phase 2: 10 architectural concepts from unified plan, MIGRATION, AFRP, CIDF, gstack, adapter contract → graduated
-* Phase 3: 13 behavioral themes from wiki docs + tri-repo plan → graduated
-* Phase 4+: 14 themes from shell-hygiene rename, reanchor\_scan, sync\_version, git-hygiene wiki, session-checklist, windows-dev, check\_identity, expunge, reanchor-after-rewrite, windows bootstrap, repo\_hygiene tail → graduated
-* Total: 55 lessons graduated (0 staged, 0 rejected)
-* Latest episode: Phase 4+ blast complete, pain=3, importance=9
-* Seed file: ../Cross-Repo-Memory-Seed.md (local-only)
-
-## Status
-
-* REVIEW\_QUEUE.md: empty
-* Candidates dir: 1 file
-* Ready for auto\_dream.py + recall.py test
-
-## Blocked
-
-* agy-check (quota exhausted, retry \~2026-06-28)
-
+If returning to this session: start with `REVIEW_QUEUE.md` review (4 candidates),
+then hardware review gate for perpetua-core if ready.
