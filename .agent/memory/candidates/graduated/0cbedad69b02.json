@@ -1,0 +1,54 @@
+{
+  "id": "0cbedad69b02",
+  "key": "manual_0cbeda",
+  "name": "manual_0cbeda",
+  "claim": "All tracked text files must be UTF-8 without BOM on Windows. Always pass encoding='utf-8' to open(); set PYTHONUTF8=1 and PYTHONIOENCODING=utf-8 in cross-platform scripts.",
+  "conditions": [
+    "all",
+    "always",
+    "bom",
+    "cross-platform",
+    "encoding",
+    "files",
+    "open",
+    "pass",
+    "pythonioencoding",
+    "pythonutf8",
+    "scripts",
+    "set",
+    "text",
+    "tracked",
+    "utf-8",
+    "windows",
+    "without"
+  ],
+  "evidence_ids": [
+    "2026-06-22T12:08:32.684154"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T12:08:32.684154",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T12:08:32.684154",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T12:08:32.780423",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Mined from orama-system docs/LESSONS.md 2026-06-10 (LINT-007): cp1252 default mangles non-ASCII chars. Prevention enforced in repo_hygiene.py (pre-commit + CI).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T12:08:32.684154"
+      ],
+      "lessons_sha": "c1e7ba614968"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T12:08:32.780423",
+  "reviewer": "learn.py",
+  "rationale": "Mined from orama-system docs/LESSONS.md 2026-06-10 (LINT-007): cp1252 default mangles non-ASCII chars. Prevention enforced in repo_hygiene.py (pre-commit + CI)."
+}

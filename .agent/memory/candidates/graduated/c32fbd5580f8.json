@@ -1,0 +1,70 @@
+{
+  "id": "c32fbd5580f8",
+  "key": "manual_c32fbd",
+  "name": "manual_c32fbd",
+  "claim": "Windows dev environment (lab machine): Node/npm anchored to LM Studio bin (%USERPROFILE%\\.lmstudio\\.internal\\utils\\node.exe, %USERPROFILE%\\.lmstudio\\tools\\npm, shims in %USERPROFILE%\\.lmstudio\\bin). git resolved dynamically from GitHub Desktop (do not hardcode versioned path). Never symlink dev tools into versioned app install folders on Windows. Verify: git --version; node --version; npm --version.",
+  "conditions": [
+    "anchored",
+    "app",
+    "bin",
+    "desktop",
+    "dev",
+    "dynamically",
+    "environment",
+    "exe",
+    "folders",
+    "git",
+    "github",
+    "hardcode",
+    "install",
+    "internal",
+    "into",
+    "lab",
+    "lmstudio",
+    "machine",
+    "never",
+    "node",
+    "npm",
+    "path",
+    "resolved",
+    "shims",
+    "studio",
+    "symlink",
+    "tools",
+    "users",
+    "utils",
+    "verify",
+    "version",
+    "versioned",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-06-22T12:29:36.640678"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T12:29:36.640678",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T12:29:36.640678",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T12:29:36.729948",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Mined from AlphaClaw/docs/wiki/11-windows-dev.md. Same principle as macOS ~/.local/bin but LM Studio bin on Windows. App updates break versioned paths.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T12:29:36.640678"
+      ],
+      "lessons_sha": "03fea3f062db"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T12:29:36.729948",
+  "reviewer": "learn.py",
+  "rationale": "Mined from AlphaClaw/docs/wiki/11-windows-dev.md. Same principle as macOS ~/.local/bin but LM Studio bin on Windows. App updates break versioned paths."
+}

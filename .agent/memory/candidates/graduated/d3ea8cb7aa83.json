@@ -1,0 +1,51 @@
+{
+  "id": "d3ea8cb7aa83",
+  "key": "manual_d3ea8c",
+  "name": "manual_d3ea8c",
+  "claim": "Never hardcode workstation absolute paths in tracked files. Use ${HOME} or repo-relative paths (git rev-parse --show-toplevel) instead.",
+  "conditions": [
+    "absolute",
+    "files",
+    "git",
+    "hardcode",
+    "home",
+    "instead",
+    "never",
+    "paths",
+    "repo-relative",
+    "rev-parse",
+    "show-toplevel",
+    "tracked",
+    "use",
+    "workstation"
+  ],
+  "evidence_ids": [
+    "2026-06-22T12:08:32.480158"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T12:08:32.480158",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T12:08:32.480158",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T12:08:32.572231",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Mined from AlphaClaw docs/Lessons.MD 2026-04-21 and orama-system 2026-06-08: absolute paths break cross-platform deployments. Also validated in orama thin-wrapper policy.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T12:08:32.480158"
+      ],
+      "lessons_sha": "aee2ed569572"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T12:08:32.572231",
+  "reviewer": "learn.py",
+  "rationale": "Mined from AlphaClaw docs/Lessons.MD 2026-04-21 and orama-system 2026-06-08: absolute paths break cross-platform deployments. Also validated in orama thin-wrapper policy."
+}
