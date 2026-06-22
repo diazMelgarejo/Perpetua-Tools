@@ -1,31 +1,31 @@
 # Workspace (live task state)
 
-Last updated: 2026-06-21 by claude-sonnet-4.6
+Last updated: 2026-06-22 by claude-opus-4.8
 
 ## Current task
-Reviewed perpetua-core repo against salvage translation design spec.
-No active work item — this is a knowledge-capture session.
+v2 repos restructured to PyPA src-layout and the session's interpretation gap
+captured. Knowledge-capture + structural cleanup session — complete.
 
-## Key finding
-`oramasys/perpetua-core` salvage port is **COMPLETE** as of 2026-05-17.
-All 16 tasks DONE, 73 tests green across 3 repos.
-Branch still local pending Mac+Win hardware review (per Push Policy in PROGRESS.md).
+## Key findings
+- `oramasys/perpetua-core` + `oramasys/oramasys` now use src-layout
+  (`src/<pkg>/`, tests in `src/tests/`, thin `/bin`, README). Merged to `main`,
+  pushed: `perpetua-core 8c063f4` (62 tests), `oramasys 0f5ba2b` (5 tests).
+- An AI interpretation gap was corrected and enshrined: assumed `.agents/memory`
+  over the explicit `.agent/memory`, on a stale branch, without reading AGENTS.md.
+  Wrong commit erased; lessons recorded via `learn.py`; DO-NOT added to AFRP + CIDF.
 
-## Open files
-- `https://github.com/oramasys/perpetua-core` (cloned /tmp/perpetua-core)
-- `orama-system/docs/superpowers/specs/2026-05-17-salvage-translation-design.md`
-
-## Active hypotheses
-- The one remaining gate before merge to `oramasys/perpetua-core` main
-  is user end-to-end review on Mac Ollama + Win LM Studio hardware.
+## Open files / artifacts
+- `docs/2026-06-22-oramasys-v2-intent-and-interpretation-gap.md` (exhaustive account)
+- `.agent/memory/semantic/DECISIONS.md` §2026-06-22
+- `https://github.com/oramasys/perpetua-core`, `https://github.com/oramasys/oramasys`
 
 ## Checkpoints
-- [x] perpetua-core repo inspected
-- [x] PROGRESS.md confirmed all 16 tasks DONE
-- [x] All 6 spec assets verified present in code
-- [x] All spec invariants verified (BaseModel, aiosqlite, Python 3.11+, engine ~102 lines)
-- [x] Memory updated (DECISIONS.md, AGENT_LEARNINGS.jsonl)
-- [ ] User hardware review (Mac + Win) before push to perpetua-core main
+- [x] perpetua-core + oramasys src-layout, verified (62 / 5 tests)
+- [x] Merged to main + pushed (both repos + orama-system + PT memory)
+- [x] Lessons recorded via .agent learn.py (4 ids)
+- [x] DO-NOT enshrined in AFRP (trigger 3) + CIDF (Target Verification)
+- [x] Exhaustive intent/gap/why-v2 account written
+- [ ] User hardware review (Mac Ollama + Win LM Studio) before any release gate
 
 ## Next step
-Ask user whether to initiate hardware review gate or defer.
+Awaiting user direction. Hardware review gate remains open per PROGRESS.md push policy.
