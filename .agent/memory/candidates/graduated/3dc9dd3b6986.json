@@ -1,0 +1,44 @@
+{
+  "id": "3dc9dd3b6986",
+  "key": "manual_3dc9dd",
+  "name": "manual_3dc9dd",
+  "claim": "datetime.fromtimestamp() returns naive local time \u2014 always pass tz=datetime.timezone.utc for UTC-aware output. Subtracting a naive datetime from an aware one raises TypeError. Also: datetime.now() without tz= is naive; use datetime.now(datetime.timezone.utc) everywhere timestamps are compared or stored.",
+  "conditions": [
+    "datetime",
+    "naive",
+    "python",
+    "render_lessons",
+    "timestamps",
+    "timezone",
+    "utc"
+  ],
+  "evidence_ids": [
+    "2026-06-22T20:06:14.005393"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T20:06:14.005393",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T20:06:14.005393",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T12:06:14.081590+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-06-22 CodeRabbit PR #123: render_lessons.py fromtimestamp without tz= vs fallback datetime.now(utc) produced mixed naive/aware accepted_at; _age_factor subtracted naive now() from possibly UTC-aware staged_at, causing TypeError. Fixed both.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T20:06:14.005393"
+      ],
+      "lessons_sha": "efc3855fa6e3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T12:06:14.081581+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-06-22 CodeRabbit PR #123: render_lessons.py fromtimestamp without tz= vs fallback datetime.now(utc) produced mixed naive/aware accepted_at; _age_factor subtracted naive now() from possibly UTC-aware staged_at, causing TypeError. Fixed both."
+}

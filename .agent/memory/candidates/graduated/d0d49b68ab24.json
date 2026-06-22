@@ -1,0 +1,46 @@
+{
+  "id": "d0d49b68ab24",
+  "key": "manual_d0d49b",
+  "name": "manual_d0d49b",
+  "claim": "Complete gbrain source archival/removal in the SAME pass you decide it \u2014 never leave 'pending removal'. Old-path duplicate sources (from repo moves) left un-archived resurface as sync_freshness/multi_source_drift warnings every session. Prefer 'gbrain sources archive' (reversible) + export the def to ~/repo-backups first; the orama guard scripts/gbrain/gbrain-selfheal.sh acks failures, refreshes live sources, and reports orphans automatically. Autopilot is launchd KeepAlive: stop with 'launchctl unload -w', a kill won't stick.",
+  "conditions": [
+    "archive",
+    "autopilot",
+    "gbrain",
+    "launchd",
+    "pending",
+    "removal",
+    "selfheal",
+    "source",
+    "stale"
+  ],
+  "evidence_ids": [
+    "2026-06-22T10:28:21.564630"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T10:28:21.564630",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T10:28:21.564630",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T10:28:21.615552",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-06-22: gbrain sync kept needing manual re-fixing. Root causes: (1) autopilot --repo . jammed on 204 unacked parse failures, silently staling sources; (2) old-path duplicate sources from the iCloud-escape/~code moves were quarantined 06-18 but left 'pending removal', recurring as stale alarms. Built orama self-heal + archived the orphans to close the loop.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T10:28:21.564630"
+      ],
+      "lessons_sha": "19678600210e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T10:28:21.615549",
+  "reviewer": "learn.py",
+  "rationale": "2026-06-22: gbrain sync kept needing manual re-fixing. Root causes: (1) autopilot --repo . jammed on 204 unacked parse failures, silently staling sources; (2) old-path duplicate sources from the iCloud-escape/~code moves were quarantined 06-18 but left 'pending removal', recurring as stale alarms. Built orama self-heal + archived the orphans to close the loop."
+}

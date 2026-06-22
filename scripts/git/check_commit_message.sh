@@ -6,16 +6,17 @@ set -euo pipefail
 msg_file="${1:?commit message file required}"
 [[ -f "$msg_file" ]] || { echo "ERROR: missing commit message file: $msg_file" >&2; exit 1; }
 
-# Explicit allowlist entries (lowercase match) — always permitted in Co-authored-by.
+# Explicit allowlist entries (case-insensitive — stored lowercase, matched after tolower).
+# Add any personal/org domain here that is NOT covered by WELL_KNOWN_COAUTHOR_DOMAIN_SUFFIXES.
 ALLOWED_EXACT_COAUTHOR_EMAILS=(
   cursoragent@cursor.com
   lawrence@bettermind.ph
+  lawrence@cyre.me
 )
 
-# Only these @gmail.com addresses may appear in Co-authored-by (lowercase match).
+# Only these @gmail.com / @googlemail.com addresses may appear in Co-authored-by.
 ALLOWED_GMAIL_COAUTHORS=(
   diazmelgarejo@gmail.com
-  lawrence@cyre.me
 )
 
 # Public agent / vendor domains (match email domain or subdomain).

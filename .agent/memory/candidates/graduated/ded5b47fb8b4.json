@@ -1,0 +1,65 @@
+{
+  "id": "ded5b47fb8b4",
+  "key": "manual_ded5b4",
+  "name": "manual_ded5b4",
+  "claim": "CIDF Target Verification: before inserting content anywhere, verify the destination (not just the method). (1) explicit user-given target is authoritative \u2014 use verbatim, (2) read the area's AGENTS.md/_index/README before writing, (3) verify not on a stale branch by comparing HEAD tree to origin.",
+  "conditions": [
+    "agents",
+    "anywhere",
+    "area",
+    "authoritative",
+    "before",
+    "branch",
+    "cidf",
+    "comparing",
+    "content",
+    "destination",
+    "explicit",
+    "head",
+    "index",
+    "inserting",
+    "just",
+    "method",
+    "origin",
+    "read",
+    "readme",
+    "stale",
+    "target",
+    "tree",
+    "use",
+    "user-given",
+    "verbatim",
+    "verification",
+    "verify",
+    "writing"
+  ],
+  "evidence_ids": [
+    "2026-06-22T12:16:25.370014"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T12:16:25.370014",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T12:16:25.370014",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T12:16:25.460907",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Mined from orama-system/bin/orama-system/cidf/SKILL.md Target Verification section and 2026-06-22 DO-NOT failure. Same root cause as AFRP trigger 3.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T12:16:25.370014"
+      ],
+      "lessons_sha": "2b67306b1435"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T12:16:25.460907",
+  "reviewer": "learn.py",
+  "rationale": "Mined from orama-system/bin/orama-system/cidf/SKILL.md Target Verification section and 2026-06-22 DO-NOT failure. Same root cause as AFRP trigger 3."
+}

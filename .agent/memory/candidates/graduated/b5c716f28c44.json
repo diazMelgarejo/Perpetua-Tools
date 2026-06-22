@@ -1,0 +1,58 @@
+{
+  "id": "b5c716f28c44",
+  "key": "manual_b5c716",
+  "name": "manual_b5c716",
+  "claim": "Gate ladder: milestone-based migration gates 0-4. Gate 0 = foundations, Gate 1 = adapter working, Gate 2 = MCP+local agents operational, Gate 3 = orama first flow, Gate 4 = RC release. Do not skip gates; verify each before proceeding.",
+  "conditions": [
+    "adapter",
+    "agents",
+    "before",
+    "each",
+    "first",
+    "flow",
+    "foundations",
+    "gate",
+    "gates",
+    "ladder",
+    "local",
+    "mcp",
+    "migration",
+    "milestone-based",
+    "operational",
+    "orama",
+    "proceeding",
+    "release",
+    "skip",
+    "verify",
+    "working"
+  ],
+  "evidence_ids": [
+    "2026-06-22T12:16:24.954757"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-22T12:16:24.954757",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-22T12:16:24.954757",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-22T12:16:25.043895",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Mined from PT/docs/MIGRATION.md and PT/docs/2026-05-31-tri-repo-alignment-completion-plan.md. Gates enforce verification before merge. Completion plan is the execution anchor.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T12:16:24.954757"
+      ],
+      "lessons_sha": "2f5ef5ff3143"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-22T12:16:25.043895",
+  "reviewer": "learn.py",
+  "rationale": "Mined from PT/docs/MIGRATION.md and PT/docs/2026-05-31-tri-repo-alignment-completion-plan.md. Gates enforce verification before merge. Completion plan is the execution anchor."
+}
