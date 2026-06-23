@@ -193,10 +193,60 @@ async def _backoff_after_error(
         await asyncio.sleep(interval)
 
 
+# ── hardware affinity helpers ─────────────────────────────────────────────────
+
+def _platform_for_role(role: str) -> str:
+    """Map a researcher role name to its canonical hardware platform string.
+
+    Returns ``"mac"`` for Mac-side roles and ``"win"`` for Windows-side roles.
+    Unknown roles default to ``"mac"`` (conservative: Mac policy is stricter).
+    """
+    if "win" in role.lower():
+        return "win"
+    return "mac"
+
+
+def _pick_model_with_affinity(
+    models: list[str],
+    preferred: str,
+    platform: str,
+    backend_label: str = "",
+) -> str | None:
+    """Return the first model from *models* allowed on *platform*, or ``None``.
+
+    Uses :func:`~utils.hardware_policy.filter_models_for_platform` so the same
+    NEVER_MAC / NEVER_WIN policy enforced at the supervisor layer applies here.
+    ``preferred`` is tried first; if it's forbidden or absent the first allowed
+    candidate wins.
+    """
+    from utils.hardware_policy import filter_models_for_platform  # local import avoids circular
+
+    allowed = filter_models_for_platform(models, platform)
+    if not allowed:
+        log.error(
+            "%s: no models available for platform=%r after affinity filter (candidates=%r)",
+            backend_label or "backend",
+            platform,
+            models,
+        )
+        return None
+    if preferred in allowed:
+        return preferred
+    return allowed[0]
+
+
 # ── model discovery ───────────────────────────────────────────────────────────
 
-async def _resolve_ollama_model(endpoint: str, preferred: str) -> str | None:
-    """Return preferred model if present in Ollama, else first available, else None."""
+async def _resolve_ollama_model(
+    endpoint: str,
+    preferred: str,
+    platform: str = "mac",
+) -> str | None:
+    """Return preferred model if present in Ollama, else first allowed model, else None.
+
+    Models forbidden on *platform* (NEVER_MAC / NEVER_WIN) are excluded from
+    the fallback candidate list so mac-researcher never lands on a Win-only model.
+    """
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
             r = await client.get(f"{endpoint.rstrip('/')}/api/tags")
@@ -210,12 +260,22 @@ async def _resolve_ollama_model(endpoint: str, preferred: str) -> str | None:
         return None
     if preferred in models:
         return preferred
-    log.warning("Model %r not in Ollama — using %r instead", preferred, models[0])
-    return models[0]
+    allowed = _pick_model_with_affinity(models, preferred=preferred, platform=platform, backend_label="Ollama")
+    if allowed:
+        log.warning("Model %r not in Ollama — using %r instead", preferred, allowed)
+    return allowed
 
 
-async def _resolve_lmstudio_model(endpoint: str, preferred: str) -> str | None:
-    """Return preferred model if LM Studio reports it, else first loaded model, else None."""
+async def _resolve_lmstudio_model(
+    endpoint: str,
+    preferred: str,
+    platform: str = "mac",
+) -> str | None:
+    """Return preferred model if LM Studio reports it, else first allowed model, else None.
+
+    Models forbidden on *platform* (NEVER_MAC / NEVER_WIN) are excluded from
+    the fallback candidate list so mac-researcher never lands on a Win-only model.
+    """
     token = os.getenv("LM_STUDIO_API_TOKEN", "")
     headers = {"Authorization": f"Bearer {token}"} if token else {}
     try:
@@ -231,8 +291,10 @@ async def _resolve_lmstudio_model(endpoint: str, preferred: str) -> str | None:
         return None
     if preferred in models:
         return preferred
-    log.warning("Model %r not in LM Studio — using %r instead", preferred, models[0])
-    return models[0]
+    allowed = _pick_model_with_affinity(models, preferred=preferred, platform=platform, backend_label="LM Studio")
+    if allowed:
+        log.warning("Model %r not in LM Studio — using %r instead", preferred, allowed)
+    return allowed
 
 
 # ── researcher coroutine ──────────────────────────────────────────────────────
