@@ -41,6 +41,7 @@ def clear_policy_cache(monkeypatch):
 
 
 WIN_ONLY = "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2"
+GEMMA_WIN_ONLY = "gemma-4-26B-A4B-it-Q4_K_M"
 MAC_SAFE = "Qwen3.5-9B-MLX-4bit"
 
 
@@ -141,6 +142,29 @@ async def test_run_researcher_passes_win_platform_to_resolver(launch_researchers
         "some-model",
         platform="win",
     )
+
+
+@pytest.mark.asyncio
+async def test_resolve_lmstudio_model_filters_gemma_quant_alias_on_mac(launch_researchers):
+    """LM Studio uses quant-suffixed ids; aliases must enforce NEVER_MAC."""
+    mock_response = MagicMock()
+    mock_response.raise_for_status = MagicMock()
+    mock_response.json.return_value = {
+        "data": [{"id": GEMMA_WIN_ONLY}, {"id": MAC_SAFE}],
+    }
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(return_value=mock_response)
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch.object(launch_researchers.httpx, "AsyncClient", return_value=mock_client):
+        resolved = await launch_researchers._resolve_lmstudio_model(
+            "http://localhost:1234",
+            preferred=GEMMA_WIN_ONLY,
+            platform="mac",
+        )
+
+    assert resolved == MAC_SAFE
 
 
 @pytest.mark.asyncio

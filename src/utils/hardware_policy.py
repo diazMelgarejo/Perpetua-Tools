@@ -30,7 +30,14 @@ _POLICY_CACHE: dict[str, Any] | None = None
 
 def _simple_policy_parse(text: str) -> dict[str, list[str]]:
     """Parse the small policy YAML shape without requiring PyYAML."""
-    parsed: dict[str, list[str]] = {"windows_only": [], "mac_only": [], "shared": []}
+    parsed: dict[str, list[str]] = {
+        "windows_only": [],
+        "mac_only": [],
+        "shared": [],
+        "windows_only_aliases": [],
+        "mac_only_aliases": [],
+        "shared_aliases": [],
+    }
     current: str | None = None
     for raw_line in text.splitlines():
         line = raw_line.split("#", 1)[0].rstrip()
@@ -48,6 +55,21 @@ def _simple_policy_parse(text: str) -> dict[str, list[str]]:
     return parsed
 
 
+def _normalize_policy(loaded: dict[str, Any]) -> dict[str, Any]:
+    """Merge documented alias sections into enforceable affinity lists."""
+    windows_only = list(loaded.get("windows_only", []) or [])
+    windows_only.extend(loaded.get("windows_only_aliases", []) or [])
+    mac_only = list(loaded.get("mac_only", []) or [])
+    mac_only.extend(loaded.get("mac_only_aliases", []) or [])
+    shared = list(loaded.get("shared", []) or [])
+    shared.extend(loaded.get("shared_aliases", []) or [])
+    return {
+        "windows_only": windows_only,
+        "mac_only": mac_only,
+        "shared": shared,
+    }
+
+
 def load_policy(policy_path: Path | None = None, *, force_reload: bool = False) -> dict[str, Any]:
     """Load and cache the hardware policy YAML."""
     global _POLICY_CACHE
@@ -63,11 +85,7 @@ def load_policy(policy_path: Path | None = None, *, force_reload: bool = False) 
     else:
         loaded = _simple_policy_parse(text)
 
-    policy = {
-        "windows_only": list(loaded.get("windows_only", []) or []),
-        "mac_only": list(loaded.get("mac_only", []) or []),
-        "shared": list(loaded.get("shared", []) or []),
-    }
+    policy = _normalize_policy(loaded)
     if policy_path == Path(__file__).resolve().parents[2] / "config" / "model_hardware_policy.yml":
         _POLICY_CACHE = policy
     return policy
