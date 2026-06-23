@@ -13,6 +13,14 @@
 
 ## Auto-promoted entries will be appended below
 
+### Canonical path + spelling
+- Canonical base dir spelling is **`uLtrathink`**, with an uppercase `L`. Treat it as verbatim repo/test anchor. Do not normalize, lowercase, or "fix" it.  
+- Canonical repo roots:  
+  - **Perpetua-Tools** = `C:\Users\lab\Downloads\SKILLS.md\uLtrathink\Perplexity-Tools`  
+  - **orama-system** = `C:\Users\lab\Downloads\SKILLS.md\uLtrathink\ultrathink-system`
+
+- Unified memory-trail hygiene rule: never write absolute workstation paths into tracked files. Resolve paths relative to the file's repo location (../../) or use repo-anchor env vars ($REPO_ROOT / $OPENCLAW_ROOT). Treat username placeholders (`<user>`) as still-doxxing because they leak directory structure. If a path can be made relative, it must be relative.  <!-- status=accepted confidence=0.8 evidence=da04cbbae68b+456ea361526d id=lesson_memory_path_doxx_merged -->
+
 ### 2026-06
 
 - DO NOT assume directory or structure names: when the user gives an explicit name (e.g. '.agent/memory'), use it verbatim — never silently 'correct' it to a guess (e.g. '.agents/memory'). If it seems wrong or you have not read its conventions, STOP and ASK first. Read the area's AGENTS.md/_index before writing.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_2e154f1b55ab -->
