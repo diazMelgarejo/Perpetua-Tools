@@ -136,6 +136,18 @@ def test_hardware_policy_blocks_mac_only_on_windows():
         check_affinity("Qwen3.5-9B-MLX-4bit", "win", policy=policy)
 
 
+def test_load_policy_merges_windows_only_aliases():
+    policy = load_policy(force_reload=True)
+    forbidden = {m.lower() for m in policy.get("windows_only", [])}
+    assert "gemma-4-26b-a4b-it-q4_k_m" in forbidden
+
+
+def test_hardware_policy_blocks_gemma_quant_alias_on_mac():
+    policy = load_policy(force_reload=True)
+    with pytest.raises(HardwareAffinityError, match="NEVER_MAC"):
+        check_affinity("gemma-4-26B-A4B-it-Q4_K_M", "mac", policy=policy)
+
+
 def test_hardware_policy_filter_is_case_insensitive():
     # Pass explicit policy: gemma-4-26B Windows GGUF model is windows_only in this test.
     # (Live policy uses 'shared' for all models due to LM Studio proxy — tests must be isolated.)
