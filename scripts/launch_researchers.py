@@ -258,11 +258,17 @@ async def _resolve_ollama_model(
     if not models:
         log.warning("Ollama at %s has no models pulled", endpoint)
         return None
-    if preferred in models:
-        return preferred
     allowed = _pick_model_with_affinity(models, preferred=preferred, platform=platform, backend_label="Ollama")
-    if allowed:
-        log.warning("Model %r not in Ollama — using %r instead", preferred, allowed)
+    if allowed and allowed != preferred:
+        if preferred in models:
+            log.warning(
+                "Model %r is in Ollama but forbidden on platform=%r — using %r instead",
+                preferred,
+                platform,
+                allowed,
+            )
+        else:
+            log.warning("Model %r not in Ollama — using %r instead", preferred, allowed)
     return allowed
 
 
@@ -289,11 +295,17 @@ async def _resolve_lmstudio_model(
     if not models:
         log.warning("LM Studio at %s has no models loaded", endpoint)
         return None
-    if preferred in models:
-        return preferred
     allowed = _pick_model_with_affinity(models, preferred=preferred, platform=platform, backend_label="LM Studio")
-    if allowed:
-        log.warning("Model %r not in LM Studio — using %r instead", preferred, allowed)
+    if allowed and allowed != preferred:
+        if preferred in models:
+            log.warning(
+                "Model %r is loaded in LM Studio but forbidden on platform=%r — using %r instead",
+                preferred,
+                platform,
+                allowed,
+            )
+        else:
+            log.warning("Model %r not in LM Studio — using %r instead", preferred, allowed)
     return allowed
 
 
@@ -375,12 +387,13 @@ async def run_researcher(
     Set rounds=0 to disable the stop (original autonomous behaviour).
     """
     use_lmstudio = "lmstudio" in backend or ":1234" in endpoint
+    platform = _platform_for_role(role)
 
     # Discover the actually-loaded model before committing to it
     if use_lmstudio:
-        resolved = await _resolve_lmstudio_model(endpoint, model)
+        resolved = await _resolve_lmstudio_model(endpoint, model, platform=platform)
     else:
-        resolved = await _resolve_ollama_model(endpoint, model)
+        resolved = await _resolve_ollama_model(endpoint, model, platform=platform)
 
     if resolved is None:
         log.error("[%s] no model available at %s — skipping", role, endpoint)
