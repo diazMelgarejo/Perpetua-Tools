@@ -93,6 +93,57 @@ async def test_resolve_lmstudio_model_filters_never_mac_proxy(launch_researchers
 
 
 @pytest.mark.asyncio
+async def test_resolve_lmstudio_model_rejects_preferred_never_mac_when_listed(launch_researchers):
+    """LM Studio proxy lists Win-only models on Mac — preferred must not bypass affinity."""
+    mock_response = MagicMock()
+    mock_response.raise_for_status = MagicMock()
+    mock_response.json.return_value = {
+        "data": [{"id": WIN_ONLY}, {"id": MAC_SAFE}],
+    }
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(return_value=mock_response)
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch.object(launch_researchers.httpx, "AsyncClient", return_value=mock_client):
+        resolved = await launch_researchers._resolve_lmstudio_model(
+            "http://localhost:1234",
+            preferred=WIN_ONLY,
+            platform="mac",
+        )
+
+    assert resolved == MAC_SAFE
+
+
+@pytest.mark.asyncio
+async def test_run_researcher_passes_win_platform_to_resolver(launch_researchers):
+    with patch.object(
+        launch_researchers,
+        "_resolve_lmstudio_model",
+        new=AsyncMock(return_value="resolved-model"),
+    ) as mock_resolve:
+        with patch.object(launch_researchers, "tracker") as mock_tracker:
+            mock_tracker.register.return_value = MagicMock(agent_id="test-agent")
+            with patch.object(launch_researchers, "_append_event"):
+                await launch_researchers.run_researcher(
+                    role="win-researcher",
+                    endpoint="http://192.168.254.108:1234",
+                    model="some-model",
+                    backend="lmstudio-win",
+                    task="test",
+                    loop_once=True,
+                    interval=1,
+                    rounds=0,
+                )
+
+    mock_resolve.assert_awaited_once_with(
+        "http://192.168.254.108:1234",
+        "some-model",
+        platform="win",
+    )
+
+
+@pytest.mark.asyncio
 async def test_resolve_lmstudio_model_allows_win_only_on_win(launch_researchers):
     mock_response = MagicMock()
     mock_response.raise_for_status = MagicMock()
