@@ -73,3 +73,54 @@ introduced by a reformat pass in commit 8101984; fixed in 122d7d7 for 9 files.
 read raw text. Add a custom Markdown plugin — rejected as over-engineering for a simple convention.
 
 **Status:** active — consider adding a repo_hygiene.py check for all-1 procedure lists.
+
+## 2026-06-23: Nested-branch multi-agent merge: simulate first, ask human, then combine
+
+**Decision:** When merging nested branches produced by independent agents against a
+moving main, the mandatory protocol is:
+1. `git merge --no-commit --no-ff` both merges in sequence to enumerate ALL conflicts
+   before touching any file.
+2. Present every conflict to the human with both sides shown — never guess resolution.
+3. Wait for explicit human direction (combine/take-ours/take-theirs/build-union).
+4. Resolve all conflicts in a single pass using the directed strategy.
+5. Push, wait for CI, then perform the official GitHub API merge.
+6. Wait 10 minutes between merges for GitHub to recompute mergeable_state.
+7. Confirm mergeable_state=clean before the second merge.
+
+**Applied to:** PR #104 (codex/hermes-ecc-harness-skills) → PR #105 (experiment) → main.
+11 conflicts resolved with combine-never-replace strategy. 0 content lost.
+
+**Rationale:** Guessing conflict resolution in a multi-agent codebase leads to silent
+content loss. The "combine-never-replace" directive from the human was clear and applicable
+to all 11 conflicts — each one had a natural union resolution once the two sides were
+inspected and compared systematically.
+
+**Status:** active — this is the standard protocol for all multi-agent branch merges.
+
+---
+
+## 2026-06-23: CodeRabbit findings require root-cause analysis, not literal application
+
+**Decision:** Never apply CodeRabbit suggestions literally without first asking
+"what is the underlying invariant being violated?" Three categories:
+(a) Surface patches — apply directly (duplicate sentences, stale flag names).
+(b) Symptom flags — dig to root cause (NEEDS_REVISION→Execute was a symptom;
+    root cause: failed final review must re-plan, not re-execute stale work).
+(c) Architectural issues — require human judgment (trigger string routing,
+    security gate ordering in check_commit_message.sh).
+
+**Applied to:** PRs #104 and #105, 14 total findings, all fixed at root cause.
+
+**Status:** active — applies to all future PR reviews.
+
+---
+
+## 2026-06-23: Version SSoT: src/orama_system/_version.py is the single source
+
+**Decision:** orama-system version is now managed exclusively through
+`src/orama_system/_version.py`. Bump procedure: edit that file only, then
+`python3 scripts/sync_version.py` (25+ surfaces), then `pytest tests/test_version_docs.py`.
+No manual edits to versioned surfaces. Historical docs are excluded intentionally.
+
+**Applied to:** orama-system main, v1.1.0.0 standardized across all canonical surfaces.
+**Status:** active.
