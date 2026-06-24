@@ -6,54 +6,39 @@ Human entry points remain:
   - Orama Portal http://localhost:8002
 """
 from __future__ import annotations
-import argparse, json
+
+import argparse
+import json
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+for _path in (ROOT / "src", ROOT):
+    sys.path.insert(0, str(_path))
+
+from utils.hardware_policy import (  # noqa: E402
+    HardwareAffinityError,
+    forbidden_models_for_platform,
+    load_policy as load_canonical_policy,
+)
+
 POLICY_PATH = ROOT / "config" / "model_hardware_policy.yml"
-
-
-def _simple_policy_parse(text: str) -> dict[str, list[str]]:
-    parsed: dict[str, list[str]] = {"windows_only": [], "mac_only": [], "shared": []}
-    current: str | None = None
-    for raw_line in text.splitlines():
-        line = raw_line.split("#", 1)[0].rstrip()
-        if not line.strip():
-            continue
-        stripped = line.strip()
-        if stripped.endswith(":") and not stripped.startswith("-"):
-            key = stripped[:-1]
-            current = key if key in parsed else None
-            continue
-        if current and stripped.startswith("-"):
-            value = stripped[1:].strip().strip('"').strip("'")
-            if value:
-                parsed[current].append(value)
-    return parsed
 
 
 def load_policy() -> dict[str, list[str]]:
     if not POLICY_PATH.exists():
         return {"windows_only": [], "mac_only": [], "shared": []}
-    return _simple_policy_parse(POLICY_PATH.read_text(encoding="utf-8"))
-
-
-def _forbidden(platform: str, policy: dict[str, list[str]]) -> set[str]:
-    p = platform.lower().strip()
-    if p in {"mac", "macos", "darwin", "lmstudio-mac", "mac-studio"}:
-        return {m.lower() for m in policy.get("windows_only", [])}
-    if p in {"win", "windows", "lmstudio-win", "win-rtx3080"}:
-        return {m.lower() for m in policy.get("mac_only", [])}
-    return set()
+    return load_canonical_policy(policy_path=POLICY_PATH, force_reload=True)
 
 
 def check_affinity(model_id: str, platform: str, policy: dict[str, list[str]]) -> tuple[bool, str]:
-    forbidden = _forbidden(platform, policy)
-    if model_id.lower() in forbidden:
-        if platform.lower().startswith("mac"):
-            return False, f"[alphaclaw] Fatal: '{model_id}' is NEVER_MAC. Assign to lmstudio-win only."
-        return False, f"[alphaclaw] Fatal: '{model_id}' is NEVER_WIN. Assign to lmstudio-mac only."
-    return True, ""
+    from utils.hardware_policy import check_affinity as check_affinity_canonical
+
+    try:
+        check_affinity_canonical(model_id, platform, policy=policy)
+        return True, ""
+    except HardwareAffinityError as exc:
+        return False, str(exc)
 
 
 def cmd_list() -> int:
@@ -102,7 +87,7 @@ def cmd_validate(model_id: str, platform: str) -> int:
 
 
 def cmd_filter(models: list[str], platform: str) -> int:
-    forbidden = _forbidden(platform, load_policy())
+    forbidden = forbidden_models_for_platform(platform, load_policy())
     allowed = [m for m in models if m.lower() not in forbidden]
     removed = [m for m in models if m.lower() in forbidden]
     print(f"Allowed: {allowed}")
