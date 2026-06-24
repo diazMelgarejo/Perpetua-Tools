@@ -264,7 +264,6 @@ def verify_gpg_approval(signed_message: str, expected_fingerprint: str) -> bool:
     finally:
         os.unlink(tmpfile)
 
-
 OPERATOR_GPG_FINGERPRINT = os.getenv("OPERATOR_GPG_FINGERPRINT", "")
 
 def require_signed_approval(signed_token: str, operation: str) -> None:
