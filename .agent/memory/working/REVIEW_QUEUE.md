@@ -12,5 +12,7 @@ Run `python .agent/tools/list_candidates.py` for detail, then:
 
 - **c094d281f841** (priority=50.40, size=3, rejections=0) — FAILURE in path-hygiene: Use ..\.. as canonical path
 - **b387cb3fb5bf** (priority=22.40, size=2, rejections=0) — FAILURE in path-hygiene: Use ..\.. as canonical path
+- **c094d281f841** (priority=50.40, size=3, rejections=0) — FAILURE in path-hygiene: Use ..\.. as cano
+- **b387cb3fb5bf** (priority=22.40, size=2, rejections=0) — FAILURE in path-hygiene: Use ..\.. as cano
 - **bb70a6833f36** (priority=22.40, size=2, rejections=0) — FAILURE in skill-absorption-map: hermes-harness should absorb hermes-agent and p
 - **60d836556ff0** (priority=14.00, size=2, rejections=0) — Core lesson of the gbrain self-heal journey; applies beyond gbrain.
