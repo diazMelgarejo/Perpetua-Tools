@@ -282,9 +282,10 @@ and the adaptive path will engage.
 | `agent_launcher.py` | Perpetua-Tools | Probe + classify + record + route |
 | `tests/test_startup_intelligence.py` | Perpetua-Tools | 20 offline unit tests |
 | `tests/test_hardware_routing.py` | Perpetua-Tools | Hardware routing integration tests |
-| `.state/startup_history.jsonl` | Perpetua-Tools | Rolling probe history |
-| `.state/routing.json` | Perpetua-Tools | Last known good routing state (warm cache source) |
-| `start.sh` | orama-system | Process manager; reads PT routing state |
+| `scripts/hardware_policy_cli.py` | Perpetua-Tools | OpenClaw / startup affinity validation |
+| `src/utils/hardware_policy.py` | Perpetua-Tools | Canonical policy API (alias merge) |
+| `scripts/launch_researchers.py` | Perpetua-Tools | Researcher model resolution + affinity |
+| `start.sh` | orama-system | Process manager; `./start.sh --hardware-policy` calls CLI |
 
 ---
 
