@@ -33,6 +33,15 @@ If the worktree is dirty, the branch is not tracking origin, or fast-forward is 
 
 Open and follow `bin/orama-system/skills/code-review/SKILL.md` (relative to the repo root). Do not copy behavior from this wrapper.
 
+## Perpetua-Tools: hardware affinity reviews
+
+When the diff touches model IDs, routing, `openclaw.json`, `launch_researchers.py`,
+or `hardware_policy.py`, also load **`.claude/skills/hardware-policy/SKILL.md`** and verify:
+
+1. No duplicate YAML parsers (`rg '_simple_policy_parse|def _forbidden'`)
+2. Alias ids covered in `model_hardware_policy.yml`
+3. `pytest tests/test_launch_researchers_affinity.py tests/test_hardware_routing.py -q`
+
 ## Windows UTF-8 Note
 
 On Windows PowerShell, set UTF-8 explicitly before reading or writing skill files:

@@ -26,3 +26,9 @@ Pre-deployment verification against a structured checklist.
 Triggers: "deploy", "ship", "release", "go live"
 Constraints: all tests passing, no unresolved TODOs in diff,
 requires human approval for production.
+
+## hardware-policy
+Hardware model affinity: policy YAML, canonical API, CLI validation, launch_researchers.
+Triggers: "hardware policy", "NEVER_MAC", "openclaw.json", "model_hardware_policy",
+"affinity", "launch_researchers", "hardware_policy_cli"
+Load: `.claude/skills/hardware-policy/SKILL.md`
