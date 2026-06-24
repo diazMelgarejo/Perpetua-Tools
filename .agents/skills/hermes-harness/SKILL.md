@@ -33,6 +33,10 @@ If the worktree is dirty, the branch is not tracking origin, or fast-forward is 
 
 Open and follow `bin/orama-system/skills/hermes-harness/SKILL.md` (relative to the repo root). Do not copy behavior from this wrapper.
 
+**Hardware policy:** Hermes on Windows consumes Perpetua-Tools `config/model_hardware_policy.yml`
+via the same CLI as OpenClaw — see orama `commands/pt-hardware-policy/SKILL.md` and PT
+`.claude/skills/hardware-policy/SKILL.md`. Never infer NEVER_MAC/NEVER_WIN at runtime.
+
 ## Windows UTF-8 Note
 
 On Windows PowerShell, set UTF-8 explicitly before reading or writing skill files:
