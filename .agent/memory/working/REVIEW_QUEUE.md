@@ -1,5 +1,23 @@
 # Review Queue
 
+## Next session — read this plan first
+
+> Added: 2026-06-24
+
+**Optimization priorities for both repos — 5-level strategic backlog**
+- Plan file: [`orama-system/docs/plans/2026-06-24-optimization-priorities.md`](https://github.com/diazMelgarejo/orama-system/blob/main/docs/plans/2026-06-24-optimization-priorities.md)
+
+| Priority | Item | Status |
+|----------|------|--------|
+| **L1 BLOCKING** | perpetua-core hardware review (Mac Ollama + Win LM Studio) → `v0.2.0-alpha` | ⏳ Gate open |
+| **L2 Critical** | `orama-system/src/oramaclaw/store.py:163` TOCTOU lock → atomic `O_CREAT\|O_EXCL` | 🔴 Unresolved |
+| **L3 Systemic** | `repo_hygiene.py` — add LINT-010/011/012 (all-1 lists, (deprecated) triggers, hermes -z) | 📋 Planned |
+| **L4 Efficiency** | GitHub Action: auto-detect unresolved post-merge CodeRabbit comments | 📋 Planned |
+| **L5 Protocol** | Encode combine-never-replace conflict strategy in `PT/.agent/AGENTS.md` | 📋 Planned |
+
+---
+
+
 **Pending:** 4
 **Oldest staged:** 2026-06-22T12:35:50.597659+00:00
 

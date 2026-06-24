@@ -32,6 +32,7 @@ None active. Full extended session completed.
 
 ## Next session start
 
+0. **READ PLAN FIRST:** [`docs/plans/2026-06-24-optimization-priorities.md`](https://github.com/diazMelgarejo/orama-system/blob/main/docs/plans/2026-06-24-optimization-priorities.md)
 1. Check: perpetua-core hardware review status
 2. Check: orama-system store.py TOCTOU fix (schedule as separate session)
 3. Run: `python3 scripts/sync_version.py --check` (verify no drift)
