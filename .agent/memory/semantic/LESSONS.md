@@ -13,14 +13,6 @@
 
 ## Auto-promoted entries will be appended below
 
-### Canonical path + spelling
-- Canonical base dir spelling is **`uLtrathink`**, with an uppercase `L`. Treat it as verbatim repo/test anchor. Do not normalize, lowercase, or "fix" it.  
-- Canonical repo roots:  
-  - **Perpetua-Tools** = `C:\Users\lab\Downloads\SKILLS.md\uLtrathink\Perplexity-Tools`  
-  - **orama-system** = `C:\Users\lab\Downloads\SKILLS.md\uLtrathink\ultrathink-system`
-
-- Unified memory-trail hygiene rule: never write absolute workstation paths into tracked files. Resolve paths relative to the file's repo location (../../) or use repo-anchor env vars ($REPO_ROOT / $OPENCLAW_ROOT). Treat username placeholders (`<user>`) as still-doxxing because they leak directory structure. If a path can be made relative, it must be relative.  <!-- status=accepted confidence=0.8 evidence=da04cbbae68b+456ea361526d id=lesson_memory_path_doxx_merged -->
-
 ### 2026-06
 
 - DO NOT assume directory or structure names: when the user gives an explicit name (e.g. '.agent/memory'), use it verbatim — never silently 'correct' it to a guess (e.g. '.agents/memory'). If it seems wrong or you have not read its conventions, STOP and ASK first. Read the area's AGENTS.md/_index before writing.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_2e154f1b55ab -->
@@ -101,6 +93,14 @@
 - Filesystem path is authoritative; pinned canonical path beats compressed recall  <!-- status=accepted confidence=0.495 evidence=1 id=lesson_110bcd19d96a -->
 - Canonical filesystem path must be treated as immutable source of truth across memory, writes, and recalls  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_ef98574d9256 -->
 - When a git pre-push hook runs from a deleted or removed worktree directory (getcwd fails), the hook exits non-zero with 'banned or unapproved attribution in commits to push' — even when NO actual banned pattern exists. The banned_attribution_lib.sh cannot resolve the repo root or patterns file, so it fails closed. The error message is misleading: the real cause is a dead working directory, not a real attribution violation. Fix: never delete a worktree before the git push completes; if a push fails with this message after a worktree cleanup, re-push from a live worktree or the canonical repo directory.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_1bb7057c6ea8 -->
+- Cross-repo hardware policy changes must land in PT config/model_hardware_policy.yml and src/utils/hardware_policy.py first; orama may only wire harness entrypoints and thin skills — never duplicate parsers or NEVER lists in markdown.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_b7d5e61cb108 -->
+- Canonical base dir spelling is **`uLtrathink`**, with an uppercase `L`. Treat it as verbatim repo/test anchor. Do not normalize, lowercase, or "fix" it.  <!-- status=legacy confidence=0.7 evidence=0 id=lesson_legacy_723580aae34d -->
+- Canonical repo roots:  <!-- status=legacy confidence=0.7 evidence=0 id=lesson_legacy_bdf40170a348 -->
+- **Perpetua-Tools** = `C:\Users\lab\Downloads\SKILLS.md\uLtrathink\Perplexity-Tools`  <!-- status=legacy confidence=0.7 evidence=0 id=lesson_legacy_4549b0ea8d50 -->
+- **orama-system** = `C:\Users\lab\Downloads\SKILLS.md\uLtrathink\ultrathink-system`  <!-- status=legacy confidence=0.7 evidence=0 id=lesson_legacy_c51190a86dd8 -->
+- Unified memory-trail hygiene rule: never write absolute workstation paths into tracked files. Resolve paths relative to the file's repo location (../../) or use repo-anchor env vars ($REPO_ROOT / $OPENCLAW_ROOT). Treat username placeholders (`<user>`) as still-doxxing because they leak directory structure. If a path can be made relative, it must be relative.  <!-- status=legacy confidence=0.7 evidence=0 id=lesson_legacy_ab002d123a7e -->
+- Skills and Hermes thin wrappers must resolve Perpetua-Tools via PERPETUA_TOOLS_ROOT or launcher gates (start.sh / platform/windows/start.ps1 --hardware-policy) — never hardcode sibling paths like ../Perpetua-Tools.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_9347a1da28de -->
+- When a parsed Co-authored-by email is present but not on the allowlist, attribution guards must reject immediately — display-name tool markers must never override a rejected email.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_ddd40529a211 -->
 
 ### 2026-04
 
