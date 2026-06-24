@@ -124,3 +124,31 @@ No manual edits to versioned surfaces. Historical docs are excluded intentionall
 
 **Applied to:** orama-system main, v1.1.0.0 standardized across all canonical surfaces.
 **Status:** active.
+
+## 2026-06-24: Hermes memory sync requires path sanitization before committing
+
+**Decision:** When integrating Hermes-generated memory into tracked .agent/memory/ files, always sanitize absolute workstation paths before committing. Hermes runs on the physical workstation and naturally includes real paths in its memory outputs. These must be converted to relative paths (../../) or env vars ($REPO_ROOT, $OPENCLAW_ROOT) before they enter tracked files.
+
+**Evidence:** 2026-06-23-memory-update-01 contained `C:\Users\lab\Downloads\SKILLS.md\uLtrathink\Perplexity-Tools` — this violates LINT-006 and the repo's own anti-doxxing lesson. The uLtrathink spelling anchor was preserved; the absolute path was replaced with env var guidance.
+
+**Status:** active.
+
+---
+
+## 2026-06-24: GitHub 'merged' status does not guarantee content on main branch
+
+**Decision:** After any GitHub PR merge, always verify with `git diff origin/main...origin/<branch>` that the content is actually present. PR #131 was closed as 'merged' on GitHub but its content was not on main — this was discovered during the post-merge sweep.
+
+**Causes:** Force-pushes, squash merges to non-main bases, and GitHub's cached merge state can all produce a 'merged' label on a PR while the target branch has diverged.
+
+**Status:** active — add to pre-session checklist.
+
+---
+
+## 2026-06-24: Optimization priorities for both repos
+
+**L1 (Blocking):** perpetua-core hardware review gate → v0.2.0-alpha → Phase 3
+**L2 (Critical):** orama-system store.py TOCTOU lock (atomic O_CREAT|O_EXCL)
+**L3 (Systemic):** repo_hygiene.py linter rules — all-1 procedure lists, (deprecated) in triggers, hermes -z in markdown
+**L4 (Efficiency):** GitHub Action to auto-detect unresolved PR comments post-merge
+**L5 (Architectural):** encode combine-never-replace conflict strategy in AGENTS.md
