@@ -152,3 +152,45 @@ No manual edits to versioned surfaces. Historical docs are excluded intentionall
 **L3 (Systemic):** repo_hygiene.py linter rules — all-1 procedure lists, (deprecated) in triggers, hermes -z in markdown
 **L4 (Efficiency):** GitHub Action to auto-detect unresolved PR comments post-merge
 **L5 (Architectural):** encode combine-never-replace conflict strategy in AGENTS.md
+
+## 2026-06-24: Duplicate parsers must be eliminated when the canonical upgrades
+
+**Decision:** When `src/utils/hardware_policy.py` (or any canonical module) receives a new capability (alias merging, _normalize_policy), immediately grep for other files implementing the same logic (`_simple_policy_parse`, `_forbidden`, etc.). Duplicate parsers silently diverge — the CLI produces different results than the Python API.
+
+**Evidence:** PT PR #131 — hardware_policy_cli.py had its own copy of _simple_policy_parse that missed alias enforcement added in PR #130. Fixed by delegating to canonical `load_policy()`.
+
+**Status:** active.
+
+---
+
+## 2026-06-24: GitHub Actions outputs are always strings — quote all comparisons
+
+**Decision:** In GitHub Actions YAML, all `steps.<id>.outputs.*` values are strings, regardless of what the Python/bash step writes. Comparisons must be: `!= '0'` (not `!= 0`), and always guard the empty case: `!= '0' && != ''`.
+
+**Evidence:** post-merge-review-sweep.yml had `unresolved_count != '0'` — this is a string comparison in the YAML expression engine; the literal string '0' is never equal to integer 0 via `!=`. Fixed to double-guard.
+
+**Status:** active.
+
+---
+
+## 2026-06-24: Never pass secrets as CLI argv — always use stdin/env/file
+
+**Decision:** Shell commands that pass secrets as positional arguments (e.g. `security add-generic-password -w $secret_value`) expose them in `ps aux`, `/proc/<pid>/cmdline`, shell history, and system audit logs. All secret passing must use: (a) stdin via heredoc/pipe, (b) `os.environ` with gitignored `.env`, or (c) restricted-permission files.
+
+**Evidence:** openclaw-add-secret SKILL.md had `security add-generic-password -w "$secret_value"`. Fixed via `store_keychain_secret.sh` that reads from stdin.
+
+**Status:** active.
+
+---
+
+## 2026-06-24: Knowledge depth must match the consumption point
+
+**Decision:** When promoting a protocol into skills, the content depth at each location must match how that location is consumed:
+- Reference doc (loaded on demand) → full detail, code snippets, all edge cases
+- SKILL.md section (loaded when doing related work) → quick summary + link to reference
+- Step in a checklist (always visible) → 3-5 line trigger + link
+- Wiki page (discovery layer) → compact table + invariants block + cross-links
+
+**Evidence:** Multi-agent merge protocol distributed across 4 files (`3ae45b5`, `72d0fbc`) using this pattern. Each file useful at its level without requiring full detail to be loaded.
+
+**Status:** active.
