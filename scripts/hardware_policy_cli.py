@@ -18,6 +18,7 @@ for _path in (ROOT / "src", ROOT):
 
 from utils.hardware_policy import (  # noqa: E402
     HardwareAffinityError,
+    check_affinity as check_affinity_canonical,
     forbidden_models_for_platform,
     load_policy as load_canonical_policy,
 )
@@ -32,8 +33,6 @@ def load_policy() -> dict[str, list[str]]:
 
 
 def check_affinity(model_id: str, platform: str, policy: dict[str, list[str]]) -> tuple[bool, str]:
-    from utils.hardware_policy import check_affinity as check_affinity_canonical
-
     try:
         check_affinity_canonical(model_id, platform, policy=policy)
         return True, ""
