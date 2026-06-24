@@ -194,3 +194,46 @@ No manual edits to versioned surfaces. Historical docs are excluded intentionall
 **Evidence:** Multi-agent merge protocol distributed across 4 files (`3ae45b5`, `72d0fbc`) using this pattern. Each file useful at its level without requiring full detail to be loaded.
 
 **Status:** active.
+
+---
+
+## 2026-06-24: Cross-repo Hermes hardware policy — one consumption path, three harnesses
+
+**Decision:** Windows Hermes must consume Perpetua-Tools hardware policy through the same
+YAML → `hardware_policy.py` → `hardware_policy_cli.py` chain as Mac/Linux OpenClaw. orama-system
+wires harness entrypoints only (`platform/windows/start.ps1 --hardware-policy`, `pt-hardware-policy`
+thin skill); it never re-declares NEVER lists or duplicate parsers in markdown.
+
+**Rationale:** Parallel orchestrators each see LM Studio `/v1/models` including LAN-proxied models.
+Independent affinity inference causes OOM and double-barrel GPU damage. Platform roles invert on
+Windows (`windows_only` allowed at localhost:1234) but the policy file is shared.
+
+**Evidence:** orama-system PR #107; Perpetua-Tools PR #134; plan
+`docs/plans/2026-06-24-hermes-windows-hardware-policy-walkthrough.md`.
+
+**Status:** active — merge orama #107 + PT #134 together; live Windows walkthrough deferred.
+
+---
+
+## 2026-06-24: Workspace-agnostic path resolution for cross-repo skills
+
+**Decision:** Skills and thin Hermes wrappers must never hardcode sibling checkout paths like
+`../Perpetua-Tools`. Resolution order: env vars (`PERPETUA_TOOLS_ROOT`, `PERPETUA_TOOLS_PATH`,
+`PT_HOME`) → `.paths`/`.paths.ps1` → `OPENCLAW_HOME/Perpetua-Tools` → sibling discovery from git
+toplevel. Prefer launcher gates over direct CLI paths.
+
+**Evidence:** CodeRabbit PR #107; `workspace-path-resolution.md`; `start.sh`/`start.ps1` parity fix.
+
+**Status:** active.
+
+---
+
+## 2026-06-24: platform/windows scripts live two levels below repo root
+
+**Decision:** `platform/windows/start.ps1` and `install.ps1` set `$RepoRoot` via
+`Join-Path $ScriptDir '..\..'`. All repo-root-relative docs use `.\platform\windows\start.ps1` —
+there is no `.\windows\` folder at repo root.
+
+**Evidence:** CodeRabbit PR #107; incorrect `$RepoRoot` broke `.paths.ps1` generation.
+
+**Status:** active.
