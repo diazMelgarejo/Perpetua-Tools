@@ -46,6 +46,48 @@ are the exact failure mode this layer prevents.
 - `protocols/tool_schemas/` — typed interfaces for external tools
 - `protocols/delegation.md` — rules for sub-agent handoff
 
+## Multi-agent merge conflict protocol
+
+When merging nested branches produced by independent agents against a moving main, follow this protocol exactly. **Never guess conflict resolution.**
+
+### Step-by-step
+
+1. **Simulate first — touch nothing.**
+   ```bash
+   git merge --no-commit --no-ff <branch>
+   git diff --name-only --diff-filter=U   # enumerate ALL conflicts
+   git merge --abort
+   ```
+
+2. **Present every conflict to the human** with both sides shown. One question per file. Wait for explicit direction before proceeding.
+
+3. **Human-directed resolution strategies:**
+   - `additive` — one side is empty, other has content → take the content side
+   - `union` — both sides have partial content → concatenate (ours first, theirs appended)
+   - `superset` — one is a structural superset of the other → verify all rows from the smaller are in the larger, then take the superset
+   - `architecturally-correct` — one side has a bug the other fixes → take the correct side regardless of branch origin
+   - `api-correct` — casing/type mismatch → take the API-correct form
+
+4. **Resolve all conflicts in one pass** using the directed strategy. Never delete content — archive/quarantine if something must be removed.
+
+5. **Verify before committing:**
+   ```bash
+   python3 -m pytest -q
+   python3 scripts/review/repo_hygiene.py .
+   git diff --name-only --diff-filter=U  # must be empty
+   ```
+
+6. **Push → wait for CI → perform GitHub API merge.**
+
+7. **Wait 10 minutes between sequential merges.** Before merge N+1, confirm `mergeable_state: clean` via GitHub API.
+
+### Key invariants
+
+- "Merged" on GitHub ≠ content is on the target branch. Always verify with `git diff origin/main...origin/<branch>` after any merge.
+- CodeRabbit re-scans on every push and creates new comment threads. Run the post-merge sweep after every merge, not just once.
+- JSONL memory files (lessons.jsonl, AGENT_LEARNINGS.jsonl): dedup by `id` / `run_id` after union — keep the **first** occurrence per id.
+- LESSONS.md is rendered from lessons.jsonl — never hand-edit it directly (AGENTS.md Rule 5). Always go through `graduate.py`.
+
 ## Host-agent CLI tools (in `tools/`)
 Daily driver, highest-leverage first:
 - `recall.py "<intent>"` — surface graduated lessons relevant to what
