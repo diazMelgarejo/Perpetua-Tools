@@ -56,7 +56,16 @@ def _simple_policy_parse(text: str) -> dict[str, list[str]]:
 
 
 def _normalize_policy(loaded: dict[str, Any]) -> dict[str, Any]:
-    """Merge documented alias sections into enforceable affinity lists."""
+    """Merge documented alias sections into enforceable affinity lists.
+
+    LM Studio reports quant-suffixed ids (e.g. ``gemma-4-26B-A4B-it-Q4_K_M``)
+    that differ from the base ``windows_only`` entry.  Policy YAML keeps aliases
+    in separate ``*_aliases`` keys; this function folds them into the lists that
+    :func:`check_affinity` and :func:`filter_models_for_platform` enforce.
+
+    **Gap closed in PR #130:** Callers that skip this merge let alias ids bypass
+    NEVER_MAC checks even when the base model is forbidden on Mac.
+    """
     windows_only = list(loaded.get("windows_only", []) or [])
     windows_only.extend(loaded.get("windows_only_aliases", []) or [])
     mac_only = list(loaded.get("mac_only", []) or [])
@@ -71,7 +80,13 @@ def _normalize_policy(loaded: dict[str, Any]) -> dict[str, Any]:
 
 
 def load_policy(policy_path: Path | None = None, *, force_reload: bool = False) -> dict[str, Any]:
-    """Load and cache the hardware policy YAML."""
+    """Load and cache the hardware policy YAML (alias-normalized).
+
+    Single source of truth: ``config/model_hardware_policy.yml``.  Parsed policy
+    is passed through :func:`_normalize_policy` so ``*_aliases`` sections are
+    enforceable.  All runtime and validation paths (supervisor, launch_researchers,
+    hardware_policy_cli) must use this function — never a local duplicate parser.
+    """
     global _POLICY_CACHE
     if _POLICY_CACHE is not None and not force_reload and policy_path is None:
         return _POLICY_CACHE
