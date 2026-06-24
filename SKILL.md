@@ -52,14 +52,26 @@ This orchestrator is designed for **full hardware profile awareness** [web:40] a
 
 ---
 
-## Hardware Affinity (implemented in orama-system)
+## Hardware Affinity (Perpetua-Tools owns enforcement)
 
-> **Note:** The hardware-affinity-gate skill lives in `orama-system` at
-> `bin/orama-system/skills/hardware-affinity-gate/SKILL.md`, but that skill
-> **imports routing rules and scripts from Perpetua-Tools one-way**.
-> Perpetua-Tools owns the actual enforcement logic (`perpetua_core/policy.py`,
-> `config/model_hardware_policy.yml`, `selector.py`). Do not duplicate those
-> rules here.
+> **Skill:** `.claude/skills/hardware-policy/SKILL.md` — operational playbook (CLI, layers, gap history).
+> **Policy:** `config/model_hardware_policy.yml` · **API:** `src/utils/hardware_policy.py`
+> **Validation:** `scripts/hardware_policy_cli.py` · **Human gate:** `orama-system/start.sh --hardware-policy`
+
+orama's `hardware-affinity-gate` skill imports PT rules **one-way** — do not duplicate policy in orama or here.
+
+### Canonical enforcement stack
+
+| Layer | Component |
+|-------|-----------|
+| Policy | `config/model_hardware_policy.yml` |
+| API | `src/utils/hardware_policy.py` (`load_policy`, `check_affinity`, `filter_models_for_platform`) |
+| CLI | `scripts/hardware_policy_cli.py` (delegates to API — never duplicate parsers) |
+| Researchers | `scripts/launch_researchers.py` (`_platform_for_role`, `_pick_model_with_affinity`) |
+| Runtime | `agent_launcher.py`, `orchestrator/supervisor.py`, `worker_registry.py` |
+| Discovery | `src/perpetua/discovery/selector.py` (`_MIRROR_BACKENDS`) |
+
+Refer to [hardware/SKILL.md](hardware/SKILL.md) for role matrix and VRAM constraints.
 
 ### Hardware Profiles (Summary)
 Refer to [hardware/SKILL.md](https://github.com/diazMelgarejo/Perpetua-Tools/blob/main/hardware/SKILL.md) for full specs.

@@ -27,6 +27,20 @@ content but get **new SHAs**.
 - Companion: orama [`AGENTS.md`](https://github.com/diazMelgarejo/orama-system/blob/main/AGENTS.md).
   **periscope excluded** (its `main`/`agentsview` are pure upstream mirrors, never rewritten by us).
 
+## Hardware affinity — cross-agent invariants
+
+**Applies when touching model IDs, routing, `openclaw.json`, or inference dispatch.**
+
+- **Policy SSoT:** `config/model_hardware_policy.yml` — never duplicate lists in markdown or skills.
+- **Canonical API:** `src/utils/hardware_policy.py` — all runtimes and `scripts/hardware_policy_cli.py` MUST delegate here.
+- **Never fork parsers:** After changing the canonical module, grep for `_simple_policy_parse`, `_forbidden`, or local YAML copies. Duplicate parsers silently diverge (PR #131).
+- **LM Studio proxy:** Mac `/v1/models` lists Win models; enforce by provider/platform, not list membership.
+- **Alias merge:** `windows_only_aliases` (quant-suffixed ids) must flow through `_normalize_policy` — see tests in `test_hardware_routing.py`.
+- **Researcher path:** `scripts/launch_researchers.py` uses `_pick_model_with_affinity` + `_platform_for_role` — no blind `models[0]`.
+- **Validation:** `orama-system/start.sh --hardware-policy` → `hardware_policy_cli.py --check-openclaw`.
+- **Skill:** `.claude/skills/hardware-policy/SKILL.md` (operational playbook; mirrored in `.agents/skills/`).
+- **Import direction:** orama imports PT affinity one-way; PT never imports orama for policy rules.
+
 ## Prime directives for agent-maintained records
 
 - Treat vulnerability memory, lessons, audits, and review ledgers as append-only
