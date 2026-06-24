@@ -10,10 +10,10 @@
 | Priority | Item | Status |
 |----------|------|--------|
 | **L1 BLOCKING** | perpetua-core hardware review (Mac Ollama + Win LM Studio) → `v0.2.0-alpha` | ⏳ Gate open |
-| **L2 Critical** | `orama-system/src/oramaclaw/store.py:163` TOCTOU lock → atomic `O_CREAT\|O_EXCL` | 🔴 Unresolved |
-| **L3 Systemic** | `repo_hygiene.py` — add LINT-010/011/012 (all-1 lists, (deprecated) triggers, hermes -z) | 📋 Planned |
-| **L4 Efficiency** | GitHub Action: auto-detect unresolved post-merge CodeRabbit comments | 📋 Planned |
-| **L5 Protocol** | Encode combine-never-replace conflict strategy in `PT/.agent/AGENTS.md` | 📋 Planned |
+| **L2 Critical** | `orama-system/src/oramaclaw/store.py:163` TOCTOU lock → atomic `O_CREAT\|O_EXCL` | ✅ Done `890e0c8` |
+| **L3 Systemic** | `repo_hygiene.py` — LINT-010/011/012 | ✅ Done `55ec2f4` |
+| **L4 Efficiency** | GitHub Action: post-merge-review-sweep.yml | ✅ Done `890e0c8` |
+| **L5 Protocol** | combine-never-replace in `PT/.agent/AGENTS.md` | ✅ Done `c91a4f6` |
 
 ---
 
