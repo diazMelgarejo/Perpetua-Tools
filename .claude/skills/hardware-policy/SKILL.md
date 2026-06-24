@@ -22,6 +22,17 @@ Manage hardware-bound model affinity for the OpenClaw / orama / Perpetua-Tools s
 - **LM Studio proxy gotcha**: Mac `/v1/models` lists **Win models too** (LAN proxy). You cannot infer physical hardware from which endpoint lists a model. Enforcement uses **provider name** (`lmstudio-mac` vs `lmstudio-win`), not model-list membership.
 - **Alias sections**: LM Studio uses quant-suffixed ids (e.g. `gemma-4-26B-A4B-it-Q4_K_M`). These live in `windows_only_aliases` / `mac_only_aliases` and are merged at load time — never enforce only the base id.
 
+## Platform Harness Model (OpenClaw vs Hermes)
+
+| Host | Harness | Policy gate | Notes |
+|------|---------|-------------|-------|
+| macOS | OpenClaw (`orama-system/start.sh`) | `./start.sh --hardware-policy` | Mac orchestrator; NEVER_MAC for Win GGUF |
+| Linux | OpenClaw (`start.sh`) | same | Same software as macOS; all PT hardware profiles documented in `hardware/SKILL.md` |
+| Windows 11 | Hermes + `start.ps1` | `.\platform\windows\start.ps1 --hardware-policy` | Local orchestrator counterpart; `lmstudio-win` → localhost:1234 |
+
+**Do not infer affinity at runtime.** All harnesses consume `config/model_hardware_policy.yml`
+via `src/utils/hardware_policy.py`. Hermes: `orama-system` → `hermes-harness` → `pt-hardware-policy`.
+
 ## Architecture (read in this order)
 
 | Layer | File | Role |
@@ -40,8 +51,11 @@ Do **not** create new human entry points. Use existing orama CLI and Portal:
 
 ```bash
 cd ../orama-system
-./start.sh --hardware-policy    # validate + exit (fail-closed when used as flag)
-./start.sh --status             # includes policy check (informational; may use || true)
+./start.sh --hardware-policy    # macOS / Linux OpenClaw
+./start.sh --status
+
+# Windows Hermes host (PowerShell, from orama-system repo root):
+# .\platform\windows\start.ps1 --hardware-policy
 
 ./start.sh                      # Portal: http://localhost:8002 → Hardware Policy panel
 ```

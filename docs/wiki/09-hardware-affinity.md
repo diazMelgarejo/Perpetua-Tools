@@ -51,6 +51,12 @@ pytest tests/test_launch_researchers_affinity.py tests/test_hardware_routing.py 
 
 `.claude/skills/hardware-policy/SKILL.md` — operational playbook for all harnesses.
 
+## Hermes Windows (parallel orchestrator)
+
+On Windows 11, Hermes consumes **this same policy** via `start.ps1 --hardware-policy`.
+`windows_only` models are allowed on localhost LM Studio; role is reversed from Mac OpenClaw.
+See orama `hermes-harness` → `commands/pt-hardware-policy/SKILL.md`.
+
 ## Prevention
 
 After changing `hardware_policy.py`:
