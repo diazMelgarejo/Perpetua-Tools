@@ -233,6 +233,18 @@ This file is the **single source of truth** for hardware profiles.
 machine-enforced model affinity. Do not duplicate the full policy in markdown;
 cite the YAML and keep examples aligned with it.
 
+### Enforcement surfaces (agents: load `hardware-policy` skill)
+
+| Surface | File | Notes |
+|---------|------|-------|
+| Canonical API | `src/utils/hardware_policy.py` | `load_policy`, `check_affinity`, alias merge via `_normalize_policy` |
+| CLI validation | `scripts/hardware_policy_cli.py` | `start.sh --hardware-policy`; must delegate to canonical API |
+| Researchers | `scripts/launch_researchers.py` | `_pick_model_with_affinity`, `_platform_for_role` |
+| Spawn / inference | `agent_launcher.py`, `supervisor.py` | `HardwareAffinityError` before dispatch |
+| Discovery | `src/perpetua/discovery/selector.py` | `_MIRROR_BACKENDS` blocks mirror dispatch |
+
+**LM Studio proxy gotcha:** Mac model lists include Win GGUF ids — enforce by provider/platform, not list presence. Quant-suffixed aliases (e.g. `gemma-4-26B-A4B-it-Q4_K_M`) belong in `windows_only_aliases`.
+
 - `config/models.yml` → references profile_ids from this file
 - `config/routing.yml` → respects `max_model_vram_gb` constraints
 - `orchestrator/model_registry.py` → loads this file at startup

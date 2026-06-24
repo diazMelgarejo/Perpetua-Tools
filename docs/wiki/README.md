@@ -19,6 +19,7 @@ This wiki organizes hard-won lessons by topic. Each page contains root cause, ex
 | 06 | [Startup & IP Detection](06-startup-ip-detection.md) | stdin deadlock, load_dotenv placement, concurrent asyncio probing |
 | 07 | [Multi-Agent Collaboration](07-multi-agent-collab.md) | Version registry, scope claims, no LAN IPs in source, test isolation |
 | 08 | [macOS alphaclaw Compat](08-macos-alphaclaw-compat.md) | EACCES fixes, ~/.local/bin pattern, idempotent setup_macos.py |
+| 09 | [Hardware Affinity](09-hardware-affinity.md) | NEVER_MAC, LM Studio proxy gotcha, PR #128–#131 gap chain, canonical API |
 
 ---
 

@@ -39,6 +39,7 @@ are the exact failure mode this layer prevents.
 - `skills/_index.md` — read first for discovery
 - `skills/_manifest.jsonl` — machine-readable skill metadata
 - Load a full `SKILL.md` only when its triggers match the current task
+- **Hardware affinity work:** also load `../.claude/skills/hardware-policy/SKILL.md` (policy YAML → canonical API → CLI → launch_researchers)
 - Every skill has a self-rewrite hook; invoke it after failures
 
 ## Protocols

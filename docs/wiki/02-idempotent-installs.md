@@ -18,7 +18,7 @@
 |------|-------|-----|
 | `openclaw_bootstrap.py` | `capture_output=True` silenced install output | Removed; output streams to terminal |
 | `openclaw_bootstrap.py` | No execute-bit check after `npm install -g openclaw` | Added `chmod +x` if `S_IXUSR` missing |
-| `scripts/launch_researchers.py` | Hardcoded model names in researcher config | Added `_resolve_ollama_model()` + `_resolve_lmstudio_model()` |
+| `scripts/launch_researchers.py` | Hardcoded model names in researcher config | `_resolve_ollama_model()` + `_resolve_lmstudio_model()` with `_pick_model_with_affinity()` and `_platform_for_role()` — see [09-hardware-affinity](09-hardware-affinity.md) |
 | `orchestrator/agent_tracker.py` | `AgentRecord(**v)` crash on stale routing data | `_load()` now `isinstance(v, dict)` guards every entry |
 
 ---
