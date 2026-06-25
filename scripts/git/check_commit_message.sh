@@ -114,6 +114,9 @@ coauthor_line_ok() {
   fi
 
   if [[ -n "$email_lc" ]]; then
+    # Email was parsed — gate on email policy only; never fall through to
+    # marker check. A display name containing "hermes" or "nousresearch"
+    # must not override a rejected email address.
     local exact
     for exact in "${ALLOWED_EXACT_COAUTHOR_EMAILS[@]}"; do
       if [[ "$email_lc" == "$exact" ]]; then
@@ -127,8 +130,12 @@ coauthor_line_ok() {
     if email_domain_ok "$email_lc"; then
       return 0
     fi
+    # Email present but not in any allowlist — reject; do NOT fall to markers.
+    return 1
   fi
 
+  # No email parsed (display-name-only line) — accept if a known tool marker
+  # appears anywhere in the lowercased line.
   local marker
   for marker in "${WELL_KNOWN_COAUTHOR_NAME_MARKERS[@]}"; do
     if [[ "$line_lc" == *"$marker"* ]]; then
