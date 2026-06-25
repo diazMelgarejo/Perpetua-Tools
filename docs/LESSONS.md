@@ -6,6 +6,20 @@
 
 ---
 
+## 2026-06-25 — discover.py Windows platform fix + Hermes plan review | Claude
+
+**PT-relevant findings:**
+
+1. **discover.py platform role reversal was broken** — `discover_endpoints()` always labeled `localhost:1234` as "mac", then filtered `windows_only` models from it. On Windows this stripped out the primary inference models. Fixed in `orama-system/scripts/discover.py` with `RUNNING_ON_WINDOWS = sys.platform == "win32"`; when Windows: `localhost → win`, `$MAC_IP → mac`. After fix `win` models = `[qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2, gemma-4-26b-a4b-it, text-embedding-nomic-embed-text-v1.5]`.
+
+2. **`PERPETUA_TOOLS_ROOT` must point to PT repo root for hardware_policy import** — `discover.py` does `sys.path.insert(0, str(pt_root))` and then `import utils.hardware_policy`. This only works if `pt_root` is the PT repo root (i.e., the directory that contains `src/utils/`). If `PERPETUA_TOOLS_ROOT` is unset, discovery falls back to the local filter silently — set it on Windows startup: `$env:PERPETUA_TOOLS_ROOT = "C:\Users\lab\Downloads\SKILLS.md\ultrathink\Perplexity-Tools"`.
+
+3. **Plan corrections** — orama Hermes onboarding plan Phase 1 task 1 referenced `resolve_local_or_remote()` which does not exist in PT. Real primitives: `_loopback_host_from_endpoint`, `_is_local_endpoint`, `_get_local_ips` in `src/perpetua_tools/agent_launcher.py`. Plan corrected.
+
+4. **Win LM Studio live** — `http://192.168.254.102:1234` (also `localhost:1234` from the Win host). Models confirmed from `/v1/models`: `qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2`, `gemma-4-26b-a4b-it`, `text-embedding-nomic-embed-text-v1.5`.
+
+---
+
 ## 2026-06-22 — Full session: assumption failure, oramasys v2 src-layout, gbrain durability
 
 > **For manual merge with the `.agent/` memory system.** This is the human-readable
