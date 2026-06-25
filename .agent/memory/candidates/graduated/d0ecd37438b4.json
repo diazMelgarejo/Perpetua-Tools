@@ -1,0 +1,72 @@
+{
+  "id": "d0ecd37438b4",
+  "key": "manual_d0ecd3",
+  "name": "manual_d0ecd3",
+  "claim": "When test expects 'must be a non-empty string' but source emits 'must be a string, got <type>', the root cause is an early guard raising before the canonical check. Refactoring: remove the type-specific early guard and let the single unified check ('not isinstance(val, str) or not val') cover both type mismatches and empty values. This produces one canonical error message that both the test and the error message agree on.",
+  "conditions": [
+    "agree",
+    "before",
+    "both",
+    "canonical",
+    "cause",
+    "check",
+    "cover",
+    "early",
+    "emits",
+    "empty",
+    "error",
+    "expects",
+    "got",
+    "guard",
+    "isinstance",
+    "let",
+    "message",
+    "mismatches",
+    "non-empty",
+    "one",
+    "produces",
+    "raising",
+    "refactoring",
+    "remove",
+    "root",
+    "single",
+    "source",
+    "str",
+    "string",
+    "test",
+    "type",
+    "type-specific",
+    "unified",
+    "val",
+    "values"
+  ],
+  "evidence_ids": [
+    "2026-06-24T17:04:09.020742"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-24T17:04:09.020742",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-24T17:04:09.020742",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-24T09:04:09.082172+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "manual via learn.py at 2026-06-24T17:04:09.021068",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-24T17:04:09.020742"
+      ],
+      "lessons_sha": "b8ba7704992f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-24T09:04:09.082164+00:00",
+  "reviewer": "learn.py",
+  "rationale": "manual via learn.py at 2026-06-24T17:04:09.021068"
+}
