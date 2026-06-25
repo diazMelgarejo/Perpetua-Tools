@@ -26,7 +26,7 @@
   "cluster_size": 2,
   "canonical_salience": 7.0,
   "staged_at": "2026-06-22T12:35:50.597659+00:00",
-  "status": "staged",
+  "status": "accepted",
   "decisions": [
     {
       "ts": "2026-06-22T12:35:50.597659+00:00",
@@ -52,7 +52,22 @@
       "ts": "2026-06-22T12:58:32.339470+00:00",
       "action": "staged",
       "reviewer": "auto_dream"
+    },
+    {
+      "ts": "2026-06-24T09:19:05.452646+00:00",
+      "action": "graduated",
+      "reviewer": "cursor-dream-review",
+      "notes": "Meta-durability principle from gbrain self-heal: recurring rot = fixes kept as knowledge + deferred removals; close the loop by converting manual fixes into idempotent self-heal wired into startup and completing archival/removal in the same pass. Applies beyond gbrain.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-22T10:44:31.679611",
+        "2026-06-22T10:50:19.007189"
+      ],
+      "lessons_sha": "782c785e8b06"
     }
   ],
-  "rejection_count": 0
+  "rejection_count": 0,
+  "accepted_at": "2026-06-24T09:19:05.452636+00:00",
+  "reviewer": "cursor-dream-review",
+  "rationale": "Meta-durability principle from gbrain self-heal: recurring rot = fixes kept as knowledge + deferred removals; close the loop by converting manual fixes into idempotent self-heal wired into startup and completing archival/removal in the same pass. Applies beyond gbrain."
 }
