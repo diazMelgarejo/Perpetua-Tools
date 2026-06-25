@@ -9,5 +9,32 @@
 - Vendor quirks ("service X rate-limits at 60 rpm, not the documented 100")
 - Domain-specific terminology
 
+## Windows Development Environment (verified 2026-06-25)
+
+### bash.exe — present but not on cmd.exe PATH
+- `bash.exe` is at `C:\Program Files\Git\usr\bin\bash.exe` (also `\bin\bash.exe`).
+- It IS on the Git Bash session PATH; NOT on cmd.exe's system PATH.
+- Any tool spawning via cmd.exe (`shell: true` in Node/bun on Windows) cannot find bash.
+- Claude Code's Bash tool runs its own bash at `/usr/bin/bash` — env vars there don't
+  cross into PowerShell and vice-versa.
+
+### gstack brain-sync Windows fix — `.cmd` wrapper (gstack issue #1731)
+- `gstack-gbrain-sync.ts` uses `NEEDS_SHELL_ON_WINDOWS = process.platform === "win32"`,
+  so bun spawns `gstack-brain-sync` via cmd.exe, which can't exec bash shebangs.
+- Fix: `~/.claude/skills/gstack/bin/gstack-brain-sync.cmd` wrapper created 2026-06-25.
+  Calls `C:\Program Files\Git\usr\bin\bash.exe` with the script path explicitly.
+- Pattern: any bash shebang script in `~/.claude/skills/gstack/bin/` that needs to be
+  callable from bun/Node.js on Windows needs a matching `.cmd` shim.
+
+### LLAMA_SERVER_BASE_URL — already in PowerShell profile, never missing
+- `C:\Users\lab\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` line 1:
+  `$env:LLAMA_SERVER_BASE_URL = "http://localhost:1234/v1"` — verified present.
+- Do NOT add it again. Not absent from PowerShell; just doesn't propagate to Bash tool.
+- Export explicitly in bash sessions: `export LLAMA_SERVER_BASE_URL="http://localhost:1234/v1"`
+
+### git -C flag required for orama-system in bash sessions
+- The bash tool's cwd may differ from the `ultrathink-system` git root.
+- Always use: `git -C "$ORAMA_SYSTEM_PATH" <subcommand>` for reliable results.
+
 ## Seeds
 _(empty — populate as you go)_
