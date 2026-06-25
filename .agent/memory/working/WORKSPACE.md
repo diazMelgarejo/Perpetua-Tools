@@ -44,8 +44,8 @@ None active. Full 2026-06-24 session compiled to memory.
 
 ## System state (2026-06-24 EOD)
 
-- orama-system main: `72d0fbc` — 41/41 tests green, hygiene OK
-- Perpetua-Tools main: `e3034b0` — 35/35 affinity+routing tests green
+- orama-system main: `36b876e` — 41/41 tests green, hygiene OK, 3 plan files live
+- Perpetua-Tools main: `6b8b219` — dream-cycle merged (additive), Cursor PR #134 merged
 - perpetua-core: local-only `feat/salvage-plugins-rc1`, push gate open
 - Post-merge sweep: GitHub Action live (`.github/workflows/post-merge-review-sweep.yml`)
 - Memory: 69 episodic entries, 79 lessons, DECISIONS 12 entries
