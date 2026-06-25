@@ -194,3 +194,17 @@ No manual edits to versioned surfaces. Historical docs are excluded intentionall
 **Evidence:** Multi-agent merge protocol distributed across 4 files (`3ae45b5`, `72d0fbc`) using this pattern. Each file useful at its level without requiring full detail to be loaded.
 
 **Status:** active.
+
+---
+
+## 2026-06-26: AlphaClaw CI fixes (ca5e3f28) stay in L1 — no PT migration
+
+**Decision:** The 2026-06-26 AlphaClaw CI repair (`ca5e3f28` on `feature/MacOS-post-install`) remains entirely in AlphaClaw. Do not copy `bin/alphaclaw.js`, `lib/server/system-cron.js`, or route test fixes into Perpetua-Tools.
+
+**Rationale:** `docs/MIGRATION.md` tri-repo contract: AlphaClaw (L1) owns npm install, macOS binary placement, gateway, and `openclaw.json`. PT (L2) bridges via HTTP+CLI only. Gate 2 PT migration targets are `lib/mcp/` and `lib/agents/` copies only.
+
+**Alternatives considered:** Duplicate fixes into PT `packages/` — rejected (wrong layer, violates strangler-fig HTTP-only rule).
+
+**Status:** active
+
+**Links:** AlphaClaw CI [28086747962](https://github.com/diazMelgarejo/AlphaClaw/actions/runs/28086747962) → [28206351466](https://github.com/diazMelgarejo/AlphaClaw/actions/runs/28206351466); commit `ca5e3f28`
