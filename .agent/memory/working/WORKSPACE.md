@@ -1,9 +1,19 @@
 # Workspace (live task state)
 
-Last updated: 2026-06-24 by claude-sonnet-4.6
+Last updated: 2026-06-26 by cursor-agent (AlphaClaw CI memory merge, local main)
 
 ## Current task
-None active. Full 2026-06-24 session compiled to memory.
+None active. AlphaClaw CI repair session memory merged to local `main` (not pushed as branch).
+
+## Completed 2026-06-26 — AlphaClaw CI fix memory (local main only)
+
+| Item | Outcome | Ref |
+|------|---------|-----|
+| AlphaClaw CI diagnosis + fix | ✅ `ca5e3f28` on `feature/MacOS-post-install`; CI [28206351466](https://github.com/diazMelgarejo/AlphaClaw/actions/runs/28206351466) green | AlphaClaw |
+| PT `.agent` episodic + 3 lessons | ✅ appended on `main` @ `82a7d1e` base | `lesson_6bff2fffe56e`, `lesson_53c4e49a41d8`, `lesson_75dae01bcd29` |
+| Migration verdict | ✅ L1 fixes stay in AlphaClaw — no PT code migration | `docs/MIGRATION.md` |
+
+**Not pushed:** memory-only branch; merged locally per user instruction.
 
 ## Complete session record (2026-06-24)
 

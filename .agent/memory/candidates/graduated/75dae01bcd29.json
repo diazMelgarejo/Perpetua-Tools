@@ -1,0 +1,61 @@
+{
+  "id": "75dae01bcd29",
+  "key": "manual_75dae0",
+  "name": "manual_75dae0",
+  "claim": "Per MIGRATION.md tri-repo contract: AlphaClaw L1 CI/runtime fixes stay in AlphaClaw until Gate 2 retirement of copied lib/mcp and lib/agents \u2014 PT does not duplicate L1 infrastructure patches; PT owns adapter HTTP+CLI lifecycle only.",
+  "conditions": [
+    "adapter",
+    "agents",
+    "alphaclaw",
+    "cli",
+    "contract",
+    "copied",
+    "duplicate",
+    "fixes",
+    "gate",
+    "http",
+    "infrastructure",
+    "lib",
+    "lifecycle",
+    "mcp",
+    "migration",
+    "only",
+    "owns",
+    "patches",
+    "per",
+    "retirement",
+    "runtime",
+    "stay",
+    "tri-repo",
+    "until"
+  ],
+  "evidence_ids": [
+    "2026-06-26T07:34:22.604107"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-26T07:34:22.604107",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-26T07:34:22.604107",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-25T23:34:22.672119+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Migration boundary for ca5e3f28 CI repair session.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-26T07:34:22.604107"
+      ],
+      "lessons_sha": "1787b914ac84"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-25T23:34:22.672112+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Migration boundary for ca5e3f28 CI repair session."
+}

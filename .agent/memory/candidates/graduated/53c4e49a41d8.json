@@ -1,0 +1,59 @@
+{
+  "id": "53c4e49a41d8",
+  "key": "manual_53c4e4",
+  "name": "manual_53c4e4",
+  "claim": "bin/alphaclaw.js must import git PATH helpers from lib/cli/git-runtime.js, not git-sync.js \u2014 git-sync only exports normalizeGitSyncFilePath and validateGitSyncFilePath; undefined prependGitShimDirToPath fails silently inside git shim try/catch.",
+  "conditions": [
+    "alphaclaw",
+    "bin",
+    "catch",
+    "cli",
+    "exports",
+    "fails",
+    "git",
+    "git-runtime",
+    "git-sync",
+    "helpers",
+    "import",
+    "inside",
+    "lib",
+    "normalizegitsyncfilepath",
+    "only",
+    "path",
+    "prependgitshimdirtopath",
+    "shim",
+    "silently",
+    "try",
+    "undefined",
+    "validategitsyncfilepath"
+  ],
+  "evidence_ids": [
+    "2026-06-26T07:34:22.463993"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-26T07:34:22.463993",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-26T07:34:22.463993",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-25T23:34:22.532049+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CI alphaclaw.test.js PATH failed on macOS; fixed ca5e3f28.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-26T07:34:22.463993"
+      ],
+      "lessons_sha": "77e62c3dd143"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-25T23:34:22.532039+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CI alphaclaw.test.js PATH failed on macOS; fixed ca5e3f28."
+}

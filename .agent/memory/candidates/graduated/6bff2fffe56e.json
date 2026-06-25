@@ -1,0 +1,63 @@
+{
+  "id": "6bff2fffe56e",
+  "key": "manual_6bff2f",
+  "name": "manual_6bff2f",
+  "claim": "After AlphaClaw macOS/cron merges, run node --check on large route test files before trusting Vitest parse errors \u2014 unclosed it() blocks surface as vite:import-analysis failures on line 1 const fs = require.",
+  "conditions": [
+    "after",
+    "alphaclaw",
+    "before",
+    "blocks",
+    "check",
+    "const",
+    "cron",
+    "errors",
+    "failures",
+    "files",
+    "import-analysis",
+    "large",
+    "line",
+    "macos",
+    "merges",
+    "node",
+    "parse",
+    "require",
+    "route",
+    "run",
+    "surface",
+    "test",
+    "trusting",
+    "unclosed",
+    "vite",
+    "vitest"
+  ],
+  "evidence_ids": [
+    "2026-06-26T07:34:22.299306"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-26T07:34:22.299306",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-26T07:34:22.299306",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-25T23:34:22.397689+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CI 2026-06-24/25 merge damage in routes-onboarding/system tests.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-26T07:34:22.299306"
+      ],
+      "lessons_sha": "2498e3b2206a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-25T23:34:22.397671+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CI 2026-06-24/25 merge damage in routes-onboarding/system tests."
+}
