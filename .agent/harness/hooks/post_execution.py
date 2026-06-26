@@ -1,9 +1,12 @@
 """Runs after every action. Appends a structured entry to episodic memory."""
-import datetime, os
+import datetime, os, sys
 from ._provenance import build_source
 from ._episodic_io import append_jsonl
 
 ROOT = os.path.join(os.path.dirname(__file__), "..", "..")
+sys.path.insert(0, os.path.join(ROOT, "memory"))
+from path_hygiene import sanitize_tracked_path_leaks  # noqa: E402
+
 EPISODIC = os.path.join(ROOT, "memory/episodic/AGENT_LEARNINGS.jsonl")
 
 
@@ -21,12 +24,12 @@ def log_execution(skill_name, action, result, success, reflection="",
     entry = {
         "timestamp": datetime.datetime.now().isoformat(),
         "skill": skill_name,
-        "action": action[:200],
+        "action": sanitize_tracked_path_leaks(action[:200]),
         "result": "success" if success else "failure",
-        "detail": str(result)[:500],
+        "detail": sanitize_tracked_path_leaks(str(result)[:500]),
         "pain_score": pain_score,
         "importance": importance,
-        "reflection": reflection,
+        "reflection": sanitize_tracked_path_leaks(reflection),
         "confidence": confidence,
         "source": build_source(skill_name),
         "evidence_ids": list(evidence_ids) if evidence_ids else [],

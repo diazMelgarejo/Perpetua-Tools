@@ -50,6 +50,16 @@ def test_personal_path_home_is_blocked(tmp_path):
     assert "/home/johndoe/" in errors[0]
 
 
+def test_personal_path_windows_path_is_blocked(tmp_path):
+    repo_hygiene = load_repo_hygiene()
+    doc = tmp_path / "notes.md"
+    win = "C:" + "\\Users\\johndoe\\Downloads\\SKILLS.md\\ultrathink"
+    doc.write_text(f"Canonical: {win}\n", encoding="utf-8")
+    errors = repo_hygiene.scan_personal_paths(tmp_path, ["notes.md"])
+    assert len(errors) == 1
+    assert "johndoe" in errors[0] or "Users" in errors[0]
+
+
 def test_personal_path_placeholder_usernames_are_allowed(tmp_path):
     repo_hygiene = load_repo_hygiene()
     doc = tmp_path / "docs" / "install.md"
@@ -381,3 +391,36 @@ def test_repo_hygiene_script_runs_clean():
     )
 
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_personal_path_windows_placeholder_not_flagged(tmp_path):
+    """Windows C:\\Users\\username placeholder must NOT be flagged — bug was group(2)=None."""
+    f = tmp_path / "README.md"
+    f.write_text("Copy files to C:\\Users\\username\\AppData\\Local\\hermes\n")
+    sys.path.insert(0, str(Path(__file__).parent.parent / "scripts" / "review"))
+    import importlib.util, importlib
+    spec = importlib.util.spec_from_file_location(
+        "repo_hygiene",
+        str(Path(__file__).parent.parent / "scripts" / "review" / "repo_hygiene.py")
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    errors = mod.scan_personal_paths(tmp_path, ["README.md"])
+    assert errors == [], f"placeholder path incorrectly flagged: {errors}"
+
+
+def test_personal_path_windows_real_username_flagged(tmp_path):
+    """Windows C:\\Users\\realname (non-placeholder) MUST be flagged."""
+    f = tmp_path / "README.md"
+    f.write_text("See C:\\Users\\alice\\Downloads\\repo\n")
+    sys.path.insert(0, str(Path(__file__).parent.parent / "scripts" / "review"))
+    import importlib.util, importlib
+    spec = importlib.util.spec_from_file_location(
+        "repo_hygiene",
+        str(Path(__file__).parent.parent / "scripts" / "review" / "repo_hygiene.py")
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    errors = mod.scan_personal_paths(tmp_path, ["README.md"])
+    assert any("alice" in e for e in errors), f"real username not flagged: {errors}"
+
