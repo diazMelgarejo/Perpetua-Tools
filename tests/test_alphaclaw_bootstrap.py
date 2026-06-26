@@ -2,9 +2,31 @@ from __future__ import annotations
 
 import asyncio
 import builtins
+import importlib
 from pathlib import Path
 
 import perpetua_tools.alphaclaw_bootstrap as alphaclaw_bootstrap
+
+
+def test_resolve_endpoint_self_heals_stale_lan_ip_on_mac(monkeypatch):
+    monkeypatch.setenv("ORAMA_PLATFORM", "mac")
+    monkeypatch.setenv("OLLAMA_MAC_ENDPOINT", "http://192.168.254.110:11434")
+    import perpetua_tools.alphaclaw_bootstrap as mod
+
+    mod = importlib.reload(mod)
+    assert mod.OLLAMA_MAC == "http://localhost:11434"
+
+
+def test_build_openclaw_config_prefers_routing_state_for_ollama_mac():
+    pt = {
+        "manager_backend": "mac-ollama",
+        "manager_endpoint": "http://localhost:11434",
+        "manager_model": "glm-5.1:cloud",
+        "coder_backend": "mac-degraded",
+        "mac_lmstudio_ok": False,
+    }
+    config = alphaclaw_bootstrap.build_openclaw_config(pt)
+    assert config["models"]["providers"]["ollama-mac"]["baseUrl"] == "http://localhost:11434"
 
 
 def test_start_openclaw_gateway_closes_log_handle_when_popen_fails(tmp_path, monkeypatch):
