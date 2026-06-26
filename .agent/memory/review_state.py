@@ -9,9 +9,14 @@ into this module to transition state. Rejection and re-stage preserve full
 history so a candidate that keeps reappearing is visibly churning rather
 than looking novel each time.
 """
-import os, json, datetime, hashlib
+import os, json, datetime, hashlib, re
 
 from path_hygiene import REVIEW_QUEUE_DYNAMIC_MARKER, sanitize_tracked_path_leaks
+
+_REVIEW_QUEUE_MARKER_LINE = re.compile(
+    rf"^{re.escape(REVIEW_QUEUE_DYNAMIC_MARKER)}\s*$",
+    re.MULTILINE,
+)
 
 
 def _now():
@@ -234,8 +239,11 @@ def _read_review_queue_preamble(summary_path: str) -> str:
         return "# Review Queue\n\n"
     with open(summary_path, encoding="utf-8") as f:
         text = f.read()
-    if REVIEW_QUEUE_DYNAMIC_MARKER in text:
-        return text.split(REVIEW_QUEUE_DYNAMIC_MARKER)[0].rstrip() + "\n\n"
+    marker_lines = list(_REVIEW_QUEUE_MARKER_LINE.finditer(text))
+    if marker_lines:
+        # Preamble docs may mention the marker inline; only line-anchored
+        # markers delimit the auto-generated tail (use the last one).
+        return text[: marker_lines[-1].start()].rstrip() + "\n\n"
     for sep in ("\n\n**Pending:**", "\n\n_No pending candidates._", "\n## Priority order"):
         if sep in text:
             return text.split(sep)[0].rstrip() + "\n\n"

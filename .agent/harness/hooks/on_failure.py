@@ -1,9 +1,12 @@
 """Failures are learning. High pain score + rewrite flag after repeat offenses."""
-import json, datetime, os
+import json, datetime, os, sys
 from ._provenance import build_source
 from ._episodic_io import append_jsonl
 
 ROOT = os.path.join(os.path.dirname(__file__), "..", "..")
+sys.path.insert(0, os.path.join(ROOT, "memory"))
+from path_hygiene import sanitize_tracked_path_leaks  # noqa: E402
+
 EPISODIC = os.path.join(ROOT, "memory/episodic/AGENT_LEARNINGS.jsonl")
 FAILURE_THRESHOLD = 3
 WINDOW_DAYS = 14
@@ -50,13 +53,13 @@ def on_failure(skill_name, action, error, context="", confidence=0.9,
     entry = {
         "timestamp": datetime.datetime.now().isoformat(),
         "skill": skill_name,
-        "action": action[:200],
+        "action": sanitize_tracked_path_leaks(action[:200]),
         "result": "failure",
-        "detail": str(error)[:500],
+        "detail": sanitize_tracked_path_leaks(str(error)[:500]),
         "pain_score": pain_score if pain_score is not None else 8,
         "importance": importance if importance is not None else 7,
-        "reflection": _refl,
-        "context": context[:300],
+        "reflection": sanitize_tracked_path_leaks(_refl),
+        "context": sanitize_tracked_path_leaks(context[:300]),
         "confidence": confidence,
         "source": build_source(skill_name),
         "evidence_ids": list(evidence_ids) if evidence_ids else [],
