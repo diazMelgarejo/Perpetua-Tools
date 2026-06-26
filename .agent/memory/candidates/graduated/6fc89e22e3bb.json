@@ -1,0 +1,64 @@
+{
+  "id": "6fc89e22e3bb",
+  "key": "manual_6fc89e",
+  "name": "manual_6fc89e",
+  "claim": "REVIEW_QUEUE.md and other tracked memory summaries must sanitize workstation paths at render time via sanitize_tracked_path_leaks() \u2014 never echo raw candidate claim text containing /Users/ or C:\\Users\\ prefixes; fixing the queue file alone is a symptom patch.",
+  "conditions": [
+    "alone",
+    "candidate",
+    "claim",
+    "containing",
+    "echo",
+    "file",
+    "fixing",
+    "memory",
+    "never",
+    "other",
+    "patch",
+    "paths",
+    "prefixes",
+    "queue",
+    "raw",
+    "render",
+    "review_queue",
+    "sanitize",
+    "sanitize_tracked_path_leaks",
+    "summaries",
+    "symptom",
+    "text",
+    "time",
+    "tracked",
+    "users",
+    "via",
+    "workstation"
+  ],
+  "evidence_ids": [
+    "2026-06-26T08:05:14.253297"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-26T08:05:14.253297",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-26T08:05:14.253297",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-26T00:05:14.345572+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit PR #135: staged path-hygiene candidates leaked C:\\Users\\lab\\... into REVIEW_QUEUE.md because write_review_queue_summary used claim[:80] verbatim. Root fix in review_state.py + tests/test_review_state.py.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-26T08:05:14.253297"
+      ],
+      "lessons_sha": "fce001565437"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-26T00:05:14.345562+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit PR #135: staged path-hygiene candidates leaked C:\\Users\\lab\\... into REVIEW_QUEUE.md because write_review_queue_summary used claim[:80] verbatim. Root fix in review_state.py + tests/test_review_state.py."
+}

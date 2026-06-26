@@ -1,0 +1,81 @@
+{
+  "id": "195f34935121",
+  "key": "manual_195f34",
+  "name": "manual_195f34",
+  "claim": "Windows .cmd/.bat files require CRLF line endings. cmd.exe tokenises on CRLF; LF-only batch files silently fail or produce garbled output. Fix in Python: open in binary mode and join lines with '\\r\\n'. Verify: xxd my.cmd | grep -c '0d 0a' must equal line count. Git prevention: declare '*.cmd text eol=crlf' in .gitattributes. Root cause confirmed in orama-system PR #108 (gstack-brain-sync.cmd). Documented in docs/wiki/08-git-hygiene-and-branching.md.",
+  "conditions": [
+    "bat",
+    "batch",
+    "binary",
+    "cause",
+    "cmd",
+    "confirmed",
+    "count",
+    "crlf",
+    "declare",
+    "docs",
+    "documented",
+    "endings",
+    "eol",
+    "equal",
+    "exe",
+    "fail",
+    "files",
+    "fix",
+    "garbled",
+    "git",
+    "git-hygiene-and-branching",
+    "gitattributes",
+    "grep",
+    "gstack-brain-sync",
+    "join",
+    "lf-only",
+    "line",
+    "lines",
+    "mode",
+    "open",
+    "orama-system",
+    "output",
+    "prevention",
+    "produce",
+    "python",
+    "require",
+    "root",
+    "silently",
+    "text",
+    "tokenises",
+    "verify",
+    "wiki",
+    "windows",
+    "xxd"
+  ],
+  "evidence_ids": [
+    "2026-06-26T08:08:52.951083"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-26T08:08:52.951083",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-26T08:08:52.951083",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-26T00:08:53.027420+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "manual via learn.py at 2026-06-26T05:52:48.702723",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-26T08:08:52.951083"
+      ],
+      "lessons_sha": "e1efba071ef9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-26T00:08:53.027413+00:00",
+  "reviewer": "learn.py",
+  "rationale": "manual via learn.py at 2026-06-26T05:52:48.702723"
+}
