@@ -1,0 +1,59 @@
+{
+  "id": "bcc6a5141f56",
+  "key": "manual_bcc6a5",
+  "name": "manual_bcc6a5",
+  "claim": "When adding Windows .cmd shims in Python always write CRLF bytes and add gitattributes eol=crlf \u2014 LF-only batch files fail silently under cmd.exe per PR #108 gstack-brain-sync.cmd incident",
+  "conditions": [
+    "add",
+    "adding",
+    "always",
+    "batch",
+    "bytes",
+    "cmd",
+    "crlf",
+    "eol",
+    "exe",
+    "fail",
+    "files",
+    "gitattributes",
+    "gstack-brain-sync",
+    "incident",
+    "lf-only",
+    "per",
+    "python",
+    "shims",
+    "silently",
+    "under",
+    "windows",
+    "write"
+  ],
+  "evidence_ids": [
+    "2026-06-26T14:52:05.298583"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-26T14:52:05.298583",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-26T14:52:05.298583",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-26T14:52:05.326367+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "cmd.exe line tokenizer requires 0d0a; silent failure mode is worse than loud error; prevention is gitattributes plus xxd verification",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-26T14:52:05.298583"
+      ],
+      "lessons_sha": "7eed1834251d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-26T14:52:05.326358+00:00",
+  "reviewer": "learn.py",
+  "rationale": "cmd.exe line tokenizer requires 0d0a; silent failure mode is worse than loud error; prevention is gitattributes plus xxd verification"
+}

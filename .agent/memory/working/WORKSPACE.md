@@ -14,6 +14,8 @@ None active. Doc 41 + install-agentic-stack.sh + memory on `main`.
 | CodeRabbit r3480506247 | ✅ `patch_models_yml` loopback guard + `LM_STUDIO_WIN_ENDPOINT` regex fix | `scripts/discover.py` |
 | discover hash/runtime split | ✅ documented in DECISIONS; lessons `lesson_0314ada4d630`, `lesson_e7d62d7a5ed9` | PR #108 review |
 | agentic-stack union-merge doc 41 | ✅ orama `docs/v2/41-*`; PT `install-agentic-stack.sh` | lessons `9a8236d2f51f`, `959ddd42ff01` |
+| CRLF + Grok agent collision memory | ✅ lessons `bcc6a5141f56`, `f4b012e5339e` | PR #108 gold nuggets |
+| CodeRabbit r3480506247 | ✅ resolved on `main` @ `b4f0e4b`; thread closed via GraphQL | `patch_models_yml` loopback |
 | orama PR #108 CI + vendor move | ✅ prior session `b4f0e4b` / `d13cd57` | see below |
 
 ## Completed 2026-06-26 — orama PR #108 closeout + agentic-stack vendor (prior)

@@ -128,6 +128,8 @@
 - agentic-stack lives at vendor/agentic-stack in Perpetua-Tools like ecc-tools — orama start.sh symlinks lib/shared/agentic_stack from PT vendor path  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_821b2a648956 -->
 - After vendor/agentic-stack submodule init run install-agentic-stack.sh then agentic-stack upgrade --dry-run before harmonizing PT .agent/ — union-merge only, never commit into vendor/  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_9a8236d2f51f -->
 - Block agentic-stack upstream Brain integration in .agent until brain_bridge.py supports both Gbrain and codejunkie99/brain — Gbrain via gstack is canonical for PT-orama RAG  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_959ddd42ff01 -->
+- xAI Grok Build (Elon Musk) installs a bare agent CLI at ~/.grok/bin/agent — it is NOT Cursor. PATH collision: scripts invoking agent without a path hit Grok TUI instead of cursor-agent. Always call cursor-agent explicitly and document both binaries in harness skills.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_f4b012e5339e -->
+- When adding Windows .cmd shims in Python always write CRLF bytes and add gitattributes eol=crlf — LF-only batch files fail silently under cmd.exe per PR #108 gstack-brain-sync.cmd incident  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_bcc6a5141f56 -->
 
 ### 2026-04
 
