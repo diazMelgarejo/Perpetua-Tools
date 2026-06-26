@@ -274,3 +274,15 @@ there is no `.\windows\` folder at repo root.
 
 **Status:** active
 
+---
+
+## 2026-06-26: Agentic-stack union-merge — dry-run first, Gbrain canonical, Brain blocked
+
+**Decision:** After `vendor/agentic-stack` submodule init, run `scripts/git/install-agentic-stack.sh` (idempotent) then `agentic-stack upgrade --dry-run` before harmonizing PT `.agent/`. Union-merge upstream skeleton into project-owned `.agent/` at runtime — never commit blended output into `vendor/`. Block upstream Brain (`brain_bridge.py`, `agentic-stack brain *`) until PT ships dual-backend bridge; Gbrain via gstack is canonical RAG. Future: `agentic-stack gbrain *` mirrors `brain *`.
+
+**Rationale:** Same patch-on-top model as orama `openclaw-skills` (submodule + local extensions). Prevents upgrade from overwriting graduated lessons, gstack hooks, and hardware-policy memory. Documented in [orama doc 41](https://github.com/diazMelgarejo/orama-system/blob/main/docs/v2/41-agentic-stack-gstack-gbrain-memory-blend.md).
+
+**Harnesses:** Windows — Antigravity CLI/IDE, Hermes, Cursor, Codex, Claude Desktop; Linux/macOS — OpenClaw, Claude CLI/Desktop, Cursor.
+
+**Status:** active
+

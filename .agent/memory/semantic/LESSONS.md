@@ -126,6 +126,8 @@
 - patch_models_yml must skip loopback win_ip the same way patch_devices_yml does — never persist localhost into shared YAML defaults  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_e7d62d7a5ed9 -->
 - SKILL.md YAML frontmatter must be the first bytes of the file — place lint-ignore HTML comments after the closing frontmatter delimiter  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_9bc9f344073b -->
 - agentic-stack lives at vendor/agentic-stack in Perpetua-Tools like ecc-tools — orama start.sh symlinks lib/shared/agentic_stack from PT vendor path  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_821b2a648956 -->
+- After vendor/agentic-stack submodule init run install-agentic-stack.sh then agentic-stack upgrade --dry-run before harmonizing PT .agent/ — union-merge only, never commit into vendor/  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_9a8236d2f51f -->
+- Block agentic-stack upstream Brain integration in .agent until brain_bridge.py supports both Gbrain and codejunkie99/brain — Gbrain via gstack is canonical for PT-orama RAG  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_959ddd42ff01 -->
 
 ### 2026-04
 
