@@ -1,0 +1,54 @@
+{
+  "id": "9a8236d2f51f",
+  "key": "manual_9a8236",
+  "name": "manual_9a8236",
+  "claim": "After vendor/agentic-stack submodule init run install-agentic-stack.sh then agentic-stack upgrade --dry-run before harmonizing PT .agent/ \u2014 union-merge only, never commit into vendor/",
+  "conditions": [
+    "after",
+    "agent",
+    "agentic-stack",
+    "before",
+    "commit",
+    "dry-run",
+    "harmonizing",
+    "init",
+    "install-agentic-stack",
+    "into",
+    "never",
+    "only",
+    "run",
+    "submodule",
+    "union-merge",
+    "upgrade",
+    "vendor"
+  ],
+  "evidence_ids": [
+    "2026-06-26T14:49:57.164134"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-26T14:49:57.164134",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-26T14:49:57.164134",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-26T14:49:57.193477+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Idempotent upgrade preview prevents overwriting in-house memory skills and gstack hooks; mirrors openclaw-skills submodule pattern",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-26T14:49:57.164134"
+      ],
+      "lessons_sha": "d65b52cfe52a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-26T14:49:57.193468+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Idempotent upgrade preview prevents overwriting in-house memory skills and gstack hooks; mirrors openclaw-skills submodule pattern"
+}
