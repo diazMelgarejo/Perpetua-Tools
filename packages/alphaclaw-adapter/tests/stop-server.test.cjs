@@ -90,8 +90,8 @@ describe("stopServer PID file", () => {
     });
     delete require.cache[adapterPath];
     const fresh = require("../src/index.js");
-    const origHealth = fresh.health;
-    fresh.health = async () => ({ ok: false });
+    // startServer probes module-level _port via health(); align before spawn.
+    fresh.configure({ host: "127.0.0.1", port: 39999 });
     try {
       const result = await fresh.startServer({
         pidFile,
@@ -103,7 +103,6 @@ describe("stopServer PID file", () => {
       assert.equal(result.pidFile, pidFile);
       assert.equal(fs.readFileSync(pidFile, "utf8"), "424242");
     } finally {
-      fresh.health = origHealth;
       cp.spawn = origSpawn;
       delete require.cache[adapterPath];
       require("../src/index.js");
