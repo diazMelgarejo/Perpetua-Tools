@@ -2,7 +2,7 @@
   "id": "f55e96698a39",
   "key": "manual_f55e96",
   "name": "manual_f55e96",
-  "claim": "Canonical repo clones must not exist under duplicate paths like /c/c/Users/<user>/...",
+  "claim": "Canonical repo clones must not exist under duplicate paths like /c/c$HOME/...",
   "conditions": [
     "canonical",
     "clones",

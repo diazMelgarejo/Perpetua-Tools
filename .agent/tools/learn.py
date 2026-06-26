@@ -26,6 +26,7 @@ sys.path.insert(0, os.path.join(BASE, "harness"))
 sys.path.insert(0, os.path.join(BASE, "memory"))
 from text import word_set  # noqa: E402
 from cluster import pattern_id  # noqa: E402
+from path_hygiene import sanitize_tracked_path_leaks  # noqa: E402
 
 
 def _lesson_already_appended(cid):
@@ -100,7 +101,7 @@ def main():
                         "if you want a reviewer to see it first.")
     args = p.parse_args()
 
-    claim = args.claim.strip()
+    claim = sanitize_tracked_path_leaks(args.claim.strip())
     if len(claim) < 20:
         print(f"ERROR: claim too short ({len(claim)} chars, need >=20). "
               f"Heuristic check would reject this.", file=sys.stderr)
@@ -123,7 +124,9 @@ def main():
         print("\n(stopping here — run graduate.py to accept)")
         return
 
-    rationale = args.rationale or f"manual via learn.py at {datetime.datetime.now().isoformat()}"
+    rationale = sanitize_tracked_path_leaks(
+        args.rationale or f"manual via learn.py at {datetime.datetime.now().isoformat()}"
+    )
     grad_args = [
         sys.executable,
         os.path.join(BASE, "tools", "graduate.py"),

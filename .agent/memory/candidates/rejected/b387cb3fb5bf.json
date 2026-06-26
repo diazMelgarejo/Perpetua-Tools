@@ -2,7 +2,7 @@
   "id": "b387cb3fb5bf",
   "key": "pattern_ultrathink_wrong-path_downloads_b387cb",
   "name": "pattern_ultrathink_wrong-path_downloads_b387cb",
-  "claim": "FAILURE in path-hygiene: Use C:\\Users\\lab\\Downloads\\SKILLS.md\\ultrathink as canonical",
+  "claim": "FAILURE in path-hygiene: Use %USERPROFILE%\\Downloads\\SKILLS.md\\ultrathink as canonical",
   "conditions": [
     "downloads",
     "failure",
