@@ -11,10 +11,11 @@ None active. PR #135 merged locally to `main`; AlphaClaw CI memory integrated.
 |------|---------|-----|
 | AlphaClaw CI diagnosis + fix | ✅ `ca5e3f28` on `feature/MacOS-post-install`; CI [28206351466](https://github.com/diazMelgarejo/AlphaClaw/actions/runs/28206351466) green | AlphaClaw |
 | PT `.agent` episodic + 3 lessons | ✅ appended on `main` | `lesson_6bff2fffe56e`, `lesson_53c4e49a41d8`, `lesson_75dae01bcd29` |
-| PR #135 Hermes memory + coauthor guard | ✅ merged locally (CodeRabbit root-cause fixes) | `cursor/critical-bug-investigation-a924` |
+| PR #135 Hermes memory + coauthor guard | ✅ merged to `main` @ `c97d89f` (CodeRabbit root-cause fixes) | `cursor/critical-bug-investigation-a924` |
+| PR #135 dream-memory follow-up | ✅ `lesson_6fc89e22e3bb` (REVIEW_QUEUE sanitize at render) | `chore/agent-dream-memory-2026-06-26` |
 | Migration verdict | ✅ L1 fixes stay in AlphaClaw — no PT code migration | `docs/MIGRATION.md` |
 
-**Not pushed:** memory-only work merged locally per user instruction.
+**Main synced:** `origin/main` @ `c97d89f`. Memory commits land on `chore/agent-dream-memory-*` branches, merged locally.
 
 ## Session record (2026-06-24 — Hermes hardware policy)
 

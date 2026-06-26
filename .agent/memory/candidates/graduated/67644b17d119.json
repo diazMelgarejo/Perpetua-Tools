@@ -1,0 +1,69 @@
+{
+  "id": "67644b17d119",
+  "key": "manual_67644b",
+  "name": "manual_67644b",
+  "claim": "Platform affinity bias: Mac/Linux installations prefer AlphaClaw + OpenClaw (start.sh). Windows installations prefer Hermes Harness (start.ps1). ECC (vendor/ecc-tools) bridges both \u2014 orama-system skills run unmodified in both harnesses in v1 and v2/oramasys. Canonical routing doc: orama-system/bin/orama-system/skills/hermes-harness/references/platform-affinity-routing.md",
+  "conditions": [
+    "affinity",
+    "alphaclaw",
+    "bias",
+    "bin",
+    "both",
+    "bridges",
+    "canonical",
+    "doc",
+    "ecc",
+    "ecc-tools",
+    "harness",
+    "harnesses",
+    "hermes",
+    "hermes-harness",
+    "installations",
+    "linux",
+    "mac",
+    "openclaw",
+    "orama-system",
+    "oramasys",
+    "platform",
+    "platform-affinity-routing",
+    "prefer",
+    "ps1",
+    "references",
+    "routing",
+    "run",
+    "skills",
+    "start",
+    "unmodified",
+    "vendor",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-06-26T08:08:53.248750"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-26T08:08:53.248750",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-26T08:08:53.248750",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-26T00:08:53.318754+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "manual via learn.py at 2026-06-26T05:52:48.843820",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-26T08:08:53.248750"
+      ],
+      "lessons_sha": "856cbc2a6f6d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-26T00:08:53.318747+00:00",
+  "reviewer": "learn.py",
+  "rationale": "manual via learn.py at 2026-06-26T05:52:48.843820"
+}
