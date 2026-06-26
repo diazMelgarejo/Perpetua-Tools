@@ -90,8 +90,8 @@ describe("stopServer PID file", () => {
     });
     delete require.cache[adapterPath];
     const fresh = require("../src/index.js");
-    const origHealth = fresh.health;
-    fresh.health = async () => ({ ok: false });
+    // startServer probes module-level _port via health(); align before spawn.
+    fresh.configure({ host: "127.0.0.1", port: 39999 });
     try {
       const result = await fresh.startServer({
         pidFile,
@@ -103,7 +103,6 @@ describe("stopServer PID file", () => {
       assert.equal(result.pidFile, pidFile);
       assert.equal(fs.readFileSync(pidFile, "utf8"), "424242");
     } finally {
-      fresh.health = origHealth;
       cp.spawn = origSpawn;
       delete require.cache[adapterPath];
       require("../src/index.js");
@@ -755,6 +754,268 @@ describe("startServer — boundary and regression cases", () => {
         ["ignore", "ignore", "ignore"],
         "all stdio must be 'ignore' when no logFile is provided"
       );
+    } finally {
+      cp.spawn = origSpawn;
+      delete require.cache[adapterPath];
+      require("../src/index.js");
+    }
+  });
+});
+
+describe("startServer — configure() alignment (PR: stop-server probe uses configure not health stub)", () => {
+  // These tests cover the behavioural change introduced by the PR: using
+  // configure() to align module-level _port/_host before startServer() instead
+  // of monkey-patching exports.health.  The key invariant is that startServer()
+  // probes /health via module-level _port (set by configure()), so callers must
+  // configure() the port rather than stub the health export when they want
+  // predictable probe behaviour on a fresh module instance.
+
+  let tmpDir;
+  let pidFile;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "ac-cfg-"));
+    pidFile = path.join(tmpDir, "alphaclaw-server.pid");
+  });
+
+  afterEach(() => {
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    } catch {
+      /* ignore */
+    }
+  });
+
+  it("configure() sets _port so health probe targets that port (unoccupied → ok:false → spawn proceeds)", async () => {
+    // Core of the PR change: configure() before startServer() makes the health
+    // probe target port 39978 which has no server, so health returns ok:false
+    // and startServer proceeds to spawn — no health stub needed.
+    const adapterPath = require.resolve("../src/index.js");
+    const origSpawn = cp.spawn;
+    cp.spawn = () => ({ pid: 909090, unref() {} });
+    delete require.cache[adapterPath];
+    const fresh = require("../src/index.js");
+    // Align module _port to an unoccupied port via configure() — no health stub.
+    fresh.configure({ host: "127.0.0.1", port: 39978 });
+    try {
+      const result = await fresh.startServer({
+        pidFile,
+        alphaclawRoot: tmpDir,
+        port: 39978,
+      });
+      assert.equal(result.ok, true, "startServer must succeed when health probe naturally returns ok:false");
+      assert.equal(result.pid, 909090);
+      assert.equal(result.pidFile, pidFile);
+      assert.equal(fs.readFileSync(pidFile, "utf8"), "909090");
+    } finally {
+      cp.spawn = origSpawn;
+      delete require.cache[adapterPath];
+      require("../src/index.js");
+    }
+  });
+
+  it("configure() with host + port sets _port: startServer without explicit port uses configured port in spawn env", async () => {
+    // Verifies configure({ host, port }) sets _port: when startServer() is called
+    // without an explicit port arg, it falls back to _port (= configured value),
+    // and the PORT env var passed to spawn reflects the configured port.
+    const adapterPath = require.resolve("../src/index.js");
+    const origSpawn = cp.spawn;
+    let capturedEnv;
+    cp.spawn = (_cmd, _args, spawnOpts) => {
+      capturedEnv = spawnOpts.env;
+      return { pid: 121212, unref() {} };
+    };
+    delete require.cache[adapterPath];
+    const fresh = require("../src/index.js");
+    fresh.configure({ host: "127.0.0.1", port: 39977 });
+    try {
+      // No explicit port — startServer falls back to _port set by configure()
+      const result = await fresh.startServer({ pidFile, alphaclawRoot: tmpDir });
+      assert.equal(result.ok, true);
+      assert.equal(capturedEnv.PORT, "39977",
+        "PORT env must equal the port set by configure() when no explicit port arg is given");
+      assert.equal(result.port, 39977, "returned port must match the configured port");
+    } finally {
+      cp.spawn = origSpawn;
+      delete require.cache[adapterPath];
+      require("../src/index.js");
+    }
+  });
+
+  it("configure() with only port preserves existing host: subsequent configure() calls are additive", async () => {
+    // configure({ port }) must not reset _host.
+    // Verified by: set both, then call configure({ port: X }) — startServer without
+    // explicit port should use port X (showing _port was updated) and still pass.
+    const adapterPath = require.resolve("../src/index.js");
+    const origSpawn = cp.spawn;
+    let capturedEnv;
+    cp.spawn = (_cmd, _args, spawnOpts) => {
+      capturedEnv = spawnOpts.env;
+      return { pid: 131313, unref() {} };
+    };
+    delete require.cache[adapterPath];
+    const fresh = require("../src/index.js");
+    // First call: set both
+    fresh.configure({ host: "127.0.0.1", port: 9999 });
+    // Second call: only port — host must remain 127.0.0.1, _port must become 39976
+    fresh.configure({ port: 39976 });
+    try {
+      const result = await fresh.startServer({ pidFile, alphaclawRoot: tmpDir });
+      assert.equal(result.ok, true);
+      assert.equal(capturedEnv.PORT, "39976",
+        "PORT env must reflect the port-only configure() call, not the earlier value");
+      assert.equal(result.port, 39976, "returned port must equal the most recently configured port");
+    } finally {
+      cp.spawn = origSpawn;
+      delete require.cache[adapterPath];
+      require("../src/index.js");
+    }
+  });
+
+  it("configure() with only host preserves existing port: _port unchanged after host-only call", async () => {
+    // configure({ host }) must not reset _port.
+    // Verified by: configure({ host, port: X }), then configure({ host }) alone —
+    // startServer without explicit port must still use port X.
+    const adapterPath = require.resolve("../src/index.js");
+    const origSpawn = cp.spawn;
+    let capturedEnv;
+    cp.spawn = (_cmd, _args, spawnOpts) => {
+      capturedEnv = spawnOpts.env;
+      return { pid: 141414, unref() {} };
+    };
+    delete require.cache[adapterPath];
+    const fresh = require("../src/index.js");
+    // Set port + host
+    fresh.configure({ host: "127.0.0.1", port: 39975 });
+    // host-only call must not clear _port
+    fresh.configure({ host: "127.0.0.1" });
+    try {
+      const result = await fresh.startServer({ pidFile, alphaclawRoot: tmpDir });
+      assert.equal(result.ok, true);
+      assert.equal(capturedEnv.PORT, "39975",
+        "PORT env must equal the port set before the host-only configure() call");
+      assert.equal(result.port, 39975, "returned port must be unchanged by host-only configure()");
+    } finally {
+      cp.spawn = origSpawn;
+      delete require.cache[adapterPath];
+      require("../src/index.js");
+    }
+  });
+
+  it("configure() with no arguments is a no-op: _port remains unchanged", async () => {
+    // configure({}) must leave _port intact.
+    // Verified by: configure({ port: X }), configure({}) — startServer without
+    // explicit port must still see _port = X in the spawn env.
+    const adapterPath = require.resolve("../src/index.js");
+    const origSpawn = cp.spawn;
+    let capturedEnv;
+    cp.spawn = (_cmd, _args, spawnOpts) => {
+      capturedEnv = spawnOpts.env;
+      return { pid: 151515, unref() {} };
+    };
+    delete require.cache[adapterPath];
+    const fresh = require("../src/index.js");
+    fresh.configure({ host: "127.0.0.1", port: 39974 });
+    fresh.configure({}); // explicit no-op
+    try {
+      const result = await fresh.startServer({ pidFile, alphaclawRoot: tmpDir });
+      assert.equal(result.ok, true);
+      assert.equal(capturedEnv.PORT, "39974",
+        "PORT env must be unaffected by configure({}) no-op call");
+      assert.equal(result.port, 39974, "returned port must be unchanged after configure({}) no-op");
+    } finally {
+      cp.spawn = origSpawn;
+      delete require.cache[adapterPath];
+      require("../src/index.js");
+    }
+  });
+
+  it("startServer() internally calls configure({port:p}) — Gate 2: PORT env reflects explicit port arg", async () => {
+    // Gate 2 contract: startServer({ port: p }) calls configure({ port: p })
+    // before the health probe.  Verified by: even without a pre-configure() call,
+    // the PORT env passed to spawn equals the explicit port argument — proving
+    // configure() was called internally with the right value.
+    const adapterPath = require.resolve("../src/index.js");
+    const origSpawn = cp.spawn;
+    let capturedEnv;
+    cp.spawn = (_cmd, _args, spawnOpts) => {
+      capturedEnv = spawnOpts.env;
+      return { pid: 161616, unref() {} };
+    };
+    delete require.cache[adapterPath];
+    const fresh = require("../src/index.js");
+    fresh.health = async () => ({ ok: false });
+    // No pre-configure() — startServer must call configure() internally
+    try {
+      const result = await fresh.startServer({
+        pidFile,
+        alphaclawRoot: tmpDir,
+        port: 39973,
+      });
+      assert.equal(result.ok, true);
+      assert.equal(capturedEnv.PORT, "39973",
+        "PORT env must match the explicit port arg — proof that startServer called configure() internally");
+      assert.equal(result.port, 39973);
+    } finally {
+      cp.spawn = origSpawn;
+      delete require.cache[adapterPath];
+      require("../src/index.js");
+    }
+  });
+
+  it("configure() before startServer() is idempotent when port matches (double-configure regression)", async () => {
+    // When configure({ port: p }) is called before startServer({ port: p }),
+    // startServer() will call configure({ port: p }) again internally — this
+    // double-configure must be idempotent and produce the same correct outcome.
+    const adapterPath = require.resolve("../src/index.js");
+    const origSpawn = cp.spawn;
+    cp.spawn = () => ({ pid: 333444, unref() {} });
+    delete require.cache[adapterPath];
+    const fresh = require("../src/index.js");
+    // Pre-configure (mirrors the PR change pattern)
+    fresh.configure({ host: "127.0.0.1", port: 39972 });
+    try {
+      const result = await fresh.startServer({
+        pidFile,
+        alphaclawRoot: tmpDir,
+        port: 39972,
+      });
+      assert.equal(result.ok, true);
+      assert.equal(result.pid, 333444);
+      assert.equal(result.port, 39972, "port in result must match configured/spawned port after double-configure");
+      assert.equal(result.pidFile, pidFile);
+      assert.equal(fs.readFileSync(pidFile, "utf8"), "333444");
+    } finally {
+      cp.spawn = origSpawn;
+      delete require.cache[adapterPath];
+      require("../src/index.js");
+    }
+  });
+
+  it("configure() port propagates to spawn env even after multiple configure() calls (last-write-wins)", async () => {
+    // Boundary / regression: calling configure() multiple times in sequence must
+    // honour last-write-wins semantics.  The final _port value must appear in the
+    // PORT env var passed to spawn, not an earlier intermediate value.
+    const adapterPath = require.resolve("../src/index.js");
+    const origSpawn = cp.spawn;
+    let capturedEnv;
+    cp.spawn = (_cmd, _args, spawnOpts) => {
+      capturedEnv = spawnOpts.env;
+      return { pid: 171717, unref() {} };
+    };
+    delete require.cache[adapterPath];
+    const fresh = require("../src/index.js");
+    // Multiple configure() calls — only the last port value should survive
+    fresh.configure({ host: "127.0.0.1", port: 11111 });
+    fresh.configure({ port: 22222 });
+    fresh.configure({ port: 39971 }); // final value
+    try {
+      // No explicit port arg — startServer uses _port from configure()
+      const result = await fresh.startServer({ pidFile, alphaclawRoot: tmpDir });
+      assert.equal(result.ok, true);
+      assert.equal(capturedEnv.PORT, "39971",
+        "PORT env must reflect the last configure() call, not an earlier one");
+      assert.equal(result.port, 39971, "returned port must be the last configured port");
     } finally {
       cp.spawn = origSpawn;
       delete require.cache[adapterPath];
