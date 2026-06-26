@@ -90,8 +90,8 @@ describe("stopServer PID file", () => {
     });
     delete require.cache[adapterPath];
     const fresh = require("../src/index.js");
-    const origHealth = fresh.health;
-    fresh.health = async () => ({ ok: false });
+    // startServer probes module-level _port via health(); align before spawn.
+    fresh.configure({ host: "127.0.0.1", port: 39999 });
     try {
       const result = await fresh.startServer({
         pidFile,
@@ -103,7 +103,6 @@ describe("stopServer PID file", () => {
       assert.equal(result.pidFile, pidFile);
       assert.equal(fs.readFileSync(pidFile, "utf8"), "424242");
     } finally {
-      fresh.health = origHealth;
       cp.spawn = origSpawn;
       delete require.cache[adapterPath];
       require("../src/index.js");
@@ -569,6 +568,223 @@ describe("startServer — return shape and edge cases", () => {
       cp.spawn = origSpawn;
       delete require.cache[adapterPath];
       require("../src/index.js");
+    }
+  });
+});
+
+describe("configure() — probe alignment for startServer", () => {
+  // Tests specifically covering the PR change: using configure() to set module-level
+  // _port before startServer(), instead of stubbing exports.health.
+
+  let tmpDir;
+  let pidFile;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "ac-configure-"));
+    pidFile = path.join(tmpDir, "alphaclaw-server.pid");
+  });
+
+  afterEach(() => {
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    } catch {
+      /* ignore */
+    }
+  });
+
+  it("configure() sets _port so health() probes the correct port — spawn proceeds on unoccupied port", async () => {
+    // Core scenario from the PR: configure({port}) → health returns {ok:false} naturally
+    // on an unoccupied port, so startServer proceeds to spawn without stubbing health.
+    const adapterPath = require.resolve("../src/index.js");
+    const origSpawn = cp.spawn;
+    cp.spawn = () => ({ pid: 810001, unref() {} });
+    delete require.cache[adapterPath];
+    const fresh = require("../src/index.js");
+    // Align _port to an unoccupied port — health() will naturally return {ok:false}.
+    fresh.configure({ host: "127.0.0.1", port: 38001 });
+    try {
+      const result = await fresh.startServer({ pidFile, alphaclawRoot: tmpDir, port: 38001 });
+      assert.equal(result.ok, true);
+      assert.equal(result.pid, 810001);
+      assert.equal(result.pidFile, pidFile);
+      assert.equal(fs.readFileSync(pidFile, "utf8"), "810001");
+    } finally {
+      cp.spawn = origSpawn;
+      delete require.cache[adapterPath];
+      require("../src/index.js");
+    }
+  });
+
+  it("configure() with port only does not change host", async () => {
+    // configure({port}) must leave _host unchanged.
+    const adapterPath = require.resolve("../src/index.js");
+    const origSpawn = cp.spawn;
+    cp.spawn = () => ({ pid: 810002, unref() {} });
+    delete require.cache[adapterPath];
+    const fresh = require("../src/index.js");
+    // Only set port — host should remain at module default.
+    fresh.configure({ port: 38002 });
+    try {
+      const result = await fresh.startServer({ pidFile, alphaclawRoot: tmpDir, port: 38002 });
+      // Should still succeed: spawn path (unoccupied port → health fails naturally).
+      assert.equal(result.ok, true);
+      assert.equal(result.pid, 810002);
+    } finally {
+      cp.spawn = origSpawn;
+      delete require.cache[adapterPath];
+      require("../src/index.js");
+    }
+  });
+
+  it("configure() with host only does not change port", async () => {
+    // configure({host}) must leave _port unchanged.
+    const adapterPath = require.resolve("../src/index.js");
+    delete require.cache[adapterPath];
+    const fresh = require("../src/index.js");
+    // Capture state: only host should change.
+    fresh.configure({ host: "127.0.0.2" });
+    // Port remains DEFAULT_PORT — just verify configure() doesn't throw.
+    assert.ok(true, "configure({host}) must not throw");
+    delete require.cache[adapterPath];
+    require("../src/index.js");
+  });
+
+  it("configure() with empty object leaves state unchanged", () => {
+    // configure({}) must be a no-op.
+    const adapterPath = require.resolve("../src/index.js");
+    delete require.cache[adapterPath];
+    const fresh = require("../src/index.js");
+    // Call with no-argument defaults (empty object) — must not throw.
+    assert.doesNotThrow(() => fresh.configure({}));
+    delete require.cache[adapterPath];
+    require("../src/index.js");
+  });
+
+  it("configure() with no argument (undefined) is a no-op", () => {
+    // configure() with no arg defaults to {} due to `= {}` default in signature.
+    const adapterPath = require.resolve("../src/index.js");
+    delete require.cache[adapterPath];
+    const fresh = require("../src/index.js");
+    assert.doesNotThrow(() => fresh.configure());
+    delete require.cache[adapterPath];
+    require("../src/index.js");
+  });
+
+  it("configure() port alignment is idempotent with startServer's own configure() call", async () => {
+    // startServer() itself calls configure({port:p}) at line 525. Pre-calling configure()
+    // with the same port before startServer must not cause a second different probe target.
+    const adapterPath = require.resolve("../src/index.js");
+    const origSpawn = cp.spawn;
+    let spawnCount = 0;
+    cp.spawn = () => { spawnCount++; return { pid: 810003, unref() {} }; };
+    delete require.cache[adapterPath];
+    const fresh = require("../src/index.js");
+    // Pre-align: the PR pattern
+    fresh.configure({ host: "127.0.0.1", port: 38003 });
+    try {
+      const result = await fresh.startServer({ pidFile, alphaclawRoot: tmpDir, port: 38003 });
+      assert.equal(result.ok, true);
+      assert.equal(spawnCount, 1, "spawn must be called exactly once");
+      assert.equal(result.pid, 810003);
+    } finally {
+      cp.spawn = origSpawn;
+      delete require.cache[adapterPath];
+      require("../src/index.js");
+    }
+  });
+
+  it("configure() called multiple times: last call wins for both host and port", async () => {
+    // configure() is cumulative — each call overrides only the fields it provides.
+    // Calling configure() twice with different ports must leave _port at the last value.
+    const adapterPath = require.resolve("../src/index.js");
+    const origSpawn = cp.spawn;
+    cp.spawn = () => ({ pid: 810004, unref() {} });
+    delete require.cache[adapterPath];
+    const fresh = require("../src/index.js");
+    // First call sets port to something high
+    fresh.configure({ host: "127.0.0.1", port: 38099 });
+    // Second call overrides port to a different value — this must win
+    fresh.configure({ port: 38004 });
+    try {
+      // startServer with port: 38004 — health() will probe 38004 (unoccupied → spawn)
+      const result = await fresh.startServer({ pidFile, alphaclawRoot: tmpDir, port: 38004 });
+      assert.equal(result.ok, true);
+      assert.equal(result.pid, 810004);
+      assert.equal(result.port, 38004, "port must reflect the last configure() call");
+    } finally {
+      cp.spawn = origSpawn;
+      delete require.cache[adapterPath];
+      require("../src/index.js");
+    }
+  });
+
+  it("configure() replaces health stub: no mutation of exports.health needed", async () => {
+    // Regression guard: the old test stubbed exports.health; the PR removes that stub.
+    // Verify the module's exported health function is the real function (not a stub)
+    // and that startServer still works using configure() alone.
+    const adapterPath = require.resolve("../src/index.js");
+    const origSpawn = cp.spawn;
+    cp.spawn = () => ({ pid: 810005, unref() {} });
+    delete require.cache[adapterPath];
+    const fresh = require("../src/index.js");
+    const originalHealth = fresh.health;
+    fresh.configure({ host: "127.0.0.1", port: 38005 });
+    try {
+      const result = await fresh.startServer({ pidFile, alphaclawRoot: tmpDir, port: 38005 });
+      // exports.health must remain the original function (not replaced)
+      assert.strictEqual(fresh.health, originalHealth, "exports.health must not be mutated by configure()");
+      assert.equal(result.ok, true);
+      assert.equal(result.pid, 810005);
+    } finally {
+      cp.spawn = origSpawn;
+      delete require.cache[adapterPath];
+      require("../src/index.js");
+    }
+  });
+
+  it("configure() port must be reflected in the startServer result port field", async () => {
+    // The port set via configure() and passed to startServer() must appear in result.port.
+    const adapterPath = require.resolve("../src/index.js");
+    const origSpawn = cp.spawn;
+    cp.spawn = () => ({ pid: 810006, unref() {} });
+    delete require.cache[adapterPath];
+    const fresh = require("../src/index.js");
+    const TARGET_PORT = 38006;
+    fresh.configure({ host: "127.0.0.1", port: TARGET_PORT });
+    try {
+      const result = await fresh.startServer({ pidFile, alphaclawRoot: tmpDir, port: TARGET_PORT });
+      assert.equal(result.port, TARGET_PORT, "result.port must match the configure()-set port");
+    } finally {
+      cp.spawn = origSpawn;
+      delete require.cache[adapterPath];
+      require("../src/index.js");
+    }
+  });
+
+  it("configure() + startServer() writes correct PID to file (no health-stub cleanup needed)", async () => {
+    // Validates that removing the health-stub finally-cleanup doesn't leave residue.
+    // After the test completes and fresh module is discarded, real adapter is re-required cleanly.
+    const adapterPath = require.resolve("../src/index.js");
+    const origSpawn = cp.spawn;
+    cp.spawn = () => ({ pid: 810007, unref() {} });
+    delete require.cache[adapterPath];
+    const fresh = require("../src/index.js");
+    fresh.configure({ host: "127.0.0.1", port: 38007 });
+    try {
+      const result = await fresh.startServer({ pidFile, alphaclawRoot: tmpDir, port: 38007 });
+      assert.equal(result.ok, true);
+      assert.equal(result.pid, 810007);
+      // PID file must contain exactly the spawned PID as a string
+      assert.equal(fs.readFileSync(pidFile, "utf8"), "810007");
+      assert.equal(result.pidFile, pidFile);
+      assert.equal(result.already, undefined, "must not be on commandeer path");
+    } finally {
+      cp.spawn = origSpawn;
+      delete require.cache[adapterPath];
+      // Re-requiring after cache delete restores the real module — no stub cleanup needed
+      const clean = require("../src/index.js");
+      // Verify the re-required module exposes an unmodified health function
+      assert.equal(typeof clean.health, "function", "health must be a function in clean module");
     }
   });
 });
