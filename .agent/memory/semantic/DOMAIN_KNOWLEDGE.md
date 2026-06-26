@@ -38,3 +38,22 @@
 
 ## Seeds
 _(empty — populate as you go)_
+
+## .agent/ system — origin and provenance
+
+**First commit:** `82bcbfae` — 2026-06-19 00:22 +0800, author: cyre <Lawrence@cyre.me>  
+**Commit message:** `docs: establish GEMINI.md mandate and agentic-stack context`  
+**Repository:** Perpetua-Tools (`diazMelgarejo/Perpetua-Tools`)  
+**Added directly to `main`** (not via a PR)
+
+**install.json at first commit:**
+- `agentic_stack_version`: `0.9.0`
+- `installed_at`: `2026-06-18T13:11:50Z` (the day before the commit)
+- `abs_target`: `C:\Users\lab\...\Perplexity-Tools`
+
+**What it added in one shot (55 files):** complete memory system (episodic/semantic/working), all Python tools (graduate.py, learn.py, recall.py, show.py, etc.), harness layer (conductor.py, hooks/, protocols/), 6 initial skills. No other repo cited as origin.
+
+**Design intent (from AGENTS.md first line):**  
+> "This folder is the portable brain. Any harness (Claude Code, Cursor, Windsurf, OpenCode, OpenClaw, Hermes, standalone Python) can mount it and get the same memory, skills, and protocols."
+
+**Origin:** Built from scratch as a purpose-designed portable agent memory system. The version `0.9.0` suggests prior offline/local development before the first tracked commit. The design philosophy connects to ECC cross-harness thinking but the code is not derived from any prior tracked repo.
