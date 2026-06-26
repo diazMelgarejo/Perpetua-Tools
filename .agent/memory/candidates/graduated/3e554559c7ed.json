@@ -1,0 +1,66 @@
+{
+  "id": "3e554559c7ed",
+  "key": "manual_3e5545",
+  "name": "manual_3e5545",
+  "claim": "All .agent/memory writers must call sanitize_tracked_path_leaks() from path_hygiene.py before persisting strings \u2014 episodic log_execution, learn.py, graduate.py, and review queue renderer. Legacy rows: run scrub_memory_paths.py then re-render LESSONS.md; never hand-edit derived markdown to hide paths.",
+  "conditions": [
+    "agent",
+    "all",
+    "before",
+    "call",
+    "derived",
+    "episodic",
+    "graduate",
+    "hand-edit",
+    "hide",
+    "learn",
+    "legacy",
+    "lessons",
+    "log_execution",
+    "markdown",
+    "memory",
+    "never",
+    "path_hygiene",
+    "paths",
+    "persisting",
+    "queue",
+    "re-render",
+    "renderer",
+    "review",
+    "rows",
+    "run",
+    "sanitize_tracked_path_leaks",
+    "scrub_memory_paths",
+    "strings",
+    "writers"
+  ],
+  "evidence_ids": [
+    "2026-06-26T08:27:45.953384"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-26T08:27:45.953384",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-26T08:27:45.953384",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-26T00:27:46.026795+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit PR #135 threads 2-4: lessons.jsonl, LESSONS.md, REVIEW_QUEUE leaked workstation paths because only the queue renderer was patched. Autofix 80926a3 used <local-path> placeholders (symptom).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-26T08:27:45.953384"
+      ],
+      "lessons_sha": "0976871701d8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-26T00:27:46.026784+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit PR #135 threads 2-4: lessons.jsonl, LESSONS.md, REVIEW_QUEUE leaked workstation paths because only the queue renderer was patched. Autofix 80926a3 used <local-path> placeholders (symptom)."
+}

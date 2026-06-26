@@ -129,7 +129,7 @@ No manual edits to versioned surfaces. Historical docs are excluded intentionall
 
 **Decision:** When integrating Hermes-generated memory into tracked .agent/memory/ files, always sanitize absolute workstation paths before committing. Hermes runs on the physical workstation and naturally includes real paths in its memory outputs. These must be converted to relative paths (../../) or env vars ($REPO_ROOT, $OPENCLAW_ROOT) before they enter tracked files.
 
-**Evidence:** 2026-06-23-memory-update-01 contained `C:\Users\lab\Downloads\SKILLS.md\uLtrathink\Perplexity-Tools` — this violates LINT-006 and the repo's own anti-doxxing lesson. The uLtrathink spelling anchor was preserved; the absolute path was replaced with env var guidance.
+**Evidence:** 2026-06-23-memory-update-01 contained `%USERPROFILE%\Downloads\SKILLS.md\uLtrathink\Perplexity-Tools` — this violates LINT-006 and the repo's own anti-doxxing lesson. The uLtrathink spelling anchor was preserved; the absolute path was replaced with env var guidance.
 
 **Status:** active.
 

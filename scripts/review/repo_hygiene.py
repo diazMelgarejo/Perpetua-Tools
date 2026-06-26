@@ -33,17 +33,25 @@ IDENTITY_DOC_EXCEPTIONS: set[str] = {
 # an absolute path under /Users/<anything>/ or /home/<anything>/. Developer
 # workstation paths in public docs are a dox risk and hurt portability.
 # Use ~, $REPO_ROOT, or <workspace> instead.
-PERSONAL_PATH_PATTERN = re.compile(r"(/Users/|/home/)([A-Za-z][A-Za-z0-9._-]+)/")
+PERSONAL_PATH_PATTERN = re.compile(
+    r"(?:/Users/|/home/)([A-Za-z][A-Za-z0-9._-]+)/"
+    r"|C:\\Users\\([^\\\"\s]+)\\?",  # capture group so PLACEHOLDERS allowlist works
+    re.IGNORECASE,
+)
 # Username segments that are documentation placeholders, not real leaks.
 PERSONAL_PATH_PLACEHOLDERS = frozenset({
     "you", "user", "example", "username", "name", "youruser", "yourname",
     "<user>", "<username>", "USERNAME", "USER",
+    "youruser",
 })
 PERSONAL_PATH_EXCEPTIONS = {
     # The script itself names the pattern in source as documentation.
     "scripts/review/repo_hygiene.py",
     # Hygiene test asserts the rule against fixture content.
     "tests/test_repo_hygiene.py",
+    # path_hygiene unit tests use /Users/alice, /home/bob as test fixtures —
+    # the file exists specifically to verify the scrubber catches these patterns.
+    "tests/test_path_hygiene.py",
 }
 # Hidden / bidirectional Unicode controls — Trojan-Source defense (CVE-2021-42574).
 # These can hide malicious code in diffs. Block in all tracked files except the
@@ -280,12 +288,13 @@ def scan_personal_paths(root: Path, files: list[str]) -> list[str]:
             m = PERSONAL_PATH_PATTERN.search(line)
             if not m:
                 continue
-            username = m.group(2)
-            if username in PERSONAL_PATH_PLACEHOLDERS:
+            # group(1) = Unix/Linux username; group(2) = Windows username
+            username = m.group(1) or (m.group(2) if m.lastindex and m.lastindex >= 2 else None)
+            if username and username in PERSONAL_PATH_PLACEHOLDERS:
                 continue
             errors.append(
                 f"personal absolute path in tracked file: {rel}:{line_no}: "
-                f"matched {m.group(0)!r} — use ~, $REPO_ROOT, or <workspace>"
+                f"matched {m.group(0)!r} — use $HOME/, %USERPROFILE%\\, or $REPO_ROOT"
             )
             break
     return errors
