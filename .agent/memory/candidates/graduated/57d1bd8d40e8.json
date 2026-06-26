@@ -1,0 +1,53 @@
+{
+  "id": "57d1bd8d40e8",
+  "key": "manual_57d1bd",
+  "name": "manual_57d1bd",
+  "claim": "v2 oramasys/agate repo will own model_hardware_policy.yml schema, hardware_policy API, and hardware_policy_cli \u2014 perpetua-core imports agate; PT v1 paths are migration source only",
+  "conditions": [
+    "agate",
+    "api",
+    "hardware_policy",
+    "hardware_policy_cli",
+    "imports",
+    "migration",
+    "model_hardware_policy",
+    "only",
+    "oramasys",
+    "own",
+    "paths",
+    "perpetua-core",
+    "repo",
+    "schema",
+    "source",
+    "yml"
+  ],
+  "evidence_ids": [
+    "2026-06-26T15:49:55.893308"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-26T15:49:55.893308",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-26T15:49:55.893308",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-26T15:49:55.927245+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Spin-off minimum moving parts from monolithic Perpetua-Tools to orbit satellite documented in orama docs/v2/42",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-26T15:49:55.893308"
+      ],
+      "lessons_sha": "a2b34159d529"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-26T15:49:55.927237+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Spin-off minimum moving parts from monolithic Perpetua-Tools to orbit satellite documented in orama docs/v2/42"
+}
