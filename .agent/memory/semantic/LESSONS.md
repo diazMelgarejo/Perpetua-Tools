@@ -130,6 +130,7 @@
 - Block agentic-stack upstream Brain integration in .agent until brain_bridge.py supports both Gbrain and codejunkie99/brain — Gbrain via gstack is canonical for PT-orama RAG  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_959ddd42ff01 -->
 - xAI Grok Build (Elon Musk) installs a bare agent CLI at ~/.grok/bin/agent — it is NOT Cursor. PATH collision: scripts invoking agent without a path hit Grok TUI instead of cursor-agent. Always call cursor-agent explicitly and document both binaries in harness skills.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_f4b012e5339e -->
 - When adding Windows .cmd shims in Python always write CRLF bytes and add gitattributes eol=crlf — LF-only batch files fail silently under cmd.exe per PR #108 gstack-brain-sync.cmd incident  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_bcc6a5141f56 -->
+- v2 oramasys/agate repo will own model_hardware_policy.yml schema, hardware_policy API, and hardware_policy_cli — perpetua-core imports agate; PT v1 paths are migration source only  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_57d1bd8d40e8 -->
 
 ### 2026-04
 
