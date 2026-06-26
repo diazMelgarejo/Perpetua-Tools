@@ -1,0 +1,50 @@
+{
+  "id": "821b2a648956",
+  "key": "manual_821b2a",
+  "name": "manual_821b2a",
+  "claim": "agentic-stack lives at vendor/agentic-stack in Perpetua-Tools like ecc-tools \u2014 orama start.sh symlinks lib/shared/agentic_stack from PT vendor path",
+  "conditions": [
+    "agentic-stack",
+    "agentic_stack",
+    "ecc-tools",
+    "lib",
+    "like",
+    "lives",
+    "orama",
+    "path",
+    "perpetua-tools",
+    "shared",
+    "start",
+    "symlinks",
+    "vendor"
+  ],
+  "evidence_ids": [
+    "2026-06-26T13:14:20.558303"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-26T13:14:20.558303",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-26T13:14:20.558303",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-26T13:14:20.584368+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Formalized submodule layout 2026-06-26; packages/ path retired",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-26T13:14:20.558303"
+      ],
+      "lessons_sha": "5389ac1efbdd"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-26T13:14:20.584359+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Formalized submodule layout 2026-06-26; packages/ path retired"
+}

@@ -268,7 +268,7 @@ edits.
 
 ### Gotcha: plain `git clone` does not initialize submodules
 
-`vendor/ecc-tools`, `vendor/Claude-Desktop-LLM`, and `packages/agentic-stack`
+`vendor/ecc-tools`, `vendor/Claude-Desktop-LLM`, and `vendor/agentic-stack`
 are all submodules (see `.gitmodules`). A plain `git clone` leaves them as
 empty directories — files inside (e.g. `vendor/ecc-tools/package-lock.json`)
 won't appear until `git submodule update --init <path>`. If a fresh clone

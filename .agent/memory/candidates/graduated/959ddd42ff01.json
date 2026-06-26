@@ -1,0 +1,54 @@
+{
+  "id": "959ddd42ff01",
+  "key": "manual_959ddd",
+  "name": "manual_959ddd",
+  "claim": "Block agentic-stack upstream Brain integration in .agent until brain_bridge.py supports both Gbrain and codejunkie99/brain \u2014 Gbrain via gstack is canonical for PT-orama RAG",
+  "conditions": [
+    "agent",
+    "agentic-stack",
+    "block",
+    "both",
+    "brain",
+    "brain_bridge",
+    "canonical",
+    "codejunkie99",
+    "gbrain",
+    "gstack",
+    "integration",
+    "pt-orama",
+    "rag",
+    "supports",
+    "until",
+    "upstream",
+    "via"
+  ],
+  "evidence_ids": [
+    "2026-06-26T14:49:57.223335"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-26T14:49:57.223335",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-26T14:49:57.223335",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-26T14:49:57.249345+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "v0.18 Brain CLI would fragment memory plane; planned agentic-stack gbrain * mirrors brain * verbs",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-26T14:49:57.223335"
+      ],
+      "lessons_sha": "9835c2f5a4ff"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-26T14:49:57.249336+00:00",
+  "reviewer": "learn.py",
+  "rationale": "v0.18 Brain CLI would fragment memory plane; planned agentic-stack gbrain * mirrors brain * verbs"
+}

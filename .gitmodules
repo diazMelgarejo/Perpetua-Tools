@@ -1,5 +1,5 @@
-[submodule "packages/agentic-stack"]
-	path = packages/agentic-stack
+[submodule "vendor/agentic-stack"]
+	path = vendor/agentic-stack
 	url = https://github.com/codejunkie99/agentic-stack
 	ignore = dirty
 

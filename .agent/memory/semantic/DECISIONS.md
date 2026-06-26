@@ -251,3 +251,58 @@ there is no `.\windows\` folder at repo root.
 **Status:** active
 
 **Links:** AlphaClaw CI [28086747962](https://github.com/diazMelgarejo/AlphaClaw/actions/runs/28086747962) → [28206351466](https://github.com/diazMelgarejo/AlphaClaw/actions/runs/28206351466); commit `ca5e3f28`
+
+---
+
+## 2026-06-26: agentic-stack submodule at vendor/agentic-stack (like ecc-tools)
+
+**Decision:** Move `packages/agentic-stack` → `vendor/agentic-stack`. Add `scripts/git/agentic-stack-submodule-sync.sh` and `agentic-stack-vendor.md`. PT `.agent/` remains the live customized brain; submodule is upstream reference for install/upgrade per [agentic-stack CHANGELOG](https://github.com/codejunkie99/agentic-stack/blob/master/CHANGELOG.md). orama `start.sh` symlinks `lib/shared/agentic_stack` from `$PT_DIR/vendor/agentic-stack`.
+
+**Rationale:** Parity with `vendor/ecc-tools` formalization — one `vendor/` namespace for external brains, documented bump workflow, CI-friendly `git submodule update --init`.
+
+**Alternatives considered:** Keep `packages/` path — rejected (inconsistent with ecc-tools). Copy `.agent/` from submodule on every clone — rejected (PT memory is customized and must not be overwritten).
+
+**Status:** active
+
+---
+
+## 2026-06-26: discover.py hash vs runtime IP split (PR #108)
+
+**Decision:** `discover.py` uses LAN IPs for `hash_endpoints`, `patch_devices_yml`, and discovery state; runtime `patch_openclaw_json` keeps `localhost` for Windows-local LM Studio. `patch_models_yml` skips loopback `win_ip` (parity with `patch_devices_yml`).
+
+**Rationale:** Mutating `endpoints["win"]` to LAN IP before `patch_openclaw_json()` breaks `lmstudio-win` on Windows hosts. CodeRabbit r3480506247 caught asymmetric loopback handling in `patch_models_yml`.
+
+**Status:** active
+
+---
+
+## 2026-06-26: Agentic-stack union-merge — dry-run first, Gbrain canonical, Brain blocked
+
+**Decision:** After `vendor/agentic-stack` submodule init, run `scripts/git/install-agentic-stack.sh` (idempotent) then `agentic-stack upgrade --dry-run` before harmonizing PT `.agent/`. Union-merge upstream skeleton into project-owned `.agent/` at runtime — never commit blended output into `vendor/`. Block upstream Brain (`brain_bridge.py`, `agentic-stack brain *`) until PT ships dual-backend bridge; Gbrain via gstack is canonical RAG. Future: `agentic-stack gbrain *` mirrors `brain *`.
+
+**Rationale:** Same patch-on-top model as orama `openclaw-skills` (submodule + local extensions). Prevents upgrade from overwriting graduated lessons, gstack hooks, and hardware-policy memory. Documented in [orama doc 41](https://github.com/diazMelgarejo/orama-system/blob/main/docs/v2/41-agentic-stack-gstack-gbrain-memory-blend.md).
+
+**Harnesses:** Windows — Antigravity CLI/IDE, Hermes, Cursor, Codex, Claude Desktop; Linux/macOS — OpenClaw, Claude CLI/Desktop, Cursor.
+
+**Status:** active
+
+---
+
+## 2026-06-26: xAI Grok `agent` vs Cursor `cursor-agent` — PATH collision
+
+**Decision:** xAI Grok Build ships `~/.grok/bin/agent` (Grok TUI). Cursor ships `cursor-agent`. Never invoke bare `agent` in scripts or skills — always `cursor-agent` for Cursor background agents. Document both binaries in harness SKILL frontmatter.
+
+**Rationale:** xAI chose generic `agent` binary name; operators with both Grok and Cursor hit wrong CLI on PATH. PR #108 `cursor-agent` skill disambiguates.
+
+**Status:** active — lesson `lesson_f4b012e5339e`
+
+---
+
+## 2026-06-26: Windows `.cmd` CRLF enforcement
+
+**Decision:** All tracked `.cmd`/`.bat` files use CRLF. Python writers open `'wb'` and join with `\r\n`. Declare `*.cmd text eol=crlf` in `.gitattributes`.
+
+**Rationale:** PR #108 `gstack-brain-sync.cmd` LF-only incident — cmd.exe silent failure on Hermes Windows.
+
+**Status:** active — lesson `lesson_bcc6a5141f56`
+
