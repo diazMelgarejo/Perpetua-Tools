@@ -186,6 +186,41 @@ def test_check_commit_message_rejects_unknown_gmail(tmp_path):
     assert proc.returncode != 0
 
 
+def test_check_commit_message_rejects_tool_marker_with_bad_email(tmp_path):
+    """Display-name markers must not override a rejected email address."""
+    script = ROOT / "scripts/git/check_commit_message.sh"
+    msg = tmp_path / "msg-marker-bad-email"
+    msg.write_text(
+        "feat: x\n\nCo-authored-by: Claude <attacker@evil.com>\n",
+        encoding="utf-8",
+    )
+    proc = subprocess.run(
+        ["bash", str(script), str(msg)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode != 0
+    assert "not on approved co-author policy" in proc.stderr
+
+
+def test_check_commit_message_rejects_hermes_display_name_with_bad_email(tmp_path):
+    """Hermes in display name must not bypass email allowlist."""
+    script = ROOT / "scripts/git/check_commit_message.sh"
+    msg = tmp_path / "msg-hermes-bad-email"
+    msg.write_text(
+        "feat: x\n\nCo-authored-by: Hermes <attacker@evil.com>\n",
+        encoding="utf-8",
+    )
+    proc = subprocess.run(
+        ["bash", str(script), str(msg)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode != 0
+
+
 # ---------------------------------------------------------------------------
 # Tests for first_banned_pattern_token() in banned_attribution_lib.sh
 # ---------------------------------------------------------------------------

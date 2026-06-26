@@ -25,14 +25,6 @@
 
 ---
 
-## Candidate queue
-
-_No pending candidates._ (Dream cycle 2026-06-24 `76d0407` graduated 4, rejected 2.)
-
-Run `python .agent/tools/list_candidates.py` for detail, then:
-- `python .agent/tools/graduate.py <id> --rationale "..."` to accept
-- `python .agent/tools/reject.py <id> --reason "..."` to reject
-
 ### Cursor agent commits landed in PT (2026-06-24, post-session)
 
 | Commit | What |
@@ -43,3 +35,6 @@ Run `python .agent/tools/list_candidates.py` for detail, then:
 
 All additive, no conflicts with our session work. Verified via git show.
 
+---
+
+_No pending candidates._
