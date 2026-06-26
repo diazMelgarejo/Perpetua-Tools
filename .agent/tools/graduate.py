@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.join(BASE, "memory"))
 from review_state import mark_graduated
 from validate import heuristic_check
 from render_lessons import append_lesson, render_lessons, load_lessons
+from path_hygiene import sanitize_tracked_path_leaks
 
 CANDIDATES = os.path.join(BASE, "memory/candidates")
 SEMANTIC = os.path.join(BASE, "memory/semantic")
@@ -47,6 +48,7 @@ def main():
     p.add_argument("--supersedes", default=None,
                    help="ID of an existing lesson this replaces.")
     args = p.parse_args()
+    args.rationale = sanitize_tracked_path_leaks(args.rationale)
 
     cand_path = os.path.join(CANDIDATES, f"{args.candidate_id}.json")
     if not os.path.exists(cand_path):
@@ -157,7 +159,7 @@ def main():
     accepted_at = datetime.datetime.now().isoformat()
     lesson = {
         "id": lesson_id,
-        "claim": cand.get("claim"),
+        "claim": sanitize_tracked_path_leaks(cand.get("claim") or ""),
         "conditions": cand.get("conditions", []),
         "evidence_ids": cand.get("evidence_ids", []),
         "status": "provisional" if args.provisional else "accepted",

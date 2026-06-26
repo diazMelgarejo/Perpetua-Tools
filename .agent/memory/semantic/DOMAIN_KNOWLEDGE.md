@@ -27,7 +27,7 @@
   callable from bun/Node.js on Windows needs a matching `.cmd` shim.
 
 ### LLAMA_SERVER_BASE_URL — already in PowerShell profile, never missing
-- `C:\Users\lab\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` line 1:
+- `%USERPROFILE%\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` line 1:
   `$env:LLAMA_SERVER_BASE_URL = "http://localhost:1234/v1"` — verified present.
 - Do NOT add it again. Not absent from PowerShell; just doesn't propagate to Bash tool.
 - Export explicitly in bash sessions: `export LLAMA_SERVER_BASE_URL="http://localhost:1234/v1"`

@@ -33,11 +33,16 @@ IDENTITY_DOC_EXCEPTIONS: set[str] = {
 # an absolute path under /Users/<anything>/ or /home/<anything>/. Developer
 # workstation paths in public docs are a dox risk and hurt portability.
 # Use ~, $REPO_ROOT, or <workspace> instead.
-PERSONAL_PATH_PATTERN = re.compile(r"(/Users/|/home/)([A-Za-z][A-Za-z0-9._-]+)/")
+PERSONAL_PATH_PATTERN = re.compile(
+    r"(?:/Users/|/home/)([A-Za-z][A-Za-z0-9._-]+)/"
+    r"|C:\\Users\\[^\\\"\s]+\\?",
+    re.IGNORECASE,
+)
 # Username segments that are documentation placeholders, not real leaks.
 PERSONAL_PATH_PLACEHOLDERS = frozenset({
     "you", "user", "example", "username", "name", "youruser", "yourname",
     "<user>", "<username>", "USERNAME", "USER",
+    "youruser",
 })
 PERSONAL_PATH_EXCEPTIONS = {
     # The script itself names the pattern in source as documentation.
@@ -280,12 +285,12 @@ def scan_personal_paths(root: Path, files: list[str]) -> list[str]:
             m = PERSONAL_PATH_PATTERN.search(line)
             if not m:
                 continue
-            username = m.group(2)
-            if username in PERSONAL_PATH_PLACEHOLDERS:
+            username = m.group(1) if m.lastindex and m.lastindex >= 1 else None
+            if username and username in PERSONAL_PATH_PLACEHOLDERS:
                 continue
             errors.append(
                 f"personal absolute path in tracked file: {rel}:{line_no}: "
-                f"matched {m.group(0)!r} — use ~, $REPO_ROOT, or <workspace>"
+                f"matched {m.group(0)!r} — use $HOME/, %USERPROFILE%\\, or $REPO_ROOT"
             )
             break
     return errors

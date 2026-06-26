@@ -9,26 +9,9 @@ into this module to transition state. Rejection and re-stage preserve full
 history so a candidate that keeps reappearing is visibly churning rather
 than looking novel each time.
 """
-import os, json, datetime, hashlib, re
+import os, json, datetime, hashlib
 
-
-def sanitize_tracked_path_leaks(text: str) -> str:
-    """Strip workstation-specific path prefixes before writing tracked summaries.
-
-    Hermes and dream-cycle candidates often embed real /Users/... or C:\\Users\\...
-    paths in claim text. REVIEW_QUEUE.md is tracked and loaded every session — sanitize
-    at render time so LINT-006 is not violated by the queue renderer itself.
-    """
-    if not text:
-        return text
-    text = re.sub(r"/Users/[^/\s]+/", "$HOME/", text)
-    text = re.sub(r"/home/[^/\s]+/", "$HOME/", text)
-    text = re.sub(
-        r"(?i)C:\\Users\\[^\\]+\\",
-        lambda _m: "%USERPROFILE%\\",
-        text,
-    )
-    return text
+from path_hygiene import REVIEW_QUEUE_DYNAMIC_MARKER, sanitize_tracked_path_leaks
 
 
 def _now():
@@ -245,6 +228,22 @@ def list_candidates(candidates_dir, status="staged", sort_by="priority"):
     return out
 
 
+def _read_review_queue_preamble(summary_path: str) -> str:
+    """Preserve curated preamble; only replace the auto-generated tail."""
+    if not os.path.exists(summary_path):
+        return "# Review Queue\n\n"
+    with open(summary_path, encoding="utf-8") as f:
+        text = f.read()
+    if REVIEW_QUEUE_DYNAMIC_MARKER in text:
+        return text.split(REVIEW_QUEUE_DYNAMIC_MARKER)[0].rstrip() + "\n\n"
+    for sep in ("\n\n**Pending:**", "\n\n_No pending candidates._", "\n## Priority order"):
+        if sep in text:
+            return text.split(sep)[0].rstrip() + "\n\n"
+    if text.startswith("# Review Queue"):
+        return text
+    return "# Review Queue\n\n"
+
+
 def write_review_queue_summary(candidates_dir, summary_path):
     """Emit a compact REVIEW_QUEUE.md so the host agent sees the backlog.
 
@@ -254,14 +253,16 @@ def write_review_queue_summary(candidates_dir, summary_path):
     """
     pending = list_candidates(candidates_dir, status="staged")
     os.makedirs(os.path.dirname(summary_path), exist_ok=True)
+    preamble = _read_review_queue_preamble(summary_path)
+
     if not pending:
-        with open(summary_path, "w") as f:
-            f.write("# Review Queue\n\n_No pending candidates._\n")
+        with open(summary_path, "w", encoding="utf-8") as f:
+            f.write(f"{preamble}{REVIEW_QUEUE_DYNAMIC_MARKER}\n\n_No pending candidates._\n")
         return 0
 
     staged_ats = [c.get("staged_at", "") for c in pending if c.get("staged_at")]
     oldest = min(staged_ats) if staged_ats else ""
-    lines = ["# Review Queue", ""]
+    lines = [REVIEW_QUEUE_DYNAMIC_MARKER, ""]
     lines.append(f"**Pending:** {len(pending)}")
     if oldest:
         lines.append(f"**Oldest staged:** {oldest}")
@@ -282,6 +283,6 @@ def write_review_queue_summary(candidates_dir, summary_path):
             f"rejections={cand.get('rejection_count', 0)}) "
             f"— {claim_preview}"
         )
-    with open(summary_path, "w") as f:
-        f.write("\n".join(lines) + "\n")
+    with open(summary_path, "w", encoding="utf-8") as f:
+        f.write(preamble + "\n".join(lines) + "\n")
     return len(pending)
