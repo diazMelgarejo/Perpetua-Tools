@@ -9,7 +9,26 @@ into this module to transition state. Rejection and re-stage preserve full
 history so a candidate that keeps reappearing is visibly churning rather
 than looking novel each time.
 """
-import os, json, datetime, hashlib
+import os, json, datetime, hashlib, re
+
+
+def sanitize_tracked_path_leaks(text: str) -> str:
+    """Strip workstation-specific path prefixes before writing tracked summaries.
+
+    Hermes and dream-cycle candidates often embed real /Users/... or C:\\Users\\...
+    paths in claim text. REVIEW_QUEUE.md is tracked and loaded every session — sanitize
+    at render time so LINT-006 is not violated by the queue renderer itself.
+    """
+    if not text:
+        return text
+    text = re.sub(r"/Users/[^/\s]+/", "$HOME/", text)
+    text = re.sub(r"/home/[^/\s]+/", "$HOME/", text)
+    text = re.sub(
+        r"(?i)C:\\Users\\[^\\]+\\",
+        lambda _m: "%USERPROFILE%\\",
+        text,
+    )
+    return text
 
 
 def _now():
@@ -256,7 +275,7 @@ def write_review_queue_summary(candidates_dir, summary_path):
     lines.append("")
     for cand in pending[:10]:
         prio = candidate_priority(cand)
-        claim_preview = (cand.get("claim") or "")[:80]
+        claim_preview = sanitize_tracked_path_leaks((cand.get("claim") or "")[:80])
         lines.append(
             f"- **{cand.get('id')}** (priority={prio:.2f}, "
             f"size={cand.get('cluster_size', '?')}, "

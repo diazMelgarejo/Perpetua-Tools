@@ -33,6 +33,10 @@ Manage hardware-bound model affinity for the OpenClaw / orama / Perpetua-Tools s
 **Do not infer affinity at runtime.** All harnesses consume `config/model_hardware_policy.yml`
 via `src/utils/hardware_policy.py`. Hermes: `orama-system` → `hermes-harness` → `pt-hardware-policy`.
 
+**Path resolution (workspace-agnostic):** Set `PERPETUA_TOOLS_ROOT` or `PERPETUA_TOOLS_PATH`
+before direct CLI use. orama launchers (`start.sh`, `platform/windows/start.ps1`) discover PT
+automatically. Reference: `orama-system/bin/orama-system/skills/hermes-harness/references/workspace-path-resolution.md`.
+
 ## Architecture (read in this order)
 
 | Layer | File | Role |
