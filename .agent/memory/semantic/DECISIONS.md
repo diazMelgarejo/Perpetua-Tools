@@ -286,3 +286,23 @@ there is no `.\windows\` folder at repo root.
 
 **Status:** active
 
+---
+
+## 2026-06-26: xAI Grok `agent` vs Cursor `cursor-agent` — PATH collision
+
+**Decision:** xAI Grok Build ships `~/.grok/bin/agent` (Grok TUI). Cursor ships `cursor-agent`. Never invoke bare `agent` in scripts or skills — always `cursor-agent` for Cursor background agents. Document both binaries in harness SKILL frontmatter.
+
+**Rationale:** xAI chose generic `agent` binary name; operators with both Grok and Cursor hit wrong CLI on PATH. PR #108 `cursor-agent` skill disambiguates.
+
+**Status:** active — lesson `lesson_f4b012e5339e`
+
+---
+
+## 2026-06-26: Windows `.cmd` CRLF enforcement
+
+**Decision:** All tracked `.cmd`/`.bat` files use CRLF. Python writers open `'wb'` and join with `\r\n`. Declare `*.cmd text eol=crlf` in `.gitattributes`.
+
+**Rationale:** PR #108 `gstack-brain-sync.cmd` LF-only incident — cmd.exe silent failure on Hermes Windows.
+
+**Status:** active — lesson `lesson_bcc6a5141f56`
+
