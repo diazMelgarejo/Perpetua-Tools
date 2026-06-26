@@ -1,11 +1,11 @@
 # Workspace (live task state)
 
-Last updated: 2026-06-26 by cursor-agent (orama PR #108 CI + memory + agentic-stack vendor)
+Last updated: 2026-06-26 by cursor-agent (agentic-stack union-merge doc 41)
 
 ## Current task
-None active. orama-system CI fixes committed to `main`; PT memory + vendor/agentic-stack formalization on `main`.
+None active. Doc 41 + install-agentic-stack.sh + memory on `main`.
 
-## Completed 2026-06-26 — orama PR #108 closeout + agentic-stack vendor
+## Completed 2026-06-26 — agentic-stack union-merge doctrine
 
 | Item | Outcome | Ref |
 |------|---------|-----|
@@ -13,10 +13,10 @@ None active. orama-system CI fixes committed to `main`; PT memory + vendor/agent
 | CI: repo_hygiene LINT-006 | ✅ ecc-migration-rules.md — no `/Users/<name>/` literal | already clean on main; defensive rephrase |
 | CodeRabbit r3480506247 | ✅ `patch_models_yml` loopback guard + `LM_STUDIO_WIN_ENDPOINT` regex fix | `scripts/discover.py` |
 | discover hash/runtime split | ✅ documented in DECISIONS; lessons `lesson_0314ada4d630`, `lesson_e7d62d7a5ed9` | PR #108 review |
-| agentic-stack vendor | ✅ `packages/` → `vendor/agentic-stack`; sync script + vendor doc | `scripts/git/agentic-stack-*` |
-| PT memory | ✅ 3 episodic + 4 graduated lessons + DECISIONS | `.agent/memory/` |
+| agentic-stack union-merge doc 41 | ✅ orama `docs/v2/41-*`; PT `install-agentic-stack.sh` | lessons `9a8236d2f51f`, `959ddd42ff01` |
+| orama PR #108 CI + vendor move | ✅ prior session `b4f0e4b` / `d13cd57` | see below |
 
-## Session record (2026-06-24 — Hermes hardware policy, PR #107)
+## Completed 2026-06-26 — orama PR #108 closeout + agentic-stack vendor (prior)
 
 ### orama-system PR #107
 

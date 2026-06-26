@@ -37,6 +37,7 @@ case "${1:-help}" in
     echo "update: checking out gitlink $target"
     _do_checkout "$target"
     echo "update: done"
+    echo "  next: bash scripts/git/install-agentic-stack.sh  # dry-run preview"
     ;;
 
   upgrade)
