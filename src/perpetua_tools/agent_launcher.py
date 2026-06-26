@@ -234,6 +234,59 @@ WINDOWS_CODER_MODEL  = os.getenv(
     "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2",  # exact LM Studio model id
 )
 
+
+def resolve_local_or_remote(
+    target_role: str,
+    port: int,
+    *,
+    env_var: str = "",
+    fallback_ip: str = "",
+) -> str:
+    """Return the correct endpoint for *target_role* based on where this process runs.
+
+    Locality rule (user decision 2026-06-24):
+      • If this process runs ON the target machine → always use localhost.
+      • If this process runs on a DIFFERENT machine → use the parametrized LAN IP.
+
+    This eliminates the twin failure modes:
+      (a) stale LAN IP configured when code runs locally (slow / broken routing)
+      (b) hardcoded IP in source that drifts as DHCP changes
+
+    Args:
+        target_role: ``"mac"`` or ``"windows"`` (case-insensitive)
+        port:        service port (e.g. 1234 for LM Studio, 11434 for Ollama)
+        env_var:     optional full-URL env var that overrides everything
+                     (e.g. ``"LM_STUDIO_WIN_ENDPOINTS"``)
+        fallback_ip: LAN IP fallback when running on the other machine.
+                     Should be sourced from env (e.g. WIN_IP / MAC_IP), never
+                     a bare literal in caller code.
+
+    Returns:
+        ``"http://localhost:{port}"`` when on the target machine,
+        ``"http://{fallback_ip}:{port}"`` when on the other machine.
+    """
+    role = target_role.lower().strip()
+    is_local = (
+        (role in {"mac", "macos", "darwin"} and RUNNING_ON_MAC)
+        or (role in {"win", "windows", "win32"} and RUNNING_ON_WINDOWS)
+    )
+    if env_var:
+        override = os.getenv(env_var, "").strip().split(",")[0].strip()
+        if override:
+            if is_local:
+                parsed = urlparse(override if "://" in override else f"http://{override}")
+                if parsed.hostname not in ("localhost", "127.0.0.1", "::1"):
+                    _launcher_logger.warning(
+                        "resolve_local_or_remote: %s=%s is non-loopback but we run ON "
+                        "the %s machine — normalizing to localhost", env_var, override, role
+                    )
+                    return f"http://localhost:{parsed.port or port}"
+            return override if "://" in override else f"http://{override}"
+    if is_local:
+        return f"http://localhost:{port}"
+    ip = fallback_ip or "127.0.0.1"
+    return f"http://{ip}:{port}"
+
 # ---------------------------------------------------------------------------
 # Startup assertion — validate hardware policy on module load
 # ---------------------------------------------------------------------------
