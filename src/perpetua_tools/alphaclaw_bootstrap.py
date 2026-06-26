@@ -70,12 +70,27 @@ ALPHACLAW_INSTALL_DIR = Path(
 )
 
 # env-var defaults (exported by start.sh)
-MAC_IP     = os.getenv("MAC_IP",  "192.168.254.110")   # Mac LM Studio host
-WIN_IP     = os.getenv("WIN_IP",  "192.168.254.108")   # Windows host
-OLLAMA_MAC = os.getenv("OLLAMA_MAC_ENDPOINT",    f"http://{MAC_IP}:11434")
-OLLAMA_WIN = os.getenv("OLLAMA_WINDOWS_ENDPOINT", f"http://{WIN_IP}:11434")
-LMS_MAC    = os.getenv("LM_STUDIO_MAC_ENDPOINT",  f"http://{MAC_IP}:1234")
-LMS_WIN    = os.getenv("LM_STUDIO_WIN_ENDPOINTS",  f"http://{WIN_IP}:1234")
+# Locality rule (2026-06-24): when running ON a machine, always reach its
+# services via localhost. Use the LAN IP only for cross-machine calls.
+# Never put bare IP literals here — read from env vars; code-fallback defaults only.
+_platform_ovr = os.getenv("ORAMA_PLATFORM", "").strip().lower()
+RUNNING_ON_MAC = _platform_ovr in {"mac", "macos", "darwin"} or (
+    not _platform_ovr and __import__("sys").platform == "darwin")
+RUNNING_ON_WINDOWS = _platform_ovr in {"win", "windows", "win32"} or (
+    not _platform_ovr and __import__("sys").platform.startswith("win"))
+
+MAC_IP     = os.getenv("MAC_IP",  "192.168.254.110")  # LAN IP; only used cross-machine
+WIN_IP     = os.getenv("WIN_IP",  "192.168.254.108")  # LAN IP; only used cross-machine
+
+# Each endpoint resolves to localhost when this process runs ON the target machine.
+OLLAMA_MAC = os.getenv("OLLAMA_MAC_ENDPOINT",
+    "http://localhost:11434" if RUNNING_ON_MAC else f"http://{MAC_IP}:11434")
+OLLAMA_WIN = os.getenv("OLLAMA_WINDOWS_ENDPOINT",
+    "http://localhost:11434" if RUNNING_ON_WINDOWS else f"http://{WIN_IP}:11434")
+LMS_MAC    = os.getenv("LM_STUDIO_MAC_ENDPOINT",
+    "http://localhost:1234" if RUNNING_ON_MAC else f"http://{MAC_IP}:1234")
+LMS_WIN    = os.getenv("LM_STUDIO_WIN_ENDPOINTS",
+    "http://localhost:1234" if RUNNING_ON_WINDOWS else f"http://{WIN_IP}:1234")
 LMS_TOKEN  = os.getenv("LM_STUDIO_API_TOKEN", "lm-studio")
 MAC_MODEL  = os.getenv("MAC_LMS_MODEL", "Qwen3.5-9B-MLX-4bit")
 WIN_MODEL  = os.getenv("WINDOWS_LMS_MODEL",
