@@ -37,4 +37,6 @@ All additive, no conflicts with our session work. Verified via git show.
 
 ---
 
+<!-- review-queue-dynamic -->
+
 _No pending candidates._

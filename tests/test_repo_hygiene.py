@@ -50,6 +50,16 @@ def test_personal_path_home_is_blocked(tmp_path):
     assert "/home/johndoe/" in errors[0]
 
 
+def test_personal_path_windows_path_is_blocked(tmp_path):
+    repo_hygiene = load_repo_hygiene()
+    doc = tmp_path / "notes.md"
+    win = "C:" + "\\Users\\johndoe\\Downloads\\SKILLS.md\\ultrathink"
+    doc.write_text(f"Canonical: {win}\n", encoding="utf-8")
+    errors = repo_hygiene.scan_personal_paths(tmp_path, ["notes.md"])
+    assert len(errors) == 1
+    assert "johndoe" in errors[0] or "Users" in errors[0]
+
+
 def test_personal_path_placeholder_usernames_are_allowed(tmp_path):
     repo_hygiene = load_repo_hygiene()
     doc = tmp_path / "docs" / "install.md"
