@@ -9,9 +9,11 @@ from __future__ import annotations
 
 import re
 
-_UNIX_HOME = re.compile(r"/Users/([^/\s\"]+)/")
-_LINUX_HOME = re.compile(r"/home/([^/\s\"]+)/")
-_WIN_HOME = re.compile(r"(?i)C:\\Users\\[^\\]+\\")
+_UNIX_HOME      = re.compile(r"/Users/([^/\s\"]+)/")
+_UNIX_HOME_TAIL = re.compile(r"/Users/([^/\s\"]+)(?=[\"\'\s]|$)")
+_LINUX_HOME      = re.compile(r"/home/([^/\s\"]+)/")
+_LINUX_HOME_TAIL = re.compile(r"/home/([^/\s\"]+)(?=[\"\'\s]|$)")
+_WIN_HOME      = re.compile(r"(?i)C:\\Users\\[^\\]+\\")
 _WIN_HOME_TAIL = re.compile(r"(?i)C:\\Users\\[^\\\"\s]+")
 
 REVIEW_QUEUE_DYNAMIC_MARKER = "<!-- review-queue-dynamic -->"
@@ -22,7 +24,9 @@ def sanitize_tracked_path_leaks(text: str) -> str:
     if not text:
         return text
     text = _UNIX_HOME.sub("$HOME/", text)
+    text = _UNIX_HOME_TAIL.sub("$HOME", text)  # no trailing slash — end-of-string / before whitespace
     text = _LINUX_HOME.sub("$HOME/", text)
+    text = _LINUX_HOME_TAIL.sub("$HOME", text)  # same for Linux /home/user
     text = _WIN_HOME.sub(lambda _m: "%USERPROFILE%\\", text)
     text = _WIN_HOME_TAIL.sub("%USERPROFILE%", text)
     return text
