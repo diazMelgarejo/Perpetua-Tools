@@ -1,0 +1,65 @@
+{
+  "id": "f4b012e5339e",
+  "key": "manual_f4b012",
+  "name": "manual_f4b012",
+  "claim": "xAI Grok Build (Elon Musk) installs a bare agent CLI at ~/.grok/bin/agent \u2014 it is NOT Cursor. PATH collision: scripts invoking agent without a path hit Grok TUI instead of cursor-agent. Always call cursor-agent explicitly and document both binaries in harness skills.",
+  "conditions": [
+    "agent",
+    "always",
+    "bare",
+    "bin",
+    "binaries",
+    "both",
+    "build",
+    "call",
+    "cli",
+    "collision",
+    "cursor",
+    "cursor-agent",
+    "document",
+    "elon",
+    "explicitly",
+    "grok",
+    "harness",
+    "hit",
+    "installs",
+    "instead",
+    "invoking",
+    "musk",
+    "path",
+    "scripts",
+    "skills",
+    "tui",
+    "without",
+    "xai"
+  ],
+  "evidence_ids": [
+    "2026-06-26T14:52:05.242079"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-26T14:52:05.242079",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-26T14:52:05.242079",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-26T14:52:05.268563+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR #108 cursor-agent skill; operators with both Grok and Cursor installed saw wrong tool invoked when docs said agent",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-26T14:52:05.242079"
+      ],
+      "lessons_sha": "d99237ddb4e1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-26T14:52:05.268554+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR #108 cursor-agent skill; operators with both Grok and Cursor installed saw wrong tool invoked when docs said agent"
+}

@@ -49,7 +49,7 @@ _(empty — populate as you go)_
 **install.json at first commit:**
 - `agentic_stack_version`: `0.9.0`
 - `installed_at`: `2026-06-18T13:11:50Z` (the day before the commit)
-- `abs_target`: `C:\Users\lab\...\Perplexity-Tools`
+- `abs_target`: `%USERPROFILE%\...\Perplexity-Tools` (historical install.json snapshot — never commit live paths)
 
 **What it added in one shot (55 files):** complete memory system (episodic/semantic/working), all Python tools (graduate.py, learn.py, recall.py, show.py, etc.), harness layer (conductor.py, hooks/, protocols/), 6 initial skills. No other repo cited as origin.
 
