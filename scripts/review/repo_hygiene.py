@@ -35,7 +35,7 @@ IDENTITY_DOC_EXCEPTIONS: set[str] = {
 # Use ~, $REPO_ROOT, or <workspace> instead.
 PERSONAL_PATH_PATTERN = re.compile(
     r"(?:/Users/|/home/)([A-Za-z][A-Za-z0-9._-]+)/"
-    r"|C:\\Users\\[^\\\"\s]+\\?",
+    r"|C:\\Users\\([^\\\"\s]+)\\?",  # capture group so PLACEHOLDERS allowlist works
     re.IGNORECASE,
 )
 # Username segments that are documentation placeholders, not real leaks.
@@ -285,7 +285,8 @@ def scan_personal_paths(root: Path, files: list[str]) -> list[str]:
             m = PERSONAL_PATH_PATTERN.search(line)
             if not m:
                 continue
-            username = m.group(1) if m.lastindex and m.lastindex >= 1 else None
+            # group(1) = Unix/Linux username; group(2) = Windows username
+            username = m.group(1) or (m.group(2) if m.lastindex and m.lastindex >= 2 else None)
             if username and username in PERSONAL_PATH_PLACEHOLDERS:
                 continue
             errors.append(
