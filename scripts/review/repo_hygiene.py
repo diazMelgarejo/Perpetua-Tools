@@ -49,6 +49,9 @@ PERSONAL_PATH_EXCEPTIONS = {
     "scripts/review/repo_hygiene.py",
     # Hygiene test asserts the rule against fixture content.
     "tests/test_repo_hygiene.py",
+    # path_hygiene unit tests use /Users/alice, /home/bob as test fixtures —
+    # the file exists specifically to verify the scrubber catches these patterns.
+    "tests/test_path_hygiene.py",
 }
 # Hidden / bidirectional Unicode controls — Trojan-Source defense (CVE-2021-42574).
 # These can hide malicious code in diffs. Block in all tracked files except the
