@@ -31,7 +31,7 @@ Run `python .agent/tools/list_candidates.py` for detail, then:
 
 ## Priority order (top 10)
 
-- **c094d281f841** (priority=57.60, size=3, rejections=0) — FAILURE in path-hygiene: Use C:\Users\lab\Downloads\SKILLS.md\ultrathink as cano
+- **c094d281f841** (priority=57.60, size=3, rejections=0) — FAILURE in path-hygiene: Use <local-path> as cano
 - **bb70a6833f36** (priority=25.60, size=2, rejections=0) — FAILURE in skill-absorption-map: hermes-harness should absorb hermes-agent and p
-- **b387cb3fb5bf** (priority=25.60, size=2, rejections=0) — FAILURE in path-hygiene: Use C:\Users\lab\Downloads\SKILLS.md\ultrathink as cano
+- **b387cb3fb5bf** (priority=25.60, size=2, rejections=0) — FAILURE in path-hygiene: Use <local-path> as cano
 - **60d836556ff0** (priority=16.00, size=2, rejections=0) — Core lesson of the gbrain self-heal journey; applies beyond gbrain.
