@@ -397,14 +397,7 @@ def test_personal_path_windows_placeholder_not_flagged(tmp_path):
     """Windows C:\\Users\\username placeholder must NOT be flagged — bug was group(2)=None."""
     f = tmp_path / "README.md"
     f.write_text("Copy files to C:\\Users\\username\\AppData\\Local\\hermes\n")
-    sys.path.insert(0, str(Path(__file__).parent.parent / "scripts" / "review"))
-    import importlib.util, importlib
-    spec = importlib.util.spec_from_file_location(
-        "repo_hygiene",
-        str(Path(__file__).parent.parent / "scripts" / "review" / "repo_hygiene.py")
-    )
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
+    mod = load_repo_hygiene()
     errors = mod.scan_personal_paths(tmp_path, ["README.md"])
     assert errors == [], f"placeholder path incorrectly flagged: {errors}"
 
@@ -413,14 +406,7 @@ def test_personal_path_windows_real_username_flagged(tmp_path):
     """Windows C:\\Users\\realname (non-placeholder) MUST be flagged."""
     f = tmp_path / "README.md"
     f.write_text("See C:\\Users\\alice\\Downloads\\repo\n")
-    sys.path.insert(0, str(Path(__file__).parent.parent / "scripts" / "review"))
-    import importlib.util, importlib
-    spec = importlib.util.spec_from_file_location(
-        "repo_hygiene",
-        str(Path(__file__).parent.parent / "scripts" / "review" / "repo_hygiene.py")
-    )
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
+    mod = load_repo_hygiene()
     errors = mod.scan_personal_paths(tmp_path, ["README.md"])
     assert any("alice" in e for e in errors), f"real username not flagged: {errors}"
 
