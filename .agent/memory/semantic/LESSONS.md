@@ -122,6 +122,10 @@
 - Canonical repo clones must not exist under duplicate paths like /c/c/Users/<user>/...  <!-- status=legacy confidence=0.7 evidence=0 id=lesson_legacy_75d2cefe4ec8 -->
 - Never put literal workstation paths (/Users/<name>/...) in any tracked file — docs, scripts, memory, or config. Use relative paths (../../, ../filename), env vars ($OPENCLAW_ROOT, $REPO_ROOT), or ~ tilde. LINT-006 in repo_hygiene.py and CIDF Target Verification both enforce this as a pre-commit hard gate. The same rule applies to AI-generated memory content: use relative paths or strip the parent path tree; do NOT use <user> placeholder (it still exposes the directory structure).  <!-- status=legacy confidence=0.7 evidence=0 id=lesson_legacy_4dd8a22181c2 -->
 - All .agent/memory writers must call sanitize_tracked_path_leaks() from path_hygiene.py before persisting strings — episodic log_execution, learn.py, graduate.py, and review queue renderer. Legacy rows: run scrub_memory_paths.py then re-render LESSONS.md; never hand-edit derived markdown to hide paths.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_3e554559c7ed -->
+- discover.py must split hash endpoints (LAN IP) from runtime endpoints (localhost on Windows) — never mutate endpoints win to LAN IP before patch_openclaw_json or lmstudio-win breaks  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_0314ada4d630 -->
+- patch_models_yml must skip loopback win_ip the same way patch_devices_yml does — never persist localhost into shared YAML defaults  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_e7d62d7a5ed9 -->
+- SKILL.md YAML frontmatter must be the first bytes of the file — place lint-ignore HTML comments after the closing frontmatter delimiter  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_9bc9f344073b -->
+- agentic-stack lives at vendor/agentic-stack in Perpetua-Tools like ecc-tools — orama start.sh symlinks lib/shared/agentic_stack from PT vendor path  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_821b2a648956 -->
 
 ### 2026-04
 

@@ -749,8 +749,7 @@ all hang indefinitely (timeout at 10–20s) in the Perpetua-Tools working tree.
 Fast read-only commands (`git log`, `git rev-parse`, `git diff --name-only HEAD -- <specific file>`)
 work fine. Only commands that scan the full worktree or acquire a ref lock hang.
 
-**Root cause (confirmed):** Repo has two active submodules (`vendor/ecc-tools`,
-`packages/agentic-stack`) whose upstream URLs require network access. Git's submodule
+**Root cause (confirmed):** Repo has two active submodules (`vendor/ecc-tools`, `vendor/agentic-stack`) whose upstream URLs require network access. Git's submodule
 status check inside `git status` attempts network probes that time out on any
 submodule that isn't checked out cleanly. Combined with macOS filesystem event
 watching (`git fsevents` daemon), write-locking operations stall waiting for event
@@ -785,7 +784,7 @@ GIT_TERMINAL_PROMPT=0 git push origin main
 **Permanent fix options:**
 
 - `git config core.fsmonitor false` in PT repo (disables fsevents polling)
-- `git submodule deinit --force vendor/ecc-tools packages/agentic-stack` if submodules
+- `git submodule deinit --force vendor/ecc-tools vendor/agentic-stack` if submodules
   are not actively used
 - VS Code "git.scanDelay" setting if using the VS Code git integration
 
