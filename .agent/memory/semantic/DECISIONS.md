@@ -251,3 +251,26 @@ there is no `.\windows\` folder at repo root.
 **Status:** active
 
 **Links:** AlphaClaw CI [28086747962](https://github.com/diazMelgarejo/AlphaClaw/actions/runs/28086747962) → [28206351466](https://github.com/diazMelgarejo/AlphaClaw/actions/runs/28206351466); commit `ca5e3f28`
+
+---
+
+## 2026-06-26: agentic-stack submodule at vendor/agentic-stack (like ecc-tools)
+
+**Decision:** Move `packages/agentic-stack` → `vendor/agentic-stack`. Add `scripts/git/agentic-stack-submodule-sync.sh` and `agentic-stack-vendor.md`. PT `.agent/` remains the live customized brain; submodule is upstream reference for install/upgrade per [agentic-stack CHANGELOG](https://github.com/codejunkie99/agentic-stack/blob/master/CHANGELOG.md). orama `start.sh` symlinks `lib/shared/agentic_stack` from `$PT_DIR/vendor/agentic-stack`.
+
+**Rationale:** Parity with `vendor/ecc-tools` formalization — one `vendor/` namespace for external brains, documented bump workflow, CI-friendly `git submodule update --init`.
+
+**Alternatives considered:** Keep `packages/` path — rejected (inconsistent with ecc-tools). Copy `.agent/` from submodule on every clone — rejected (PT memory is customized and must not be overwritten).
+
+**Status:** active
+
+---
+
+## 2026-06-26: discover.py hash vs runtime IP split (PR #108)
+
+**Decision:** `discover.py` uses LAN IPs for `hash_endpoints`, `patch_devices_yml`, and discovery state; runtime `patch_openclaw_json` keeps `localhost` for Windows-local LM Studio. `patch_models_yml` skips loopback `win_ip` (parity with `patch_devices_yml`).
+
+**Rationale:** Mutating `endpoints["win"]` to LAN IP before `patch_openclaw_json()` breaks `lmstudio-win` on Windows hosts. CodeRabbit r3480506247 caught asymmetric loopback handling in `patch_models_yml`.
+
+**Status:** active
+
