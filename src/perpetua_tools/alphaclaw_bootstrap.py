@@ -129,7 +129,7 @@ def _heal_pt_endpoint_url(
     parsed = urlparse(canonical)
     if parsed.hostname not in _LOOPBACK_HOSTS:
         return f"http://localhost:{_endpoint_port(parsed, port)}"
-    return url
+    return canonical
 
 
 def _locality_resolve_endpoint(
@@ -161,7 +161,7 @@ def _locality_resolve_endpoint(
                 file=sys.stderr,
             )
         return healed
-    return url
+    return canonical
 
 
 # Each endpoint resolves to localhost when this process runs ON the target machine.

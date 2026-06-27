@@ -126,6 +126,28 @@ def test_build_openclaw_config_heals_stale_lan_routing_json_on_mac(monkeypatch):
     assert providers["ollama-mac"]["baseUrl"] == "http://localhost:11434"
     assert providers["lmstudio-mac"]["baseUrl"] == "http://localhost:1234/v1"
 
+
+def test_locality_resolve_endpoint_canonicalizes_bare_loopback_on_target(monkeypatch):
+    """Bare localhost:port on the target machine must still gain http:// scheme."""
+    _reload_bootstrap(
+        monkeypatch,
+        ORAMA_PLATFORM="mac",
+        LM_STUDIO_MAC_ENDPOINT="localhost:1234",
+    )
+    assert alphaclaw_bootstrap.LMS_MAC == "http://localhost:1234"
+
+
+def test_heal_pt_endpoint_url_canonicalizes_bare_loopback_on_target(monkeypatch):
+    """routing.json bare loopback endpoints must not bypass _canonical_endpoint."""
+    _reload_bootstrap(monkeypatch, ORAMA_PLATFORM="mac")
+    result = alphaclaw_bootstrap._heal_pt_endpoint_url(
+        "localhost:11434",
+        running_on_target=True,
+        port=11434,
+    )
+    assert result == "http://localhost:11434"
+
+
 def test_start_openclaw_gateway_closes_log_handle_when_popen_fails(tmp_path, monkeypatch):
     real_open = builtins.open
     opened = []

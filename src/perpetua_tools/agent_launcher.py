@@ -249,7 +249,15 @@ if not os.getenv("WINDOWS_IP") and _win_lms_first:
 else:
     _win_ip_default = "localhost" if RUNNING_ON_WINDOWS else "192.168.254.108"
 
-WINDOWS_IP        = os.getenv("WINDOWS_IP",   _win_ip_default)
+_windows_ip = os.getenv("WINDOWS_IP", _win_ip_default)
+if RUNNING_ON_WINDOWS and not _is_loopback_host(_windows_ip):
+    logging.getLogger(__name__).warning(
+        "WINDOWS_IP=%s is non-loopback; PT runs on Windows so local services "
+        "are localhost — normalizing to localhost",
+        _windows_ip,
+    )
+    _windows_ip = "localhost"
+WINDOWS_IP        = _windows_ip
 WINDOWS_PORT      = int(os.getenv("WINDOWS_PORT", "11434"))
 REMOTE_WINDOWS_URL   = f"http://{WINDOWS_IP}:{WINDOWS_PORT}"
 WINDOWS_CODER_MODEL  = os.getenv(
