@@ -1,0 +1,78 @@
+{
+  "id": "a0d29898cd65",
+  "key": "manual_a0d298",
+  "name": "manual_a0d298",
+  "claim": "Pre-v2 security hardening (v1.1.1.0): all Linux-runnable tiers ship on cursor/security-hardening-pre-v2-c4ae in both repos; Mac/Win live E2E (start.sh, Ollama probes, LM_STUDIO_WIN_ENDPOINTS, hardware-policy harness, keychain) and T5 freeze tags stay blocked until tomorrow on real machines. Plan: orama-system/docs/plans/2026-06-27-security-hardening-pre-v2.md \u2014 platform schedule table marks each tier.",
+  "conditions": [
+    "all",
+    "blocked",
+    "both",
+    "cursor",
+    "docs",
+    "e2e",
+    "each",
+    "freeze",
+    "hardening",
+    "hardware-policy",
+    "harness",
+    "keychain",
+    "linux-runnable",
+    "live",
+    "lm_studio_win_endpoints",
+    "mac",
+    "machines",
+    "marks",
+    "ollama",
+    "orama-system",
+    "plan",
+    "plans",
+    "platform",
+    "pre-v2",
+    "probes",
+    "real",
+    "repos",
+    "schedule",
+    "security",
+    "security-hardening-pre-v2",
+    "security-hardening-pre-v2-c4ae",
+    "ship",
+    "start",
+    "stay",
+    "table",
+    "tags",
+    "tier",
+    "tiers",
+    "tomorrow",
+    "until",
+    "win"
+  ],
+  "evidence_ids": [
+    "2026-06-27T01:52:47.131438"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-27T01:52:47.131438",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-27T01:52:47.131438",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-27T01:52:47.160131+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-06-27 cloud agent session; gbrain not on PATH in VM; PRs orama #113 + PT #154",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-27T01:52:47.131438"
+      ],
+      "lessons_sha": "f7fbbbb0b05b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-27T01:52:47.160122+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-06-27 cloud agent session; gbrain not on PATH in VM; PRs orama #113 + PT #154"
+}
