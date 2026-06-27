@@ -505,6 +505,8 @@ def test_validate_endpoint_host_rejects_public():
         "172.15.0.1",
         "172.32.0.1",
         "192.169.0.1",
+        "169.254.0.1",
+        "169.254.169.254",
         "google.com",
         "evil.example.com",
     ):
@@ -512,6 +514,14 @@ def test_validate_endpoint_host_rejects_public():
             alphaclaw_bootstrap._validate_endpoint_host(
                 "manager_endpoint", f"http://{host}:11434"
             )
+
+
+def test_validate_endpoint_host_rejects_ipv4_mapped_link_local():
+    """IPv4-mapped IPv6 must not bypass link-local rejection (cloud metadata SSRF)."""
+    with pytest.raises(ValueError, match="link-local"):
+        alphaclaw_bootstrap._validate_endpoint_host(
+            "manager_endpoint", "http://[::ffff:169.254.169.254]"
+        )
 
 
 def test_validate_endpoint_host_rejects_missing_hostname():
