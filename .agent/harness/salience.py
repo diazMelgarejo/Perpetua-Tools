@@ -6,7 +6,11 @@ def _parse_timestamp(ts: str) -> datetime.datetime:
     """Parse ISO timestamps; normalize naive values to UTC."""
     dt = datetime.datetime.fromisoformat(ts.replace("Z", "+00:00"))
     if dt.tzinfo is None:
-        return dt.replace(tzinfo=datetime.timezone.utc)
+        # Use astimezone() directly so Python applies the system's own DST
+        # rules for the timestamp's specific date — not the frozen offset
+        # from datetime.now().astimezone().tzinfo (which would shift by ±1 h
+        # for winter/summer timestamps when called in the opposite season).
+        return dt.astimezone(datetime.timezone.utc)
     return dt.astimezone(datetime.timezone.utc)
 
 

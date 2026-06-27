@@ -51,6 +51,10 @@ are the exact failure mode this layer prevents.
 
 When merging nested branches produced by independent agents against a moving main, follow this protocol exactly. **Never guess conflict resolution.**
 
+**Canonical doctrine (orama-way):** load **oramasys-method** →
+[orama `integrative-merge.md`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/oramasys-method/references/integrative-merge.md)
+(synthesize, never amputate; six resolution modes). This section is the portable-brain summary; the skill reference is authoritative.
+
 ### Step-by-step
 
 1. **Simulate first — touch nothing.**
@@ -66,6 +70,7 @@ When merging nested branches produced by independent agents against a moving mai
    - `additive` — one side is empty, other has content → take the content side
    - `union` — both sides have partial content → concatenate (ours first, theirs appended)
    - `superset` — one is a structural superset of the other → verify all rows from the smaller are in the larger, then take the superset
+   - `synthesize` — both sides changed the same region for valid different reasons → blend both (e.g. new API + old branch's tests)
    - `architecturally-correct` — one side has a bug the other fixes → take the correct side regardless of branch origin
    - `api-correct` — casing/type mismatch → take the API-correct form
 

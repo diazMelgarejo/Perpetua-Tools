@@ -478,6 +478,25 @@ def test_heal_pt_endpoint_url_heals_to_localhost_when_on_target(monkeypatch):
     assert result == "http://localhost:11434"
 
 
+def test_locality_resolve_endpoint_canonicalizes_bare_loopback_on_target(monkeypatch):
+    """Bare localhost:port on the target machine must still gain http:// scheme."""
+    _reload_bootstrap(
+        monkeypatch,
+        ORAMA_PLATFORM="mac",
+        LM_STUDIO_MAC_ENDPOINT="localhost:1234",
+    )
+    assert alphaclaw_bootstrap.LMS_MAC == "http://localhost:1234"
+
+
+def test_heal_pt_endpoint_url_canonicalizes_bare_loopback_on_target(monkeypatch):
+    """routing.json bare loopback endpoints must not bypass _canonical_endpoint."""
+    _reload_bootstrap(monkeypatch, ORAMA_PLATFORM="mac")
+    result = alphaclaw_bootstrap._heal_pt_endpoint_url(
+        "localhost:11434",
+        running_on_target=True,
+        port=11434,
+    )
+    assert result == "http://localhost:11434"
 def test_validate_endpoint_host_accepts_rfc1918():
     """_validate_endpoint_host must accept all valid RFC-1918 ranges."""
     for host in (
@@ -522,8 +541,6 @@ def test_validate_endpoint_host_rejects_ipv4_mapped_link_local():
         alphaclaw_bootstrap._validate_endpoint_host(
             "manager_endpoint", "http://[::ffff:169.254.169.254]"
         )
-
-
 def test_validate_endpoint_host_rejects_missing_hostname():
     with pytest.raises(ValueError, match="missing a hostname"):
         alphaclaw_bootstrap._validate_endpoint_host("manager_endpoint", "http://")
