@@ -358,14 +358,18 @@ def _read_discovery_win_url(max_age_s: int = _DISCOVERY_MAX_AGE_S) -> Optional[s
     if not ip or ip in ("localhost", "127.0.0.1") or not win.get("reachable", False):
         return None
     stamp = data.get("watcher_heartbeat") or data.get("timestamp")
-    if stamp:
-        try:
-            ts = datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
-            if (datetime.now(timezone.utc) - ts).total_seconds() > max_age_s:
-                return None
-        except Exception as exc:
-            log.debug("invalid discovery snapshot timestamp %r: %s", stamp, exc)
+    if not stamp:
+        log.debug("discovery snapshot missing timestamp — refusing stale win endpoint")
+        return None
+    try:
+        ts = datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        if (datetime.now(timezone.utc) - ts).total_seconds() > max_age_s:
             return None
+    except Exception as exc:
+        log.debug("invalid discovery snapshot timestamp %r: %s", stamp, exc)
+        return None
     return f"http://{ip}:{win.get('port', 1234)}"
 
 

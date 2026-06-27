@@ -68,8 +68,12 @@ def endpoint_online(base: str, backend: str, model_id: str = "", ttl: float = _E
     ok, served = cached[1], cached[2]
     if not ok:
         return False
-    if cloud or not served or not model_id:
+    if cloud:
         return ok
+    if not model_id:
+        return ok
+    if not served:
+        return False
 
     def _norm(x: str) -> str:
         # strip trailing quant/format tags (LM Studio lists the base id; the
