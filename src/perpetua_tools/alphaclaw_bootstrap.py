@@ -44,6 +44,7 @@ import sys
 import threading
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from urllib.parse import urlparse
 
 SCRIPT_DIR = Path(__file__).resolve().parents[2]
 OPENCLAW_GATEWAY_PORT = int(os.getenv("OPENCLAW_GATEWAY_PORT", "18789"))
@@ -82,15 +83,96 @@ RUNNING_ON_WINDOWS = _platform_ovr in {"win", "windows", "win32"} or (
 MAC_IP     = os.getenv("MAC_IP",  "192.168.254.110")  # LAN IP; only used cross-machine
 WIN_IP     = os.getenv("WIN_IP",  "192.168.254.108")  # LAN IP; only used cross-machine
 
+_LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
+
+
+def _endpoint_port(parsed, default: int) -> int:
+    """Return parsed port or *default*, tolerating malformed urlparse ports."""
+    try:
+        return parsed.port or default
+    except ValueError:
+        return default
+
+
+def _first_csv_endpoint(value: str) -> str:
+    """First comma-separated endpoint (LM_STUDIO_WIN_ENDPOINTS is often a CSV list)."""
+    return value.split(",")[0].strip() if value else ""
+
+
+def _heal_pt_endpoint_url(
+    url: str | None,
+    *,
+    running_on_target: bool,
+    port: int,
+) -> str:
+    """Apply locality self-heal to a routing.json endpoint override."""
+    if not url:
+        return ""
+    url = _first_csv_endpoint(url.strip())
+    if not url or not running_on_target:
+        return url
+    parsed = urlparse(url if "://" in url else f"http://{url}")
+    if parsed.hostname not in _LOOPBACK_HOSTS:
+        return f"http://localhost:{_endpoint_port(parsed, port)}"
+    return url
+
+
+def _locality_resolve_endpoint(
+    env_var: str,
+    *,
+    default: str,
+    running_on_target: bool,
+    port: int,
+) -> str:
+    """Resolve a service URL with locality self-heal for explicit env overrides.
+
+    When bootstrap runs ON the target machine, a stale LAN IP in the env var
+  (e.g. from start.sh cross-machine exports) must normalize to localhost —
+    matching agent_launcher.py resolve_local_or_remote() (40d3f65 fixed defaults only).
+    """
+    raw = os.getenv(env_var, "").strip()
+    raw_first = _first_csv_endpoint(raw)
+    url = raw_first or _first_csv_endpoint(default) or default
+    if not running_on_target:
+        return url
+    parsed = urlparse(url if "://" in url else f"http://{url}")
+    if parsed.hostname not in _LOOPBACK_HOSTS:
+        healed = f"http://localhost:{_endpoint_port(parsed, port)}"
+        if raw:
+            print(
+                f"[alphaclaw] WARNING: {env_var}={raw} is non-loopback but bootstrap "
+                f"runs on the target machine — normalizing to {healed}",
+                file=sys.stderr,
+            )
+        return healed
+    return url
+
+
 # Each endpoint resolves to localhost when this process runs ON the target machine.
-OLLAMA_MAC = os.getenv("OLLAMA_MAC_ENDPOINT",
-    "http://localhost:11434" if RUNNING_ON_MAC else f"http://{MAC_IP}:11434")
-OLLAMA_WIN = os.getenv("OLLAMA_WINDOWS_ENDPOINT",
-    "http://localhost:11434" if RUNNING_ON_WINDOWS else f"http://{WIN_IP}:11434")
-LMS_MAC    = os.getenv("LM_STUDIO_MAC_ENDPOINT",
-    "http://localhost:1234" if RUNNING_ON_MAC else f"http://{MAC_IP}:1234")
-LMS_WIN    = os.getenv("LM_STUDIO_WIN_ENDPOINTS",
-    "http://localhost:1234" if RUNNING_ON_WINDOWS else f"http://{WIN_IP}:1234")
+OLLAMA_MAC = _locality_resolve_endpoint(
+    "OLLAMA_MAC_ENDPOINT",
+    default="http://localhost:11434" if RUNNING_ON_MAC else f"http://{MAC_IP}:11434",
+    running_on_target=RUNNING_ON_MAC,
+    port=11434,
+)
+OLLAMA_WIN = _locality_resolve_endpoint(
+    "OLLAMA_WINDOWS_ENDPOINT",
+    default="http://localhost:11434" if RUNNING_ON_WINDOWS else f"http://{WIN_IP}:11434",
+    running_on_target=RUNNING_ON_WINDOWS,
+    port=11434,
+)
+LMS_MAC = _locality_resolve_endpoint(
+    "LM_STUDIO_MAC_ENDPOINT",
+    default="http://localhost:1234" if RUNNING_ON_MAC else f"http://{MAC_IP}:1234",
+    running_on_target=RUNNING_ON_MAC,
+    port=1234,
+)
+LMS_WIN = _locality_resolve_endpoint(
+    "LM_STUDIO_WIN_ENDPOINTS",
+    default="http://localhost:1234" if RUNNING_ON_WINDOWS else f"http://{WIN_IP}:1234",
+    running_on_target=RUNNING_ON_WINDOWS,
+    port=1234,
+)
 LMS_TOKEN  = os.getenv("LM_STUDIO_API_TOKEN", "lm-studio")
 MAC_MODEL  = os.getenv("MAC_LMS_MODEL", "Qwen3.5-9B-MLX-4bit")
 WIN_MODEL  = os.getenv("WINDOWS_LMS_MODEL",
@@ -443,16 +525,43 @@ def build_openclaw_config(pt: dict | None = None) -> dict[str, object]:
     """
     pt = pt or _load_pt_state()
     if pt:
-        mac_lms_url   = pt.get("mac_lmstudio_endpoint") or LMS_MAC
-        win_lms_url   = pt.get("lmstudio_endpoint")     or LMS_WIN
+        mac_lms_url = _heal_pt_endpoint_url(
+            pt.get("mac_lmstudio_endpoint"),
+            running_on_target=RUNNING_ON_MAC,
+            port=1234,
+        ) or LMS_MAC
+        win_lms_url = _heal_pt_endpoint_url(
+            pt.get("lmstudio_endpoint"),
+            running_on_target=RUNNING_ON_WINDOWS,
+            port=1234,
+        ) or LMS_WIN
         coder_model   = pt.get("coder_model",   WIN_MODEL)
         manager_model = pt.get("manager_model", MAC_MODEL)
         coder_backend = pt.get("coder_backend", "mac-degraded")
         mac_lms_ok    = bool(pt.get("mac_lmstudio_ok"))
+        ollama_mac_url = (
+            _heal_pt_endpoint_url(
+                pt.get("manager_endpoint"),
+                running_on_target=RUNNING_ON_MAC,
+                port=11434,
+            )
+            if pt.get("manager_backend") == "mac-ollama" and pt.get("manager_endpoint")
+            else OLLAMA_MAC
+        )
+        ollama_win_url = (
+            _heal_pt_endpoint_url(
+                pt.get("coder_endpoint"),
+                running_on_target=RUNNING_ON_WINDOWS,
+                port=11434,
+            )
+            if pt.get("coder_backend") == "windows-ollama" and pt.get("coder_endpoint")
+            else OLLAMA_WIN
+        )
     else:
         mac_lms_url, win_lms_url = LMS_MAC, LMS_WIN
         coder_model, manager_model = WIN_MODEL, MAC_MODEL
         coder_backend, mac_lms_ok = "unknown", False
+        ollama_mac_url, ollama_win_url = OLLAMA_MAC, OLLAMA_WIN
 
     if coder_backend == "windows-lmstudio":
         coder_primary = f"lmstudio-win/{coder_model}"
@@ -519,13 +628,13 @@ def build_openclaw_config(pt: dict | None = None) -> dict[str, object]:
                 },
                 "ollama-mac": {
                     "apiKey": "ollama-local",
-                    "baseUrl": OLLAMA_MAC,
+                    "baseUrl": ollama_mac_url,
                     "api": "ollama",
                     "models": [],
                 },
                 "ollama-win": {
                     "apiKey": "ollama-remote",
-                    "baseUrl": OLLAMA_WIN,
+                    "baseUrl": ollama_win_url,
                     "api": "ollama",
                     "models": [],
                 },
