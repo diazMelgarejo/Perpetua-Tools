@@ -138,6 +138,8 @@
 - oramaclaw pending conflicts cleared or orphaned by dead transactions must be archived to state_dir/registry/orphan-conflicts/ before removal — never silent delete (T3-C). sweep_orphan_pending runs on ControlStore.open.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_2abff9b4e522 -->
 - Security and API fixes must trace the full data path from source to sink — a helper fix (e.g. _canonical_endpoint on return paths) does not protect import-time constants, module-level env reads, or unvalidated JSON consumers that bypass the helper.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_d9e84ea8c6c2 -->
 - Dream-cycle salience scoring must compare UTC-aware timestamps — episodic entries use +00:00 offsets; naive datetime.now() minus aware fromisoformat raises TypeError and blocks auto_dream.py.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_65921fdf4329 -->
+- PR descriptions and summaries are append-only historical records: never replace the original purpose with a follow-up job summary. When new work lands (CodeRabbit fixes, merge resolutions, CI notes), add a ## Follow-up section below the existing scope — same rule as LESSONS.md and integrative-merge doctrine.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_3b13ab0a45d4 -->
+- Merge-conflict synthesize mode: when both branches changed the same region for valid different reasons, blend both — do not pick one side wholesale. Example PR #158: keep ipaddress-based _validate_endpoint_host from security-hardening AND locality/canonical-loopback tests from #157.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_257a631cbfd3 -->
 
 ### 2026-04
 

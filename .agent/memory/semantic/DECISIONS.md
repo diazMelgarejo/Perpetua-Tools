@@ -318,3 +318,13 @@ there is no `.\windows\` folder at repo root.
 
 **Status:** active — PRs orama [#113](https://github.com/diazMelgarejo/orama-system/pull/113), PT [#154](https://github.com/diazMelgarejo/Perpetua-Tools/pull/154); lessons `lesson_a0d29898cd65`, `lesson_e45608de48c0`, `lesson_34bb51037fce`, `lesson_1171086a7740`, `lesson_2abff9b4e522`
 
+---
+
+## 2026-06-27: PR descriptions are append-only (integrative-merge)
+
+**Decision:** PR titles and bodies are historical records. Agents MUST NOT replace an existing PR summary with a follow-up job description. New work (CodeRabbit fixes, merge notes, CI status) is appended in a `## Follow-up:` section below the original scope.
+
+**Rationale:** PT #154 incident — full pre-v2 security hardening summary was overwritten with CodeRabbit-only notes, erasing purpose, tier table, hardware policy, integrative merges, and E2E gates. Same additive rule as `LESSONS.md` and oramasys-method `integrative-merge.md`.
+
+**Status:** active — lessons `lesson_3b13ab0a45d4`, `lesson_257a631cbfd3`; episodic gold nuggets `PR154-summary-append-only-gold-nugget`, `PR158-synthesize-mode-gold-nugget`
+

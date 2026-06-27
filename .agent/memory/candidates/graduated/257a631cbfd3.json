@@ -1,0 +1,61 @@
+{
+  "id": "257a631cbfd3",
+  "key": "manual_257a63",
+  "name": "manual_257a63",
+  "claim": "Merge-conflict synthesize mode: when both branches changed the same region for valid different reasons, blend both \u2014 do not pick one side wholesale. Example PR #158: keep ipaddress-based _validate_endpoint_host from security-hardening AND locality/canonical-loopback tests from #157.",
+  "conditions": [
+    "blend",
+    "both",
+    "branches",
+    "canonical-loopback",
+    "changed",
+    "different",
+    "example",
+    "ipaddress-based",
+    "keep",
+    "locality",
+    "merge-conflict",
+    "mode",
+    "one",
+    "pick",
+    "reasons",
+    "region",
+    "same",
+    "security-hardening",
+    "side",
+    "synthesize",
+    "tests",
+    "valid",
+    "validate_endpoint_host",
+    "wholesale"
+  ],
+  "evidence_ids": [
+    "2026-06-27T04:30:00.304436"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-27T04:30:00.304436",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-27T04:30:00.304436",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-27T04:30:00.338534+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-06-27 PT #158 conflict in test_alphaclaw_bootstrap.py; sixth named strategy in integrative-merge.md and nested-branch merge protocol.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-27T04:30:00.304436"
+      ],
+      "lessons_sha": "80f9205985e2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-27T04:30:00.338525+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-06-27 PT #158 conflict in test_alphaclaw_bootstrap.py; sixth named strategy in integrative-merge.md and nested-branch merge protocol."
+}
