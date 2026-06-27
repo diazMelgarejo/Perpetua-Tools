@@ -99,6 +99,24 @@ def _first_csv_endpoint(value: str) -> str:
     return value.split(",")[0].strip() if value else ""
 
 
+def _heal_pt_endpoint_url(
+    url: str | None,
+    *,
+    running_on_target: bool,
+    port: int,
+) -> str:
+    """Apply locality self-heal to a routing.json endpoint override."""
+    if not url:
+        return ""
+    url = _first_csv_endpoint(url.strip())
+    if not url or not running_on_target:
+        return url
+    parsed = urlparse(url if "://" in url else f"http://{url}")
+    if parsed.hostname not in _LOOPBACK_HOSTS:
+        return f"http://localhost:{_endpoint_port(parsed, port)}"
+    return url
+
+
 def _locality_resolve_endpoint(
     env_var: str,
     *,
@@ -507,8 +525,16 @@ def build_openclaw_config(pt: dict | None = None) -> dict[str, object]:
     """
     pt = pt or _load_pt_state()
     if pt:
-        mac_lms_url   = pt.get("mac_lmstudio_endpoint") or LMS_MAC
-        win_lms_url   = pt.get("lmstudio_endpoint")     or LMS_WIN
+        mac_lms_url = _heal_pt_endpoint_url(
+            pt.get("mac_lmstudio_endpoint"),
+            running_on_target=RUNNING_ON_MAC,
+            port=1234,
+        ) or LMS_MAC
+        win_lms_url = _heal_pt_endpoint_url(
+            pt.get("lmstudio_endpoint"),
+            running_on_target=RUNNING_ON_WINDOWS,
+            port=1234,
+        ) or LMS_WIN
         coder_model   = pt.get("coder_model",   WIN_MODEL)
         manager_model = pt.get("manager_model", MAC_MODEL)
         coder_backend = pt.get("coder_backend", "mac-degraded")
