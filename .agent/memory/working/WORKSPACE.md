@@ -1,61 +1,50 @@
-# Workspace — Session Close 2026-06-27 (security hardening)
+# Workspace — Session Close 2026-06-27 (end)
 
-Last written by: cursor-agent (cloud)
-Branch: `cursor/security-hardening-pre-v2-c4ae` (both repos)
+Last written: claude-sonnet-4.6
 
 ---
 
 ## Next agent: START HERE
 
-### Read these first (in order)
-1. [`orama-system/docs/plans/2026-06-27-security-hardening-pre-v2.md`](../../orama-system/docs/plans/2026-06-27-security-hardening-pre-v2.md) — platform schedule + tier status
-2. [`docs/LESSONS.md` §2026-06-27](../docs/LESSONS.md) — penultimate human-readable summary
-3. This file's **Open gates** section below
-
-### Run these first (confirm state)
 ```bash
-cd orama-system && git checkout cursor/security-hardening-pre-v2-c4ae
-cd orama-system && python3 scripts/sync_version.py --check
-cd orama-system && python3 -m pytest -q tests/test_concurrent_lock.py tests/test_oramaclaw_store.py
-cd Perpetua-Tools && git checkout cursor/security-hardening-pre-v2-c4ae
-cd Perpetua-Tools && python3 scripts/check_model_ids.py
-cd Perpetua-Tools && unset OPENCLAW_EXTRA_PORTS && python3 -m pytest -q tests/test_alphaclaw_bootstrap.py tests/test_git_attribution_guard.py::test_check_commit_message_malformed_coauthor_fuzz
+# 1. Confirm branch state
+git -C orama-system log --oneline origin/cursor/security-hardening-pre-v2-c4ae -3
+git -C Perpetua-Tools log --oneline origin/cursor/security-hardening-pre-v2-c4ae -3
+
+# 2. Verify CI
+# PT PR #154:  https://github.com/diazMelgarejo/Perpetua-Tools/pull/154  ← 4/4 green
+# OS PR #113:  https://github.com/diazMelgarejo/orama-system/pull/113    ← 13/14 (see notes)
+
+# 3. DO NOT MERGE #154 or #113 — human review required
 ```
 
-### First task on live Mac + Windows 11 (tomorrow)
-- `bash start.sh --status` → hard-requirements green
-- Ollama probes: `qwen3.5:9b-nvfp4`, `bge-m3`
-- Win LM Studio: `LM_STUDIO_WIN_ENDPOINTS` reachable from Mac LAN
-- `start.sh --hardware-policy` harness
-- If E2E green → merge PRs #113 + #154 → T5 tag `v1.1.1` + `oramasys/v2-foundation`
-
 ---
 
-## System state (EOD 2026-06-27)
+## System state
 
-| Repo | Branch | Tip | Linux tiers |
+| Repo | Branch | Tip | CI |
 |---|---|---|---|
-| orama-system | `cursor/security-hardening-pre-v2-c4ae` | `de5c820` | T2-C, T3-A/C, T4-A/B/C ✅ |
-| Perpetua-Tools | `cursor/security-hardening-pre-v2-c4ae` | `627d3a3` | T1-A/B/C, T2-B, T3-B ✅ |
-| Version | both | `1.1.1.0` | T5 freeze ⏳ Mac/Win |
-
-**PRs:** [orama #113](https://github.com/diazMelgarejo/orama-system/pull/113) · [PT #154](https://github.com/diazMelgarejo/Perpetua-Tools/pull/154)
+| orama-system | main | `b962ab0` | ✅ |
+| orama-system | `cursor/security-hardening-pre-v2-c4ae` | `81e909dbd5` | ⚠️ 13/14 (see note) |
+| Perpetua-Tools | main | `43641a2` | ✅ |
+| Perpetua-Tools | `cursor/security-hardening-pre-v2-c4ae` | `c8e771f` | ✅ 4/4 |
+| perpetua-core | local `feat/salvage-plugins-rc1` | 56 tests ✅ | push gate OPEN |
 
 ---
 
-## Security hardening completed (Linux cloud)
+## PRs awaiting human review (DO NOT MERGE)
 
-### Perpetua-Tools
-- T1-A: `routing.json` jsonschema + RFC-1918 validation
-- T1-B/C: URL canonicalization + `audit_policy_enforcement.py`
-- T2-B: `scripts/check_model_ids.py` allowlist
-- T3-B: Co-authored-by fuzz tests (6 cases)
+| PR | Repo | What | CI | Status |
+|---|---|---|---|---|
+| #154 | Perpetua-Tools | S4: _validate_pt_state + RFC-1918 allowlist; S8: module-level URL canonicalization at import time; S3: audit_policy_enforcement.py; T2-B: check_model_ids.py (allowlist); version 1.1.1.0 | 4/4 ✅ | Awaiting human review |
+| #113 | orama-system | LINT-014 argv secret scan; orphan conflict archival; concurrent lock stress test; SBOM v1.1.1.0; check_dep_pins.py; version 1.1.1.0 | 13/14 ⚠️ | Awaiting human review (see CI note) |
 
-### orama-system
-- T2-A/C: LINT-014 + line-level LINT-013
-- T3-A: concurrent lock stress test
-- T3-C: orphan pending archive under `registry/orphan-conflicts/`
-- T4-A/B/C: dep pins, LM token warning, SBOM JSON
+**PR #113 CI note:** 1 failing job (`test` matrix entry) = `pytest-asyncio` not installed
+in that CI step. `pytest-asyncio~=0.23.0` IS declared in `pyproject.toml` dev deps and
+the test passes locally. Reviewer should verify CI `pip install` includes `[dev]` extras.
+
+**PR #156** (CodeRabbit UTG): ✅ merged into the PT security branch (not main).
+22 new tests added; 3 regressions in check_model_ids.py fixed (see AGENT_LEARNINGS #98-99).
 
 ---
 
@@ -63,17 +52,25 @@ cd Perpetua-Tools && unset OPENCLAW_EXTRA_PORTS && python3 -m pytest -q tests/te
 
 | Priority | Item | Status | Needs |
 |---|---|---|---|
-| **E2E** | `start.sh` + hardware-policy + keychain | ⏳ tomorrow | 🍎 Mac + 🪟 Win 11 |
-| **T5** | Tag `v1.1.1`, release, `oramasys/v2-foundation` | ⏳ blocked | E2E green |
-| **L1** | perpetua-core hardware review → `v0.2.0-alpha` | ⏳ local only | Live Mac+Win |
-| Phase 6/9 | Hermes thin skills + Windows wrappers | ⏳ deferred | Live Windows |
-| L6 | `schemas/*.schema.json` | 📋 planned | Any machine |
+| **Human gate** | Review + approve PR #154 (PT) | ⏳ awaiting | Human decision |
+| **Human gate** | Review + approve PR #113 (OS) | ⏳ awaiting | Human decision (fix CI note first) |
+| **L1 BLOCKING** | perpetua-core hardware review → push → tag `v0.2.0-alpha` | ⏳ local only | Live Mac+Win |
+| Phase 6 | `install_hermes_thin_skills.py --install --verify --test` | ⏳ | Live Windows |
+| Phase 9 | Windows thin wrapper migration | ⏳ | Live Windows |
+| L6 | `schemas/` JSON Schema files | 📋 planned | Any machine |
+| T3-A | Concurrent lock stress test (already in PR #113) | In PR #113 | Merges with #113 |
 
 ---
 
-## .agent memory updates (this session)
+## Architectural decisions this session
 
-- **lessons.jsonl:** 5 graduated lessons (`lesson_a0d29898cd65` … `lesson_2abff9b4e522`)
-- **DECISIONS.md:** 2026-06-27 pre-v2 security freeze gate
-- **episodic:** `2026-06-27-security-hardening-linux-complete`
-- **docs/LESSONS.md:** penultimate §2026-06-27 (both repos)
+1. **S4 fix pattern**: unvalidated JSON from filesystem → schema validation + hostname allowlist.
+   Any file consumed via `json.load()` and fed to network dispatch must be schema-validated.
+2. **S8 fix pattern**: helper fixes don't protect callers that bypass the helper.
+   Module-level constants set at import time from env vars must be canonicalized at that same
+   import time, not deferred to the helper's return path.
+3. **Merge gate rule**: 'for manual review' = read + fix branch + document + stop.
+   Never merge without explicit 'merge', 'ship', 'land it' authorization.
+4. **YAML regex pattern**: `^\s*name:` misses `- name:` (list items). Always use `^\s*-?\s*name:`.
+5. **Path display in tests**: functions using `.relative_to(ROOT)` need try/except when
+   tests monkeypatch the path to tmp_path outside the repo root.
