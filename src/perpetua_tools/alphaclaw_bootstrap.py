@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import ipaddress
 import json
 import os
 import re
@@ -460,6 +461,8 @@ _PT_STATE_SCHEMA = {
                 "mac-lmstudio",
                 "mac-ollama",
                 "mac-degraded",
+                "perplexity",
+                "anthropic",
                 "unknown",
             ],
         },
@@ -469,12 +472,41 @@ _PT_STATE_SCHEMA = {
     "additionalProperties": True,
 }
 
-_ALLOWED_ENDPOINT_HOST_RE = re.compile(
-    r"^(localhost|127\.\d+\.\d+\.\d+|::1"
-    r"|10\.\d+\.\d+\.\d+"
-    r"|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+"
-    r"|192\.168\.\d+\.\d+)$"
-)
+_CLOUD_CODER_BACKENDS = frozenset({"perplexity", "anthropic"})
+_ALLOWED_CLOUD_HOST_RE = re.compile(r"^(api\.perplexity\.ai|api\.anthropic\.com)$")
+
+
+def _validate_endpoint_host(key: str, url: str, *, cloud: bool = False) -> None:
+    """Reject malformed hosts; enforce localhost/RFC-1918 or allowed cloud APIs."""
+    parsed = urlparse(url if "://" in url else f"http://{url}")
+    host = parsed.hostname
+    if not host:
+        raise ValueError(f"routing.json {key}={url!r} is missing a hostname.")
+    if cloud:
+        if parsed.scheme != "https":
+            raise ValueError(
+                f"routing.json {key}={url!r} must use https for cloud coder "
+                "backends — cleartext http would expose the cloud API key."
+            )
+        if not _ALLOWED_CLOUD_HOST_RE.match(host):
+            raise ValueError(
+                f"routing.json {key}={url!r} resolves to disallowed cloud host {host!r}. "
+                "Only api.perplexity.ai and api.anthropic.com are permitted for cloud coder backends."
+            )
+        return
+    if host == "localhost":
+        return
+    try:
+        addr = ipaddress.ip_address(host)
+    except ValueError as exc:
+        raise ValueError(
+            f"routing.json {key}={url!r} must use localhost or a loopback/RFC-1918 IP."
+        ) from exc
+    if not (addr.is_loopback or addr.is_private):
+        raise ValueError(
+            f"routing.json {key}={url!r} resolves to non-RFC-1918 host {host!r}. "
+            "Only localhost and RFC-1918 addresses are permitted."
+        )
 
 
 def _validate_pt_state(state: dict) -> dict:
@@ -485,6 +517,7 @@ def _validate_pt_state(state: dict) -> dict:
         validate(state, _PT_STATE_SCHEMA)
     except ValidationError as exc:
         raise ValueError(f"routing.json schema violation: {exc.message}") from exc
+    coder_backend = state.get("coder_backend", "")
     for key in (
         "mac_lmstudio_endpoint",
         "lmstudio_endpoint",
@@ -494,12 +527,11 @@ def _validate_pt_state(state: dict) -> dict:
         url = state.get(key, "")
         if not url:
             continue
-        host = urlparse(url if "://" in url else f"http://{url}").hostname or ""
-        if host and not _ALLOWED_ENDPOINT_HOST_RE.match(host):
-            raise ValueError(
-                f"routing.json {key}={url!r} resolves to non-RFC-1918 host {host!r}. "
-                "Only localhost and RFC-1918 addresses are permitted."
-            )
+        _validate_endpoint_host(
+            key,
+            url,
+            cloud=(key == "coder_endpoint" and coder_backend in _CLOUD_CODER_BACKENDS),
+        )
     return state
 
 
