@@ -46,6 +46,13 @@
 
 **Machine memory:** PT `.agent/memory` lessons `learn.py` batch + episodic `2026-06-27-security-hardening-linux-complete`.
 
+### Follow-up (same day): PR summary append-only + gold nuggets
+
+- **Incident:** PT [#154](https://github.com/diazMelgarejo/Perpetua-Tools/pull/154) body was replaced with CodeRabbit-only follow-up text — original pre-v2 scope erased. Restored via integrative synthesis; follow-ups appended below original.
+- **Rule:** PR descriptions are **append-only** (same as `LESSONS.md`). New work → `## Follow-up:` section; never wholesale replace.
+- **`.agent` memory:** `lesson_3b13ab0a45d4` (append-only PRs), `lesson_257a631cbfd3` (synthesize merge mode); DECISIONS §2026-06-27 PR append-only; episodic gold nuggets `PR154-summary-append-only-gold-nugget`, `PR158-synthesize-mode-gold-nugget`.
+- **Canonical:** [orama `integrative-merge.md`](../../orama-system/blob/main/bin/orama-system/skills/oramasys-method/references/integrative-merge.md)
+
 ---
 
 ## 2026-06-26 — PR #135 CodeRabbit closure: memory path hygiene at write boundaries | Cursor

@@ -49,8 +49,6 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 SCRIPT_DIR = Path(__file__).resolve().parents[2]
-
-
 def _parse_single_port(raw: str, *, default: int, env_name: str) -> int:
     try:
         port = int(raw)
@@ -62,7 +60,16 @@ def _parse_single_port(raw: str, *, default: int, env_name: str) -> int:
         return default
     return port
 
-
+def _parse_single_port(raw: str, *, default: int, env_name: str) -> int:
+    try:
+        port = int(raw)
+    except ValueError:
+        print(f"[alphaclaw] ⚠  Invalid {env_name}: {raw!r}; using {default}")
+        return default
+    if not 1 <= port <= 65535:
+        print(f"[alphaclaw] ⚠  Out-of-range {env_name}: {port}; using {default}")
+        return default
+    return port
 OPENCLAW_GATEWAY_PORT = _parse_single_port(
     os.getenv("OPENCLAW_GATEWAY_PORT", "18789"),
     default=18789,

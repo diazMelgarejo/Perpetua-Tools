@@ -59,7 +59,7 @@ def _lesson_already_appended(cid):
 def stage(claim, conditions, source="learn", importance=7):
     os.makedirs(CANDIDATES, exist_ok=True)
     cid = pattern_id(claim, conditions)
-    now = datetime.datetime.now().isoformat()
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
     candidate = {
         "id": cid,
         "key": f"manual_{cid[:6]}",
