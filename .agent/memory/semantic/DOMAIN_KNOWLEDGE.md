@@ -80,8 +80,9 @@ $env:PATH = "$tmpBashDir;$gitRoot\usr\bin;$env:PATH"
   bash explicitly, e.g. `"%HERMES_GIT_BASH_PATH%" "%~dp0gstack-brain-sync" %*` (or resolve
   bash from the same `$gitRoot` discovery above). Any bash script in that `bin/` tree that
   bun/Node must call on Windows needs the same `.cmd` shim pattern.
-- `.cmd`/`.bat` files require **CRLF** line endings (`*.cmd text eol=crlf` in `.gitattributes`);
-  LF-only batch files fail silently under cmd.exe.
+- `.cmd`/`.bat`/`.ps1` on **Windows turf** require **CRLF** in the working tree (`eol=crlf` in orama `.gitattributes`). LF-only batch files fail silently under `cmd.exe`.
+- **Each turf, its own EOL — no tug-of-war:** macOS/Linux agents must **not** strip `\r` from Windows-serving files (`orama-system/platform/windows/**`, `*.cmd`, `*.bat`, `*.ps1`). Mac/Linux-owned sources (`*.sh`, `*.py`, docs) stay **LF**. Canonical policy: orama `git-history-surgery/references/platform-line-endings-turf.md`.
+- **False dirty on Mac:** `git status` shows `platform/windows/*.cmd` modified but content unchanged — often a pre-attributes blob. Fix once with `git add <file>` (normalizes object to `i/lf w/crlf`), not hand-edited EOL conversion.
 
 ### LLAMA_SERVER_BASE_URL — already in PowerShell profile, never missing
 - `%USERPROFILE%\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` line 1:
@@ -132,3 +133,30 @@ _(empty — populate as you go)_
 > "This folder is the portable brain. Any harness (Claude Code, Cursor, Windsurf, OpenCode, OpenClaw, Hermes, standalone Python) can mount it and get the same memory, skills, and protocols."
 
 **Origin:** Built from scratch as a purpose-designed portable agent memory system. The version `0.9.0` suggests prior offline/local development before the first tracked commit. The design philosophy connects to ECC cross-harness thinking but the code is not derived from any prior tracked repo.
+
+## Git operations — gold nuggets (sticky notes)
+
+> **Run these skills before any branch triage, rebase, merge, or delete** after a suspected
+> history rewrite. Catalog: `.agent/memory/working/BRANCH_COMPARISON_2026-06-27.md`.
+
+### Sticky skill routing (next git op)
+
+| Situation | Skill / reference (orama-system) |
+|-----------|----------------------------------|
+| Branch looks 600+ behind / `merge-base` exit 1 | [`git-history-surgery`](../../orama-system/bin/orama-system/skills/git-history-surgery/SKILL.md) → [`reanchor-after-rewrite.md`](../../orama-system/bin/orama-system/skills/git-history-surgery/references/reanchor-after-rewrite.md) |
+| Scan all local heads vs rewritten `main` | PT: `scripts/git/reanchor_scan.sh . origin/main heads` — see [`using-git-worktrees`](../../orama-system/bin/orama-system/skills/using-git-worktrees/SKILL.md) |
+| Verify unique work before PR | `git cherry -v origin/main <tip> <twin-base-from-scan>` — only `+` lines are truly unmerged |
+| Case A: tip already in main as tree twin | `git branch -f <branch> <twin-sha>` (or detach worktree at twin first) — **not** `git rebase origin/main` |
+| Case B: commits above twin need replay | Re-anchor to deepest twin, then cherry-pick/rebase only `+` commits |
+| Windows host before fetch/rebase/push | [`windows-powershell-runtime-bootstrap.md`](../../orama-system/bin/orama-system/skills/git-history-surgery/references/windows-powershell-runtime-bootstrap.md) |
+| `.cmd` blocks checkout/rebase on macOS | [`platform-line-endings-turf.md`](../../orama-system/bin/orama-system/skills/git-history-surgery/references/platform-line-endings-turf.md) — do not `git restore` CRLF files to LF |
+| Nested multi-agent merges | [`git-history-surgery`](../../orama-system/bin/orama-system/skills/git-history-surgery/SKILL.md) + episodic `nested-branch-merge-protocol` (2026-06-26) |
+
+### Gold nuggets (2026-06-27 branch catalog)
+
+1. **Never trust `merge-base exit 1` or ahead/behind alone after a rewrite.** `cursor/critical-bug-investigation-0df5` was misclassified as unrelated orphan (647 behind); tree-twin scan showed tip `c1ae82e` = main twin `ad702c5` — work already absorbed. Action: re-anchor ref, not rebase.
+2. **`reanchor_scan.sh` + `git cherry -v` is the canonical triage pair** — replaces naive `git branch --no-merged` inventories. Save markdown catalog before destructive ops.
+3. **orama branches are not orphan class** — large June integration branches (`2026-06-13/14-*`) are stale merge-bases (`a156104`), not unrelated history. Still use cherry `+` before rebase.
+4. **PT unrelated-looking branches may be MERGED/in-main** — 12 heads classified MERGED/in-main by tree-twin (incl. `feat/perpetua-submodule-upgrade`, `fix/pt71-clean`, `0df5`). Delete local after human review, not rebase.
+5. **Open PR candidates (post cherry verify):** P1 `chore/domain-knowledge-windows-shims` (DOMAIN_KNOWLEDGE Windows shims); P2 `2026-06-11-001-win-endpoint-discovery-sync` (routing); P3 `clean-pt127`; orama `fix/pr135-lint006-windows` (LINT-006 Windows paths).
+6. **Pre-destructive snapshot rule:** write `.agent/memory/working/BRANCH_COMPARISON_<date>.md` before rebase/delete/surgery — append-only memory, not a substitute for `reanchor_scan`.
