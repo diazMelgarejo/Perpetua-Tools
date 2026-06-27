@@ -6,9 +6,8 @@
 #   them anywhere else = OOM, missing CUDA kernel, or "double barrel" GPU damage
 #   (when Mac LM Studio mirror proxies the model AND Win dispatches it concurrently).
 #
-# mac_only:     models that physically run ONLY on Mac Apple Silicon (e.g. MLX
-#   quantizations with no GGUF/CUDA equivalent). Currently empty — all MLX models
-#   have GGUF mirrors usable on Win.
+# mac_only:     models that physically run ONLY on Mac/Linux Ollama (Apple Silicon
+#   MLX quantizations, Ollama-native ids with no GGUF/CUDA equivalent on Win).
 #
 # shared:       models that run NATIVELY on both machines (either machine can be
 #   the physical home). Routing chooses per task_type / target_tier.
@@ -36,19 +35,22 @@
 # in agent_registry.json. Update this file if that machine gets exclusive models.
 # ─────────────────────────────────────────────────────────────────────────────
 
-mac_only: []
+# Ollama-native Mac/Linux models — NEVER dispatch to Windows LM Studio.
+mac_only:
+  - qwen3.5:9b-nvfp4                                        # Mac orchestration / inference
+  - bge-m3                                                  # gbrain + CRG embeddings (1024-dim)
 
 # HARD POLICY: these models MUST dispatch to lmstudio-win (192.168.254.103:1234).
 # Selector will refuse to route them to lmstudio-mac (mirror) or anywhere else.
 windows_only:
   - qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2    # RTX 3080 GGUF — heavy reasoning
   - gemma-4-26b-a4b-it                                    # RTX 3080 GGUF — large model
+  - text-embedding-qwen3-embedding-8b-i1-gguf-q6-k        # Win LM Studio embeddings (4096-dim)
 
 # These models run natively on both machines (or are small enough for either).
 shared:
   - qwen3.5-9b-mlx                                        # native: Mac MLX | proxied: Win
   - gemma-4-e4b-it                                        # native: both confirmed
-  - text-embedding-nomic-embed-text-v1.5                  # native: both confirmed
 
 # Case-insensitive aliases (LM Studio sometimes capitalises model IDs)
 shared_aliases:

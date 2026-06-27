@@ -15,9 +15,13 @@ ALLOWED_MODEL_IDS = {
     # Mac MLX / LM Studio
     "qwen3.5-9b-mlx",
     "qwen3.5-9b-mlx-4bit",
+    # Mac/Linux Ollama
+    "qwen3.5:9b-nvfp4",
+    "bge-m3",
     # Windows GGUF / LM Studio
     "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2",
     "gemma-4-26b-a4b-it-q4_k_m",
+    "text-embedding-qwen3-embedding-8b-i1-gguf-q6-k",
     # Shared Ollama
     "qwen3.5:35b-a3b-q4_k_m",
     "qwen3-30b-autoresearch-critic",
