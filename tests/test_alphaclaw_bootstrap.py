@@ -72,6 +72,26 @@ def test_build_openclaw_config_ollama_mac_uses_healed_localhost(monkeypatch):
     assert ollama_mac["baseUrl"] == "http://localhost:11434"
 
 
+def test_build_openclaw_config_heals_stale_win_lms_from_routing_json(monkeypatch):
+    """Stale routing.json lmstudio_endpoint must not bypass Windows localhost heal."""
+    _reload_bootstrap(monkeypatch, ORAMA_PLATFORM="windows")
+    config = alphaclaw_bootstrap.build_openclaw_config(
+        pt={"lmstudio_endpoint": "http://192.168.254.108:1234"}
+    )
+    win_lms = config["models"]["providers"]["lmstudio-win"]
+    assert win_lms["baseUrl"] == "http://localhost:1234/v1"
+
+
+def test_build_openclaw_config_heals_stale_mac_lms_from_routing_json(monkeypatch):
+    """Stale routing.json mac_lmstudio_endpoint must not bypass Mac localhost heal."""
+    _reload_bootstrap(monkeypatch, ORAMA_PLATFORM="mac")
+    config = alphaclaw_bootstrap.build_openclaw_config(
+        pt={"mac_lmstudio_endpoint": "http://192.168.254.110:1234"}
+    )
+    mac_lms = config["models"]["providers"]["lmstudio-mac"]
+    assert mac_lms["baseUrl"] == "http://localhost:1234/v1"
+
+
 def test_start_openclaw_gateway_closes_log_handle_when_popen_fails(tmp_path, monkeypatch):
     real_open = builtins.open
     opened = []
