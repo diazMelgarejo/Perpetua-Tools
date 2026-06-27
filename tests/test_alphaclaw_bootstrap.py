@@ -428,6 +428,8 @@ def test_validate_endpoint_host_rejects_public():
         "172.15.0.1",
         "172.32.0.1",
         "192.169.0.1",
+        "169.254.0.1",
+        "169.254.169.254",
         "google.com",
         "evil.example.com",
     ):
