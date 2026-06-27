@@ -74,3 +74,20 @@ the test passes locally. Reviewer should verify CI `pip install` includes `[dev]
 4. **YAML regex pattern**: `^\s*name:` misses `- name:` (list items). Always use `^\s*-?\s*name:`.
 5. **Path display in tests**: functions using `.relative_to(ROOT)` need try/except when
    tests monkeypatch the path to tmp_path outside the repo root.
+
+---
+
+## Append: branch catalog gold nuggets (2026-06-27)
+
+**Catalog:** `.agent/memory/working/BRANCH_COMPARISON_2026-06-27.md` (tree-twin / `reanchor_scan` — corrected)
+
+**Sticky git skills (before next rebase/delete):**
+- orama `bin/orama-system/skills/git-history-surgery/SKILL.md`
+- `references/reanchor-after-rewrite.md`
+- PT `scripts/git/reanchor_scan.sh . origin/main heads`
+
+**Key correction:** `cursor/critical-bug-investigation-0df5` is **MERGED/in-main** (twin `ad702c5`), not unrelated orphan — re-anchor or delete local; do not rebase.
+
+**PR candidates after `git cherry` verify:** `chore/domain-knowledge-windows-shims`, `fix/pr135-lint006-windows` (orama), `2026-06-11-001-win-endpoint-discovery-sync`, `clean-pt127`.
+
+**Memory updated:** DOMAIN_KNOWLEDGE § Git gold nuggets, DECISIONS 2026-06-27 tree-twin, episodic + learn.py lessons (this session).
