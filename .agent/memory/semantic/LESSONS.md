@@ -136,6 +136,8 @@
 - Model dispatch security uses a positive allowlist: scripts/check_model_ids.py scans config/models.yml and .env.example only; new model IDs require explicit ALLOWED_MODEL_IDS entry (T2-B). Denylist check_no_hallucinated_models.py is insufficient alone (S7).  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_34bb51037fce -->
 - Co-authored-by guards must fail-closed on parsed email: if angle-bracket email is present but not allowlisted, reject immediately — display-name markers (hermes, qwen, claude) never override. Fuzz cases in tests/test_git_attribution_guard.py (T3-B).  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_1171086a7740 -->
 - oramaclaw pending conflicts cleared or orphaned by dead transactions must be archived to state_dir/registry/orphan-conflicts/ before removal — never silent delete (T3-C). sweep_orphan_pending runs on ControlStore.open.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_2abff9b4e522 -->
+- Security and API fixes must trace the full data path from source to sink — a helper fix (e.g. _canonical_endpoint on return paths) does not protect import-time constants, module-level env reads, or unvalidated JSON consumers that bypass the helper.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_d9e84ea8c6c2 -->
+- Dream-cycle salience scoring must compare UTC-aware timestamps — episodic entries use +00:00 offsets; naive datetime.now() minus aware fromisoformat raises TypeError and blocks auto_dream.py.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_65921fdf4329 -->
 
 ### 2026-04
 
