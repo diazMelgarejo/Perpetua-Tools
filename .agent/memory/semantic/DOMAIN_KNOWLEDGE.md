@@ -137,7 +137,7 @@ _(empty — populate as you go)_
 ## Git operations — gold nuggets (sticky notes)
 
 > **Run these skills before any branch triage, rebase, merge, or delete** after a suspected
-> history rewrite. Catalog: `.agent/memory/working/BRANCH_COMPARISON_2026-06-27.md`.
+> history rewrite. Catalog: `.agent/memory/working/BRANCH_CATALOG_COMPLETE_2026-06-27.md`.
 
 ### Sticky skill routing (next git op)
 
@@ -159,4 +159,4 @@ _(empty — populate as you go)_
 3. **orama branches are not orphan class** — large June integration branches (`2026-06-13/14-*`) are stale merge-bases (`a156104`), not unrelated history. Still use cherry `+` before rebase.
 4. **PT unrelated-looking branches may be MERGED/in-main** — 12 heads classified MERGED/in-main by tree-twin (incl. `feat/perpetua-submodule-upgrade`, `fix/pt71-clean`, `0df5`). Delete local after human review, not rebase.
 5. **Open PR candidates (post cherry verify):** P1 `chore/domain-knowledge-windows-shims` (DOMAIN_KNOWLEDGE Windows shims); P2 `2026-06-11-001-win-endpoint-discovery-sync` (routing); P3 `clean-pt127`; orama `fix/pr135-lint006-windows` (LINT-006 Windows paths).
-6. **Pre-destructive snapshot rule:** write `.agent/memory/working/BRANCH_COMPARISON_<date>.md` before rebase/delete/surgery — append-only memory, not a substitute for `reanchor_scan`.
+6. **Pre-destructive snapshot rule:** write `.agent/memory/working/BRANCH_CATALOG_COMPLETE_<date>.md` before rebase/delete/surgery — append-only memory, not a substitute for `reanchor_scan`.
