@@ -5,33 +5,36 @@ description: "Successor and drop-in replacement for the legacy ultrathink-system
 
 # oramasys-method
 
-This is a thin wrapper. The canonical skill lives in this repo at the path below
-(resolve the repo root at runtime — paths are never hardcoded).
+This is a thin wrapper. The canonical skill lives in the **orama-system** repo
+(resolve paths at runtime — never hardcode workstation paths).
 
-- Canonical skill path (repo-relative): `bin/orama-system/skills/oramasys-method/SKILL.md`
+- Canonical skill (orama-system): `bin/orama-system/skills/oramasys-method/SKILL.md`
+- **PR merge / conflicts:** `bin/orama-system/skills/oramasys-method/references/integrative-merge.md`
 
 ## Before Use
 
-Before relying on the canonical card, check whether the canonical repository can safely sync:
+Sync the canonical card from orama-system when a sibling checkout exists:
 
 ```bash
-ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-cd "$ROOT/bin/orama-system/skills/oramasys-method"
-git fetch origin --prune
-git status --short --branch
-```
-
-If the repo is on a tracking branch and the worktree is clean:
-
-```bash
-git pull --ff-only
+ORAMA="${ORAMA_SYSTEM_ROOT:-${OPENCLAW_HOME:-$HOME}/orama-system}"
+if [ -d "$ORAMA/bin/orama-system/skills/oramasys-method" ]; then
+  cd "$ORAMA/bin/orama-system/skills/oramasys-method"
+  git fetch origin --prune && git status --short --branch
+  # git pull --ff-only   # only when clean + tracking
+fi
 ```
 
 If the worktree is dirty, the branch is not tracking origin, or fast-forward is impossible, do not overwrite local work. Report the drift and read the current canonical card with that caveat.
 
 ## Load Canonical Skill
 
-Open and follow `bin/orama-system/skills/oramasys-method/SKILL.md` (relative to the repo root). Do not copy behavior from this wrapper.
+Open and follow the canonical card in **orama-system**:
+
+- [`orama-system/.../oramasys-method/SKILL.md`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/oramasys-method/SKILL.md)
+- [`references/integrative-merge.md`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/oramasys-method/references/integrative-merge.md) — **mandatory for PR merges** (synthesize, never amputate)
+
+If `../orama-system` exists locally, prefer
+`../orama-system/bin/orama-system/skills/oramasys-method/SKILL.md`. Do not copy behavior from this wrapper.
 
 ## Windows UTF-8 Note
 

@@ -115,16 +115,14 @@ class TestScanModelsYml:
         )
         assert scan_models_yml() == []
 
-    def test_disallowed_name_violation(self, monkeypatch, tmp_path):
+    def test_disallowed_name_only_not_scanned(self, monkeypatch, tmp_path):
+        """Internal routing aliases (name:) are not external model IDs."""
         self._patch_yml(
             monkeypatch,
             "- name: hallucinated-model-9000\n",
             tmp_path,
         )
-        violations = scan_models_yml()
-        assert len(violations) == 1
-        assert "hallucinated-model-9000" in violations[0]
-        assert "name:" in violations[0]
+        assert scan_models_yml() == []
 
     def test_disallowed_api_model_violation(self, monkeypatch, tmp_path):
         self._patch_yml(
@@ -239,6 +237,14 @@ class TestScanEnvExample:
         # The regex requires uppercase first letter
         assert scan_env_example() == []
 
+    def test_probe_timeout_not_scanned(self, monkeypatch, tmp_path):
+        self._patch_env(
+            monkeypatch,
+            "MODEL_PROBE_TIMEOUT=3\n",
+            tmp_path,
+        )
+        assert scan_env_example() == []
+
     def test_grok_model_allowlisted(self, monkeypatch, tmp_path):
         self._patch_env(
             monkeypatch,
@@ -268,7 +274,7 @@ class TestMain:
 
     def test_main_fails_when_yml_has_violation(self, monkeypatch, tmp_path, capsys):
         yml = tmp_path / "models.yml"
-        yml.write_text("- name: hallucinated-llm\n", encoding="utf-8")
+        yml.write_text("  api_model: hallucinated-llm\n", encoding="utf-8")
         env = tmp_path / ".env.example"
         env.write_text("", encoding="utf-8")
         monkeypatch.setattr(_mod, "MODEL_YML", yml)

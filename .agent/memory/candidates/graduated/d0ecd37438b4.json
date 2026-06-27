@@ -45,7 +45,7 @@
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
-  "staged_at": "2026-06-24T17:04:09.020742",
+  "staged_at": "2026-06-24T17:04:09.020742+00:00",
   "status": "accepted",
   "decisions": [
     {
