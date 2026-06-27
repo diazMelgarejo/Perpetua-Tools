@@ -325,7 +325,7 @@ there is no `.\windows\` folder at repo root.
 **Decision:** After any suspected `main` rewrite, classify local branches with
 `scripts/git/reanchor_scan.sh` + `git cherry -v`, not `git merge-base` failure or
 ahead/behind counts alone. Save a markdown catalog
-(`.agent/memory/working/BRANCH_COMPARISON_<date>.md`) before rebase, delete, or
+(`.agent/memory/working/BRANCH_CATALOG_COMPLETE_<date>.md`) before rebase, delete, or
 history surgery.
 
 **Rationale:** 2026-06-27 triage misclassified `cursor/critical-bug-investigation-0df5`
@@ -337,6 +337,6 @@ destroying branch identity.
 for rewrite-boundary branches; flatten to `origin/main` — rejected per git-history-surgery
 non-negotiables.
 
-**Status:** active — catalog `.agent/memory/working/BRANCH_COMPARISON_2026-06-27.md`;
+**Status:** active — catalog `.agent/memory/working/BRANCH_CATALOG_COMPLETE_2026-06-27.md`;
 skills: orama `git-history-surgery` → `reanchor-after-rewrite.md`, PT `scripts/git/reanchor_scan.sh`
 

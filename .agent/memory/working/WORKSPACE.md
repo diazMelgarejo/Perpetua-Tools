@@ -79,7 +79,7 @@ the test passes locally. Reviewer should verify CI `pip install` includes `[dev]
 
 ## Append: branch catalog gold nuggets (2026-06-27)
 
-**Catalog:** `.agent/memory/working/BRANCH_COMPARISON_2026-06-27.md` (tree-twin / `reanchor_scan` — corrected)
+**Catalog:** `.agent/memory/working/BRANCH_CATALOG_COMPLETE_2026-06-27.md` (tree-twin / `reanchor_scan` — corrected)
 
 **Sticky git skills (before next rebase/delete):**
 - orama `bin/orama-system/skills/git-history-surgery/SKILL.md`
