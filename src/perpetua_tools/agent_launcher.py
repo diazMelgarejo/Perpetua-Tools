@@ -127,17 +127,40 @@ LOCAL_MAC_HOST, LOCAL_MAC_PORT = _loopback_host_from_endpoint(_ollama_mac_endpoi
 LOCAL_MAC_URL = _ollama_mac_endpoint if "://" in _ollama_mac_endpoint else f"http://{LOCAL_MAC_HOST}:{LOCAL_MAC_PORT}"
 MAC_MANAGER_MODEL = os.getenv("MAC_MANAGER_MODEL", "glm-5.1:cloud")
 
-# Mac LM Studio — parse LM_STUDIO_MAC_ENDPOINT if set (canonical form in .env),
-# then fall back to explicit MAC_LMS_HOST/PORT vars, then hard-coded LAN default.
-_mac_lms_ep = os.getenv("LM_STUDIO_MAC_ENDPOINT", "").strip()
-if _mac_lms_ep:
-    _p = urlparse(_mac_lms_ep)
-    MAC_LMS_HOST = os.getenv("MAC_LMS_HOST", _p.hostname or "192.168.254.110")
-    MAC_LMS_PORT = int(os.getenv("MAC_LMS_PORT", str(_p.port or 1234)))
-else:
-    MAC_LMS_HOST = os.getenv("MAC_LMS_HOST", "192.168.254.110")
-    MAC_LMS_PORT = int(os.getenv("MAC_LMS_PORT", "1234"))
-MAC_LMS_URL   = f"http://{MAC_LMS_HOST}:{MAC_LMS_PORT}"
+# Mac LM Studio — locality-aware default (mirrors Ollama block above).
+_default_mac_lms_endpoint = (
+    "http://localhost:1234"
+    if RUNNING_ON_MAC
+    else f"http://{_default_mac_host}:1234"
+)
+_mac_lms_endpoint = os.getenv("LM_STUDIO_MAC_ENDPOINT", _default_mac_lms_endpoint)
+_p_mac_lms = urlparse(
+    _mac_lms_endpoint if "://" in _mac_lms_endpoint else f"http://{_mac_lms_endpoint}"
+)
+if RUNNING_ON_MAC and _p_mac_lms.hostname not in ("localhost", "127.0.0.1", "::1", None):
+    _healed_mac_lms = f"http://localhost:{_p_mac_lms.port or 1234}"
+    logging.getLogger(__name__).warning(
+        "LM_STUDIO_MAC_ENDPOINT=%s is non-loopback; PT runs on the Mac so Mac LM Studio "
+        "is localhost — normalizing to %s",
+        _mac_lms_endpoint,
+        _healed_mac_lms,
+    )
+    _mac_lms_endpoint = _healed_mac_lms
+    _p_mac_lms = urlparse(_healed_mac_lms)
+_mac_lms_host = os.getenv(
+    "MAC_LMS_HOST",
+    _p_mac_lms.hostname or ("localhost" if RUNNING_ON_MAC else _default_mac_host),
+)
+if RUNNING_ON_MAC and not _is_loopback_host(_mac_lms_host):
+    logging.getLogger(__name__).warning(
+        "MAC_LMS_HOST=%s is non-loopback; PT runs on the Mac so Mac LM Studio "
+        "is localhost — normalizing to localhost",
+        _mac_lms_host,
+    )
+    _mac_lms_host = "localhost"
+MAC_LMS_HOST = _mac_lms_host
+MAC_LMS_PORT = int(os.getenv("MAC_LMS_PORT", str(_p_mac_lms.port or 1234)))
+MAC_LMS_URL = f"http://{MAC_LMS_HOST}:{MAC_LMS_PORT}"
 MAC_LMS_MODEL = (os.getenv("MAC_LMS_MODEL")
                  or os.getenv("LMS_MAC_MODEL")
                  or "Qwen3.5-9B-MLX-4bit")
