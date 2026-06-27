@@ -5,6 +5,8 @@ import builtins
 import importlib
 from pathlib import Path
 
+import pytest
+
 import perpetua_tools.alphaclaw_bootstrap as alphaclaw_bootstrap
 
 
@@ -125,6 +127,44 @@ def test_build_openclaw_config_heals_stale_lan_routing_json_on_mac(monkeypatch):
     providers = config["models"]["providers"]
     assert providers["ollama-mac"]["baseUrl"] == "http://localhost:11434"
     assert providers["lmstudio-mac"]["baseUrl"] == "http://localhost:1234/v1"
+
+
+def test_validate_pt_state_accepts_valid_routing_json():
+    state = {
+        "mac_lmstudio_endpoint": "http://localhost:1234",
+        "manager_endpoint": "http://192.168.254.110:11434",
+        "coder_backend": "mac-degraded",
+        "mac_lmstudio_ok": True,
+        "future_field": "tolerated",
+    }
+    assert alphaclaw_bootstrap._validate_pt_state(state) == state
+
+
+def test_validate_pt_state_rejects_non_rfc1918_endpoint():
+    with pytest.raises(ValueError, match="non-RFC-1918"):
+        alphaclaw_bootstrap._validate_pt_state(
+            {"manager_endpoint": "http://8.8.8.8:11434"}
+        )
+
+
+def test_load_pt_state_validates_file(tmp_path, monkeypatch):
+    routing = tmp_path / "routing.json"
+    routing.write_text(
+        '{"manager_endpoint": "http://8.8.8.8:11434"}', encoding="utf-8"
+    )
+    monkeypatch.setenv("PT_AGENTS_STATE", str(routing))
+    with pytest.raises(ValueError, match="non-RFC-1918"):
+        alphaclaw_bootstrap._load_pt_state()
+
+
+def test_module_constants_canonicalize_bare_env_scheme(monkeypatch):
+    """Bare host:port env vars must gain http:// at import (T1-B)."""
+    _reload_bootstrap(
+        monkeypatch,
+        ORAMA_PLATFORM="mac",
+        OLLAMA_WINDOWS_ENDPOINT="192.168.254.108:11434",
+    )
+    assert alphaclaw_bootstrap.OLLAMA_WIN == "http://192.168.254.108:11434"
 
 def test_start_openclaw_gateway_closes_log_handle_when_popen_fails(tmp_path, monkeypatch):
     real_open = builtins.open

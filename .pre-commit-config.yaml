@@ -75,6 +75,13 @@ repos:
         pass_filenames: false
         always_run: true
 
+      - id: policy-enforcement-audit
+        name: "Policy enforcement uses hardware_policy API (T1-C)"
+        entry: python scripts/audit_policy_enforcement.py
+        language: system
+        pass_filenames: false
+        always_run: true
+
       - id: repo-hygiene
         name: "Repo hygiene — identity, paths, secrets (CI parity)"
         entry: python scripts/review/repo_hygiene.py .
