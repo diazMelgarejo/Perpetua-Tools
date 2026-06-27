@@ -5,7 +5,7 @@
 | Plan | Status | Link |
 |---|---|---|
 | Security hardening pre-v2 | 🔄 In progress — PRs #154 + #113 open | [`2026-06-27-security-hardening-pre-v2.md`](https://github.com/diazMelgarejo/orama-system/blob/main/docs/plans/2026-06-27-security-hardening-pre-v2.md) |
-| Hermes-harness onboarding | Phases 1-5+7+8 ✅, 6+9 ⏳ | [`2026-06-24-hermes-harness-canonical-onboarding.md`](https://github.com/diazMelgarejo/orama-system/blob/main/docs/plans/2026-06-24-hermes-harness-canonical-onboarding.md) |
+| Hermes-harness onboarding | Phases 1-5+7+8 on main (#108); 6+9 prep offline (`--prepare`, checklist) | [`2026-06-24-hermes-harness-canonical-onboarding.md`](https://github.com/diazMelgarejo/orama-system/blob/main/docs/plans/2026-06-24-hermes-harness-canonical-onboarding.md) |
 | Optimization priorities | L1 open, L6 📋 | [`2026-06-24-optimization-priorities.md`](https://github.com/diazMelgarejo/orama-system/blob/main/docs/plans/2026-06-24-optimization-priorities.md) |
 
 ## PRs open for human review
@@ -27,6 +27,7 @@ _No pending candidates._
 - Freeze procedure: version bump → tag v1.1.1/v1.0.0 → release → v2 branch
 - L6: schemas/ JSON Schema files
 
-### Live Windows
+### Live Windows (Win Coder localhost)
+- Hermes Phase 6+9: `verify_partner_canaries.py` (no `--prepare`) + `install_hermes_thin_skills.py --verify`
+- Checklist: orama `bin/orama-system/skills/hermes-harness/references/win-localhost-runtime-checklist.md`
 - L1: perpetua-core hardware review → push → v0.2.0-alpha
-- Phase 6+9: Hermes thin wrappers
