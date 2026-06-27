@@ -1,0 +1,58 @@
+{
+  "id": "2abff9b4e522",
+  "key": "manual_2abff9",
+  "name": "manual_2abff9",
+  "claim": "oramaclaw pending conflicts cleared or orphaned by dead transactions must be archived to state_dir/registry/orphan-conflicts/ before removal \u2014 never silent delete (T3-C). sweep_orphan_pending runs on ControlStore.open.",
+  "conditions": [
+    "archived",
+    "before",
+    "cleared",
+    "conflicts",
+    "controlstore",
+    "dead",
+    "delete",
+    "never",
+    "open",
+    "oramaclaw",
+    "orphan-conflicts",
+    "orphaned",
+    "pending",
+    "registry",
+    "removal",
+    "runs",
+    "silent",
+    "state_dir",
+    "sweep_orphan_pending",
+    "t3-c",
+    "transactions"
+  ],
+  "evidence_ids": [
+    "2026-06-27T01:52:47.358022"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-27T01:52:47.358022",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-27T01:52:47.358022",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-27T01:52:47.383925+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "cc8c581 deferred auditability for orphan conflicts",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-27T01:52:47.358022"
+      ],
+      "lessons_sha": "44c9d1ea6e8a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-27T01:52:47.383916+00:00",
+  "reviewer": "learn.py",
+  "rationale": "cc8c581 deferred auditability for orphan conflicts"
+}

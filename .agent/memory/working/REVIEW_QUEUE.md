@@ -10,18 +10,6 @@
 
 ## Candidate queue
 
-_No pending candidates._ (Dream cycle 2026-06-24 `76d0407` graduated 4, rejected 2.)
+<!-- review-queue-dynamic -->
 
-Run `python .agent/tools/list_candidates.py` for detail.
-
-## Next session priorities (by machine)
-
-### Any machine
-- L6: create `schemas/` directory with `topology.schema.json`, `devices.schema.json`, `skills.schema.json`
-- oramaclaw engine.py: orphan conflict cleanup + cooperative timeout bypass
-- Apply progressive-disclosure pattern to the 654-line hermes-harness plan (split into index + sub-specs)
-
-### Live Windows required
-- L1: perpetua-core hardware review → push `feat/salvage-plugins-rc1` → tag `v0.2.0-alpha`
-- Phase 6: `install_hermes_thin_skills.py --install --verify --test`
-- Phase 9: Windows thin wrappers → additive migration → verify
+_No pending candidates._

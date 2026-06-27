@@ -6,6 +6,48 @@
 
 ---
 
+## 2026-06-27 — Pre-v2 security hardening (Linux complete; Mac/Win E2E tomorrow) | Cursor
+
+**Branch:** `cursor/security-hardening-pre-v2-c4ae` · **PRs:** [orama #113](https://github.com/diazMelgarejo/orama-system/pull/113) · [PT #154](https://github.com/diazMelgarejo/Perpetua-Tools/pull/154) · **Versions:** `1.1.1.0` both repos
+
+**Context:** Last hardening pass before `v1.x-stable` freeze and `oramasys/v2-foundation` migration. Plan: [`orama-system/docs/plans/2026-06-27-security-hardening-pre-v2.md`](../../orama-system/docs/plans/2026-06-27-security-hardening-pre-v2.md).
+
+### Perpetua-Tools (Linux ✅)
+
+| Tier | Deliverable |
+|------|-------------|
+| T1-A | `_PT_STATE_SCHEMA` + `_validate_pt_state()` — RFC-1918 endpoint allowlist in `alphaclaw_bootstrap.py` |
+| T1-B/C | URL canonicalization + `scripts/audit_policy_enforcement.py` pre-commit |
+| T2-B | `scripts/check_model_ids.py` positive allowlist (`config/models.yml`, `.env.example`) |
+| T3-B | 6 parametrized malformed `Co-authored-by` fuzz tests |
+
+### orama-system (Linux ✅)
+
+| Tier | Deliverable |
+|------|-------------|
+| T2-A/C | LINT-014 argv secret scan; line-level LINT-013 (`<!-- LINT-013-ok -->`) |
+| T3-A | `tests/test_concurrent_lock.py` — 8 threads, ≤1 simultaneous lock holder |
+| T3-C | Orphan pending → `registry/orphan-conflicts/` on clear + `sweep_orphan_pending()` on open |
+| T4-A/B/C | `check_dep_pins.py`; LM Studio token WARN in `check-local-env.sh`; SBOM `docs/sbom/sbom-v1.1.1.0.json` |
+
+### Blocked on Mac / Windows 11 (schedule tomorrow)
+
+- Full `start.sh` E2E + `probe_required_endpoints` (Ollama `qwen3.5:9b-nvfp4`, `bge-m3`)
+- `LM_STUDIO_WIN_ENDPOINTS` LAN probes from Mac
+- `start.sh --hardware-policy` live harness
+- Claude Desktop MCPB `--open`; keychain `security` CLI flows
+- **T5:** tag `v1.1.1`, GitHub release, `oramasys/v2-foundation` branch — only after real-machine E2E green
+
+### Verification (cloud VM)
+
+- orama: pytest 33/33 (store, engine, concurrent lock); `repo_hygiene.py` OK
+- PT: bootstrap 14/14; fuzz 6/6; `check_model_ids.py` exit 0
+- `gbrain-selfheal.sh` skipped (gbrain not on PATH)
+
+**Machine memory:** PT `.agent/memory` lessons `learn.py` batch + episodic `2026-06-27-security-hardening-linux-complete`.
+
+---
+
 ## 2026-06-26 — PR #135 CodeRabbit closure: memory path hygiene at write boundaries | Cursor
 
 **Context:** PR #135 (`cursor/critical-bug-investigation-a924`) was merged before all four CodeRabbit threads were closed at root cause. CodeRabbit autofix on `80926a3` only hand-edited `REVIEW_QUEUE.md` (`<local-path>` placeholders) — a symptom patch.
