@@ -111,6 +111,28 @@ def _resolve_endpoint(
         else f"http://{fallback_ip}:{port}"
     )
     raw = os.getenv(env_var, default).strip().split(",")[0].strip() or default
+    return _heal_local_endpoint(
+        raw, target_role=role, port=port, source=env_var, is_local=is_local
+    )
+
+
+def _heal_local_endpoint(
+    raw: str,
+    *,
+    target_role: str,
+    port: int,
+    source: str,
+    is_local: bool | None = None,
+) -> str:
+    """Normalize stale LAN URLs when bootstrap runs on the target machine."""
+    if not raw:
+        return raw
+    role = target_role.lower()
+    if is_local is None:
+        is_local = (
+            (role in {"mac", "macos", "darwin"} and RUNNING_ON_MAC)
+            or (role in {"win", "windows", "win32"} and RUNNING_ON_WINDOWS)
+        )
     if not is_local:
         return raw if "://" in raw else f"http://{raw}"
     parsed = urlparse(raw if "://" in raw else f"http://{raw}")
@@ -119,7 +141,7 @@ def _resolve_endpoint(
         healed = f"http://localhost:{parsed.port or port}"
         _logger.warning(
             "%s=%s is non-loopback but bootstrap runs ON %s — normalizing to %s",
-            env_var,
+            source,
             raw,
             role,
             healed,
@@ -514,6 +536,19 @@ def build_openclaw_config(pt: dict | None = None) -> dict[str, object]:
         coder_model, manager_model = WIN_MODEL, MAC_MODEL
         coder_backend, mac_lms_ok = "unknown", False
         ollama_mac_url, ollama_win_url = OLLAMA_MAC, OLLAMA_WIN
+
+    mac_lms_url = _heal_local_endpoint(
+        mac_lms_url, target_role="mac", port=1234, source="mac_lmstudio_endpoint"
+    )
+    win_lms_url = _heal_local_endpoint(
+        win_lms_url, target_role="windows", port=1234, source="lmstudio_endpoint"
+    )
+    ollama_mac_url = _heal_local_endpoint(
+        ollama_mac_url, target_role="mac", port=11434, source="manager_endpoint"
+    )
+    ollama_win_url = _heal_local_endpoint(
+        ollama_win_url, target_role="windows", port=11434, source="coder_endpoint"
+    )
 
     if coder_backend == "windows-lmstudio":
         coder_primary = f"lmstudio-win/{coder_model}"

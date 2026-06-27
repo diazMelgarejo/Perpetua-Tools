@@ -29,6 +29,22 @@ def test_build_openclaw_config_prefers_routing_state_for_ollama_mac():
     assert config["models"]["providers"]["ollama-mac"]["baseUrl"] == "http://localhost:11434"
 
 
+def test_build_openclaw_config_heals_stale_lan_routing_json_on_mac(monkeypatch):
+    monkeypatch.setenv("ORAMA_PLATFORM", "mac")
+    pt = {
+        "manager_backend": "mac-ollama",
+        "manager_endpoint": "http://192.168.254.110:11434",
+        "manager_model": "glm-5.1:cloud",
+        "mac_lmstudio_endpoint": "http://192.168.254.110:1234",
+        "coder_backend": "mac-degraded",
+        "mac_lmstudio_ok": True,
+    }
+    config = alphaclaw_bootstrap.build_openclaw_config(pt)
+    providers = config["models"]["providers"]
+    assert providers["ollama-mac"]["baseUrl"] == "http://localhost:11434"
+    assert providers["lmstudio-mac"]["baseUrl"] == "http://localhost:1234/v1"
+
+
 def test_start_openclaw_gateway_closes_log_handle_when_popen_fails(tmp_path, monkeypatch):
     real_open = builtins.open
     opened = []
