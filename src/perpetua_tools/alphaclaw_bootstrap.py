@@ -99,6 +99,18 @@ def _first_csv_endpoint(value: str) -> str:
     return value.split(",")[0].strip() if value else ""
 
 
+def _canonical_endpoint(url: str) -> str:
+    """Ensure a URL has an http:// scheme.
+
+    Bare host:port strings (e.g. ``192.168.254.110:1234`` or ``localhost:11434``)
+    are accepted by urlparse but rejected by HTTP clients and by
+    ``build_openclaw_config``'s ``baseUrl`` fields.  Every return boundary in
+    the locality helpers must go through this guard so callers always receive a
+    full URL regardless of the env-var or routing.json source format.
+    """
+    return url if "://" in url else f"http://{url}"
+
+
 def _heal_pt_endpoint_url(
     url: str | None,
     *,
@@ -109,9 +121,12 @@ def _heal_pt_endpoint_url(
     if not url:
         return ""
     url = _first_csv_endpoint(url.strip())
-    if not url or not running_on_target:
-        return url
-    parsed = urlparse(url if "://" in url else f"http://{url}")
+    if not url:
+        return ""
+    canonical = _canonical_endpoint(url)
+    if not running_on_target:
+        return canonical
+    parsed = urlparse(canonical)
     if parsed.hostname not in _LOOPBACK_HOSTS:
         return f"http://localhost:{_endpoint_port(parsed, port)}"
     return url
@@ -133,9 +148,10 @@ def _locality_resolve_endpoint(
     raw = os.getenv(env_var, "").strip()
     raw_first = _first_csv_endpoint(raw)
     url = raw_first or _first_csv_endpoint(default) or default
+    canonical = _canonical_endpoint(url)
     if not running_on_target:
-        return url
-    parsed = urlparse(url if "://" in url else f"http://{url}")
+        return canonical
+    parsed = urlparse(canonical)
     if parsed.hostname not in _LOOPBACK_HOSTS:
         healed = f"http://localhost:{_endpoint_port(parsed, port)}"
         if raw:
