@@ -80,6 +80,16 @@ content but get **new SHAs**.
 - Rebasing or force-updating an existing remote branch requires explicit current
   user authorization.
 
+## PR merge & conflict resolution — oramasys-method (MANDATORY)
+
+**Applies to every agent when modifying, merging, or resolving conflicts on a PR.**
+
+Load **oramasys-method** (`.claude/skills/oramasys-method/SKILL.md`) and follow the canonical
+[integrative-merge reference](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/oramasys-method/references/integrative-merge.md):
+
+- **Synthesize, never amputate** — additive, blending, union, superset; archive instead of delete.
+- Portable brain summary: [`.agent/AGENTS.md` § Multi-agent merge conflict protocol](.agent/AGENTS.md).
+
 ## Cursor Cloud: git commits
 
 Run on cloud VM boot:
