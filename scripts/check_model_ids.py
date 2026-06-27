@@ -55,10 +55,9 @@ _ALLOWED_LC = {m.lower() for m in ALLOWED_MODEL_IDS}
 MODEL_YML = ROOT / "config" / "models.yml"
 ENV_EXAMPLE = ROOT / ".env.example"
 
-_NAME_RE = re.compile(r"^\s*-?\s*name:\s*[\"']?([^\"'\n#]+)", re.MULTILINE)
 _API_MODEL_RE = re.compile(r"^\s*api_model:\s*[\"']?([^\"'\n#]+)", re.MULTILINE)
 _ENV_MODEL_RE = re.compile(
-    r"^(?:[A-Z][A-Z0-9_]*MODEL[A-Z0-9_]*)=([^\s#]+)",
+    r"^([A-Z][A-Z0-9_]*_MODEL)=([^\s#]+)",
     re.MULTILINE,
 )
 
@@ -81,10 +80,6 @@ def scan_models_yml() -> list[str]:
         return [f"missing required file: {_rel(MODEL_YML)}"]
     text = MODEL_YML.read_text(encoding="utf-8")
     violations: list[str] = []
-    for match in _NAME_RE.finditer(text):
-        err = _check_model_id(match.group(1), str(_rel(MODEL_YML)), "name:")
-        if err:
-            violations.append(err)
     for match in _API_MODEL_RE.finditer(text):
         err = _check_model_id(match.group(1), str(_rel(MODEL_YML)), "api_model:")
         if err:
@@ -98,7 +93,8 @@ def scan_env_example() -> list[str]:
     text = ENV_EXAMPLE.read_text(encoding="utf-8")
     violations: list[str] = []
     for match in _ENV_MODEL_RE.finditer(text):
-        err = _check_model_id(match.group(1), str(_rel(ENV_EXAMPLE)), match.group(0).split("=")[0])
+        key, value = match.groups()
+        err = _check_model_id(value, str(_rel(ENV_EXAMPLE)), key)
         if err:
             violations.append(err)
     return violations

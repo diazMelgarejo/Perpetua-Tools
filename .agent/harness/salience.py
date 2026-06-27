@@ -6,7 +6,8 @@ def _parse_timestamp(ts: str) -> datetime.datetime:
     """Parse ISO timestamps; normalize naive values to UTC."""
     dt = datetime.datetime.fromisoformat(ts.replace("Z", "+00:00"))
     if dt.tzinfo is None:
-        return dt.replace(tzinfo=datetime.timezone.utc)
+        local_tz = datetime.datetime.now().astimezone().tzinfo
+        return dt.replace(tzinfo=local_tz).astimezone(datetime.timezone.utc)
     return dt.astimezone(datetime.timezone.utc)
 
 
