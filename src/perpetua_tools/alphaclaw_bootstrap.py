@@ -38,6 +38,7 @@ import argparse
 import asyncio
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -129,7 +130,7 @@ def _heal_pt_endpoint_url(
     parsed = urlparse(canonical)
     if parsed.hostname not in _LOOPBACK_HOSTS:
         return f"http://localhost:{_endpoint_port(parsed, port)}"
-    return url
+    return canonical
 
 
 def _locality_resolve_endpoint(
@@ -442,6 +443,66 @@ async def _start_openclaw_gateway(log_dir: Path, setup_password: str, timeout: i
 
 # ── config + workspaces ───────────────────────────────────────────────────────
 
+_PT_STATE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "mac_lmstudio_endpoint": {"type": "string", "pattern": r"^https?://"},
+        "lmstudio_endpoint": {"type": "string", "pattern": r"^https?://"},
+        "manager_endpoint": {"type": "string", "pattern": r"^https?://"},
+        "coder_endpoint": {"type": "string", "pattern": r"^https?://"},
+        "coder_model": {"type": "string", "maxLength": 128},
+        "manager_model": {"type": "string", "maxLength": 128},
+        "coder_backend": {
+            "type": "string",
+            "enum": [
+                "windows-lmstudio",
+                "windows-ollama",
+                "mac-lmstudio",
+                "mac-ollama",
+                "mac-degraded",
+                "unknown",
+            ],
+        },
+        "mac_lmstudio_ok": {"type": "boolean"},
+        "manager_backend": {"type": "string"},
+    },
+    "additionalProperties": True,
+}
+
+_ALLOWED_ENDPOINT_HOST_RE = re.compile(
+    r"^(localhost|127\.\d+\.\d+\.\d+|::1"
+    r"|10\.\d+\.\d+\.\d+"
+    r"|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+"
+    r"|192\.168\.\d+\.\d+)$"
+)
+
+
+def _validate_pt_state(state: dict) -> dict:
+    """Schema-validate routing.json before use. Raises ValueError on violation."""
+    from jsonschema import ValidationError, validate
+
+    try:
+        validate(state, _PT_STATE_SCHEMA)
+    except ValidationError as exc:
+        raise ValueError(f"routing.json schema violation: {exc.message}") from exc
+    for key in (
+        "mac_lmstudio_endpoint",
+        "lmstudio_endpoint",
+        "manager_endpoint",
+        "coder_endpoint",
+    ):
+        url = state.get(key, "")
+        if not url:
+            continue
+        host = urlparse(url if "://" in url else f"http://{url}").hostname or ""
+        if host and not _ALLOWED_ENDPOINT_HOST_RE.match(host):
+            raise ValueError(
+                f"routing.json {key}={url!r} resolves to non-RFC-1918 host {host!r}. "
+                "Only localhost and RFC-1918 addresses are permitted."
+            )
+    return state
+
+
 def _load_pt_state() -> dict | None:
     """
     Load and parse the PT agents state JSON from the path specified by the PT_AGENTS_STATE environment variable.
@@ -453,7 +514,10 @@ def _load_pt_state() -> dict | None:
     state_path = os.getenv("PT_AGENTS_STATE")
     if state_path and Path(state_path).exists():
         with open(state_path, encoding="utf-8") as f:
-            return json.load(f)
+            state = json.load(f)
+        if isinstance(state, dict):
+            return _validate_pt_state(state)
+        raise ValueError("routing.json must be a JSON object")
     return None
 
 
