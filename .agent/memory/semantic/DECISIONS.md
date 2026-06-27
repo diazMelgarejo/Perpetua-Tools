@@ -318,3 +318,25 @@ there is no `.\windows\` folder at repo root.
 
 **Status:** active — PRs orama [#113](https://github.com/diazMelgarejo/orama-system/pull/113), PT [#154](https://github.com/diazMelgarejo/Perpetua-Tools/pull/154); lessons `lesson_a0d29898cd65`, `lesson_e45608de48c0`, `lesson_34bb51037fce`, `lesson_1171086a7740`, `lesson_2abff9b4e522`
 
+---
+
+## 2026-06-27: Branch triage uses tree-twin scan, not merge-base counts
+
+**Decision:** After any suspected `main` rewrite, classify local branches with
+`scripts/git/reanchor_scan.sh` + `git cherry -v`, not `git merge-base` failure or
+ahead/behind counts alone. Save a markdown catalog
+(`.agent/memory/working/BRANCH_COMPARISON_<date>.md`) before rebase, delete, or
+history surgery.
+
+**Rationale:** 2026-06-27 triage misclassified `cursor/critical-bug-investigation-0df5`
+as unrelated orphan (647 behind); tree-twin showed tip byte-identical to `ad702c5` on
+`origin/main` — zero `+` cherry commits. Naive metrics waste rebase effort and risk
+destroying branch identity.
+
+**Alternatives considered:** `git rebase origin/main` on all unmerged heads — rejected
+for rewrite-boundary branches; flatten to `origin/main` — rejected per git-history-surgery
+non-negotiables.
+
+**Status:** active — catalog `.agent/memory/working/BRANCH_COMPARISON_2026-06-27.md`;
+skills: orama `git-history-surgery` → `reanchor-after-rewrite.md`, PT `scripts/git/reanchor_scan.sh`
+
