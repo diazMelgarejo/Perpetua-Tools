@@ -9,22 +9,74 @@
 - Vendor quirks ("service X rate-limits at 60 rpm, not the documented 100")
 - Domain-specific terminology
 
-## Windows Development Environment (verified 2026-06-25)
+## Windows Development Environment (verified 2026-06-26)
 
-### bash.exe — present but not on cmd.exe PATH
-- `bash.exe` is at `C:\Program Files\Git\usr\bin\bash.exe` (also `\bin\bash.exe`).
-- It IS on the Git Bash session PATH; NOT on cmd.exe's system PATH.
-- Any tool spawning via cmd.exe (`shell: true` in Node/bun on Windows) cannot find bash.
-- Claude Code's Bash tool runs its own bash at `/usr/bin/bash` — env vars there don't
-  cross into PowerShell and vice-versa.
+Canonical bootstrap (PowerShell, run before git push/rebase/pytest on the RTX host):
+`orama-system/bin/orama-system/skills/git-history-surgery/references/windows-powershell-runtime-bootstrap.md`
 
-### gstack brain-sync Windows fix — `.cmd` wrapper (gstack issue #1731)
-- `gstack-gbrain-sync.ts` uses `NEEDS_SHELL_ON_WINDOWS = process.platform === "win32"`,
-  so bun spawns `gstack-brain-sync` via cmd.exe, which can't exec bash shebangs.
-- Fix: `~/.claude/skills/gstack/bin/gstack-brain-sync.cmd` wrapper created 2026-06-25.
-  Calls `C:\Program Files\Git\usr\bin\bash.exe` with the script path explicitly.
-- Pattern: any bash shebang script in `~/.claude/skills/gstack/bin/` that needs to be
-  callable from bun/Node.js on Windows needs a matching `.cmd` shim.
+### Stable shim directory — `%USERPROFILE%\.lmstudio\bin`
+- User-owned, survives LM Studio / GitHub Desktop version bumps. Holds lightweight
+  `git.cmd`, `node.cmd`, `npm.cmd` wrappers — not full tool installs.
+- Node runtime: `%USERPROFILE%\.lmstudio\.internal\utils\node.exe` (LM Studio bundle).
+- npm global prefix: `%USERPROFILE%\.lmstudio` so `npm install -g` CLIs land in the shim bin.
+- npm-generated `.ps1` launchers expect `node.exe` beside them; a hardlink from
+  `%USERPROFILE%\.lmstudio\bin\node.exe` → the bundled node keeps globals working without elevation.
+- **Never** symlink dev tools into versioned app install folders (e.g. `GitHubDesktop\app-*`).
+
+### Git shim — dynamic GitHub Desktop discovery
+- `%USERPROFILE%\.lmstudio\bin\git.cmd` should find the **latest** GitHub Desktop bundle:
+  `%LOCALAPPDATA%\GitHubDesktop\app-*\resources\app\git` (sort by `LastWriteTime`, take newest).
+  Do **not** hardcode `app-3.5.9-beta3` or any pinned version path.
+- Before invoking `cmd\git.exe`, prepend **both** helper dirs and set exec path:
+  - `PATH` += `…\mingw64\bin;…\cmd` (order matters)
+  - `GIT_EXEC_PATH` = `…\mingw64\bin` (contains `git-remote-https.exe`)
+- Symptom when misconfigured: `git: 'remote-https' is not a git command` even though
+  `git --exec-path` looks correct — the child process lacks `mingw64\bin` on PATH.
+- PowerShell gotchas: quote `git rev-parse --abbrev-ref '@{u}'` (bare `@{u}` is a hashtable);
+  avoid `&&` in older PowerShell; separate commands or use native control flow.
+- Explicit Python for scripts/tests: `%PERPETUA_TOOLS_ROOT%\.venv\Scripts\python.exe`
+  (plain `python` may resolve to the Windows Store alias).
+
+```powershell
+$lmBin = "$env:USERPROFILE\.lmstudio\bin"
+$gitRoot = Get-ChildItem "$env:LOCALAPPDATA\GitHubDesktop" -Directory -Filter "app-*" |
+  Sort-Object LastWriteTime -Descending | Select-Object -First 1 |
+  ForEach-Object { Join-Path $_.FullName "resources\app\git" }
+$env:PATH = "$lmBin;$gitRoot\mingw64\bin;$gitRoot\cmd;$env:PATH"
+$env:GIT_EXEC_PATH = "$gitRoot\mingw64\bin"
+```
+
+### bash.exe — present on some hosts, absent from cmd.exe PATH
+- Git Bash sessions see `bash.exe`; **cmd.exe** and Node/bun spawns with `shell: true` do not.
+- GitHub Desktop's bundle often ships `usr\bin\sh.exe` but **no** literal `bash.exe`.
+  Do not assume full Git for Windows is installed.
+- `HERMES_GIT_BASH_PATH` must point at a real `bash.exe` (Hermes harness, explicit bash
+  wrappers). Discover under GitHub Desktop or install Git for Windows / WSL2 git bash.
+- Test-only shim when pytest/shell tests need literal `bash` (keep outside the repo):
+
+```powershell
+$tmpBashDir = Join-Path $env:TEMP "codex-bash-shim"
+New-Item -ItemType Directory -Force -Path $tmpBashDir | Out-Null
+Copy-Item -Force "$gitRoot\usr\bin\sh.exe" (Join-Path $tmpBashDir "bash.exe")
+$env:PATH = "$tmpBashDir;$gitRoot\usr\bin;$env:PATH"
+```
+
+- Claude Code's Bash tool uses its own `/usr/bin/bash` — env vars do not cross into PowerShell
+  and vice versa. Export per session when needed.
+
+### gbrain + gstack shims (gstack issue #1731)
+- `gbrain` installed via npm/bun is a **`gbrain.cmd` / `gbrain.ps1` shim** on Windows.
+  Direct `spawn("gbrain", …)` without `shell: true` → ENOENT ("brain-sync exited undefined").
+- gstack centralizes this: `NEEDS_SHELL_ON_WINDOWS = process.platform === "win32"` in
+  `lib/gbrain-exec.ts`; every `spawnGbrain` / `spawnGbrainAsync` / brain-sync spawn sets
+  `shell: NEEDS_SHELL_ON_WINDOWS`. Static tripwire: `test/gbrain-spawn-windows-shell.test.ts`.
+- `gstack-brain-sync` is a **bash shebang** at `~/.claude/skills/gstack/bin/gstack-brain-sync`.
+  cmd.exe cannot exec shebangs — add a sibling **`gstack-brain-sync.cmd`** that invokes
+  bash explicitly, e.g. `"%HERMES_GIT_BASH_PATH%" "%~dp0gstack-brain-sync" %*` (or resolve
+  bash from the same `$gitRoot` discovery above). Any bash script in that `bin/` tree that
+  bun/Node must call on Windows needs the same `.cmd` shim pattern.
+- `.cmd`/`.bat` files require **CRLF** line endings (`*.cmd text eol=crlf` in `.gitattributes`);
+  LF-only batch files fail silently under cmd.exe.
 
 ### LLAMA_SERVER_BASE_URL — already in PowerShell profile, never missing
 - `%USERPROFILE%\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` line 1:
@@ -35,6 +87,12 @@
 ### git -C flag required for orama-system in bash sessions
 - The bash tool's cwd may differ from the `ultrathink-system` git root.
 - Always use: `git -C "$ORAMA_SYSTEM_PATH" <subcommand>` for reliable results.
+
+### Windows toolchain verification
+After bootstrap or shim changes, run in PowerShell:
+`git --version`; `node --version`; `npm --version`;
+`& $env:HERMES_GIT_BASH_PATH --noprofile --norc -lc 'echo hermes-bash-ok'` (when Hermes/bash wrappers matter);
+`~/.claude/skills/gstack/bin/gstack-brain-sync --status` (or `.cmd` variant on Windows).
 
 ## Seeds
 _(empty — populate as you go)_
