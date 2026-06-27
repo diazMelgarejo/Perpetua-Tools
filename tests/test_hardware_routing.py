@@ -524,44 +524,47 @@ def test_manager_affinity_violation_degrades_gracefully_with_override(monkeypatc
     )
 
 
-def test_mac_lms_url_defaults_to_localhost_on_mac(monkeypatch):
+def test_mac_lms_url_defaults_to_localhost_on_mac(monkeypatch, request):
     """40d3f65 fixed alphaclaw_bootstrap but agent_launcher MAC_LMS still used LAN IP."""
     import importlib
+    import perpetua_tools.agent_launcher as agent_launcher
+
+    request.addfinalizer(lambda: importlib.reload(agent_launcher))
 
     monkeypatch.setenv("ORAMA_PLATFORM", "mac")
     monkeypatch.delenv("LM_STUDIO_MAC_ENDPOINT", raising=False)
     monkeypatch.delenv("MAC_LMS_HOST", raising=False)
     monkeypatch.delenv("MAC_LMS_PORT", raising=False)
 
-    import perpetua_tools.agent_launcher as agent_launcher
-
     importlib.reload(agent_launcher)
     assert agent_launcher.MAC_LMS_URL == "http://localhost:1234"
 
 
-def test_mac_lms_url_heals_stale_lan_env_on_mac(monkeypatch):
+def test_mac_lms_url_heals_stale_lan_env_on_mac(monkeypatch, request):
     import importlib
+    import perpetua_tools.agent_launcher as agent_launcher
+
+    request.addfinalizer(lambda: importlib.reload(agent_launcher))
 
     monkeypatch.setenv("ORAMA_PLATFORM", "mac")
     monkeypatch.setenv("LM_STUDIO_MAC_ENDPOINT", "http://192.168.1.50:1234")
     monkeypatch.delenv("MAC_LMS_HOST", raising=False)
 
-    import perpetua_tools.agent_launcher as agent_launcher
-
     importlib.reload(agent_launcher)
     assert agent_launcher.MAC_LMS_URL == "http://localhost:1234"
 
 
-def test_mac_lms_url_heals_stale_mac_lms_host_on_mac(monkeypatch):
+def test_mac_lms_url_heals_stale_mac_lms_host_on_mac(monkeypatch, request):
     """MAC_LMS_HOST in .env.local has higher priority than LM_STUDIO_MAC_ENDPOINT."""
     import importlib
+    import perpetua_tools.agent_launcher as agent_launcher
+
+    request.addfinalizer(lambda: importlib.reload(agent_launcher))
 
     monkeypatch.setenv("ORAMA_PLATFORM", "mac")
     monkeypatch.delenv("LM_STUDIO_MAC_ENDPOINT", raising=False)
     monkeypatch.setenv("MAC_LMS_HOST", "192.168.254.110")
     monkeypatch.delenv("MAC_LMS_PORT", raising=False)
-
-    import perpetua_tools.agent_launcher as agent_launcher
 
     importlib.reload(agent_launcher)
     assert agent_launcher.MAC_LMS_URL == "http://localhost:1234"
