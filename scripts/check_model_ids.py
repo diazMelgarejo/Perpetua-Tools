@@ -9,6 +9,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
+def _rel(path: Path) -> str:
+    """Return path relative to ROOT if possible, else the bare filename."""
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return path.name
+
+
 # Only known-good IDs may appear in scanned config files.
 # Add new IDs here when a model is adopted — never add partial strings.
 ALLOWED_MODEL_IDS = {
@@ -47,7 +55,7 @@ _ALLOWED_LC = {m.lower() for m in ALLOWED_MODEL_IDS}
 MODEL_YML = ROOT / "config" / "models.yml"
 ENV_EXAMPLE = ROOT / ".env.example"
 
-_NAME_RE = re.compile(r"^\s*name:\s*[\"']?([^\"'\n#]+)", re.MULTILINE)
+_NAME_RE = re.compile(r"^\s*-?\s*name:\s*[\"']?([^\"'\n#]+)", re.MULTILINE)
 _API_MODEL_RE = re.compile(r"^\s*api_model:\s*[\"']?([^\"'\n#]+)", re.MULTILINE)
 _ENV_MODEL_RE = re.compile(
     r"^(?:[A-Z][A-Z0-9_]*MODEL[A-Z0-9_]*)=([^\s#]+)",
@@ -70,15 +78,15 @@ def _check_model_id(model_id: str, source: str, line_hint: str) -> str | None:
 
 def scan_models_yml() -> list[str]:
     if not MODEL_YML.is_file():
-        return [f"missing required file: {MODEL_YML.relative_to(ROOT)}"]
+        return [f"missing required file: {_rel(MODEL_YML)}"]
     text = MODEL_YML.read_text(encoding="utf-8")
     violations: list[str] = []
     for match in _NAME_RE.finditer(text):
-        err = _check_model_id(match.group(1), str(MODEL_YML.relative_to(ROOT)), "name:")
+        err = _check_model_id(match.group(1), str(_rel(MODEL_YML)), "name:")
         if err:
             violations.append(err)
     for match in _API_MODEL_RE.finditer(text):
-        err = _check_model_id(match.group(1), str(MODEL_YML.relative_to(ROOT)), "api_model:")
+        err = _check_model_id(match.group(1), str(_rel(MODEL_YML)), "api_model:")
         if err:
             violations.append(err)
     return violations
@@ -86,11 +94,11 @@ def scan_models_yml() -> list[str]:
 
 def scan_env_example() -> list[str]:
     if not ENV_EXAMPLE.is_file():
-        return [f"missing required file: {ENV_EXAMPLE.relative_to(ROOT)}"]
+        return [f"missing required file: {_rel(ENV_EXAMPLE)}"]
     text = ENV_EXAMPLE.read_text(encoding="utf-8")
     violations: list[str] = []
     for match in _ENV_MODEL_RE.finditer(text):
-        err = _check_model_id(match.group(1), str(ENV_EXAMPLE.relative_to(ROOT)), match.group(0).split("=")[0])
+        err = _check_model_id(match.group(1), str(_rel(ENV_EXAMPLE)), match.group(0).split("=")[0])
         if err:
             violations.append(err)
     return violations
