@@ -517,6 +517,11 @@ def _validate_endpoint_host(key: str, url: str, *, cloud: bool = False) -> None:
     if not host:
         raise ValueError(f"routing.json {key}={url!r} is missing a hostname.")
     if cloud:
+        if parsed.scheme != "https":
+            raise ValueError(
+                f"routing.json {key}={url!r} must use https for cloud coder "
+                "backends — cleartext http would expose the cloud API key."
+            )
         if not _ALLOWED_CLOUD_HOST_RE.match(host):
             raise ValueError(
                 f"routing.json {key}={url!r} resolves to disallowed cloud host {host!r}. "

@@ -79,11 +79,16 @@ def main() -> int:
             continue
         try:
             source = py.read_text(encoding="utf-8")
-            tree = ast.parse(source, filename=rel)
         except OSError:
             continue
+        try:
+            tree = ast.parse(source, filename=rel)
         except SyntaxError:
-            continue
+            # Unparseable files still get the keyword check; only AST-based
+            # import detection is skipped. This preserves the raw-source
+            # fallback path: a file with syntax errors but policy keywords
+            # without the canonical import is still flagged as a violation.
+            tree = None
         if not _mentions_policy_keywords(source):
             continue
         if not _imports_hardware_policy(tree):
