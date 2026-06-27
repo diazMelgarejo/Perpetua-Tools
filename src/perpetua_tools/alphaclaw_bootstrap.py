@@ -502,6 +502,11 @@ def _validate_endpoint_host(key: str, url: str, *, cloud: bool = False) -> None:
         raise ValueError(
             f"routing.json {key}={url!r} must use localhost or a loopback/RFC-1918 IP."
         ) from exc
+    if addr.is_link_local:
+        raise ValueError(
+            f"routing.json {key}={url!r} resolves to link-local host {host!r}. "
+            "Only localhost and RFC-1918 addresses are permitted."
+        )
     if not (addr.is_loopback or addr.is_private):
         raise ValueError(
             f"routing.json {key}={url!r} resolves to non-RFC-1918 host {host!r}. "
