@@ -12,7 +12,7 @@
 ## Windows Development Environment (verified 2026-06-26)
 
 Canonical bootstrap (PowerShell, run before git push/rebase/pytest on the RTX host):
-`bin/orama-system/skills/git-history-surgery/references/windows-powershell-runtime-bootstrap.md` (in `diazMelgarejo/orama-system`)
+[`bin/orama-system/skills/git-history-surgery/references/windows-powershell-runtime-bootstrap.md`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/git-history-surgery/references/windows-powershell-runtime-bootstrap.md)
 
 ### Stable shim directory — `%USERPROFILE%\.lmstudio\bin`
 - User-owned, survives LM Studio / GitHub Desktop version bumps. Holds lightweight
@@ -36,6 +36,11 @@ Canonical bootstrap (PowerShell, run before git push/rebase/pytest on the RTX ho
   avoid `&&` in older PowerShell; separate commands or use native control flow.
 - Explicit Python for scripts/tests: `%PERPETUA_TOOLS_ROOT%\.venv\Scripts\python.exe`
   (plain `python` may resolve to the Windows Store alias).
+  `%PERPETUA_TOOLS_ROOT%` must be set before use — define it in one of:
+  - **System environment variables** (Control Panel → System → Advanced)
+  - **PowerShell profile** (`$PROFILE`): `$env:PERPETUA_TOOLS_ROOT = "C:\path\to\Perpetua-Tools"`
+  - **Harness bootstrap** (`start.ps1`): the Hermes/Codex bootstrap exports it automatically
+    when launching from the repo root.
 
 ```powershell
 $lmBin = "$env:USERPROFILE\.lmstudio\bin"
@@ -90,9 +95,21 @@ $env:PATH = "$tmpBashDir;$gitRoot\usr\bin;$env:PATH"
 
 ### Windows toolchain verification
 After bootstrap or shim changes, run in PowerShell:
-`git --version`; `node --version`; `npm --version`;
-`& $env:HERMES_GIT_BASH_PATH --noprofile --norc -lc 'echo hermes-bash-ok'` (when Hermes/bash wrappers matter);
-`~/.claude/skills/gstack/bin/gstack-brain-sync --status` (or `.cmd` variant on Windows).
+
+```powershell
+# Core toolchain
+git --version
+node --version
+npm --version
+
+# Hermes/bash wrapper (when Hermes wrappers are in scope)
+& $env:HERMES_GIT_BASH_PATH --noprofile --norc -lc 'echo hermes-bash-ok'
+
+# gstack-brain-sync (two variants — use .cmd when bash-shebang wrapper is unavailable,
+# e.g. in plain PowerShell sessions without Git Bash on PATH)
+gstack-brain-sync --status                          # bash-shebang variant (requires Git Bash)
+~/.claude/skills/gstack/bin/gstack-brain-sync.cmd --status  # .cmd variant (pure PowerShell)
+```
 
 ## Seeds
 _(empty — populate as you go)_
