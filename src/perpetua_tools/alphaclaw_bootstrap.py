@@ -49,9 +49,45 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 SCRIPT_DIR = Path(__file__).resolve().parents[2]
-OPENCLAW_GATEWAY_PORT = int(os.getenv("OPENCLAW_GATEWAY_PORT", "18789"))
 
-_extra = [int(p) for p in os.getenv("OPENCLAW_EXTRA_PORTS", "").split(",") if p.strip()]
+
+def _parse_single_port(raw: str, *, default: int, env_name: str) -> int:
+    try:
+        port = int(raw)
+    except ValueError:
+        print(f"[alphaclaw] ⚠  Invalid {env_name}: {raw!r}; using {default}")
+        return default
+    if not 1 <= port <= 65535:
+        print(f"[alphaclaw] ⚠  Out-of-range {env_name}: {port}; using {default}")
+        return default
+    return port
+
+
+OPENCLAW_GATEWAY_PORT = _parse_single_port(
+    os.getenv("OPENCLAW_GATEWAY_PORT", "18789"),
+    default=18789,
+    env_name="OPENCLAW_GATEWAY_PORT",
+)
+
+
+def _parse_port_list(raw: str) -> list[int]:
+    """Parse comma-separated port env vars; skip invalid tokens instead of crashing."""
+    ports: list[int] = []
+    for token in raw.split(","):
+        token = token.strip()
+        if not token:
+            continue
+        try:
+            port = int(token)
+        except ValueError:
+            print(f"[alphaclaw] ⚠  Ignoring invalid port in OPENCLAW_EXTRA_PORTS: {token!r}")
+            continue
+        if 1 <= port <= 65535:
+            ports.append(port)
+    return ports
+
+
+_extra = _parse_port_list(os.getenv("OPENCLAW_EXTRA_PORTS", ""))
 # Probe AlphaClaw's default (18789) AND OpenClaw's native gateway (19001, also the
 # --dev port) so a running OpenClaw instance is discovered + commandeered rather
 # than missed — otherwise a live OpenClaw on 19001 would be ignored and we'd
@@ -163,7 +199,7 @@ def _locality_resolve_endpoint(
                 file=sys.stderr,
             )
         return healed
-    return url
+    return canonical
 
 
 # Each endpoint resolves to localhost when this process runs ON the target machine.
