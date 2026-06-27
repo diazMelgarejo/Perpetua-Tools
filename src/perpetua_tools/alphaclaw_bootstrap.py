@@ -86,6 +86,19 @@ WIN_IP     = os.getenv("WIN_IP",  "192.168.254.108")  # LAN IP; only used cross-
 _LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 
 
+def _endpoint_port(parsed, default: int) -> int:
+    """Return parsed port or *default*, tolerating malformed urlparse ports."""
+    try:
+        return parsed.port or default
+    except ValueError:
+        return default
+
+
+def _first_csv_endpoint(value: str) -> str:
+    """First comma-separated endpoint (LM_STUDIO_WIN_ENDPOINTS is often a CSV list)."""
+    return value.split(",")[0].strip() if value else ""
+
+
 def _locality_resolve_endpoint(
     env_var: str,
     *,
@@ -97,18 +110,19 @@ def _locality_resolve_endpoint(
 
     When bootstrap runs ON the target machine, a stale LAN IP in the env var
   (e.g. from start.sh cross-machine exports) must normalize to localhost —
-    matching agent_launcher.py OLLAMA_MAC self-heal (40d3f65 fixed defaults only).
+    matching agent_launcher.py resolve_local_or_remote() (40d3f65 fixed defaults only).
     """
     raw = os.getenv(env_var, "").strip()
-    url = raw or default
+    raw_first = _first_csv_endpoint(raw)
+    url = raw_first or _first_csv_endpoint(default) or default
     if not running_on_target:
         return url
     parsed = urlparse(url if "://" in url else f"http://{url}")
     if parsed.hostname not in _LOOPBACK_HOSTS:
-        healed = f"http://localhost:{parsed.port or port}"
+        healed = f"http://localhost:{_endpoint_port(parsed, port)}"
         if raw:
             print(
-                f"[alphaclaw] WARNING: {env_var}={url} is non-loopback but bootstrap "
+                f"[alphaclaw] WARNING: {env_var}={raw} is non-loopback but bootstrap "
                 f"runs on the target machine — normalizing to {healed}",
                 file=sys.stderr,
             )

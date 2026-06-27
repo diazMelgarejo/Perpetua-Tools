@@ -37,6 +37,19 @@ def test_locality_resolve_endpoint_heals_stale_lan_on_windows(monkeypatch):
     assert alphaclaw_bootstrap.OLLAMA_WIN == "http://localhost:11434"
 
 
+def test_locality_resolve_endpoint_heals_csv_lms_win_on_windows(monkeypatch):
+    """Comma-separated LM_STUDIO_WIN_ENDPOINTS must not crash import on Windows."""
+    _reload_bootstrap(
+        monkeypatch,
+        ORAMA_PLATFORM="windows",
+        LM_STUDIO_WIN_ENDPOINTS=(
+            "http://192.168.254.108:1234,http://192.168.254.100:1234"
+        ),
+    )
+    assert alphaclaw_bootstrap.RUNNING_ON_WINDOWS is True
+    assert alphaclaw_bootstrap.LMS_WIN == "http://localhost:1234"
+
+
 def test_locality_resolve_endpoint_preserves_lan_when_remote(monkeypatch):
     """Mac bootstrap must keep Windows LAN endpoint when not running on Windows."""
     _reload_bootstrap(
