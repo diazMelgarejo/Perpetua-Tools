@@ -39,6 +39,13 @@ repos:
         pass_filenames: false
         types: [python, yaml, json]
 
+      - id: model-id-allowlist
+        name: "Model ID positive allowlist (T2-B)"
+        entry: python scripts/check_model_ids.py
+        language: system
+        pass_filenames: false
+        always_run: true
+
 
       - id: env-assignment-syntax
         name: "Reject invalid env assignment spacing"
