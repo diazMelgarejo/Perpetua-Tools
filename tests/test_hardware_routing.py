@@ -568,3 +568,19 @@ def test_mac_lms_url_heals_stale_mac_lms_host_on_mac(monkeypatch, request):
 
     importlib.reload(agent_launcher)
     assert agent_launcher.MAC_LMS_URL == "http://localhost:1234"
+
+
+def test_windows_ip_heals_stale_lan_env_on_windows(monkeypatch, request):
+    """Stale WINDOWS_IP in .env.local must normalize to localhost on Windows."""
+    import importlib
+    import perpetua_tools.agent_launcher as agent_launcher
+
+    request.addfinalizer(lambda: importlib.reload(agent_launcher))
+
+    monkeypatch.setenv("ORAMA_PLATFORM", "windows")
+    monkeypatch.setenv("WINDOWS_IP", "192.168.254.108")
+    monkeypatch.delenv("LM_STUDIO_WIN_ENDPOINTS", raising=False)
+
+    importlib.reload(agent_launcher)
+    assert agent_launcher.WINDOWS_IP == "localhost"
+    assert agent_launcher.REMOTE_WINDOWS_LMS_URL == "http://localhost:1234"

@@ -346,6 +346,27 @@ def test_heal_pt_endpoint_url_heals_to_localhost_when_on_target(monkeypatch):
     assert result == "http://localhost:11434"
 
 
+def test_locality_resolve_endpoint_canonicalizes_bare_loopback_on_target(monkeypatch):
+    """Bare localhost:port on the target machine must still gain http:// scheme."""
+    _reload_bootstrap(
+        monkeypatch,
+        ORAMA_PLATFORM="mac",
+        LM_STUDIO_MAC_ENDPOINT="localhost:1234",
+    )
+    assert alphaclaw_bootstrap.LMS_MAC == "http://localhost:1234"
+
+
+def test_heal_pt_endpoint_url_canonicalizes_bare_loopback_on_target(monkeypatch):
+    """routing.json bare loopback endpoints must not bypass _canonical_endpoint."""
+    _reload_bootstrap(monkeypatch, ORAMA_PLATFORM="mac")
+    result = alphaclaw_bootstrap._heal_pt_endpoint_url(
+        "localhost:11434",
+        running_on_target=True,
+        port=11434,
+    )
+    assert result == "http://localhost:11434"
+
+
 def test_allowed_endpoint_host_re_accepts_rfc1918():
     """_ALLOWED_ENDPOINT_HOST_RE must accept all valid RFC-1918 ranges."""
     regex = alphaclaw_bootstrap._ALLOWED_ENDPOINT_HOST_RE
