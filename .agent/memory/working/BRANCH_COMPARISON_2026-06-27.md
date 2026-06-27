@@ -88,3 +88,22 @@ git cherry -v origin/main <tip> <twin-base-from-scan>
 # Case A re-anchor (tip already in main)
 git branch -f <branch> <twin-sha>   # or detach worktree at twin first
 ```
+
+---
+
+## Memory distillation (append 2026-06-27)
+
+Gold nuggets from this catalog appended to (no replacements):
+
+| Layer | Location |
+|-------|----------|
+| Sticky skill routing + 6 nuggets | `.agent/memory/semantic/DOMAIN_KNOWLEDGE.md` § Git operations — gold nuggets |
+| Decision | `.agent/memory/semantic/DECISIONS.md` § 2026-06-27 tree-twin scan |
+| Episodic | `.agent/memory/episodic/AGENT_LEARNINGS.jsonl` — `branch-catalog-gold-nuggets-appended` |
+| Lessons | `lesson_154b34159790`, `lesson_021fe0145c18`, `lesson_aad58ebed148` → `semantic/LESSONS.md` |
+| Working pointer | `.agent/memory/working/WORKSPACE.md` (append section) |
+---
+
+## Superseded by complete catalog
+
+Full tree-twin + cherry inventory: [`BRANCH_CATALOG_COMPLETE_2026-06-27.md`](BRANCH_CATALOG_COMPLETE_2026-06-27.md) (generated same session, all branches verified).
