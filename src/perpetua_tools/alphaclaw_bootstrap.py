@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import ipaddress
 import json
 import os
 import re
@@ -48,9 +49,45 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 SCRIPT_DIR = Path(__file__).resolve().parents[2]
-OPENCLAW_GATEWAY_PORT = int(os.getenv("OPENCLAW_GATEWAY_PORT", "18789"))
 
-_extra = [int(p) for p in os.getenv("OPENCLAW_EXTRA_PORTS", "").split(",") if p.strip()]
+
+def _parse_single_port(raw: str, *, default: int, env_name: str) -> int:
+    try:
+        port = int(raw)
+    except ValueError:
+        print(f"[alphaclaw] ⚠  Invalid {env_name}: {raw!r}; using {default}")
+        return default
+    if not 1 <= port <= 65535:
+        print(f"[alphaclaw] ⚠  Out-of-range {env_name}: {port}; using {default}")
+        return default
+    return port
+
+
+OPENCLAW_GATEWAY_PORT = _parse_single_port(
+    os.getenv("OPENCLAW_GATEWAY_PORT", "18789"),
+    default=18789,
+    env_name="OPENCLAW_GATEWAY_PORT",
+)
+
+
+def _parse_port_list(raw: str) -> list[int]:
+    """Parse comma-separated port env vars; skip invalid tokens instead of crashing."""
+    ports: list[int] = []
+    for token in raw.split(","):
+        token = token.strip()
+        if not token:
+            continue
+        try:
+            port = int(token)
+        except ValueError:
+            print(f"[alphaclaw] ⚠  Ignoring invalid port in OPENCLAW_EXTRA_PORTS: {token!r}")
+            continue
+        if 1 <= port <= 65535:
+            ports.append(port)
+    return ports
+
+
+_extra = _parse_port_list(os.getenv("OPENCLAW_EXTRA_PORTS", ""))
 # Probe AlphaClaw's default (18789) AND OpenClaw's native gateway (19001, also the
 # --dev port) so a running OpenClaw instance is discovered + commandeered rather
 # than missed — otherwise a live OpenClaw on 19001 would be ignored and we'd
@@ -162,7 +199,7 @@ def _locality_resolve_endpoint(
                 file=sys.stderr,
             )
         return healed
-    return url
+    return canonical
 
 
 # Each endpoint resolves to localhost when this process runs ON the target machine.
@@ -460,6 +497,8 @@ _PT_STATE_SCHEMA = {
                 "mac-lmstudio",
                 "mac-ollama",
                 "mac-degraded",
+                "perplexity",
+                "anthropic",
                 "unknown",
             ],
         },
@@ -469,12 +508,41 @@ _PT_STATE_SCHEMA = {
     "additionalProperties": True,
 }
 
-_ALLOWED_ENDPOINT_HOST_RE = re.compile(
-    r"^(localhost|127\.\d+\.\d+\.\d+|::1"
-    r"|10\.\d+\.\d+\.\d+"
-    r"|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+"
-    r"|192\.168\.\d+\.\d+)$"
-)
+_CLOUD_CODER_BACKENDS = frozenset({"perplexity", "anthropic"})
+_ALLOWED_CLOUD_HOST_RE = re.compile(r"^(api\.perplexity\.ai|api\.anthropic\.com)$")
+
+
+def _validate_endpoint_host(key: str, url: str, *, cloud: bool = False) -> None:
+    """Reject malformed hosts; enforce localhost/RFC-1918 or allowed cloud APIs."""
+    parsed = urlparse(url if "://" in url else f"http://{url}")
+    host = parsed.hostname
+    if not host:
+        raise ValueError(f"routing.json {key}={url!r} is missing a hostname.")
+    if cloud:
+        if parsed.scheme != "https":
+            raise ValueError(
+                f"routing.json {key}={url!r} must use https for cloud coder "
+                "backends — cleartext http would expose the cloud API key."
+            )
+        if not _ALLOWED_CLOUD_HOST_RE.match(host):
+            raise ValueError(
+                f"routing.json {key}={url!r} resolves to disallowed cloud host {host!r}. "
+                "Only api.perplexity.ai and api.anthropic.com are permitted for cloud coder backends."
+            )
+        return
+    if host == "localhost":
+        return
+    try:
+        addr = ipaddress.ip_address(host)
+    except ValueError as exc:
+        raise ValueError(
+            f"routing.json {key}={url!r} must use localhost or a loopback/RFC-1918 IP."
+        ) from exc
+    if not (addr.is_loopback or addr.is_private):
+        raise ValueError(
+            f"routing.json {key}={url!r} resolves to non-RFC-1918 host {host!r}. "
+            "Only localhost and RFC-1918 addresses are permitted."
+        )
 
 
 def _validate_pt_state(state: dict) -> dict:
@@ -485,6 +553,7 @@ def _validate_pt_state(state: dict) -> dict:
         validate(state, _PT_STATE_SCHEMA)
     except ValidationError as exc:
         raise ValueError(f"routing.json schema violation: {exc.message}") from exc
+    coder_backend = state.get("coder_backend", "")
     for key in (
         "mac_lmstudio_endpoint",
         "lmstudio_endpoint",
@@ -494,12 +563,11 @@ def _validate_pt_state(state: dict) -> dict:
         url = state.get(key, "")
         if not url:
             continue
-        host = urlparse(url if "://" in url else f"http://{url}").hostname or ""
-        if host and not _ALLOWED_ENDPOINT_HOST_RE.match(host):
-            raise ValueError(
-                f"routing.json {key}={url!r} resolves to non-RFC-1918 host {host!r}. "
-                "Only localhost and RFC-1918 addresses are permitted."
-            )
+        _validate_endpoint_host(
+            key,
+            url,
+            cloud=(key == "coder_endpoint" and coder_backend in _CLOUD_CODER_BACKENDS),
+        )
     return state
 
 
