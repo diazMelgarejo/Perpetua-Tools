@@ -56,7 +56,7 @@ Generated: **2026-06-27 10:07 UTC**
 
 #### `2026-06-11-001-win-endpoint-discovery-sync`
 
-```
+```text
 + fdccd5b75ebb91776f11db52ceb21416950e2b7b auto-save: pre-compaction checkpoint
 + 6ebe3babcca51c80fabd80b93779a21919b8c65b fix(routing): Win endpoint tracks live discovery + syncs all holders
 + 2fc8c24143a7b0beebc10a80c05696f4f9a7ba82 feat(routing): derive model `online` from a live probe, not static config
@@ -66,26 +66,26 @@ Generated: **2026-06-27 10:07 UTC**
 
 #### `2026-06-26--dev-recalib-cursor-agent`
 
-```
+```text
 + f78d5c251dfe5a90a16bee4e05fc4ca30367b30c chore(agent): 2026-06-26 dev-recalib — branch triage, Windows shims, review queue
 + bdcfb53d0e2683c63dabfd204a5bab1e51804694 docs(agent): platform line-ending turf rule — CRLF on Windows, LF elsewhere
 ```
 
 #### `chore/domain-knowledge-windows-shims`
 
-```
+```text
 + 9435b9edf5e6384c49b4b21b91af3df3857f3824 docs(agent): steer Windows git/bash/gbrain shims into DOMAIN_KNOWLEDGE
 ```
 
 #### `clean-pt127`
 
-```
+```text
 + 1ab3ed2119484f3259bd48ad58ca54378203fb90 fix(routing): live Win endpoint tracking + Mac affinity + gateway idempotency
 ```
 
 #### `fix/ci-69`
 
-```
+```text
 + 69de745c199d0ad151c675e1d57dc518ba37f0a3 feat(mcpb): submodule Claude-Desktop-LLM and real MCPB install
 + 1f22a9a44a0fefc5cc3e520457872e9a3669e541 📝 Add docstrings to `cursor/claude-desktop-mcpb-submodule-74e2`
 + 74e53a4f2d44050213528087a5bcfcdc7818c3dd fix: apply CodeRabbit auto-fixes
@@ -96,7 +96,7 @@ Generated: **2026-06-27 10:07 UTC**
 
 #### `fix/ci-71`
 
-```
+```text
 + 69de745c199d0ad151c675e1d57dc518ba37f0a3 feat(mcpb): submodule Claude-Desktop-LLM and real MCPB install
 + 189468f4176336d2055edd2f2e8b41d0c4124c0f fix(alphaclaw-adapter): startServer pidFile opts ReferenceError
 + 1f7da496f3010bdd8fc2991773d8b94ddeb0e97b test(alphaclaw_manager): regression tests for bootstrap JSON parsing
@@ -108,7 +108,7 @@ Generated: **2026-06-27 10:07 UTC**
 
 #### `fix/pt71-onto-main`
 
-```
+```text
 + 061c0eee1ed6d7d3880436171ae7941768ff5da6 fix(alphaclaw-adapter): startServer pidFile opts ReferenceError
 + e9c4ab83343873ef0c8192ae14a968c9a55e3b78 test(alphaclaw_manager): regression tests for bootstrap JSON parsing
 + 33bb9e90f43a8218065acd15c8d3616259722e96 📝 CodeRabbit Chat: Add generated unit tests
@@ -120,7 +120,7 @@ Generated: **2026-06-27 10:07 UTC**
 
 #### `fix/pt71-review-v2`
 
-```
+```text
 + 061c0eee1ed6d7d3880436171ae7941768ff5da6 fix(alphaclaw-adapter): startServer pidFile opts ReferenceError
 + e9c4ab83343873ef0c8192ae14a968c9a55e3b78 test(alphaclaw_manager): regression tests for bootstrap JSON parsing
 + 33bb9e90f43a8218065acd15c8d3616259722e96 📝 CodeRabbit Chat: Add generated unit tests
@@ -134,13 +134,13 @@ Generated: **2026-06-27 10:07 UTC**
 
 #### `recover/2026-05-31-codex-plan-revision`
 
-```
+```text
 + 79a3ddaacd007ffbaa898742a5486d8edc67534b test(user-input-queue): isolate queue state from prior-test bleed
 ```
 
 #### `temp-recovery`
 
-```
+```text
 + 18ebde8a47ffd295ada03793b71f758be3340fb9 feat: implement 3-tier priority IP detection
 + 7492c660d506782f1802a5aa3cd704dc8f02ac90 chore: document symlink portability policy
 ```
@@ -193,7 +193,7 @@ Generated: **2026-06-27 10:07 UTC**
 
 #### `2026-06-13-001-ac-regression-repair-v2`
 
-```
+```text
 + b8c39ddc17dd34bc694b4755fce4a278ed70cd40 feat(start): ollama idempotent startup, per-profile config, MCP exposure, graceful shutdown
 + 591b9d1a8cdcbe37b2baa6e4275cca756d3d52af chore(config): openclaw auto-sorted mac-orchestrator.json (lmstudio-mac models)
 + 48bfa6d934e8c612bebc2a400f35141dc31069c4 arch: ollama first-class priority on Mac (qwen3.5:9b-nvfp4 + LM Studio Win)
@@ -204,7 +204,7 @@ Generated: **2026-06-27 10:07 UTC**
 
 #### `2026-06-13-001-post-fable5-ac-regression-repair`
 
-```
+```text
 + b8c39ddc17dd34bc694b4755fce4a278ed70cd40 feat(start): ollama idempotent startup, per-profile config, MCP exposure, graceful shutdown
 + 591b9d1a8cdcbe37b2baa6e4275cca756d3d52af chore(config): openclaw auto-sorted mac-orchestrator.json (lmstudio-mac models)
 + 48bfa6d934e8c612bebc2a400f35141dc31069c4 arch: ollama first-class priority on Mac (qwen3.5:9b-nvfp4 + LM Studio Win)
@@ -220,7 +220,7 @@ Generated: **2026-06-27 10:07 UTC**
 
 #### `2026-06-14-001-omniroute-ops-and-local-fallback`
 
-```
+```text
 + b8c39ddc17dd34bc694b4755fce4a278ed70cd40 feat(start): ollama idempotent startup, per-profile config, MCP exposure, graceful shutdown
 + 591b9d1a8cdcbe37b2baa6e4275cca756d3d52af chore(config): openclaw auto-sorted mac-orchestrator.json (lmstudio-mac models)
 + 48bfa6d934e8c612bebc2a400f35141dc31069c4 arch: ollama first-class priority on Mac (qwen3.5:9b-nvfp4 + LM Studio Win)
@@ -232,7 +232,7 @@ Generated: **2026-06-27 10:07 UTC**
 
 #### `2026-06-14-002-omniroute-settings-env-fix`
 
-```
+```text
 + b8c39ddc17dd34bc694b4755fce4a278ed70cd40 feat(start): ollama idempotent startup, per-profile config, MCP exposure, graceful shutdown
 + 591b9d1a8cdcbe37b2baa6e4275cca756d3d52af chore(config): openclaw auto-sorted mac-orchestrator.json (lmstudio-mac models)
 + 48bfa6d934e8c612bebc2a400f35141dc31069c4 arch: ollama first-class priority on Mac (qwen3.5:9b-nvfp4 + LM Studio Win)
@@ -244,20 +244,20 @@ Generated: **2026-06-27 10:07 UTC**
 
 #### `2026-06-26--dev-recalib-cursor-agent`
 
-```
+```text
 + 431a37d084207b2c899defa3e9d77bb5893cdb01 feat(tdd): 2026-06-26 dev-recalib — Vitest gate, oramasys-method wiring, Hermes prep
 + f5538647b4383315afc9322fd4f0f6c9921bcaa6 fix(windows): normalize gstack-brain-sync.cmd EOL + platform turf policy
 ```
 
 #### `fix/pr135-lint006-windows`
 
-```
+```text
 + 148c86f8606cbc5d3a1eb2c2a8a839890931312a fix(hygiene): LINT-006 Windows user-profile paths + PR #135 lesson
 ```
 
 #### `v1.1-oramasys-Fable-5-preparation-part-1`
 
-```
+```text
 + b8c39ddc17dd34bc694b4755fce4a278ed70cd40 feat(start): ollama idempotent startup, per-profile config, MCP exposure, graceful shutdown
 + 591b9d1a8cdcbe37b2baa6e4275cca756d3d52af chore(config): openclaw auto-sorted mac-orchestrator.json (lmstudio-mac models)
 + 48bfa6d934e8c612bebc2a400f35141dc31069c4 arch: ollama first-class priority on Mac (qwen3.5:9b-nvfp4 + LM Studio Win)
@@ -272,7 +272,7 @@ Generated: **2026-06-27 10:07 UTC**
 
 #### `wip/preserve-local-main-20260614`
 
-```
+```text
 + b8c39ddc17dd34bc694b4755fce4a278ed70cd40 feat(start): ollama idempotent startup, per-profile config, MCP exposure, graceful shutdown
 + 591b9d1a8cdcbe37b2baa6e4275cca756d3d52af chore(config): openclaw auto-sorted mac-orchestrator.json (lmstudio-mac models)
 + 48bfa6d934e8c612bebc2a400f35141dc31069c4 arch: ollama first-class priority on Mac (qwen3.5:9b-nvfp4 + LM Studio Win)
@@ -283,7 +283,7 @@ Generated: **2026-06-27 10:07 UTC**
 
 #### `wip/vitest-scratch`
 
-```
+```text
 + 85f59051b5705901fd2badd9c78a7e9685593332 wip: vitest scratch + tdd-gate docs (restored from stash 2026-06-26)
 ```
 
