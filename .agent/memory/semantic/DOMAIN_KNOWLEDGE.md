@@ -9,22 +9,80 @@
 - Vendor quirks ("service X rate-limits at 60 rpm, not the documented 100")
 - Domain-specific terminology
 
-## Windows Development Environment (verified 2026-06-25)
+## Windows Development Environment (verified 2026-06-26)
 
-### bash.exe — present but not on cmd.exe PATH
-- `bash.exe` is at `C:\Program Files\Git\usr\bin\bash.exe` (also `\bin\bash.exe`).
-- It IS on the Git Bash session PATH; NOT on cmd.exe's system PATH.
-- Any tool spawning via cmd.exe (`shell: true` in Node/bun on Windows) cannot find bash.
-- Claude Code's Bash tool runs its own bash at `/usr/bin/bash` — env vars there don't
-  cross into PowerShell and vice-versa.
+Canonical bootstrap (PowerShell, run before git push/rebase/pytest on the RTX host):
+[`bin/orama-system/skills/git-history-surgery/references/windows-powershell-runtime-bootstrap.md`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/git-history-surgery/references/windows-powershell-runtime-bootstrap.md)
 
-### gstack brain-sync Windows fix — `.cmd` wrapper (gstack issue #1731)
-- `gstack-gbrain-sync.ts` uses `NEEDS_SHELL_ON_WINDOWS = process.platform === "win32"`,
-  so bun spawns `gstack-brain-sync` via cmd.exe, which can't exec bash shebangs.
-- Fix: `~/.claude/skills/gstack/bin/gstack-brain-sync.cmd` wrapper created 2026-06-25.
-  Calls `C:\Program Files\Git\usr\bin\bash.exe` with the script path explicitly.
-- Pattern: any bash shebang script in `~/.claude/skills/gstack/bin/` that needs to be
-  callable from bun/Node.js on Windows needs a matching `.cmd` shim.
+### Stable shim directory — `%USERPROFILE%\.lmstudio\bin`
+- User-owned, survives LM Studio / GitHub Desktop version bumps. Holds lightweight
+  `git.cmd`, `node.cmd`, `npm.cmd` wrappers — not full tool installs.
+- Node runtime: `%USERPROFILE%\.lmstudio\.internal\utils\node.exe` (LM Studio bundle).
+- npm global prefix: `%USERPROFILE%\.lmstudio` so `npm install -g` CLIs land in the shim bin.
+- npm-generated `.ps1` launchers expect `node.exe` beside them; a hardlink from
+  `%USERPROFILE%\.lmstudio\bin\node.exe` → the bundled node keeps globals working without elevation.
+- **Never** symlink dev tools into versioned app install folders (e.g. `GitHubDesktop\app-*`).
+
+### Git shim — dynamic GitHub Desktop discovery
+- `%USERPROFILE%\.lmstudio\bin\git.cmd` should find the **latest** GitHub Desktop bundle:
+  `%LOCALAPPDATA%\GitHubDesktop\app-*\resources\app\git` (sort by `LastWriteTime`, take newest).
+  Do **not** hardcode `app-3.5.9-beta3` or any pinned version path.
+- Before invoking `cmd\git.exe`, prepend **both** helper dirs and set exec path:
+  - `PATH` += `…\mingw64\bin;…\cmd` (order matters)
+  - `GIT_EXEC_PATH` = `…\mingw64\bin` (contains `git-remote-https.exe`)
+- Symptom when misconfigured: `git: 'remote-https' is not a git command` even though
+  `git --exec-path` looks correct — the child process lacks `mingw64\bin` on PATH.
+- PowerShell gotchas: quote `git rev-parse --abbrev-ref '@{u}'` (bare `@{u}` is a hashtable);
+  avoid `&&` in older PowerShell; separate commands or use native control flow.
+- Explicit Python for scripts/tests: `%PERPETUA_TOOLS_ROOT%\.venv\Scripts\python.exe`
+  (plain `python` may resolve to the Windows Store alias).
+  `%PERPETUA_TOOLS_ROOT%` must be set before use — define it in one of:
+  - **System environment variables** (Control Panel → System → Advanced)
+  - **PowerShell profile** (`$PROFILE`): `$env:PERPETUA_TOOLS_ROOT = "C:\path\to\Perpetua-Tools"`
+  - **Harness bootstrap** (`start.ps1`): the Hermes/Codex bootstrap exports it automatically
+    when launching from the repo root.
+
+```powershell
+$lmBin = "$env:USERPROFILE\.lmstudio\bin"
+$gitRoot = Get-ChildItem "$env:LOCALAPPDATA\GitHubDesktop" -Directory -Filter "app-*" |
+  Sort-Object LastWriteTime -Descending | Select-Object -First 1 |
+  ForEach-Object { Join-Path $_.FullName "resources\app\git" }
+$env:PATH = "$lmBin;$gitRoot\mingw64\bin;$gitRoot\cmd;$env:PATH"
+$env:GIT_EXEC_PATH = "$gitRoot\mingw64\bin"
+```
+
+### bash.exe — present on some hosts, absent from cmd.exe PATH
+- Git Bash sessions see `bash.exe`; **cmd.exe** and Node/bun spawns with `shell: true` do not.
+- GitHub Desktop's bundle often ships `usr\bin\sh.exe` but **no** literal `bash.exe`.
+  Do not assume full Git for Windows is installed.
+- `HERMES_GIT_BASH_PATH` must point at a real `bash.exe` (Hermes harness, explicit bash
+  wrappers). Discover under GitHub Desktop or install Git for Windows / WSL2 git bash.
+- Test-only shim when pytest/shell tests need literal `bash` (keep outside the repo):
+
+```powershell
+$tmpBashDir = Join-Path $env:TEMP "codex-bash-shim"
+New-Item -ItemType Directory -Force -Path $tmpBashDir | Out-Null
+Copy-Item -Force "$gitRoot\usr\bin\sh.exe" (Join-Path $tmpBashDir "bash.exe")
+$env:PATH = "$tmpBashDir;$gitRoot\usr\bin;$env:PATH"
+```
+
+- Claude Code's Bash tool uses its own `/usr/bin/bash` — env vars do not cross into PowerShell
+  and vice versa. Export per session when needed.
+
+### gbrain + gstack shims (gstack issue #1731)
+- `gbrain` installed via npm/bun is a **`gbrain.cmd` / `gbrain.ps1` shim** on Windows.
+  Direct `spawn("gbrain", …)` without `shell: true` → ENOENT ("brain-sync exited undefined").
+- gstack centralizes this: `NEEDS_SHELL_ON_WINDOWS = process.platform === "win32"` in
+  `lib/gbrain-exec.ts`; every `spawnGbrain` / `spawnGbrainAsync` / brain-sync spawn sets
+  `shell: NEEDS_SHELL_ON_WINDOWS`. Static tripwire: `test/gbrain-spawn-windows-shell.test.ts`.
+- `gstack-brain-sync` is a **bash shebang** at `~/.claude/skills/gstack/bin/gstack-brain-sync`.
+  cmd.exe cannot exec shebangs — add a sibling **`gstack-brain-sync.cmd`** that invokes
+  bash explicitly, e.g. `"%HERMES_GIT_BASH_PATH%" "%~dp0gstack-brain-sync" %*` (or resolve
+  bash from the same `$gitRoot` discovery above). Any bash script in that `bin/` tree that
+  bun/Node must call on Windows needs the same `.cmd` shim pattern.
+- `.cmd`/`.bat`/`.ps1` on **Windows turf** require **CRLF** in the working tree (`eol=crlf` in orama `.gitattributes`). LF-only batch files fail silently under `cmd.exe`.
+- **Each turf, its own EOL — no tug-of-war:** macOS/Linux agents must **not** strip `\r` from Windows-serving files (`orama-system/platform/windows/**`, `*.cmd`, `*.bat`, `*.ps1`). Mac/Linux-owned sources (`*.sh`, `*.py`, docs) stay **LF**. Canonical policy: orama `git-history-surgery/references/platform-line-endings-turf.md`.
+- **False dirty on Mac:** `git status` shows `platform/windows/*.cmd` modified but content unchanged — often a pre-attributes blob. Fix once with `git add <file>` (normalizes object to `i/lf w/crlf`), not hand-edited EOL conversion.
 
 ### LLAMA_SERVER_BASE_URL — already in PowerShell profile, never missing
 - `%USERPROFILE%\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` line 1:
@@ -35,6 +93,24 @@
 ### git -C flag required for orama-system in bash sessions
 - The bash tool's cwd may differ from the `ultrathink-system` git root.
 - Always use: `git -C "$ORAMA_SYSTEM_PATH" <subcommand>` for reliable results.
+
+### Windows toolchain verification
+After bootstrap or shim changes, run in PowerShell:
+
+```powershell
+# Core toolchain
+git --version
+node --version
+npm --version
+
+# Hermes/bash wrapper (when Hermes wrappers are in scope)
+& $env:HERMES_GIT_BASH_PATH --noprofile --norc -lc 'echo hermes-bash-ok'
+
+# gstack-brain-sync (two variants — use .cmd when bash-shebang wrapper is unavailable,
+# e.g. in plain PowerShell sessions without Git Bash on PATH)
+gstack-brain-sync --status                          # bash-shebang variant (requires Git Bash)
+~/.claude/skills/gstack/bin/gstack-brain-sync.cmd --status  # .cmd variant (pure PowerShell)
+```
 
 ## Seeds
 _(empty — populate as you go)_
@@ -57,3 +133,30 @@ _(empty — populate as you go)_
 > "This folder is the portable brain. Any harness (Claude Code, Cursor, Windsurf, OpenCode, OpenClaw, Hermes, standalone Python) can mount it and get the same memory, skills, and protocols."
 
 **Origin:** Built from scratch as a purpose-designed portable agent memory system. The version `0.9.0` suggests prior offline/local development before the first tracked commit. The design philosophy connects to ECC cross-harness thinking but the code is not derived from any prior tracked repo.
+
+## Git operations — gold nuggets (sticky notes)
+
+> **Run these skills before any branch triage, rebase, merge, or delete** after a suspected
+> history rewrite. Catalog: `.agent/memory/working/BRANCH_CATALOG_COMPLETE_2026-06-27.md`.
+
+### Sticky skill routing (next git op)
+
+| Situation | Skill / reference (orama-system) |
+|-----------|----------------------------------|
+| Branch looks 600+ behind / `merge-base` exit 1 | [`git-history-surgery`](../../orama-system/bin/orama-system/skills/git-history-surgery/SKILL.md) → [`reanchor-after-rewrite.md`](../../orama-system/bin/orama-system/skills/git-history-surgery/references/reanchor-after-rewrite.md) |
+| Scan all local heads vs rewritten `main` | PT: `scripts/git/reanchor_scan.sh . origin/main heads` — see [`using-git-worktrees`](../../orama-system/bin/orama-system/skills/using-git-worktrees/SKILL.md) |
+| Verify unique work before PR | `git cherry -v origin/main <tip> <twin-base-from-scan>` — only `+` lines are truly unmerged |
+| Case A: tip already in main as tree twin | `git branch -f <branch> <twin-sha>` (or detach worktree at twin first) — **not** `git rebase origin/main` |
+| Case B: commits above twin need replay | Re-anchor to deepest twin, then cherry-pick/rebase only `+` commits |
+| Windows host before fetch/rebase/push | [`windows-powershell-runtime-bootstrap.md`](../../orama-system/bin/orama-system/skills/git-history-surgery/references/windows-powershell-runtime-bootstrap.md) |
+| `.cmd` blocks checkout/rebase on macOS | [`platform-line-endings-turf.md`](../../orama-system/bin/orama-system/skills/git-history-surgery/references/platform-line-endings-turf.md) — do not `git restore` CRLF files to LF |
+| Nested multi-agent merges | [`git-history-surgery`](../../orama-system/bin/orama-system/skills/git-history-surgery/SKILL.md) + episodic `nested-branch-merge-protocol` (2026-06-26) |
+
+### Gold nuggets (2026-06-27 branch catalog)
+
+1. **Never trust `merge-base exit 1` or ahead/behind alone after a rewrite.** `cursor/critical-bug-investigation-0df5` was misclassified as unrelated orphan (647 behind); tree-twin scan showed tip `c1ae82e` = main twin `ad702c5` — work already absorbed. Action: re-anchor ref, not rebase.
+2. **`reanchor_scan.sh` + `git cherry -v` is the canonical triage pair** — replaces naive `git branch --no-merged` inventories. Save markdown catalog before destructive ops.
+3. **orama branches are not orphan class** — large June integration branches (`2026-06-13/14-*`) are stale merge-bases (`a156104`), not unrelated history. Still use cherry `+` before rebase.
+4. **PT unrelated-looking branches may be MERGED/in-main** — 12 heads classified MERGED/in-main by tree-twin (incl. `feat/perpetua-submodule-upgrade`, `fix/pt71-clean`, `0df5`). Delete local after human review, not rebase.
+5. **Open PR candidates (post cherry verify):** P1 `chore/domain-knowledge-windows-shims` (DOMAIN_KNOWLEDGE Windows shims); P2 `2026-06-11-001-win-endpoint-discovery-sync` (routing); P3 `clean-pt127`; orama `fix/pr135-lint006-windows` (LINT-006 Windows paths).
+6. **Pre-destructive snapshot rule:** write `.agent/memory/working/BRANCH_CATALOG_COMPLETE_<date>.md` before rebase/delete/surgery — append-only memory, not a substitute for `reanchor_scan`.

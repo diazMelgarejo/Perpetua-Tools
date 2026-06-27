@@ -18,6 +18,19 @@ def _reload_bootstrap(monkeypatch, **env: str) -> None:
     importlib.reload(alphaclaw_bootstrap)
 
 
+def test_invalid_openclaw_gateway_port_does_not_crash_import(monkeypatch):
+    """Malformed OPENCLAW_GATEWAY_PORT must fall back instead of crashing at import."""
+    _reload_bootstrap(monkeypatch, OPENCLAW_GATEWAY_PORT="notaport")
+    assert alphaclaw_bootstrap.OPENCLAW_GATEWAY_PORT == 18789
+
+
+def test_invalid_openclaw_extra_ports_skipped(monkeypatch):
+    """Invalid tokens in OPENCLAW_EXTRA_PORTS must be skipped, not crash import."""
+    _reload_bootstrap(monkeypatch, OPENCLAW_EXTRA_PORTS="99999,abc,8081")
+    assert 8081 in alphaclaw_bootstrap.OPENCLAW_CANDIDATE_PORTS
+    assert 99999 not in alphaclaw_bootstrap.OPENCLAW_CANDIDATE_PORTS
+
+
 def test_locality_resolve_endpoint_heals_stale_lan_on_mac(monkeypatch):
     """Explicit OLLAMA_MAC_ENDPOINT LAN IP on Mac must normalize to localhost."""
     _reload_bootstrap(
@@ -276,6 +289,70 @@ def test_validate_pt_state_rejects_invalid_coder_backend():
         alphaclaw_bootstrap._validate_pt_state({"coder_backend": "invalid-backend"})
 
 
+@pytest.mark.parametrize(
+    ("state", "backend"),
+    [
+        (
+            {
+                "manager_endpoint": "http://localhost:11434",
+                "coder_endpoint": "https://api.perplexity.ai",
+                "coder_backend": "perplexity",
+            },
+            "perplexity",
+        ),
+        (
+            {
+                "manager_endpoint": "http://localhost:11434",
+                "coder_endpoint": "https://api.anthropic.com",
+                "coder_backend": "anthropic",
+            },
+            "anthropic",
+        ),
+    ],
+)
+def test_validate_pt_state_accepts_cloud_fallback_routing(state, backend):
+    """agent_launcher cloud fallback must not crash alphaclaw bootstrap."""
+    assert alphaclaw_bootstrap._validate_pt_state(state) == state
+
+
+def test_validate_pt_state_rejects_spoofed_cloud_coder_endpoint():
+    with pytest.raises(ValueError, match="disallowed cloud host"):
+        alphaclaw_bootstrap._validate_pt_state(
+            {
+                "coder_endpoint": "https://evil.example.com",
+                "coder_backend": "perplexity",
+            }
+        )
+
+
+def test_validate_pt_state_rejects_http_cloud_coder_endpoint():
+    with pytest.raises(ValueError, match="must use https"):
+        alphaclaw_bootstrap._validate_pt_state(
+            {
+                "coder_endpoint": "http://api.perplexity.ai",
+                "coder_backend": "perplexity",
+            }
+        )
+
+
+def test_load_pt_state_accepts_cloud_fallback_file(tmp_path, monkeypatch):
+    routing = tmp_path / "routing.json"
+    routing.write_text(
+        json.dumps(
+            {
+                "manager_endpoint": "http://localhost:11434",
+                "coder_endpoint": "https://api.perplexity.ai",
+                "coder_backend": "perplexity",
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("PT_AGENTS_STATE", str(routing))
+    state = alphaclaw_bootstrap._load_pt_state()
+    assert state is not None
+    assert state["coder_backend"] == "perplexity"
+
+
 def test_validate_pt_state_rejects_non_http_endpoint():
     """Endpoint URLs must start with http:// or https:// per schema pattern."""
     with pytest.raises(ValueError, match="schema violation"):
@@ -420,8 +497,6 @@ def test_heal_pt_endpoint_url_canonicalizes_bare_loopback_on_target(monkeypatch)
         port=11434,
     )
     assert result == "http://localhost:11434"
-
-
 def test_validate_endpoint_host_accepts_rfc1918():
     """_validate_endpoint_host must accept all valid RFC-1918 ranges."""
     for host in (
@@ -449,6 +524,8 @@ def test_validate_endpoint_host_rejects_public():
         "172.15.0.1",
         "172.32.0.1",
         "192.169.0.1",
+        "169.254.0.1",
+        "169.254.169.254",
         "google.com",
         "evil.example.com",
     ):
@@ -458,6 +535,12 @@ def test_validate_endpoint_host_rejects_public():
             )
 
 
+def test_validate_endpoint_host_rejects_ipv4_mapped_link_local():
+    """IPv4-mapped IPv6 must not bypass link-local rejection (cloud metadata SSRF)."""
+    with pytest.raises(ValueError, match="link-local"):
+        alphaclaw_bootstrap._validate_endpoint_host(
+            "manager_endpoint", "http://[::ffff:169.254.169.254]"
+        )
 def test_validate_endpoint_host_rejects_missing_hostname():
     with pytest.raises(ValueError, match="missing a hostname"):
         alphaclaw_bootstrap._validate_endpoint_host("manager_endpoint", "http://")

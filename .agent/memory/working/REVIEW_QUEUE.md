@@ -6,6 +6,7 @@
 |---|---|---|
 | Security hardening pre-v2 | 🔄 In progress — PRs #154 + #113 open | [`2026-06-27-security-hardening-pre-v2.md`](https://github.com/diazMelgarejo/orama-system/blob/main/docs/plans/2026-06-27-security-hardening-pre-v2.md) |
 | Hermes-harness onboarding | Phases 1-5+7+8 ✅, 6+9 ⏳ | [`2026-06-24-hermes-harness-canonical-onboarding.md`](https://github.com/diazMelgarejo/orama-system/blob/main/docs/plans/2026-06-24-hermes-harness-canonical-onboarding.md) |
+| Hermes-harness onboarding | Phases 1-5+7+8 on main (#108); 6+9 prep offline (`--prepare`, checklist) | [`2026-06-24-hermes-harness-canonical-onboarding.md`](https://github.com/diazMelgarejo/orama-system/blob/main/docs/plans/2026-06-24-hermes-harness-canonical-onboarding.md) |
 | Optimization priorities | L1 open, L6 📋 | [`2026-06-24-optimization-priorities.md`](https://github.com/diazMelgarejo/orama-system/blob/main/docs/plans/2026-06-24-optimization-priorities.md) |
 
 ## PRs open for human review

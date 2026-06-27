@@ -327,4 +327,23 @@ there is no `.\windows\` folder at repo root.
 **Rationale:** PT #154 incident — full pre-v2 security hardening summary was overwritten with CodeRabbit-only notes, erasing purpose, tier table, hardware policy, integrative merges, and E2E gates. Same additive rule as `LESSONS.md` and oramasys-method `integrative-merge.md`.
 
 **Status:** active — lessons `lesson_3b13ab0a45d4`, `lesson_257a631cbfd3`; episodic gold nuggets `PR154-summary-append-only-gold-nugget`, `PR158-synthesize-mode-gold-nugget`
+## 2026-06-27: Branch triage uses tree-twin scan, not merge-base counts
+
+**Decision:** After any suspected `main` rewrite, classify local branches with
+`scripts/git/reanchor_scan.sh` + `git cherry -v`, not `git merge-base` failure or
+ahead/behind counts alone. Save a markdown catalog
+(`.agent/memory/working/BRANCH_CATALOG_COMPLETE_<date>.md`) before rebase, delete, or
+history surgery.
+
+**Rationale:** 2026-06-27 triage misclassified `cursor/critical-bug-investigation-0df5`
+as unrelated orphan (647 behind); tree-twin showed tip byte-identical to `ad702c5` on
+`origin/main` — zero `+` cherry commits. Naive metrics waste rebase effort and risk
+destroying branch identity.
+
+**Alternatives considered:** `git rebase origin/main` on all unmerged heads — rejected
+for rewrite-boundary branches; flatten to `origin/main` — rejected per git-history-surgery
+non-negotiables.
+
+**Status:** active — catalog `.agent/memory/working/BRANCH_CATALOG_COMPLETE_2026-06-27.md`;
+skills: orama `git-history-surgery` → `reanchor-after-rewrite.md`, PT `scripts/git/reanchor_scan.sh`
 
