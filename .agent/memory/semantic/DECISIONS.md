@@ -306,3 +306,15 @@ there is no `.\windows\` folder at repo root.
 
 **Status:** active — lesson `lesson_bcc6a5141f56`
 
+---
+
+## 2026-06-27: Pre-v2 security hardening — Linux tiers ship; Mac/Win E2E gates T5 freeze
+
+**Decision:** Ship all Linux-runnable security tiers (T1–T4) on matching branch `cursor/security-hardening-pre-v2-c4ae` in both repos at version `1.1.1.0`. Block T5 (git tags `v1.1.1`, GitHub release, `oramasys/v2-foundation` branch) until live Mac + Windows 11 E2E passes (`start.sh`, Ollama probes, `LM_STUDIO_WIN_ENDPOINTS`, hardware-policy harness, keychain).
+
+**Rationale:** Cloud VM cannot satisfy Ollama hard-requirements or Win LM Studio LAN topology. Platform schedule table in `orama-system/docs/plans/2026-06-27-security-hardening-pre-v2.md` documents which tiers are 🐧 vs 🍎/🪟.
+
+**Alternatives considered:** Tag freeze from cloud without E2E — rejected (fail-open on real hardware affinity and endpoint probes).
+
+**Status:** active — PRs orama [#113](https://github.com/diazMelgarejo/orama-system/pull/113), PT [#154](https://github.com/diazMelgarejo/Perpetua-Tools/pull/154); lessons `lesson_a0d29898cd65`, `lesson_e45608de48c0`, `lesson_34bb51037fce`, `lesson_1171086a7740`, `lesson_2abff9b4e522`
+

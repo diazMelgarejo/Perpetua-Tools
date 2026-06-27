@@ -8,6 +8,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 STRIP_HOOK = ROOT / "scripts/git/hooks/commit-msg.strip-coauthor"
 SYNC_PRIVATE = ROOT / "scripts/cursor/sync-private-attribution-from-home.sh"
@@ -219,6 +221,42 @@ def test_check_commit_message_rejects_hermes_display_name_with_bad_email(tmp_pat
         text=True,
     )
     assert proc.returncode != 0
+
+
+@pytest.mark.parametrize(
+    ("body", "should_pass"),
+    [
+        ("feat: x\n\nCo-authored-by: Hermes <<attacker@evil.com>>\n", False),
+        ("feat: x\n\nCo-authored-by: Claude <noreply@anthropic.com\n", True),
+        ("feat: x\n\nCo-authored-by: <noreply@anthropic.com>\n", True),
+        ("feat: x\n\nCo-Authored-By: Qwen <ünïcödé@evil.com>\n", False),
+        ("feat: x\n\nco-authored-by: hermes\n", True),
+        ("feat: x\n\nCo-authored-by: Random Person <random@gmail.com>\n", False),
+    ],
+    ids=[
+        "double-angle-email",
+        "unclosed-bracket-claude",
+        "no-display-name-anthropic",
+        "non-ascii-email",
+        "display-name-only-hermes",
+        "unknown-gmail",
+    ],
+)
+def test_check_commit_message_malformed_coauthor_fuzz(tmp_path, body, should_pass):
+    """Edge-case Co-authored-by lines from security plan T3-B."""
+    script = ROOT / "scripts/git/check_commit_message.sh"
+    msg = tmp_path / "msg-fuzz"
+    msg.write_text(body, encoding="utf-8")
+    proc = subprocess.run(
+        ["bash", str(script), str(msg)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if should_pass:
+        assert proc.returncode == 0, proc.stderr
+    else:
+        assert proc.returncode != 0
 
 
 # ---------------------------------------------------------------------------

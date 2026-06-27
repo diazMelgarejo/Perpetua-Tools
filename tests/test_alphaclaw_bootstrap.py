@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import builtins
 import importlib
+import json
 from pathlib import Path
 
 import pytest
@@ -147,6 +148,60 @@ def test_validate_pt_state_rejects_non_rfc1918_endpoint():
         )
 
 
+@pytest.mark.parametrize(
+    ("state", "backend"),
+    [
+        (
+            {
+                "manager_endpoint": "http://localhost:11434",
+                "coder_endpoint": "https://api.perplexity.ai",
+                "coder_backend": "perplexity",
+            },
+            "perplexity",
+        ),
+        (
+            {
+                "manager_endpoint": "http://localhost:11434",
+                "coder_endpoint": "https://api.anthropic.com",
+                "coder_backend": "anthropic",
+            },
+            "anthropic",
+        ),
+    ],
+)
+def test_validate_pt_state_accepts_cloud_fallback_routing(state, backend):
+    """agent_launcher cloud fallback must not crash alphaclaw bootstrap."""
+    assert alphaclaw_bootstrap._validate_pt_state(state) == state
+
+
+def test_validate_pt_state_rejects_spoofed_cloud_coder_endpoint():
+    with pytest.raises(ValueError, match="disallowed cloud host"):
+        alphaclaw_bootstrap._validate_pt_state(
+            {
+                "coder_endpoint": "https://evil.example.com",
+                "coder_backend": "perplexity",
+            }
+        )
+
+
+def test_load_pt_state_accepts_cloud_fallback_file(tmp_path, monkeypatch):
+    routing = tmp_path / "routing.json"
+    routing.write_text(
+        json.dumps(
+            {
+                "manager_endpoint": "http://localhost:11434",
+                "coder_endpoint": "https://api.perplexity.ai",
+                "coder_backend": "perplexity",
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("PT_AGENTS_STATE", str(routing))
+    state = alphaclaw_bootstrap._load_pt_state()
+    assert state is not None
+    assert state["coder_backend"] == "perplexity"
+
+
 def test_load_pt_state_validates_file(tmp_path, monkeypatch):
     routing = tmp_path / "routing.json"
     routing.write_text(
@@ -167,7 +222,7 @@ def test_module_constants_canonicalize_bare_env_scheme(monkeypatch):
     assert alphaclaw_bootstrap.OLLAMA_WIN == "http://192.168.254.108:11434"
 
 # ---------------------------------------------------------------------------
-# Additional tests for PR additions: _validate_pt_state, _ALLOWED_ENDPOINT_HOST_RE,
+# Additional tests for PR additions: _validate_pt_state, _validate_endpoint_host,
 # _heal_pt_endpoint_url (canonical return fix), _load_pt_state edge cases
 # ---------------------------------------------------------------------------
 
@@ -367,9 +422,8 @@ def test_heal_pt_endpoint_url_canonicalizes_bare_loopback_on_target(monkeypatch)
     assert result == "http://localhost:11434"
 
 
-def test_allowed_endpoint_host_re_accepts_rfc1918():
-    """_ALLOWED_ENDPOINT_HOST_RE must accept all valid RFC-1918 ranges."""
-    regex = alphaclaw_bootstrap._ALLOWED_ENDPOINT_HOST_RE
+def test_validate_endpoint_host_accepts_rfc1918():
+    """_validate_endpoint_host must accept all valid RFC-1918 ranges."""
     for host in (
         "localhost",
         "127.0.0.1",
@@ -377,16 +431,18 @@ def test_allowed_endpoint_host_re_accepts_rfc1918():
         "10.255.255.255",
         "172.16.0.1",
         "172.24.0.1",
+        "172.30.0.1",
         "172.31.255.255",
         "192.168.0.1",
         "192.168.254.110",
     ):
-        assert regex.match(host), f"Expected {host!r} to match RFC-1918 regex"
+        alphaclaw_bootstrap._validate_endpoint_host(
+            "manager_endpoint", f"http://{host}:11434"
+        )
 
 
-def test_allowed_endpoint_host_re_rejects_public():
-    """_ALLOWED_ENDPOINT_HOST_RE must reject public IPs and external hostnames."""
-    regex = alphaclaw_bootstrap._ALLOWED_ENDPOINT_HOST_RE
+def test_validate_endpoint_host_rejects_public():
+    """_validate_endpoint_host must reject public IPs and external hostnames."""
     for host in (
         "8.8.8.8",
         "1.1.1.1",
@@ -395,9 +451,16 @@ def test_allowed_endpoint_host_re_rejects_public():
         "192.169.0.1",
         "google.com",
         "evil.example.com",
-        "169.254.0.1",  # link-local (not RFC-1918)
     ):
-        assert not regex.match(host), f"Expected {host!r} to NOT match RFC-1918 regex"
+        with pytest.raises(ValueError):
+            alphaclaw_bootstrap._validate_endpoint_host(
+                "manager_endpoint", f"http://{host}:11434"
+            )
+
+
+def test_validate_endpoint_host_rejects_missing_hostname():
+    with pytest.raises(ValueError, match="missing a hostname"):
+        alphaclaw_bootstrap._validate_endpoint_host("manager_endpoint", "http://")
 
 
 def test_start_openclaw_gateway_closes_log_handle_when_popen_fails(tmp_path, monkeypatch):

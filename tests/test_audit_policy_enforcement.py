@@ -17,7 +17,6 @@ _spec.loader.exec_module(_mod)  # type: ignore[union-attr]
 _is_exempt = _mod._is_exempt
 main = _mod.main
 POLICY_KEYWORDS = _mod.POLICY_KEYWORDS
-CANONICAL_MARKERS = _mod.CANONICAL_MARKERS
 EXEMPT_PREFIXES = _mod.EXEMPT_PREFIXES
 
 
@@ -176,8 +175,18 @@ class TestMain:
         result = main()
         assert result == 0
 
+    def test_comment_bypass_in_import_does_not_clear(self, tmp_path, capsys, monkeypatch):
+        """Substring markers in comments must not satisfy the import requirement."""
+        src = tmp_path / "comment_bypass.py"
+        _write_py(
+            src,
+            "# from utils.hardware_policy import get_policy\nif NEVER_WIN:\n    pass\n",
+        )
+        monkeypatch.setattr(_mod, "ROOT", tmp_path)
+        result = main()
+        assert result == 1
+
     def test_oserror_on_read_is_skipped(self, tmp_path, capsys, monkeypatch):
-        """Files that raise OSError on read must be silently skipped."""
         src = tmp_path / "unreadable.py"
         src.write_bytes(b"NEVER_MAC\n")
         # Patch read_text to raise OSError for this file

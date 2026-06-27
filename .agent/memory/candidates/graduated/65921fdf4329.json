@@ -1,0 +1,57 @@
+{
+  "id": "65921fdf4329",
+  "key": "manual_65921f",
+  "name": "manual_65921f",
+  "claim": "Dream-cycle salience scoring must compare UTC-aware timestamps \u2014 episodic entries use +00:00 offsets; naive datetime.now() minus aware fromisoformat raises TypeError and blocks auto_dream.py.",
+  "conditions": [
+    "auto_dream",
+    "aware",
+    "blocks",
+    "compare",
+    "datetime",
+    "dream-cycle",
+    "entries",
+    "episodic",
+    "fromisoformat",
+    "minus",
+    "naive",
+    "now",
+    "offsets",
+    "raises",
+    "salience",
+    "scoring",
+    "timestamps",
+    "typeerror",
+    "use",
+    "utc-aware"
+  ],
+  "evidence_ids": [
+    "2026-06-27T01:56:35.742762"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-27T01:56:35.742762",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-27T01:56:35.742762",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-27T01:56:35.777114+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-06-27 dream again failure fixed in harness/salience.py",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-27T01:56:35.742762"
+      ],
+      "lessons_sha": "91f9c3ce4269"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-27T01:56:35.777103+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-06-27 dream again failure fixed in harness/salience.py"
+}

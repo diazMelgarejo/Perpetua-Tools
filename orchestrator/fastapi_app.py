@@ -26,6 +26,7 @@ from orchestrator.control_plane_auth import (
 )
 
 from orchestrator import autoresearch_bridge
+from orchestrator import __version__ as _ORCHESTRATOR_VERSION
 from orchestrator.agent_tracker import AgentTracker
 from orchestrator.connectivity import backend_health_map
 from orchestrator.control_plane import (
@@ -99,7 +100,7 @@ async def _lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Perpetua-Tools Orchestrator",
-    version="0.9.9.7",
+    version=_ORCHESTRATOR_VERSION,
     description=(
         "Top-level idempotent multi-agent orchestrator. "
         "Repo #1 complements orama-system with routing, runtime "
@@ -397,7 +398,7 @@ def health(
 ) -> Dict[str, Any]:
     return {
         "status": "ok",
-        "version": "0.9.9.7",
+        "version": _ORCHESTRATOR_VERSION,
         "runtime": _runtime_summary(),
         "backends": backend_health_map(
             ollama_host=ollama_host,

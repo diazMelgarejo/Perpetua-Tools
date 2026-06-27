@@ -140,6 +140,14 @@ def test_load_policy_merges_windows_only_aliases():
     policy = load_policy(force_reload=True)
     forbidden = {m.lower() for m in policy.get("windows_only", [])}
     assert "gemma-4-26b-a4b-it-q4_k_m" in forbidden
+    assert "text-embedding-qwen3-embedding-8b-i1-gguf-q6-k" in forbidden
+
+
+def test_load_policy_includes_mac_only_ollama_models():
+    policy = load_policy(force_reload=True)
+    mac_only = {m.lower() for m in policy.get("mac_only", [])}
+    assert "qwen3.5:9b-nvfp4" in mac_only
+    assert "bge-m3" in mac_only
 
 
 def test_hardware_policy_blocks_gemma_quant_alias_on_mac():
