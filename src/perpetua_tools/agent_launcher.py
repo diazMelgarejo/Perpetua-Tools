@@ -147,10 +147,18 @@ if RUNNING_ON_MAC and _p_mac_lms.hostname not in ("localhost", "127.0.0.1", "::1
     )
     _mac_lms_endpoint = _healed_mac_lms
     _p_mac_lms = urlparse(_healed_mac_lms)
-MAC_LMS_HOST = os.getenv(
+_mac_lms_host = os.getenv(
     "MAC_LMS_HOST",
     _p_mac_lms.hostname or ("localhost" if RUNNING_ON_MAC else _default_mac_host),
 )
+if RUNNING_ON_MAC and not _is_loopback_host(_mac_lms_host):
+    logging.getLogger(__name__).warning(
+        "MAC_LMS_HOST=%s is non-loopback; PT runs on the Mac so Mac LM Studio "
+        "is localhost — normalizing to localhost",
+        _mac_lms_host,
+    )
+    _mac_lms_host = "localhost"
+MAC_LMS_HOST = _mac_lms_host
 MAC_LMS_PORT = int(os.getenv("MAC_LMS_PORT", str(_p_mac_lms.port or 1234)))
 MAC_LMS_URL = f"http://{MAC_LMS_HOST}:{MAC_LMS_PORT}"
 MAC_LMS_MODEL = (os.getenv("MAC_LMS_MODEL")
