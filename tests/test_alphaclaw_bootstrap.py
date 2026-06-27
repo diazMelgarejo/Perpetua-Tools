@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import builtins
 import importlib
+import json
 from pathlib import Path
 
 import pytest
@@ -145,6 +146,60 @@ def test_validate_pt_state_rejects_non_rfc1918_endpoint():
         alphaclaw_bootstrap._validate_pt_state(
             {"manager_endpoint": "http://8.8.8.8:11434"}
         )
+
+
+@pytest.mark.parametrize(
+    ("state", "backend"),
+    [
+        (
+            {
+                "manager_endpoint": "http://localhost:11434",
+                "coder_endpoint": "https://api.perplexity.ai",
+                "coder_backend": "perplexity",
+            },
+            "perplexity",
+        ),
+        (
+            {
+                "manager_endpoint": "http://localhost:11434",
+                "coder_endpoint": "https://api.anthropic.com",
+                "coder_backend": "anthropic",
+            },
+            "anthropic",
+        ),
+    ],
+)
+def test_validate_pt_state_accepts_cloud_fallback_routing(state, backend):
+    """agent_launcher cloud fallback must not crash alphaclaw bootstrap."""
+    assert alphaclaw_bootstrap._validate_pt_state(state) == state
+
+
+def test_validate_pt_state_rejects_spoofed_cloud_coder_endpoint():
+    with pytest.raises(ValueError, match="disallowed cloud host"):
+        alphaclaw_bootstrap._validate_pt_state(
+            {
+                "coder_endpoint": "https://evil.example.com",
+                "coder_backend": "perplexity",
+            }
+        )
+
+
+def test_load_pt_state_accepts_cloud_fallback_file(tmp_path, monkeypatch):
+    routing = tmp_path / "routing.json"
+    routing.write_text(
+        json.dumps(
+            {
+                "manager_endpoint": "http://localhost:11434",
+                "coder_endpoint": "https://api.perplexity.ai",
+                "coder_backend": "perplexity",
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("PT_AGENTS_STATE", str(routing))
+    state = alphaclaw_bootstrap._load_pt_state()
+    assert state is not None
+    assert state["coder_backend"] == "perplexity"
 
 
 def test_load_pt_state_validates_file(tmp_path, monkeypatch):
