@@ -572,3 +572,18 @@ def test_mac_lms_url_heals_stale_lan_env_on_mac(monkeypatch):
 
     importlib.reload(agent_launcher)
     assert agent_launcher.MAC_LMS_URL == "http://localhost:1234"
+
+
+def test_mac_lms_url_heals_stale_mac_lms_host_on_mac(monkeypatch):
+    """MAC_LMS_HOST in .env.local has higher priority than LM_STUDIO_MAC_ENDPOINT."""
+    import importlib
+
+    monkeypatch.setenv("ORAMA_PLATFORM", "mac")
+    monkeypatch.delenv("LM_STUDIO_MAC_ENDPOINT", raising=False)
+    monkeypatch.setenv("MAC_LMS_HOST", "192.168.254.110")
+    monkeypatch.delenv("MAC_LMS_PORT", raising=False)
+
+    import perpetua_tools.agent_launcher as agent_launcher
+
+    importlib.reload(agent_launcher)
+    assert agent_launcher.MAC_LMS_URL == "http://localhost:1234"
