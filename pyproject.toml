@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "perpetua-tools"
-version = "0.9.9.9"
+version = "1.1.1.0"
 description = "Top-level idempotent multi-agent orchestrator: per-device model selection, fallback routing, cost guard, and orama-system integration."
 readme = "README.md"
 license = { text = "AGPL-3.0" }
@@ -43,6 +43,7 @@ dependencies = [
     "aiohttp>=3.14.0",
     "asyncio>=3.4.3",
     "httpx>=0.26.0",
+    "jsonschema>=4.0.0",
     # Database and caching
     "aiosqlite>=0.19",        # GossipBus async SQLite + FTS5 (RAG backport 2026-05-22)
     "redis>=5.0.1",
