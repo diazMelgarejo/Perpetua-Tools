@@ -12,7 +12,7 @@
 ## Windows Development Environment (verified 2026-06-26)
 
 Canonical bootstrap (PowerShell, run before git push/rebase/pytest on the RTX host):
-`orama-system/bin/orama-system/skills/git-history-surgery/references/windows-powershell-runtime-bootstrap.md`
+`bin/orama-system/skills/git-history-surgery/references/windows-powershell-runtime-bootstrap.md` (in `diazMelgarejo/orama-system`)
 
 ### Stable shim directory — `%USERPROFILE%\.lmstudio\bin`
 - User-owned, survives LM Studio / GitHub Desktop version bumps. Holds lightweight
