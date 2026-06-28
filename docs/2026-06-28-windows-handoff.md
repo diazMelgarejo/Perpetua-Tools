@@ -28,10 +28,16 @@
 ## Mac operator — start here
 
 ```bash
-# 1. Sync
+# 1. Sync (clean tree: pull only; dirty tree: see safe-cross-host-sync reference card)
 cd ~/code/OpenClaw/orama-system && git pull --ff-only origin main
 cd ~/code/OpenClaw/Perpetua-Tools && git pull --ff-only origin main
+```
 
+Dirty worktree on either repo: orama-system
+`bin/orama-system/skills/git-history-surgery/references/safe-cross-host-sync-reference-card.md`
+(stash → `pull --ff-only` → pop → commit → push — never `reset --hard`).
+
+```bash
 # 2. Mac-local E2E
 cd ~/code/OpenClaw/orama-system
 bash start.sh --status
