@@ -84,6 +84,42 @@ $env:PATH = "$tmpBashDir;$gitRoot\usr\bin;$env:PATH"
 - **Each turf, its own EOL — no tug-of-war:** macOS/Linux agents must **not** strip `\r` from Windows-serving files (`orama-system/platform/windows/**`, `*.cmd`, `*.bat`, `*.ps1`). Mac/Linux-owned sources (`*.sh`, `*.py`, docs) stay **LF**. Canonical policy: orama `git-history-surgery/references/platform-line-endings-turf.md`.
 - **False dirty on Mac:** `git status` shows `platform/windows/*.cmd` modified but content unchanged — often a pre-attributes blob. Fix once with `git add <file>` (normalizes object to `i/lf w/crlf`), not hand-edited EOL conversion.
 
+### PowerShell 5.1 encoding — UTF-8 BOM required for non-ASCII in `.ps1` files (verified 2026-06-28)
+
+**Root cause:** PowerShell 5.1 reads `.ps1` files as Windows-1252 (ANSI) when there is **no BOM**.
+UTF-8 multibyte sequences get misinterpreted byte-by-byte. The critical case:
+
+| Character | UTF-8 bytes | Windows-1252 decode | Effect |
+|-----------|------------|---------------------|--------|
+| em-dash `—` (U+2014) | `E2 80 94` | `â` + `€` + `"` (U+201D) | **String closed early** — PS 5.1 accepts RIGHT DOUBLE QUOTATION MARK as a string delimiter |
+
+**Symptom:** `Missing closing '}' in statement block` reported for the `try`/`catch` or `if` block
+that **contains** the double-quoted string with the em-dash. The `}` at the end of that string is
+consumed as orphaned code, not a block closer. `git checkout --` does **not** fix it if the
+BOM-less file is already in git history.
+
+**Diagnosis:**
+```powershell
+$errors = $null
+$null = [System.Management.Automation.Language.Parser]::ParseFile($file, [ref]$null, [ref]$errors)
+$errors   # zero entries = clean parse
+```
+
+**Fix (idempotent — add BOM, no content change):**
+```powershell
+$content = [System.IO.File]::ReadAllText($file, [System.Text.Encoding]::UTF8)
+[System.IO.File]::WriteAllText($file, $content, (New-Object System.Text.UTF8Encoding($true)))
+```
+
+**Rule:** Every `.ps1` file in the repo that contains non-ASCII characters (em-dashes, box-drawing,
+Unicode arrows, Greek letters, etc.) **must** have a UTF-8 BOM. `install.ps1` was already BOM-safe
+(written by Claude Code's Write tool which emits UTF-8); `start.ps1` was not (first authored
+externally). Fixed in orama-system commit `2f78e35`.
+
+**Single-quoted strings** are safe — PS only looks for `'` to close them, never smart quotes.
+**Here-strings** (`@"..."@`) are safe — only `"@` at column 0 closes them.
+**Em-dashes in comments** are safe. Only **double-quoted string literals** are at risk.
+
 ### LLAMA_SERVER_BASE_URL — already in PowerShell profile, never missing
 - `%USERPROFILE%\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` line 1:
   `$env:LLAMA_SERVER_BASE_URL = "http://localhost:1234/v1"` — verified present.
