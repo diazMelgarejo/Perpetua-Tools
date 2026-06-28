@@ -38,6 +38,10 @@ jobs:
           persist-credentials: false
         continue-on-error: true
 
+      - name: Clear orama-system before main fallback
+        if: github.event_name != 'pull_request' || steps.checkout-orama-pr.outcome != 'success'
+        run: rm -rf orama-system
+
       - name: Checkout orama-system (main fallback)
         if: github.event_name != 'pull_request' || steps.checkout-orama-pr.outcome != 'success'
         uses: actions/checkout@v4

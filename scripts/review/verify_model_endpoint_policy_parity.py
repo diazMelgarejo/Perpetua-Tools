@@ -26,7 +26,7 @@ def _extract_policy_source(path: Path) -> str:
             ):
                 node.body = node.body[1:]
             ast.fix_missing_locations(node)
-            chunks.append(ast.unparse(node))
+            chunks.append(ast.dump(node))
     missing = sorted(set(_POLICY_FUNCTIONS) - {n.name for n in tree.body if isinstance(n, ast.FunctionDef)})
     if missing:
         raise SystemExit(f"{path}: missing policy functions: {', '.join(missing)}")
