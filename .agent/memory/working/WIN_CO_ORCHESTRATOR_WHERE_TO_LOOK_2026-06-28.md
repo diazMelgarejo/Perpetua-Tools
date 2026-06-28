@@ -50,8 +50,14 @@ python bin\orama-system\skills\hermes-harness\scripts\probe_lan_peer.py --json
 
 ## Inbox commands (Win)
 
-**Portal monitor:** `http://localhost:8002/co-orchestration/windows` — Hermes skin, local + Mac peer inbox, HTML markdown preview (pull orama `main` + restart portal).
+**Portal monitor:** `http://localhost:8002/peer-inbox` — Win lane (`platform/windows/peer_inbox_portal.py`). Mac: `/co-orchestration/macos`.
 
+**Job queue (sequential, one active job per role):**
+
+```powershell
+python bin\orama-system\skills\hermes-harness\scripts\win_job_queue.py enqueue
+python bin\orama-system\skills\hermes-harness\scripts\win_job_queue.py status
+python bin\orama-system\skills\hermes-harness\scripts\win_job_queue.py run-once
 ```powershell
 cd $env:ORAMA_SYSTEM_PATH
 
@@ -62,7 +68,8 @@ python bin\orama-system\skills\hermes-harness\scripts\lan_peer_assign.py read --
 
 # Reply to Mac
 python bin\orama-system\skills\hermes-harness\scripts\lan_peer_assign.py drop --peer `
-  --file .\results\gpu-results.md --assignee mac --topic autoresearch/gpu-done `
+  --file bin\orama-system\skills\hermes-harness\references\results\gpu-results.md `
+  --assignee mac --topic autoresearch/gpu-done `
   --fanout-id 2026-06-28-autoresearch-001
 ```
 
