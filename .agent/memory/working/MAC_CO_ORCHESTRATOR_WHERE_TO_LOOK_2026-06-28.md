@@ -68,6 +68,15 @@ python3 bin/orama-system/skills/hermes-harness/scripts/lan_peer_assign.py drop -
 
 **Local inbox:** `~/.openclaw/state/lan_peer/inbox/`
 
+## Portal monitor (bidirectional queue UI)
+
+| URL | Purpose |
+|-----|---------|
+| `http://localhost:8002/co-orchestration` | **Live queue** — local + peer inbox, markdown preview, fan-out filter |
+| `http://localhost:8002/` | Service health + link in navbar |
+
+Auto-refreshes every 10s. On Win use `http://localhost:8002/co-orchestration` after `git pull` + `start.ps1 --lan-peer`.
+
 ## Mac local agents (same host only)
 
 ```bash
