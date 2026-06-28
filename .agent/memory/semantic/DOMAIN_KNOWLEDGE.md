@@ -379,3 +379,20 @@ _(empty — populate as you go)_
 ### Tell Hermes (LAN peer)
 
 Slash: `/lan-peer-self-talk` · Plain: *Probe LAN peer via `probe_lan_peer.py --json` using `last_discovery.json`.*
+
+### L2 token handoff landmark (2026-06-28 — no secrets in memory)
+
+| Step | Action |
+|------|--------|
+| Win → Mac | `scripts/env/print-lan-peer-token.ps1` → paste line into Mac `orama-system/.env.local` |
+| Mac → Win | `scripts/env/print-lan-peer-token.sh` → paste into Win `orama-system/.env.local` |
+| Never | Commit token, paste in chat, or write to `.agent/memory` |
+| Verify | `probe_lan_peer.py --json` → `portal-status` PASS + artifact `~/.openclaw/state/last_lan_peer_probe.json` |
+| Working card | `.agent/memory/working/LAN_PEER_L2_TOKEN_LANDMARK_2026-06-28.md` |
+
+### P2P L3 transport (in development on orama `main`)
+
+- `src/orama_system/lan_peer_channel.py` — WS primary, SSE+POST fallback
+- Portal routes: `/ws/portal-peer`, `/events/peer-stream`, `POST /api/peer-event`
+- Probe check: `ws-peer` in `probe_lan_peer.py`
+- Plan: `orama-system/docs/guides/lan-peer-bidirectional-talk-2026-06-28.md`
