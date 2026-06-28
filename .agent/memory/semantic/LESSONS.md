@@ -165,6 +165,7 @@
 - macOS Keychain service names for OpenClaw: 'openclaw.gemini-main-apikey' (->OPENCLAW_MODELS_PROVIDERS_GEMINI_MAIN_APIKEY), 'openclaw.gemini-fallback-apikey' (->OPENCLAW_MODELS_PROVIDERS_GEMINI_FALLBACK_APIKEY), 'openclaw.telegram-bot-token' (->OPENCLAW_TELEGRAM_BOT_TOKEN), 'openclaw.gateway-auth-token' (->OPENCLAW_GATEWAY_AUTH_TOKEN). Store: printf '%s' VALUE | bash $OPENCLAW_ROOT/orama-system/scripts/openclaw/store_keychain_secret.sh <service>. Load at startup: source $OPENCLAW_ROOT/orama-system/scripts/openclaw/load_keychain_secrets.sh  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_2a6766b489c5 -->
 - LM Studio loads only one model per instance; probe state=loaded via /api/v0/models before dispatch  <!-- status=accepted confidence=0.59 evidence=1 id=lesson_712a5068a678 -->
 - Windows partner CLIs use parametric LOCALAPPDATA and USERPROFILE paths; bootstrap with ensure-partner-cli-paths.ps1  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_5d96448dd529 -->
+- Codex CLI v0.142.x uses three dispatch profiles: fanout (codex exec -C repo -s workspace-write --dangerously-bypass-approvals-and-sandbox), bounded (exec workspace-write only), interactive (--sandbox danger-full-access --ask-for-approval never). Legacy --approval-mode removed in 0.140+. Resolve repo root and Codex binary at runtime; never hardcode host paths in prompts.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_2cef6113c1f1 -->
 
 ### 2026-04
 
