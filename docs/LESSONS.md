@@ -8,6 +8,17 @@
 
 ---
 
+## 2026-06-29 — Bucket drain + subagent fan-out (operator approved ALL) | Cursor
+
+**Approval:** operator `approve lessons` (round 10)  
+**Machine lessons:** `lesson_db15dbdc9000`, `lesson_77688462f96e`, `lesson_b545fe9db94c`
+
+32. **Subagent fan-out** — `win-coder-queue` + `win-autoresearcher-queue` in `.cursor/agents` (`lesson_db15dbdc9000`)
+33. **401 after security PR** — restart `start.ps1 --lan-peer` before peer drops (`lesson_77688462f96e`)
+34. **Stash before pull** — PT behind Mac learn rows; stash submodule/candidate drift (`lesson_b545fe9db94c`)
+
+---
+
 ## 2026-06-28 — Cycle 005 coder + Ladder F (operator approved ALL) | Cursor
 
 **Approval:** operator `approve lessons` (round 9) — **ALL** to PT `.agent`  
