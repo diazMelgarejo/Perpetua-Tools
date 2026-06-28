@@ -120,6 +120,35 @@ externally). Fixed in orama-system commit `2f78e35`.
 **Here-strings** (`@"..."@`) are safe — only `"@` at column 0 closes them.
 **Em-dashes in comments** are safe. Only **double-quoted string literals** are at risk.
 
+### PT memory pipeline — UTF-8 codec bug (fixed 2026-06-28)
+
+**Files affected:** `.agent/memory/promote.py:81`, `.agent/memory/auto_dream.py:62`
+
+**Bug:** Both files called `open(lessons_path).read()` without `encoding="utf-8"`.
+On Windows, `open()` defaults to the system locale codec (cp1252).
+`semantic/LESSONS.md` contains em-dashes (U+2014, UTF-8 `E2 80 94`) — cp1252 decodes
+byte `0x9D` as `<undefined>` → `UnicodeDecodeError: 'charmap' codec can't decode byte 0x9d`.
+
+**Trigger:** adding any non-ASCII character (em-dash, smart quote, arrow, etc.) to
+`semantic/LESSONS.md` caused `auto_dream.py` to crash on the next run.
+
+**Fix (both files):**
+```python
+# Before (broken on Windows)
+lessons_text = open(lessons_path).read()
+
+# After (correct everywhere)
+lessons_text = open(lessons_path, encoding="utf-8").read()
+```
+
+**Rule:** every `open()` call in the memory pipeline that reads `.md` or `.jsonl` files
+**must** pass `encoding="utf-8"` — these files are UTF-8 and will contain non-ASCII.
+Windows cp1252 default is a silent time-bomb that only triggers when specific byte values
+appear. The same bug pattern applies to `validate.py`, `cluster.py`, `decay.py`, and
+`render_lessons.py` — audit all `open()` calls in `.agent/memory/*.py`.
+
+**Commit:** PT `0ed5635`
+
 ### LAN P2P bidirectional transport — zero-dep options (surveyed 2026-06-28)
 
 For a 2-host Python/FastAPI LAN stack (Mac ↔ Win), ranked by (new deps, code LoC):
