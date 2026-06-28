@@ -401,19 +401,28 @@ Slash: `/lan-peer-self-talk` · Plain: *Probe LAN peer via `probe_lan_peer.py --
 
 ## Mac↔Win co-orchestrator — file inbox + cursor-agent (2026-06-28)
 
-> **PT working card:** `.agent/memory/working/CO_ORCHESTRATOR_LAN_PEER_2026-06-28.md`  
-> **orama playbook:** `bin/orama-system/skills/hermes-harness/references/mac-co-orchestrator-playbook.md`  
-> **GitHub:** https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/hermes-harness/references/mac-co-orchestrator-playbook.md
+> **PT working card (start here):** `.agent/memory/working/CO_ORCHESTRATOR_LAN_PEER_2026-06-28.md`  
+> **orama playbook:** `../../orama-system/bin/orama-system/skills/hermes-harness/references/mac-co-orchestrator-playbook.md`
+
+### Platform affinity
+
+| Host | Harness | Subagents |
+|------|---------|-----------|
+| **macOS** | OpenClaw + AlphaClaw (`start.sh`) | main, mac-researcher, orchestrator + cursor-agent |
+| **Windows** | Hermes-only (`start.ps1`) | win-researcher, coder, autoresearcher + cursor-agent, Codex, AGY |
+
+Coordination is **file inbox only** — agents never execute on the peer host over HTTP.
 
 ### Where subagents look
 
-| Agent | Memory / inbox |
-|-------|----------------|
-| Win co-orchestrator | `.agent/memory/working/WIN_CO_ORCHESTRATOR_WHERE_TO_LOOK_2026-06-28.md` |
-| mac-researcher | openclaw state `lan_peer/inbox/` (local Mac assignments) |
-| Win autoresearcher | `.agent/memory/working/WIN_AUTORESEARCHER_WHERE_TO_LOOK_2026-06-28.md` |
-| All LAN peer lessons | `.agent/memory/working/LAN_PEER_FILE_COORDINATION_2026-06-28.md` |
-| All | PT `.agent/memory/semantic/LESSONS.md` (rendered from `lessons.jsonl`) |
+| Agent | Harness | Memory / inbox |
+|-------|---------|----------------|
+| Mac co-orchestrator | OpenClaw | `CO_ORCHESTRATOR_LAN_PEER_2026-06-28.md` + orama playbook |
+| Win co-orchestrator | Hermes | `WIN_CO_ORCHESTRATOR_WHERE_TO_LOOK_2026-06-28.md` |
+| mac-researcher | OpenClaw | openclaw state `lan_peer/inbox/` (local Mac assignments) |
+| Win autoresearcher | Hermes | `WIN_AUTORESEARCHER_WHERE_TO_LOOK_2026-06-28.md` |
+| All LAN peer lessons | either | `LAN_PEER_FILE_COORDINATION_2026-06-28.md` |
+| All | either | `.agent/memory/semantic/LESSONS.md` (rendered from `lessons.jsonl`) |
 
 ### Handoff pattern
 

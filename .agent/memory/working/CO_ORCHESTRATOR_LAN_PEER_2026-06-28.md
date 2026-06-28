@@ -1,20 +1,32 @@
 # Co-orchestrator LAN peer lessons — 2026-06-28
 
 **Status:** graduated to `.agent/memory/semantic/lessons.jsonl` via `learn.py`  
-**Human index:** `docs/LESSONS.md` §2026-06-28 co-orchestrator  
-**orama playbook:** `orama-system/.../references/mac-co-orchestrator-playbook.md`
+**Human index:** `docs/LESSONS.md` section 2026-06-28 co-orchestrator  
+**orama playbook:** `../../orama-system/bin/orama-system/skills/hermes-harness/references/mac-co-orchestrator-playbook.md`
 
-## Where Mac co-orchestrator + subagents look first
+## Platform affinity (memorize)
 
-| Role | Read this | Purpose |
-|------|-----------|---------|
-| **Mac co-orchestrator** (Hermes / cursor-agent) | This file + `mac-co-orchestrator-playbook.md` | Fan-out, peer read/write |
-| **mac-researcher** | `~/.openclaw/state/lan_peer/inbox/` + `list` (local) | Mac-assigned hypothesis tasks |
-| **autoresearcher (Win)** | Win inbox `list` / `read --name` (no `--peer` inbound) | Mac→Win assignments |
-| **All agents** | `PT/.agent/memory/semantic/LESSONS.md` | Rendered lesson brain |
-| **All agents** | `PT/.agent/memory/semantic/DOMAIN_KNOWLEDGE.md` | LAN peer + co-orchestrator gold |
-| **Probe / ops** | `PT/.agent/memory/working/LAN_PEER_L2_TOKEN_LANDMARK_2026-06-28.md` | Token handoff (no secrets) |
-| **Win deliverables pending** | `orama-system/tasks/gpu-results.md`, `win-code-review.md`, `win-self-improve-runtime-results.md` | Drop to Mac when peer-file live |
+| Host | Primary harness | Subagents | Co-orchestration executor |
+|------|-----------------|-----------|---------------------------|
+| **macOS** | **OpenClaw** + AlphaClaw (`start.sh`) | main, mac-researcher, orchestrator + **cursor-agent** | OpenClaw/cursor-agent run **locally** on Mac |
+| **Windows** | **Hermes-only** (`start.ps1`; OpenClaw optional) | win-researcher, coder, autoresearcher + **cursor-agent**, Codex, AGY | Hermes/cursor-agent run **locally** on Win |
+
+**Rule:** No remote agent RPC. Mac does not run Hermes dispatch on Win and vice versa. Coordination = **file inbox** (`lan_peer_assign.py`) + git pull on both repos.
+
+Canonical: `../../orama-system/bin/orama-system/skills/hermes-harness/references/platform-affinity-routing.md`
+
+## Where co-orchestrator + subagents look first
+
+| Role | Harness | Read this | Purpose |
+|------|---------|-----------|---------|
+| **Mac co-orchestrator** | OpenClaw + cursor-agent | This file + mac-co-orchestrator-playbook.md | Fan-out, peer read/write |
+| **mac-researcher** | OpenClaw | openclaw state `lan_peer/inbox/` + `list` (local) | Mac-assigned hypothesis tasks |
+| **Win co-orchestrator** | Hermes + cursor-agent | `WIN_CO_ORCHESTRATOR_WHERE_TO_LOOK_2026-06-28.md` | Fan-out replies to Mac |
+| **autoresearcher (Win)** | Hermes | `WIN_AUTORESEARCHER_WHERE_TO_LOOK_2026-06-28.md` + Win inbox `list` / `read --name` | Mac to Win assignments (inbound local) |
+| **All agents** | either | `.agent/memory/semantic/LESSONS.md` | Rendered lesson brain |
+| **All agents** | either | `.agent/memory/semantic/DOMAIN_KNOWLEDGE.md` | LAN peer + co-orchestrator gold |
+| **Probe / ops** | either | `LAN_PEER_L2_TOKEN_LANDMARK_2026-06-28.md` | Token handoff (no secrets) |
+| **Win deliverables pending** | Hermes | `tasks/gpu-results.md`, `tasks/win-code-review.md`, `tasks/win-self-improve-runtime-results.md` on Win disk | Drop to Mac when Mac peer-file UP |
 
 ## GitHub links (pull `main`)
 
@@ -33,24 +45,28 @@
 7. **Mac unblock** — pull `>= 9f89051`, `./start.sh --lan-peer` for peer-file
 8. **Joint auth** — PT `.state` token + orama env lanes → `auth_mode: joint`
 
-## Mac commands (subagents)
+## Mac commands (OpenClaw co-orchestrator + subagents)
 
 ```bash
-export ORAMA_SYSTEM_PATH="$(git -C ~/path/to/orama-system rev-parse --show-toplevel)"
-export PERPETUA_TOOLS_PATH="$(git -C ~/path/to/Perpetua-Tools rev-parse --show-toplevel)"
+export ORAMA_SYSTEM_PATH="$(git -C "$(dirname "$0")/../../.." rev-parse --show-toplevel 2>/dev/null || git rev-parse --show-toplevel)"
+export PERPETUA_TOOLS_PATH="$(git -C "$ORAMA_SYSTEM_PATH/../perplexity-api/Perpetua-Tools" rev-parse --show-toplevel 2>/dev/null)"
 
-# Memory
+git -C "$PERPETUA_TOOLS_PATH" pull --rebase origin main
+git -C "$ORAMA_SYSTEM_PATH" pull --rebase origin main
+"$ORAMA_SYSTEM_PATH/start.sh" --stop && "$ORAMA_SYSTEM_PATH/start.sh" --lan-peer --no-open
+
 cat "$PERPETUA_TOOLS_PATH/.agent/memory/working/CO_ORCHESTRATOR_LAN_PEER_2026-06-28.md"
-cat "$PERPETUA_TOOLS_PATH/.agent/memory/semantic/LESSONS.md" | tail -40
 
-# Co-orchestration
+python3 "$ORAMA_SYSTEM_PATH/bin/orama-system/skills/hermes-harness/scripts/lan_peer_assign.py" list
 python3 "$ORAMA_SYSTEM_PATH/bin/orama-system/skills/hermes-harness/scripts/lan_peer_assign.py" list --peer
 python3 "$ORAMA_SYSTEM_PATH/bin/orama-system/skills/hermes-harness/scripts/lan_peer_assign.py" read --peer --name gpu-results.md
 
-# cursor-agent on Mac task
+# cursor-agent on Mac task (OpenClaw stack already running)
 cursor-agent --print --model composer-2.5 --trust \
-  "Read PT .agent/memory/working/CO_ORCHESTRATOR_LAN_PEER_2026-06-28.md and inbox assignments; execute Mac-side work."
+  "Read PT .agent/memory/working/CO_ORCHESTRATOR_LAN_PEER_2026-06-28.md and local inbox; execute Mac-side work."
 ```
+
+**Mac peer-file is live** when `POST /api/peer-file` returns 200 after `--lan-peer` restart. Win can then drop pending deliverables.
 
 ## Win deliverables to drop (when Mac peer-file UP)
 
