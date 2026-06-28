@@ -1,0 +1,52 @@
+{
+  "id": "816433497c31",
+  "key": "manual_816433",
+  "name": "manual_816433",
+  "claim": "validate_model_endpoint_url must catch urlparse().port ValueError on malformed ports and re-raise ModelEndpointPolicyError \u2014 uncaught ValueError becomes HTTP 500 instead of policy rejection.",
+  "conditions": [
+    "becomes",
+    "catch",
+    "http",
+    "instead",
+    "malformed",
+    "modelendpointpolicyerror",
+    "policy",
+    "port",
+    "ports",
+    "re-raise",
+    "rejection",
+    "uncaught",
+    "urlparse",
+    "validate_model_endpoint_url",
+    "valueerror"
+  ],
+  "evidence_ids": [
+    "2026-06-28T19:55:21.336823+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T19:55:21.336823+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T19:55:21.336823+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T19:55:21.371250+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit PT #177: bare ValueError from port parse leaked as 500; fixed with explicit boundary in model_endpoint_url.py.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T19:55:21.336823+00:00"
+      ],
+      "lessons_sha": "3997e9a32443"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T19:55:21.371242+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit PT #177: bare ValueError from port parse leaked as 500; fixed with explicit boundary in model_endpoint_url.py."
+}
