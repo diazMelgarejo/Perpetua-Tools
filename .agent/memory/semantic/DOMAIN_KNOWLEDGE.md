@@ -390,11 +390,13 @@ Slash: `/lan-peer-self-talk` · Plain: *Probe LAN peer via `probe_lan_peer.py --
 | Verify | `probe_lan_peer.py --json` → `portal-status` PASS + artifact `~/.openclaw/state/last_lan_peer_probe.json` |
 | Working card | `.agent/memory/working/LAN_PEER_L2_TOKEN_LANDMARK_2026-06-28.md` |
 
-### P2P L3 transport (in development on orama `main`)
+### P2P L3 transport (shipped on orama `main` >= 86c90bc)
 
 - `src/orama_system/lan_peer_channel.py` — WS primary, SSE+POST fallback
 - Portal routes: `/ws/portal-peer`, `/events/peer-stream`, `POST /api/peer-event`
-- Probe check: `ws-peer` in `probe_lan_peer.py`
+- **File inbox (primary for assignments):** `POST /api/peer-file`, `GET /api/peer-inbox`
+- CLI: `lan_peer_assign.py` — `drop --peer`, `list --peer`, `read --peer`, `fanout --manifest`
+- Probe check: `ws-peer` in `probe_lan_peer.py` (SKIP ok if file inbox green)
 - Plan: `orama-system/docs/guides/lan-peer-bidirectional-talk-2026-06-28.md`
 
 ## Mac↔Win co-orchestrator — file inbox + cursor-agent (2026-06-28)
@@ -407,9 +409,10 @@ Slash: `/lan-peer-self-talk` · Plain: *Probe LAN peer via `probe_lan_peer.py --
 
 | Agent | Memory / inbox |
 |-------|----------------|
-| Mac co-orchestrator | PT `CO_ORCHESTRATOR_LAN_PEER_2026-06-28.md` + orama playbook |
-| mac-researcher | `~/.openclaw/state/lan_peer/inbox/` (local Mac assignments) |
-| Win autoresearcher | Win inbox — `lan_peer_assign.py list` / `read --name` (inbound Mac files, no `--peer`) |
+| Win co-orchestrator | `.agent/memory/working/WIN_CO_ORCHESTRATOR_WHERE_TO_LOOK_2026-06-28.md` |
+| mac-researcher | openclaw state `lan_peer/inbox/` (local Mac assignments) |
+| Win autoresearcher | `.agent/memory/working/WIN_AUTORESEARCHER_WHERE_TO_LOOK_2026-06-28.md` |
+| All LAN peer lessons | `.agent/memory/working/LAN_PEER_FILE_COORDINATION_2026-06-28.md` |
 | All | PT `.agent/memory/semantic/LESSONS.md` (rendered from `lessons.jsonl`) |
 
 ### Handoff pattern
@@ -423,3 +426,21 @@ Slash: `/lan-peer-self-talk` · Plain: *Probe LAN peer via `probe_lan_peer.py --
 ### CLI (`>= 9f89051`)
 
 `--peer` on subcommand: `list --peer`, `read --peer --name`, `drop --peer --file`
+
+### File inbox co-orchestration (2026-06-28)
+
+| Agent / role | Read first (PT memory) |
+|--------------|------------------------|
+| Win co-orchestrator | `.agent/memory/working/WIN_CO_ORCHESTRATOR_WHERE_TO_LOOK_2026-06-28.md` |
+| Win autoresearcher | `.agent/memory/working/WIN_AUTORESEARCHER_WHERE_TO_LOOK_2026-06-28.md` |
+| All LAN peer lessons | `.agent/memory/working/LAN_PEER_FILE_COORDINATION_2026-06-28.md` |
+
+| Agent / role | Read first (orama tracked) |
+|--------------|----------------------------|
+| Mac + Win operators | `references/mac-co-orchestrator-playbook.md` |
+| Win handoff summary | `references/co-orchestrator-handoff.md` |
+| Operator SSOT index | `references/lan-peer-self-talk.md` section F |
+
+**Inbox path (both hosts):** openclaw state dir `lan_peer/inbox/` (see lan-peer-self-talk.md)
+
+**Post-commit sync:** `git fetch --prune` -> `git pull --rebase origin main` -> `git push` -> verify `HEAD == origin/main` in **both** repos. ce8934c (docs(memory): LAN peer file lessons + Win co-orchestrator/autoresearcher cards)

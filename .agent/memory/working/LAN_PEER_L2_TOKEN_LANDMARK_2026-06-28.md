@@ -22,17 +22,24 @@
 3. **Direction:** whoever generated the token first runs the print script; peer pastes into `.env.local`.
 4. **Stale IP:** use `last_discovery.json` — Mac is `.102`, Win is `.100` (not legacy `.110`).
 
-## P2P next (L3 transport — in development)
+## P2P L3 transport + file inbox (shipped orama >= 86c90bc)
 
 | Phase | Deliverable | Status |
 |-------|-------------|--------|
-| P1 | Portal WS + SSE + POST endpoints | 🚧 in progress |
-| P2 | `lan_peer_channel.py` state machine | 🚧 in progress |
-| P3 | Lifespan auto-connect to peer | planned |
-| P4 | `probe_lan_peer.py` `ws-peer` check | planned |
+| P1 | Portal WS + SSE + POST endpoints | done |
+| P2 | `lan_peer_channel.py` state machine | done |
+| P3 | Lifespan auto-connect to peer | done |
+| P4 | `probe_lan_peer.py` `ws-peer` check | done (SKIP ok) |
+| P4b | **File inbox** `lan_peer_assign.py` + `/api/peer-file` | done |
 | P5 | Cross-peer `user-input` dispatch | deferred |
 
-**Transport:** FastAPI WebSocket primary, SSE+POST fallback, zero new deps.
+**Transport:** FastAPI WebSocket primary, SSE+POST fallback, **file inbox for assignments**.
+
+**Win agents — read first:**
+
+- Co-orchestrator: `Perpetua-Tools/.agent/memory/working/WIN_CO_ORCHESTRATOR_WHERE_TO_LOOK_2026-06-28.md`
+- Autoresearcher: `Perpetua-Tools/.agent/memory/working/WIN_AUTORESEARCHER_WHERE_TO_LOOK_2026-06-28.md`
+- All lessons: `Perpetua-Tools/.agent/memory/working/LAN_PEER_FILE_COORDINATION_2026-06-28.md`
 
 ## Commands (no token output)
 
