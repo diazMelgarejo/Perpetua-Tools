@@ -41,7 +41,7 @@ ALLOWED_MODEL_IDS = {
     "grok-4-1-thinking",
     # Remote / Nous / OpenRouter stack
     "qwen/qwen3-coder:free",
-    "nvidia/nemotron-3-ultra:free",
+    "stepfun/step-3.7-flash:free",
     "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
     "openrouter/minimax/minimax-m2.5:free",
     "openrouter/deepseek/deepseek-v4-flash:free",
