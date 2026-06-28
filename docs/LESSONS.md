@@ -62,6 +62,25 @@ Set `PERPETUA_TOOLS_PATH` before start — wrong sibling path degrades hardware 
 
 ---
 
+## 2026-06-28 — LAN P2P transport research: WS-primary + SSE/POST-fallback plan | Claude Code
+
+**orama docs:** [`docs/guides/lan-peer-bidirectional-talk-2026-06-28.md`](https://github.com/diazMelgarejo/orama-system/blob/main/docs/guides/lan-peer-bidirectional-talk-2026-06-28.md) · **Commits:** orama `ca96862`, `f63ec72`
+
+### What was learned
+
+1. **FastAPI WebSocket (zero deps) is the simplest/most frugal LAN P2P transport** for a 2-host Python/FastAPI stack — already bundled in `fastapi[standard]`. Dual-socket pattern (each side is server + client) gives full-duplex at <1 ms LAN latency with ~40 LoC.
+2. **SSE + POST is the correct HTTP-only fallback** — `GET /events/peer-stream` + `POST /api/peer-event`, two connections per direction, zero new packages. Degrades cleanly when WebSocket is firewalled or the peer doesn't support it.
+3. **Channel manager pattern:** `lan_peer_channel.py` abstracts both transports behind `send()` / `on_inbound()`. State machine: `WS_CONNECTING → WS_CONNECTED | SSE_CONNECTING → SSE_CONNECTED | DISCONNECTED (30 s retry)`. Shared JSON envelope `{type, source, ts, data}` makes the transport invisible to callers.
+4. **PT impact:** `probe_lan_peer.py` gains a `ws-peer` check in Phase 4 — probes `ws://{PEER_IP}:8002/ws/portal-peer` with a 5-second handshake test. No new deps.
+5. **Transport upgrade ladder:** ZeroMQ PAIR (1 dep: `pyzmq`) for sub-ms or N>2 hosts; mDNS/zeroconf (1 dep) auto-discovers peer IP as `_orama._tcp.local.` — replaces `$MAC_IP`/`$WIN_IP` env vars. Both deferred until WS+SSE/POST channel is stable.
+
+### Decisions
+
+- Reuse-first: zero new packages in Phases 1–4. ZeroMQ/mDNS only if WS+SSE/POST proves insufficient.
+- 5-phase sequence: endpoints → channel manager → lifespan hook → ws-peer probe → L3 agent dispatch.
+
+---
+
 ## 2026-06-28 — LAN peer self-talk: Mac↔Win orama installs over HTTP | Cursor
 
 **Canonical operator playbook (Mac + Win — identical):**
