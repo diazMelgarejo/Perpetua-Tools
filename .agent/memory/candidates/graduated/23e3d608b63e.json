@@ -1,0 +1,53 @@
+{
+  "id": "23e3d608b63e",
+  "key": "manual_23e3d6",
+  "name": "manual_23e3d6",
+  "claim": "If the only goal is 'worktree matches remote', use git restore --staged --worktree . and manually remove confirmed files; do not destroy untracked files first",
+  "conditions": [
+    "confirmed",
+    "destroy",
+    "files",
+    "first",
+    "git",
+    "goal",
+    "manually",
+    "matches",
+    "only",
+    "remote",
+    "remove",
+    "restore",
+    "staged",
+    "untracked",
+    "use",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-06-28T10:15:49.510729+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T10:15:49.510729+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T10:15:49.510729+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T10:15:49.608533+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Safer convergence to origin/main without untracked-loss risk",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T10:15:49.510729+00:00"
+      ],
+      "lessons_sha": "403d92c3b7ee"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T10:15:49.608533+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Safer convergence to origin/main without untracked-loss risk"
+}
