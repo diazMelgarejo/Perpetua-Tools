@@ -37,18 +37,29 @@ from typing import Any
 
 from utils.hardware_policy import check_affinity
 
-SCRIPT_DIR = Path(__file__).resolve().parent.parent   # PT root
-TOOLS_DIR = SCRIPT_DIR / "src" / "perpetua_tools"
-AGENT_LAUNCHER_SCRIPT = TOOLS_DIR / "agent_launcher.py"
-ALPHACLAW_BOOTSTRAP_SCRIPT = TOOLS_DIR / "alphaclaw_bootstrap.py"
-STATE_DIR  = SCRIPT_DIR / ".state"
+SCRIPT_DIR = Path(__file__).resolve().parent.parent   # PT root or site-packages
+STATE_DIR = SCRIPT_DIR / ".state"
 ROUTING_JSON = STATE_DIR / "routing.json"
+
+
+def _tool_script(module_name: str) -> Path:
+    """Resolve a perpetua_tools CLI script for source checkout and wheel installs."""
+    mod = importlib.import_module(module_name)
+    return Path(mod.__file__).resolve()
+
+
+AGENT_LAUNCHER_SCRIPT = _tool_script("perpetua_tools.agent_launcher")
+ALPHACLAW_BOOTSTRAP_SCRIPT = _tool_script("perpetua_tools.alphaclaw_bootstrap")
+TOOLS_DIR = AGENT_LAUNCHER_SCRIPT.parent
 
 
 def _pt_subprocess_env(extra: dict[str, str] | None = None) -> dict[str, str]:
     """PYTHONPATH for perpetua_tools CLIs (orchestrator + src packages)."""
     env = {**os.environ, **(extra or {})}
-    paths = [str(SCRIPT_DIR), str(SCRIPT_DIR / "src")]
+    paths = [str(SCRIPT_DIR)]
+    src_dir = SCRIPT_DIR / "src"
+    if src_dir.is_dir():
+        paths.append(str(src_dir))
     existing = env.get("PYTHONPATH", "")
     if existing:
         paths.append(existing)
