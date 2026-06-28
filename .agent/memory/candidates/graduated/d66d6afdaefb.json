@@ -1,0 +1,45 @@
+{
+  "id": "d66d6afdaefb",
+  "key": "manual_d66d6a",
+  "name": "manual_d66d6a",
+  "claim": "NEVER run git clean -fd or git clean -fdx without backup or stash",
+  "conditions": [
+    "backup",
+    "clean",
+    "fdx",
+    "git",
+    "never",
+    "run",
+    "stash",
+    "without"
+  ],
+  "evidence_ids": [
+    "2026-06-28T10:15:49.255987+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T10:15:49.255987+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T10:15:49.255987+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T10:15:49.382985+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-06-28: git clean -fd removed untracked local-only state; unrecoverable via Git",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T10:15:49.255987+00:00"
+      ],
+      "lessons_sha": "c2db093b0647"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T10:15:49.382985+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-06-28: git clean -fd removed untracked local-only state; unrecoverable via Git"
+}
