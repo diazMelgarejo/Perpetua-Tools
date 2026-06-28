@@ -1,0 +1,64 @@
+{
+  "id": "46944e3665db",
+  "key": "manual_46944e",
+  "name": "manual_46944e",
+  "claim": "lan_peer_assign fanout continues on per-item peer drop failures and returns status partial with exit code 1 when any remote drop fails while local assignments succeed. Mac can proceed while Win catches up on git pull and portal restart.",
+  "conditions": [
+    "any",
+    "assignments",
+    "catches",
+    "code",
+    "continues",
+    "drop",
+    "exit",
+    "fails",
+    "failures",
+    "fanout",
+    "git",
+    "lan_peer_assign",
+    "local",
+    "mac",
+    "partial",
+    "peer",
+    "per-item",
+    "portal",
+    "proceed",
+    "pull",
+    "remote",
+    "restart",
+    "returns",
+    "status",
+    "succeed",
+    "while",
+    "win"
+  ],
+  "evidence_ids": [
+    "2026-06-28T11:36:23.092406+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T11:36:23.092406+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T11:36:23.092406+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T11:36:23.178347+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-06-28 Win 404 on peer-file while Mac local fanout succeeded",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T11:36:23.092406+00:00"
+      ],
+      "lessons_sha": "a46cf6d1d7fb"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T11:36:23.178347+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-06-28 Win 404 on peer-file while Mac local fanout succeeded"
+}

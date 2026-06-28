@@ -1,0 +1,61 @@
+{
+  "id": "130073d9e30a",
+  "key": "manual_130073",
+  "name": "manual_130073",
+  "claim": "Mac must git pull orama-system main at or after 9f89051 and restart with ./start.sh --lan-peer --no-open before /api/peer-file accepts Win drops. portal-health can PASS while peer-file returns 404 on an old portal process.",
+  "conditions": [
+    "accepts",
+    "after",
+    "api",
+    "before",
+    "drops",
+    "f89051",
+    "git",
+    "lan-peer",
+    "mac",
+    "main",
+    "no-open",
+    "old",
+    "orama-system",
+    "pass",
+    "peer-file",
+    "portal",
+    "portal-health",
+    "process",
+    "pull",
+    "restart",
+    "returns",
+    "start",
+    "while",
+    "win"
+  ],
+  "evidence_ids": [
+    "2026-06-28T11:36:23.833697+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T11:36:23.833697+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T11:36:23.833697+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T11:36:23.930519+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-06-28 repeated Win HTTP 404 to Mac peer-file",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T11:36:23.833697+00:00"
+      ],
+      "lessons_sha": "ef0b83e20c02"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T11:36:23.930519+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-06-28 repeated Win HTTP 404 to Mac peer-file"
+}

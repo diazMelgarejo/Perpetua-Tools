@@ -396,3 +396,30 @@ Slash: `/lan-peer-self-talk` · Plain: *Probe LAN peer via `probe_lan_peer.py --
 - Portal routes: `/ws/portal-peer`, `/events/peer-stream`, `POST /api/peer-event`
 - Probe check: `ws-peer` in `probe_lan_peer.py`
 - Plan: `orama-system/docs/guides/lan-peer-bidirectional-talk-2026-06-28.md`
+
+## Mac↔Win co-orchestrator — file inbox + cursor-agent (2026-06-28)
+
+> **PT working card:** `.agent/memory/working/CO_ORCHESTRATOR_LAN_PEER_2026-06-28.md`  
+> **orama playbook:** `bin/orama-system/skills/hermes-harness/references/mac-co-orchestrator-playbook.md`  
+> **GitHub:** https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/hermes-harness/references/mac-co-orchestrator-playbook.md
+
+### Where subagents look
+
+| Agent | Memory / inbox |
+|-------|----------------|
+| Mac co-orchestrator | PT `CO_ORCHESTRATOR_LAN_PEER_2026-06-28.md` + orama playbook |
+| mac-researcher | `~/.openclaw/state/lan_peer/inbox/` (local Mac assignments) |
+| Win autoresearcher | Win inbox — `lan_peer_assign.py list` / `read --name` (inbound Mac files, no `--peer`) |
+| All | PT `.agent/memory/semantic/LESSONS.md` (rendered from `lessons.jsonl`) |
+
+### Handoff pattern
+
+1. **Fan-out** — `lan_peer_assign.py fanout --manifest …json` splits `assignee: mac|win`
+2. **Mac → Win** — HTTP `POST /api/peer-file` → Win local inbox
+3. **Win work** — Codex, AGY, cursor-agent, lmstudio-win on assigned markdown locally
+4. **Win → Mac** — `drop --peer --file …` → Mac inbox (`read --peer --name …`)
+5. **Mac unblock** — `git pull` orama `>= 9f89051`, `./start.sh --lan-peer` (peer-file 404 without restart)
+
+### CLI (`>= 9f89051`)
+
+`--peer` on subcommand: `list --peer`, `read --peer --name`, `drop --peer --file`
