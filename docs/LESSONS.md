@@ -6,6 +6,23 @@
 
 ---
 
+## 2026-06-28 — Portal dashboard `/` 500 on Windows (operator approved) | Cursor
+
+**Fix:** orama `435d27a` — `_unwrap_redacted_list()` in `portal_server.py`  
+**Symptom:** `http://localhost:8002/` → Internal Server Error; `/health` may still return 200 on stale portal  
+**Win recovery:**
+
+```powershell
+cd $env:ORAMA_SYSTEM_PATH
+git pull --rebase origin main   # >= 435d27a
+.\platform\windows\start.ps1 --stop
+.\platform\windows\start.ps1 --lan-peer --no-open
+```
+
+**Machine lesson:** `lesson_78f4700bd60c` in `.agent/memory/semantic/lessons.jsonl`
+
+---
+
 ## 2026-06-28 — Operator approved: co-orchestration GO + self-improve lessons | Cursor
 
 **Approval:** operator `approve lessons` (2026-06-28)  
