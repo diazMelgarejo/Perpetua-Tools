@@ -1,0 +1,57 @@
+{
+  "id": "005241c94fc6",
+  "key": "manual_005241",
+  "name": "manual_005241",
+  "claim": "Do not assume a branch tip is merged just because its PR shows MERGED \u2014 GitHub merges the PR snapshot at merge time; agents that push after merge create a divergent branch tip that main never receives.",
+  "conditions": [
+    "after",
+    "agents",
+    "assume",
+    "because",
+    "branch",
+    "create",
+    "divergent",
+    "github",
+    "just",
+    "main",
+    "merge",
+    "merged",
+    "merges",
+    "never",
+    "push",
+    "receives",
+    "shows",
+    "snapshot",
+    "time",
+    "tip"
+  ],
+  "evidence_ids": [
+    "2026-06-28T20:04:18.158134+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T20:04:18.158134+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T20:04:18.158134+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T20:04:18.193936+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Classic multi-agent race: agent A merges, agent B pushes memory/CI fixes to same branch minutes later.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T20:04:18.158134+00:00"
+      ],
+      "lessons_sha": "c83f473bb0d2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T20:04:18.193927+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Classic multi-agent race: agent A merges, agent B pushes memory/CI fixes to same branch minutes later."
+}

@@ -47,6 +47,27 @@ Append-only summaries for #127 and #177 — never replace original PR1+PR2 scope
 
 Once both land on `main`, parity gate compares `main`↔`main` as intended.
 
+## Post-merge orphan commits (PT #177 → #179)
+
+**Incident:** PT #177 merged at `3a287da` while `cursor/security-pr1-pr2-auth-hardening-f559` continued with two commits (`c3957d7` CI parity fix, `861793a` memory/lessons) that never reached `main`. orama #127 was fully merged; only PT had orphans.
+
+**Root cause:** Multi-agent unattended merge — one agent merged the PR snapshot while another pushed to the same branch name minutes later. GitHub `MERGED` status reflects merge-time tip only; post-merge pushes create a divergent branch tip.
+
+**Recovery:** Follow-up PR #179 carries the orphan commits. Before closing any cross-repo security branch, run:
+
+```bash
+git fetch origin
+git log --oneline origin/main..origin/cursor/security-pr1-pr2-auth-hardening-f559
+```
+
+Repeat on both PT and orama-system. Any output → open a fresh follow-up branch/PR; do not assume the shared branch name is done.
+
+**Lessons graduated (learn.py):**
+
+- `lesson_0425d3219be5` — verify origin/main contains every feature-branch commit after merge
+- `lesson_ff3b885b1eae` — merge time is a hard boundary for shared branch names
+- `lesson_005241c94fc6` — PR MERGED ≠ branch tip on main
+
 ## Local verify
 
 ```bash
