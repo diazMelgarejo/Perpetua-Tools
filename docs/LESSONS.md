@@ -8,6 +8,34 @@
 
 ---
 
+## 2026-06-28 — Cycle 003 + graceful degradation ladders (operator approved) | Cursor
+
+**Approval:** operator `approve lessons` (round 3)  
+**Fan-out:** `2026-06-28-coord-003`  
+**Canonical reference:** orama `bin/orama-system/skills/oramasys-method/references/graceful-degradation.md`  
+**Machine lessons:** `lesson_c8dc70c59ac9` … `lesson_0ec02977f23a` (6 rows in `.agent/memory/semantic/lessons.jsonl`)
+
+### Cycle 003 deliverables (Win)
+
+| Subagent | Branch | Dropped to Mac |
+|----------|--------|------------------|
+| autoresearcher | `subagent/win-autoresearcher/h5-gpu-harness` | `gpu-results-h5.md` (3/3 PASS, iter 1) |
+| coder | `subagent/win-coder/bridge-http-local` | `win-bridge-spike-notes.md` |
+| doc-sync | `subagent/win-orchestrator/doc-sync-peer-inbox` | `win-doc-sync-peer-inbox.md` |
+
+**Portal:** Win lane `/peer-inbox`; `/co-orchestration/windows` → 307 redirect (`1679b84`).
+
+### Graceful degradation gold nuggets
+
+11. **Unified ladders** — search (gbrain→CRG→web), inference (host-local→validated fallback→cloud budget cutoff), LAN (ws-peer→SSE, file inbox→partial fan-out), autoresearch (`http-local`→SSH) (`lesson_c8dc70c59ac9`)
+12. **Win canonical inbox** — `platform/windows/peer_inbox_portal.py`; Hermes skin deleted; legacy URLs redirect (`lesson_0762f924239d`)
+13. **Subagent branches** — `subagent/<role>/<topic>` for mutations only; inbox on `main`; operator PR review (`lesson_d0dfe41fb420`)
+14. **HTTP-local preflight** — `AUTORESEARCH_PREFLIGHT_MODE=auto` skips SSH when `GPU_BOX` is local (`lesson_aeb3cd01c203`)
+15. **H5 harness** — `run_h5_gpu_benchmark.py`; iterations-to-pass on Win 27B; Mac 9B leg still pending (`lesson_b7fb9002c24f`)
+16. **Subagent usage limit** — when Task subagents hit quota, parent executes inline and still drops inbox deliverables (`lesson_0ec02977f23a`)
+
+---
+
 ## 2026-06-28 — Portal dashboard `/` 500 after pull/restart (operator approved) | Cursor
 
 **Approval:** operator `approve lessons` (round 2) — memory **union** per doctrine C  
