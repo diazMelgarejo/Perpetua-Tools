@@ -4,12 +4,15 @@ from __future__ import annotations
 import os
 import secrets
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Literal, Mapping
 
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 
 ENV_TOKEN = "ORAMA_CONTROL_PLANE_TOKEN"
+ENV_TOKEN_LOCAL = "ORAMA_CONTROL_PLANE_TOKEN_LOCAL"
+ENV_TOKEN_PEER = "ORAMA_CONTROL_PLANE_TOKEN_PEER"
+ENV_PT_TOKEN = "PT_CONTROL_PLANE_TOKEN"
 ENV_INSECURE = "ORAMA_INSECURE_DEV"
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_TOKEN_PATH = _REPO_ROOT / ".state" / "control_plane_token"
@@ -57,6 +60,10 @@ def control_plane_token() -> str:
     return os.getenv(ENV_TOKEN, "").strip()
 
 
+def _strip_env(name: str) -> str:
+    return os.getenv(name, "").strip()
+
+
 def _read_persisted_token(path: Path | None = None) -> str:
     token_path = path or DEFAULT_TOKEN_PATH
     if token_path.is_file():
@@ -64,70 +71,143 @@ def _read_persisted_token(path: Path | None = None) -> str:
     return ""
 
 
+def pt_lane_token_candidates() -> list[str]:
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for raw in (_strip_env(ENV_PT_TOKEN), _read_persisted_token()):
+        if raw and raw not in seen:
+            seen.add(raw)
+            ordered.append(raw)
+    return ordered
+
+
+def orama_lane_token_candidates() -> list[str]:
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for raw in (_strip_env(ENV_TOKEN), _strip_env(ENV_TOKEN_LOCAL)):
+        if raw and raw not in seen:
+            seen.add(raw)
+            ordered.append(raw)
+    return ordered
+
+
+def control_plane_auth_mode() -> Literal["unset", "pt_only", "orama_only", "joint"]:
+    pt = pt_lane_token_candidates()
+    orama = orama_lane_token_candidates()
+    if pt and orama:
+        return "joint"
+    if pt:
+        return "pt_only"
+    if orama:
+        return "orama_only"
+    return "unset"
+
+
+def _merge_unique(*groups: list[str]) -> list[str]:
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for group in groups:
+        for raw in group:
+            if raw and raw not in seen:
+                seen.add(raw)
+                ordered.append(raw)
+    return ordered
+
+
+def collect_control_plane_token_candidates() -> list[str]:
+    peer = _strip_env(ENV_TOKEN_PEER)
+    extra = [peer] if peer else []
+    mode = control_plane_auth_mode()
+    if mode == "joint":
+        return _merge_unique(pt_lane_token_candidates(), orama_lane_token_candidates(), extra)
+    if mode == "pt_only":
+        return _merge_unique(pt_lane_token_candidates(), extra)
+    if mode == "orama_only":
+        return _merge_unique(orama_lane_token_candidates(), extra)
+    return _merge_unique(extra)
+
+
+def accepted_control_plane_tokens(
+    scope: Literal["pt", "orama"] = "pt",
+) -> frozenset[str]:
+    mode = control_plane_auth_mode()
+    pt = pt_lane_token_candidates()
+    orama = orama_lane_token_candidates()
+    if mode == "joint":
+        return frozenset(_merge_unique(pt, orama))
+    if mode == "pt_only":
+        return frozenset(pt)
+    if mode == "orama_only":
+        return frozenset(orama)
+    if scope == "pt":
+        return frozenset(pt or orama)
+    return frozenset(orama or pt)
+
+
+def outbound_control_plane_tokens() -> list[str]:
+    peer = _strip_env(ENV_TOKEN_PEER)
+    ordered: list[str] = []
+    seen: set[str] = set()
+    if peer:
+        ordered.append(peer)
+        seen.add(peer)
+    for raw in _merge_unique(orama_lane_token_candidates(), pt_lane_token_candidates()):
+        if raw not in seen:
+            seen.add(raw)
+            ordered.append(raw)
+    return ordered
+
+
+def token_matches_control_plane(
+    provided: str,
+    scope: Literal["pt", "orama"] = "pt",
+) -> bool:
+    if not provided:
+        return False
+    for expected in accepted_control_plane_tokens(scope):
+        if secrets.compare_digest(provided, expected):
+            return True
+    return False
+
+
+def _env_control_plane_token_candidates() -> list[str]:
+    return orama_lane_token_candidates()
+
+
 def _resolved_control_plane_token() -> str:
-    token = control_plane_token()
-    if token:
-        return token
-    return _read_persisted_token()
+    tokens = outbound_control_plane_tokens()
+    return tokens[0] if tokens else ""
 
 
 def auth_headers() -> dict[str, str]:
     """Bearer headers for outbound PT HTTP clients (researchers, scripts)."""
-    token = _resolved_control_plane_token()
-    if token:
-        return {"Authorization": f"Bearer {token}"}
+    tokens = outbound_control_plane_tokens()
+    if tokens:
+        return {"Authorization": f"Bearer {tokens[0]}"}
     return {}
 
 
 def auth_enforced() -> bool:
-    """Return True when control-plane bearer auth must be checked.
-
-    Precedence (top wins — INSECURE_DEV is always evaluated first):
-
-    1. ORAMA_INSECURE_DEV={1,true,yes} → DO NOT enforce (explicit dev opt-out)
-    2. Token configured (env or persisted file) → ENFORCE
-    3. ORAMA_INSECURE_DEV={0,false,no} → ENFORCE (explicit prod lock-in)
-    4. Default → ENFORCE (secure-by-default; ensure_control_plane_token()
-       auto-generates a token on first startup)
-
-    Prior behaviour silently left a fresh deployment with no token AND no env
-    var configured fully unauthenticated. That default is reversed as of the
-    v1 security audit (2026-05-28). Existing local stacks that relied on the
-    insecure default must either set ORAMA_INSECURE_DEV=1 explicitly OR read
-    the auto-generated token from .state/control_plane_token.
-    """
+    """Return True when control-plane bearer auth must be checked."""
     insecure = os.getenv(ENV_INSECURE, "").strip().lower()
     if insecure in ("1", "true", "yes"):
         return False
-    if control_plane_token():
+    if _env_control_plane_token_candidates() or pt_lane_token_candidates():
         return True
     if insecure in ("0", "false", "no"):
         return True
-    # Default: enforce. ensure_control_plane_token() will auto-generate.
     return True
 
 
 def verify_control_plane_auth(request: Request) -> None:
-    """
-    Verify the incoming request's Authorization bearer token matches the configured control-plane token and raise on failure.
-    
-    If authentication enforcement is disabled, no check is performed.
-    
-    Parameters:
-        request (Request): Incoming HTTP request whose "authorization" header will be validated against the expected bearer token.
-    
-    Raises:
-        HTTPException: 503 if no control-plane token is configured; 401 if the Authorization header is missing or does not match `Bearer <token>`.
-    """
     if not auth_enforced():
         return
-    expected = _resolved_control_plane_token()
-    if not expected:
+    if not accepted_control_plane_tokens("pt"):
         raise HTTPException(status_code=503, detail="Control plane token not configured")
     auth_header = request.headers.get("authorization", "")
-    if auth_header == f"Bearer {expected}":
-        return
-    raise HTTPException(status_code=401, detail="Unauthorized")
+    provided = auth_header[7:].strip() if auth_header.startswith("Bearer ") else ""
+    if not token_matches_control_plane(provided, scope="pt"):
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
 
 def control_plane_auth_failure(request: Request) -> JSONResponse | None:
