@@ -6,20 +6,31 @@
 
 ---
 
-## 2026-06-28 — Portal dashboard `/` 500 on Windows (operator approved) | Cursor
+---
 
+## 2026-06-28 — Portal dashboard `/` 500 after pull/restart (operator approved) | Cursor
+
+**Approval:** operator `approve lessons` (round 2) — memory **union** per doctrine C  
 **Fix:** orama `435d27a` — `_unwrap_redacted_list()` in `portal_server.py`  
-**Symptom:** `http://localhost:8002/` → Internal Server Error; `/health` may still return 200 on stale portal  
-**Win recovery:**
+**Symptom:** `http://localhost:8002/` → Internal Server Error; `/health` may still return 200 on stale portal process  
+**Machine lessons:** `lesson_78f4700bd60c` (Win detail) + `lesson_64dedfe61cfa` (restart shorthand) + `lesson_20833366511b` (ws-peer GO)
+
+### Win recovery
 
 ```powershell
 cd $env:ORAMA_SYSTEM_PATH
-git pull --rebase origin main   # >= 435d27a
+git pull --ff-only origin main   # need >= 435d27a
 .\platform\windows\start.ps1 --stop
 .\platform\windows\start.ps1 --lan-peer --no-open
 ```
 
-**Machine lesson:** `lesson_78f4700bd60c` in `.agent/memory/semantic/lessons.jsonl`
+### Mac recovery
+
+```bash
+cd "$ORAMA_SYSTEM_PATH"
+git pull --ff-only origin main
+./start.sh --stop && ./start.sh --lan-peer --no-open
+```
 
 ---
 
@@ -27,7 +38,7 @@ git pull --rebase origin main   # >= 435d27a
 
 **Approval:** operator `approve lessons` (2026-06-28)  
 **Sources:** `mac-lessons-draft.md`, `win-self-improve-runtime-results.md`, live probes  
-**Machine lessons:** `lesson_87636d658879` … `lesson_20833366511b` (13 rows in `.agent/memory/semantic/lessons.jsonl`)
+**Machine lessons:** `lesson_87636d658879` … `lesson_64dedfe61cfa` (15 rows in `.agent/memory/semantic/lessons.jsonl`)
 
 ### Operational status (verified live)
 
@@ -75,7 +86,7 @@ git pull --rebase origin main   # >= 435d27a
 **orama playbook:** [`mac-co-orchestrator-playbook.md`](../../orama-system/bin/orama-system/skills/hermes-harness/references/mac-co-orchestrator-playbook.md)  
 **GitHub:** https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/hermes-harness/references/mac-co-orchestrator-playbook.md
 
-**Machine lessons:** `lesson_87636d658879` … `lesson_20833366511b` (13 co-orchestrator rows in `.agent/memory/semantic/lessons.jsonl`)
+**Machine lessons:** `lesson_87636d658879` … `lesson_64dedfe61cfa` (15 co-orchestrator rows in `.agent/memory/semantic/lessons.jsonl`)
 
 ### Where Mac co-orchestrator + subagents look
 
