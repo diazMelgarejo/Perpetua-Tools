@@ -1,0 +1,58 @@
+{
+  "id": "30de39cf9ada",
+  "key": "manual_30de39",
+  "name": "manual_30de39",
+  "claim": "Rebase or cherry-pick post-merge orphan PRs onto current main before closing or merging: first-commit conflicts with main usually mean the work already landed via a different PR path.",
+  "conditions": [
+    "already",
+    "before",
+    "cherry-pick",
+    "closing",
+    "conflicts",
+    "current",
+    "different",
+    "first-commit",
+    "landed",
+    "main",
+    "mean",
+    "merging",
+    "onto",
+    "orphan",
+    "path",
+    "post-merge",
+    "prs",
+    "rebase",
+    "usually",
+    "via",
+    "work"
+  ],
+  "evidence_ids": [
+    "2026-06-28T20:53:01.355500+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T20:53:01.355500+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T20:53:01.355500+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T20:53:01.393193+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama #133 cherry-pick onto d1d607e conflicted on security files already in #127; 10 remaining file diffs were regressions vs main",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T20:53:01.355500+00:00"
+      ],
+      "lessons_sha": "97ed74ddbcd3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T20:53:01.393183+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama #133 cherry-pick onto d1d607e conflicted on security files already in #127; 10 remaining file diffs were regressions vs main"
+}
