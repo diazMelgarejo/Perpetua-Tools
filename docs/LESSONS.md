@@ -8,6 +8,19 @@
 
 ---
 
+## 2026-06-28 — Cycle 005 coder + Ladder F (operator approved ALL) | Cursor
+
+**Approval:** operator `approve lessons` (round 9) — **ALL** to PT `.agent`  
+**Fan-out:** `2026-06-28-coord-005`  
+**Machine lessons:** `lesson_7fc75916a601`, `lesson_81a9b9806526`, `lesson_7588896135cf`, `lesson_b6d64dcb2d7f`
+
+28. **Bridge PR verify** — 38/38 tests on `subagent/win-coder/bridge-http-local`; drop `win-bridge-pr-ready.md` (`lesson_7fc75916a601`)
+29. **Ladder F** — model-routing-check dispatch gate in `graceful-degradation.md` (`lesson_81a9b9806526`)
+30. **Idle resume** — `V1_DEFERRED_BACKLOG` when queues idle >15 min (`lesson_7588896135cf`)
+31. **Peer timeout degrade** — continue local queue; retry drop when probe green (`lesson_b6d64dcb2d7f`)
+
+---
+
 ## 2026-06-28 — Self-improve cycle 005 (operator approved ALL) | Cursor
 
 **Approval:** operator `approve lessons` (round 8) — **ALL** to PT `.agent`  
