@@ -32,6 +32,7 @@
 4. **Mac unblock** — `git pull` orama `>= 9f89051`, `./start.sh --lan-peer` (peer-file 404 on stale portal)
 5. **Partial fanout** — Mac proceeds when Win peer-file not yet live
 6. **autoresearch_bridge** — SSH `GPU_BOX` path vs LAN HTTP + file handoff on Win
+7. **Mac inference** — Ollama warm (`:11434`) primary; LM Studio passive (`:1234`) — route Mac subagents to `ollama-mac`
 
 ---
 

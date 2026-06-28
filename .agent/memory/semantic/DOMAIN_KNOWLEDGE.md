@@ -452,4 +452,13 @@ Coordination is **file inbox only** — agents never execute on the peer host ov
 
 **Inbox path (both hosts):** openclaw state dir `lan_peer/inbox/` (see lan-peer-self-talk.md)
 
-**Post-commit sync:** `git fetch --prune` -> `git pull --rebase origin main` -> `git push` -> verify `HEAD == origin/main` in **both** repos. ce8934c (docs(memory): LAN peer file lessons + Win co-orchestrator/autoresearcher cards)
+**Post-commit sync:** `git fetch --prune` → `git pull --rebase origin main` → `git push` → verify `HEAD == origin/main` in **both** repos.
+
+### Mac inference mode (operator 2026-06-28)
+
+| Backend | State | Routing |
+|---------|-------|---------|
+| Ollama `:11434` | **Active / warm** | Primary Mac inference (`ollama-mac`) |
+| LM Studio `:1234` | **Passive only** | Catalog/probe OK; not primary coder path |
+
+Mac subagents (cursor-agent, mac-researcher) use Ollama for local runs. Win uses LM Studio `:1234` (27B).

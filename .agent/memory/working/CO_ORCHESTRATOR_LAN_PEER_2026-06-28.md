@@ -15,8 +15,18 @@
 
 Canonical: `../../orama-system/bin/orama-system/skills/hermes-harness/references/platform-affinity-routing.md`
 
-## Where co-orchestrator + subagents look first
+## Mac inference mode (2026-06-28 — operator reported)
 
+| Backend | Mac state | Use for |
+|---------|-----------|---------|
+| **Ollama** `:11434` | **Active / warm** | Mac co-orchestrator, mac-researcher, cursor-agent inference |
+| **LM Studio** `:1234` | **Passive only** | Probe catalog / optional MLX; **not** primary execution path |
+
+**Routing:** Mac subagents run local inference on `ollama-mac` (localhost:11434). Do not warm or dispatch through passive LM Studio unless hardware policy explicitly requires MLX on `:1234`.
+
+**Probe note:** `peer-lmstudio` can still PASS (LMS listening with model list) while Mac active work uses Ollama. `peer-lmstudio` ≠ Mac primary coder.
+
+## Where co-orchestrator + subagents look first
 | Role | Harness | Read this | Purpose |
 |------|---------|-----------|---------|
 | **Mac co-orchestrator** | OpenClaw + cursor-agent | This file + mac-co-orchestrator-playbook.md | Fan-out, peer read/write |
@@ -44,6 +54,7 @@ Canonical: `../../orama-system/bin/orama-system/skills/hermes-harness/references
 6. **autoresearch_bridge** — SSH GPU_BOX path vs LAN HTTP + file handoff
 7. **Mac unblock** — pull `>= 9f89051`, `./start.sh --lan-peer` for peer-file
 8. **Joint auth** — PT `.state` token + orama env lanes → `auth_mode: joint`
+9. **Mac inference** — Ollama warm (`:11434`) primary; LM Studio passive (`:1234`)
 
 ## Mac commands (OpenClaw co-orchestrator + subagents)
 
