@@ -59,7 +59,7 @@ def _heuristic_prefilter(candidates_dir, semantic_dir):
     if not os.path.isdir(candidates_dir):
         return 0
     lessons_path = os.path.join(semantic_dir, "LESSONS.md")
-    existing = open(lessons_path).read() if os.path.exists(lessons_path) else ""
+    existing = open(lessons_path, encoding="utf-8").read() if os.path.exists(lessons_path) else ""
     rejected = 0
     for fname in sorted(os.listdir(candidates_dir)):
         if not fname.endswith(".json"):

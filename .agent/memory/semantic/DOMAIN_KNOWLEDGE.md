@@ -120,6 +120,36 @@ externally). Fixed in orama-system commit `2f78e35`.
 **Here-strings** (`@"..."@`) are safe — only `"@` at column 0 closes them.
 **Em-dashes in comments** are safe. Only **double-quoted string literals** are at risk.
 
+### LAN P2P bidirectional transport — zero-dep options (surveyed 2026-06-28)
+
+For a 2-host Python/FastAPI LAN stack (Mac ↔ Win), ranked by (new deps, code LoC):
+
+| Transport | New pkgs | LoC | Notes |
+|-----------|----------|-----|-------|
+| **FastAPI WebSocket** | **0** | ~40 | Bundled in `fastapi[standard]`. Dual-socket: each host is server+client. <1 ms LAN. |
+| SSE + POST (HTTP fallback) | **0** | ~50 | `GET /events/peer-stream` downlink + `POST /api/peer-event` uplink. 2 connections. |
+| ZeroMQ PAIR (`pyzmq`) | 1 | ~30 | True P2P, <0.1 ms. Upgrade when sub-ms or N>2 hosts needed. |
+| mDNS/zeroconf | 1 | ~20 | Discovery only — announces `_orama._tcp.local.`; pairs with any transport. |
+| MQTT + Mosquitto | 1+broker | ~30 | Overkill for 2 hosts. Right for N-to-N pub/sub. |
+| gRPC bidirec. | 2+ | ~100 | Best for cross-language (Python↔TypeScript) structured schema. |
+
+**Connection state machine (WS-primary):**
+```
+WS_CONNECTING (5 s timeout)
+  ├─ success → WS_CONNECTED  [heartbeat every 15 s]
+  │             └─ drop ──────────────────────────┐
+  └─ fail (×2) → SSE_CONNECTING                  │
+                  ├─ success → SSE_CONNECTED       │
+                  │             └─ drop ───────────┘
+                  └─ fail → DISCONNECTED (30 s retry → WS_CONNECTING)
+```
+
+**Shared envelope (transport-agnostic):** `{"type": "...", "source": "win|mac", "ts": 0, "data": {}}`
+
+**PT file to add:** `probe_lan_peer.py` Phase 4 — `ws-peer` check via `websockets.connect(f"ws://{peer}:8002/ws/portal-peer", open_timeout=5)`.
+
+**Plan:** `orama-system/docs/guides/lan-peer-bidirectional-talk-2026-06-28.md` §Implementation plan
+
 ### LLAMA_SERVER_BASE_URL — already in PowerShell profile, never missing
 - `%USERPROFILE%\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` line 1:
   `$env:LLAMA_SERVER_BASE_URL = "http://localhost:1234/v1"` — verified present.

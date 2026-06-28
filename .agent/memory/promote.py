@@ -78,7 +78,7 @@ def write_candidates(patterns, candidates_dir):
     lessons_text = ""
     if os.path.exists(lessons_path):
         try:
-            lessons_text = open(lessons_path).read()
+            lessons_text = open(lessons_path, encoding="utf-8").read()
         except OSError:
             pass
     current_terminal_lessons = set(extract_lesson_lines(lessons_text))
