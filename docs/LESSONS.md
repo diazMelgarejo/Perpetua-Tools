@@ -8,6 +8,22 @@
 
 ---
 
+## 2026-06-28 — Self-improve cycle 005 (operator approved ALL) | Cursor
+
+**Approval:** operator `approve lessons` (round 8) — **ALL** to PT `.agent`  
+**Fan-out:** `2026-06-28-coord-005`  
+**Sources:** `win-self-improve-cycle-005.md`, monitor log, queue reconcile, H5 finalize  
+**Machine lessons:** `lesson_c391481ca104`, `lesson_8b5d45070494`, `lesson_82ab64772b2b`, `lesson_2a476c761ca1`
+
+### Gold nuggets
+
+24. **PS ASCII-only** — em-dash in `coord_monitor.ps1` broke ParserError; use ASCII in Win ops scripts (`lesson_c391481ca104`)
+25. **PT memory merge** — union all rows when Mac+Win push `.agent/memory` same round (`lesson_8b5d45070494`)
+26. **H5 finalize pattern** — pull Mac results, synthesis-only, drop final, no GPU re-run (`lesson_82ab64772b2b`)
+27. **Monitor validated** — `coord_monitor.ps1` tick 5 caught coord-005 before manual poll (`lesson_2a476c761ca1`)
+
+---
+
 ## 2026-06-28 — Cycle 005 H5 closed (operator approved) | Cursor
 
 **Approval:** operator `approve lessons` (round 7)  
