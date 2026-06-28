@@ -53,6 +53,15 @@ jobs:
             echo "skip: orama-system not available in this CI run"
           fi
 
+      - name: Verify model endpoint policy parity with orama-system
+        run: |
+          if [ -d orama-system ]; then
+            ORAMA_SYSTEM_ROOT="$GITHUB_WORKSPACE/orama-system" \
+              python3 scripts/review/verify_model_endpoint_policy_parity.py
+          else
+            echo "skip: orama-system not available in this CI run"
+          fi
+
       - name: Scan tracked files for banned tokens
         run: bash scripts/git/scan-tracked-banned-tokens.sh
 
