@@ -8,6 +8,19 @@
 
 ---
 
+## 2026-06-28 — Queue prune + monitor playbook (operator approved) | Cursor
+
+**Approval:** operator `approve lessons` (round 6)  
+**Tool:** `win_job_queue.py` (`prune`, `complete-pending`)  
+**Machine lessons:** `lesson_c6e4f1a89d20`, `lesson_9b3d7e2f41ac`
+
+### Gold nuggets
+
+21. **Queue hygiene** — `prune` on enqueue strips mac-* deliverables and ops noise; `complete-pending` reconciles finished coord jobs (`lesson_c6e4f1a89d20`)
+22. **Active-cycle monitor** — poll probe + inbox + queue every 2–3 min; Mac H5 leg Mac-owned until dropped (`lesson_9b3d7e2f41ac`)
+
+---
+
 ## 2026-06-28 — Cycle 004 sequential job queues (operator approved) | Cursor
 
 **Approval:** operator `approve lessons` (round 5)  
