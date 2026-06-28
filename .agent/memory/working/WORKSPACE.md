@@ -91,3 +91,16 @@ the test passes locally. Reviewer should verify CI `pip install` includes `[dev]
 **PR candidates after `git cherry` verify:** `chore/domain-knowledge-windows-shims`, `fix/pr135-lint006-windows` (orama), `2026-06-11-001-win-endpoint-discovery-sync`, `clean-pt127`.
 
 **Memory updated:** DOMAIN_KNOWLEDGE § Git gold nuggets, DECISIONS 2026-06-27 tree-twin, episodic + learn.py lessons (this session).
+
+---
+
+## Append: Vitest / TDD gate session (2026-06-27)
+
+**Catalog:** `.agent/memory/working/VITEST_TDD_SESSION_2026-06-27.md` — 13 rated learnings (importance 5–9).
+
+**Top priority (9):** bash 3.2 no `mapfile` (`lesson_f8e2a91b4c3d`); TDD commit-msg gate (`lesson_e7d1b80a3b2c`).
+
+**Merge order:** orama #116 (CRLF) → #118 (dev-recalib + Vitest); fold/close #117 scratch.
+
+**Memory updated (append-only):** `lessons.jsonl` (+13, now 144 lines), `LESSONS.md` re-rendered, `AGENT_LEARNINGS.jsonl` episodic `vitest-tdd-gate-session-2026-06-27`, `DECISIONS.md` TDD hook + Playwright defer, `DOMAIN_KNOWLEDGE.md` § Vitest/TDD.
+

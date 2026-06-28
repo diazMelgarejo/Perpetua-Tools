@@ -347,3 +347,11 @@ non-negotiables.
 **Status:** active — catalog `.agent/memory/working/BRANCH_CATALOG_COMPLETE_2026-06-27.md`;
 skills: orama `git-history-surgery` → `reanchor-after-rewrite.md`, PT `scripts/git/reanchor_scan.sh`
 
+---
+
+## 2026-06-27: TDD commit-msg hook + Playwright defer
+**Decision:** Enforce web/src TDD pairing via scripts/git/check_tdd_commit.sh on commit-msg (not pre-commit); defer Playwright E2E until Vitest RC-1 gate merges to orama main.
+**Rationale:** Pre-commit lacks commit message for tdd-skip escape hatch. E2E is out of RC-1 minimum; Vitest 16-test gate must land first.
+**Alternatives considered:** Pre-commit only (rejected — no tdd-skip); Playwright in same PR (rejected — scope).
+**Status:** active
+
