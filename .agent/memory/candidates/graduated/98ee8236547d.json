@@ -1,0 +1,60 @@
+{
+  "id": "98ee8236547d",
+  "key": "manual_98ee82",
+  "name": "manual_98ee82",
+  "claim": "Before git pull --rebase when Perpetua-Tools main is behind origin, stash local devices.yml and submodule drift; remote may have landed security PR lessons and episodic memory while Mac was idle.",
+  "conditions": [
+    "before",
+    "behind",
+    "devices",
+    "drift",
+    "episodic",
+    "git",
+    "idle",
+    "landed",
+    "lessons",
+    "local",
+    "mac",
+    "main",
+    "memory",
+    "origin",
+    "perpetua-tools",
+    "pull",
+    "rebase",
+    "remote",
+    "security",
+    "stash",
+    "submodule",
+    "while",
+    "yml"
+  ],
+  "evidence_ids": [
+    "2026-06-28T23:10:31.477831+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T23:10:31.477831+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T23:10:31.477831+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T23:10:31.592410+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-06-29 sync: main was 27 commits behind d41bc85; stash avoided rebase conflict",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T23:10:31.477831+00:00"
+      ],
+      "lessons_sha": "5e3a6e412279"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T23:10:31.592401+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-06-29 sync: main was 27 commits behind d41bc85; stash avoided rebase conflict"
+}
