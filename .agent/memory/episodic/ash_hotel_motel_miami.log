@@ -1,0 +1,9 @@
+ABSOLUTE_TRUTH 2026-06-28: In this Windows session,
+the current running model is nous:stepfun/step-3.
+7-flash:free. When a user asks to “make X the de
+fault,” set the model/provider in the Hermes user
+config (provider/model fields), not repo docs. Use
+`hermes config set` or the equivalent Hermes
+config API. For orama-system skill routing, the
+ orama config layer owns provider/model routing
+on Windows; Hermes is a consumer, not the SSoT.
