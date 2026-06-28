@@ -209,6 +209,33 @@ def test_host_has_port_handles_bracketed_ipv6():
     assert _host_has_port("[::1]") is False
 
 
+def test_active_tilting_ollama_win_uses_model_port_not_lmstudio(registry, monkeypatch):
+    """Win Ollama backends must not inherit lm-studio :1234 from active tilting."""
+    monkeypatch.delenv("PT_DISABLE_LIVE_MODEL_PROBES", raising=False)
+    monkeypatch.setattr(
+        "orchestrator.lan_discovery.detect_active_tilting_ip",
+        lambda: "http://192.168.254.108:1234",
+    )
+
+    ollama_item = {
+        "device": "win-rtx3080",
+        "backend": "ollama",
+        "host": "${WIN_OLLAMA_ENDPOINT:-http://192.168.254.108}",
+        "port": 11434,
+        "name": "qwen3-30b-autoresearch-critic",
+    }
+    lm_item = {
+        "device": "win-rtx3080",
+        "backend": "lm-studio",
+        "host": "${LM_STUDIO_WIN_ENDPOINT:-http://192.168.254.108}",
+        "port": 1234,
+        "name": "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2",
+    }
+
+    assert registry._resolve_host(ollama_item) == "http://192.168.254.108:11434"
+    assert registry._resolve_host(lm_item) == "http://192.168.254.108:1234"
+
+
 def test_orchestrate_hardware_selection(monkeypatch, client):
     """
     End-to-end check of /orchestrate selecting the right model per device.

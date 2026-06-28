@@ -108,13 +108,24 @@ class ModelRegistry:
         detect_active_tilting_ip).
 
         For all other devices, falls through to the usual env-var expansion.
+
+        Active tilting discovers the Win GPU host for lm-studio (:1234). Win Ollama
+        models on the same device must keep their own port (11434) — reusing the
+        lm-studio URL would probe the wrong endpoint and mark Ollama models offline.
         """
         device_name = item.get("device", "")
         dev_info = self.device_info(device_name)
-        live_disabled = os.getenv("PT_DISABLE_LIVE_MODEL_PROBES", "").strip().lower() in _DISABLE_LIVE_PROBES
-        if dev_info.get("identity_method") == "active_tilting" and not live_disabled:
+        if dev_info.get("identity_method") == "active_tilting":
             from orchestrator.lan_discovery import detect_active_tilting_ip
-            return detect_active_tilting_ip()
+
+            tilted = detect_active_tilting_ip()
+            if item.get("backend") != "ollama":
+                return tilted
+            parsed = urlparse(tilted if "://" in tilted else f"http://{tilted}")
+            hostname = parsed.hostname
+            if not hostname:
+                return _expand_env_default(str(item.get("host", "")))
+            return f"http://{hostname}:{int(item.get('port', 11434))}"
         return _expand_env_default(str(item.get("host", "")))
 
     # ── model listing ─────────────────────────────────────────────────────────
