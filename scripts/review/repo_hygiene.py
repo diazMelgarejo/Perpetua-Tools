@@ -80,7 +80,7 @@ _CP1252_HIGH_PUNCT = (
     (0x02DC, 0x02DC),
 )
 _CP1252_HIGH_SINGLE = (0x2026, 0x2030, 0x2039, 0x203A, 0x20AC, 0x2122)
-MOJIBAKE_RE = re.compile(
+_MOJIBAKE_2BYTE = (
     "["
     + chr(0x00C2)
     + "-"
@@ -98,6 +98,26 @@ MOJIBAKE_RE = re.compile(
     + "".join(chr(cp) for cp in _CP1252_HIGH_SINGLE)
     + "])"
 )
+# Supplementary-plane UTF-8 mis-decoded as latin-1/cp1252 (lead bytes U+00F0–U+00F4).
+_MOJIBAKE_4BYTE = (
+    "["
+    + chr(0x00F0)
+    + "-"
+    + chr(0x00F4)
+    + "](?:["
+    + chr(0x0080)
+    + "-"
+    + chr(0x00BF)
+    + "]|["
+    + "".join(
+        chr(cp)
+        for start, end in _CP1252_HIGH_PUNCT
+        for cp in range(start, end + 1)
+    )
+    + "".join(chr(cp) for cp in _CP1252_HIGH_SINGLE)
+    + "]){3}"
+)
+MOJIBAKE_RE = re.compile(_MOJIBAKE_2BYTE + "|" + _MOJIBAKE_4BYTE)
 PRIVATE_GENERATED_TRACKED = {".env", ".env.local", ".paths"}
 SECRET_PATTERN_EXCEPTIONS = {
     "packages/alphaclaw-mcp/tests/path-boundary-mcp.test.mjs",

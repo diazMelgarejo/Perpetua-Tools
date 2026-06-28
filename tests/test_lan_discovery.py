@@ -123,3 +123,37 @@ def test_read_discovery_win_url_rejects_malformed_timestamp(tmp_path, monkeypatc
     assert "invalid discovery snapshot timestamp" in caplog.text
 
 
+def test_read_discovery_win_url_rejects_missing_timestamp(tmp_path, monkeypatch, caplog):
+    snapshot = tmp_path / "last_discovery.json"
+    snapshot.write_text(
+        json.dumps({
+            "endpoints": {
+                "win": {
+                    "ip": "192.168.254.108",
+                    "port": 1234,
+                    "reachable": True,
+                }
+            },
+        }),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(lan_discovery, "_OPENCLAW_DISCOVERY", snapshot)
+    caplog.set_level("DEBUG", logger="orchestrator.lan_discovery")
+
+    assert lan_discovery._read_discovery_win_url() is None
+    assert "missing timestamp" in caplog.text
+
+
+def test_read_discovery_win_url_rejects_malformed_endpoints_shape(tmp_path, monkeypatch):
+    snapshot = tmp_path / "last_discovery.json"
+    snapshot.write_text(
+        json.dumps({
+            "watcher_heartbeat": "2026-06-24T12:00:00+00:00",
+            "endpoints": "not-a-dict",
+        }),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(lan_discovery, "_OPENCLAW_DISCOVERY", snapshot)
+
+    assert lan_discovery._read_discovery_win_url() is None
+

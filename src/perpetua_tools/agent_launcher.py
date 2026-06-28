@@ -215,19 +215,21 @@ def _pick_mac_manager(served: list, preferred: str) -> str:
          whenever it's online (rather than grabbing the first raw tag, which may
          be an embedding model like bge-m3);
       2. the first served Mac-affine model;
-      3. the configured default.
+      3. the configured default (affinity-checked).
     Never returns a NEVER_MAC model (a Win-only coder that leaked into a mac
     bucket via LAN discovery) — that would fail the hardware-affinity gate.
     """
-    if preferred and preferred in served:
-        try:
-            check_affinity(preferred, "mac")
-            return preferred
-        except HardwareAffinityError:
-            logging.getLogger(__name__).warning(
-                "skipping preferred NEVER_MAC model %r for the Mac manager role",
-                preferred,
-            )
+    if preferred:
+        for m in served:
+            if _served_model_present([m], preferred):
+                try:
+                    check_affinity(m, "mac")
+                    return m
+                except HardwareAffinityError:
+                    logging.getLogger(__name__).warning(
+                        "skipping preferred NEVER_MAC model %r for the Mac manager role",
+                        m,
+                    )
     for m in served:
         try:
             check_affinity(m, "mac")
@@ -237,7 +239,10 @@ def _pick_mac_manager(served: list, preferred: str) -> str:
                 "skipping NEVER_MAC model %r for the Mac manager role", m
             )
             continue
-    return preferred
+    if preferred:
+        check_affinity(preferred, "mac")
+        return preferred
+    raise HardwareAffinityError("No Mac-affine manager model available")
 
 # Windows — WINDOWS_IP exported by start.sh; if absent parse LM_STUDIO_WIN_ENDPOINTS
 # (first entry), then fall back to hard-coded LAN default.
@@ -641,6 +646,7 @@ def _build_routing_state(
     local_ips: frozenset[str],
     manager_affinity_alert: str | None = None,
     scenario: StartupScenario | None = None,
+    manager_model: str | None = None,
 ) -> dict:
     """Construct the routing state dict.
 
@@ -659,12 +665,16 @@ def _build_routing_state(
     # online+accessible; then Mac LM Studio. Affinity-safe (never a NEVER_MAC model).
     if mac_ok:
         manager_endpoint = LOCAL_MAC_URL
-        manager_model    = _pick_mac_manager(local_models.get("mac-ollama", []), MAC_MANAGER_MODEL)
         manager_backend  = "mac-ollama"
     else:
         manager_endpoint = MAC_LMS_URL
-        manager_model    = _pick_mac_manager(local_models.get("mac-lmstudio", []), MAC_LMS_MODEL)
         manager_backend  = "mac-lmstudio"
+    if manager_model is None:
+        manager_model = (
+            _pick_mac_manager(local_models.get("mac-ollama", []), MAC_MANAGER_MODEL)
+            if mac_ok
+            else _pick_mac_manager(local_models.get("mac-lmstudio", []), MAC_LMS_MODEL)
+        )
 
     mac_any = mac_ok or mac_lms_ok
 
@@ -870,16 +880,19 @@ async def initialize_environment() -> dict:
         _ensure_mac_ollama_models_present(_mac_ol, LOCAL_MAC_URL)
     # Mac ollama-localhost is the highest-priority orchestrator when online;
     # affinity-safe pick (never a NEVER_MAC Win coder that leaked into the bucket).
-    _mgr_model = (
-        _pick_mac_manager(_mac_ol, MAC_MANAGER_MODEL)
-        if mac_ok
-        else _pick_mac_manager(_mac_lms, MAC_LMS_MODEL)
-    )
+    _mgr_model: str | None = None
     try:
+        _mgr_model = (
+            _pick_mac_manager(_mac_ol, MAC_MANAGER_MODEL)
+            if mac_ok
+            else _pick_mac_manager(_mac_lms, MAC_LMS_MODEL)
+        )
         check_affinity(_mgr_model, "mac")
     except HardwareAffinityError as exc:
         override = await _await_manager_override_async(exc, timeout=10.0)
         if override:
+            if _mgr_model is None:
+                _mgr_model = MAC_MANAGER_MODEL if mac_ok else MAC_LMS_MODEL
             mac_ok = False
             mac_lms_ok = False
             mac_any = False
@@ -903,6 +916,7 @@ async def initialize_environment() -> dict:
         mac_ok, mac_lms_ok, win_ok, lms_ok, local_models, mac_lms_is_local, local_ips,
         manager_affinity_alert=manager_affinity_alert,
         scenario=scenario,
+        manager_model=_mgr_model,
     )
 
 

@@ -585,3 +585,63 @@ def test_start_openclaw_gateway_closes_log_handle_when_popen_fails(tmp_path, mon
     assert result is None
     assert opened
     assert opened[0].closed_by_wrapper is True
+
+
+def test_gateway_port_from_url_extracts_non_default_port():
+    assert alphaclaw_bootstrap._gateway_port_from_url("http://127.0.0.1:19001") == 19001
+
+
+@pytest.mark.asyncio
+async def test_bootstrap_commandeer_sets_gateway_port(monkeypatch, tmp_path):
+    async def _find_gateway():
+        return "http://127.0.0.1:19001"
+
+    monkeypatch.setattr(alphaclaw_bootstrap, "_find_any_gateway", _find_gateway)
+    monkeypatch.setattr(alphaclaw_bootstrap, "_load_pt_state", lambda: {})
+    monkeypatch.setattr(alphaclaw_bootstrap, "_write_openclaw_config", lambda _d, _f: {"gateway": {}})
+    monkeypatch.setattr(alphaclaw_bootstrap, "build_role_routing", lambda _pt: {})
+    monkeypatch.setattr(alphaclaw_bootstrap, "_ensure_agent_workspaces", lambda _d: None)
+    monkeypatch.setattr(alphaclaw_bootstrap, "_ensure_autoresearch", lambda: None)
+    config_dir = tmp_path / ".openclaw"
+    config_dir.mkdir()
+    monkeypatch.setattr(alphaclaw_bootstrap.Path, "home", lambda: tmp_path)
+
+    result = await alphaclaw_bootstrap.bootstrap_alphaclaw()
+
+    assert result["ok"] is True
+    assert result["gateway_url"] == "http://127.0.0.1:19001"
+    assert result["gateway_port"] == 19001
+
+
+@pytest.mark.asyncio
+async def test_bootstrap_tries_bare_openclaw_before_npm_check(monkeypatch, tmp_path):
+    calls: list[str] = []
+
+    async def _no_gateway():
+        return None
+
+    async def _openclaw_ok(*_args, **_kwargs):
+        calls.append("openclaw")
+        return {
+            "ok": True,
+            "gateway_ready": True,
+            "gateway_url": "http://127.0.0.1:19001",
+            "gateway_port": 19001,
+        }
+
+    def _no_npm(_name):
+        if _name == "npm":
+            calls.append("npm")
+        return None
+
+    monkeypatch.setattr(alphaclaw_bootstrap, "_find_any_gateway", _no_gateway)
+    monkeypatch.setattr(alphaclaw_bootstrap, "_bootstrap_via_bare_openclaw", _openclaw_ok)
+    monkeypatch.setattr(alphaclaw_bootstrap.shutil, "which", _no_npm)
+    monkeypatch.setattr(alphaclaw_bootstrap.Path, "home", lambda: tmp_path)
+
+    result = await alphaclaw_bootstrap.bootstrap_alphaclaw()
+
+    assert result["gateway_port"] == 19001
+    assert calls == ["openclaw"]
+    assert "npm" not in calls
+

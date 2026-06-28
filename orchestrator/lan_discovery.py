@@ -353,19 +353,30 @@ def _read_discovery_win_url(max_age_s: int = _DISCOVERY_MAX_AGE_S) -> Optional[s
         data = json.loads(_OPENCLAW_DISCOVERY.read_text(encoding="utf-8"))
     except Exception:
         return None
-    win = (data.get("endpoints") or {}).get("win") or {}
+    if not isinstance(data, dict):
+        return None
+    endpoints = data.get("endpoints")
+    if not isinstance(endpoints, dict):
+        return None
+    win = endpoints.get("win")
+    if not isinstance(win, dict):
+        return None
     ip = win.get("ip")
     if not ip or ip in ("localhost", "127.0.0.1") or not win.get("reachable", False):
         return None
     stamp = data.get("watcher_heartbeat") or data.get("timestamp")
-    if stamp:
-        try:
-            ts = datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
-            if (datetime.now(timezone.utc) - ts).total_seconds() > max_age_s:
-                return None
-        except Exception as exc:
-            log.debug("invalid discovery snapshot timestamp %r: %s", stamp, exc)
+    if not stamp:
+        log.debug("discovery snapshot missing timestamp — refusing stale win endpoint")
+        return None
+    try:
+        ts = datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        if (datetime.now(timezone.utc) - ts).total_seconds() > max_age_s:
             return None
+    except Exception as exc:
+        log.debug("invalid discovery snapshot timestamp %r: %s", stamp, exc)
+        return None
     return f"http://{ip}:{win.get('port', 1234)}"
 
 
@@ -401,6 +412,7 @@ def _sync_win_endpoint_env(url: str) -> None:
     }
     for k, v in holders.items():
         os.environ[k] = v
+    env_persisted = False
     try:
         env_path = Path(__file__).resolve().parents[1] / ".env"
         lines = env_path.read_text(encoding="utf-8").splitlines() if env_path.is_file() else []
@@ -423,9 +435,11 @@ def _sync_win_endpoint_env(url: str) -> None:
             tmp.write_text("\n".join(out) + "\n", encoding="utf-8")
             tmp.replace(env_path)
             log.info("synced Win endpoint to .env holders -> %s", url)
+        env_persisted = True
     except Exception as exc:
         log.warning("could not persist Win endpoint to .env (non-fatal): %s", exc)
-    _last_synced_win_url = url
+    if env_persisted:
+        _last_synced_win_url = url
 
 
 def detect_active_tilting_ip() -> str:

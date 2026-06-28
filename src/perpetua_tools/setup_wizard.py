@@ -44,6 +44,17 @@ from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 ENV_PATH   = _REPO_ROOT / ".env"
+_BOOTSTRAP_SCRIPT = Path(__file__).resolve().parent / "alphaclaw_bootstrap.py"
+
+
+def _pt_subprocess_env() -> dict[str, str]:
+    env = dict(os.environ)
+    paths = [str(_REPO_ROOT), str(_REPO_ROOT / "src")]
+    existing = env.get("PYTHONPATH", "")
+    if existing:
+        paths.append(existing)
+    env["PYTHONPATH"] = os.pathsep.join(paths)
+    return env
 
 try:
     from dotenv import load_dotenv, set_key as _set_key
@@ -232,11 +243,13 @@ def _install_alphaclaw_interactive() -> bool:
                                  str(Path.home() / ".alphaclaw")))
     install_dir.mkdir(parents=True, exist_ok=True)
 
-    bootstrap = _REPO_ROOT / "alphaclaw_bootstrap.py"
-    if bootstrap.exists():
+    bootstrap = _BOOTSTRAP_SCRIPT
+    if bootstrap.is_file():
         print("  Running alphaclaw_bootstrap.py --bootstrap…\n")
         result = subprocess.run(
             [sys.executable, str(bootstrap), "--bootstrap"],
+            cwd=str(_REPO_ROOT),
+            env=_pt_subprocess_env(),
         )
         return result.returncode == 0
 
@@ -306,9 +319,13 @@ def run_wizard(args: argparse.Namespace) -> None:
         elif not alphaclaw_running:
             ans = input("  AlphaClaw installed but gateway not running. Start now? [Y/n]: ").strip()
             if ans.lower() != "n":
-                bootstrap = _REPO_ROOT / "alphaclaw_bootstrap.py"
-                if bootstrap.exists():
-                    subprocess.run([sys.executable, str(bootstrap), "--bootstrap"])
+                bootstrap = _BOOTSTRAP_SCRIPT
+                if bootstrap.is_file():
+                    subprocess.run(
+                        [sys.executable, str(bootstrap), "--bootstrap"],
+                        cwd=str(_REPO_ROOT),
+                        env=_pt_subprocess_env(),
+                    )
                 else:
                     install_dir = Path(os.getenv("ALPHACLAW_INSTALL_DIR",
                                                   str(Path.home() / ".alphaclaw")))

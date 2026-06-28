@@ -3,7 +3,23 @@ from __future__ import annotations
 
 import json
 
-from orchestrator.alphaclaw_manager import _parse_bootstrap_json
+from orchestrator.alphaclaw_manager import (
+    AGENT_LAUNCHER_SCRIPT,
+    ALPHACLAW_BOOTSTRAP_SCRIPT,
+    _parse_bootstrap_json,
+)
+
+
+def test_tool_script_paths_resolve_after_src_migration():
+    """Regression: CLIs moved under src/perpetua_tools/ must stay discoverable."""
+    assert AGENT_LAUNCHER_SCRIPT.is_file(), (
+        f"agent_launcher missing at {AGENT_LAUNCHER_SCRIPT}"
+    )
+    assert ALPHACLAW_BOOTSTRAP_SCRIPT.is_file(), (
+        f"alphaclaw_bootstrap missing at {ALPHACLAW_BOOTSTRAP_SCRIPT}"
+    )
+    assert AGENT_LAUNCHER_SCRIPT.parent == ALPHACLAW_BOOTSTRAP_SCRIPT.parent
+    assert AGENT_LAUNCHER_SCRIPT.parent.name == "perpetua_tools"
 
 
 def test_parse_bootstrap_json_accepts_pure_json():
