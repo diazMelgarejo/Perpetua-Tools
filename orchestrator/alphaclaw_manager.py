@@ -28,18 +28,56 @@ from __future__ import annotations
 import asyncio
 import importlib
 import json
+import logging
 import os
 import subprocess
 import sys
+
+_log = logging.getLogger(__name__)
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
 from utils.hardware_policy import check_affinity
 
-SCRIPT_DIR = Path(__file__).resolve().parent.parent   # PT root
-STATE_DIR  = SCRIPT_DIR / ".state"
+SCRIPT_DIR = Path(__file__).resolve().parent.parent   # PT root or site-packages
+STATE_DIR = SCRIPT_DIR / ".state"
 ROUTING_JSON = STATE_DIR / "routing.json"
+
+
+def _tool_script(module_name: str) -> Path:
+    """Resolve a perpetua_tools CLI script for source checkout and wheel installs.
+
+    Defers import errors so callers get a structured probe/bootstrap failure
+    instead of an ImportError that breaks module-level import.
+    """
+    try:
+        mod = importlib.import_module(module_name)
+        return Path(mod.__file__).resolve()
+    except Exception as exc:
+        # Sentinel path; callers guard with .is_file() before use.
+        sentinel = SCRIPT_DIR / "src" / module_name.replace(".", "/")
+        _log.debug("_tool_script(%r) failed (%s) — sentinel: %s", module_name, exc, sentinel)
+        return sentinel
+
+
+AGENT_LAUNCHER_SCRIPT = _tool_script("perpetua_tools.agent_launcher")
+ALPHACLAW_BOOTSTRAP_SCRIPT = _tool_script("perpetua_tools.alphaclaw_bootstrap")
+TOOLS_DIR = AGENT_LAUNCHER_SCRIPT.parent
+
+
+def _pt_subprocess_env(extra: dict[str, str] | None = None) -> dict[str, str]:
+    """PYTHONPATH for perpetua_tools CLIs (orchestrator + src packages)."""
+    env = {**os.environ, **(extra or {})}
+    paths = [str(SCRIPT_DIR)]
+    src_dir = SCRIPT_DIR / "src"
+    if src_dir.is_dir():
+        paths.append(str(src_dir))
+    existing = env.get("PYTHONPATH", "")
+    if existing:
+        paths.append(existing)
+    env["PYTHONPATH"] = os.pathsep.join(paths)
+    return env
 
 # ─── Data model ───────────────────────────────────────────────────────────────
 
@@ -160,21 +198,20 @@ def probe_backends(
     mac_ip = mac_ip or os.getenv("MAC_IP", "192.168.254.105")
     win_ip = win_ip or os.getenv("WIN_IP", "192.168.254.103")
 
-    launcher = SCRIPT_DIR / "agent_launcher.py"
+    launcher = AGENT_LAUNCHER_SCRIPT
     if not launcher.is_file():
         return BackendProbeResult(
             mac_ip=mac_ip,
             win_ip=win_ip,
-            error="agent_launcher.py not found",
+            error=f"agent_launcher.py not found at {launcher}",
         )
 
-    env = {
-        **os.environ,
+    env = _pt_subprocess_env({
         "WINDOWS_IP": win_ip,
         "OLLAMA_MAC_ENDPOINT": "http://localhost:11434",
         "MAC_IP": mac_ip,
         "WIN_IP": win_ip,
-    }
+    })
 
     STATE_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -313,19 +350,18 @@ def bootstrap_alphaclaw(mac_ip: str = "", win_ip: str = "") -> AlphaClawState:
     This replaces start.sh §2b's delegation logic. PT orchestrates AlphaClaw;
     orama is told where the gateway ended up via the resolved payload.
     """
-    bootstrap = SCRIPT_DIR / "alphaclaw_bootstrap.py"
+    bootstrap = ALPHACLAW_BOOTSTRAP_SCRIPT
     if not bootstrap.is_file():
-        return AlphaClawState(error="alphaclaw_bootstrap.py not found")
+        return AlphaClawState(error=f"alphaclaw_bootstrap.py not found at {bootstrap}")
 
     mac_ip = mac_ip or os.getenv("MAC_IP", "192.168.254.105")
     win_ip = win_ip or os.getenv("WIN_IP", "192.168.254.103")
 
-    env = {
-        **os.environ,
+    env = _pt_subprocess_env({
         "PT_HOME": str(SCRIPT_DIR),
         "MAC_IP": mac_ip,
         "WIN_IP": win_ip,
-    }
+    })
 
     try:
         result = subprocess.run(
