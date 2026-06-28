@@ -1,0 +1,68 @@
+{
+  "id": "78f4700bd60c",
+  "key": "manual_78f470",
+  "name": "manual_78f470",
+  "claim": "Windows Portal http://localhost:8002/ Internal Server Error on dashboard root: pull orama-system main at or after 435d27a and restart start.ps1 --lan-peer. Fix unwraps redacted agents dict in portal_server _render_html; /health may PASS while / returns 500 on stale portal process.",
+  "conditions": [
+    "after",
+    "agents",
+    "d27a",
+    "dashboard",
+    "dict",
+    "error",
+    "fix",
+    "health",
+    "http",
+    "internal",
+    "lan-peer",
+    "localhost",
+    "main",
+    "orama-system",
+    "pass",
+    "portal",
+    "portal_server",
+    "process",
+    "ps1",
+    "pull",
+    "redacted",
+    "render_html",
+    "restart",
+    "returns",
+    "root",
+    "server",
+    "stale",
+    "start",
+    "unwraps",
+    "while",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-06-28T12:25:18.542396+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T12:25:18.542396+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T12:25:18.542396+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T12:25:18.618252+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-06-28 Win operator report; fix 435d27a _unwrap_redacted_list; test test_portal_index_handles_redacted_agents_payload",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T12:25:18.542396+00:00"
+      ],
+      "lessons_sha": "bdecd2b04915"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T12:25:18.618247+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-06-28 Win operator report; fix 435d27a _unwrap_redacted_list; test test_portal_index_handles_redacted_agents_payload"
+}
