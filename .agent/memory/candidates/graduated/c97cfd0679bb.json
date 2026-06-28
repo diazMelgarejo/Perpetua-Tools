@@ -1,0 +1,58 @@
+{
+  "id": "c97cfd0679bb",
+  "key": "manual_c97cfd",
+  "name": "manual_c97cfd",
+  "claim": "Cross-repo Python policy parity scripts must compare function ASTs with ast.dump(), not ast.unparse() \u2014 quote-style and formatting differences cause false diverge failures even when logic is identical.",
+  "conditions": [
+    "ast",
+    "asts",
+    "cause",
+    "compare",
+    "cross-repo",
+    "differences",
+    "diverge",
+    "dump",
+    "even",
+    "failures",
+    "false",
+    "formatting",
+    "function",
+    "identical",
+    "logic",
+    "parity",
+    "policy",
+    "python",
+    "quote-style",
+    "scripts",
+    "unparse"
+  ],
+  "evidence_ids": [
+    "2026-06-28T19:55:21.264000+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T19:55:21.264000+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T19:55:21.264000+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T19:55:21.301410+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "verify_model_endpoint_policy_parity.py false failure on PR #127/#177 until ast.dump comparator landed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T19:55:21.264000+00:00"
+      ],
+      "lessons_sha": "99a1405c6ef4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T19:55:21.301401+00:00",
+  "reviewer": "learn.py",
+  "rationale": "verify_model_endpoint_policy_parity.py false failure on PR #127/#177 until ast.dump comparator landed."
+}
