@@ -90,6 +90,9 @@ def validate_model_endpoint_url(
     raw = (url or "").strip()
     if not raw:
         raise ModelEndpointPolicyError("empty endpoint URL")
+    # Match agent_launcher / alphaclaw_bootstrap: bare host:port env values are valid.
+    if "://" not in raw:
+        raw = f"http://{raw}"
 
     parsed = urlparse(raw)
     scheme = (parsed.scheme or "").lower()
