@@ -88,6 +88,20 @@ class TestMalformed:
         with pytest.raises(ModelEndpointPolicyError, match="empty"):
             validate_model_endpoint_url("   ")
 
+    def test_malformed_port_rejected_as_policy_error(self):
+        with pytest.raises(ModelEndpointPolicyError, match="invalid endpoint URL"):
+            validate_model_endpoint_url("http://127.0.0.1:notaport")
+
+    def test_out_of_range_port_rejected_as_policy_error(self):
+        with pytest.raises(ModelEndpointPolicyError, match="invalid endpoint URL"):
+            validate_model_endpoint_url("http://127.0.0.1:99999")
+
+    def test_parse_list_skip_invalid_handles_malformed_port(self):
+        raw = "http://127.0.0.1:11434, http://127.0.0.1:notaport"
+        assert parse_model_endpoint_list(raw, skip_invalid=True) == [
+            "http://127.0.0.1:11434",
+        ]
+
 
 class TestLoggingRedaction:
     def test_private_ip_redacted(self):
