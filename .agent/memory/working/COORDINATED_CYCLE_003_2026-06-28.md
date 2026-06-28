@@ -1,21 +1,44 @@
-# Coordinated cycle 003 — Win session complete
+# Coordinated cycle 003 — merged landmark (Mac + Win)
 
 **Date:** 2026-06-28  
 **Fan-out:** `2026-06-28-coord-003`  
-**Approval:** operator `approve lessons` (round 3)
+**Status:** Win deliverables complete; Mac branches ready for PR review
 
-## Win deliverables
+## Branch policy
 
-- H5 GPU: `subagent/win-autoresearcher/h5-gpu-harness` → `gpu-results-h5.md`
-- Bridge spike: `subagent/win-coder/bridge-http-local` → `win-bridge-spike-notes.md`
-- Doc sync: `subagent/win-orchestrator/doc-sync-peer-inbox`
-- Portal: `/peer-inbox` canonical; windows skin redirect
+`orama-system/.../references/subagent-branch-policy.md` — `subagent/<role>/<topic>`; coordination on `main` via file inbox.
 
-## Mac pending
+## Subagent table
 
-- `mac-h4-comparison.md` (Ollama 9B parallel to Win H4/H5)
-- PR review of subagent branches
+| Host | Subagent | Branch | Deliverable | Status |
+|------|----------|--------|-------------|--------|
+| Mac | mac-researcher | `subagent/mac-researcher/h4-mac-benchmark` | `mac-h4-comparison.md` | Done → Win |
+| Mac | orchestrator | `subagent/mac-orchestrator/self-improve-memory` | cycle landmark | Done (this file) |
+| Win | autoresearcher | `subagent/win-autoresearcher/h5-gpu-harness` | `gpu-results-h5.md` | Done |
+| Win | coder | `subagent/win-coder/bridge-http-local` | `win-bridge-spike-notes.md` | Done |
+| Win | orchestrator | `subagent/win-orchestrator/doc-sync-peer-inbox` | portal doc sync | Done |
 
-## Reference
+## Win session outcomes
 
-`orama-system/bin/orama-system/skills/oramasys-method/references/graceful-degradation.md`
+- H5 GPU: 3/3 rubric prompts on LM Studio 27B (`run_h5_gpu_benchmark.py`)
+- Bridge: `AUTORESEARCH_PREFLIGHT_MODE=auto` → http-local on Win GPU host
+- Portal: `/peer-inbox` canonical on Win; `/co-orchestration/windows` → 307 redirect
+- Graceful degradation: `orama-system/.../oramasys-method/references/graceful-degradation.md`
+
+## Mac pending / review
+
+- PR review: `subagent/mac-researcher/h4-mac-benchmark`, `subagent/mac-orchestrator/self-improve-memory`
+- Cross-host H5 comparison after reading `gpu-results-h5.md`
+- Operator: **`approve lessons`** for `docs/LESSONS.md` when ready (landmark only until then)
+
+## Frugality priority (coord-004)
+
+1. **Win autoresearcher + coder** → LM Studio `:1234` first  
+2. Online agents (cursor-agent cloud, Codex, etc.) → fallback only  
+3. Online failure → LAN peer file inbox + local LM Studio / Mac Ollama  
+4. Document escalation tier in one line per `graceful-degradation.md`
+
+## Monitor
+
+- Mac: `http://localhost:8002/co-orchestration/macos`
+- Win: `http://localhost:8002/peer-inbox`
