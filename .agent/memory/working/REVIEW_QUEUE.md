@@ -1,27 +1,28 @@
-# Review Queue — 2026-06-28 (end of session)
+# Review Queue — 2026-06-28 (Hermes Win testdrive)
 
 ## Plans to read at next session start
 
 | Plan | Status | Link |
 |---|---|---|
-| Security hardening pre-v2 | ⚠️ Partial — Gemini keys stored; TELEGRAM + GATEWAY_AUTH need user values | [`2026-06-27-security-hardening-pre-v2.md`](https://github.com/diazMelgarejo/orama-system/blob/main/docs/plans/2026-06-27-security-hardening-pre-v2.md) |
-| Windows handoff | ⏳ Pending Win machine — T5 tags, Hermes 6+9, cross-harness affinity | [`docs/2026-06-28-windows-handoff.md`](https://github.com/diazMelgarejo/Perpetua-Tools/blob/main/docs/2026-06-28-windows-handoff.md) |
-| Hermes-harness onboarding | Phases 1-5+7+8 ✅, 6+9 ⏳ blocked on Win | [`2026-06-24-hermes-harness-canonical-onboarding.md`](https://github.com/diazMelgarejo/orama-system/blob/main/docs/plans/2026-06-24-hermes-harness-canonical-onboarding.md) |
+| Security hardening pre-v2 | ⚠️ Win partial — Mac↔Win cross-harness + T5 tags remain | [`2026-06-27-security-hardening-pre-v2.md`](https://github.com/diazMelgarejo/orama-system/blob/main/docs/plans/2026-06-27-security-hardening-pre-v2.md) |
+| Windows handoff | ✅ Phase 6+9 done; ⏳ Mac LAN probe + T5 | [`docs/2026-06-28-windows-handoff.md`](https://github.com/diazMelgarejo/Perpetua-Tools/blob/main/docs/2026-06-28-windows-handoff.md) |
+| Hermes-harness onboarding | **Phase 6+9 ✅ Win 2026-06-28** | [`2026-06-24-hermes-harness-canonical-onboarding.md`](https://github.com/diazMelgarejo/orama-system/blob/main/docs/plans/2026-06-24-hermes-harness-canonical-onboarding.md) |
 | Optimization priorities | L1 open, L6 📋 | [`2026-06-24-optimization-priorities.md`](https://github.com/diazMelgarejo/orama-system/blob/main/docs/plans/2026-06-24-optimization-priorities.md) |
 
-## Completed this session (2026-06-28)
+## Completed this session (2026-06-28 Win)
 
-- ✅ PT PR #173 merged (`820e078a`) — fail-closed routing hardening; all CI + CodeRabbit fixes
-- ✅ PR #123 + #111 CodeRabbit post-merge fixes committed directly on main (`e882fb2`)
-- ✅ Gemini main + fallback stored in macOS Keychain; `load_keychain_secrets.sh` added
-- ✅ 7 lessons graduated (incl. keychain naming convention lesson `2a6766b489c5`)
-- ✅ Windows handoff doc created: `docs/2026-06-28-windows-handoff.md`
-- ✅ Both repos pushed and clean (PT `75981fd`, orama `3a854bc`)
+- ✅ Hermes Phase 6+9 live on Windows (thin wrappers + canaries)
+- ✅ `ensure-partner-cli-paths.ps1` + parametric partner CLI docs
+- ✅ `verify_partner_canaries.py`: LM Studio/Hermes/Codex/cursor-agent PASS
+- ✅ Canary model `stepfun/step-3.7-flash:free`; LM Studio `state=loaded` probe
+- ✅ OpenClaw optional on Windows (skip when absent)
+- ✅ Working memory: `.agent/memory/working/HERMES_WIN_TESTDRIVE_2026-06-28.md`
 
-## PRs open for human review
+## Still pending (Mac)
 
-- **PT #154**: S4+S8 security fixes. CI 4/4 ✅. Ready for review.
-- **OS #113**: T3+T4 tier fixes + version 1.1.1.0. CI 13/14 ⚠️ (pytest-asyncio note). Ready after CI resolved.
+- `start.sh --hardware-policy` cross-harness with Win LM Studio LAN
+- `openclaw.gateway-auth-token` in Keychain
+- T5 git tags after Mac↔Win E2E green
 
 ## Candidate queue
 
