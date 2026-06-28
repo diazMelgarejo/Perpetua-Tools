@@ -289,3 +289,34 @@ _(empty — populate as you go)_
 2. **Command cards** live under `hermes-harness/commands/<slug>/`, not top-level `skills/<slug>/`.
 3. **Result superset:** OpenClaw core (`status`, `files_modified`, `follow_up_actions`) + optional Hermes fields.
 4. **Four required thin wrappers** (council, review, delegate, hardware-policy); lesson-mining is optional.
+
+## Windows `start.ps1` + LAN peer — gold nuggets (sticky notes)
+
+> Canonical operator playbook (Mac + Win identical text):
+> [`lan-peer-self-talk.md` § Operator playbook](../../orama-system/bin/orama-system/skills/hermes-harness/references/lan-peer-self-talk.md#operator-playbook)
+> · [`docs/guides/lan-peer-mac-win-operator.md`](../../orama-system/docs/guides/lan-peer-mac-win-operator.md)
+> · Fix commit: orama-system `2717eee` (`platform/windows/start.ps1`)
+
+### Sticky skill routing
+
+| Situation | Skill / reference (orama-system) |
+|-----------|----------------------------------|
+| Mac↔Win peer probe | `probe_lan_peer.py` or Hermes `/lan-peer-self-talk` |
+| Win stack start | `platform/windows/start.ps1 --no-open` (not `-NoOpen` only) |
+| Win stack stop / status | `start.ps1 --stop` · `start.ps1 --status` |
+| LAN bind + probe after start | `start.ps1 --lan-peer --no-open` |
+| Mac mirror | `./start.sh --lan-peer --no-open` |
+
+### Gold nuggets (2026-06-28 Win `start.ps1` rehab)
+
+1. **`--no-open` is not a PowerShell switch** — `[switch]$NoOpen` rejects `--no-open`; parse bash-style flags from `$args` for start.sh parity (`--stop`, `--status`, `--lan-peer`, etc.).
+2. **Never assign `$pid`** — PowerShell's automatic `$PID` is read-only; use `$listenerPid` in `--status` / `--stop` or the script aborts mid-flight.
+3. **Uvicorn paths must match `start.sh`** — `orama_system.api_server:app` and `orama_system.portal_server:app` with `PYTHONPATH=$RepoRoot\src;$RepoRoot` (not bare `api_server:app`).
+4. **`EnvironmentVariables.ContainsKey`** — `ProcessStartInfo.EnvironmentVariables` is a `StringDictionary`; `.Contains()` throws; use `.ContainsKey()`.
+5. **Bind order** — resolve `Get-BindHost` **after** `--lan-peer` sets `PORTAL_BIND_LAN` / `ORAMA_BIND_LAN` / `PT_BIND_LAN`.
+6. **Set `PERPETUA_TOOLS_PATH`** before start — wrong sibling path (`perplexity-api\Perpetua-Tools`) degrades hardware policy to cache-only; point at the live PT clone.
+7. **Ports 8000/8001/8002** — PT / orama API / Portal; `1234` is LM Studio only. After green `--status`, Hermes LAN probe can run.
+
+### Tell Hermes (LAN peer)
+
+Slash: `/lan-peer-self-talk` · Plain: *Probe LAN peer via `probe_lan_peer.py --json` using `last_discovery.json`.*

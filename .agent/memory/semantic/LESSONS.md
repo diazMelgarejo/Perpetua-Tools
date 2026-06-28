@@ -205,6 +205,8 @@
 - At Mac session start after a Win session, always read REVIEW_QUEUE.md FIRST â€” the Win session completes tasks that Mac thought were pending. Never repeat work the Win session already did.  <!-- status=legacy confidence=0.7 evidence=0 id=lesson_legacy_b194920de806 -->
 - When git pull is blocked by local commits, use git pull --rebase origin main. If the local commit content is already upstream (e.g. a duplicate episodic memory entry), rebase drops it silently with 'dropping...patch contents already upstream' â€” this is correct, not data loss.  <!-- status=legacy confidence=0.7 evidence=0 id=lesson_legacy_2856d7b3b7f3 -->
 - T5 tagging procedure: git tag v1.1.1 -m '<message>' then git push origin v1.1.1 in BOTH repos in the same session. No version bump needed if pyproject.toml/\_version.py already reflect the target version. Tag only after ALL E2E gates pass (Mac E2E + Win E2E + Macâ†’Win cross-probe).  <!-- status=legacy confidence=0.7 evidence=0 id=lesson_legacy_80a8b4101160 -->
+- Windows start.ps1 must parse bash-style flags from args (--no-open --stop --status) because PowerShell switch params reject --kebab-case; never assign to dollar-pid — use listenerPid — PID is a read-only automatic variable  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_0d5d6b4a25eb -->
+- Windows orama uvicorn launch must match start.sh: orama_system.api_server and portal_server modules with PYTHONPATH repo src and root — bare api_server colon app fails silently  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_52add7792e48 -->
 
 ### 2026-04
 
