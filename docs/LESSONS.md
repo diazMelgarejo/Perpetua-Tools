@@ -8,6 +8,16 @@
 
 ---
 
+## 2026-06-28 — Cycle 005 H5 closed (operator approved) | Cursor
+
+**Approval:** operator `approve lessons` (round 7)  
+**Fan-out:** `2026-06-28-coord-005`  
+**Machine lessons:** `lesson_e2f8a41c7d93`
+
+23. **H5 closed** — Mac 3/3 @ 1/4/5 itp (490s) vs Win 3/3 @ 1/1/1 (280s); route autoresearch-coder to Win 27B (`lesson_e2f8a41c7d93`)
+
+---
+
 ## 2026-06-28 — Queue prune + monitor playbook (operator approved) | Cursor
 
 **Approval:** operator `approve lessons` (round 6)  
