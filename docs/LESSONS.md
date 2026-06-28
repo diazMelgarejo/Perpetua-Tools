@@ -8,6 +8,27 @@
 
 ---
 
+## 2026-06-28 — Cycle 004 sequential job queues (operator approved) | Cursor
+
+**Approval:** operator `approve lessons` (round 5)  
+**Fan-out:** `2026-06-28-coord-004`  
+**Tool:** `bin/orama-system/skills/hermes-harness/scripts/win_job_queue.py`  
+**Machine lessons:** `lesson_a3f8e2b91c04`, `lesson_7d2c1e8f5b90`
+
+### Deliverables
+
+| Role | Output |
+|------|--------|
+| autoresearcher | `gpu-results-h5-cross.md` → Mac |
+| coder | `win-frugal-spawn-policy.md` → Mac |
+
+### Gold nuggets
+
+19. **Sequential Win queues** — `win_job_queue.py` routes `win-autoresearcher-*` / `win-coder-*` cards; one active job per role; LM Studio single-tenant (`lesson_a3f8e2b91c04`)
+20. **Mac H4 closed** — Ollama 9B ~20.2s vs Win 27B ~33.1s warm clamp; H5 Win 3/3 iter-1; Mac H5 pending (`lesson_7d2c1e8f5b90`)
+
+---
+
 ## 2026-06-28 — Self-improve merge FINAL + H3 routing (operator approved) | Cursor
 
 **Approval:** operator `approve lessons` (round 4) — **union** with rounds 1–3 (doctrine C)  
