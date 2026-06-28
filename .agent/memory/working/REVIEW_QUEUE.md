@@ -18,6 +18,7 @@
 - ✅ OpenClaw optional on Windows (skip when absent)
 - ✅ Working memory: `.agent/memory/working/HERMES_WIN_TESTDRIVE_2026-06-28.md`
 - ✅ Codex v0.142.x canonical card + PT memory: `CODEX_V142_DISPATCH_2026-06-28.md`, `lesson_2cef6113c1f1`
+- ✅ Hermes absorption audit: `.agents` wrappers, archive superseded, onboarding plan updated — `HERMES_ABSORPTION_AUDIT_2026-06-28.md`
 
 ## Still pending (Mac)
 
