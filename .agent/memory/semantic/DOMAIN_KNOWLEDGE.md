@@ -244,12 +244,12 @@ _(empty — populate as you go)_
 | Hermes dispatch envelope | `hermes-universal-invocation-protocol.md` — core trio + L2 extensions |
 | Partner audit trail | L2 `transport: { partner, profile }` (L1 CLI stays internal) |
 | Delegation identity | `agent_id` = owner, `executor_id` = runner |
-| Lesson graduation | `pt-orama-lesson-mining` → PT `.agent/tools/learn.py` |
+| Lesson graduation (optional) | `pt-orama-lesson-mining` only with `--include-optional`; no PT dependency |
 | OpenClaw on Windows | Registry entry OK; Mac-only ops return `blocked` envelope |
 
 ### Gold nuggets (2026-06-28 authority batch)
 
-1. **hermes-harness v1.1.0** matches openclaw-skills authority: registry, bootstrap JSON health, boundaries.
+1. **hermes-harness v1.1.0.0** matches openclaw-skills authority: registry, bootstrap JSON health, boundaries.
 2. **Command cards** live under `hermes-harness/commands/<slug>/`, not top-level `skills/<slug>/`.
 3. **Result superset:** OpenClaw core (`status`, `files_modified`, `follow_up_actions`) + optional Hermes fields.
-4. **Five thin wrappers** including `lesson-mining`; run `install_hermes_thin_skills.py --install` after pull.
+4. **Four required thin wrappers** (council, review, delegate, hardware-policy); lesson-mining is optional.
