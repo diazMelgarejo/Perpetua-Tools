@@ -205,6 +205,31 @@ def test_pick_mac_manager_checks_preferred_affinity(monkeypatch):
     assert agent_launcher._pick_mac_manager(["win-only", "mac-ok"], "win-only") == "mac-ok"
 
 
+def test_pick_mac_manager_matches_preferred_tag_prefix(monkeypatch):
+    import perpetua_tools.agent_launcher as agent_launcher
+
+    monkeypatch.setattr(
+        "perpetua_tools.agent_launcher.check_affinity",
+        lambda model_id, platform: None,
+    )
+
+    assert agent_launcher._pick_mac_manager(
+        ["glm-5.1:cloud", "bge-m3"],
+        "glm-5.1",
+    ) == "glm-5.1:cloud"
+
+
+def test_pick_mac_manager_raises_when_no_mac_affine_model(monkeypatch):
+    import perpetua_tools.agent_launcher as agent_launcher
+
+    def _fake_check(model_id, platform):
+        raise HardwareAffinityError("NEVER_MAC")
+
+    monkeypatch.setattr("perpetua_tools.agent_launcher.check_affinity", _fake_check)
+
+    with pytest.raises(HardwareAffinityError, match="NEVER_MAC"):
+        agent_launcher._pick_mac_manager(["win-only"], "win-only")
+
 def test_mac_ollama_required_models_fail_closed(monkeypatch):
     import perpetua_tools.agent_launcher as agent_launcher
 
