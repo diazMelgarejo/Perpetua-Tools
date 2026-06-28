@@ -6,6 +6,35 @@
 
 ---
 
+## 2026-06-28 — Mac↔Win co-orchestrator: file inbox + PT `.agent` memory | Cursor
+
+**PT working card:** `.agent/memory/working/CO_ORCHESTRATOR_LAN_PEER_2026-06-28.md`  
+**orama playbook:** [`mac-co-orchestrator-playbook.md`](../../orama-system/bin/orama-system/skills/hermes-harness/references/mac-co-orchestrator-playbook.md)  
+**GitHub:** https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/hermes-harness/references/mac-co-orchestrator-playbook.md
+
+**Machine lessons:** `lesson_87636d658879` … `lesson_43c39af8176f` (8 rows in `.agent/memory/semantic/lessons.jsonl`)
+
+### Where Mac co-orchestrator + subagents look
+
+| Role | Path |
+|------|------|
+| Co-orchestrator | PT `.agent/memory/working/CO_ORCHESTRATOR_LAN_PEER_2026-06-28.md` |
+| All agents | PT `.agent/memory/semantic/LESSONS.md` + `DOMAIN_KNOWLEDGE.md` |
+| mac-researcher | `~/.openclaw/state/lan_peer/inbox/` (local Mac assignments) |
+| Win autoresearcher | Win inbox — `lan_peer_assign.py list` / `read --name` (no `--peer` inbound) |
+| Ops / tokens | `.agent/memory/working/LAN_PEER_L2_TOKEN_LANDMARK_2026-06-28.md` |
+
+### Gold nuggets
+
+1. **File inbox beats WS** for autoresearch fan-out — `POST /api/peer-file`, fan-out manifest by `assignee`
+2. **Win inbound** — Mac drops are already local; do not use `--peer` to read them on Win
+3. **Win outbound** — `drop --peer` → Mac reads with `read --peer --name`
+4. **Mac unblock** — `git pull` orama `>= 9f89051`, `./start.sh --lan-peer` (peer-file 404 on stale portal)
+5. **Partial fanout** — Mac proceeds when Win peer-file not yet live
+6. **autoresearch_bridge** — SSH `GPU_BOX` path vs LAN HTTP + file handoff on Win
+
+---
+
 ## 2026-06-28 — Windows `start.ps1` rehab: flags, read-only `$PID`, uvicorn paths | Cursor
 
 **orama fix:** `2717eee` (`platform/windows/start.ps1`) · **PT memory:** `lesson_0d5d6b4a25eb`, `lesson_52add7792e48`, `.agent/memory/working/START_PS1_LAN_PEER_2026-06-28.md` · **Verified live:** `start.ps1 --no-open` → PT `:8000`, orama `:8001`, Portal `:8002` UP (exit 0)

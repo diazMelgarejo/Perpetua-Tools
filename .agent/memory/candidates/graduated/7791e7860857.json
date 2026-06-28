@@ -1,0 +1,58 @@
+{
+  "id": "7791e7860857",
+  "key": "manual_7791e7",
+  "name": "manual_7791e7",
+  "claim": "autoresearch_bridge.py sync_autoresearch_idempotent uses SSH to GPU_BOX by default. LAN co-orchestration on Win uses HTTP LM Studio and file inbox instead. Local Win preflight must not block on SSH timeout when the operator runs on the Win host.",
+  "conditions": [
+    "autoresearch_bridge",
+    "block",
+    "co-orchestration",
+    "default",
+    "file",
+    "gpu_box",
+    "host",
+    "http",
+    "inbox",
+    "instead",
+    "lan",
+    "local",
+    "operator",
+    "preflight",
+    "runs",
+    "ssh",
+    "studio",
+    "sync_autoresearch_idempotent",
+    "timeout",
+    "uses",
+    "win"
+  ],
+  "evidence_ids": [
+    "2026-06-28T11:36:23.645603+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T11:36:23.645603+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T11:36:23.645603+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T11:36:23.740126+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-06-28 win-code-review.md finding",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T11:36:23.645603+00:00"
+      ],
+      "lessons_sha": "5b7ea4c8c7aa"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T11:36:23.740126+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-06-28 win-code-review.md finding"
+}

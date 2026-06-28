@@ -1,0 +1,58 @@
+{
+  "id": "cbcd146eb431",
+  "key": "manual_cbcd14",
+  "name": "manual_cbcd14",
+  "claim": "lan_peer_assign.py resolves orama repo root as Path(__file__).resolve().parents[4], not parents[5]. Local inbox import requires orama_system on sys.path from repo/src. parents[5] pointed at OpenClaw parent and caused ModuleNotFoundError.",
+  "conditions": [
+    "caused",
+    "file__",
+    "import",
+    "inbox",
+    "lan_peer_assign",
+    "local",
+    "modulenotfounderror",
+    "openclaw",
+    "orama",
+    "orama_system",
+    "parent",
+    "parents",
+    "path",
+    "pointed",
+    "repo",
+    "requires",
+    "resolve",
+    "resolves",
+    "root",
+    "src",
+    "sys"
+  ],
+  "evidence_ids": [
+    "2026-06-28T11:36:22.914455+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T11:36:22.914455+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T11:36:22.914455+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T11:36:23.001487+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-06-28 fix in orama 9f89051; mac-lessons-draft",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T11:36:22.914455+00:00"
+      ],
+      "lessons_sha": "050f55fda819"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T11:36:23.001487+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-06-28 fix in orama 9f89051; mac-lessons-draft"
+}
