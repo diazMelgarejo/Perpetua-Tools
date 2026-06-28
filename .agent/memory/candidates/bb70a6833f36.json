@@ -20,7 +20,7 @@
     "2026-06-22T20:58:32.119023"
   ],
   "cluster_size": 2,
-  "canonical_salience": 9.52,
+  "canonical_salience": 9.184,
   "staged_at": "2026-06-22T12:58:32.342470+00:00",
   "status": "staged",
   "decisions": [
@@ -56,6 +56,11 @@
     },
     {
       "ts": "2026-06-28T20:04:29.385817+00:00",
+      "action": "staged",
+      "reviewer": "auto_dream"
+    },
+    {
+      "ts": "2026-06-28T23:10:02.787185+00:00",
       "action": "staged",
       "reviewer": "auto_dream"
     }
