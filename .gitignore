@@ -110,3 +110,6 @@ temp/
 # Runtime hook logs (never commit)
 .claude/hooks/.logs/
 vendor/oramaclaw/
+
+# Episodic runtime logs (not AGENT_LEARNINGS.jsonl)
+.agent/memory/episodic/*.log
