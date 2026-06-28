@@ -1,0 +1,64 @@
+{
+  "id": "49a5af119f6f",
+  "key": "manual_49a5af",
+  "name": "manual_49a5af",
+  "claim": "On Mac when Ollama is warm and LM Studio is passive-only, route Mac co-orchestrator and subagent inference through ollama-mac at localhost:11434. LM Studio :1234 may still answer peer-lmstudio probes with a model catalog but must not be the primary execution path unless hardware policy requires MLX on that port.",
+  "conditions": [
+    "answer",
+    "catalog",
+    "co-orchestrator",
+    "execution",
+    "hardware",
+    "inference",
+    "localhost",
+    "mac",
+    "mlx",
+    "model",
+    "ollama",
+    "ollama-mac",
+    "passive-only",
+    "path",
+    "peer-lmstudio",
+    "policy",
+    "port",
+    "primary",
+    "probes",
+    "requires",
+    "route",
+    "still",
+    "studio",
+    "subagent",
+    "through",
+    "unless",
+    "warm"
+  ],
+  "evidence_ids": [
+    "2026-06-28T11:54:32.784317+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T11:54:32.784317+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T11:54:32.784317+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T11:54:32.888120+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-06-28 operator: Mac active on Ollama warm, passive-only LM Studio",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T11:54:32.784317+00:00"
+      ],
+      "lessons_sha": "2f05390f15b6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T11:54:32.888109+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-06-28 operator: Mac active on Ollama warm, passive-only LM Studio"
+}

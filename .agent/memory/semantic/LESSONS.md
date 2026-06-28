@@ -224,9 +224,6 @@
 - autoresearch_bridge.py sync_autoresearch_idempotent uses SSH to GPU_BOX by default. LAN co-orchestration on Win uses HTTP LM Studio and file inbox instead. Local Win preflight must not block on SSH timeout when the operator runs on the Win host.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7791e7860857 -->
 - Mac must git pull orama-system main at or after 9f89051 and restart with ./start.sh --lan-peer --no-open before /api/peer-file accepts Win drops. portal-health can PASS while peer-file returns 404 on an old portal process.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_130073d9e30a -->
 - LAN peer joint auth mode accepts PT lane token from Perpetua-Tools .state/control_plane_token plus orama env lanes. probe_lan_peer.py reports auth_mode joint when both lanes are configured; either key unlocks portal-status on probes.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_43c39af8176f -->
-- Portal peer-file 404: pull orama 86c90bc+, restart --lan-peer; peer-stream needs response_class=StreamingResponse  <!-- status=accepted confidence=0.9 evidence=1 id=lesson_legacy_peerstream_20260628 -->
 - Post-commit sync: git fetch --prune, pull --rebase origin main, push, verify HEAD equals origin/main in both repos  <!-- status=accepted confidence=0.9 evidence=1 id=lesson_legacy_sync_rebase_20260628 -->
-
-### 2026-04
-
-- Always serialize timestamps in UTC to avoid cross-region comparison bugs  <!-- status=accepted confidence=0.46 evidence=1 id=lesson_422695ae5b2d -->
+- Portal peer-file 404: pull orama 86c90bc+, restart --lan-peer; peer-stream needs response_class=StreamingResponse  <!-- status=accepted confidence=0.9 evidence=1 id=lesson_legacy_peerstream_20260628 -->
+- On Mac when Ollama is warm and LM Studio is passive-only, route Mac co-orchestrator and subagent inference through ollama-mac at localhost:11434. LM Studio :1234 may still answer peer-lmstudio probes with a model catalog but must not be the primary execution path unless hardware policy requires MLX on that port.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_49a5af119f6f -->
