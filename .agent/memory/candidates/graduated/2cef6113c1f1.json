@@ -1,0 +1,66 @@
+{
+  "id": "2cef6113c1f1",
+  "key": "manual_2cef61",
+  "name": "manual_2cef61",
+  "claim": "Codex CLI v0.142.x uses three dispatch profiles: fanout (codex exec -C repo -s workspace-write --dangerously-bypass-approvals-and-sandbox), bounded (exec workspace-write only), interactive (--sandbox danger-full-access --ask-for-approval never). Legacy --approval-mode removed in 0.140+. Resolve repo root and Codex binary at runtime; never hardcode host paths in prompts.",
+  "conditions": [
+    "approval-mode",
+    "ask-for-approval",
+    "binary",
+    "bounded",
+    "cli",
+    "codex",
+    "danger-full-access",
+    "dangerously-bypass-approvals-and-sandbox",
+    "dispatch",
+    "exec",
+    "fanout",
+    "hardcode",
+    "host",
+    "interactive",
+    "legacy",
+    "never",
+    "only",
+    "paths",
+    "profiles",
+    "prompts",
+    "removed",
+    "repo",
+    "resolve",
+    "root",
+    "runtime",
+    "sandbox",
+    "three",
+    "uses",
+    "workspace-write"
+  ],
+  "evidence_ids": [
+    "2026-06-28T04:55:01.555580+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T04:55:01.555580+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T04:55:01.555580+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T04:55:01.640276+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-06-28 Win testdrive fanout fix; canonical card codex-cli-v142-dispatch.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T04:55:01.555580+00:00"
+      ],
+      "lessons_sha": "545e22fb6155"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T04:55:01.640276+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-06-28 Win testdrive fanout fix; canonical card codex-cli-v142-dispatch.md"
+}

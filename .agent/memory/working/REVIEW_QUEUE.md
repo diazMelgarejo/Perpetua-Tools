@@ -17,9 +17,11 @@
 - ✅ Canary model `stepfun/step-3.7-flash:free`; LM Studio `state=loaded` probe
 - ✅ OpenClaw optional on Windows (skip when absent)
 - ✅ Working memory: `.agent/memory/working/HERMES_WIN_TESTDRIVE_2026-06-28.md`
+- ✅ Codex v0.142.x canonical card + PT memory: `CODEX_V142_DISPATCH_2026-06-28.md`, `lesson_2cef6113c1f1`
 
 ## Still pending (Mac)
 
+- `git pull --ff-only` both repos — see [Mac E2E handoff](https://github.com/diazMelgarejo/orama-system/blob/main/docs/plans/2026-06-28-mac-e2e-handoff.md)
 - `start.sh --hardware-policy` cross-harness with Win LM Studio LAN
 - `openclaw.gateway-auth-token` in Keychain
 - T5 git tags after Mac↔Win E2E green
