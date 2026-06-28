@@ -40,6 +40,19 @@ def test_health_forwards_validated_hosts_to_backend_map(monkeypatch):
     }
 
 
+def test_health_accepts_bare_host_port_env_style(monkeypatch):
+    monkeypatch.setattr(fastapi_app, "backend_health_map", lambda **kwargs: {"ok": True})
+    monkeypatch.setattr(fastapi_app, "load_runtime_payload", lambda: None)
+
+    response = fastapi_app.health(
+        ollama_host="192.168.1.50:11434",
+        lm_studio_host="localhost:1234",
+        mlx_host="127.0.0.1:8081",
+    )
+
+    assert response["status"] == "ok"
+
+
 def test_health_rejects_link_local_ssrf_target():
     with pytest.raises(HTTPException) as exc:
         fastapi_app.health(ollama_host="http://169.254.169.254/latest/meta-data/")
