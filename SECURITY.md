@@ -4,7 +4,7 @@ Companion to the cross-repo posture in
 [`orama-system/SECURITY.md`](https://github.com/diazMelgarejo/orama-system/blob/main/SECURITY.md).
 This file states the credential and artifact hygiene contract enforced in this repo.
 
-Last updated: 2026-06-18
+Last updated: 2026-06-28
 
 Runtime security alignment for MAESTRO/OWASP v2 is recorded in
 [`docs/adr/ADR-003-maestro-owasp-v2-security-foundation.md`](docs/adr/ADR-003-maestro-owasp-v2-security-foundation.md).
@@ -40,6 +40,8 @@ verification gate, and an operator recovery path.
 | Control plane | Loopback default; LAN bind requires explicit opt-in | Strong bearer auth on mutating/read-sensitive routes | unauthenticated route tests + no bearer in HTML/logs |
 | MCP and workers | readonly default profiles; dangerous workers opt-in only | path boundary roots + log redaction + no tracked bearer headers | profile tests verify final merged config, not only dry-run output |
 | Model discovery | trusted host pinning before persistence | strip `Authorization` from LM Studio/Ollama/public probes | tests assert control-plane tokens never reach model endpoints |
+| Public health probes | loopback/RFC1918 only on `/health` query params | `validate_model_endpoint_url()` before outbound probes | `tests/test_fastapi_health.py` rejects link-local/metadata targets |
+| Runtime bootstrap | redact top-level secrets before HTTP response | POST `/runtime/bootstrap` omits `credentials`/`paths`/`gateway` blobs; `runtime` field uses `redact_runtime_payload()` | `tests/test_runtime_bootstrap_redaction.py` + `redact_runtime_payload()` unit tests |
 | Memory and artifacts | redact before persistence; runtime dirs ignored | store only sanitized prompts/results; private tickets for raw artifacts | hygiene blocks databases, traces, screenshots, logs, and `/tasks/` |
 | Dependencies | lockfiles are security surfaces; override vulnerable transitives at package-manager root | builds/tests must pass after lock refresh | Dependabot alerts close on the exact target lockfile |
 
