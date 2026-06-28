@@ -32,6 +32,36 @@ Set `PERPETUA_TOOLS_PATH` before start — wrong sibling path degrades hardware 
 
 ---
 
+## 2026-06-28 — LAN peer bidirectional talk attempts (Win session) | Cursor
+
+**Full log (orama):** [`docs/guides/lan-peer-bidirectional-talk-2026-06-28.md`](../../orama-system/docs/guides/lan-peer-bidirectional-talk-2026-06-28.md)
+
+### Network (live)
+
+| Host | LAN IP | Notes |
+|------|--------|-------|
+| Win RTX | `192.168.254.100` | LM Studio + stack |
+| Mac Studio | `192.168.254.102` | **Not** `.110` (stale default) |
+
+### What worked
+
+- Inference Mac↔Win over LM Studio HTTP (`:1234`) both directions
+- `discover.py --force` subnet scan finds Mac at `.102`; `last_discovery.json` updated
+- Win `probe_lan_peer.py` → Mac `portal-health` PASS after Mac `--lan-peer`
+
+### What blocked full L2 round-trip
+
+- `portal-status` 401 until **same** `ORAMA_CONTROL_PLANE_TOKEN` on both `.env.local`
+- Win services must restart with `--lan-peer` (bind `0.0.0.0`, not `127.0.0.1` only)
+- Cross-peer `POST /api/user-input` message queue — **v2 increment**, not wired
+
+### Code fixes (same session)
+
+- orama `discover.py`: Windows subnet scan; `start.ps1`: repo discover + `last_discovery.json`, no `.110` fallback
+- PT: removed `192.168.254.110` defaults from `agent_launcher.py` / `alphaclaw_bootstrap.py`
+
+---
+
 ## 2026-06-28 — LAN peer self-talk: Mac↔Win orama installs over HTTP | Cursor
 
 **Canonical operator playbook (Mac + Win — identical):**
