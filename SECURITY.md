@@ -41,7 +41,7 @@ verification gate, and an operator recovery path.
 | MCP and workers | readonly default profiles; dangerous workers opt-in only | path boundary roots + log redaction + no tracked bearer headers | profile tests verify final merged config, not only dry-run output |
 | Model discovery | trusted host pinning before persistence | strip `Authorization` from LM Studio/Ollama/public probes | tests assert control-plane tokens never reach model endpoints |
 | Public health probes | loopback/RFC1918 only on `/health` query params | `validate_model_endpoint_url()` before outbound probes | `tests/test_fastapi_health.py` rejects link-local/metadata targets |
-| Runtime bootstrap | redact before HTTP response | POST `/runtime/bootstrap` matches GET `/runtime` redaction | `redact_runtime_payload()` on bootstrap responses |
+| Runtime bootstrap | redact top-level secrets before HTTP response | POST `/runtime/bootstrap` omits `credentials`/`paths`/`gateway` blobs; `runtime` field uses `redact_runtime_payload()` | `tests/test_runtime_bootstrap_redaction.py` + `redact_runtime_payload()` unit tests |
 | Memory and artifacts | redact before persistence; runtime dirs ignored | store only sanitized prompts/results; private tickets for raw artifacts | hygiene blocks databases, traces, screenshots, logs, and `/tasks/` |
 | Dependencies | lockfiles are security surfaces; override vulnerable transitives at package-manager root | builds/tests must pass after lock refresh | Dependabot alerts close on the exact target lockfile |
 
