@@ -1,0 +1,55 @@
+{
+  "id": "f6de10a70a81",
+  "key": "manual_f6de10",
+  "name": "manual_f6de10",
+  "claim": "Hermes dispatch envelope: L3 skill_id+args+agent_id; L2 adds orama_system_root, executor_id, optional transport partner profile; L0 OpenClaw core result plus optional Hermes extensions",
+  "conditions": [
+    "adds",
+    "agent_id",
+    "args",
+    "core",
+    "dispatch",
+    "envelope",
+    "executor_id",
+    "extensions",
+    "hermes",
+    "openclaw",
+    "optional",
+    "orama_system_root",
+    "partner",
+    "plus",
+    "profile",
+    "result",
+    "skill_id",
+    "transport"
+  ],
+  "evidence_ids": [
+    "2026-06-28T06:40:45.758040+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T06:40:45.758040+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T06:40:45.758040+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T06:40:45.843851+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Canonical protocol hermes-universal-invocation-protocol.md v1.1.0.0 authority parity",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T06:40:45.758040+00:00"
+      ],
+      "lessons_sha": "1ce89a3c7088"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T06:40:45.843851+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Canonical protocol hermes-universal-invocation-protocol.md v1.1.0.0 authority parity"
+}

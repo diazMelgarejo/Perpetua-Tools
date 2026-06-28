@@ -1,0 +1,55 @@
+{
+  "id": "6ce521f323f4",
+  "key": "manual_6ce521",
+  "name": "manual_6ce521",
+  "claim": "Hermes thin wrappers: four required (council, review, delegate, hardware-policy); lesson-mining is optional via --include-optional only \u2014 orama-system has no Perpetua-Tools dependency for graduation",
+  "conditions": [
+    "council",
+    "delegate",
+    "dependency",
+    "four",
+    "graduation",
+    "hardware-policy",
+    "hermes",
+    "include-optional",
+    "lesson-mining",
+    "only",
+    "optional",
+    "orama-system",
+    "perpetua-tools",
+    "required",
+    "review",
+    "thin",
+    "via",
+    "wrappers"
+  ],
+  "evidence_ids": [
+    "2026-06-28T06:40:45.578922+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T06:40:45.578922+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T06:40:45.578922+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T06:40:45.666034+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Shipped hermes-integration-authority batch 2026-06-28; installer split WRAPPERS vs OPTIONAL_WRAPPERS",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T06:40:45.578922+00:00"
+      ],
+      "lessons_sha": "696b07dfefc6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T06:40:45.666034+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Shipped hermes-integration-authority batch 2026-06-28; installer split WRAPPERS vs OPTIONAL_WRAPPERS"
+}
