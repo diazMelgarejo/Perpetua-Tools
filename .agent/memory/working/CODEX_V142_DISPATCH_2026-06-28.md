@@ -13,7 +13,7 @@
 
 ## Path contract
 
-- **Never** hardcode `C:\Users\…` or `/Users/…` in prompts or tracked docs (LINT-006).
+- **Never** hardcode absolute host paths (`C:\<user>\…` or `/<user>/…`) in prompts or tracked docs (LINT-006).
 - Resolve repo root: `$ORAMA_SYSTEM_PATH` or `git rev-parse --show-toplevel`.
 - Resolve Codex: WinGet native before LM Studio npm shim (`ensure-partner-cli-paths.ps1`).
 - Pytest paths in prompt: repo-relative (`tests/...`) with `-C` set to repo root.
