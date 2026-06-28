@@ -1,8 +1,8 @@
 # Win autoresearcher — where to look (READ FIRST)
 
-**Agent:** `autoresearcher`, win-researcher, GPU routes on `win-rtx3080`  
-**Date:** 2026-06-28  
-**Fan-out:** `2026-06-28-autoresearch-001`
+**Agent:** `autoresearcher`, win-researcher — **Hermes-only** Win subagents + cursor-agent  
+**Platform:** Windows Hermes harness; Mac peer uses **OpenClaw** (not Hermes)  
+**Date:** 2026-06-28
 
 ## Your assignment
 
