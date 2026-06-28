@@ -186,3 +186,26 @@ _(empty — populate as you go)_
 4. **Empty dry cherry-pick** — delete absorbed branches; don't PR (pairs with tree-twin triage).
 5. **CRLF PR order** — #116 before #117/#118 on `gstack-brain-sync.cmd`.
 6. **Playwright E2E** — deferred until post-merge (importance 5).
+
+## Codex CLI v0.142.x dispatch — gold nuggets (sticky notes)
+
+> Canonical orama card:
+> [`codex-cli-v142-dispatch.md`](../../orama-system/bin/orama-system/references/codex-cli-v142-dispatch.md).
+> Working log: `.agent/memory/working/CODEX_V142_DISPATCH_2026-06-28.md`.
+> Launcher: `orama-system/.../dispatch_codex_partner.py`.
+
+### Sticky skill routing
+
+| Situation | Skill / reference (orama-system) |
+|-----------|----------------------------------|
+| Codex fanout from orchestrator | [`codex-cli-v142-dispatch.md`](../../orama-system/bin/orama-system/references/codex-cli-v142-dispatch.md) profile **fanout** |
+| TTY / interactive Codex | same card, profile **interactive** (`--sandbox danger-full-access --ask-for-approval never`) |
+| Resolve paths at runtime | `-C` repo root + repo-relative pytest paths — never hardcoded host paths |
+| Windows PATH for Codex | `platform/windows/ensure-partner-cli-paths.ps1` (native before LM Studio shim) |
+
+### Gold nuggets (2026-06-28 Win testdrive)
+
+1. **`--approval-mode` removed in 0.140+** — fanout failures are flag drift, not npm vs WinGet version skew (both can be 0.142.x).
+2. **Use `-C <repo-root>`** so prompts stay relative (`tests/foo.py`); do not paste absolute checkout paths into fanout prompts.
+3. **Three profiles:** fanout (exec+bypass), bounded (exec+workspace-write), interactive (top-level sandbox+never).
+4. **Cite the canonical card** from all codex-related skills — do not fork flag tables into SKILL bodies.
