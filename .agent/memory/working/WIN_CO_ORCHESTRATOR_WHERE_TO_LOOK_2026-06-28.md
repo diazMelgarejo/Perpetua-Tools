@@ -50,6 +50,8 @@ python bin\orama-system\skills\hermes-harness\scripts\probe_lan_peer.py --json
 
 ## Inbox commands (Win)
 
+**Portal monitor:** `http://localhost:8002/co-orchestration` — local + Mac peer inbox, HTML markdown preview (pull orama `main` + restart portal).
+
 ```powershell
 cd $env:ORAMA_SYSTEM_PATH
 
