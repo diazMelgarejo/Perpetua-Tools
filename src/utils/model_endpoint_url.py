@@ -64,6 +64,9 @@ def _host_allowed(host: str, *, allow_public: bool) -> bool:
         addr = ipaddress.ip_address(normalized)
     except ValueError:
         return allow_public
+    # IPv4-mapped IPv6 (::ffff:x.x.x.x) reports is_link_local=False on the wrapper.
+    if isinstance(addr, ipaddress.IPv6Address) and addr.ipv4_mapped is not None:
+        addr = addr.ipv4_mapped
     # Link-local (169.254.0.0/16) is not RFC1918 — block cloud metadata SSRF (e.g. 169.254.169.254).
     if addr.is_link_local:
         return False
