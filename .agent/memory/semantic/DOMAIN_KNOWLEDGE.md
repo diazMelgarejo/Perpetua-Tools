@@ -209,3 +209,24 @@ _(empty — populate as you go)_
 2. **Use `-C <repo-root>`** so prompts stay relative (`tests/foo.py`); do not paste absolute checkout paths into fanout prompts.
 3. **Three profiles:** fanout (exec+bypass), bounded (exec+workspace-write), interactive (top-level sandbox+never).
 4. **Cite the canonical card** from all codex-related skills — do not fork flag tables into SKILL bodies.
+
+## Hermes skill absorption — gold nuggets (sticky notes)
+
+> Canonical map:
+> [`hermes-skill-absorption-map.md`](../../orama-system/bin/orama-system/skills/hermes-harness/references/hermes-skill-absorption-map.md).
+> Working log: `.agent/memory/working/HERMES_ABSORPTION_AUDIT_2026-06-28.md`.
+
+### Sticky skill routing
+
+| Situation | Skill / reference (orama-system) |
+|-----------|----------------------------------|
+| Old Hermes slug (`hermes-agent`, etc.) | Load redirect target from absorption map — never the stub body |
+| `.agents/perpetua-hardware` | Points to `hardware-affinity-gate` (orama), not PT/hardware folder |
+| Archive `llm-council-orchestration` | SUPERSEDED → `pt-orama-council` + `hermes-council-review-gates` |
+| Win LM Studio coder | `qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2` via loaded probe |
+
+### Gold nuggets (2026-06-28 absorption audit)
+
+1. **Redirect stubs + `.agents` wrappers** must stay thin — canonical bodies only in `bin/orama-system/skills/`.
+2. **Dual-layer hardware:** orama `hardware-affinity-gate` (methodology) + PT policy YAML (runtime SSoT) + Hermes `pt-hardware-policy` (edge).
+3. **Never use archive council skill** — invented "Qwen 3.6 Coder" was wrong; use live model ID from LM Studio.
