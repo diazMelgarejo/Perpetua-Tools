@@ -1,6 +1,6 @@
 # Windows start.ps1 + LAN peer — 2026-06-28
 
-**Status:** Fixed on orama-system `main` (`2717eee`)  
+**Status:** Fixed on orama-system `main` (`2717eee`) · **Verified:** 2026-06-28 — `start.ps1 --no-open` exit 0; ports 8000/8001/8002 UP  
 **Playbook:** `orama-system/.../references/lan-peer-self-talk.md#operator-playbook`
 
 ## Failures observed (pre-fix)
