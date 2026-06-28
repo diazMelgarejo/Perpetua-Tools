@@ -207,6 +207,8 @@
 - T5 tagging procedure: git tag v1.1.1 -m '<message>' then git push origin v1.1.1 in BOTH repos in the same session. No version bump needed if pyproject.toml/\_version.py already reflect the target version. Tag only after ALL E2E gates pass (Mac E2E + Win E2E + Macâ†’Win cross-probe).  <!-- status=legacy confidence=0.7 evidence=0 id=lesson_legacy_80a8b4101160 -->
 - Windows start.ps1 must parse bash-style flags from args (--no-open --stop --status) because PowerShell switch params reject --kebab-case; never assign to dollar-pid — use listenerPid — PID is a read-only automatic variable  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_0d5d6b4a25eb -->
 - Windows orama uvicorn launch must match start.sh: orama_system.api_server and portal_server modules with PYTHONPATH repo src and root — bare api_server colon app fails silently  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_52add7792e48 -->
+- PowerShell ProcessStartInfo EnvironmentVariables is a StringDictionary — use ContainsKey not Contains or Start-Service throws before uvicorn launches  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_51f853af60eb -->
+- After start.ps1 rehab on Windows verify PT 8000 orama 8001 Portal 8002 UP via start.ps1 --status before LAN peer probe  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_998b0a438dd4 -->
 
 ### 2026-04
 

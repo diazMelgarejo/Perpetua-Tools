@@ -1,0 +1,49 @@
+{
+  "id": "51f853af60eb",
+  "key": "manual_51f853",
+  "name": "manual_51f853",
+  "claim": "PowerShell ProcessStartInfo EnvironmentVariables is a StringDictionary \u2014 use ContainsKey not Contains or Start-Service throws before uvicorn launches",
+  "conditions": [
+    "before",
+    "contains",
+    "containskey",
+    "environmentvariables",
+    "launches",
+    "powershell",
+    "processstartinfo",
+    "start-service",
+    "stringdictionary",
+    "throws",
+    "use",
+    "uvicorn"
+  ],
+  "evidence_ids": [
+    "2026-06-28T09:12:18.336006+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T09:12:18.336006+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T09:12:18.336006+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T09:12:18.452616+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "start.ps1 ContainsKey fix; services never started when Contains threw",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T09:12:18.336006+00:00"
+      ],
+      "lessons_sha": "967d29e1da58"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T09:12:18.452616+00:00",
+  "reviewer": "learn.py",
+  "rationale": "start.ps1 ContainsKey fix; services never started when Contains threw"
+}
