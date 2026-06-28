@@ -1,0 +1,56 @@
+{
+  "id": "e38573d65b51",
+  "key": "manual_e38573",
+  "name": "manual_e38573",
+  "claim": "Graceful degradation Ladders A through F in oramasys-method references graceful-degradation.md are SSOT; PT perpetua-model-selection tiers 0-6 map to Ladder B; working cards hold pointers only not duplicate ladder prose.",
+  "conditions": [
+    "cards",
+    "degradation",
+    "duplicate",
+    "graceful",
+    "graceful-degradation",
+    "hold",
+    "ladder",
+    "ladders",
+    "map",
+    "only",
+    "oramasys-method",
+    "perpetua-model-selection",
+    "pointers",
+    "prose",
+    "references",
+    "ssot",
+    "through",
+    "tiers",
+    "working"
+  ],
+  "evidence_ids": [
+    "2026-06-28T14:52:52.420511+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T14:52:52.420511+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T14:52:52.420511+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T14:52:52.502459+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "self-improve cycle 005 scope guard; Ladder F on 064c418",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T14:52:52.420511+00:00"
+      ],
+      "lessons_sha": "7d8d8de74a6b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T14:52:52.502452+00:00",
+  "reviewer": "learn.py",
+  "rationale": "self-improve cycle 005 scope guard; Ladder F on 064c418"
+}
