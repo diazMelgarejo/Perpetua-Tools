@@ -1,31 +1,110 @@
-# PR #198 — Cursor Final Closure Plan (Executable)
+# PR #198 — Cursor Final Closure Plan (Parity Complete v2)
 
-## 🚨 Goal
-Fully close PR #198 by enforcing remaining OramaSys v2 invariants and removing all CodeRabbit ambiguity.
+## 🚨 STATUS
+This document is the **authoritative execution + reasoning contract** for fully closing PR #198.
 
-This is the **authoritative Cursor execution file**.
-
----
-
-# 🧠 CONTEXT
-
-PR #198 fixes backend routing for:
-- active_tilting discovery
-- Ollama (11434)
-- LM Studio (1234)
-
-BUT still has a missing invariant:
-
-> ❌ Transport scheme identity is not consistently preserved
+It now includes full parity with:
+- CodeRabbit review findings
+- OramaSys v2 RFC security model
+- CI invariant enforcement system
+- Cross-repo transport architecture rules
 
 ---
 
-# 🔧 REQUIRED FINAL FIX
+# 🧠 1. EXECUTIVE SUMMARY
+
+PR #198 implements backend routing fixes for:
+- active_tilting discovery layer
+- Ollama backend (port 11434)
+- LM Studio backend (port 1234)
+
+However, the system is still missing a critical invariant:
+
+> ❌ Transport identity (scheme) is not consistently preserved across reconstruction boundaries
+
+This leads to potential:
+- implicit http downgrade
+- semantic transport loss
+- cross-backend routing inconsistency
+
+---
+
+# 🧩 2. SYSTEM CONTEXT (ORAMASYS MODEL)
+
+The system operates under a 3-layer model:
+
+## Layer 1 — Discovery
+- active_tilting returns host identity (sometimes scheme-aware URL)
+
+## Layer 2 — Routing
+- model_registry assigns backend (ollama / lm-studio)
+
+## Layer 3 — Transport Reconstruction
+- URL is rebuilt for runtime usage
+
+👉 BUG CLASS:
+Mismatch between Layer 1 (semantic identity) and Layer 3 (transport reconstruction)
+
+---
+
+# ⚠️ 3. CODERABBIT FINDINGS (ROOT INTERPRETATION)
+
+CodeRabbit identified:
+- hardcoded http reconstruction
+- missing scheme preservation
+
+### BUT SYSTEMIC ROOT CAUSE:
+
+> The system incorrectly treats discovery output as a raw host instead of a structured transport identity
+
+This causes:
+- protocol loss
+- implicit fallback to HTTP
+- hidden SSRF surface inconsistency
+
+---
+
+# 🧠 4. ORAMASYS ROOT CAUSE ANALYSIS
+
+## True failure mode:
+
+> Transport identity was not modeled as a first-class invariant
+
+Instead of:
+```
+(URL = scheme + host + port)
+```
+System used:
+```
+host → assumed http → reconstructed URL
+```
+
+---
+
+# 🔐 5. RFC v1 INVARIANT MAPPING
+
+This PR must satisfy OramaSys RFC:
+
+## RFC-001 Invariants:
+
+### ✔ SSRF Boundary
+- no unsafe URL parsing outside controlled logic
+
+### ✔ Transport Integrity
+- scheme MUST be preserved end-to-end
+- no implicit downgrade allowed
+
+### ✔ Backend Isolation
+- ollama ≠ lm-studio routing must never overlap
+
+---
+
+# 🔧 6. REQUIRED FINAL FIX
 
 ## File:
 `orchestrator/model_registry.py`
 
-### Replace reconstruction logic with invariant-safe version:
+### Correct implementation:
 
 ```python
 from urllib.parse import urlparse
@@ -44,71 +123,55 @@ def _build_tilting_url(tilted: str, port: int, default_scheme: str = "http") -> 
 
 ---
 
-# 🧠 ROOT CAUSE FIXED
+# 🧪 7. CI ENFORCEMENT LINKAGE
 
-This resolves:
+This fix is enforced by:
 
-- implicit http downgrade
-- scheme loss from active_tilting output
-- cross-backend transport contamination
+- `.github/workflows/security-invariant-enforcer.yml`
+- `.github/workflows/invariant-monitor-bot.yml`
 
----
-
-# 🧪 REQUIRED TEST VALIDATION
-
-Run:
-
-```bash
-pytest tests/test_hardware_routing.py -q
-pytest tests/test_scheme_preservation.py -q
-```
-
-Must ensure:
-
-- no `http://http` duplication
-- scheme preserved if present
-- Ollama stays on 11434
-- LM Studio stays on 1234
+## CI MUST FAIL IF:
+- `http://http` pattern appears
+- `urlparse()` used outside policy boundary
+- scheme downgrade detected
 
 ---
 
-# 🔐 FINAL INVARIANTS (MUST HOLD)
+# 🌐 8. CROSS-REPO CONSISTENCY RULE
 
-## 1. SSRF Safety
-- no raw urlparse decision-making outside controlled boundary
+This invariant applies to:
+- Perpetua-Tools
+- Orama-System
 
-## 2. Transport Integrity
-- scheme is part of identity
-- never silently downgraded
+## MUST MATCH:
+- SSRF policy behavior
+- transport reconstruction rules
+- authentication safety model
 
-## 3. Backend Isolation
-- Ollama ≠ LM Studio routing
-- ports MUST remain isolated
+Any divergence = system integrity failure
 
 ---
 
-# 🚀 MERGE CHECKLIST
+# 🧠 9. FINAL SYSTEM STATE AFTER FIX
 
-- [ ] scheme-preserving helper applied
+After applying this patch, PR #198 becomes:
+
+✔ deterministic backend routing system
+✔ invariant-safe transport reconstruction
+✔ SSRF-aligned execution model
+✔ CodeRabbit findings fully resolved at root cause level
+
+---
+
+# 🚀 10. MERGE CHECKLIST
+
+- [ ] scheme preserved from upstream when present
 - [ ] no hardcoded http reconstruction
-- [ ] tests passing
-- [ ] no regression in routing logic
-
----
-
-# 🧠 FINAL SYSTEM STATE AFTER APPLYING
-
-PR #198 becomes:
-
-✔ deterministic routing system
-✔ invariant-safe transport layer
-✔ SSRF-aligned architecture
-✔ CodeRabbit fully satisfied
+- [ ] no cross-backend contamination
+- [ ] CI passing with invariant enforcement
 
 ---
 
 # 📌 EXECUTION RULE
 
-If any uncertainty exists:
-
-> ALWAYS preserve scheme first, normalize second, route third.
+> Always preserve scheme first, normalize second, route third.
