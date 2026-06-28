@@ -118,9 +118,35 @@ _CONT = (
     + "".join(chr(cp) for cp in _CP1252_HIGH_SINGLE)
     + "])"
 )
+# cp1252 decode of UTF-8 bytes 0x91-0x9F (0x90 stays U+0090 in latin-1 range).
+_CP1252_91_9F = (
+    0x2018,
+    0x2019,
+    0x201C,
+    0x201D,
+    0x2022,
+    0x2013,
+    0x2014,
+    0x02DC,
+    0x2122,
+    0x0161,
+    0x203A,
+    0x0153,
+    0x017E,
+    0x0178,
+)
+_SECOND_F0 = (
+    "(?:["
+    + chr(0x0090)
+    + "-"
+    + chr(0x00BF)
+    + "]|["
+    + "".join(chr(cp) for cp in _CP1252_91_9F)
+    + "])"
+)
 _MOJIBAKE_4BYTE = (
     "(?:"
-    + chr(0x00F0) + "[" + chr(0x0090) + "-" + chr(0x00BF) + "]" + _CONT + _CONT
+    + chr(0x00F0) + _SECOND_F0 + _CONT + _CONT
     + "|[" + chr(0x00F1) + "-" + chr(0x00F3) + "]" + _CONT + _CONT + _CONT
     + "|" + chr(0x00F4) + "[" + chr(0x0080) + "-" + chr(0x008F) + "]" + _CONT + _CONT
     + ")"
