@@ -91,4 +91,4 @@ python bin\orama-system\skills\hermes-harness\scripts\lan_peer_assign.py drop --
 
 ## Self-improve merge
 
-Drafts: `mac-lessons-draft.md` (inbox) + Win runtime results — merged into PT `.agent` via this session. `docs/LESSONS.md` human section updated; orama `docs/LESSONS.md` not touched unless operator requests.
+**Status:** APPROVED 2026-06-28 — `docs/LESSONS.md` updated on PT + orama `main`
