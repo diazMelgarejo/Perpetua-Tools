@@ -14,6 +14,14 @@
 - ✅ Canary model `stepfun/step-3.7-flash:free`; LM Studio `state=loaded` probe
 - ✅ PT memory: `CODEX_V142_DISPATCH_2026-06-28.md`, `lesson_2cef6113c1f1`
 
+## LAN peer (Mac ↔ Win — same instructions both hosts)
+
+**Canonical playbook:** [orama `lan-peer-self-talk.md` § Operator playbook](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/hermes-harness/references/lan-peer-self-talk.md#operator-playbook)
+
+- Hermes: `/lan-peer-self-talk`
+- Win start: `.\platform\windows\start.ps1 --lan-peer`
+- Mac start: `./start.sh --lan-peer --no-open`
+
 ## Mac operator — start here
 
 ```bash
