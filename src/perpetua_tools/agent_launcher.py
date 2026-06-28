@@ -102,7 +102,7 @@ def _loopback_host_from_endpoint(endpoint: str, *, default_port: int) -> tuple[s
     return host, port
 
 
-_default_mac_host = os.getenv("MAC_IP") or os.getenv("MAC_LMS_HOST") or "192.168.254.110"
+_default_mac_host = os.getenv("MAC_IP") or os.getenv("MAC_LMS_HOST") or ""
 _default_ollama_mac_endpoint = (
     "http://localhost:11434"
     if RUNNING_ON_MAC

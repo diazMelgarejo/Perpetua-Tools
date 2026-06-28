@@ -125,7 +125,7 @@ RUNNING_ON_MAC = _platform_ovr in {"mac", "macos", "darwin"} or (
 RUNNING_ON_WINDOWS = _platform_ovr in {"win", "windows", "win32"} or (
     not _platform_ovr and __import__("sys").platform.startswith("win"))
 
-MAC_IP     = os.getenv("MAC_IP",  "192.168.254.110")  # LAN IP; only used cross-machine
+MAC_IP     = os.getenv("MAC_IP",  "")  # LAN IP; set by discover.py / start.ps1 — never hardcode DHCP
 WIN_IP     = os.getenv("WIN_IP",  "192.168.254.108")  # LAN IP; only used cross-machine
 
 _LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})

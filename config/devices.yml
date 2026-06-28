@@ -26,7 +26,7 @@ devices:
     default_backend: ollama
     primary_backend: "ollama"
     # secondary_backend removed: LM Studio Mac is mirror-only per hardware policy
-    lan_ip: "localhost"
+    lan_ip: "192.168.254.102"
     ports:
       - 11434  # Ollama (PRIMARY — inference)
       - 8081   # MLX (optional, native Mac performance benchmarks)

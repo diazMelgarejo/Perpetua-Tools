@@ -19,6 +19,8 @@
 
 **Canonical playbook:** [orama `lan-peer-self-talk.md` § Operator playbook](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/hermes-harness/references/lan-peer-self-talk.md#operator-playbook)
 
+**Bidirectional talk log (attempts + plans):** [orama `lan-peer-bidirectional-talk-2026-06-28.md`](https://github.com/diazMelgarejo/orama-system/blob/main/docs/guides/lan-peer-bidirectional-talk-2026-06-28.md)
+
 - Hermes: `/lan-peer-self-talk`
 - Win start: `.\platform\windows\start.ps1 --lan-peer`
 - Mac start: `./start.sh --lan-peer --no-open`
