@@ -14,6 +14,21 @@ from orchestrator.connectivity import endpoint_online as _endpoint_online
 _DISABLE_LIVE_PROBES = {"1", "true", "yes", "on"}
 
 
+def _build_tilting_url(tilted: str, port: int, *, default_scheme: str = "http") -> Optional[str]:
+    """Rebuild scheme://hostname:port from active_tilting discovery output.
+
+    Preserves the transport scheme when discovery returns an absolute URL
+    (e.g. https overrides). Returns None when hostname cannot be parsed so
+    callers can fall back to models.yml host expansion.
+    """
+    parsed = urlparse(tilted if "://" in tilted else f"{default_scheme}://{tilted}")
+    hostname = parsed.hostname
+    if not hostname:
+        return None
+    scheme = parsed.scheme or default_scheme
+    return f"{scheme}://{hostname}:{int(port)}"
+
+
 def _expand_env_default(value: str) -> str:
     """Expand ${VAR:-default} in config strings (e.g. OLLAMA host)."""
     if not isinstance(value, str) or "${" not in value:
@@ -122,11 +137,10 @@ class ModelRegistry:
             tilted = detect_active_tilting_ip()
             if item.get("backend") != "ollama":
                 return tilted
-            parsed = urlparse(tilted if "://" in tilted else f"http://{tilted}")
-            hostname = parsed.hostname
-            if not hostname:
+            rebuilt = _build_tilting_url(tilted, int(item.get("port", 11434)))
+            if rebuilt is None:
                 return _expand_env_default(str(item.get("host", "")))
-            return f"http://{hostname}:{int(item.get('port', 11434))}"
+            return rebuilt
         return _expand_env_default(str(item.get("host", "")))
 
     # ── model listing ─────────────────────────────────────────────────────────
