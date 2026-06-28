@@ -1,0 +1,73 @@
+{
+  "id": "37ed595a3b57",
+  "key": "manual_37ed59",
+  "name": "manual_37ed59",
+  "claim": "git add --renormalize with 'text eol=crlf' in .gitattributes can store raw CRLF bytes in the blob on macOS, creating a phantom git diff where cmp shows working-tree and HEAD blob are byte-identical yet git diff HEAD shows 69+ lines changed. Fix: write LF content to file, git add (normalizes to LF blob), commit locally, then git pull --rebase drops it as 'patch already upstream'.",
+  "conditions": [
+    "add",
+    "already",
+    "blob",
+    "byte-identical",
+    "bytes",
+    "changed",
+    "cmp",
+    "commit",
+    "content",
+    "creating",
+    "crlf",
+    "diff",
+    "drops",
+    "eol",
+    "file",
+    "fix",
+    "git",
+    "gitattributes",
+    "head",
+    "lines",
+    "locally",
+    "macos",
+    "normalizes",
+    "patch",
+    "phantom",
+    "pull",
+    "raw",
+    "rebase",
+    "renormalize",
+    "shows",
+    "store",
+    "text",
+    "upstream",
+    "working-tree",
+    "write",
+    "yet"
+  ],
+  "evidence_ids": [
+    "2026-06-28T00:44:01.914014+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T00:44:01.914014+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T00:44:01.914014+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T00:44:01.977947+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Blocked orama git pull for hours (platform/windows/gstack-brain-sync.cmd). git update-index --assume-unchanged masks but does not fix; correct fix is LF-content re-stage.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T00:44:01.914014+00:00"
+      ],
+      "lessons_sha": "6d4119a305e6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T00:44:01.977941+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Blocked orama git pull for hours (platform/windows/gstack-brain-sync.cmd). git update-index --assume-unchanged masks but does not fix; correct fix is LF-content re-stage."
+}
