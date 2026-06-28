@@ -27,12 +27,14 @@ Canonical: `../../orama-system/bin/orama-system/skills/hermes-harness/references
 **Probe note:** `peer-lmstudio` can still PASS (LMS listening with model list) while Mac active work uses Ollama. `peer-lmstudio` ≠ Mac primary coder.
 
 ## Where co-orchestrator + subagents look first
+
 | Role | Harness | Read this | Purpose |
 |------|---------|-----------|---------|
-| **Mac co-orchestrator** | OpenClaw + cursor-agent | This file + mac-co-orchestrator-playbook.md | Fan-out, peer read/write |
-| **mac-researcher** | OpenClaw | openclaw state `lan_peer/inbox/` + `list` (local) | Mac-assigned hypothesis tasks |
+| **Mac co-orchestrator** | OpenClaw + cursor-agent | `MAC_CO_ORCHESTRATOR_WHERE_TO_LOOK_2026-06-28.md` | **Start here on Mac** |
+| **Mac subagents** | OpenClaw | `MAC_SUBAGENTS_WHERE_TO_LOOK_2026-06-28.md` | mac-researcher, orchestrator |
+| **mac-researcher** | OpenClaw | `~/.openclaw/state/lan_peer/inbox/` + `list` (local) | Mac-assigned hypothesis tasks |
 | **Win co-orchestrator** | Hermes + cursor-agent | `WIN_CO_ORCHESTRATOR_WHERE_TO_LOOK_2026-06-28.md` | Fan-out replies to Mac |
-| **autoresearcher (Win)** | Hermes | `WIN_AUTORESEARCHER_WHERE_TO_LOOK_2026-06-28.md` + Win inbox `list` / `read --name` | Mac to Win assignments (inbound local) |
+| **autoresearcher (Win)** | Hermes | `WIN_AUTORESEARCHER_WHERE_TO_LOOK_2026-06-28.md` + Win inbox `list` / `read --name` | Mac→Win inbound (local) |
 | **All agents** | either | `.agent/memory/semantic/LESSONS.md` | Rendered lesson brain |
 | **All agents** | either | `.agent/memory/semantic/DOMAIN_KNOWLEDGE.md` | LAN peer + co-orchestrator gold |
 | **Probe / ops** | either | `LAN_PEER_L2_TOKEN_LANDMARK_2026-06-28.md` | Token handoff (no secrets) |
