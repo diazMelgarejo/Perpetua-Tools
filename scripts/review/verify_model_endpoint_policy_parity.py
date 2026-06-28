@@ -59,6 +59,21 @@ def main() -> int:
         print("model-endpoint-policy-parity: FAIL — policy functions diverged", file=sys.stderr)
         print(f"  local: {_LOCAL_POLICY}", file=sys.stderr)
         print(f"  peer:  {peer}", file=sys.stderr)
+        print(
+            "  hint: on stacked cross-repo PRs, CI must checkout the sibling at the same "
+            "PR branch (not main); after merge both repos should match on main.",
+            file=sys.stderr,
+        )
+        import difflib
+
+        for line in difflib.unified_diff(
+            peer_src.splitlines(),
+            local_src.splitlines(),
+            fromfile=str(peer),
+            tofile=str(_LOCAL_POLICY),
+            lineterm="",
+        ):
+            print(line, file=sys.stderr)
         return 1
 
     print("model-endpoint-policy-parity: PASS")
