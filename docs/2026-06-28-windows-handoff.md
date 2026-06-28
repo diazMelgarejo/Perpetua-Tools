@@ -11,6 +11,7 @@
 - ✅ `ensure-partner-cli-paths.ps1` + parametric partner CLI paths
 - ✅ `codex-cli-v142-dispatch.md` canonical card + `dispatch_codex_partner.py`
 - ✅ OpenClaw optional on Windows (`start.ps1` skips when no `openclaw.json`)
+- ✅ **`start.ps1` rehab (`2717eee`):** bash-style flags, `$listenerPid`, uvicorn paths, `ContainsKey` — live verify 8000/8001/8002 UP
 - ✅ Canary model `stepfun/step-3.7-flash:free`; LM Studio `state=loaded` probe
 - ✅ PT memory: `CODEX_V142_DISPATCH_2026-06-28.md`, `lesson_2cef6113c1f1`
 

@@ -6,6 +6,32 @@
 
 ---
 
+## 2026-06-28 — Windows `start.ps1` rehab: flags, read-only `$PID`, uvicorn paths | Cursor
+
+**orama fix:** `2717eee` (`platform/windows/start.ps1`) · **PT memory:** `lesson_0d5d6b4a25eb`, `lesson_52add7792e48`, `.agent/memory/working/START_PS1_LAN_PEER_2026-06-28.md` · **Verified live:** `start.ps1 --no-open` → PT `:8000`, orama `:8001`, Portal `:8002` UP (exit 0)
+
+### Failures (pre-fix)
+
+| Symptom | Root cause |
+|---------|------------|
+| `--no-open` parameter not found | PowerShell `[switch]` params reject `--kebab-case`; need `$args` parsing like `start.sh` |
+| `--status` / `--stop` abort | Assigned to read-only automatic `$PID` — use `$listenerPid` |
+| Ports 8001/8002 never open | Wrong uvicorn modules (`api_server:app` vs `orama_system.api_server:app`) + `PYTHONPATH` |
+| Start crashes before services | `EnvironmentVariables.Contains()` — must use `.ContainsKey()` |
+
+### Operator sequence (Win)
+
+```powershell
+$env:PERPETUA_TOOLS_PATH = "<canonical PT clone>"
+.\platform\windows\start.ps1 --stop
+.\platform\windows\start.ps1 --no-open
+.\platform\windows\start.ps1 --status
+```
+
+Set `PERPETUA_TOOLS_PATH` before start — wrong sibling path degrades hardware policy to cache-only.
+
+---
+
 ## 2026-06-28 — LAN peer self-talk: Mac↔Win orama installs over HTTP | Cursor
 
 **Canonical operator playbook (Mac + Win — identical):**
