@@ -6,13 +6,59 @@
 
 ---
 
+## 2026-06-28 — Operator approved: co-orchestration GO + self-improve lessons | Cursor
+
+**Approval:** operator `approve lessons` (2026-06-28)  
+**Sources:** `mac-lessons-draft.md`, `win-self-improve-runtime-results.md`, live probes  
+**Machine lessons:** `lesson_87636d658879` … `lesson_20833366511b` (13 rows in `.agent/memory/semantic/lessons.jsonl`)
+
+### Operational status (verified live)
+
+| Layer | Status |
+|-------|--------|
+| L1 inference | PASS — Mac Ollama warm (`:11434`); Win LM Studio 27B (`:1234`) |
+| L2 portal | PASS — `auth_mode: joint` |
+| L3 file inbox | PASS — bidirectional `POST /api/peer-file` |
+| ws-peer | PASS — bidirectional (`websockets>=12`, orama `58605e1`) |
+
+### Approved gold nuggets (beyond co-orchestrator section below)
+
+8. **Joint auth** — PT `.state/control_plane_token` + orama env lanes; either key unlocks `portal-status` on probes (`lesson_43c39af8176f`)
+9. **ws-peer GO** — when ws-peer PASS both directions, L3 file inbox co-orchestration is fully operational; coordinate only via `lan_peer_assign` file drops, not remote agent RPC (`lesson_20833366511b`)
+10. **parents[4]** — `lan_peer_assign.py` repo root is `Path(__file__).resolve().parents[4]`, not `parents[5]` (orama `9f89051`)
+
+---
+
+## 2026-06-28 — Coordinated cycle 002: parallel Mac+Win subagents | Cursor
+
+**Landmark:** `.agent/memory/working/COORDINATED_CYCLE_002_2026-06-28.md`  
+**Fan-out manifest:** [`coordinated-cycle-002.json`](../../orama-system/bin/orama-system/skills/hermes-harness/references/coordinated-cycle-002.json)
+
+| Host | Assignment | Deliverable |
+|------|------------|-------------|
+| Mac | routing policy review | `mac-routing-review.md` |
+| Win | H4 GPU coding-loop benchmark | `gpu-results-h4.md` → Mac inbox |
+| Mac | hypothesis v2 | `mac-hypothesis-v2.md` → Win inbox |
+
+**H4 headline (Win 27B):** ~33s wall on coding prompt (`clamp`); reasoning model returned thinking tokens only — Mac Ollama 9B parallel run still pending for comparison.
+
+---
+
+## 2026-06-28 — CI: 4-byte UTF-8 mojibake cp1252 second-byte gap | Cursor
+
+**Fix:** `32722d5` — `_SECOND_F0` in `scripts/review/repo_hygiene.py`  
+**Symptom:** CI `test_four_byte_utf8_mojibake_is_blocked` failed — emoji mojibake (`U+0178` from byte `0x9F`) not detected after RFC 3629 tightening in `820e078`  
+**Pattern:** F0 lead-byte sequences must match cp1252-mapped second bytes (`0x91`–`0x9F`), not only latin-1 `U+0090`–`U+00BF`
+
+---
+
 ## 2026-06-28 — Mac↔Win co-orchestrator: file inbox + PT `.agent` memory | Cursor
 
 **PT working card:** `.agent/memory/working/CO_ORCHESTRATOR_LAN_PEER_2026-06-28.md`  
 **orama playbook:** [`mac-co-orchestrator-playbook.md`](../../orama-system/bin/orama-system/skills/hermes-harness/references/mac-co-orchestrator-playbook.md)  
 **GitHub:** https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/hermes-harness/references/mac-co-orchestrator-playbook.md
 
-**Machine lessons:** `lesson_87636d658879` … `lesson_49a5af119f6f` (11 co-orchestrator rows in `.agent/memory/semantic/lessons.jsonl`)
+**Machine lessons:** `lesson_87636d658879` … `lesson_20833366511b` (13 co-orchestrator rows in `.agent/memory/semantic/lessons.jsonl`)
 
 ### Where Mac co-orchestrator + subagents look
 

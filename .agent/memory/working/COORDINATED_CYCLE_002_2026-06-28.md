@@ -18,8 +18,7 @@
 
 ## Self-improve gate
 
-`~/.openclaw/state/lan_peer/inbox/self-improve-merge-final-proposed.md`  
-→ reply **`approve lessons`** to land PT + orama `docs/LESSONS.md`
+**Status:** APPROVED 2026-06-28 — landed in PT + orama `docs/LESSONS.md`
 
 ## Win waiting on
 
