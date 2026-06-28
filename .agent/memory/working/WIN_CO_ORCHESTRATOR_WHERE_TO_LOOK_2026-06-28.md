@@ -10,11 +10,20 @@
 ```powershell
 cd $env:ORAMA_SYSTEM_PATH
 git fetch origin --prune
-git pull --rebase origin main   # need >= 6fa3dd9
+git pull --rebase origin main   # need >= 435d27a (portal / 500 fix)
 .\platform\windows\start.ps1 --stop
 .\platform\windows\start.ps1 --lan-peer --no-open
 python bin\orama-system\skills\hermes-harness\scripts\probe_lan_peer.py --json
 ```
+
+### Portal `http://localhost:8002/` → Internal Server Error
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| `/` → 500, `/health` → 200 | Stale portal before `435d27a` | `git pull` orama `main`, `start.ps1 --stop` then `--lan-peer` |
+| Root cause | `api_status` redacted `agents` as `{"agents": [...], "count": N}` | `_unwrap_redacted_list()` in `portal_server.py` |
+
+**Verify:** browser or `Invoke-WebRequest http://localhost:8002/` → status 200.
 
 ## Primary playbooks (orama-system, tracked)
 
