@@ -167,6 +167,8 @@
 - Windows partner CLIs use parametric LOCALAPPDATA and USERPROFILE paths; bootstrap with ensure-partner-cli-paths.ps1  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_5d96448dd529 -->
 - Codex CLI v0.142.x uses three dispatch profiles: fanout (codex exec -C repo -s workspace-write --dangerously-bypass-approvals-and-sandbox), bounded (exec workspace-write only), interactive (--sandbox danger-full-access --ask-for-approval never). Legacy --approval-mode removed in 0.140+. Resolve repo root and Codex binary at runtime; never hardcode host paths in prompts.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_2cef6113c1f1 -->
 - Hermes skill absorption: redirect stubs and .agents wrappers stay thin; canonical bodies live only in bin/orama-system/skills. perpetua-hardware in .agents targets hardware-affinity-gate (orama methodology); PT runtime SSoT stays in Perpetua-Tools policy YAML. Archive llm-council-orchestration is SUPERSEDED by pt-orama-council; Win LM Studio coder is qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2 not invented Qwen 3.6 Coder.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_ed634fbe6cd0 -->
+- Hermes thin wrappers: four required (council, review, delegate, hardware-policy); lesson-mining is optional via --include-optional only — orama-system has no Perpetua-Tools dependency for graduation  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_6ce521f323f4 -->
+- Hermes dispatch envelope: L3 skill_id+args+agent_id; L2 adds orama_system_root, executor_id, optional transport partner profile; L0 OpenClaw core result plus optional Hermes extensions  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_f6de10a70a81 -->
 
 ### 2026-04
 
