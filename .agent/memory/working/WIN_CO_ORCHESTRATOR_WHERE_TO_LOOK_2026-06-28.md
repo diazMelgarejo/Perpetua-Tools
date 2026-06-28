@@ -57,7 +57,11 @@ python bin\orama-system\skills\hermes-harness\scripts\probe_lan_peer.py --json
 ```powershell
 python bin\orama-system\skills\hermes-harness\scripts\win_job_queue.py enqueue
 python bin\orama-system\skills\hermes-harness\scripts\win_job_queue.py status
+python bin\orama-system\skills\hermes-harness\scripts\win_job_queue.py prune
 python bin\orama-system\skills\hermes-harness\scripts\win_job_queue.py run-once
+python bin\orama-system\skills\hermes-harness\scripts\coord_monitor.ps1 -Minutes 15 -IntervalSec 120
+```
+
 ```powershell
 cd $env:ORAMA_SYSTEM_PATH
 
