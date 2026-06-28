@@ -440,8 +440,11 @@ Coordination is **file inbox only** — agents never execute on the peer host ov
 
 | Agent / role | Read first (PT memory) |
 |--------------|------------------------|
+| **Mac co-orchestrator** | `.agent/memory/working/MAC_CO_ORCHESTRATOR_WHERE_TO_LOOK_2026-06-28.md` |
+| **Mac subagents** | `.agent/memory/working/MAC_SUBAGENTS_WHERE_TO_LOOK_2026-06-28.md` |
 | Win co-orchestrator | `.agent/memory/working/WIN_CO_ORCHESTRATOR_WHERE_TO_LOOK_2026-06-28.md` |
 | Win autoresearcher | `.agent/memory/working/WIN_AUTORESEARCHER_WHERE_TO_LOOK_2026-06-28.md` |
+| Shared landmark | `.agent/memory/working/CO_ORCHESTRATOR_LAN_PEER_2026-06-28.md` |
 | All LAN peer lessons | `.agent/memory/working/LAN_PEER_FILE_COORDINATION_2026-06-28.md` |
 
 | Agent / role | Read first (orama tracked) |

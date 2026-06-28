@@ -12,16 +12,18 @@
 **orama playbook:** [`mac-co-orchestrator-playbook.md`](../../orama-system/bin/orama-system/skills/hermes-harness/references/mac-co-orchestrator-playbook.md)  
 **GitHub:** https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/hermes-harness/references/mac-co-orchestrator-playbook.md
 
-**Machine lessons:** `lesson_87636d658879` … `lesson_43c39af8176f` (8 rows in `.agent/memory/semantic/lessons.jsonl`)
+**Machine lessons:** `lesson_87636d658879` … `lesson_49a5af119f6f` (11 co-orchestrator rows in `.agent/memory/semantic/lessons.jsonl`)
 
 ### Where Mac co-orchestrator + subagents look
 
 | Role | Path |
 |------|------|
-| Co-orchestrator | PT `.agent/memory/working/CO_ORCHESTRATOR_LAN_PEER_2026-06-28.md` |
-| All agents | PT `.agent/memory/semantic/LESSONS.md` + `DOMAIN_KNOWLEDGE.md` |
-| mac-researcher | `~/.openclaw/state/lan_peer/inbox/` (local Mac assignments) |
-| Win autoresearcher | Win inbox — `lan_peer_assign.py list` / `read --name` (no `--peer` inbound) |
+| **Mac co-orchestrator** | `.agent/memory/working/MAC_CO_ORCHESTRATOR_WHERE_TO_LOOK_2026-06-28.md` |
+| **Mac subagents** (mac-researcher, etc.) | `.agent/memory/working/MAC_SUBAGENTS_WHERE_TO_LOOK_2026-06-28.md` |
+| Shared landmark | `.agent/memory/working/CO_ORCHESTRATOR_LAN_PEER_2026-06-28.md` |
+| All agents | `.agent/memory/semantic/LESSONS.md` + `DOMAIN_KNOWLEDGE.md` |
+| mac-researcher inbox | `~/.openclaw/state/lan_peer/inbox/` (local Mac assignments) |
+| Win autoresearcher | `.agent/memory/working/WIN_AUTORESEARCHER_WHERE_TO_LOOK_2026-06-28.md` |
 | Ops / tokens | `.agent/memory/working/LAN_PEER_L2_TOKEN_LANDMARK_2026-06-28.md` |
 
 ### Gold nuggets
