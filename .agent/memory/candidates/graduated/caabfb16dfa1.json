@@ -1,0 +1,61 @@
+{
+  "id": "caabfb16dfa1",
+  "key": "manual_caabfb",
+  "name": "manual_caabfb",
+  "claim": "~/.gbrain/config.json must have a 'database_url' key explicitly \u2014 ~/.gbrain/.env is NOT auto-sourced in non-interactive shells (Claude Code agents, launchd background jobs). Export the URL from .env into config.json directly, or gbrain fails with 'database_url is missing from config' in every non-interactive context.",
+  "conditions": [
+    "agents",
+    "auto-sourced",
+    "background",
+    "claude",
+    "code",
+    "config",
+    "context",
+    "database_url",
+    "directly",
+    "env",
+    "every",
+    "explicitly",
+    "export",
+    "fails",
+    "gbrain",
+    "into",
+    "jobs",
+    "json",
+    "key",
+    "launchd",
+    "missing",
+    "non-interactive",
+    "shells",
+    "url"
+  ],
+  "evidence_ids": [
+    "2026-06-28T00:44:01.787609+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T00:44:01.787609+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T00:44:01.787609+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T00:44:01.842309+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Discovered 2026-06-28 when gbrain broke in Claude Code agent session; ~/.gbrain/.env existed but was not loaded; fixed by writing database_url into config.json",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T00:44:01.787609+00:00"
+      ],
+      "lessons_sha": "2e0af9580986"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T00:44:01.842304+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Discovered 2026-06-28 when gbrain broke in Claude Code agent session; ~/.gbrain/.env existed but was not loaded; fixed by writing database_url into config.json"
+}

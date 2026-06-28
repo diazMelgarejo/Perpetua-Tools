@@ -1,0 +1,70 @@
+{
+  "id": "47847426bd94",
+  "key": "manual_478474",
+  "name": "manual_478474",
+  "claim": "orama-system TDD gate (pre-commit check for adjacent *.test.ts(x) when web/src/ production files change) fires on merge resolution commits even when no new code was authored. Override with 'tdd-skip: <reason>' in the git commit message body \u2014 the commit-msg hook reads this line and bypasses the TDD requirement.",
+  "conditions": [
+    "adjacent",
+    "authored",
+    "body",
+    "bypasses",
+    "change",
+    "check",
+    "code",
+    "commit",
+    "commit-msg",
+    "commits",
+    "even",
+    "files",
+    "fires",
+    "gate",
+    "git",
+    "hook",
+    "line",
+    "merge",
+    "message",
+    "new",
+    "orama-system",
+    "override",
+    "pre-commit",
+    "production",
+    "reads",
+    "reason",
+    "requirement",
+    "resolution",
+    "src",
+    "tdd",
+    "tdd-skip",
+    "test",
+    "web"
+  ],
+  "evidence_ids": [
+    "2026-06-28T00:44:15.197730+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T00:44:15.197730+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T00:44:15.197730+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T00:44:15.253615+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Blocked merge-conflict-resolution commit on orama during PR #113 merge; tdd-skip: is the canonical escape hatch, not --no-verify",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T00:44:15.197730+00:00"
+      ],
+      "lessons_sha": "fa3420590b87"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T00:44:15.253608+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Blocked merge-conflict-resolution commit on orama during PR #113 merge; tdd-skip: is the canonical escape hatch, not --no-verify"
+}

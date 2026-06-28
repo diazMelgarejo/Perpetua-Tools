@@ -1,0 +1,45 @@
+{
+  "id": "2a6766b489c5",
+  "key": "manual_2a6766",
+  "name": "manual_2a6766",
+  "claim": "macOS Keychain service names for OpenClaw: 'openclaw.gemini-main-apikey' (->OPENCLAW_MODELS_PROVIDERS_GEMINI_MAIN_APIKEY), 'openclaw.gemini-fallback-apikey' (->OPENCLAW_MODELS_PROVIDERS_GEMINI_FALLBACK_APIKEY), 'openclaw.telegram-bot-token' (->OPENCLAW_TELEGRAM_BOT_TOKEN), 'openclaw.gateway-auth-token' (->OPENCLAW_GATEWAY_AUTH_TOKEN). Store: printf '%s' VALUE | bash $OPENCLAW_ROOT/orama-system/scripts/openclaw/store_keychain_secret.sh <service>. Load at startup: source $OPENCLAW_ROOT/orama-system/scripts/openclaw/load_keychain_secrets.sh",
+  "conditions": [
+    "gateway",
+    "gemini",
+    "keychain",
+    "macos",
+    "openclaw",
+    "secrets",
+    "startup",
+    "telegram"
+  ],
+  "evidence_ids": [
+    "2026-06-28T02:21:40.395780+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T02:21:40.395780+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T02:21:40.395780+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T02:21:40.462867+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-06-28: Gemini main + fallback stored. TELEGRAM + GATEWAY_AUTH still need user-provided values. load_keychain_secrets.sh added to orama-system/scripts/openclaw/ \u2014 source it in start.sh or shell profile.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T02:21:40.395780+00:00"
+      ],
+      "lessons_sha": "7429bbbb89db"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T02:21:40.462861+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-06-28: Gemini main + fallback stored. TELEGRAM + GATEWAY_AUTH still need user-provided values. load_keychain_secrets.sh added to orama-system/scripts/openclaw/ \u2014 source it in start.sh or shell profile."
+}

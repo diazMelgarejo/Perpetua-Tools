@@ -1,0 +1,65 @@
+{
+  "id": "a88a10dfcba5",
+  "key": "manual_a88a10",
+  "name": "manual_a88a10",
+  "claim": "SSRF validation must convert IPv4-mapped IPv6 addresses before checking is_link_local: if isinstance(addr, ipaddress.IPv6Address) and addr.ipv4_mapped is not None: addr = addr.ipv4_mapped. Without this, ::ffff:169.254.x.x passes ipv6.is_link_local=False check even though the underlying IPv4 address is link-local. Fixed in PT PR #154 alphaclaw_bootstrap.py.",
+  "conditions": [
+    "addr",
+    "address",
+    "addresses",
+    "alphaclaw_bootstrap",
+    "before",
+    "check",
+    "checking",
+    "convert",
+    "even",
+    "false",
+    "ffff",
+    "fixed",
+    "ipaddress",
+    "ipv4",
+    "ipv4-mapped",
+    "ipv4_mapped",
+    "ipv6",
+    "ipv6address",
+    "is_link_local",
+    "isinstance",
+    "link-local",
+    "none",
+    "passes",
+    "ssrf",
+    "though",
+    "underlying",
+    "validation",
+    "without"
+  ],
+  "evidence_ids": [
+    "2026-06-28T00:44:15.449513+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T00:44:15.449513+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T00:44:15.449513+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T00:44:15.522158+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Security gap surfaced during PR #154 security hardening; IPv4-mapped IPv6 bypass was a real SSRF vector",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T00:44:15.449513+00:00"
+      ],
+      "lessons_sha": "78b10cc6c7a8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T00:44:15.522138+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Security gap surfaced during PR #154 security hardening; IPv4-mapped IPv6 bypass was a real SSRF vector"
+}
