@@ -38,11 +38,11 @@ git log --oneline origin/main..origin/<branch>        # orphan check after merge
 
 ### PT #185 → #198 cherry-pick (only net-new)
 
-**#185 close** — 16-file branch is ~473 files behind `main`; merge would regress security, paths, GPU_BOX sync.
+**#185 closed** — superseded; remote branch `cursor/critical-bug-investigation-32a0` **deleted**.
 
 **Only net-new fix:** `ModelRegistry._resolve_host` — when `active_tilting` + `backend=ollama`, use hostname from tilted IP but **port 11434**, not LM Studio `:1234`.
 
-- **Follow-up:** PT **#198** `cursor/fix-ollama-port-active-tilting-c4ae` @ `5fc305e` (2 files, draft)
+- **Follow-up:** PT **#198** `cursor/fix-ollama-port-active-tilting-c4ae` @ `5fc305e` — **ready for review** (cross-links #185)
 - **Affected model:** `qwen3-30b-autoresearch-critic` (`config/models.yml`, `win-rtx3080`, ollama)
 - **Tests:** `test_active_tilting_ollama_win_uses_model_port_not_lmstudio` — 35/35 `test_hardware_routing.py`
 
@@ -88,10 +88,11 @@ Run `python3 .agent/tools/show.py <lesson_id>` for full text.
 
 | Item | Owner |
 |------|-------|
-| Merge **#198** (ollama port guard) | operator |
+| Merge **#198** (ollama port guard) | operator — **ready for review** |
 | Merge **#183** after Win operator review | operator |
 | Close Tier 3–4 PRs (15 PT + 3 orama) | operator (GitHub UI) |
-| Close **#185**, **#135**, **#133** | operator |
+| Close **#185** manually if still open (branch deleted) | operator |
+| Close **#135**, **#133** | operator |
 | Rebase Tier 1 orama **#129**, **#131**, **#132** | next agent pass |
 
 ## Local verify
