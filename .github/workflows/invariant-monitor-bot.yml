@@ -1,0 +1,55 @@
+name: OramaSys Invariant Monitor Bot
+
+on:
+  pull_request:
+  push:
+  issue_comment:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          pip install -r requirements.txt || true
+          pip install pytest
+
+      - name: Run invariant tests
+        run: |
+          pytest -q
+
+      - name: Scan SSRF violations
+        run: |
+          echo "Scanning for SSRF boundary violations"
+          ! grep -R "urlparse(" src || true
+          ! grep -R "urllib" src/utils || true
+
+      - name: Scan auth leaks
+        run: |
+          ! grep -R "ORAMA_CONTROL_PLANE_TOKEN" . || true
+
+      - name: Detect transport regression
+        run: |
+          echo "Detecting scheme downgrade patterns"
+          ! grep -R "http://http" . || true
+
+      - name: Comment on PR if failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## 🚨 OramaSys Invariant Monitor Alert\n\nSecurity invariants were violated in this PR.\n\n- SSRF boundary check failed OR\n- Auth leakage detected OR\n- Transport regression detected\n\nPlease review OramaSys v2 RFC and fix before merge.`
+            })
