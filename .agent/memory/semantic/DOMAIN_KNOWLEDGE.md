@@ -230,3 +230,26 @@ _(empty — populate as you go)_
 1. **Redirect stubs + `.agents` wrappers** must stay thin — canonical bodies only in `bin/orama-system/skills/`.
 2. **Dual-layer hardware:** orama `hardware-affinity-gate` (methodology) + PT policy YAML (runtime SSoT) + Hermes `pt-hardware-policy` (edge).
 3. **Never use archive council skill** — invented "Qwen 3.6 Coder" was wrong; use live model ID from LM Studio.
+
+## Hermes integration authority — gold nuggets (sticky notes)
+
+> Plan: `orama-system/docs/plans/2026-06-28-hermes-integration-authority.md`.
+> Protocol: `hermes-harness/references/hermes-universal-invocation-protocol.md`.
+> Working log: `.agent/memory/working/HERMES_INTEGRATION_AUTHORITY_2026-06-28.md`.
+
+### Sticky skill routing
+
+| Situation | Skill / reference (orama-system) |
+|-----------|----------------------------------|
+| Hermes dispatch envelope | `hermes-universal-invocation-protocol.md` — core trio + L2 extensions |
+| Partner audit trail | L2 `transport: { partner, profile }` (L1 CLI stays internal) |
+| Delegation identity | `agent_id` = owner, `executor_id` = runner |
+| Lesson graduation | `pt-orama-lesson-mining` → PT `.agent/tools/learn.py` |
+| OpenClaw on Windows | Registry entry OK; Mac-only ops return `blocked` envelope |
+
+### Gold nuggets (2026-06-28 authority batch)
+
+1. **hermes-harness v1.1.0** matches openclaw-skills authority: registry, bootstrap JSON health, boundaries.
+2. **Command cards** live under `hermes-harness/commands/<slug>/`, not top-level `skills/<slug>/`.
+3. **Result superset:** OpenClaw core (`status`, `files_modified`, `follow_up_actions`) + optional Hermes fields.
+4. **Five thin wrappers** including `lesson-mining`; run `install_hermes_thin_skills.py --install` after pull.
