@@ -59,9 +59,23 @@ def test_health_rejects_link_local_ssrf_target():
     assert exc.value.status_code == 400
 
 
+def test_health_rejects_malformed_port_as_client_error():
+    with pytest.raises(HTTPException) as exc:
+        fastapi_app.health(ollama_host="http://127.0.0.1:notaport")
+    assert exc.value.status_code == 400
+
+
 def test_health_rejects_metadata_via_test_client(monkeypatch):
     monkeypatch.setattr(fastapi_app, "backend_health_map", lambda **kwargs: {"ollama": {"ok": False}})
     monkeypatch.setattr(fastapi_app, "load_runtime_payload", lambda: None)
     with TestClient(fastapi_app.app, raise_server_exceptions=False) as client:
         resp = client.get("/health?ollama_host=http://169.254.169.254/latest/meta-data/")
+    assert resp.status_code == 400
+
+
+def test_health_rejects_malformed_port_via_test_client(monkeypatch):
+    monkeypatch.setattr(fastapi_app, "backend_health_map", lambda **kwargs: {"ollama": {"ok": False}})
+    monkeypatch.setattr(fastapi_app, "load_runtime_payload", lambda: None)
+    with TestClient(fastapi_app.app, raise_server_exceptions=False) as client:
+        resp = client.get("/health?ollama_host=http://127.0.0.1:notaport")
     assert resp.status_code == 400
