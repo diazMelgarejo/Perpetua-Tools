@@ -1,0 +1,43 @@
+{
+  "id": "601a930aa10d",
+  "key": "manual_601a93",
+  "name": "manual_601a93",
+  "claim": "T5 tagging procedure: git tag v1.1.1 -m '<message>' then git push origin v1.1.1 in BOTH repos in the same session. No version bump needed if pyproject.toml/\\_version.py already reflect the target version. Tag only after ALL E2E gates pass (Mac E2E + Win E2E + Mac\u2192Win cross-probe).",
+  "conditions": [
+    "E2E gate",
+    "T5",
+    "both repos",
+    "git tag",
+    "release tag",
+    "v1.1.1"
+  ],
+  "evidence_ids": [
+    "2026-06-28T07:14:05.725890+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T07:14:05.725890+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T07:14:05.725890+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T07:14:05.776700+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-06-28: Both repos were at version 1.1.1.0. No existing v1.1.x tags existed. T5 was unblocked once mac\u2192Win curl probe succeeded. Tags pushed to GitHub without force-push since they were new.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T07:14:05.725890+00:00"
+      ],
+      "lessons_sha": "3cdf237623a2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T07:14:05.776695+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-06-28: Both repos were at version 1.1.1.0. No existing v1.1.x tags existed. T5 was unblocked once mac\u2192Win curl probe succeeded. Tags pushed to GitHub without force-push since they were new."
+}
