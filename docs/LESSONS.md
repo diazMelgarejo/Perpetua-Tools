@@ -6,6 +6,33 @@
 
 ---
 
+## 2026-06-28 — Hermes integration authority: PT is not a lesson-mining dependency | Cursor
+
+**orama plan:** [`orama-system/docs/plans/2026-06-28-hermes-integration-authority.md`](../../orama-system/docs/plans/2026-06-28-hermes-integration-authority.md) · **orama commits:** `2e284a5`…`9d5f4e6` on `main` · **PT memory:** `.agent/memory/working/HERMES_INTEGRATION_AUTHORITY_2026-06-28.md`
+
+### What was learned
+
+1. **Hermes dispatch is orama-owned** — envelope, registry, and thin-wrapper installer live in `orama-system/bin/orama-system/skills/hermes-harness/`. PT supplies hardware-policy **runtime** YAML/API via one-way import; it does **not** own Hermes slash commands or lesson graduation.
+2. **Four required thin wrappers** — `pt-orama-council`, `pt-orama-review`, `pt-orama-delegate`, `pt-hardware-policy`. Regenerate after pull: `python bin/orama-system/skills/hermes-harness/scripts/install_hermes_thin_skills.py --install --verify` (from orama root).
+3. **Lesson-mining is optional** — `pt-orama-lesson-mining` installs only with `--include-optional`. No hard dependency on PT `learn.py`, `.agent` layout, or any specific graduation CLI. Do not wire PT bootstrap or `POST /autoresearch/sync` gates to this command.
+4. **Sticky routing** — dispatch envelope → `hermes-universal-invocation-protocol.md`; partner audit → L2 `transport`; delegation → `agent_id` + `executor_id`; hardware on Windows Hermes → `pt-hardware-policy` command card + `start.ps1 --hardware-policy`.
+5. **`PERPETUA_TOOLS_ROOT` unchanged for hardware** — still required for `discover.py` / `hardware_policy` import when running PT-side launchers; unrelated to optional lesson-mining.
+
+### Decisions made
+
+- DOMAIN_KNOWLEDGE gold nuggets and working memory updated; orama canonical bodies enriched — PT `.agent` references, does not duplicate procedure.
+- Mac E2E for cross-harness `--hardware-policy` remains deferred (see orama `docs/plans/2026-06-28-mac-e2e-handoff.md`).
+
+### Sync (both repos)
+
+```bash
+cd orama-system && git pull --ff-only origin main && python scripts/sync_version.py --check
+python bin/orama-system/skills/hermes-harness/scripts/install_hermes_thin_skills.py --install --verify
+cd ../Perpetua-Tools && git pull --ff-only origin main
+```
+
+---
+
 ## 2026-06-27 — Pre-v2 security hardening (Linux complete; Mac/Win E2E tomorrow) | Cursor
 
 **Branch:** `cursor/security-hardening-pre-v2-c4ae` · **PRs:** [orama #113](https://github.com/diazMelgarejo/orama-system/pull/113) · [PT #154](https://github.com/diazMelgarejo/Perpetua-Tools/pull/154) · **Versions:** `1.1.1.0` both repos
