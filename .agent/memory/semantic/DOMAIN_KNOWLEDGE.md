@@ -151,6 +151,8 @@ _(empty — populate as you go)_
 | Windows host before fetch/rebase/push | [`windows-powershell-runtime-bootstrap.md`](../../orama-system/bin/orama-system/skills/git-history-surgery/references/windows-powershell-runtime-bootstrap.md) |
 | `.cmd` blocks checkout/rebase on macOS | [`platform-line-endings-turf.md`](../../orama-system/bin/orama-system/skills/git-history-surgery/references/platform-line-endings-turf.md) — do not `git restore` CRLF files to LF |
 | Nested multi-agent merges | [`git-history-surgery`](../../orama-system/bin/orama-system/skills/git-history-surgery/SKILL.md) + episodic `nested-branch-merge-protocol` (2026-06-26) |
+| `check_tdd_commit.sh`: `mapfile: command not found` | [`bash-32-git-script-portability.md`](../../orama-system/bin/orama-system/skills/git-history-surgery/references/bash-32-git-script-portability.md) — macOS bash 3.2; use `while read` not `mapfile` |
+| Install TDD + hygiene hooks | `bash scripts/git/install-local-hooks.sh` (orama or PT sibling) — commit-msg runs `check_tdd_commit.sh` |
 
 ### Gold nuggets (2026-06-27 branch catalog)
 
@@ -160,3 +162,27 @@ _(empty — populate as you go)_
 4. **PT unrelated-looking branches may be MERGED/in-main** — 12 heads classified MERGED/in-main by tree-twin (incl. `feat/perpetua-submodule-upgrade`, `fix/pt71-clean`, `0df5`). Delete local after human review, not rebase.
 5. **Open PR candidates (post cherry verify):** P1 `chore/domain-knowledge-windows-shims` (DOMAIN_KNOWLEDGE Windows shims); P2 `2026-06-11-001-win-endpoint-discovery-sync` (routing); P3 `clean-pt127`; orama `fix/pr135-lint006-windows` (LINT-006 Windows paths).
 6. **Pre-destructive snapshot rule:** write `.agent/memory/working/BRANCH_CATALOG_COMPLETE_<date>.md` before rebase/delete/surgery — append-only memory, not a substitute for `reanchor_scan`.
+
+## Vitest / TDD gate — gold nuggets (sticky notes)
+
+> Canonical orama gate: `orama-system/docs/TDD.md`. Evidence:
+> `docs/testing/2026-06-26-vite-frontend-tdd-gate.tdd.md`. Session log:
+> `.agent/memory/working/VITEST_TDD_SESSION_2026-06-27.md`.
+
+### Sticky skill routing
+
+| Situation | Skill / reference (orama-system) |
+|-----------|----------------------------------|
+| Stage 4 TDD gate before commit | [`oramasys-method/references/tdd-gate.md`](../../orama-system/bin/orama-system/skills/oramasys-method/references/tdd-gate.md) |
+| Bash 3.2 hook portability (no `mapfile`) | [`bash-32-git-script-portability.md`](../../orama-system/bin/orama-system/skills/git-history-surgery/references/bash-32-git-script-portability.md) |
+| Operator console tests | `cd orama-system/web && pnpm test` (16 tests / 5 files on branch) |
+| `web/src/` change without test | `tdd-skip: <reason>` in commit message OR paired `*.test.ts(x)` |
+
+### Gold nuggets (2026-06-27 Vitest/TDD session)
+
+1. **RC-1 gate on branch, not main** — merge orama PR #118 before treating Vitest as shipped.
+2. **`check_tdd_commit.sh`** — commit-msg gate; macOS needs `while read` not `mapfile` (importance 9).
+3. **Nav smokes** — `CommandCenter.test.tsx`: composer / runs / artifacts exclusive panels.
+4. **Empty dry cherry-pick** — delete absorbed branches; don't PR (pairs with tree-twin triage).
+5. **CRLF PR order** — #116 before #117/#118 on `gstack-brain-sync.cmd`.
+6. **Playwright E2E** — deferred until post-merge (importance 5).
