@@ -229,6 +229,21 @@ def test_valid_utf8_punctuation_passes_mojibake_scan(tmp_path):
     assert errors == []
 
 
+def test_four_byte_utf8_mojibake_is_blocked(tmp_path):
+    repo_hygiene = load_repo_hygiene()
+    doc = tmp_path / "docs" / "notes.md"
+    doc.parent.mkdir()
+    # UTF-8 emoji bytes mis-decoded as latin-1 (supplementary-plane mojibake).
+    mojibake_emoji = chr(0x00F0) + chr(0x0178) + chr(0x02DC) + chr(0x20AC)
+    doc.write_text(f"broken {mojibake_emoji}\n", encoding="utf-8")
+
+    errors = repo_hygiene.scan_mojibake(tmp_path, ["docs/notes.md"])
+
+    assert len(errors) == 1
+    assert "UTF-8 mojibake" in errors[0]
+    assert "docs/notes.md:1" in errors[0]
+
+
 # ---------------------------------------------------------------------------
 # generated artifact tracking
 # ---------------------------------------------------------------------------

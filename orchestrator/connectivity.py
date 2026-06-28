@@ -27,11 +27,17 @@ _endpoint_lock = _threading.Lock()
 _CLOUD_BACKENDS = {"perplexity", "openrouter", "anthropic", "online", "xai", "cloud"}
 
 
+def _is_ollama_backend(backend: str) -> bool:
+    """True for Ollama and Ollama-family backends (e.g. mac-ollama, ollama-win)."""
+    b = backend.lower()
+    return b == "ollama" or "ollama" in b
+
+
 def _served_model_ids(base: str, backend: str, timeout: float = 1.5) -> tuple:
     """(reachable, {served model ids, lowercased}) for a local inference endpoint."""
     base = base.rstrip("/")
     try:
-        if backend == "ollama":
+        if _is_ollama_backend(backend):
             r = httpx.get(f"{base}/api/tags", timeout=timeout)
             if r.status_code >= 400:
                 return (False, frozenset())
@@ -68,8 +74,12 @@ def endpoint_online(base: str, backend: str, model_id: str = "", ttl: float = _E
     ok, served = cached[1], cached[2]
     if not ok:
         return False
-    if cloud or not served or not model_id:
+    if cloud:
         return ok
+    if not model_id:
+        return ok
+    if not served:
+        return False
 
     def _norm(x: str) -> str:
         # strip trailing quant/format tags (LM Studio lists the base id; the

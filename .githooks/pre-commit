@@ -8,7 +8,7 @@ ROOT="$(git rev-parse --show-toplevel)"
 export PYTHONUTF8=1
 export PYTHONIOENCODING=utf-8
 if [[ -f "$ROOT/scripts/review/repo_hygiene.py" ]]; then
-  for py in \
+    for py in \
     "$ROOT/.venv/Scripts/python.exe" \
     "$ROOT/.venv/bin/python" \
     python3 \
@@ -17,6 +17,8 @@ if [[ -f "$ROOT/scripts/review/repo_hygiene.py" ]]; then
       exec "$py" "$ROOT/scripts/review/repo_hygiene.py" "$ROOT"
     fi
   done
+  echo "[pre-commit] repo_hygiene.py requires Python >= 3.9; none found on PATH" >&2
+  exit 1
 fi
 
 exec "$ROOT/scripts/git/check_identity.sh"

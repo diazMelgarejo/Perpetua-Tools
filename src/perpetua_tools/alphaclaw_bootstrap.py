@@ -425,6 +425,52 @@ async def _find_any_gateway() -> str | None:
     return None
 
 
+def _gateway_port_from_url(url: str) -> int:
+    """Extract the numeric port from a gateway base URL."""
+    parsed = urlparse(url)
+    if parsed.port is not None:
+        return parsed.port
+    return OPENCLAW_GATEWAY_PORT
+
+
+async def _bootstrap_via_bare_openclaw(
+    config_dir: Path,
+    config_file: Path,
+    *,
+    force: bool,
+) -> dict[str, object] | None:
+    """Start bare OpenClaw when AlphaClaw is absent — no npm required."""
+    if _is_alphaclaw_installed() or not _is_openclaw_installed():
+        return None
+    ALPHACLAW_INSTALL_DIR.mkdir(parents=True, exist_ok=True)
+    _oc_creds = _gather_alphaclaw_credentials(timeout=30)
+    _oc_url = await _start_openclaw_gateway(
+        ALPHACLAW_INSTALL_DIR / "logs", str(_oc_creds["password"])
+    )
+    if not _oc_url:
+        return None
+    os.environ["OPENCLAW_GATEWAY_URL"] = _oc_url
+    _oc_pt = _load_pt_state()
+    _oc_cfg = (
+        _write_openclaw_config(config_dir, config_file)
+        if (not config_file.exists() or force)
+        else build_openclaw_config(_oc_pt)
+    )
+    _ensure_agent_workspaces(config_dir)
+    _ensure_autoresearch()
+    return asdict(
+        AlphaClawBootstrapResult(
+            ok=True,
+            gateway_ready=True,
+            gateway_url=_oc_url,
+            gateway_port=_gateway_port_from_url(_oc_url),
+            runtime="openclaw",
+            role_routing=build_role_routing(_oc_pt),
+            openclaw_config=_oc_cfg,
+        )
+    )
+
+
 def _is_alphaclaw_installed() -> bool:
     """
     Determine whether AlphaClaw is available on the system.
@@ -1000,7 +1046,7 @@ async def bootstrap_alphaclaw(force: bool = False) -> dict[str, object]:
     existing_url = await _find_any_gateway()
 
     if existing_url:
-        existing_port = int(existing_url.rsplit(":", 1)[-1])
+        existing_port = _gateway_port_from_url(existing_url)
         if existing_port != OPENCLAW_GATEWAY_PORT:
             print(
                 f"[alphaclaw] \u2713 Found gateway at {existing_url}"
@@ -1021,6 +1067,7 @@ async def bootstrap_alphaclaw(force: bool = False) -> dict[str, object]:
                 ok=True,
                 gateway_ready=True,
                 gateway_url=existing_url,
+                gateway_port=existing_port,
                 commandeered=True,
                 role_routing=build_role_routing(pt_state),
                 openclaw_config=config,
@@ -1029,7 +1076,16 @@ async def bootstrap_alphaclaw(force: bool = False) -> dict[str, object]:
 
     print("[alphaclaw] No running gateway found \u2014 proceeding with full bootstrap")
 
-    # Step 1: npm check
+    # Bare OpenClaw path (no npm) — evaluate before any npm-dependent step.
+    _openclaw_payload = await _bootstrap_via_bare_openclaw(
+        config_dir, config_file, force=force
+    )
+    if _openclaw_payload is not None:
+        return _openclaw_payload
+    if not _is_alphaclaw_installed() and _is_openclaw_installed():
+        print("[alphaclaw] \u2192 OpenClaw gateway unavailable \u2014 installing AlphaClaw (step 5)")
+
+    # Step 1: npm check (required for AlphaClaw install/start)
     if not shutil.which("npm"):
         print("[alphaclaw] \u2717 npm not found \u2014 install Node 22.14.0+ from https://nodejs.org/ or: nvm install 24")
         return asdict(
@@ -1052,34 +1108,6 @@ async def bootstrap_alphaclaw(force: bool = False) -> dict[str, object]:
 
     # Step 2: install @chrysb/alphaclaw locally if missing.
     if not _is_alphaclaw_installed():
-        # Precedence step 4: AlphaClaw is NOT installed -- if the bare OpenClaw CLI
-        # is, start its gateway first; only fall through to installing AlphaClaw
-        # (step 5) when OpenClaw cannot be brought up. (Step 3, "start installed
-        # AlphaClaw", is the else-branch below: skip install, go straight to start.)
-        if _is_openclaw_installed():
-            _oc_creds = _gather_alphaclaw_credentials(timeout=30)
-            _oc_url = await _start_openclaw_gateway(
-                ALPHACLAW_INSTALL_DIR / "logs", str(_oc_creds["password"])
-            )
-            if _oc_url:
-                os.environ["OPENCLAW_GATEWAY_URL"] = _oc_url
-                _oc_pt = _load_pt_state()
-                _oc_cfg = (
-                    _write_openclaw_config(config_dir, config_file)
-                    if (not config_file.exists() or force)
-                    else build_openclaw_config(_oc_pt)
-                )
-                _ensure_agent_workspaces(config_dir)
-                _ensure_autoresearch()
-                return asdict(
-                    AlphaClawBootstrapResult(
-                        ok=True, gateway_ready=True, gateway_url=_oc_url,
-                        runtime="openclaw",
-                        role_routing=build_role_routing(_oc_pt),
-                        openclaw_config=_oc_cfg,
-                    )
-                )
-            print("[alphaclaw] \u2192 OpenClaw gateway unavailable \u2014 installing AlphaClaw (step 5)")
         print(
             f"[alphaclaw] \u2192 Installing @chrysb/alphaclaw into"
             f" {ALPHACLAW_INSTALL_DIR}\u2026"
@@ -1197,6 +1225,9 @@ async def bootstrap_alphaclaw(force: bool = False) -> dict[str, object]:
             ok=ready,
             gateway_ready=ready,
             gateway_url=os.environ.get("OPENCLAW_GATEWAY_URL", gateway_url),
+            gateway_port=_gateway_port_from_url(
+                os.environ.get("OPENCLAW_GATEWAY_URL", gateway_url)
+            ),
             error="" if ready else "gateway did not pass readiness check",
             role_routing=build_role_routing(pt_state),
             openclaw_config=config,
