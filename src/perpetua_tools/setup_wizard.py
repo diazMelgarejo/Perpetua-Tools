@@ -54,6 +54,9 @@ def _pt_subprocess_env() -> dict[str, str]:
     if existing:
         paths.append(existing)
     env["PYTHONPATH"] = os.pathsep.join(paths)
+    # PT_HOME must be propagated so bootstrap scripts resolve state relative
+    # to this checkout, not $HOME/Perpetua-Tools (the documented fallback).
+    env.setdefault("PT_HOME", str(_REPO_ROOT))
     return env
 
 try:

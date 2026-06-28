@@ -99,12 +99,13 @@ _MOJIBAKE_2BYTE = (
     + "])"
 )
 # Supplementary-plane UTF-8 mis-decoded as latin-1/cp1252 (lead bytes U+00F0–U+00F4).
-_MOJIBAKE_4BYTE = (
-    "["
-    + chr(0x00F0)
-    + "-"
-    + chr(0x00F4)
-    + "](?:["
+# Second-byte ranges tightened per RFC 3629 §4:
+#   \xF0 → 2nd byte 0x90-0xBF   (U+10000–U+3FFFF)
+#   \xF1-\xF3 → 2nd byte 0x80-0xBF  (U+40000–U+FFFFF)
+#   \xF4 → 2nd byte 0x80-0x8F   (U+100000–U+10FFFF)
+# This prevents false positives like \xF0\x80\x80\x80 (overlong encoding).
+_CONT = (
+    "(?:["
     + chr(0x0080)
     + "-"
     + chr(0x00BF)
@@ -115,7 +116,14 @@ _MOJIBAKE_4BYTE = (
         for cp in range(start, end + 1)
     )
     + "".join(chr(cp) for cp in _CP1252_HIGH_SINGLE)
-    + "]){3}"
+    + "])"
+)
+_MOJIBAKE_4BYTE = (
+    "(?:"
+    + chr(0x00F0) + "[" + chr(0x0090) + "-" + chr(0x00BF) + "]" + _CONT + _CONT
+    + "|[" + chr(0x00F1) + "-" + chr(0x00F3) + "]" + _CONT + _CONT + _CONT
+    + "|" + chr(0x00F4) + "[" + chr(0x0080) + "-" + chr(0x008F) + "]" + _CONT + _CONT
+    + ")"
 )
 MOJIBAKE_RE = re.compile(_MOJIBAKE_2BYTE + "|" + _MOJIBAKE_4BYTE)
 PRIVATE_GENERATED_TRACKED = {".env", ".env.local", ".paths"}

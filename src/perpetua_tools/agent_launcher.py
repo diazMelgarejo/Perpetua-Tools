@@ -116,7 +116,7 @@ _ollama_mac_endpoint = os.getenv("OLLAMA_MAC_ENDPOINT", _default_ollama_mac_endp
 # canonical value. Mirrors the Win endpoint's "live/canonical source beats stale
 # config" self-heal in lan_discovery.detect_active_tilting_ip.
 _p_mac = urlparse(_ollama_mac_endpoint if "://" in _ollama_mac_endpoint else f"http://{_ollama_mac_endpoint}")
-if RUNNING_ON_MAC and _p_mac.hostname not in ("localhost", "127.0.0.1", "::1", None):
+if RUNNING_ON_MAC and _p_mac.hostname and not _is_loopback_host(_p_mac.hostname):
     _healed_mac = f"http://localhost:{_p_mac.port or 11434}"
     logging.getLogger(__name__).warning(
         "OLLAMA_MAC_ENDPOINT=%s is non-loopback; PT runs on the Mac so its ollama "

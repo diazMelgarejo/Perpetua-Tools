@@ -1,8 +1,16 @@
 from __future__ import annotations
 
+import pytest
 from unittest.mock import patch
 
 from orchestrator import connectivity
+
+
+@pytest.fixture(autouse=True)
+def _clear_endpoint_cache():
+    connectivity._endpoint_cache.clear()
+    yield
+    connectivity._endpoint_cache.clear()
 
 
 def test_endpoint_online_false_when_endpoint_up_but_model_not_served():

@@ -361,8 +361,19 @@ def _read_discovery_win_url(max_age_s: int = _DISCOVERY_MAX_AGE_S) -> Optional[s
     win = endpoints.get("win")
     if not isinstance(win, dict):
         return None
-    ip = win.get("ip")
-    if not ip or ip in ("localhost", "127.0.0.1") or not win.get("reachable", False):
+    raw_ip = win.get("ip")
+    if not isinstance(raw_ip, str) or not win.get("reachable", False):
+        return None
+    ip = raw_ip.strip()
+    if not ip or ip in ("localhost", "127.0.0.1"):
+        return None
+    raw_port = win.get("port", 1234)
+    try:
+        port = int(raw_port)
+        if not (1 <= port <= 65535):
+            raise ValueError(f"port {port} out of range")
+    except (TypeError, ValueError) as exc:
+        log.debug("invalid discovery snapshot port %r: %s", raw_port, exc)
         return None
     stamp = data.get("watcher_heartbeat") or data.get("timestamp")
     if not stamp:
@@ -372,12 +383,13 @@ def _read_discovery_win_url(max_age_s: int = _DISCOVERY_MAX_AGE_S) -> Optional[s
         ts = datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
         if ts.tzinfo is None:
             ts = ts.replace(tzinfo=timezone.utc)
-        if (datetime.now(timezone.utc) - ts).total_seconds() > max_age_s:
+        age_s = (datetime.now(timezone.utc) - ts).total_seconds()
+        if age_s < 0 or age_s > max_age_s:
             return None
     except Exception as exc:
         log.debug("invalid discovery snapshot timestamp %r: %s", stamp, exc)
         return None
-    return f"http://{ip}:{win.get('port', 1234)}"
+    return f"http://{ip}:{port}"
 
 
 def _sync_win_endpoint_env(url: str) -> None:

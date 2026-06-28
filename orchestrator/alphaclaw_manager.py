@@ -28,9 +28,12 @@ from __future__ import annotations
 import asyncio
 import importlib
 import json
+import logging
 import os
 import subprocess
 import sys
+
+_log = logging.getLogger(__name__)
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
@@ -43,9 +46,19 @@ ROUTING_JSON = STATE_DIR / "routing.json"
 
 
 def _tool_script(module_name: str) -> Path:
-    """Resolve a perpetua_tools CLI script for source checkout and wheel installs."""
-    mod = importlib.import_module(module_name)
-    return Path(mod.__file__).resolve()
+    """Resolve a perpetua_tools CLI script for source checkout and wheel installs.
+
+    Defers import errors so callers get a structured probe/bootstrap failure
+    instead of an ImportError that breaks module-level import.
+    """
+    try:
+        mod = importlib.import_module(module_name)
+        return Path(mod.__file__).resolve()
+    except Exception as exc:
+        # Sentinel path; callers guard with .is_file() before use.
+        sentinel = SCRIPT_DIR / "src" / module_name.replace(".", "/")
+        _log.debug("_tool_script(%r) failed (%s) — sentinel: %s", module_name, exc, sentinel)
+        return sentinel
 
 
 AGENT_LAUNCHER_SCRIPT = _tool_script("perpetua_tools.agent_launcher")
