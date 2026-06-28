@@ -8,25 +8,13 @@
 
 ## 2026-06-28 — LAN peer self-talk: Mac↔Win orama installs over HTTP | Cursor
 
-**orama ref:** [`hermes-harness/references/lan-peer-self-talk.md`](../../orama-system/bin/orama-system/skills/hermes-harness/references/lan-peer-self-talk.md) · **Commit:** `88b7563` · **`.agent`:** `lesson_12ddf8cf63b9`
+**Canonical operator playbook (Mac + Win — identical):**
+[`orama-system/.../lan-peer-self-talk.md#operator-playbook`](../../orama-system/bin/orama-system/skills/hermes-harness/references/lan-peer-self-talk.md#operator-playbook)
 
-### What was learned
+Both machines: `git pull --ff-only origin main` in orama-system, then follow playbook §A–§E.
+Hermes slash: `/lan-peer-self-talk` · `.agent`: `lesson_12ddf8cf63b9`
 
-1. **Inference already works** — Mac→Win LM Studio via `last_discovery.json` LAN IP; `verify_partner_canaries.py` and `start.sh --status` prove Tier 1 without new RPC.
-2. **Portal peer access** — set `PORTAL_BIND_LAN=1` and shared `ORAMA_CONTROL_PLANE_TOKEN` on **both** hosts (`.env.local` only). Reuses `control_plane_auth.default_bind_host()` — no new bind code.
-3. **Probe** — `probe_lan_peer.py --json` or Hermes `/lan-peer-self-talk`: peer `/health`, optional `/api/status`, peer `/v1/models`. No SSH (`:22` not required).
-4. **Do not** add a second discovery system; never hardcode DHCP IPs in tracked files.
-
-### Operator sync
-
-```bash
-python bin/orama-system/skills/hermes-harness/scripts/probe_lan_peer.py --json   # from orama root
-python bin/orama-system/skills/hermes-harness/scripts/install_hermes_thin_skills.py --install --verify
-```
-
-Win checklist: [`orama-system/docs/plans/2026-06-28-windows-powershell-todo.md`](../../orama-system/docs/plans/2026-06-28-windows-powershell-todo.md) §5.
-
-### Rehab note (missing-LESSONS branch)
+### Rehab note (missing-LESSONS branch, merged)
 
 Commit `2d6225a` on a **stale Perplexity-Tools clone** tried to `learn.py` a **workstation path** as the lesson claim (`%USERPROFILE%\...\hermes-integration-authority.md`). That violates path-hygiene (LINT-006). This branch replaces it with semantic lessons in `docs/LESSONS.md` + `.agent` (`lesson_12ddf8cf63b9` already on `main`) — **do not merge `2d6225a`**.
 
