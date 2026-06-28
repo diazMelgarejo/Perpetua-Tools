@@ -1,29 +1,41 @@
-# Graceful degradation — LAN co-orchestration (PT memory)
+# Graceful degradation — LAN co-orchestration (PT pointer)
 
-**Canonical:** `../../orama-system/bin/orama-system/skills/oramasys-method/references/graceful-degradation.md`  
-**PT skill:** `SKILL.md` (model selection + budget guard)
+**SSOT:** `orama-system/bin/orama-system/skills/oramasys-method/references/graceful-degradation.md`  
+**PT inference:** `SKILL.md` (perpetua-model-selection — tiers 0–6, budget guard)
 
-## Win agent priority (frugal)
+Do not duplicate ladder prose here. Use pointers + one-line tier when escalating.
+
+## Ladder map (v1.1)
+
+| Ladder | Scope | PT / oramasys |
+|--------|-------|----------------|
+| A | Search | oramasys-method — gbrain → CRG → Grep → web |
+| B | Inference | perpetua-model-selection — Tier 0–2 local-first |
+| B4 | Autoresearch preflight | `AUTORESEARCH_PREFLIGHT_MODE=auto` → http-local |
+| C | LAN inbox | `lan_peer_assign.py`; partial fan-out OK |
+| D | Portal | joint auth; peer mirror on fetch fail |
+| E | Subagents | Task → inline parent → peer drop |
+| F | Dispatch gate | model-routing-check + hardware_policy fail-closed |
+
+## Win priority (B1)
 
 ```text
-1. LM Studio 27B @ :1234 (autoresearcher, coder)
-2. Win Ollama validated fallback (routing.yml)
-3. LAN peer file inbox (Mac Ollama / orchestrator)
-4. Online agents (cursor-agent cloud, Codex) — budget + operator only
+LM Studio 27B :1234 → Win Ollama → LAN peer inbox → cloud (budget only)
 ```
 
-## Disaster recovery (both directions)
+## Bidirectional DR
 
 | Failure | Fallback |
 |---------|----------|
-| Online API down / 429 | LAN LM Studio or Mac Ollama via inbox handoff |
-| Win LM Studio down | Mac Ollama + defer GPU tasks; partial fan-out |
-| Mac Ollama down | Win 27B absorbs coder leg; drop results to Mac |
-| ws-peer FAIL | SSE+POST; file inbox still works |
-| SSH preflight timeout | `AUTORESEARCH_PREFLIGHT_MODE=http-local` on Win |
+| Cloud / API | LAN LM Studio or Mac Ollama via inbox |
+| Win GPU down | Mac Ollama; defer GPU rubrics |
+| Mac Ollama down | Win 27B absorbs coder leg |
+| ws-peer FAIL | SSE+POST; inbox still works |
+| Mac peer timeout | Win continues local queue; retry drop when probe green (Ladder C+F) |
+| SSH preflight on Win host | http-local (B4) |
 
-**Rule:** State escalation tier in one line. Stop at first success.
+**Rule:** Stop at first success. State tier in one line.
 
-## coord-004
+## coord-005 closed
 
-Fan-out `2026-06-28-coord-004` — operationalize ladders on Win autoresearcher + coder first.
+H5 routing: autoresearch-coder → Win 27B; Mac 9B latency probes. Bridge PR ready (38/38).
