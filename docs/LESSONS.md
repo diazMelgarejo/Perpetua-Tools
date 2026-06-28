@@ -8,6 +8,30 @@
 
 ---
 
+## 2026-06-28 — Self-improve merge FINAL + H3 routing (operator approved) | Cursor
+
+**Approval:** operator `approve lessons` (round 4) — **union** with rounds 1–3 (doctrine C)  
+**Sources:** `self-improve-merge-final-proposed.md`, `self-improve-merge-proposed.md`, `mac-self-improve-cycle-003.md`  
+**Machine lessons:** `lesson_1f9c927792ba`, `lesson_203c342c1e85` (2 new rows; remainder already in jsonl)
+
+### Union confirmation (already landed — not duplicated)
+
+| Topic | Existing lesson / doc |
+|-------|----------------------|
+| File inbox co-orchestration | `lesson_87636d658879`, `lesson_20833366511b` |
+| Mac Ollama warm / LM Studio passive | `lesson_49a5af119f6f` |
+| autoresearch HTTP-local preflight | `lesson_aeb3cd01c203` (supersedes `lesson_7791e7860857`) |
+| peer-stream / peer-file restart | `lesson_legacy_peerstream_20260628`, `lesson_130073d9e30a` |
+| Post-commit sync | `lesson_legacy_sync_rebase_20260628` |
+| Graceful degradation ladders | `lesson_c8dc70c59ac9` + `graceful-degradation.md` |
+
+### New gold nuggets (round 4)
+
+17. **H3 falsified — route by task class** — Win 27B ~10s on trivial prompts; affinity in `routing.yml` is quality/heavy → Win, latency-sensitive → Mac Ollama (`lesson_1f9c927792ba`)
+18. **Portal monitor URLs** — Mac co-orchestrator: `/co-orchestration/macos`; Win: `/peer-inbox` (`lesson_203c342c1e85`)
+
+---
+
 ## 2026-06-28 — Cycle 003 + graceful degradation ladders (operator approved) | Cursor
 
 **Approval:** operator `approve lessons` (round 3)  
