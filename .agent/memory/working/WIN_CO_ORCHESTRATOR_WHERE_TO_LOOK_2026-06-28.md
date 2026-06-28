@@ -1,6 +1,7 @@
 # Win co-orchestrator — where to look (READ FIRST)
 
-**Agent:** Win co-orchestrator, Hermes, Codex, cursor-agent operators  
+**Agent:** Win co-orchestrator — **Hermes-only** harness + cursor-agent + Win subagents  
+**Platform:** Windows = Hermes (`start.ps1`); OpenClaw optional on Win  
 **Date:** 2026-06-28  
 **Mode:** file inbox handoff (no remote agent RPC)
 
@@ -34,7 +35,7 @@ python bin\orama-system\skills\hermes-harness\scripts\probe_lan_peer.py --json
 | File | Purpose |
 |------|---------|
 | `.agent/memory/working/WIN_CO_ORCHESTRATOR_WHERE_TO_LOOK_2026-06-28.md` | **This card** |
-| `.agent/memory/working/LAN_PEER_FILE_COORDINATION_2026-06-28.md` | All LAN peer file lessons |
+| `.agent/memory/working/CO_ORCHESTRATOR_LAN_PEER_2026-06-28.md` | **Start here** — platform affinity + routing |
 | `.agent/memory/working/LAN_PEER_L2_TOKEN_LANDMARK_2026-06-28.md` | Token handoff (no secrets) |
 | `.agent/memory/semantic/DOMAIN_KNOWLEDGE.md` | Windows start.ps1 + LAN peer sticky notes |
 
