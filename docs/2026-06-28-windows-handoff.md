@@ -1,19 +1,27 @@
 # Windows Handoff Instructions — 2026-06-28
 
-> **Context:** Mac E2E complete. These tasks require the Windows machine (RTX 3080 LM Studio).
+> **Context:** Mac E2E complete. Windows Hermes testdrive **partial green** 2026-06-28.
 
 ## Prerequisites (Windows side)
 
 1. LM Studio running with the correct model loaded (`qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2`)
-2. `LM_STUDIO_WIN_ENDPOINTS=http://192.168.254.100:1234` reachable from Mac LAN
-3. OpenClaw clone at `C:\OpenClaw\` or equivalent
+2. `LM_STUDIO_WIN_ENDPOINTS` reachable from Mac LAN (read Win IP from discovery — never hardcode)
+3. OpenClaw **optional** on Windows — Hermes is the primary orchestrator
 
-## Pending Windows tasks
+## Completed on Windows (2026-06-28)
 
-### T5: Git tag release (blocked on Win E2E green)
+- ✅ Hermes Phase 6: `install_hermes_thin_skills.py --install --verify --test`
+- ✅ Hermes Phase 9: four thin wrappers installed under `%LOCALAPPDATA%\hermes\skills\pt-orama\`
+- ✅ `verify_partner_canaries.py`: LM Studio + Hermes + Codex + cursor-agent PASS
+- ✅ `start.ps1 --hardware-policy`: PT `--list` + Win model `--validate` (skips `--check-openclaw` when no `openclaw.json`)
+- ✅ Partner CLI PATH: `platform/windows/ensure-partner-cli-paths.ps1`
+
+## Pending (needs Mac + Win pair)
+
+### T5: Git tag release (blocked on Mac↔Win cross-harness E2E)
 
 ```bash
-# After Win E2E passes:
+# After Mac LAN probe + cross-harness affinity green:
 git tag v1.1.1 -m "v1.1.1 — security hardening + fail-closed routing"
 git tag v1.0.0 -m "v1.0.0 — baseline stable"
 git push --tags origin
@@ -24,33 +32,27 @@ git push --tags origin
 ```powershell
 # On Windows: verify LM Studio is serving on LAN
 netstat -an | Select-String ":1234"
-# Confirm the Win IP matches ~/.openclaw/state/last_discovery.json endpoints.win.ip
 ```
 
-### Hermes Phase 6+9 (when Win coder is back online)
+From Mac (never hardcode Win IP):
 
-Phase 6: `scripts/hermes/phase6-win-validation.sh` (LAN routing validation)  
-Phase 9: `scripts/hermes/phase9-full-harness.sh` (full cross-harness hardware affinity)
+```bash
+WIN_IP=$(python3 -c "import json,pathlib; p=pathlib.Path.home()/'.openclaw/state/last_discovery.json'; print(json.loads(p.read_text())['endpoints']['win']['ip'])")
+curl -s "http://${WIN_IP}:1234/v1/models" | head
+```
 
 ### Cross-harness hardware affinity verification
 
-Run from Mac (after Win LM Studio is online):
+Run from Mac when Win LM Studio is online:
 
 ```bash
 bash ~/code/OpenClaw/orama-system/scripts/start.sh --hardware-policy
-# Expected: Win node routes qwen3.5-27b-..., Mac routes qwen3.5:9b-nvfp4 + qwen3.5-9b-mlx
 ```
 
 ## Keychain secrets still needed on Mac
 
-The following secrets must be provided by the user and stored via `store_keychain_secret.sh`:
-
 ```bash
-# TELEGRAM_BOT_TOKEN — get from @BotFather or existing .env on Win
-printf '%s' 'YOUR_TELEGRAM_BOT_TOKEN' | \
-  bash ~/code/OpenClaw/orama-system/scripts/openclaw/store_keychain_secret.sh openclaw.telegram-bot-token
-
-# GATEWAY_AUTH_TOKEN — get from PT gateway config or Win secrets store
+# GATEWAY_AUTH_TOKEN — user must provide
 printf '%s' 'YOUR_GATEWAY_AUTH_TOKEN' | \
   bash ~/code/OpenClaw/orama-system/scripts/openclaw/store_keychain_secret.sh openclaw.gateway-auth-token
 ```
@@ -60,10 +62,9 @@ Once stored, `source ~/code/OpenClaw/orama-system/scripts/openclaw/load_keychain
 ## Win ↔ Mac IP invariant
 
 **Never hardcode** the Windows IP. Always read from:
+
 ```bash
-cat ~/.openclaw/state/last_discovery.json | python3 -c "import sys,json; print(json.load(sys.stdin)['endpoints']['win']['ip'])"
+python3 -c "import json,pathlib; print(json.loads(pathlib.Path.home().joinpath('.openclaw/state/last_discovery.json').read_text())['endpoints']['win']['ip'])"
 ```
 
-The launchd watcher (`com.orama.network-watch`) refreshes this every 30s.  
-Discovery script: `Perpetua-Tools/scripts/discover-lm-studio.sh`
-
+Discovery script: `$PERPETUA_TOOLS_PATH/scripts/discover-lm-studio.sh`
