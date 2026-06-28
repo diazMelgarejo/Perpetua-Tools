@@ -1,0 +1,54 @@
+{
+  "id": "cc6cbd625069",
+  "key": "manual_cc6cbd",
+  "name": "manual_cc6cbd",
+  "claim": "Tests and docs must not embed $HOME/ or other workstation-specific absolute paths \u2014 repo_hygiene LINT-006 blocks them; use /tmp/ placeholders or repo-relative paths in fixtures.",
+  "conditions": [
+    "absolute",
+    "blocks",
+    "docs",
+    "embed",
+    "fixtures",
+    "home",
+    "lint-006",
+    "other",
+    "paths",
+    "placeholders",
+    "repo-relative",
+    "repo_hygiene",
+    "tests",
+    "them",
+    "tmp",
+    "use",
+    "workstation-specific"
+  ],
+  "evidence_ids": [
+    "2026-06-28T19:55:21.748743+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T19:55:21.748743+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T19:55:21.748743+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T19:55:21.782771+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Pre-existing repo_hygiene gate; orama worktree used /tmp/ paths for policy tests.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T19:55:21.748743+00:00"
+      ],
+      "lessons_sha": "7dc2af355176"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T19:55:21.782762+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Pre-existing repo_hygiene gate; orama worktree used /tmp/ paths for policy tests."
+}
