@@ -1,0 +1,38 @@
+{
+  "id": "4ad1b44cc918",
+  "key": "manual_4ad1b4",
+  "name": "manual_4ad1b4",
+  "claim": "P5 swarm HITL on cursor/security-pr3-swarm-approval-f559: T1 operator payload + T2 preview signing done (2/7); T3 launch token verify is next; L1 /api/l1/* stays blocked until PR merges",
+  "conditions": [
+    "l1-blocked"
+  ],
+  "evidence_ids": [
+    "2026-06-29T02:51:52.159690+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T02:51:52.159690+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T02:51:52.159690+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T02:51:52.238820+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "P5-STATUS + branch state cycle 018",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T02:51:52.159690+00:00"
+      ],
+      "lessons_sha": "3badd66627e3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T02:51:52.238820+00:00",
+  "reviewer": "learn.py",
+  "rationale": "P5-STATUS + branch state cycle 018"
+}
