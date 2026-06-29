@@ -49,7 +49,9 @@ content but get **new SHAs**.
 - **Canonical reconstruction API:** `src/utils/endpoint_policy_core.py`. Runtime routing code MUST delegate URL reconstruction to `build_transport_url()` or `parse_transport_identity()` instead of calling `urlparse()` locally.
 - **SSRF/network allow policy:** `src/utils/model_endpoint_url.py` remains the allow/deny validation layer. Do not merge network-class policy into transport reconstruction helpers.
 - **Active tilting invariant:** LM Studio keeps the discovered endpoint unchanged; Ollama reuses the discovered scheme/host but switches to the Ollama model port (`11434`).
-- **CI contract:** `.agent/endpoint-policy-contract.yml` plus `scripts/security/check_endpoint_policy_core.py` define and enforce the local multi-repo contract. Update them together with any transport-policy change.
+- **CI contract:** `.agent/endpoint-policy-contract.yml` plus `scripts/security/check_endpoint_policy_core.py` define the Perpetua canonical side; `diazMelgarejo/orama-system` mirrors it through `.agent/endpoint-policy-contract.yml` and `.github/workflows/endpoint-policy-contract.yml`.
+- **Existing skills to load:** use orama `bin/orama-system/skills/oramasys-method/SKILL.md` for architecture-heavy endpoint changes, `bin/orama-system/skills/oramasys-method/references/integrative-merge.md` for cross-repo synthesis, `bin/orama-system/skills/git-history-surgery/SKILL.md` before judging rewritten branch state, and `.claude/skills/hardware-policy/SKILL.md` when routing intersects hardware affinity.
+- **Security policy:** read orama `docs/SECURITY-POLICY.md` before endpoint-security remediation PRs.
 - **Validation:** run `python scripts/security/check_endpoint_policy_core.py` and `pytest tests/test_endpoint_policy_core.py tests/test_scheme_preservation.py tests/test_model_endpoint_url.py -q`.
 
 ## Prime directives for agent-maintained records
