@@ -45,7 +45,7 @@
 
 ## Pending operator actions
 
-1. **PR:** PT **#183** merge (`cursor/review-bridge-http-local-c4ae`) — 5/5 checks; Win reconcile done
+1. **PR:** PT **#183** — **merged** coord-012 (`gh pr ready` + squash)
 2. **PR:** PT **#199** review (`subagent/mac-orchestrator/frugality-router-spike`) — 9 checks pass
 3. **Pulse P1:** `./orama-system/scripts/install_coord_pulse.sh` (launchd 15m) — landed coord-009
 4. **Mac peer:** restart portal if `probe_lan_peer` timeout (`PORTAL_BIND_LAN=1`)
