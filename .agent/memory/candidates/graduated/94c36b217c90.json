@@ -1,0 +1,54 @@
+{
+  "id": "94c36b217c90",
+  "key": "manual_94c36b",
+  "name": "manual_94c36b",
+  "claim": "Coord listen longest-wait-wins: job_cycle_listen.sh waits 900s from last_job_finished_at and resets deadline when coord_mark_job_done runs during wait; jobs run immediately when queue actionable.",
+  "conditions": [
+    "actionable",
+    "coord",
+    "coord_mark_job_done",
+    "deadline",
+    "during",
+    "immediately",
+    "job_cycle_listen",
+    "jobs",
+    "last_job_finished_at",
+    "listen",
+    "longest-wait-wins",
+    "queue",
+    "resets",
+    "run",
+    "runs",
+    "wait",
+    "waits"
+  ],
+  "evidence_ids": [
+    "2026-06-29T01:42:27.601488+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T01:42:27.601488+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T01:42:27.601488+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T01:42:27.666880+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-016-018 listen reset semantics",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T01:42:27.601488+00:00"
+      ],
+      "lessons_sha": "c4c0b0f9828f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T01:42:27.666873+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-016-018 listen reset semantics"
+}
