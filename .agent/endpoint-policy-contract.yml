@@ -21,8 +21,10 @@ required_local_files:
   - tests/test_scheme_preservation.py
   - tests/test_hardware_routing.py
   - scripts/security/check_endpoint_policy_core.py
+  - .agent/endpoint-policy-contract.yml
   - .github/workflows/security-invariant-enforcer.yml
   - .github/workflows/invariant-monitor-bot.yml
+  - AGENTS.md
 
 required_tests:
   - tests/test_endpoint_policy_core.py
@@ -32,13 +34,36 @@ required_tests:
 
 peer_repos:
   - repo: diazMelgarejo/orama-system
-    status: sync-target
+    status: peer-consumer
     expected_contract: endpoint-transport-policy
+    contract_path: .agent/endpoint-policy-contract.yml
+    workflow_path: .github/workflows/endpoint-policy-contract.yml
+    checker_path: scripts/security/check_endpoint_policy_contract.py
     rule: Must preserve the same transport identity semantics for generated or proxied model endpoints.
   - repo: diazMelgarejo/Perpetua-Tools
-    status: canonical
+    status: canonical-provider
     expected_contract: endpoint-transport-policy
+    contract_path: .agent/endpoint-policy-contract.yml
+    workflow_path: .github/workflows/security-invariant-enforcer.yml
+    checker_path: scripts/security/check_endpoint_policy_core.py
     rule: Owns current endpoint_policy_core implementation and local CI enforcement.
+
+existing_skill_references:
+  - repo: diazMelgarejo/orama-system
+    path: bin/orama-system/skills/oramasys-method/SKILL.md
+    reason: Use for architecture-heavy endpoint policy changes.
+  - repo: diazMelgarejo/orama-system
+    path: bin/orama-system/skills/oramasys-method/references/integrative-merge.md
+    reason: Use when syncing endpoint policy changes across branches or repos.
+  - repo: diazMelgarejo/orama-system
+    path: bin/orama-system/skills/git-history-surgery/SKILL.md
+    reason: Use before judging branch state across rewritten histories.
+  - repo: diazMelgarejo/Perpetua-Tools
+    path: .claude/skills/hardware-policy/SKILL.md
+    reason: Use when endpoint/routing changes intersect model hardware affinity.
+  - repo: diazMelgarejo/orama-system
+    path: docs/SECURITY-POLICY.md
+    reason: Redirect to canonical security policy for security PR stacking rules.
 
 workflow_requirements:
   - workflow: .github/workflows/security-invariant-enforcer.yml
@@ -49,3 +74,6 @@ workflow_requirements:
     must_run:
       - python scripts/security/check_endpoint_policy_core.py
       - pytest tests/test_endpoint_policy_core.py
+  - peer_workflow: diazMelgarejo/orama-system/.github/workflows/endpoint-policy-contract.yml
+    must_run:
+      - python scripts/security/check_endpoint_policy_contract.py
