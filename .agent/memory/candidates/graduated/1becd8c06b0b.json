@@ -1,0 +1,56 @@
+{
+  "id": "1becd8c06b0b",
+  "key": "manual_1becd8",
+  "name": "manual_1becd8",
+  "claim": "Triple rinse cycle: execute queue job, learn from PT agent, auto_dream, push sync, then coord_pulse dry-run when idle repeats Mac Win coord loop.",
+  "conditions": [
+    "agent",
+    "auto_dream",
+    "coord",
+    "coord_pulse",
+    "cycle",
+    "dry-run",
+    "execute",
+    "idle",
+    "job",
+    "learn",
+    "loop",
+    "mac",
+    "push",
+    "queue",
+    "repeats",
+    "rinse",
+    "sync",
+    "triple",
+    "win"
+  ],
+  "evidence_ids": [
+    "2026-06-29T01:40:39.161026+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T01:40:39.161026+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T01:40:39.161026+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T01:40:39.254568+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-016 operator pattern",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T01:40:39.161026+00:00"
+      ],
+      "lessons_sha": "55cfca3c6bd7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T01:40:39.254568+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-016 operator pattern"
+}
