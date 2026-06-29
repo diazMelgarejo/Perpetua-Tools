@@ -1,0 +1,38 @@
+{
+  "id": "07c8bb2e3197",
+  "key": "manual_07c8bb",
+  "name": "manual_07c8bb",
+  "claim": "portal-health PASS + peer-lmstudio PASS does NOT mean dispatch authorized \u2014 POST to /api/peer-file returns HTTP 401 without openclaw.gateway-auth-token in Keychain (portal-status SKIP = token absent). Always check auth layer separately from reachability layer.",
+  "conditions": [
+    "dispatch peer drop lan_peer_assign portal-status gateway-auth"
+  ],
+  "evidence_ids": [
+    "2026-06-29T05:10:50.729903+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T05:10:50.729903+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T05:10:50.729903+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T05:10:50.790449+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "H6 dispatch blocked 2026-06-29: probe passed but lan_peer_assign.py drop --peer returned 401. Reachability (ICMP/TCP) and auth (bearer token) are independent gates.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T05:10:50.729903+00:00"
+      ],
+      "lessons_sha": "c7809c04fde0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T05:10:50.790440+00:00",
+  "reviewer": "learn.py",
+  "rationale": "H6 dispatch blocked 2026-06-29: probe passed but lan_peer_assign.py drop --peer returned 401. Reachability (ICMP/TCP) and auth (bearer token) are independent gates."
+}
