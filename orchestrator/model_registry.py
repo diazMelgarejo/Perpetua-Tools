@@ -5,11 +5,11 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from urllib.parse import urlparse
 
 import yaml
 
 from orchestrator.connectivity import endpoint_online as _endpoint_online
+from utils.endpoint_policy_core import build_transport_url
 
 _DISABLE_LIVE_PROBES = {"1", "true", "yes", "on"}
 
@@ -17,16 +17,12 @@ _DISABLE_LIVE_PROBES = {"1", "true", "yes", "on"}
 def _build_tilting_url(tilted: str, port: int, *, default_scheme: str = "http") -> Optional[str]:
     """Rebuild scheme://hostname:port from active_tilting discovery output.
 
-    Preserves the transport scheme when discovery returns an absolute URL
-    (e.g. https overrides). Returns None when hostname cannot be parsed so
-    callers can fall back to models.yml host expansion.
+    Compatibility wrapper around the shared endpoint policy core. Preserves the
+    transport scheme when discovery returns an absolute URL (e.g. https
+    overrides). Returns None when hostname cannot be parsed so callers can fall
+    back to models.yml host expansion.
     """
-    parsed = urlparse(tilted if "://" in tilted else f"{default_scheme}://{tilted}")
-    hostname = parsed.hostname
-    if not hostname:
-        return None
-    scheme = parsed.scheme or default_scheme
-    return f"{scheme}://{hostname}:{int(port)}"
+    return build_transport_url(tilted, port, default_scheme=default_scheme)
 
 
 def _expand_env_default(value: str) -> str:
