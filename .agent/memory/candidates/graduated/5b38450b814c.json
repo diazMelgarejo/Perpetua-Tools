@@ -1,0 +1,66 @@
+{
+  "id": "5b38450b814c",
+  "key": "manual_5b3845",
+  "name": "manual_5b3845",
+  "claim": "Mac coord pulse uses launchd com.orama.coord-pulse every 900s running coord_pulse.sh: Tier 0 probe and inbox diff when idle, then one-shot cursor-agent via mac-orchestrator-queue.md; OpenClaw Gateway is not the scheduler \u2014 file inbox plus win_job_queue on Win remain transport.",
+  "conditions": [
+    "com",
+    "coord",
+    "coord-pulse",
+    "coord_pulse",
+    "cursor-agent",
+    "diff",
+    "every",
+    "file",
+    "gateway",
+    "idle",
+    "inbox",
+    "launchd",
+    "mac",
+    "mac-orchestrator-queue",
+    "one-shot",
+    "openclaw",
+    "orama",
+    "plus",
+    "probe",
+    "pulse",
+    "remain",
+    "running",
+    "scheduler",
+    "tier",
+    "transport",
+    "uses",
+    "via",
+    "win",
+    "win_job_queue"
+  ],
+  "evidence_ids": [
+    "2026-06-29T00:47:20.739931+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T00:47:20.739931+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T00:47:20.739931+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T00:47:20.815580+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-pulse-plan.md oramasys-method Mode 2",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T00:47:20.739931+00:00"
+      ],
+      "lessons_sha": "b27789187c22"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T00:47:20.815570+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-pulse-plan.md oramasys-method Mode 2"
+}
