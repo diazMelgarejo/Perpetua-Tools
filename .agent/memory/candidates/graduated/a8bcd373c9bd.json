@@ -1,0 +1,38 @@
+{
+  "id": "a8bcd373c9bd",
+  "key": "manual_a8bcd3",
+  "name": "manual_a8bcd3",
+  "claim": "Operator triple-rinse after coord jobs: push both repos, learn.py batch graduate lessons, auto_dream.py x3, lan_peer_assign drop to Mac, coord_pulse x3, push again",
+  "conditions": [
+    "triple"
+  ],
+  "evidence_ids": [
+    "2026-06-29T02:51:52.502353+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T02:51:52.502353+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T02:51:52.502353+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T02:51:52.582606+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Standard Hermes coord cycle per user 2026-06-29",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T02:51:52.502353+00:00"
+      ],
+      "lessons_sha": "a690527bdafb"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T02:51:52.582606+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Standard Hermes coord cycle per user 2026-06-29"
+}
