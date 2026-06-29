@@ -1,0 +1,60 @@
+{
+  "id": "c391481ca104",
+  "key": "manual_c39148",
+  "name": "manual_c39148",
+  "claim": "PowerShell ops scripts under orama-system must use ASCII-only punctuation in string literals; Unicode em-dash or smart quotes cause ParserError on Windows PowerShell 5.x and break background monitors like coord_monitor.ps1.",
+  "conditions": [
+    "ascii-only",
+    "background",
+    "break",
+    "cause",
+    "coord_monitor",
+    "em-dash",
+    "like",
+    "literals",
+    "monitors",
+    "ops",
+    "orama-system",
+    "parsererror",
+    "powershell",
+    "ps1",
+    "punctuation",
+    "quotes",
+    "scripts",
+    "smart",
+    "string",
+    "under",
+    "unicode",
+    "use",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-06-28T13:53:15.972205+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T13:53:15.972205+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T13:53:15.972205+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T13:53:16.071121+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-06-28 coord_monitor first run failed on em-dash; fixed in 382c89a",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T13:53:15.972205+00:00"
+      ],
+      "lessons_sha": "2fce3f375f07"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T13:53:16.071121+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-06-28 coord_monitor first run failed on em-dash; fixed in 382c89a"
+}

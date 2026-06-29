@@ -1,0 +1,57 @@
+{
+  "id": "c935b0102fb9",
+  "key": "manual_c935b0",
+  "name": "manual_c935b0",
+  "claim": "Stacked cross-repo security PRs may intentionally share the same branch name (e.g. cursor/security-pr1-pr2-auth-hardening-f559) \u2014 parity CI head_ref checkout is what binds sibling repos, not branch-name coincidence alone.",
+  "conditions": [
+    "alone",
+    "binds",
+    "branch",
+    "branch-name",
+    "checkout",
+    "coincidence",
+    "cross-repo",
+    "cursor",
+    "head_ref",
+    "intentionally",
+    "name",
+    "parity",
+    "prs",
+    "repos",
+    "same",
+    "security",
+    "security-pr1-pr2-auth-hardening-f559",
+    "share",
+    "sibling",
+    "stacked"
+  ],
+  "evidence_ids": [
+    "2026-06-28T19:55:21.680236+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T19:55:21.680236+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T19:55:21.680236+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T19:55:21.714310+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT #177 and orama #127 coordinated PR1+PR2 auth hardening on matching branch names.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T19:55:21.680236+00:00"
+      ],
+      "lessons_sha": "6ca6e717ba23"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T19:55:21.714301+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT #177 and orama #127 coordinated PR1+PR2 auth hardening on matching branch names."
+}

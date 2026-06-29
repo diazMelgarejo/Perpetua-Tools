@@ -1,0 +1,38 @@
+{
+  "id": "6c8aed1a143d",
+  "key": "manual_6c8aed",
+  "name": "manual_6c8aed",
+  "claim": "mac-orchestrator-self-improve-003 is superseded per mac-self-improve-cycle-003-ack.md \u2014 Win reconciles PT branch subagent/mac-orchestrator/self-improve-memory with main landmark note, not new feature work",
+  "conditions": [
+    "self-improve-003"
+  ],
+  "evidence_ids": [
+    "2026-06-29T03:08:31.773983+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T03:08:31.773983+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T03:08:31.773983+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T03:08:31.888966+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-021 backlog triage",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T03:08:31.773983+00:00"
+      ],
+      "lessons_sha": "0051e789f808"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T03:08:31.888966+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-021 backlog triage"
+}

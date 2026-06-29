@@ -1,0 +1,50 @@
+{
+  "id": "907f55684408",
+  "key": "manual_907f55",
+  "name": "manual_907f55",
+  "claim": "Mac coord_pulse.sh must exit when mac_job_queue is not idle; do not spawn cursor-agent after logging skip-defer or you double-run with manual cycle.",
+  "conditions": [
+    "after",
+    "coord_pulse",
+    "cursor-agent",
+    "cycle",
+    "double-run",
+    "exit",
+    "idle",
+    "logging",
+    "mac",
+    "mac_job_queue",
+    "manual",
+    "skip-defer",
+    "spawn"
+  ],
+  "evidence_ids": [
+    "2026-06-29T01:16:31.683359+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T01:16:31.683359+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T01:16:31.683359+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T01:16:31.773065+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-014 parity fix",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T01:16:31.683359+00:00"
+      ],
+      "lessons_sha": "263df3e63f35"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T01:16:31.773065+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-014 parity fix"
+}

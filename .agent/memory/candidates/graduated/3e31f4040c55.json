@@ -1,0 +1,61 @@
+{
+  "id": "3e31f4040c55",
+  "key": "manual_3e31f4",
+  "name": "manual_3e31f4",
+  "claim": "Portal lifecycle mutating routes (stop, restart, rediscover) require same-origin Origin or Referer guards in addition to bearer token \u2014 CSRF protection is mandatory; session cookies are optional UX only per SECURITY.md.",
+  "conditions": [
+    "addition",
+    "bearer",
+    "cookies",
+    "csrf",
+    "guards",
+    "lifecycle",
+    "mandatory",
+    "mutating",
+    "only",
+    "optional",
+    "origin",
+    "per",
+    "portal",
+    "protection",
+    "rediscover",
+    "referer",
+    "require",
+    "restart",
+    "routes",
+    "same-origin",
+    "security",
+    "session",
+    "stop",
+    "token"
+  ],
+  "evidence_ids": [
+    "2026-06-28T19:55:21.611714+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T19:55:21.611714+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T19:55:21.611714+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T19:55:21.646042+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama #127 CodeRabbit + tests/test_portal_lifecycle_csrf.py; SECURITY.md wording clarified mandatory vs optional.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T19:55:21.611714+00:00"
+      ],
+      "lessons_sha": "60b7f04b64b7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T19:55:21.646033+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama #127 CodeRabbit + tests/test_portal_lifecycle_csrf.py; SECURITY.md wording clarified mandatory vs optional."
+}

@@ -1,0 +1,54 @@
+{
+  "id": "45eabd551f44",
+  "key": "manual_45eabd",
+  "name": "manual_45eabd",
+  "claim": "L1 preview is mandatory for fan-out two or more jobs and all HITL-class launches; single read-only Codex may stay bearer-only fast-path like dispatch_codex_partner.",
+  "conditions": [
+    "all",
+    "bearer-only",
+    "codex",
+    "dispatch_codex_partner",
+    "fan-out",
+    "fast-path",
+    "hitl-class",
+    "jobs",
+    "launches",
+    "like",
+    "mandatory",
+    "more",
+    "preview",
+    "read-only",
+    "single",
+    "stay",
+    "two"
+  ],
+  "evidence_ids": [
+    "2026-06-29T01:34:06.333386+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T01:34:06.333386+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T01:34:06.333386+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T01:34:06.424637+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "D1 locked decision",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T01:34:06.333386+00:00"
+      ],
+      "lessons_sha": "3be9bc1db53a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T01:34:06.424637+00:00",
+  "reviewer": "learn.py",
+  "rationale": "D1 locked decision"
+}

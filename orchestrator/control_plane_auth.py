@@ -233,11 +233,17 @@ def pt_path_requires_auth(path: str, method: str) -> bool:
     return False
 
 
+def _secure_write_token(path: Path, value: str) -> None:
+    """Write token file with 0600 permissions at creation time (umask-safe)."""
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        handle.write(value)
+
+
 def persist_control_plane_token(token: str, path: Path | None = None) -> Path:
     token_path = path or DEFAULT_TOKEN_PATH
     token_path.parent.mkdir(parents=True, exist_ok=True)
-    token_path.write_text(token, encoding="utf-8")
-    token_path.chmod(0o600)
+    _secure_write_token(token_path, token)
     return token_path
 
 

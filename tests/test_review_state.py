@@ -16,12 +16,12 @@ _WIN_HOME = "C:" + r"\Users\lab\Downloads\SKILLS.md\ultrathink"
 
 def test_sanitize_tracked_path_leaks_unix_home():
     raw = f"Use {_UNIX_HOME} as canonical"
-    assert sanitize_tracked_path_leaks(raw) == "Use $HOME/Downloads/SKILLS.md/ultrathink as canonical"
+    assert sanitize_tracked_path_leaks(raw) == "Use <workspace-root> as canonical"
 
 
 def test_sanitize_tracked_path_leaks_windows_home():
     raw = f"Use {_WIN_HOME} as canonical"
-    assert sanitize_tracked_path_leaks(raw) == r"Use %USERPROFILE%\Downloads\SKILLS.md\ultrathink as canonical"
+    assert sanitize_tracked_path_leaks(raw) == "Use <workspace-root> as canonical"
 
 
 def test_read_review_queue_preamble_ignores_inline_marker_mentions(tmp_path):

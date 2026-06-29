@@ -1,0 +1,54 @@
+{
+  "id": "fb42336ab528",
+  "key": "manual_fb4233",
+  "name": "manual_fb4233",
+  "claim": "POST /runtime/bootstrap logging must pass payloads through redact_runtime_payload before emission \u2014 never log raw bootstrap bodies that may contain tokens or secrets.",
+  "conditions": [
+    "before",
+    "bodies",
+    "bootstrap",
+    "contain",
+    "emission",
+    "log",
+    "logging",
+    "never",
+    "pass",
+    "payloads",
+    "post",
+    "raw",
+    "redact_runtime_payload",
+    "runtime",
+    "secrets",
+    "through",
+    "tokens"
+  ],
+  "evidence_ids": [
+    "2026-06-28T19:55:21.543264+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T19:55:21.543264+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T19:55:21.543264+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T19:55:21.577278+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT #177: redact_runtime_payload + tests/test_runtime_bootstrap_redaction.py HTTP integration test.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T19:55:21.543264+00:00"
+      ],
+      "lessons_sha": "0209ba42efc7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T19:55:21.577269+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT #177: redact_runtime_payload + tests/test_runtime_bootstrap_redaction.py HTTP integration test."
+}

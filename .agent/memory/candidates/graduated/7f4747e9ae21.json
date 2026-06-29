@@ -1,0 +1,64 @@
+{
+  "id": "7f4747e9ae21",
+  "key": "manual_7f4747",
+  "name": "manual_7f4747",
+  "claim": "Work queue job from inbox drops: process one Mac backlog item then one Win assignment per coord round; when subagent branch has zero commits ahead of main the deliverable already merged \u2014 skip PR and mark backlog done.",
+  "conditions": [
+    "ahead",
+    "already",
+    "assignment",
+    "backlog",
+    "branch",
+    "commits",
+    "coord",
+    "deliverable",
+    "done",
+    "drops",
+    "inbox",
+    "item",
+    "job",
+    "mac",
+    "main",
+    "mark",
+    "merged",
+    "one",
+    "per",
+    "process",
+    "queue",
+    "round",
+    "skip",
+    "subagent",
+    "win",
+    "work",
+    "zero"
+  ],
+  "evidence_ids": [
+    "2026-06-28T23:31:49.124716+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T23:31:49.124716+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T23:31:49.124716+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T23:31:49.207838+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-006 h5-ollama-parallel PR failed no commits between main and branch",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T23:31:49.124716+00:00"
+      ],
+      "lessons_sha": "27fd42cd6a26"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T23:31:49.207827+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-006 h5-ollama-parallel PR failed no commits between main and branch"
+}

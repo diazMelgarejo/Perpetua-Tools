@@ -1,0 +1,48 @@
+{
+  "id": "3ab1237a6625",
+  "key": "manual_3ab123",
+  "name": "manual_3ab123",
+  "claim": "win_job_queue next must skip BLOCKED_PENDING jobs same as coord_pulse.ps1 to avoid claiming L1 before P5",
+  "conditions": [
+    "avoid",
+    "before",
+    "blocked_pending",
+    "claiming",
+    "coord_pulse",
+    "jobs",
+    "next",
+    "ps1",
+    "same",
+    "skip",
+    "win_job_queue"
+  ],
+  "evidence_ids": [
+    "2026-06-29T01:06:40.435682+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T01:06:40.435682+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T01:06:40.435682+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T01:06:40.526045+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "L1 was claimed at priority 10 before block fix in cycle 013",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T01:06:40.435682+00:00"
+      ],
+      "lessons_sha": "e5b8325b829d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T01:06:40.526045+00:00",
+  "reviewer": "learn.py",
+  "rationale": "L1 was claimed at priority 10 before block fix in cycle 013"
+}

@@ -26,95 +26,113 @@ Workflow:
    cluster_size, and any contradictions with existing LESSONS.md
 3. `python .agent/tools/graduate.py <id> --rationale "..."` to accept
 4. `python .agent/tools/reject.py <id> --reason "..."` to reject
-5. `python .agent/tools/reopen.py <id>` to requeue a previously-rejected item
-6. Review in a **batch**, not one-by-one — cross-candidate contradictions
-   only surface when you see multiple at once.
-
-The heuristic prefilter in `memory/validate.py` has already dropped obvious
-junk (too-short claims, exact duplicates). Everything staged needs real
-judgment. Rationale is required for graduation — rubber-stamped promotions
-are the exact failure mode this layer prevents.
+5. `python .agent/tools/reopen.py <id>` to requeue
 
 ## Skills
-- `skills/_index.md` — read first for discovery
-- `skills/_manifest.jsonl` — machine-readable skill metadata
-- Load a full `SKILL.md` only when its triggers match the current task
-- **Hardware affinity work:** also load `../.claude/skills/hardware-policy/SKILL.md` (policy YAML → canonical API → CLI → launch_researchers)
-- Every skill has a self-rewrite hook; invoke it after failures
+- `skills/_index.md`
+- `skills/_manifest.jsonl`
+- Load SKILL.md only when triggers match task
 
 ## Protocols
-- `protocols/permissions.md` — read before any tool call
-- `protocols/tool_schemas/` — typed interfaces for external tools
-- `protocols/delegation.md` — rules for sub-agent handoff
+- `protocols/permissions.md`
+- `protocols/delegation.md`
+- `protocols/path-hygiene.md` — **anti-doxxing / LINT-006** (always apply)
 
-## Multi-agent merge conflict protocol
+## Path Hygiene (anti-doxxing — always apply)
 
-When merging nested branches produced by independent agents against a moving main, follow this protocol exactly. **Never guess conflict resolution.**
+**Never** write workstation-specific paths into git-tracked files — including
+`.agent/memory/*`, lessons, review queue summaries, skills, and docs.
 
-**Canonical doctrine (orama-way):** load **oramasys-method** →
-[orama `integrative-merge.md`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/oramasys-method/references/integrative-merge.md)
-(synthesize, never amputate; six resolution modes). This section is the portable-brain summary; the skill reference is authoritative.
+| Do | Don't |
+|----|-------|
+| Repo-relative paths (`../../Perpetua-Tools/.agent`) | `C:\<user>\...`, `/\<user>/...` |
+| Env anchors (`$REPO_ROOT`, `PERPETUA_TOOLS_ROOT`) | `%USERPROFILE%\Downloads\...` workspace trees |
+| Generic `~/.gstack/projects/<slug>/` | Pinning "canonical workspace" paths in memory |
+| `orama-system` / `Perpetua-Tools` repo names | Teaching agents your Downloads folder layout |
 
-### Step-by-step
+**Write boundaries:** all memory writers call `sanitize_tracked_path_leaks()` from
+`memory/path_hygiene.py` (`learn.py`, `graduate.py`, `review_state.py`, episodic hooks).
 
-1. **Simulate first — touch nothing.**
-   ```bash
-   git merge --no-commit --no-ff <branch>
-   git diff --name-only --diff-filter=U   # enumerate ALL conflicts
-   git merge --abort
-   ```
+**Antipattern:** Graduating or echoing lessons that treat a personal Downloads path as
+canonical — reject those candidates; use repo names + env vars instead.
 
-2. **Present every conflict to the human** with both sides shown. One question per file. Wait for explicit direction before proceeding.
+Full contract: `protocols/path-hygiene.md` · lessons `lesson_da04cbbae68b`, `lesson_456ea361526d`, `lesson_6fc89e22e3bb`.
 
-3. **Human-directed resolution strategies:**
-   - `additive` — one side is empty, other has content → take the content side
-   - `union` — both sides have partial content → concatenate (ours first, theirs appended)
-   - `superset` — one is a structural superset of the other → verify all rows from the smaller are in the larger, then take the superset
-   - `synthesize` — both sides changed the same region for valid different reasons → blend both (e.g. new API + old branch's tests)
-   - `architecturally-correct` — one side has a bug the other fixes → take the correct side regardless of branch origin
-   - `api-correct` — casing/type mismatch → take the API-correct form
+## Security Invariant Enforcement Protocol (OramaSys v2)
 
-4. **Resolve all conflicts in one pass** using the directed strategy. Never delete content — archive/quarantine if something must be removed.
+This section defines the **authoritative security enforcement contract** for all agent execution environments.
 
-5. **Verify before committing:**
-   ```bash
-   python3 -m pytest -q
-   python3 scripts/review/repo_hygiene.py .
-   git diff --name-only --diff-filter=U  # must be empty
-   ```
+It is derived from the OramaSys v2 security architecture and MUST be enforced in conjunction with:
+- `docs/v2/plans/security-v2-roadmap.md` (system architecture)
+- `docs/v2/plans/security-v2-roadmap-part2.md` (execution layer)
+- `.github/workflows/security-invariant-enforcer.yml` (CI enforcement bot)
+- `SECURITY.md` (repository security policy)
 
-6. **Push → wait for CI → perform GitHub API merge.**
+---
 
-7. **Wait 10 minutes between sequential merges.** Before merge N+1, confirm `mergeable_state: clean` via GitHub API.
+## 🧠 Core Invariants
 
-### Key invariants
+All agent actions MUST obey the following invariants:
 
-- "Merged" on GitHub ≠ content is on the target branch. Always verify with `git diff origin/main...origin/<branch>` after any merge.
-- CodeRabbit re-scans on every push and creates new comment threads. Run the post-merge sweep after every merge, not just once.
-- JSONL memory files (lessons.jsonl, AGENT_LEARNINGS.jsonl): dedup by `id` / `run_id` after union — keep the **first** occurrence per id.
-- LESSONS.md is rendered from lessons.jsonl — never hand-edit it directly (AGENTS.md Rule 5). Always go through `graduate.py`.
+### 1. SSRF Safety Boundary
+- All URL inputs MUST pass through `endpoint_policy_core`
+- Raw `urlparse()` usage in production paths is forbidden
+- Private, loopback, and metadata IPs MUST be blocked deterministically
 
-## Host-agent CLI tools (in `tools/`)
-Daily driver, highest-leverage first:
-- `recall.py "<intent>"` — surface graduated lessons relevant to what
-  you're about to do. **Run before deploy / migration / timestamp / debug /
-  refactor work.** This is how lessons cross harnesses.
-- `learn.py "<rule>" --rationale "<why>"` — teach the agent a new lesson
-  in one shot (stage + graduate + render). For rules you already know.
-- `show.py` — one-screen dashboard of brain state: episodes, candidates,
-  lessons, failing skills, activity graph.
-- `list_candidates.py` / `graduate.py` / `reject.py` / `reopen.py` — review
-  protocol for patterns the dream cycle has staged.
-- `memory_reflect.py <skill> <action> <outcome>` — log a significant event.
+### 2. Auth Safety Boundary
+- Control plane tokens MUST be written using secure file primitives only
+- Token files MUST be created with `0600` permissions at creation time
+- No token material may appear in logs, HTML, or UI rendering
 
-## Rules
-1. Check memory before decisions you have been corrected on before.
-2. If `REVIEW_QUEUE.md` shows backlog past threshold, handle it before the new task.
-3. Log every significant action to `memory/episodic/AGENT_LEARNINGS.jsonl`
-   via `.agent/tools/memory_reflect.py`.
-4. Update `memory/working/WORKSPACE.md` as you work; archive on completion.
-5. Never hand-edit `memory/semantic/LESSONS.md` — it's rendered from
-   `lessons.jsonl`. Use `graduate.py` / `reject.py` instead.
-6. Follow `protocols/permissions.md`. Blocked means blocked.
-7. When a self-rewrite hook fires, propose conservative edits only.
-8. The harness is dumb on purpose. Reasoning lives in skills + the host agent.
+### 3. Transport Identity Integrity
+- URL scheme (`http/https`) MUST be preserved end-to-end
+- Reconstruction layers MUST NOT hardcode transport schemes
+- Any downgrade or implicit normalization is a critical violation
+
+### 4. Rendering Safety
+- All external inputs MUST be HTML escaped before rendering
+- No raw event/model metadata may reach UI layers
+
+### 5. Cross-Repo Consistency
+- Orama-system and Perpetua-Tools MUST implement identical security rules
+- Divergence in SSRF/auth/transport logic is forbidden
+
+---
+
+## ⚙️ CI Enforcement Binding
+
+The following CI pipeline enforces these invariants:
+
+👉 `.github/workflows/security-invariant-enforcer.yml`
+
+It MUST:
+- Block PRs containing `urlparse(` usage
+- Block token leakage patterns (`ORAMA_CONTROL_PLANE_TOKEN`)
+- Detect unsafe transport downgrades (`http://http` patterns)
+- Run full test suite before merge
+
+---
+
+## 🔗 Security Policy Reference
+
+Refer to:
+- `SECURITY.md` for repository-level security rules
+- v2 roadmap for architectural guarantees
+
+---
+
+## 🚨 Failure Semantics
+
+Violations are classified as:
+
+- **HARD BLOCK**: SSRF bypass, auth leakage, scheme downgrade
+- **CI FAILURE**: lint/security invariant violation
+- **ARCHITECTURAL DRIFT**: cross-repo mismatch in behavior
+
+---
+
+## 🧩 Operational Rule
+
+> If a fix cannot be verified against these invariants, it MUST NOT be merged.
+
+All agent reasoning must defer to this protocol as the final authority layer.

@@ -1,0 +1,59 @@
+{
+  "id": "da75fcd087d6",
+  "key": "manual_da75fc",
+  "name": "manual_da75fc",
+  "claim": "After each LAN coord round both Mac and Win run PT learn.py for session lessons and auto_dream.py to stage patterns; commit and push .agent/memory before the next fan-out.",
+  "conditions": [
+    "after",
+    "agent",
+    "auto_dream",
+    "before",
+    "both",
+    "commit",
+    "coord",
+    "each",
+    "fan-out",
+    "lan",
+    "learn",
+    "lessons",
+    "mac",
+    "memory",
+    "next",
+    "patterns",
+    "push",
+    "round",
+    "run",
+    "session",
+    "stage",
+    "win"
+  ],
+  "evidence_ids": [
+    "2026-06-28T13:40:24.026338+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T13:40:24.026338+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T13:40:24.026338+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T13:40:24.090824+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "joint workflow symmetry coord-005 mirror card to Win",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T13:40:24.026338+00:00"
+      ],
+      "lessons_sha": "6bb5757fb58f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T13:40:24.090819+00:00",
+  "reviewer": "learn.py",
+  "rationale": "joint workflow symmetry coord-005 mirror card to Win"
+}
