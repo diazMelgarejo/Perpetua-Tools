@@ -36,6 +36,27 @@ Workflow:
 ## Protocols
 - `protocols/permissions.md`
 - `protocols/delegation.md`
+- `protocols/path-hygiene.md` — **anti-doxxing / LINT-006** (always apply)
+
+## Path Hygiene (anti-doxxing — always apply)
+
+**Never** write workstation-specific paths into git-tracked files — including
+`.agent/memory/*`, lessons, review queue summaries, skills, and docs.
+
+| Do | Don't |
+|----|-------|
+| Repo-relative paths (`../../Perpetua-Tools/.agent`) | `C:\<user>\...`, `/\<user>/...` |
+| Env anchors (`$REPO_ROOT`, `PERPETUA_TOOLS_ROOT`) | `%USERPROFILE%\Downloads\...` workspace trees |
+| Generic `~/.gstack/projects/<slug>/` | Pinning "canonical workspace" paths in memory |
+| `orama-system` / `Perpetua-Tools` repo names | Teaching agents your Downloads folder layout |
+
+**Write boundaries:** all memory writers call `sanitize_tracked_path_leaks()` from
+`memory/path_hygiene.py` (`learn.py`, `graduate.py`, `review_state.py`, episodic hooks).
+
+**Antipattern:** Graduating or echoing lessons that treat a personal Downloads path as
+canonical — reject those candidates; use repo names + env vars instead.
+
+Full contract: `protocols/path-hygiene.md` · lessons `lesson_da04cbbae68b`, `lesson_456ea361526d`, `lesson_6fc89e22e3bb`.
 
 ## Security Invariant Enforcement Protocol (OramaSys v2)
 
