@@ -18,7 +18,17 @@ tests/test_hardware_routing.py
 tests/test_scheme_preservation.py
 ```
 
-This document records what actually landed, what repo-level support exists outside the PR, and what remains outside the PR scope.
+Follow-up architecture now implemented on `main` after PR #198:
+
+```text
+src/utils/endpoint_policy_core.py
+tests/test_endpoint_policy_core.py
+scripts/security/check_endpoint_policy_core.py
+.agent/endpoint-policy-contract.yml
+.github/workflows/security-invariant-enforcer.yml
+.github/workflows/invariant-monitor-bot.yml
+AGENTS.md
+```
 
 ---
 
@@ -31,36 +41,40 @@ It fixed two critical runtime invariants:
 1. Ollama models on `win-rtx3080` must use Ollama port `11434`, not the LM Studio port returned by active tilting.
 2. Transport scheme is part of endpoint identity and must be preserved when reconstructing the Ollama URL.
 
-The PR is complete for the production bug it targeted. It is not a full endpoint-policy or cross-repo security architecture rollout.
+The follow-up architecture now promotes that local PR fix into a shared endpoint transport policy boundary on `main`.
 
 ---
 
-## Actual Merged Implementation
+## Current Main Implementation
+
+File: `src/utils/endpoint_policy_core.py`
+
+Canonical transport helpers:
+
+```python
+def parse_transport_identity(source: str, *, default_scheme: str = "http") -> Optional[TransportIdentity]:
+    ...
+
+
+def build_transport_url(source: str, port: int, *, default_scheme: str = "http") -> Optional[str]:
+    ...
+```
+
+The core owns URL parsing for transport reconstruction and returns `None` for malformed, credentialed, unsupported-scheme, or missing-host inputs so callers can fall back safely.
 
 File: `orchestrator/model_registry.py`
 
-The merged helper is:
+The compatibility helper now delegates to the shared policy core:
 
 ```python
-from urllib.parse import urlparse
+from utils.endpoint_policy_core import build_transport_url
 
 
 def _build_tilting_url(tilted: str, port: int, *, default_scheme: str = "http") -> Optional[str]:
-    """Rebuild scheme://hostname:port from active_tilting discovery output.
-
-    Preserves the transport scheme when discovery returns an absolute URL
-    (e.g. https overrides). Returns None when hostname cannot be parsed so
-    callers can fall back to models.yml host expansion.
-    """
-    parsed = urlparse(tilted if "://" in tilted else f"{default_scheme}://{tilted}")
-    hostname = parsed.hostname
-    if not hostname:
-        return None
-    scheme = parsed.scheme or default_scheme
-    return f"{scheme}://{hostname}:{int(port)}"
+    return build_transport_url(tilted, port, default_scheme=default_scheme)
 ```
 
-The merged routing behavior is:
+The active-tilting behavior remains:
 
 ```python
 if dev_info.get("identity_method") == "active_tilting" and not live_disabled:
@@ -78,44 +92,51 @@ if dev_info.get("identity_method") == "active_tilting" and not live_disabled:
 This means:
 
 - LM Studio keeps the active-tilting endpoint unchanged.
-- Ollama reuses the discovered host and scheme, but swaps to the Ollama model port.
+- Ollama reuses the discovered scheme/host and swaps to the Ollama model port.
 - Invalid discovery output falls back to the configured model host instead of constructing a malformed URL.
 
 ---
 
 ## Landed Invariants
 
-| Invariant | Landed in PR #198 | Evidence |
-|---|---:|---|
-| Ollama on `win-rtx3080` uses `:11434` | Yes | `test_active_tilting_ollama_win_uses_model_port_not_lmstudio` |
-| LM Studio remains on discovered `:1234` endpoint | Yes | same regression test |
-| Scheme is preserved from active-tilting output | Yes | `tests/test_scheme_preservation.py` |
-| No `http://http` double-scheme reconstruction | Yes | `test_build_tilting_url_no_double_scheme` |
-| Invalid tilted output falls back safely | Yes | `_build_tilting_url()` returns `None`; `_resolve_host()` falls back to config host |
-| Live-probe bypass is preserved | Yes | existing `PT_DISABLE_LIVE_MODEL_PROBES` branch remains intact |
+| Invariant | Landed in PR #198 | Promoted on `main` after PR #198 | Evidence |
+|---|---:|---:|---|
+| Ollama on `win-rtx3080` uses `:11434` | Yes | Yes | `test_active_tilting_ollama_win_uses_model_port_not_lmstudio` |
+| LM Studio remains on discovered `:1234` endpoint | Yes | Yes | same regression test |
+| Scheme is preserved from active-tilting output | Yes | Yes | `tests/test_scheme_preservation.py` |
+| No `http://http` double-scheme reconstruction | Yes | Yes | `test_build_tilting_url_no_double_scheme` plus workflow grep |
+| Invalid tilted output falls back safely | Yes | Yes | `_build_tilting_url()` returns `None`; `_resolve_host()` falls back to config host |
+| Live-probe bypass is preserved | Yes | Yes | existing `PT_DISABLE_LIVE_MODEL_PROBES` branch remains intact |
+| Shared endpoint transport boundary | No | Yes | `src/utils/endpoint_policy_core.py` |
+| Structural CI enforcement | No | Yes | `scripts/security/check_endpoint_policy_core.py` |
+| Multi-repo contract record | No | Yes | `.agent/endpoint-policy-contract.yml` |
+| Agent guidance for future edits | No | Yes | `AGENTS.md` endpoint transport policy section |
 
 ---
 
-## Test Coverage Landed
+## Test Coverage
 
-File: `tests/test_scheme_preservation.py`
+PR #198 landed:
 
-Landed coverage includes:
+- `tests/test_scheme_preservation.py`
+- `tests/test_hardware_routing.py::test_active_tilting_ollama_win_uses_model_port_not_lmstudio`
 
-- HTTPS preservation: `https://win-box.example:1234` -> `https://win-box.example:11434`
+Follow-up architecture added:
+
+- `tests/test_endpoint_policy_core.py`
+
+Coverage now includes:
+
+- HTTPS preservation
 - Bare host defaulting to HTTP only when no scheme exists
 - No `http://http` duplication
 - No-host parse failure returns `None`
+- Credentialed endpoint rejection
+- Unsupported scheme rejection
+- Malformed port rejection
+- IPv6 bracket-safe reconstruction
 - `_resolve_host()` preserves HTTPS for Ollama
 - `_resolve_host()` returns LM Studio tilted endpoint unchanged
-
-File: `tests/test_hardware_routing.py`
-
-Landed coverage includes:
-
-- Active tilting returns LM Studio endpoint on `:1234`
-- Ollama model on same device resolves to `:11434`
-- LM Studio model resolves to `:1234`
 
 ---
 
@@ -132,62 +153,73 @@ active_tilting output was being treated as a host-ish string instead of a transp
 Correct invariant:
 
 ```text
-transport identity = scheme + host + port
+transport identity = scheme + hostname + backend-specific port
 ```
 
-PR #198 resolves this locally in `model_registry.py` by preserving `scheme`, extracting `hostname`, and replacing only the backend-specific port.
+PR #198 resolved this locally. The follow-up architecture now centralizes the transport reconstruction boundary in `src/utils/endpoint_policy_core.py`.
 
 ---
 
-## Repo-Level Enforcement Outside PR #198
-
-The broader enforcement work exists on `main`, but it was not part of PR #198's changed-file set.
+## CI And Multi-Repo Enforcement
 
 Present on `main`:
 
 ```text
 .github/workflows/security-invariant-enforcer.yml
 .github/workflows/invariant-monitor-bot.yml
+scripts/security/check_endpoint_policy_core.py
+.agent/endpoint-policy-contract.yml
 AGENTS.md
 ```
 
-The workflows run targeted invariant tests and block obvious transport regressions such as `http://http` in production Python.
+The workflows now run:
 
-Important distinction:
+```bash
+python scripts/security/check_endpoint_policy_core.py
+pytest tests/test_endpoint_policy_core.py \
+  tests/test_scheme_preservation.py \
+  tests/test_hardware_routing.py::test_active_tilting_ollama_win_uses_model_port_not_lmstudio \
+  tests/test_model_endpoint_url.py -q --tb=short
+```
 
-- PR #198 landed the runtime fix and regression tests.
-- The enforcement workflows and agent rules are repo-level support that exist outside the PR diff.
+The structural checker enforces:
+
+- `model_registry.py` imports `build_transport_url` from `utils.endpoint_policy_core`
+- `model_registry.py` does not call `urlparse()` directly
+- the core owns the transport URL parsing boundary
+- both invariant workflows run the core tests and checker
+- `.agent/endpoint-policy-contract.yml` names Perpetua-Tools and orama-system as the contract pair
+- production Python under `orchestrator/` and `src/` does not contain double-scheme transport literals
 
 ---
 
 ## Grand Plan Comparison
 
-| Planned item | Landed in PR #198 | Present elsewhere on `main` | Notes |
+| Planned item | Landed in PR #198 | Implemented on `main` now | Notes |
 |---|---:|---:|---|
-| Scheme-preserving active-tilting reconstruction | Yes | Yes | Implemented in `_build_tilting_url()` |
+| Scheme-preserving active-tilting reconstruction | Yes | Yes | Implemented locally, then promoted to core |
 | Ollama vs LM Studio port isolation | Yes | Yes | Ollama uses configured model port; LM Studio unchanged |
-| Regression tests for scheme and routing | Yes | Yes | Two test files in PR |
-| CI invariant monitor | No | Yes | Workflow exists outside PR #198 |
-| Security invariant enforcer workflow | No | Yes | Workflow exists outside PR #198 |
-| AGENTS.md invariant guidance | No | Yes | Repo-level agent guidance exists outside PR #198 |
-| Shared `endpoint_policy_core` abstraction | No | No confirmed landing | Still not extracted as a shared endpoint-policy module |
-| Multi-repo mesh enforcement | No | Partial / external | Not landed as a PR #198 artifact |
-| Full SSRF platform redesign | No | Partial support only | PR #198 was intentionally a local routing fix |
+| Regression tests for scheme and routing | Yes | Yes | PR tests remain |
+| CI invariant monitor | No | Yes | Workflow updated to run core checker/tests |
+| Security invariant enforcer workflow | No | Yes | Workflow updated to run core checker/tests |
+| AGENTS.md invariant guidance | No | Yes | Endpoint transport policy section added |
+| Shared `endpoint_policy_core` abstraction | No | Yes | `src/utils/endpoint_policy_core.py` |
+| Multi-repo mesh contract | No | Yes, local contract | `.agent/endpoint-policy-contract.yml` records Perpetua + orama contract |
+| Full SSRF platform redesign | No | Partial | Transport reconstruction is centralized; network allow/deny remains in `src/utils/model_endpoint_url.py` |
 
 ---
 
 ## Remaining Gaps
 
-No blocking gap remains for PR #198's production bug.
+No blocking gap remains for PR #198's production bug or for the local endpoint transport architecture.
 
-Remaining architecture gaps are outside PR #198 scope:
+Remaining broader-system work:
 
-1. `endpoint_policy_core` has not been extracted as a shared module.
-2. SSRF/transport policy is not yet centralized across every endpoint construction site.
-3. Cross-repo mesh enforcement is not represented as a single auditable contract in this PR.
-4. The current workflows catch targeted regressions, but they do not prove full system-wide endpoint-policy compliance.
+1. Mirror or consume `.agent/endpoint-policy-contract.yml` from `diazMelgarejo/orama-system` so the contract is enforced from both sides.
+2. Audit every endpoint construction site outside `model_registry.py` and decide whether each should call `endpoint_policy_core`, `model_endpoint_url`, or both.
+3. Add an inter-repo scheduled workflow only if GitHub credentials/permissions are available for cross-repo reads.
 
-These are follow-up architecture tasks, not defects in PR #198.
+These are cross-repo rollout tasks, not missing local main-branch implementation.
 
 ---
 
@@ -195,14 +227,14 @@ These are follow-up architecture tasks, not defects in PR #198.
 
 PR #198 is complete and landed on `main` for the bug it was created to fix.
 
-It delivered:
+The broader follow-up architecture is now also implemented locally on `main`:
 
-- Correct Ollama routing under active tilting
-- LM Studio routing preservation
-- Scheme-preserving transport reconstruction
-- Regression coverage for port isolation and scheme preservation
-
-It did not deliver the full grand architecture rollout. That broader plan is partially present on `main` via workflows and AGENTS guidance, with `endpoint_policy_core` and full multi-repo enforcement still remaining as follow-up work.
+- shared endpoint transport core
+- direct core tests
+- structural CI checker
+- updated invariant workflows
+- AGENTS policy guidance
+- local multi-repo contract record
 
 Execution rule retained from the design discussion:
 
