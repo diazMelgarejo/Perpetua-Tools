@@ -1,0 +1,38 @@
+{
+  "id": "7be44425b675",
+  "key": "manual_7be444",
+  "name": "manual_7be444",
+  "claim": "When Win queue is drained post coord-023, operator must fan out new win-coder-* and win-autoresearcher-* assignment cards to local inbox and win_job_queue.py enqueue before pulse can dispatch jobs",
+  "conditions": [
+    "pulse"
+  ],
+  "evidence_ids": [
+    "2026-06-29T03:08:32.175232+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T03:08:32.175232+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T03:08:32.175232+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T03:08:32.279243+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Pulse idle with empty pending",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T03:08:32.175232+00:00"
+      ],
+      "lessons_sha": "2a1777df046d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T03:08:32.279243+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Pulse idle with empty pending"
+}
