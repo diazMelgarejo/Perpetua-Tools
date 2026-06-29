@@ -1,0 +1,38 @@
+{
+  "id": "0bf04410f4b3",
+  "key": "manual_0bf044",
+  "name": "manual_0bf044",
+  "claim": "Researcher GPU backlog after H5: next cycle is preflight/doc spike (h6) on subagent/win-autoresearcher/researcher-backlog-h6 unless Mac drops new hypothesis card",
+  "conditions": [
+    "researcher"
+  ],
+  "evidence_ids": [
+    "2026-06-29T03:08:32.361532+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T03:08:32.361532+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T03:08:32.361532+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T03:08:32.460914+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-021 researcher backlog",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T03:08:32.361532+00:00"
+      ],
+      "lessons_sha": "4eb8ee89e1e8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T03:08:32.460914+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-021 researcher backlog"
+}
