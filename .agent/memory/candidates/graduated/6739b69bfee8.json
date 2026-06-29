@@ -1,0 +1,55 @@
+{
+  "id": "6739b69bfee8",
+  "key": "manual_6739b6",
+  "name": "manual_6739b6",
+  "claim": "L1 local dispatch weekend build reuses P5 HMAC preview tokens and Option C portal wedge; ship ingredients only until sign_operator_payload exists on main.",
+  "conditions": [
+    "build",
+    "dispatch",
+    "exists",
+    "hmac",
+    "ingredients",
+    "local",
+    "main",
+    "only",
+    "option",
+    "portal",
+    "preview",
+    "reuses",
+    "ship",
+    "sign_operator_payload",
+    "tokens",
+    "until",
+    "wedge",
+    "weekend"
+  ],
+  "evidence_ids": [
+    "2026-06-29T01:34:05.967029+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T01:34:05.967029+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T01:34:05.967029+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T01:34:06.070910+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "execution-plan coord-015 P5 gate",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T01:34:05.967029+00:00"
+      ],
+      "lessons_sha": "5476f9b92054"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T01:34:06.070910+00:00",
+  "reviewer": "learn.py",
+  "rationale": "execution-plan coord-015 P5 gate"
+}

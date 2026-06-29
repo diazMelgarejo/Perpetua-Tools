@@ -1,0 +1,54 @@
+{
+  "id": "46c828cb56e6",
+  "key": "manual_46c828",
+  "name": "manual_46c828",
+  "claim": "/autoplan on execution plan produced GSTACK REVIEW REPORT with amendments A1-A6 before coding; lock decisions in P5-DECISIONS-LOCKED.md to prevent silent drift.",
+  "conditions": [
+    "a1-a6",
+    "amendments",
+    "autoplan",
+    "before",
+    "coding",
+    "decisions",
+    "drift",
+    "execution",
+    "gstack",
+    "lock",
+    "p5-decisions-locked",
+    "plan",
+    "prevent",
+    "produced",
+    "report",
+    "review",
+    "silent"
+  ],
+  "evidence_ids": [
+    "2026-06-29T02:33:08.531074+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T02:33:08.531074+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T02:33:08.531074+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T02:33:08.617440+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-p5-autoplan",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T02:33:08.531074+00:00"
+      ],
+      "lessons_sha": "f1be6c1eca2f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T02:33:08.617440+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-p5-autoplan"
+}

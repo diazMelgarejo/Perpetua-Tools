@@ -1,0 +1,53 @@
+{
+  "id": "d2325989d100",
+  "key": "manual_d23259",
+  "name": "manual_d23259",
+  "claim": "Win bucket drain ack win-bucket-drain-ack.md signals coord-005 backlog cleared; next Mac job from V1_DEFERRED_BACKLOG is P1 frugality_router then operator PR triage PT 183.",
+  "conditions": [
+    "ack",
+    "backlog",
+    "bucket",
+    "cleared",
+    "coord-005",
+    "drain",
+    "frugality_router",
+    "job",
+    "mac",
+    "next",
+    "operator",
+    "signals",
+    "triage",
+    "v1_deferred_backlog",
+    "win",
+    "win-bucket-drain-ack"
+  ],
+  "evidence_ids": [
+    "2026-06-29T00:32:36.296747+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T00:32:36.296747+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T00:32:36.296747+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T00:32:36.377928+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "inbox drop 2026-06-29 after portal lan-peer restart",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T00:32:36.296747+00:00"
+      ],
+      "lessons_sha": "33c698d0554c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T00:32:36.377921+00:00",
+  "reviewer": "learn.py",
+  "rationale": "inbox drop 2026-06-29 after portal lan-peer restart"
+}

@@ -1,0 +1,57 @@
+{
+  "id": "7b816eb46b17",
+  "key": "manual_7b816e",
+  "name": "manual_7b816e",
+  "claim": "Coord cycles 013-015: Mac coord_pulse P2.1 parity (pulse-gate, flock, idle exit) matches Win.ps1; PT #199 frugality_router merged after Win reconcile; triple 15m listen between jobs.",
+  "conditions": [
+    "after",
+    "between",
+    "coord",
+    "coord_pulse",
+    "cycles",
+    "exit",
+    "flock",
+    "frugality_router",
+    "idle",
+    "jobs",
+    "listen",
+    "mac",
+    "matches",
+    "merged",
+    "parity",
+    "ps1",
+    "pulse-gate",
+    "reconcile",
+    "triple",
+    "win"
+  ],
+  "evidence_ids": [
+    "2026-06-29T01:15:57.875997+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T01:15:57.875997+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T01:15:57.875997+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T01:15:57.952711+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-013-015 pulse parity and PT199 merge",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T01:15:57.875997+00:00"
+      ],
+      "lessons_sha": "1ec950007a52"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T01:15:57.952702+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-013-015 pulse parity and PT199 merge"
+}

@@ -1,0 +1,56 @@
+{
+  "id": "1eb60ac2018e",
+  "key": "manual_1eb60a",
+  "name": "manual_1eb60a",
+  "claim": "coord-024 drained orchestrator queue to zero; researcher h4 h5 remain for pulse; triple rinse uses timed coord_pulse and always runs 3x15m listen per outer rinse",
+  "conditions": [
+    "always",
+    "coord-024",
+    "coord_pulse",
+    "drained",
+    "listen",
+    "orchestrator",
+    "outer",
+    "per",
+    "pulse",
+    "queue",
+    "remain",
+    "researcher",
+    "rinse",
+    "runs",
+    "timed",
+    "triple",
+    "uses",
+    "x15m",
+    "zero"
+  ],
+  "evidence_ids": [
+    "2026-06-29T03:05:12.030821+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T03:05:12.030821+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T03:05:12.030821+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T03:05:12.102685+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-024",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T03:05:12.030821+00:00"
+      ],
+      "lessons_sha": "a7695b786f82"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T03:05:12.102677+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-024"
+}
