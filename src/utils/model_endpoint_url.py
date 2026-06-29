@@ -90,19 +90,30 @@ def validate_model_endpoint_url(
     raw = (url or "").strip()
     if not raw:
         raise ModelEndpointPolicyError("empty endpoint URL")
+    # Match agent_launcher / alphaclaw_bootstrap: bare host:port env values are valid.
+    if "://" not in raw:
+        raw = f"http://{raw}"
 
-    parsed = urlparse(raw)
-    scheme = (parsed.scheme or "").lower()
-    if scheme not in _ALLOWED_SCHEMES:
-        raise ModelEndpointPolicyError(
-            f"endpoint scheme {scheme!r} not allowed (http/https only)"
-        )
-    if parsed.username or parsed.password:
-        raise ModelEndpointPolicyError("credentials in endpoint URL are not allowed")
+    try:
+        parsed = urlparse(raw)
+        scheme = (parsed.scheme or "").lower()
+        if scheme not in _ALLOWED_SCHEMES:
+            raise ModelEndpointPolicyError(
+                f"endpoint scheme {scheme!r} not allowed (http/https only)"
+            )
+        if parsed.username or parsed.password:
+            raise ModelEndpointPolicyError("credentials in endpoint URL are not allowed")
 
-    host = parsed.hostname
-    if not host:
-        raise ModelEndpointPolicyError("endpoint URL missing hostname")
+        host = parsed.hostname
+        if not host:
+            raise ModelEndpointPolicyError("endpoint URL missing hostname")
+
+        # Accessing ParseResult.port validates numeric/range syntax and may raise ValueError.
+        port = parsed.port
+    except ModelEndpointPolicyError:
+        raise
+    except ValueError as exc:
+        raise ModelEndpointPolicyError(f"invalid endpoint URL: {exc}") from exc
 
     if not _host_allowed(host, allow_public=allow_public):
         raise ModelEndpointPolicyError(
@@ -111,7 +122,6 @@ def validate_model_endpoint_url(
             "to allow public hosts"
         )
 
-    port = parsed.port
     if port is None:
         port = 443 if scheme == "https" else 80
 

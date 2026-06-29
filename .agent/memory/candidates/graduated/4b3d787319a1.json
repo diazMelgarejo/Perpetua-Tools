@@ -1,0 +1,61 @@
+{
+  "id": "4b3d787319a1",
+  "key": "manual_4b3d78",
+  "name": "manual_4b3d78",
+  "claim": "Cross-repo model-endpoint-policy parity CI on pull_request must checkout the sibling repository at github.head_ref (same branch name), not main \u2014 stacked security PRs diverge from main until merge; rm -rf sibling dir before main fallback to avoid partial checkout.",
+  "conditions": [
+    "avoid",
+    "before",
+    "branch",
+    "checkout",
+    "cross-repo",
+    "dir",
+    "diverge",
+    "fallback",
+    "github",
+    "head_ref",
+    "main",
+    "merge",
+    "model-endpoint-policy",
+    "name",
+    "parity",
+    "partial",
+    "prs",
+    "pull_request",
+    "repository",
+    "same",
+    "security",
+    "sibling",
+    "stacked",
+    "until"
+  ],
+  "evidence_ids": [
+    "2026-06-28T19:55:21.191550+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T19:55:21.191550+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T19:55:21.191550+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T19:55:21.228653+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT #177 and orama #127 CI failed model-endpoint-policy-parity because comparator diffed PR branch against sibling main; fix c3957d7/e9059d1 green runs 28333911916 and 28334035588.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T19:55:21.191550+00:00"
+      ],
+      "lessons_sha": "c1a718b979da"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T19:55:21.228644+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT #177 and orama #127 CI failed model-endpoint-policy-parity because comparator diffed PR branch against sibling main; fix c3957d7/e9059d1 green runs 28333911916 and 28334035588."
+}

@@ -1,0 +1,66 @@
+{
+  "id": "7432957e086c",
+  "key": "manual_743295",
+  "name": "manual_743295",
+  "claim": "Coord job cycle: after each completed Mac inbox or backlog job run learn.py and auto_dream.py, push main, then wait 15 minutes probe and list inbox before taking the next single job; install_coord_pulse.sh provides automated 900s launchd pulse when operator loads it.",
+  "conditions": [
+    "after",
+    "auto_dream",
+    "automated",
+    "backlog",
+    "before",
+    "completed",
+    "coord",
+    "cycle",
+    "each",
+    "inbox",
+    "install_coord_pulse",
+    "job",
+    "launchd",
+    "learn",
+    "list",
+    "loads",
+    "mac",
+    "main",
+    "minutes",
+    "next",
+    "operator",
+    "probe",
+    "provides",
+    "pulse",
+    "push",
+    "run",
+    "single",
+    "taking",
+    "wait"
+  ],
+  "evidence_ids": [
+    "2026-06-29T00:53:48.043262+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T00:53:48.043262+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T00:53:48.043262+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T00:53:48.134883+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-009 install pulse P1 + operator PR queue job",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T00:53:48.043262+00:00"
+      ],
+      "lessons_sha": "4b321d430dfa"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T00:53:48.134875+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-009 install pulse P1 + operator PR queue job"
+}

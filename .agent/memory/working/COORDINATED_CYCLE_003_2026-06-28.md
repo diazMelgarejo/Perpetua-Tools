@@ -1,50 +1,44 @@
-# Coordinated cycle 003 — landmark
+# Coordinated cycle 003 — merged landmark (Mac + Win)
 
 **Date:** 2026-06-28  
-**Status:** ACTIVE — Mac+Win subagents working in parallel  
-**Fan-out:** `2026-06-28-coord-003`
+**Fan-out:** `2026-06-28-coord-003`  
+**Status:** **Superseded by coord-016+** (2026-06-29) — landmark preserved; no new branch work required per `mac-self-improve-cycle-003-ack.md`
 
 ## Branch policy
 
-See `orama-system/.../references/subagent-branch-policy.md`:
-
-- Naming: `subagent/<role>/<short-topic>`
-- Branch from latest `origin/main`; one branch per subagent task
-- Coordination stays on `main` via file inbox — branches are for **mutations only**
-- Operator merges via PR after cycle; no `docs/LESSONS.md` without **`approve lessons`**
+`orama-system/.../references/subagent-branch-policy.md` — `subagent/<role>/<topic>`; coordination on `main` via file inbox.
 
 ## Subagent table
 
-| Host | Subagent | Branch | Deliverable |
-|------|----------|--------|-------------|
-| Mac | mac-researcher | `subagent/mac-researcher/h4-mac-benchmark` | `mac-h4-comparison.md` |
-| Mac | orchestrator | `subagent/mac-orchestrator/self-improve-memory` | `mac-self-improve-cycle-003.md` |
-| Win | autoresearcher | `subagent/win-autoresearcher/h5-gpu-harness` | `gpu-results-h5.md` |
-| Win | coder | `subagent/win-coder/bridge-http-local` | `win-bridge-spike-notes.md` |
+| Host | Subagent | Branch | Deliverable | Status |
+|------|----------|--------|-------------|--------|
+| Mac | mac-researcher | `subagent/mac-researcher/h4-mac-benchmark` | `mac-h4-comparison.md` | Done → Win |
+| Mac | orchestrator | `subagent/mac-orchestrator/self-improve-memory` | cycle landmark | Done (this file) |
+| Win | autoresearcher | `subagent/win-autoresearcher/h5-gpu-harness` | `gpu-results-h5.md` | Done |
+| Win | coder | `subagent/win-coder/bridge-http-local` | `win-bridge-spike-notes.md` | Done |
+| Win | orchestrator | `subagent/win-orchestrator/doc-sync-peer-inbox` | portal doc sync | Done |
 
-## Inbox read (cycle 003)
+## Win session outcomes
 
-| File | Source | Notes |
-|------|--------|-------|
-| `win-self-improve-runtime-results.md` | Win drop | Runtime verified; Win inbox = autoresearcher queue |
-| `self-improve-merge-final-proposed.md` | Mac inbox | PROPOSED — operator gate for `docs/LESSONS.md` |
-| `mac-win-portal-merge-notes.md` | orama `references/results/` | Portal merge strategy (Mac skins + Win peer-inbox lane) |
+- H5 GPU: 3/3 rubric prompts on LM Studio 27B (`run_h5_gpu_benchmark.py`)
+- Bridge: `AUTORESEARCH_PREFLIGHT_MODE=auto` → http-local on Win GPU host
+- Portal: `/peer-inbox` canonical on Win; `/co-orchestration/windows` → 307 redirect
+- Graceful degradation: `orama-system/.../oramasys-method/references/graceful-degradation.md`
 
-## Self-improve gate
+## Mac pending / review
 
-**Status:** PROPOSED — landmark in PT `.agent/memory/working/` only; no `docs/LESSONS.md` commit
+- PR review: `subagent/mac-researcher/h4-mac-benchmark`, `subagent/mac-orchestrator/self-improve-memory`
+- Cross-host H5 comparison after reading `gpu-results-h5.md`
+- Operator: **`approve lessons`** for `docs/LESSONS.md` when ready (landmark only until then)
 
-## Mac orchestrator (this branch)
+## Frugality priority (coord-004)
 
-- **Branch:** `subagent/mac-orchestrator/self-improve-memory`
-- **Landmark:** this file
-- **Summary drop:** `mac-self-improve-cycle-003.md` → Win peer
-
-## Win waiting on
-
-- autoresearcher: H5 GPU harness → drop `gpu-results-h5.md`
-- coder: bridge HTTP spike → drop `win-bridge-spike-notes.md`
+1. **Win autoresearcher + coder** → LM Studio `:1234` first  
+2. Online agents (cursor-agent cloud, Codex, etc.) → fallback only  
+3. Online failure → LAN peer file inbox + local LM Studio / Mac Ollama  
+4. Document escalation tier in one line per `graceful-degradation.md`
 
 ## Monitor
 
-http://localhost:8002/co-orchestration/macos
+- Mac: `http://localhost:8002/co-orchestration/macos`
+- Win: `http://localhost:8002/peer-inbox`
