@@ -1,0 +1,53 @@
+{
+  "id": "361923307118",
+  "key": "manual_361923",
+  "name": "manual_361923",
+  "claim": "Blocked prerequisite jobs stay in win_job_queue pending but coord_pulse.ps1 skips them via BlockedPending list until operator unblocks.",
+  "conditions": [
+    "blocked",
+    "blockedpending",
+    "coord_pulse",
+    "jobs",
+    "list",
+    "operator",
+    "pending",
+    "prerequisite",
+    "ps1",
+    "skips",
+    "stay",
+    "them",
+    "unblocks",
+    "until",
+    "via",
+    "win_job_queue"
+  ],
+  "evidence_ids": [
+    "2026-06-29T00:59:15.921634+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T00:59:15.921634+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T00:59:15.921634+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T00:59:16.017029+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "L1 comms blocked on P5; avoid wasted cursor-agent spawn",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T00:59:15.921634+00:00"
+      ],
+      "lessons_sha": "35be1361b05c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T00:59:16.017029+00:00",
+  "reviewer": "learn.py",
+  "rationale": "L1 comms blocked on P5; avoid wasted cursor-agent spawn"
+}
