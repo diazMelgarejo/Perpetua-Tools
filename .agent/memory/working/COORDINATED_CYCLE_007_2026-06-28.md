@@ -5,9 +5,9 @@
 
 | Step | Job | Status |
 |------|-----|--------|
-| 1 | Mac — frugality_router spike | **done** branch `c7161de` 15 tests |
-| 2 | Win — PT #183 reconcile | awaiting `win-pt183-reconcile.md` (coord-006) |
+| 1 | Mac — frugality_router spike | **done** — PR **#199** (`c7161de`, code-only branch) |
+| 2 | Win — PT #183 reconcile | **done** (`win-pt183-reconcile.md`) — merge **#183** |
 
-## Next
+## Memory hygiene
 
-Operator PR: `subagent/mac-orchestrator/frugality-router-spike` → PT `main`
+coord-007 `.agent/memory` on **`main` only** — removed from spike PR branch.
