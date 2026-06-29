@@ -353,3 +353,4 @@
 - When Win queue is drained post coord-023, operator must fan out new win-coder-* and win-autoresearcher-* assignment cards to local inbox and win_job_queue.py enqueue before pulse can dispatch jobs  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7be44425b675 -->
 - Researcher GPU backlog after H5: next cycle is preflight/doc spike (h6) on subagent/win-autoresearcher/researcher-backlog-h6 unless Mac drops new hypothesis card  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_0bf04410f4b3 -->
 - coord triple rinse tick: pulse job done, pushed sync  <!-- status=accepted confidence=0.36 evidence=1 id=lesson_497b441557d4 -->
+- Researcher backlog handoff after H5: Win autoresearcher completes doc-spike preflight (gpu-results-h6-preflight.md), drops to Mac peer, and blocks next GPU harness until Mac researcher fans out a new hypothesis card with falsification criteria  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_599216f1810f -->
