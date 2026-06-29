@@ -1,0 +1,46 @@
+{
+  "id": "497b441557d4",
+  "key": "manual_497b44",
+  "name": "manual_497b44",
+  "claim": "coord triple rinse tick: pulse job done, pushed sync",
+  "conditions": [
+    "coord",
+    "done",
+    "job",
+    "pulse",
+    "pushed",
+    "rinse",
+    "sync",
+    "tick",
+    "triple"
+  ],
+  "evidence_ids": [
+    "2026-06-29T03:06:36.364160+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T03:06:36.364160+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T03:06:36.364160+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T03:06:36.423628+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-024-rinse",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T03:06:36.364160+00:00"
+      ],
+      "lessons_sha": "0d00f1ebf77f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T03:06:36.423621+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-024-rinse"
+}

@@ -1,0 +1,16 @@
+---
+description: Anti-doxxing — no workstation paths in tracked PT memory (LINT-006)
+alwaysApply: true
+---
+
+# No workstation path doxxing (Perpetua-Tools — always apply)
+
+Before writing or editing **any tracked file** in this repo:
+
+1. Read `.agent/protocols/path-hygiene.md` and `.agent/AGENTS.md` § Path Hygiene.
+2. **Never** embed real `C:\<user>\...`, `/\<user>/...`, or personal Downloads/workspace trees in memory, lessons, or docs.
+3. Use **repo-relative** paths, `$REPO_ROOT` / `PERPETUA_TOOLS_ROOT`, or generic `~/.gstack/...`.
+4. All `.agent/memory` writers must call `sanitize_tracked_path_leaks()` — including `learn.py`, `graduate.py`, `review_state.py`, episodic hooks.
+5. **Reject** review-queue candidates that promote pinning a personal workspace path as canonical.
+
+Cross-repo: orama-system `.cursor/rules/no-workstation-paths.mdc` mirrors this contract.

@@ -1,0 +1,63 @@
+{
+  "id": "1cbdd2917d26",
+  "key": "manual_1cbdd2",
+  "name": "manual_1cbdd2",
+  "claim": "At end of each coord monitor window git fetch and pull --rebase origin main on both orama-system and Perpetua-Tools then push before reporting session complete; Win may land lessons and results while Mac monitors.",
+  "conditions": [
+    "before",
+    "both",
+    "complete",
+    "coord",
+    "each",
+    "end",
+    "fetch",
+    "git",
+    "land",
+    "lessons",
+    "mac",
+    "main",
+    "monitor",
+    "monitors",
+    "orama-system",
+    "origin",
+    "perpetua-tools",
+    "pull",
+    "push",
+    "rebase",
+    "reporting",
+    "results",
+    "session",
+    "while",
+    "win",
+    "window"
+  ],
+  "evidence_ids": [
+    "2026-06-28T14:52:52.260663+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T14:52:52.260663+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T14:52:52.260663+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T14:52:52.346013+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "operator step 6 post-15min sync; coord-005 Win pushed during Mac monitor",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T14:52:52.260663+00:00"
+      ],
+      "lessons_sha": "cda302ece1a5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T14:52:52.346003+00:00",
+  "reviewer": "learn.py",
+  "rationale": "operator step 6 post-15min sync; coord-005 Win pushed during Mac monitor"
+}

@@ -1,0 +1,61 @@
+{
+  "id": "8b5d45070494",
+  "key": "manual_8b5d45",
+  "name": "manual_8b5d45",
+  "claim": "When Mac and Win both push Perpetua-Tools .agent/memory in the same coord round, git pull may conflict on lessons.jsonl and LESSONS.md; union-merge all lesson rows from both sides and never drop Mac learn.py rows or Win operator-approve rows.",
+  "conditions": [
+    "agent",
+    "all",
+    "both",
+    "conflict",
+    "coord",
+    "drop",
+    "git",
+    "jsonl",
+    "learn",
+    "lesson",
+    "lessons",
+    "mac",
+    "memory",
+    "never",
+    "operator-approve",
+    "perpetua-tools",
+    "pull",
+    "push",
+    "round",
+    "rows",
+    "same",
+    "sides",
+    "union-merge",
+    "win"
+  ],
+  "evidence_ids": [
+    "2026-06-28T13:53:16.157407+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T13:53:16.157407+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T13:53:16.157407+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T13:53:16.254223+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Round 7 merge conflict b7750df vs 680a113; resolved by union",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T13:53:16.157407+00:00"
+      ],
+      "lessons_sha": "f595f8761b45"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T13:53:16.254223+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Round 7 merge conflict b7750df vs 680a113; resolved by union"
+}

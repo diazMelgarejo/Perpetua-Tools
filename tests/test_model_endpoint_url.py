@@ -24,6 +24,10 @@ class TestLoopbackAndPrivate:
     def test_127_allowed(self):
         assert validate_model_endpoint_url("http://127.0.0.1:11434") == "http://127.0.0.1:11434"
 
+    def test_bare_host_port_canonicalized(self):
+        assert validate_model_endpoint_url("localhost:1234") == "http://localhost:1234"
+        assert validate_model_endpoint_url("192.168.1.50:11434") == "http://192.168.1.50:11434"
+
     def test_rfc1918_192_allowed(self):
         url = validate_model_endpoint_url("http://192.168.254.102:1234")
         assert url == "http://192.168.254.102:1234"
@@ -83,6 +87,20 @@ class TestMalformed:
     def test_empty_rejected(self):
         with pytest.raises(ModelEndpointPolicyError, match="empty"):
             validate_model_endpoint_url("   ")
+
+    def test_malformed_port_rejected_as_policy_error(self):
+        with pytest.raises(ModelEndpointPolicyError, match="invalid endpoint URL"):
+            validate_model_endpoint_url("http://127.0.0.1:notaport")
+
+    def test_out_of_range_port_rejected_as_policy_error(self):
+        with pytest.raises(ModelEndpointPolicyError, match="invalid endpoint URL"):
+            validate_model_endpoint_url("http://127.0.0.1:99999")
+
+    def test_parse_list_skip_invalid_handles_malformed_port(self):
+        raw = "http://127.0.0.1:11434, http://127.0.0.1:notaport"
+        assert parse_model_endpoint_list(raw, skip_invalid=True) == [
+            "http://127.0.0.1:11434",
+        ]
 
 
 class TestLoggingRedaction:

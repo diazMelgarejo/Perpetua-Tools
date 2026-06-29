@@ -8,6 +8,142 @@
 
 ---
 
+## 2026-06-29 — Bucket drain + subagent fan-out (operator approved ALL) | Cursor
+
+**Approval:** operator `approve lessons` (round 10)  
+**Machine lessons:** `lesson_db15dbdc9000`, `lesson_77688462f96e`, `lesson_b545fe9db94c`
+
+32. **Subagent fan-out** — `win-coder-queue` + `win-autoresearcher-queue` in `.cursor/agents` (`lesson_db15dbdc9000`)
+33. **401 after security PR** — restart `start.ps1 --lan-peer` before peer drops (`lesson_77688462f96e`)
+34. **Stash before pull** — PT behind Mac learn rows; stash submodule/candidate drift (`lesson_b545fe9db94c`)
+
+---
+
+## 2026-06-28 — Cycle 005 coder + Ladder F (operator approved ALL) | Cursor
+
+**Approval:** operator `approve lessons` (round 9) — **ALL** to PT `.agent`  
+**Fan-out:** `2026-06-28-coord-005`  
+**Machine lessons:** `lesson_7fc75916a601`, `lesson_81a9b9806526`, `lesson_7588896135cf`, `lesson_b6d64dcb2d7f`
+
+28. **Bridge PR verify** — 38/38 tests on `subagent/win-coder/bridge-http-local`; drop `win-bridge-pr-ready.md` (`lesson_7fc75916a601`)
+29. **Ladder F** — model-routing-check dispatch gate in `graceful-degradation.md` (`lesson_81a9b9806526`)
+30. **Idle resume** — `V1_DEFERRED_BACKLOG` when queues idle >15 min (`lesson_7588896135cf`)
+31. **Peer timeout degrade** — continue local queue; retry drop when probe green (`lesson_b6d64dcb2d7f`)
+
+---
+
+## 2026-06-28 — Self-improve cycle 005 (operator approved ALL) | Cursor
+
+**Approval:** operator `approve lessons` (round 8) — **ALL** to PT `.agent`  
+**Fan-out:** `2026-06-28-coord-005`  
+**Sources:** `win-self-improve-cycle-005.md`, monitor log, queue reconcile, H5 finalize  
+**Machine lessons:** `lesson_c391481ca104`, `lesson_8b5d45070494`, `lesson_82ab64772b2b`, `lesson_2a476c761ca1`
+
+### Gold nuggets
+
+24. **PS ASCII-only** — em-dash in `coord_monitor.ps1` broke ParserError; use ASCII in Win ops scripts (`lesson_c391481ca104`)
+25. **PT memory merge** — union all rows when Mac+Win push `.agent/memory` same round (`lesson_8b5d45070494`)
+26. **H5 finalize pattern** — pull Mac results, synthesis-only, drop final, no GPU re-run (`lesson_82ab64772b2b`)
+27. **Monitor validated** — `coord_monitor.ps1` tick 5 caught coord-005 before manual poll (`lesson_2a476c761ca1`)
+
+---
+
+## 2026-06-28 — Cycle 005 H5 closed (operator approved) | Cursor
+
+**Approval:** operator `approve lessons` (round 7)  
+**Fan-out:** `2026-06-28-coord-005`  
+**Machine lessons:** `lesson_e2f8a41c7d93`
+
+23. **H5 closed** — Mac 3/3 @ 1/4/5 itp (490s) vs Win 3/3 @ 1/1/1 (280s); route autoresearch-coder to Win 27B (`lesson_e2f8a41c7d93`)
+
+---
+
+## 2026-06-28 — Queue prune + monitor playbook (operator approved) | Cursor
+
+**Approval:** operator `approve lessons` (round 6)  
+**Tool:** `win_job_queue.py` (`prune`, `complete-pending`)  
+**Machine lessons:** `lesson_c6e4f1a89d20`, `lesson_9b3d7e2f41ac`
+
+### Gold nuggets
+
+21. **Queue hygiene** — `prune` on enqueue strips mac-* deliverables and ops noise; `complete-pending` reconciles finished coord jobs (`lesson_c6e4f1a89d20`)
+22. **Active-cycle monitor** — poll probe + inbox + queue every 2–3 min; Mac H5 leg Mac-owned until dropped (`lesson_9b3d7e2f41ac`)
+
+---
+
+## 2026-06-28 — Cycle 004 sequential job queues (operator approved) | Cursor
+
+**Approval:** operator `approve lessons` (round 5)  
+**Fan-out:** `2026-06-28-coord-004`  
+**Tool:** `bin/orama-system/skills/hermes-harness/scripts/win_job_queue.py`  
+**Machine lessons:** `lesson_a3f8e2b91c04`, `lesson_7d2c1e8f5b90`
+
+### Deliverables
+
+| Role | Output |
+|------|--------|
+| autoresearcher | `gpu-results-h5-cross.md` → Mac |
+| coder | `win-frugal-spawn-policy.md` → Mac |
+
+### Gold nuggets
+
+19. **Sequential Win queues** — `win_job_queue.py` routes `win-autoresearcher-*` / `win-coder-*` cards; one active job per role; LM Studio single-tenant (`lesson_a3f8e2b91c04`)
+20. **Mac H4 closed** — Ollama 9B ~20.2s vs Win 27B ~33.1s warm clamp; H5 Win 3/3 iter-1; Mac H5 pending (`lesson_7d2c1e8f5b90`)
+
+---
+
+## 2026-06-28 — Self-improve merge FINAL + H3 routing (operator approved) | Cursor
+
+**Approval:** operator `approve lessons` (round 4) — **union** with rounds 1–3 (doctrine C)  
+**Sources:** `self-improve-merge-final-proposed.md`, `self-improve-merge-proposed.md`, `mac-self-improve-cycle-003.md`  
+**Machine lessons:** `lesson_1f9c927792ba`, `lesson_203c342c1e85` (2 new rows; remainder already in jsonl)
+
+### Union confirmation (already landed — not duplicated)
+
+| Topic | Existing lesson / doc |
+|-------|----------------------|
+| File inbox co-orchestration | `lesson_87636d658879`, `lesson_20833366511b` |
+| Mac Ollama warm / LM Studio passive | `lesson_49a5af119f6f` |
+| autoresearch HTTP-local preflight | `lesson_aeb3cd01c203` (supersedes `lesson_7791e7860857`) |
+| peer-stream / peer-file restart | `lesson_legacy_peerstream_20260628`, `lesson_130073d9e30a` |
+| Post-commit sync | `lesson_legacy_sync_rebase_20260628` |
+| Graceful degradation ladders | `lesson_c8dc70c59ac9` + `graceful-degradation.md` |
+
+### New gold nuggets (round 4)
+
+17. **H3 falsified — route by task class** — Win 27B ~10s on trivial prompts; affinity in `routing.yml` is quality/heavy → Win, latency-sensitive → Mac Ollama (`lesson_1f9c927792ba`)
+18. **Portal monitor URLs** — Mac co-orchestrator: `/co-orchestration/macos`; Win: `/peer-inbox` (`lesson_203c342c1e85`)
+
+---
+
+## 2026-06-28 — Cycle 003 + graceful degradation ladders (operator approved) | Cursor
+
+**Approval:** operator `approve lessons` (round 3)  
+**Fan-out:** `2026-06-28-coord-003`  
+**Canonical reference:** orama `bin/orama-system/skills/oramasys-method/references/graceful-degradation.md`  
+**Machine lessons:** `lesson_c8dc70c59ac9` … `lesson_0ec02977f23a` (6 rows in `.agent/memory/semantic/lessons.jsonl`)
+
+### Cycle 003 deliverables (Win)
+
+| Subagent | Branch | Dropped to Mac |
+|----------|--------|------------------|
+| autoresearcher | `subagent/win-autoresearcher/h5-gpu-harness` | `gpu-results-h5.md` (3/3 PASS, iter 1) |
+| coder | `subagent/win-coder/bridge-http-local` | `win-bridge-spike-notes.md` |
+| doc-sync | `subagent/win-orchestrator/doc-sync-peer-inbox` | `win-doc-sync-peer-inbox.md` |
+
+**Portal:** Win lane `/peer-inbox`; `/co-orchestration/windows` → 307 redirect (`1679b84`).
+
+### Graceful degradation gold nuggets
+
+11. **Unified ladders** — search (gbrain→CRG→web), inference (host-local→validated fallback→cloud budget cutoff), LAN (ws-peer→SSE, file inbox→partial fan-out), autoresearch (`http-local`→SSH) (`lesson_c8dc70c59ac9`)
+12. **Win canonical inbox** — `platform/windows/peer_inbox_portal.py`; Hermes skin deleted; legacy URLs redirect (`lesson_0762f924239d`)
+13. **Subagent branches** — `subagent/<role>/<topic>` for mutations only; inbox on `main`; operator PR review (`lesson_d0dfe41fb420`)
+14. **HTTP-local preflight** — `AUTORESEARCH_PREFLIGHT_MODE=auto` skips SSH when `GPU_BOX` is local (`lesson_aeb3cd01c203`)
+15. **H5 harness** — `run_h5_gpu_benchmark.py`; iterations-to-pass on Win 27B; Mac 9B leg still pending (`lesson_b7fb9002c24f`)
+16. **Subagent usage limit** — when Task subagents hit quota, parent executes inline and still drops inbox deliverables (`lesson_0ec02977f23a`)
+
+---
+
 ## 2026-06-28 — Portal dashboard `/` 500 after pull/restart (operator approved) | Cursor
 
 **Approval:** operator `approve lessons` (round 2) — memory **union** per doctrine C  

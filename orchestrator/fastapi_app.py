@@ -29,6 +29,7 @@ from orchestrator import autoresearch_bridge
 from orchestrator import __version__ as _ORCHESTRATOR_VERSION
 from orchestrator.agent_tracker import AgentTracker
 from orchestrator.connectivity import backend_health_map
+from utils.model_endpoint_url import ModelEndpointPolicyError, validate_model_endpoint_url
 from orchestrator.control_plane import (
     bootstrap_runtime,
     load_runtime_payload,
@@ -396,14 +397,24 @@ def health(
     lm_studio_host: str = os.getenv("LM_STUDIO_MAC_ENDPOINT", "http://localhost:1234"),
     mlx_host: str = "http://localhost:8081",
 ) -> Dict[str, Any]:
+    def _validated(raw: str, default: str) -> str:
+        candidate = (raw or default).strip()
+        try:
+            return validate_model_endpoint_url(candidate)
+        except ModelEndpointPolicyError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    safe_ollama = _validated(ollama_host, "http://localhost:11434")
+    safe_lm = _validated(lm_studio_host, "http://localhost:1234")
+    safe_mlx = _validated(mlx_host, "http://localhost:8081")
     return {
         "status": "ok",
         "version": _ORCHESTRATOR_VERSION,
         "runtime": _runtime_summary(),
         "backends": backend_health_map(
-            ollama_host=ollama_host,
-            lm_studio_host=lm_studio_host,
-            mlx_host=mlx_host,
+            ollama_host=safe_ollama,
+            lm_studio_host=safe_lm,
+            mlx_host=safe_mlx,
         ),
     }
 
@@ -427,13 +438,20 @@ async def runtime_bootstrap(
     autoresearch: bool = Query(True),
     run_tag: Optional[str] = Query(None),
 ) -> Dict[str, Any]:
-    return await bootstrap_runtime(
+    payload = await bootstrap_runtime(
         interactive=False,
         force_gateway=force_gateway,
         run_autoresearch_preflight=autoresearch,
         run_tag=run_tag,
         print_progress=False,
     )
+    return {
+        "schema_version": payload.get("schema_version"),
+        "generated_at": payload.get("generated_at"),
+        "stages": payload.get("stages"),
+        "autoresearch": payload.get("autoresearch"),
+        "runtime": redact_runtime_payload(payload),
+    }
 
 
 @app.get("/agents", tags=["agents"])
