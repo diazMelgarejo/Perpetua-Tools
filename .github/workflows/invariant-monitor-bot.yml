@@ -26,21 +26,26 @@ jobs:
           pip install fastapi aiohttp redis httpx python-dotenv loguru pydantic slowapi respx
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
+      - name: Check endpoint policy core wiring
+        run: |
+          python scripts/security/check_endpoint_policy_core.py
+
       - name: Run transport invariant tests
         run: |
-          pytest tests/test_scheme_preservation.py \
+          pytest tests/test_endpoint_policy_core.py \
+            tests/test_scheme_preservation.py \
             tests/test_hardware_routing.py::test_active_tilting_ollama_win_uses_model_port_not_lmstudio \
             tests/test_model_endpoint_url.py -q --tb=short
         env:
           ORAMA_ENABLED: "false"
 
-      - name: Detect transport regression (http://http in source)
+      - name: Detect transport regression (double scheme in source)
         run: |
-          if grep -R --include='*.py' -n 'http://http' orchestrator src; then
-            echo "FAIL: http://http transport mojibake in production Python"
+          if grep -R --include='*.py' -n 'http://http\|https://https' orchestrator src; then
+            echo "FAIL: double-scheme transport mojibake in production Python"
             exit 1
           fi
-          echo "OK: no http://http in orchestrator/ or src/"
+          echo "OK: no double-scheme transport mojibake in orchestrator/ or src/"
 
       - name: Comment on PR if failure
         if: failure() && github.event_name == 'pull_request'
@@ -56,6 +61,8 @@ jobs:
                 '',
                 'Transport or endpoint-policy invariants failed. See the workflow log.',
                 '',
+                '- scripts/security/check_endpoint_policy_core.py',
+                '- tests/test_endpoint_policy_core.py',
                 '- tests/test_scheme_preservation.py',
                 '- tests/test_model_endpoint_url.py',
               ].join('\n'),
