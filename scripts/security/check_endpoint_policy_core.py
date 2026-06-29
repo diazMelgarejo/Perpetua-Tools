@@ -20,6 +20,7 @@ REQUIRED_FILES = [
     ".agent/endpoint-policy-contract.yml",
     ".github/workflows/security-invariant-enforcer.yml",
     ".github/workflows/invariant-monitor-bot.yml",
+    "AGENTS.md",
 ]
 
 WORKFLOWS = [
@@ -83,10 +84,31 @@ def assert_contract_names_peer_repos() -> None:
         "endpoint-transport-policy",
         "controlled-urlparse-boundary",
         "backend-port-isolation",
+        ".github/workflows/endpoint-policy-contract.yml",
+        "scripts/security/check_endpoint_policy_contract.py",
+        "bin/orama-system/skills/oramasys-method/SKILL.md",
+        "bin/orama-system/skills/oramasys-method/references/integrative-merge.md",
+        "bin/orama-system/skills/git-history-surgery/SKILL.md",
+        ".claude/skills/hardware-policy/SKILL.md",
     ]
     missing = [needle for needle in required if needle not in text]
     if missing:
         fail(f"contract missing required entries: {', '.join(missing)}")
+
+
+def assert_agents_guidance_names_skills() -> None:
+    text = read("AGENTS.md")
+    required = [
+        "Endpoint transport policy",
+        "src/utils/endpoint_policy_core.py",
+        "bin/orama-system/skills/oramasys-method/SKILL.md",
+        "bin/orama-system/skills/oramasys-method/references/integrative-merge.md",
+        "bin/orama-system/skills/git-history-surgery/SKILL.md",
+        ".claude/skills/hardware-policy/SKILL.md",
+    ]
+    missing = [needle for needle in required if needle not in text]
+    if missing:
+        fail(f"AGENTS.md missing required endpoint guidance: {', '.join(missing)}")
 
 
 def assert_no_double_scheme_literals() -> None:
@@ -103,6 +125,7 @@ def main() -> None:
     assert_core_owns_urlparse_boundary()
     assert_workflows_run_policy()
     assert_contract_names_peer_repos()
+    assert_agents_guidance_names_skills()
     assert_no_double_scheme_literals()
     print("endpoint policy invariants passed")
 
