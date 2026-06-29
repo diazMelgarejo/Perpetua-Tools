@@ -183,29 +183,6 @@
       "ts": "2026-06-29T03:04:31.284927+00:00",
       "action": "staged",
       "reviewer": "auto_dream"
-    },
-    {
-<<<<<<< HEAD
-      "ts": "2026-06-29T03:08:32.581459+00:00",
-=======
-      "ts": "2026-06-29T03:06:31.471915+00:00",
->>>>>>> 387556e (chore(memory): coord-025 learn tick — triple rinse sync unblock)
-      "action": "staged",
-      "reviewer": "auto_dream"
-    },
-    {
-<<<<<<< HEAD
-      "ts": "2026-06-29T03:08:32.709487+00:00",
-      "action": "staged",
-      "reviewer": "auto_dream"
-    },
-    {
-      "ts": "2026-06-29T03:08:32.835592+00:00",
-=======
-      "ts": "2026-06-29T03:06:36.541754+00:00",
->>>>>>> 387556e (chore(memory): coord-025 learn tick — triple rinse sync unblock)
-      "action": "staged",
-      "reviewer": "auto_dream"
     }
   ],
   "rejection_count": 0
