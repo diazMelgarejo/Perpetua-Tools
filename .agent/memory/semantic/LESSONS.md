@@ -301,3 +301,4 @@
 - Mac coord_pulse.sh must exit when mac_job_queue is not idle; do not spawn cursor-agent after logging skip-defer or you double-run with manual cycle.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_907f55684408 -->
 - mac_job_queue _priority must use the same bold-tolerant Priority regex as win_job_queue so assignment cards with markdown bold sort correctly.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_97a37458ba78 -->
 - Mac pulse snapshots inbox filenames to last_pulse_seen.json for diff; Win pulse relies on win_job_queue enqueue only without inbox filename diff in the tick script.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_9765a97b0dc4 -->
+- When Mac merges a PT PR during Win coord_monitor listen window, pull main immediately and run combined frugality plus bridge test suites before dropping merge-ack to Mac peer.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_396409d55e60 -->
