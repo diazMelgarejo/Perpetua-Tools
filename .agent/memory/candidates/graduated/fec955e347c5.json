@@ -1,0 +1,38 @@
+{
+  "id": "fec955e347c5",
+  "key": "manual_fec955",
+  "name": "manual_fec955",
+  "claim": "mac-coord-023-queue-ack reconciled 18 Win inbox drops on Mac; remaining Mac work is mac-orchestrator-self-improve-003 and researcher GPU backlog \u2014 Win queue empty is expected post-drain",
+  "conditions": [
+    "researcher"
+  ],
+  "evidence_ids": [
+    "2026-06-29T03:04:30.617140+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T03:04:30.617140+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T03:04:30.617140+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T03:04:30.712643+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "mac-coord-023-queue-ack.md on main",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T03:04:30.617140+00:00"
+      ],
+      "lessons_sha": "95697a602bdf"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T03:04:30.712643+00:00",
+  "reviewer": "learn.py",
+  "rationale": "mac-coord-023-queue-ack.md on main"
+}
