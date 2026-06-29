@@ -21,7 +21,7 @@
 | Deliverable | Status |
 |-------------|--------|
 | L1 intra-machine dispatch (`/api/l1/*`) | **queued** `win-coder-l1-comms-autoplan-backlog.md` — blocked on P5 swarm HITL merge |
-| `orchestrator/frugality_router.py` single chokepoint | **deferred** — doctrine in graceful-degradation ladders |
+| `orchestrator/frugality_router.py` single chokepoint | **spike on PR #199** — merge pending |
 | G1 local-first ≥ 85% telemetry | measure post-coord |
 | G2 skills auto-loaded ≤ 5 | partial (oramasys-method triggers) |
 | `ORAMASYS_OFFLINE=1` tier ≥ 3 reject | verify in acceptance test |
@@ -45,9 +45,10 @@
 
 ## Pending operator actions
 
-1. **PR:** `subagent/win-coder/bridge-http-local` → PT `main` (`win-bridge-pr-ready.md`)
-2. **PR:** `subagent/mac-researcher/h5-ollama-parallel` → orama `main` (optional)
-3. **Mac peer:** restart portal if `probe_lan_peer` timeout (`PORTAL_BIND_LAN=1`)
+1. **PR:** PT **#183** merge (`cursor/review-bridge-http-local-c4ae`) — 5/5 checks; Win reconcile done
+2. **PR:** PT **#199** review (`subagent/mac-orchestrator/frugality-router-spike`) — 9 checks pass
+3. **Pulse P1:** `./orama-system/scripts/install_coord_pulse.sh` (launchd 15m) — landed coord-009
+4. **Mac peer:** restart portal if `probe_lan_peer` timeout (`PORTAL_BIND_LAN=1`)
 
 ## Resume trigger
 
