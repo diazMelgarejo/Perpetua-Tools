@@ -348,7 +348,11 @@
 - mac-coord-023-queue-ack reconciled 18 Win inbox drops on Mac; remaining Mac work is mac-orchestrator-self-improve-003 and researcher GPU backlog — Win queue empty is expected post-drain  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_fec955e347c5 -->
 - P5-STATUS on main tracks branch progress without merging code: T1-T2 on cursor/security-pr3-swarm-approval-f559; portal on main still has approved:true until PR merges  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_ed0ef7c21784 -->
 - coord-024 drained orchestrator queue to zero; researcher h4 h5 remain for pulse; triple rinse uses timed coord_pulse and always runs 3x15m listen per outer rinse  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_1eb60ac2018e -->
+<<<<<<< HEAD
 - mac-orchestrator-self-improve-003 is superseded per mac-self-improve-cycle-003-ack.md — Win reconciles PT branch subagent/mac-orchestrator/self-improve-memory with main landmark note, not new feature work  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_6c8aed1a143d -->
 - win-code-review.md deliverable is acked on Mac; follow-on Win work is playbook doc pass (swarm_state.md ownership) on subagent/win-coder/mac-co-orchestrator-playbook — not re-running full bridge review  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_723cc8acbe94 -->
 - When Win queue is drained post coord-023, operator must fan out new win-coder-* and win-autoresearcher-* assignment cards to local inbox and win_job_queue.py enqueue before pulse can dispatch jobs  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7be44425b675 -->
 - Researcher GPU backlog after H5: next cycle is preflight/doc spike (h6) on subagent/win-autoresearcher/researcher-backlog-h6 unless Mac drops new hypothesis card  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_0bf04410f4b3 -->
+=======
+- coord triple rinse tick: pulse job done, pushed sync  <!-- status=accepted confidence=0.36 evidence=1 id=lesson_497b441557d4 -->
+>>>>>>> 387556e (chore(memory): coord-025 learn tick — triple rinse sync unblock)
