@@ -1,0 +1,38 @@
+{
+  "id": "ed0ef7c21784",
+  "key": "manual_ed0ef7",
+  "name": "manual_ed0ef7",
+  "claim": "P5-STATUS on main tracks branch progress without merging code: T1-T2 on cursor/security-pr3-swarm-approval-f559; portal on main still has approved:true until PR merges",
+  "conditions": [
+    "tracker"
+  ],
+  "evidence_ids": [
+    "2026-06-29T03:04:30.790996+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T03:04:30.790996+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T03:04:30.790996+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T03:04:30.892182+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "P5-STATUS coord-023 update",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T03:04:30.790996+00:00"
+      ],
+      "lessons_sha": "786ae0b6672d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T03:04:30.892182+00:00",
+  "reviewer": "learn.py",
+  "rationale": "P5-STATUS coord-023 update"
+}
