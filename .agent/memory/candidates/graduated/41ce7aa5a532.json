@@ -1,0 +1,55 @@
+{
+  "id": "41ce7aa5a532",
+  "key": "manual_41ce7a",
+  "name": "manual_41ce7a",
+  "claim": "After each coder queue job completes, run coord_monitor 15 minutes then Mac peer probe, push sync, and batch learn.py before second push.",
+  "conditions": [
+    "after",
+    "batch",
+    "before",
+    "coder",
+    "completes",
+    "coord_monitor",
+    "each",
+    "job",
+    "learn",
+    "mac",
+    "minutes",
+    "peer",
+    "probe",
+    "push",
+    "queue",
+    "run",
+    "second",
+    "sync"
+  ],
+  "evidence_ids": [
+    "2026-06-29T00:38:57.013418+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T00:38:57.013418+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T00:38:57.013418+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T00:38:57.115835+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "operator idle-resume pattern for Win LAN co-orchestration.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T00:38:57.013418+00:00"
+      ],
+      "lessons_sha": "623cf754cc2b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T00:38:57.115835+00:00",
+  "reviewer": "learn.py",
+  "rationale": "operator idle-resume pattern for Win LAN co-orchestration."
+}

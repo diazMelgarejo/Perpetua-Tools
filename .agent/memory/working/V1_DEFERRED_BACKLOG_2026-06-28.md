@@ -20,6 +20,7 @@
 
 | Deliverable | Status |
 |-------------|--------|
+| L1 intra-machine dispatch (`/api/l1/*`) | **queued** `win-coder-l1-comms-autoplan-backlog.md` — blocked on P5 swarm HITL merge |
 | `orchestrator/frugality_router.py` single chokepoint | **deferred** — doctrine in graceful-degradation ladders |
 | G1 local-first ≥ 85% telemetry | measure post-coord |
 | G2 skills auto-loaded ≤ 5 | partial (oramasys-method triggers) |
