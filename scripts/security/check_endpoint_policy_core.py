@@ -1,0 +1,111 @@
+#!/usr/bin/env python3
+"""Check endpoint transport policy wiring.
+
+This is intentionally structural: unit tests validate behavior, while this
+script verifies that routing code and CI continue to use the shared policy
+boundary instead of reintroducing local URL reconstruction.
+"""
+from __future__ import annotations
+
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+
+REQUIRED_FILES = [
+    "src/utils/endpoint_policy_core.py",
+    "tests/test_endpoint_policy_core.py",
+    "tests/test_scheme_preservation.py",
+    "tests/test_hardware_routing.py",
+    "scripts/security/check_endpoint_policy_core.py",
+    ".agent/endpoint-policy-contract.yml",
+    ".github/workflows/security-invariant-enforcer.yml",
+    ".github/workflows/invariant-monitor-bot.yml",
+]
+
+WORKFLOWS = [
+    ".github/workflows/security-invariant-enforcer.yml",
+    ".github/workflows/invariant-monitor-bot.yml",
+]
+
+
+def read(path: str) -> str:
+    return (ROOT / path).read_text(encoding="utf-8")
+
+
+def fail(message: str) -> None:
+    raise SystemExit(f"endpoint policy invariant failed: {message}")
+
+
+def assert_required_files() -> None:
+    missing = [path for path in REQUIRED_FILES if not (ROOT / path).exists()]
+    if missing:
+        fail(f"missing required files: {', '.join(missing)}")
+
+
+def assert_model_registry_uses_core() -> None:
+    text = read("orchestrator/model_registry.py")
+    if "from utils.endpoint_policy_core import build_transport_url" not in text:
+        fail("model_registry.py must import build_transport_url from endpoint_policy_core")
+    if "from urllib.parse import urlparse" in text or "urlparse(" in text:
+        fail("model_registry.py must not parse transport URLs directly")
+    if "http://{hostname}" in text or "http://{host}" in text:
+        fail("model_registry.py must not hardcode http reconstruction")
+
+
+def assert_core_owns_urlparse_boundary() -> None:
+    text = read("src/utils/endpoint_policy_core.py")
+    required = [
+        "class TransportIdentity",
+        "def parse_transport_identity",
+        "def build_transport_url",
+        "from urllib.parse import urlparse",
+        "_ALLOWED_SCHEMES",
+    ]
+    missing = [needle for needle in required if needle not in text]
+    if missing:
+        fail(f"endpoint_policy_core.py missing expected boundary symbols: {', '.join(missing)}")
+
+
+def assert_workflows_run_policy() -> None:
+    for workflow in WORKFLOWS:
+        text = read(workflow)
+        if "tests/test_endpoint_policy_core.py" not in text:
+            fail(f"{workflow} must run endpoint policy core tests")
+        if "scripts/security/check_endpoint_policy_core.py" not in text:
+            fail(f"{workflow} must run endpoint policy checker")
+
+
+def assert_contract_names_peer_repos() -> None:
+    text = read(".agent/endpoint-policy-contract.yml")
+    required = [
+        "diazMelgarejo/Perpetua-Tools",
+        "diazMelgarejo/orama-system",
+        "endpoint-transport-policy",
+        "controlled-urlparse-boundary",
+        "backend-port-isolation",
+    ]
+    missing = [needle for needle in required if needle not in text]
+    if missing:
+        fail(f"contract missing required entries: {', '.join(missing)}")
+
+
+def assert_no_double_scheme_literals() -> None:
+    for folder in ("orchestrator", "src"):
+        for path in (ROOT / folder).rglob("*.py"):
+            text = path.read_text(encoding="utf-8")
+            if "http://http" in text or "https://https" in text:
+                fail(f"double-scheme literal found in {path.relative_to(ROOT)}")
+
+
+def main() -> None:
+    assert_required_files()
+    assert_model_registry_uses_core()
+    assert_core_owns_urlparse_boundary()
+    assert_workflows_run_policy()
+    assert_contract_names_peer_repos()
+    assert_no_double_scheme_literals()
+    print("endpoint policy invariants passed")
+
+
+if __name__ == "__main__":
+    main()
