@@ -295,3 +295,4 @@
 - Mac mac-cycle inbox drops are informational; synthesize win-coder assignment cards for win_job_queue pickup  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_fc448885c51a -->
 - win_job_queue next must skip BLOCKED_PENDING jobs same as coord_pulse.ps1 to avoid claiming L1 before P5  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_3ab1237a6625 -->
 - Parse bold markdown Priority fields in assignment cards when computing queue sort order  <!-- status=accepted confidence=0.535 evidence=1 id=lesson_4d3962e3dece -->
+- Coord cycles 010-012: install coord-pulse launchd, mac_job_queue P2 mirror for Mac inbox, merge PT #183 after Win reconcile; 3x15m listen loop between jobs.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_362521b44592 -->
