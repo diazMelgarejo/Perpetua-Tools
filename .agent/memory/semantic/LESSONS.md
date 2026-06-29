@@ -326,3 +326,4 @@
 - Win queue idle after job burst is expected; synthesize win-coder cards from Mac inbox intel when orchestrator has backlog.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_6a40e7cdcc09 -->
 - Post-ship rinse: learn all interaction lessons, auto_dream x3, push both repos, peer drop artifacts, coord_pulse dry-run x3, coord_monitor 15m listen.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_a5d22ead6088 -->
 - P5 T2 next: api_swarm_preview returns preview_id approval_token expires_at signed via sign_operator_payload with assignments_hash in canonical payload.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_aa77d4508b52 -->
+- P5 T2 api_swarm_preview returns preview_id approval_token expires_at via _sign_swarm_preview and assignments_hash; preview tests need bearer header when auth enforced.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_f3147e01a67d -->
