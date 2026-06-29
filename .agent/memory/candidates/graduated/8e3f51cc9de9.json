@@ -1,0 +1,54 @@
+{
+  "id": "8e3f51cc9de9",
+  "key": "manual_8e3f51",
+  "name": "manual_8e3f51",
+  "claim": "PT lessons.jsonl parallel Mac Win pushes cause rebase conflicts; union-merge jsonl lines split concatenated entries then render_lessons.py before rebase --continue.",
+  "conditions": [
+    "before",
+    "cause",
+    "concatenated",
+    "conflicts",
+    "continue",
+    "entries",
+    "jsonl",
+    "lessons",
+    "lines",
+    "mac",
+    "parallel",
+    "pushes",
+    "rebase",
+    "render_lessons",
+    "split",
+    "union-merge",
+    "win"
+  ],
+  "evidence_ids": [
+    "2026-06-29T02:33:08.877277+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T02:33:08.877277+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T02:33:08.877277+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T02:33:08.968905+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-017-019 lessons sync",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T02:33:08.877277+00:00"
+      ],
+      "lessons_sha": "17fc1ac6bb60"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T02:33:08.968905+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-017-019 lessons sync"
+}
