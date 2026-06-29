@@ -15,6 +15,15 @@ _LINUX_HOME      = re.compile(r"/home/([^/\s\"]+)/")
 _LINUX_HOME_TAIL = re.compile(r"/home/([^/\s\"]+)(?=[\"\'\s]|$)")
 _WIN_HOME      = re.compile(r"(?i)C:\\Users\\[^\\]+\\")
 _WIN_HOME_TAIL = re.compile(r"(?i)C:\\Users\\[^\\\"\s]+")
+# Workspace-tree doxxing: even after home→%USERPROFILE% substitution, Downloads/SKILLS.md
+# layout must not persist in tracked memory (LINT-006 antipattern).
+_WORKSPACE_DOXX_WIN = re.compile(
+    r"(?i)%USERPROFILE%\\Downloads\\SKILLS\.md\\u?l?trathink(?:\\[^\\\"\s]*)?"
+)
+_WORKSPACE_DOXX_UNIX = re.compile(
+    r"(?i)\$HOME/Downloads/SKILLS\.md/u?l?trathink(?:/[^\s\"']*)?"
+)
+_WORKSPACE_ROOT = "<workspace-root>"
 
 REVIEW_QUEUE_DYNAMIC_MARKER = "<!-- review-queue-dynamic -->"
 
@@ -29,6 +38,8 @@ def sanitize_tracked_path_leaks(text: str) -> str:
     text = _LINUX_HOME_TAIL.sub("$HOME", text)  # same for Linux /home/user
     text = _WIN_HOME.sub(lambda _m: "%USERPROFILE%\\", text)
     text = _WIN_HOME_TAIL.sub("%USERPROFILE%", text)
+    text = _WORKSPACE_DOXX_WIN.sub(_WORKSPACE_ROOT, text)
+    text = _WORKSPACE_DOXX_UNIX.sub(_WORKSPACE_ROOT, text)
     return text
 
 
