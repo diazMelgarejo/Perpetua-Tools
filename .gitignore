@@ -113,3 +113,6 @@ vendor/oramaclaw/
 
 # Episodic runtime logs (not AGENT_LEARNINGS.jsonl)
 .agent/memory/episodic/*.log
+
+# Local build/node stamp (generated per install; never commit)
+**/.node_stamp
