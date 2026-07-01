@@ -40,7 +40,7 @@ mac_only:
   - qwen3.5:9b-nvfp4                                        # Mac orchestration / inference
   - bge-m3                                                  # gbrain + CRG embeddings (1024-dim)
 
-# HARD POLICY: these models MUST dispatch to lmstudio-win (192.168.254.103:1234).
+# HARD POLICY: these models MUST dispatch to lmstudio-win (192.168.9.18:1234).
 # Selector will refuse to route them to lmstudio-mac (mirror) or anywhere else.
 windows_only:
   - qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2    # RTX 3080 GGUF — heavy reasoning

@@ -1,0 +1,55 @@
+{
+  "id": "338fa8879fdf",
+  "key": "manual_338fa8",
+  "name": "manual_338fa8",
+  "claim": "coord_monitor 15m ticks should treat Mac peer probe success as heartbeat; merge lessons.jsonl with union not ff-only when Mac lands rows during Win idle.",
+  "conditions": [
+    "coord_monitor",
+    "during",
+    "ff-only",
+    "heartbeat",
+    "idle",
+    "jsonl",
+    "lands",
+    "lessons",
+    "mac",
+    "merge",
+    "peer",
+    "probe",
+    "rows",
+    "success",
+    "ticks",
+    "treat",
+    "union",
+    "win"
+  ],
+  "evidence_ids": [
+    "2026-06-29T00:56:09.076148+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T00:56:09.076148+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T00:56:09.076148+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T00:56:09.186589+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "post-monitor 2026-06-29: peer green all ticks, pull needed merge on lessons",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T00:56:09.076148+00:00"
+      ],
+      "lessons_sha": "3d520868036d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T00:56:09.186589+00:00",
+  "reviewer": "learn.py",
+  "rationale": "post-monitor 2026-06-29: peer green all ticks, pull needed merge on lessons"
+}

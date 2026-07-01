@@ -6,6 +6,7 @@ All SSH/scp/claude calls are mocked — no GPU runner required.
 """
 from __future__ import annotations
 
+import json
 import sys
 import textwrap
 from pathlib import Path
@@ -172,6 +173,11 @@ class TestSyncResult:
 # ── sync_autoresearch_idempotent ──────────────────────────────────────────────
 
 class TestSyncAutoresearchIdempotent:
+    @pytest.fixture(autouse=True)
+    def force_ssh_preflight(self, monkeypatch):
+        """Existing tests target the remote SSH path."""
+        monkeypatch.setattr(bridge, "use_http_local_preflight", lambda: False)
+
     def test_uses_default_branch_not_master(self):
         """SSH command must reference bridge.AUTORESEARCH_DEFAULT_BRANCH, not 'master'."""
         mock_result = MagicMock()
@@ -213,6 +219,58 @@ class TestSyncAutoresearchIdempotent:
             result = bridge.sync_autoresearch_idempotent()
         assert result.ok is False
         assert "timeout" in result.error.lower()
+
+
+# ── HTTP-local preflight (Win LAN co-orchestration) ───────────────────────────
+
+class TestHttpLocalPreflight:
+    def test_use_http_local_when_gpu_box_is_loopback(self, monkeypatch):
+        monkeypatch.setattr(bridge, "GPU_BOX", "WINUSER@127.0.0.1")
+        monkeypatch.setattr(bridge, "AUTORESEARCH_PREFLIGHT_MODE", "auto")
+        assert bridge.use_http_local_preflight() is True
+
+    def test_sync_local_skips_ssh(self, monkeypatch, patch_swarm_path):
+        repo = patch_swarm_path
+        (repo / ".git").mkdir()
+        monkeypatch.setattr(bridge, "use_http_local_preflight", lambda: True)
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = "abc123def"
+        mock_result.stderr = ""
+        with patch("subprocess.run", return_value=mock_result) as mock_run:
+            result = bridge.sync_autoresearch_idempotent()
+        assert result.ok is True
+        assert result.sha == "abc123def"
+        for call_args in mock_run.call_args_list:
+            cmd = call_args[0][0]
+            assert cmd[0] == "git"
+            assert "ssh" not in cmd
+
+    def test_probe_lm_studio_http_success(self, monkeypatch):
+        payload = json.dumps({"data": [{"id": "m1"}, {"id": "m2"}]})
+        mock_resp = MagicMock()
+        mock_resp.status = 200
+        mock_resp.read.return_value = payload.encode("utf-8")
+        mock_resp.__enter__ = MagicMock(return_value=mock_resp)
+        mock_resp.__exit__ = MagicMock(return_value=False)
+        with patch("urllib.request.urlopen", return_value=mock_resp):
+            result = bridge.probe_lm_studio_http()
+        assert result.ok is True
+        assert result.sha == "2"
+
+    def test_preflight_exposes_http_local_fields(self):
+        with patch.object(bridge, "install_autoresearch_plugin",
+                          return_value=SyncResult(ok=True)), \
+             patch.object(bridge, "bootstrap_autoresearch_on_runner",
+                          return_value=SyncResult(ok=True, sha="deadbeef")), \
+             patch.object(bridge, "use_http_local_preflight", return_value=True), \
+             patch.object(bridge, "probe_lm_studio_http",
+                          return_value=SyncResult(ok=True, sha="3")):
+            result = bridge.preflight()
+        assert result["gpu_local"] is True
+        assert result["preflight_mode"] == "http-local"
+        assert result["lm_studio_ok"] is True
+        assert result["lm_studio_models"] == "3"
 
 
 # ── install_autoresearch_plugin ───────────────────────────────────────────────

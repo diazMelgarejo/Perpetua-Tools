@@ -12,7 +12,7 @@
     "serialize"
   ],
   "evidence_ids": [
-    "2026-04-19T22:09:32.170652"
+    "2026-04-19T22:09:32.170652+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
@@ -20,12 +20,12 @@
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-04-19T22:09:32.170652",
+      "ts": "2026-04-19T22:09:32.170652+00:00",
       "action": "staged",
       "reviewer": "learn"
     },
     {
-      "ts": "2026-04-19T22:09:32.224058",
+      "ts": "2026-04-19T22:09:32.224058+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
       "notes": "prior incidents with mixed local/UTC timestamps in order ledger",
@@ -37,7 +37,7 @@
     }
   ],
   "rejection_count": 0,
-  "accepted_at": "2026-04-19T22:09:32.224053",
+  "accepted_at": "2026-04-19T22:09:32.224053+00:00",
   "reviewer": "learn.py",
   "rationale": "prior incidents with mixed local/UTC timestamps in order ledger"
 }

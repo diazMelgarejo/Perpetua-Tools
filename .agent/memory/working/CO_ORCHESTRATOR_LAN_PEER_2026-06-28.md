@@ -57,6 +57,7 @@ Canonical: `../../orama-system/bin/orama-system/skills/hermes-harness/references
 7. **Mac unblock** — pull `>= 9f89051`, `./start.sh --lan-peer` for peer-file
 8. **Joint auth** — PT `.state` token + orama env lanes → `auth_mode: joint`
 9. **Mac inference** — Ollama warm (`:11434`) primary; LM Studio passive (`:1234`)
+10. **Portal `/` 500 on Win** — pull orama `>= 435d27a`, restart `start.ps1 --lan-peer`; `/health` can PASS while `/` 500 on stale process
 
 ## Mac commands (OpenClaw co-orchestrator + subagents)
 
@@ -91,4 +92,4 @@ python bin\orama-system\skills\hermes-harness\scripts\lan_peer_assign.py drop --
 
 ## Self-improve merge
 
-Drafts: `mac-lessons-draft.md` (inbox) + Win runtime results — merged into PT `.agent` via this session. `docs/LESSONS.md` human section updated; orama `docs/LESSONS.md` not touched unless operator requests.
+**Status:** APPROVED 2026-06-28 — `docs/LESSONS.md` updated on PT + orama `main`

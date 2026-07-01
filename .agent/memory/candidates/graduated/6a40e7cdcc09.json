@@ -1,0 +1,52 @@
+{
+  "id": "6a40e7cdcc09",
+  "key": "manual_6a40e7",
+  "name": "manual_6a40e7",
+  "claim": "Win queue idle after job burst is expected; synthesize win-coder cards from Mac inbox intel when orchestrator has backlog.",
+  "conditions": [
+    "after",
+    "backlog",
+    "burst",
+    "cards",
+    "expected",
+    "idle",
+    "inbox",
+    "intel",
+    "job",
+    "mac",
+    "orchestrator",
+    "queue",
+    "synthesize",
+    "win",
+    "win-coder"
+  ],
+  "evidence_ids": [
+    "2026-06-29T02:33:09.221782+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T02:33:09.221782+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T02:33:09.221782+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T02:33:09.315097+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord pulse gate idle",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T02:33:09.221782+00:00"
+      ],
+      "lessons_sha": "ce708dc79562"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T02:33:09.315097+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord pulse gate idle"
+}

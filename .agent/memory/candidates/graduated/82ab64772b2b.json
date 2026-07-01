@@ -1,0 +1,60 @@
+{
+  "id": "82ab64772b2b",
+  "key": "manual_82ab64",
+  "name": "manual_82ab64",
+  "claim": "H5 finalize Win autoresearcher job pattern: git pull Mac results, read mac-h5-comparison.md, synthesis-only update gpu-results-h5-cross.md, drop gpu-results-h5-final.md to peer, win_job_queue complete autoresearcher without GPU re-run (B1 frugality).",
+  "conditions": [
+    "autoresearcher",
+    "complete",
+    "drop",
+    "finalize",
+    "frugality",
+    "git",
+    "gpu",
+    "gpu-results-h5-cross",
+    "gpu-results-h5-final",
+    "job",
+    "mac",
+    "mac-h5-comparison",
+    "pattern",
+    "peer",
+    "pull",
+    "re-run",
+    "read",
+    "results",
+    "synthesis-only",
+    "update",
+    "win",
+    "win_job_queue",
+    "without"
+  ],
+  "evidence_ids": [
+    "2026-06-28T13:53:16.332993+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T13:53:16.332993+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T13:53:16.332993+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T13:53:16.427078+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-005 win-autoresearcher-h5-finalize.md executed 2026-06-28",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T13:53:16.332993+00:00"
+      ],
+      "lessons_sha": "ddb2407583db"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T13:53:16.427078+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-005 win-autoresearcher-h5-finalize.md executed 2026-06-28"
+}

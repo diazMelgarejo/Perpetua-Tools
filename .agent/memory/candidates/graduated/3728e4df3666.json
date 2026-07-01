@@ -29,7 +29,7 @@
     "wrong"
   ],
   "evidence_ids": [
-    "2026-06-22T12:08:33.086517"
+    "2026-06-22T12:08:33.086517+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
@@ -37,12 +37,12 @@
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-22T12:08:33.086517",
+      "ts": "2026-06-22T12:08:33.086517+00:00",
       "action": "staged",
       "reviewer": "learn"
     },
     {
-      "ts": "2026-06-22T12:08:33.179780",
+      "ts": "2026-06-22T12:08:33.179780+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
       "notes": "Mined from orama-system docs/LESSONS.md 2026-06-22 (DO-NOT catastrophic assumption failure): wrote to guessed .agents instead of explicit .agent on a stale branch. Exact failure AFRP exists to prevent.",
@@ -54,7 +54,7 @@
     }
   ],
   "rejection_count": 0,
-  "accepted_at": "2026-06-22T12:08:33.179780",
+  "accepted_at": "2026-06-22T12:08:33.179780+00:00",
   "reviewer": "learn.py",
   "rationale": "Mined from orama-system docs/LESSONS.md 2026-06-22 (DO-NOT catastrophic assumption failure): wrote to guessed .agents instead of explicit .agent on a stale branch. Exact failure AFRP exists to prevent."
 }

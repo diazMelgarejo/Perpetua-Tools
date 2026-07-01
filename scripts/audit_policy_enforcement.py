@@ -54,7 +54,13 @@ def _mentions_policy_keywords(source: str) -> bool:
     return False
 
 
-def _imports_hardware_policy(tree: ast.Module) -> bool:
+def _imports_hardware_policy(tree: ast.Module | None) -> bool:
+    if tree is None:
+        # SyntaxError fallback path (main() passes tree=None) — no AST to walk,
+        # so we cannot detect an import. Caller's keyword check still applies,
+        # so this correctly falls through to 'flagged as a violation' rather
+        # than crashing ast.walk(None).
+        return False
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:

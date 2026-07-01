@@ -27,7 +27,7 @@
     "versioned"
   ],
   "evidence_ids": [
-    "2026-06-22T12:24:41.030700"
+    "2026-06-22T12:24:41.030700+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
@@ -35,12 +35,12 @@
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-22T12:24:41.030700",
+      "ts": "2026-06-22T12:24:41.030700+00:00",
       "action": "staged",
       "reviewer": "learn"
     },
     {
-      "ts": "2026-06-22T12:24:41.120651",
+      "ts": "2026-06-22T12:24:41.120651+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
       "notes": "Mined from orama-system/docs/wiki/06-multi-agent-collab.md Version Registry. Centralized version system prevents divergence.",
@@ -52,7 +52,7 @@
     }
   ],
   "rejection_count": 0,
-  "accepted_at": "2026-06-22T12:24:41.120651",
+  "accepted_at": "2026-06-22T12:24:41.120651+00:00",
   "reviewer": "learn.py",
   "rationale": "Mined from orama-system/docs/wiki/06-multi-agent-collab.md Version Registry. Centralized version system prevents divergence."
 }

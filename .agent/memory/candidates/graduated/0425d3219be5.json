@@ -1,0 +1,60 @@
+{
+  "id": "0425d3219be5",
+  "key": "manual_0425d3",
+  "name": "manual_0425d3",
+  "claim": "After a PR merges, always verify origin/main contains every commit on the feature branch \u2014 unattended merges and continued pushes to the same branch name leave post-merge commits orphaned until a follow-up PR is opened.",
+  "conditions": [
+    "after",
+    "always",
+    "branch",
+    "commit",
+    "commits",
+    "contains",
+    "continued",
+    "every",
+    "feature",
+    "follow-up",
+    "leave",
+    "main",
+    "merges",
+    "name",
+    "opened",
+    "origin",
+    "orphaned",
+    "post-merge",
+    "pushes",
+    "same",
+    "unattended",
+    "until",
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-06-28T20:04:14.811836+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T20:04:14.811836+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T20:04:14.811836+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T20:04:14.848228+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT #177 merged at 3a287da while cursor/security-pr1-pr2-auth-hardening-f559 continued with c3957d7 and 861793a; required follow-up PR #179.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T20:04:14.811836+00:00"
+      ],
+      "lessons_sha": "d2a0de92ca5c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T20:04:14.848219+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT #177 merged at 3a287da while cursor/security-pr1-pr2-auth-hardening-f559 continued with c3957d7 and 861793a; required follow-up PR #179."
+}

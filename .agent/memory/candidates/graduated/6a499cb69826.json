@@ -30,7 +30,7 @@
     "wrappers"
   ],
   "evidence_ids": [
-    "2026-06-22T12:08:33.298484"
+    "2026-06-22T12:08:33.298484+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
@@ -38,12 +38,12 @@
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-22T12:08:33.298484",
+      "ts": "2026-06-22T12:08:33.298484+00:00",
       "action": "staged",
       "reviewer": "learn"
     },
     {
-      "ts": "2026-06-22T12:08:33.389201",
+      "ts": "2026-06-22T12:08:33.389201+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
       "notes": "Mined from orama-system docs/LESSONS.md 2026-06-12 (thin wrapper rule) and 2026-06-20 (Codex native agent): duplication fragments the operator surface. Origin rule: fetch+prune before using canonical, pull-ff-only only when clean.",
@@ -55,7 +55,7 @@
     }
   ],
   "rejection_count": 0,
-  "accepted_at": "2026-06-22T12:08:33.389201",
+  "accepted_at": "2026-06-22T12:08:33.389201+00:00",
   "reviewer": "learn.py",
   "rationale": "Mined from orama-system docs/LESSONS.md 2026-06-12 (thin wrapper rule) and 2026-06-20 (Codex native agent): duplication fragments the operator surface. Origin rule: fetch+prune before using canonical, pull-ff-only only when clean."
 }
