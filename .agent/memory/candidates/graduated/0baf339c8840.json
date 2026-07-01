@@ -24,7 +24,7 @@
     "windows-only"
   ],
   "evidence_ids": [
-    "2026-06-22T12:08:31.833005"
+    "2026-06-22T12:08:31.833005+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
@@ -32,12 +32,12 @@
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-22T12:08:31.833005",
+      "ts": "2026-06-22T12:08:31.833005+00:00",
       "action": "staged",
       "reviewer": "learn"
     },
     {
-      "ts": "2026-06-22T12:08:31.967810",
+      "ts": "2026-06-22T12:08:31.967810+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
       "notes": "Mined from PT docs/LESSONS.md 2026-04-26 hardware affinity incident: hardcoded LAN model lists created damage risk on M2 Pro and could make Windows advertise MLX models. Enforced in L1/L2/L3 policy layers.",
@@ -49,7 +49,7 @@
     }
   ],
   "rejection_count": 0,
-  "accepted_at": "2026-06-22T12:08:31.967810",
+  "accepted_at": "2026-06-22T12:08:31.967810+00:00",
   "reviewer": "learn.py",
   "rationale": "Mined from PT docs/LESSONS.md 2026-04-26 hardware affinity incident: hardcoded LAN model lists created damage risk on M2 Pro and could make Windows advertise MLX models. Enforced in L1/L2/L3 policy layers."
 }

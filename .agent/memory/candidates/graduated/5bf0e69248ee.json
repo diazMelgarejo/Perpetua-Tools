@@ -39,7 +39,7 @@
     "updated"
   ],
   "evidence_ids": [
-    "2026-06-22T12:26:27.762328"
+    "2026-06-22T12:26:27.762328+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
@@ -47,12 +47,12 @@
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-22T12:26:27.762328",
+      "ts": "2026-06-22T12:26:27.762328+00:00",
       "action": "staged",
       "reviewer": "learn"
     },
     {
-      "ts": "2026-06-22T12:26:27.857403",
+      "ts": "2026-06-22T12:26:27.857403+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
       "notes": "Discovered during progressive disclosure: orama-system/bin/orama-system/skills/no-sleep-chains/SKILL.md is now a redirect stub; AlphaClaw Lessons.md still links to the old path. Pattern applies to all skill renames.",
@@ -64,7 +64,7 @@
     }
   ],
   "rejection_count": 0,
-  "accepted_at": "2026-06-22T12:26:27.857403",
+  "accepted_at": "2026-06-22T12:26:27.857403+00:00",
   "reviewer": "learn.py",
   "rationale": "Discovered during progressive disclosure: orama-system/bin/orama-system/skills/no-sleep-chains/SKILL.md is now a redirect stub; AlphaClaw Lessons.md still links to the old path. Pattern applies to all skill renames."
 }

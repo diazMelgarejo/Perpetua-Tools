@@ -15,7 +15,7 @@
     "stale"
   ],
   "evidence_ids": [
-    "2026-06-22T10:28:21.564630"
+    "2026-06-22T10:28:21.564630+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
@@ -23,12 +23,12 @@
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-22T10:28:21.564630",
+      "ts": "2026-06-22T10:28:21.564630+00:00",
       "action": "staged",
       "reviewer": "learn"
     },
     {
-      "ts": "2026-06-22T10:28:21.615552",
+      "ts": "2026-06-22T10:28:21.615552+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
       "notes": "2026-06-22: gbrain sync kept needing manual re-fixing. Root causes: (1) autopilot --repo . jammed on 204 unacked parse failures, silently staling sources; (2) old-path duplicate sources from the iCloud-escape/~code moves were quarantined 06-18 but left 'pending removal', recurring as stale alarms. Built orama self-heal + archived the orphans to close the loop.",
@@ -40,7 +40,7 @@
     }
   ],
   "rejection_count": 0,
-  "accepted_at": "2026-06-22T10:28:21.615549",
+  "accepted_at": "2026-06-22T10:28:21.615549+00:00",
   "reviewer": "learn.py",
   "rationale": "2026-06-22: gbrain sync kept needing manual re-fixing. Root causes: (1) autopilot --repo . jammed on 204 unacked parse failures, silently staling sources; (2) old-path duplicate sources from the iCloud-escape/~code moves were quarantined 06-18 but left 'pending removal', recurring as stale alarms. Built orama self-heal + archived the orphans to close the loop."
 }

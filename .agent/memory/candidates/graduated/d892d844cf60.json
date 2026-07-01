@@ -10,7 +10,7 @@
     "procrastination"
   ],
   "evidence_ids": [
-    "2026-06-22T09:21:23.688000"
+    "2026-06-22T09:21:23.688000+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
@@ -18,12 +18,12 @@
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-22T09:21:23.688000",
+      "ts": "2026-06-22T09:21:23.688000+00:00",
       "action": "staged",
       "reviewer": "learn"
     },
     {
-      "ts": "2026-06-22T09:21:23.755336",
+      "ts": "2026-06-22T09:21:23.755336+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
       "notes": "User-stated 2026-06-22. Context is freshest the moment the related need surfaces; deferred 'I'll flag it later' items are exactly what gets forgotten.",
@@ -35,7 +35,7 @@
     }
   ],
   "rejection_count": 0,
-  "accepted_at": "2026-06-22T09:21:23.755333",
+  "accepted_at": "2026-06-22T09:21:23.755333+00:00",
   "reviewer": "learn.py",
   "rationale": "User-stated 2026-06-22. Context is freshest the moment the related need surfaces; deferred 'I'll flag it later' items are exactly what gets forgotten."
 }
