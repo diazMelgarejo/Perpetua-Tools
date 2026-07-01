@@ -20,6 +20,7 @@
 - When a git branch has diverged from origin with unrelated concurrent commits, reset --hard to origin tip and re-apply only your own deltas as fresh edits, rather than fighting an interactive rebase across duplicate/superseded history  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_3060e4382900 -->
 - A file showing 'M' in git status/diff with every line changed but zero semantic diff (confirmed via diff with tr -d carriage-return) is EOL-attribute false-dirty, not a real edit - fix once with git add <file> to renormalize, never git checkout-- which can silently discard real changes if you're wrong  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_f37d3322a020 -->
 - PT .agent memory pipeline had unencoded open() calls scattered across graduate.py, render_lessons.py, learn.py beyond the two files fixed earlier (promote.py, auto_dream.py) - the UTF-8 codec bug on Windows cp1252 recurs at every new read site until the whole call chain is audited, not just the entry point  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_3afc37f1ec96 -->
+- scripts/ensure_requirements.ps1 (PowerShell) must stay PowerShell 5.1 compatible on Windows: no ?? null-coalescing operator, no 3+ positional-arg Join-Path calls, and UTF-8 files with em-dashes in double-quoted strings need a BOM  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_883e26e451c5 -->
 
 ### 2026-06
 
