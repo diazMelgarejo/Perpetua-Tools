@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-28  
 **Fan-out:** `2026-06-28-coord-003`  
-**Status:** Win deliverables complete; Mac branches ready for PR review
+**Status:** **Superseded by coord-016+** (2026-06-29) — landmark preserved; no new branch work required per `mac-self-improve-cycle-003-ack.md`
 
 ## Branch policy
 

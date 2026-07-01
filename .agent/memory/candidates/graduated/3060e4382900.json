@@ -1,0 +1,41 @@
+{
+  "id": "3060e4382900",
+  "key": "manual_3060e4",
+  "name": "manual_3060e4",
+  "claim": "When a git branch has diverged from origin with unrelated concurrent commits, reset --hard to origin tip and re-apply only your own deltas as fresh edits, rather than fighting an interactive rebase across duplicate/superseded history",
+  "conditions": [
+    "concurrent-session",
+    "divergent-branch",
+    "git",
+    "rebase"
+  ],
+  "evidence_ids": [
+    "2026-07-01T12:47:46.566862+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-01T12:47:46.566862+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-01T12:47:46.566862+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-01T12:47:46.769776+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Rebase onto origin/branch produced 'would be overwritten by merge' errors and dropped commits as 'already upstream' - the local branch had diverged with an unrelated concurrent start.ps1 rewrite. Aborting rebase and reset --hard + manual re-diff was faster and lower-risk than resolving the interactive rebase conflicts.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-01T12:47:46.566862+00:00"
+      ],
+      "lessons_sha": "25127eeee7a9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-01T12:47:46.769776+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Rebase onto origin/branch produced 'would be overwritten by merge' errors and dropped commits as 'already upstream' - the local branch had diverged with an unrelated concurrent start.ps1 rewrite. Aborting rebase and reset --hard + manual re-diff was faster and lower-risk than resolving the interactive rebase conflicts."
+}
