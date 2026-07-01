@@ -91,6 +91,15 @@ class TestOfflineMode:
         assert route.tier == 2
         assert route.backend == "gbrain"
 
+    def test_offline_rejects_remote_tier1_override(self, monkeypatch, registry):
+        monkeypatch.setenv("ORAMASYS_OFFLINE", "1")
+        spec = ToolCallSpec(
+            task_type="coding",
+            base_url_override="https://api.openai.com/v1",
+        )
+        with pytest.raises(FrugalityPolicyError, match="ORAMASYS_OFFLINE=1 rejects non-local tier-1"):
+            resolve_route(spec, registry=registry)
+
 
 class TestPrivacyCritical:
     def test_privacy_critical_caps_max_tier_at_3(self):
@@ -127,6 +136,18 @@ class TestPrivacyCritical:
         assert route.tier == 1
         assert route.est_cost_usd == 0.0
 
+    def test_privacy_critical_rejects_remote_tier1_override(self, registry):
+        spec = ToolCallSpec(
+            task_type="coding",
+            privacy_critical=True,
+            base_url_override="https://api.openai.com/v1",
+        )
+        with pytest.raises(
+            FrugalityPolicyError,
+            match="privacy_critical=True rejects non-local tier-1",
+        ):
+            resolve_route(spec, registry=registry)
+
 
 class TestLocalFirstProbing:
     def test_tier_0_in_context(self):
@@ -141,6 +162,13 @@ class TestLocalFirstProbing:
     def test_escalation_requires_reason(self):
         with pytest.raises(FrugalityPolicyError, match="escalation_reason is required"):
             resolve_route(ToolCallSpec(task_type="reasoning"), escalation_tier=3)
+
+    def test_escalation_rejects_tier_at_or_below_2(self):
+        with pytest.raises(
+            FrugalityPolicyError,
+            match="cannot escalate to tier 2; tiers 0-2 require probe match",
+        ):
+            resolve_route(ToolCallSpec(task_type="reasoning"), escalation_tier=2)
 
 
 class TestTraceEmission:

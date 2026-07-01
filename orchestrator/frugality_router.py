@@ -102,6 +102,24 @@ def _enforce_tier_policy(tier: int, spec: ToolCallSpec) -> None:
         )
 
 
+def _validate_tier1_local_backend(spec: ToolCallSpec, backend: Any) -> None:
+    """Block tier-1 cloud endpoints when offline or privacy-critical."""
+    if not (is_offline_mode() or spec.privacy_critical):
+        return
+    base_url = getattr(backend, "base_url", None)
+    if not base_url:
+        raise FrugalityPolicyError(
+            "tier-1 backend missing base_url under restricted egress policy"
+        )
+    from utils.model_endpoint_url import ModelEndpointPolicyError, validate_model_endpoint_url
+
+    try:
+        validate_model_endpoint_url(str(base_url), allow_public=False)
+    except ModelEndpointPolicyError as exc:
+        mode = "ORAMASYS_OFFLINE=1" if is_offline_mode() else "privacy_critical=True"
+        raise FrugalityPolicyError(f"{mode} rejects non-local tier-1 backend") from exc
+
+
 def _probe_tier_0(spec: ToolCallSpec) -> Optional[ResolvedRoute]:
     if spec.in_context or spec.task_type == "in_context":
         return ResolvedRoute(tier=0, backend="in_context", model=None, est_cost_usd=0.0)
@@ -122,6 +140,7 @@ def _probe_tier_1(spec: ToolCallSpec, registry: Any) -> Optional[ResolvedRoute]:
         backend = resolve_backend_for_spec(registry, launch_spec)
     except PolicyUnavailable:
         return None
+    _validate_tier1_local_backend(spec, backend)
     model = spec.model_hint
     if model is None and getattr(backend, "models", ()):
         model = backend.models[0]
@@ -225,6 +244,10 @@ def resolve_route(
             return route
 
     target = escalation_tier if escalation_tier is not None else 3
+    if target <= 2:
+        raise FrugalityPolicyError(
+            f"cannot escalate to tier {target}; tiers 0-2 require probe match"
+        )
     _enforce_tier_policy(target, spec)
 
     route = _escalation_route(spec, target)
