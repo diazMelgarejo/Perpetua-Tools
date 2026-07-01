@@ -1,0 +1,41 @@
+{
+  "id": "ac7b0254bada",
+  "key": "manual_ac7b02",
+  "name": "manual_ac7b02",
+  "claim": "Hermes user-local skills live under HERMES_HOME/skills/<category>/<name>/SKILL.md, not ~/.hermes/skills - HERMES_HOME can be a custom env var pointing elsewhere on Windows",
+  "conditions": [
+    "hermes",
+    "hermes_home",
+    "skills",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-07-01T12:47:37.653585+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-01T12:47:37.653585+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-01T12:47:37.653585+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-01T12:47:37.821764+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Created a skill under ~/.hermes/skills and 'hermes skills list' never showed it. skill_manager_tool.py resolves SKILLS_DIR from HERMES_HOME env var, not a hardcoded ~/.hermes path. Windows install had HERMES_HOME=%USERPROFILE%\\AppData\\Local\\hermes.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-01T12:47:37.653585+00:00"
+      ],
+      "lessons_sha": "a506961c9657"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-01T12:47:37.821764+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Created a skill under ~/.hermes/skills and 'hermes skills list' never showed it. skill_manager_tool.py resolves SKILLS_DIR from HERMES_HOME env var, not a hardcoded ~/.hermes path. Windows install had HERMES_HOME=%USERPROFILE%\\AppData\\Local\\hermes."
+}

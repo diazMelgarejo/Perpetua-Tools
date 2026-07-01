@@ -1,0 +1,42 @@
+{
+  "id": "f37d3322a020",
+  "key": "manual_f37d33",
+  "name": "manual_f37d33",
+  "claim": "A file showing 'M' in git status/diff with every line changed but zero semantic diff (confirmed via diff with tr -d carriage-return) is EOL-attribute false-dirty, not a real edit - fix once with git add <file> to renormalize, never git checkout-- which can silently discard real changes if you're wrong",
+  "conditions": [
+    "crlf",
+    "eol",
+    "false-dirty",
+    "git",
+    "gitattributes"
+  ],
+  "evidence_ids": [
+    "2026-07-01T12:47:54.531902+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-01T12:47:54.531902+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-01T12:47:54.531902+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-01T12:47:54.722096+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "platform/windows/start.ps1 showed as modified with 515 insertions/515 deletions after only touching an unrelated file - .gitattributes marks it eol=crlf but the working tree blob predates that attribute. git add renormalized it cleanly; this matches a prior documented lesson about .cmd files in the same repo.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-01T12:47:54.531902+00:00"
+      ],
+      "lessons_sha": "8cb1568ca4bf"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-01T12:47:54.722096+00:00",
+  "reviewer": "learn.py",
+  "rationale": "platform/windows/start.ps1 showed as modified with 515 insertions/515 deletions after only touching an unrelated file - .gitattributes marks it eol=crlf but the working tree blob predates that attribute. git add renormalized it cleanly; this matches a prior documented lesson about .cmd files in the same repo."
+}
