@@ -58,6 +58,78 @@ canonical — reject those candidates; use repo names + env vars instead.
 
 Full contract: `protocols/path-hygiene.md` · lessons `lesson_da04cbbae68b`, `lesson_456ea361526d`, `lesson_6fc89e22e3bb`.
 
+## Multi-agent merge conflict protocol
+
+When merging nested branches produced by independent agents against a moving main, follow this protocol exactly. **Never guess conflict resolution.**
+
+**Canonical doctrine (orama-way):** load **oramasys-method** →
+[orama `integrative-merge.md`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/oramasys-method/references/integrative-merge.md)
+(synthesize, never amputate; six resolution modes). This section is the portable-brain summary; the skill reference is authoritative.
+
+### Step-by-step
+
+1. **Simulate first — touch nothing.**
+   ```bash
+   git merge --no-commit --no-ff <branch>
+   git diff --name-only --diff-filter=U   # enumerate ALL conflicts
+   git merge --abort
+   ```
+
+2. **Present every conflict to the human** with both sides shown. One question per file. Wait for explicit direction before proceeding.
+
+3. **Human-directed resolution strategies:**
+   - `additive` — one side is empty, other has content → take the content side
+   - `union` — both sides have partial content → concatenate (ours first, theirs appended)
+   - `superset` — one is a structural superset of the other → verify all rows from the smaller are in the larger, then take the superset
+   - `synthesize` — both sides changed the same region for valid different reasons → blend both (e.g. new API + old branch's tests)
+   - `architecturally-correct` — one side has a bug the other fixes → take the correct side regardless of branch origin
+   - `api-correct` — casing/type mismatch → take the API-correct form
+
+4. **Resolve all conflicts in one pass** using the directed strategy. Never delete content — archive/quarantine if something must be removed.
+
+5. **Verify before committing:**
+   ```bash
+   python3 -m pytest -q
+   python3 scripts/review/repo_hygiene.py .
+   git diff --name-only --diff-filter=U  # must be empty
+   ```
+
+6. **Push → wait for CI → perform GitHub API merge.**
+
+7. **Wait 10 minutes between sequential merges.** Before merge N+1, confirm `mergeable_state: clean` via GitHub API.
+
+### Key invariants
+
+- "Merged" on GitHub ≠ content is on the target branch. Always verify with `git diff origin/main...origin/<branch>` after any merge.
+- CodeRabbit re-scans on every push and creates new comment threads. Run the post-merge sweep after every merge, not just once.
+- JSONL memory files (lessons.jsonl, AGENT_LEARNINGS.jsonl): dedup by `id` / `run_id` after union — keep the **first** occurrence per id.
+- LESSONS.md is rendered from lessons.jsonl — never hand-edit it directly (AGENTS.md Rule 5). Always go through `graduate.py`.
+
+## Host-agent CLI tools (in `tools/`)
+Daily driver, highest-leverage first:
+- `recall.py "<intent>"` — surface graduated lessons relevant to what
+  you're about to do. **Run before deploy / migration / timestamp / debug /
+  refactor work.** This is how lessons cross harnesses.
+- `learn.py "<rule>" --rationale "<why>"` — teach the agent a new lesson
+  in one shot (stage + graduate + render). For rules you already know.
+- `show.py` — one-screen dashboard of brain state: episodes, candidates,
+  lessons, failing skills, activity graph.
+- `list_candidates.py` / `graduate.py` / `reject.py` / `reopen.py` — review
+  protocol for patterns the dream cycle has staged.
+- `memory_reflect.py <skill> <action> <outcome>` — log a significant event.
+
+## Rules
+1. Check memory before decisions you have been corrected on before.
+2. If `REVIEW_QUEUE.md` shows backlog past threshold, handle it before the new task.
+3. Log every significant action to `memory/episodic/AGENT_LEARNINGS.jsonl`
+   via `.agent/tools/memory_reflect.py`.
+4. Update `memory/working/WORKSPACE.md` as you work; archive on completion.
+5. Never hand-edit `memory/semantic/LESSONS.md` — it's rendered from
+   `lessons.jsonl`. Use `graduate.py` / `reject.py` instead.
+6. Follow `protocols/permissions.md`. Blocked means blocked.
+7. When a self-rewrite hook fires, propose conservative edits only.
+8. The harness is dumb on purpose. Reasoning lives in skills + the host agent.
+
 ## Security Invariant Enforcement Protocol (OramaSys v2)
 
 This section defines the **authoritative security enforcement contract** for all agent execution environments.
