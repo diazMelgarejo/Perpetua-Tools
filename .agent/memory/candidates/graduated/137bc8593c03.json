@@ -12,7 +12,7 @@
     "rules"
   ],
   "evidence_ids": [
-    "2026-06-22T14:05:37.502904"
+    "2026-06-22T14:05:37.502904+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
@@ -20,12 +20,12 @@
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-22T14:05:37.502904",
+      "ts": "2026-06-22T14:05:37.502904+00:00",
       "action": "staged",
       "reviewer": "learn"
     },
     {
-      "ts": "2026-06-22T14:05:37.595058",
+      "ts": "2026-06-22T14:05:37.595058+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
       "notes": "Duplicating Mac/Windows NEVER lists causes drift; canonical enforcement lives in PT config/model_hardware_policy.yml",
@@ -37,7 +37,7 @@
     }
   ],
   "rejection_count": 0,
-  "accepted_at": "2026-06-22T14:05:37.595058",
+  "accepted_at": "2026-06-22T14:05:37.595058+00:00",
   "reviewer": "learn.py",
   "rationale": "Duplicating Mac/Windows NEVER lists causes drift; canonical enforcement lives in PT config/model_hardware_policy.yml"
 }

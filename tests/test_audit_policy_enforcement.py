@@ -2,11 +2,8 @@
 from __future__ import annotations
 
 import importlib.util
-import sys
 from pathlib import Path
-from unittest import mock
 
-import pytest
 
 # Load the script as a module (it lives in scripts/, not a package)
 _SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "audit_policy_enforcement.py"
@@ -111,7 +108,7 @@ class TestMain:
     def test_violation_lists_all_offenders(self, tmp_path, capsys, monkeypatch):
         """Multiple violating files must all appear in stderr."""
         for name in ("a.py", "b.py"):
-            _write_py(tmp_path / name, f"ALWAYS_MAC = True\n")
+            _write_py(tmp_path / name, "ALWAYS_MAC = True\n")
         monkeypatch.setattr(_mod, "ROOT", tmp_path)
         result = main()
         assert result == 1
@@ -202,3 +199,32 @@ class TestMain:
         result = main()
         # Skipped, no violation recorded
         assert result == 0
+
+    def test_syntax_error_with_policy_keyword_flags_not_crashes(self, tmp_path, capsys, monkeypatch):
+        """Regression: SyntaxError -> tree=None must flag as violation, not crash.
+
+        _imports_hardware_policy(None) previously called ast.walk(None), which
+        raises TypeError. A file with a syntax error AND a policy keyword (e.g.
+        NEVER_MAC) should be reported as a violation, not take down main().
+        """
+        src = tmp_path / "broken.py"
+        src.write_text("NEVER_MAC = True\nif True\n", encoding="utf-8")  # SyntaxError
+        monkeypatch.setattr(_mod, "ROOT", tmp_path)
+        result = main()
+        assert result == 1
+        out = capsys.readouterr().err
+        assert "broken.py" in out
+
+    def test_syntax_error_without_policy_keyword_is_clean(self, tmp_path, capsys, monkeypatch):
+        """SyntaxError file with no policy keyword should not be flagged."""
+        src = tmp_path / "broken_no_keyword.py"
+        src.write_text("x = 1\nif True\n", encoding="utf-8")  # SyntaxError, no keyword
+        monkeypatch.setattr(_mod, "ROOT", tmp_path)
+        result = main()
+        assert result == 0
+
+
+class TestImportsHardwarePolicyNoneGuard:
+    def test_none_tree_returns_false(self):
+        """_imports_hardware_policy(None) must return False, not raise."""
+        assert _mod._imports_hardware_policy(None) is False

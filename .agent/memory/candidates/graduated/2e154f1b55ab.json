@@ -14,7 +14,7 @@
     "structure"
   ],
   "evidence_ids": [
-    "2026-06-22T09:21:23.576748"
+    "2026-06-22T09:21:23.576748+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
@@ -22,12 +22,12 @@
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-22T09:21:23.576748",
+      "ts": "2026-06-22T09:21:23.576748+00:00",
       "action": "staged",
       "reviewer": "learn"
     },
     {
-      "ts": "2026-06-22T09:21:23.635647",
+      "ts": "2026-06-22T09:21:23.635647+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
       "notes": "2026-06-22 anti-pattern: I overrode the explicit '.agent/memory' instruction with '.agents/memory' rationalizing 'avoid a parallel dir', and committed there. '.agent/' was in fact the canonical structured memory system on origin/main with an AGENTS.md I never read. Catastrophic assumptions like this are the exact failure the orama AFRP method exists to prevent (know purpose first, never assume).",
@@ -39,7 +39,7 @@
     }
   ],
   "rejection_count": 0,
-  "accepted_at": "2026-06-22T09:21:23.635644",
+  "accepted_at": "2026-06-22T09:21:23.635644+00:00",
   "reviewer": "learn.py",
   "rationale": "2026-06-22 anti-pattern: I overrode the explicit '.agent/memory' instruction with '.agents/memory' rationalizing 'avoid a parallel dir', and committed there. '.agent/' was in fact the canonical structured memory system on origin/main with an AGENTS.md I never read. Catastrophic assumptions like this are the exact failure the orama AFRP method exists to prevent (know purpose first, never assume)."
 }

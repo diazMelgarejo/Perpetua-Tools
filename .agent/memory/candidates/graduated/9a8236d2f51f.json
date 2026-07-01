@@ -23,7 +23,7 @@
     "vendor"
   ],
   "evidence_ids": [
-    "2026-06-26T14:49:57.164134"
+    "2026-06-26T14:49:57.164134+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
@@ -31,7 +31,7 @@
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-26T14:49:57.164134",
+      "ts": "2026-06-26T14:49:57.164134+00:00",
       "action": "staged",
       "reviewer": "learn"
     },

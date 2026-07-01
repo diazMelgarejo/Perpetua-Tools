@@ -13,7 +13,7 @@
     "workstation-path"
   ],
   "evidence_ids": [
-    "2026-06-22T10:48:56.625356"
+    "2026-06-22T10:48:56.625356+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
@@ -21,12 +21,12 @@
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-22T10:48:56.625356",
+      "ts": "2026-06-22T10:48:56.625356+00:00",
       "action": "staged",
       "reviewer": "learn"
     },
     {
-      "ts": "2026-06-22T10:48:56.672693",
+      "ts": "2026-06-22T10:48:56.672693+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
       "notes": "2026-06-22: blocked twice in one turn writing the gbrain self-heal journey doc; also re-leaked 2026-06-12 (per CIDF LINT-006 note). The block is the LATE backstop; the habit is to think portable-paths up front. Deeper meta: check the established guard/convention before producing the artifact.",
@@ -38,7 +38,7 @@
     }
   ],
   "rejection_count": 0,
-  "accepted_at": "2026-06-22T10:48:56.672690",
+  "accepted_at": "2026-06-22T10:48:56.672690+00:00",
   "reviewer": "learn.py",
   "rationale": "2026-06-22: blocked twice in one turn writing the gbrain self-heal journey doc; also re-leaked 2026-06-12 (per CIDF LINT-006 note). The block is the LATE backstop; the habit is to think portable-paths up front. Deeper meta: check the established guard/convention before producing the artifact."
 }
