@@ -1,0 +1,59 @@
+{
+  "id": "5222ac71c9ef",
+  "key": "manual_5222ac",
+  "name": "manual_5222ac",
+  "claim": "Draft PR triage: three-dot diff inflates post-merge orphan PRs; always compare two-dot at branch tip vs main and cherry-pick net-new commits instead of merging stale multi-hundred-commit-behind branches.",
+  "conditions": [
+    "always",
+    "branch",
+    "branches",
+    "cherry-pick",
+    "commits",
+    "compare",
+    "diff",
+    "draft",
+    "inflates",
+    "instead",
+    "main",
+    "merging",
+    "multi-hundred-commit-behind",
+    "net-new",
+    "orphan",
+    "post-merge",
+    "prs",
+    "stale",
+    "three-dot",
+    "tip",
+    "triage",
+    "two-dot"
+  ],
+  "evidence_ids": [
+    "2026-06-28T20:53:01.355742+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T20:53:01.355742+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T20:53:01.355742+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T20:53:01.395786+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT #185 16 files +5900 three-dot but 0 net-new at tips except ollama port; orama #133 57/67 files already identical after rebase onto main post-#127",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T20:53:01.355742+00:00"
+      ],
+      "lessons_sha": "97ed74ddbcd3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T20:53:01.395776+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT #185 16 files +5900 three-dot but 0 net-new at tips except ollama port; orama #133 57/67 files already identical after rebase onto main post-#127"
+}

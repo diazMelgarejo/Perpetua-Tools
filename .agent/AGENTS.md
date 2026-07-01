@@ -26,26 +26,37 @@ Workflow:
    cluster_size, and any contradictions with existing LESSONS.md
 3. `python .agent/tools/graduate.py <id> --rationale "..."` to accept
 4. `python .agent/tools/reject.py <id> --reason "..."` to reject
-5. `python .agent/tools/reopen.py <id>` to requeue a previously-rejected item
-6. Review in a **batch**, not one-by-one — cross-candidate contradictions
-   only surface when you see multiple at once.
-
-The heuristic prefilter in `memory/validate.py` has already dropped obvious
-junk (too-short claims, exact duplicates). Everything staged needs real
-judgment. Rationale is required for graduation — rubber-stamped promotions
-are the exact failure mode this layer prevents.
+5. `python .agent/tools/reopen.py <id>` to requeue
 
 ## Skills
-- `skills/_index.md` — read first for discovery
-- `skills/_manifest.jsonl` — machine-readable skill metadata
-- Load a full `SKILL.md` only when its triggers match the current task
-- **Hardware affinity work:** also load `../.claude/skills/hardware-policy/SKILL.md` (policy YAML → canonical API → CLI → launch_researchers)
-- Every skill has a self-rewrite hook; invoke it after failures
+- `skills/_index.md`
+- `skills/_manifest.jsonl`
+- Load SKILL.md only when triggers match task
 
 ## Protocols
-- `protocols/permissions.md` — read before any tool call
-- `protocols/tool_schemas/` — typed interfaces for external tools
-- `protocols/delegation.md` — rules for sub-agent handoff
+- `protocols/permissions.md`
+- `protocols/delegation.md`
+- `protocols/path-hygiene.md` — **anti-doxxing / LINT-006** (always apply)
+
+## Path Hygiene (anti-doxxing — always apply)
+
+**Never** write workstation-specific paths into git-tracked files — including
+`.agent/memory/*`, lessons, review queue summaries, skills, and docs.
+
+| Do | Don't |
+|----|-------|
+| Repo-relative paths (`../../Perpetua-Tools/.agent`) | `C:\<user>\...`, `/\<user>/...` |
+| Env anchors (`$REPO_ROOT`, `PERPETUA_TOOLS_ROOT`) | `%USERPROFILE%\Downloads\...` workspace trees |
+| Generic `~/.gstack/projects/<slug>/` | Pinning "canonical workspace" paths in memory |
+| `orama-system` / `Perpetua-Tools` repo names | Teaching agents your Downloads folder layout |
+
+**Write boundaries:** all memory writers call `sanitize_tracked_path_leaks()` from
+`memory/path_hygiene.py` (`learn.py`, `graduate.py`, `review_state.py`, episodic hooks).
+
+**Antipattern:** Graduating or echoing lessons that treat a personal Downloads path as
+canonical — reject those candidates; use repo names + env vars instead.
+
+Full contract: `protocols/path-hygiene.md` · lessons `lesson_da04cbbae68b`, `lesson_456ea361526d`, `lesson_6fc89e22e3bb`.
 
 ## Multi-agent merge conflict protocol
 
@@ -118,3 +129,82 @@ Daily driver, highest-leverage first:
 6. Follow `protocols/permissions.md`. Blocked means blocked.
 7. When a self-rewrite hook fires, propose conservative edits only.
 8. The harness is dumb on purpose. Reasoning lives in skills + the host agent.
+
+## Security Invariant Enforcement Protocol (OramaSys v2)
+
+This section defines the **authoritative security enforcement contract** for all agent execution environments.
+
+It is derived from the OramaSys v2 security architecture and MUST be enforced in conjunction with:
+- `docs/v2/plans/security-v2-roadmap.md` (system architecture)
+- `docs/v2/plans/security-v2-roadmap-part2.md` (execution layer)
+- `.github/workflows/security-invariant-enforcer.yml` (CI enforcement bot)
+- `SECURITY.md` (repository security policy)
+
+---
+
+## 🧠 Core Invariants
+
+All agent actions MUST obey the following invariants:
+
+### 1. SSRF Safety Boundary
+- All URL inputs MUST pass through `endpoint_policy_core`
+- Raw `urlparse()` usage in production paths is forbidden
+- Private, loopback, and metadata IPs MUST be blocked deterministically
+
+### 2. Auth Safety Boundary
+- Control plane tokens MUST be written using secure file primitives only
+- Token files MUST be created with `0600` permissions at creation time
+- No token material may appear in logs, HTML, or UI rendering
+
+### 3. Transport Identity Integrity
+- URL scheme (`http/https`) MUST be preserved end-to-end
+- Reconstruction layers MUST NOT hardcode transport schemes
+- Any downgrade or implicit normalization is a critical violation
+
+### 4. Rendering Safety
+- All external inputs MUST be HTML escaped before rendering
+- No raw event/model metadata may reach UI layers
+
+### 5. Cross-Repo Consistency
+- Orama-system and Perpetua-Tools MUST implement identical security rules
+- Divergence in SSRF/auth/transport logic is forbidden
+
+---
+
+## ⚙️ CI Enforcement Binding
+
+The following CI pipeline enforces these invariants:
+
+👉 `.github/workflows/security-invariant-enforcer.yml`
+
+It MUST:
+- Block PRs containing `urlparse(` usage
+- Block token leakage patterns (`ORAMA_CONTROL_PLANE_TOKEN`)
+- Detect unsafe transport downgrades (`http://http` patterns)
+- Run full test suite before merge
+
+---
+
+## 🔗 Security Policy Reference
+
+Refer to:
+- `SECURITY.md` for repository-level security rules
+- v2 roadmap for architectural guarantees
+
+---
+
+## 🚨 Failure Semantics
+
+Violations are classified as:
+
+- **HARD BLOCK**: SSRF bypass, auth leakage, scheme downgrade
+- **CI FAILURE**: lint/security invariant violation
+- **ARCHITECTURAL DRIFT**: cross-repo mismatch in behavior
+
+---
+
+## 🧩 Operational Rule
+
+> If a fix cannot be verified against these invariants, it MUST NOT be merged.
+
+All agent reasoning must defer to this protocol as the final authority layer.

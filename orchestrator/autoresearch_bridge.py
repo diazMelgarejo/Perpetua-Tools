@@ -40,14 +40,19 @@ Design rules (from approved interoperability contract)
 
 from __future__ import annotations
 
+import json
 import os
+import socket
 import subprocess
 import textwrap
 import threading
 import time
+import urllib.error
+import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlparse
 
 # ── configuration (resolved from environment, never hard-coded secrets) ────────
 
@@ -64,6 +69,13 @@ AUTORESEARCH_REMOTE: str = os.environ.get(
 AUTORESEARCH_DEFAULT_BRANCH: str = os.environ.get("AUTORESEARCH_BRANCH", "main")
 
 SSH_TIMEOUT: int = int(os.environ.get("SSH_TIMEOUT", "90"))
+
+# HTTP-local preflight (Win operator on GPU host — skip SSH, probe LM Studio).
+# auto | http-local | ssh
+AUTORESEARCH_PREFLIGHT_MODE: str = os.environ.get(
+    "AUTORESEARCH_PREFLIGHT_MODE", "auto"
+).strip().lower()
+LM_STUDIO_PROBE_TIMEOUT: int = int(os.environ.get("LM_STUDIO_PROBE_TIMEOUT", "10"))
 
 # WIN_SSH_KEY is the canonical name; DELL_SSH_KEY kept for backward-compat with
 # existing .env files from before the subnet rename.
@@ -114,6 +126,105 @@ class SwarmState:
 def _progress(label: str, msg: str) -> None:
     """Print a single-line status update (no bar — SSH ops have no duration signal)."""
     print(f"  [{label}] {msg}", flush=True)
+
+
+def _gpu_box_host() -> str:
+    """Hostname from GPU_BOX (user@host or bare host)."""
+    raw = GPU_BOX.split("@", 1)[-1].strip()
+    return raw.split(":", 1)[0].strip().lower()
+
+
+def _is_loopback_host(host: str) -> bool:
+    h = host.strip().lower()
+    return h in {"localhost", "127.0.0.1", "::1", "0.0.0.0"}
+
+
+def _get_local_ips() -> frozenset[str]:
+    """Local interface addresses (loopback + LAN) for GPU locality checks."""
+    local: set[str] = {"127.0.0.1", "localhost", "::1"}
+    try:
+        local.add(socket.gethostname().lower())
+        for info in socket.getaddrinfo(socket.gethostname(), None):
+            local.add(info[4][0])
+    except OSError:
+        pass
+    for probe in ("8.8.8.8", "1.1.1.1"):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                s.settimeout(0.2)
+                s.connect((probe, 80))
+                local.add(s.getsockname()[0])
+                break
+        except OSError:
+            pass
+    return frozenset(local)
+
+
+def is_gpu_runner_local() -> bool:
+    """True when GPU_BOX points at this machine (Win LAN co-orchestration)."""
+    host = _gpu_box_host()
+    if _is_loopback_host(host):
+        return True
+    return host in _get_local_ips()
+
+
+def use_http_local_preflight() -> bool:
+    """Whether preflight should skip SSH and use local git + HTTP probes."""
+    mode = AUTORESEARCH_PREFLIGHT_MODE
+    if mode == "ssh":
+        return False
+    if mode == "http-local":
+        return True
+    return is_gpu_runner_local()
+
+
+def _lm_studio_base_url() -> str:
+    """Resolve LM Studio base URL for HTTP preflight (no trailing /v1)."""
+    llama = os.environ.get("LLAMA_SERVER_BASE_URL", "").strip()
+    if llama:
+        parsed = urlparse(llama if "://" in llama else f"http://{llama}")
+        base = f"{parsed.scheme}://{parsed.netloc or parsed.path.split('/')[0]}"
+        return base.rstrip("/").removesuffix("/v1")
+    raw = os.environ.get("LM_STUDIO_WIN_ENDPOINTS", "").strip()
+    if raw:
+        first = raw.split(",", 1)[0].strip()
+        parsed = urlparse(first if "://" in first else f"http://{first}")
+        return f"{parsed.scheme}://{parsed.netloc or parsed.path}".rstrip("/")
+    return "http://localhost:1234"
+
+
+def probe_lm_studio_http() -> SyncResult:
+    """HTTP GET /v1/models — local GPU readiness without SSH."""
+    base = _lm_studio_base_url()
+    url = f"{base.rstrip('/')}/v1/models"
+    _progress("autoresearch", f"→ Probing LM Studio ({url})…")
+    headers: dict[str, str] = {}
+    token = os.environ.get("LM_STUDIO_API_TOKEN", "").strip()
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    req = urllib.request.Request(url, headers=headers, method="GET")
+    try:
+        with urllib.request.urlopen(req, timeout=LM_STUDIO_PROBE_TIMEOUT) as resp:
+            body = resp.read().decode("utf-8", errors="replace")
+            if resp.status >= 400:
+                return SyncResult(ok=False, error=f"HTTP {resp.status} from {url}")
+            try:
+                payload = json.loads(body) if body.strip() else {}
+            except json.JSONDecodeError:
+                payload = {}
+            models = payload.get("data") if isinstance(payload, dict) else None
+            count = len(models) if isinstance(models, list) else 0
+            _progress("autoresearch", f"✓ LM Studio reachable  models={count}")
+            return SyncResult(ok=True, sha=str(count))
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")[:200]
+        msg = f"HTTP {exc.code} from {url}: {detail}"
+        _progress("autoresearch", f"✗ {msg}")
+        return SyncResult(ok=False, error=msg)
+    except Exception as exc:  # noqa: BLE001
+        msg = f"LM Studio probe failed ({url}): {exc}"
+        _progress("autoresearch", f"✗ {msg}")
+        return SyncResult(ok=False, error=msg)
 
 
 # ── Claude Code plugin install ────────────────────────────────────────────────
@@ -168,6 +279,48 @@ def install_autoresearch_plugin() -> SyncResult:
 
 # ── idempotent sync (called by orchestrator before EVERY autoresearch run) ─────
 
+def sync_autoresearch_local() -> SyncResult:
+    """Pull latest autoresearch in LOCAL_REPO_PATH (no SSH)."""
+    repo = LOCAL_REPO_PATH
+    _progress("autoresearch", f"→ Syncing locally ({repo})…")
+    if not (repo / ".git").is_dir():
+        return SyncResult(ok=False, error=f"no git repo at {repo}")
+    try:
+        fetch = subprocess.run(
+            ["git", "-C", str(repo), "fetch", "origin"],
+            capture_output=True, text=True, timeout=SSH_TIMEOUT,
+        )
+        if fetch.returncode != 0:
+            err = fetch.stderr.strip() or fetch.stdout.strip()
+            _progress("autoresearch", f"✗ local fetch failed: {err}")
+            return SyncResult(ok=False, error=err)
+        reset = subprocess.run(
+            ["git", "-C", str(repo), "reset", "--hard",
+             f"origin/{AUTORESEARCH_DEFAULT_BRANCH}"],
+            capture_output=True, text=True, timeout=SSH_TIMEOUT,
+        )
+        if reset.returncode != 0:
+            err = reset.stderr.strip() or reset.stdout.strip()
+            _progress("autoresearch", f"✗ local reset failed: {err}")
+            return SyncResult(ok=False, error=err)
+        sha_result = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "HEAD"],
+            capture_output=True, text=True, timeout=30,
+        )
+        if sha_result.returncode != 0:
+            return SyncResult(ok=False, error=sha_result.stderr.strip())
+        sha = sha_result.stdout.strip()
+        _progress("autoresearch", f"✓ synced locally  sha={sha[:8]}")
+        return SyncResult(ok=True, sha=sha)
+    except subprocess.TimeoutExpired:
+        msg = f"local git timeout after {SSH_TIMEOUT}s"
+        _progress("autoresearch", f"✗ {msg}")
+        return SyncResult(ok=False, error=msg)
+    except Exception as exc:  # noqa: BLE001
+        _progress("autoresearch", f"✗ {exc}")
+        return SyncResult(ok=False, error=str(exc))
+
+
 def sync_autoresearch_idempotent() -> SyncResult:
     """Pull latest autoresearch on the Windows GPU runner.
 
@@ -175,8 +328,13 @@ def sync_autoresearch_idempotent() -> SyncResult:
     Uses `git fetch + reset --hard origin/<AUTORESEARCH_DEFAULT_BRANCH>` so the
     runner always runs the latest upstream code without merge conflicts.
 
+    When the GPU runner is local (Win LAN co-orchestration), uses local git
+    instead of SSH.
+
     Returns SyncResult with HEAD sha for logging.
     """
+    if use_http_local_preflight():
+        return sync_autoresearch_local()
     _progress("autoresearch", f"→ Syncing on GPU runner ({GPU_BOX})…")
     cmd = (
         f"cd {GPU_REPO_PATH} && "
@@ -208,13 +366,51 @@ def sync_autoresearch_idempotent() -> SyncResult:
 
 # ── bootstrap: ensure the repo exists on the GPU runner (first-run only) ──────
 
+def bootstrap_autoresearch_local() -> SyncResult:
+    """Clone / sync autoresearch locally when GPU runner is this host."""
+    repo = LOCAL_REPO_PATH
+    _progress("autoresearch", f"→ Checking / bootstrapping locally ({repo})…")
+    try:
+        if not (repo / ".git").is_dir():
+            repo.parent.mkdir(parents=True, exist_ok=True)
+            clone = subprocess.run(
+                ["git", "clone", AUTORESEARCH_REMOTE, str(repo)],
+                capture_output=True, text=True, timeout=SSH_TIMEOUT,
+            )
+            if clone.returncode != 0:
+                err = clone.stderr.strip() or clone.stdout.strip()
+                return SyncResult(ok=False, error=f"local clone failed: {err}")
+        _progress("autoresearch", "→ Running uv sync --dev locally…")
+        try:
+            subprocess.run(
+                ["uv", "sync", "--dev"],
+                cwd=str(repo),
+                capture_output=True,
+                text=True,
+                timeout=SSH_TIMEOUT,
+            )
+            _progress("autoresearch", "✓ uv sync --dev complete")
+        except Exception:
+            _progress("autoresearch", "⚠ uv sync --dev failed (non-fatal — runner may lack uv)")
+        return sync_autoresearch_local()
+    except subprocess.TimeoutExpired:
+        return SyncResult(ok=False, error=f"local bootstrap timeout after {SSH_TIMEOUT}s")
+    except Exception as exc:  # noqa: BLE001
+        return SyncResult(ok=False, error=f"Bootstrap failed: {exc}")
+
+
 def bootstrap_autoresearch_on_runner() -> SyncResult:
     """Clone autoresearch on the Windows GPU runner if it does not exist yet.
 
     Idempotent: if the directory already exists, falls through to a normal sync.
     Uses uv sync --dev to install dev dependencies (uditgoenka/autoresearch uses
     pyproject.toml with dev extras).
+
+    When the GPU runner is local, uses LOCAL_REPO_PATH and skips SSH.
     """
+    if use_http_local_preflight():
+        return bootstrap_autoresearch_local()
+
     _progress("autoresearch", f"→ Checking / bootstrapping on GPU runner ({GPU_BOX})…")
 
     check_cmd = (
@@ -381,12 +577,17 @@ def preflight(run_tag: Optional[str] = None) -> dict:
     Steps (all idempotent):
     1. Install the uditgoenka/autoresearch Claude Code plugin.
     2. Bootstrap / sync autoresearch on GPU runner (secondary/verify substrate).
+       On the Win GPU host, uses local git + HTTP LM Studio probe (no SSH).
     3. Initialise swarm_state.md on Mac (only if run_tag supplied and file absent).
 
-    Returns a dict with keys: plugin_ok, sync_ok, sha, swarm_state_initialised.
+    Returns a dict with keys: plugin_ok, sync_ok, sha, swarm_state_initialised,
+    gpu_local, preflight_mode, lm_studio_ok.
     """
+    gpu_local = use_http_local_preflight()
+    preflight_mode = "http-local" if gpu_local else "ssh"
     plugin = install_autoresearch_plugin()
-    sync   = bootstrap_autoresearch_on_runner()
+    sync = bootstrap_autoresearch_on_runner()
+    lm = probe_lm_studio_http() if gpu_local else SyncResult(ok=True, sha="skipped")
     initialised = False
     if run_tag and not SWARM_STATE_FILE.exists():
         init_swarm_state(run_tag)
@@ -398,4 +599,9 @@ def preflight(run_tag: Optional[str] = None) -> dict:
         "sha":                    sync.sha,
         "error":                  sync.error,
         "swarm_state_initialised": initialised,
+        "gpu_local":              gpu_local,
+        "preflight_mode":         preflight_mode,
+        "lm_studio_ok":           lm.ok,
+        "lm_studio_error":        lm.error,
+        "lm_studio_models":       lm.sha if lm.ok else "",
     }

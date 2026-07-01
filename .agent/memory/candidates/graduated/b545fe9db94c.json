@@ -1,0 +1,59 @@
+{
+  "id": "b545fe9db94c",
+  "key": "manual_b545fe",
+  "name": "manual_b545fe",
+  "claim": "Before git pull when Perpetua-Tools is behind origin stash local candidate and submodule drift then pop or checkout --theirs on conflict; Mac may land 20+ learn.py rows while Win idle.",
+  "conditions": [
+    "before",
+    "behind",
+    "candidate",
+    "checkout",
+    "conflict",
+    "drift",
+    "git",
+    "idle",
+    "land",
+    "learn",
+    "local",
+    "mac",
+    "origin",
+    "perpetua-tools",
+    "pop",
+    "pull",
+    "rows",
+    "stash",
+    "submodule",
+    "theirs",
+    "while",
+    "win"
+  ],
+  "evidence_ids": [
+    "2026-06-28T23:27:10.556073+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T23:27:10.556073+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T23:27:10.556073+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T23:27:10.641765+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "lesson_98ee8236547d reinforced Win sync b176269",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T23:27:10.556073+00:00"
+      ],
+      "lessons_sha": "944861ff7c5d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T23:27:10.641765+00:00",
+  "reviewer": "learn.py",
+  "rationale": "lesson_98ee8236547d reinforced Win sync b176269"
+}

@@ -1,0 +1,65 @@
+{
+  "id": "20833366511b",
+  "key": "manual_208333",
+  "name": "manual_208333",
+  "claim": "When ws-peer probe PASS is bidirectional between Mac and Win portal, L3 file inbox co-orchestration is fully operational. Mac uses OpenClaw plus Ollama warm; Win uses Hermes plus LM Studio 27B. Coordinate only via lan_peer_assign file drops, not remote agent RPC.",
+  "conditions": [
+    "agent",
+    "between",
+    "bidirectional",
+    "co-orchestration",
+    "coordinate",
+    "drops",
+    "file",
+    "fully",
+    "hermes",
+    "inbox",
+    "lan_peer_assign",
+    "mac",
+    "ollama",
+    "only",
+    "openclaw",
+    "operational",
+    "pass",
+    "plus",
+    "portal",
+    "probe",
+    "remote",
+    "rpc",
+    "studio",
+    "uses",
+    "via",
+    "warm",
+    "win",
+    "ws-peer"
+  ],
+  "evidence_ids": [
+    "2026-06-28T12:06:22.603922+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T12:06:22.603922+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T12:06:22.603922+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T12:06:22.700082+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-06-28 full probe SUCCESS ws-peer PASS both directions after websockets 58605e1",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T12:06:22.603922+00:00"
+      ],
+      "lessons_sha": "770dccf738f3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T12:06:22.700072+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-06-28 full probe SUCCESS ws-peer PASS both directions after websockets 58605e1"
+}

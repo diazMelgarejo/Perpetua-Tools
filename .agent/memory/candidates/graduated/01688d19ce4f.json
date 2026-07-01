@@ -1,0 +1,38 @@
+{
+  "id": "01688d19ce4f",
+  "key": "manual_01688d",
+  "name": "manual_01688d",
+  "claim": "New markdown files over 200 lines trigger a WARNING (not a block) from orama repo_hygiene pre-commit \u2014 commit still succeeds. Consider offloading details to references/ or sub-skills for files approaching this size.",
+  "conditions": [
+    "markdown lint repo_hygiene 200 lines warning commit"
+  ],
+  "evidence_ids": [
+    "2026-06-29T05:11:01.162673+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T05:11:01.162673+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T05:11:01.162673+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T05:11:01.218857+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "openclaw-hermes-cross-harness-wiring.md (269 lines) generated a WARNING during commit 34d1a03. Did not fail the commit but appeared in hook output \u2014 important to distinguish from LINT-00x errors that DO block.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T05:11:01.162673+00:00"
+      ],
+      "lessons_sha": "5f21023abb1c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T05:11:01.218848+00:00",
+  "reviewer": "learn.py",
+  "rationale": "openclaw-hermes-cross-harness-wiring.md (269 lines) generated a WARNING during commit 34d1a03. Did not fail the commit but appeared in hook output \u2014 important to distinguish from LINT-00x errors that DO block."
+}

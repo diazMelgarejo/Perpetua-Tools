@@ -45,7 +45,7 @@
     "windows"
   ],
   "evidence_ids": [
-    "2026-06-22T12:29:37.239239"
+    "2026-06-22T12:29:37.239239+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
@@ -53,12 +53,12 @@
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-22T12:29:37.239239",
+      "ts": "2026-06-22T12:29:37.239239+00:00",
       "action": "staged",
       "reviewer": "learn"
     },
     {
-      "ts": "2026-06-22T12:29:37.331827",
+      "ts": "2026-06-22T12:29:37.331827+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
       "notes": "Mined from orama-system/bin/orama-system/skill/git-history-surgery/references/windows-powershell-runtime-bootstrap.md (61 lines). Frugal setup reusing LM Studio + GitHub Desktop toolchains.",
@@ -70,7 +70,7 @@
     }
   ],
   "rejection_count": 0,
-  "accepted_at": "2026-06-22T12:29:37.331827",
+  "accepted_at": "2026-06-22T12:29:37.331827+00:00",
   "reviewer": "learn.py",
   "rationale": "Mined from orama-system/bin/orama-system/skill/git-history-surgery/references/windows-powershell-runtime-bootstrap.md (61 lines). Frugal setup reusing LM Studio + GitHub Desktop toolchains."
 }

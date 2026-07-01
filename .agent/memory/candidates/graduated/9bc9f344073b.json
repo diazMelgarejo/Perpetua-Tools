@@ -19,7 +19,7 @@
     "yaml"
   ],
   "evidence_ids": [
-    "2026-06-26T13:14:20.502352"
+    "2026-06-26T13:14:20.502352+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
@@ -27,7 +27,7 @@
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-26T13:14:20.502352",
+      "ts": "2026-06-26T13:14:20.502352+00:00",
       "action": "staged",
       "reviewer": "learn"
     },

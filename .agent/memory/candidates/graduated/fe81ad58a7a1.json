@@ -1,0 +1,59 @@
+{
+  "id": "fe81ad58a7a1",
+  "key": "manual_fe81ad",
+  "name": "manual_fe81ad",
+  "claim": "LAN co-orchestration cycles honor v1.1 frugality tiers 0-2 local-first per docs/plans/2026-05-29-03-v1.1-definitive.md; state escalation tier in one line; no new architecture beyond existing graceful-degradation ladders.",
+  "conditions": [
+    "architecture",
+    "beyond",
+    "co-orchestration",
+    "cycles",
+    "definitive",
+    "docs",
+    "escalation",
+    "existing",
+    "frugality",
+    "graceful-degradation",
+    "honor",
+    "ladders",
+    "lan",
+    "line",
+    "local-first",
+    "new",
+    "one",
+    "per",
+    "plans",
+    "state",
+    "tier",
+    "tiers"
+  ],
+  "evidence_ids": [
+    "2026-06-28T13:40:24.150640+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-28T13:40:24.150640+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-28T13:40:24.150640+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-28T13:40:24.217654+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "operator scope guard; v1 plan section 2 tier hierarchy",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-28T13:40:24.150640+00:00"
+      ],
+      "lessons_sha": "0e420d8cb2f3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-28T13:40:24.217648+00:00",
+  "reviewer": "learn.py",
+  "rationale": "operator scope guard; v1 plan section 2 tier hierarchy"
+}

@@ -1,0 +1,60 @@
+{
+  "id": "51978d9dc250",
+  "key": "manual_51978d",
+  "name": "manual_51978d",
+  "claim": "P1 frugality_router.py spike lands on subagent/mac-orchestrator/frugality-router-spike with resolve_route tier 0-2 first, ORAMASYS_OFFLINE rejects tier>=3, privacy_critical forbids tier>=4, and ot.tool.tier JSONL traces; G1 frugality-report harness remains follow-on per v1.1 plan section 11.",
+  "conditions": [
+    "first",
+    "follow-on",
+    "forbids",
+    "frugality-report",
+    "frugality-router-spike",
+    "frugality_router",
+    "harness",
+    "jsonl",
+    "lands",
+    "mac-orchestrator",
+    "oramasys_offline",
+    "per",
+    "plan",
+    "privacy_critical",
+    "rejects",
+    "remains",
+    "resolve_route",
+    "section",
+    "spike",
+    "subagent",
+    "tier",
+    "tool",
+    "traces"
+  ],
+  "evidence_ids": [
+    "2026-06-29T00:32:36.131308+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T00:32:36.131308+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T00:32:36.131308+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T00:32:36.231422+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-007 deferred backlog P1; 15 tests pass c7161de",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T00:32:36.131308+00:00"
+      ],
+      "lessons_sha": "fa2bcfa2cc49"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T00:32:36.231415+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-007 deferred backlog P1; 15 tests pass c7161de"
+}

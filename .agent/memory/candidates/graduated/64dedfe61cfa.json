@@ -4,35 +4,50 @@
   "name": "manual_64dedf",
   "claim": "Portal / returned HTTP 500 after restart if portal_server is not updated first: rerun start.ps1 --lan-peer after pulling latest origin/main",
   "conditions": [
-    "500 portal server error fix portal_server.py update commit pull"
+    "after",
+    "first",
+    "http",
+    "lan-peer",
+    "latest",
+    "main",
+    "origin",
+    "portal",
+    "portal_server",
+    "ps1",
+    "pulling",
+    "rerun",
+    "restart",
+    "returned",
+    "start",
+    "updated"
   ],
   "evidence_ids": [
-    "2026-06-28T12:16:01.555783+00:00"
+    "2026-06-28T12:30:00+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
-  "staged_at": "2026-06-28T12:16:01.555783+00:00",
+  "staged_at": "2026-06-28T12:30:00+00:00",
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-28T12:16:01.555783+00:00",
+      "ts": "2026-06-28T12:30:00+00:00",
       "action": "staged",
-      "reviewer": "learn"
+      "reviewer": "operator-approve"
     },
     {
-      "ts": "2026-06-28T12:16:01.678146+00:00",
+      "ts": "2026-06-28T12:27:15.803146+00:00",
       "action": "graduated",
-      "reviewer": "learn.py",
-      "notes": "2026-06-28 Windows portal / Internal Server Error was fixed by upstream commit cda6a68 (response_class on peer-stream SSE route); current state healthy",
+      "reviewer": "operator-approve",
+      "notes": "2026-06-28 portal / returned 500 when portal_server stale after restart; fix orama 435d27a; operator approve lessons union with lesson_20833366511b",
       "provisional": false,
       "evidence_snapshot": [
-        "2026-06-28T12:16:01.555783+00:00"
+        "2026-06-28T20:30:00.000000+00:00"
       ],
-      "lessons_sha": "07e03ef4637d"
+      "lessons_sha": "cef0ece9ce14"
     }
   ],
   "rejection_count": 0,
-  "accepted_at": "2026-06-28T12:16:01.678146+00:00",
-  "reviewer": "learn.py",
-  "rationale": "2026-06-28 Windows portal / Internal Server Error was fixed by upstream commit cda6a68 (response_class on peer-stream SSE route); current state healthy"
+  "accepted_at": "2026-06-28T12:27:15.803146+00:00",
+  "reviewer": "operator-approve",
+  "rationale": "2026-06-28 portal / returned 500 when portal_server stale after restart; fix orama 435d27a; operator approve lessons union with lesson_20833366511b"
 }

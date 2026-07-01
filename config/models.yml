@@ -24,6 +24,27 @@ models:
     description: "Top Orchestrator - Cloud-Local Hybrid"
     tier: "primary" 
 
+  # ── ONLINE: BigModel / Zhipu GLM-5.2 (cloud, OpenAI-compatible, thinking) ─
+  # Endpoint: https://open.bigmodel.cn/api/paas/v4/chat/completions
+  # Key: ${OPENCLAW_MODELS_PROVIDERS_BIGMODEL_APIKEY} (gitignored .env.local)
+  - name: "glm-5.2"
+    backend: bigmodel
+    device: cloud
+    host: "https://open.bigmodel.cn"
+    port: 443
+    api_path: "/api/paas/v4/chat/completions"
+    context_window: 131072
+    max_tokens: 65536
+    temperature: 1.0
+    thinking:
+      type: enabled
+    roles: [top-level, long_context, strategy, general, reasoning, autoresearch]
+    priority: 2
+    online: true
+    reasoning: cloud-thinking
+    description: "GLM-5.2 cloud (BigModel/Zhipu) — thinking-enabled, 131k context"
+    tier: "primary"
+
   # ── Priority 05 - LOCAL: Windows LM Studio (v1.0 RC canonical) ────────────
   # Qwen3.5-27B Q4_K_M — GPU Offload=40, Context=16384
   # HF: Jackrong/Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF
@@ -31,7 +52,7 @@ models:
   - name: "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2"
     backend: lm-studio
     device: win-rtx3080
-    host: "${LM_STUDIO_WIN_ENDPOINT:-http://192.168.254.100}"
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://192.168.9.18}"
     port: 1234
     context_window: 16384
     gpu_offload: 40
@@ -71,7 +92,7 @@ models:
   - name: gemma-4-26B-A4B-it-Q4_K_M
     backend: lm-studio
     device: win-rtx3080
-    host: "${LM_STUDIO_WIN_ENDPOINT:-http://192.168.254.100}"
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://192.168.9.18}"
     port: 1234
     context_window: 16384
     gpu_offload: 35

@@ -1,0 +1,52 @@
+{
+  "id": "fa0c5c1f8caa",
+  "key": "manual_fa0c5c",
+  "name": "manual_fa0c5c",
+  "claim": "After T1 merge on branch, l1_dispatch _p5_landed import succeeds but CLI still blocked until portal /api/l1/* wired in T2-T7.",
+  "conditions": [
+    "after",
+    "api",
+    "blocked",
+    "branch",
+    "cli",
+    "import",
+    "l1_dispatch",
+    "merge",
+    "p5_landed",
+    "portal",
+    "still",
+    "succeeds",
+    "t2-t7",
+    "until",
+    "wired"
+  ],
+  "evidence_ids": [
+    "2026-06-29T02:33:08.705701+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T02:33:08.705701+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T02:33:08.705701+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T02:33:08.794132+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "l1_dispatch gate nuance",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T02:33:08.705701+00:00"
+      ],
+      "lessons_sha": "19abdf6ed546"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T02:33:08.794132+00:00",
+  "reviewer": "learn.py",
+  "rationale": "l1_dispatch gate nuance"
+}

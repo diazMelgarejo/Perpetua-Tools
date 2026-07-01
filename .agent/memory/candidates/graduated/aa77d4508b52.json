@@ -1,0 +1,49 @@
+{
+  "id": "aa77d4508b52",
+  "key": "manual_aa77d4",
+  "name": "manual_aa77d4",
+  "claim": "P5 T2 next: api_swarm_preview returns preview_id approval_token expires_at signed via sign_operator_payload with assignments_hash in canonical payload.",
+  "conditions": [
+    "api_swarm_preview",
+    "approval_token",
+    "assignments_hash",
+    "canonical",
+    "expires_at",
+    "next",
+    "payload",
+    "preview_id",
+    "returns",
+    "sign_operator_payload",
+    "signed",
+    "via"
+  ],
+  "evidence_ids": [
+    "2026-06-29T02:33:09.569379+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T02:33:09.569379+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T02:33:09.569379+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T02:33:09.668722+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "win-p5-t2-handoff",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T02:33:09.569379+00:00"
+      ],
+      "lessons_sha": "3a6192eb8309"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T02:33:09.668722+00:00",
+  "reviewer": "learn.py",
+  "rationale": "win-p5-t2-handoff"
+}

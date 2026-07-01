@@ -159,6 +159,7 @@ def test_production_mode_without_token_auto_generates_and_requires_bearer(monkey
     assert denied.status_code == 401
     assert allowed.status_code == 200
     assert token
+    assert oct(token_path.stat().st_mode & 0o777) == oct(0o600)
 
 
 def test_head_on_protected_route_requires_auth_when_enforced(monkeypatch):

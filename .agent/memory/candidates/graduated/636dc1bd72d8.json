@@ -1,0 +1,38 @@
+{
+  "id": "636dc1bd72d8",
+  "key": "manual_636dc1",
+  "name": "manual_636dc1",
+  "claim": "coord_pulse returns idle when win_job_queue pending=0 even if lan_peer inbox has new markdown cards \u2014 inbox files are not jobs until enqueued or pulse-gate marks them actionable",
+  "conditions": [
+    "new_files"
+  ],
+  "evidence_ids": [
+    "2026-06-29T03:02:42.546669+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T03:02:42.546669+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T03:02:42.546669+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T03:02:42.626010+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "win-coord-listen-022 seen in new_files but gate idle",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T03:02:42.546669+00:00"
+      ],
+      "lessons_sha": "ef113edc6915"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T03:02:42.626010+00:00",
+  "reviewer": "learn.py",
+  "rationale": "win-coord-listen-022 seen in new_files but gate idle"
+}
