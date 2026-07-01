@@ -1,0 +1,42 @@
+{
+  "id": "349ea348289d",
+  "key": "manual_349ea3",
+  "name": "manual_349ea3",
+  "claim": "Before deleting any uncommitted untracked file discovered mid-session as a suspected side-effect, check git log --all -- <path> and cross-reference against other files that import/reference/test it (e.g. a matching tests/test_X.py) - an untracked .py file with a matching test suite is very likely another agent's real in-progress work, not build noise, even if it appeared alongside genuine bootstrap-script side effects in the same git status",
+  "conditions": [
+    "data-loss",
+    "git",
+    "recovery",
+    "session-handoff",
+    "untracked-files"
+  ],
+  "evidence_ids": [
+    "2026-07-01T13:46:43.298267+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-01T13:46:43.298267+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-01T13:46:43.298267+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-01T13:46:43.540712+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Deleted scripts/cline_autoresearcher.py mid-session assuming it was a bootstrap-environment.sh skill-consolidation side effect (several .SKILL.md.bak files appeared in the same git status output from the same start.ps1 test run). It was actually real uncommitted work from a prior agent session that hit its usage limit - recoverable only because tests/test_cline_autoresearcher.py (also untracked, already committed nowhere) fully specified its public API and let the file be reconstructed from scratch. Would have been unrecoverable if the test file had been deleted too, or if no test suite existed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-01T13:46:43.298267+00:00"
+      ],
+      "lessons_sha": "311cc44019fb"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-01T13:46:43.540712+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Deleted scripts/cline_autoresearcher.py mid-session assuming it was a bootstrap-environment.sh skill-consolidation side effect (several .SKILL.md.bak files appeared in the same git status output from the same start.ps1 test run). It was actually real uncommitted work from a prior agent session that hit its usage limit - recoverable only because tests/test_cline_autoresearcher.py (also untracked, already committed nowhere) fully specified its public API and let the file be reconstructed from scratch. Would have been unrecoverable if the test file had been deleted too, or if no test suite existed."
+}
