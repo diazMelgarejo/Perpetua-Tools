@@ -61,7 +61,7 @@ def _locked_jsonl(path):
     render lock to sidestep this).
     """
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    f = open(path, "a+")
+    f = open(path, "a+", encoding="utf-8")
     try:
         if _HAS_FLOCK:
             fcntl.flock(f.fileno(), fcntl.LOCK_EX)
@@ -103,7 +103,7 @@ def load_lessons(semantic_dir):
     if not os.path.exists(path):
         return []
     out = []
-    for line in open(path):
+    for line in open(path, encoding="utf-8"):
         line = line.strip()
         if not line:
             continue
@@ -171,7 +171,7 @@ def migrate_legacy_bullets(semantic_dir):
     md_path = os.path.join(semantic_dir, LESSONS_MD)
     if not os.path.exists(md_path):
         return 0
-    content = open(md_path).read()
+    content = open(md_path, encoding="utf-8").read()
     if SENTINEL not in content:
         return 0
 
@@ -276,7 +276,7 @@ def render_lessons(semantic_dir):
         auto_section = _build_auto_section(lessons)
 
         if os.path.exists(md_path):
-            existing = open(md_path).read()
+            existing = open(md_path, encoding="utf-8").read()
             if SENTINEL in existing:
                 prefix = existing.split(SENTINEL)[0].rstrip()
                 new = f"{prefix}\n\n{SENTINEL}\n\n{auto_section}"
@@ -295,7 +295,7 @@ def render_lessons(semantic_dir):
         # reader of LESSONS.md always sees either the old or the new
         # complete content, never a half-written file.
         tmp_path = md_path + ".tmp"
-        with open(tmp_path, "w") as f:
+        with open(tmp_path, "w", encoding="utf-8") as f:
             f.write(new)
         os.replace(tmp_path, md_path)
 
@@ -303,7 +303,7 @@ def render_lessons(semantic_dir):
 
 
 def render_lessons_as_text(semantic_dir):
-    return open(render_lessons(semantic_dir)).read()
+    return open(render_lessons(semantic_dir), encoding="utf-8").read()
 
 
 if __name__ == "__main__":

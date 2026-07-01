@@ -54,7 +54,7 @@ def main():
     if not os.path.exists(cand_path):
         print(f"ERROR: candidate not found: {args.candidate_id}", file=sys.stderr)
         sys.exit(1)
-    with open(cand_path) as f:
+    with open(cand_path, encoding="utf-8") as f:
         cand = json.load(f)
 
     lesson_id = _lesson_id(cand)
@@ -137,7 +137,7 @@ def main():
         return
 
     lessons_md = os.path.join(SEMANTIC, "LESSONS.md")
-    existing = open(lessons_md).read() if os.path.exists(lessons_md) else ""
+    existing = open(lessons_md, encoding="utf-8").read() if os.path.exists(lessons_md) else ""
     # When superseding, exclude the target lesson from the duplicate check —
     # replacing a lesson with structurally-better content but same wording
     # is exactly what supersession is for.
