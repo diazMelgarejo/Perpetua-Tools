@@ -1,0 +1,42 @@
+{
+  "id": "3afc37f1ec96",
+  "key": "manual_3afc37",
+  "name": "manual_3afc37",
+  "claim": "PT .agent memory pipeline had unencoded open() calls scattered across graduate.py, render_lessons.py, learn.py beyond the two files fixed earlier (promote.py, auto_dream.py) - the UTF-8 codec bug on Windows cp1252 recurs at every new read site until the whole call chain is audited, not just the entry point",
+  "conditions": [
+    "agent-memory",
+    "cp1252",
+    "encoding",
+    "utf-8",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-07-01T12:48:02.529839+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-01T12:48:02.529839+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-01T12:48:02.529839+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-01T12:48:02.640797+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "learn.py -> graduate.py -> render_lessons.py each independently crashed on the same lessons.jsonl/LESSONS.md em-dash bytes because each had its own unencoded open(). Fixed graduate.py:57,140 and all 4 remaining calls in render_lessons.py in one pass instead of whack-a-mole. Full sweep of .agent/tools/*.py and .agent/memory/*.py still has ~15 more unencoded open() calls (recall.py, show.py, skill_loader.py, decay.py, review_state.py) not yet fixed - flagged as follow-up, not blocking.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-01T12:48:02.529839+00:00"
+      ],
+      "lessons_sha": "c14d96d8173d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-01T12:48:02.640797+00:00",
+  "reviewer": "learn.py",
+  "rationale": "learn.py -> graduate.py -> render_lessons.py each independently crashed on the same lessons.jsonl/LESSONS.md em-dash bytes because each had its own unencoded open(). Fixed graduate.py:57,140 and all 4 remaining calls in render_lessons.py in one pass instead of whack-a-mole. Full sweep of .agent/tools/*.py and .agent/memory/*.py still has ~15 more unencoded open() calls (recall.py, show.py, skill_loader.py, decay.py, review_state.py) not yet fixed - flagged as follow-up, not blocking."
+}
