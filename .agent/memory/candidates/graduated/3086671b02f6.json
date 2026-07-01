@@ -35,7 +35,7 @@
     "write"
   ],
   "evidence_ids": [
-    "2026-06-22T12:16:26.373878"
+    "2026-06-22T12:16:26.373878+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
@@ -43,12 +43,12 @@
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-22T12:16:26.373878",
+      "ts": "2026-06-22T12:16:26.373878+00:00",
       "action": "staged",
       "reviewer": "learn"
     },
     {
-      "ts": "2026-06-22T12:16:26.463329",
+      "ts": "2026-06-22T12:16:26.463329+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
       "notes": "Mined from orama-system/docs/2026-05-14--UNIFIED-ABSORPTION-PLAN.md \u00a73-\u00a74 and \u00a75. Hard rule prevents worker recursion. JSON/Pydantic is canonical internal contract.",
@@ -60,7 +60,7 @@
     }
   ],
   "rejection_count": 0,
-  "accepted_at": "2026-06-22T12:16:26.463329",
+  "accepted_at": "2026-06-22T12:16:26.463329+00:00",
   "reviewer": "learn.py",
   "rationale": "Mined from orama-system/docs/2026-05-14--UNIFIED-ABSORPTION-PLAN.md \u00a73-\u00a74 and \u00a75. Hard rule prevents worker recursion. JSON/Pydantic is canonical internal contract."
 }

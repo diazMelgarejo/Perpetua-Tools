@@ -13,7 +13,7 @@
     "tree-twin"
   ],
   "evidence_ids": [
-    "2026-06-22T09:21:23.812031"
+    "2026-06-22T09:21:23.812031+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
@@ -21,12 +21,12 @@
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-22T09:21:23.812031",
+      "ts": "2026-06-22T09:21:23.812031+00:00",
       "action": "staged",
       "reviewer": "learn"
     },
     {
-      "ts": "2026-06-22T09:21:23.860626",
+      "ts": "2026-06-22T09:21:23.860626+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
       "notes": "2026-06-22: I committed into the dead '.agents/memory' dir while origin/main had already migrated the memory system to '.agent/'. I was outdated and did not know it because I never checked origin before writing.",
@@ -38,7 +38,7 @@
     }
   ],
   "rejection_count": 0,
-  "accepted_at": "2026-06-22T09:21:23.860623",
+  "accepted_at": "2026-06-22T09:21:23.860623+00:00",
   "reviewer": "learn.py",
   "rationale": "2026-06-22: I committed into the dead '.agents/memory' dir while origin/main had already migrated the memory system to '.agent/'. I was outdated and did not know it because I never checked origin before writing."
 }
