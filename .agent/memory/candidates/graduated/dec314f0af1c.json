@@ -1,0 +1,55 @@
+{
+  "id": "dec314f0af1c",
+  "key": "manual_dec314",
+  "name": "manual_dec314",
+  "claim": "Track P5 swarm HITL progress in docs/plans/P5-STATUS.md with T1-T7 checklist and acceptance criteria; implementation branch cursor/security-pr3-swarm-approval-f559 not yet created on remote.",
+  "conditions": [
+    "acceptance",
+    "branch",
+    "checklist",
+    "created",
+    "criteria",
+    "cursor",
+    "docs",
+    "hitl",
+    "implementation",
+    "p5-status",
+    "plans",
+    "progress",
+    "remote",
+    "security-pr3-swarm-approval-f559",
+    "swarm",
+    "t1-t7",
+    "track",
+    "yet"
+  ],
+  "evidence_ids": [
+    "2026-06-29T01:46:47.396106+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T01:46:47.396106+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T01:46:47.396106+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T01:46:47.490872+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-017 P5 comprehensive view",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T01:46:47.396106+00:00"
+      ],
+      "lessons_sha": "2d508ac86b25"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T01:46:47.490872+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-017 P5 comprehensive view"
+}

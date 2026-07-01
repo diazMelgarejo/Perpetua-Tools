@@ -26,6 +26,7 @@ invocation. Humans edit this file; the agent does not.
 - Modify `permissions.md` (only humans edit this file).
 - Disable or bypass `pre_tool_call` hooks.
 - Delete entries from episodic or semantic memory (archive, don't delete).
+- Write workstation-specific paths into tracked files (see `protocols/path-hygiene.md`).
 
 ## Approved external domains
 - `api.github.com`

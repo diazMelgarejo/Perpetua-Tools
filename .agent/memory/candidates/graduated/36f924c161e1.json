@@ -13,7 +13,7 @@
     "sync"
   ],
   "evidence_ids": [
-    "2026-06-22T10:11:09.099035"
+    "2026-06-22T10:11:09.099035+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
@@ -21,12 +21,12 @@
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-22T10:11:09.099035",
+      "ts": "2026-06-22T10:11:09.099035+00:00",
       "action": "staged",
       "reviewer": "learn"
     },
     {
-      "ts": "2026-06-22T10:11:09.151388",
+      "ts": "2026-06-22T10:11:09.151388+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
       "notes": "2026-06-22: fixing a blocked sync, a bare 'gbrain sync' from ~/code/OpenClaw (not a git repo) only acked failures and refused to sync; per-source refresh worked only after cd-ing into each source's local_path. Also surfaced that stale sources can be superseded duplicates pointing at OLD moved paths (orama-src/ools/claw/periscope \u2192 ~/Documents/... pre-iCloud-escape) \u2014 refresh the live canonical source, don't re-index the moved orphan.",
@@ -38,7 +38,7 @@
     }
   ],
   "rejection_count": 0,
-  "accepted_at": "2026-06-22T10:11:09.151384",
+  "accepted_at": "2026-06-22T10:11:09.151384+00:00",
   "reviewer": "learn.py",
   "rationale": "2026-06-22: fixing a blocked sync, a bare 'gbrain sync' from ~/code/OpenClaw (not a git repo) only acked failures and refused to sync; per-source refresh worked only after cd-ing into each source's local_path. Also surfaced that stale sources can be superseded duplicates pointing at OLD moved paths (orama-src/ools/claw/periscope \u2192 ~/Documents/... pre-iCloud-escape) \u2014 refresh the live canonical source, don't re-index the moved orphan."
 }

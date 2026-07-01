@@ -1,0 +1,58 @@
+{
+  "id": "eaa5e10d7c2c",
+  "key": "manual_eaa5e1",
+  "name": "manual_eaa5e1",
+  "claim": "Win coord_pulse.ps1 is queue-gated: cursor-agent spawns only when win_job_queue has a non-blocked pending job; Mac coord_pulse.sh when idle still uses a generic mac-orchestrator-queue card to scan inbox and backlog.",
+  "conditions": [
+    "backlog",
+    "card",
+    "coord_pulse",
+    "cursor-agent",
+    "generic",
+    "idle",
+    "inbox",
+    "job",
+    "mac",
+    "mac-orchestrator-queue",
+    "non-blocked",
+    "only",
+    "pending",
+    "ps1",
+    "queue-gated",
+    "scan",
+    "spawns",
+    "still",
+    "uses",
+    "win",
+    "win_job_queue"
+  ],
+  "evidence_ids": [
+    "2026-06-29T01:16:31.314736+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T01:16:31.314736+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T01:16:31.314736+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T01:16:31.412035+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "win-mac-pulse-comparison.md coord-014",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T01:16:31.314736+00:00"
+      ],
+      "lessons_sha": "82741bdd0528"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T01:16:31.412035+00:00",
+  "reviewer": "learn.py",
+  "rationale": "win-mac-pulse-comparison.md coord-014"
+}

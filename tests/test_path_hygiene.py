@@ -42,6 +42,21 @@ def test_no_false_positive_on_system_path():
     assert sanitize_tracked_path_leaks(text) == text
 
 
+def test_workspace_doxx_win_after_home_substitution():
+    raw = r"Use %USERPROFILE%\Downloads\SKILLS.md\ultrathink as canonical"
+    assert sanitize_tracked_path_leaks(raw) == "Use <workspace-root> as canonical"
+
+
+def test_workspace_doxx_unix_after_home_substitution():
+    raw = "Use $HOME/Downloads/SKILLS.md/ultrathink as canonical"
+    assert sanitize_tracked_path_leaks(raw) == "Use <workspace-root> as canonical"
+
+
+def test_workspace_doxx_full_windows_path():
+    raw = r"Use C:\Users\lab\Downloads\SKILLS.md\ultrathink as canonical"
+    assert sanitize_tracked_path_leaks(raw) == "Use <workspace-root> as canonical"
+
+
 def test_json_structure_sanitized():
     from path_hygiene import sanitize_json_strings
     obj = {"path": "/Users/alice/config.json", "count": 5}

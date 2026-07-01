@@ -13,7 +13,7 @@
     "git-guard"
   ],
   "evidence_ids": [
-    "2026-06-22T19:37:38.665209"
+    "2026-06-22T19:37:38.665209+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
@@ -21,12 +21,12 @@
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-22T19:37:38.665209",
+      "ts": "2026-06-22T19:37:38.665209+00:00",
       "action": "staged",
       "reviewer": "learn"
     },
     {
-      "ts": "2026-06-22T19:37:38.714957",
+      "ts": "2026-06-22T19:37:38.714957+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
       "notes": "2026-06-22: lawrence@cyre.me was in ALLOWED_GMAIL_COAUTHORS; commits with Co-authored-by: cyre <Lawrence@cyre.me> were rejected because gmail_allowed() is guarded by *@gmail.com check. Moved to ALLOWED_EXACT_COAUTHOR_EMAILS (case-insensitive tolower match). Fix in orama scripts/git/check_commit_message.sh, synced to PT via sync-attribution-guard-scripts.sh.",
@@ -38,7 +38,7 @@
     }
   ],
   "rejection_count": 0,
-  "accepted_at": "2026-06-22T19:37:38.714954",
+  "accepted_at": "2026-06-22T19:37:38.714954+00:00",
   "reviewer": "learn.py",
   "rationale": "2026-06-22: lawrence@cyre.me was in ALLOWED_GMAIL_COAUTHORS; commits with Co-authored-by: cyre <Lawrence@cyre.me> were rejected because gmail_allowed() is guarded by *@gmail.com check. Moved to ALLOWED_EXACT_COAUTHOR_EMAILS (case-insensitive tolower match). Fix in orama scripts/git/check_commit_message.sh, synced to PT via sync-attribution-guard-scripts.sh."
 }

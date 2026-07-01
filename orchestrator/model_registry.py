@@ -5,13 +5,24 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from urllib.parse import urlparse
 
 import yaml
 
 from orchestrator.connectivity import endpoint_online as _endpoint_online
+from utils.endpoint_policy_core import build_transport_url
 
 _DISABLE_LIVE_PROBES = {"1", "true", "yes", "on"}
+
+
+def _build_tilting_url(tilted: str, port: int, *, default_scheme: str = "http") -> Optional[str]:
+    """Rebuild scheme://hostname:port from active_tilting discovery output.
+
+    Compatibility wrapper around the shared endpoint policy core. Preserves the
+    transport scheme when discovery returns an absolute URL (e.g. https
+    overrides). Returns None when hostname cannot be parsed so callers can fall
+    back to models.yml host expansion.
+    """
+    return build_transport_url(tilted, port, default_scheme=default_scheme)
 
 
 def _expand_env_default(value: str) -> str:
@@ -108,13 +119,24 @@ class ModelRegistry:
         detect_active_tilting_ip).
 
         For all other devices, falls through to the usual env-var expansion.
+
+        Active tilting discovers the Win GPU host for lm-studio (:1234). Win Ollama
+        models on the same device must keep their own port (11434) — reusing the
+        lm-studio URL would probe the wrong endpoint and mark Ollama models offline.
         """
         device_name = item.get("device", "")
         dev_info = self.device_info(device_name)
         live_disabled = os.getenv("PT_DISABLE_LIVE_MODEL_PROBES", "").strip().lower() in _DISABLE_LIVE_PROBES
         if dev_info.get("identity_method") == "active_tilting" and not live_disabled:
             from orchestrator.lan_discovery import detect_active_tilting_ip
-            return detect_active_tilting_ip()
+
+            tilted = detect_active_tilting_ip()
+            if item.get("backend") != "ollama":
+                return tilted
+            rebuilt = _build_tilting_url(tilted, int(item.get("port", 11434)))
+            if rebuilt is None:
+                return _expand_env_default(str(item.get("host", "")))
+            return rebuilt
         return _expand_env_default(str(item.get("host", "")))
 
     # ── model listing ─────────────────────────────────────────────────────────

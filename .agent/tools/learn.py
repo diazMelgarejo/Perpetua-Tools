@@ -78,7 +78,7 @@ def stage(claim, conditions, source="learn", importance=7):
         "rejection_count": 0,
     }
     path = os.path.join(CANDIDATES, f"{cid}.json")
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         json.dump(candidate, f, indent=2)
     return cid, path
 

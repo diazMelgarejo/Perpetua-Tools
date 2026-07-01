@@ -26,7 +26,7 @@
     "utc-aware"
   ],
   "evidence_ids": [
-    "2026-06-27T01:56:35.742762"
+    "2026-06-27T01:56:35.742762+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
@@ -34,7 +34,7 @@
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-27T01:56:35.742762",
+      "ts": "2026-06-27T01:56:35.742762+00:00",
       "action": "staged",
       "reviewer": "learn"
     },

@@ -33,15 +33,15 @@
     "workstation"
   ],
   "evidence_ids": [
-    "2026-06-26T08:05:14.253297"
+    "2026-06-26T00:05:14.253297+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
-  "staged_at": "2026-06-26T08:05:14.253297+00:00",
+  "staged_at": "2026-06-26T00:05:14.253297+00:00",
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-26T08:05:14.253297",
+      "ts": "2026-06-26T00:05:14.253297+00:00",
       "action": "staged",
       "reviewer": "learn"
     },

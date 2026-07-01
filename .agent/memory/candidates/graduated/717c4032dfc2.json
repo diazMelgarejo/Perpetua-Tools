@@ -12,7 +12,7 @@
     "retirement"
   ],
   "evidence_ids": [
-    "2026-06-22T14:45:49.092057"
+    "2026-06-22T14:45:49.092057+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
@@ -20,12 +20,12 @@
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-06-22T14:45:49.092057",
+      "ts": "2026-06-22T14:45:49.092057+00:00",
       "action": "staged",
       "reviewer": "learn"
     },
     {
-      "ts": "2026-06-22T14:45:49.168024",
+      "ts": "2026-06-22T14:45:49.168024+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
       "notes": "User-stated 2026-06-22 while fixing a config/models.yml stale comment that tripped the hallucinated-model guard.",
@@ -37,7 +37,7 @@
     }
   ],
   "rejection_count": 0,
-  "accepted_at": "2026-06-22T14:45:49.168020",
+  "accepted_at": "2026-06-22T14:45:49.168020+00:00",
   "reviewer": "learn.py",
   "rationale": "User-stated 2026-06-22 while fixing a config/models.yml stale comment that tripped the hallucinated-model guard."
 }

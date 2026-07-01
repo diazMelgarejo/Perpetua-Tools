@@ -1,0 +1,38 @@
+{
+  "id": "bc102bd9e95a",
+  "key": "manual_bc102b",
+  "name": "manual_bc102b",
+  "claim": "Cross-harness wiring docs belong in orama-system/docs/how-to/ \u2014 not inside skill references/ directories (those are skill-internal) and not in docs/wiki/ (wiki is concept-level). how-to/ is for operational runbooks agents and humans self-reference.",
+  "conditions": [
+    "wiring doc location how-to references wiki cross-harness"
+  ],
+  "evidence_ids": [
+    "2026-06-29T05:11:01.279335+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-06-29T05:11:01.279335+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-06-29T05:11:01.279335+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-06-29T05:11:01.379650+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Placed openclaw-hermes-cross-harness-wiring.md in docs/how-to/ 2026-06-29. The hermes-harness/references/ dir is skill-internal context; docs/wiki/ is concept-level. how-to/ is the right tier for 'how do I do X' operational docs.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-06-29T05:11:01.279335+00:00"
+      ],
+      "lessons_sha": "0cecb6a489d7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-06-29T05:11:01.379639+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Placed openclaw-hermes-cross-harness-wiring.md in docs/how-to/ 2026-06-29. The hermes-harness/references/ dir is skill-internal context; docs/wiki/ is concept-level. how-to/ is the right tier for 'how do I do X' operational docs."
+}
