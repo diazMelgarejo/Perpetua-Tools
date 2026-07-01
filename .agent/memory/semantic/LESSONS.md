@@ -13,6 +13,14 @@
 
 ## Auto-promoted entries will be appended below
 
+### 2026-07
+
+- Windows Task Scheduler rejects [TimeSpan]::MaxValue as a RepetitionDuration - it serializes to P99999999DT23H59M59S which the XML schema rejects  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_c709f609c537 -->
+- Hermes user-local skills live under HERMES_HOME/skills/<category>/<name>/SKILL.md, not ~/.hermes/skills - HERMES_HOME can be a custom env var pointing elsewhere on Windows  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_ac7b0254bada -->
+- When a git branch has diverged from origin with unrelated concurrent commits, reset --hard to origin tip and re-apply only your own deltas as fresh edits, rather than fighting an interactive rebase across duplicate/superseded history  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_3060e4382900 -->
+- A file showing 'M' in git status/diff with every line changed but zero semantic diff (confirmed via diff with tr -d carriage-return) is EOL-attribute false-dirty, not a real edit - fix once with git add <file> to renormalize, never git checkout-- which can silently discard real changes if you're wrong  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_f37d3322a020 -->
+- PT .agent memory pipeline had unencoded open() calls scattered across graduate.py, render_lessons.py, learn.py beyond the two files fixed earlier (promote.py, auto_dream.py) - the UTF-8 codec bug on Windows cp1252 recurs at every new read site until the whole call chain is audited, not just the entry point  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_3afc37f1ec96 -->
+
 ### 2026-06
 
 - PR landing in orama-system and Perpetua-Tools always uses squash-merge (gh pr merge --squash). When a PR shows CONFLICTING/DIRTY on GitHub: (1) git merge origin/main locally, (2) resolve conflicts additively (union both sides), (3) push branch, (4) gh pr merge --squash. Never regular merge commit; never rebase-merge. squash keeps main history linear.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_001158f408c1 -->
