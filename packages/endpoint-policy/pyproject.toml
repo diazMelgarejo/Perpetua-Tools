@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "perpetua-endpoint-policy"
+version = "0.1.0"
+description = "Shared endpoint/URL egress policy: validate and normalize local/LAN model server base URLs with a single typed error (ModelEndpointPolicyError). SSRF-hardened: link-local metadata block, IPv4-mapped-IPv6 unwrap, wrapped urlparse port access."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "Perpetua-Tools maintainers" }]
+keywords = ["ssrf", "endpoint", "url-validation", "egress-policy"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+]
+
+[project.urls]
+Homepage = "https://github.com/diazMelgarejo/Perpetua-Tools"
+Source = "https://github.com/diazMelgarejo/Perpetua-Tools/tree/main/packages/endpoint-policy"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/endpoint_policy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
