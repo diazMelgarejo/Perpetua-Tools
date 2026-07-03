@@ -5,14 +5,20 @@ Layer 4 integration: autoresearch as a managed foot-soldier.
 Architecture (post-migration)
 ------------------------------
 Primary mode:  uditgoenka/autoresearch Claude Code plugin
-               → installed via `claude plugin marketplace add uditgoenka/autoresearch`
-               → activated via `/autoresearch` and `/autoresearch:debug` slash commands
-               → can execute anywhere (Mac, Windows, CI) without SSH
+               -> installed via `claude plugin marketplace add uditgoenka/autoresearch`
+               -> activated via `/autoresearch` and `/autoresearch:debug` slash commands
+               -> can execute anywhere (Mac, Windows, CI) without SSH
 
 Secondary mode: When task_type is `ml-experiment`, the GPU runner at $GPU_BOX
                 is used as an optional `Verify` substrate via SSH, reading
-                swarm_state.md for GPU locks.  This path is NOT removed — it
+                swarm_state.md for GPU locks. This path is NOT removed; it
                 becomes the dedicated hardware verifier for ML experiments.
+
+Planning mode: dry-run orchestration plans classify a plain-language goal using
+               the upstream uditgoenka/autoresearch archetypes and return the
+               predicate, pipeline, state snapshot, and safety gates without
+               invoking Claude, plugin install, git sync, SSH, SCP, LM Studio,
+               or GPU work.
 
 Responsibilities
 ----------------
@@ -22,20 +28,24 @@ Responsibilities
   consistent with the rest of the stack.
 - Reading swarm_state.md for GPU lock status before dispatching any training run.
 - Installing the uditgoenka/autoresearch Claude Code plugin (idempotent).
+- Preparing dry-run plans that pass only state + goal/archetype metadata to the
+  higher-level Perpetua/orama orchestrator path.
 
 Design rules (from approved interoperability contract)
 ------------------------------------------------------
 1. ONLY Perpetua-Tools/orchestrator.py (or the FastAPI /autoresearch/* endpoints)
-   may call sync_autoresearch_idempotent().  Layers 2-4 treat autoresearch as
+   may call sync_autoresearch_idempotent(). Layers 2-4 treat autoresearch as
    read-only from a lifecycle perspective.
 2. The autoresearch clone lives in ONE canonical path on the Windows GPU runner:
        C:/Users/<WINUSER>/autoresearch/
    Never duplicate it.
 3. File transfer uses scp only (rsync not guaranteed on Windows SSH sessions).
 4. API keys are NEVER written to files; they are injected as session env vars.
-5. GPU lock is the IDLE/BUSY flag in swarm_state.md — no external queue daemon.
-6. Windows model loading is STRICTLY SEQUENTIAL — never dispatch a new GPU run
+5. GPU lock is the IDLE/BUSY flag in swarm_state.md: no external queue daemon.
+6. Windows model loading is STRICTLY SEQUENTIAL: never dispatch a new GPU run
    while swarm_state.md shows GPU: BUSY.
+7. Long-running goals MUST start with dry-run planning. Dry-run never executes
+   Claude/plugin/GPU/network substrate actions.
 """
 
 from __future__ import annotations
@@ -49,28 +59,35 @@ import threading
 import time
 import urllib.error
 import urllib.request
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
 
-# ── configuration (resolved from environment, never hard-coded secrets) ────────
+# -- configuration (resolved from environment, never hard-coded secrets) --------
 
 # GPU_BOX: SSH target for the Windows RTX 3080.
 # Uses detect_active_tilting_ip() host if GPU_BOX not set, but SSH needs user@host
-# so we keep a separate env var.  Default reflects the current 192.168.254.x subnet.
+# so we keep a separate env var. Default reflects the current 192.168.254.x subnet.
 GPU_BOX: str = os.environ.get("GPU_BOX", "WINUSER@192.168.254.100")
 GPU_REPO_PATH: str = os.environ.get("GPU_REPO_PATH", "autoresearch")
 
-# Primary: uditgoenka/autoresearch Claude Code plugin (env-var configurable)
+# Primary: uditgoenka/autoresearch Claude Code plugin (env-var configurable).
+# The tracked vendor/autoresearch submodule is a source/reference mirror; runtime
+# still installs the plugin and may sync LOCAL_AUTORESEARCH_PATH/GPU_REPO_PATH.
 AUTORESEARCH_REMOTE: str = os.environ.get(
     "AUTORESEARCH_REMOTE", "https://github.com/uditgoenka/autoresearch.git"
 )
-AUTORESEARCH_DEFAULT_BRANCH: str = os.environ.get("AUTORESEARCH_BRANCH", "main")
+AUTORESEARCH_DEFAULT_BRANCH: str = os.environ.get("AUTORESEARCH_BRANCH", "master")
+AUTORESEARCH_UPSTREAM_PRIMARY: str = "https://github.com/uditgoenka/autoresearch"
+AUTORESEARCH_UPSTREAM_PRIMARY_PIN: str = "9f51f726e513be4e899b6afeed9f9c55fc1f51f3"
+AUTORESEARCH_UPSTREAM_SECONDARY: str = "https://github.com/karpathy/autoresearch"
+AUTORESEARCH_UPSTREAM_SECONDARY_PIN: str = "c92bee55ebc339e8b1501f6b5c9cfb54835a9de8"
 
 SSH_TIMEOUT: int = int(os.environ.get("SSH_TIMEOUT", "90"))
+DEFAULT_MAX_CYCLES: int = int(os.environ.get("AUTORESEARCH_MAX_CYCLES", "50"))
 
-# HTTP-local preflight (Win operator on GPU host — skip SSH, probe LM Studio).
+# HTTP-local preflight (Win operator on GPU host: skip SSH, probe LM Studio).
 # auto | http-local | ssh
 AUTORESEARCH_PREFLIGHT_MODE: str = os.environ.get(
     "AUTORESEARCH_PREFLIGHT_MODE", "auto"
@@ -86,13 +103,7 @@ _SSH_OPTS: list[str] = (
     ["-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=accept-new"]
 )
 
-# ── Hardware Overload Prevention (HOP) — win-rtx3080:1234 slot lock ───────────
-# The RTX 3080 has limited VRAM.  Executor and Verifier/Critic agents both target
-# LM Studio on this machine.  Loading a second model while the first is still in
-# VRAM triggers repeated load/unload cycles that crash the GPU (see LESSONS.md
-# 2026-04-07 "Rapid model reload after crash burns GPU").
-# This lock serializes any call that holds the Windows LM Studio inference slot.
-# CRASH_RECOVERY_SECS matches the 30 s cooldown already used by launch_researchers.
+# -- Hardware Overload Prevention (HOP) -- win-rtx3080:1234 slot lock ----------
 _WIN_LM_STUDIO_SLOT: threading.Lock = threading.Lock()
 SLOT_ACQUIRE_TIMEOUT_SECS: int = int(os.environ.get("HOP_SLOT_TIMEOUT", "120"))
 CRASH_RECOVERY_SECS: int = 30
@@ -102,8 +113,36 @@ LOCAL_REPO_PATH: Path = Path(
 )
 SWARM_STATE_FILE: Path = LOCAL_REPO_PATH / "swarm_state.md"
 
+# Upstream v2.2 orchestrator archetypes. Keep these names aligned with
+# uditgoenka/autoresearch guide/autoresearch-orchestrator.md.
+LOOP_ARCHETYPES = frozenset({
+    "fix-broken",
+    "ship-ready",
+    "optimize-metric",
+    "harden",
+    "build-feature",
+})
+SINGLE_PASS_ARCHETYPES = frozenset({
+    "explore",
+    "document",
+    "decide-design",
+    "what-to-build",
+})
 
-# ── data types ────────────────────────────────────────────────────────────────
+PIPELINES: dict[str, list[str]] = {
+    "fix-broken": ["debug", "fix", "regression"],
+    "ship-ready": ["regression", "fix", "ship"],
+    "optimize-metric": ["plan", "core-loop"],
+    "harden": ["security", "fix", "security"],
+    "build-feature": ["scenario", "fix", "regression"],
+    "explore": ["scenario"],
+    "document": ["learn"],
+    "decide-design": ["reason"],
+    "what-to-build": ["improve"],
+}
+
+
+# -- data types ----------------------------------------------------------------
 
 @dataclass
 class SyncResult:
@@ -121,12 +160,158 @@ class SwarmState:
     evaluator_findings: list[str] = field(default_factory=list)
 
 
-# ── progress helper ───────────────────────────────────────────────────────────
+@dataclass(frozen=True)
+class AutoresearchPlan:
+    """Side-effect-free orchestration plan for an autoresearch goal."""
+
+    goal: str
+    task_type: str
+    archetype: str
+    mode: str
+    predicate: str
+    pipeline: list[str]
+    max_cycles: int
+    dry_run: bool
+    units_remaining: str
+    ship_requires_approval: bool
+    plugin_execution: str
+    gpu_execution: str
+    orama_methodology: str
+    upstream_primary: str
+    upstream_secondary: str
+    notes: list[str]
+    swarm_state: dict[str, object]
+
+    def to_dict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+# -- progress helper -----------------------------------------------------------
 
 def _progress(label: str, msg: str) -> None:
-    """Print a single-line status update (no bar — SSH ops have no duration signal)."""
+    """Print a single-line status update (no bar: SSH ops have no duration signal)."""
     print(f"  [{label}] {msg}", flush=True)
 
+
+# -- dry-run planning ----------------------------------------------------------
+
+def _normalize_goal(goal: str) -> str:
+    return " ".join((goal or "").strip().split())
+
+
+def classify_autoresearch_goal(goal: str, *, task_type: str = "autoresearch") -> str:
+    """Classify a goal into the upstream uditgoenka/autoresearch archetypes.
+
+    This is deliberately cheap and deterministic. orama-system may refine the
+    classification later, but dry-run must not call paid/cloud tools by default.
+    """
+    text = _normalize_goal(goal).lower()
+    if task_type == "ml-experiment" or any(k in text for k in ("val_bpb", "metric", "optimize", "optimise", "faster", "latency", "benchmark")):
+        return "optimize-metric"
+    if any(k in text for k in ("harden", "security", "ssrf", "xss", "auth", "token", "vulnerability")):
+        return "harden"
+    if any(k in text for k in ("ship", "shippable", "production", "release", "deploy")):
+        return "ship-ready"
+    if any(k in text for k in ("build", "implement", "feature", "tdd", "acceptance")):
+        return "build-feature"
+    if any(k in text for k in ("bug", "broken", "failing", "failure", "fix", "regression")):
+        return "fix-broken"
+    if any(k in text for k in ("document", "docs", "readme", "guide")):
+        return "document"
+    if any(k in text for k in ("decide", "choose", "architecture", "design", "tradeoff")):
+        return "decide-design"
+    if any(k in text for k in ("what should", "what to build", "roadmap", "opportunity")):
+        return "what-to-build"
+    return "explore"
+
+
+def _predicate_for_archetype(archetype: str, *, task_type: str) -> str:
+    if task_type == "ml-experiment":
+        return "swarm_state.md reports GPU: IDLE and latest log.txt contains a parsed val_bpb"
+    if archetype == "fix-broken":
+        return "targeted failing test or reproduction command exits 0"
+    if archetype == "ship-ready":
+        return "configured test + lint + smoke gate exits 0; ship remains HITL-approved"
+    if archetype == "optimize-metric":
+        return "declared metric improves against baseline without hard regression"
+    if archetype == "harden":
+        return "security regression tests pass and no HIGH/HARD finding remains open"
+    if archetype == "build-feature":
+        return "acceptance test count increases and full regression gate remains green"
+    if archetype == "document":
+        return "requested docs are updated, linked, and repo hygiene passes"
+    if archetype == "decide-design":
+        return "decision record captures options, tradeoffs, recommendation, and rollback path"
+    if archetype == "what-to-build":
+        return "ranked opportunity list includes evidence, cost, risk, and next experiment"
+    return "single-pass exploration report is produced with findings and next questions"
+
+
+def _units_for_archetype(archetype: str, *, task_type: str) -> str:
+    if task_type == "ml-experiment":
+        return "normalized metric delta to target val_bpb"
+    if archetype in {"fix-broken", "ship-ready", "harden"}:
+        return "failing tests + HARD regressions remaining"
+    if archetype == "build-feature":
+        return "green acceptance assertions remaining"
+    if archetype == "optimize-metric":
+        return "normalized metric delta to target"
+    return "single-pass: no loop units"
+
+
+def plan_autoresearch_goal(
+    goal: str,
+    *,
+    task_type: str = "autoresearch",
+    max_cycles: Optional[int] = None,
+    use_orama: Optional[bool] = None,
+) -> AutoresearchPlan:
+    """Build an autoresearch dry-run plan without executing substrate actions.
+
+    This is the Perpetua side of `/autoresearch --dry-run`: it passes only the
+    goal, upstream archetype, current swarm-state snapshot, and safety gates to
+    whichever orchestrator will execute later. It never installs plugins, syncs
+    repos, probes LM Studio, or touches the GPU.
+    """
+    clean_goal = _normalize_goal(goal)
+    if not clean_goal:
+        clean_goal = "setup autoresearch session"
+    archetype = classify_autoresearch_goal(clean_goal, task_type=task_type)
+    mode = "orchestration-loop" if archetype in LOOP_ARCHETYPES else "single-pass-dispatch"
+    cycles = max_cycles if max_cycles is not None else DEFAULT_MAX_CYCLES
+    state = read_swarm_state()
+    orama_enabled = bool(use_orama) if use_orama is not None else bool(os.getenv("ORAMA_ENABLED", "").strip())
+    notes = [
+        "dry-run only: no Claude/plugin/GPU/SSH/SCP/LM Studio calls executed",
+        "uditgoenka/autoresearch is primary; karpathy/autoresearch is secondary audit reference",
+        "cheapest-first: local policy/deterministic classifier before paid or cloud reasoning",
+    ]
+    if task_type == "ml-experiment":
+        notes.append("GPU verify substrate requires swarm_state.md GPU: IDLE before execution")
+    if orama_enabled:
+        notes.append("orama-system may refine methodology after this Perpetua state+goal plan")
+    return AutoresearchPlan(
+        goal=clean_goal,
+        task_type=task_type,
+        archetype=archetype,
+        mode=mode,
+        predicate=_predicate_for_archetype(archetype, task_type=task_type),
+        pipeline=list(PIPELINES[archetype]),
+        max_cycles=cycles,
+        dry_run=True,
+        units_remaining=_units_for_archetype(archetype, task_type=task_type),
+        ship_requires_approval=(archetype == "ship-ready" or "ship" in PIPELINES[archetype]),
+        plugin_execution="skipped in dry-run",
+        gpu_execution="skipped in dry-run",
+        orama_methodology="optional" if orama_enabled else "not requested",
+        upstream_primary=f"{AUTORESEARCH_UPSTREAM_PRIMARY}@{AUTORESEARCH_UPSTREAM_PRIMARY_PIN}",
+        upstream_secondary=f"{AUTORESEARCH_UPSTREAM_SECONDARY}@{AUTORESEARCH_UPSTREAM_SECONDARY_PIN}",
+        notes=notes,
+        swarm_state=asdict(state),
+    )
+
+
+# -- locality helpers ----------------------------------------------------------
 
 def _gpu_box_host() -> str:
     """Hostname from GPU_BOX (user@host or bare host)."""
@@ -194,10 +379,10 @@ def _lm_studio_base_url() -> str:
 
 
 def probe_lm_studio_http() -> SyncResult:
-    """HTTP GET /v1/models — local GPU readiness without SSH."""
+    """HTTP GET /v1/models: local GPU readiness without SSH."""
     base = _lm_studio_base_url()
     url = f"{base.rstrip('/')}/v1/models"
-    _progress("autoresearch", f"→ Probing LM Studio ({url})…")
+    _progress("autoresearch", f"-> Probing LM Studio ({url})...")
     headers: dict[str, str] = {}
     token = os.environ.get("LM_STUDIO_API_TOKEN", "").strip()
     if token:
@@ -214,75 +399,58 @@ def probe_lm_studio_http() -> SyncResult:
                 payload = {}
             models = payload.get("data") if isinstance(payload, dict) else None
             count = len(models) if isinstance(models, list) else 0
-            _progress("autoresearch", f"✓ LM Studio reachable  models={count}")
+            _progress("autoresearch", f"OK LM Studio reachable models={count}")
             return SyncResult(ok=True, sha=str(count))
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="replace")[:200]
         msg = f"HTTP {exc.code} from {url}: {detail}"
-        _progress("autoresearch", f"✗ {msg}")
+        _progress("autoresearch", f"FAIL {msg}")
         return SyncResult(ok=False, error=msg)
     except Exception as exc:  # noqa: BLE001
         msg = f"LM Studio probe failed ({url}): {exc}"
-        _progress("autoresearch", f"✗ {msg}")
+        _progress("autoresearch", f"FAIL {msg}")
         return SyncResult(ok=False, error=msg)
 
 
-# ── Claude Code plugin install ────────────────────────────────────────────────
+# -- Claude Code plugin install ------------------------------------------------
 
 def install_autoresearch_plugin() -> SyncResult:
-    """Install the uditgoenka/autoresearch Claude Code plugin idempotently.
-
-    Checks `claude plugin list` first; skips install if already present.
-    Runs two commands:
-      1. claude plugin marketplace add uditgoenka/autoresearch
-      2. claude plugin install autoresearch@autoresearch
-    """
-    _progress("autoresearch-plugin", "Checking if plugin is already installed…")
-
-    # Check current plugin list
+    """Install the uditgoenka/autoresearch Claude Code plugin idempotently."""
+    _progress("autoresearch-plugin", "Checking if plugin is already installed...")
     list_result = subprocess.run(
         ["claude", "plugin", "list"],
         capture_output=True, text=True, timeout=30,
     )
     if list_result.returncode == 0 and "uditgoenka/autoresearch" in list_result.stdout:
-        _progress("autoresearch-plugin", "✓ plugin already installed — skipping")
+        _progress("autoresearch-plugin", "OK plugin already installed: skipping")
         return SyncResult(ok=True, sha="already-installed")
 
-    # Step 1: marketplace add
-    _progress("autoresearch-plugin",
-              "→ claude plugin marketplace add uditgoenka/autoresearch")
+    _progress("autoresearch-plugin", "-> claude plugin marketplace add uditgoenka/autoresearch")
     add_result = subprocess.run(
         ["claude", "plugin", "marketplace", "add", "uditgoenka/autoresearch"],
         capture_output=True, text=True, timeout=60,
     )
     if add_result.returncode != 0:
-        return SyncResult(
-            ok=False,
-            error=f"marketplace add failed: {add_result.stderr.strip()}"
-        )
+        return SyncResult(ok=False, error=f"marketplace add failed: {add_result.stderr.strip()}")
 
-    # Step 2: install
-    _progress("autoresearch-plugin", "→ claude plugin install autoresearch@autoresearch")
+    _progress("autoresearch-plugin", "-> claude plugin install autoresearch@autoresearch")
     install_result = subprocess.run(
         ["claude", "plugin", "install", "autoresearch@autoresearch"],
         capture_output=True, text=True, timeout=60,
     )
     if install_result.returncode != 0:
-        return SyncResult(
-            ok=False,
-            error=f"plugin install failed: {install_result.stderr.strip()}"
-        )
+        return SyncResult(ok=False, error=f"plugin install failed: {install_result.stderr.strip()}")
 
-    _progress("autoresearch-plugin", "✓ uditgoenka/autoresearch plugin installed")
+    _progress("autoresearch-plugin", "OK uditgoenka/autoresearch plugin installed")
     return SyncResult(ok=True)
 
 
-# ── idempotent sync (called by orchestrator before EVERY autoresearch run) ─────
+# -- idempotent sync (called by orchestrator before EVERY autoresearch run) -----
 
 def sync_autoresearch_local() -> SyncResult:
     """Pull latest autoresearch in LOCAL_REPO_PATH (no SSH)."""
     repo = LOCAL_REPO_PATH
-    _progress("autoresearch", f"→ Syncing locally ({repo})…")
+    _progress("autoresearch", f"-> Syncing locally ({repo})...")
     if not (repo / ".git").is_dir():
         return SyncResult(ok=False, error=f"no git repo at {repo}")
     try:
@@ -292,16 +460,15 @@ def sync_autoresearch_local() -> SyncResult:
         )
         if fetch.returncode != 0:
             err = fetch.stderr.strip() or fetch.stdout.strip()
-            _progress("autoresearch", f"✗ local fetch failed: {err}")
+            _progress("autoresearch", f"FAIL local fetch failed: {err}")
             return SyncResult(ok=False, error=err)
         reset = subprocess.run(
-            ["git", "-C", str(repo), "reset", "--hard",
-             f"origin/{AUTORESEARCH_DEFAULT_BRANCH}"],
+            ["git", "-C", str(repo), "reset", "--hard", f"origin/{AUTORESEARCH_DEFAULT_BRANCH}"],
             capture_output=True, text=True, timeout=SSH_TIMEOUT,
         )
         if reset.returncode != 0:
             err = reset.stderr.strip() or reset.stdout.strip()
-            _progress("autoresearch", f"✗ local reset failed: {err}")
+            _progress("autoresearch", f"FAIL local reset failed: {err}")
             return SyncResult(ok=False, error=err)
         sha_result = subprocess.run(
             ["git", "-C", str(repo), "rev-parse", "HEAD"],
@@ -310,32 +477,22 @@ def sync_autoresearch_local() -> SyncResult:
         if sha_result.returncode != 0:
             return SyncResult(ok=False, error=sha_result.stderr.strip())
         sha = sha_result.stdout.strip()
-        _progress("autoresearch", f"✓ synced locally  sha={sha[:8]}")
+        _progress("autoresearch", f"OK synced locally sha={sha[:8]}")
         return SyncResult(ok=True, sha=sha)
     except subprocess.TimeoutExpired:
         msg = f"local git timeout after {SSH_TIMEOUT}s"
-        _progress("autoresearch", f"✗ {msg}")
+        _progress("autoresearch", f"FAIL {msg}")
         return SyncResult(ok=False, error=msg)
     except Exception as exc:  # noqa: BLE001
-        _progress("autoresearch", f"✗ {exc}")
+        _progress("autoresearch", f"FAIL {exc}")
         return SyncResult(ok=False, error=str(exc))
 
 
 def sync_autoresearch_idempotent() -> SyncResult:
-    """Pull latest autoresearch on the Windows GPU runner.
-
-    Idempotent: safe to call on every orchestration cycle.
-    Uses `git fetch + reset --hard origin/<AUTORESEARCH_DEFAULT_BRANCH>` so the
-    runner always runs the latest upstream code without merge conflicts.
-
-    When the GPU runner is local (Win LAN co-orchestration), uses local git
-    instead of SSH.
-
-    Returns SyncResult with HEAD sha for logging.
-    """
+    """Pull latest autoresearch on the Windows GPU runner."""
     if use_http_local_preflight():
         return sync_autoresearch_local()
-    _progress("autoresearch", f"→ Syncing on GPU runner ({GPU_BOX})…")
+    _progress("autoresearch", f"-> Syncing on GPU runner ({GPU_BOX})...")
     cmd = (
         f"cd {GPU_REPO_PATH} && "
         "git fetch origin && "
@@ -350,26 +507,26 @@ def sync_autoresearch_idempotent() -> SyncResult:
             timeout=SSH_TIMEOUT,
         )
         if result.returncode != 0:
-            _progress("autoresearch", f"✗ sync failed: {result.stderr.strip()}")
+            _progress("autoresearch", f"FAIL sync failed: {result.stderr.strip()}")
             return SyncResult(ok=False, error=result.stderr.strip())
         sha = result.stdout.strip().splitlines()[-1]
-        _progress("autoresearch", f"✓ synced  sha={sha[:8]}")
+        _progress("autoresearch", f"OK synced sha={sha[:8]}")
         return SyncResult(ok=True, sha=sha)
     except subprocess.TimeoutExpired:
         msg = f"SSH timeout after {SSH_TIMEOUT}s"
-        _progress("autoresearch", f"✗ {msg}")
+        _progress("autoresearch", f"FAIL {msg}")
         return SyncResult(ok=False, error=msg)
     except Exception as exc:  # noqa: BLE001
-        _progress("autoresearch", f"✗ {exc}")
+        _progress("autoresearch", f"FAIL {exc}")
         return SyncResult(ok=False, error=str(exc))
 
 
-# ── bootstrap: ensure the repo exists on the GPU runner (first-run only) ──────
+# -- bootstrap: ensure the repo exists on the GPU runner (first-run only) -------
 
 def bootstrap_autoresearch_local() -> SyncResult:
     """Clone / sync autoresearch locally when GPU runner is this host."""
     repo = LOCAL_REPO_PATH
-    _progress("autoresearch", f"→ Checking / bootstrapping locally ({repo})…")
+    _progress("autoresearch", f"-> Checking / bootstrapping locally ({repo})...")
     try:
         if not (repo / ".git").is_dir():
             repo.parent.mkdir(parents=True, exist_ok=True)
@@ -380,7 +537,7 @@ def bootstrap_autoresearch_local() -> SyncResult:
             if clone.returncode != 0:
                 err = clone.stderr.strip() or clone.stdout.strip()
                 return SyncResult(ok=False, error=f"local clone failed: {err}")
-        _progress("autoresearch", "→ Running uv sync --dev locally…")
+        _progress("autoresearch", "-> Running uv sync --dev locally...")
         try:
             subprocess.run(
                 ["uv", "sync", "--dev"],
@@ -389,9 +546,9 @@ def bootstrap_autoresearch_local() -> SyncResult:
                 text=True,
                 timeout=SSH_TIMEOUT,
             )
-            _progress("autoresearch", "✓ uv sync --dev complete")
+            _progress("autoresearch", "OK uv sync --dev complete")
         except Exception:
-            _progress("autoresearch", "⚠ uv sync --dev failed (non-fatal — runner may lack uv)")
+            _progress("autoresearch", "WARN uv sync --dev failed (non-fatal: runner may lack uv)")
         return sync_autoresearch_local()
     except subprocess.TimeoutExpired:
         return SyncResult(ok=False, error=f"local bootstrap timeout after {SSH_TIMEOUT}s")
@@ -400,24 +557,12 @@ def bootstrap_autoresearch_local() -> SyncResult:
 
 
 def bootstrap_autoresearch_on_runner() -> SyncResult:
-    """Clone autoresearch on the Windows GPU runner if it does not exist yet.
-
-    Idempotent: if the directory already exists, falls through to a normal sync.
-    Uses uv sync --dev to install dev dependencies (uditgoenka/autoresearch uses
-    pyproject.toml with dev extras).
-
-    When the GPU runner is local, uses LOCAL_REPO_PATH and skips SSH.
-    """
+    """Clone autoresearch on the Windows GPU runner if it does not exist yet."""
     if use_http_local_preflight():
         return bootstrap_autoresearch_local()
 
-    _progress("autoresearch", f"→ Checking / bootstrapping on GPU runner ({GPU_BOX})…")
-
-    check_cmd = (
-        f"if not exist {GPU_REPO_PATH} ("
-        f"  git clone {AUTORESEARCH_REMOTE} {GPU_REPO_PATH}"
-        f")"
-    )
+    _progress("autoresearch", f"-> Checking / bootstrapping on GPU runner ({GPU_BOX})...")
+    check_cmd = f"if not exist {GPU_REPO_PATH} (  git clone {AUTORESEARCH_REMOTE} {GPU_REPO_PATH})"
     try:
         subprocess.run(
             ["ssh", *_SSH_OPTS, GPU_BOX, check_cmd],
@@ -428,8 +573,7 @@ def bootstrap_autoresearch_on_runner() -> SyncResult:
     except Exception as exc:  # noqa: BLE001
         return SyncResult(ok=False, error=f"Bootstrap failed: {exc}")
 
-    # After clone, install dev deps via uv sync --dev on the runner
-    _progress("autoresearch", "→ Running uv sync --dev on GPU runner…")
+    _progress("autoresearch", "-> Running uv sync --dev on GPU runner...")
     uv_cmd = f"cd {GPU_REPO_PATH} && uv sync --dev"
     try:
         subprocess.run(
@@ -438,20 +582,17 @@ def bootstrap_autoresearch_on_runner() -> SyncResult:
             text=True,
             timeout=SSH_TIMEOUT,
         )
-        _progress("autoresearch", "✓ uv sync --dev complete")
+        _progress("autoresearch", "OK uv sync --dev complete")
     except Exception:
-        _progress("autoresearch", "⚠ uv sync --dev failed (non-fatal — runner may lack uv)")
+        _progress("autoresearch", "WARN uv sync --dev failed (non-fatal: runner may lack uv)")
 
     return sync_autoresearch_idempotent()
 
 
-# ── GPU lock helpers (read/write swarm_state.md on Mac) ───────────────────────
+# -- GPU lock helpers (read/write swarm_state.md on Mac) -----------------------
 
 def read_swarm_state() -> SwarmState:
-    """Parse swarm_state.md into a SwarmState dataclass.
-
-    Returns a default IDLE state if the file does not exist yet.
-    """
+    """Parse swarm_state.md into a SwarmState dataclass."""
     if not SWARM_STATE_FILE.exists():
         return SwarmState()
 
@@ -476,20 +617,14 @@ def is_gpu_idle() -> bool:
     return read_swarm_state().gpu_status.upper() == "IDLE"
 
 
-# ── deploy train.py to runner ─────────────────────────────────────────────────
-
 def deploy_train_py() -> bool:
-    """SCP train.py to the GPU runner.
-
-    Uses the HOP slot lock so a Verifier/Critic that is mid-inference on the same
-    Windows LM Studio endpoint cannot race with a new Coder dispatch.
-    """
+    """SCP train.py to the GPU runner."""
     local_train = LOCAL_REPO_PATH / "train.py"
     if not local_train.exists():
         return False
     acquired = _WIN_LM_STUDIO_SLOT.acquire(timeout=SLOT_ACQUIRE_TIMEOUT_SECS)
     if not acquired:
-        print(f"[autoresearch] ⚠ HOP: deploy_train_py timed out waiting for win-lm-studio slot after {SLOT_ACQUIRE_TIMEOUT_SECS}s")
+        print(f"[autoresearch] WARN HOP: deploy_train_py timed out waiting for win-lm-studio slot after {SLOT_ACQUIRE_TIMEOUT_SECS}s")
         return False
     try:
         result = subprocess.run(
@@ -501,23 +636,14 @@ def deploy_train_py() -> bool:
         _WIN_LM_STUDIO_SLOT.release()
 
 
-# ── dispatch training run on GPU runner ───────────────────────────────────────
-
 def run_experiment_on_gpu() -> bool:
-    """Dispatch the training run on the GPU runner.
-
-    Holds the HOP slot for the full duration of the run so the Verifier/Critic
-    waits before loading its own model onto the same VRAM.
-    """
+    """Dispatch the training run on the GPU runner."""
     acquired = _WIN_LM_STUDIO_SLOT.acquire(timeout=SLOT_ACQUIRE_TIMEOUT_SECS)
     if not acquired:
-        print(f"[autoresearch] ⚠ HOP: run_experiment timed out waiting for win-lm-studio slot after {SLOT_ACQUIRE_TIMEOUT_SECS}s")
+        print(f"[autoresearch] WARN HOP: run_experiment timed out waiting for win-lm-studio slot after {SLOT_ACQUIRE_TIMEOUT_SECS}s")
         return False
     try:
-        cmd = (
-            f"cd {GPU_REPO_PATH} && "
-            "conda run -n autoresearch uv run train.py > run.log 2>&1"
-        )
+        cmd = f"cd {GPU_REPO_PATH} && conda run -n autoresearch uv run train.py > run.log 2>&1"
         result = subprocess.run(
             ["ssh", *_SSH_OPTS, GPU_BOX, cmd],
             capture_output=True, text=True, timeout=400,
@@ -527,26 +653,19 @@ def run_experiment_on_gpu() -> bool:
         _WIN_LM_STUDIO_SLOT.release()
 
 
-# ── fetch run.log back to Mac ─────────────────────────────────────────────────
-
 def fetch_run_log() -> bool:
-    """Copy run.log from the Windows runner to the local Mac repo dir via scp."""
     """SCP run.log from the GPU runner back to Mac (read-only, no slot needed)."""
     result = subprocess.run(
-        ["scp", *_SSH_OPTS,
-         f"{GPU_BOX}:{GPU_REPO_PATH}/run.log",
-         str(LOCAL_REPO_PATH / "log.txt")],
+        ["scp", *_SSH_OPTS, f"{GPU_BOX}:{GPU_REPO_PATH}/run.log", str(LOCAL_REPO_PATH / "log.txt")],
         capture_output=True, text=True, timeout=SSH_TIMEOUT,
     )
     return result.returncode == 0
 
 
-# ── swarm_state.md initialiser ────────────────────────────────────────────────
-
 def init_swarm_state(run_tag: str) -> None:
     """Write a fresh swarm_state.md into the local autoresearch repo."""
     content = textwrap.dedent(f"""\
-        # Swarm State — {run_tag}
+        # Swarm State - {run_tag}
         <!-- Managed by Perpetua-Tools autoresearch_bridge.py -->
         <!-- DO NOT commit this file; it is ephemeral session state. -->
 
@@ -563,26 +682,52 @@ def init_swarm_state(run_tag: str) -> None:
         ## Status
         - GPU: IDLE
         <!-- IDLE = safe to dispatch. BUSY = Coder has an active run. -->
-        <!-- Only the Coder agent may flip IDLE → BUSY and back. -->
-        <!-- HARDWARE GUARD: Windows loads ONE model at a time — never dispatch while BUSY. -->
+        <!-- Only the Coder agent may flip IDLE -> BUSY and back. -->
+        <!-- HARDWARE GUARD: Windows loads ONE model at a time: never dispatch while BUSY. -->
     """)
     SWARM_STATE_FILE.write_text(content, encoding="utf-8")
 
 
-# ── convenience: full pre-run checklist ───────────────────────────────────────
+# -- convenience: full pre-run checklist ---------------------------------------
 
-def preflight(run_tag: Optional[str] = None) -> dict:
+def preflight(
+    run_tag: Optional[str] = None,
+    *,
+    goal: str = "",
+    task_type: str = "autoresearch",
+    dry_run: bool = False,
+    max_cycles: Optional[int] = None,
+    use_orama: Optional[bool] = None,
+) -> dict:
     """Run the full pre-flight sequence before starting an autoresearch session.
 
-    Steps (all idempotent):
-    1. Install the uditgoenka/autoresearch Claude Code plugin.
-    2. Bootstrap / sync autoresearch on GPU runner (secondary/verify substrate).
-       On the Win GPU host, uses local git + HTTP LM Studio probe (no SSH).
-    3. Initialise swarm_state.md on Mac (only if run_tag supplied and file absent).
-
-    Returns a dict with keys: plugin_ok, sync_ok, sha, swarm_state_initialised,
-    gpu_local, preflight_mode, lm_studio_ok.
+    When ``dry_run`` is True, this returns a side-effect-free plan and skips all
+    Claude/plugin/GPU/network substrate actions. Use this before long-running
+    goals and before handing state/goals to optional orama methodology.
     """
+    if dry_run:
+        plan = plan_autoresearch_goal(
+            goal or run_tag or "setup autoresearch session",
+            task_type=task_type,
+            max_cycles=max_cycles,
+            use_orama=use_orama,
+        )
+        return {
+            "dry_run": True,
+            "plan": plan.to_dict(),
+            "plugin_ok": None,
+            "plugin_error": None,
+            "sync_ok": None,
+            "sha": "",
+            "error": "",
+            "swarm_state_initialised": False,
+            "gpu_local": use_http_local_preflight(),
+            "preflight_mode": "dry-run",
+            "lm_studio_ok": None,
+            "lm_studio_error": None,
+            "lm_studio_models": "",
+        }
+
     gpu_local = use_http_local_preflight()
     preflight_mode = "http-local" if gpu_local else "ssh"
     plugin = install_autoresearch_plugin()
@@ -593,15 +738,15 @@ def preflight(run_tag: Optional[str] = None) -> dict:
         init_swarm_state(run_tag)
         initialised = True
     return {
-        "plugin_ok":              plugin.ok,
-        "plugin_error":           plugin.error,
-        "sync_ok":                sync.ok,
-        "sha":                    sync.sha,
-        "error":                  sync.error,
+        "plugin_ok": plugin.ok,
+        "plugin_error": plugin.error,
+        "sync_ok": sync.ok,
+        "sha": sync.sha,
+        "error": sync.error,
         "swarm_state_initialised": initialised,
-        "gpu_local":              gpu_local,
-        "preflight_mode":         preflight_mode,
-        "lm_studio_ok":           lm.ok,
-        "lm_studio_error":        lm.error,
-        "lm_studio_models":       lm.sha if lm.ok else "",
+        "gpu_local": gpu_local,
+        "preflight_mode": preflight_mode,
+        "lm_studio_ok": lm.ok,
+        "lm_studio_error": lm.error,
+        "lm_studio_models": lm.sha if lm.ok else "",
     }
