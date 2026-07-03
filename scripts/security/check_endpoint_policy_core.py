@@ -53,6 +53,31 @@ def assert_model_registry_uses_core() -> None:
         fail("model_registry.py must not hardcode http reconstruction")
 
 
+def assert_fastapi_uses_core() -> None:
+    text = read("orchestrator/fastapi_app.py")
+    if "from utils.endpoint_policy_core import build_transport_url" not in text:
+        fail("fastapi_app.py must import build_transport_url from endpoint_policy_core")
+    if "from urllib.parse import urlparse" in text or "urlparse(" in text:
+        fail("fastapi_app.py must not parse transport URLs directly")
+
+
+def assert_launcher_guards_port_access() -> None:
+    text = read("src/perpetua_tools/agent_launcher.py")
+    if "def _safe_port(" not in text:
+        fail("agent_launcher.py must keep the _safe_port guarded accessor")
+    for stale in ("_p_mac.port or", "_p_mac_lms.port or", "parsed.port or default_port"):
+        if stale in text:
+            fail(f"agent_launcher.py reintroduced unguarded port access: {stale!r}")
+
+
+def assert_bootstrap_guards_port_access() -> None:
+    text = read("src/perpetua_tools/alphaclaw_bootstrap.py")
+    if "if parsed.port is not None:\n        return parsed.port" in text:
+        fail("alphaclaw_bootstrap.py reintroduced unguarded ParseResult.port access")
+    if "_gateway_port_from_url" in text and "except ValueError" not in text:
+        fail("alphaclaw_bootstrap.py gateway port extraction must wrap ValueError")
+
+
 def assert_core_owns_urlparse_boundary() -> None:
     text = read("src/utils/endpoint_policy_core.py")
     required = [
@@ -122,6 +147,9 @@ def assert_no_double_scheme_literals() -> None:
 def main() -> None:
     assert_required_files()
     assert_model_registry_uses_core()
+    assert_fastapi_uses_core()
+    assert_launcher_guards_port_access()
+    assert_bootstrap_guards_port_access()
     assert_core_owns_urlparse_boundary()
     assert_workflows_run_policy()
     assert_contract_names_peer_repos()
