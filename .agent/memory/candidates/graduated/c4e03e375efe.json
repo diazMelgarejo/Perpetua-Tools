@@ -1,0 +1,38 @@
+{
+  "id": "c4e03e375efe",
+  "key": "manual_c4e03e",
+  "name": "manual_c4e03e",
+  "claim": "A whole-file git conflict (markers spanning nearly the entire file) usually means one side substantially rewrote the file while the other commit never intended to touch it at all \u2014 check 'git show <incoming-commit> -- <file>' first; if the incoming commit's own diff is empty for that file, its tree snapshot is just stale carry-through, and the correct resolution is almost always --ours (the side with the real, intentional changes), not a line-by-line merge.",
+  "conditions": [
+    "whole file conflict git show incoming commit stale carry-through ours theirs rebase"
+  ],
+  "evidence_ids": [
+    "2026-07-03T11:21:01.823906+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-03T11:21:01.823906+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-03T11:21:01.823906+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-03T11:21:01.934429+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-03: scripts/spawn_agents.py conflicted from line 1 to EOF during a rebase. Verified via 'git show c31741c -- scripts/spawn_agents.py' that the incoming lm-link commit made zero changes to that file; upstream's 57a8a57 series was a genuine 727-line dispatch-race rewrite. Taking --ours avoided silently reverting real work.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-03T11:21:01.823906+00:00"
+      ],
+      "lessons_sha": "eb0e2e9cf5d0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-03T11:21:01.934416+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-03: scripts/spawn_agents.py conflicted from line 1 to EOF during a rebase. Verified via 'git show c31741c -- scripts/spawn_agents.py' that the incoming lm-link commit made zero changes to that file; upstream's 57a8a57 series was a genuine 727-line dispatch-race rewrite. Taking --ours avoided silently reverting real work."
+}
