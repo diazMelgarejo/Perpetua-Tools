@@ -1,0 +1,15 @@
+perpetua-endpoint-policy
+Copyright 2026 Perpetua-Tools maintainers (diazMelgarejo)
+
+This subpackage is licensed under the Apache License, Version 2.0 — see the
+LICENSE file in this directory. It is deliberately licensed independently of
+the host repository (Perpetua-Tools, AGPL-3.0) so that consumers (orama-system,
+AlphaClaw's JSON contract mirror, and third parties) can depend on the shared
+endpoint-policy primitive without AGPL obligations. Do not remove this NOTICE
+or the per-directory LICENSE when vendoring or republishing (license-bleed
+guard per the endpoint transport policy peer contract).
+
+The validator logic is ported from the cross-repo parity-checked mirror
+(src/utils/model_endpoint_url.py in Perpetua-Tools and orama-system), which is
+the single source of truth for behavior until consumers cut over to this
+package at publish time.
