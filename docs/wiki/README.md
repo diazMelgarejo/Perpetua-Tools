@@ -1,7 +1,7 @@
-# Perpetua-Tools — Knowledge Wiki
+# Perpetua-Tools - Knowledge Wiki
 
 > **TL;DR for agents:** Read `docs/LESSONS.md` for the session log. Read pages here for deep dives.
-> For quick behavioral rules: **[SKILL.md →](../../SKILL.md)**
+> For quick behavioral rules: **[SKILL.md ->](../../SKILL.md)**
 
 This wiki organizes hard-won lessons by topic. Each page contains root cause, exact fix, verification commands, and prevention rules. Derived from [docs/LESSONS.md](../LESSONS.md) and cross-linked with the [orama-system wiki](https://github.com/diazMelgarejo/orama-system/blob/main/docs/wiki/README.md).
 
@@ -15,11 +15,19 @@ This wiki organizes hard-won lessons by topic. Each page contains root cause, ex
 | 02 | [Idempotent Installs](02-idempotent-installs.md) | Execute bits, capture_output=False, runtime model name discovery |
 | 03 | [Device Identity & GPU Recovery](03-device-identity.md) | One role per device, 30s crash cooldown, local IP detection |
 | 04 | [Gateway Discovery](04-gateway-discovery.md) | Probe before install, commandeer running gateway |
-| 05 | [AutoResearcher Migration](05-autoresearcher-migration.md) | uditgoenka plugin primary, GPU runner secondary, uv sync |
+| 05 | [AutoResearcher Migration](05-autoresearcher-migration.md) | uditgoenka plugin/submodule primary, dry-run first, GPU runner secondary |
 | 06 | [Startup & IP Detection](06-startup-ip-detection.md) | stdin deadlock, load_dotenv placement, concurrent asyncio probing |
 | 07 | [Multi-Agent Collaboration](07-multi-agent-collab.md) | Version registry, scope claims, no LAN IPs in source, test isolation |
 | 08 | [macOS alphaclaw Compat](08-macos-alphaclaw-compat.md) | EACCES fixes, ~/.local/bin pattern, idempotent setup_macos.py |
-| 09 | [Hardware Affinity](09-hardware-affinity.md) | NEVER_MAC, LM Studio proxy gotcha, PR #128–#131 gap chain, canonical API |
+| 09 | [Hardware Affinity](09-hardware-affinity.md) | NEVER_MAC, LM Studio proxy gotcha, PR #128-#131 gap chain, canonical API |
+
+---
+
+## Active Plans
+
+| Plan | Purpose |
+| --- | --- |
+| [AutoResearch Orchestrator Adoption](../plans/autoresearch-orchestrator-adoption.md) | Canonical uditgoenka-primary, karpathy-secondary, submodule + plugin + dry-run adoption plan |
 
 ---
 
@@ -50,7 +58,7 @@ This wiki organizes hard-won lessons by topic. Each page contains root cause, ex
 ```
 
 3. Add a row to the index table above
-4. Add `→ [wiki/NN-topic.md](wiki/NN-topic.md)` at the bottom of the LESSONS.md session entry
+4. Add `-> [wiki/NN-topic.md](wiki/NN-topic.md)` at the bottom of the LESSONS.md session entry
 
 ---
 
