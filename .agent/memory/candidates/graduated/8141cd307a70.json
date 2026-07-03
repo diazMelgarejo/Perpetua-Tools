@@ -1,0 +1,38 @@
+{
+  "id": "8141cd307a70",
+  "key": "manual_8141cd",
+  "name": "manual_8141cd",
+  "claim": "A run_in_background git push reporting 'completed (exit code 0)' does NOT prove main is clean or the remote matches \u2014 the exit code can come from an early stage of a chained command while a later 'git pull --rebase' or 'git commit' stalls interactively (e.g. mid-rebase waiting on rebase --continue, or a corrupted commit-msg hook). Always follow a backgrounded push with an explicit 'git status --short --branch' check before reporting sync as done.",
+  "conditions": [
+    "background push exit code git status rebase verify before report done"
+  ],
+  "evidence_ids": [
+    "2026-07-03T11:20:48.305194+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-03T11:20:48.305194+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-03T11:20:48.305194+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-03T11:20:48.601708+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-03: a background push task notified 'completed (exit code 0)' but the repo was actually stuck mid-interactive-rebase with an unresolved 727-line whole-file conflict in spawn_agents.py plus a CRLF-corrupted commit-msg hook (bash\\r). The next session inherited a broken, unpushed main. Root-caused and fixed only when git status was checked directly instead of trusting the task summary.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-03T11:20:48.305194+00:00"
+      ],
+      "lessons_sha": "c9e5c1610bc5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-03T11:20:48.601700+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-03: a background push task notified 'completed (exit code 0)' but the repo was actually stuck mid-interactive-rebase with an unresolved 727-line whole-file conflict in spawn_agents.py plus a CRLF-corrupted commit-msg hook (bash\\r). The next session inherited a broken, unpushed main. Root-caused and fixed only when git status was checked directly instead of trusting the task summary."
+}
