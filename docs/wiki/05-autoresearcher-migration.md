@@ -1,84 +1,151 @@
-# 05. AutoResearcher Migration — uditgoenka Plugin + uv sync
+# 05. AutoResearcher Migration - uditgoenka Plugin, Submodule, and Dry-Run
 
-**TL;DR:** Primary mode is now the `uditgoenka/autoresearch` Claude Code plugin (runs anywhere). GPU runner is secondary — Verify substrate for ML experiments only. Use `uv sync --dev` not bare `pip install`.
-
----
-
-## What Changed (2026-04-11)
-
-The autoresearch loop migrated from a hardcoded Python script cloned to a GPU runner to a Claude Code plugin that can run anywhere, with the GPU runner demoted to an optional Verify substrate.
+**TL;DR:** Primary mode is `uditgoenka/autoresearch`. Perpetua adopts it in two forms: a tracked source mirror at `vendor/autoresearch` and the Claude Code plugin runtime. GPU runner remains secondary and is only a Verify substrate for ML experiments. Long-running goals must start with `preflight(dry_run=True)`.
 
 ---
 
-## Key Changes
+## Current Canonical Plan
 
-### 1. `AUTORESEARCH_REMOTE` is now an env var
+See [`../plans/autoresearch-orchestrator-adoption.md`](../plans/autoresearch-orchestrator-adoption.md).
+
+That plan is the source of truth for:
+
+- uditgoenka as primary upstream
+- karpathy as secondary catch-all audit reference only
+- `vendor/autoresearch` submodule parity
+- dry-run first behavior
+- Perpetua/orama responsibility split
+- future `POST /autoresearch/plan` v2 API candidate
+
+---
+
+## What Changed
+
+The autoresearch loop migrated from a hardcoded Python script cloned to a GPU runner into a goal-directed Claude Code plugin and Perpetua bridge workflow.
+
+The current architecture is:
+
+1. Source/reference mirror: `vendor/autoresearch` tracks `https://github.com/uditgoenka/autoresearch.git` on `master`.
+2. Runtime plugin: `claude plugin marketplace add uditgoenka/autoresearch` plus `claude plugin install autoresearch@autoresearch`.
+3. Perpetua bridge: `orchestrator/autoresearch_bridge.py` handles idempotent plugin install, local/GPU sync, preflight, GPU guard, and dry-run autoplan.
+4. Optional orama modulation: orama receives state + goal + archetype + safety gates and may apply methodology, but must not execute plugin/GPU work during dry-run.
+
+---
+
+## Environment Defaults
 
 ```bash
-# .env (not source code)
+# .env, not source code
 AUTORESEARCH_REMOTE=https://github.com/uditgoenka/autoresearch.git
-AUTORESEARCH_BRANCH=main  # was hardcoded 'master' — now env-configurable
+AUTORESEARCH_BRANCH=master
+LOCAL_AUTORESEARCH_PATH=~/autoresearch
+GPU_REPO_PATH=autoresearch
 ```
 
-### 2. Plugin install (primary mode — idempotent)
+`AUTORESEARCH_BRANCH` remains configurable, but the default is `master` because the primary upstream currently uses `master`.
+
+---
+
+## Dry-Run First
+
+Use dry-run before long-running goals:
+
+```python
+from orchestrator.autoresearch_bridge import preflight
+
+plan = preflight(
+    goal="harden gateway auth token handling",
+    dry_run=True,
+    use_orama=True,
+)
+```
+
+Dry-run returns a plan and skips:
+
+- Claude/plugin install or slash commands
+- git bootstrap/sync
+- SSH
+- SCP
+- LM Studio HTTP probes
+- GPU dispatch
+- paid/cloud model calls
+
+---
+
+## Plugin Install - Primary Runtime
 
 ```bash
 claude plugin marketplace add uditgoenka/autoresearch
 claude plugin install autoresearch@autoresearch
 ```
 
-`install_autoresearch_plugin()` in `autoresearch_bridge.py` handles this idempotently (checks `claude plugin list` first).
+`install_autoresearch_plugin()` handles this idempotently by checking `claude plugin list` first.
 
-### 3. GPU runner is secondary
+---
+
+## GPU Runner - Secondary Verify Substrate
 
 Still used for `ml-experiment` task types only. Requires:
-- SSH access to the GPU runner
-- `swarm_state.md` shows `GPU: BUSY` = false before dispatch
 
-### 4. `uv sync --dev` everywhere
+- SSH access to the GPU runner
+- `swarm_state.md` reports `GPU: IDLE`
+- sequential GPU load discipline
+
+Do not dispatch while `swarm_state.md` reports `GPU: BUSY`.
+
+---
+
+## Bootstrap Rule
+
+Use:
 
 ```bash
-# All bootstrap paths now use:
 uv sync --dev
-# Never:
-pip install uv && uv sync   # old pattern
 ```
 
-### 5. Valid Windows model names
+Never regress to bare `pip install` bootstrap paths.
 
+---
+
+## Model Rule
+
+Never hardcode model names. Query the runtime endpoint before use:
+
+```bash
+GET $LM_STUDIO_BASE_URL/v1/models
 ```
-✓  Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2
-✗  Qwen3.5-27B-Instruct   ← DOES NOT EXIST — never hardcode this
-```
 
-Always verify available models via `GET http://192.168.254.108:1234/v1/models` before using.
+---
 
-### 6. `preflight()` return keys
+## `preflight()` Return Shape
+
+Normal execution returns plugin/sync/GPU-local fields. Dry-run returns the same envelope plus a `plan` object:
 
 ```python
 {
-    "plugin_ok": bool,
-    "plugin_error": str | None,
-    "sync_ok": bool,
-    "sha": str | None,
-    "error": str | None,
-    "swarm_state_initialised": bool,
+    "dry_run": True,
+    "preflight_mode": "dry-run",
+    "plan": {
+        "goal": str,
+        "archetype": str,
+        "pipeline": list[str],
+        "predicate": str,
+        "max_cycles": int,
+        "upstream_primary": str,
+        "upstream_secondary": str,
+    },
+    "plugin_ok": None,
+    "sync_ok": None,
+    "lm_studio_ok": None,
 }
 ```
 
 ---
 
-## Rules
-
-1. **`AUTORESEARCH_REMOTE` must be an env var** — never hardcode fork URLs in source
-2. **Plugin install first** — check `claude plugin list` before re-installing
-3. **GPU runner: Windows sequential load rule** — never dispatch while `swarm_state.md` shows `GPU: BUSY`
-4. **Use `uv sync --dev`** in all bootstrap and CI paths
-5. **Never hardcode model names** — query `/v1/models` at runtime
-
----
-
 ## Related
 
-- [Session log 2026-04-11](../LESSONS.md#2026-04-11--claude--autoresearcher-migration-karpathy--uditgoenka-plugin)
-- CLAUDE.md § 4 AutoResearcher Integration
+- [`../plans/autoresearch-orchestrator-adoption.md`](../plans/autoresearch-orchestrator-adoption.md)
+- [`../../orchestrator/autoresearch_bridge.py`](../../orchestrator/autoresearch_bridge.py)
+- [`../../tests/test_autoresearch_bridge.py`](../../tests/test_autoresearch_bridge.py)
+- [`../../CLAUDE.md`](../../CLAUDE.md) section 4
+- orama-system `bin/agents/autoresearcher/SOUL.md`
