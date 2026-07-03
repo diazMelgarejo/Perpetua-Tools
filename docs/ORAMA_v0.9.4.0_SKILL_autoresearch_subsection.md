@@ -1,24 +1,43 @@
-# Paste into orama-system `SKILL.md` (branch `v0.9.4.0`)
+# ORAMA v0.9.4.0 AutoResearch Subsection - Historical Helper
 
-Add the following subsection (e.g. after your main methodology sections, or under a “Integrations” heading).
+This file was originally a copy-paste helper for orama-system `SKILL.md` on branch `v0.9.4.0`.
 
----
+Current canonical plan: [`docs/plans/autoresearch-orchestrator-adoption.md`](plans/autoresearch-orchestrator-adoption.md).
 
-## autoresearch Integration (Mode 3 Task Type)
-
-When the coordinating system reports **`task_type`** of **`autoresearch`** or **`ml-experiment`** (from **Perpetua-Tools**):
-
-1. **Defer execution topology** to Perpetua-Tools: `POST /autoresearch/sync` must succeed (`sync_ok == true`) before deep multi-step planning assumes the GPU workspace is ready.
-2. **Reasoning layer (this repo)**: apply **CIDF / orama** methodology for hypotheses, critique, and next-step narrative — but **do not** assume cloud models for autoresearch unless the user explicitly overrides (see Perpetua-Tools `SKILL.md` “autoresearch Tasks”).
-3. **GPU lock & metrics**: treat **`swarm_state.md`** (IDLE/BUSY) and **`log.txt` / `val_bpb`** as the source of truth for whether a run is active and whether metrics are valid.
-4. **Cross-repo stack**: Perpetua-Tools (orchestrator) → orama-system (reasoning) → ECC Tools → uditgoenka/autoresearch (Claude Code plugin loop) → GPU substrate (optional, via autoresearch_bridge.py for ML experiments).
-
-For local setup work inside Perpetua-Tools, the Perplexity client now exposes optional `base_url` and `timeout` overrides, and the smoke-test script accepts the same values:
-
-```bash
-python scripts/test_perplexity.py --validate --base-url https://api.perplexity.ai --timeout 30
-```
+Use this file only as historical context. The current implementation should follow the adoption plan, `orchestrator/autoresearch_bridge.py`, and orama-system `bin/agents/autoresearcher/SOUL.md`.
 
 ---
 
-This file is a **copy-paste helper** only; edit **orama-system** in its own repository.
+## Current AutoResearch Integration Rule
+
+When the coordinating system reports `task_type` of `autoresearch` or `ml-experiment` from Perpetua-Tools:
+
+1. Start with Perpetua dry-run planning for long-running goals:
+
+   ```python
+   from orchestrator.autoresearch_bridge import preflight
+
+   plan = preflight(goal="<goal>", dry_run=True, use_orama=True)
+   ```
+
+2. Defer runtime topology to Perpetua-Tools. Perpetua owns plugin install, local/GPU sync, LM Studio probes, GPU guard, and `swarm_state.md`.
+
+3. Let orama-system apply methodology only after Perpetua has produced a state + goal + archetype + safety-gate plan. orama must not execute plugin, SSH, SCP, LM Studio, or GPU work during dry-run.
+
+4. Treat `swarm_state.md`, `log.txt`, and `val_bpb` as the truth for ML experiment state and metrics.
+
+5. Use uditgoenka/autoresearch as the primary upstream. Use karpathy/autoresearch only as a secondary catch-all audit reference for the original ML loop.
+
+---
+
+## Cross-Repo Stack
+
+Perpetua-Tools runtime/state authority -> optional orama-system methodology -> ECC-style skill routing -> uditgoenka/autoresearch plugin/submodule -> GPU substrate only for `ml-experiment` verification.
+
+---
+
+## Related
+
+- [`docs/plans/autoresearch-orchestrator-adoption.md`](plans/autoresearch-orchestrator-adoption.md)
+- [`docs/wiki/05-autoresearcher-migration.md`](wiki/05-autoresearcher-migration.md)
+- [`orchestrator/autoresearch_bridge.py`](../orchestrator/autoresearch_bridge.py)
