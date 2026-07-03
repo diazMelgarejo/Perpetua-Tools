@@ -11,3 +11,9 @@
 	path = vendor/Claude-Desktop-LLM
 	url = https://github.com/yayoboy/Claude-Desktop-LLM.git
 	ignore = dirty
+
+[submodule "vendor/autoresearch"]
+	path = vendor/autoresearch
+	url = https://github.com/uditgoenka/autoresearch.git
+	branch = master
+	ignore = dirty
