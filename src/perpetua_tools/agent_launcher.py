@@ -86,13 +86,27 @@ def _is_loopback_host(host: str) -> bool:
     except ValueError:
         return False
 
+
+def _safe_port(parsed, default: int) -> int:
+    """Read ParseResult.port, falling back to *default* on malformed/out-of-range ports.
+
+    ``ParseResult.port`` raises ``ValueError`` lazily on access (not at
+    ``urlparse()`` time) for non-numeric or out-of-range ports — guard every
+    access so a bad env var never escapes as a bare ValueError.
+    """
+    try:
+        return parsed.port or default
+    except ValueError:
+        return default
+
+
 def _loopback_host_from_endpoint(endpoint: str, *, default_port: int) -> tuple[str, int]:
     """Resolve host/port from a URL; never use LOCAL_MAC_HOST (avoids secret-scan collisions)."""
     endpoint = endpoint.strip()
     if "://" in endpoint:
         parsed = urlparse(endpoint)
         host = (parsed.hostname or "localhost").strip()
-        port = parsed.port or default_port
+        port = _safe_port(parsed, default_port)
     else:
         host, _, port_part = endpoint.partition(":")
         host = host.strip() or "localhost"
@@ -117,7 +131,7 @@ _ollama_mac_endpoint = os.getenv("OLLAMA_MAC_ENDPOINT", _default_ollama_mac_endp
 # config" self-heal in lan_discovery.detect_active_tilting_ip.
 _p_mac = urlparse(_ollama_mac_endpoint if "://" in _ollama_mac_endpoint else f"http://{_ollama_mac_endpoint}")
 if RUNNING_ON_MAC and _p_mac.hostname and not _is_loopback_host(_p_mac.hostname):
-    _healed_mac = f"http://localhost:{_p_mac.port or 11434}"
+    _healed_mac = f"http://localhost:{_safe_port(_p_mac, 11434)}"
     logging.getLogger(__name__).warning(
         "OLLAMA_MAC_ENDPOINT=%s is non-loopback; PT runs on the Mac so its ollama "
         "is localhost — normalizing to %s", _ollama_mac_endpoint, _healed_mac
@@ -138,7 +152,7 @@ _p_mac_lms = urlparse(
     _mac_lms_endpoint if "://" in _mac_lms_endpoint else f"http://{_mac_lms_endpoint}"
 )
 if RUNNING_ON_MAC and _p_mac_lms.hostname not in ("localhost", "127.0.0.1", "::1", None):
-    _healed_mac_lms = f"http://localhost:{_p_mac_lms.port or 1234}"
+    _healed_mac_lms = f"http://localhost:{_safe_port(_p_mac_lms, 1234)}"
     logging.getLogger(__name__).warning(
         "LM_STUDIO_MAC_ENDPOINT=%s is non-loopback; PT runs on the Mac so Mac LM Studio "
         "is localhost — normalizing to %s",
@@ -159,7 +173,7 @@ if RUNNING_ON_MAC and not _is_loopback_host(_mac_lms_host):
     )
     _mac_lms_host = "localhost"
 MAC_LMS_HOST = _mac_lms_host
-MAC_LMS_PORT = int(os.getenv("MAC_LMS_PORT", str(_p_mac_lms.port or 1234)))
+MAC_LMS_PORT = int(os.getenv("MAC_LMS_PORT", str(_safe_port(_p_mac_lms, 1234))))
 MAC_LMS_URL = f"http://{MAC_LMS_HOST}:{MAC_LMS_PORT}"
 MAC_LMS_MODEL = (os.getenv("MAC_LMS_MODEL")
                  or os.getenv("LMS_MAC_MODEL")
@@ -186,7 +200,7 @@ def _ensure_mac_ollama_models_present(served: list[str], base_url: str = LOCAL_M
         return
     parsed = urlparse(base_url if "://" in base_url else f"http://{base_url}")
     host = parsed.hostname or ""
-    port = parsed.port or 11434
+    port = _safe_port(parsed, 11434)
     if not _is_loopback_host(host) or port != 11434:
         raise RuntimeError(
             f"Mac Ollama must be localhost:11434 before manager selection; got {base_url}"
@@ -316,7 +330,7 @@ def resolve_local_or_remote(
                         "resolve_local_or_remote: %s=%s is non-loopback but we run ON "
                         "the %s machine — normalizing to localhost", env_var, override, role
                     )
-                    return f"http://localhost:{parsed.port or port}"
+                    return f"http://localhost:{_safe_port(parsed, port)}"
             return override if "://" in override else f"http://{override}"
     if is_local:
         return f"http://localhost:{port}"
