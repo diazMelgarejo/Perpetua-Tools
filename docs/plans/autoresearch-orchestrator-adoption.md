@@ -40,6 +40,20 @@ The submodule is reference/source parity. Runtime still uses the existing bridge
 | orama AutoResearcher role | `orama-system/bin/agents/autoresearcher/SOUL.md` |
 | orama v2 doctrine | `orama-system/docs/v2/25-autoresearcher-doctrine-and-againtra-flagship.md` |
 
+## Existing Skills To Reuse
+
+Do not create a new skill or methodology path until these are exhausted:
+
+| Skill / guidance | Use |
+| --- | --- |
+| Perpetua `SKILL.md` | hardware/model routing and runtime rules |
+| Perpetua `AGENTS.md` | repo-wide agent guardrails and endpoint policy discipline |
+| orama `bin/agents/autoresearcher/SOUL.md` | AutoResearcher role behavior |
+| orama `bin/orama-system/skills/oramasys-method/SKILL.md` | methodology and architecture-heavy synthesis |
+| orama `bin/orama-system/skills/oramasys-method/references/integrative-merge.md` | cross-repo harmonization without deleting existing pathways |
+| orama `bin/orama-system/skills/git-history-surgery/SKILL.md` | branch/rewrite analysis before judging stale work |
+| ECC `vendor/ecc-tools` skills | subagent auto-selection and existing ECC-style skill conventions |
+
 ## Dry-Run First Contract
 
 Long-running goals must start with a dry-run plan.
