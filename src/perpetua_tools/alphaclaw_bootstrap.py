@@ -418,8 +418,13 @@ async def _find_any_gateway() -> str | None:
 def _gateway_port_from_url(url: str) -> int:
     """Extract the numeric port from a gateway base URL."""
     parsed = urlparse(url)
-    if parsed.port is not None:
-        return parsed.port
+    try:
+        port = parsed.port
+    except ValueError:
+        print(f"[alphaclaw] ⚠  Invalid port in gateway URL {url!r}; using {OPENCLAW_GATEWAY_PORT}")
+        return OPENCLAW_GATEWAY_PORT
+    if port is not None:
+        return port
     return OPENCLAW_GATEWAY_PORT
 
 

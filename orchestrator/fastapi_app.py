@@ -11,7 +11,6 @@ from dataclasses import asdict
 from hashlib import sha256
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from urllib.parse import urlparse
 
 import httpx
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -29,6 +28,7 @@ from orchestrator import autoresearch_bridge
 from orchestrator import __version__ as _ORCHESTRATOR_VERSION
 from orchestrator.agent_tracker import AgentTracker
 from orchestrator.connectivity import backend_health_map
+from utils.endpoint_policy_core import build_transport_url
 from utils.model_endpoint_url import ModelEndpointPolicyError, validate_model_endpoint_url
 from orchestrator.control_plane import (
     bootstrap_runtime,
@@ -169,12 +169,13 @@ def _runtime_summary() -> dict[str, Any]:
 
 
 def _candidate_base_url(host: str, port: int) -> str:
-    parsed = urlparse(host)
-    if parsed.scheme and parsed.hostname:
-        scheme = parsed.scheme
-        hostname = parsed.hostname
-        resolved_port = parsed.port or port
-        return f"{scheme}://{hostname}:{resolved_port}"
+    # Route through the shared endpoint_policy_core boundary so a malformed
+    # host string (bad port syntax/range) can never raise a bare ValueError
+    # here — parse_transport_identity/build_transport_url swallow ValueError
+    # internally and fall back to the plain host:port reconstruction below.
+    built = build_transport_url(host, port)
+    if built is not None:
+        return built
     return f"{host.rstrip('/')}:{port}"
 
 
