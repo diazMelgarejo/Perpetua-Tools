@@ -1,0 +1,46 @@
+{
+  "id": "04f59c541076",
+  "key": "manual_04f59c",
+  "name": "manual_04f59c",
+  "claim": "Fable-5 Tool Cataloging: Auto-discover 100% of skills/MCP/agents (70+/100+) with zero manual registration. Generate docs/generated/tool-catalog.json unioning SKILL.md frontmatter + MCP roots + worker_registry live regs. Runtime availability reuses connectivity.py endpoint_online() cache (single source of truth). Registry-stale tools flagged by CI before commit (LINT-302). Catalog-first fail-closed tool selection. Consensus: 5/7 subagent types. Foundation: ECC 2.0 fragmentation-detection precedent (docs/v2/ D21).",
+  "conditions": [
+    "availability",
+    "catalog",
+    "discovery",
+    "fable5",
+    "mcp",
+    "orchestration",
+    "registry",
+    "skill",
+    "tool"
+  ],
+  "evidence_ids": [
+    "2026-07-04T10:08:55.031049+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T10:08:55.031049+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-07-04T10:08:55.031049+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T10:08:55.118611+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Current state: 70+ tools scattered across skills/, MCP servers, and worker_registry; hand-maintained catalog fragments cause stale-tool selection, unnecessary retries, and cascaded fallbacks. Connectivity.py endpoint_online() model-id-served verification proven; reusing its cache eliminates duplicate probes. sync_tool_registry.py --check already enforces freshness in CI. Operationalizes automatic discovery per orama docs/v2/ (zero-fragmentation pattern).",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-07-04T10:08:55.031049+00:00"
+      ],
+      "lessons_sha": "8519d94f2b52"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T10:08:55.118602+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Current state: 70+ tools scattered across skills/, MCP servers, and worker_registry; hand-maintained catalog fragments cause stale-tool selection, unnecessary retries, and cascaded fallbacks. Connectivity.py endpoint_online() model-id-served verification proven; reusing its cache eliminates duplicate probes. sync_tool_registry.py --check already enforces freshness in CI. Operationalizes automatic discovery per orama docs/v2/ (zero-fragmentation pattern)."
+}

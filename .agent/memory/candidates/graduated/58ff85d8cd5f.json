@@ -1,0 +1,46 @@
+{
+  "id": "58ff85d8cd5f",
+  "key": "manual_58ff85",
+  "name": "manual_58ff85",
+  "claim": "Fable-5 Skill Creation & Priority Roadmap: Six new consensus skills target Phase 0-1 stabilization: fable5-git-rebase-safety, fable5-tier-based-routing, fable5-mcp-diagnostics, fable5-endpoint-centralization, fable5-tool-cataloging, fable5-doc-layering. Phase 0 unblocks v2 multi-agent workflows (ranks 1-3, medium-small effort, existing foundations). Phase 1 hardens routing/catalog/docs (ranks 4-7, medium-large, triggers Phase 3 real-data-first gate). Phase 2 (concurrency coordination, telemetry aggregation) depends on Phase 0-1 solid. Top upgrade: model-routing-check skill gap (reachability vs actual router resolution), mcp-orchestration diagnostics subsection, hardware-policy timeout unification. Consensus: Architect + Reviewer + General + CodeGuide (highest-tier skill steering group).",
+  "conditions": [
+    "architecture",
+    "fable5",
+    "multi-agent",
+    "orchestration",
+    "phase",
+    "priority",
+    "roadmap",
+    "skill",
+    "upgrade"
+  ],
+  "evidence_ids": [
+    "2026-07-04T10:09:20.841700+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T10:09:20.841700+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-07-04T10:09:20.841700+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T10:09:20.917545+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "LLM Council session validated 6 new skills as highest-ROI for v2 unblocking (consensus 5-7 out of 7 panel members each). Tier-based-routing + git-rebase-safety + mcp-diagnostics form foundation layer; endpoint-centralization + tool-cataloging + doc-layering provide infrastructure. Current state: none of these exist as executable skills; they're documented patterns with partial implementation (frugality_router.py, reanchor_scan.sh, mcp_diagnostics.py in progress). Skills operationalize patterns, making them discoverable and actionable per CLAUDE.md horse-pulls-cart doctrine.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-07-04T10:09:20.841700+00:00"
+      ],
+      "lessons_sha": "48ae125f7013"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T10:09:20.917538+00:00",
+  "reviewer": "learn.py",
+  "rationale": "LLM Council session validated 6 new skills as highest-ROI for v2 unblocking (consensus 5-7 out of 7 panel members each). Tier-based-routing + git-rebase-safety + mcp-diagnostics form foundation layer; endpoint-centralization + tool-cataloging + doc-layering provide infrastructure. Current state: none of these exist as executable skills; they're documented patterns with partial implementation (frugality_router.py, reanchor_scan.sh, mcp_diagnostics.py in progress). Skills operationalize patterns, making them discoverable and actionable per CLAUDE.md horse-pulls-cart doctrine."
+}
