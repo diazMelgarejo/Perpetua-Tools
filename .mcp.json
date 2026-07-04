@@ -3,7 +3,8 @@
     "exa": {
       "command": "bash",
       "args": [
-        "$HOME/code/OpenClaw/orama-system/scripts/exa/exa-mcp-wrapper.sh"
+        "-c",
+        "exec bash \"$HOME/code/OpenClaw/orama-system/scripts/exa/exa-mcp-wrapper.sh\""
       ],
       "env": {}
     }
