@@ -1,0 +1,48 @@
+{
+  "id": "1a984f855042",
+  "key": "manual_1a984f",
+  "name": "manual_1a984f",
+  "claim": "Fable-5 MCP Diagnostics: Implement single-command health probe across all registered MCP servers (CRG, gbrain, alphaclaw-mcp, ai-cli-mcp) with <10s response time. Catches tool degradation within 1 invocation before cascade. Detects stale-name failures (detect_changes vs detect_changes_tool) and down-server escalation. Consensus: 6/7 subagent types. Emit OTEL span in router trace stream. Foundation: orchestrator/mcp_diagnostics.py mirrors connectivity.py endpoint_online() cache (one source of truth).",
+  "conditions": [
+    "channel",
+    "debug",
+    "diagnostics",
+    "error",
+    "fable5",
+    "failure",
+    "health",
+    "mcp",
+    "multi-channel",
+    "orchestration",
+    "tool"
+  ],
+  "evidence_ids": [
+    "2026-07-04T10:08:41.172594+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T10:08:41.172594+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-07-04T10:08:41.172594+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T10:08:41.244148+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "ADR-045 error-resilience Phase 1-3 complete; mcp_diagnostics.py needed to bridge observability gap. Currently ad hoc per-tool checks scattered across docs/local-env-catch-up.md. Single canonical probe prevents redundant offline probes, improves cache hit rate, unifies timeout semantics (LINT-301/LINT-401 enforcement: 100% of MCP calls wrapped with 10s timeout).",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-07-04T10:08:41.172594+00:00"
+      ],
+      "lessons_sha": "1a114a907cb7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T10:08:41.244142+00:00",
+  "reviewer": "learn.py",
+  "rationale": "ADR-045 error-resilience Phase 1-3 complete; mcp_diagnostics.py needed to bridge observability gap. Currently ad hoc per-tool checks scattered across docs/local-env-catch-up.md. Single canonical probe prevents redundant offline probes, improves cache hit rate, unifies timeout semantics (LINT-301/LINT-401 enforcement: 100% of MCP calls wrapped with 10s timeout)."
+}

@@ -1,0 +1,41 @@
+{
+  "id": "6741dab9176f",
+  "key": "manual_6741da",
+  "name": "manual_6741da",
+  "claim": "Fable-5 LLM Council model fallback priority: Tier 1 = Ollama qwen3.5:9b-nvfp4 (local, always first), Tier 2 = SKIP Windows GPU (offline), Tier 3 = GLM-5.2 BigModel (fallback), Tier 4 = Sonnet 5 Medium (absolute last resort only). Timeout: 10s per tier. No further fallback after Sonnet fails.",
+  "conditions": [
+    "GLM-5.2 API key configured,",
+    "Ollama localhost:11434 running,",
+    "Sonnet 5 API available",
+    "qwen3.5:9b-nvfp4 available,"
+  ],
+  "evidence_ids": [
+    "2026-07-04T10:01:54.975719+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T10:01:54.975719+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-04T10:01:54.975719+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T10:01:55.123170+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Session 2026-07-04 Fable-5 LLM council processing requires clear model priority. Local Ollama must be tried first (lowest latency, highest throughput). Windows GPU is currently offline \u2014 skip it entirely to save fallback time. GLM-5.2 is reliable regional option. Sonnet 5 is expensive cloud option \u2014 use only when all else fails. This priority ensures cost-effective, fast-first operation.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-04T10:01:54.975719+00:00"
+      ],
+      "lessons_sha": "d6e09757f45e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T10:01:55.123158+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Session 2026-07-04 Fable-5 LLM council processing requires clear model priority. Local Ollama must be tried first (lowest latency, highest throughput). Windows GPU is currently offline \u2014 skip it entirely to save fallback time. GLM-5.2 is reliable regional option. Sonnet 5 is expensive cloud option \u2014 use only when all else fails. This priority ensures cost-effective, fast-first operation."
+}
