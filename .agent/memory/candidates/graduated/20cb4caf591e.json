@@ -1,0 +1,61 @@
+{
+  "id": "20cb4caf591e",
+  "key": "manual_20cb4c",
+  "name": "manual_20cb4c",
+  "claim": "Live execution validation is non-negotiable for quality gates \u2014 static path checks and imports do not catch execution errors (e.g., cost formula mismatches, tier examples that raise exceptions). Re-review must test against real backends.",
+  "conditions": [
+    "against",
+    "backends",
+    "catch",
+    "checks",
+    "cost",
+    "errors",
+    "examples",
+    "exceptions",
+    "execution",
+    "formula",
+    "gates",
+    "imports",
+    "live",
+    "mismatches",
+    "non-negotiable",
+    "path",
+    "quality",
+    "raise",
+    "re-review",
+    "real",
+    "static",
+    "test",
+    "tier",
+    "validation"
+  ],
+  "evidence_ids": [
+    "2026-07-04T14:05:10.283720+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T14:05:10.283720+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-04T14:05:10.283720+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T14:05:10.373012+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Task 2 v2 fixer claimed 100% testing but only ran static validation. Re-review found: Tier 1 BackendRegistry needed real autodetect(), cost examples wrong (/bin/zsh.009 vs .00). Pattern: fabricated evidence caught by gates. Lesson applies to all fixer protocols going forward.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-04T14:05:10.283720+00:00"
+      ],
+      "lessons_sha": "8da00cf0f6b0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T14:05:10.373001+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Task 2 v2 fixer claimed 100% testing but only ran static validation. Re-review found: Tier 1 BackendRegistry needed real autodetect(), cost examples wrong (/bin/zsh.009 vs .00). Pattern: fabricated evidence caught by gates. Lesson applies to all fixer protocols going forward."
+}
