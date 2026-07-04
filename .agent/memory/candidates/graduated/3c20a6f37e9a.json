@@ -1,0 +1,38 @@
+{
+  "id": "3c20a6f37e9a",
+  "key": "manual_3c20a6",
+  "name": "manual_3c20a6",
+  "claim": "Implementation Guide for ADR-045: Step-by-step how to harden any orama-system skill using gstack/gbrain/CRG. (1) Identify skills (any that call gbrain/gstack/CRG tools). (2) Add safety library preamble (source bin/orama-system/scripts/lib/gstack-gbrain-crg-safe.sh). (3) Run pre-flight checks (_detect_errors) before first external call. (4) Guard external calls: simple=_retry_with_backoff, state-modifying=_with_lock, queries=timeout+fallback. (5) Add post-operation health checks (_health_check). (6) Use _err_actionable for clear error messages. Priority skills to update: code-review, mcp-install, using-git-worktrees, first-run-setup, orama-gstack. Testing scenarios: happy path, gbrain offline, lock contention, timeout. Checklist in docs/how-to/hardening-gstack-gbrain-skills.md.",
+  "conditions": [
+    "skills gstack gbrain crg hardening implementation pattern"
+  ],
+  "evidence_ids": [
+    "2026-07-04T04:34:14.305701+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T04:34:14.305701+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-04T04:34:14.305701+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T04:34:14.395422+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Session 2026-07-04: Captured entire implementation procedure so future agents can update skills consistently and quickly. Provides examples, testing patterns, and checklists.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-04T04:34:14.305701+00:00"
+      ],
+      "lessons_sha": "097f11493ee4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T04:34:14.395414+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Session 2026-07-04: Captured entire implementation procedure so future agents can update skills consistently and quickly. Provides examples, testing patterns, and checklists."
+}
