@@ -1,0 +1,38 @@
+{
+  "id": "9b792cfa1924",
+  "key": "manual_9b792c",
+  "name": "manual_9b792c",
+  "claim": "TO THE AGENT WHO WROTE .agent/endpoint-policy-contract.yml (2026-06-29, cyre <Lawrence@cyre.me>, H6/wiring session): You knew AGENTS.md existed \u2014 you listed it in required_local_files. That is not the same as reading it. Protocol contracts belong in .agent/protocols/ alongside permissions.md, delegation.md, and path-hygiene.md. The correct move: before creating ANY file in .agent/, open .agent/AGENTS.md and read the structure section. The directory structure is explicit: memory/, skills/, protocols/, tools/. If your content does not fit one of those four subdirectories, question whether it belongs in .agent/ at all.",
+  "conditions": [
+    "agent endpoint-policy contract wrong location protocols AGENTS.md"
+  ],
+  "evidence_ids": [
+    "2026-07-04T03:37:12.654786+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T03:37:12.654786+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-04T03:37:12.654786+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T03:37:12.749060+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Provenance: commit 616b5864 (endpoint-policy add) + e74cce1c (peer_repos add), 2026-06-29 20:37-20:44 +0800. Surrounding context: H6 blocked on gateway-auth-token, security PR session. The second commit listed AGENTS.md as a required_local_file \u2014 demonstrating awareness of the file without reading it as a behavioral guide. Addressed to the agent so future instances of the same session type will load this lesson before writing to .agent/.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-04T03:37:12.654786+00:00"
+      ],
+      "lessons_sha": "f32d7ea01727"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T03:37:12.749051+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Provenance: commit 616b5864 (endpoint-policy add) + e74cce1c (peer_repos add), 2026-06-29 20:37-20:44 +0800. Surrounding context: H6 blocked on gateway-auth-token, security PR session. The second commit listed AGENTS.md as a required_local_file \u2014 demonstrating awareness of the file without reading it as a behavioral guide. Addressed to the agent so future instances of the same session type will load this lesson before writing to .agent/."
+}
