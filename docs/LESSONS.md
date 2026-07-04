@@ -1954,6 +1954,16 @@ node <repo>/AlphaClaw/node_modules/openclaw/openclaw.mjs gateway --port 18789 --
 
 ---
 
+## [2026-07-04] Hermes bb70a6833f36: cross-machine learning pathway + .agent/ misfire autopsy
+
+- **Cross-machine learning pathway**: Win AutoResearcher (`start.ps1` / Hermes) generates episodic evidence via skills (e.g. `skill-absorption-map`) → `auto_dream.py` clusters them into candidates in `.agent/memory/candidates/` → candidates persist across dream cycles until a human reviews on Mac. Win-originated candidates can sit `staged` for days (bb70a6833f36 was re-staged 47× over 12 days) because `auto_dream` runs on both machines but only a human session on either can graduate them.
+- **skill-absorption-map `FAILURE` label**: a diagnostic output, NOT a system crash. It means the map found unabsorbed skill clusters. Treat as architecture TODOs: `hermes-harness` should absorb `hermes-agent` + `pt-orama-harness-integration`; `perpetua-hardware` should absorb `local-inference`. Act as refactoring targets.
+- **Misfire 1 — `endpoint-policy-contract.yml` (2026-06-29, `cyre <Lawrence@cyre.me>`)**: Valid contract written to `.agent/` root instead of `.agent/protocols/`. The agent listed `AGENTS.md` in `required_local_files` — knowing the file exists is not the same as reading it for behavioral guidance. Correct move: read `.agent/AGENTS.md` BEFORE creating any file under `.agent/`.
+- **Misfire 2 — `.agent/lessons.md` (2026-07-04 07:15, `cyre <Lawrence.Melgarejo@gmail.com>`)**: Agent hand-wrote a markdown lessons file instead of using `python3 .agent/tools/learn.py`. Created a phantom file nothing reads, bypassing the full stage→graduate→render pipeline. Additional flag: `Lawrence.Melgarejo@gmail.com` is NOT in the canonical git identity allowlist (`Lawrence@cyre.me`, `diazMelgarejo@gmail.com`, `Codex <codex@openai.com>`).
+- **Anti-pattern — listing ≠ reading**: Cargo-culting a convention file's name into a checklist/plan while skipping its content is how AFRP Trigger 3 failures happen. A file that appears in your output as a reference MUST be opened and read before acting in its domain.
+
+---
+
 ## [2026-07-01] Hermes coord-pulse hardening: race dispatch, pause/resume, memory pipeline encoding sweep
 
 - **Fact**: `coord_pulse.ps1` (orama-system) was upgraded from single-leg Hermes dispatch to `spawn_agents.py --agent race` — races `cursor-agent` against Hermes+LM Studio Win, first success wins, falls back to direct LM Studio. Added a sticky `coord_pulse_pause.json` gate checked independent of the Task Scheduler enable state (default: stays paused until explicit resume), backed by a new user-local Hermes skill (`coord-pulse-control`) so "pause/resume coord pulse" works conversationally.
