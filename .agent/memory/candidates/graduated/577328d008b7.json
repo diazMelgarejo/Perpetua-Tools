@@ -1,0 +1,82 @@
+{
+  "id": "577328d008b7",
+  "key": "manual_577328",
+  "name": "manual_577328",
+  "claim": "Dry-run before long-running or cross-repo execution: for long-running goals, autonomous loops, plugin installs, GPU work, external LLM usage, or cross-repo changes \u2014 run/produce a dry-run plan first showing affected files and commands, classify risks and ownership, avoid side effects until reviewed. Dry-run must not call paid/external LLMs, install plugins, touch GPUs, mutate AlphaClaw, or mutate repos beyond a plan/report file.",
+  "conditions": [
+    "affected",
+    "alphaclaw",
+    "autonomous",
+    "avoid",
+    "before",
+    "beyond",
+    "call",
+    "changes",
+    "classify",
+    "commands",
+    "cross-repo",
+    "dry-run",
+    "effects",
+    "execution",
+    "external",
+    "file",
+    "files",
+    "first",
+    "goals",
+    "gpu",
+    "gpus",
+    "install",
+    "installs",
+    "llm",
+    "llms",
+    "long-running",
+    "loops",
+    "mutate",
+    "ownership",
+    "paid",
+    "plan",
+    "plugin",
+    "plugins",
+    "produce",
+    "report",
+    "repos",
+    "reviewed",
+    "risks",
+    "run",
+    "showing",
+    "side",
+    "touch",
+    "until",
+    "usage",
+    "work"
+  ],
+  "evidence_ids": [
+    "2026-07-04T03:18:04.601958+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T03:18:04.601958+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-04T03:18:04.601958+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T03:18:04.694509+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Recorded 2026-07-04 planning session. Prevents irreversible side effects from autonomous agent actions.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-04T03:18:04.601958+00:00"
+      ],
+      "lessons_sha": "4424fe959014"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T03:18:04.694501+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Recorded 2026-07-04 planning session. Prevents irreversible side effects from autonomous agent actions."
+}

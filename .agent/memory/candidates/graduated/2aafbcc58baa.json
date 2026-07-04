@@ -1,0 +1,72 @@
+{
+  "id": "2aafbcc58baa",
+  "key": "manual_2aafbc",
+  "name": "manual_2aafbc",
+  "claim": "Numbered plan docs require index verification: before creating any numbered doc in orama-system/docs/v2/*, read docs/v2/README.md first, use its 'Next free slot' as the coordination lock, create at that slot, then update the README spec tree and advance 'Next free slot' in the same pass. If a wrong-numbered file was created, move content to the correct slot and delete the wrong file.",
+  "conditions": [
+    "advance",
+    "any",
+    "before",
+    "content",
+    "coordination",
+    "correct",
+    "create",
+    "created",
+    "creating",
+    "delete",
+    "doc",
+    "docs",
+    "file",
+    "first",
+    "free",
+    "index",
+    "lock",
+    "move",
+    "next",
+    "numbered",
+    "orama-system",
+    "pass",
+    "plan",
+    "read",
+    "readme",
+    "require",
+    "same",
+    "slot",
+    "spec",
+    "tree",
+    "update",
+    "use",
+    "verification",
+    "wrong",
+    "wrong-numbered"
+  ],
+  "evidence_ids": [
+    "2026-07-04T03:18:03.542716+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T03:18:03.542716+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-04T03:18:03.542716+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T03:18:03.638800+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Root lesson: do not infer numbering from an uploaded filename or stale conversation context. Recorded 2026-07-04 planning session.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-04T03:18:03.542716+00:00"
+      ],
+      "lessons_sha": "c7c13d1a4737"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T03:18:03.638792+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Root lesson: do not infer numbering from an uploaded filename or stale conversation context. Recorded 2026-07-04 planning session."
+}
