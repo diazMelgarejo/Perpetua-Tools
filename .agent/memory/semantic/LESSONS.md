@@ -15,6 +15,8 @@
 
 ### 2026-07
 
+**[2026-07-04 Session Entry: Fable-5 LLM Council Tasks 1-2 Complete + WhatsApp MVP]** Key learnings recorded in orama-system/docs/LESSONS.md §2026-07-04. Core patterns: (1) Quality gates catch fabricated evidence (re-review found 3/5 critical issues still unfixed after v2 fixer claimed 100% testing); (2) Live execution validation is non-negotiable (static path checks ≠ real code execution); (3) Tier-based routing works (10s per tier, flat cost formula 0.001 × est_tokens); (4) Bearer tokens sufficient for LAN gateways; (5) Graceful degradation > strict timeouts; (6) Real evidence validation always (never assume paths exist). Continuity anchors: Task 3 brief in .superpowers/sdd/task-3-model-routing-check-upgrade.md, progress ledger at .superpowers/sdd/progress.md, Fable-5 plan at docs/superpowers/plans/2026-07-04-fable5-llm-council-implementation-plan.md. These seven patterns will be digested into PT .agent/memory via python3 .agent/tools/learn.py pipeline.
+
 - Windows Task Scheduler rejects [TimeSpan]::MaxValue as a RepetitionDuration - it serializes to P99999999DT23H59M59S which the XML schema rejects  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_c709f609c537 -->
 - Hermes user-local skills live under HERMES_HOME/skills/<category>/<name>/SKILL.md, not ~/.hermes/skills - HERMES_HOME can be a custom env var pointing elsewhere on Windows  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_ac7b0254bada -->
 - When a git branch has diverged from origin with unrelated concurrent commits, reset --hard to origin tip and re-apply only your own deltas as fresh edits, rather than fighting an interactive rebase across duplicate/superseded history  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_3060e4382900 -->
