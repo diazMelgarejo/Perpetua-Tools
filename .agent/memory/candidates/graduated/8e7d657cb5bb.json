@@ -1,0 +1,38 @@
+{
+  "id": "8e7d657cb5bb",
+  "key": "manual_8e7d65",
+  "name": "manual_8e7d65",
+  "claim": "NEVER write lessons by hand-editing any file in .agent/. The pipeline is: python3 .agent/tools/learn.py '<claim>' --rationale '...' (stages + graduates + re-renders memory/semantic/LESSONS.md automatically). Creating a parallel .agent/lessons.md or .agent/memory/semantic/LESSONS.md by hand defeats the candidate review system and salience decay.",
+  "conditions": [
+    "agent memory lessons write pipeline bypass"
+  ],
+  "evidence_ids": [
+    "2026-07-04T03:13:43.301797+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T03:13:43.301797+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-04T03:13:43.301797+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T03:13:43.381384+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Anti-pattern exhibited by commit 480d6ebc on PT main: agent wrote .agent/lessons.md at root, bypassing learn.py entirely. This is the exact violation AGENTS.md warns against. 2026-07-04.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-04T03:13:43.301797+00:00"
+      ],
+      "lessons_sha": "bb01d7275677"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T03:13:43.381377+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Anti-pattern exhibited by commit 480d6ebc on PT main: agent wrote .agent/lessons.md at root, bypassing learn.py entirely. This is the exact violation AGENTS.md warns against. 2026-07-04."
+}
