@@ -1,0 +1,41 @@
+{
+  "id": "a9c5357fb5ca",
+  "key": "manual_a9c535",
+  "name": "manual_a9c535",
+  "claim": "gbrain embedding configuration CRITICAL: use Ollama bge-m3 (local, no API key) NOT OpenAI. Provider=openai, model=bge-m3, base_url=http://localhost:11434/v1, api_key=dummy. Matches code-review-graph unified embeddings (same vector space). Session 2026-07-04: fixed 2114+ sync failures by switching from OpenAI (missing OPENAI_API_KEY) to local Ollama.",
+  "conditions": [
+    "Ollama running localhost:11434,",
+    "bge-m3 model available,",
+    "gbrain config writable,",
+    "sync failures cleared"
+  ],
+  "evidence_ids": [
+    "2026-07-04T09:46:25.160813+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T09:46:25.160813+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-04T09:46:25.160813+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T09:46:25.774488+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "gbrain sync repeatedly failed with 'OpenAI embedding requires OPENAI_API_KEY'. Root cause: gbrain config had no embedding provider or was set to OpenAI. Solution: switch to Ollama bge-m3 (same model code-review-graph uses). Unified embeddings = consistent semantic search across both tools. No external API, no rate limits, fast local processing.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-04T09:46:25.160813+00:00"
+      ],
+      "lessons_sha": "f93a6cdad95b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T09:46:25.774477+00:00",
+  "reviewer": "learn.py",
+  "rationale": "gbrain sync repeatedly failed with 'OpenAI embedding requires OPENAI_API_KEY'. Root cause: gbrain config had no embedding provider or was set to OpenAI. Solution: switch to Ollama bge-m3 (same model code-review-graph uses). Unified embeddings = consistent semantic search across both tools. No external API, no rate limits, fast local processing."
+}
