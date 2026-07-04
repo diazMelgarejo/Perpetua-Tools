@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "exa": {
+      "command": "bash",
+      "args": [
+        "$HOME/code/OpenClaw/orama-system/scripts/exa/exa-mcp-wrapper.sh"
+      ],
+      "env": {}
+    }
+  }
+}
