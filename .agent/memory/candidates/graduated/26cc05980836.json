@@ -1,0 +1,38 @@
+{
+  "id": "26cc05980836",
+  "key": "manual_26cc05",
+  "name": "manual_26cc05",
+  "claim": "Cross-machine knowledge transfer pathway: Win AutoResearcher (start.ps1 / Hermes) generates episodic evidence via skills like skill-absorption-map \u2192 auto_dream.py clusters them into candidates in PT .agent/memory \u2192 candidates persist across dream cycles until a human reviews on Mac. This is how Hermes self-assessments, Win session diagnostics, and AutoResearcher findings arrive in the shared portable brain. The pathway is: Win skill/session \u2192 AGENT_LEARNINGS.jsonl (evidence_ids) \u2192 auto_dream staging \u2192 REVIEW_QUEUE.md \u2192 human graduate/reject on Mac.",
+  "conditions": [
+    "cross-machine learning transfer hermes windows autodresearcher pathway episodic"
+  ],
+  "evidence_ids": [
+    "2026-07-04T03:34:30.137793+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T03:34:30.137793+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-04T03:34:30.137793+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T03:34:30.222111+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Meta-lesson surfaced 2026-07-04 while graduating bb70a6833f36 (Hermes skill-absorption-map self-assessment staged 2026-06-22, re-staged 47x over 12 days). The pathway explains why Win-originated candidates can sit staged for days: auto_dream runs on both machines but only a human session on either machine can graduate them.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-04T03:34:30.137793+00:00"
+      ],
+      "lessons_sha": "13efd85c04a1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T03:34:30.222100+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Meta-lesson surfaced 2026-07-04 while graduating bb70a6833f36 (Hermes skill-absorption-map self-assessment staged 2026-06-22, re-staged 47x over 12 days). The pathway explains why Win-originated candidates can sit staged for days: auto_dream runs on both machines but only a human session on either machine can graduate them."
+}
