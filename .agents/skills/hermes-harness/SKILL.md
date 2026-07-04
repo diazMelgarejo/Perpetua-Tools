@@ -29,6 +29,14 @@ git pull --ff-only
 
 If the worktree is dirty, the branch is not tracking origin, or fast-forward is impossible, do not overwrite local work. Report the drift and read the current canonical card with that caveat.
 
+## GLM-5.2 Fallback (Hermes Windows Path)
+
+```bash
+source ~/.openclaw/.env.glm52 2>/dev/null && echo "✅ GLM-5.2 Fallback Activated" || true
+```
+
+On Windows, when LM Studio or other Hermes-accessible models are unavailable, the task queue automatically falls back to GLM-5.2. This is automatically wired by `start.ps1` — no additional setup required beyond the one-time `setup-glm52.sh` run on the Mac side.
+
 ## Load Canonical Skill
 
 Open and follow `bin/orama-system/skills/hermes-harness/SKILL.md` (relative to the repo root). Do not copy behavior from this wrapper.
