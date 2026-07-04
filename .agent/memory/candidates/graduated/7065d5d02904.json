@@ -1,0 +1,67 @@
+{
+  "id": "7065d5d02904",
+  "key": "manual_7065d5",
+  "name": "manual_7065d5",
+  "claim": "JSON-RPC multiplexing over a single stdio backend: mangle request IDs to '{client_id}:{original_id}' before forwarding; on responses, split by ':' to demux back to the originating client. Cache initialize capabilities and tools/list results so subsequent clients are served from cache without hitting the backend.",
+  "conditions": [
+    "back",
+    "backend",
+    "before",
+    "cache",
+    "capabilities",
+    "client",
+    "client_id",
+    "clients",
+    "demux",
+    "forwarding",
+    "hitting",
+    "ids",
+    "initialize",
+    "json-rpc",
+    "list",
+    "mangle",
+    "multiplexing",
+    "original_id",
+    "originating",
+    "over",
+    "request",
+    "responses",
+    "results",
+    "served",
+    "single",
+    "split",
+    "stdio",
+    "subsequent",
+    "tools",
+    "without"
+  ],
+  "evidence_ids": [
+    "2026-07-04T03:13:29.903167+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T03:13:29.903167+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-04T03:13:29.903167+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T03:13:30.030298+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Used in exa-mcp-daemon.py to multiplex multiple Claude sessions through one npx exa-mcp-server process. ID splitting handles both int and string original IDs. 2026-07-04.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-04T03:13:29.903167+00:00"
+      ],
+      "lessons_sha": "fb10de7ae7d2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T03:13:30.030287+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Used in exa-mcp-daemon.py to multiplex multiple Claude sessions through one npx exa-mcp-server process. ID splitting handles both int and string original IDs. 2026-07-04."
+}

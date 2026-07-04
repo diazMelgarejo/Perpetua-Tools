@@ -1,0 +1,66 @@
+{
+  "id": "6cff80879069",
+  "key": "manual_6cff80",
+  "name": "manual_6cff80",
+  "claim": "MCP singleton pattern: when N registrations point to the same server, run ONE backend daemon on a Unix socket and have each registration wrapper probe the socket, start the daemon (nohup, detached) if dead, then bridge its own stdio via Python threading. No socat dependency.",
+  "conditions": [
+    "backend",
+    "bridge",
+    "daemon",
+    "dead",
+    "dependency",
+    "detached",
+    "each",
+    "mcp",
+    "nohup",
+    "one",
+    "own",
+    "pattern",
+    "point",
+    "probe",
+    "python",
+    "registration",
+    "registrations",
+    "run",
+    "same",
+    "server",
+    "singleton",
+    "socat",
+    "socket",
+    "start",
+    "stdio",
+    "threading",
+    "unix",
+    "via",
+    "wrapper"
+  ],
+  "evidence_ids": [
+    "2026-07-04T03:13:29.316123+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T03:13:29.316123+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-04T03:13:29.316123+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T03:13:29.460427+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Implemented for Exa MCP across 3 registrations (Claude Desktop, orama, PT). exa-mcp-daemon.py uses asyncio Unix socket server; wrappers use python threading for stdio<->socket bridge. Committed orama-system 600cda2, PT 0acbeba, 2026-07-04.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-04T03:13:29.316123+00:00"
+      ],
+      "lessons_sha": "12cafd7128eb"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T03:13:29.460418+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Implemented for Exa MCP across 3 registrations (Claude Desktop, orama, PT). exa-mcp-daemon.py uses asyncio Unix socket server; wrappers use python threading for stdio<->socket bridge. Committed orama-system 600cda2, PT 0acbeba, 2026-07-04."
+}
