@@ -1,0 +1,44 @@
+{
+  "id": "8df4d109ae3a",
+  "key": "manual_8df4d1",
+  "name": "manual_8df4d1",
+  "claim": "On macOS/BSD, singleton daemon-start locks in shell scripts must use mkdir-is-atomic + rm -rf for teardown, never flock(1) or rmdir.",
+  "conditions": [
+    "MCP wrapper",
+    "flock",
+    "macOS bash",
+    "mkdir lock",
+    "rmdir race",
+    "shell lock",
+    "singleton daemon"
+  ],
+  "evidence_ids": [
+    "2026-07-04T07:55:52.620958+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T07:55:52.620958+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-04T07:55:52.620958+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T07:55:52.709557+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "flock(1) is util-linux-only and absent on macOS by default \u2014 a flock-based fix silently fails on the exact platform being debugged. Separately, rmdir silently no-ops on a non-empty lock directory; if the lock dir ever contains a pid marker file (the normal case), every successful run leaves the lock behind and the next daemon restart spins forever in the reclaim loop. Found while fixing orama-system exa-mcp-wrapper.sh: reproduced both the daemon-start race (5 concurrent launches -> 2 competing daemons, 0/5 responses) and the rmdir infinite-loop regression (clean run then forced restart hung indefinitely, exit 124) with concrete tests before and after each fix. A second independent reviewer (parallel Sonnet 5 + GLM-5.2 review) caught the rmdir bug that the first fix pass missed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-04T07:55:52.620958+00:00"
+      ],
+      "lessons_sha": "f92209940eac"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T07:55:52.709548+00:00",
+  "reviewer": "learn.py",
+  "rationale": "flock(1) is util-linux-only and absent on macOS by default \u2014 a flock-based fix silently fails on the exact platform being debugged. Separately, rmdir silently no-ops on a non-empty lock directory; if the lock dir ever contains a pid marker file (the normal case), every successful run leaves the lock behind and the next daemon restart spins forever in the reclaim loop. Found while fixing orama-system exa-mcp-wrapper.sh: reproduced both the daemon-start race (5 concurrent launches -> 2 competing daemons, 0/5 responses) and the rmdir infinite-loop regression (clean run then forced restart hung indefinitely, exit 124) with concrete tests before and after each fix. A second independent reviewer (parallel Sonnet 5 + GLM-5.2 review) caught the rmdir bug that the first fix pass missed."
+}
