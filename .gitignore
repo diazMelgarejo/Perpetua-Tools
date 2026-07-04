@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+!.env.local.example
 .env.local
 .env.lmstudio
 *.pem
