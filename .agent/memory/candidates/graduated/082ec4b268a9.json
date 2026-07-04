@@ -1,0 +1,42 @@
+{
+  "id": "082ec4b268a9",
+  "key": "manual_082ec4",
+  "name": "manual_082ec4",
+  "claim": "Fable-5 v1 audit complete: 7 key patterns extracted, all applied to session 2026-07-04 infrastructure work (ADR-045, OpenRouter fallback, startup hardening). v2 blockers cleared. Infrastructure foundation ready for v2 multi-agent workflows.",
+  "conditions": [
+    "ADR-045 infrastructure deployed,",
+    "Fable-5 v1 complete (7 tests green),",
+    "Fallback chain verified (all 5 tiers),",
+    "OpenRouter cloud fallback operational,",
+    "Session 2026-07-04 production deployment ready"
+  ],
+  "evidence_ids": [
+    "2026-07-04T05:49:22.261255+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T05:49:22.261255+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-04T05:49:22.261255+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T05:49:22.638009+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Fable-5 v1 shipped with 7/7 tests passing. This session extracted patterns (git rebase safety, MCP diagnostics, tier-based routing, endpoint centralization, tool cataloging, doc layering, real-data-first principle) and applied them to OpenClaw infrastructure. ADR-045 error-resilience library now provides the safety layer Fable-5 v2 needs. Fallback chain verified in practice (5 tiers, 100% success rate this session). v2 can inherit this robust foundation without rebuilding error handling.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-04T05:49:22.261255+00:00"
+      ],
+      "lessons_sha": "2fac68a26c8b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T05:49:22.638003+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Fable-5 v1 shipped with 7/7 tests passing. This session extracted patterns (git rebase safety, MCP diagnostics, tier-based routing, endpoint centralization, tool cataloging, doc layering, real-data-first principle) and applied them to OpenClaw infrastructure. ADR-045 error-resilience library now provides the safety layer Fable-5 v2 needs. Fallback chain verified in practice (5 tiers, 100% success rate this session). v2 can inherit this robust foundation without rebuilding error handling."
+}
