@@ -74,6 +74,7 @@
 - Live execution validation is non-negotiable for quality gates — static path checks and imports do not catch execution errors (e.g., cost formula mismatches, tier examples that raise exceptions). Re-review must test against real backends.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_20cb4caf591e -->
 - Tier-based routing with flat cost formula 0.001 × est_tokens works across all escalation tiers (no per-tier variation). Each tier must enforce hard 10s timeout via killable background call. Cost gate raises on deny, no silent reroute.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_597850c7f05c -->
 - Parallel subagent fixers work well when scopes are independent (e.g., code example fix vs. contradictions removal). No collision. Both approved on re-review without re-do cycles. Validation must serialize (re-review after all fixers).  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_906a46baec0a -->
+- ECC submodule upgrade cycle: preserve 3 local-only files via patch + sync script (ecc-submodule-sync.sh restore). Files: frontend-design openai.yaml, .antigravity/ANTIGRAVITY.md, .gemini/ANTIGRAVITY.md. Patch tracked in scripts/git/ecc-local-additions.patch. Always run restore after submodule update.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_525743857a6b -->
 
 ### 2026-06
 
