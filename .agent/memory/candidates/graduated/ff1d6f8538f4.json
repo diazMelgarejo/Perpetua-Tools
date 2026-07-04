@@ -1,0 +1,38 @@
+{
+  "id": "ff1d6f8538f4",
+  "key": "manual_ff1d6f",
+  "name": "manual_ff1d6f",
+  "claim": "Orchestration layer wiring for GLM-5.2: start.sh (Mac) and start.ps1 (Windows) both source ~/.openclaw/.env.glm52 at bootstrap and print fallback status prominently after services startup. Variables: $GLM52_API_KEY, $GLM52_ENDPOINT. Both scripts check availability and log whether fallback is ACTIVE or NOT AVAILABLE. This is the entry point where all agent tasks can discover and use GLM-5.2 when needed.",
+  "conditions": [
+    "orchestration start.sh start.ps1 bootstrap glm52 sourcing"
+  ],
+  "evidence_ids": [
+    "2026-07-04T04:21:59.841542+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T04:21:59.841542+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-04T04:21:59.841542+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T04:21:59.910513+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Session 2026-07-04: added GLM-5.2 awareness to both Mac (start.sh) and Windows (start.ps1) entry points so the fallback is available to all agents from startup.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-04T04:21:59.841542+00:00"
+      ],
+      "lessons_sha": "edb85dd3922e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T04:21:59.910505+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Session 2026-07-04: added GLM-5.2 awareness to both Mac (start.sh) and Windows (start.ps1) entry points so the fallback is available to all agents from startup."
+}

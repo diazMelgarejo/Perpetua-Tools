@@ -1,0 +1,38 @@
+{
+  "id": "a9a1dc2b20d4",
+  "key": "manual_a9a1dc",
+  "name": "manual_a9a1dc",
+  "claim": "GLM-5.2 safe defaults and error recovery: (1) API key in secrets, environment file auto-sourced, health check with 10s connect + 120s max timeout + 3 retries. (2) Exit codes drive fallback: 0=success, 7/28/52=try next. (3) Setup is idempotent: setup-glm52.sh adds sourcing to shell profiles once; re-runs are safe no-ops. (4) Status visible at startup: every orchestrator run prints whether GLM-5.2 is ACTIVE or NOT AVAILABLE. (5) Operators always know fallback state; silent failures are prevented; diagnostics are available via shell history and endpoint testing.",
+  "conditions": [
+    "glm52 error recovery health check safe defaults idempotent setup"
+  ],
+  "evidence_ids": [
+    "2026-07-04T04:22:00.444696+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T04:22:00.444696+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-04T04:22:00.444696+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T04:22:00.527262+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Session 2026-07-04: GLM-5.2 fallback must be robust with clear error handling and status visibility. Safe defaults prevent silent failures; logging enables diagnostics; idempotent setup prevents multi-entry issues.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-04T04:22:00.444696+00:00"
+      ],
+      "lessons_sha": "6b23e3e85927"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T04:22:00.527255+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Session 2026-07-04: GLM-5.2 fallback must be robust with clear error handling and status visibility. Safe defaults prevent silent failures; logging enables diagnostics; idempotent setup prevents multi-entry issues."
+}
