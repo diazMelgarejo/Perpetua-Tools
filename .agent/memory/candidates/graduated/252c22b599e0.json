@@ -1,0 +1,42 @@
+{
+  "id": "252c22b599e0",
+  "key": "manual_252c22",
+  "name": "manual_252c22",
+  "claim": "OpenClaw Gateway critical configuration resolved: (1) PT_DIR properly set in workspace+system, (2) all services running (PT:8000, orama:8001, Portal:8002), (3) GLM-5.2 API key configured with BigModel endpoint, (4) start.sh symlinked from orama-system to workspace. Deployment verified operational.",
+  "conditions": [
+    "All 3 services running (PT/orama/Portal),",
+    "GLM-5.2 fallback API key valid,",
+    "Gateway reports all systems UP",
+    "OpenClaw Gateway startup successful,",
+    "start.sh symlink from orama-system to workspace,"
+  ],
+  "evidence_ids": [
+    "2026-07-04T06:00:01.850436+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T06:00:01.850436+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-04T06:00:01.850436+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T06:00:01.970348+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Session 2026-07-04 final deployment exposed 4 critical configuration areas that required coordination between orama-system and workspace. Gateway now reports all systems UP. This lesson ensures future deployments and debugging know exact configuration points: PT_DIR resolution (multiple paths), service port binding (all three must be accessible), GLM-5.2 integration (secrets + endpoint), workspace initialization (symlink strategy). Resolution verified by gateway status output.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-04T06:00:01.850436+00:00"
+      ],
+      "lessons_sha": "ccda4da20494"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T06:00:01.970339+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Session 2026-07-04 final deployment exposed 4 critical configuration areas that required coordination between orama-system and workspace. Gateway now reports all systems UP. This lesson ensures future deployments and debugging know exact configuration points: PT_DIR resolution (multiple paths), service port binding (all three must be accessible), GLM-5.2 integration (secrets + endpoint), workspace initialization (symlink strategy). Resolution verified by gateway status output."
+}
