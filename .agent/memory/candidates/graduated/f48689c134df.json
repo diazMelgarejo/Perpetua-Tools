@@ -1,0 +1,68 @@
+{
+  "id": "f48689c134df",
+  "key": "manual_f48689",
+  "name": "manual_f48689",
+  "claim": "Repo source of truth beats review projections: margin/PR-comments/Cursor-handoff-docs/chat-summaries are review surfaces, not sources of truth. Workflow: update the repo file first \u2192 publish the rendered review copy second \u2192 fold review comments back into the repo file \u2192 reuse the same Margin doc when revising \u2192 never treat Margin comments as approval.",
+  "conditions": [
+    "approval",
+    "back",
+    "beats",
+    "chat-summaries",
+    "comments",
+    "copy",
+    "cursor-handoff-docs",
+    "doc",
+    "file",
+    "first",
+    "fold",
+    "into",
+    "margin",
+    "never",
+    "pr-comments",
+    "projections",
+    "publish",
+    "rendered",
+    "repo",
+    "reuse",
+    "review",
+    "revising",
+    "same",
+    "second",
+    "source",
+    "sources",
+    "surfaces",
+    "treat",
+    "truth",
+    "update",
+    "workflow"
+  ],
+  "evidence_ids": [
+    "2026-07-04T03:18:03.771590+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T03:18:03.771590+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-04T03:18:03.771590+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T03:18:03.858160+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Recorded 2026-07-04 planning session. Establishes precedence of committed artifact over any review surface.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-04T03:18:03.771590+00:00"
+      ],
+      "lessons_sha": "7f314d61e204"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T03:18:03.858148+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Recorded 2026-07-04 planning session. Establishes precedence of committed artifact over any review surface."
+}
