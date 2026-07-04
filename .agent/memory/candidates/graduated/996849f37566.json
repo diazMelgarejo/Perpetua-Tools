@@ -1,0 +1,41 @@
+{
+  "id": "996849f37566",
+  "key": "manual_996849",
+  "name": "manual_996849",
+  "claim": "Fable-5 LLM Council session complete (7 subagents, 7 patterns analyzed, 572k tokens): Top 5 skill upgrades (model-routing-check HIGH, mcp-orchestration HIGH, hardware-policy MEDIUM, endpoint-centralization MEDIUM, real-data-first MEDIUM), 6 orama adoption patterns (tiered dataclass, fail-closed gate, dual-track wrappers, live-derived status, zero-fragmentation, MultiLLMRouter decorator), 7 new skills proposed (git-rebase-safety, tier-based-routing, mcp-diagnostics, endpoint-centralization, tool-cataloging, doc-layering, real-data-first-gate). Consensus heat map: 7/7 on routing+safety, 6/7 on diagnostics+centralization+layering+gate, 5/7 on cataloging. All ready for v2 implementation.",
+  "conditions": [
+    "7/7 subagents completed,",
+    "Consensus reached on skill upgrades,",
+    "Implementation roadmap ready",
+    "New skills identified by 6-7 agents,"
+  ],
+  "evidence_ids": [
+    "2026-07-04T10:10:53.032597+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T10:10:53.032597+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-04T10:10:53.032597+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T10:10:53.105286+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Session 2026-07-04 comprehensive multi-agent analysis of Fable-5 v1 learnings using 7 specialized subagent types (Architect, Explorer, Reviewer, Explore, General, Plan, CodeGuide) with fallback chain (local Ollama \u2192 GLM-5.2 \u2192 Sonnet 5). Results show clear consensus on highest-value patterns to adopt. 7/7 agreement on git-rebase-safety and tier-routing indicates these are production-critical. 6/7 agreement on diagnostics and centralization indicates wide recognition of fragmentation problems.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-04T10:10:53.032597+00:00"
+      ],
+      "lessons_sha": "76b22d280aa7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T10:10:53.105280+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Session 2026-07-04 comprehensive multi-agent analysis of Fable-5 v1 learnings using 7 specialized subagent types (Architect, Explorer, Reviewer, Explore, General, Plan, CodeGuide) with fallback chain (local Ollama \u2192 GLM-5.2 \u2192 Sonnet 5). Results show clear consensus on highest-value patterns to adopt. 7/7 agreement on git-rebase-safety and tier-routing indicates these are production-critical. 6/7 agreement on diagnostics and centralization indicates wide recognition of fragmentation problems."
+}

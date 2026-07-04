@@ -1,0 +1,48 @@
+{
+  "id": "17a8cb51d2b4",
+  "key": "manual_17a8cb",
+  "name": "manual_17a8cb",
+  "claim": "Fable-5 Git-Rebase Safety: Never use rev-list --count, merge-base, or ahead-behind to judge divergence post-rewrite; always use git cherry with tree-twins from git_reanchor_scan.sh to classify branches as ORPHAN/TWIN/NEEDS-REANCHOR. Consensus: 7/7 subagent types (Architect, Reviewer, General, CodeGuide, Explorer, ModelSelector, Validator). This prevents zero-tree-orphan-merges (LINT-200 100% pass), zero force-pushes to protected branches, and zero branch-collision incidents across concurrent multi-agent sessions.",
+  "conditions": [
+    "agents",
+    "branch",
+    "divergence",
+    "fable5",
+    "git",
+    "merge",
+    "parallel",
+    "rebase",
+    "rewrite",
+    "tree-twin",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-07-04T10:08:24.404961+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-04T10:08:24.404961+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-07-04T10:08:24.404961+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-04T10:08:24.499522+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Three documented tri-repo collision incidents traced to using git ahead/behind as proxy for reachability post-rewrite. Canonical method now in orama-system/scripts/git/reanchor_scan.sh (byte-identical synced to PT). Use git cherry, not graph proxies, to judge tree-twins. Foundational for v2 multi-agent parallel-write orchestration.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-07-04T10:08:24.404961+00:00"
+      ],
+      "lessons_sha": "ce77af17f57e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-04T10:08:24.499515+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Three documented tri-repo collision incidents traced to using git ahead/behind as proxy for reachability post-rewrite. Canonical method now in orama-system/scripts/git/reanchor_scan.sh (byte-identical synced to PT). Use git cherry, not graph proxies, to judge tree-twins. Foundational for v2 multi-agent parallel-write orchestration."
+}
