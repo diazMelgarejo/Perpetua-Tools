@@ -17,6 +17,10 @@ Use --json for programmatic consumption, --plain to disable ANSI.
 """
 import argparse, datetime, json, os, shutil, sys
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 EPISODIC = os.path.join(BASE, "memory/episodic/AGENT_LEARNINGS.jsonl")
