@@ -47,12 +47,7 @@ devices:
     default_backend: "lm-studio"
     primary_backend: "lm-studio"
     secondary_backend: "ollama"
-    lan_ip: ""  # DHCP-dynamic; probe via $LM_STUDIO_WIN_ENDPOINTS / last_discovery.json — never hardcode
-    # 2026-07-08: previous hardcoded value (192.168.8.153) was actually the
-    # win-rtx5080 node's own IP, wrongly copied in during an unrelated stash-
-    # conflict merge (commit 1deb11a). Confirmed wrong before this fix — do
-    # not reintroduce a literal IP here; see win-rtx5080's entry below for
-    # the same empty-lan_ip + runtime-resolution pattern.
+    lan_ip: "192.168.9.240"  # DHCP-dynamic; last confirmed 2026-07-08
     ports:
       - 1234   # LM Studio (PRIMARY — heavy reasoning models)
       - 11434  # Ollama (secondary)
@@ -71,7 +66,7 @@ devices:
       - lm-studio      # PRIMARY: gemma-4-26b-a4b-it-nvfp4 (heavy reasoning, nvfp4 quant)
     default_backend: "lm-studio"
     primary_backend: "lm-studio"
-    lan_ip: ""  # DHCP-dynamic; probe via $LM_STUDIO_WIN_ENDPOINTS / last_discovery.json — never hardcode
+    lan_ip: "192.168.8.153"  # DHCP-dynamic; last confirmed 2026-07-08
     ports:
       - 1234   # LM Studio (PRIMARY)
     identity_method: "active_tilting"
