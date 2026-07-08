@@ -52,7 +52,7 @@ models:
   - name: "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2"
     backend: lm-studio
     device: win-rtx3080
-    host: "${LM_STUDIO_WIN_ENDPOINT:-http://192.168.9.238}"
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://192.168.8.153}"
     port: 1234
     context_window: 16384
     gpu_offload: 40
@@ -92,7 +92,7 @@ models:
   - name: gemma-4-26B-A4B-it-Q4_K_M
     backend: lm-studio
     device: win-rtx3080
-    host: "${LM_STUDIO_WIN_ENDPOINT:-http://192.168.9.238}"
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://192.168.8.153}"
     port: 1234
     context_window: 16384
     gpu_offload: 35
