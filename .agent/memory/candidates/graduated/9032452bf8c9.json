@@ -1,0 +1,44 @@
+{
+  "id": "9032452bf8c9",
+  "key": "manual_903245",
+  "name": "manual_903245",
+  "claim": "When a cross-platform infra fix (line endings, encoding, build config) is documented in the wiki, implement it in main the same session \u2014 do not leave it as documentation only.",
+  "conditions": [
+    "cross-platform",
+    "documentation only",
+    "editorconfig",
+    "gitattributes",
+    "implement now",
+    "infra fix",
+    "wiki doc"
+  ],
+  "evidence_ids": [
+    "2026-07-08T02:45:42.307907+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-08T02:45:42.307907+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-08T02:45:42.307907+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-08T02:45:42.423018+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A wiki page describing the .gitattributes/.editorconfig fix for CRLF/BOM checkout churn was written first, but the actual files weren't added to either repo's main until the user pointed out agents were 're-inventing failed solutions every commit and sync.' Documentation that isn't wired into the repo doesn't stop the next agent from hitting the same problem \u2014 only the committed config does. Verified safe to apply immediately in both repos: git add --renormalize . touched 17 files in orama-system and 1 in Perpetua-Tools, all confirmed lossless via git diff --ignore-cr-at-eol (zero semantic change, no binaries touched).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-08T02:45:42.307907+00:00"
+      ],
+      "lessons_sha": "0e507bdff137"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-08T02:45:42.423004+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A wiki page describing the .gitattributes/.editorconfig fix for CRLF/BOM checkout churn was written first, but the actual files weren't added to either repo's main until the user pointed out agents were 're-inventing failed solutions every commit and sync.' Documentation that isn't wired into the repo doesn't stop the next agent from hitting the same problem \u2014 only the committed config does. Verified safe to apply immediately in both repos: git add --renormalize . touched 17 files in orama-system and 1 in Perpetua-Tools, all confirmed lossless via git diff --ignore-cr-at-eol (zero semantic change, no binaries touched)."
+}

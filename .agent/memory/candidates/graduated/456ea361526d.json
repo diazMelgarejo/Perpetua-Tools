@@ -2,7 +2,7 @@
   "id": "456ea361526d",
   "key": "manual_456ea3",
   "name": "manual_456ea3",
-  "claim": "When tracked files contain paths that look absolute (C:\\\\Users\\\\..., /Users/...), use relative paths instead (../../, ../) resolved from the file's own location within the repo. Never use username-containing placeholders like <user> or env vars that still expose directory structure (%USERPROFILE%\\Downloads\\...). The filename alone is sufficient when marked local-only; strip the parent path tree entirely. Standard: relative paths from the file's directory, or ~ for home, or $OPENCLAW_ROOT for the repo root. Applies to all tracked files including .agent/memory JSON and markdown.",
+  "claim": "When tracked files contain paths that look absolute (C:\\\\Users\\\\..., $HOME use relative paths instead (../../, ../) resolved from the file's own location within the repo. Never use username-containing placeholders like <user> or env vars that still expose directory structure (%USERPROFILE%\\Downloads\\...). The filename alone is sufficient when marked local-only; strip the parent path tree entirely. Standard: relative paths from the file's directory, or ~ for home, or $OPENCLAW_ROOT for the repo root. Applies to all tracked files including .agent/memory JSON and markdown.",
   "conditions": [
     "doxxing",
     "memory",

@@ -31,7 +31,7 @@
       "ts": "2026-06-22T19:33:36.136070+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
-      "notes": "LINT-006 / CIDF anti-doxxing invariant: literal workstation paths in tracked files expose the developer's username and machine layout to anyone with repo access. Caught multiple times (2026-06-22 PR #123 dream-cycle content had /Users/lab and /Users/user). CI and pre-commit both block commits with violations.",
+      "notes": "LINT-006 / CIDF anti-doxxing invariant: literal workstation paths in tracked files expose the developer's username and machine layout to anyone with repo access. Caught multiple times (2026-06-22 PR #123 dream-cycle content had $HOME and $HOME CI and pre-commit both block commits with violations.",
       "provisional": false,
       "evidence_snapshot": [
         "2026-06-22T19:33:36.071175"
@@ -42,5 +42,5 @@
   "rejection_count": 0,
   "accepted_at": "2026-06-22T19:33:36.136063+00:00",
   "reviewer": "learn.py",
-  "rationale": "LINT-006 / CIDF anti-doxxing invariant: literal workstation paths in tracked files expose the developer's username and machine layout to anyone with repo access. Caught multiple times (2026-06-22 PR #123 dream-cycle content had /Users/lab and /Users/user). CI and pre-commit both block commits with violations."
+  "rationale": "LINT-006 / CIDF anti-doxxing invariant: literal workstation paths in tracked files expose the developer's username and machine layout to anyone with repo access. Caught multiple times (2026-06-22 PR #123 dream-cycle content had $HOME and $HOME CI and pre-commit both block commits with violations."
 }

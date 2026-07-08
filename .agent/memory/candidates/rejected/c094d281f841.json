@@ -2,7 +2,7 @@
   "id": "c094d281f841",
   "key": "pattern_ultrathink_downloads_failure_c094d2",
   "name": "pattern_ultrathink_downloads_failure_c094d2",
-  "claim": "FAILURE in path-hygiene: Use C:\\Users\\lab\\Downloads\\SKILLS.md\\ultrathink as canonical",
+  "claim": "FAILURE in path-hygiene: Use <workspace-root> as canonical",
   "conditions": [
     "downloads",
     "failure",
