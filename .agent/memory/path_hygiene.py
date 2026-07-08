@@ -9,12 +9,26 @@ from __future__ import annotations
 
 import re
 
-_UNIX_HOME      = re.compile(r"/Users/([^/\s\"]+)/")
-_UNIX_HOME_TAIL = re.compile(r"/Users/([^/\s\"]+)(?=[\"\'\s]|$)")
-_LINUX_HOME      = re.compile(r"/home/([^/\s\"]+)/")
-_LINUX_HOME_TAIL = re.compile(r"/home/([^/\s\"]+)(?=[\"\'\s]|$)")
-_WIN_HOME      = re.compile(r"(?i)C:\\Users\\[^\\]+\\")
-_WIN_HOME_TAIL = re.compile(r"(?i)C:\\Users\\[^\\\"\s]+")
+# The username/segment character class excludes not just `/`, whitespace,
+# and quotes, but also common sentence punctuation ( ) , . ; : ! ? — a
+# TAIL pattern's lookahead only requires a quote/whitespace/EOF to stop,
+# so without this the greedy capture swallows trailing punctuation as if
+# it were part of the path, corrupting the surrounding sentence. Confirmed
+# 2026-07-08 against a lesson quoting an absolute Windows/Unix path pair
+# in prose as an illustrative example: the closing paren and comma right
+# after the path got silently absorbed into the "sanitized" replacement,
+# leaving a run-on sentence. A real username never legitimately contains
+# any of these characters, so excluding them is a pure precision gain —
+# see the reproduction and full before/after in Perpetua-Tools commit
+# 36cc9d18 (manual revert) and the fix commit that follows it.
+_SEG      = r"[^/\\\s\"'(),.;:!?]+"
+_WIN_SEG  = r"[^\\\"'(),.;:!?\s]+"
+_UNIX_HOME      = re.compile(r"/Users/(" + _SEG + r")/")
+_UNIX_HOME_TAIL = re.compile(r"/Users/(" + _SEG + r")(?=[\"\'\s]|$)")
+_LINUX_HOME      = re.compile(r"/home/(" + _SEG + r")/")
+_LINUX_HOME_TAIL = re.compile(r"/home/(" + _SEG + r")(?=[\"\'\s]|$)")
+_WIN_HOME      = re.compile(r"(?i)C:\\Users\\" + _WIN_SEG + r"\\")
+_WIN_HOME_TAIL = re.compile(r"(?i)C:\\Users\\" + _WIN_SEG)
 # Workspace-tree doxxing: even after home→%USERPROFILE% substitution, Downloads/SKILLS.md
 # layout must not persist in tracked memory (LINT-006 antipattern).
 _WORKSPACE_DOXX_WIN = re.compile(
