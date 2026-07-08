@@ -79,6 +79,17 @@ default_primary_model: glm-5.1:cloud
 default_fallback_model: Qwen3.5-9B-MLX-4bit
 ```
 
+> **GPU residency ground-truth (`ollama ps`):** the mac-studio active backend is
+> decided by `ollama ps` (or `GET http://localhost:11434/api/ps`), **not** by a
+> port probe. A port-open check only proves the Ollama *server* is up — it says
+> nothing about whether a model is resident in unified memory. `ollama ps` lists
+> models with `size_vram > 0` that are loaded right now. **Idempotent rule:** if
+> `ollama ps` is non-empty, Mac active backend = `ollama-local` and LM Studio Mac
+> (`:1234`) must not load a model on the same device (one-backend-per-device,
+> Ollama takes precedence). Re-probing is read-only and returns the same
+> classification until the keep-alive expires or the model is unloaded — safe to
+> repeat every startup.
+
 ---
 
 ### Profile: win-rtx3080
@@ -198,6 +209,57 @@ DEGRADED: return cached result or queue task
 
 ---
 
+## GPU Residency Ground-Truth — `ollama ps`
+
+A port probe (`nc -z localhost 11434`) proves the Ollama **server process** is up.
+It does **not** prove a model is loaded in GPU/unified memory. The only read-only
+ground-truth signal for "is a model resident on this device right now" is:
+
+```bash
+ollama ps
+# or, machine-readable:
+curl -sf http://localhost:11434/api/ps
+```
+
+Output fields that matter:
+- `name` / `model` — which model is loaded
+- `size_vram` — bytes resident in GPU (0 = CPU-only / not loaded)
+- `processor` — `100% GPU` confirms full offload
+- `expires_at` / `UNTIL` — keep-alive countdown; a model mid-unload is not resident
+
+**LM Studio has no equivalent probe.** `GET :1234/api/ps` returns
+`{"error":"Unexpected endpoint or method."}`; `GET :1234/v1/models` is the
+*installed catalog*, not what is loaded in VRAM. This asymmetry is why Ollama is
+the precedence backend on Mac and LM Studio Mac is MIRROR ONLY (D14): you can
+verify Ollama's residency but not LM Studio's, so the device must not run both.
+
+### Idempotent enforcement gate
+
+```
+READ ollama ps  (or GET /api/ps)          # read-only, no side effects
+IF result.models is non-empty AND size_vram > 0:
+    mac_active_backend = "ollama-local"   # Ollama owns the GPU
+    SKIP any LM Studio model load on this device
+ELSE:
+    mac_active_backend = mac_lms_ok ? "mac-lmstudio" : (cloud | offline)
+```
+
+Re-evaluating this gate is safe at any time: identical input → identical output,
+no state mutated. The gate only *reads*; it classifies, it does not start or
+stop services. When the residency state is unchanged between two probes, the
+second probe is a no-op.
+
+### Integration points
+
+| Surface | How it uses `ollama ps` |
+|---|---|
+| `agent_launcher.py` probe | classify mac-studio active backend before building routing state |
+| `start.sh` banner | show resident model + `size_vram` instead of a bare port-up mark |
+| `_TIER_HOSTS["mac"]` | already `{"ollama-local"}` only; residency gate keeps it honest |
+| D14 mirror policy | lmstudio-mac excluded from dispatch while Ollama is resident |
+
+---
+
 ## VRAM Safety Rules (win-rtx3080)
 
 **LM Studio path (v0.9.9.1+ primary):**
@@ -257,6 +319,17 @@ cite the YAML and keep examples aligned with it.
 ---
 
 ## Changelog
+
+### v0.9.9.8 (2026-07-08)
+- **mac-studio**: Document `ollama ps` / `GET /api/ps` as the GPU-residency
+  ground-truth signal. Port probes only prove the server is up, not that a model
+  is loaded in unified memory. Added idempotent enforcement gate: non-empty
+  `ollama ps` with `size_vram > 0` → Mac active backend = `ollama-local`, skip
+  LM Studio load on same device (one-backend-per-device, Ollama precedence).
+  Read-only probe — re-running changes nothing when residency is unchanged.
+- **asymmetry**: LM Studio has no `/api/ps` equivalent (`:1234/api/ps` errors;
+  `/v1/models` is catalog not residency) — documented as the reason LM Studio
+  Mac is MIRROR ONLY (D14).
 
 ### v0.9.9.2 (2026-04-06)
 - **win-rtx3080**: Add `gemma-4-26B-A4B-it-Q4_K_M` (lmstudio-community) as secondary LM Studio model (priority 16, gpu_offload=35, roles: general/coding/executor/subagent/fallback)
