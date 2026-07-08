@@ -112,7 +112,7 @@ def forbidden_models_for_platform(platform: str, policy: dict[str, Any] | None =
     normalized = platform.lower().strip()
     if normalized in {"mac", "macos", "darwin", "apple", "mac-studio", "lmstudio-mac"}:
         return {str(m).lower() for m in policy.get("windows_only", [])}
-    if normalized in {"win", "windows", "win32", "win-rtx3080", "lmstudio-win", "ollama-win"}:
+    if normalized in {"win", "windows", "win32", "win-rtx3080", "win-rtx5080", "lmstudio-win", "ollama-win"}:
         return {str(m).lower() for m in policy.get("mac_only", [])}
     return set()
 
@@ -139,7 +139,7 @@ def check_affinity(model_id: str, platform: str, policy: dict[str, Any] | None =
                 f"[alphaclaw] Fatal: '{model_id}' is NEVER_MAC. "
                 "Assign to lmstudio-win only."
             )
-    elif normalized in {"win", "windows", "win32", "win-rtx3080", "lmstudio-win", "ollama-win"}:
+    elif normalized in {"win", "windows", "win32", "win-rtx3080", "win-rtx5080", "lmstudio-win", "ollama-win"}:
         forbidden = {m.lower() for m in policy.get("mac_only", [])}
         if model_lower in forbidden:
             raise HardwareAffinityError(
