@@ -1,0 +1,20 @@
+# Cross-platform encoding policy — see docs/wiki/10-line-endings-and-encoding.md
+# (canonical; mirrored to orama-system/wiki/17). Editor-layer complement to
+# .gitattributes: prevents CRLF/BOM from being typed in, rather than just
+# normalizing it after the fact at commit time.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Windows-owned files keep CRLF in the working tree (matches .gitattributes
+# eol=crlf turf for the RTX host bootstrap / shim scripts). Do not "fix" to LF.
+[*.{bat,cmd,ps1}]
+end_of_line = crlf
+
+# Markdown often uses trailing double-space for hard line breaks.
+[*.md]
+trim_trailing_whitespace = false
