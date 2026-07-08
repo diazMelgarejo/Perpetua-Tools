@@ -1,0 +1,42 @@
+{
+  "id": "4cba77672bef",
+  "key": "manual_4cba77",
+  "name": "manual_4cba77",
+  "claim": "On Windows Python 3.13+, prefer 'netifaces2' over the original 'netifaces' package \u2014 the original has no prebuilt wheel past Python 3.11 and fails to build from source without MSVC build tools; netifaces2 is a maintained drop-in fork (same 'import netifaces' API) with prebuilt wheels for current Python.",
+  "conditions": [
+    "dependency-pin",
+    "netifaces",
+    "python313",
+    "wheel-build-failure",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-07-08T09:09:15.717060+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-08T09:09:15.717060+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-08T09:09:15.717060+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-08T09:09:15.864693+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "requirements-windows.txt pinned netifaces>=0.11.0, which broke the entire fresh-install bootstrap chain on Python 3.13.14 (wheel build failure, no MSVC installed). Swapped to netifaces2>=0.0.22 with zero code changes needed downstream (discover.py, ip_detection_solution.py both already treat the import as optional via try/except).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-08T09:09:15.717060+00:00"
+      ],
+      "lessons_sha": "b5d0b56d5193"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-08T09:09:15.864683+00:00",
+  "reviewer": "learn.py",
+  "rationale": "requirements-windows.txt pinned netifaces>=0.11.0, which broke the entire fresh-install bootstrap chain on Python 3.13.14 (wheel build failure, no MSVC installed). Swapped to netifaces2>=0.0.22 with zero code changes needed downstream (discover.py, ip_detection_solution.py both already treat the import as optional via try/except)."
+}
