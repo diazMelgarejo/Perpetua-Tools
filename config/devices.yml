@@ -59,6 +59,28 @@ devices:
       reasoning-distilled-v2 (RTX 3080 GGUF). Mac LM Studio mirrors this model
       but selector excludes mirror from dispatch — see hardware policy above.
 
+  - id: "win-rtx5080"
+    os: windows
+    gpu: rtx-5080
+    runtimes:
+      - lm-studio      # PRIMARY: gemma-4-26b-a4b-it-nvfp4 (heavy reasoning, nvfp4 quant)
+    default_backend: "lm-studio"
+    primary_backend: "lm-studio"
+    lan_ip: ""  # DHCP-dynamic; probe via $LM_STUDIO_WIN_ENDPOINTS / last_discovery.json — never hardcode
+    ports:
+      - 1234   # LM Studio (PRIMARY)
+    identity_method: "active_tilting"
+    description: "Windows RTX 5080: LM Studio primary, gemma-4-26b-a4b-it-nvfp4"
+    active_tilting_required: true
+    notes: >
+      3rd fleet node (2nd Windows GPU box), bootstrapped from
+      orama-system/bin/orama-system/skills/first-run-setup/references/windows-node-onboarding.md
+      under $OPENCLAW_ROOT. Runs gemma-4-26b-a4b-it-nvfp4 (and mirrors
+      gemma-4-26b-a4b-it, text-embedding-nomic-embed-text-v1.5,
+      text-embedding-qwen3-embedding-8b-i1) via LM Studio local server. lan_ip
+      is DHCP-dynamic — always resolve current value via $LM_STUDIO_WIN_ENDPOINTS
+      or ~/.openclaw/state/last_discovery.json before dispatch; never hardcode it.
+
   - id: "shared-ollama"
     os: mixed
     runtimes:
