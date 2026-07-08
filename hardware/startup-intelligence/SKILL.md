@@ -76,6 +76,49 @@ async def check_remote_worker(
 from history is > 5000 ms — it may simply be slow to accept connections.  Do not
 increase Mac probe retries; local sockets fail fast when the service is down.
 
+### 2a. GPU residency probe (`ollama ps`) — ground truth, not port-up
+
+Port probes (`check_remote_worker`, `check_lmstudio_worker`) prove a **server
+process** is listening. They do **not** prove a model is resident in GPU/unified
+memory. On mac-studio the active-backend classification must additionally read
+`ollama ps` (CLI) or `GET {ollama_base}/api/ps` (HTTP):
+
+```python
+def ollama_resident_models(base_url: str = "http://localhost:11434",
+                           timeout: int = 2) -> list[dict]:
+    """Read-only: return models with size_vram > 0 currently loaded.
+    Idempotent — repeat calls return the same residency until keep-alive
+    expires or the model is unloaded. Never raises; returns [] on any error.
+    """
+    # GET /api/ps → {"models": [{"name","size_vram","expires_at",...}]}
+    # keep only entries where size_vram > 0
+```
+
+**Classification rule (idempotent gate):**
+
+```
+mac_ol_resident = len(ollama_resident_models()) > 0   # size_vram > 0
+if mac_ol_resident:
+    mac_active_backend = "ollama-local"                # Ollama owns the GPU
+    # LM Studio Mac (:1234) must not load on same device — one-per-device, Ollama precedence
+elif mac_lms_ok:
+    mac_active_backend = "mac-lmstudio"
+else:
+    mac_active_backend = cloud | offline
+```
+
+This is a **read-only classification**, not a lifecycle action — re-evaluating
+the gate with unchanged residency yields the same result and mutates nothing.
+It refines the `MAC_DUAL` / `MAC_OLLAMA_ONLY` / `MAC_LMS_ONLY` scenarios: even
+when both Mac backends answer a port probe (`MAC_DUAL`), dispatch keys off
+residency, and a resident Ollama model demotes lmstudio-mac to mirror-only
+(consistent with D14 and `_TIER_HOSTS["mac"] = {"ollama-local"}`).
+
+**LM Studio has no residency probe** — `GET :1234/api/ps` returns
+`{"error":"Unexpected endpoint or method."}` and `/v1/models` is the installed
+catalog, not loaded-in-VRAM state. That asymmetry is the reason Ollama is the
+precedence backend on Mac.
+
 ---
 
 ## 3. Startup History
@@ -271,6 +314,21 @@ or route manually via `WIN_LM_STUDIO_HOST` env var.
 
 Only 1 history entry → P50 is `None` → safe default 3 s.  Run at least 2 startups
 and the adaptive path will engage.
+
+### "Both Mac backends are up — which one is actually loaded?"
+
+`MAC_DUAL` means both *ports* answer. It does **not** mean both have a model in
+GPU memory. Check residency, not ports:
+
+```bash
+ollama ps                                    # non-empty + size_vram>0 = Ollama owns the GPU
+curl -s localhost:1234/api/ps                # errors — LM Studio has no residency probe
+```
+
+If `ollama ps` lists a resident model, Mac active backend = `ollama-local` and
+lmstudio-mac is mirror-only (D14) regardless of the `MAC_DUAL` port classification.
+The residency gate is read-only — re-run it freely; it classifies, it does not
+mutate.
 
 ---
 
