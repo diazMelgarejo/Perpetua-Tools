@@ -9,6 +9,33 @@
 - Vendor quirks ("service X rate-limits at 60 rpm, not the documented 100")
 - Domain-specific terminology
 
+## Cross-Platform Line Endings & Encoding (verified 2026-07-08)
+
+Both PT and orama-system main enforce this at the repo layer (not per-developer
+`core.autocrlf`) via `.gitattributes` + `.editorconfig` at each repo root:
+
+- **Default:** `* text=auto eol=lf` — every text file normalizes to LF in the
+  repository on every OS. This is what ends "file keeps getting modified on
+  checkout" — the committed blob is byte-identical regardless of who commits it.
+- **Named exceptions:** `*.cmd`/`*.bat`/`*.ps1` → `eol=crlf` (Windows tooling —
+  cmd.exe tokenizes on `0d0a` — genuinely needs CRLF in the working tree; see
+  orama's `platform-line-endings-turf.md` policy, PR #108). Binaries get an
+  explicit `binary` allowlist so they're never diff'd as text or EOL-converted.
+- **Encoding:** UTF-8 without BOM everywhere (`.editorconfig` `charset = utf-8`).
+  A BOM breaks UNIX shebangs; only legacy Windows PowerShell 5.1 `Out-File`/
+  `Set-Content` and old Excel CSV import still want one — handle those at the
+  point of generation (`Out-File -Encoding utf8NoBOM`), never in the tree.
+- **One-time reset after adding the rules:** `git add --renormalize .` — without
+  it the old CRLF blobs persist and the phantom diffs continue. Verify losslessness
+  with `git diff --cached --ignore-cr-at-eol` (should be empty) before committing
+  the renormalized blobs.
+- Canonical doc: [`docs/wiki/10-line-endings-and-encoding.md`](../../../docs/wiki/10-line-endings-and-encoding.md)
+  (mirrored to orama-system `docs/wiki/17-line-endings-and-encoding.md`).
+- Verified live in both repos 2026-07-08: orama-system renormalize touched 17
+  files, Perpetua-Tools touched 1 (`orchestrator/__init__.py`) — both confirmed
+  zero semantic diff, no binaries affected, Windows-turf `.cmd`/`.bat`/`.ps1`
+  files untouched.
+
 ## Windows Development Environment (verified 2026-06-26)
 
 Canonical bootstrap (PowerShell, run before git push/rebase/pytest on the RTX host):
