@@ -47,7 +47,7 @@ devices:
     default_backend: "lm-studio"
     primary_backend: "lm-studio"
     secondary_backend: "ollama"
-    lan_ip: "192.168.9.238"  # DHCP-dynamic; last confirmed 2026-06-17
+    lan_ip: "192.168.8.153"  # DHCP-dynamic; last confirmed 2026-06-17
     ports:
       - 1234   # LM Studio (PRIMARY — heavy reasoning models)
       - 11434  # Ollama (secondary)
