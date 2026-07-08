@@ -1,0 +1,42 @@
+{
+  "id": "a96de386f4f5",
+  "key": "manual_a96de3",
+  "name": "manual_a96de3",
+  "claim": "graduate.py/learn.py/recall.py/show.py print unicode arrows (\u2192) that crash on Windows' default cp1252 console encoding; force UTF-8 stdout/stderr at each script's entry point (sys.stdout.reconfigure) rather than removing the unicode.",
+  "conditions": [
+    "agent-tools",
+    "cp1252",
+    "encoding",
+    "unicode",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-07-08T03:15:50.291966+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-08T03:15:50.291966+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-08T03:15:50.291966+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-08T03:15:50.419991+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Live-reproduced this session on a fresh Windows shell: python3 .agent/tools/learn.py ... crashed with UnicodeEncodeError on the final print(), even though the actual graduation (file move + jsonl append) had already succeeded. This matches the repo's own documented LINT-007 no-mojibake rule but the 4 .agent/tools/*.py scripts hadn't applied it themselves.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-08T03:15:50.291966+00:00"
+      ],
+      "lessons_sha": "165e1ddd6459"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-08T03:15:50.417986+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Live-reproduced this session on a fresh Windows shell: python3 .agent/tools/learn.py ... crashed with UnicodeEncodeError on the final print(), even though the actual graduation (file move + jsonl append) had already succeeded. This matches the repo's own documented LINT-007 no-mojibake rule but the 4 .agent/tools/*.py scripts hadn't applied it themselves."
+}
