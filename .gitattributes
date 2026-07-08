@@ -1,0 +1,26 @@
+# Cross-platform line-ending & encoding policy.
+# Doc: docs/wiki/10-line-endings-and-encoding.md (canonical; mirrored to orama-system/wiki/17)
+#
+# Default: normalize every text file to LF in the repository. This is what
+# ends "file keeps getting modified on checkout" for good — the stored blob
+# is identical no matter who commits it, on any OS.
+* text=auto eol=lf
+
+# Windows-owned files (RTX host bootstrap, shim scripts) must stay CRLF in
+# the working tree — Windows tooling (cmd.exe, some PowerShell hosts)
+# tokenizes on 0d0a. Do not "hygiene-fix" these to LF from a Mac/Linux agent.
+*.cmd  text  eol=crlf
+*.bat  text  eol=crlf
+*.ps1  text  eol=crlf
+
+# Binaries: never diff as text, never convert line endings.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+*.zip binary
+*.lance binary
