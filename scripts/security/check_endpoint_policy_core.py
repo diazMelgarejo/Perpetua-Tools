@@ -10,6 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+CONTRACT_PATH = "config/endpoint-policy-contract.yml"
 
 REQUIRED_FILES = [
     "src/utils/endpoint_policy_core.py",
@@ -17,7 +18,7 @@ REQUIRED_FILES = [
     "tests/test_scheme_preservation.py",
     "tests/test_hardware_routing.py",
     "scripts/security/check_endpoint_policy_core.py",
-    ".agent/endpoint-policy-contract.yml",
+    CONTRACT_PATH,
     ".github/workflows/security-invariant-enforcer.yml",
     ".github/workflows/invariant-monitor-bot.yml",
     "AGENTS.md",
@@ -102,13 +103,14 @@ def assert_workflows_run_policy() -> None:
 
 
 def assert_contract_names_peer_repos() -> None:
-    text = read(".agent/endpoint-policy-contract.yml")
+    text = read(CONTRACT_PATH)
     required = [
         "diazMelgarejo/Perpetua-Tools",
         "diazMelgarejo/orama-system",
         "endpoint-transport-policy",
         "controlled-urlparse-boundary",
         "backend-port-isolation",
+        "config/endpoint-policy-contract.yml",
         ".github/workflows/endpoint-policy-contract.yml",
         "scripts/security/check_endpoint_policy_contract.py",
         "bin/orama-system/skills/oramasys-method/SKILL.md",
@@ -126,6 +128,7 @@ def assert_agents_guidance_names_skills() -> None:
     required = [
         "Endpoint transport policy",
         "src/utils/endpoint_policy_core.py",
+        "config/endpoint-policy-contract.yml",
         "bin/orama-system/skills/oramasys-method/SKILL.md",
         "bin/orama-system/skills/oramasys-method/references/integrative-merge.md",
         "bin/orama-system/skills/git-history-surgery/SKILL.md",
