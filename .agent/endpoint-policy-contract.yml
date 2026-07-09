@@ -1,0 +1,84 @@
+version: 1
+name: endpoint-transport-policy
+owner_repo: diazMelgarejo/Perpetua-Tools
+canonical_module: src/utils/endpoint_policy_core.py
+canonical_package: packages/endpoint-policy
+package_license: Apache-2.0
+
+invariants:
+  - id: transport-identity
+    rule: Transport identity is scheme + hostname + backend-specific port.
+  - id: preserve-scheme
+    rule: Endpoint reconstruction must preserve http/https from discovery output.
+  - id: no-double-scheme
+    rule: Runtime Python sources must not construct http://http or https://https endpoints.
+  - id: controlled-urlparse-boundary
+    rule: Endpoint reconstruction in model routing must delegate to utils.endpoint_policy_core.
+  - id: backend-port-isolation
+    rule: Ollama and LM Studio ports must not contaminate each other under active_tilting.
+
+required_local_files:
+  - src/utils/endpoint_policy_core.py
+  - tests/test_endpoint_policy_core.py
+  - tests/test_scheme_preservation.py
+  - tests/test_hardware_routing.py
+  - scripts/security/check_endpoint_policy_core.py
+  - .agent/endpoint-policy-contract.yml
+  - packages/endpoint-policy/pyproject.toml
+  - packages/endpoint-policy/LICENSE
+  - packages/endpoint-policy/NOTICE
+  - .github/workflows/security-invariant-enforcer.yml
+  - .github/workflows/invariant-monitor-bot.yml
+  - AGENTS.md
+
+required_tests:
+  - tests/test_endpoint_policy_core.py
+  - tests/test_scheme_preservation.py
+  - tests/test_hardware_routing.py::test_active_tilting_ollama_win_uses_model_port_not_lmstudio
+  - tests/test_model_endpoint_url.py
+
+peer_repos:
+  - repo: diazMelgarejo/orama-system
+    status: peer-consumer
+    expected_contract: endpoint-transport-policy
+    contract_path: .agent/endpoint-policy-contract.yml
+    workflow_path: .github/workflows/endpoint-policy-contract.yml
+    checker_path: scripts/security/check_endpoint_policy_contract.py
+    rule: Must preserve the same transport identity semantics for generated or proxied model endpoints.
+  - repo: diazMelgarejo/Perpetua-Tools
+    status: canonical-provider
+    expected_contract: endpoint-transport-policy
+    contract_path: .agent/endpoint-policy-contract.yml
+    workflow_path: .github/workflows/security-invariant-enforcer.yml
+    checker_path: scripts/security/check_endpoint_policy_core.py
+    rule: Owns current endpoint_policy_core implementation and local CI enforcement.
+
+existing_skill_references:
+  - repo: diazMelgarejo/orama-system
+    path: bin/orama-system/skills/oramasys-method/SKILL.md
+    reason: Use for architecture-heavy endpoint policy changes.
+  - repo: diazMelgarejo/orama-system
+    path: bin/orama-system/skills/oramasys-method/references/integrative-merge.md
+    reason: Use when syncing endpoint policy changes across branches or repos.
+  - repo: diazMelgarejo/orama-system
+    path: bin/orama-system/skills/git-history-surgery/SKILL.md
+    reason: Use before judging branch state across rewritten histories.
+  - repo: diazMelgarejo/Perpetua-Tools
+    path: .claude/skills/hardware-policy/SKILL.md
+    reason: Use when endpoint/routing changes intersect model hardware affinity.
+  - repo: diazMelgarejo/orama-system
+    path: docs/SECURITY-POLICY.md
+    reason: Redirect to canonical security policy for security PR stacking rules.
+
+workflow_requirements:
+  - workflow: .github/workflows/security-invariant-enforcer.yml
+    must_run:
+      - python scripts/security/check_endpoint_policy_core.py
+      - pytest tests/test_endpoint_policy_core.py
+  - workflow: .github/workflows/invariant-monitor-bot.yml
+    must_run:
+      - python scripts/security/check_endpoint_policy_core.py
+      - pytest tests/test_endpoint_policy_core.py
+  - peer_workflow: diazMelgarejo/orama-system/.github/workflows/endpoint-policy-contract.yml
+    must_run:
+      - python scripts/security/check_endpoint_policy_contract.py
