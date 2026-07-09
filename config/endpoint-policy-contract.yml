@@ -3,6 +3,7 @@ name: endpoint-transport-policy
 owner_repo: diazMelgarejo/Perpetua-Tools
 canonical_module: src/utils/endpoint_policy_core.py
 canonical_package: packages/endpoint-policy
+canonical_contract: config/endpoint-policy-contract.yml
 package_license: Apache-2.0
 
 invariants:
@@ -23,7 +24,7 @@ required_local_files:
   - tests/test_scheme_preservation.py
   - tests/test_hardware_routing.py
   - scripts/security/check_endpoint_policy_core.py
-  - .agent/endpoint-policy-contract.yml
+  - config/endpoint-policy-contract.yml
   - packages/endpoint-policy/pyproject.toml
   - packages/endpoint-policy/LICENSE
   - packages/endpoint-policy/NOTICE
@@ -41,14 +42,14 @@ peer_repos:
   - repo: diazMelgarejo/orama-system
     status: peer-consumer
     expected_contract: endpoint-transport-policy
-    contract_path: .agent/endpoint-policy-contract.yml
+    contract_path: config/endpoint-policy-contract.yml
     workflow_path: .github/workflows/endpoint-policy-contract.yml
     checker_path: scripts/security/check_endpoint_policy_contract.py
     rule: Must preserve the same transport identity semantics for generated or proxied model endpoints.
   - repo: diazMelgarejo/Perpetua-Tools
     status: canonical-provider
     expected_contract: endpoint-transport-policy
-    contract_path: .agent/endpoint-policy-contract.yml
+    contract_path: config/endpoint-policy-contract.yml
     workflow_path: .github/workflows/security-invariant-enforcer.yml
     checker_path: scripts/security/check_endpoint_policy_core.py
     rule: Owns current endpoint_policy_core implementation and local CI enforcement.
@@ -65,7 +66,7 @@ existing_skill_references:
     reason: Use before judging branch state across rewritten histories.
   - repo: diazMelgarejo/Perpetua-Tools
     path: .claude/skills/hardware-policy/SKILL.md
-    reason: Use when endpoint/routing changes intersect model hardware affinity.
+    reason: Use when endpoint/routing changes intersect hardware affinity.
   - repo: diazMelgarejo/orama-system
     path: docs/SECURITY-POLICY.md
     reason: Redirect to canonical security policy for security PR stacking rules.
