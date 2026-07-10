@@ -90,9 +90,14 @@ jobs:
 
       - name: Audit branch commit attribution (PR commits)
         if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          git fetch origin "${{ github.base_ref }}:${{ github.base_ref }}" || true
-          RANGE="origin/${{ github.base_ref }}..HEAD"
+          git fetch origin "$BASE_REF:$BASE_REF" || true
+          # actions/checkout checks out refs/pull/*/merge for pull_request events.
+          # Audit the contributor's actual head commits, not GitHub's synthetic merge commit.
+          RANGE="origin/$BASE_REF..$HEAD_SHA"
           GIT_AUDIT_RANGE="$RANGE" GIT_AUDIT_STRICT=1 bash scripts/git/audit_attribution.sh
 
   lint-and-test:

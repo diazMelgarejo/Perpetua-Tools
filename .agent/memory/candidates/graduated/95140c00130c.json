@@ -1,0 +1,40 @@
+{
+  "id": "95140c00130c",
+  "key": "manual_95140c",
+  "name": "manual_95140c",
+  "claim": "When dual_path_dispatch.py fails locally on Mac with 'Context overflow' due to openclaw agent workspace limits, bypass it by compressing the payload and dropping it directly into the peer inbox using lan_peer_assign.py drop.",
+  "conditions": [
+    "context overflow",
+    "dual_path_dispatch",
+    "lan_peer_assign"
+  ],
+  "evidence_ids": [
+    "2026-07-10T13:40:13.179222+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-10T13:40:13.179222+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-10T13:40:13.179222+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-10T13:40:13.326841+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The local openclaw agent can hit context limits when processing large payloads or orchestrator cards. Direct drops to the lan_peer/inbox using lan_peer_assign.py bypass the local model and rely on the remote peer's pulse-gate for ingestion.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-10T13:40:13.179222+00:00"
+      ],
+      "lessons_sha": "762ab400ac4f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-10T13:40:13.326832+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The local openclaw agent can hit context limits when processing large payloads or orchestrator cards. Direct drops to the lan_peer/inbox using lan_peer_assign.py bypass the local model and rely on the remote peer's pulse-gate for ingestion."
+}
