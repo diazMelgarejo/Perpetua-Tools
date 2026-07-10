@@ -359,13 +359,13 @@ class TestWitnessQuorumEdgeCases:
         assert validate_witness_quorum(obs) is True
 
     def test_empty_provenance_string_treated_as_distinct(self):
-        """E2: Empty provenance strings are distinct from each other and other provenances."""
+        """E2: Empty provenance buckets are distinct from non-empty provenance buckets."""
         witness_a = PeerObservation(
             peer_id="peer-001",
             epoch=1,
             timestamp=999.0,
             observer_id="observer-b",
-            observer_provenance="",  # Empty provenance
+            observer_provenance="",  # Empty provenance (opaque literal bucket)
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
             endpoint="192.168.1.2:9000",
@@ -394,7 +394,7 @@ class TestWitnessQuorumEdgeCases:
             endpoint_epoch=1,
             witness_set=(witness_a, witness_b),
         )
-        # Empty "" and "ASN-003" are distinct → should pass
+        # Empty "" and "ASN-003" are distinct buckets → should pass
         assert validate_witness_quorum(obs) is True
 
     def test_many_witnesses_satisfies_quorum(self):
@@ -469,3 +469,40 @@ class TestWitnessQuorumUnreachable:
             witness_set=(witness_a, witness_b),
         )
         assert validate_witness_quorum(obs) is True
+
+
+class TestWitnessQuorumSubnetDedup:
+    """Regression tests for G1 subnet-aware provenance deduplication."""
+
+    def test_five_sybils_on_same_slash24_fail_quorum(self):
+        """G1: 5 Sybil witnesses on the same /24 with distinct observer_id and
+        distinct observer_provenance strings must collapse to one provenance
+        bucket and therefore FAIL quorum."""
+        witnesses = [
+            PeerObservation(
+                peer_id="peer-001",
+                epoch=1,
+                timestamp=999.0 - i,
+                observer_id=f"sybil-{i}",
+                observer_provenance=f"192.168.1.{10 + i}",  # Same /24, different string
+                observation_type=ObservationType.REACHABLE,
+                direct_status=DirectStatus.REACHABLE,
+                endpoint=f"192.168.1.{10 + i}:9000",
+                endpoint_epoch=1,
+            )
+            for i in range(5)
+        ]
+        obs = PeerObservation(
+            peer_id="peer-001",
+            epoch=1,
+            timestamp=1000.0,
+            observer_id="observer-a",
+            observer_provenance="ASN-001",
+            observation_type=ObservationType.REACHABLE,
+            direct_status=DirectStatus.REACHABLE,
+            endpoint="192.168.1.1:9000",
+            endpoint_epoch=1,
+            witness_set=tuple(witnesses),
+        )
+        # Distinct observer_ids (5) but only one /24 provenance bucket → quorum fails
+        assert validate_witness_quorum(obs) is False
