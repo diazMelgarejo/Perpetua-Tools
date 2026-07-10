@@ -143,6 +143,7 @@ class PeerObservation:
     direct_status: DirectStatus  # Detailed SWIM state
     endpoint: str  # Network address ("192.168.1.1:9000")
     endpoint_epoch: int  # Incarnation counter for this endpoint
+    observer_provenance: str = ""  # Network origin identifier (ASN, subnet, or origin IP for Sybil defense)
 
     # ──────────────────────────────────────────────────────────────────────────
     # PROBE HISTORY
