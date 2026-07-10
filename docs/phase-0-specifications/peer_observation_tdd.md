@@ -328,7 +328,10 @@ def test_epoch_mismatch_stale_cached_entry():
     
     # Check for mismatch
     assert new_heartbeat["endpoint_epoch"] - cached_obs.endpoint_epoch >= 2
-    assert should_be_tagged(cached_obs, "epoch_mismatch")
+    # cached_obs is frozen (see D1 §0 dataclass(frozen=True)) — mark staleness
+    # via a superseded copy, same pattern as Test 3.1's old_obs_stale above.
+    cached_obs_stale = dataclass_replace(cached_obs, tags=["epoch_mismatch"])
+    assert "epoch_mismatch" in cached_obs_stale.tags
 ```
 
 ---
