@@ -143,6 +143,12 @@ class PeerObservation:
     direct_status: DirectStatus  # Detailed SWIM state
     endpoint: str  # Network address ("192.168.1.1:9000")
     endpoint_epoch: int  # Incarnation counter for this endpoint
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # MONOTONIC ORDERING (T7 Gate)
+    # ──────────────────────────────────────────────────────────────────────────
+
+    sequence: int = 0  # Causal ordering counter within epoch (canonical causality, T7 monotonic gate)
     observer_provenance: str = ""  # Network origin identifier (ASN, subnet, or origin IP for Sybil defense)
 
     # ──────────────────────────────────────────────────────────────────────────
