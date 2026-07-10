@@ -1,0 +1,172 @@
+"""tests/test_agent_coordination.py
+
+Pure-logic tests for scripts/agent_coordination.py helpers.
+
+These tests construct a temporary GossipBus per test and exercise the async
+helper functions directly. They avoid the real .state/perpetua_core.db and do
+not depend on the CLI argparse layer.
+"""
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import pytest
+
+# Ensure project root is on path for scripts/agent_coordination + orchestrator.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from scripts.agent_coordination import (
+    _agents,
+    _claim,
+    _known_agent_ids,
+    _list,
+    _log,
+    _register,
+    _release,
+    canonical_db_path,
+    canonical_repo_root,
+    current_worktree_label,
+)
+from orchestrator.gossip_bus import GossipBus
+
+
+@pytest.fixture
+def make_bus(tmp_path):
+    """Factory for temporary, freshly-initialised GossipBus instances."""
+
+    async def _factory():
+        db_path = str(tmp_path / "coordination_test.db")
+        bus = GossipBus(db_path)
+        await bus.init_db()
+        return bus
+
+    return _factory
+
+
+async def test_register_then_known_agent_ids(make_bus):
+    bus = await make_bus()
+    await _register(bus, "kimi-t1", "cli-tool", "kimi-code", "test registration")
+    ids = await _known_agent_ids(bus)
+    assert "kimi-t1" in ids
+
+
+async def test_claim_then_release_no_longer_open(make_bus, capsys):
+    bus = await make_bus()
+    await _register(bus, "agy-a1", "llm-agent", "gemini", "claim/release test")
+
+    await _claim(bus, "agy-a1", "task/alpha", "working on it")
+    await _release(bus, "agy-a1", "task/alpha")
+    await _list(bus, None)
+
+    captured = capsys.readouterr()
+    assert "no open claims" in captured.out
+
+
+async def test_claim_without_release_shows_open(make_bus, capsys):
+    bus = await make_bus()
+    await _register(bus, "kimi-t2", "cli-tool", "kimi-code", "open claim test")
+
+    await _claim(bus, "kimi-t2", "task/beta", "notes-beta")
+    await _list(bus, None)
+
+    captured = capsys.readouterr()
+    assert "OPEN  task/beta" in captured.out
+    assert "kimi-t2" in captured.out
+    assert "notes-beta" in captured.out
+
+
+async def test_two_tasks_claimed_by_two_agents(make_bus, capsys):
+    bus = await make_bus()
+    await _register(bus, "agent-x", "cli-tool", "model-x", "multi claim test")
+    await _register(bus, "agent-y", "llm-agent", "model-y", "multi claim test")
+
+    await _claim(bus, "agent-x", "task/x", "notes-x")
+    await _claim(bus, "agent-y", "task/y", "notes-y")
+    await _list(bus, None)
+
+    captured = capsys.readouterr()
+    assert captured.out.count("OPEN") == 2
+    assert "OPEN  task/x" in captured.out
+    assert "OPEN  task/y" in captured.out
+    assert "agent-x" in captured.out
+    assert "agent-y" in captured.out
+
+
+async def test_second_claim_on_same_task_wins(make_bus, capsys):
+    """Last-claim-wins: a second claim without an intervening release overwrites."""
+    bus = await make_bus()
+    await _register(bus, "agent-first", "cli-tool", "model-a", "last wins test")
+    await _register(bus, "agent-second", "llm-agent", "model-b", "last wins test")
+
+    await _claim(bus, "agent-first", "task/shared", "first claim")
+    await _claim(bus, "agent-second", "task/shared", "second claim")
+    await _list(bus, None)
+
+    captured = capsys.readouterr()
+    open_lines = [line for line in captured.out.splitlines() if line.startswith("OPEN")]
+    assert len(open_lines) == 1
+    open_line = open_lines[0]
+    assert "OPEN  task/shared" in open_line
+    assert "agent-second" in open_line
+    assert "second claim" in open_line
+    assert "agent-first" not in open_line
+    assert "first claim" not in open_line
+
+
+async def test_list_task_filter_excludes_other_tasks(make_bus, capsys):
+    bus = await make_bus()
+    await _register(bus, "agent-f", "cli-tool", "model-f", "filter test")
+
+    await _claim(bus, "agent-f", "task/filtered", "filtered notes")
+    await _claim(bus, "agent-f", "task/other", "other notes")
+    await _list(bus, "task/filtered")
+
+    captured = capsys.readouterr()
+    open_lines = [line for line in captured.out.splitlines() if line.startswith("OPEN")]
+    assert len(open_lines) == 1
+    assert "OPEN  task/filtered" in open_lines[0]
+    assert "task/other" not in open_lines[0]
+
+
+async def test_agents_lists_registered_agent(make_bus, capsys):
+    bus = await make_bus()
+    await _register(bus, "agent-z", "human", "model-z", "agents list test")
+    await _agents(bus)
+
+    captured = capsys.readouterr()
+    assert "agent-z" in captured.out
+    assert "human" in captured.out
+    assert "model-z" in captured.out
+
+
+async def test_log_emits_note(make_bus, capsys):
+    bus = await make_bus()
+    await _log(bus, "agent-w", "hello from test")
+    captured = capsys.readouterr()
+    assert "logged" in captured.out
+
+    # Verify the event is actually in the bus.
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    note_events = [e for e in events if e["payload"].get("kind") == "agent_note"]
+    assert len(note_events) == 1
+    assert note_events[0]["payload"]["message"] == "hello from test"
+
+
+def test_canonical_repo_root_is_git_directory():
+    root = canonical_repo_root()
+    assert isinstance(root, Path)
+    assert root.is_dir()
+    assert (root / ".git").exists() or (root / ".git").is_symlink()
+
+
+def test_canonical_db_path_looks_sane():
+    path = canonical_db_path()
+    assert path.endswith(".state/perpetua_core.db")
+    assert Path(path).parent.name == ".state"
+
+
+def test_current_worktree_label_contains_cwd_or_branch():
+    label = current_worktree_label()
+    # Format: branch@cwd. Either component is enough to sanity-check.
+    assert str(Path.cwd()) in label or "?" in label
