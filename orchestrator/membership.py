@@ -325,33 +325,46 @@ class PeerObservation:
 
     @property
     def time_to_suspect_ms(self) -> float:
-        """
-        Compute time remaining until this observation transitions to SUSPECT status.
+        """Time until this observation becomes suspect (T5 + heartbeat deadline).
 
-        Formula (from D1 Iteration-2):
-            time_to_suspect_ms = max(0, (HEARTBEAT_DEADLINE_S - (now - last_heartbeat)) * 1000)
+        Returns 0.0 immediately if TTL has expired, otherwise uses heartbeat deadline.
 
         This is a COMPUTED property, not a stored field. It is recomputed on each read
-        to avoid stale values under clock skew.
-
-        HEARTBEAT_DEADLINE_S = 30 seconds (D1 § 2.2)
+        to avoid stale values under clock skew. Considers both:
+        - T5: TTL staleness (observation expires after ttl_seconds from timestamp)
+        - HEARTBEAT_DEADLINE_S (30 seconds, D1 § 2.2) — declares peer SUSPECT if no heartbeat
 
         Returns:
             float: milliseconds until peer should be marked SUSPECT, or 0 if deadline passed
-
-        Returns 0 if:
-        - last_heartbeat_timestamp is None (never succeeded)
-        - Deadline has already passed (now > last_heartbeat + HEARTBEAT_DEADLINE_S)
         """
         import time
 
+        # T5: TTL-based staleness takes priority
+        if self.is_stale:
+            return 0.0
+
+        # T5 + heartbeat deadline: use heartbeat freshness
         if self.last_heartbeat_timestamp is None:
             return 0.0
 
         now_s = time.time()
-        deadline_s = self.last_heartbeat_timestamp + HEARTBEAT_DEADLINE_S
+        deadline_s = self.last_heartbeat_timestamp + HEARTBEAT_DEADLINE_S  # 30s
         time_remaining_s = max(0.0, deadline_s - now_s)
-        return time_remaining_s * 1000.0  # Convert to milliseconds
+        return time_remaining_s * 1000.0
+
+    @property
+    def is_stale(self) -> bool:
+        """True if this observation has exceeded its TTL (T5 mitigation).
+
+        ttl_seconds == -1 means "never expires" (e.g., STATIC_SEED route).
+        ttl_seconds > 0 means observation expires that many seconds after timestamp.
+        """
+        if self.ttl_seconds is None or self.ttl_seconds < 0:
+            # Sentinel for "never expires"
+            return False
+        import time
+        age_s = time.time() - self.timestamp
+        return age_s > self.ttl_seconds
 
     def _compute_witness_multiplier(self) -> float:
         """
