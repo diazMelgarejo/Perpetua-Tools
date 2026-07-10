@@ -1,0 +1,38 @@
+{
+  "id": "0cd82de45dbb",
+  "key": "manual_0cd82d",
+  "name": "manual_0cd82d",
+  "claim": "User-stated policy: when a provider (e.g. google-antigravity/Gemini) supports both interactive web/OAuth login and an API key, ALWAYS prefer completing the web/OAuth login flow. An API key is backup/fallback only \u2014 never set one up preferentially or skip the interactive login step just because a key is available or easier to script.",
+  "conditions": [
+    "antigravity gemini auth policy web OAuth API key preference fallback"
+  ],
+  "evidence_ids": [
+    "2026-07-10T22:55:31.846732+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-10T22:55:31.846732+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-10T22:55:31.846732+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-10T22:55:31.936973+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-11: explicit user correction while setting up the gemini-coder OpenClaw agent. Encoded into gemini-coder's IDENTITY.md and the openclaw-new-agent canonical skill's Gotchas so future agent-creation sessions don't default to API-key auth for providers where OAuth is preferred.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-10T22:55:31.846732+00:00"
+      ],
+      "lessons_sha": "15e4e035fe7b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-10T22:55:31.936964+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-11: explicit user correction while setting up the gemini-coder OpenClaw agent. Encoded into gemini-coder's IDENTITY.md and the openclaw-new-agent canonical skill's Gotchas so future agent-creation sessions don't default to API-key auth for providers where OAuth is preferred."
+}

@@ -1,0 +1,38 @@
+{
+  "id": "aaf424830928",
+  "key": "manual_aaf424",
+  "name": "manual_aaf424",
+  "claim": "When a concurrent agent session has uncommitted tracked-file changes in the SAME shared git checkout (not a worktree), 'git pull --rebase' and 'git rebase origin/main' both fail ('cannot rebase: you have unstaged changes') even if those changes are in files you never touch. Do NOT stash/discard another session's live uncommitted work. Instead: 'git merge origin/main' tolerates a dirty tree as long as the incoming changes don't conflict with the dirty files (often resolves to 'Already up to date' if your commit already sits on top); a plain 'git push' also works without needing a clean tree at all, since only pull/rebase require it.",
+  "conditions": [
+    "git rebase pull dirty tree concurrent session unstaged changes merge push without clean tree"
+  ],
+  "evidence_ids": [
+    "2026-07-10T22:55:31.639141+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-10T22:55:31.639141+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-10T22:55:31.639141+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-10T22:55:31.736071+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-11: hit this twice (PT and orama-system) while a concurrent session was live-editing orchestrator/gossip_bus.py and orama-system/*.py in the same shared checkout. Successfully synced both repos without ever touching the other session's uncommitted work.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-10T22:55:31.639141+00:00"
+      ],
+      "lessons_sha": "faab030ec03e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-10T22:55:31.736063+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-11: hit this twice (PT and orama-system) while a concurrent session was live-editing orchestrator/gossip_bus.py and orama-system/*.py in the same shared checkout. Successfully synced both repos without ever touching the other session's uncommitted work."
+}

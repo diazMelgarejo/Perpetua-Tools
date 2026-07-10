@@ -1,0 +1,38 @@
+{
+  "id": "fc6e8293ab26",
+  "key": "manual_fc6e82",
+  "name": "manual_fc6e82",
+  "claim": "For intra-machine multi-agent coordination (concurrent Claude Code/kimi/cline sessions in different git worktrees on the same machine), reuse orchestrator/GossipBus (SQLite FTS5 event log) as a claim/registration board instead of building new infrastructure \u2014 it is already intra-machine by design (zero LAN dependency). The only real problem is db-path resolution across worktrees, solved via 'git rev-parse --git-common-dir' (every worktree of the same repo resolves to the same shared .git dir, zero new env vars needed).",
+  "conditions": [
+    "concurrent agents same machine git worktree coordination claim collision GossipBus intra-machine"
+  ],
+  "evidence_ids": [
+    "2026-07-10T22:55:17.668156+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-10T22:55:17.668156+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-10T22:55:17.668156+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-10T22:55:17.801371+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-11: two Claude Code sessions worked the same PT repo simultaneously (this session + a concurrent worktree implementing Phase 1-4 of the self-healing-mesh plan). Collision was avoided only by manual git-log/ps-aux archaeology before every dispatch. Built scripts/agent_coordination.py on this pattern; the concurrent session then independently extended it with heartbeat/liveness monitoring \u2014 validates the reuse-not-rebuild approach.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-10T22:55:17.668156+00:00"
+      ],
+      "lessons_sha": "e6cfc30bc350"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-10T22:55:17.801361+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-11: two Claude Code sessions worked the same PT repo simultaneously (this session + a concurrent worktree implementing Phase 1-4 of the self-healing-mesh plan). Collision was avoided only by manual git-log/ps-aux archaeology before every dispatch. Built scripts/agent_coordination.py on this pattern; the concurrent session then independently extended it with heartbeat/liveness monitoring \u2014 validates the reuse-not-rebuild approach."
+}
