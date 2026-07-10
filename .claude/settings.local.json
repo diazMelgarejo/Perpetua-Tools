@@ -9,7 +9,28 @@
       "Bash(python3 -m pytest tests/test_peer_observation.py -v)",
       "Bash(git *)",
       "Bash(python *)",
-      "Bash(python3 *)"
+      "Bash(python3 *)",
+      "Bash(grep \"\\\\.py$\")",
+      "Bash(tee /tmp/batch7_results.txt)",
+      "Bash(pytest *)",
+      "Bash(python3 -m pytest tests/test_peer_observation.py::TestConfidenceFormulaBatch7 tests/test_peer_record_update_loop.py -v --tb=short)",
+      "Bash(pytest tests/test_display_state.py tests/test_peer_observation.py -v --tb=short)",
+      "Skill(fewer-permission-prompts)",
+      "Bash(python3 -m pytest tests/test_peer_observation.py tests/test_display_state.py tests/test_peer_record_update_loop.py -v)",
+      "Bash(python3 -m pytest tests/test_peer_observation.py::TestConfidenceFormulaBatch7 -v)",
+      "Bash(python3 -m pytest tests/test_peer_observation.py tests/test_peer_record_update_loop.py tests/test_display_state.py -v --tb=short)",
+      "Bash(python3 -m pytest tests/test_peer_observation.py tests/test_display_state.py tests/test_peer_record_update_loop.py -v --tb=short)",
+      "Bash(/Library/Frameworks/Python.framework/Versions/3.13/bin/python3 *)",
+      "Bash(/Library/Frameworks/Python.framework/Versions/3.13/bin/python3 -m pytest tests/test_peer_observation.py -v --tb=short)",
+      "Bash(python3 -m pytest tests/test_peer_observation.py tests/test_display_state.py tests/test_peer_record_update_loop.py -v --tb=no)",
+      "Bash(/Library/Frameworks/Python.framework/Versions/3.13/bin/python3 -m pytest tests/test_peer_observation.py::TestPeerObservationImmutability -v --tb=short)",
+      "Bash(/Library/Frameworks/Python.framework/Versions/3.13/bin/python3 -m pytest tests/test_peer_observation.py -v --tb=line)",
+      "Bash(/Library/Frameworks/Python.framework/Versions/3.13/bin/python3 -m pytest tests/test_monotonic_gate.py -v)",
+      "Bash(/Library/Frameworks/Python.framework/Versions/3.13/bin/python3 -m pytest tests/test_monotonic_gate.py::TestMonotonicOrderingEpochPriority::test_newer_epoch_accepted_regardless_of_sequence -xvs)",
+      "Bash(git config *)",
+      "Bash(git hash-object *)",
+      "Bash(git write-tree *)",
+      "Bash(git ls-tree *)"
     ]
   }
 }
