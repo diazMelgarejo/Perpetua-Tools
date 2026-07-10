@@ -10,7 +10,7 @@
 
 **Problem:** D2 § 2 says `seq: uint32` but doesn't justify. Is 2^32 sufficient for N=2 LAN nodes?
 
-**Why it matters:** 
+**Why it matters:**
 - Seq overflow → T7 monotonic apply gate might accept reordered observations as "newer" when old
 - Example: seq=4294967294, next obs seq=0 (wrapped) — treated as newer = STATE REGRESS
 
@@ -18,11 +18,11 @@
 
 | Option | Cost | Benefit | Risk | Phase |
 |--------|------|---------|------|-------|
-| **A: Keep uint32 (NO change)** | 0 | Simple, no code change | Wrap after 3,170 years; non-issue for practical deployments | Phase 1 ✅ |
+| **A: Keep uint32 + modular comparison** | Add tests | Simple wire format; explicit wrap behavior | Wrap after ~1,362 years at 10s intervals; MAX→0 and 0→MAX cases must be pinned | Phase 1 ✅ |
 | **B: Promote to uint64** | 10 min code | Extra safety margin (10^19 years wrap); future-proof | Over-engineered; negligible gain | Phase 1 ✅ |
 | **C: Add wrap-detection** | 2h code + tests | Monitor seq delta; flag if >1000 (anomaly detection) | Overhead on hot path; rare event | Phase 1b |
 
-**Recommendation:** **OPTION A** (keep uint32). Wrap is non-issue; time to v2 will far exceed wrap horizon.
+**Recommendation:** **OPTION A** (keep uint32 + modular comparison tests). Wrap is operationally remote, but the monotonic gate must define MAX→0 and 0→MAX behavior explicitly.
 
 **Decision:** ☐ A (keep uint32) ☐ B (promote uint64) ☐ C (add detection) → **User picks one**
 
@@ -31,7 +31,7 @@
 ## M2: Ghost-Peer Test Vector M1 (Witnesses + Proof)
 
 **Problem:** D1 § 4 (TDD test) says:
-```
+```text
 Scenario: Ghost-peer (proof=0, witnesses=2)
 Expected: confidence = 0.00
 ```
@@ -58,24 +58,24 @@ Expected: confidence = 0.00
 
 ## M3: StateTransitionManager Interface Protection Pattern
 
-**Problem:** Should STM validate input or assume caller is trusted?
+**Problem:** STM is the authority that mutates counters and state. It must validate observation inputs before counter mutation, even if callers also validate earlier.
 
 **Why it matters:**
 - Affects error handling strategy
-- If caller must validate, integration point is clear
-- If STM validates, two code paths to maintain
+- Caller-side validation can remain an optimization
+- STM validation is the final security gate for monotonicity, freshness, replay/deduplication, and valid observation type
 
 **Options:**
 
 | Option | Validation | Error Path | Cost | Maintenance |
 |---|---|---|---|---|
-| **A: Defensive (validate)** | STM checks input | Raise ValueError with diagnostic | +30 LOC + tests | Two paths; more complex |
-| **B: Trust (no validation)** | Caller validates | Caller handles validation | 0 LOC | One path; silent bugs if caller fails |
-| **C: Hybrid (optional gate)** | Hook function | Caller can enable/disable | +50 LOC | Flexible; config-dependent behavior |
+| **A: Mandatory STM validation** | STM checks every observation before mutation | Reject/raise with diagnostic | +tests | Authoritative, safe Phase 1 gate |
+| **B: Trust caller** | Caller validates only | Caller handles validation | 0 LOC | Rejected for Phase 1; silent state corruption risk |
+| **C: Hybrid hook** | Optional pre-validation hook plus mandatory STM checks | Hook can enrich diagnostics | +integration | Phase 1b extension only |
 
-**Recommendation:** **OPTION B** (trust caller). Validation happens once at call site. Simpler for Phase 1; add defensive checks in Phase 1b if bugs emerge.
+**Recommendation:** **OPTION A** (mandatory STM validation). Caller-side validation may reduce errors earlier, but it cannot replace STM's own checks.
 
-**Decision:** ☐ A (validate in STM) ☐ B (trust caller) ☐ C (optional hook) → **User picks one**
+**Decision:** ☑ A (validate in STM) ☐ B (trust caller; rejected for Phase 1) ☐ C (optional hook later)
 
 ---
 
@@ -93,20 +93,20 @@ Expected: confidence = 0.00
 
 | Checkpoint | Must-Have (blocks Phase 1) | Nice-to-Have (Phase 1b) | Acceptance Metric |
 |---|---|---|---|
-| **1.0 Schema + Confidence** | Schema compiles; formula exists; M1 test (ghost-peer) passes | All M1–M5 tests passing; code review clean | "Confidence formula implemented + 1/5 tests pass" OR "5/5 tests pass" |
-| **1.1 Confidence Wired** | compute_confidence() method exists; Batch 7 regression tests written | All 5 tests passing | "Method exists + tests exist" OR "5/5 tests green" |
-| **1.2 Witness + Hysteresis** | StateTransitionManager class exists; promote/demote methods defined | All STM tests passing; edge cases E1–E10 covered | "Methods exist" OR "E1–E5 pass" OR "E1–E10 pass" |
-| **1.3 Epoch + T7** | Monotonic apply guard implemented; T7 edge cases defined | E6–E10 tests passing; order-independence verified | "Guard exists" OR "E1–E10 pass" |
+| **1.0 Schema + Confidence** | Schema and immutable field normalization landed; all schema fixture tests M1–M5 pass; mutable inputs copied/frozen | Additional fixture volume beyond blocker set | All blocker vectors pass |
+| **1.1 Confidence Wired** | `compute_confidence()` wired into PeerObservation; all Batch 7 multiplicative tests pass; zero-proof never produces non-zero confidence | Threshold tuning and UX labels | 5/5 Batch 7 tests green |
+| **1.2 Witness + Hysteresis** | STM integrated; all hysteresis, recovery, validation, witness-quorum, and counter-reset tests pass | Telemetry dashboards and adaptive tuning | Required STM vectors plus E1–E10 green |
+| **1.3 Epoch + T7** | Epoch, sequence, nonce, and T7 monotonic apply gate implemented; all E1–E10 edge cases pass, including mid-batch threshold transitions | Longer fuzz/property-test runs | Full blocker edge-case suite green |
 
-**Recommendation:** **Phased acceptance:**
-- Checkpoint 1.0: "Schema compiles + formula exists + M1 (ghost-peer) passes" (soft gate → Phase 1 can start)
-- Checkpoint 1.1: "Batch 7 regression tests 3/5 passing" (medium gate → Phase 1.1 start)
-- Checkpoint 1.2: "STM promote/demote + edge cases E1–E5 pass" (firm gate)
-- Checkpoint 1.3: "T7 monotonic gate + E6–E10 pass" (complete gate)
+**Recommendation:** **Firm acceptance for every blocker gate.**
+- Checkpoint 1.0: all schema fixture blockers pass
+- Checkpoint 1.1: all Batch 7 confidence regressions pass
+- Checkpoint 1.2: all STM validation/hysteresis/quorum vectors pass
+- Checkpoint 1.3: all epoch/T7 edge cases E1–E10 pass
 
-This enables **parallel task execution:** Phase 1.0 tasks start after Checkpoint 1.0 (soft); Phase 1.1 tasks wait for 1.1, etc.
+Parallel task execution is allowed only for independent implementation work. A checkpoint is not complete until its full blocker-specific gate passes.
 
-**Decision for each checkpoint:** ☐ Soft (method exists) ☐ Medium (half tests pass) ☐ Firm (all tests pass) → **User picks per checkpoint**
+**Decision for each checkpoint:** ☑ Firm (all blocker-specific vectors pass)
 
 ---
 
@@ -118,19 +118,19 @@ This enables **parallel task execution:** Phase 1.0 tasks start after Checkpoint
 - Timeout per strategy?
 
 **Why it matters:**
-- 40–90s SLA depends on peer discovered in ~10–20s (leaving rest for observation collection)
-- Serial strategy: mDNS 3s + seeds 5s × N = 8–15s total
+- 30–90s failure-state SLA depends on peer discovered in ~10–20s (leaving rest for observation collection)
+- Serial strategy: mDNS 3s + static seeds 5s × N + gossip timeout; unbounded N risks SLA drift
 - Parallel strategy: mDNS || seeds = 3–5s (fast path)
 
 **Options:**
 
 | Option | Strategy | Timeout | Parallelization | Time Budget | Architecture |
 |---|---|---|---|---|---|
-| **A: Serial (simple)** | mDNS → seeds → gossip | 3s + 5s×N + 5s | None | ~15s total | Simple; blocking calls |
+| **A: Serial (simple)** | mDNS → seeds → gossip | 3s + 5s×N + 5s | None | Depends on seed count | Simple; blocking calls |
 | **B: Parallel (async)** | mDNS \|\| seeds, winner takes all | 3s (fast path) or 8s (all fail) | 2-way parallel | ~8s max | Async threads/await; cleaner SLA |
 | **C: Cascading parallel** | mDNS \|\| seeds → gossip if both fail | 3s (fast) or 8s + 5s (slow) | 2-way then 1-way | ~13s worst case | Hybrid; progressive fallback |
 
-**Recommendation:** **OPTION B** (parallel mDNS + seeds). Achieves 3s median, 8s worst-case; SLA-compliant; enables async architecture.
+**Recommendation:** **OPTION B** (parallel mDNS + bounded seed probes). Achieves ~3s median and bounded aggregate fallback; SLA-compliant for multiple configured seeds.
 
 **Implementation hint:** Use `asyncio.gather()` or `Promise.race()` depending on language. Gossip added only if both fail (rare).
 
@@ -196,14 +196,14 @@ This enables **parallel task execution:** Phase 1.0 tasks start after Checkpoint
 
 **Quick format for user input:**
 
-```
+```text
 M1 Sequence bit-width:           [A] Keep uint32 / [B] uint64 / [C] detect wrap
 M2 Ghost-peer witnesses:          [A] No witnesses / [B] Witnesses ok, proof=0 zeros score
-M3 STM validation:                [A] Validate in STM / [B] Trust caller / [C] Optional hook
-M4 Checkpoint 1.0 gate:           [soft/medium/firm] (schema compiles + 1 test / 3/5 tests / 5/5 tests)
-M4 Checkpoint 1.1 gate:           [soft/medium/firm]
-M4 Checkpoint 1.2 gate:           [soft/medium/firm]
-M4 Checkpoint 1.3 gate:           [soft/medium/firm]
+M3 STM validation:                [A] Validate in STM (mandatory)
+M4 Checkpoint 1.0 gate:           [firm] all blocker-specific vectors pass
+M4 Checkpoint 1.1 gate:           [firm] all blocker-specific vectors pass
+M4 Checkpoint 1.2 gate:           [firm] all blocker-specific vectors pass
+M4 Checkpoint 1.3 gate:           [firm] all blocker-specific vectors pass
 M5 Discovery strategy:            [A] Serial / [B] Parallel / [C] Cascading
 M6 Replay dedup scope:            [A] Global nonce / [B] Epoch-scoped nonce
 M6 Cache eviction:                [1] Forever / [2] Rotate per epoch / [3] LRU + watermark
@@ -216,14 +216,13 @@ M7 Rate limiting:                 [A] Static Phase 1 / [B] Static + Adaptive Pha
 
 | Item | Recommendation | Urgency | Rationale |
 |---|---|---|---|
-| **M1** | Option A (uint32) | Low | Wrap horizon (3000 years) far exceeds product lifetime; no code needed |
+| **M1** | Option A (uint32 + modular tests) | Low | Wrap horizon is ~1,362 years at 10s intervals; explicit MAX→0 / 0→MAX behavior avoids ambiguity |
 | **M2** | Option B (witnesses allowed) | Medium | Flexibility for future enhancements; test vector works either way |
-| **M3** | Option B (trust) | Low | Simpler Phase 1; add defenses Phase 1b if needed |
-| **M4** | Soft gates (1.0); firm gates (1.3) | High | Enables parallel Phase 1 tasks; blocks escalation on incomplete work |
+| **M3** | Option A (mandatory STM validation) | High | STM is the authoritative mutation gate; caller validation cannot replace it |
+| **M4** | Firm gates for 1.0–1.3 | High | Prevents partial blocker clearance and stale Phase 1 scheduling |
 | **M5** | Option B (parallel) | Medium | SLA-compliant; enables async architecture; ~3s median discovery |
 | **M6** | Epoch-scoped + rotate | Medium | Memory-safe; sufficient replay protection (20s window) |
 | **M7** | Static Phase 1, adaptive Phase 1b | Low | Conservative start; add tuning as feedback emerges |
 
 **Total decision time:** ~30 minutes (format: yes/no/defer per item)  
 **Phase 1 impact:** M1–M7 are all Phase 1 optional; no blockers if deferred
-

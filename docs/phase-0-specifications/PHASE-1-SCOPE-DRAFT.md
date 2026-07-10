@@ -8,7 +8,7 @@
 
 ## Phase 0 → Phase 1 Handoff Model
 
-```
+```text
 Phase 0 (DONE):
   D1 (PeerObservation spec) → Phase 1.0 tasks (schema landing)
   D2 (Heartbeat spec) → Phase 1.1–1.3 tasks (STM integration)
@@ -23,33 +23,33 @@ Phase 1 (PLANNED):
 
 ---
 
-## Checkpoint Gate Dependencies (M4-Dependent)
+## Checkpoint Gate Dependencies
 
-**Checkpoint 1.0 gate criteria:** [USER DECISION NEEDED]
-- Soft: Schema compiles + confidence method exists + M1 (ghost-peer) test passes
-- Medium: Same, but M1–M3 tests passing
-- Firm: All M1–M5 tests passing
+**Checkpoint 1.0 gate criteria:** firm blocker gate
+- Schema and immutable field normalization landed
+- All schema fixture tests M1–M5 pass
+- Mutable constructor inputs are copied/frozen before object escape
 
-**Checkpoint 1.1 gate criteria:** [USER DECISION NEEDED]
-- Soft: compute_confidence() wired + test fixtures exist
-- Medium: 3/5 TDD tests passing
-- Firm: 5/5 TDD tests passing
+**Checkpoint 1.1 gate criteria:** firm blocker gate
+- `compute_confidence()` wired into PeerObservation
+- All Batch 7 multiplicative tests pass
+- No zero-proof case can produce non-zero confidence
 
-**Checkpoint 1.2 gate criteria:** [USER DECISION NEEDED]
-- Soft: StateTransitionManager class exists + methods defined
-- Medium: Promote/demote logic + E1–E5 edge cases pass
-- Firm: All E1–E10 edge cases pass
+**Checkpoint 1.2 gate criteria:** firm blocker gate
+- StateTransitionManager integrated
+- Mandatory `_apply_observation()` validation runs before counter mutation
+- Hysteresis, recovery, witness-quorum, and counter-reset tests pass
 
-**Checkpoint 1.3 gate criteria:** [USER DECISION NEEDED]
-- Soft: T7 monotonic apply guard exists
-- Medium: T7 guard + T2 freshness gate pass
-- Firm: Full epoch + T7 integration + conflict resolution
+**Checkpoint 1.3 gate criteria:** firm blocker gate
+- Epoch, sequence, nonce, and T7 monotonic apply gate implemented
+- All edge cases E1–E10 pass, including batch mid-threshold transitions
+- Longer fuzz/property-test runs may continue after the blocker gate
 
 ---
 
 ## Phase 1.0: Schema + Confidence (Days 1–5)
 
-**Checkpoint gate:** 1.0 (user picks: soft/medium/firm)
+**Checkpoint gate:** 1.0 firm blocker gate
 
 ### Task 1.0.1: PeerObservation Dataclass Implementation
 
@@ -57,13 +57,13 @@ Phase 1 (PLANNED):
 
 **Deliverable:** Python dataclass + validation
 ```python
-@dataclass
+@dataclass(frozen=True)
 class PeerObservation:
     peer_id: str
     epoch: int
     timestamp: float
     proof_score: float  # [0, 1]
-    witness_set: List[PeerObservation]  # Recursive; capped at depth 2
+    witness_set: tuple[PeerObservation, ...]  # Recursive; capped at depth 2
     freshness_score: float  # [0, 1]
     observation_type: ObservationType  # REACHABLE | UNREACHABLE
     # ... 14 more fields from D1 § 2
@@ -152,16 +152,13 @@ def compute_display_state(peer: PeerRecord, confidence: float) -> PeerDisplaySta
 
 **Cline re-review focus:** Schema soundness, confidence formula correctness, no floating-point surprises.
 
-**Decision:** Proceed to Phase 1.1? 
-- If soft gate (method exists): YES, start 1.1 in parallel
-- If medium gate (3/5 tests): YES if M1–M3 pass
-- If firm gate (5/5 tests): YES only if M1–M5 all pass
+**Decision:** Proceed to Phase 1.1 only after the firm 1.0 blocker gate passes. Independent implementation work may proceed in parallel, but checkpoint completion requires all blocker vectors.
 
 ---
 
 ## Phase 1.1: Confidence Wired + TDD Regression (Days 5–10)
 
-**Checkpoint gate:** 1.1 (user picks: soft/medium/firm)
+**Checkpoint gate:** 1.1 firm blocker gate
 
 ### Task 1.1.1: Wire Confidence Into PeerRecord Update Loop
 
@@ -227,15 +224,13 @@ def test_confidence_regression(scenario):
 **Cline re-review focus:** Test comprehensiveness, edge case coverage, floating-point correctness.
 
 **Decision:** Proceed to Phase 1.2?
-- If soft gate: YES, start 1.2
-- If medium gate (3/5 pass): YES if M1–M3 pass
-- If firm gate (5/5 pass): YES only if all pass
+- Proceed only if all Batch 7 blocker vectors pass.
 
 ---
 
 ## Phase 1.2: StateTransitionManager + Witness Quorum (Days 10–18)
 
-**Checkpoint gate:** 1.2 (user picks: soft/medium/firm)
+**Checkpoint gate:** 1.2 firm blocker gate
 
 ### Task 1.2.1: StateTransitionManager Class + State Machine
 
@@ -340,7 +335,7 @@ def validate_witness_quorum(observation: PeerObservation) -> bool:
 
 ## Phase 1.3: Epoch + T7 Monotonic Gate (Days 18–28)
 
-**Checkpoint gate:** 1.3 (user picks: soft/medium/firm)
+**Checkpoint gate:** 1.3 firm blocker gate
 
 ### Task 1.3.1: Monotonic Apply Gate (T7)
 
@@ -421,7 +416,7 @@ class ReorderBuffer:
 
 ## Phase 1 Task Dependency Graph
 
-```
+```text
 1.0.1 (PeerObservation dataclass)
   ↓
 1.0.2 (Confidence formula)
@@ -492,4 +487,3 @@ Phase 1 COMPLETE
 3. **Phase 1 task assignment (after decisions):**
    - 1.0.1–1.3.2 ready for developer handoff
    - Task breakdown cards can be filed in backlog with exact requirements
-
