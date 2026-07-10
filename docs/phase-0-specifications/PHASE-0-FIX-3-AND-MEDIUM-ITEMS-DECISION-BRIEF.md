@@ -15,15 +15,15 @@ Two deliverables specify contradictory state machine hysteresis constants:
 | Source | Constant | Value | Semantics |
 |--------|----------|-------|-----------|
 | **D1** § 2 (schema) | `POLLS_TO_CONFIRM` | **2** | Symmetric: 2 polls in any direction triggers state change |
-| **D2** § 5.3 (STM pseudocode) | `PROMOTE_THRESHOLD` | **2** | Asymmetric: 2 positive polls → ACTIVE→SUSPECT |
-| **D2** § 5.3 (STM pseudocode) | `DEMOTE_THRESHOLD` | **3** | Asymmetric: 3 negative polls → SUSPECT→INACTIVE |
+| **D2** § 5.3 (STM pseudocode) | `PROMOTE_THRESHOLD` | **2** | 2 positive polls → SUSPECT/INACTIVE→ACTIVE |
+| **D2** § 5.3 (STM pseudocode) | `DEMOTE_THRESHOLD` | **3** | 3 negative polls → ACTIVE→SUSPECT, then sustained hold → INACTIVE |
 | **D2** § 5.3 (STM pseudocode) | `RECOVERY_GRACE` | **1** | One recovery poll resets demotion counter |
 
 ### Why This Blocks Phase 1
 
 - Implementation must encode state machine transitions; can't guess which model is canonical
 - Test fixtures (TDD Batch 7, edge cases E1–E10) depend on knowing exact thresholds
-- Production SLA (40–90s failure detection) depends on which model—asymmetric is slower to recover (3 polls vs 2)
+- Production SLA (30–90s committed failure-state detection) depends on which model and the configured hysteresis/dead-hold windows
 - Integration with D1 PeerObservation depends on aligned terminology
 
 ### User Decision: ADOPT ASYMMETRIC HYSTERESIS (D2 Model)
@@ -35,7 +35,7 @@ Two deliverables specify contradictory state machine hysteresis constants:
 #### Task 3.1: Reconcile D1 § 2 (Schema)
 
 **Current text in D1:**
-```
+```text
 StateTransitionManager constants:
 - POLLS_TO_CONFIRM = 2 (hysteresis)
 - PROMOTE_THRESHOLD = 2
@@ -47,7 +47,7 @@ StateTransitionManager constants:
 
 **What to do:**
 1. Rename `POLLS_TO_CONFIRM` → `PROMOTE_THRESHOLD` throughout D1 § 2 to match D2 terminology
-2. Add clarification: "PROMOTE_THRESHOLD = 2 positive polls triggers state change from ACTIVE to SUSPECT. DEMOTE_THRESHOLD = 3 negative polls triggers change from SUSPECT to INACTIVE. Asymmetric by design: quick suspect detection, conservative recovery."
+2. Add clarification: "PROMOTE_THRESHOLD = 2 positive polls triggers recovery/promotion to ACTIVE. DEMOTE_THRESHOLD = 3 negative polls triggers demotion from ACTIVE to SUSPECT; CONFIRM_DEAD_HOLD controls confirmed INACTIVE."
 3. Update the PeerRecord dataclass example to show both counters (`pending_count_promote`, `pending_count_demote`) tracking independently
 4. Verify section 2's "Properties" list includes all 5 constants: PROMOTE_THRESHOLD, DEMOTE_THRESHOLD, RECOVERY_GRACE, CONFIRM_DEAD_HOLD, POLLS_TO_CONFIRM (deprecated reference only, note it's renamed)
 
@@ -74,19 +74,23 @@ StateTransitionManager constants:
 1. **Write full `_apply_observation()` pseudocode** (~40–50 lines):
    - Input: `(peer_id, epoch, timestamp, observation_type)` where observation_type ∈ {REACHABLE, UNREACHABLE}
    - Output: state change trigger or no-op
-   - Logic:
-     ```
+   - Validation and logic:
+     ```text
+     validate peer_id, epoch, sequence, nonce, timestamp freshness, and observation_type
+     reject duplicate (peer_id, epoch, sequence, nonce) before counter mutation
+     reject non-monotonic observations before counter mutation
+
      if observation_type == REACHABLE:
        increment pending_count_promote
        reset pending_count_demote to 0  # reset recovery grace
        if pending_count_promote >= PROMOTE_THRESHOLD:
-         trigger state_change(ACTIVE → SUSPECT)
+         trigger state_change(SUSPECT → ACTIVE)
          reset pending_count_promote to 0
      else (UNREACHABLE):
        increment pending_count_demote
        reset pending_count_promote to 0  # reset recovery grace
        if pending_count_demote >= DEMOTE_THRESHOLD:
-         trigger state_change(SUSPECT → INACTIVE)
+         trigger state_change(ACTIVE → SUSPECT)
          reset pending_count_demote to 0
          set confirm_dead_timestamp = now()  # start CONFIRM_DEAD_HOLD window
      ```
@@ -99,32 +103,31 @@ StateTransitionManager constants:
 3. **Document edge cases (E1–E10 from task list)** with exact expected behavior:
    - E1: Empty observation batch → no state change
    - E2: Out-of-order observations (newer, then older) → older observation ignored (monotonic apply gate from T7)
-   - E3: Multiple observations in one batch (e.g., 3 REACHABLE + 1 UNREACHABLE) → apply in sequence; last one determines threshold check
+   - E3: Multiple observations in one batch (e.g., 3 REACHABLE + 1 UNREACHABLE) → apply in sequence; threshold checks run after each observation
    - E4: Threshold hit mid-batch (e.g., after 2nd of 3 REACHABLE) → state changes immediately; 3rd observation is applied to NEW state
    - E5: Flapping (REACHABLE, UNREACHABLE, REACHABLE within 1 second) → counters reset twice; no state change if neither threshold hit
    - E6: Clock skew (observation timestamp in future by >deadline) → state doesn't change (freshness gate from T2 rejects it)
-   - E7: Conflicting timestamps (same epoch, same peer, two observations with same seq but different timestamps) → dedup via nonce (T3 gate); take first-seen
-   - E8: Sybil witnesses (5 observers all reporting UNREACHABLE for same peer at same epoch) → all 5 observations are distinct; each increments counter once; if counter hits DEMOTE_THRESHOLD after observation N, state changes
-   - E9: Recovery after CONFIRM_DEAD_HOLD expiry → UNREACHABLE observation arrives after recovery window; treats peer as "newly appeared"; state → ACTIVE then immediately applies UNREACHABLE (counters reset)
+   - E7: Conflicting timestamps (same epoch, same peer, same seq, different nonce) → keep deterministic winner by `(epoch, sequence, timestamp, nonce)` ordering; record conflict for T3 replay telemetry
+   - E8: Sybil witnesses (5 observers all reporting UNREACHABLE for same peer at same epoch) → only observations that satisfy D4 proof diversity + witness quorum can increment the demotion counter
+   - E9: Recovery after CONFIRM_DEAD_HOLD expiry → transition peer to ACTIVE, reset counters, then apply the arriving UNREACHABLE to the new state so `pending_count_demote=1` and all other counters are 0
    - E10: Bootstrap (peer appears for first time) → state = ACTIVE initially; first UNREACHABLE increments demote counter; no change until DEMOTE_THRESHOLD
 
 4. **Pseudocode signature & contract**:
-   ```
-   _apply_observation(peer_id: str, epoch: int, timestamp: float, observation_type: ObservationType) -> StateChange | None:
+   ```python
+   _apply_observation(observation: PeerObservation) -> StateChange | None:
        """
        Apply one observation and decide if state change is triggered.
        
        Args:
-           peer_id: Unique identifier
-           epoch: Observation epoch (monotonic)
-           timestamp: Claim time (±deadline skew allowed)
-           observation_type: REACHABLE or UNREACHABLE
+           observation: Complete observation record containing peer_id, epoch,
+                        sequence, nonce, timestamp, observer_id, and type.
        
        Returns:
            StateChange(from_state, to_state, reason) if threshold crossed, else None
        
        Guarantees:
            - State never regresses (monotonic apply gate)
+           - Replay/dedup and freshness checks run before counter mutation
            - Counters reset on opposite observation
            - One observation affects at most one counter increment
        """
@@ -141,41 +144,28 @@ StateTransitionManager constants:
 
 ---
 
-#### Task 3.3: Update D4 Threat Matrix (Reference D2 Model)
+#### Task 3.3: Preserve D4 Threat Claims; Add Cross-Reference Only If Needed
 
-**Current state:** D4 § Summary Matrix lists all threats but doesn't reference the STM model choice.
+**Current state:** D4 § Summary Matrix lists all threats and intentionally keeps the multiplicative-formula claims as the target design basis for later implementation.
 
 **What to do:**
 
-1. Add a new row to the threat matrix (after T7):
-   ```
-   | State Machine Hysteresis | Asymmetric (PROMOTE=2, DEMOTE=3) | Fast suspect detection + conservative recovery |
-   ```
+1. Do **not** weaken or rewrite D4's multiplicative-formula claims.
+2. If a cross-reference is needed, add only a short pointer from the STM docs back to D4, not a new threat-model claim.
+3. Treat implementation catch-up work as Phase 1/Phase 1b scope, not as a reason to dilute the D4 target-state language.
 
-2. In the summary text (D4 end § Rationale), add one paragraph:
-   ```
-   State machine design choice (asymmetric hysteresis) is driven by threat model T1 (malicious relay) 
-   and T5 (DoS flooding). Quick promotion to SUSPECT (2 positive observations required, not 3) lets 
-   observers isolate a potentially compromised relay faster. Slow demotion to INACTIVE (3 negative 
-   observations required) prevents flapping when a relay recovers from transient link glitches or 
-   congestion. The asymmetry is intentional: security > availability during glitches.
-   ```
-
-3. Cross-reference D2 § 5.3 from this section.
-
-**File to update:** `DELIVERABLE-4-THREAT-MODEL-REGENERATED.md` § Summary
+**File to update:** None for claim changes. Optional cross-reference belongs in D2 § 5.3, not in D4.
 
 **Verification checklist:**
-- [ ] New hysteresis row added to threat matrix
-- [ ] Rationale paragraph explains asymmetry in security terms
-- [ ] D2 § 5.3 cross-reference present
+- [ ] No substantive D4 claim changes
+- [ ] Any STM cross-reference preserves D4 as target-state guidance
 - [ ] Consistent terminology (PROMOTE_THRESHOLD, not POLLS_TO_CONFIRM)
 
 ---
 
 ### Task 3 Dependencies & Sequence
 
-**Order:** 3.1 (schema) → 3.2 (pseudocode) → 3.3 (matrix reference)
+**Order:** 3.1 (schema) → 3.2 (pseudocode) → 3.3 (D4 preservation/cross-reference check)
 
 **Why:** D1 provides the contract (constants + data structures); D2 implements the logic; D4 validates the threat coverage.
 
@@ -196,7 +186,7 @@ These do NOT block Phase 1 start. They are design decisions that can be deferred
 - Example: seq=4294967294, next observation seq=0 (wrapped) — if treated as "newer", could regress state
 
 **Decision needed:**
-1. **Keep uint32 and document wrap behavior:** Heartbeat sends seq every 10s; uint32 wraps after ~10^9 heartbeats ≈ 3,170 years. Wrap is non-issue for practical systems. → Phase 1: no special handling needed.
+1. **Keep uint32 and document wrap behavior:** Heartbeat sends seq every 10s; uint32 wraps after 2^32 heartbeats ≈ 1,362 years. Wrap is non-issue for practical systems, but modular comparison must be explicit and tested at `MAX_UINT32 → 0` and `0 → MAX_UINT32`. → Phase 1: document + test wrap semantics.
 2. **Promote to uint64:** Extra safety margin if deployment lifetime > 50 years. → Phase 1: minimal code change.
 3. **Add wrap-around detection:** Monitor seq delta; flag if delta jumps >1000 (potential wrap). → Phase 1b enhancement.
 
@@ -211,7 +201,7 @@ These do NOT block Phase 1 start. They are design decisions that can be deferred
 ### M2: TDD Batch 7 Test Vector M1 (Ghost-Peer with Witnesses)
 
 **What:** D1 § 4 (TDD Batch 7) test vector M1 reads:
-```
+```text
 Scenario: Ghost-peer (proof=0, witnesses=2)
 Expected: confidence = 0.00
 ```
@@ -239,23 +229,21 @@ Expected: confidence = 0.00
 **What:** Should StateTransitionManager validate input or assume caller is trusted?
 
 **Options:**
-1. **Defensive (Phase 1):** Add input validation in `_apply_observation()`:
+1. **Defensive (Phase 1):** Add mandatory input validation inside `_apply_observation()`:
    - Reject null peer_id, invalid epoch (negative, decreasing), invalid observation_type
    - Raise ValueError with diagnostic message; let caller handle
    - Pros: Catches bugs early; implementer can't accidentally pass garbage
    - Cons: +30 lines of validation code; validation is trusting caller didn't already validate
 
-2. **Trust (Phase 1):** No validation; assume caller already validated input
-   - Assume peer_id is non-null, epoch is monotonic, observation_type is valid enum
-   - Pros: Simpler code; validation happens once at call site
-   - Cons: Silent bugs if caller has a bug; harder to debug
+2. **Trust (rejected for Phase 1):** No validation; assume caller already validated input
+   - Rejected because STM is the authority that mutates counters and state; it must not accept invalid, replayed, stale, or non-monotonic observations.
 
 3. **Hybrid (Phase 1b):** Validation in a separate gate function; STM calls it via hook
    - Caller can enable/disable validation (e.g., `_apply_observation(obs, validate=True)`)
    - Pros: Flexible; can disable in production for speed
    - Cons: API surface grows; two code paths to maintain
 
-**User decision needed:** Which of 1, 2, or 3?
+**Decision:** Option 1 is mandatory for Phase 1. The STM validates monotonicity, timestamp freshness, replay/dedup keys, and observation type before any counter mutation.
 
 **Why it matters:**
 - Affects error handling in Phase 1 implementation
@@ -277,17 +265,14 @@ Expected: confidence = 0.00
 
 **Decisions needed (one per checkpoint):**
 
-| Checkpoint | Criteria Definition Needed |
-|---|---|
-| **1.0** | Schema + confidence formula landed? Schema tests (M1–M5) passing? Or: "schema compiles, formula exists, one test passes"? |
-| **1.1** | Confidence computation wired into PeerObservation? Batch 7 tests all passing? Or: "compute_confidence() method exists, at least 3/5 tests passing"? |
-| **1.2** | StateTransitionManager integrated + witness quorum working? All hysteresis tests passing? Or: "STM class exists, promote/demote methods defined, basic tests passing"? |
-| **1.3** | Epoch + T7 monotonic gate implemented? All edge cases E1–E10 tested? Or: "monotonic apply guard exists, at least 6/10 edge cases pass"? |
+| Checkpoint | Must-have acceptance gate | Deferrable only after gate passes |
+|---|---|---|
+| **1.0** | Schema and immutable field normalization landed; all schema fixture tests M1–M5 pass; mutable inputs copied/frozen. | Additional fixture volume beyond the blocker set. |
+| **1.1** | `compute_confidence()` wired into PeerObservation; all Batch 7 multiplicative tests pass; no zero-proof case can produce non-zero confidence. | Threshold tuning and UX labels. |
+| **1.2** | StateTransitionManager integrated; all hysteresis, recovery, validation, witness-quorum, and counter-reset tests pass. | Telemetry dashboards and adaptive tuning. |
+| **1.3** | Epoch, sequence, nonce, and T7 monotonic apply gate implemented; all edge cases E1–E10 pass, including batch mid-threshold transitions. | Longer fuzz/property-test runs beyond the required blocker vectors. |
 
-**User decision needed:** For each checkpoint, specify:
-- Must-have (blocking Phase 1)
-- Nice-to-have (can defer to Phase 1b)
-- Acceptance criteria (quantifiable: N/M tests, or qualitative: "core logic wired")
+**Decision:** Partial thresholds are not acceptable for blocker gates. Phase 1 can proceed only after each checkpoint's blocker-specific test vectors and listed edge cases pass.
 
 **File impacted:** D1 § 6 (Integration Checkpoints)
 
@@ -304,7 +289,7 @@ Expected: confidence = 0.00
 - Timeout for each strategy?
 
 **Why it matters:**
-- 40–90s SLA depends on peer being discovered within ~10–20s (leaving rest for observation collection)
+- 30–90s failure-state SLA depends on peer being discovered within ~10–20s (leaving rest for observation collection)
 - If discovery is serial + mDNS timeout is 30s, SLA is at risk
 - If discovery is parallel, requires thread pool / async; adds complexity
 
@@ -312,12 +297,12 @@ Expected: confidence = 0.00
 
 1. **Strategy order:**
    - Primary: mDNS `.local` discovery (fast, requires mdns-sd library, 3s timeout default)
-   - Fallback: static seed IPs from config (slower, reliable, 5s per seed × N seeds)
+   - Fallback: all static seed IPs from config (slower, reliable, 5s per seed when probed serially)
    - Tertiary: peer gossip (ask other observed peers where they know this peer)
 
 2. **Parallelization:**
-   - Option A (Serial): Try mDNS, if fail try seeds, if fail try gossip. Total: up to 3+5+5=13s.
-   - Option B (Parallel): Start mDNS + seeds simultaneously, wait for first success (fast path ~3s), continue with gossip if both fail.
+   - Option A (Serial): Try mDNS, if fail try each configured seed, if fail try gossip. Total: 3s + (5s × number of seeds) + gossip timeout.
+   - Option B (Parallel): Start mDNS + bounded static-seed probes simultaneously, wait for first success (fast path ~3s), continue with gossip if both fail.
 
 3. **Recommendation:** Option B with async—mDNS + seeds run in parallel. Time budget: 3s for fast path, 8s fallback. Gossip added only if both fail.
 
@@ -391,16 +376,16 @@ Expected: confidence = 0.00
 
 ### For Fix #3 (Now—REQUIRED)
 - **Asymmetric hysteresis (D2 model) is adopted.** This means:
-  - Peers move to SUSPECT fast (2 positive polls, ~20s)
-  - Peers recover from SUSPECT slowly (3 negative polls, ~30s)
+  - Positive observations promote/recover peers toward ACTIVE after `PROMOTE_THRESHOLD=2`
+  - Negative observations demote peers toward SUSPECT after `DEMOTE_THRESHOLD=3`, then confirmed INACTIVE only after the dead-hold window
   - Consequence: Better resilience to cascading failures; worse UX during transient link glitches
-  - Production impact: SLA remains 40–90s; actual deployments will skew toward 40–60s detection time
+  - Production impact: committed failure-state SLA remains 30–90s; confirmed INACTIVE includes the additional hold window
 
 ### For Medium Items (Phase 1b—OPTIONAL)
-- **M1 (Sequence bit-width):** Recommend keep uint32; wrap is non-issue for 3000+ years. Simple + sufficient.
+- **M1 (Sequence bit-width):** Recommend keep uint32 with explicit modular comparison and MAX→0 / 0→MAX tests; wrap occurs after ~1,362 years at 10s intervals.
 - **M2 (Ghost-peer witnesses):** Recommend interpretation 2; allows separating proof requirement from witness agreement. More flexible for future enhancements.
-- **M3 (STM validation):** Recommend trust; validation happens at call site. Simpler code, faster.
-- **M4 (Checkpoint gates):** Recommend per-checkpoint: must-have = "compiles + one test passes", nice-to-have = "all tests pass". Enables Phase 1 start after checkpoint 1.0.
+- **M3 (STM validation):** Mandatory defensive validation inside `_apply_observation()` before any counter mutation.
+- **M4 (Checkpoint gates):** All blocker-specific vectors and edge cases must pass; partial thresholds do not clear a checkpoint.
 - **M5 (Discovery):** Recommend parallel mDNS + static seeds; SLA-compliant at ~5s median. Enables async implementation.
 - **M6 (Replay cache):** Recommend epoch-scoped dedup + 2-epoch rotation. Memory-safe, sufficient protection.
 - **M7 (Rate limit):** Recommend static for Phase 1; adaptive tuning in Phase 1b. Phased approach, lower risk.
@@ -425,4 +410,3 @@ Expected: confidence = 0.00
 
 ### Phase 1b Backlog
 - [ ] Implement decisions from M1–M7 as time permits
-

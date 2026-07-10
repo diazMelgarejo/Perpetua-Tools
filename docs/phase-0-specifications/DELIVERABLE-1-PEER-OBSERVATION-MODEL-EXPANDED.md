@@ -136,7 +136,7 @@ class PeerObservation:
     # PROOF & VALIDATION (Threat T1: malicious relay)
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     
-    probe_result: Optional[Dict[str, Any]]
+    probe_result: Optional[Mapping[str, Any]]
         # For REACHABLE:
         #   {
         #     "success": True,
@@ -197,7 +197,7 @@ class PeerObservation:
     # BACKEND & CAPABILITIES (our use-case)
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     
-    backend_caps: List[str]  # Advertised by peer: ["ollama", "lmstudio"]
+    backend_caps: Tuple[str, ...]  # Advertised by peer: ("ollama", "lmstudio")
     
     backend_state: Optional[str]  # Peer's last-reported backend state
                                   # = "MAC_DUAL" | "MAC_OLLAMA_ONLY" | "WIN_LMSTUDIO" | "MAC_NONE" | "OFFLINE"
@@ -215,8 +215,8 @@ class PeerObservation:
                       # = 300 for STALE/DEGRADED
                       # = -1 (no expiry) for static seeds
     
-    tags: List[str]  # Metadata: ["static_seed", "ip_migrated", "flaky", "relay_liar_candidate"]
-                     # Used for debugging, monitoring, and selective trust
+    tags: FrozenSet[str]  # Metadata: {"static_seed", "ip_migrated", "flaky", "relay_liar_candidate"}
+                          # Used for debugging, monitoring, and selective trust
     
     notes: str  # Human-readable explanation
                # = "peer reported IP change (epoch 2→3)"
@@ -225,6 +225,13 @@ class PeerObservation:
     
     source_id: str  # If this observation came from another observer's heartbeat,
                     # record who reported it (for circular-reference detection)
+
+    def __post_init__(self) -> None:
+        # frozen=True blocks assignment after construction, but callers can still pass mutable
+        # containers. Copy and freeze nested structures at the boundary.
+        object.__setattr__(self, "probe_result", deep_freeze_mapping(self.probe_result))
+        object.__setattr__(self, "backend_caps", tuple(self.backend_caps))
+        object.__setattr__(self, "tags", frozenset(self.tags))
 ```
 
 ### 2.2 Immutability Rationale
@@ -235,6 +242,13 @@ class PeerObservation:
 - Time-series analysis natural (sort by timestamp, compute deltas)
 - Thread-safe (no mutations race)
 
+`frozen=True` is not enough by itself for nested containers. Phase 1 must normalize mutable constructor inputs before the object escapes:
+
+- `probe_result` is deep-copied and exposed as an immutable mapping
+- `backend_caps` is stored as a tuple
+- `tags` is stored as a frozenset
+- tests mutate the original input dict/list/set after construction and assert the observation does not change
+
 ---
 
 ## § 3 — Confidence Scoring (TDD Spec)
@@ -242,7 +256,7 @@ class PeerObservation:
 ### 3.1 Scoring Formula
 
 ```python
-confidence = (proof_score × 0.5) + (freshness_score × 0.3) + (witness_bonus × 0.2)
+confidence = proof_score × freshness_factor × witness_multiplier
 
 where:
     proof_score ∈ [0.0, 1.0]:
@@ -251,6 +265,7 @@ where:
         0.7 = strong proof (heartbeat received, signature valid, but older)
         1.0 = full proof (fresh heartbeat, signature valid, endpoint epoch matches)
     
+    freshness_factor = 0.40 + 0.60 × freshness_score
     freshness_score ∈ [0.0, 1.0]:
         1.0 if last_heartbeat < 10s ago (ACTIVE)
         0.7 if 10–30s ago (REACHABLE but warming)
@@ -258,11 +273,11 @@ where:
         0.2 if > 90s ago (STALE, demote from active view)
         0.0 if never received (UNKNOWN)
     
-    witness_bonus ∈ [0.0, 1.0]:
-        +0.0 if witness_disagreement > 0  (other observers disagree → reduce trust)
-        +0.2 if witness_agreement == 0    (only this observer)
-        +0.5 if witness_agreement == 1    (1 other observer agrees)
-        +1.0 if witness_agreement >= 2    (2+ others agree → high confidence)
+    witness_multiplier ∈ [0.50, 1.00]:
+        0.50 if witness_disagreement > witness_agreement
+        0.85 if witness_agreement == 0
+        0.95 if witness_agreement == 1
+        1.00 if witness_agreement >= 2
 ```
 
 ### 3.2 Examples
@@ -292,7 +307,7 @@ obs = PeerObservation(
             "signature": "abc123..."
         }
     },
-    confidence=0.95,  # (1.0 × 0.5) + (1.0 × 0.3) + (1.0 × 0.2) = 1.0 (capped)
+    confidence=1.0,  # 1.0 × 1.0 × 1.0 = 1.0
     proof_score=1.0,   # Full proof: signature valid, epoch matches
     freshness_score=1.0,  # < 10s ago
     witness_agreement=2,  # Both mac-primary and win-rtx3080 see this
@@ -306,7 +321,7 @@ obs = PeerObservation(
     source_id=None,
 )
 
-# Derived: REACHABLE + fresh + witnessed = confidence 0.95, add to active view
+# Derived: REACHABLE + fresh + witnessed = confidence 1.0, add to active view
 ```
 
 **Example 2: Stale passive entry**
@@ -324,7 +339,7 @@ obs = PeerObservation(
     route="relay",
     probe_result=None,  # No direct probe yet
     relay_proof=None,   # Never got proof from relay
-    confidence=0.15,  # (0.0 × 0.5) + (0.0 × 0.3) + (0.2 × 0.2) = 0.04 → round to 0.15
+    confidence=0.0,  # 0.0 proof gate forces confidence to 0.0
     proof_score=0.0,   # No proof: relay claim unverified
     freshness_score=0.0,  # Way past deadline
     witness_agreement=0,  # Only this observer
@@ -338,7 +353,7 @@ obs = PeerObservation(
     source_id="win-rtx3080",
 )
 
-# Derived: STALE + unverified = confidence 0.15, keep in passive_view (don't promote)
+# Derived: STALE + unverified = confidence 0.0, keep only as diagnostic/passive evidence
 ```
 
 **Example 3: Relay claim with partial proof**
@@ -363,7 +378,7 @@ obs = PeerObservation(
         }
     },
     relay_proof=None,  # No signature from target
-    confidence=0.35,  # (0.3 × 0.5) + (0.7 × 0.3) + (0.2 × 0.2) = 0.35
+    confidence=0.123,  # 0.3 × (0.40 + 0.60 × 0.7) × 0.50
     proof_score=0.3,   # Partial proof: relay claim + response, no target signature
     freshness_score=0.7,  # 10s ago (fresh-ish)
     witness_agreement=0,
@@ -377,7 +392,7 @@ obs = PeerObservation(
     source_id="win-rtx3080",
 )
 
-# Derived: confidence 0.35 < 0.5 threshold, don't mark REACHABLE yet
+# Derived: confidence 0.123 < 0.5 threshold, don't mark REACHABLE yet
 # Requires ≥2 observers to promote this to reachable
 ```
 
@@ -395,8 +410,8 @@ WITNESS_THRESHOLD_MARK_REACHABLE = 1  # At least 1 other observer agrees
 WITNESS_THRESHOLD_MARK_SOLO = 2        # 2+ observers agree it's unreachable
 
 # Disagreement = low confidence even if proof_score high
-if witness_disagreement > 0 and witness_agreement < witness_disagreement:
-    confidence *= 0.5  # Penalty for conflict
+if witness_disagreement > witness_agreement:
+    witness_multiplier = 0.50  # Penalty for conflict
 ```
 
 ---
@@ -443,16 +458,16 @@ def test_fresh_direct_connection_high_confidence():
         probe_latency_ms=12.5,
         route="direct",
         probe_result={"success": True, "latency_ms": 12.5, "heartbeat_received": heartbeat},
-        confidence=compute_confidence(1.0, 1.0, 0),  # proof=1.0, fresh=1.0, witness=0
+        confidence=compute_confidence(1.0, 1.0, 2),  # proof=1.0, fresh=1.0, witnessed
         proof_score=1.0,
         freshness_score=1.0,
-        witness_agreement=0,
+        witness_agreement=2,
         witness_disagreement=0,
-        backend_caps=["lmstudio"],
+        backend_caps=("lmstudio",),
         backend_state="WIN_LMSTUDIO",
         backend_state_timestamp=now,
         ttl_seconds=60,
-        tags=[],
+        tags=frozenset(),
         notes="",
         source_id=None,
     )
@@ -508,7 +523,8 @@ def test_relay_claim_requires_proof_signature():
     assert obs.proof_score < 0.5
     assert obs.confidence < 0.5
     # Don't mark as reachable without witness agreement
-    assert CONFIDENCE_THRESHOLD_RELAY not reached or witness_agreement >= 2
+    assert obs.confidence < CONFIDENCE_THRESHOLD_RELAY
+    assert obs.witness_agreement < 2
 ```
 
 ### Test 3: IP Migration (Threat T2)
@@ -558,7 +574,10 @@ def test_ip_migration_epoch_mismatch_detected():
     
     # Old observation should be marked stale
     assert old_obs.endpoint_epoch < new_obs.endpoint_epoch
-    assert old_obs.direct_status == "REACHABLE" and old_obs.tags include "ip_migrated" or old_obs marked STALE
+    superseded = supersede_observation(old_obs, new_obs)
+    assert old_obs.direct_status == "REACHABLE"  # immutable historical record is not mutated
+    assert superseded.direct_status == "STALE"
+    assert "ip_migrated" in superseded.tags
     assert new_obs.endpoint != old_obs.endpoint
 ```
 
@@ -574,7 +593,7 @@ def test_witness_agreement_prevents_lone_claim():
     # Observer 1 claims via relay
     obs1 = PeerObservation(
         # ... (relay route, unverified, witness_agreement=0)
-        confidence=0.35,
+        confidence=compute_confidence(0.3, 0.7, 0, 0),
     )
     
     assert obs1.confidence < CONFIDENCE_THRESHOLD_RELAY
@@ -582,13 +601,14 @@ def test_witness_agreement_prevents_lone_claim():
     # Now Observer 2 also claims
     obs2 = PeerObservation(
         # ... (same relay route, witness_agreement=1)
-        confidence=0.50,
+        confidence=compute_confidence(0.3, 0.7, 1, 0),
     )
     
-    # Combine via witness agreement
-    combined_confidence = (obs1.confidence + obs2.confidence) / 2  # Rough average
-    # With witness_agreement=1 for both, total confidence can reach threshold
-    assert combined_confidence >= CONFIDENCE_THRESHOLD_RELAY
+    # Combine via the real aggregation path, which verifies provenance and quorum.
+    aggregate = aggregate_witness_confidence([obs1, obs2])
+    assert aggregate.witness_agreement == 1
+    assert aggregate.confidence < CONFIDENCE_THRESHOLD_RELAY
+    assert aggregate.reason == "insufficient_proof_or_quorum"
 ```
 
 ### Test 5: Partition Detection
@@ -627,7 +647,8 @@ def test_partition_detection_asymmetric_reachability():
     observations = [a_sees_b, b_sees_a]
     partition_likely = detect_partition(observations)
     assert partition_likely == True
-    assert "PARTITIONED" or "ASYMMETRIC" in [o.tags for o in observations]
+    all_tags = {tag for obs in observations for tag in obs.tags}
+    assert {"PARTITIONED", "ASYMMETRIC"} & all_tags
 ```
 
 ### Test 6: Hysteresis Prevents Flapping
@@ -662,7 +683,7 @@ def test_hysteresis_requires_2_stable_polls():
 
 ### 5.1 Phase 1 (Current): HyParView + Custom Probes
 
-```
+```text
 PeerObservation table + HyParView membership
 Custom heartbeat probes (HTTP GET /health)
 Custom relay probe (HTTP POST /api/relay-probe)
@@ -671,7 +692,7 @@ No cryptographic proof yet (optional Phase 1b)
 
 ### 5.2 Phase 2: PlumTree Integration
 
-```
+```text
 Keep PeerObservation table UNCHANGED
 Replace custom relay probes with PlumTree gossip repair
 - relay_proof field now populated by PlumTree-verified source
@@ -680,10 +701,10 @@ Replace custom relay probes with PlumTree gossip repair
 
 ### 5.3 Phase 3: Kademlia DHT
 
-```
+```text
 Keep PeerObservation table UNCHANGED
 Add Kademlia DHT query layer on top
-- route="relay" observations may become route="dht" (discovered via DHT, not relay)
+- route="relay" observations may become route="discovered" with discovery_method="dht"
 - endpoint_epoch helps DHT detect stale entries
 - Confidence scoring unchanged; DHT results feed into table as normal observations
 ```
@@ -758,4 +779,3 @@ This Deliverable 1 design:
 ---
 
 **Phase 0 next: Finalize this spec with team. Estimated: 4–6 hours. Target completion: 2026-07-12.**
-

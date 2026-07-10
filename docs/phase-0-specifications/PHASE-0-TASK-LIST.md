@@ -1,8 +1,9 @@
 # Phase 0 Task List (TDD-First)
 
-**Duration:** 8–10 hours over 1–2 weeks  
-**Approach:** TDD (test specs → design → consensus)  
+**Duration:** 17.5 hours over 2–3 weeks
+**Approach:** TDD (test specs → design → consensus)
 **Checkpoints:** Every 2 days (async design review)
+**Total effort:** 17.5 hours across Task Groups A–C, matching the detailed task estimates below.
 
 ---
 
@@ -13,6 +14,9 @@
 **Spec Test:** `test_peer_observation_schema_complete`
 
 ```python
+from dataclasses import FrozenInstanceError
+import pytest
+
 def test_peer_observation_schema_complete():
     """
     GIVEN: PeerObservation dataclass
@@ -21,9 +25,9 @@ def test_peer_observation_schema_complete():
     """
     # See DELIVERABLE-1-PEER-OBSERVATION-MODEL-EXPANDED.md § 2.2
     # Create 10 example observations (fixtures):
-    # 1. Fresh direct connection (confidence 0.95)
-    # 2. Stale passive entry (confidence 0.15)
-    # 3. Relay claim unverified (confidence 0.35)
+    # 1. Fresh direct connection (confidence 1.00)
+    # 2. Stale passive entry (confidence 0.00)
+    # 3. Relay claim with partial proof (confidence ~0.209)
     # 4. Timeout (confidence 0.1)
     # 5. Degraded (confidence 0.6)
     # 6. IP migrated (epoch mismatch)
@@ -31,9 +35,11 @@ def test_peer_observation_schema_complete():
     # 8. Witnessed disagreement (witness_disagreement=1)
     # 9. Static seed (route="static_seed")
     # 10. Malicious relay attempt (proof_score=0.0, confidence penalized)
-    
+
     for fixture in FIXTURES:
-        assert fixture.frozen == True  # Immutable
+        assert fixture.__dataclass_params__.frozen is True
+        with pytest.raises(FrozenInstanceError):
+            fixture.confidence = 0.0
         assert all(hasattr(fixture, field) for field in REQUIRED_FIELDS)
         assert fixture.confidence <= 1.0 and fixture.confidence >= 0.0
 ```
@@ -61,22 +67,23 @@ def test_confidence_scoring_formula():
     """
     GIVEN: proof_score, freshness_score, witness_agreement
     WHEN: compute_confidence(proof, fresh, witness)
-    THEN: confidence = (proof × 0.5) + (fresh × 0.3) + (witness_bonus × 0.2)
-          witness_bonus ∈ [0.0, 1.0] based on agreement/disagreement ratio
+    THEN: confidence = proof × freshness_factor × witness_multiplier
+          freshness_factor = 0.40 + 0.60 × freshness_score
+          witness_multiplier ∈ [0.50, 1.00] based on agreement/disagreement ratio
     """
     # Test cases from § 3.2 (Deliverable 1):
-    # 1. Fresh direct (1.0, 1.0, 2 witnesses) → 0.95+
-    # 2. Stale relay (0.0, 0.0, 0 witnesses) → 0.04
-    # 3. Partial relay (0.3, 0.7, 0 witnesses) → 0.35
-    # 4. Disagreement penalty (1.0, 1.0 but witness_disagree=2) → 0.5 (halved)
-    
+    # 1. Fresh direct (1.0, 1.0, 2 witnesses) → 1.00
+    # 2. Stale unverified (0.0, 0.0, 0 witnesses) → 0.00
+    # 3. Partial relay (0.3, 0.7, 0 witnesses) → 0.209
+    # 4. Disagreement penalty (1.0, 1.0 but witness_disagree=2) → 0.50
+
     test_cases = [
-        ((1.0, 1.0, 2, 0), 0.95),  # Fresh direct + witnessed
+        ((1.0, 1.0, 2, 0), 1.00),  # Fresh direct + witnessed
         ((0.0, 0.0, 0, 0), 0.0),   # Stale unverified
-        ((0.3, 0.7, 0, 0), 0.35),  # Partial proof
+        ((0.3, 0.7, 0, 0), 0.209), # Partial proof: 0.3 * 0.82 * 0.85
         ((1.0, 1.0, 0, 2), 0.5),   # Proof high but disagreement penalty
     ]
-    
+
     for (proof, fresh, agree, disagree), expected in test_cases:
         result = compute_confidence(proof, fresh, agree, disagree)
         assert abs(result - expected) < 0.05  # Within 5%
@@ -88,9 +95,9 @@ def test_confidence_scoring_formula():
 - `docs/confidence-scoring-spec.md` with formula explanation + decision thresholds
 
 **Checklist:**
-- [ ] Formula matches § 3.1 (proof 50%, fresh 30%, witness 20%)
-- [ ] Witness bonus computed from agreement/disagreement ratio
-- [ ] Disagreement penalty applied (confidence *= 0.5 if disagree > agree)
+- [ ] Formula matches § 3.1 (proof-gated multiplicative confidence)
+- [ ] Witness multiplier computed from agreement/disagreement ratio
+- [ ] Disagreement penalty applied (witness_multiplier = 0.50 if disagree > agree)
 - [ ] All test cases pass (10+ cases covering extremes)
 - [ ] Team review: scoring formula reasonable? Weights correct?
 
@@ -117,7 +124,7 @@ def test_derive_topology_state_from_observations():
     # 6. 0 reachable, 1+ STALE → STALE
     # 7. 0 reachable, 0 suspect → SOLO
     # 8. No local backend → OFFLINE
-    
+
     test_cases = [
         ([direct1, direct2_cross_reachable], TopologyState.FLEET, 0.93),
         ([direct1, direct2_not_cross], TopologyState.PARTITIONED, 0.85),
@@ -126,7 +133,7 @@ def test_derive_topology_state_from_observations():
         ([suspect1, suspect2], TopologyState.SUSPECT, 0.35),
         ([stale1], TopologyState.STALE, 0.1),
     ]
-    
+
     for obs_list, expected_state, expected_conf in test_cases:
         state, meta = derive_topology_state(obs_list)
         assert state == expected_state
@@ -164,7 +171,7 @@ def test_state_transition_hysteresis_prevents_flapping():
         POLLS_TO_CONFIRM=2,
         dwell_time_min_s=5,
     )
-    
+
     # Simulate 10 polls over 100s (10s each)
     states_input = [
         "DIRECT_1",    # Poll 0
@@ -178,19 +185,20 @@ def test_state_transition_hysteresis_prevents_flapping():
         "DIRECT_1",    # Poll 8
         "DIRECT_1",    # Poll 9
     ]
-    
+
     outputs = []
     for i, input_state in enumerate(states_input):
         time.sleep(10)  # or mock time
         output_state = manager.update(input_state)
         outputs.append(output_state)
-    
+
     # Expected: state changes only after 2 stable polls
-    # DIRECT_1 (0–2), DIRECT_1 (3), SUSPECT (4–5 don't flap, stable at 6), DIRECT_1 (7+)
+    # DIRECT_1 (0–2), DIRECT_1 (3–4), SUSPECT after poll 5, DIRECT_1 after poll 8
     assert outputs[0:3] == ["DIRECT_1", "DIRECT_1", "DIRECT_1"]  # Hysteresis suppresses jitter
-    assert outputs[4:6] == ["DIRECT_1", "DIRECT_1"]  # Still previous; not enough polls yet
-    assert outputs[6] == "SUSPECT"  # 2 consecutive SUSPECT polls, transition
-    assert outputs[7:] == ["SUSPECT", "SUSPECT", "SUSPECT"]  # Wait for 2 DIRECT_1 polls to recover
+    assert outputs[4] == "DIRECT_1"  # Still previous; not enough polls yet
+    assert outputs[5] == "SUSPECT"  # 2 consecutive SUSPECT polls, transition
+    assert outputs[6:8] == ["SUSPECT", "SUSPECT"]  # Wait for 2 DIRECT_1 polls to recover
+    assert outputs[8:] == ["DIRECT_1", "DIRECT_1"]
 ```
 
 **Deliverable:**
@@ -215,30 +223,43 @@ def test_state_transition_hysteresis_prevents_flapping():
 ```python
 def test_peer_health_state_machine():
     """
-    GIVEN: Peer's last_heartbeat_timestamp
-    WHEN: Update health state (every probe, update observation)
+    GIVEN: Peer's last_heartbeat_timestamp and an injectable clock/deadline strategy
+    WHEN: Update health state with jitter-aware fixed deadlines
     THEN: Transition ACTIVE → SUSPECT → INACTIVE based on time
     """
     HEARTBEAT_INTERVAL = 10
     HEARTBEAT_DEADLINE = 30
     SUSPICION_TIMEOUT = 90
-    
+
+    clock = FakeClock(now)
+    deadlines = DeadlineStrategy(
+        heartbeat_deadline_s=HEARTBEAT_DEADLINE,
+        suspicion_timeout_s=SUSPICION_TIMEOUT,
+        jitter_budget_s=2,
+    )
     peer = {"node_id": "...", "last_heartbeat": now}
-    
+
     # At now: ACTIVE
-    assert health_state(peer, now) == "ACTIVE"
-    
+    assert health_state(peer, clock.now(), deadlines) == "ACTIVE"
+
     # At now + 25s: still ACTIVE (< deadline)
-    assert health_state(peer, now + 25) == "ACTIVE"
-    
+    clock.advance_to(now + 25)
+    assert health_state(peer, clock.now(), deadlines) == "ACTIVE"
+
     # At now + 30s: SUSPECT (deadline reached)
-    assert health_state(peer, now + 30) == "SUSPECT"
-    
+    clock.advance_to(now + 30)
+    assert health_state(peer, clock.now(), deadlines) == "SUSPECT"
+
     # At now + 60s: still SUSPECT (< suspicion timeout)
-    assert health_state(peer, now + 60) == "SUSPECT"
-    
+    clock.advance_to(now + 60)
+    assert health_state(peer, clock.now(), deadlines) == "SUSPECT"
+
     # At now + 90s: INACTIVE (demote from active view)
-    assert health_state(peer, now + 90) == "INACTIVE"
+    clock.advance_to(now + 90)
+    assert health_state(peer, clock.now(), deadlines) == "INACTIVE"
+
+    # Deadline math is fixed; send jitter changes heartbeat scheduling, not the deadline window.
+    assert deadlines.next_send_interval(base_s=10, jitter_s=2) in range(8, 13)
 ```
 
 **Deliverable:**
@@ -248,6 +269,8 @@ def test_peer_health_state_machine():
 
 **Checklist:**
 - [ ] Constants defined: HEARTBEAT_INTERVAL=10, DEADLINE=30, SUSPICION=90 (seconds)
+- [ ] health_state() accepts injectable clock/deadline strategy for deterministic tests
+- [ ] Deadline strategy keeps heartbeat send jitter separate from detection deadlines
 - [ ] health_state() returns one of ACTIVE, SUSPECT, INACTIVE
 - [ ] Transition happens at exact boundaries (not off-by-one)
 - [ ] Test covers all 4 state transitions
@@ -267,7 +290,7 @@ def test_discovery_fallback_chain_order():
     GIVEN: All discovery methods available (seeds, mDNS, TCP scan)
     WHEN: Discover peers (static seeds first, then mDNS, then TCP)
     THEN: First available method returns peers; later methods skipped
-    
+
     GIVEN: First method fails
     WHEN: Retry next method
     THEN: Chain continues until success or exhausted
@@ -281,17 +304,17 @@ def test_discovery_fallback_chain_order():
     peers = discover_peers(config)
     assert len(peers) > 0
     assert peers[0]["route"] == "static_seed"
-    
+
     # Scenario 2: Seeds empty, multicast available
     config["discovery"]["static_seeds"] = []
     peers = discover_peers(config)  # Fall back to mDNS
     assert all(p["route"] == "mdns" for p in peers)
-    
+
     # Scenario 3: mDNS blocked, TCP scan fallback
     config["discovery"]["enable_mdns"] = False
     peers = discover_peers(config)
     assert all(p["route"] == "tcp_scan" for p in peers)
-    
+
     # Scenario 4: All fail
     config["discovery"]["static_seeds"] = []
     config["discovery"]["enable_mdns"] = False
@@ -329,7 +352,7 @@ def test_observation_table_crud_operations():
     THEN: Operations succeed; table maintains consistency
     """
     table = ObservationTable()
-    
+
     # CREATE: Add observation
     obs = PeerObservation(
         observer_id="mac-primary",
@@ -337,12 +360,12 @@ def test_observation_table_crud_operations():
         # ... (fields)
     )
     table.add(obs)
-    
+
     # RETRIEVE: Get by (observer, target) pair
     result = table.get(observer_id="mac-primary", target_peer_id="win-rtx5080")
     assert result is not None
     assert result.confidence == obs.confidence
-    
+
     # UPDATE: Add newer observation (same pair, newer timestamp)
     obs2 = PeerObservation(
         observer_id="mac-primary",
@@ -351,15 +374,15 @@ def test_observation_table_crud_operations():
         confidence=0.92,  # Updated
     )
     table.add(obs2)
-    
+
     # Latest should be obs2
     result = table.get(observer_id="mac-primary", target_peer_id="win-rtx5080", latest=True)
     assert result.confidence == 0.92
-    
+
     # LIST: Query all observations
     all_obs = table.list(observer_id="mac-primary")
     assert len(all_obs) >= 1  # At least obs1 and obs2 for this observer
-    
+
     # TIME-SERIES: Get all observations for target (trend analysis)
     trend = table.trend(target_peer_id="win-rtx5080", limit=10)
     assert len(trend) >= 2
@@ -416,7 +439,7 @@ def test_e2e_derive_state_realistic_scenario():
             "expected": "FLEET",
         },
     ]
-    
+
     for step in scenario:
         observations = build_observations_from_scenario(step)
         state, meta = derive_topology_state(observations)
@@ -519,11 +542,10 @@ def test_e2e_derive_state_realistic_scenario():
 | **W1** | 7/12–7/13 | B1–B2 (Hysteresis) | 3h | ✓ 1.1 (State transitions) |
 | **W2** | 7/14–7/15 | C1 + D1 (Discovery + Table) | 2.5h | ✓ 1.2 (Integration) |
 | **W2** | 7/16–7/17 | E1–E2 (Reviews + Finalization) | 3h | **Phase 0 Complete** |
-| **Total** | 7/10–7/17 | All 6 deliverables | **8–10h** | Ready for Phase 1 |
+| **Total** | 7/10–7/24 | All 6 deliverables | **17.5h** | Ready for Phase 1 |
 
 **Phase 1 start: 2026-07-24 (1 week buffer for refinement)**
 
 ---
 
 **Ready to start Task A1?**
-

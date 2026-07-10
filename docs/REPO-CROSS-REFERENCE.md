@@ -15,7 +15,7 @@
 |---|---|---|---|---|
 | PHASE-0-TASK-LIST.md | Phase 0 implementation tasks (TDD-first breakdown) | `docs/phase-0-specifications/` | ✅ YES | Synced from gstack cache 2026-07-10 |
 | DELIVERABLE-1-PEER-OBSERVATION-MODEL-REGENERATED-ITERATION-2.md | PeerObservation schema with multiplicative confidence fix | `docs/phase-0-specifications/` | ✅ YES | Critical blocker fixes; D1 iteration 2 |
-| DELIVERABLE-2-HEARTBEAT-LIVENESS-REGENERATED.md | Heartbeat protocol + StateTransitionManager spec | `docs/phase-0-specifications/` | ✅ YES | 40–90s real-world SLA reframed; N=2 asymmetry fix |
+| DELIVERABLE-2-HEARTBEAT-LIVENESS-REGENERATED.md | Heartbeat protocol + StateTransitionManager spec | `docs/phase-0-specifications/` | ✅ YES | 30–90s failure-state bounds reframed; N=2 asymmetry fix |
 | DELIVERABLE-4-THREAT-MODEL-REGENERATED.md | Threat model T1–T7 with Phase 0 mitigations | `docs/phase-0-specifications/` | ✅ YES | T7 (out-of-order defense) added 2026-07-10; field order fixed |
 | PHASE-0-TEAM-REVIEW-CHECKLIST.md | Checkpoint 1.0–1.3 team async review gates | `docs/phase-0-specifications/` | ✅ YES | 6 design questions per checkpoint |
 | 2026-05-31-tri-repo-alignment-completion-plan.md | Gate-2 alignment tracker (AlphaClaw→PT→orama) | `docs/` | ✅ YES | 8 gaps; lib/mcp retirement deferred |
@@ -27,7 +27,7 @@
 
 ### Phase 0 Specifications Hierarchy
 
-```
+```text
 PT/docs/phase-0-specifications/
 ├── DELIVERABLE-1-PEER-OBSERVATION-MODEL-REGENERATED-ITERATION-2.md  [CANONICAL]
 ├── DELIVERABLE-2-HEARTBEAT-LIVENESS-REGENERATED.md  [CANONICAL]
@@ -68,7 +68,7 @@ PT/docs/phase-0-specifications/
 - orama-system owns architecture ADRs; design should live in `docs/v2/` (not yet migrated)
 - Interim: gstack cache has stale copies, causing navigation confusion
 
-**Solution:** Create `oramasys/alexandria` as documentation-only, zero-code repository:
+**Solution target state after migration:** Create `oramasys/alexandria` as documentation-only, zero-code repository. Until that migration is complete, the Phase 0 specifications listed above remain canonical in PT.
 
 | Repo | Purpose | Contents | Excludes |
 |---|---|---|---|
@@ -86,7 +86,7 @@ PT/docs/phase-0-specifications/
 
 ### Proposed Directory Structure
 
-```
+```text
 alexandria/
 ├── docs/
 │   ├── adr/                     # ADRs D0–D17+ (migrated from orama-system/docs/v2/)
@@ -133,4 +133,3 @@ alexandria/
   - **Implementation tasks** → PT `docs/plans/` or `docs/phase-0-specifications/`
   - **Architectural decisions** → alexandria (future) or orama-system `docs/v2/`
   - **Session learnings** → Both PT and orama-system `LESSONS.md`
-
