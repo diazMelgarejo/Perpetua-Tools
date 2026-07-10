@@ -1,6 +1,6 @@
 """orchestrator/startup_intelligence.py
 ---------------------------------------
-Startup scenario engine for Perpetua-Tools.
+Startup scenario and fleet mode engine for Perpetua-Tools.
 
 After probing four backends (Mac Ollama, Mac LM Studio, Windows Ollama,
 Windows LM Studio) and checking for a cloud API key, this module encodes
@@ -9,12 +9,17 @@ corresponding fallback chains and routing hints.
 
 This replaces ad-hoc if/else chains in callers with a clean named vocabulary.
 
+Phase 2 addition: FleetMode enum and classify_fleet_mode() for distributed
+peer topology detection (SOLO, PAIR, FLEET).
+
 Public surface:
     StartupScenario       — Enum of the 6 possible startup states
     FallbackChain         — Dataclass carrying ordered backend preferences
     SCENARIO_TABLE        — Mapping from scenario to its FallbackChain
     classify_scenario     — Pure function: bool flags → StartupScenario
     build_routing_hints   — Reads startup_history entries → adaptive hints dict
+    FleetMode             — Enum of peer topology states (Phase 2)
+    classify_fleet_mode   — Pure function: (peers_reachable, cross_reachable) → FleetMode
 """
 from __future__ import annotations
 
@@ -29,6 +34,8 @@ __all__ = [
     "SCENARIO_TABLE",
     "classify_scenario",
     "build_routing_hints",
+    "FleetMode",
+    "classify_fleet_mode",
 ]
 
 
@@ -45,6 +52,20 @@ class StartupScenario(str, Enum):
     MAC_DUAL         = "MAC_DUAL"           # both mac_ok AND mac_lms_ok
     CLOUD_ONLY       = "CLOUD_ONLY"         # no local backends; cloud API key present
     FULLY_OFFLINE    = "FULLY_OFFLINE"      # nothing reachable
+
+
+class FleetMode(str, Enum):
+    """Peer topology classification (Phase 2 — distributed mesh states).
+
+    Describes the reachability and connectivity of the peer fleet to this node:
+        SOLO   — no peer nodes reachable (peers_reachable == 0)
+        PAIR   — 1 peer reachable, or 2+ peers but fragmented (cross-reachability lost)
+        FLEET  — 2+ peers reachable AND cross-reachable (full mesh topology)
+    """
+
+    SOLO = "SOLO"    # No peers reachable
+    PAIR = "PAIR"    # 1 peer, or 2+ peers but not fully cross-reachable
+    FLEET = "FLEET"  # 2+ peers AND cross-reachable
 
 
 # ---------------------------------------------------------------------------
@@ -230,3 +251,50 @@ def build_routing_hints(history: list[dict[str, Any]]) -> dict[str, Any]:
 
     except Exception:  # noqa: BLE001 — never crash callers, always return safe defaults
         return _default
+
+
+# ---------------------------------------------------------------------------
+# classify_fleet_mode (Phase 2)
+# ---------------------------------------------------------------------------
+
+def classify_fleet_mode(
+    peers_reachable: int,
+    cross_reachable: bool,
+) -> FleetMode:
+    """Classify peer fleet topology based on reachability and cross-connectivity.
+
+    Pure function: no side effects, no I/O. Maps observed peer state to one of
+    three fleet modes (SOLO, PAIR, FLEET) used for adaptive degradation behavior.
+
+    Args:
+        peers_reachable: count of peer nodes this node can reach directly (0, 1, 2+).
+        cross_reachable: whether peers can reach each other (forms a mesh).
+                        Only meaningful when peers_reachable >= 2.
+
+    Returns:
+        FleetMode.SOLO:  peers_reachable <= 0 (isolated, no peer connectivity)
+        FleetMode.PAIR:  peers_reachable == 1 (one peer), or
+                        peers_reachable >= 2 but cross_reachable == False (fragmented)
+        FleetMode.FLEET: peers_reachable >= 2 AND cross_reachable == True (full mesh)
+
+    Classification logic (priority order, first match wins):
+      1. peers_reachable <= 0 → SOLO (baseline isolation, including invalid negative counts)
+      2. 1 peer → PAIR (point-to-point link)
+      3. 2+ peers, not cross-reachable → PAIR (fragmented topology, fallback to resilient ops)
+      4. 2+ peers, cross-reachable → FLEET (full mesh, optimal for quorum/consensus)
+
+    Edge cases:
+      • peers_reachable < 0 is invalid; treated as SOLO (safe default)
+      • cross_reachable is ignored when peers_reachable < 2
+      • Ties and exact boundaries are deterministic (no floating-point)
+
+    Reference: 2026-07-08 self-healing mesh plan § 4.1–4.3
+    """
+    if peers_reachable <= 0:
+        return FleetMode.SOLO
+    if peers_reachable == 1:
+        return FleetMode.PAIR
+    # peers_reachable >= 2
+    if cross_reachable:
+        return FleetMode.FLEET
+    return FleetMode.PAIR  # fragmented topology

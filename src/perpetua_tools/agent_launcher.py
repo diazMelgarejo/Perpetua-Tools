@@ -38,6 +38,8 @@ from orchestrator.startup_intelligence import (
     StartupScenario,
     classify_scenario,
     build_routing_hints,
+    FleetMode,
+    classify_fleet_mode,
 )
 from perpetua.discovery.backend import Backend, BackendHealth, BackendKind
 from perpetua.discovery.registry import BackendRegistry
@@ -925,6 +927,14 @@ async def initialize_environment() -> dict:
         "win_ol_latency_ms":  _win_ol_lat,
         "win_lms_latency_ms": _win_lms_lat,
     })
+
+    # ── Step 8: classify fleet mode (Phase 2 — peer topology detection) ─────
+    # Placeholder: peers_reachable defaults to 0 (SOLO) until Phase 3 peer
+    # discovery is implemented. Will be populated by LAN discovery module.
+    _peers_reachable = 0  # TODO: replace with actual peer discovery count
+    _cross_reachable = False  # TODO: replace with actual mesh probe results
+    fleet_mode = classify_fleet_mode(_peers_reachable, _cross_reachable)
+    print(f"[agent_launcher] ✓  fleet mode: {fleet_mode.value}")
 
     return _build_routing_state(
         mac_ok, mac_lms_ok, win_ok, lms_ok, local_models, mac_lms_is_local, local_ips,
