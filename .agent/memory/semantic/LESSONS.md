@@ -560,3 +560,17 @@
 - Researcher GPU backlog after H5: next cycle is preflight/doc spike (h6) on subagent/win-autoresearcher/researcher-backlog-h6 unless Mac drops new hypothesis card  <!-- status=legacy confidence=0.7 evidence=0 id=lesson_legacy_1bb7992e2130 -->
 - coord triple rinse tick: pulse job done, pushed sync  <!-- status=legacy confidence=0.7 evidence=0 id=lesson_legacy_aac9963257dc -->
 - Researcher backlog handoff after H5: Win autoresearcher completes doc-spike preflight (gpu-results-h6-preflight.md), drops to Mac peer, and blocks next GPU harness until Mac researcher fans out a new hypothesis card with falsification criteria  <!-- status=legacy confidence=0.7 evidence=0 id=lesson_legacy_22215380c3c5 -->
+
+## 2026-07-10T11:01:06+00:00 - Cline Instance Map (2026-07-08 Session)
+
+**Lesson ID:** `lesson_d05c151e5302` | Salience: 7.0 | Confidence: 0.95
+
+| # | PID | Process | Caller | Role |
+|---|---|---|---|---|
+| 1 | 51483 | node cline | zsh (terminal) | CLI launcher |
+| 2 | 51484 | .cline main | PID 51483 | Active session (66.8% CPU, 619MB) |
+| 3 | 44584 | .cline --cline-hub-daemon | PID 51484 (auto) | Hub daemon ws://127.0.0.1:25463/hub |
+| 4 | 71165 | cline_mcp_server.mjs | Claude Code 0a13d9d5 | MCP stdio bridge |
+
+Process tree: zsh -> node cline -> .cline -> .cline --cline-hub-daemon; claude --resume -> cline_mcp_server.mjs
+cline-agent allowlisted in openclaw.json but NOT dispatched via gateway. All running ~2h.
