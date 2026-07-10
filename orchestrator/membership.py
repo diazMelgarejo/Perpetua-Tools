@@ -33,6 +33,14 @@ CONFIDENCE_THRESHOLD_DEMOTE = 0.30  # Below this = remove from active_view
 # Witness depth limit (D1 § 2, § 6.0 T6 mitigation)
 MAX_WITNESS_DEPTH = 2
 
+# Chain depth limit for gossip loops (D1 § 6.0 T6 mitigation)
+# chain_depth=0 is direct observation, chain_depth=1 is one hop, chain_depth=2 is two hops
+# Reject observations with chain_depth > MAX_CHAIN_DEPTH to prevent gossip cycles
+MAX_CHAIN_DEPTH = 2
+
+# Heartbeat deadline (D1 § 2.2 for time_to_suspect_ms computation)
+HEARTBEAT_DEADLINE_S = 30  # Seconds until a peer is considered suspect
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # Enums
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -186,6 +194,7 @@ class PeerObservation:
         # Field validation
         self._validate_bounds()
         self._validate_witness_depth()
+        self._validate_chain_depth()
 
         # Deep-freeze mutable inputs
         if self.probe_result is not None:
@@ -234,6 +243,23 @@ class PeerObservation:
             raise ValueError(
                 f"witness_set depth exceeds maximum {MAX_WITNESS_DEPTH}, "
                 f"computed depth: {max_depth}"
+            )
+
+    def _validate_chain_depth(self) -> None:
+        """Validate chain_depth does not exceed MAX_CHAIN_DEPTH (T6 gossip-loop defense).
+
+        Chain depth tracks how many hops this observation has traveled:
+        - chain_depth = 0: direct observation (from target directly)
+        - chain_depth = 1: reported by one peer
+        - chain_depth = 2: reported by peer who got it from another peer
+
+        With MAX_CHAIN_DEPTH = 2, we reject chain_depth > 2 to prevent
+        unbounded gossip loops (D1 § 6.0 T6 mitigation).
+        """
+        if self.chain_depth > MAX_CHAIN_DEPTH:
+            raise ValueError(
+                f"chain_depth exceeds MAX_CHAIN_DEPTH {MAX_CHAIN_DEPTH} "
+                f"(T6 gossip-loop defense), got {self.chain_depth}"
             )
 
     def _compute_witness_depth(self) -> int:
@@ -296,6 +322,36 @@ class PeerObservation:
         # Clamp and round to 2 decimals
         confidence = max(0.0, min(1.0, confidence))
         return round(confidence, 2)
+
+    @property
+    def time_to_suspect_ms(self) -> float:
+        """
+        Compute time remaining until this observation transitions to SUSPECT status.
+
+        Formula (from D1 Iteration-2):
+            time_to_suspect_ms = max(0, (HEARTBEAT_DEADLINE_S - (now - last_heartbeat)) * 1000)
+
+        This is a COMPUTED property, not a stored field. It is recomputed on each read
+        to avoid stale values under clock skew.
+
+        HEARTBEAT_DEADLINE_S = 30 seconds (D1 § 2.2)
+
+        Returns:
+            float: milliseconds until peer should be marked SUSPECT, or 0 if deadline passed
+
+        Returns 0 if:
+        - last_heartbeat_timestamp is None (never succeeded)
+        - Deadline has already passed (now > last_heartbeat + HEARTBEAT_DEADLINE_S)
+        """
+        import time
+
+        if self.last_heartbeat_timestamp is None:
+            return 0.0
+
+        now_s = time.time()
+        deadline_s = self.last_heartbeat_timestamp + HEARTBEAT_DEADLINE_S
+        time_remaining_s = max(0.0, deadline_s - now_s)
+        return time_remaining_s * 1000.0  # Convert to milliseconds
 
     def _compute_witness_multiplier(self) -> float:
         """
@@ -427,4 +483,6 @@ __all__ = [
     "CONFIDENCE_THRESHOLD_PROMOTED",
     "CONFIDENCE_THRESHOLD_DEMOTE",
     "MAX_WITNESS_DEPTH",
+    "MAX_CHAIN_DEPTH",
+    "HEARTBEAT_DEADLINE_S",
 ]
