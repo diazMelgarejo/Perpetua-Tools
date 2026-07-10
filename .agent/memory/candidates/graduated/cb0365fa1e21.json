@@ -1,0 +1,38 @@
+{
+  "id": "cb0365fa1e21",
+  "key": "manual_cb0365",
+  "name": "manual_cb0365",
+  "claim": "Before dispatching a new agent onto a task in a repo with concurrent multi-agent activity, grep the codebase for actual callers of the module being built or extended, not just its own file and tests. Well-tested, spec-compliant modules can pile up with zero real integration if the orchestration layer they are meant to feed only exists as pseudocode in a spec doc.",
+  "conditions": [
+    "integration review standalone modules unwired spec compliant but not integrated"
+  ],
+  "evidence_ids": [
+    "2026-07-10T23:23:00.143571+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-10T23:23:00.143571+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-10T23:23:00.143571+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-10T23:23:00.234945+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-11: reviewed 4 merged Phase 1b security modules (provenance, equivocation, distance_bucket, audit_log) - all individually correct (38+ tests), but only provenance.py had a real caller (witness_quorum.py). The other 3 had zero callers outside their own files. Root cause: StateTransitionManager (the designed integration point per DELIVERABLE-2) only exists as pseudocode, never implemented. Documented in docs/phase-0-specifications/2026-07-11-phase1b-integration-review.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-10T23:23:00.143571+00:00"
+      ],
+      "lessons_sha": "89d657670651"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-10T23:23:00.234930+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-11: reviewed 4 merged Phase 1b security modules (provenance, equivocation, distance_bucket, audit_log) - all individually correct (38+ tests), but only provenance.py had a real caller (witness_quorum.py). The other 3 had zero callers outside their own files. Root cause: StateTransitionManager (the designed integration point per DELIVERABLE-2) only exists as pseudocode, never implemented. Documented in docs/phase-0-specifications/2026-07-11-phase1b-integration-review.md."
+}
