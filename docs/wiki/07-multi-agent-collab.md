@@ -90,7 +90,42 @@ git checkout -b feature/xyz origin/main
 ## Commits
 - `71a15f7` (PT) — fix(health): restore 127.0.0.1 loopback defaults for ollama/lm_studio_host
 
+## Intra-Machine Agent Coordination (added 2026-07-11)
+
+Two Claude Code sessions (this one and a concurrent one in
+`.claude/worktrees/phase-1-impl`) worked the same repo simultaneously this
+session — one on Phase 0/PR review, the other autonomously implementing
+Phase 1.0–1.3.1 and Phase 2/4 of the self-healing-mesh plan. Collision was
+avoided only by manually reading `git log`, `ps aux`, and uncommitted
+`git status` before every dispatch — expensive and error-prone. Fixed with
+`scripts/agent_coordination.py`, which reuses the EXISTING
+`orchestrator/GossipBus` (SQLite FTS5 event log, already intra-machine —
+zero LAN dependency) as a claim/registration board, instead of building new
+infrastructure:
+
+```bash
+# once per session:
+python3 scripts/agent_coordination.py register <agent_id> <agent_type> <model> "<notes>"
+# before starting work on a named task/gap:
+python3 scripts/agent_coordination.py list                    # check for open claims
+python3 scripts/agent_coordination.py claim <agent_id> <task> "<notes>"
+# when done:
+python3 scripts/agent_coordination.py release <agent_id> <task>
+```
+
+Works correctly from any git worktree of the repo with zero new env vars —
+resolves the shared db path via `git rev-parse --git-common-dir` (every
+worktree of the same repo answers with the same path). Claims/registration
+are advisory only (a warning, never a hard block) — this is coordination
+for human-supervised concurrent agent sessions, not a distributed lock.
+
+Rule going forward: **before dispatching a new agent (kimi, cline,
+antigravity, or a Claude Code subagent) onto a named task, run `list` first
+and `claim` before it starts** — cheaper than re-deriving collision state
+from git archaeology every time.
+
 ## Related
 
 - [Session log 2026-04-12](../LESSONS.md#2026-04-12--claude--48-hour-multi-agent-sprint-collaboration-patterns--version-registry)
 - [UTS/06-multi-agent-collab.md](https://github.com/diazMelgarejo/orama-system/blob/main/docs/wiki/06-multi-agent-collab.md)
+- `scripts/agent_coordination.py` — intra-machine claim board (this repo)
