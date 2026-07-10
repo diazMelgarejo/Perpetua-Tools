@@ -1,0 +1,38 @@
+{
+  "id": "77958788207a",
+  "key": "manual_779587",
+  "name": "manual_779587",
+  "claim": "openclaw agent --session-key agent:<id>:<key> requires <id> to already be a REAL, registered agent (openclaw agents list) \u2014 an arbitrary/fictional id (e.g. 'review') fails with 'Agent \"<id>\" no longer exists in configuration'. For a one-off model call without a persistent agent, borrow an EXISTING agent's slot (e.g. agent:main:<ephemeral-key>) with --model as the override; for anything recurring create a real persistent agent via 'openclaw agents add' instead of hand-jq-editing openclaw.json (the live schema uses agentDir/workspace/tools.profile, not the model:{primary} shape an intuitive jq template would produce \u2014 mirrors the existing openclaw-cron-add invariant).",
+  "conditions": [
+    "openclaw agent session-key agents add jq auth per-agent isolated credentials configured catalog"
+  ],
+  "evidence_ids": [
+    "2026-07-10T22:55:18.145268+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-10T22:55:18.145268+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-10T22:55:18.145268+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-10T22:55:18.220235+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-11: hit the session-key rejection trying an ad-hoc 'review' agent id for a design-review call. Also discovered openclaw models list showing a provider as 'configured' in the catalog does NOT mean any given agent's ISOLATED auth store (~/.openclaw/agents/<id>/agent/openclaw-agent.sqlite) actually has credentials for it \u2014 verified creating a real gemini-coder agent bound to google-antigravity/* with zero antigravity credentials in its own store despite the catalog listing it configured. Fixed the openclaw-new-agent canonical skill's Procedure + Gotchas.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-10T22:55:18.145268+00:00"
+      ],
+      "lessons_sha": "34cd8163c24a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-10T22:55:18.220229+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-11: hit the session-key rejection trying an ad-hoc 'review' agent id for a design-review call. Also discovered openclaw models list showing a provider as 'configured' in the catalog does NOT mean any given agent's ISOLATED auth store (~/.openclaw/agents/<id>/agent/openclaw-agent.sqlite) actually has credentials for it \u2014 verified creating a real gemini-coder agent bound to google-antigravity/* with zero antigravity credentials in its own store despite the catalog listing it configured. Fixed the openclaw-new-agent canonical skill's Procedure + Gotchas."
+}
