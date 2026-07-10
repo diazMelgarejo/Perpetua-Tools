@@ -6,6 +6,28 @@
 
 ---
 
+## 2026-07-10 — Checkpoint 1.0 team review + repo grounding | Claude Code
+
+**Session:** Phase 0 blocker fixes + multi-agent orchestration (Codex + Cline + Sonnet-5)
+**Key mistake:** Edited specs from wrong location (gstack cache instead of canonical PT docs)
+**Outcome:** User called out two-repo invariant violation; corrected course; committed fixes
+
+### Critical lessons
+
+35. **Two-repo invariant FIRST** — Before editing architectural specs, ALWAYS run git verification to confirm repo locations. This session edited specs from `~/.gstack/projects/` (gstack cache) instead of canonical `docs/phase-0-specifications/` (PT). User had to prompt correction. Apply two-repo check as FIRST step before multi-repo work.
+
+36. **Orama monorepo structure** — `~/code/oramasys` is a container; the actual orama-system repo is at `~/code/oramasys/oramasys/`. Non-obvious. Document in checklist: `cd ../../oramasys/oramasys/` for orama-system canonical work, NOT `cd ../../oramasys/` alone.
+
+37. **Codex CLI interactive limitation** — Codex needs TTY; piping stdin with `< /dev/null` fails silently. Codex 0.144.1 auth works, but review requires interactive terminal. Defer Codex reviews in non-interactive context (subagent sandbox). Reserve for foreground human sessions.
+
+38. **Token sequencing** — Session burned ~40k tokens before critical-fixes phase. Early token-budget visibility enables ordering fixes by token-cost (T7 fix ~30m vs STM model ~4h). Request budget estimate before sequencing multi-phase work.
+
+39. **Positive: two-repo grounding check** — User-prompted repo verification pattern worked excellently. Reusable pattern: when unsure of canonical location, verify both repos FIRST. Do this before any multi-repo edit.
+
+40. **STM model conflict (spec reconciliation)** — D1 specifies POLLS_TO_CONFIRM=2; D2 specifies PROMOTE_THRESHOLD=2, DEMOTE_THRESHOLD=3. Spec-reconciliation task (design decision + dual-doc update + pseudocode), not implementation task. Resolve conflicts BEFORE Phase 1 scoping.
+
+---
+
 ---
 
 ## 2026-06-29 — Bucket drain + subagent fan-out (operator approved ALL) | Cursor
