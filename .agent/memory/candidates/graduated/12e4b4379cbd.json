@@ -1,0 +1,40 @@
+{
+  "id": "12e4b4379cbd",
+  "key": "manual_12e4b4",
+  "name": "manual_12e4b4",
+  "claim": "The Git repository root for orchestration is orama-system, not the parent OpenClaw directory, and start.sh does not support a --sync flag.",
+  "conditions": [
+    "git repo",
+    "orama-system",
+    "start.sh --sync"
+  ],
+  "evidence_ids": [
+    "2026-07-10T13:40:22.271979+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-10T13:40:22.271979+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-10T13:40:22.271979+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-10T13:40:22.418818+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Git commands run at the OpenClaw root will fail (fatal: not a git repository). Ensure git operations target orama-system or Perpetua-Tools. Additionally, start.sh in orama-system does not accept --sync; use explicit scripts like /ecc-sync or /sync-gbrain for synchronization.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-10T13:40:22.271979+00:00"
+      ],
+      "lessons_sha": "49e3c9c9d1d9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-10T13:40:22.418803+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Git commands run at the OpenClaw root will fail (fatal: not a git repository). Ensure git operations target orama-system or Perpetua-Tools. Additionally, start.sh in orama-system does not accept --sync; use explicit scripts like /ecc-sync or /sync-gbrain for synchronization."
+}
