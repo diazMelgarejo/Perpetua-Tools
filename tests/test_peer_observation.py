@@ -1189,7 +1189,7 @@ class TestCanonicalFixtures:
             obs.proof_score = 0.5
 
     def test_fixture_stale_passive(self):
-        """Fixture 2: Stale passive entry (confidence ≈ 0.15)"""
+        """Fixture 2: Stale passive entry (confidence = 0.00, multiplicative gate)"""
         now = time.time()
         obs = PeerObservation(
             peer_id="win-unknown-peer-9e8d7c6b5a4f3e2d",
@@ -1222,7 +1222,8 @@ class TestCanonicalFixtures:
         )
 
         assert obs.direct_status == DirectStatus.STALE
-        assert obs.compute_confidence() <= 0.15
+        # With proof_score=0, multiplicative gate forces confidence=0 regardless of freshness
+        assert obs.compute_confidence() == 0.0
         # Verify deep-copy of tags
         original_tags = {"tag1", "tag2"}
         obs_tags = PeerObservation(
@@ -1284,7 +1285,9 @@ class TestCanonicalFixtures:
         )
 
         assert obs.proof_score == 0.3
-        assert obs.compute_confidence() < 0.5
+        # witness_disagreement > witness_agreement → multiplier = 0.50
+        # confidence = 0.3 × (0.40 + 0.60×0.7) × 0.50 = 0.3 × 0.82 × 0.50 = 0.123
+        assert obs.compute_confidence() == pytest.approx(0.123, abs=1e-9)
 
     def test_fixture_timeout(self):
         """Fixture 4: Timeout (confidence ≈ 0.10)"""

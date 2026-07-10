@@ -1,7 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Skill(context-restore)"
+      "Skill(context-restore)",
+      "Bash(python3 -m pytest tests/test_peer_record_update_loop.py -v --tb=short)",
+      "Bash(python -m pytest tests/test_peer_observation.py -v --tb=short)",
+      "Bash(python3 -m pytest tests/test_peer_observation.py -v --tb=short)",
+      "Bash(python3 -m pytest tests/test_peer_observation.py --collect-only -q)",
+      "Bash(python3 -m pytest tests/test_peer_observation.py -v)",
+      "Bash(git *)",
+      "Bash(python *)",
+      "Bash(python3 *)"
     ]
   }
 }
