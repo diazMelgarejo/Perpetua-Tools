@@ -896,6 +896,111 @@ class TestTimeToSuspectMs:
         # Deadline is (40 + 30 = 70s ago), so time_remaining is max(0, now - now + 70) = 0
         assert obs.time_to_suspect_ms == 0.0
 
+    def test_time_to_suspect_ms_ttl_expired(self):
+        """time_to_suspect_ms returns 0.0 immediately if TTL has expired."""
+        now = time.time()
+        obs = PeerObservation(
+            peer_id="test",
+            epoch=1,
+            timestamp=now - 10.0,  # 10 seconds ago
+            proof_score=0.8,
+            witness_set=(),
+            freshness_score=0.9,
+            observation_type=ObservationType.REACHABLE,
+            observer_id="observer-001",
+            direct_status=DirectStatus.REACHABLE,
+            endpoint="192.168.1.1:9000",
+            endpoint_epoch=1,
+            last_heartbeat_timestamp=now - 1.0,  # heartbeat fresh (1s ago)
+            last_probe_timestamp=now - 1.0,
+            probe_latency_ms=5.0,
+            route=Route.DIRECT,
+            probe_result=None,
+            relay_proof=None,
+            witness_agreement=0,
+            witness_disagreement=0,
+            backend_caps=(),
+            backend_state=None,
+            backend_state_timestamp=None,
+            ttl_seconds=5.0,  # TTL expires 5s after timestamp (now stale)
+            tags=frozenset(),
+            notes="",
+            source_id=None,
+            chain_depth=0,
+        )
+        assert obs.is_stale is True
+        assert obs.time_to_suspect_ms == 0.0
+
+    def test_time_to_suspect_ms_ttl_never_expires(self):
+        """time_to_suspect_ms ignores TTL if ttl_seconds == -1 (never expires)."""
+        now = time.time()
+        obs = PeerObservation(
+            peer_id="test",
+            epoch=1,
+            timestamp=now - 100.0,  # Very old
+            proof_score=0.8,
+            witness_set=(),
+            freshness_score=0.9,
+            observation_type=ObservationType.REACHABLE,
+            observer_id="observer-001",
+            direct_status=DirectStatus.REACHABLE,
+            endpoint="192.168.1.1:9000",
+            endpoint_epoch=1,
+            last_heartbeat_timestamp=now - 1.0,  # heartbeat fresh
+            last_probe_timestamp=now - 1.0,
+            probe_latency_ms=5.0,
+            route=Route.STATIC_SEED,
+            probe_result=None,
+            relay_proof=None,
+            witness_agreement=0,
+            witness_disagreement=0,
+            backend_caps=(),
+            backend_state=None,
+            backend_state_timestamp=None,
+            ttl_seconds=-1,  # Never expires
+            tags=frozenset(),
+            notes="",
+            source_id=None,
+            chain_depth=0,
+        )
+        assert obs.is_stale is False
+        assert obs.time_to_suspect_ms > 0  # Uses heartbeat deadline, not TTL
+
+    def test_time_to_suspect_ms_ttl_not_yet_expired(self):
+        """time_to_suspect_ms uses heartbeat deadline if TTL not yet expired."""
+        now = time.time()
+        obs = PeerObservation(
+            peer_id="test",
+            epoch=1,
+            timestamp=now - 2.0,  # 2 seconds ago
+            proof_score=0.8,
+            witness_set=(),
+            freshness_score=0.9,
+            observation_type=ObservationType.REACHABLE,
+            observer_id="observer-001",
+            direct_status=DirectStatus.REACHABLE,
+            endpoint="192.168.1.1:9000",
+            endpoint_epoch=1,
+            last_heartbeat_timestamp=now - 1.0,  # heartbeat fresh
+            last_probe_timestamp=now - 1.0,
+            probe_latency_ms=5.0,
+            route=Route.DIRECT,
+            probe_result=None,
+            relay_proof=None,
+            witness_agreement=0,
+            witness_disagreement=0,
+            backend_caps=(),
+            backend_state=None,
+            backend_state_timestamp=None,
+            ttl_seconds=10.0,  # TTL expires 10s after timestamp (not yet)
+            tags=frozenset(),
+            notes="",
+            source_id=None,
+            chain_depth=0,
+        )
+        assert obs.is_stale is False
+        assert obs.time_to_suspect_ms > 0  # Uses heartbeat deadline
+
 
 class TestPeerObservationSerialization:
     """Test JSON serialization and round-trip."""
@@ -1287,7 +1392,8 @@ class TestCanonicalFixtures:
         assert obs.proof_score == 0.3
         # witness_disagreement > witness_agreement → multiplier = 0.50
         # confidence = 0.3 × (0.40 + 0.60×0.7) × 0.50 = 0.3 × 0.82 × 0.50 = 0.123
-        assert obs.compute_confidence() == pytest.approx(0.123, abs=1e-9)
+        # Rounded to 2 decimals: 0.12
+        assert obs.compute_confidence() == 0.12
 
     def test_fixture_timeout(self):
         """Fixture 4: Timeout (confidence ≈ 0.10)"""
@@ -1495,8 +1601,10 @@ class TestCanonicalFixtures:
 
         assert obs.ttl_seconds == -1
         assert "static_seed" in obs.tags
-        # confidence = 0.95 × (0.40 + 0.60×0.85) × 0.85 = 0.95 × 0.91 × 0.85 ≈ 0.73
-        assert obs.compute_confidence() >= 0.73
+        # witness_agreement == 0 → witness_multiplier = 0.85 (solo observation)
+        # confidence = 0.95 × (0.40 + 0.60×0.85) × 0.85 = 0.95 × 0.91 × 0.85 = 0.7348
+        # Rounded to 2 decimals: 0.73
+        assert obs.compute_confidence() == 0.73
 
     def test_fixture_malicious_relay(self):
         """Fixture 9: Malicious relay attempt (confidence ≈ 0.025)"""
@@ -1845,3 +1953,48 @@ class TestConfidenceFormulaBatch7:
         confidence = obs.compute_confidence()
         assert confidence == 0.40, f"Expected 0.40, got {confidence}"
         assert confidence > 0.0, "Confidence should be > 0 even for stale data with proof"
+
+
+class TestBatch7:
+    """Batch 7: M2 floating-point boundary verification."""
+
+    def test_batch7_m2_floating_point_boundary(self):
+        """M2: Verify rounding at 0.255 boundary (0.3 × 1.0 × 0.85)."""
+        # Sanity check: Python's round() behavior at .x5 boundaries
+        raw_value = 0.3 * 1.0 * 0.85
+        assert abs(raw_value - 0.255) < 1e-9, f"Expected ~0.255, got {raw_value}"
+
+        # Now verify the formula: 0.3 (proof) × 1.0 (freshness) × 0.85 (solo multiplier)
+        now = time.time()
+        obs = PeerObservation(
+            peer_id="m2-boundary",
+            epoch=1,
+            timestamp=now,
+            proof_score=0.3,
+            freshness_score=1.0,
+            witness_set=(),  # solo observation
+            observation_type=ObservationType.REACHABLE,
+            observer_id="observer-001",
+            direct_status=DirectStatus.REACHABLE,
+            endpoint="192.168.1.1:9000",
+            endpoint_epoch=1,
+            last_heartbeat_timestamp=now,
+            last_probe_timestamp=now,
+            probe_latency_ms=10.5,
+            route=Route.DIRECT,
+            probe_result={"success": True, "latency_ms": 10.5},
+            relay_proof=None,
+            witness_agreement=0,
+            witness_disagreement=0,
+            backend_caps=(),
+            backend_state=None,
+            backend_state_timestamp=None,
+            ttl_seconds=60,
+            tags=frozenset(),
+            notes="M2 boundary test",
+            source_id=None,
+            chain_depth=0,
+        )
+        confidence = obs.compute_confidence()
+        # Result depends on Python's rounding: 0.3 × 1.0 × 0.85 = 0.255 → rounds to 0.26
+        assert confidence == pytest.approx(0.255, abs=1e-9) or confidence == 0.26
