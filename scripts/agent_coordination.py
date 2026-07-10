@@ -40,10 +40,15 @@ Usage:
     # Legacy claim/release API (still supported)
     python3 scripts/agent_coordination.py register <agent_id> <agent_type> [model] [notes]
     python3 scripts/agent_coordination.py agents
-    python3 scripts/agent_coordination.py claim <agent_id> <task_name> [notes]
+    python3 scripts/agent_coordination.py claim <agent_id> <task_name> [notes] [--seq N]
     python3 scripts/agent_coordination.py release <agent_id> <task_name>
     python3 scripts/agent_coordination.py list [task_name]
     python3 scripts/agent_coordination.py log <agent_id> <message>
+
+    # Reorder buffer (Phase 1.3.2) — out-of-order claim buffering
+    python3 scripts/agent_coordination.py claim <agent_id> <task_name> [notes] --seq <N>
+    python3 scripts/agent_coordination.py buffer status [--agent <agent_id>]
+    python3 scripts/agent_coordination.py buffer drain <agent_id>
 
     # New queue API
     python3 scripts/agent_coordination.py queue add <task_name> <phase> [--priority critical|high|normal|low] [--notes "..."] [--depends-on task_id,...]
@@ -82,6 +87,113 @@ from typing import Optional
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from orchestrator.gossip_bus import GossipBus  # noqa: E402
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Reorder Buffer & Watermark (Phase 1.3.2)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@dataclass
+class ClaimSequence:
+    """Represents an ordered claim event with sequence number."""
+    agent_id: str
+    claim_num: int
+    task: str
+    timestamp: float
+    notes: str = ""
+    worktree: str = ""
+
+    def to_payload(self) -> dict:
+        """Convert to JSON-serializable payload for GossipBus."""
+        return {
+            "kind": "claim_sequence",
+            "agent_id": self.agent_id,
+            "claim_num": self.claim_num,
+            "task": self.task,
+            "timestamp": self.timestamp,
+            "notes": self.notes,
+            "worktree": self.worktree,
+        }
+
+    @classmethod
+    def from_payload(cls, payload: dict) -> "ClaimSequence":
+        """Reconstruct ClaimSequence from GossipBus payload."""
+        return cls(
+            agent_id=payload["agent_id"],
+            claim_num=payload["claim_num"],
+            task=payload["task"],
+            timestamp=payload["timestamp"],
+            notes=payload.get("notes", ""),
+            worktree=payload.get("worktree", ""),
+        )
+
+
+@dataclass
+class ReorderBuffer:
+    """Manages per-agent reorder buffering for out-of-order claims."""
+    agent_id: str
+    buffer: dict[int, ClaimSequence] = field(default_factory=dict)
+    watermark: int = 0  # Next expected sequence number
+
+    def add_claim(self, claim: ClaimSequence) -> tuple[list[ClaimSequence], int]:
+        """
+        Add a claim to the buffer; return (emitted_claims, new_watermark).
+
+        When claim N arrives:
+        - If N == watermark: emit N, then check buffer for N+1, N+2, etc.
+        - If N > watermark: buffer N (gap exists)
+        - If N < watermark: silently drop (already emitted)
+
+        Returns:
+          - list of claims ready to emit (in order from watermark)
+          - new watermark value
+        """
+        if claim.claim_num < self.watermark:
+            # Already emitted, silently drop
+            return ([], self.watermark)
+
+        if claim.claim_num == self.watermark:
+            # Claim matches watermark: emit immediately and advance
+            emitted = [claim]
+            new_watermark = self.watermark + 1
+
+            # Check buffer for consecutive claims
+            while new_watermark in self.buffer:
+                emitted.append(self.buffer.pop(new_watermark))
+                new_watermark += 1
+
+            self.watermark = new_watermark
+            return (emitted, new_watermark)
+        else:
+            # claim.claim_num > watermark: buffer the claim (gap exists)
+            self.buffer[claim.claim_num] = claim
+            return ([], self.watermark)
+
+    def drain(self) -> tuple[list[ClaimSequence], int]:
+        """
+        Force-drain all buffered claims (advance watermark to max seen + 1).
+        Used when buffer timeout expires or explicit drain command issued.
+        """
+        if not self.buffer:
+            return ([], self.watermark)
+
+        max_seen = max(self.buffer.keys())
+        emitted = []
+        for seq_num in sorted(self.buffer.keys()):
+            emitted.append(self.buffer.pop(seq_num))
+
+        self.watermark = max_seen + 1
+        return (emitted, self.watermark)
+
+    def status(self) -> dict:
+        """Return buffer status as dict."""
+        return {
+            "agent_id": self.agent_id,
+            "watermark": self.watermark,
+            "buffered_count": len(self.buffer),
+            "buffered_seqs": sorted(self.buffer.keys()),
+        }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -549,6 +661,132 @@ async def _detect_blockers(
     return blocking
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Reorder Buffer Management Functions (Phase 1.3.2)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+async def _get_reorder_buffers(bus: GossipBus) -> dict[str, ReorderBuffer]:
+    """Reconstruct all per-agent reorder buffers from GossipBus event log."""
+    events = await bus.tail(limit=1000, event_type="heartbeat")
+    buffers: dict[str, ReorderBuffer] = {}
+
+    for ev in events:
+        p = ev["payload"]
+        if p.get("kind") != "claim_sequence":
+            continue
+
+        agent_id = p.get("agent_id")
+        if agent_id not in buffers:
+            buffers[agent_id] = ReorderBuffer(agent_id=agent_id)
+
+        claim = ClaimSequence.from_payload(p)
+        buffers[agent_id].add_claim(claim)
+
+    return buffers
+
+
+async def _claim_with_seq(
+    bus: GossipBus, agent_id: str, seq_num: int, task: str, notes: str
+) -> None:
+    """Emit a claim with sequence number; reorder buffer processes it."""
+    # Get pre-emit buffer state
+    buffers_before = await _get_reorder_buffers(bus)
+    watermark_before = buffers_before.get(agent_id, ReorderBuffer(agent_id)).watermark
+
+    claim = ClaimSequence(
+        agent_id=agent_id,
+        claim_num=seq_num,
+        task=task,
+        timestamp=time.time(),
+        notes=notes,
+        worktree=current_worktree_label(),
+    )
+
+    # Emit to bus
+    await bus.emit("heartbeat", claim.to_payload())
+
+    # Reconstruct buffer state from ALL events in bus (including the one we just emitted)
+    buffers_after = await _get_reorder_buffers(bus)
+    buffer_after = buffers_after.get(agent_id, ReorderBuffer(agent_id))
+    watermark_after = buffer_after.watermark
+
+    # Determine status based on watermark advancement
+    if watermark_after > seq_num:
+        # Claim was processed (emitted)
+        num_emitted = watermark_after - watermark_before
+        print(
+            f"claimed (seq {seq_num}): {task} by {agent_id} "
+            f"(watermark now {watermark_after}, emitted {num_emitted} claim(s))"
+        )
+    elif seq_num in buffer_after.buffer:
+        # Claim is buffered
+        status = buffer_after.status()
+        print(
+            f"buffered (seq {seq_num}): {task} by {agent_id} "
+            f"(watermark {watermark_after}, buffered seqs: {status['buffered_seqs']})"
+        )
+    else:
+        # Shouldn't happen, but handle it
+        print(
+            f"claimed (seq {seq_num}): {task} by {agent_id} "
+            f"(watermark now {watermark_after})"
+        )
+
+
+async def _buffer_status(bus: GossipBus, agent_filter: Optional[str] = None) -> None:
+    """Show reorder buffer status for all or specified agents."""
+    buffers = await _get_reorder_buffers(bus)
+    if not buffers:
+        print("no buffer state found")
+        return
+
+    print("\n=== Reorder Buffer Status ===")
+    for agent_id in sorted(buffers.keys()):
+        if agent_filter and agent_id != agent_filter:
+            continue
+        status = buffers[agent_id].status()
+        print(
+            f"\n{agent_id}:"
+            f"  watermark={status['watermark']}"
+            f"  buffered={status['buffered_count']}"
+        )
+        if status['buffered_seqs']:
+            print(f"  buffered_seqs: {status['buffered_seqs']}")
+
+
+async def _buffer_drain(bus: GossipBus, agent_id: str) -> None:
+    """Force-drain buffered claims for an agent (emit all held claims)."""
+    buffers = await _get_reorder_buffers(bus)
+    if agent_id not in buffers:
+        print(f"ERROR: no buffer state for agent {agent_id}")
+        return
+
+    buffer = buffers[agent_id]
+    if not buffer.buffer:
+        print(f"buffer for {agent_id} is already empty (watermark {buffer.watermark})")
+        return
+
+    emitted, new_watermark = buffer.drain()
+    print(
+        f"drained: {agent_id} ({len(emitted)} claims) "
+        f"→ watermark {buffer.watermark} to {new_watermark}"
+    )
+    for claim in emitted:
+        print(f"  - seq {claim.claim_num}: {claim.task}")
+
+    # Emit a drain marker to the bus for audit
+    await bus.emit(
+        "heartbeat",
+        {
+            "kind": "buffer_drained",
+            "agent_id": agent_id,
+            "emitted_count": len(emitted),
+            "new_watermark": new_watermark,
+        },
+    )
+
+
 async def _workflow_critical_path(bus: GossipBus) -> None:
     """Show critical path (longest dependency chain) and ETA."""
     phases = await _all_phase_states(bus)
@@ -870,6 +1108,18 @@ async def _amain(args: argparse.Namespace) -> None:
     elif args.cmd == "workflow":
         if args.subcmd == "critical-path":
             await _workflow_critical_path(bus)
+    elif args.cmd == "buffer":
+        if args.subcmd == "status":
+            await _buffer_status(bus, args.agent)
+        elif args.subcmd == "drain":
+            await _buffer_drain(bus, args.agent_id)
+    elif args.cmd == "claim":
+        if hasattr(args, "seq") and args.seq is not None:
+            # New claim with sequence number (Phase 1.3.2)
+            await _claim_with_seq(bus, args.agent_id, args.seq, args.task, args.notes or "")
+        else:
+            # Legacy claim without sequence number
+            await _claim(bus, args.agent_id, args.task, args.notes or "")
 
 
 def main() -> int:
@@ -885,10 +1135,14 @@ def main() -> int:
 
     sub.add_parser("agents")
 
-    p_claim = sub.add_parser("claim")
+    p_claim = sub.add_parser("claim", help="Claim a task (legacy or with sequence number)")
     p_claim.add_argument("agent_id")
     p_claim.add_argument("task")
     p_claim.add_argument("notes", nargs="?", default="")
+    p_claim.add_argument(
+        "--seq", type=int, default=None,
+        help="Sequence number for out-of-order claim buffering (Phase 1.3.2)"
+    )
 
     p_release = sub.add_parser("release")
     p_release.add_argument("agent_id")
@@ -935,6 +1189,16 @@ def main() -> int:
     p_workflow = sub.add_parser("workflow", help="Workflow analysis")
     workflow_sub = p_workflow.add_subparsers(dest="subcmd", required=True)
     workflow_sub.add_parser("critical-path", help="Show critical path and ETA")
+
+    # Reorder buffer management (Phase 1.3.2)
+    p_buffer = sub.add_parser("buffer", help="Manage reorder buffers for out-of-order claims")
+    buffer_sub = p_buffer.add_subparsers(dest="subcmd", required=True)
+
+    p_buffer_status = buffer_sub.add_parser("status", help="Show reorder buffer status")
+    p_buffer_status.add_argument("--agent", default=None, help="Filter by agent ID")
+
+    p_buffer_drain = buffer_sub.add_parser("drain", help="Force-drain buffered claims")
+    p_buffer_drain.add_argument("agent_id", help="Agent ID to drain")
 
     args = ap.parse_args()
     asyncio.run(_amain(args))
