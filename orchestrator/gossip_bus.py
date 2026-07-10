@@ -136,7 +136,14 @@ def _sanitize_fts_query(query: str) -> str:
 # ---------------------------------------------------------------------------
 # GossipBus
 # ---------------------------------------------------------------------------
-EventType = Literal["dispatch", "route", "result", "error", "heartbeat"]
+EventType = Literal[
+    "dispatch",
+    "route",
+    "result",
+    "error",
+    "heartbeat",
+    "fleet_topology_transition",  # Phase 4: topology change events
+]
 
 
 class GossipBus:
