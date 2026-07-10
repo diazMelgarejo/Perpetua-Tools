@@ -60,8 +60,14 @@ def xor_distance(id_a: str, id_b: str) -> int:
     Properties:
         - ``xor_distance(a, a) == 0``
         - ``xor_distance(a, b) == xor_distance(b, a)`` (symmetric)
-        - ``xor_distance(a, b) ^ xor_distance(b, c) >= xor_distance(a, c)``
-          (the XOR metric forms a valid ultrametric over the keyspace)
+        - ``xor_distance(a, b) ^ xor_distance(b, c) == xor_distance(a, c)``
+          (an exact identity, not merely an inequality — XOR is
+          associative/self-inverse, so combining two hop distances via XOR
+          always reconstructs the direct distance)
+        - ``xor_distance(a, c) <= max(xor_distance(a, b), xor_distance(b, c))``
+          (the real triangle-inequality analogue: XOR forms a non-archimedean
+          "ultrametric" over the keyspace, same structure Kademlia relies on
+          for its routing-table correctness)
 
     Sybil-defense rationale:
         Correlated Sybil identities (sequentially generated keys, keys sharing
