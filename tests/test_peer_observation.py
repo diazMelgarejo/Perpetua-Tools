@@ -115,6 +115,60 @@ class TestPeerObservationImmutability:
         assert obs.tags == frozenset(["tag1", "tag2"])
         assert obs.backend_caps == ("ollama", "lmstudio")
 
+    def test_probe_result_dict_deep_copied(self):
+        """GIVEN: mutable dict probe_result WHEN: passed to constructor
+        THEN: deep-copy on init prevents mutations to original from affecting obs."""
+
+        now = time.time()
+        probe_result_original = {
+            "success": True,
+            "latency_ms": 12.5,
+            "heartbeat_received": {
+                "node_id": "peer-123",
+                "endpoint": "192.168.1.1:9000",
+                "timestamp": now,
+                "signature": "sig-abc123",
+            }
+        }
+
+        obs = PeerObservation(
+            peer_id="peer-001",
+            epoch=1,
+            timestamp=now,
+            proof_score=0.9,
+            witness_set=(),
+            freshness_score=0.95,
+            observation_type=ObservationType.REACHABLE,
+            observer_id="observer-001",
+            direct_status=DirectStatus.REACHABLE,
+            endpoint="192.168.1.1:9000",
+            endpoint_epoch=1,
+            last_heartbeat_timestamp=now,
+            last_probe_timestamp=now,
+            probe_latency_ms=12.5,
+            route=Route.DIRECT,
+            probe_result=probe_result_original,
+            relay_proof=None,
+            witness_agreement=0,
+            witness_disagreement=0,
+            backend_caps=(),
+            backend_state=None,
+            backend_state_timestamp=None,
+            ttl_seconds=60,
+            tags=frozenset(),
+            notes="",
+            source_id=None,
+            chain_depth=0,
+        )
+
+        # Mutate original probe_result
+        probe_result_original["latency_ms"] = 999
+        probe_result_original["heartbeat_received"]["signature"] = "forged-sig"
+
+        # Object should be unchanged
+        assert obs.probe_result["latency_ms"] == 12.5
+        assert obs.probe_result["heartbeat_received"]["signature"] == "sig-abc123"
+
 
 class TestPeerObservationBounds:
     """Test field value bounds and validations."""
@@ -558,6 +612,291 @@ class TestPeerObservationWitnessDepth:
             )
 
 
+class TestChainDepthValidation:
+    """Test chain_depth limits for T6 gossip-loop defense (MAX_CHAIN_DEPTH=2)."""
+
+    def test_chain_depth_zero_direct_observation(self):
+        """GIVEN: chain_depth=0 (direct observation) THEN: accepted."""
+        obs = PeerObservation(
+            peer_id="peer-001",
+            epoch=1,
+            timestamp=time.time(),
+            proof_score=0.8,
+            witness_set=(),
+            freshness_score=0.9,
+            observation_type=ObservationType.REACHABLE,
+            observer_id="observer-001",
+            direct_status=DirectStatus.REACHABLE,
+            endpoint="192.168.1.1:9000",
+            endpoint_epoch=1,
+            last_heartbeat_timestamp=None,
+            last_probe_timestamp=None,
+            probe_latency_ms=None,
+            route=Route.DIRECT,
+            probe_result=None,
+            relay_proof=None,
+            witness_agreement=0,
+            witness_disagreement=0,
+            backend_caps=(),
+            backend_state=None,
+            backend_state_timestamp=None,
+            ttl_seconds=60,
+            tags=frozenset(),
+            notes="",
+            source_id=None,
+            chain_depth=0,
+        )
+        assert obs.chain_depth == 0
+
+    def test_chain_depth_one_relay(self):
+        """GIVEN: chain_depth=1 (relayed once) THEN: accepted."""
+        obs = PeerObservation(
+            peer_id="peer-001",
+            epoch=1,
+            timestamp=time.time(),
+            proof_score=0.5,
+            witness_set=(),
+            freshness_score=0.7,
+            observation_type=ObservationType.REACHABLE,
+            observer_id="observer-001",
+            direct_status=DirectStatus.REACHABLE,
+            endpoint="192.168.1.1:9000",
+            endpoint_epoch=1,
+            last_heartbeat_timestamp=None,
+            last_probe_timestamp=None,
+            probe_latency_ms=None,
+            route=Route.RELAY,
+            probe_result=None,
+            relay_proof=None,
+            witness_agreement=0,
+            witness_disagreement=0,
+            backend_caps=(),
+            backend_state=None,
+            backend_state_timestamp=None,
+            ttl_seconds=60,
+            tags=frozenset(),
+            notes="",
+            source_id="reporter-001",
+            chain_depth=1,
+        )
+        assert obs.chain_depth == 1
+
+    def test_chain_depth_two_relay_of_relay(self):
+        """GIVEN: chain_depth=2 (relay of relay) THEN: accepted."""
+        obs = PeerObservation(
+            peer_id="peer-001",
+            epoch=1,
+            timestamp=time.time(),
+            proof_score=0.3,
+            witness_set=(),
+            freshness_score=0.5,
+            observation_type=ObservationType.UNREACHABLE,
+            observer_id="observer-001",
+            direct_status=DirectStatus.UNKNOWN,
+            endpoint="192.168.1.1:9000",
+            endpoint_epoch=1,
+            last_heartbeat_timestamp=None,
+            last_probe_timestamp=None,
+            probe_latency_ms=None,
+            route=Route.RELAY,
+            probe_result=None,
+            relay_proof=None,
+            witness_agreement=0,
+            witness_disagreement=0,
+            backend_caps=(),
+            backend_state=None,
+            backend_state_timestamp=None,
+            ttl_seconds=60,
+            tags=frozenset(),
+            notes="",
+            source_id="reporter-002",
+            chain_depth=2,
+        )
+        assert obs.chain_depth == 2
+
+    def test_chain_depth_exceeds_max_rejected(self):
+        """GIVEN: chain_depth > MAX_CHAIN_DEPTH (2) THEN: ValueError raised.
+
+        This enforces T6 gossip-loop defense: reject observations with chain_depth > 2
+        to prevent unbounded gossip cycles.
+        """
+        with pytest.raises(ValueError, match="chain_depth exceeds MAX_CHAIN_DEPTH"):
+            PeerObservation(
+                peer_id="peer-001",
+                epoch=1,
+                timestamp=time.time(),
+                proof_score=0.2,
+                witness_set=(),
+                freshness_score=0.4,
+                observation_type=ObservationType.UNREACHABLE,
+                observer_id="observer-001",
+                direct_status=DirectStatus.UNKNOWN,
+                endpoint="192.168.1.1:9000",
+                endpoint_epoch=1,
+                last_heartbeat_timestamp=None,
+                last_probe_timestamp=None,
+                probe_latency_ms=None,
+                route=Route.RELAY,
+                probe_result=None,
+                relay_proof=None,
+                witness_agreement=0,
+                witness_disagreement=0,
+                backend_caps=(),
+                backend_state=None,
+                backend_state_timestamp=None,
+                ttl_seconds=60,
+                tags=frozenset(),
+                notes="",
+                source_id="reporter-003",
+                chain_depth=3,  # EXCEEDS MAX_CHAIN_DEPTH=2
+            )
+
+    def test_chain_depth_far_exceeds_max_rejected(self):
+        """GIVEN: chain_depth=10 THEN: ValueError raised."""
+        with pytest.raises(ValueError, match="chain_depth exceeds MAX_CHAIN_DEPTH"):
+            PeerObservation(
+                peer_id="peer-001",
+                epoch=1,
+                timestamp=time.time(),
+                proof_score=0.1,
+                witness_set=(),
+                freshness_score=0.2,
+                observation_type=ObservationType.UNREACHABLE,
+                observer_id="observer-001",
+                direct_status=DirectStatus.UNKNOWN,
+                endpoint="192.168.1.1:9000",
+                endpoint_epoch=1,
+                last_heartbeat_timestamp=None,
+                last_probe_timestamp=None,
+                probe_latency_ms=None,
+                route=Route.RELAY,
+                probe_result=None,
+                relay_proof=None,
+                witness_agreement=0,
+                witness_disagreement=0,
+                backend_caps=(),
+                backend_state=None,
+                backend_state_timestamp=None,
+                ttl_seconds=60,
+                tags=frozenset(),
+                notes="",
+                source_id="reporter-deep",
+                chain_depth=10,  # Far exceeds MAX_CHAIN_DEPTH=2
+            )
+
+
+class TestTimeToSuspectMs:
+    """Test time_to_suspect_ms @property (computed, not stored)."""
+
+    def test_time_to_suspect_ms_none_heartbeat(self):
+        """GIVEN: last_heartbeat_timestamp is None THEN: returns 0.0."""
+        obs = PeerObservation(
+            peer_id="peer-001",
+            epoch=1,
+            timestamp=time.time(),
+            proof_score=0.5,
+            witness_set=(),
+            freshness_score=0.5,
+            observation_type=ObservationType.UNREACHABLE,
+            observer_id="observer-001",
+            direct_status=DirectStatus.TIMEOUT,
+            endpoint="192.168.1.1:9000",
+            endpoint_epoch=1,
+            last_heartbeat_timestamp=None,  # Never succeeded
+            last_probe_timestamp=None,
+            probe_latency_ms=None,
+            route=Route.DIRECT,
+            probe_result=None,
+            relay_proof=None,
+            witness_agreement=0,
+            witness_disagreement=0,
+            backend_caps=(),
+            backend_state=None,
+            backend_state_timestamp=None,
+            ttl_seconds=60,
+            tags=frozenset(),
+            notes="",
+            source_id=None,
+            chain_depth=0,
+        )
+        assert obs.time_to_suspect_ms == 0.0
+
+    def test_time_to_suspect_ms_recent_heartbeat(self):
+        """GIVEN: recent last_heartbeat_timestamp THEN: returns time remaining (>0)."""
+        now = time.time()
+        obs = PeerObservation(
+            peer_id="peer-001",
+            epoch=1,
+            timestamp=now,
+            proof_score=0.9,
+            witness_set=(),
+            freshness_score=0.95,
+            observation_type=ObservationType.REACHABLE,
+            observer_id="observer-001",
+            direct_status=DirectStatus.REACHABLE,
+            endpoint="192.168.1.1:9000",
+            endpoint_epoch=1,
+            last_heartbeat_timestamp=now,  # Just now
+            last_probe_timestamp=now,
+            probe_latency_ms=5.0,
+            route=Route.DIRECT,
+            probe_result=None,
+            relay_proof=None,
+            witness_agreement=0,
+            witness_disagreement=0,
+            backend_caps=(),
+            backend_state=None,
+            backend_state_timestamp=None,
+            ttl_seconds=60,
+            tags=frozenset(),
+            notes="",
+            source_id=None,
+            chain_depth=0,
+        )
+
+        time_to_suspect = obs.time_to_suspect_ms
+        # Should be close to 30000ms (30 seconds), with small tolerance for execution time
+        assert 29000 < time_to_suspect <= 30000
+
+    def test_time_to_suspect_ms_past_deadline(self):
+        """GIVEN: heartbeat is 40 seconds old (past 30s deadline) THEN: returns 0.0."""
+        now = time.time()
+        old_heartbeat = now - 40  # 40 seconds ago (past the 30s deadline)
+
+        obs = PeerObservation(
+            peer_id="peer-001",
+            epoch=1,
+            timestamp=now,
+            proof_score=0.5,
+            witness_set=(),
+            freshness_score=0.2,
+            observation_type=ObservationType.UNREACHABLE,
+            observer_id="observer-001",
+            direct_status=DirectStatus.STALE,
+            endpoint="192.168.1.1:9000",
+            endpoint_epoch=1,
+            last_heartbeat_timestamp=old_heartbeat,
+            last_probe_timestamp=old_heartbeat,
+            probe_latency_ms=10.0,
+            route=Route.DIRECT,
+            probe_result=None,
+            relay_proof=None,
+            witness_agreement=0,
+            witness_disagreement=0,
+            backend_caps=(),
+            backend_state=None,
+            backend_state_timestamp=None,
+            ttl_seconds=60,
+            tags=frozenset(),
+            notes="",
+            source_id=None,
+            chain_depth=0,
+        )
+
+        # Deadline is (40 + 30 = 70s ago), so time_remaining is max(0, now - now + 70) = 0
+        assert obs.time_to_suspect_ms == 0.0
+
+
 class TestPeerObservationSerialization:
     """Test JSON serialization and round-trip."""
 
@@ -779,6 +1118,474 @@ class TestPeerObservationIntegration:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # TDD BATCH 7: Confidence Formula Tests (M1–M5)
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+class TestCanonicalFixtures:
+    """
+    Checkpoint 1.0 Gate: All 10 canonical fixtures from peer_observation_tdd.md § 2
+    must instantiate without error, with immutability enforced and deep-copy verified.
+
+    These fixtures cover all threat scenarios and confidence levels:
+    1. FRESH_DIRECT - High confidence direct connection
+    2. STALE_PASSIVE - Very low confidence, aged entry
+    3. UNVERIFIED_RELAY - Relay claim without proof
+    4. TIMEOUT - No response, zero confidence
+    5. IP_MIGRATED - Superseded observation, epoch mismatch
+    6. WITNESS_AGREEMENT - Multiple observers agree (consensus)
+    7. WITNESS_DISAGREEMENT - Observers disagree (partition suspect)
+    8. STATIC_SEED - From config, no expiry
+    9. MALICIOUS_RELAY - Forged relay attempt
+    10. DEGRADED_LINK - Reachable but slow
+    """
+
+    def test_fixture_fresh_direct(self):
+        """Fixture 1: Fresh direct connection (confidence ≈ 0.95)"""
+        now = time.time()
+        obs = PeerObservation(
+            peer_id="win-rtx5080-c4d8e2f1a3b7c9d5",
+            epoch=2,
+            timestamp=now,
+            proof_score=1.0,
+            freshness_score=1.0,
+            witness_set=(),
+            observation_type=ObservationType.REACHABLE,
+            observer_id="mac-primary-a7f3c9e2d4b1aaff",
+            direct_status=DirectStatus.REACHABLE,
+            endpoint="192.168.1.105:9000",
+            endpoint_epoch=2,
+            last_heartbeat_timestamp=now,
+            last_probe_timestamp=now,
+            probe_latency_ms=12.5,
+            route=Route.DIRECT,
+            probe_result={
+                "success": True,
+                "latency_ms": 12.5,
+                "heartbeat_received": {
+                    "node_id": "win-rtx5080-c4d8e2f1a3b7c9d5",
+                    "endpoint": "192.168.1.105:9000",
+                    "endpoint_epoch": 2,
+                    "backend_state": "WIN_LMSTUDIO",
+                    "timestamp": now,
+                    "signature": "aAbBcCdDeEfF1122334455667788990011223344556677889900112233445566",
+                }
+            },
+            relay_proof=None,
+            witness_agreement=2,
+            witness_disagreement=0,
+            backend_caps=("lmstudio",),
+            backend_state=BackendState.WIN_LMSTUDIO,
+            backend_state_timestamp=now,
+            ttl_seconds=60,
+            tags=frozenset(),
+            notes="Direct connection, fresh heartbeat, cross-witnessed",
+            source_id=None,
+            chain_depth=0,
+        )
+
+        assert obs.peer_id == "win-rtx5080-c4d8e2f1a3b7c9d5"
+        assert obs.compute_confidence() >= 0.85
+        # Verify immutability
+        with pytest.raises(FrozenInstanceError):
+            obs.proof_score = 0.5
+
+    def test_fixture_stale_passive(self):
+        """Fixture 2: Stale passive entry (confidence ≈ 0.15)"""
+        now = time.time()
+        obs = PeerObservation(
+            peer_id="win-unknown-peer-9e8d7c6b5a4f3e2d",
+            epoch=1,
+            timestamp=now,
+            proof_score=0.0,
+            freshness_score=0.0,
+            witness_set=(),
+            observation_type=ObservationType.UNREACHABLE,
+            observer_id="mac-primary-a7f3c9e2d4b1aaff",
+            direct_status=DirectStatus.STALE,
+            endpoint="192.168.1.200:9000",
+            endpoint_epoch=1,
+            last_heartbeat_timestamp=now - 143,
+            last_probe_timestamp=now - 143,
+            probe_latency_ms=None,
+            route=Route.RELAY,
+            probe_result=None,
+            relay_proof=None,
+            witness_agreement=0,
+            witness_disagreement=0,
+            backend_caps=(),
+            backend_state=None,
+            backend_state_timestamp=None,
+            ttl_seconds=300,
+            tags=frozenset(["relay_unverified", "stale"]),
+            notes="Peer reported via relay; past heartbeat deadline",
+            source_id="win-rtx3080-5f4e3d2c1b0a9f8e",
+            chain_depth=0,
+        )
+
+        assert obs.direct_status == DirectStatus.STALE
+        assert obs.compute_confidence() <= 0.15
+        # Verify deep-copy of tags
+        original_tags = {"tag1", "tag2"}
+        obs_tags = PeerObservation(
+            peer_id="test",
+            epoch=1,
+            timestamp=now,
+            proof_score=0.5,
+            freshness_score=0.5,
+            witness_set=(),
+            observation_type=ObservationType.REACHABLE,
+            observer_id="observer",
+            direct_status=DirectStatus.REACHABLE,
+            endpoint="192.168.1.1:9000",
+            endpoint_epoch=1,
+            route=Route.DIRECT,
+            tags=original_tags,
+            chain_depth=0,
+        )
+        original_tags.add("tag3")
+        assert "tag3" not in obs_tags.tags
+
+    def test_fixture_unverified_relay(self):
+        """Fixture 3: Unverified relay (confidence ≈ 0.35)"""
+        now = time.time()
+        obs = PeerObservation(
+            peer_id="win-rtx5080-c4d8e2f1a3b7c9d5",
+            epoch=2,
+            timestamp=now,
+            proof_score=0.3,
+            freshness_score=0.7,
+            witness_set=(),
+            observation_type=ObservationType.UNREACHABLE,
+            observer_id="mac-primary-a7f3c9e2d4b1aaff",
+            direct_status=DirectStatus.UNKNOWN,
+            endpoint="192.168.1.105:9000",
+            endpoint_epoch=2,
+            last_heartbeat_timestamp=None,
+            last_probe_timestamp=now - 10,
+            probe_latency_ms=None,
+            route=Route.RELAY,
+            probe_result={
+                "success": True,
+                "relay_response": {
+                    "can_reach": True,
+                    "via_peer": "win-rtx3080-5f4e3d2c1b0a9f8e",
+                },
+            },
+            relay_proof=None,
+            witness_agreement=0,
+            witness_disagreement=1,
+            backend_caps=(),
+            backend_state=None,
+            backend_state_timestamp=None,
+            ttl_seconds=60,
+            tags=frozenset(["relay_claim", "unverified_proof"]),
+            notes="win-rtx3080 claims reachability; no proof from target",
+            source_id="win-rtx3080-5f4e3d2c1b0a9f8e",
+            chain_depth=0,
+        )
+
+        assert obs.proof_score == 0.3
+        assert obs.compute_confidence() < 0.5
+
+    def test_fixture_timeout(self):
+        """Fixture 4: Timeout (confidence ≈ 0.10)"""
+        now = time.time()
+        obs = PeerObservation(
+            peer_id="unknown-offline-1a2b3c4d5e6f7a8b",
+            epoch=0,
+            timestamp=now,
+            proof_score=0.0,
+            freshness_score=0.0,
+            witness_set=(),
+            observation_type=ObservationType.UNREACHABLE,
+            observer_id="mac-primary-a7f3c9e2d4b1aaff",
+            direct_status=DirectStatus.TIMEOUT,
+            endpoint="192.168.1.150:9000",
+            endpoint_epoch=0,
+            last_heartbeat_timestamp=None,
+            last_probe_timestamp=now,
+            probe_latency_ms=None,
+            route=Route.DIRECT,
+            probe_result={
+                "success": False,
+                "error": "connection_timeout",
+                "timeout_ms": 5000,
+            },
+            relay_proof=None,
+            witness_agreement=0,
+            witness_disagreement=1,
+            backend_caps=(),
+            backend_state=None,
+            backend_state_timestamp=None,
+            ttl_seconds=120,
+            tags=frozenset(["timeout", "suspect"]),
+            notes="Direct probe timed out after 5000ms",
+            source_id=None,
+            chain_depth=0,
+        )
+
+        assert obs.direct_status == DirectStatus.TIMEOUT
+        assert obs.compute_confidence() <= 0.10
+
+    def test_fixture_ip_migrated(self):
+        """Fixture 5: IP migrated / superseded (confidence = 0.0)"""
+        now = time.time()
+        obs = PeerObservation(
+            peer_id="win-rtx5080-c4d8e2f1a3b7c9d5",
+            epoch=1,
+            timestamp=now,
+            proof_score=0.7,
+            freshness_score=0.0,
+            witness_set=(),
+            observation_type=ObservationType.UNREACHABLE,
+            observer_id="mac-primary-a7f3c9e2d4b1aaff",
+            direct_status=DirectStatus.STALE,
+            endpoint="192.168.1.50:9000",
+            endpoint_epoch=1,
+            last_heartbeat_timestamp=now - 143,
+            last_probe_timestamp=now - 143,
+            probe_latency_ms=15.0,
+            route=Route.DIRECT,
+            probe_result=None,
+            relay_proof=None,
+            witness_agreement=0,
+            witness_disagreement=0,
+            backend_caps=("lmstudio",),
+            backend_state=BackendState.WIN_LMSTUDIO,
+            backend_state_timestamp=now - 143,
+            ttl_seconds=300,
+            tags=frozenset(["ip_migrated", "superseded", "epoch_mismatch"]),
+            notes="Old address; peer migrated to new epoch",
+            source_id=None,
+            chain_depth=0,
+        )
+
+        assert "ip_migrated" in obs.tags
+        # confidence = 0.7 × 0.40 × 0.85 = 0.238 → 0.24
+        assert obs.compute_confidence() == 0.24
+
+    def test_fixture_witness_agreement(self):
+        """Fixture 6: Witness agreement (confidence = 1.0)"""
+        now = time.time()
+        obs = PeerObservation(
+            peer_id="win-rtx5080-c4d8e2f1a3b7c9d5",
+            epoch=2,
+            timestamp=now,
+            proof_score=1.0,
+            freshness_score=1.0,
+            witness_set=(),
+            observation_type=ObservationType.REACHABLE,
+            observer_id="mac-primary-a7f3c9e2d4b1aaff",
+            direct_status=DirectStatus.REACHABLE,
+            endpoint="192.168.1.105:9000",
+            endpoint_epoch=2,
+            last_heartbeat_timestamp=now,
+            last_probe_timestamp=now,
+            probe_latency_ms=14.2,
+            route=Route.DIRECT,
+            probe_result={
+                "success": True,
+                "latency_ms": 14.2,
+                "heartbeat_received": {
+                    "node_id": "win-rtx5080-c4d8e2f1a3b7c9d5",
+                    "endpoint": "192.168.1.105:9000",
+                    "endpoint_epoch": 2,
+                    "backend_state": "WIN_LMSTUDIO",
+                    "timestamp": now,
+                    "signature": "aAbBcCdDeEfF1122334455667788990011223344556677889900112233445566",
+                }
+            },
+            relay_proof=None,
+            witness_agreement=2,
+            witness_disagreement=0,
+            backend_caps=("lmstudio",),
+            backend_state=BackendState.WIN_LMSTUDIO,
+            backend_state_timestamp=now,
+            ttl_seconds=60,
+            tags=frozenset(["witnessed", "consensus"]),
+            notes="Fresh direct connection witnessed by 2 observers",
+            source_id=None,
+            chain_depth=0,
+        )
+
+        assert obs.witness_agreement == 2
+        assert obs.compute_confidence() == 1.0
+
+    def test_fixture_witness_disagreement(self):
+        """Fixture 7: Witness disagreement (confidence ≈ 0.40)"""
+        now = time.time()
+        obs = PeerObservation(
+            peer_id="win-unknown-peer-9e8d7c6b5a4f3e2d",
+            epoch=2,
+            timestamp=now,
+            proof_score=1.0,
+            freshness_score=0.8,
+            witness_set=(),
+            observation_type=ObservationType.REACHABLE,
+            observer_id="mac-primary-a7f3c9e2d4b1aaff",
+            direct_status=DirectStatus.REACHABLE,
+            endpoint="192.168.1.200:9000",
+            endpoint_epoch=2,
+            last_heartbeat_timestamp=now,
+            last_probe_timestamp=now,
+            probe_latency_ms=45.3,
+            route=Route.DIRECT,
+            probe_result={
+                "success": True,
+                "latency_ms": 45.3,
+                "heartbeat_received": {
+                    "node_id": "win-unknown-peer-9e8d7c6b5a4f3e2d",
+                    "endpoint": "192.168.1.200:9000",
+                    "endpoint_epoch": 2,
+                    "timestamp": now,
+                    "signature": "xXyYzZ1122334455667788990011223344556677889900112233445566aAbBcC",
+                }
+            },
+            relay_proof=None,
+            witness_agreement=0,
+            witness_disagreement=1,
+            backend_caps=(),
+            backend_state=None,
+            backend_state_timestamp=None,
+            ttl_seconds=60,
+            tags=frozenset(["asymmetric_reachability", "partition_suspect", "disagreement"]),
+            notes="mac-primary reaches, but win-rtx3080 times out",
+            source_id=None,
+            chain_depth=0,
+        )
+
+        assert obs.witness_disagreement == 1
+        # confidence = 1.0 × (0.40 + 0.60×0.8) × 0.50 = 1.0 × 0.88 × 0.50 = 0.44
+        assert obs.compute_confidence() == 0.44
+
+    def test_fixture_static_seed(self):
+        """Fixture 8: Static seed entry (no expiry, confidence ≈ 0.92)"""
+        now = time.time()
+        obs = PeerObservation(
+            peer_id="win-rtx5080-c4d8e2f1a3b7c9d5",
+            epoch=2,
+            timestamp=now,
+            proof_score=0.95,
+            freshness_score=0.85,
+            witness_set=(),
+            observation_type=ObservationType.REACHABLE,
+            observer_id="orchestrator-system-0000000000000000",
+            direct_status=DirectStatus.REACHABLE,
+            endpoint="192.168.1.105:9000",
+            endpoint_epoch=2,
+            last_heartbeat_timestamp=now - 43,
+            last_probe_timestamp=now - 43,
+            probe_latency_ms=11.8,
+            route=Route.STATIC_SEED,
+            probe_result={"success": True, "latency_ms": 11.8},
+            relay_proof=None,
+            witness_agreement=0,
+            witness_disagreement=0,
+            backend_caps=("lmstudio",),
+            backend_state=BackendState.WIN_LMSTUDIO,
+            backend_state_timestamp=now - 43,
+            ttl_seconds=-1,  # NO EXPIRY for static seeds
+            tags=frozenset(["static_seed"]),
+            notes="From OPENCLAW_PEERS config; never expires",
+            source_id=None,
+            chain_depth=0,
+        )
+
+        assert obs.ttl_seconds == -1
+        assert "static_seed" in obs.tags
+        # confidence = 0.95 × (0.40 + 0.60×0.85) × 0.85 = 0.95 × 0.91 × 0.85 ≈ 0.73
+        assert obs.compute_confidence() >= 0.73
+
+    def test_fixture_malicious_relay(self):
+        """Fixture 9: Malicious relay attempt (confidence ≈ 0.025)"""
+        now = time.time()
+        obs = PeerObservation(
+            peer_id="unknown-peer-deadbeef00001234",
+            epoch=1,
+            timestamp=now,
+            proof_score=0.05,
+            freshness_score=1.0,
+            witness_set=(),
+            observation_type=ObservationType.REACHABLE,
+            observer_id="mac-primary-a7f3c9e2d4b1aaff",
+            direct_status=DirectStatus.REACHABLE,
+            endpoint="192.168.1.222:9000",
+            endpoint_epoch=1,
+            last_heartbeat_timestamp=now,
+            last_probe_timestamp=now,
+            probe_latency_ms=None,
+            route=Route.RELAY,
+            probe_result={
+                "success": True,
+                "relay_response": {
+                    "can_reach": True,
+                    "via_peer": "win-rtx3080-5f4e3d2c1b0a9f8e",
+                },
+            },
+            relay_proof="<invalid-signature-fails-verification>",
+            witness_agreement=0,
+            witness_disagreement=2,  # Both direct-probe AND win-rtx3080 say unreachable
+            backend_caps=(),
+            backend_state=None,
+            backend_state_timestamp=None,
+            ttl_seconds=60,
+            tags=frozenset(["relay_claim", "invalid_signature", "relay_liar_candidate", "malicious_attempt"]),
+            notes="Relay claims reachability, signature forged; direct probe times out",
+            source_id="win-rtx3080-5f4e3d2c1b0a9f8e",
+            chain_depth=0,
+        )
+
+        assert "relay_liar_candidate" in obs.tags
+        assert obs.proof_score < 0.3
+        assert obs.compute_confidence() < 0.1
+
+    def test_fixture_degraded_link(self):
+        """Fixture 10: Degraded link (confidence ≈ 0.68)"""
+        now = time.time()
+        obs = PeerObservation(
+            peer_id="win-rtx5080-c4d8e2f1a3b7c9d5",
+            epoch=2,
+            timestamp=now,
+            proof_score=0.8,
+            freshness_score=0.9,
+            witness_set=(),
+            observation_type=ObservationType.REACHABLE,
+            observer_id="mac-primary-a7f3c9e2d4b1aaff",
+            direct_status=DirectStatus.DEGRADED,
+            endpoint="192.168.1.105:9000",
+            endpoint_epoch=2,
+            last_heartbeat_timestamp=now,
+            last_probe_timestamp=now,
+            probe_latency_ms=385.5,
+            route=Route.DIRECT,
+            probe_result={
+                "success": True,
+                "latency_ms": 385.5,
+                "heartbeat_received": {
+                    "node_id": "win-rtx5080-c4d8e2f1a3b7c9d5",
+                    "endpoint": "192.168.1.105:9000",
+                    "endpoint_epoch": 2,
+                    "backend_state": "WIN_LMSTUDIO",
+                    "timestamp": now,
+                    "signature": "aAbBcCdDeEfF1122334455667788990011223344556677889900112233445566",
+                }
+            },
+            relay_proof=None,
+            witness_agreement=0,
+            witness_disagreement=0,
+            backend_caps=("lmstudio",),
+            backend_state=BackendState.WIN_LMSTUDIO,
+            backend_state_timestamp=now,
+            ttl_seconds=60,
+            tags=frozenset(["degraded", "high_latency", "jitter_detected"]),
+            notes="Responding but slow (385ms RTT); prioritize for rotation",
+            source_id=None,
+            chain_depth=0,
+        )
+
+        assert obs.direct_status == DirectStatus.DEGRADED
+        assert obs.probe_latency_ms > 300
+        # confidence = 0.8 × (0.40 + 0.60×0.9) × 0.85 = 0.8 × 0.94 × 0.85 ≈ 0.64
+        assert obs.compute_confidence() == 0.64
 
 
 class TestConfidenceFormulaBatch7:
