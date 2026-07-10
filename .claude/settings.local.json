@@ -30,7 +30,9 @@
       "Bash(git config *)",
       "Bash(git hash-object *)",
       "Bash(git write-tree *)",
-      "Bash(git ls-tree *)"
+      "Bash(git ls-tree *)",
+      "Bash(git diff-index *)",
+      "Bash(/Library/Frameworks/Python.framework/Versions/3.13/bin/python3 -m pytest tests/test_monotonic_gate.py tests/test_peer_observation.py -v --tb=no)"
     ]
   }
 }
