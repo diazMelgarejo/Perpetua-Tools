@@ -1,5 +1,7 @@
 # P2P Security Pattern Synthesis — 20 Battle-Tested Patterns for OpenClaw Swarm Orchestration
 
+**Navigation:** ← [task list](PHASE-0-TASK-LIST.md) · informs: [D1 PeerObservation](DELIVERABLE-1-PEER-OBSERVATION-MODEL-REGENERATED-ITERATION-2.md) · [D4 threat model](DELIVERABLE-4-THREAT-MODEL-REGENERATED.md) · → feeds: [Phase 1 scope](PHASE-1-SCOPE-DRAFT.md) (P19/P20 Phase 1b enhancements)
+
 **Research scope:** BitTorrent/DHT (Kademlia), Gossip protocols (SWIM, Hyparview), Distributed consensus (RAFT, BFT), Proof-of-Work blockchains (Bitcoin), Zero-Trust security (mTLS).
 
 **Validation:** Each pattern has been battle-tested in production systems with millions of nodes or terabytes of data. Patterns are ranked by relevance to Phase 0 threat model (T1–T7).
@@ -224,7 +226,7 @@
 
 ### P19. Immutable Append-Only Audit Log (Source: Bitcoin blockchain, Ethereum logs, PostgreSQL write-ahead logs)
 **Principle:** Every state change is logged to an immutable audit trail; log is cryptographically chained so tampering is detectable.  
-**Mechanism:** Each log entry is `{sequence_number, timestamp, peer_id, old_status, new_status, witnesses, signature}`. Hash chain: `entry[i].hash = SHA256(entry[i-1].hash || entry[i])`. New entry is only appended if its hash > previous entry's hash. Hash is signed by orchestrator. On audit, verify chain integrity: recompute hashes, check signatures.  
+**Mechanism:** Each log entry is `{sequence_number, timestamp, peer_id, old_status, new_status, witnesses, previous_hash, signature}`. Hash chain by **reference, not magnitude**: `entry[i].hash = SHA256(entry[i].previous_hash || entry[i])`, where `entry[i].previous_hash = entry[i-1].hash` (a cryptographic hash is uniformly distributed and has no meaningful numeric ordering — requiring `hash > previous_hash` would randomly reject ~50% of legitimate entries and provides zero tamper-evidence, since an attacker could simply re-hash with a different nonce until the magnitude condition happens to hold). Hash is signed by orchestrator. On audit, verify chain integrity by walking the chain: recompute each `entry[i].hash` from its content and confirm `entry[i].previous_hash == entry[i-1].hash`, then verify the signature independently.  
 **Threat defended:** T1 (audit trail proves relay's actions), data corruption, forensic analysis of malice.  
 **Cost:** Hash + sign per state change (~100µs), chain verification ~1µs per entry. Storage ~200 bytes per entry.  
 **Swarm application:** PT maintains observation audit log: every state change (peer ACTIVE→SUSPECT), every witness vote, every accusation. Log is signed and committed to persistent storage. Enables post-incident forensics.  

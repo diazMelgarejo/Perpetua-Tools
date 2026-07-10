@@ -1,5 +1,7 @@
 # Phase 0 Task List (TDD-First)
 
+**Navigation:** entry point for Phase 0 → deliverables: [D1 current](DELIVERABLE-1-PEER-OBSERVATION-MODEL-REGENERATED-ITERATION-2.md) · [D1 expanded (superseded)](DELIVERABLE-1-PEER-OBSERVATION-MODEL-EXPANDED.md) · [D1 test specs](peer_observation_tdd.md) · [D2](DELIVERABLE-2-HEARTBEAT-LIVENESS-REGENERATED.md) · [D4](DELIVERABLE-4-THREAT-MODEL-REGENERATED.md) · [pattern research](PATTERN-SYNTHESIS.md) · → next: [Phase 1 scope](PHASE-1-SCOPE-DRAFT.md)
+
 **Duration:** 17.5 hours over 2–3 weeks
 **Approach:** TDD (test specs → design → consensus)
 **Checkpoints:** Every 2 days (async design review)

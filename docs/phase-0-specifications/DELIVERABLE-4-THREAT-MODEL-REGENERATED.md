@@ -1,5 +1,7 @@
 # Deliverable 4 — Threat Model (T1–T7, Regenerated)
 
+**Navigation:** ← [task list](PHASE-0-TASK-LIST.md) · constrains: [D1 PeerObservation](DELIVERABLE-1-PEER-OBSERVATION-MODEL-REGENERATED-ITERATION-2.md) (T1 proof_diversity/witness_quorum, T2 dual freshness gate, T7 monotonic apply gate) · constrains: [D2 Heartbeat](DELIVERABLE-2-HEARTBEAT-LIVENESS-REGENERATED.md) (T2/T3/T7) · research basis: [pattern synthesis](PATTERN-SYNTHESIS.md) · → feeds: [Phase 1 scope](PHASE-1-SCOPE-DRAFT.md)
+
 **System context:** Distributed peer observation network where relays forward peer state observations carrying `{epoch, timestamp, proof, witness_set}`. Downstream consumers compute a **multiplicative confidence score** — any factor collapsing to ~0 collapses the whole score.
 
 ---

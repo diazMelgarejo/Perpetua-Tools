@@ -1,5 +1,7 @@
 # Phase 1 Scope — Draft Implementation Plan
 
+**Navigation:** ← [task list](PHASE-0-TASK-LIST.md) · built on: [D1](DELIVERABLE-1-PEER-OBSERVATION-MODEL-REGENERATED-ITERATION-2.md) · [D2](DELIVERABLE-2-HEARTBEAT-LIVENESS-REGENERATED.md) · [D4](DELIVERABLE-4-THREAT-MODEL-REGENERATED.md) · pattern basis: [pattern synthesis](PATTERN-SYNTHESIS.md) · related plan (separate repo): [orama-system self-healing-mesh-degradation-modes](https://github.com/diazMelgarejo/orama-system/blob/main/docs/plans/2026-07-08-self-healing-mesh-degradation-modes.md)
+
 **Date:** 2026-07-10  
 **Status:** DRAFT — awaiting Fix #3 completion + M4 checkpoint gate decisions  
 **Purpose:** Map Phase 0 deliverables (D1, D2, D4) → Phase 1 implementation tasks (TDD-first, parallel execution)
@@ -380,7 +382,7 @@ def is_observation_newer(current: PeerObservation, new: PeerObservation) -> bool
 class ReorderBuffer:
     def __init__(self, window_size_seconds=30):
         self.buffer = {}  # key=(epoch, sequence) → observation
-        self.watermark = (epoch=0, sequence=0)
+        self.watermark = (0, 0)  # (epoch, sequence) tuple, positional not keyword
     
     def add_observation(self, obs: PeerObservation) -> List[PeerObservation]:
         """

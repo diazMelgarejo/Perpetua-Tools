@@ -1,5 +1,7 @@
 # PeerObservation Schema: TDD Test Specs & Fixtures
 
+**Navigation:** ← [task list](PHASE-0-TASK-LIST.md) · companion spec: [D1 PeerObservation Model (current)](DELIVERABLE-1-PEER-OBSERVATION-MODEL-REGENERATED-ITERATION-2.md) · [D1 expanded (superseded)](DELIVERABLE-1-PEER-OBSERVATION-MODEL-EXPANDED.md)
+
 **Date:** 2026-07-10
 **Phase:** 0 Deliverable 1 (Non-binding Iteration 1)
 **Approach:** Test-driven design; fixtures exercise all confidence levels & edge cases
@@ -326,7 +328,7 @@ def test_epoch_mismatch_stale_cached_entry():
     
     # Check for mismatch
     assert new_heartbeat["endpoint_epoch"] - cached_obs.endpoint_epoch >= 2
-    assert "epoch_mismatch" should_be_tagged(cached_obs)
+    assert should_be_tagged(cached_obs, "epoch_mismatch")
 ```
 
 ---

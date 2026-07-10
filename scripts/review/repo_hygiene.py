@@ -19,6 +19,7 @@ from pathlib import Path
 APPROVED_IDENTITIES = {
     ("cyre", "Lawrence@cyre.me"),
     ("cyre", "diazMelgarejo@gmail.com"),
+    ("cyre", "Lawrence.Melgarejo@gmail.com"),
     ("Codex", "codex@openai.com"),
 }
 # Keep in sync with scripts/git/check_identity.sh (local hooks + pre-commit).

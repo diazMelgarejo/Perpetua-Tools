@@ -1,5 +1,7 @@
 # Deliverable 2 — Heartbeat & Failure Detector (Regenerated)
 
+**Navigation:** ← [task list](PHASE-0-TASK-LIST.md) · depends on: [D1 PeerObservation](DELIVERABLE-1-PEER-OBSERVATION-MODEL-REGENERATED-ITERATION-2.md) (STM's `_apply_observation()` consumes `PeerObservation` fields directly) · constrained by: [D4 threat model](DELIVERABLE-4-THREAT-MODEL-REGENERATED.md) (T2, T3, T7) · → feeds: [Phase 1 scope](PHASE-1-SCOPE-DRAFT.md) · related plan (separate repo): [orama-system self-healing-mesh-degradation-modes](https://github.com/diazMelgarejo/orama-system/blob/main/docs/plans/2026-07-08-self-healing-mesh-degradation-modes.md) § 6.2 Heartbeat-based liveness
+
 **Status:** Regenerated with all blocker fixes (SLA reframe, asymmetric-reachability, StateTransitionManager integration, jitter-aware timeout hierarchy).
 **Layer:** Liveness / membership. Feeds the StateTransitionManager, which owns authoritative peer state.
 
@@ -127,12 +129,44 @@ RECOVERY_GRACE      = 1   HEALTHY signal in SUSPECT immediately cancels escalati
 
 ### 5.3 Detector → STM signal pipeline and StateTransitionManager integration
 
-**Detector → STM signal flow:**
+**Reverse-ack freshness (`rev_ok`) — explicit, not sequence-number-only.**
+A sequence number alone cannot express *when* an ack was observed: `last_ack_seq`
+only ever increases, so a high value received long ago would otherwise keep
+`rev_ok` true forever after the reverse link actually dies. Two independent
+timestamps are required, not one:
+
+- **send timestamp** — when *we* sent the heartbeat the peer is acking
+- **observation timestamp** — when *we* received that ack (distinct from the
+  ack's own content; a stale ack replayed late must not look fresh)
 
 ```pseudo
+function peer.newest_sent_seq_within(DEADLINE, now):
+    """Highest sequence number among heartbeats WE sent whose send-timestamp
+    is within DEADLINE of now. Returns None if no such heartbeat exists
+    (empty history, peer just joined, or our own send loop stalled) — this
+    is the qualifying-sequence-selection rule for delayed/reordered/empty
+    histories: only sends still inside the deadline window qualify, and
+    reordering doesn't matter because we always take the max, not the first."""
+    candidates = [s for s in peer.sent_log if (now - s.sent_ts) <= DEADLINE]
+    return max(c.seq for c in candidates) if candidates else None
+
 function detector.evaluate(peer, now):
     fwd_ok = (now - peer.last_recv_ts) <= HEARTBEAT_DEADLINE
-    rev_ok = peer.last_ack_seq >= peer.oldest_unacked_seq_within(DEADLINE)
+
+    qualifying_seq = peer.newest_sent_seq_within(HEARTBEAT_DEADLINE, now)
+    if qualifying_seq is None:
+        # No qualifying heartbeat sent within the deadline -> nothing to
+        # verify reverse-reachability against. Explicit reverse-unreachable,
+        # never silently ACTIVE-by-default.
+        rev_ok = False
+    else:
+        rev_ok = (
+            peer.last_ack_seq >= qualifying_seq
+            and (now - peer.last_ack_observed_ts) <= HEARTBEAT_DEADLINE
+        )
+        # An ack that references an old qualifying_seq but was itself observed
+        # outside the freshness window is stale and rejected here — it cannot
+        # drive rev_ok True.
 
     if peer.cluster_size == 2:
         signal = HEALTHY if (fwd_ok and rev_ok) else SUSPECT

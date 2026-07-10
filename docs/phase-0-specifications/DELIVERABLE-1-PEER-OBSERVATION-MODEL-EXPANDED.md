@@ -1,5 +1,11 @@
 # Phase 0 Deliverable 1 (Expanded): Peer Observation Model
 
+> **SUPERSEDED** — this is Iteration 1 (additive confidence formula, since
+> replaced by the multiplicative gated formula). Kept for research-provenance
+> only; do not implement against this version. Current: [Iteration 2](DELIVERABLE-1-PEER-OBSERVATION-MODEL-REGENERATED-ITERATION-2.md).
+
+**Navigation:** ← [task list](PHASE-0-TASK-LIST.md) · companion: [test specs](peer_observation_tdd.md) · → superseded by: [Iteration 2](DELIVERABLE-1-PEER-OBSERVATION-MODEL-REGENERATED-ITERATION-2.md)
+
 **Date:** 2026-07-10  
 **Approach:** TDD-first (test specs before schema), P2P RFC compliance (HyParView baseline, Kademlia-migration-ready), production-ready confidence scoring.
 

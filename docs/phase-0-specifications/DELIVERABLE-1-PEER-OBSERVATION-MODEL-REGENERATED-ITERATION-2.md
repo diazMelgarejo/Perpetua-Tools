@@ -1,5 +1,7 @@
 # Deliverable 1 — PeerObservation Model (Regenerated, All Fixes Applied)
 
+**Navigation:** ← [task list](PHASE-0-TASK-LIST.md) · supersedes: [Iteration 1 (expanded)](DELIVERABLE-1-PEER-OBSERVATION-MODEL-EXPANDED.md) · companion: [test specs](peer_observation_tdd.md) · consumed by: [D2](DELIVERABLE-2-HEARTBEAT-LIVENESS-REGENERATED.md) · constrained by: [D4 threat model](DELIVERABLE-4-THREAT-MODEL-REGENERATED.md) · → feeds: [Phase 1 scope](PHASE-1-SCOPE-DRAFT.md)
+
 **Phase:** 0 · **Iteration:** 2 (fixes folded in) · **Date:** 2026-07-10
 **Change log vs. Iteration 1:**
 - **A1** — `time_to_suspect_ms` demoted from stored field to `@property`; new `chain_depth` field added (gossip-loop safety).
