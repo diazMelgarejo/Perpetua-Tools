@@ -252,6 +252,8 @@ This iteration consumes the gap severity ratings, threat model (T1–T7), and pa
 
 **Total Track A:** ~36 hours (~5 sessions)
 
+> The module-implementation work in Track A3–A7 is compressed into the concrete integration milestone [`2026-07-11-state-transition-manager-integration-plan.md`](./2026-07-11-state-transition-manager-integration-plan.md), which wires the already-implemented P2/P5/P6/P13/P19 modules into a single `PeerObservation` security-decision pipeline.
+
 ---
 
 ### Track B: orama-system (Observation Routing Layer)
