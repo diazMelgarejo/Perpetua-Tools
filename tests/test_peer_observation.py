@@ -39,6 +39,8 @@ class TestPeerObservationImmutability:
             freshness_score=0.9,
             observation_type=ObservationType.REACHABLE,
             observer_id="observer-001",
+            sequence=7,
+            observer_provenance="198.51.100.0/24",
             direct_status=DirectStatus.REACHABLE,
             endpoint="192.168.1.1:9000",
             endpoint_epoch=1,
@@ -84,6 +86,8 @@ class TestPeerObservationImmutability:
             freshness_score=0.9,
             observation_type=ObservationType.REACHABLE,
             observer_id="observer-001",
+            sequence=7,
+            observer_provenance="198.51.100.0/24",
             direct_status=DirectStatus.REACHABLE,
             endpoint="192.168.1.1:9000",
             endpoint_epoch=1,
@@ -1017,6 +1021,8 @@ class TestPeerObservationSerialization:
             freshness_score=0.9,
             observation_type=ObservationType.REACHABLE,
             observer_id="observer-001",
+            sequence=7,
+            observer_provenance="198.51.100.0/24",
             direct_status=DirectStatus.REACHABLE,
             endpoint="192.168.1.1:9000",
             endpoint_epoch=1,
@@ -1044,6 +1050,8 @@ class TestPeerObservationSerialization:
         assert data["peer_id"] == "peer-001"
         assert data["epoch"] == 1
         assert data["timestamp"] == now
+        assert data["sequence"] == 7
+        assert data["observer_provenance"] == "198.51.100.0/24"
         assert data["proof_score"] == 0.8
         assert data["freshness_score"] == 0.9
 
@@ -1059,6 +1067,8 @@ class TestPeerObservationSerialization:
             freshness_score=0.9,
             observation_type=ObservationType.REACHABLE,
             observer_id="observer-001",
+            sequence=9,
+            observer_provenance="203.0.113.0/24",
             direct_status=DirectStatus.REACHABLE,
             endpoint="192.168.1.1:9000",
             endpoint_epoch=1,
@@ -1088,6 +1098,8 @@ class TestPeerObservationSerialization:
         assert restored.peer_id == original.peer_id
         assert restored.epoch == original.epoch
         assert restored.timestamp == original.timestamp
+        assert restored.sequence == original.sequence
+        assert restored.observer_provenance == original.observer_provenance
         assert restored.proof_score == original.proof_score
         assert restored.freshness_score == original.freshness_score
         assert restored.observation_type == original.observation_type
