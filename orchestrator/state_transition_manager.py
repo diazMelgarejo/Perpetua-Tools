@@ -235,9 +235,10 @@ class StateTransitionManager:
         # ordered set.
         self._seen_observations: "OrderedDict[str, None]" = OrderedDict()
 
-        # P9 (PATTERN-SYNTHESIS.md): peer_id -> {(epoch, sequence): (obs, old_status)},
-        # capped at _reorder_buffer_max entries per peer.
-        self._reorder_buffer: Dict[str, "OrderedDict[Tuple[int, int], Tuple[PeerObservation, str]]"] = {}
+        # P9 (PATTERN-SYNTHESIS.md): peer_id -> {(epoch, sequence): (obs, old_status)}.
+        # The outer peer_id map is LRU-bounded by _max_cache_size, and each
+        # inner peer buffer is capped at _reorder_buffer_max entries.
+        self._reorder_buffer: "OrderedDict[str, OrderedDict[Tuple[int, int], Tuple[PeerObservation, str]]]" = OrderedDict()
 
     def _touch_cache(self, cache: "OrderedDict", key, value) -> None:
         """Insert/refresh `key` in an LRU-bounded OrderedDict cache, evicting
@@ -327,7 +328,10 @@ class StateTransitionManager:
         sequence. Not a terminal decision — no audit entry, not marked seen —
         so the same observation re-submitted later still resolves correctly
         once the gap fills or the buffer evicts it."""
-        buffer = self._reorder_buffer.setdefault(obs.peer_id, OrderedDict())
+        buffer = self._reorder_buffer.get(obs.peer_id)
+        if buffer is None:
+            buffer = OrderedDict()
+        self._touch_cache(self._reorder_buffer, obs.peer_id, buffer)
         key = (obs.epoch, obs.sequence)
         if key not in buffer and len(buffer) >= self._reorder_buffer_max:
             # Buffer capacity guard (P5/T5 in PATTERN-SYNTHESIS.md's DoS
