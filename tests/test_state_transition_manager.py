@@ -28,6 +28,7 @@ from orchestrator.membership import (
     ObservationType,
     PeerObservation,
 )
+from orchestrator.reputation import ReputationLedger
 from orchestrator.state_transition_manager import (
     StateTransitionManager,
     StateTransitionResult,
@@ -318,6 +319,120 @@ class TestEquivocationGate:
         assert result.decision_type == "malicious"
         assert "Equivocation detected" in result.rejection_reason
 
+    @pytest.mark.asyncio
+    async def test_equivocation_penalizes_observer_id_reputation(
+        self,
+        equivocation_log: EquivocationLog,
+        k_bucket: KBucketTable,
+        audit_log: AuditLog,
+        sample_peer_observation: PeerObservation,
+    ):
+        """G4->G5 feedback: equivocation penalizes obs.observer_id via
+        ReputationLedger.record_equivocation(), not observer_provenance --
+        provenance identifies where a report came from, not who is
+        accountable for it, and multiple observers can share a bucket.
+        """
+        ledger = ReputationLedger()
+        manager = StateTransitionManager(
+            equivocation_log=equivocation_log,
+            k_bucket=k_bucket,
+            audit_log=audit_log,
+            reputation_ledger=ledger,
+        )
+
+        equivocation_log.record_observation(sample_peer_observation)
+
+        contradictory = PeerObservation(
+            peer_id=sample_peer_observation.peer_id,
+            epoch=sample_peer_observation.epoch,
+            timestamp=1001.0,
+            observer_id=sample_peer_observation.observer_id,
+            observation_type=ObservationType.UNREACHABLE,
+            direct_status=DirectStatus.UNREACHABLE,
+            endpoint="192.168.1.100:9000",
+            endpoint_epoch=1,
+            last_heartbeat_timestamp=999.0,
+            last_probe_timestamp=999.0,
+            probe_latency_ms=10.0,
+            route="direct",
+            probe_result="timeout",
+            relay_proof=None,
+            proof_score=0.50,
+            freshness_score=0.80,
+            witness_agreement=0,
+            witness_disagreement=0,
+            witness_set=[],
+            backend_caps="MAC_OLLAMA",
+            backend_state="SUSPECT",
+            backend_state_timestamp=1001.0,
+            ttl_seconds=3600,
+            tags=["contradictory"],
+            notes="Contradicts prior",
+            source_id="test_source",
+            chain_depth=0,
+            sequence=2,
+            observer_provenance=sample_peer_observation.observer_provenance,
+        )
+
+        neutral_weight = ledger.reputation_weight(contradictory.observer_id)
+        result = await manager.evaluate_observation(contradictory)
+
+        assert result.accepted is False
+        assert result.decision_type == "malicious"
+        # The equivocating observer_id's reputation must have actually moved
+        # -- asserting the manager's outcome alone (accepted=False) would
+        # pass even if record_equivocation() were never called at all.
+        penalized_weight = ledger.reputation_weight(contradictory.observer_id)
+        assert penalized_weight < neutral_weight
+        assert ledger.is_untrusted(contradictory.observer_id) or penalized_weight < neutral_weight
+
+    @pytest.mark.asyncio
+    async def test_equivocation_without_ledger_does_not_crash(
+        self,
+        state_transition_manager: StateTransitionManager,
+        sample_peer_observation: PeerObservation,
+    ):
+        """No ReputationLedger provided (the default fixture) -- equivocation
+        detection must still work via the neutral reputation_fn stub, not
+        raise because self._reputation_ledger is None.
+        """
+        state_transition_manager._equivocation_log.record_observation(sample_peer_observation)
+        contradictory = PeerObservation(
+            peer_id=sample_peer_observation.peer_id,
+            epoch=sample_peer_observation.epoch,
+            timestamp=1001.0,
+            observer_id=sample_peer_observation.observer_id,
+            observation_type=ObservationType.UNREACHABLE,
+            direct_status=DirectStatus.UNREACHABLE,
+            endpoint="192.168.1.100:9000",
+            endpoint_epoch=1,
+            last_heartbeat_timestamp=999.0,
+            last_probe_timestamp=999.0,
+            probe_latency_ms=10.0,
+            route="direct",
+            probe_result="timeout",
+            relay_proof=None,
+            proof_score=0.50,
+            freshness_score=0.80,
+            witness_agreement=0,
+            witness_disagreement=0,
+            witness_set=[],
+            backend_caps="MAC_OLLAMA",
+            backend_state="SUSPECT",
+            backend_state_timestamp=1001.0,
+            ttl_seconds=3600,
+            tags=["contradictory"],
+            notes="Contradicts prior",
+            source_id="test_source",
+            chain_depth=0,
+            sequence=2,
+            observer_provenance=sample_peer_observation.observer_provenance,
+        )
+
+        result = await state_transition_manager.evaluate_observation(contradictory)
+        assert result.accepted is False
+        assert result.decision_type == "malicious"
+
 
 class TestQuorumGate:
     """Unit tests for G1 (Witness Quorum)."""
@@ -406,6 +521,57 @@ class TestSybilCorrelation:
         # Even with Sybil signals, result should have metadata
         if result.sybil_signals:
             assert result.sybil_signals.overall_risk in ["low", "medium", "high"]
+
+    @pytest.mark.asyncio
+    async def test_provenance_clustering_buckets_by_subnet_not_raw_string(
+        self,
+        state_transition_manager: StateTransitionManager,
+    ):
+        """Witnesses on the same /24 subnet but with DIFFERENT raw
+        observer_provenance strings must cluster into ONE provenance bucket,
+        not two separate raw-string entries -- otherwise an attacker on a
+        single subnet defeats the provenance-clustering signal just by
+        reporting a slightly different IP per identity (the exact spoof
+        provenance_bucket() exists to close, per its own module docstring).
+        """
+        obs = PeerObservation(
+            peer_id="peer_subnet_test",
+            epoch=1,
+            timestamp=1000.0,
+            observer_id="observer_1",
+            observation_type=ObservationType.REACHABLE,
+            direct_status=DirectStatus.REACHABLE,
+            endpoint="192.168.1.100:9000",
+            endpoint_epoch=1,
+            proof_score=0.95,
+            freshness_score=0.90,
+            witness_agreement=0,
+            witness_disagreement=0,
+            witness_set=[
+                WitnessBuilder.witness("observer_a", "192.168.1.5"),
+                WitnessBuilder.witness("observer_b", "192.168.1.99"),
+                WitnessBuilder.witness("observer_c", "192.168.1.200"),
+            ],
+            backend_state="ACTIVE",
+            backend_state_timestamp=1000.0,
+            ttl_seconds=3600,
+            tags=frozenset(["test"]),
+            notes="Same-subnet provenance clustering test",
+            source_id="test_source",
+            chain_depth=0,
+            sequence=1,
+            observer_provenance="192.168.1.1",
+        )
+
+        sybil = await state_transition_manager._check_sybil_correlation(obs)
+
+        # 3 distinct raw IP strings must collapse to exactly 1 /24 bucket key,
+        # holding all 3 witnesses -- proves bucketing happened, not just that
+        # SOME dict was returned (which would pass even with raw strings).
+        assert list(sybil.provenance_clustering.keys()) == ["192.168.1.0/24"]
+        assert sybil.provenance_clustering["192.168.1.0/24"] == 3
+        # 3/3 witnesses from a single bucket exceeds the >2/3 medium threshold.
+        assert sybil.overall_risk in ("medium", "high")
 
 
 class TestAuditCommit:
