@@ -1,5 +1,3 @@
-<!-- /autoplan restore point: $HOME/.gstack/projects/perpetua-tools/main-autoplan-restore-20260711-074525.md -->
-<!-- /autoplan steelmanned restore point: $HOME/.gstack/projects/perpetua-tools/main-autoplan-steelmanned-restore-20260711-075900.md -->
 # StateTransitionManager Integration Plan (Steelmanned + Program-Aligned)
 
 **Date:** 2026-07-11 · **Scope:** Wire G1/G4/G5/G6/G8 into a `PeerObservation` security-decision pipeline  
