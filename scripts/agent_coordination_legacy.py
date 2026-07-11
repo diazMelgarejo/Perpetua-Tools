@@ -1108,6 +1108,26 @@ async def _amain(args: argparse.Namespace) -> None:
     elif args.cmd == "workflow":
         if args.subcmd == "critical-path":
             await _workflow_critical_path(bus)
+    elif args.cmd == "queue":
+        if args.subcmd == "add":
+            await _queue_add(
+                bus,
+                args.task_name,
+                args.phase,
+                args.priority,
+                args.notes or "",
+                args.depends_on,
+            )
+        elif args.subcmd == "list":
+            await _queue_list(bus, args.phase, args.priority, args.agent)
+        elif args.subcmd == "claim":
+            await _queue_claim(bus, args.task_id, args.agent_id)
+        elif args.subcmd == "complete":
+            await _queue_complete(bus, args.task_id, args.notes or "")
+        elif args.subcmd == "fail":
+            await _queue_fail(bus, args.task_id, args.notes or "")
+        elif args.subcmd == "status":
+            await _queue_status(bus, args.agent)
     elif args.cmd == "buffer":
         if args.subcmd == "status":
             await _buffer_status(bus, args.agent)
@@ -1189,6 +1209,41 @@ def main() -> int:
     p_workflow = sub.add_parser("workflow", help="Workflow analysis")
     workflow_sub = p_workflow.add_subparsers(dest="subcmd", required=True)
     workflow_sub.add_parser("critical-path", help="Show critical path and ETA")
+
+    # Distributed task queue commands
+    p_queue = sub.add_parser("queue", help="Manage GossipBus-backed queued tasks")
+    queue_sub = p_queue.add_subparsers(dest="subcmd", required=True)
+
+    p_queue_add = queue_sub.add_parser("add", help="Enqueue a task")
+    p_queue_add.add_argument("task_name")
+    p_queue_add.add_argument("phase")
+    p_queue_add.add_argument(
+        "--priority",
+        default="normal",
+        choices=("critical", "high", "normal", "low", "CRITICAL", "HIGH", "NORMAL", "LOW"),
+    )
+    p_queue_add.add_argument("--notes", default="")
+    p_queue_add.add_argument("--depends-on", default=None)
+
+    p_queue_list = queue_sub.add_parser("list", help="List queued task snapshots")
+    p_queue_list.add_argument("--phase", default=None)
+    p_queue_list.add_argument("--priority", default=None)
+    p_queue_list.add_argument("--agent", default=None)
+
+    p_queue_claim = queue_sub.add_parser("claim", help="Claim a queued task")
+    p_queue_claim.add_argument("task_id")
+    p_queue_claim.add_argument("agent_id")
+
+    p_queue_complete = queue_sub.add_parser("complete", help="Mark a queued task complete")
+    p_queue_complete.add_argument("task_id")
+    p_queue_complete.add_argument("--notes", default="")
+
+    p_queue_fail = queue_sub.add_parser("fail", help="Mark a queued task failed/retry")
+    p_queue_fail.add_argument("task_id")
+    p_queue_fail.add_argument("--notes", default="")
+
+    p_queue_status = queue_sub.add_parser("status", help="Show claimed queue work by agent")
+    p_queue_status.add_argument("--agent", default=None)
 
     # Reorder buffer management (Phase 1.3.2)
     p_buffer = sub.add_parser("buffer", help="Manage reorder buffers for out-of-order claims")
