@@ -5,7 +5,8 @@
 **Date:** 2026-07-11 · **Scope:** Wire G1/G4/G5/G6/G8 into a `PeerObservation` security-decision pipeline  
 **Effort:** 2 phases (design + implementation) · **Timeline:** 2–3 days  
 **Auto-reviewed by:** Claude subagent + Codex (gpt-5.5) via `/autoplan`  
-**Program parent:** [`PATTERN-MULTIAGENT-EXECUTION-PLAN.md`](./PATTERN-MULTIAGENT-EXECUTION-PLAN.md)
+**Program parent:** [`PATTERN-MULTIAGENT-EXECUTION-PLAN.md`](./PATTERN-MULTIAGENT-EXECUTION-PLAN.md)  
+**Security foundation:** [`MULTIAGENT-SWARM-SECURITY-ANALYSIS.md`](./MULTIAGENT-SWARM-SECURITY-ANALYSIS.md)
 
 ---
 
@@ -677,6 +678,7 @@ Treat this as a **dedicated 2–3 day milestone**, not a 6–8 hour bolt-on. The
 - [`orchestrator/membership.py`](../orchestrator/membership.py) — `PeerObservation` schema
 - [`DELIVERABLE-2-HEARTBEAT-LIVENESS-REGENERATED.md`](./DELIVERABLE-2-HEARTBEAT-LIVENESS-REGENERATED.md) — §5.3 full state machine (out of scope here)
 - [`2026-07-11-phase1b-integration-review.md`](./2026-07-11-phase1b-integration-review.md) — Prior review that flagged the integration gap
+- [`MULTIAGENT-SWARM-SECURITY-ANALYSIS.md`](./MULTIAGENT-SWARM-SECURITY-ANALYSIS.md) — Threat model (T1–T7) and gap analysis (G1–G16) that motivates the security pipeline
 - [`PATTERN-MULTIAGENT-EXECUTION-PLAN.md`](./PATTERN-MULTIAGENT-EXECUTION-PLAN.md) — Parent program plan (20 patterns, 16 gaps, 4-week execution)
 
 ---
