@@ -304,3 +304,17 @@ None — the one applicable User Challenge (threat-model premise vs. wiring prio
   - Files: `orchestrator/connectivity.py`, `tests/` (integration)
 
 **Sequencing (updated 2026-07-12): T1 done, verdict DESCOPE. T2/T3 remain live — land these regardless (independent DoS/correctness fixes). T4/T5/T6 superseded/moot — do not implement as originally scoped; revisit only if Fleet Mode changes the actual trust boundary (real external tenants, not just more self-owned nodes).**
+
+---
+
+## Plan Status: CLOSED 2026-07-12
+
+All actionable items resolved, split across two concurrently-coordinating sessions via the GossipBus claim board (`scripts/agent_coordination.py`):
+
+- **T1 (threat-model recheck):** DONE. Verdict DESCOPE — see `MULTIAGENT-SWARM-SECURITY-ANALYSIS.md` addendum, gate closed in `PATTERN-SYNTHESIS.md`.
+- **T2 (reorder-buffer bound):** DONE — `62b66119`.
+- **T3 (dedup-key fix):** DONE — `128e69eb`.
+- **T4/T5/T6 (production wiring):** superseded/moot per the descope verdict — not implemented.
+- **STM-Next-08 (durability design slice):** DONE for the module that matters regardless of the descope verdict — `AuditLog` (P19/G8) now supports an optional `persist_path` (JSONL sink, replayed on init, hash-chain re-verified on reload) — see `orchestrator/audit_log.py` + `tests/test_audit_log.py`. **Deliberately NOT implemented for `ReputationLedger`/`EquivocationLog`/`KBucketTable`'s corresponding gap**: those three back P6 (reputation-decay) and P13 (equivocation) specifically — the exact patterns just descoped — and KBucketTable's P2 role, while unaffected by the verdict, has no forensic/audit use case driving urgency the way AuditLog does. Persisting state that isn't being actively exercised in production would be effort spent ahead of need; revisit if/when Fleet Mode makes P5/P6/P13 relevant again (see the addendum's own revisit condition).
+
+No further open items from this plan.
