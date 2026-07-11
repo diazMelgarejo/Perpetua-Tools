@@ -2027,3 +2027,42 @@ node <repo>/AlphaClaw/node_modules/openclaw/openclaw.mjs gateway --port 18789 --
 
 **Next agent:** Execute the blend execution checklist in `docs/phase-0-specifications/2026-07-11-PR203-BLEND-VERDICT.md`.
 
+
+## 2026-07-11 — PR #203 Blend Execution Complete (Codex Review)
+
+**Final Status:** ✅ READY TO MERGE with tracked Phase 2 TODOs
+
+### Execution Summary
+
+Selective blend (commit 482d7199) completed by executing agent after Codex verified:
+- ✅ G4→G5 reputation feedback loop wired (record_equivocation targeting observer_id)
+- ✅ Subnet-aware Sybil clustering via provenance_bucket() implemented
+- ✅ Sybil accept-with-flag semantics correct
+- ✅ Tests passing (24/24)
+
+### Two TODOs Deferred (Non-Blocking)
+
+**TODO-stm-observation-dedup** (Phase 2, Medium priority)
+- Issue: Observation dedup via _seen_observations cache was dead scaffolding in Lineage B (declared but never read/written)
+- Root cause: Sonnet's plan incorrectly assumed B's cache was functional
+- Action: Implement bounded observation dedup (digest-based or TTL-based retention policy)
+- Blocker: No (dedup risk lives in injected equivocation_log, not STM state)
+
+**TODO-stm-concurrency-model** (Phase 2, Medium priority)
+- Issue: threading.RLock() proposed by Sonnet doesn't serialize async pipeline (no atomicity across awaits)
+- Root cause: Sonnet used threading primitive for async code (incorrect)
+- Action: Implement asyncio.Lock() serializing full evaluate_observation pipeline
+- Blocker: No (no concurrent caller path exists yet in orchestrator)
+
+### Elegance Assessment
+
+**Codex verdict:** 4/5 (Selective blend was architecturally superior to blind cherry-pick; agent correctly rejected unsafe fixes; tests added)
+
+**Weakness:** Blend-verdict doc still claimed "all findings closed" (now false) — corrected below.
+
+### Next: Phase 2 Planning
+
+Two tracking documents updated:
+1. Phase 2 integration backlog (formal TODO entries)
+2. Blend verdict doc (correction note added)
+

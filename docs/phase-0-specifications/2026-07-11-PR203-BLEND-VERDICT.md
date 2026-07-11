@@ -150,6 +150,30 @@ Fixes:
 
 ---
 
+
+
+---
+
+## CORRECTION (2026-07-11 Post-Execution)
+
+**Planned vs. Actual:** This verdict promised "all 10 CodeRabbit findings closed; no further deferred work." Actual execution was selective, discovering that Sonnet's plan was only 60% viable.
+
+**What changed:**
+- ✅ **G4→G5 reputation feedback:** Correctly implemented (reputation_ledger param)
+- ✅ **G6 Sybil subnet clustering:** Correctly implemented (provenance_bucket in Sybil gate)
+- ❌ **threading.RLock concurrency:** REJECTED as unsafe for async code — needs asyncio.Lock (TODO-stm-concurrency-model)
+- ❌ **Unbounded cache bound:** Dead scaffolding in Lineage B, never read/written — correctly dropped (TODO-stm-observation-dedup)
+
+**Execution verdict (Codex review):** Selective blend was architecturally superior to blind cherry-pick. Agent correctly rejected unsafe fixes. **4/5 elegance.**
+
+**Two TODOs now tracked:**
+1. **TODO-stm-observation-dedup** (Phase 2, Medium) — Implement bounded observation dedup
+2. **TODO-stm-concurrency-model** (Phase 2, Medium) — Implement asyncio.Lock serializing full pipeline
+
+**Status:** PR #203 ready to merge (non-blocking TODOs; detailed in `2026-07-11-PHASE-2-BLOCKERS.md`)
+
+**Validator:** Codex (GPT-5.5) independent review, 4/5 confidence
+
 **Validator:** Claude Sonnet 5  
 **Confidence Level:** 4/5  
 **Decision Rationale:** File-existence evidence (state_transition_manager.py gap), diff analysis, code vs. docs artifact separation, orama-system zero-duplication doctrine.
