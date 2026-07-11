@@ -35,6 +35,11 @@ Open and follow `bin/orama-system/skills/agent-coordination-heartbeat/SKILL.md` 
 
 This skill operates `orchestrator/heartbeat_monitor.py` and `scripts/agent_coordination.py` in Perpetua-Tools itself — see `docs/heartbeat-monitoring.md` for the PT-side implementation the canonical skill drives.
 
+## Related Skills
+
+- [`../gossip-bus/SKILL.md`](../gossip-bus/SKILL.md) — heartbeat events are emitted onto the intra-host GossipBus; read it before extending liveness detection across hosts (LAN peer transport).
+- [`../agent-methodology/SKILL.md`](../agent-methodology/SKILL.md) — Context Immersion (stage 1) should check heartbeat state before assuming an agent is silent because it's dead.
+
 ## Windows UTF-8 Note
 
 On Windows PowerShell, set UTF-8 explicitly before reading or writing skill files:
