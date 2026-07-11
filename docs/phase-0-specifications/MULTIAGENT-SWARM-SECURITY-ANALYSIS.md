@@ -427,5 +427,40 @@ TOTAL: 2–4 weeks depending on parallelism and whether P4 refactoring is includ
 
 ---
 
+## Addendum: Single-Operator LAN Premise Check (2026-07-12)
+
+**Why this exists:** the PR #205 CEO quad-review (`docs/phase-0-specifications/2026-07-12-ceo-review-quad-voices/`) and the STM remediation plan (`docs/phase-0-specifications/2026-07-12-stm-remediation-plan.md`) both flagged that Sections 1-6 above assume an adversarial, multi-tenant network (P2P patterns sourced from Kademlia/PBFT/Bitcoin, designed for strangers with economic incentive to attack). This addendum re-derives the premise against the **actual current deployment**, not the aspirational 3–100 node table in Section 1, per the gate recorded in `PATTERN-SYNTHESIS.md` § "GATE on P5/P6/P13" — it does not replace Sections 1-6, which remain the record of the original design reasoning.
+
+### Q1: Who are the actual "witnesses"?
+
+**None currently exist.** The only live reachability-checking code is `_probe()` in `orchestrator/connectivity.py:9-14`, called once per backend from `backend_health_map()` (`connectivity.py:130-143`) — a single observer directly probing its own configured endpoints. There is no second, independent process anywhere in this repo that also probes the same backend and reports in. P5 (witness quorum), P6 (reputation-decay), and P13 (equivocation detection) all presume ≥2 independent, potentially-adversarial witnesses whose reports can be compared — that comparison has no data to operate on today, because there is only ever one witness. This matches the remediation plan's independent finding that no production code anywhere constructs a `PeerObservation` at all.
+
+### Q2: What is the actual trust boundary?
+
+**Two machines, one operator, one administrative identity.** Per this repo's own `CLAUDE-instru.md` hardware section and `orama-system` CLAUDE.md § 8, the live topology is Mac (Ollama + qwen3.5:9b-nvfp4 + bge-m3, L2/L3 roles) + one Windows RTX3080 (LM Studio, L1 inference) — not the aspirational L3=1-3/L2=2-5/L1=10-100 range in Section 1's table, which describes a future scale that hasn't materialized. Both machines are configured, administered, and physically controlled by the same single person. **If the operator's own Mac (the primary node) is compromised, a witness quorum spanning Mac+Win provides no real defense** — the same operator's credentials/access already control both halves of any quorum. Per-pattern verdict at current scale:
+- **P5 (witness quorum):** negligible real defense — quorum among 2 self-owned, co-administered machines does not resist a compromise of either.
+- **P6 (reputation-decay):** negligible real defense — there is no population of distinct, independently-operated witnesses for reputation to differentiate between.
+- **P13 (equivocation detection):** negligible real defense today — equivocation detection catches a witness contradicting itself, but with one witness and no adversarial second party, "contradiction" degrades to "this node's own state changed," which is already handled by the existing monotonic-epoch/sequence gate, not by equivocation logic.
+
+### Q3: What's the actual observed failure mode?
+
+Grepped `docs/LESSONS.md` for real incident history (DHCP/network/crash/timeout/offline keywords, 60+ matches reviewed). **Every incident found is self-inflicted operational flakiness**, not adversarial behavior:
+- DHCP reassignment moved the Win node's IP, breaking `openclaw.json` config until re-discovery (`docs/LESSONS.md:1323`, `:1956`).
+- GPU crash recovery, rapid-model-reload-burns-GPU, 30s cooldown enforcement (`docs/LESSONS.md:770-808`).
+- Network probe timeouts/hangs (`nc` with no `-w` flag hanging startup, `docs/LESSONS.md:1243`; `git status` timeouts, `:1380-1407`).
+- Process/gateway crashes, "Not onboarded" bugs, Node version mismatches, port collisions (`docs/LESSONS.md:1355`, `:1929`, `:1939`).
+
+**Zero incidents** resembling a forged observation, a detected Sybil identity, an equivocating adversary, or any malicious third party. This is decisive, not merely suggestive: the actual failure population this system has generated to date is 100% "my own flaky/buggy node," 0% "an attacker forged an identity to fool my quorum."
+
+### Go/No-Go Recommendation
+
+**Descope P5/P6/P13 from the next increment.** The BFT/Sybil-resistant machinery these patterns implement solves a threat (adversarial strangers with economic incentive to attack a quorum they have no stake in) that does not match this deployment's actual trust boundary (two machines, one operator, zero observed adversarial incidents in the project's full operational history). Wiring `evaluate_observation()` as scoped would ship "working" code against a pipeline that structurally has nothing to detect at current scale — P5/P6/P13's own gates would sit permanently dormant (single-witness inputs never trigger quorum/reputation/equivocation logic in any meaningful way).
+
+**Recommended alternative for the actual problem** (per the remediation plan's own framing — "the risk is bugs/crashes, not Byzantine attackers"): a lean reachability/liveness model matched to the real failure mode — retry-with-backoff, a monotonic epoch/sequence gate (already implemented and useful regardless of this decision), and a health-check consumer that treats `_probe()` results as authoritative without needing a quorum to trust its own configured backend. If Fleet Mode later introduces genuinely external, untrusted tenants (a real change in trust boundary, not just more self-owned nodes), P5/P6/P13 should be revisited from this addendum's Q1/Q2 questions, not resumed by default.
+
+**Not touched by this verdict:** P9 (reorder buffer), P18 (bounded caches), P2 (k-bucket maintenance) — already shipped in PR #205, useful regardless of the threat model (they protect against out-of-order/memory-growth issues that occur even with zero adversaries), not contingent on this addendum.
+
+---
+
 *End of Multiagent Swarm Security Analysis. Ready for Phase 1b roadmap execution.*
 
