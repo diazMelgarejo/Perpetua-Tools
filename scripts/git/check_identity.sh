@@ -12,7 +12,7 @@ echo "git user.name=${actual_name:-<unset>}"
 echo "git user.email=${actual_email:-<unset>}"
 
 # This check is scoped to Cursor remote/cloud agent commits only.
-# Non-Cursor commits (human, Codex, Claude CLI) pass through unchecked.
+# Non-Cursor commits (human, Codex, Claude CLI, Kimi) pass through unchecked.
 # Cursor context detected by env vars Cursor sets in its agent subprocess,
 # OR by the committer name/email pattern.
 is_cursor_agent() {
@@ -46,6 +46,7 @@ WELL_KNOWN_AUTHOR_DOMAIN_SUFFIXES=(
   sourcegraph.com
   devin.ai
   codeium.com
+  kimi.ai
 )
 
 author_domain_ok() {
@@ -76,6 +77,11 @@ if [[ "$actual_email_lc" == "lawrence@cyre.me" ]]; then
   exit 0
 fi
 
+if [[ "$actual_email_lc" == "lawrence.melgarejo@gmail.com" ]]; then
+  echo "OK: approved git identity"
+  exit 0
+fi
+
 if [[ "$actual_email_lc" == "lawrence@bettermind.ph" ]]; then
   echo "OK: approved git identity"
   exit 0
@@ -94,6 +100,7 @@ fi
 echo "ERROR: git identity must be one of:" >&2
 echo "  - * <diazMelgarejo@gmail.com>" >&2
 echo "  - * <Lawrence@cyre.me>" >&2
+echo "  - * <Lawrence.Melgarejo@gmail.com>" >&2
 echo "  - Codex <codex@openai.com>" >&2
-echo "  - a well-known AI/vendor domain (OpenAI, Anthropic, Cursor, Google/Gemini, GitHub/Copilot, Microsoft, Perplexity, xAI/Grok)" >&2
+echo "  - a well-known AI/vendor domain (OpenAI, Anthropic, Kimi, Cursor, Google/Gemini, GitHub/Copilot, Microsoft, Perplexity, xAI/Grok)" >&2
 exit 1
