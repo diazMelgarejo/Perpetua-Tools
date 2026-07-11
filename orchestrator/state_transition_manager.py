@@ -165,17 +165,17 @@ class StateTransitionManager:
         # [3] Reputation weighting (G5) — adjust quorum votes by agent reputation
         weighted_votes = self._weight_votes(quorum_check.votes, obs.observer_id)
 
-        # [4] Sybil correlation (G6) — cross-check distance bucket + provenance
+        # [4] Sybil correlation (G6) — cross-check distance bucket + provenance.
+        # Per the design this pipeline implements (DELIVERABLE-2 §5.3's
+        # pseudocode: "Log but don't reject (just flag)"), Sybil correlation
+        # is a heuristic signal, not proof of malice like equivocation — a
+        # false-positive hard-reject would drop a legitimate peer's
+        # observation on circumstantial network-topology evidence alone.
+        # Flag it (decision_type + sybil_signals carry the risk forward for
+        # downstream/human review) but still let the observation through to
+        # the audit commit step.
         sybil_signals = await self._check_sybil_correlation(obs)
-        if sybil_signals.overall_risk == "high":
-            return StateTransitionResult(
-                accepted=False,
-                decision_type="sybil",
-                quorum_votes=weighted_votes,
-                sybil_signals=sybil_signals,
-                rejection_reason="High Sybil risk detected via G6 distance bucketing + G1 provenance clustering",
-                metadata={"step_4_sybil_check": True, "elapsed_ms": (time.time() - start_time) * 1000},
-            )
+        decision_type = "sybil_flagged" if sybil_signals.overall_risk == "high" else "approved"
 
         # [5] Audit commit (G8) — record decision to hash chain
         audit_entry = await self._commit_decision(
@@ -186,7 +186,7 @@ class StateTransitionManager:
 
         return StateTransitionResult(
             accepted=True,
-            decision_type="approved",
+            decision_type=decision_type,
             quorum_votes=weighted_votes,
             sybil_signals=sybil_signals,
             audit_hash=audit_entry.hash,
@@ -287,17 +287,27 @@ class StateTransitionManager:
                 witness.observer_provenance, 0
             ) + 1
 
-        # Check for XOR-distance correlation among witnesses
+        # Check for XOR-distance correlation among witnesses. Mark BOTH sides
+        # of a correlated pair, not just id_a — the previous version only
+        # recorded id_a, undercounting len(correlated) by up to half. That
+        # made the >50% threshold below mathematically unreachable at the
+        # minimum quorum size (2 witnesses, 1 possible pair: 1 correlated id
+        # out of 2 needs "1 > 1", never true), so a fully Sybil-correlated
+        # minimum-size quorum always silently scored "low" risk.
         witness_ids = [w.observer_id for w in obs.witness_set]
         for i, id_a in enumerate(witness_ids):
             for id_b in witness_ids[i + 1 :]:
                 if self._k_bucket.is_correlated(id_a, id_b, proximity_bits=4):
                     correlated[id_a] = f"correlated with {id_b}"
+                    correlated[id_b] = f"correlated with {id_a}"
 
-        # Risk assessment: high if >50% witnesses are correlated or
-        # provenance clustering is skewed (>2/3 from single origin)
+        # Risk assessment: high if >=50% witnesses are correlated or
+        # provenance clustering is skewed (>2/3 from single origin). >= (not
+        # >) so an exactly-half-correlated set — including the minimum
+        # 2-witness quorum where both are correlated with each other — is
+        # not silently waved through as "low".
         risk = "low"
-        if correlated and len(correlated) > len(witness_ids) / 2:
+        if correlated and len(correlated) >= len(witness_ids) / 2:
             risk = "high"
         elif provenance_counts and max(provenance_counts.values()) > len(obs.witness_set) * 0.67:
             risk = "medium"
