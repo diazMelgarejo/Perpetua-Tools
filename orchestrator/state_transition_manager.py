@@ -27,6 +27,8 @@ from orchestrator.audit_log import AuditLog, AuditEntry
 from orchestrator.distance_bucket import KBucketTable
 from orchestrator.equivocation import EquivocationLog, EquivocationEvidence
 from orchestrator.membership import PeerObservation, ObservationType
+from orchestrator.provenance import provenance_bucket
+from orchestrator.reputation import ReputationLedger
 from orchestrator.witness_quorum import validate_witness_quorum
 
 
@@ -102,8 +104,18 @@ class StateTransitionManager:
         witness_quorum_fn: Function to validate witness quorum (G1).
         k_bucket: KBucketTable for Sybil distance-bucketing correlation (G6).
         audit_log: AuditLog instance for hash-chain commitment (G8).
+        reputation_ledger: Optional ReputationLedger instance (G5). When
+            provided, closes the G4->G5 feedback loop: an equivocation
+            detection (step 1) immediately penalizes the equivocating
+            observer's reputation via record_equivocation(), and vote
+            weighting (step 3) reads live scores via reputation_weight().
+            If None, reputation weighting falls back to reputation_fn (or
+            a neutral 1.0 stub), and equivocation detection cannot
+            penalize reputation at all — TODO-stm-reputation-feedback
+            (job board) tracked this gap; passing a ledger here closes it.
         reputation_fn: Callable(observer_id) -> float for vote weighting (G5).
-            Returns reputation weight [0.0, ∞). Defaults to 1.0 (stub until G5 ready).
+            Returns reputation weight [0.0, ∞). Ignored if reputation_ledger
+            is provided. Defaults to 1.0 (stub) if neither is given.
     """
 
     def __init__(
@@ -111,14 +123,19 @@ class StateTransitionManager:
         equivocation_log: EquivocationLog,
         k_bucket: KBucketTable,
         audit_log: AuditLog,
+        reputation_ledger: Optional[ReputationLedger] = None,
         reputation_fn: Optional[Callable[[str], float]] = None,
     ):
         """Initialize StateTransitionManager with security modules."""
         self._equivocation_log = equivocation_log
         self._k_bucket = k_bucket
         self._audit_log = audit_log
-        # G5 stub: returns 1.0 (neutral) until G5 reputation ledger is ready
-        self._reputation_fn = reputation_fn or (lambda agent_id: 1.0)
+        self._reputation_ledger = reputation_ledger
+        if reputation_ledger is not None:
+            self._reputation_fn = reputation_ledger.reputation_weight
+        else:
+            # G5 stub: returns 1.0 (neutral) until a ledger is wired in
+            self._reputation_fn = reputation_fn or (lambda agent_id: 1.0)
 
     async def evaluate_observation(
         self,
@@ -212,11 +229,21 @@ class StateTransitionManager:
         Call equivocation_log.record_observation() to detect and log any
         contradictory reports from the same observer for the same peer/epoch.
 
+        On detection, if a ReputationLedger was provided, immediately penalize
+        the equivocating observer via record_equivocation() -- this is the
+        G4->G5 feedback loop TODO-stm-reputation-feedback tracked. Penalizes
+        obs.observer_id (the actual peer identity), not observer_provenance
+        (the network-origin string) -- provenance identifies where a report
+        came from, not who is accountable for issuing it, and multiple
+        observers can legitimately share a provenance bucket.
+
         Returns:
             EquivocationCheck with is_equivocal=True if contradiction found.
         """
         evidences = self._equivocation_log.record_observation(obs)
         if evidences:
+            if self._reputation_ledger is not None:
+                self._reputation_ledger.record_equivocation(obs.observer_id)
             reason = f"{len(evidences)} equivocation(s): observer {obs.observer_provenance} issued contradictory reports"
             return EquivocationCheck(is_equivocal=True, reason=reason, evidence=evidences)
         return EquivocationCheck(is_equivocal=False)
@@ -284,11 +311,16 @@ class StateTransitionManager:
         correlated = {}
         provenance_counts: Dict[str, int] = {}
 
-        # Collect provenance clustering data from witness_set
+        # Collect provenance clustering data from witness_set. Bucket by
+        # subnet (provenance_bucket(), same helper witness_quorum.py uses)
+        # rather than the raw provenance string -- otherwise Sybils on the
+        # same /24 or /64 with distinct observer_provenance strings would
+        # count as independent origins and dilute the clustering signal.
         for witness in obs.witness_set:
             bucket = self._k_bucket.bucket_for(witness.observer_id)
-            provenance_counts[witness.observer_provenance] = provenance_counts.get(
-                witness.observer_provenance, 0
+            bucketed_provenance = provenance_bucket(witness.observer_provenance)
+            provenance_counts[bucketed_provenance] = provenance_counts.get(
+                bucketed_provenance, 0
             ) + 1
 
         # Check for XOR-distance correlation among witnesses. Mark BOTH sides
