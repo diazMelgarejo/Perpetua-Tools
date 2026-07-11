@@ -629,6 +629,46 @@ class TestReorderBuffer:
         assert r5.accepted is False
         assert len(manager._reorder_buffer[obs1.peer_id]) == 2
 
+    @pytest.mark.asyncio
+    async def test_reorder_buffer_outer_peer_map_is_lru_bounded(self):
+        """P18: many peer_ids with abandoned sequence gaps must not grow the
+        outer reorder-buffer map without bound."""
+        manager = StateTransitionManager(
+            local_id="local_node",
+            equivocation_log=EquivocationLog(),
+            k_bucket=KBucketTable(local_id="local_node", k=20),
+            audit_log=AuditLog(),
+            reputation=ReputationLedger(),
+            max_cache_size=2,
+            reorder_buffer_max=2,
+        )
+
+        for i in range(3):
+            peer_id = f"peer_{i}"
+            obs1 = observation_factory(
+                peer_id=peer_id,
+                sequence=1,
+                timestamp=1_000_000.0 + (i * 10),
+                witness_set=trusted_witnesses(2),
+            )
+            obs3 = observation_factory(
+                peer_id=peer_id,
+                sequence=3,
+                timestamp=1_000_003.0 + (i * 10),
+                witness_set=trusted_witnesses(2),
+            )
+
+            accepted = await manager.evaluate_observation(obs1)
+            buffered = await manager.evaluate_observation(obs3)
+
+            assert accepted.accepted is True
+            assert buffered.decision_type == DecisionType.BUFFERED
+
+        assert len(manager._reorder_buffer) == 2
+        assert "peer_0" not in manager._reorder_buffer
+        assert "peer_1" in manager._reorder_buffer
+        assert "peer_2" in manager._reorder_buffer
+
 
 class TestBoundedCaches:
     @pytest.mark.asyncio
