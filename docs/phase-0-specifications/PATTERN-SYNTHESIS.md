@@ -251,14 +251,14 @@
 | ID | Name | Source | Threat(s) | PT status | Effort (Phase 1b) |
 |----|------|--------|-----------|-----------|-------------------|
 | P1 | Proof-Anchored Identity | Kademlia, Bitcoin | T1, T4 | ✅ | Low — extend to threshold sigs |
-| P2 | Distance-Metric Bucketing | Kademlia DHT | T4, T5 | ⚠️ | Medium — implement distance metric |
+| P2 | Distance-Metric Bucketing | Kademlia DHT | T4, T5 | ✅ | Implemented 2026-07-12 — `KBucketTable.update()` wired into `state_transition_manager.py` on every accepted observation |
 | P3 | Challenge-Response Liveness | SWIM | T1, T2 | ✅ | Low — formalize nonce binding |
 | P4 | Multi-Path Probe Diversity | HyParView, Eth | T6, T1 | ⚠️ | High — refactor confidence tracking |
 | P5 | Witness Quorum + Provenance Dedup | PBFT, HotStuff | T4, T1 | ⚠️ | Medium — integrate ASN lookup |
 | P6 | Reputation-Decay Witness Scoring | Bitcoin, Eth | T1, T4 | ❌ | Medium — implement reputation ledger |
 | P7 | Asynchronous Member Notification | SWIM | T5, T6 | ⚠️ | Medium — formalize log(N) gossip fan-out |
 | P8 | Monotonic Sequence Numbering | RAFT, TCP | T3, T7 | ⚠️ | Low — add seq field to schema |
-| P9 | Epoch-Scoped Reorder Buffer | TCP, RAFT | T7, T5 | ❌ | Medium — implement sorted buffer |
+| P9 | Epoch-Scoped Reorder Buffer | TCP, RAFT | T7, T5 | ✅ | Implemented 2026-07-12 in `orchestrator/state_transition_manager.py` — see integration plan Decision Audit Trail #15 |
 | P10 | Cryptographic Merkle Commit | Bitcoin, Eth | T6, data corruption | ❌ | Medium — optional periodic audits |
 | P11 | Atomic Multi-Writer Consensus | RAFT, Paxos | T1, T7 | ⚠️ | High — implement leader election |
 | P12 | BFT Threshold (f < N/3) | HotStuff, PBFT | T1–T6 | ✅ | Low — document formal bound |
@@ -283,4 +283,32 @@
 - P15 (threshold crypto), P20 (Merkle observability), P11 (full consensus)
 
 **Validation:** All 20 patterns extracted from production systems (BitTorrent DHT serves ~25M peers, SWIM proven in Cassandra/Riak with 1000+ node clusters, RAFT in etcd/Consul, Bitcoin in production 15+ years, BFT protocols in Ethereum/Cosmos).
+
+**GATE on P5/P6/P13 (2026-07-12, CEO review of PR #205):** three independent
+reviews (Codex + 2 clean Claude instances) converged, verified via direct
+grep across `src/`/`orchestrator/`/`tests/`, that `StateTransitionManager
+.evaluate_observation()` — the pipeline P5 (witness quorum), P6 (reputation-
+decay), and P13 (equivocation) all feed into — has **zero production
+callers**. `orchestrator/monotonic_gate.py`'s `is_observation_newer()` and
+`PeerRecord.update_from_observation()` are *also* zero-caller, so this isn't
+one disconnected module — the whole peer-observation ingestion path is
+unwired. Separately, the reviews question whether the BFT/permissionless
+threat model these patterns assume (Sybil, equivocation, reputation-decay —
+sourced from Kademlia/PBFT/Bitcoin, designed for adversarial multi-tenant
+networks) matches this project's actual topology (a single operator's own
+2–10 node LAN, per `MULTIAGENT-SWARM-SECURITY-ANALYSIS.md`).
+
+**Before further P5/P6/P13 hardening work starts, BOTH must land:**
+1. `evaluate_observation()` wired into a real ingestion path (`orchestrator
+   /agent_tracker.py` or `orchestrator/heartbeat_monitor.py` are the plan's
+   own candidate call sites — see the integration plan's §1d intended call
+   graph, never executed).
+2. An explicit threat-model premise re-check scoped to the actual topology,
+   not inherited wholesale from the permissionless-network pattern sources.
+
+PR #205 itself (P9/P18/P2 + the two memory-leak fixes) is unaffected by this
+gate — it's already implemented, tested, and merged; this blocks the *next*
+increment of pattern work, not what already shipped. See integration plan
+`2026-07-11-state-transition-manager-integration-plan.md` Blockers &amp;
+Dependencies table for the corresponding tracked entry.
 
