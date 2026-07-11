@@ -95,18 +95,31 @@ def state_transition_manager(equivocation_log, k_bucket, audit_log, reputation_f
 
 
 class WitnessBuilder:
-    """Builder for PeerObservation.Witness records."""
+    """Builder for lightweight witness_set leaf records.
+
+    PeerObservation.witness_set is typed Tuple[PeerObservation, ...], and
+    PeerObservation.__post_init__ unconditionally calls
+    _validate_witness_depth() -> _compute_witness_depth(), which recurses
+    into every witness_set member calling w._compute_witness_depth().
+    A plain duck-typed stub with only observer_id/observer_provenance
+    (matching what witness_quorum.py actually reads) raises AttributeError
+    the moment it's nested inside a real PeerObservation. PeerObservation
+    has no actual nested `.Witness` class (verified: hasattr is False) —
+    this stub IS the witness representation used across this test file, so
+    give it the one method the recursive depth check requires: a leaf
+    witness has no further nesting, so depth is always 1.
+    """
 
     @staticmethod
     def witness(
         observer_id: str = "observer_1",
         observer_provenance: str = "192.168.1.0/24",
-    ) -> PeerObservation.Witness:
-        """Create a witness record."""
-        # Access the inner Witness class if it exists
+    ):
+        """Create a leaf witness record (depth 1, no further nesting)."""
         return type("Witness", (), {
             "observer_id": observer_id,
             "observer_provenance": observer_provenance,
+            "_compute_witness_depth": lambda self: 1,
         })()
 
 
@@ -651,14 +664,8 @@ class TestMultiplePipelineRuns:
                 witness_agreement=0,
                 witness_disagreement=0,
                 witness_set=[
-                    type("Witness", (), {
-                        "observer_id": "observer_3",
-                        "observer_provenance": "192.168.3.0/24",
-                    })(),
-                    type("Witness", (), {
-                        "observer_id": "observer_4",
-                        "observer_provenance": "192.168.4.0/24",
-                    })(),
+                    WitnessBuilder.witness("observer_3", "192.168.3.0/24"),
+                    WitnessBuilder.witness("observer_4", "192.168.4.0/24"),
                 ],
                 backend_caps="MAC_OLLAMA",
                 backend_state="ACTIVE",
