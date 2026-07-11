@@ -24,10 +24,6 @@ fi
 export AGENTIC_STACK_ROOT="$STACK"
 export PYTHONPATH="$STACK${PYTHONPATH:+:$PYTHONPATH}"
 
-_run_upgrade_dry_run() {
-  python3 -m harness_manager.cli upgrade --dry-run "$REPO_ROOT"
-}
-
 _run_doctor_fallback() {
   echo "[agentic-stack] upgrade verb unavailable at pinned SHA — running doctor"
   python3 -m harness_manager.cli doctor "$REPO_ROOT"
@@ -35,12 +31,17 @@ _run_doctor_fallback() {
   echo "[agentic-stack]       bash scripts/git/agentic-stack-submodule-sync.sh upgrade"
 }
 
-if python3 -m harness_manager.cli upgrade --help >/dev/null 2>&1; then
-  echo "[agentic-stack] upgrade --dry-run (no writes until you run upgrade --yes):"
-  _run_upgrade_dry_run || true
-else
-  _run_doctor_fallback || true
-fi
+# Probe by attempting the real dry-run rather than `upgrade --help` -- the
+# CLI's argv parsing has changed across versions (v0.18 mis-parses a bare
+# --help as a positional adapter name), so a --help probe is not a reliable
+# version gate. The dry-run itself is side-effect-free either way.
+echo "[agentic-stack] upgrade --dry-run (no writes until you run upgrade --yes):"
+_dry_run_output="$(python3 -m harness_manager.cli upgrade --dry-run "$REPO_ROOT" 2>&1)" && {
+  printf '%s\n' "$_dry_run_output"
+} || {
+  printf '%s\n' "$_dry_run_output" | grep -qi "unrecognized\|no such\|unknown\|invalid choice" \
+    && _run_doctor_fallback || printf '%s\n' "$_dry_run_output"
+}
 
 echo "[agentic-stack] BLOCK upstream Brain integration — use Gbrain via gstack (doc 41 §5)"
 echo "[agentic-stack] PT .agent/ is union-merged at upgrade time; never commit into vendor/"
