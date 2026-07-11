@@ -203,7 +203,13 @@ function StateTransitionManager._apply_observation(observation: PeerObservation)
 
     # ========== Validation gates (run before any counter mutation) ==========
 
-    # Validate input
+    # Validate input. E1 (empty batch or null observation -> rejected before
+    # validation, no state change) requires this null check to run BEFORE any
+    # attribute access on observation -- accessing observation.peer_id first
+    # would raise AttributeError on a None observation instead of the
+    # intended ValueError rejection.
+    if observation is None:
+        raise ValueError("Invalid observation: observation is None")
     if observation.peer_id is None or observation.observation_type not in {REACHABLE, UNREACHABLE}:
         raise ValueError(f"Invalid observation: peer_id={observation.peer_id}, type={observation.observation_type}")
 

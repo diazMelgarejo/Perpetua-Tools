@@ -26,7 +26,7 @@
 
 40. **STM model conflict (spec reconciliation)** — D1 specifies POLLS_TO_CONFIRM=2; D2 specifies PROMOTE_THRESHOLD=2, DEMOTE_THRESHOLD=3. Spec-reconciliation task (design decision + dual-doc update + pseudocode), not implementation task. Resolve conflicts BEFORE Phase 1 scoping.
 
-41. **REPO-CROSS-REFERENCE.md created** — Navigation confusion from gstack cache stale copies led to creation of canonical cross-reference document (docs/REPO-CROSS-REFERENCE.md) mapping all plans/specs/ADRs across PT and orama-system. Maintenance pattern: maintain cross-reference FIRST when adding new plans; use relative paths only (no /Users/ paths in tracked files).
+41. **REPO-CROSS-REFERENCE.md created** — Navigation confusion from gstack cache stale copies led to creation of canonical cross-reference document (docs/REPO-CROSS-REFERENCE.md) mapping all plans/specs/ADRs across PT and orama-system. Maintenance pattern: maintain cross-reference FIRST when adding new plans; use relative paths only (no `/<user>/`-style workstation-absolute paths in tracked files).
 
 42. **Alexandria repository policy APPROVED** — Decision: create `oramasys/alexandria` as a documentation-only, zero-code repository for centralized specs, threat models, ADRs, and team review checklists. Benefits: single source of truth (not scattered across PT + gstack cache), no code = no build burden, stable URL anchors for cross-project references, clear L2/L3 delineation. ADR to be written to orama-system/docs/v2/41-alexandria-repository.md. Sync this policy to BOTH repos' LESSONS.md when implemented.
 
