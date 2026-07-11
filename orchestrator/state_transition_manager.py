@@ -317,7 +317,6 @@ class StateTransitionManager:
         # same /24 or /64 with distinct observer_provenance strings would
         # count as independent origins and dilute the clustering signal.
         for witness in obs.witness_set:
-            bucket = self._k_bucket.bucket_for(witness.observer_id)
             bucketed_provenance = provenance_bucket(witness.observer_provenance)
             provenance_counts[bucketed_provenance] = provenance_counts.get(
                 bucketed_provenance, 0
