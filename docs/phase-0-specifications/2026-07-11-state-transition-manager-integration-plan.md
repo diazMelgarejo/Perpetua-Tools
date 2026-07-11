@@ -638,15 +638,16 @@ from orchestrator.state_transition_manager import (
 | Full DELIVERABLE-2 hysteresis | 📋 Out of scope | Separate milestone after this pipeline is proven |
 | Persistence of in-memory modules | ⚠️ Design decision | Documented as follow-up; in-memory is acceptable for Phase 1b integration |
 | Branch target | ⚠️ `main` vs `feature/phase-0-blocker-fixes` | Implement on whichever branch Track D (Fleet Mode) will consume |
+| G4/G6 real production caller (2d, unwired) | 🔒 **GATED (2026-07-12)** | `evaluate_observation()` has zero production callers — confirmed independently 4+ times in the PR #205 quad-CEO-review. Further P5/P6/P13 pattern-hardening requires (1) this wiring landed and (2) a threat-model premise re-check for the actual single-operator LAN topology. See `docs/phase-0-specifications/PATTERN-SYNTHESIS.md` § "GATE on P5/P6/P13 (2026-07-12)" and `docs/phase-0-specifications/2026-07-12-ceo-review-quad-voices/`. PR #205 itself is unaffected — it stays merged/unblocked. |
 
 ---
 
 ## Success Criteria
 
 - [ ] `StateTransitionManager` exists and wires G1/G4/G5/G6/G8 into a single callable pipeline.
-- [ ] G4 (`equivocation`) has a real production caller.
+- [ ] G4 (`equivocation`) has a real production caller. **Still unmet as of 2026-07-12 — see Blockers table row "G4/G6 real production caller."**
 - [ ] G5 (`reputation`) is read for weighting and written on equivocation.
-- [ ] G6 (`distance_bucket`) has a real production caller.
+- [ ] G6 (`distance_bucket`) has a real production caller. **Still unmet as of 2026-07-12 — same gate as G4.**
 - [ ] G8 (`audit_log`) records every terminal decision (accepted and rejected).
 - [ ] Unit and integration tests cover all gates and cross-module behavior.
 - [ ] `tests/fixtures/state_transition_fixtures.py` is rewritten for the security pipeline; placeholder counter machine removed.
