@@ -294,10 +294,15 @@ class StateTransitionManager:
         # [2] Equivocation gate (cheapest)
         evidences = self._equivocation_log.record_observation(obs)
         if evidences:
-            for evidence in evidences:
-                # Evidence stores observer_provenance; penalize the provenance string
-                # as an observer identifier if no distinct observer_id is available.
-                self._reputation.record_equivocation(evidence.observer_provenance)
+            # Penalize obs.observer_id (the reporter of THIS contradictory
+            # observation), not EquivocationEvidence.observer_provenance.
+            # observer_provenance identifies a network origin, not an
+            # accountable identity, and multiple observers can legitimately
+            # share a provenance bucket -- penalizing it would punish
+            # innocent co-located observers alongside the actual offender.
+            # obs.observer_id is always available here (the triggering
+            # observation's own field), so no provenance fallback is needed.
+            self._reputation.record_equivocation(obs.observer_id)
             return self._reject(
                 obs,
                 DecisionType.EQUIVOCATION,
