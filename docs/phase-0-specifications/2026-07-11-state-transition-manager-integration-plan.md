@@ -633,7 +633,7 @@ from orchestrator.state_transition_manager import (
 | G2 (Confidence formula) | ✅ Implemented | Kept inside `PeerRecord.compute_confidence()`; STM does not touch it |
 | G7 (Async notifications) | 📋 Planned (Track B2/B5) | Portal endpoint deferred to G7 milestone |
 | P8 Monotonic sequence enforcement | ✅ Implemented | `PeerObservation.sequence` exists; STM adds per-peer `(epoch, sequence)` gate |
-| P9 Reorder buffer | 📋 Out of scope for STM | Parent plan Track A2; STM only rejects out-of-order duplicates, does not buffer |
+| P9 Reorder buffer | ✅ Implemented (2026-07-12) | Superseded the original "out of scope" decision — see Deferred Items and Decision Audit Trail #15 |
 | ASN lookup (P5) | 📋 Parent-plan decision | Parent plan default is MaxMind free tier; STM uses existing `/24` + `/64` provenance bucketing and does not require ASN |
 | Full DELIVERABLE-2 hysteresis | 📋 Out of scope | Separate milestone after this pipeline is proven |
 | Persistence of in-memory modules | ⚠️ Design decision | Documented as follow-up; in-memory is acceptable for Phase 1b integration |
@@ -745,7 +745,21 @@ No disagreements required taste decisions; both models converged on the steelman
 - Public HTTP portal endpoint for observation evaluation (G7 milestone / Track B).
 - Persistence for `EquivocationLog`, `KBucketTable`, `ReputationLedger`, and `AuditLog`.
 - Detailed reputation feedback loop after confirmed state transitions.
-- P9 reorder buffer (parent plan Track A2) — STM only gates duplicates, it does not buffer.
+- ~~P9 reorder buffer (parent plan Track A2) — STM only gates duplicates, it does not buffer.~~
+  **Superseded 2026-07-12** (see Decision Audit Trail #15): implemented inside
+  STM after all, per a PR #205 code-review follow-up plan
+  (`~/.gemini/antigravity-cli/brain/c135322b-e318-4038-93e4-e83a92cd48bb/plan.md`)
+  identifying P9 as still-missing alongside two memory-leak fixes. See
+  [PATTERN-SYNTHESIS.md](PATTERN-SYNTHESIS.md) P9 for the canonical spec.
+  `orchestrator/state_transition_manager.py` now has a per-peer
+  `(epoch, sequence)`-keyed reorder buffer (`_reorder_buffer`, capped at
+  `reorder_buffer_max`), draining via `_flush_reorder_buffer()` and surfacing
+  flushed results through `StateTransitionResult.flushed`. Also landed in the
+  same pass: P18 bounded LRU caches (`_seen_observations`, `_last_applied_key`,
+  `max_cache_size`), P2 `KBucketTable.update()` on every accepted observation,
+  ref-counted `_peer_locks` eviction (memory-leak fix, PR #205 code review),
+  and an audit-log naming fix (`new_status` uses `observation_type`, not the
+  internal `decision_type` label, for accepted decisions).
 
 ### Adaptation Notes (integration with parent PATTERN plan)
 
@@ -778,3 +792,5 @@ Plan approved with the scope and API corrections above. Next step: implement `or
 | 12 | Program | Position STM as prerequisite to parent plan Track D (Fleet Mode) | Mechanical | P5 | Fleet mode self-healing and topology consensus need the security pipeline before they can trust observations | Implement Fleet Mode first and retrofit security later |
 | 13 | Program | Leave P9 reorder buffer out of STM scope | Mechanical | P2 (blast radius) | Reorder buffer is a separate pattern with its own state and tests; STM only needs a dedup/monotonic gate | Implement buffering inside STM |
 | 14 | Program | Target `feature/phase-0-blocker-fixes` if Track D is active there, else `main` | Mechanical | P3 | Minimizes cross-branch merge work for the broader program | Force all STM work onto `main` regardless of broader program branch |
+| 15 | Program | **Supersedes #13** (2026-07-12): implement P9 reorder buffer inside STM after all, plus P18 bounded caches and P2 k-bucket maintenance in the same pass | Mechanical | P1 (completeness), P5 | A PR #205 code-review follow-up (antigravity-cli plan) found P9/P18/P2 still pseudocode-only per PATTERN-SYNTHESIS.md, plus a real `_peer_locks`/`_seen_observations` memory-leak risk under many distinct peer_ids; the original blast-radius concern (#13) was addressed by scoping the buffer to a private, per-peer, capped structure with no new public surface, not by staying out of STM | Ship a separate `ReorderBuffer` module and wire it externally (would re-fragment the same peer-ordering state STM already owns via `_last_applied_key`) |
+| 16 | Eng | Add `StateTransitionResult.flushed` as an additive field rather than changing `evaluate_observation()`'s return type to a list | Taste | P5, P3 (pragmatic) | Every existing caller reads a single `StateTransitionResult`; a list return type is a breaking change with no compensating benefit for the common (nothing flushed) case | Return `list[StateTransitionResult]` unconditionally, per the antigravity plan's original proposal |
