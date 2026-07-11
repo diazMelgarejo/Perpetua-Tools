@@ -91,6 +91,14 @@ Fixes:
 5. **Fold in:** Only the pseudocode comment from A's 0f2a3829 that explains why `accepted=` accepts SYBIL_FLAGGED (if not already present in the cherry-picked c62af7c3)
 6. **Result:** Final lineage with code + docs + spec logic, no duplicates
 
+### What Gets Lost / Gained
+
+| Scenario | Loss / Gain |
+|----------|------------|
+| **If A-only** | ❌ Loses Python code fixes (UNACCEPTABLE — PR ships broken) with unbounded-memory and race-condition defects; ❌ Loses cache bound, RLock, G4→G5 loop |
+| **If B-only** | ✅ Loses nothing material; B's docs subsume A; ✅ Covers all substantive fixes |
+| **If Blend (CHOSEN)** | ✅ Complete: code + docs + spec logic; ✅ No duplicate markdown fixes; ✅ Correct TODO list (2 of 3 "deferred" items already done in 3376fa99) |
+
 ### What Gets Kept
 
 - ✅ All 5 Python code fixes (3376fa99)
@@ -98,6 +106,7 @@ Fixes:
 - ✅ Spec pseudocode comment explaining SYBIL_FLAGGED acceptance logic (from 0f2a3829)
 - ❌ No duplicate markdown fixes
 - ❌ No redundant fence/link/language-tag changes
+
 
 ---
 
