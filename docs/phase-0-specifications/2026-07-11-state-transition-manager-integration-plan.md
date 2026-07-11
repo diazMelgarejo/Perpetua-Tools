@@ -62,7 +62,7 @@ Phase 1b security gaps are implemented and unit-tested in isolation:
 
 ### Execution Flow
 
-```
+```text
 PeerObservation
     ↓
 [1] Dedup + Monotonic Gate        ← reject replays / out-of-order sequence
@@ -202,7 +202,9 @@ from orchestrator.audit_log import AuditLog, AuditEntry
 from orchestrator.distance_bucket import KBucketTable
 from orchestrator.equivocation import EquivocationLog
 from orchestrator.membership import PeerObservation
+from orchestrator.provenance import provenance_bucket
 from orchestrator.reputation import ReputationLedger
+from orchestrator.witness_quorum import validate_witness_quorum
 
 
 class InvalidObservationError(ValueError):
@@ -349,7 +351,13 @@ class StateTransitionManager:
         self._last_applied_key[obs.peer_id] = (obs.epoch, obs.sequence)
 
         return StateTransitionResult(
-            accepted=decision_type == DecisionType.APPROVED,
+            # APPROVED and SYBIL_FLAGGED both accept the observation (Sybil
+            # correlation is a heuristic signal carried forward for
+            # downstream review, not proof of malice like equivocation —
+            # see step [5] above). Only the earlier hard-reject paths
+            # (insufficient quorum, weighted-quorum-below-threshold) set
+            # accepted=False, and they return before reaching this point.
+            accepted=decision_type in (DecisionType.APPROVED, DecisionType.SYBIL_FLAGGED),
             decision_type=decision_type,
             peer_id=obs.peer_id,
             epoch=obs.epoch,
@@ -666,14 +674,14 @@ Treat this as a **dedicated 2–3 day milestone**, not a 6–8 hour bolt-on. The
 
 ## Related
 
-- [`orchestrator/equivocation.py`](../orchestrator/equivocation.py) — G4
-- [`orchestrator/distance_bucket.py`](../orchestrator/distance_bucket.py) — G6
-- [`orchestrator/audit_log.py`](../orchestrator/audit_log.py) — G8
-- [`orchestrator/provenance.py`](../orchestrator/provenance.py) — G1
-- [`orchestrator/witness_quorum.py`](../orchestrator/witness_quorum.py) — Calls G1
-- [`orchestrator/reputation.py`](../orchestrator/reputation.py) — G5
-- [`orchestrator/peer_record.py`](../orchestrator/peer_record.py) — Downstream display-state consumer
-- [`orchestrator/membership.py`](../orchestrator/membership.py) — `PeerObservation` schema
+- [`orchestrator/equivocation.py`](../../orchestrator/equivocation.py) — G4
+- [`orchestrator/distance_bucket.py`](../../orchestrator/distance_bucket.py) — G6
+- [`orchestrator/audit_log.py`](../../orchestrator/audit_log.py) — G8
+- [`orchestrator/provenance.py`](../../orchestrator/provenance.py) — G1
+- [`orchestrator/witness_quorum.py`](../../orchestrator/witness_quorum.py) — Calls G1
+- [`orchestrator/reputation.py`](../../orchestrator/reputation.py) — G5
+- [`orchestrator/peer_record.py`](../../orchestrator/peer_record.py) — Downstream display-state consumer
+- [`orchestrator/membership.py`](../../orchestrator/membership.py) — `PeerObservation` schema
 - [`DELIVERABLE-2-HEARTBEAT-LIVENESS-REGENERATED.md`](./DELIVERABLE-2-HEARTBEAT-LIVENESS-REGENERATED.md) — §5.3 full state machine (out of scope here)
 - [`2026-07-11-phase1b-integration-review.md`](./2026-07-11-phase1b-integration-review.md) — Prior review that flagged the integration gap
 - [`MULTIAGENT-SWARM-SECURITY-ANALYSIS.md`](./MULTIAGENT-SWARM-SECURITY-ANALYSIS.md) — Threat model (T1–T7) and gap analysis (G1–G16) that motivates the security pipeline
