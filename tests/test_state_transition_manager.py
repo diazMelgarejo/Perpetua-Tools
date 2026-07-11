@@ -539,3 +539,228 @@ class TestEdgeCases:
         duplicate_count = sum(1 for r in results if r.decision_type == DecisionType.DUPLICATE)
         assert accepted_count == 1
         assert duplicate_count == 1
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Phase 2 follow-up: P9 reorder buffer, P18 bounded caches, P2 k-bucket
+# maintenance, ref-counted lock cleanup, audit status naming.
+# Per docs/wiki/11-agentic-stack-agent-blend.md-adjacent plan doc:
+# ~/.gemini/antigravity-cli/brain/c135322b-e318-4038-93e4-e83a92cd48bb/plan.md
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+class TestReorderBuffer:
+    @pytest.mark.asyncio
+    async def test_gap_ahead_is_buffered_not_rejected(self, state_transition_manager):
+        obs1 = observation_factory(sequence=1, witness_set=trusted_witnesses(2))
+        obs3 = observation_factory(sequence=3, timestamp=1_000_003.0, witness_set=trusted_witnesses(2))
+
+        first = await state_transition_manager.evaluate_observation(obs1)
+        second = await state_transition_manager.evaluate_observation(obs3)
+
+        assert first.accepted is True
+        assert second.accepted is False
+        assert second.decision_type == DecisionType.BUFFERED
+        # Buffering is provisional, not a terminal decision -- no audit
+        # entry, unlike every other decision type.
+        assert second.audit_entry is None
+
+    @pytest.mark.asyncio
+    async def test_buffered_observation_flushed_when_gap_fills(self, state_transition_manager):
+        obs1 = observation_factory(sequence=1, witness_set=trusted_witnesses(2))
+        obs3 = observation_factory(sequence=3, timestamp=1_000_003.0, witness_set=trusted_witnesses(2))
+        obs2 = observation_factory(sequence=2, timestamp=1_000_002.0, witness_set=trusted_witnesses(2))
+
+        await state_transition_manager.evaluate_observation(obs1)
+        await state_transition_manager.evaluate_observation(obs3)  # buffered
+        result = await state_transition_manager.evaluate_observation(obs2)  # fills the gap
+
+        assert result.accepted is True
+        assert result.decision_type == DecisionType.APPROVED
+        assert len(result.flushed) == 1
+        flushed_result = result.flushed[0]
+        assert flushed_result.accepted is True
+        assert flushed_result.epoch == obs3.epoch
+        # The manager's own state now reflects seq 3 as applied, not seq 2 --
+        # confirms the flush actually advanced _last_applied_key, not just
+        # returned a result object without applying it.
+        assert state_transition_manager._last_applied_key[obs1.peer_id] == (1, 3)
+
+    @pytest.mark.asyncio
+    async def test_multiple_buffered_observations_flush_in_order(self, state_transition_manager):
+        """seq 4 and seq 3 both buffered (arriving out of order relative to
+        each other too); seq 2 arriving should flush 3 then 4, not just 3."""
+        obs1 = observation_factory(sequence=1, witness_set=trusted_witnesses(2))
+        obs4 = observation_factory(sequence=4, timestamp=1_000_004.0, witness_set=trusted_witnesses(2))
+        obs3 = observation_factory(sequence=3, timestamp=1_000_003.0, witness_set=trusted_witnesses(2))
+        obs2 = observation_factory(sequence=2, timestamp=1_000_002.0, witness_set=trusted_witnesses(2))
+
+        await state_transition_manager.evaluate_observation(obs1)
+        await state_transition_manager.evaluate_observation(obs4)
+        await state_transition_manager.evaluate_observation(obs3)
+        result = await state_transition_manager.evaluate_observation(obs2)
+
+        assert len(result.flushed) == 2
+        assert state_transition_manager._last_applied_key[obs1.peer_id] == (1, 4)
+        # Buffer for this peer should be fully drained, not just partially.
+        assert obs1.peer_id not in state_transition_manager._reorder_buffer
+
+    @pytest.mark.asyncio
+    async def test_reorder_buffer_respects_max_size(self):
+        manager = StateTransitionManager(
+            local_id="local_node",
+            equivocation_log=EquivocationLog(),
+            k_bucket=KBucketTable(local_id="local_node", k=20),
+            audit_log=AuditLog(),
+            reputation=ReputationLedger(),
+            reorder_buffer_max=2,
+        )
+        obs1 = observation_factory(sequence=1, witness_set=trusted_witnesses(2))
+        obs3 = observation_factory(sequence=3, timestamp=1_000_003.0, witness_set=trusted_witnesses(2))
+        obs4 = observation_factory(sequence=4, timestamp=1_000_004.0, witness_set=trusted_witnesses(2))
+        obs5 = observation_factory(sequence=5, timestamp=1_000_005.0, witness_set=trusted_witnesses(2))
+
+        await manager.evaluate_observation(obs1)
+        r3 = await manager.evaluate_observation(obs3)  # buffered (1/2)
+        r4 = await manager.evaluate_observation(obs4)  # buffered (2/2, at max)
+        r5 = await manager.evaluate_observation(obs5)  # buffer full -> rejected
+
+        assert r3.decision_type == DecisionType.BUFFERED
+        assert r4.decision_type == DecisionType.BUFFERED
+        assert r5.decision_type == DecisionType.STALE
+        assert r5.accepted is False
+        assert len(manager._reorder_buffer[obs1.peer_id]) == 2
+
+
+class TestBoundedCaches:
+    @pytest.mark.asyncio
+    async def test_seen_observations_and_last_applied_key_are_lru_bounded(self):
+        """P18: caches must not grow past max_cache_size, and must evict the
+        LEAST recently used entry (peer_0), not an arbitrary one."""
+        manager = StateTransitionManager(
+            local_id="local_node",
+            equivocation_log=EquivocationLog(),
+            k_bucket=KBucketTable(local_id="local_node", k=20),
+            audit_log=AuditLog(),
+            reputation=ReputationLedger(),
+            max_cache_size=3,
+        )
+        for i in range(5):
+            obs = observation_factory(peer_id=f"peer_{i}", witness_set=trusted_witnesses(2))
+            result = await manager.evaluate_observation(obs)
+            assert result.accepted is True  # guard against a silently-broken fixture masking the real assertions below
+
+        assert len(manager._seen_observations) == 3
+        assert len(manager._last_applied_key) == 3
+        assert "peer_0" not in manager._last_applied_key
+        assert "peer_1" not in manager._last_applied_key
+        assert "peer_4" in manager._last_applied_key  # most recent survives
+
+    @pytest.mark.asyncio
+    async def test_lru_cache_eviction_does_not_crash_next_observation(self):
+        """A peer evicted from _last_applied_key loses monotonic-ordering
+        protection (accepted tradeoff, see class docstring) but must not
+        crash -- its next observation is treated as fresh, not as an error."""
+        manager = StateTransitionManager(
+            local_id="local_node",
+            equivocation_log=EquivocationLog(),
+            k_bucket=KBucketTable(local_id="local_node", k=20),
+            audit_log=AuditLog(),
+            reputation=ReputationLedger(),
+            max_cache_size=1,
+        )
+        obs_a = observation_factory(peer_id="peer_a", witness_set=trusted_witnesses(2))
+        obs_b = observation_factory(peer_id="peer_b", witness_set=trusted_witnesses(2))
+
+        await manager.evaluate_observation(obs_a)  # evicted once peer_b is applied
+        result = await manager.evaluate_observation(obs_b)
+
+        assert result.accepted is True
+        assert "peer_a" not in manager._last_applied_key
+
+
+class TestKBucketMaintenance:
+    @pytest.mark.asyncio
+    async def test_successful_observation_updates_k_bucket(self, state_transition_manager, k_bucket):
+        obs = observation_factory(peer_id="tracked_peer", witness_set=trusted_witnesses(2))
+
+        assert "tracked_peer" not in k_bucket.peers_in_bucket(k_bucket.bucket_for("tracked_peer"))
+        result = await state_transition_manager.evaluate_observation(obs)
+
+        assert result.accepted is True
+        assert "tracked_peer" in k_bucket.peers_in_bucket(k_bucket.bucket_for("tracked_peer"))
+
+    @pytest.mark.asyncio
+    async def test_rejected_observation_does_not_update_k_bucket(self, state_transition_manager, k_bucket):
+        # Empty witness set fails quorum (step [3]) -- a rejected gate must
+        # not touch k-bucket membership at all.
+        obs = observation_factory(peer_id="rejected_peer", witness_set=())
+
+        result = await state_transition_manager.evaluate_observation(obs)
+
+        assert result.accepted is False
+        assert "rejected_peer" not in k_bucket.peers_in_bucket(k_bucket.bucket_for("rejected_peer"))
+
+
+class TestPeerLockCleanup:
+    @pytest.mark.asyncio
+    async def test_peer_lock_evicted_after_evaluation_completes(self, state_transition_manager):
+        obs = observation_factory(witness_set=trusted_witnesses(2))
+
+        assert len(state_transition_manager._peer_locks) == 0
+        await state_transition_manager.evaluate_observation(obs)
+        # Ref count should have returned to 0 and the entry evicted -- not
+        # left behind to accumulate across many distinct peer_ids.
+        assert len(state_transition_manager._peer_locks) == 0
+
+    @pytest.mark.asyncio
+    async def test_peer_lock_not_evicted_while_a_concurrent_call_holds_it(self, state_transition_manager):
+        import asyncio as _asyncio
+
+        obs_a = observation_factory(peer_id="peer_a", witness_set=trusted_witnesses(2))
+        obs_b = observation_factory(peer_id="peer_a", timestamp=2_000_000.0, sequence=2, witness_set=trusted_witnesses(2))
+
+        results = await _asyncio.gather(
+            state_transition_manager.evaluate_observation(obs_a),
+            state_transition_manager.evaluate_observation(obs_b),
+        )
+
+        assert all(r is not None for r in results)
+        # Both calls completed and released -- back to zero, no leaked entry.
+        assert len(state_transition_manager._peer_locks) == 0
+
+
+class TestAuditStatusNaming:
+    @pytest.mark.asyncio
+    async def test_approved_audit_entry_uses_observation_type_not_decision_type(
+        self, state_transition_manager, audit_log
+    ):
+        obs = observation_factory(observation_type=ObservationType.REACHABLE, witness_set=trusted_witnesses(2))
+
+        result = await state_transition_manager.evaluate_observation(obs)
+
+        assert result.decision_type == DecisionType.APPROVED
+        assert result.audit_entry.new_status == ObservationType.REACHABLE.value
+
+    @pytest.mark.asyncio
+    async def test_sybil_flagged_audit_entry_uses_observation_type_not_sybil_flagged_label(
+        self, state_transition_manager, k_bucket
+    ):
+        target_peer = "peer_abc"
+        witnesses = sybil_witnesses_correlated_ids(n=2, target_peer_id=target_peer)
+        obs = observation_factory(
+            peer_id=target_peer,
+            observation_type=ObservationType.REACHABLE,
+            witness_set=witnesses,
+        )
+
+        result = await state_transition_manager.evaluate_observation(obs)
+
+        assert result.decision_type == DecisionType.SYBIL_FLAGGED
+        # The audit trail's status column should read the peer's actual
+        # reachability, not the internal "sybil_flagged" label -- a reader
+        # scanning old_status -> new_status transitions should see
+        # unreachable/reachable, not a decision-pipeline implementation
+        # detail leaking into the peer-state column.
+        assert result.audit_entry.new_status == ObservationType.REACHABLE.value
+        assert result.audit_entry.new_status != DecisionType.SYBIL_FLAGGED.value
