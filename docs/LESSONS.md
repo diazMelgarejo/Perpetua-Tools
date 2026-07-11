@@ -1999,3 +1999,70 @@ node <repo>/AlphaClaw/node_modules/openclaw/openclaw.mjs gateway --port 18789 --
 - **Gotcha**: a file showing 100% line-changed in `git diff` with zero semantic difference (verified via `diff <(tr -d '\r' ...)`) is `.gitattributes` EOL false-dirty — fix once with `git add <file>` to renormalize the blob, never `git checkout --` (which can silently discard real changes if the diagnosis is wrong).
 - **Encoding sweep**: the UTF-8/cp1252 codec bug documented 2026-06-XX (promote.py, auto_dream.py) recurred at every new read site in the memory pipeline — `graduate.py` (candidate JSON, LESSONS.md), `render_lessons.py` (4 more call sites), `learn.py`. Fixed the full `learn.py → graduate.py → render_lessons.py` chain in this session. **Not yet fixed**: `recall.py`, `show.py`, `skill_loader.py`, `decay.py`, `review_state.py` still have unencoded `open()` calls on tracked `.md`/`.jsonl` — flagged for a follow-up sweep, not blocking today's work.
 - **Gotcha**: `graduate.py`'s retry-safety print path (`f"... {lesson_id} (retry)"` containing `→`) crashes with `UnicodeEncodeError` on Windows cp1252 stdout even after all file reads are UTF-8-safe — this is a *stdout* encoding issue, not a file-read issue; `PYTHONIOENCODING=utf-8` env var unblocks it without a source patch. The underlying graduation had already completed by the time the print crashed, so treat a post-completion print crash as cosmetic, not a rollback signal — verify via `grep lesson_<id> lessons.jsonl` before retrying.
+
+## 2026-07-11 — PR #203 Blend Verdict (Sonnet 5 Architectural Review)
+
+**Status:** Decision published, ready for execution  
+**Confidence:** 4/5
+
+### Finding: Two Parallel Lineages Required (Not Duplicates)
+
+- **Lineage A** (`stm-pattern-integration-local`, commit `0f2a3829`): Docs + spec pseudocode fixes
+- **Lineage B** (`worktree-pr-203-stm-integration`, `3376fa99` + `c62af7c3`): Code fixes + docs fixes
+
+**Critical Discovery:** `orchestrator/state_transition_manager.py` does not exist on `main`. Lineage A fixes the SPEC pseudocode; Lineage B fixes the REAL Python code. Both required.
+
+### Blend Strategy
+
+1. Cherry-pick `3376fa99` (code fixes) onto `stm-pattern-integration-local`
+2. Cherry-pick `c62af7c3` (docs fixes) onto `stm-pattern-integration-local`
+3. Diff against `0f2a3829`, fold in A-only spec commentary
+4. Push result to PR #203
+
+### Outcome
+
+- All 10 CodeRabbit findings closed
+- No duplicate fixes
+- No deferred work items (3 "TODOs" in Lineage A are already done in 3376fa99)
+
+**Next agent:** Execute the blend execution checklist in `docs/phase-0-specifications/2026-07-11-PR203-BLEND-VERDICT.md`.
+
+
+## 2026-07-11 — PR #203 Blend Execution Complete (Codex Review)
+
+**Final Status:** ✅ READY TO MERGE with tracked Phase 2 TODOs
+
+### Execution Summary
+
+Selective blend (commit 482d7199) completed by executing agent after Codex verified:
+- ✅ G4→G5 reputation feedback loop wired (record_equivocation targeting observer_id)
+- ✅ Subnet-aware Sybil clustering via provenance_bucket() implemented
+- ✅ Sybil accept-with-flag semantics correct
+- ✅ Tests passing (24/24)
+
+### Two TODOs Deferred (Non-Blocking)
+
+**TODO-stm-observation-dedup** (Phase 2, Medium priority)
+- Issue: Observation dedup via _seen_observations cache was dead scaffolding in Lineage B (declared but never read/written)
+- Root cause: Sonnet's plan incorrectly assumed B's cache was functional
+- Action: Implement bounded observation dedup (digest-based or TTL-based retention policy)
+- Blocker: No (dedup risk lives in injected equivocation_log, not STM state)
+
+**TODO-stm-concurrency-model** (Phase 2, Medium priority)
+- Issue: threading.RLock() proposed by Sonnet doesn't serialize async pipeline (no atomicity across awaits)
+- Root cause: Sonnet used threading primitive for async code (incorrect)
+- Action: Implement asyncio.Lock() serializing full evaluate_observation pipeline
+- Blocker: No (no concurrent caller path exists yet in orchestrator)
+
+### Elegance Assessment
+
+**Codex verdict:** 4/5 (Selective blend was architecturally superior to blind cherry-pick; agent correctly rejected unsafe fixes; tests added)
+
+**Weakness:** Blend-verdict doc still claimed "all findings closed" (now false) — corrected below.
+
+### Next: Phase 2 Planning
+
+Two tracking documents updated:
+1. Phase 2 integration backlog (formal TODO entries)
+2. Blend verdict doc (correction note added)
+
