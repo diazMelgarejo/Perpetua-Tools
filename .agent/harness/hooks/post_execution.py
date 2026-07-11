@@ -22,7 +22,7 @@ def log_execution(skill_name, action, result, success, reflection="",
     if pain_score is None:
         pain_score = 2 if success else 7
     entry = {
-        "timestamp": datetime.datetime.now().isoformat(),
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "skill": skill_name,
         "action": sanitize_tracked_path_leaks(action[:200]),
         "result": "success" if success else "failure",
