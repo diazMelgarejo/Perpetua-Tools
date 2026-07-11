@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "base_sha": "db4e6b08673ac152096f24b82a5cea3a28acb509",
+  "base_version": "v0.9.0",
+  "note": "base is PT .agent/'s original scaffold version (see .agent/install.json); never been blended since",
+  "last_blend": {
+    "at": null,
+    "target_sha": null,
+    "applied_clean": [],
+    "conflicts": [],
+    "staged_new": [],
+    "skipped_blocked": []
+  }
+}
