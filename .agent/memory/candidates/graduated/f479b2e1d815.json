@@ -1,0 +1,43 @@
+{
+  "id": "f479b2e1d815",
+  "key": "manual_f479b2",
+  "name": "manual_f479b2",
+  "claim": "The agent-coordination-heartbeat skill is globally available: canonical source is orama-system/bin/orama-system/skills/agent-coordination-heartbeat/SKILL.md, and the PT-side wrapper is .agents/skills/agent-coordination-heartbeat/SKILL.md (mirrors the existing git-history-surgery/hermes-harness thin-wrapper pattern).",
+  "conditions": [
+    "agent-coordination",
+    "cleanup-stale-claims",
+    "dead-agent",
+    "heartbeat",
+    "liveness",
+    "skill-registration"
+  ],
+  "evidence_ids": [
+    "2026-07-11T12:23:40.359896+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T12:23:40.359896+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T12:23:40.359896+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T12:23:40.445957+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Salvaged from PR #202 (fix/audit-attribution-emails), which recorded this skill's registration in memory but the actual PT wrapper file was never created \u2014 created it in the same session and graduated this lesson to close the gap.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T12:23:40.359896+00:00"
+      ],
+      "lessons_sha": "90e40c56838e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T12:23:40.445949+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Salvaged from PR #202 (fix/audit-attribution-emails), which recorded this skill's registration in memory but the actual PT wrapper file was never created \u2014 created it in the same session and graduated this lesson to close the gap."
+}
