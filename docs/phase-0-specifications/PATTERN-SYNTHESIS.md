@@ -299,12 +299,31 @@ networks) matches this project's actual topology (a single operator's own
 2–10 node LAN, per `MULTIAGENT-SWARM-SECURITY-ANALYSIS.md`).
 
 **Before further P5/P6/P13 hardening work starts, BOTH must land:**
-1. `evaluate_observation()` wired into a real ingestion path (`orchestrator
-   /agent_tracker.py` or `orchestrator/heartbeat_monitor.py` are the plan's
-   own candidate call sites — see the integration plan's §1d intended call
-   graph, never executed).
+1. `evaluate_observation()` wired into a real ingestion path.
+   ~~`orchestrator/agent_tracker.py` or `orchestrator/heartbeat_monitor.py`
+   are the plan's own candidate call sites~~ — **CORRECTED 2026-07-12**: a
+   remediation-plan pass (agent `aac123e82eb006ede`) read both files and
+   found this guess wrong — they operate on `AgentRecord`/raw `GossipBus`
+   dicts (Claude sub-agent process lifecycle), not `PeerObservation`
+   (backend reachability), and in fact **no production code anywhere in
+   this repo currently constructs a `PeerObservation` at all** — the gap is
+   larger than "STM has no caller." The real, currently-live call site is
+   `GET /health` → `backend_health_map()` → `_probe()` in
+   `orchestrator/connectivity.py:130-143` (bypasses `PeerObservation`
+   entirely today). Full wiring task, effort estimate, and a flagged
+   two-FastAPI-app ambiguity: see
+   `docs/phase-0-specifications/2026-07-12-stm-remediation-plan.md` §1.
 2. An explicit threat-model premise re-check scoped to the actual topology,
    not inherited wholesale from the permissionless-network pattern sources.
+   Scoped into 3 concrete questions (real witnesses? real trust boundary?
+   real observed failure mode?) with a deliverable shape: see
+   `docs/phase-0-specifications/2026-07-12-stm-remediation-plan.md` §2.
+
+**Recommended sequencing (per the remediation plan):** run the threat-model
+premise re-check FIRST, alone — it's cheap, has no code dependency, and its
+go/no-go verdict determines whether wiring P5/P6/P13 as scoped is even worth
+doing, vs. descoping to a simpler allowlist+mTLS model. Do not start wiring
+code before that verdict lands.
 
 PR #205 itself (P9/P18/P2 + the two memory-leak fixes) is unaffected by this
 gate — it's already implemented, tested, and merged; this blocks the *next*
