@@ -49,11 +49,11 @@ fi
 
 email_lc="$(git config --local user.email 2>/dev/null | tr '[:upper:]' '[:lower:]' || true)"
 case "$email_lc" in
-  diazmelgarejo@gmail.com | lawrence@cyre.me | codex@openai.com)
+  diazmelgarejo@gmail.com | lawrence@cyre.me | lawrence.melgarejo@gmail.com | codex@openai.com)
     ok "user.email=${email_lc}"
     ;;
   *)
-    fail "user.email=${email_lc:-<unset>} — expected cyre gmail/cyre.me or Codex"
+    fail "user.email=${email_lc:-<unset>} — expected diazmelgarejo@gmail.com, lawrence@cyre.me, lawrence.melgarejo@gmail.com, or codex@openai.com"
     ;;
 esac
 
