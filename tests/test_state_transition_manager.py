@@ -599,6 +599,39 @@ class TestSybilDetection:
             # May be low/medium/high risk depending on configuration
             assert result.sybil_signals.overall_risk in ["low", "medium", "high"]
 
+    @pytest.mark.asyncio
+    async def test_sybil_high_risk_flags_but_does_not_reject(
+        self,
+        state_transition_manager: StateTransitionManager,
+        sample_peer_observation: PeerObservation,
+    ):
+        """High Sybil risk is a heuristic signal, not proof of malice like
+        equivocation — per DELIVERABLE-2 §5.3's own pseudocode ("Log but
+        don't reject (just flag)"), the observation must still be accepted
+        and committed to the audit chain, with the risk carried forward in
+        decision_type + sybil_signals for downstream/human review. A hard
+        reject here would drop a legitimate peer's observation on
+        circumstantial network-topology evidence alone.
+        """
+        state_transition_manager._k_bucket.is_correlated = Mock(return_value=True)
+
+        result = await state_transition_manager.evaluate_observation(sample_peer_observation)
+
+        assert result.sybil_signals is not None
+        # Precondition: is_correlated=True for every witness pair must actually
+        # drive risk to "high" (>50% of witnesses correlated) — assert this
+        # explicitly so the test fails loudly instead of vacuously passing if
+        # the risk-scoring thresholds in _check_sybil_correlation ever change.
+        assert result.sybil_signals.overall_risk == "high", (
+            f"expected mocked is_correlated=True to produce high risk, got "
+            f"{result.sybil_signals.overall_risk!r} (correlated_ids="
+            f"{result.sybil_signals.correlated_ids!r})"
+        )
+        assert result.accepted is True
+        assert result.decision_type == "sybil_flagged"
+        assert result.audit_hash != ""
+        assert result.rejection_reason is None
+
 
 class TestEndToEndWithAuditHash:
     """Full pipeline: all gates pass → audit hash created and returned."""
