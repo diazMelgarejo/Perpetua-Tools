@@ -284,23 +284,23 @@ None — the one applicable User Challenge (threat-model premise vs. wiring prio
 
 ### Implementation Tasks (aggregated)
 
-- [ ] **T1 (P1, human: ~half day / CC: ~2-4h) — Threat-model premise re-check** — Answer 3 concrete questions (real witnesses? real trust boundary? real observed failure mode?) and append a dated addendum to `MULTIAGENT-SWARM-SECURITY-ANALYSIS.md` with a go/no-go verdict on P5/P6/P13.
+- [x] **T1 (P1, human: ~half day / CC: ~2-4h) — Threat-model premise re-check** — **DONE 2026-07-12, verdict: DESCOPE.** Addendum appended to `MULTIAGENT-SWARM-SECURITY-ANALYSIS.md`: zero real witnesses in the current code, trust boundary is 2 machines/1 operator (quorum defends against nothing a compromise of the primary machine doesn't already defeat), and a full `docs/LESSONS.md` incident-history grep found zero adversarial incidents ever (100% self-inflicted operational flakiness — DHCP moves, GPU/process crashes, timeouts). Gate updated in `PATTERN-SYNTHESIS.md`.
   - Surfaced by: CEO phase (User Challenge resolution) + remediation plan §2
   - Files: `docs/phase-0-specifications/MULTIAGENT-SWARM-SECURITY-ANALYSIS.md`
-- [ ] **T2 (P3, human: ~small / CC: ~1h) — Bound `_reorder_buffer`'s outer dict** — Apply `_touch_cache()` to the outer `peer_id → OrderedDict` map, matching the existing pattern.
+- [ ] **T2 (P3, human: ~small / CC: ~1h) — Bound `_reorder_buffer`'s outer dict** — Apply `_touch_cache()` to the outer `peer_id → OrderedDict` map, matching the existing pattern. **Still unblocked, still recommended** — this is a real DoS gap independent of the threat-model verdict (protects against out-of-order/memory growth that occurs with zero adversaries too).
   - Surfaced by: Eng phase, 4/4 non-stale voices
   - Files: `orchestrator/state_transition_manager.py`, `tests/test_state_transition_manager.py`
-- [ ] **T3 (P2, human: ~small / CC: ~1h) — Fix dedup key to include `sequence`** — Extend `PeerObservation.to_json()`/`_to_dict()`, update the tests that currently work around the bug.
+- [ ] **T3 (P2, human: ~small / CC: ~1h) — Fix dedup key to include `sequence`** — Extend `PeerObservation.to_json()`/`_to_dict()`, update the tests that currently work around the bug. **Still unblocked, still recommended** — same reasoning as T2, a correctness bug independent of the threat model. **In progress live via the coordination board** — claimed by `codex-claude-partner` as `STM-Next-02-dedup-key-sequence-provenance-fix`.
   - Surfaced by: Eng phase, 3/4 voices (Claude Sonnet's pass missed it)
   - Files: `orchestrator/membership.py`, `tests/test_state_transition_manager.py`
-- [ ] **T4 (P1, human: ~half day / CC: ~3-5h, depends on T1's go/no-go) — Wire `evaluate_observation()` into `backend_health_map()`** — Construct `PeerObservation` per probe result, call `evaluate_observation()`, merge `StateTransitionResult` into the existing `/health` response, add a try/except around this new call site.
+- [~] **T4 (P1, human: ~half day / CC: ~3-5h, depends on T1's go/no-go) — Wire `evaluate_observation()` into `backend_health_map()`** — **SUPERSEDED by the DESCOPE verdict.** Do not wire the full P5/P6/P13-gated pipeline as originally scoped. Per the addendum's recommended alternative: a lean reachability/liveness model (retry + the already-shipped monotonic epoch/sequence gate) may still be worth adding to `backend_health_map()`, but NOT via `evaluate_observation()`'s witness-quorum/reputation/equivocation gates, which have nothing to operate on at current scale. If this lean alternative is wanted, it should be scoped as a new, smaller task — not this one as originally written.
   - Surfaced by: remediation plan §1, CEO phase gate
   - Files: `orchestrator/connectivity.py`
-- [ ] **T5 (P2, human: ~small / CC: ~1-2h, depends on T4) — Resolve the two-FastAPI-app ambiguity** — Confirm whether `orchestrator/fastapi_app.py` or `src/perpetua_tools/orchestrator.py` is the deployed service; that app owns the shared `StateTransitionManager` instance.
+- [~] **T5 (P2, human: ~small / CC: ~1-2h, depends on T4) — Resolve the two-FastAPI-app ambiguity** — **Moot for now** — only matters if/when T4-equivalent wiring is revived (Fleet Mode introducing real external tenants). Not needed for the descope path.
   - Surfaced by: remediation plan §1
   - Files: `orchestrator/fastapi_app.py`, `src/perpetua_tools/orchestrator.py`
-- [ ] **T6 (P2, human: ~small / CC: ~2-3h, depends on T4) — Consume `.flushed` in the `/health` response, add integration tests** — Per the test diagram above.
+- [~] **T6 (P2, human: ~small / CC: ~2-3h, depends on T4) — Consume `.flushed` in the `/health` response, add integration tests** — **Moot for now**, same reasoning as T5.
   - Surfaced by: Eng phase test-coverage section
   - Files: `orchestrator/connectivity.py`, `tests/` (integration)
 
-**Sequencing: T1 alone first. T2/T3 can land any time, independent of T1. T4/T5/T6 wait on T1's go/no-go.**
+**Sequencing (updated 2026-07-12): T1 done, verdict DESCOPE. T2/T3 remain live — land these regardless (independent DoS/correctness fixes). T4/T5/T6 superseded/moot — do not implement as originally scoped; revisit only if Fleet Mode changes the actual trust boundary (real external tenants, not just more self-owned nodes).**
