@@ -14,6 +14,7 @@ import pytest
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from orchestrator import gossip_bus as gossip_bus_module  # noqa: E402
 from orchestrator.gossip_bus import GossipBus  # noqa: E402
 from scripts.agent_coordination_phases import (  # noqa: E402
     PhaseState,
@@ -37,6 +38,16 @@ async def bus_with_db():
         bus = GossipBus(db_path)
         await bus.init_db()
         yield bus
+        # GossipBus.emit() fires a fire-and-forget asyncio.create_task for
+        # embedding writes (see orchestrator/gossip_bus.py's _pending_embeds
+        # GC guard). If one of those tasks is still running when this `with`
+        # block exits, it can still be writing into tmpdir's SQLite file the
+        # instant TemporaryDirectory starts rmtree-ing it, racing shutil.rmtree
+        # into OSError: Directory not empty. Drain the module-level guard set
+        # before teardown so no background write can outlive its own db dir.
+        pending = list(gossip_bus_module._pending_embeds)
+        if pending:
+            await asyncio.gather(*pending, return_exceptions=True)
 
 
 @pytest.mark.asyncio
