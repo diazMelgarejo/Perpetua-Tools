@@ -35,6 +35,10 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 # fix(orchestrator): migrate from deprecated Pydantic V1 @validator to V2 @field_validator
 from pydantic import BaseModel, Field, field_validator
 from orchestrator.control_plane import bootstrap_runtime_sync, load_runtime_payload
+from orchestrator.state_transition_manager import StateTransitionManager
+from orchestrator.audit_log import AuditLog
+from orchestrator.distance_bucket import KBucketTable
+from orchestrator.equivocation import EquivocationLog
 try:
     from loguru import logger
 except ImportError:
@@ -107,6 +111,19 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
 app = FastAPI(title="Perpetua-Tools Orchestrator", version=VERSION)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# sec: Initialize Phase 1b security pipeline (PR #203)
+# Wire G1 (witness quorum), G4 (equivocation), G6 (distance bucketing), G8 (audit log)
+# G5 (reputation) uses stub until ready
+_equivocation_log = EquivocationLog()
+_k_bucket = KBucketTable(local_id="perpetua-orchestrator", k=20)
+_audit_log = AuditLog()
+app.state.state_transition_manager = StateTransitionManager(
+    equivocation_log=_equivocation_log,
+    k_bucket=_k_bucket,
+    audit_log=_audit_log,
+    reputation_fn=lambda agent_id: 1.0,  # G5 stub: neutral weight until reputation ledger ready
+)
 
 # sec: restrict to known hosts in production (set ALLOWED_HOSTS env var)
 _allowed_hosts = os.getenv("ALLOWED_HOSTS", "*")

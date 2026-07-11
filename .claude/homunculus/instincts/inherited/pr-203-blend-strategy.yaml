@@ -1,0 +1,58 @@
+# PR #203 Blend Strategy — Architectural Lesson
+# Source: Claude Sonnet 5 review (2026-07-11)
+# Confidence: 4/5
+
+---
+id: pr-203-blend-validated
+trigger: "when merging parallel CodeRabbit fix lineages"
+confidence: 0.8
+domain: architecture
+source: architectural-review
+reviewed_by: Claude Sonnet 5
+date: 2026-07-11
+---
+
+# PR #203 CodeRabbit Fixes — Blend Both Lineages (Not Duplicates)
+
+## Action
+
+When two parallel fix lineages exist for the same CodeRabbit findings:
+
+1. **Verify file existence.** Check if the file being "fixed" exists on `main`:
+   - `git show main:path/to/file.py` (if not in main, only spec is being fixed)
+   - If file doesn't exist on main, spec fixes and code fixes are non-overlapping
+
+2. **Don't conflate layers.** Fixes to markdown specs (pseudocode) are not duplicates of fixes to actual Python code. Both required.
+
+3. **Blend strategy:**
+   - Cherry-pick code fixes first (Lineage B: `3376fa99`)
+   - Cherry-pick docs fixes second (Lineage B: `c62af7c3`)
+   - Diff result against alternative lineage (Lineage A: `0f2a3829`)
+   - Fold in only spec commentary A-only content
+   - No duplicate markdown fixes
+
+4. **Avoid phantom TODOs.** If deferred items in one lineage are already implemented in another, don't publish them as open work items.
+
+## Evidence
+
+**PR #203 case study:**
+
+- Lineage A (`0f2a3829`): Spec pseudocode fixes + markdown docs
+- Lineage B (`3376fa99` + `c62af7c3`): Real Python fixes + markdown docs
+
+`orchestrator/state_transition_manager.py` doesn't exist on `main`.
+
+- Lineage B's `3376fa99` fixes real implementation (unbounded cache, RLock, G4→G5 loop)
+- Lineage A's `0f2a3829` fixes spec pseudocode in `.md` files only
+- **Verdict:** Not duplicates, both required
+
+Without Lineage B's code fixes, PR ships with unbounded-memory and race-condition defects CodeRabbit flagged.
+
+## Why This Matters
+
+Conflating specification and implementation fixes leads to:
+- Silent loss of critical runtime fixes
+- Phantom deferred work (3 "TODOs" already implemented)
+- Duplicate markdown changes CodeRabbit re-flags
+
+Proper layering: verify file existence, blend by layer, no ghost TODOs.

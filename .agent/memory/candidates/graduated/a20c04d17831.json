@@ -1,0 +1,38 @@
+{
+  "id": "a20c04d17831",
+  "key": "manual_a20c04",
+  "name": "manual_a20c04",
+  "claim": "A test that only asserts the outer/observable outcome of a code path (e.g. 'accepted is False') can pass vacuously even when the specific mechanism it's meant to verify never actually fired (e.g. a reputation-penalty call, a lock acquisition, a cache write). When adding a test for 'X happened as a side effect of Y', assert on X's own state directly (the ledger's score moved, the cache has an entry, the lock's internal counter changed) \u2014 not just that Y's return value looks plausible, which can be true for reasons unrelated to X.",
+  "conditions": [
+    "vacuous test pass precondition assertion side effect verification mock produces expected state before checking downstream effect"
+  ],
+  "evidence_ids": [
+    "2026-07-11T06:42:42.548571+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T06:42:42.548571+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T06:42:42.548571+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T06:42:42.638477+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-11: caught this in my own draft test twice this session. First: a Sybil risk-scoring test asserted 'if risk == high: check accepted' without first asserting risk actually WAS high \u2014 the mocked is_correlated=True didn't produce high risk due to a real off-by-one in the threshold math (len(correlated) > len(witness_ids)/2 is unreachable at 2 witnesses when only one side of each pair is recorded), and the test passed vacuously until I added an explicit precondition assertion, which then failed and revealed the real bug. Second: when adding a reputation-feedback test, asserted ledger.reputation_weight() actually moved, not just that the pipeline's own accepted/decision_type outcome looked right.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T06:42:42.548571+00:00"
+      ],
+      "lessons_sha": "d42081ca9b54"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T06:42:42.638464+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-11: caught this in my own draft test twice this session. First: a Sybil risk-scoring test asserted 'if risk == high: check accepted' without first asserting risk actually WAS high \u2014 the mocked is_correlated=True didn't produce high risk due to a real off-by-one in the threshold math (len(correlated) > len(witness_ids)/2 is unreachable at 2 witnesses when only one side of each pair is recorded), and the test passed vacuously until I added an explicit precondition assertion, which then failed and revealed the real bug. Second: when adding a reputation-feedback test, asserted ledger.reputation_weight() actually moved, not just that the pipeline's own accepted/decision_type outcome looked right."
+}

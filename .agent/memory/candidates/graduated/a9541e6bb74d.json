@@ -1,0 +1,38 @@
+{
+  "id": "a9541e6bb74d",
+  "key": "manual_a9541e",
+  "name": "manual_a9541e",
+  "claim": "When CI's 'install dependencies' step hand-lists packages instead of running 'pip install -e .[dev]' (or equivalent), pyproject.toml's declared test extras and CI's actual installed set are two independently-maintained lists that silently diverge. A test file can import a real, locally-installed package (e.g. hypothesis, requests) and pass on every dev machine while failing collection entirely in CI. Fix both: add to pyproject.toml (correct declarative source for local dev) AND to CI's explicit install list (what actually runs), don't assume fixing one fixes the other.",
+  "conditions": [
+    "CI install dependencies hand-listed packages pyproject.toml dev extras diverge ModuleNotFoundError local passes CI fails"
+  ],
+  "evidence_ids": [
+    "2026-07-11T06:42:42.343638+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T06:42:42.343638+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T06:42:42.343638+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T06:42:42.438225+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-11: hit this exact pattern twice in one session \u2014 orama-system's requests dependency (test used mock.patch('requests.get'), CI's install step hand-listed packages and never had it) and Perpetua-Tools' hypothesis dependency (test_state_transition_manager.py used @given/strategies, same CI-vs-pyproject.toml divergence). Both were genuine dependencies used for real test coverage, not accidental/unused imports \u2014 confirmed by grep before concluding it was a real dependency gap and not something to work around.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T06:42:42.343638+00:00"
+      ],
+      "lessons_sha": "c40958de577b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T06:42:42.438217+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-11: hit this exact pattern twice in one session \u2014 orama-system's requests dependency (test used mock.patch('requests.get'), CI's install step hand-listed packages and never had it) and Perpetua-Tools' hypothesis dependency (test_state_transition_manager.py used @given/strategies, same CI-vs-pyproject.toml divergence). Both were genuine dependencies used for real test coverage, not accidental/unused imports \u2014 confirmed by grep before concluding it was a real dependency gap and not something to work around."
+}
