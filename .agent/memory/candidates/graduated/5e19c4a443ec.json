@@ -1,0 +1,38 @@
+{
+  "id": "5e19c4a443ec",
+  "key": "manual_5e19c4",
+  "name": "manual_5e19c4",
+  "claim": "When two parallel agent lineages independently fix the same review findings, do not trust either lineage's own summary of what it changed or why the other is subsumed \u2014 read the actual current diff/code of BOTH before blending or discarding. A well-formatted 'blend verdict' doc with citations and confidence scores can still be wrong: it can go stale relative to a fast-moving branch (analysis written against an old HEAD, unaware of newer commits on the same lineage), and it can contain plausible-sounding but technically incorrect claims (e.g. recommending threading.RLock() inside async def code, or claiming a declared-but-unused variable is a functional fix).",
+  "conditions": [
+    "parallel agent lineages blend verdict stale analysis verify actual code not summary threading async lock wrong primitive dead code declared unused"
+  ],
+  "evidence_ids": [
+    "2026-07-11T06:42:26.992971+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T06:42:26.992971+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T06:42:26.992971+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T06:42:27.077813+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-11: a concurrent agent (also self-identifying as 'Claude Sonnet 5') produced a well-structured PR203-BLEND-VERDICT.md recommending cherry-picking a sibling worktree's code fix onto my branch. Verified the actual code directly instead of trusting the doc: found the recommended fix (1) used threading.RLock() inside an async def pipeline (wrong primitive, doesn't protect against asyncio task interleaving), and (2) would have REGRESSED an already-fixed, already-tested bug (single-sided Sybil correlation counting) that my own more-recent commit had already corrected. Blindly executing the verdict's checklist would have shipped two real regressions. Selectively blended only the 2 genuinely good, verified-functional pieces (reputation feedback wiring, subnet-aware provenance bucketing) and left the other 2 unmerged with an explicit rejection rationale.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T06:42:26.992971+00:00"
+      ],
+      "lessons_sha": "cada1e5a1e79"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T06:42:27.077797+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-11: a concurrent agent (also self-identifying as 'Claude Sonnet 5') produced a well-structured PR203-BLEND-VERDICT.md recommending cherry-picking a sibling worktree's code fix onto my branch. Verified the actual code directly instead of trusting the doc: found the recommended fix (1) used threading.RLock() inside an async def pipeline (wrong primitive, doesn't protect against asyncio task interleaving), and (2) would have REGRESSED an already-fixed, already-tested bug (single-sided Sybil correlation counting) that my own more-recent commit had already corrected. Blindly executing the verdict's checklist would have shipped two real regressions. Selectively blended only the 2 genuinely good, verified-functional pieces (reputation feedback wiring, subnet-aware provenance bucketing) and left the other 2 unmerged with an explicit rejection rationale."
+}
