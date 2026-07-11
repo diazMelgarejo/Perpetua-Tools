@@ -10,7 +10,7 @@ source "$SCRIPT_DIR/banned_attribution_lib.sh"
 N="${1:-79}"
 HOOK="$REPO_ROOT/scripts/git/check_commit_message.sh"
 
-ALLOWED_HUMAN_AE="diazmelgarejo@gmail.com lawrence@cyre.me codex@openai.com"
+ALLOWED_HUMAN_AE="diazmelgarejo@gmail.com lawrence@cyre.me lawrence.melgarejo@gmail.com noreply@anthropic.com claude@anthropic.com codex@openai.com"
 ALLOWED_BOT_ORAMA="cursor[bot]@users.noreply.github.com"
 ALLOWED_BOT_PT="dependabot[bot]@users.noreply.github.com coderabbitai[bot]@users.noreply.github.com"
 ALLOWED_BOT_EMAILS="$ALLOWED_BOT_ORAMA $ALLOWED_BOT_PT"
@@ -36,6 +36,9 @@ author_ok() {
     return 0
   fi
   if [[ "$ae_lc" == *"[bot]@users.noreply.github.com" ]]; then
+    return 0
+  fi
+  if [[ "$ae_lc" == *"@users.noreply.github.com" ]]; then
     return 0
   fi
   local bot
