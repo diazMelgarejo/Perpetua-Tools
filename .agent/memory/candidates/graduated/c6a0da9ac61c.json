@@ -1,0 +1,38 @@
+{
+  "id": "c6a0da9ac61c",
+  "key": "manual_c6a0da",
+  "name": "manual_c6a0da",
+  "claim": "Before applying a fix that uses a mechanism with a known-bad prior lesson (e.g. 'flock'), check whether the new usage is actually the SAME mechanism as the prior failure or just shares a name. lesson_8df4d109ae3a warns against flock(1), the util-linux shell CLI tool (absent on macOS by default); fcntl.flock() is Python's wrapper around the flock(2) syscall, present on both macOS/BSD and Linux, and is a different, safe mechanism. Conflating same-named-but-different mechanisms would cause either a false rejection of a safe fix, or worse, missing a real repeat of a past failure when the names differ but the mechanism is the same.",
+  "conditions": [
+    "flock fcntl memory check name collision mechanism identity before applying known-bad-pattern fix"
+  ],
+  "evidence_ids": [
+    "2026-07-11T05:14:02.831387+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T05:14:02.831387+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T05:14:02.831387+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T05:14:02.913537+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-11: fixed a genuine unsynchronized-file-write race in orama-system's test_concurrent_coord_pulse_calls_dont_race (3 threads racing raw open/read/write with zero locking despite a comment claiming 'file lock prevents corruption') using fcntl.flock(). User asked me to check PT .agent memory + gbrain for prior flock issues before trusting the fix. Found lesson_8df4d109ae3a, verified it was about a different mechanism (flock(1) CLI, not fcntl.flock() syscall wrapper), confirmed fcntl.flock is safe here, and had already empirically verified the fix with 5/5 passing local runs before this check. Good habit: search memory before applying anything with a name-collision to a documented past failure, but verify mechanism identity, not just name identity, before accepting or rejecting.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T05:14:02.831387+00:00"
+      ],
+      "lessons_sha": "20f6f6231906"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T05:14:02.913529+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-11: fixed a genuine unsynchronized-file-write race in orama-system's test_concurrent_coord_pulse_calls_dont_race (3 threads racing raw open/read/write with zero locking despite a comment claiming 'file lock prevents corruption') using fcntl.flock(). User asked me to check PT .agent memory + gbrain for prior flock issues before trusting the fix. Found lesson_8df4d109ae3a, verified it was about a different mechanism (flock(1) CLI, not fcntl.flock() syscall wrapper), confirmed fcntl.flock is safe here, and had already empirically verified the fix with 5/5 passing local runs before this check. Good habit: search memory before applying anything with a name-collision to a documented past failure, but verify mechanism identity, not just name identity, before accepting or rejecting."
+}
