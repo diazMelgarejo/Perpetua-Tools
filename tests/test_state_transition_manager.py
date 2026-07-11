@@ -308,12 +308,10 @@ class TestDedupGate:
 
     @pytest.mark.asyncio
     async def test_out_of_order_sequence_rejected(self, state_transition_manager):
-        # obs.to_json() (the dedup key) does not include `sequence` -- vary
-        # timestamp too so obs_old is a genuinely different JSON payload from
-        # obs_new, otherwise the dedup gate (which runs before the monotonic
-        # check) would flag it as DUPLICATE instead of STALE.
-        obs_new = observation_factory(epoch=1, sequence=5, timestamp=1_000_005.0, witness_set=trusted_witnesses(2))
-        obs_old = observation_factory(epoch=1, sequence=2, timestamp=1_000_002.0, witness_set=trusted_witnesses(2))
+        # Same payload except sequence: this must reach the monotonic gate and
+        # return STALE, not get masked as DUPLICATE by the dedup gate.
+        obs_new = observation_factory(epoch=1, sequence=5, timestamp=1_000_000.0, witness_set=trusted_witnesses(2))
+        obs_old = observation_factory(epoch=1, sequence=2, timestamp=1_000_000.0, witness_set=trusted_witnesses(2))
 
         first = await state_transition_manager.evaluate_observation(obs_new)
         second = await state_transition_manager.evaluate_observation(obs_old)
