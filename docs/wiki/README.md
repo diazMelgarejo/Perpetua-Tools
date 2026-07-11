@@ -21,6 +21,7 @@ This wiki organizes hard-won lessons by topic. Each page contains root cause, ex
 | 08 | [macOS alphaclaw Compat](08-macos-alphaclaw-compat.md) | EACCES fixes, ~/.local/bin pattern, idempotent setup_macos.py |
 | 09 | [Hardware Affinity](09-hardware-affinity.md) | NEVER_MAC, LM Studio proxy gotcha, PR #128-#131 gap chain, canonical API |
 | 10 | [Line Endings & Encoding](10-line-endings-and-encoding.md) | `.gitattributes` + `.editorconfig` + `git add --renormalize .`; LF in repo, UTF-8 no BOM; kills phantom CRLF checkout diffs |
+| 11 | [agentic-stack `.agent/` Blend](11-agentic-stack-agent-blend.md) | AlphaClaw reverse-merge precedent mapped to file-level 3-way merges; conflict-resolution playbook from the v0.9.0→v0.18.0 cycle |
 
 ---
 

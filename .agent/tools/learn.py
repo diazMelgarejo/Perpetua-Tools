@@ -129,7 +129,7 @@ def main():
         return
 
     rationale = sanitize_tracked_path_leaks(
-        args.rationale or f"manual via learn.py at {datetime.datetime.now().isoformat()}"
+        args.rationale or f"manual via learn.py at {datetime.datetime.now(datetime.timezone.utc).isoformat()}"
     )
     grad_args = [
         sys.executable,
