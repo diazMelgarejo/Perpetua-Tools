@@ -1,0 +1,42 @@
+{
+  "id": "52241f43007e",
+  "key": "manual_52241f",
+  "name": "manual_52241f",
+  "claim": "The agent-coordination-heartbeat skill is globally available: canonical source is orama-system/bin/orama-system/skills/agent-coordination-heartbeat/SKILL.md and the OpenClaw agent wrapper is .agents/skills/agent-coordination-heartbeat/SKILL.md.",
+  "conditions": [
+    "agent-coordination",
+    "cleanup-stale-claims",
+    "dead-agent",
+    "heartbeat",
+    "liveness"
+  ],
+  "evidence_ids": [
+    "2026-07-11T02:55:18.726254+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T02:55:18.726254+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T02:55:18.726254+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T02:55:18.822945+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Skill was created via skillify and registered in orama-system sub_skills; wrapper makes it usable by any agent in the OpenClaw workspace.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T02:55:18.726254+00:00"
+      ],
+      "lessons_sha": "8c9a46645cd2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T02:55:18.822933+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Skill was created via skillify and registered in orama-system sub_skills; wrapper makes it usable by any agent in the OpenClaw workspace."
+}

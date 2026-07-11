@@ -1,0 +1,42 @@
+{
+  "id": "02d9ac4f28bc",
+  "key": "manual_02d9ac",
+  "name": "manual_02d9ac",
+  "claim": "Kimi Agent and Cloud Kimi Agent are authorized first-class authors/co-authors in this stack; canonical attribution identities are Kimi Agent <kimi-agent@kimi.ai> and Cloud Kimi Agent <cloud-kimi-agent@kimi.ai>, and both are allowed by scripts/git/audit_attribution.sh in Perpetua-Tools and orama-system.",
+  "conditions": [
+    "attribution",
+    "cloud-kimi",
+    "co-author",
+    "kimi",
+    "kimi-agent"
+  ],
+  "evidence_ids": [
+    "2026-07-11T02:55:18.928446+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T02:55:18.928446+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T02:55:18.928446+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T02:55:19.002459+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Registration added to git attribution allowlists so Kimi-authored commits pass pre-push hygiene checks on both repos.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T02:55:18.928446+00:00"
+      ],
+      "lessons_sha": "9c23917d94dd"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T02:55:19.002451+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Registration added to git attribution allowlists so Kimi-authored commits pass pre-push hygiene checks on both repos."
+}
