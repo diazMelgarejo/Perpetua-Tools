@@ -63,8 +63,12 @@ class StateTransitionResult:
     Immutable result of end-to-end observation validation.
 
     Fields:
-        accepted: True if observation passed all gates, False otherwise.
-        decision_type: One of "malicious", "insufficient_quorum", "sybil", "approved", "stale".
+        accepted: True if the observation was committed to the audit chain —
+            "approved" and "sybil_flagged" both accept (Sybil correlation is
+            a carried-forward heuristic flag, not a hard reject); only the
+            earlier gate failures (equivocation, quorum) set this False.
+        decision_type: One of "malicious", "insufficient_quorum", "approved",
+            "sybil_flagged".
         quorum_votes: Weighted votes by agent_id (post-G5 reputation weighting).
         sybil_signals: Cross-referenced signals from G6 + G1.
         audit_hash: G8 reference hash from audit log (empty if rejected before audit).
