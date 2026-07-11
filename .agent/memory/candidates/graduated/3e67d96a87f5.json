@@ -1,0 +1,38 @@
+{
+  "id": "3e67d96a87f5",
+  "key": "manual_3e67d9",
+  "name": "manual_3e67d9",
+  "claim": "kimi CLI's -p/--prompt headless mode is incompatible with --yolo (hard error: 'Cannot combine --prompt with --yolo'). -p mode is already non-interactive by definition (no approval loop exists to bypass), so drop --yolo entirely when scripting kimi -p calls.",
+  "conditions": [
+    "kimi CLI prompt mode yolo flag conflict headless dispatch"
+  ],
+  "evidence_ids": [
+    "2026-07-10T22:55:17.908032+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-10T22:55:17.908032+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-10T22:55:17.908032+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-10T22:55:18.004502+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-10/11: hit this exact error dispatching kimi for parallel security-patch implementation. Fixed in bin/orama-system/skills/kimi-agent/SKILL.md's Key Options table.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-10T22:55:17.908032+00:00"
+      ],
+      "lessons_sha": "b9ebcda48590"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-10T22:55:18.004491+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-10/11: hit this exact error dispatching kimi for parallel security-patch implementation. Fixed in bin/orama-system/skills/kimi-agent/SKILL.md's Key Options table."
+}

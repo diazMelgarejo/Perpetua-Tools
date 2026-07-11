@@ -1,9 +1,9 @@
 # Phase 1 Scope — Draft Implementation Plan
 
-**Navigation:** ← [task list](PHASE-0-TASK-LIST.md) · built on: [D1](DELIVERABLE-1-PEER-OBSERVATION-MODEL-REGENERATED-ITERATION-2.md) · [D2](DELIVERABLE-2-HEARTBEAT-LIVENESS-REGENERATED.md) · [D4](DELIVERABLE-4-THREAT-MODEL-REGENERATED.md) · pattern basis: [pattern synthesis](PATTERN-SYNTHESIS.md) · related plan (separate repo): [orama-system self-healing-mesh-degradation-modes](https://github.com/diazMelgarejo/orama-system/blob/main/docs/plans/2026-07-08-self-healing-mesh-degradation-modes.md)
+**Navigation:** ← [task list](PHASE-0-TASK-LIST.md) · built on: [D1](DELIVERABLE-1-PEER-OBSERVATION-MODEL-REGENERATED-ITERATION-2.md) · [D2](DELIVERABLE-2-HEARTBEAT-LIVENESS-REGENERATED.md) · [D4](DELIVERABLE-4-THREAT-MODEL-REGENERATED.md) · pattern basis: [pattern synthesis](PATTERN-SYNTHESIS.md) · related plans (orama-system): [integration map (Phase 1-6 unified)](https://github.com/diazMelgarejo/orama-system/blob/main/docs/plans/2026-07-10-phase-integration-map.md) · [self-healing mesh (Phases 2-6)](https://github.com/diazMelgarejo/orama-system/blob/main/docs/plans/2026-07-08-self-healing-mesh-degradation-modes.md)
 
 **Date:** 2026-07-10  
-**Status:** DRAFT — awaiting Fix #3 completion + M4 checkpoint gate decisions  
+**Status:** ✅ COMPLETE (2026-07-11) — Phase 1.0–1.3.1 implemented, 69/69 tests passing, merged to main  
 **Purpose:** Map Phase 0 deliverables (D1, D2, D4) → Phase 1 implementation tasks (TDD-first, parallel execution)
 
 ---
