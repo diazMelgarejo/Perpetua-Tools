@@ -325,6 +325,27 @@ go/no-go verdict determines whether wiring P5/P6/P13 as scoped is even worth
 doing, vs. descoping to a simpler allowlist+mTLS model. Do not start wiring
 code before that verdict lands.
 
+**GATE RESOLVED 2026-07-12 — VERDICT: DESCOPE.** The threat-model premise
+re-check ran (`docs/phase-0-specifications/MULTIAGENT-SWARM-SECURITY-ANALYSIS.md`
+§ "Addendum: Single-Operator LAN Premise Check"). Findings: (1) zero real
+witnesses exist in the current code (`_probe()` is the only observer,
+single-path); (2) the actual trust boundary is 2 machines, 1 operator, 1
+administrative identity — a witness quorum spanning them defends against
+nothing a compromise of the operator's own primary machine doesn't already
+defeat; (3) a full grep of `docs/LESSONS.md`'s real incident history found
+**zero** adversarial incidents (forged observations, Sybils, equivocation) —
+100% of logged incidents are self-inflicted operational flakiness (DHCP
+moves, GPU/process crashes, network timeouts). **P5/P6/P13 are descoped
+from the next increment** — wiring them as originally scoped would ship
+code against a pipeline with structurally nothing to detect at current
+scale. Recommended alternative: a lean reachability/liveness model (retry
++ the already-shipped monotonic epoch/sequence gate), not adversarial
+quorum machinery. Revisit only if Fleet Mode introduces genuinely external,
+untrusted tenants — a real trust-boundary change, not just more self-owned
+nodes. P9/P18/P2 remain unaffected (already shipped, useful regardless of
+this verdict). Forward plan and task list:
+`docs/phase-0-specifications/2026-07-12-stm-next-increment-plan.md`.
+
 PR #205 itself (P9/P18/P2 + the two memory-leak fixes) is unaffected by this
 gate — it's already implemented, tested, and merged; this blocks the *next*
 increment of pattern work, not what already shipped. See integration plan
