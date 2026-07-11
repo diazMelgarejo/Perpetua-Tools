@@ -22,7 +22,7 @@ This iteration consumes the gap severity ratings, threat model (T1–T7), and pa
 - G4 (P13 Equivocation Detection): Current contradiction logging — does D1's witness disagreement logging catch this?
 
 **Evidence needed:**
-```
+```text
 1. Read PT agent_launcher.py observation ingestion path
 2. Read PT witness quorum aggregation logic
 3. Read orama probe_lan_peer.py observation schema (field order, nonce handling)
@@ -48,7 +48,7 @@ This iteration consumes the gap severity ratings, threat model (T1–T7), and pa
 | Research-only v2 (P10, P14, P15, P20) | 4 patterns | Document rationale; do not implement |
 
 **Evidence needed:**
-```
+```text
 1. Read PT observation schema (what fields exist today?)
 2. Read PT confidence formula implementation
 3. Check for existing GeoIP/ASN library dependencies
@@ -84,7 +84,7 @@ This iteration consumes the gap severity ratings, threat model (T1–T7), and pa
 | P19 Audit Log | both | Cross-layer forensics | Both repos append to shared log |
 
 **Evidence needed:**
-```
+```text
 1. Read PT state machine code (where are observations applied?)
 2. Read orama Portal middleware (where are observations received?)
 3. Identify shared data structures (fleet_topology.json, peer state)
@@ -191,7 +191,12 @@ This iteration consumes the gap severity ratings, threat model (T1–T7), and pa
 | `sortedcontainers` | ✅ | ✅ | SortedDict (reorder buffer) | pip |
 | `mmh3` | ✅ | ✅ | MurmurHash (Bloom filter) | pip |
 
-**Total: 5 packages**, all pure Python with compiled extensions, all available on macOS and Windows.
+**Total: 5 packages.** Not uniformly "pure Python with compiled extensions" — the five differ in kind:
+- `sortedcontainers` — pure Python, no native code, most portable of the five.
+- `aioquic`, `cryptography`, `mmh3` — native-extension dependencies (C/Rust builds); wheels are published for macOS and Windows but build-from-source can fail without a working toolchain.
+- `maxminddb` — has an *optional* C extension for speed; falls back to a pure-Python reader if the extension isn't available, so it degrades gracefully rather than hard-failing.
+
+macOS/Windows support above reflects published wheel availability, not a portability guarantee for every environment (e.g. unusual Python versions or architectures may need a source build).
 
 **Deliverable:** Dependency manifest with per-package installation verification.
 
@@ -242,17 +247,17 @@ This iteration consumes the gap severity ratings, threat model (T1–T7), and pa
 |---------|------|----------|--------|--------|
 | A1 | Observation schema extension | P8 (sequence_number field) | 2h | Schema v2 with seq field |
 | A2 | Reorder buffer implementation | P9 (SortedDict buffer) | 4h | `reorder_buffer.py` + tests |
-| A3 | Witness quorum + provenance | P5 (ASN lookup, dedup) | 6h | `witness_quorum.py` + GeoIP |
-| A4 | Reputation ledger | P6 (scoring, daily update) | 4h | `reputation_ledger.py` |
-| A5 | Equivocation detection | P13 (contradiction logging) | 3h | `equivocation_detector.py` |
-| A6 | Audit log hash-chain | P19 (SHA256 chain + signature) | 4h | `audit_log.py` |
-| A7 | Distance bucketing | P2 (XOR metric, k-buckets) | 4h | `peer_buckets.py` |
+| A3 | Witness quorum + provenance — **integration only** (`witness_quorum.py` + `provenance.py` already implemented and unit-tested) | P5 | 2h | Wired into STM pipeline step 3 |
+| A4 | Reputation ledger — **integration only** (`reputation.py` already implemented and unit-tested) | P6 | 2h | Wired into STM pipeline step 4 |
+| A5 | Equivocation detection — **integration only** (`equivocation.py` already implemented and unit-tested) | P13 | 2h | Wired into STM pipeline step 2 |
+| A6 | Audit log hash-chain — **integration only** (`audit_log.py` already implemented and unit-tested) | P19 | 2h | Wired into STM pipeline step 6 |
+| A7 | Distance bucketing — **integration only** (`distance_bucket.py` already implemented and unit-tested) | P2 | 2h | Wired into STM pipeline step 5 |
 | A8 | Cache eviction + Bloom filter | P18 (LRU + Bloom) | 3h | `dedup_cache.py` |
 | A9 | Integration + system tests | All PT patterns | 6h | `test_pattern_integration.py` |
 
-**Total Track A:** ~36 hours (~5 sessions)
+**Total Track A:** ~25 hours (~3–4 sessions) — was ~36h when A3–A7 assumed module implementation from scratch; all five modules (P2/P5/P6/P13/P19) are already implemented and unit-tested, so those rows now reflect integration-only effort (10h total, not 21h) matching the concrete milestone below.
 
-> The module-implementation work in Track A3–A7 is compressed into the concrete integration milestone [`2026-07-11-state-transition-manager-integration-plan.md`](./2026-07-11-state-transition-manager-integration-plan.md), which wires the already-implemented P2/P5/P6/P13/P19 modules into a single `PeerObservation` security-decision pipeline.
+> A3–A7's integration work is tracked as the concrete milestone [`2026-07-11-state-transition-manager-integration-plan.md`](./2026-07-11-state-transition-manager-integration-plan.md), which wires the already-implemented P2/P5/P6/P13/P19 modules into a single `PeerObservation` security-decision pipeline (StateTransitionManager). The per-row effort above is this milestone's per-module share, not a separate duplicate implementation task.
 
 ---
 
