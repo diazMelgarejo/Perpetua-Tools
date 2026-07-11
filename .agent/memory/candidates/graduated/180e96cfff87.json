@@ -1,0 +1,42 @@
+{
+  "id": "180e96cfff87",
+  "key": "manual_180e96",
+  "name": "manual_180e96",
+  "claim": "Before closing a stale/superseded PR as 'nothing to salvage', check its .agent/memory/candidates/graduated/*.json files individually (git show <branch>:<path> for each), not just its code diff. A superseded code change can still carry a graduated memory lesson recording a claim (e.g. 'skill X wrapper exists at path Y') that is factually false on current main \u2014 revealing a real gap worth fixing even when the rest of the PR is dead weight.",
+  "conditions": [
+    "graduated-json",
+    "memory-lesson-audit",
+    "pr-closure",
+    "skill-gap-detection",
+    "superseded-pr"
+  ],
+  "evidence_ids": [
+    "2026-07-11T13:29:26.806292+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T13:29:26.806292+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T13:29:26.806292+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T13:29:26.893234+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR #202's audit_attribution.sh changes were fully superseded by main, but one of its two graduated memory JSON files claimed the agent-coordination-heartbeat PT wrapper already existed at .agents/skills/agent-coordination-heartbeat/SKILL.md. It didn't. Checking the memory files (not just the code diff) is what surfaced that gap, which became PR #206.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T13:29:26.806292+00:00"
+      ],
+      "lessons_sha": "f4b3fc76d953"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T13:29:26.893227+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR #202's audit_attribution.sh changes were fully superseded by main, but one of its two graduated memory JSON files claimed the agent-coordination-heartbeat PT wrapper already existed at .agents/skills/agent-coordination-heartbeat/SKILL.md. It didn't. Checking the memory files (not just the code diff) is what surfaced that gap, which became PR #206."
+}

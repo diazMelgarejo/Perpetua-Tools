@@ -1,0 +1,42 @@
+{
+  "id": "1fe8e0825abf",
+  "key": "manual_1fe8e0",
+  "name": "manual_1fe8e0",
+  "claim": "PT .agents/skills/*/SKILL.md thin-wrappers point to a canonical path (bin/orama-system/skills/<name>/SKILL.md) that does NOT exist inside Perpetua-Tools itself \u2014 PT has no bin/orama-system/ directory. The canonical skill actually lives in the sibling checkout ../orama-system/bin/orama-system/skills/<name>/SKILL.md in this workspace layout. When a wrapper's claimed path 404s, don't conclude the skill is missing \u2014 resolve it via the sibling orama-system repo before reporting a gap.",
+  "conditions": [
+    "bin-orama-system",
+    "canonical-path",
+    "cross-repo-skills",
+    "sibling-checkout",
+    "skill-wrapper"
+  ],
+  "evidence_ids": [
+    "2026-07-11T13:29:21.039570+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T13:29:21.039570+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T13:29:21.039570+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T13:29:21.128617+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Hit this twice in one session: first with git-history-surgery (had to search orama-system directly after the wrapper's path didn't resolve in PT), then deliberately encoded a fallback line for it when authoring the agent-coordination-heartbeat and gossip-bus wrappers so future agents don't repeat the confusion.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T13:29:21.039570+00:00"
+      ],
+      "lessons_sha": "fcfb588fa3b6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T13:29:21.128610+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Hit this twice in one session: first with git-history-surgery (had to search orama-system directly after the wrapper's path didn't resolve in PT), then deliberately encoded a fallback line for it when authoring the agent-coordination-heartbeat and gossip-bus wrappers so future agents don't repeat the confusion."
+}
