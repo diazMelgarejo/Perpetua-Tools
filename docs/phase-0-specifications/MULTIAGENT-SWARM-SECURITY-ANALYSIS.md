@@ -273,6 +273,8 @@ Hardware: Mac (L2 + L3 mainly), Win RTX3080 (L1 inference), transient peers (doc
 
 ## Section 4: Phase 1b Roadmap (2–4 weeks)
 
+Implementation tracks for the gaps below are detailed in [`PATTERN-MULTIAGENT-EXECUTION-PLAN.md`](./PATTERN-MULTIAGENT-EXECUTION-PLAN.md).
+
 ### Priority 1: CRITICAL Gaps (must fix before Phase 1 starts)
 
 **G1 + G3 + G4: Witness Quorum + Reorder Buffer + Equivocation Detection**
@@ -416,6 +418,12 @@ TOTAL: 2–4 weeks depending on parallelism and whether P4 refactoring is includ
 - mTLS / Zero-Trust: NIST Cybersecurity Framework, Forrester Zero-Trust Architecture.
 
 **Validation:** Each pattern has been deployed in production systems with 10M+ nodes (BitTorrent DHT), 1000+ node clusters (SWIM), or billions of transactions (Bitcoin, Ethereum). Patterns are derived from first-principles protocol design, not speculative research.
+
+---
+
+## Related
+
+- [`PATTERN-MULTIAGENT-EXECUTION-PLAN.md`](./PATTERN-MULTIAGENT-EXECUTION-PLAN.md) — Concrete discovery and implementation tracks that execute the G1–G16 gaps and P1–P20 patterns identified in this analysis.
 
 ---
 

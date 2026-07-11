@@ -11,6 +11,9 @@
 ## Part 1: Discovery Phase — Deep Research Iteration Cycles
 
 ### Iteration 1: Gap Severity Validation (CRITICAL gaps first)
+
+This iteration consumes the gap severity ratings, threat model (T1–T7), and pattern coverage analysis from [`MULTIAGENT-SWARM-SECURITY-ANALYSIS.md`](./MULTIAGENT-SWARM-SECURITY-ANALYSIS.md).
+
 **Research question:** Are G1, G3, G4 truly CRITICAL in the current deployment context?
 
 **Investigation targets:**
@@ -366,6 +369,7 @@ Week 4: SKILL.md + Validation
 
 ## Related Integration Milestones
 
+- [`MULTIAGENT-SWARM-SECURITY-ANALYSIS.md`](./MULTIAGENT-SWARM-SECURITY-ANALYSIS.md) — P2P threat model mapping (T1–T7), gap severity analysis (G1–G16), and the security foundation that defines which gaps this execution plan closes.
 - [`2026-07-11-state-transition-manager-integration-plan.md`](./2026-07-11-state-transition-manager-integration-plan.md) — Concrete Perpetua-Tools milestone that wires the already-implemented P2/P5/P6/P13/P19 modules into a single `PeerObservation` security-decision pipeline. Compresses Track A3–A7 into a 2–3 day integration pass and unblocks Track D (Fleet Mode Integration).
 
 ---
