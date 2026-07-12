@@ -41,8 +41,7 @@ def _load_entries_locked(_fd):
     entries = []
     try:
         with open(EPISODIC, encoding="utf-8", errors="replace") as stream:
-            lines = stream
-            for line in lines:
+            for line in stream:
                 line = line.strip()
                 if not line:
                     continue
@@ -53,6 +52,25 @@ def _load_entries_locked(_fd):
     except FileNotFoundError:
         pass
     return entries
+
+
+def _write_all(fd, payload):
+    """Write every byte, preserving the pre-atomic-rewrite helper contract.
+
+    The production episodic rewrite uses temp-file persistence plus ``os.replace``.
+    This helper remains for callers/tests that need a correct descriptor write-all
+    primitive and for other durability code that may reuse it.
+    """
+    view = memoryview(payload)
+    written = 0
+    while written < len(view):
+        try:
+            count = os.write(fd, view[written:])
+        except InterruptedError:
+            continue
+        if count <= 0:
+            raise OSError("descriptor write made no progress")
+        written += count
 
 
 def _write_entries_locked(_fd, entries):
@@ -82,7 +100,6 @@ def _write_entries_locked(_fd, entries):
             os.fsync(stream.fileno())
         os.replace(temp_path, EPISODIC)
         temp_path = None
-        # Persist the directory entry where supported.
         try:
             dir_fd = os.open(os.path.dirname(EPISODIC), os.O_RDONLY)
         except OSError:
