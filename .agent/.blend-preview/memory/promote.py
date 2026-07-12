@@ -39,7 +39,7 @@ def _find_prior(slug, candidates_dir):
     staged_path = os.path.join(candidates_dir, f"{slug}.json")
     if os.path.isfile(staged_path):
         try:
-            with open(staged_path) as f:
+            with open(staged_path, encoding="utf-8") as f:
                 return json.load(f), "staged"
         except (OSError, json.JSONDecodeError):
             pass
@@ -47,7 +47,7 @@ def _find_prior(slug, candidates_dir):
         path = os.path.join(candidates_dir, sub, f"{slug}.json")
         if os.path.isfile(path):
             try:
-                with open(path) as f:
+                with open(path, encoding="utf-8") as f:
                     return json.load(f), sub
             except (OSError, json.JSONDecodeError):
                 pass
@@ -78,7 +78,8 @@ def write_candidates(patterns, candidates_dir):
     lessons_text = ""
     if os.path.exists(lessons_path):
         try:
-            lessons_text = open(lessons_path, encoding="utf-8").read()
+            with open(lessons_path, encoding="utf-8") as f:
+                lessons_text = f.read()
         except OSError:
             pass
     current_terminal_lessons = set(extract_lesson_lines(lessons_text))
@@ -162,7 +163,7 @@ def write_candidates(patterns, candidates_dir):
         }
 
         staged_path = os.path.join(candidates_dir, f"{slug}.json")
-        with open(staged_path, "w") as f:
+        with open(staged_path, "w", encoding="utf-8") as f:
             json.dump(candidate, f, indent=2)
 
         # The slug must live in exactly one lifecycle location. Remove any

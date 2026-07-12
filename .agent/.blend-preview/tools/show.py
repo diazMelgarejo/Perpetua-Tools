@@ -118,14 +118,15 @@ def _load_episodic():
     if not os.path.exists(EPISODIC):
         return []
     out = []
-    for line in open(EPISODIC):
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            out.append(json.loads(line))
-        except json.JSONDecodeError:
-            continue
+    with open(EPISODIC, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                out.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
     return out
 
 
@@ -218,25 +219,27 @@ def lesson_stats():
     out = {"count": 0, "provisional": 0, "accepted": [],
            "from_md_fallback": False}
     if os.path.exists(LESSONS_JSONL):
-        for line in open(LESSONS_JSONL):
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                l = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            out["count"] += 1
-            if l.get("status") == "provisional":
-                out["provisional"] += 1
-            elif l.get("status") == "accepted":
-                out["accepted"].append(l)
+        with open(LESSONS_JSONL, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    l = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                out["count"] += 1
+                if l.get("status") == "provisional":
+                    out["provisional"] += 1
+                elif l.get("status") == "accepted":
+                    out["accepted"].append(l)
     elif os.path.exists(LESSONS_MD):
         out["from_md_fallback"] = True
-        for line in open(LESSONS_MD):
-            s = line.strip()
-            if s.startswith("- ") and len(s) > 2 and not s.startswith("- #"):
-                out["count"] += 1
+        with open(LESSONS_MD, encoding="utf-8") as f:
+            for line in f:
+                s = line.strip()
+                if s.startswith("- ") and len(s) > 2 and not s.startswith("- #"):
+                    out["count"] += 1
     return out
 
 
@@ -244,14 +247,15 @@ def skill_stats():
     if not os.path.exists(MANIFEST):
         return {"count": 0, "names": []}
     names = []
-    for line in open(MANIFEST):
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            names.append(json.loads(line).get("name", "?"))
-        except json.JSONDecodeError:
-            continue
+    with open(MANIFEST, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                names.append(json.loads(line).get("name", "?"))
+            except json.JSONDecodeError:
+                continue
     return {"count": len(names), "names": names}
 
 
@@ -289,7 +293,8 @@ def _version():
     if not os.path.exists(VERSION_FILE):
         return ""
     try:
-        return open(VERSION_FILE).read().strip()
+        with open(VERSION_FILE, encoding="utf-8") as f:
+            return f.read().strip()
     except OSError:
         return ""
 
