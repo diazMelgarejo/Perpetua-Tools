@@ -1,4 +1,21 @@
-"""Cluster, extract, and stage memory candidates."""
+"""Cluster episodic evidence, extract patterns, and stage review candidates.
+
+Pipeline:
+  1. Cluster related episodic entries and extract one structured pattern per cluster.
+  2. Derive a stable candidate slug from the pattern ID, with a legacy hash fallback.
+  3. Search staged, rejected, and graduated lifecycle locations for prior state.
+  4. Preserve decisions, rejection counts, staged_at, and evidence history on restage.
+  5. Skip terminal accepted lessons and exact duplicate claims.
+  6. Restage rejected or provisional candidates only when evidence/blockers changed.
+  7. Persist the complete candidate through recursive tracked-path sanitization.
+  8. Enforce one lifecycle location by rolling back the new staged file if cleanup fails.
+
+Never:
+  - graduate a lesson; host review tools own acceptance;
+  - silently leave one slug in multiple lifecycle locations;
+  - reset lifecycle history merely because a pattern was detected again;
+  - write candidate JSON using platform-default encoding or unsanitized strings.
+"""
 import datetime
 import hashlib
 import json

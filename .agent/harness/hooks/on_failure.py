@@ -4,12 +4,13 @@ import json
 import os
 import sys
 
-from ._episodic_io import append_jsonl
+from ._episodic_io import append_jsonl, episodic_lock
 from ._provenance import build_source
 
 ROOT = os.path.join(os.path.dirname(__file__), "..", "..")
 sys.path.insert(0, os.path.join(ROOT, "memory"))
 from path_hygiene import sanitize_json_strings  # noqa: E402
+from time_utils import legacy_local_to_utc  # noqa: E402
 
 EPISODIC = os.path.join(ROOT, "memory/episodic/AGENT_LEARNINGS.jsonl")
 FAILURE_THRESHOLD = 3
@@ -17,40 +18,46 @@ WINDOW_DAYS = 14
 
 
 def _legacy_local_to_utc(ts):
-    """Interpret legacy naive timestamps as local wall time, then normalize."""
-    if ts.tzinfo is None:
-        local_tz = datetime.datetime.now().astimezone().tzinfo
-        ts = ts.replace(tzinfo=local_tz)
-    return ts.astimezone(datetime.timezone.utc)
+    """Backward-compatible alias for the shared memory timestamp policy."""
+    return legacy_local_to_utc(ts)
 
 
 def _count_recent_failures(skill_name):
+    """Count recent failures from a stable, replacement-decoded snapshot."""
     if not os.path.exists(EPISODIC):
         return 0
     cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=WINDOW_DAYS)
     count = 0
-    with open(EPISODIC, encoding="utf-8") as stream:
-        for line in stream:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                entry = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            if entry.get("skill") != skill_name or entry.get("result") != "failure":
-                continue
-            try:
-                ts = _legacy_local_to_utc(datetime.datetime.fromisoformat(entry["timestamp"]))
-                if ts > cutoff:
-                    count += 1
-            except (KeyError, TypeError, ValueError):
-                continue
+    with episodic_lock(EPISODIC, exclusive=False):
+        try:
+            stream = open(EPISODIC, encoding="utf-8", errors="replace")
+        except FileNotFoundError:
+            return 0
+        with stream:
+            for line in stream:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if entry.get("skill") != skill_name or entry.get("result") != "failure":
+                    continue
+                try:
+                    ts = legacy_local_to_utc(
+                        datetime.datetime.fromisoformat(entry["timestamp"])
+                    )
+                    if ts > cutoff:
+                        count += 1
+                except (KeyError, TypeError, ValueError):
+                    continue
     return count
 
 
 def on_failure(skill_name, action, error, context="", confidence=0.9,
                evidence_ids=None, importance=None, pain_score=None):
+    """Persist a sanitized failure episode and return the stored entry."""
     if isinstance(error, Exception):
         reflection = (
             f"FAILURE in {skill_name}: {type(error).__name__}: "

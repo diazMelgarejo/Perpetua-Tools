@@ -15,5 +15,9 @@ def feature_enabled(features_path: PathLike, key: str) -> bool:
             features = json.load(stream)
     except (FileNotFoundError, OSError, json.JSONDecodeError, TypeError):
         return False
+    if not isinstance(features, dict):
+        return False
     entry = features.get(key) or {}
-    return bool(entry.get("enabled"))
+    if not isinstance(entry, dict):
+        return False
+    return entry.get("enabled") is True
