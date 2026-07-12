@@ -17,24 +17,25 @@ def _count_recent_failures(skill_name):
         return 0
     cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=WINDOW_DAYS)
     count = 0
-    for line in open(EPISODIC):
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            e = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if e.get("skill") != skill_name or e.get("result") != "failure":
-            continue
-        try:
-            ts = datetime.datetime.fromisoformat(e["timestamp"])
-            if ts.tzinfo is None:
-                ts = ts.replace(tzinfo=datetime.timezone.utc)
-            if ts > cutoff:
-                count += 1
-        except (KeyError, ValueError):
-            continue
+    with open(EPISODIC, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                e = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if e.get("skill") != skill_name or e.get("result") != "failure":
+                continue
+            try:
+                ts = datetime.datetime.fromisoformat(e["timestamp"])
+                if ts.tzinfo is None:
+                    ts = ts.replace(tzinfo=datetime.timezone.utc)
+                if ts > cutoff:
+                    count += 1
+            except (KeyError, ValueError):
+                continue
     return count
 
 
