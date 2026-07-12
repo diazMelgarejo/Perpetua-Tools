@@ -33,6 +33,19 @@ If the worktree is dirty, the branch is not tracking origin, or fast-forward is 
 
 Open and follow `bin/orama-system/skills/git-history-surgery/SKILL.md` (relative to the repo root). Do not copy behavior from this wrapper.
 
+## Branch and review provenance
+
+Before rebasing, resetting, transplanting, or recovering review work, load:
+
+- [Branch-Local Review Remediation](../../../.agent/references/branch-local-review-remediation.md)
+
+Review remediation remains on the reviewed branch until merge. Do not move a fix to `main` merely because the content is correct. Preserve the `review → branch → commits → merge` chain, inspect both sides before conflict resolution, and require explicit operator authorization for force updates.
+
+## Related skills
+
+- [`../agent-methodology/SKILL.md`](../agent-methodology/SKILL.md) — Oramasys integrative synthesis and verification discipline.
+- [`../code-review/SKILL.md`](../code-review/SKILL.md) — Classify findings by owning invariant before history operations.
+
 ## Windows UTF-8 Note
 
 On Windows PowerShell, set UTF-8 explicitly before reading or writing skill files:
