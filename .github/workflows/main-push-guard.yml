@@ -1,0 +1,43 @@
+name: Main push guard (Phase 0 audit trail)
+
+# Advisory local pre-push hooks can be bypassed with --no-verify. This
+# workflow is the visibility backstop: it cannot retroactively block a
+# push that already landed, but it flags direct-to-main pushes loudly so
+# they never go unnoticed the way the 2026-07-13 doctrine self-violation
+# incident briefly did. The durable, unbypassable enforcement is GitHub
+# branch protection on main (repo Settings -> Branches -> Require a pull
+# request before merging) — configure that manually; this workflow cannot
+# set it (requires `administration` scope, not available to CI tokens by
+# default).
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  flag-if-not-a-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check whether this push was a PR merge
+        id: check
+        run: |
+          # A push produced by GitHub's "Merge pull request" button always
+          # creates a 2-parent merge commit (or, for squash/rebase, is
+          # immediately preceded by a closed+merged PR record referencing
+          # this exact SHA). A direct push of a local branch onto main from
+          # a local checkout is neither. Heuristic, not proof — see the
+          # note above about the real enforcement layer.
+          PARENT_COUNT=$(git rev-list --parents -n 1 HEAD | wc -w)
+          echo "parent_count=$((PARENT_COUNT - 1))" >> "$GITHUB_OUTPUT"
+
+      - name: Warn if this looks like a direct push
+        if: steps.check.outputs.parent_count == '1'
+        run: |
+          echo "::warning::HEAD commit on main has a single parent — this looks like a direct push rather than a PR merge (which produces a 2-parent merge commit). Per the Post-Review Micro-Remediation doctrine (Phase 0), main should only move via a merged, reviewed PR. If this was intentional, no action needed; if not, see .agent/AGENTS.md for the safety-ref-then-reset remediation procedure."
