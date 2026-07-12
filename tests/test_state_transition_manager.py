@@ -252,7 +252,13 @@ class TestSybilCorrelation:
 
     @pytest.mark.asyncio
     async def test_sybil_weak_when_same_bucket(self, state_transition_manager, k_bucket):
-        # A single correlated pair (not >=2) should produce WEAK, not STRONG.
+        # Exactly one correlated pair (peer_abc <-> witness peer_abc, XOR
+        # distance 0) and no bucket overlap (only one witness shares the
+        # peer's bucket, and len(bucket_overlap) < 2) -- per
+        # _check_sybil_correlation's own threshold (>=2 correlated_pairs OR
+        # >=2 bucket_overlap => STRONG), this must resolve to exactly WEAK,
+        # not just "WEAK or STRONG" -- a test asserting the looser bound
+        # would not fail if the STRONG threshold regressed to >=1.
         witnesses = (
             witness_factory(peer_id="peer_abc", observer_id="observer_close", observer_provenance="provenance-close"),
             witness_factory(peer_id="far_peer_zzz", observer_id="observer_far", observer_provenance="provenance-far"),
@@ -262,10 +268,9 @@ class TestSybilCorrelation:
         result = await state_transition_manager.evaluate_observation(obs)
 
         assert result.sybil_correlation is not None
-        assert result.sybil_correlation.signal in (SybilSignal.WEAK, SybilSignal.STRONG)
-        if result.sybil_correlation.signal == SybilSignal.WEAK:
-            assert result.accepted is True
-            assert result.decision_type == DecisionType.SYBIL_FLAGGED
+        assert result.sybil_correlation.signal == SybilSignal.WEAK
+        assert result.accepted is True
+        assert result.decision_type == DecisionType.SYBIL_FLAGGED
 
 
 class TestAuditCommit:
@@ -292,7 +297,7 @@ class TestAuditCommit:
         assert result.accepted is True
         assert entries_after == entries_before + 1
         assert result.audit_entry is not None
-        assert result.audit_hash if hasattr(result, "audit_hash") else result.audit_entry.hash
+        assert result.audit_entry.hash
 
 
 class TestDedupGate:
