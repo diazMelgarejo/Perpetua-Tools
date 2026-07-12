@@ -1,0 +1,42 @@
+{
+  "id": "5b6bd6b7d194",
+  "key": "manual_5b6bd6",
+  "name": "manual_5b6bd6",
+  "claim": "When cataloguing an existing pattern/reference library against new work, only draw cross-references that are substantively real -- explicitly note which candidate files have NO genuine overlap rather than force-fitting every entry into a mapping table. A catalogue that honestly says 'no forced connection here' is more trustworthy and more useful to future readers than one that manufactures a link for completeness.",
+  "conditions": [
+    "catalogue",
+    "cross-reference",
+    "honest mapping",
+    "pattern library",
+    "progressive disclosure"
+  ],
+  "evidence_ids": [
+    "2026-07-12T00:30:56.388594+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-12T00:30:56.388594+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-12T00:30:56.388594+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-12T00:30:56.483596+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Catalogued orama-system's 10-file docs/v2/references/patterns/ library (Karpathy/Foundry/LangGraph/MCP/Swarm-CrewAI-AutoGen/Pydantic-AI/state-reducers) against this session's STM/GossipBus/AuditLog work (2026-07-12). 5 of 10 files had genuine, substantive overlap (drawn out explicitly); the other 5 (mcp-and-research-patterns, prompt-and-task-primitives, both pydantic-ai files) did not, and were named as such rather than stretched to fit.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-12T00:30:56.388594+00:00"
+      ],
+      "lessons_sha": "9401ebd0dad9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-12T00:30:56.483582+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Catalogued orama-system's 10-file docs/v2/references/patterns/ library (Karpathy/Foundry/LangGraph/MCP/Swarm-CrewAI-AutoGen/Pydantic-AI/state-reducers) against this session's STM/GossipBus/AuditLog work (2026-07-12). 5 of 10 files had genuine, substantive overlap (drawn out explicitly); the other 5 (mcp-and-research-patterns, prompt-and-task-primitives, both pydantic-ai files) did not, and were named as such rather than stretched to fit."
+}

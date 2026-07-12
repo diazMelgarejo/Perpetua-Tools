@@ -39,6 +39,7 @@ from orchestrator.state_transition_manager import StateTransitionManager
 from orchestrator.audit_log import AuditLog
 from orchestrator.distance_bucket import KBucketTable
 from orchestrator.equivocation import EquivocationLog
+from orchestrator.reputation import ReputationLedger
 try:
     from loguru import logger
 except ImportError:
@@ -112,17 +113,19 @@ app = FastAPI(title="Perpetua-Tools Orchestrator", version=VERSION)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# sec: Initialize Phase 1b security pipeline (PR #203)
-# Wire G1 (witness quorum), G4 (equivocation), G6 (distance bucketing), G8 (audit log)
-# G5 (reputation) uses stub until ready
+# sec: Initialize Phase 1b security pipeline (PR #203/#205)
+# Wire G1 (witness quorum), G4 (equivocation), G5 (reputation), G6 (distance
+# bucketing), G8 (audit log) into the full 6-step security decision pipeline.
 _equivocation_log = EquivocationLog()
 _k_bucket = KBucketTable(local_id="perpetua-orchestrator", k=20)
 _audit_log = AuditLog()
+_reputation_ledger = ReputationLedger()
 app.state.state_transition_manager = StateTransitionManager(
+    local_id="perpetua-orchestrator",
     equivocation_log=_equivocation_log,
     k_bucket=_k_bucket,
     audit_log=_audit_log,
-    reputation_fn=lambda agent_id: 1.0,  # G5 stub: neutral weight until reputation ledger ready
+    reputation=_reputation_ledger,
 )
 
 # sec: restrict to known hosts in production (set ALLOWED_HOSTS env var)

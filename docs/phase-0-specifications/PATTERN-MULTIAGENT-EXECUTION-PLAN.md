@@ -378,6 +378,7 @@ Week 4: SKILL.md + Validation
 
 - [`MULTIAGENT-SWARM-SECURITY-ANALYSIS.md`](./MULTIAGENT-SWARM-SECURITY-ANALYSIS.md) — P2P threat model mapping (T1–T7), gap severity analysis (G1–G16), and the security foundation that defines which gaps this execution plan closes.
 - [`2026-07-11-state-transition-manager-integration-plan.md`](./2026-07-11-state-transition-manager-integration-plan.md) — Concrete Perpetua-Tools milestone that wires the already-implemented P2/P5/P6/P13/P19 modules into a single `PeerObservation` security-decision pipeline. Compresses Track A3–A7 into a 2–3 day integration pass and unblocks Track D (Fleet Mode Integration).
+- **Canonical orama-system cross-reference (progressive disclosure — read on demand):** `orama-system/docs/v2/03-safety-v2.5.md` § "Related implementation patterns (Perpetua-Tools)" — MAESTRO/SWARM's v2.5 enforcement design maps directly onto this plan's P1–P20 catalog and the G1–G16 gaps it closes. Before executing further tracks against these patterns, also read `orama-system/docs/v2/45-single-operator-lan-threat-model-descope.md` (D23) — P5/P6/P13 (witness quorum, reputation-decay, equivocation) were descoped for the current single-operator-LAN deployment after a premise check found no adversary for them to defend against; re-run that check before resuming Track A/D work on those specific patterns.
 
 ---
 
