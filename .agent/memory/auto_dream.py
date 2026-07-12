@@ -1,4 +1,21 @@
-"""Staging-only dream cycle. Mechanical work, no subjective graduation."""
+"""Staging-only dream cycle for the PT agent-memory lifecycle.
+
+Responsibilities, in order:
+  1. Load episodic JSONL under the shared sidecar lock.
+  2. Replacement-decode malformed UTF-8 and skip malformed JSON rows.
+  3. Cluster episodes and extract structured candidate patterns.
+  4. Stage candidates with lifecycle metadata; never graduate subjectively.
+  5. Heuristically reject obvious junk while preserving host review authority.
+  6. Decay low-salience episodes and archive stale workspace artifacts.
+  7. Atomically rewrite sanitized episodic state through fsynced temp replacement.
+  8. Refresh REVIEW_QUEUE.md so the next host session sees pending work.
+
+Durability and safety invariants:
+  - One stable sidecar lock spans the complete read-modify-write cycle.
+  - Every persisted JSON string passes through the tracked-path sanitizer.
+  - The destination is replaced only after the temporary file is flushed/fsynced.
+  - This module never graduates lessons and never commits unattended changes.
+"""
 from __future__ import annotations
 
 import contextlib
