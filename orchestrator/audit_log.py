@@ -129,11 +129,18 @@ class AuditLog:
         self._persist_path = Path(persist_path) if persist_path is not None else None
         if self._persist_path is not None and self._persist_path.exists():
             with self._persist_path.open("r", encoding="utf-8") as f:
-                for line in f:
+                for line_number, line in enumerate(f, start=1):
                     line = line.strip()
                     if not line:
                         continue
-                    payload = json.loads(line)
+                    try:
+                        payload = json.loads(line)
+                    except json.JSONDecodeError as exc:
+                        raise json.JSONDecodeError(
+                            f"{exc.msg} (persist_path={self._persist_path}, line={line_number})",
+                            exc.doc,
+                            exc.pos,
+                        ) from exc
                     self._entries.append(
                         AuditEntry(
                             sequence_number=payload["sequence_number"],
@@ -204,7 +211,6 @@ class AuditLog:
             previous_hash=prev_hash,
             signature=sig,
         )
-        self._entries.append(entry)
         if self._persist_path is not None:
             payload = {
                 "sequence_number": entry.sequence_number,
@@ -218,6 +224,10 @@ class AuditLog:
             }
             with self._persist_path.open("a", encoding="utf-8") as f:
                 f.write(json.dumps(payload) + "\n")
+        # Only commit to the in-memory chain after persistence succeeds —
+        # a write failure must not leave a gap between what's on disk and
+        # what verify_chain() sees in memory.
+        self._entries.append(entry)
         return entry
 
     def entries(self) -> tuple[AuditEntry, ...]:

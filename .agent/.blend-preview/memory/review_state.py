@@ -66,12 +66,12 @@ def _stamp_evidence_and_lessons(cand, candidates_dir):
 
 
 def load_candidate(path):
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
 def save_candidate(candidate, path):
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         json.dump(candidate, f, indent=2)
 
 
@@ -98,9 +98,10 @@ def _refresh_queue(candidates_dir):
     """
     try:
         write_review_queue_summary(candidates_dir, _default_queue_path(candidates_dir))
-    except Exception:
-        # Never let queue bookkeeping break a graduation / rejection action.
-        pass
+    except Exception as exc:
+        # Never let queue bookkeeping break a graduation / rejection action —
+        # but do leave a debug trail for why the summary went stale.
+        logging.debug("write_review_queue_summary failed: %s", exc)
 
 
 def mark_graduated(candidate_id, reviewer, rationale, candidates_dir,
@@ -220,7 +221,7 @@ def list_candidates(candidates_dir, status="staged", sort_by="priority"):
         if not os.path.isfile(path):
             continue
         try:
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 out.append(json.load(f))
         except (OSError, json.JSONDecodeError):
             continue
