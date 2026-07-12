@@ -285,10 +285,21 @@ async def _queue_list(
         rows = grouped[label]
         if rows:
             print(f"\n{label.upper()} ({len(rows)} tasks):")
-            for task_id in sorted(rows):
+            # Highest urgency first (TaskPriority.CRITICAL=1 .. LOW=4), task_id
+            # as a stable tiebreak -- the priority filter above already reads
+            # this same field, so surfacing it here is the display half of
+            # the same feature, not a separate concern.
+            def _priority_rank(task_id: str) -> int:
+                try:
+                    return TaskPriority.from_string(rows[task_id].get("priority", "NORMAL")).value
+                except ValueError:
+                    return TaskPriority.NORMAL.value
+
+            for task_id in sorted(rows, key=lambda t: (_priority_rank(t), t)):
                 state = rows[task_id]
                 print(
                     f"  {task_id} status={state.get('status', '?')} "
+                    f"priority={state.get('priority', 'NORMAL')} "
                     f"agent={state.get('assigned_agent') or '-'}"
                 )
 
