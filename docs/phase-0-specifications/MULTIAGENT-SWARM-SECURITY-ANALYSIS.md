@@ -463,5 +463,10 @@ Grepped `docs/LESSONS.md` for real incident history (DHCP/network/crash/timeout/
 
 ---
 
+## Related Documents
+
+- [`PATTERN-MULTIAGENT-EXECUTION-PLAN.md`](./PATTERN-MULTIAGENT-EXECUTION-PLAN.md) — Deep-research-driven execution plan for the 20 P2P security patterns (P1–P20) and 16 gaps (G1–G16) analyzed here.
+- [`2026-07-11-state-transition-manager-integration-plan.md`](./2026-07-11-state-transition-manager-integration-plan.md) — Concrete Perpetua-Tools milestone that wires P2/P5/P6/P13/P19 into a single `PeerObservation` security-decision pipeline and unblocks Track D (Fleet Mode Integration).
+
 *End of Multiagent Swarm Security Analysis. Ready for Phase 1b roadmap execution.*
 
