@@ -77,12 +77,12 @@ json.dump({
     "base_version": "v0.9.0",
     "note": "base is PT .agent/'s original scaffold version (see .agent/install.json); never been blended since",
     "last_blend": {"at": None, "target_sha": None, "applied_clean": [], "conflicts": [], "staged_new": [], "skipped_blocked": []},
-}, open(state_file, "w"), indent=2)
+}, open(state_file, "w", encoding="utf-8"), indent=2)
 print(f"initialized {state_file} at base {base_sha[:8]} (v0.9.0)")
 PYEOF
 }
 
-_base_sha() { python3 -c "import json; print(json.load(open('$STATE_FILE'))['base_sha'])"; }
+_base_sha() { python3 -c "import json; print(json.load(open('$STATE_FILE', encoding='utf-8'))['base_sha'])"; }
 _target_sha() { git -C "$SUB" rev-parse HEAD; }
 
 # Enumerate the dry-run delta from harness_manager, categorized by kind
@@ -90,9 +90,15 @@ _target_sha() { git -C "$SUB" rev-parse HEAD; }
 _dry_run_files() {
   export AGENTIC_STACK_ROOT="$SUB"
   export PYTHONPATH="$SUB${PYTHONPATH:+:$PYTHONPATH}"
-  python3 -m harness_manager.cli upgrade --dry-run "$REPO" 2>&1 \
-    | grep -E '^\s*[+~]\s+\.agent/' \
-    | sed -E 's/^\s*([+~])\s+(\.agent\/.*)$/\1 \2/'
+  local raw
+  if ! raw="$(python3 -m harness_manager.cli upgrade --dry-run "$REPO" 2>&1)"; then
+    echo "agentic-stack-agent-blend: upgrade --dry-run failed:" >&2
+    printf '%s\n' "$raw" >&2
+    return 1
+  fi
+  printf '%s\n' "$raw" \
+    | grep -E '^[[:space:]]*[+~][[:space:]]+\.agent/' \
+    | sed -E 's/^[[:space:]]*([+~])[[:space:]]+(\.agent\/.*)$/\1 \2/'
 }
 
 cmd_status() {
@@ -136,6 +142,13 @@ cmd_apply() {
   target="$(_target_sha)"
   [ "$base" != "$target" ] || { echo "apply: already up to date"; return 0; }
 
+  # Capture via command substitution (not process substitution) so a
+  # non-zero exit from _dry_run_files (upgrade --dry-run failed) is checked
+  # explicitly here -- `done < <(_dry_run_files)` would otherwise discard the
+  # exit status and the failure would silently look like "nothing to blend".
+  local dry_run_lines
+  dry_run_lines="$(_dry_run_files)" || die "upgrade --dry-run failed -- see output above; nothing staged"
+
   rm -rf "$PREVIEW_DIR"
   mkdir -p "$PREVIEW_DIR"
 
@@ -177,7 +190,7 @@ cmd_apply() {
       echo "  CONFLICT  $rel  (preview has <<<<<<< markers -- resolve by hand before promote)"
     fi
     rm -f "$base_tmp" "$theirs_tmp"
-  done < <(_dry_run_files)
+  done <<< "$dry_run_lines"
 
   echo "apply: staged under ${PREVIEW_DIR#$REPO/}/"
   echo "  clean merges:     ${#clean[@]}"
@@ -222,16 +235,22 @@ cmd_promote() {
   python3 - "$STATE_FILE" "$target" "$at" "${#unresolved[@]}" "$promoted_json" "$unresolved_json" <<'PYEOF'
 import json, sys
 state_file, target, at, n_unresolved, promoted_json, unresolved_json = sys.argv[1:7]
-state = json.load(open(state_file))
+state = json.load(open(state_file, encoding="utf-8"))
+promoted = json.loads(promoted_json)
 state["last_blend"] = {
     "at": at,
     "target_sha": target,
-    "applied_clean": json.loads(promoted_json),
+    "applied_clean": promoted,
     "conflicts": json.loads(unresolved_json),
 }
-if int(n_unresolved) == 0:
+# Only advance the recorded base when nothing is left unresolved AND at
+# least one file was actually promoted -- an empty promote (nothing staged,
+# e.g. everything was blocked/skipped) must not silently mark the base as
+# blended, or the next cycle would diff from the wrong base and drop
+# upstream's intervening changes.
+if int(n_unresolved) == 0 and promoted:
     state["base_sha"] = target
-json.dump(state, open(state_file, "w"), indent=2)
+json.dump(state, open(state_file, "w", encoding="utf-8"), indent=2)
 PYEOF
 
   if [ "${#unresolved[@]}" -gt 0 ]; then
@@ -244,6 +263,13 @@ PYEOF
     echo "'apply' again after manually editing the conflicted .agent/ files, then"
     echo "promote once every flagged file is clean:"
     printf '  - %s\n' "${unresolved[@]}"
+    return 0
+  fi
+  if [ "${#promoted[@]}" -eq 0 ]; then
+    echo ""
+    echo "blend-state base NOT advanced: nothing was actually promoted (preview"
+    echo "was empty -- everything blocked/skipped, or 'apply' hasn't been re-run"
+    echo "since the last promote). Nothing to record as blended at $target."
     return 0
   fi
   echo "blend-state base advanced to ${target:0:8} (last_blend recorded, $at)"
