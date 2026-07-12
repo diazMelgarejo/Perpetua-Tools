@@ -137,7 +137,7 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - **orchestrator.py**: Removed git commit message fragment appended to REDIS_HOST line (syntax error)
-- **orchestrator.py**: Replaced bare IP `192.168.1.100` with `OLLAMA_WINDOWS_ENDPOINT` env var
+- **orchestrator.py**: Replaced bare IP `<YOUR_LAN_IP>` with `OLLAMA_WINDOWS_ENDPOINT` env var
 - **orchestrator/fastapi_app.py**: Updated stale version `0.9.0.0` → `0.9.7.0`
 - **orchestrator/autoresearch_bridge.py**: Removed 3x confidential folder references
 - **requirements.txt**: Updated header comment version

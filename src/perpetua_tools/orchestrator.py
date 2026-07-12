@@ -39,6 +39,7 @@ from orchestrator.state_transition_manager import StateTransitionManager
 from orchestrator.audit_log import AuditLog
 from orchestrator.distance_bucket import KBucketTable
 from orchestrator.equivocation import EquivocationLog
+from orchestrator.reputation import ReputationLedger
 try:
     from loguru import logger
 except ImportError:
@@ -75,8 +76,8 @@ load_dotenv()
 
 # Configuration
 PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
-OLLAMA_MAC_ENDPOINT = os.getenv("OLLAMA_MAC_ENDPOINT", "http://192.168.254.103:11434")
-OLLAMA_WINDOWS_ENDPOINT = os.getenv("OLLAMA_WINDOWS_ENDPOINT", "http://192.168.254.100:11434")
+OLLAMA_MAC_ENDPOINT = os.getenv("OLLAMA_MAC_ENDPOINT", "http://127.0.1.2:11434")
+OLLAMA_WINDOWS_ENDPOINT = os.getenv("OLLAMA_WINDOWS_ENDPOINT", "http://127.0.1.1:11434")
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 MAX_DAILY_SPEND = float(os.getenv("MAX_DAILY_SPEND", 0.17))
@@ -87,10 +88,10 @@ ULTRATHINK_ENDPOINT = ORAMASYS_ENDPOINT
 # LM Studio (v1.0 RC primary local backend)
 LMS_WIN_ENDPOINTS: List[str] = [
     ep.strip()
-    for ep in os.getenv("LM_STUDIO_WIN_ENDPOINTS", "http://192.168.254.100:1234").split(",")
+    for ep in os.getenv("LM_STUDIO_WIN_ENDPOINTS", "http://127.0.1.1:1234").split(",")
     if ep.strip()
 ]
-LMS_MAC_ENDPOINT: str = os.getenv("LM_STUDIO_MAC_ENDPOINT", "http://192.168.254.103:1234")
+LMS_MAC_ENDPOINT: str = os.getenv("LM_STUDIO_MAC_ENDPOINT", "http://127.0.1.2:1234")
 LMS_API_TOKEN: str = os.getenv("LM_STUDIO_API_TOKEN", "")
 LMS_WIN_MODEL: str = os.getenv("LMS_WIN_MODEL", "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2")
 LMS_MAC_MODEL: str = os.getenv("LMS_MAC_MODEL", "Qwen3.5-9B-MLX-4bit")
@@ -112,17 +113,19 @@ app = FastAPI(title="Perpetua-Tools Orchestrator", version=VERSION)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# sec: Initialize Phase 1b security pipeline (PR #203)
-# Wire G1 (witness quorum), G4 (equivocation), G6 (distance bucketing), G8 (audit log)
-# G5 (reputation) uses stub until ready
+# sec: Initialize Phase 1b security pipeline (PR #203/#205)
+# Wire G1 (witness quorum), G4 (equivocation), G5 (reputation), G6 (distance
+# bucketing), G8 (audit log) into the full 6-step security decision pipeline.
 _equivocation_log = EquivocationLog()
 _k_bucket = KBucketTable(local_id="perpetua-orchestrator", k=20)
 _audit_log = AuditLog()
+_reputation_ledger = ReputationLedger()
 app.state.state_transition_manager = StateTransitionManager(
+    local_id="perpetua-orchestrator",
     equivocation_log=_equivocation_log,
     k_bucket=_k_bucket,
     audit_log=_audit_log,
-    reputation_fn=lambda agent_id: 1.0,  # G5 stub: neutral weight until reputation ledger ready
+    reputation=_reputation_ledger,
 )
 
 # sec: restrict to known hosts in production (set ALLOWED_HOSTS env var)

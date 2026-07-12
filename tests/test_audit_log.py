@@ -122,3 +122,42 @@ def test_sequence_numbers_are_monotonic_and_zero_indexed():
     log = AuditLog()
     entries = [log.append(f"peer-{i}", "ACTIVE", "SUSPECT", timestamp=float(i)) for i in range(4)]
     assert [e.sequence_number for e in entries] == [0, 1, 2, 3]
+
+
+def test_persist_path_survives_across_instances(tmp_path):
+    """STM-Next-08 durability slice: a fresh AuditLog pointed at the same
+    persist_path after 'restart' rebuilds identical, verifiable state."""
+    log_path = tmp_path / "audit.jsonl"
+
+    log1 = AuditLog(persist_path=log_path)
+    log1.append("peer-1", "ACTIVE", "SUSPECT", witnesses=("obs-a",), timestamp=1.0)
+    log1.append("peer-1", "SUSPECT", "INACTIVE", timestamp=2.0)
+
+    # Simulate a process restart: a brand-new instance, same file.
+    log2 = AuditLog(persist_path=log_path)
+    assert len(log2.entries()) == 2
+    assert log2.entries()[0].peer_id == "peer-1"
+    assert log2.entries()[1].previous_hash == log2.entries()[0].hash
+    assert log2.verify_chain() is True
+
+    # Appending after reload continues the chain correctly, not restarting it.
+    e3 = log2.append("peer-1", "INACTIVE", "ACTIVE", timestamp=3.0)
+    assert e3.sequence_number == 2
+    assert e3.previous_hash == log2.entries()[1].hash
+
+
+def test_persist_path_reload_detects_tampered_file(tmp_path):
+    """A hand-edited persisted file must fail verify_chain() on reload —
+    durability must not silently trust disk content over the hash chain."""
+    log_path = tmp_path / "audit.jsonl"
+    log1 = AuditLog(persist_path=log_path)
+    log1.append("peer-1", "ACTIVE", "SUSPECT", timestamp=1.0)
+    log1.append("peer-1", "SUSPECT", "INACTIVE", timestamp=2.0)
+
+    lines = log_path.read_text(encoding="utf-8").splitlines()
+    tampered = lines[0].replace('"SUSPECT"', '"ACTIVE"')  # forge the first entry
+    log_path.write_text("\n".join([tampered, *lines[1:]]) + "\n", encoding="utf-8")
+
+    log2 = AuditLog(persist_path=log_path)
+    with pytest.raises(ChainIntegrityError):
+        log2.verify_chain()

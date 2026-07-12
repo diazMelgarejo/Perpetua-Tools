@@ -1108,6 +1108,55 @@ async def _amain(args: argparse.Namespace) -> None:
     elif args.cmd == "workflow":
         if args.subcmd == "critical-path":
             await _workflow_critical_path(bus)
+    elif args.cmd == "queue":
+        if args.subcmd == "add":
+            await _queue_add(
+                bus,
+                args.task_name,
+                args.phase,
+                args.priority,
+                args.notes or "",
+                args.depends_on,
+            )
+        elif args.subcmd == "list":
+            await _queue_list(bus, args.phase, args.priority, args.agent)
+        elif args.subcmd == "claim":
+            await _queue_claim(bus, args.task_id, args.agent_id)
+        elif args.subcmd == "complete":
+            await _queue_complete(bus, args.task_id, args.notes or "")
+        elif args.subcmd == "fail":
+            await _queue_fail(bus, args.task_id, args.notes or "")
+        elif args.subcmd == "status":
+            await _queue_status(bus, args.agent)
+    elif args.cmd == "heartbeat":
+        # Lazy import: the heartbeat handlers live in agent_coordination.py,
+        # which imports this module at its own top level. A module-level
+        # import here would deadlock on circular init, so import at call
+        # time instead — safe because dispatch always runs after both
+        # modules have finished loading.
+        from scripts.agent_coordination import (
+            _heartbeat_list,
+            _heartbeat_check,
+            _heartbeat_dashboard,
+            _heartbeat_pulse,
+            _heartbeat_kill,
+            _heartbeat_timeline,
+            _heartbeat_cleanup,
+        )
+        if args.subcmd == "list":
+            await _heartbeat_list(bus)
+        elif args.subcmd == "check":
+            await _heartbeat_check(bus, args.agent_id)
+        elif args.subcmd == "dashboard":
+            await _heartbeat_dashboard(bus)
+        elif args.subcmd == "pulse":
+            await _heartbeat_pulse(bus, args.agent_id)
+        elif args.subcmd == "kill":
+            await _heartbeat_kill(bus, args.agent_id, args.reason)
+        elif args.subcmd == "timeline":
+            await _heartbeat_timeline(bus, args.agent_id, args.hours)
+        elif args.subcmd == "cleanup":
+            await _heartbeat_cleanup(bus)
     elif args.cmd == "buffer":
         if args.subcmd == "status":
             await _buffer_status(bus, args.agent)
@@ -1189,6 +1238,65 @@ def main() -> int:
     p_workflow = sub.add_parser("workflow", help="Workflow analysis")
     workflow_sub = p_workflow.add_subparsers(dest="subcmd", required=True)
     workflow_sub.add_parser("critical-path", help="Show critical path and ETA")
+
+    # Distributed task queue commands
+    p_queue = sub.add_parser("queue", help="Manage GossipBus-backed queued tasks")
+    queue_sub = p_queue.add_subparsers(dest="subcmd", required=True)
+
+    p_queue_add = queue_sub.add_parser("add", help="Enqueue a task")
+    p_queue_add.add_argument("task_name")
+    p_queue_add.add_argument("phase")
+    p_queue_add.add_argument(
+        "--priority",
+        default="normal",
+        choices=("critical", "high", "normal", "low", "CRITICAL", "HIGH", "NORMAL", "LOW"),
+    )
+    p_queue_add.add_argument("--notes", default="")
+    p_queue_add.add_argument("--depends-on", default=None)
+
+    p_queue_list = queue_sub.add_parser("list", help="List queued task snapshots")
+    p_queue_list.add_argument("--phase", default=None)
+    p_queue_list.add_argument("--priority", default=None)
+    p_queue_list.add_argument("--agent", default=None)
+
+    p_queue_claim = queue_sub.add_parser("claim", help="Claim a queued task")
+    p_queue_claim.add_argument("task_id")
+    p_queue_claim.add_argument("agent_id")
+
+    p_queue_complete = queue_sub.add_parser("complete", help="Mark a queued task complete")
+    p_queue_complete.add_argument("task_id")
+    p_queue_complete.add_argument("--notes", default="")
+
+    p_queue_fail = queue_sub.add_parser("fail", help="Mark a queued task failed/retry")
+    p_queue_fail.add_argument("task_id")
+    p_queue_fail.add_argument("--notes", default="")
+
+    p_queue_status = queue_sub.add_parser("status", help="Show claimed queue work by agent")
+    p_queue_status.add_argument("--agent", default=None)
+
+    # Heartbeat/liveness commands
+    p_heartbeat = sub.add_parser("heartbeat", help="Inspect and manage agent liveness")
+    heartbeat_sub = p_heartbeat.add_subparsers(dest="subcmd", required=True)
+
+    heartbeat_sub.add_parser("list", help="List tracked agent liveness")
+
+    p_heartbeat_check = heartbeat_sub.add_parser("check", help="Show one agent's liveness")
+    p_heartbeat_check.add_argument("agent_id")
+
+    heartbeat_sub.add_parser("dashboard", help="Show liveness summary")
+
+    p_heartbeat_pulse = heartbeat_sub.add_parser("pulse", help="Emit a pulse for this agent")
+    p_heartbeat_pulse.add_argument("agent_id")
+
+    p_heartbeat_kill = heartbeat_sub.add_parser("kill", help="Mark an agent killed")
+    p_heartbeat_kill.add_argument("agent_id")
+    p_heartbeat_kill.add_argument("--reason", required=True)
+
+    p_heartbeat_timeline = heartbeat_sub.add_parser("timeline", help="Show agent activity")
+    p_heartbeat_timeline.add_argument("agent_id")
+    p_heartbeat_timeline.add_argument("--hours", type=int, default=24)
+
+    heartbeat_sub.add_parser("cleanup", help="Auto-release claims held by DEAD agents")
 
     # Reorder buffer management (Phase 1.3.2)
     p_buffer = sub.add_parser("buffer", help="Manage reorder buffers for out-of-order claims")

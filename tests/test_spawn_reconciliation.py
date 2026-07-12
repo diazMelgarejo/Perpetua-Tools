@@ -14,7 +14,7 @@ from orchestrator.spawn_reconciliation import SpawnReconciler
 from orchestrator.agent_tracker import AgentRecord
 
 
-def _make_ep(host="10.0.0.1", port=11434, models=None, server_type="ollama"):
+def _make_ep(host="127.0.1.1", port=11434, models=None, server_type="ollama"):
     ep = MagicMock()
     ep.host, ep.port = host, port
     ep.models = models or ["qwen3:8b"]
@@ -22,7 +22,7 @@ def _make_ep(host="10.0.0.1", port=11434, models=None, server_type="ollama"):
     return ep
 
 
-def _make_record(agent_id="a1", role="recruited-reasoner", host="10.0.0.1", port=11434, status="starting"):
+def _make_record(agent_id="a1", role="recruited-reasoner", host="127.0.1.1", port=11434, status="starting"):
     return AgentRecord(
         agent_id=agent_id,
         role=role,
@@ -63,13 +63,13 @@ def test_orphan_skipped_when_update_returns_none():
     when update_status returned None.  After fix: `continue` skips the endpoint.
     """
     existing = _make_record(agent_id="a2", role="reasoner",
-                            host="10.0.0.2", port=11434, status="starting")
+                            host="127.0.1.2", port=11434, status="starting")
     tracker = MagicMock()
     tracker.list_agents.return_value = [existing]
     tracker.update_status.return_value = None  # agent gone between scan and update
 
     discovery = MagicMock()
-    discovery.scan_lan = AsyncMock(return_value=[_make_ep(host="10.0.0.2", port=11434)])
+    discovery.scan_lan = AsyncMock(return_value=[_make_ep(host="127.0.1.2", port=11434)])
 
     result = asyncio.run(SpawnReconciler(tracker, discovery).reconcile_orphans())
     assert result == []  # endpoint skipped, no AttributeError

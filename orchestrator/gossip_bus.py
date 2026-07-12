@@ -27,6 +27,7 @@ import json
 import os
 import re
 import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal, Optional
 
@@ -192,19 +193,54 @@ class GossipBus:
 
         Never blocks on LanceDB / Ollama.  FTS5 is always synchronously written.
         """
+        async with aiosqlite.connect(self._db_path) as db:
+            row_id, safe_payload = await self.emit_within(db, event_type, payload)
+            await db.commit()
+        self.schedule_embed(row_id, safe_payload)
+
+    @asynccontextmanager
+    async def transaction(self):
+        """Yield a raw aiosqlite connection for callers that must combine an
+        emit() with another mutation (e.g. an exclusive-claim row insert or a
+        claim-release delete) in one atomic commit -- closing the gap where
+        two separate commits could leave one mutation applied without the
+        other after a crash between them. Caller owns the transaction: must
+        call `await db.commit()` itself; an uncaught exception leaves the
+        connection's implicit transaction unresolved and aiosqlite rolls
+        back on connection close, same as any other
+        `async with aiosqlite.connect(...)` block.
+        """
+        async with aiosqlite.connect(self._db_path) as db:
+            yield db
+
+    async def emit_within(self, db, event_type: EventType, payload: dict) -> tuple[int, dict]:
+        """Same INSERT as emit(), but against a connection the caller already
+        owns (see `transaction()`) instead of opening and committing its own.
+        Does NOT commit and does NOT schedule the embed task -- the caller
+        must commit its own transaction first (embedding pre-commit data that
+        might still roll back would embed content that was never durably
+        written), then call `schedule_embed()` with this method's return
+        values once the commit has actually succeeded.
+
+        Returns:
+            (row_id, safe_payload) -- pass both to schedule_embed() after commit.
+        """
         from orchestrator.memory_governance import classify_and_redact
 
         safe_payload, _memory_class = classify_and_redact(payload, event_type=event_type)
-        async with aiosqlite.connect(self._db_path) as db:
-            cursor = await db.execute(
-                "INSERT INTO gossip (ts, event_type, payload_json, embed_status) "
-                "VALUES (?, ?, ?, 'pending')",
-                (time.time(), event_type, json.dumps(safe_payload)),
-            )
-            row_id = cursor.lastrowid
-            await db.commit()
-        # Fire-and-forget embed — never blocks emit() return (D_BPG-1).
-        # _pending_embeds holds a strong reference so GC cannot collect the task (D_GCG-1).
+        cursor = await db.execute(
+            "INSERT INTO gossip (ts, event_type, payload_json, embed_status) "
+            "VALUES (?, ?, ?, 'pending')",
+            (time.time(), event_type, json.dumps(safe_payload)),
+        )
+        return cursor.lastrowid, safe_payload
+
+    def schedule_embed(self, row_id: int, safe_payload: dict) -> None:
+        """Fire-and-forget embed for a row already committed to the gossip
+        table — never blocks the caller (D_BPG-1). _pending_embeds holds a
+        strong reference so GC cannot collect the task (D_GCG-1). Split out
+        from emit() so emit_within() callers can invoke this only after
+        their own transaction's commit succeeds."""
         if len(_pending_embeds) < _MAX_PENDING:
             task = asyncio.create_task(
                 self._embed_and_store(row_id, safe_payload),

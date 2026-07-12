@@ -12,6 +12,7 @@ directly with temporary GossipBus instances, verifying:
 """
 from __future__ import annotations
 
+import asyncio
 import sys
 from pathlib import Path
 
@@ -29,6 +30,9 @@ from scripts.agent_coordination import (
     _queue_fail,
     _queue_list,
     _queue_status,
+    _try_atomic_claim,
+    _try_atomic_claim_with_event,
+    _release_claim_with_event,
 )
 from orchestrator.gossip_bus import GossipBus
 
@@ -274,6 +278,28 @@ async def test_queue_fail_with_retry(make_bus, capsys):
     assert "retry 1/3" in captured.out
 
 
+async def test_claim_then_fail_then_reclaim_succeeds(make_bus, capsys):
+    """A retried task must become claimable again -- _queue_fail's retry path
+    has to release the atomic-claim row, or the same PRIMARY KEY that
+    prevents a real double-claim would also permanently lock out every
+    future legitimate reclaim of a requeued task."""
+    bus = await make_bus()
+    await _queue_add(bus, "flaky-work", "Phase-2", "NORMAL", "", None)
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    task_id = events[0]["payload"]["task_id"]
+
+    await _queue_claim(bus, task_id, "agent-a")
+    capsys.readouterr()
+
+    await _queue_fail(bus, task_id, "transient error")
+    capsys.readouterr()
+
+    await _queue_claim(bus, task_id, "agent-b")
+    captured = capsys.readouterr()
+    assert "claimed:" in captured.out
+    assert "ERROR" not in captured.out
+
+
 async def test_queue_fail_abandons_after_max_retries(make_bus, capsys):
     """_queue_fail abandons task after max_retries exceeded."""
     bus = await make_bus()
@@ -441,6 +467,46 @@ async def test_multiple_agents_cannot_claim_same_task(make_bus, capsys):
     assert "ERROR" in captured.out
 
 
+async def test_atomic_claim_gate_exactly_one_winner_under_true_concurrency(make_bus):
+    """_try_atomic_claim is the actual exclusion point: fire two claims for the
+    SAME task_id truly concurrently (asyncio.gather, not sequential awaits) and
+    assert the SQLite PRIMARY KEY on task_claims lets exactly one through,
+    regardless of scheduling order. This is the real TOCTOU-race regression
+    test -- test_multiple_agents_cannot_claim_same_task above only proves the
+    sequential case, which the snapshot-based status check already handled
+    fine; it never exercised the actual race window between that check and
+    the emit that used to follow it unguarded."""
+    bus = await make_bus()
+    task_id = "race-task-001"
+
+    results = await asyncio.gather(
+        _try_atomic_claim(bus, task_id, "agent-a"),
+        _try_atomic_claim(bus, task_id, "agent-b"),
+    )
+
+    assert sorted(results) == [False, True]
+
+
+async def test_queue_claim_concurrent_race_only_one_succeeds(make_bus, capsys):
+    """Full-stack version of the race test: two _queue_claim calls fired via
+    asyncio.gather (not one-after-the-other) on the same freshly-queued task.
+    Exactly one must succeed -- which one is not deterministic, but the count
+    is: this is what the old sequential test could never actually prove."""
+    bus = await make_bus()
+    await _queue_add(bus, "hotly-contested-concurrent", "Phase-2", "CRITICAL", "", None)
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    task_id = events[0]["payload"]["task_id"]
+
+    await asyncio.gather(
+        _queue_claim(bus, task_id, "agent-a"),
+        _queue_claim(bus, task_id, "agent-b"),
+    )
+    captured = capsys.readouterr()
+
+    assert captured.out.count("claimed:") == 1
+    assert captured.out.count("ERROR") == 1
+
+
 async def test_priority_ordering_in_list(make_bus, capsys):
     """_queue_list sorts queued tasks by priority level (CRITICAL first)."""
     bus = await make_bus()
@@ -456,3 +522,143 @@ async def test_priority_ordering_in_list(make_bus, capsys):
     # (Position check is approximate since output format matters)
     assert "CRITICAL" in captured.out
     assert "NORMAL" in captured.out
+
+
+# ────────────────────────────────────────────────────────────────────────────
+# Atomic claim/release + heartbeat-event transactions (CodeRabbit review
+# 4679555600, scripts/agent_coordination.py:140 — "Commit the claim row and
+# task event atomically").
+#
+# _try_atomic_claim_with_event() and _release_claim_with_event() commit their
+# task_claims row mutation (INSERT / DELETE) and heartbeat event in ONE
+# SQLite transaction via GossipBus.transaction() / emit_within(), closing the
+# gap where the prior two-commit sequences (_try_atomic_claim()/_release_claim()
+# each followed by a separate bus.emit()) could leave a claim row with no
+# corresponding event -- or a terminal event recorded while the claim row
+# stays held, blocking every future claim on that task_id -- if the process
+# died between the two commits.
+# ────────────────────────────────────────────────────────────────────────────
+
+
+async def test_atomic_claim_with_event_persists_one_row_and_one_event(make_bus):
+    bus = await make_bus()
+
+    claimed = await _try_atomic_claim_with_event(
+        bus, "task-x", "agent-a", "heartbeat", {"kind": "task_claim", "task_id": "task-x"}
+    )
+
+    assert claimed is True
+    async with bus.transaction() as db:
+        cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", ("task-x",))
+        (claim_count,) = await cursor.fetchone()
+    assert claim_count == 1
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    matching = [e for e in events if e["payload"].get("task_id") == "task-x"]
+    assert len(matching) == 1
+
+
+async def test_atomic_claim_with_event_duplicate_claim_emits_no_second_event(make_bus):
+    bus = await make_bus()
+    await _try_atomic_claim_with_event(
+        bus, "task-y", "agent-a", "heartbeat", {"kind": "task_claim", "task_id": "task-y"}
+    )
+
+    claimed_again = await _try_atomic_claim_with_event(
+        bus, "task-y", "agent-b", "heartbeat", {"kind": "task_claim", "task_id": "task-y"}
+    )
+
+    assert claimed_again is False
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    matching = [e for e in events if e["payload"].get("task_id") == "task-y"]
+    assert len(matching) == 1  # still just the first claimant's event
+
+
+async def test_atomic_claim_with_event_injected_insert_failure_rolls_back_claim_row(make_bus, monkeypatch):
+    """If the event INSERT inside the shared transaction raises, the earlier
+    claim-row INSERT in the same (uncommitted) transaction must not survive
+    -- proving the two mutations really share one atomic unit, not just two
+    sequential statements against the same connection."""
+    bus = await make_bus()
+
+    async def _boom(self, db, event_type, payload):
+        raise RuntimeError("simulated event-insert failure")
+
+    monkeypatch.setattr(GossipBus, "emit_within", _boom)
+
+    with pytest.raises(RuntimeError, match="simulated event-insert failure"):
+        await _try_atomic_claim_with_event(
+            bus, "task-z", "agent-a", "heartbeat", {"kind": "task_claim", "task_id": "task-z"}
+        )
+
+    async with bus.transaction() as db:
+        cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", ("task-z",))
+        (claim_count,) = await cursor.fetchone()
+    assert claim_count == 0  # rolled back along with the failed event insert
+
+
+async def test_release_claim_with_event_deletes_row_and_persists_event(make_bus):
+    bus = await make_bus()
+    await _try_atomic_claim_with_event(
+        bus, "task-r1", "agent-a", "heartbeat", {"kind": "task_claim", "task_id": "task-r1"}
+    )
+
+    await _release_claim_with_event(
+        bus, "task-r1", "heartbeat", {"kind": "task_complete", "task_id": "task-r1"}
+    )
+
+    async with bus.transaction() as db:
+        cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", ("task-r1",))
+        (claim_count,) = await cursor.fetchone()
+    assert claim_count == 0
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    complete_events = [
+        e for e in events
+        if e["payload"].get("task_id") == "task-r1" and e["payload"].get("kind") == "task_complete"
+    ]
+    assert len(complete_events) == 1
+
+
+async def test_release_claim_with_event_injected_failure_leaves_claim_row_intact(make_bus, monkeypatch):
+    """If the event insert fails inside the shared transaction, the release
+    DELETE in the same (uncommitted) transaction must not survive either --
+    a released-but-unreported task_id must not silently vanish from
+    task_claims, which would otherwise let a second agent claim it while the
+    first agent still believes it holds it."""
+    bus = await make_bus()
+    await _try_atomic_claim_with_event(
+        bus, "task-r2", "agent-a", "heartbeat", {"kind": "task_claim", "task_id": "task-r2"}
+    )
+
+    async def _boom(self, db, event_type, payload):
+        raise RuntimeError("simulated event-insert failure")
+
+    monkeypatch.setattr(GossipBus, "emit_within", _boom)
+
+    with pytest.raises(RuntimeError, match="simulated event-insert failure"):
+        await _release_claim_with_event(
+            bus, "task-r2", "heartbeat", {"kind": "task_complete", "task_id": "task-r2"}
+        )
+
+    async with bus.transaction() as db:
+        cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", ("task-r2",))
+        (claim_count,) = await cursor.fetchone()
+    assert claim_count == 1  # still held -- release did not partially apply
+
+
+async def test_queue_complete_releases_claim_and_completion_event_together(make_bus, capsys):
+    """End-to-end: _queue_complete's public entrypoint uses the atomic
+    release path, not the old two-commit sequence."""
+    bus = await make_bus()
+    await _queue_add(bus, "e2e-complete", "Phase-1", "NORMAL", "", None)
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    task_id = events[0]["payload"]["task_id"]
+    await _queue_claim(bus, task_id, "agent-a")
+
+    await _queue_complete(bus, task_id, "done")
+
+    async with bus.transaction() as db:
+        cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", (task_id,))
+        (claim_count,) = await cursor.fetchone()
+    assert claim_count == 0
+    captured = capsys.readouterr()
+    assert f"completed: {task_id}" in captured.out

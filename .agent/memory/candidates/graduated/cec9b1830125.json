@@ -1,0 +1,45 @@
+{
+  "id": "cec9b1830125",
+  "key": "manual_cec9b1",
+  "name": "manual_cec9b1",
+  "claim": "Every backgrounded external CLI/agent dispatch (codex exec, kimi -p, an Agent/SendMessage subagent) needs an explicit 15-minute hard ceiling (Monitor with a kill -0 poll + force-kill on timeout), not just reliance on the run_in_background completion notification \u2014 a stalled process and a legitimately slow one look identical from outside until you check sustained CPU activity.",
+  "conditions": [
+    "background",
+    "ceiling",
+    "codex",
+    "hang",
+    "kimi",
+    "monitor",
+    "subagent",
+    "timeout"
+  ],
+  "evidence_ids": [
+    "2026-07-11T20:08:49.795037+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T20:08:49.795037+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T20:08:49.795037+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T20:08:49.894156+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A codex exec Eng-review dispatch for PR #205 ran unbounded past 19 minutes with near-zero CPU before a ceiling was added retroactively (2026-07-12). Codified as a default in orama-system's canonical shell-hygiene skill (bin/orama-system/skills/shell-hygiene/SKILL.md \u00a7 5), cross-linked from kimi-agent and gstack review-voice docs, so future sessions don't re-derive it.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T20:08:49.795037+00:00"
+      ],
+      "lessons_sha": "fd17a732df5b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T20:08:49.894140+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A codex exec Eng-review dispatch for PR #205 ran unbounded past 19 minutes with near-zero CPU before a ceiling was added retroactively (2026-07-12). Codified as a default in orama-system's canonical shell-hygiene skill (bin/orama-system/skills/shell-hygiene/SKILL.md \u00a7 5), cross-linked from kimi-agent and gstack review-voice docs, so future sessions don't re-derive it."
+}

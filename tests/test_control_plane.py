@@ -41,7 +41,7 @@ def test_bootstrap_runtime_writes_resolved_payload(monkeypatch, tmp_path):
             "manager_endpoint": "http://localhost:1234",
             "manager_model": "Qwen3.5-9B-MLX-4bit",
             "coder_backend": "windows-lmstudio",
-            "coder_endpoint": "http://192.168.0.10:1234",
+            "coder_endpoint": "http://127.0.1.1:1234",
             "coder_model": "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2",
             "distributed": True,
         }

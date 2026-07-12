@@ -12,11 +12,11 @@
 
 ## PT-Specific Context
 
-PT's `orchestrator/control_plane.py` and `agent_launcher.py` are the primary sources of device identity and routing decisions. The bug: `.env.local` had `WINDOWS_IP=192.168.254.101` (the Mac's own IP) instead of `.108`.
+PT's `orchestrator/control_plane.py` and `agent_launcher.py` are the primary sources of device identity and routing decisions. The bug: `.env.local` had `WINDOWS_IP=<YOUR_LAN_IP>` (the Mac's own IP) instead of `.108`.
 
 Actual device map:
-- `192.168.254.110` — Mac LM Studio (Mac's own LAN IP)
-- `192.168.254.108` — Windows (Ollama `11434`, LM Studio `1234`)
+- `<YOUR_LAN_IP>` — Mac LM Studio (Mac's own LAN IP)
+- `<YOUR_LAN_IP>` — Windows (Ollama `11434`, LM Studio `1234`)
 - `127.0.0.1` — localhost for all local services
 
 ---

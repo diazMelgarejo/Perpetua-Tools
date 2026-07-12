@@ -23,7 +23,7 @@ def provenance_bucket(provenance: str) -> str:
 
     Returns:
         A canonical bucket string.  For IPv4 this is the containing /24 network
-        (e.g., ``192.168.1.0/24``); for IPv6 this is the containing /64 network
+        (e.g., ``127.0.1.0/24``); for IPv6 this is the containing /64 network
         (e.g., ``2001:db8::/64``); for non-IP strings this is the original
         literal value.
 

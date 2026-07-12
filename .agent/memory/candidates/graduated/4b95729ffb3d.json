@@ -1,0 +1,43 @@
+{
+  "id": "4b95729ffb3d",
+  "key": "manual_4b9572",
+  "name": "manual_4b9572",
+  "claim": "A worktree-isolated subagent (Agent isolation: 'worktree') can be stale relative to the live branch if the orchestrating session commits/pushes after the worktree checkout was created \u2014 it can then hallucinate a confident, specific-looking-but-false git claim (e.g. 'main already has commit X') instead of expressing uncertainty. Always independently verify any subagent claim about branch/commit state via 'git merge-base --is-ancestor' before trusting it.",
+  "conditions": [
+    "git",
+    "isolation",
+    "stale",
+    "subagent",
+    "verify",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-07-11T19:34:21.587952+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T19:34:21.587952+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T19:34:21.587952+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T19:34:21.681103+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR #205 quad-CEO-review (2026-07-12): worktree-isolated agent a51e4d78f51585c6b confidently claimed main already carried commit 60636ad5 (the orchestrating session's own just-pushed commit). Verified false via git merge-base --is-ancestor. The agent's underlying strategic reasoning was still partly valid, so the fix is to caveat/correct, not discard the whole review.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T19:34:21.587952+00:00"
+      ],
+      "lessons_sha": "fede54a82788"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T19:34:21.681092+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR #205 quad-CEO-review (2026-07-12): worktree-isolated agent a51e4d78f51585c6b confidently claimed main already carried commit 60636ad5 (the orchestrating session's own just-pushed commit). Verified false via git merge-base --is-ancestor. The agent's underlying strategic reasoning was still partly valid, so the fix is to caveat/correct, not discard the whole review."
+}
