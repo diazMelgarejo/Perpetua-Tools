@@ -128,7 +128,7 @@ async def test_run_researcher_passes_win_platform_to_resolver(launch_researchers
             with patch.object(launch_researchers, "_append_event"):
                 await launch_researchers.run_researcher(
                     role="win-researcher",
-                    endpoint="http://192.168.254.108:1234",
+                    endpoint="http://127.0.1.1:1234",
                     model="some-model",
                     backend="lmstudio-win",
                     task="test",
@@ -138,7 +138,7 @@ async def test_run_researcher_passes_win_platform_to_resolver(launch_researchers
                 )
 
     mock_resolve.assert_awaited_once_with(
-        "http://192.168.254.108:1234",
+        "http://127.0.1.1:1234",
         "some-model",
         platform="win",
     )
@@ -179,7 +179,7 @@ async def test_resolve_lmstudio_model_allows_win_only_on_win(launch_researchers)
 
     with patch.object(launch_researchers.httpx, "AsyncClient", return_value=mock_client):
         resolved = await launch_researchers._resolve_lmstudio_model(
-            "http://192.168.254.108:1234",
+            "http://127.0.1.1:1234",
             preferred=WIN_ONLY,
             platform="win",
         )

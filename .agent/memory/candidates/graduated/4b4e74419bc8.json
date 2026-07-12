@@ -1,0 +1,45 @@
+{
+  "id": "4b4e74419bc8",
+  "key": "manual_4b4e74",
+  "name": "manual_4b4e74",
+  "claim": "When a security/consensus module reports 'implemented and tested' with N passing unit tests, grep for its real call sites across src/ and orchestrator/ (excluding tests/) before trusting the docstring's production-status claim \u2014 a fully-tested module can still have zero production callers, meaning all the hardening work delivers zero live risk reduction until wiring lands.",
+  "conditions": [
+    "caller",
+    "callers",
+    "grep",
+    "pipeline",
+    "production",
+    "security",
+    "state_transition_manager",
+    "wired"
+  ],
+  "evidence_ids": [
+    "2026-07-11T19:34:32.655368+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T19:34:32.655368+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T19:34:32.655368+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T19:34:32.747206+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "StateTransitionManager.evaluate_observation() in orchestrator/state_transition_manager.py had 35/35 passing tests and a docstring calling it the live 'Phase 1b Security Decision Pipeline', but grep confirmed zero callers outside tests/ (2026-07-12, PR #205 quad-CEO-review, independently re-verified 4+ times by different reviewers). PATTERN-SYNTHESIS.md gate now requires wiring proof before further P5/P6/P13 hardening.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T19:34:32.655368+00:00"
+      ],
+      "lessons_sha": "c464b2ceb072"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T19:34:32.747199+00:00",
+  "reviewer": "learn.py",
+  "rationale": "StateTransitionManager.evaluate_observation() in orchestrator/state_transition_manager.py had 35/35 passing tests and a docstring calling it the live 'Phase 1b Security Decision Pipeline', but grep confirmed zero callers outside tests/ (2026-07-12, PR #205 quad-CEO-review, independently re-verified 4+ times by different reviewers). PATTERN-SYNTHESIS.md gate now requires wiring proof before further P5/P6/P13 hardening."
+}

@@ -68,8 +68,12 @@ from urllib.parse import urlparse
 
 # GPU_BOX: SSH target for the Windows RTX 3080.
 # Uses detect_active_tilting_ip() host if GPU_BOX not set, but SSH needs user@host
-# so we keep a separate env var. Default reflects the current 192.168.254.x subnet.
-GPU_BOX: str = os.environ.get("GPU_BOX", "WINUSER@192.168.254.100")
+# so we keep a separate env var. No fabricated default: an unset GPU_BOX must
+# fail closed (ssh to an empty target errors immediately and clearly) rather
+# than silently resolving to 192.0.2.1 — a TEST-NET-1 documentation address
+# that looks like a real host but never routes anywhere. Callers should either
+# set GPU_BOX explicitly or use the existing use_http_local_preflight() path.
+GPU_BOX: str = os.environ.get("GPU_BOX", "")
 GPU_REPO_PATH: str = os.environ.get("GPU_REPO_PATH", "autoresearch")
 
 # Primary: uditgoenka/autoresearch Claude Code plugin (env-var configurable).

@@ -28,8 +28,8 @@ class NetworkAutoConfig:
         Initialize the NetworkAutoConfig instance by detecting the host operating system and establishing a prioritized mapping of preferred LAN IPs.
         
         If available, preferred IPs are loaded from the user's OpenClaw configuration via _load_from_openclaw(); otherwise a last-resort fallback mapping is used:
-        - Darwin: 192.168.254.105
-        - Windows: 192.168.254.105
+        - Darwin: 192.0.2.2
+        - Windows: 192.0.2.1
         
         Sets:
         - self.system: detected platform name (e.g., 'Darwin', 'Windows')
@@ -40,8 +40,8 @@ class NetworkAutoConfig:
         # Priority 2: fall back to confirmed hardware constants (last-resort only).
         # OLD stale IPs (archive): Darwin=.110, Windows=.108/.100/.101 — do not restore.
         self.preferred_ips = self._load_from_openclaw() or {
-            'Darwin': '192.168.254.105',   # macOS LAN IP (last-resort; use localhost for self-probe)
-            'Windows': '192.168.254.105',  # Windows RTX 3080 (last-resort; confirmed 2026-04-26)
+            'Darwin': '192.0.2.2',   # macOS LAN placeholder (TEST-NET; use localhost for self-probe)
+            'Windows': '192.0.2.1',  # Windows RTX 3080 placeholder (TEST-NET; override via config)
         }
 
     def _load_from_openclaw(self) -> Optional[Dict[str, str]]:
@@ -49,7 +49,7 @@ class NetworkAutoConfig:
         Load preferred IPs from ~/.openclaw/openclaw.json by extracting the LM Studio base URL.
         
         Returns:
-            dict: Mapping of OS name to IP string (e.g., {'Darwin': '192.168.254.105', 'Windows': '<ip>'}) when a usable LM Studio IP is found.
+            dict: Mapping of OS name to IP string (e.g., {'Darwin': '192.0.2.2', 'Windows': '<ip>'}) when a usable LM Studio IP is found.
             None: If the file is missing, malformed, or does not contain a usable LM Studio IP.
         """
         try:
@@ -62,7 +62,7 @@ class NetworkAutoConfig:
             if not win_ip:
                 return None
             return {
-                'Darwin': '192.168.254.105',  # Mac LAN identity (probe via localhost)
+                'Darwin': '192.0.2.2',  # Mac LAN placeholder (TEST-NET; probe via localhost)
                 'Windows': win_ip,
             }
         except Exception:
@@ -188,7 +188,7 @@ class NetworkAutoConfig:
         Get the /24 subnet prefix (first three octets) from an IPv4 address string.
         
         Parameters:
-            ip (str): IPv4 address in dotted-decimal form (e.g., "192.168.254.105").
+            ip (str): IPv4 address in dotted-decimal form (e.g., "127.0.1.1").
         
         Returns:
             str: The subnet prefix (e.g., "192.168.254"). Returns "192.168.1" if the input is not a valid dotted IPv4 string.
@@ -211,7 +211,7 @@ class NetworkAutoConfig:
             scan_timeout (float): Socket timeout in seconds for each probe.
         
         Returns:
-            Dict[str, list]: Mapping from service name to a list of reachable IPv4 addresses (as strings). For example: {"lmstudio": ["192.168.254.105"], "ollama": []}
+            Dict[str, list]: Mapping from service name to a list of reachable IPv4 addresses (as strings). For example: {"lmstudio": ["127.0.1.1"], "ollama": []}
         """
         if subnet_prefix is None:
             local_ip = self.get_working_local_ip()

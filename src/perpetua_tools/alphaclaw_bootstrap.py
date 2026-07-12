@@ -116,7 +116,7 @@ RUNNING_ON_WINDOWS = _platform_ovr in {"win", "windows", "win32"} or (
     not _platform_ovr and __import__("sys").platform.startswith("win"))
 
 MAC_IP     = os.getenv("MAC_IP",  "")  # LAN IP; set by discover.py / start.ps1 — never hardcode DHCP
-WIN_IP     = os.getenv("WIN_IP",  "192.168.254.108")  # LAN IP; only used cross-machine
+WIN_IP     = os.getenv("WIN_IP",  "192.0.2.1")  # LAN IP; only used cross-machine
 
 _LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 
@@ -137,7 +137,7 @@ def _first_csv_endpoint(value: str) -> str:
 def _canonical_endpoint(url: str) -> str:
     """Ensure a URL has an http:// scheme.
 
-    Bare host:port strings (e.g. ``192.168.254.110:1234`` or ``localhost:11434``)
+    Bare host:port strings (e.g. ``127.0.1.2:1234`` or ``localhost:11434``)
     are accepted by urlparse but rejected by HTTP clients and by
     ``build_openclaw_config``'s ``baseUrl`` fields.  Every return boundary in
     the locality helpers must go through this guard so callers always receive a

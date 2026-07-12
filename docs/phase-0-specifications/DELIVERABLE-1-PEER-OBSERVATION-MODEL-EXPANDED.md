@@ -105,7 +105,7 @@ class PeerObservation:
     # ENDPOINT (network address)
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     
-    endpoint: str  # "192.168.1.105:9000" or "10.0.0.5:9000"
+    endpoint: str  # "<YOUR_LAN_IP>:9000" or "<YOUR_LAN_IP>:9000"
     
     endpoint_epoch: int  # Increments when peer reports IP change
                          # Use to detect/ignore stale cached entries
@@ -295,7 +295,7 @@ obs = PeerObservation(
     target_peer_id="win-rtx5080",
     observer_timestamp=1720614843,
     direct_status="REACHABLE",
-    endpoint="192.168.1.105:9000",
+    endpoint="<YOUR_LAN_IP>:9000",
     endpoint_epoch=2,
     last_heartbeat_timestamp=1720614843,
     last_probe_timestamp=1720614843,
@@ -306,7 +306,7 @@ obs = PeerObservation(
         "latency_ms": 12.5,
         "heartbeat_received": {
             "node_id": "win-rtx5080",
-            "endpoint": "192.168.1.105:9000",
+            "endpoint": "<YOUR_LAN_IP>:9000",
             "endpoint_epoch": 2,
             "backend_state": "WIN_LMSTUDIO",
             "timestamp": 1720614843,
@@ -337,7 +337,7 @@ obs = PeerObservation(
     target_peer_id="win-unknown-peer",
     observer_timestamp=1720614843,
     direct_status="STALE",
-    endpoint="192.168.1.200:9000",  # Claimed by win-rtx3080
+    endpoint="<YOUR_LAN_IP>:9000",  # Claimed by win-rtx3080
     endpoint_epoch=1,
     last_heartbeat_timestamp=1720614700,  # 143 seconds ago
     last_probe_timestamp=1720614700,
@@ -369,7 +369,7 @@ obs = PeerObservation(
     target_peer_id="win-rtx5080",
     observer_timestamp=1720614843,
     direct_status="UNKNOWN",  # Never direct-probed
-    endpoint="192.168.1.105:9000",
+    endpoint="<YOUR_LAN_IP>:9000",
     endpoint_epoch=2,
     last_heartbeat_timestamp=None,
     last_probe_timestamp=1720614833,  # Relay probe 10s ago
@@ -444,7 +444,7 @@ def test_fresh_direct_connection_high_confidence():
     # Create signed heartbeat
     heartbeat = {
         "node_id": win_key.public_key().hex(),
-        "endpoint": "192.168.1.105:9000",
+        "endpoint": "<YOUR_LAN_IP>:9000",
         "endpoint_epoch": 2,
         "backend_state": "WIN_LMSTUDIO",
         "timestamp": now,
@@ -457,7 +457,7 @@ def test_fresh_direct_connection_high_confidence():
         target_peer_id=win_key.public_key().hex(),
         observer_timestamp=now,
         direct_status="REACHABLE",
-        endpoint="192.168.1.105:9000",
+        endpoint="<YOUR_LAN_IP>:9000",
         endpoint_epoch=2,
         last_heartbeat_timestamp=now,
         last_probe_timestamp=now,
@@ -504,7 +504,7 @@ def test_relay_claim_requires_proof_signature():
         target_peer_id=unknown_key.public_key().hex(),
         observer_timestamp=now,
         direct_status="UNKNOWN",
-        endpoint="192.168.1.200:9000",
+        endpoint="<YOUR_LAN_IP>:9000",
         endpoint_epoch=1,
         last_heartbeat_timestamp=None,
         last_probe_timestamp=now,
@@ -546,22 +546,22 @@ def test_ip_migration_epoch_mismatch_detected():
     mac_key = ed25519.Ed25519PrivateKey.generate()
     win_key = ed25519.Ed25519PrivateKey.generate()
     
-    # Old observation: epoch 1, IP 192.168.1.50
+    # Old observation: epoch 1, IP <YOUR_LAN_IP>
     old_obs = PeerObservation(
         observer_id=mac_key.public_key().hex(),
         target_peer_id=win_key.public_key().hex(),
         observer_timestamp=now - 100,
         direct_status="REACHABLE",
-        endpoint="192.168.1.50:9000",
+        endpoint="<YOUR_LAN_IP>:9000",
         endpoint_epoch=1,
         last_heartbeat_timestamp=now - 100,
         # ... (other fields)
     )
     
-    # New heartbeat arrives: epoch 2, IP 10.0.0.5
+    # New heartbeat arrives: epoch 2, IP <YOUR_LAN_IP>
     new_heartbeat = {
         "node_id": win_key.public_key().hex(),
-        "endpoint": "10.0.0.5:9000",
+        "endpoint": "<YOUR_LAN_IP>:9000",
         "endpoint_epoch": 2,
         "timestamp": now,
         "signature": "...",
@@ -572,7 +572,7 @@ def test_ip_migration_epoch_mismatch_detected():
         target_peer_id=win_key.public_key().hex(),
         observer_timestamp=now,
         direct_status="REACHABLE",
-        endpoint="10.0.0.5:9000",
+        endpoint="<YOUR_LAN_IP>:9000",
         endpoint_epoch=2,
         last_heartbeat_timestamp=now,
         # ... (other fields)

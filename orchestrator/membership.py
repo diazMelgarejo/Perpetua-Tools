@@ -141,7 +141,7 @@ class PeerObservation:
 
     observation_type: ObservationType  # REACHABLE or UNREACHABLE
     direct_status: DirectStatus  # Detailed SWIM state
-    endpoint: str  # Network address ("192.168.1.1:9000")
+    endpoint: str  # Network address ("127.0.1.1:9000")
     endpoint_epoch: int  # Incarnation counter for this endpoint
 
     # ──────────────────────────────────────────────────────────────────────────
@@ -408,6 +408,8 @@ class PeerObservation:
             "epoch": self.epoch,
             "timestamp": self.timestamp,
             "observer_id": self.observer_id,
+            "sequence": self.sequence,
+            "observer_provenance": self.observer_provenance,
             "observation_type": self.observation_type.value,
             "direct_status": self.direct_status.value,
             "endpoint": self.endpoint,
@@ -455,6 +457,8 @@ class PeerObservation:
             epoch=data["epoch"],
             timestamp=data["timestamp"],
             observer_id=data["observer_id"],
+            sequence=data.get("sequence", 0),
+            observer_provenance=data.get("observer_provenance", ""),
             observation_type=ObservationType(data["observation_type"]),
             direct_status=DirectStatus(data["direct_status"]),
             endpoint=data["endpoint"],

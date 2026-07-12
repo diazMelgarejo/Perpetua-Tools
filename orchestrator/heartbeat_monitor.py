@@ -87,16 +87,22 @@ async def find_agent_heartbeats(
                 'work_in_progress': None,
                 'last_registration': {},
                 'registration_ts': None,
+                'killed_reason': None,
             }
 
-        # Update last_heartbeat_ts (track most recent for each agent)
-        if agent not in last_ts_per_agent:
-            last_ts_per_agent[agent] = ev["ts"]
+        # Update last_heartbeat_ts (track most recent for each agent).
+        # Events are iterated oldest-first, so every later event for the same
+        # agent supersedes the previous timestamp.
+        last_ts_per_agent[agent] = ev["ts"]
 
         # Track registration
         if kind == "agent_register":
             agent_data[agent]['last_registration'] = p
             agent_data[agent]['registration_ts'] = ev["ts"]
+            # A restart via re-registration is live evidence the agent is
+            # no longer dead — clear any prior terminal kill state so it
+            # can be scored by liveness again instead of being stuck DEAD.
+            agent_data[agent]['killed_reason'] = None
 
         # Track work-in-progress from claims
         if kind == "agent_claim":
@@ -104,11 +110,20 @@ async def find_agent_heartbeats(
         elif kind == "agent_release":
             if agent_data[agent].get('work_in_progress') == p.get("task"):
                 agent_data[agent]['work_in_progress'] = None
+        elif kind == "agent_killed":
+            agent_data[agent]['work_in_progress'] = None
+            agent_data[agent]['killed_reason'] = p.get("reason", "")
+        elif kind == "agent_pulse":
+            # A pulse after a kill event is also restart-recovery evidence
+            # (docs use pulse, not just register, for recovery).
+            agent_data[agent]['killed_reason'] = None
 
     # Add computed status and uptime
     for agent, data in agent_data.items():
         last_ts = last_ts_per_agent.get(agent, time.time())
         status, _ = liveness_status(last_ts)
+        if data.get('killed_reason') is not None:
+            status = "DEAD"
         data['status'] = status
         data['last_heartbeat_ts'] = last_ts
         reg_ts = data.get('registration_ts', last_ts)

@@ -117,7 +117,7 @@ async def test_returns_correct_shape_with_preprobed_endpoint(self):
         # Inject the pre-probed endpoint — bypasses the probe block entirely
         metadata={
             "model": "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2",
-            "_win_endpoint": "http://192.168.254.102:1234",
+            "_win_endpoint": "http://<YOUR_LAN_IP>:1234",
         },
         prompt="Hello",
     )
@@ -169,7 +169,7 @@ async def test_returns_correct_shape_direct_call_path(self):
         async def get(self, url, **kw): return _FakeResp()   # probe
         async def post(self, url, **kw): return _FakeResp()  # request
 
-    with patch.dict(os.environ, {"LM_STUDIO_WIN_ENDPOINTS": "http://192.168.254.102:1234"}):
+    with patch.dict(os.environ, {"LM_STUDIO_WIN_ENDPOINTS": "http://<YOUR_LAN_IP>:1234"}):
         with patch("httpx.AsyncClient", return_value=_FakeClient()):
             result = await _lmstudio_win_worker(spec)
 

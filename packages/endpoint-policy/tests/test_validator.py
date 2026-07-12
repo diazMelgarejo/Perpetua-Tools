@@ -52,9 +52,9 @@ def test_vector_5_ipv4_mapped_ipv6_bypass_blocked():
 
 
 def test_vector_6_skip_invalid_list_parsing():
-    raw = "http://localhost:1234, http://gpu:notaport, http://169.254.169.254, 192.168.8.51:1234"
+    raw = "http://localhost:1234, http://gpu:notaport, http://169.254.169.254, 127.0.2.1:1234"
     ok = parse_model_endpoint_list(raw, allow_public=False, skip_invalid=True)
-    assert ok == ["http://localhost:1234", "http://192.168.8.51:1234"]
+    assert ok == ["http://localhost:1234", "http://127.0.2.1:1234"]
     with pytest.raises(ModelEndpointPolicyError):
         parse_model_endpoint_list(raw, allow_public=False, skip_invalid=False)
 
@@ -116,8 +116,8 @@ def test_differential_parity_with_mirror():
         "localhost:1234", "http://localhost:notaport", "http://localhost:99999",
         "http://169.254.169.254", "http://[::ffff:169.254.169.254]",
         "http://[::ffff:127.0.0.1]:80", "http://api.example.com",
-        "http://user:pass@localhost", "ftp://localhost", "", "192.168.8.51:1234",
-        "https://10.0.0.5", "http://gpu-box", "http://localhost:0",
+        "http://user:pass@localhost", "ftp://localhost", "", "127.0.2.1:1234",
+        "https://127.0.1.1", "http://gpu-box", "http://localhost:0",
     ]
     for url in vectors:
         try:

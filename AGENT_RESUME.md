@@ -56,7 +56,7 @@ All Claude Code automation from the LM Studio Auto-Discovery plan has been imple
 
 ```ascii
 Mac LM Studio: http://localhost:1234
-Win LM Studio: http://192.168.254.109:1234
+Win LM Studio: http://<YOUR_WINDOWS_IP>:1234
 LMS_WIN_MODEL: qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2
 LMS_WIN_FALLBACK_MODEL: gemma-4-26b-a4b-it
 ```

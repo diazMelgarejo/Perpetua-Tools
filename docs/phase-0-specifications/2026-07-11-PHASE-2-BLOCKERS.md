@@ -23,12 +23,14 @@ PR #203 (StateTransitionManager integration) successfully wired G4→G5 and G6 s
 
 **Priority:** Medium (risk lives in injected EquivocationLog, not STM state; concurrent caller can retry idempotently)
 
+**Status (2026-07-12): DONE.** Implemented in `orchestrator/state_transition_manager.py` (PR #205) — see the "Achieved" note below.
+
 **Acceptance Criteria:**
-- [ ] Implement bounded observation dedup (max 500 entries, LRU or TTL-based)
-- [ ] Dedup key: canonical hash of (peer_id, epoch, sequence, observation_type)
-- [ ] Document eviction policy (time-to-live or LRU count)
-- [ ] Add 5+ tests covering dedup gate (accept first, reject second, eviction)
-- [ ] Verify no memory leak under high-observation rate
+- [x] Implement bounded observation dedup (max 500 entries, LRU or TTL-based) — LRU via `_touch_cache` on `OrderedDict`, `_max_cache_size` bound
+- [x] Dedup key: canonical hash of (peer_id, epoch, sequence, observation_type) — `_dedup_key()`, `f"{peer_id}:{epoch}:{sequence}:{observer_id}"`
+- [x] Document eviction policy (time-to-live or LRU count) — LRU, documented in `_touch_cache` docstring
+- [x] Add 5+ tests covering dedup gate (accept first, reject second, eviction) — `test_idempotence_under_dedup`, `test_seen_observations_and_last_applied_key_are_lru_bounded`, `test_lru_cache_eviction_does_not_crash_next_observation`, `test_reorder_buffer_outer_peer_map_is_lru_bounded`, plus buffer-eviction tests in `tests/test_state_transition_manager.py`
+- [x] Verify no memory leak under high-observation rate — LRU bound enforces a hard ceiling regardless of observation volume
 
 **Suggested Approach:**
 - Use `functools.lru_cache` with max_size=500 for the digest computation
@@ -49,12 +51,14 @@ PR #203 (StateTransitionManager integration) successfully wired G4→G5 and G6 s
 
 **Priority:** Medium (no concurrent caller path exists yet; future orchestrator must use this)
 
+**Status (2026-07-12): DONE, with one item deferred.** Implemented in `orchestrator/state_transition_manager.py` (PR #205) as a refcounted per-peer `asyncio.Lock` (`_RefCountedLock`), not the single global lock this doc originally suggested — see the "Achieved" note below for why that's the stronger design.
+
 **Acceptance Criteria:**
-- [ ] Replace per-peer asyncio.Lock with a single pipeline lock serializing full `evaluate_observation`
-- [ ] Document locking strategy (single global lock vs. per-peer async.Lock with explicit ordering)
-- [ ] Add 3+ tests covering concurrent observation races (same peer, different epochs)
-- [ ] Verify no deadlock under heavy concurrency
-- [ ] Benchmark latency impact (lock contention on high-peer-count deployments)
+- [x] Replace per-peer asyncio.Lock with a single pipeline lock serializing full `evaluate_observation` — superseded by a *refcounted* per-peer `asyncio.Lock` (`_RefCountedLock`, evicted from `_peer_locks` once no in-flight caller holds it), which serializes same-peer calls while still letting different peers proceed concurrently; a single global lock would have serialized all peers, which this doc's own Option 2 already flagged as "more parallelism"
+- [x] Document locking strategy (single global lock vs. per-peer async.Lock with explicit ordering) — documented in the `StateTransitionManager` class docstring in `orchestrator/state_transition_manager.py`
+- [x] Add 3+ tests covering concurrent observation races (same peer, different epochs) — `test_concurrent_calls_different_peers_do_not_block_each_other`, `test_concurrent_calls_same_peer_serialize_correctly`, `test_peer_lock_evicted_after_evaluation_completes`, `test_peer_lock_not_evicted_while_a_concurrent_call_holds_it`
+- [x] Verify no deadlock under heavy concurrency — covered by the concurrent-call test pair above (asyncio.gather across peers/same-peer)
+- [ ] **Benchmark latency impact (lock contention on high-peer-count deployments) — DEFERRED to orama-system `docs/v2/03-safety-v2.5.md`.** No concurrent caller exists yet in the orchestrator (this doc's own "Why Neither is a Blocker" reasoning still holds), so there is no real workload to benchmark against today. This is also the same peer-count/adversarial-load question that orama's D23 single-operator-LAN descope (`docs/v2/45-single-operator-lan-threat-model-descope.md`) already raises for the P2P-derived patterns (witness quorum, reputation-decay, equivocation) this STM work implements — a high-peer-count benchmark is only worth running once/if a real multi-operator deployment materializes. Re-evaluate together with SWARM's aggregate-risk-scoring rollout in v2.5.
 
 **Suggested Approach:**
 - Add `self._pipeline_lock: asyncio.Lock = asyncio.Lock()` to constructor

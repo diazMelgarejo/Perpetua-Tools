@@ -8,7 +8,7 @@
  *
  * Endpoints (configurable via env or constructor):
  *   Ollama:    http://127.0.0.1:11435  (try GLM-5.1:cloud → qwen3.5:9b-nvfp4)
- *   LM Studio: http://192.168.254.101:1234  (OpenAI-compatible)
+ *   LM Studio: http://127.0.0.1:1234  (OpenAI-compatible local fallback)
  *
  * API compatibility:
  *   Ollama    → native /api/generate  +  OpenAI-compat /v1/chat/completions
