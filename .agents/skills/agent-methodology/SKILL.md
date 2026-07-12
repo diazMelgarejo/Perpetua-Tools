@@ -33,10 +33,20 @@ If the worktree is dirty, the branch is not tracking origin, or fast-forward is 
 
 Open and follow `bin/orama-system/skills/agent-methodology/SKILL.md` (relative to the repo root). Do not copy behavior from this wrapper.
 
+## Branch-local review discipline
+
+Before delegating parallel implementation, review remediation, conflict work, or branch repair, load:
+
+- [Branch-Local Review Remediation](../../../.agent/references/branch-local-review-remediation.md)
+
+Assign one owning branch per task, preserve `review → branch → commits → merge`, announce shared-file ownership, and use one integrator for the final harmonization pass.
+
 ## Related Skills
 
 - [`../agent-coordination-heartbeat/SKILL.md`](../agent-coordination-heartbeat/SKILL.md) — Monitor agent liveness, detect dead agents, and auto-release stale claims.
 - [`../gossip-bus/SKILL.md`](../gossip-bus/SKILL.md) — Multi-agent event bus: intra-host (SQLite FTS5) and inter-host LAN peer (WS/SSE + file-drop) transports.
+- [`../code-review/SKILL.md`](../code-review/SKILL.md) — Bind findings to the reviewed branch and cluster them by owning invariant.
+- [`../git-history-surgery/SKILL.md`](../git-history-surgery/SKILL.md) — Preserve review lineage during rebase, reset, or history repair.
 
 ## Windows UTF-8 Note
 
