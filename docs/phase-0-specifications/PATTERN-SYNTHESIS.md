@@ -352,3 +352,13 @@ increment of pattern work, not what already shipped. See integration plan
 `2026-07-11-state-transition-manager-integration-plan.md` Blockers &amp;
 Dependencies table for the corresponding tracked entry.
 
+**Canonical orama-system cross-reference (progressive disclosure — read on
+demand):** this gate's descope reasoning is generalized into a reusable,
+cross-repo principle at `orama-system/docs/v2/45-single-operator-lan-threat-model-descope.md`
+(D23) — read it before applying the same P2P-derived adversarial patterns
+(witness quorum, reputation-decay, equivocation) to any other subsystem in
+this stack. `orama-system/docs/v2/03-safety-v2.5.md` § "Related implementation
+patterns (Perpetua-Tools)" maps this 20-pattern catalog onto MAESTRO/SWARM's
+v2.5 enforcement design (SWARM's risk-scoring ↔ P5/P6, contradiction-detection
+↔ P13, audit-replay ↔ P19).
+

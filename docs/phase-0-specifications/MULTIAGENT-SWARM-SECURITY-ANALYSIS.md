@@ -424,6 +424,7 @@ TOTAL: 2–4 weeks depending on parallelism and whether P4 refactoring is includ
 ## Related
 
 - [`PATTERN-MULTIAGENT-EXECUTION-PLAN.md`](./PATTERN-MULTIAGENT-EXECUTION-PLAN.md) — Concrete discovery and implementation tracks that execute the G1–G16 gaps and P1–P20 patterns identified in this analysis.
+- **Canonical orama-system cross-reference (progressive disclosure — read on demand):** `orama-system/docs/v2/03-safety-v2.5.md` § "Related implementation patterns (Perpetua-Tools)" maps these P2P patterns to MAESTRO/SWARM's v2.5 enforcement concepts (SWARM's risk-scoring ↔ P5/P6, contradiction-detection ↔ P13, audit-replay ↔ P19); `orama-system/docs/v2/45-single-operator-lan-threat-model-descope.md` (D23) generalizes this analysis's own threat-model descope (see Addendum below) into a reusable principle for any P2P-derived adversarial pattern elsewhere in the stack.
 
 ---
 
