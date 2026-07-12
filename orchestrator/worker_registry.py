@@ -424,7 +424,7 @@ async def _lmstudio_win_worker(spec: Any) -> dict:
         if not candidates:
             raise RuntimeError(
                 "LM_STUDIO_WIN_ENDPOINTS is not set. "
-                "Set it to the Windows LM Studio URL, e.g. http://192.168.254.102:1234"
+                "Set it to the Windows LM Studio URL, e.g. http://127.0.1.1:1234"
             )
         endpoint = None
         async with httpx.AsyncClient(timeout=5.0) as probe_client:

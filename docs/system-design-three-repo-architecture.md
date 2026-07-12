@@ -357,7 +357,7 @@ perpetua-tools/local-agents/orchestrator.js
         │    primary: GLM-5.1:cloud
         │    fallback: qwen3.5-local:latest
         │
-        └──► LM Studio  192.168.254.101:1234
+        └──► LM Studio  <YOUR_LAN_IP>:1234
              model: whatever is loaded
 ```
 

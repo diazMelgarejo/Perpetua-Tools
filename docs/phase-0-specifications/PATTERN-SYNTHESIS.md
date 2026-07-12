@@ -61,7 +61,7 @@
 **Mechanism:** Each witness carries (peer_id, ip_address, asn). When aggregating witness votes, deduplicate by ASN first: if 10 witnesses all originate from ASN 65000, count as **one logical witness** for quorum purposes. This breaks Sybil attacks where one entity spins up many identities on the same network.  
 **Threat defended:** T4 (Sybil witnesses — attacker can't easily acquire diverse ASN/subnet), T1 (quorum forging requires control of multiple network segments, detectable by ASN clustering).  
 **Cost:** WHOIS/GeoIP lookup per witness (~100ms cold, cached after); on-memory ASN dedup table (hundreds of bytes).  
-**Swarm application:** OpenClaw swarm observing "LM Studio at 192.168.254.104 is online" requires ≥2 witnesses from different ASN/subnets. On a LAN, substitute "different physical machine" dedup key; on WAN, use ASN/datacenters.  
+**Swarm application:** OpenClaw swarm observing "LM Studio at <YOUR_LAN_IP> is online" requires ≥2 witnesses from different ASN/subnets. On a LAN, substitute "different physical machine" dedup key; on WAN, use ASN/datacenters.  
 **PT implementation status:** ⚠️ Partial (D1 mentions "distinct network provenance" in T4 mitigation but doesn't formalize ASN/subnet dedup).  
 **Phase 1b enhancement:** Implement peer GeoIP lookup on startup; maintain ASN-indexed witness table; reject observations where >50% of witnesses share ASN.
 
@@ -251,14 +251,14 @@
 | ID | Name | Source | Threat(s) | PT status | Effort (Phase 1b) |
 |----|------|--------|-----------|-----------|-------------------|
 | P1 | Proof-Anchored Identity | Kademlia, Bitcoin | T1, T4 | ✅ | Low — extend to threshold sigs |
-| P2 | Distance-Metric Bucketing | Kademlia DHT | T4, T5 | ⚠️ | Medium — implement distance metric |
+| P2 | Distance-Metric Bucketing | Kademlia DHT | T4, T5 | ✅ | Implemented 2026-07-12 — `KBucketTable.update()` wired into `state_transition_manager.py` on every accepted observation |
 | P3 | Challenge-Response Liveness | SWIM | T1, T2 | ✅ | Low — formalize nonce binding |
 | P4 | Multi-Path Probe Diversity | HyParView, Eth | T6, T1 | ⚠️ | High — refactor confidence tracking |
 | P5 | Witness Quorum + Provenance Dedup | PBFT, HotStuff | T4, T1 | ⚠️ | Medium — integrate ASN lookup |
 | P6 | Reputation-Decay Witness Scoring | Bitcoin, Eth | T1, T4 | ❌ | Medium — implement reputation ledger |
 | P7 | Asynchronous Member Notification | SWIM | T5, T6 | ⚠️ | Medium — formalize log(N) gossip fan-out |
 | P8 | Monotonic Sequence Numbering | RAFT, TCP | T3, T7 | ⚠️ | Low — add seq field to schema |
-| P9 | Epoch-Scoped Reorder Buffer | TCP, RAFT | T7, T5 | ❌ | Medium — implement sorted buffer |
+| P9 | Epoch-Scoped Reorder Buffer | TCP, RAFT | T7, T5 | ✅ | Implemented 2026-07-12 in `orchestrator/state_transition_manager.py` — see integration plan Decision Audit Trail #15 |
 | P10 | Cryptographic Merkle Commit | Bitcoin, Eth | T6, data corruption | ❌ | Medium — optional periodic audits |
 | P11 | Atomic Multi-Writer Consensus | RAFT, Paxos | T1, T7 | ⚠️ | High — implement leader election |
 | P12 | BFT Threshold (f < N/3) | HotStuff, PBFT | T1–T6 | ✅ | Low — document formal bound |
@@ -283,4 +283,82 @@
 - P15 (threshold crypto), P20 (Merkle observability), P11 (full consensus)
 
 **Validation:** All 20 patterns extracted from production systems (BitTorrent DHT serves ~25M peers, SWIM proven in Cassandra/Riak with 1000+ node clusters, RAFT in etcd/Consul, Bitcoin in production 15+ years, BFT protocols in Ethereum/Cosmos).
+
+**GATE on P5/P6/P13 (2026-07-12, CEO review of PR #205):** three independent
+reviews (Codex + 2 clean Claude instances) converged, verified via direct
+grep across `src/`/`orchestrator/`/`tests/`, that `StateTransitionManager
+.evaluate_observation()` — the pipeline P5 (witness quorum), P6 (reputation-
+decay), and P13 (equivocation) all feed into — has **zero production
+callers**. `orchestrator/monotonic_gate.py`'s `is_observation_newer()` and
+`PeerRecord.update_from_observation()` are *also* zero-caller, so this isn't
+one disconnected module — the whole peer-observation ingestion path is
+unwired. Separately, the reviews question whether the BFT/permissionless
+threat model these patterns assume (Sybil, equivocation, reputation-decay —
+sourced from Kademlia/PBFT/Bitcoin, designed for adversarial multi-tenant
+networks) matches this project's actual topology (a single operator's own
+2–10 node LAN, per `MULTIAGENT-SWARM-SECURITY-ANALYSIS.md`).
+
+**Before further P5/P6/P13 hardening work starts, BOTH must land:**
+1. `evaluate_observation()` wired into a real ingestion path.
+   ~~`orchestrator/agent_tracker.py` or `orchestrator/heartbeat_monitor.py`
+   are the plan's own candidate call sites~~ — **CORRECTED 2026-07-12**: a
+   remediation-plan pass (agent `aac123e82eb006ede`) read both files and
+   found this guess wrong — they operate on `AgentRecord`/raw `GossipBus`
+   dicts (Claude sub-agent process lifecycle), not `PeerObservation`
+   (backend reachability), and in fact **no production code anywhere in
+   this repo currently constructs a `PeerObservation` at all** — the gap is
+   larger than "STM has no caller." The real, currently-live call site is
+   `GET /health` → `backend_health_map()` → `_probe()` in
+   `orchestrator/connectivity.py:130-143` (bypasses `PeerObservation`
+   entirely today). Full wiring task, effort estimate, and a flagged
+   two-FastAPI-app ambiguity: see
+   `docs/phase-0-specifications/2026-07-12-stm-remediation-plan.md` §1.
+2. An explicit threat-model premise re-check scoped to the actual topology,
+   not inherited wholesale from the permissionless-network pattern sources.
+   Scoped into 3 concrete questions (real witnesses? real trust boundary?
+   real observed failure mode?) with a deliverable shape: see
+   `docs/phase-0-specifications/2026-07-12-stm-remediation-plan.md` §2.
+
+**Recommended sequencing (per the remediation plan):** run the threat-model
+premise re-check FIRST, alone — it's cheap, has no code dependency, and its
+go/no-go verdict determines whether wiring P5/P6/P13 as scoped is even worth
+doing, vs. descoping to a simpler allowlist+mTLS model. Do not start wiring
+code before that verdict lands.
+
+**GATE RESOLVED 2026-07-12 — VERDICT: DESCOPE.** The threat-model premise
+re-check ran (`docs/phase-0-specifications/MULTIAGENT-SWARM-SECURITY-ANALYSIS.md`
+§ "Addendum: Single-Operator LAN Premise Check"). Findings: (1) zero real
+witnesses exist in the current code (`_probe()` is the only observer,
+single-path); (2) the actual trust boundary is 2 machines, 1 operator, 1
+administrative identity — a witness quorum spanning them defends against
+nothing a compromise of the operator's own primary machine doesn't already
+defeat; (3) a full grep of `docs/LESSONS.md`'s real incident history found
+**zero** adversarial incidents (forged observations, Sybils, equivocation) —
+100% of logged incidents are self-inflicted operational flakiness (DHCP
+moves, GPU/process crashes, network timeouts). **P5/P6/P13 are descoped
+from the next increment** — wiring them as originally scoped would ship
+code against a pipeline with structurally nothing to detect at current
+scale. Recommended alternative: a lean reachability/liveness model (retry
++ the already-shipped monotonic epoch/sequence gate), not adversarial
+quorum machinery. Revisit only if Fleet Mode introduces genuinely external,
+untrusted tenants — a real trust-boundary change, not just more self-owned
+nodes. P9/P18/P2 remain unaffected (already shipped, useful regardless of
+this verdict). Forward plan and task list:
+`docs/phase-0-specifications/2026-07-12-stm-next-increment-plan.md`.
+
+PR #205 itself (P9/P18/P2 + the two memory-leak fixes) is unaffected by this
+gate — it's already implemented, tested, and merged; this blocks the *next*
+increment of pattern work, not what already shipped. See integration plan
+`2026-07-11-state-transition-manager-integration-plan.md` Blockers &amp;
+Dependencies table for the corresponding tracked entry.
+
+**Canonical orama-system cross-reference (progressive disclosure — read on
+demand):** this gate's descope reasoning is generalized into a reusable,
+cross-repo principle at `orama-system/docs/v2/45-single-operator-lan-threat-model-descope.md`
+(D23) — read it before applying the same P2P-derived adversarial patterns
+(witness quorum, reputation-decay, equivocation) to any other subsystem in
+this stack. `orama-system/docs/v2/03-safety-v2.5.md` § "Related implementation
+patterns (Perpetua-Tools)" maps this 20-pattern catalog onto MAESTRO/SWARM's
+v2.5 enforcement design (SWARM's risk-scoring ↔ P5/P6, contradiction-detection
+↔ P13, audit-replay ↔ P19).
 

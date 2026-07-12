@@ -1,0 +1,43 @@
+{
+  "id": "a89e267de1b0",
+  "key": "manual_a89e26",
+  "name": "manual_a89e26",
+  "claim": "To make a GossipBus.emit() atomic with another SQLite mutation (e.g. an exclusive-claim row insert/delete), use bus.transaction() to get a shared connection, bus.emit_within(db, event_type, payload) to insert the event without committing, commit once yourself, then bus.schedule_embed(row_id, safe_payload) afterward \u2014 never embed before the caller's own commit succeeds, since pre-commit data might still roll back.",
+  "conditions": [
+    "GossipBus",
+    "agent_coordination",
+    "atomic",
+    "emit_within",
+    "schedule_embed",
+    "transaction"
+  ],
+  "evidence_ids": [
+    "2026-07-12T09:31:06.822408+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-12T09:31:06.822408+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-12T09:31:06.822408+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-12T09:31:06.911004+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit review 4679555600 flagged scripts/agent_coordination.py:140 as a Heavy-lift 'commit the claim row and task event atomically' gap \u2014 a crash between the two separate commits (_try_atomic_claim then a separate bus.emit()) could leave a claim row with no corresponding event, or vice versa for release. Verified atomic via an injected-failure test that proves rollback, not just a happy-path test.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-12T09:31:06.822408+00:00"
+      ],
+      "lessons_sha": "fe66fd3af9f4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-12T09:31:06.910994+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit review 4679555600 flagged scripts/agent_coordination.py:140 as a Heavy-lift 'commit the claim row and task event atomically' gap \u2014 a crash between the two separate commits (_try_atomic_claim then a separate bus.emit()) could leave a claim row with no corresponding event, or vice versa for release. Verified atomic via an injected-failure test that proves rollback, not just a happy-path test."
+}
