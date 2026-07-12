@@ -97,6 +97,29 @@ def _refresh_queue(candidates_dir):
         )
 
 
+def _move_candidate(candidate, dst, src):
+    """Write the candidate to its new lifecycle location, then remove the
+    old one — with rollback if the removal fails.
+
+    save_candidate() followed by a bare os.remove(src) leaves BOTH src and
+    dst present if the remove step raises (permissions, disk, concurrent
+    delete) after the write already succeeded — the candidate would then
+    exist in two lifecycle locations simultaneously, and callers scanning
+    by directory (staged/rejected/graduated) would double-count it. Roll
+    the destination write back if src removal fails, so exactly one
+    authoritative copy exists at all times.
+    """
+    save_candidate(candidate, dst)
+    try:
+        os.remove(src)
+    except OSError:
+        try:
+            os.remove(dst)
+        except OSError:
+            pass
+        raise
+
+
 def mark_graduated(candidate_id, reviewer, rationale, candidates_dir,
                     provisional=False):
     """Move a staged candidate to candidates/graduated/ with an accept decision."""
@@ -120,8 +143,7 @@ def mark_graduated(candidate_id, reviewer, rationale, candidates_dir,
     graduated_dir = os.path.join(candidates_dir, "graduated")
     os.makedirs(graduated_dir, exist_ok=True)
     dst = os.path.join(graduated_dir, f"{candidate_id}.json")
-    save_candidate(candidate, dst)
-    os.remove(src)
+    _move_candidate(candidate, dst, src)
     _refresh_queue(candidates_dir)
     return candidate
 
@@ -140,8 +162,7 @@ def mark_rejected(candidate_id, reviewer, reason, candidates_dir, **extra_stamp)
     rejected_dir = os.path.join(candidates_dir, "rejected")
     os.makedirs(rejected_dir, exist_ok=True)
     dst = os.path.join(rejected_dir, f"{candidate_id}.json")
-    save_candidate(candidate, dst)
-    os.remove(src)
+    _move_candidate(candidate, dst, src)
     _refresh_queue(candidates_dir)
     return candidate
 
@@ -156,8 +177,7 @@ def mark_reopened(candidate_id, reviewer, candidates_dir):
     _touch(candidate, "reopened", reviewer)
 
     dst = os.path.join(candidates_dir, f"{candidate_id}.json")
-    save_candidate(candidate, dst)
-    os.remove(src)
+    _move_candidate(candidate, dst, src)
     _refresh_queue(candidates_dir)
     return candidate
 

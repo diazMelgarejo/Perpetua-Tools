@@ -848,7 +848,7 @@ async def _workflow_critical_path(bus: GossipBus) -> None:
 
     # Compute ETA
     eta_hours = longest_duration
-    print(f"\n=== Critical Path Analysis ===")
+    print("\n=== Critical Path Analysis ===")
     print(f"Longest chain: {' → '.join(longest_overall)}")
     print(f"Total duration: {eta_hours:.1f} hours")
     print(f"ETA (if started now): +{eta_hours:.1f} hours\n")
@@ -1072,7 +1072,12 @@ async def _amain(args: argparse.Namespace) -> None:
     elif args.cmd == "agents":
         await _agents(bus)
     elif args.cmd == "claim":
-        await _claim(bus, args.agent_id, args.task, args.notes or "")
+        if hasattr(args, "seq") and args.seq is not None:
+            # New claim with sequence number (Phase 1.3.2)
+            await _claim_with_seq(bus, args.agent_id, args.seq, args.task, args.notes or "")
+        else:
+            # Legacy claim without sequence number
+            await _claim(bus, args.agent_id, args.task, args.notes or "")
     elif args.cmd == "release":
         await _release(bus, args.agent_id, args.task)
     elif args.cmd == "list":
@@ -1129,6 +1134,17 @@ async def _amain(args: argparse.Namespace) -> None:
         elif args.subcmd == "status":
             await _queue_status(bus, args.agent)
     elif args.cmd == "heartbeat":
+        # Lazy import — see the identical circular-import note in
+        # agent_coordination_legacy.py's heartbeat dispatch.
+        from scripts.agent_coordination import (
+            _heartbeat_list,
+            _heartbeat_check,
+            _heartbeat_dashboard,
+            _heartbeat_pulse,
+            _heartbeat_kill,
+            _heartbeat_timeline,
+            _heartbeat_cleanup,
+        )
         if args.subcmd == "list":
             await _heartbeat_list(bus)
         elif args.subcmd == "check":
@@ -1148,13 +1164,6 @@ async def _amain(args: argparse.Namespace) -> None:
             await _buffer_status(bus, args.agent)
         elif args.subcmd == "drain":
             await _buffer_drain(bus, args.agent_id)
-    elif args.cmd == "claim":
-        if hasattr(args, "seq") and args.seq is not None:
-            # New claim with sequence number (Phase 1.3.2)
-            await _claim_with_seq(bus, args.agent_id, args.seq, args.task, args.notes or "")
-        else:
-            # Legacy claim without sequence number
-            await _claim(bus, args.agent_id, args.task, args.notes or "")
 
 
 def main() -> int:
