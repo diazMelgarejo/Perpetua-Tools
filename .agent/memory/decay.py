@@ -1,4 +1,18 @@
-"""Archive old low-salience entries instead of deleting."""
+"""Archive old, low-salience episodic entries instead of deleting them.
+
+Responsibilities:
+  1. Parse each entry timestamp without changing valid aware timestamps.
+  2. Interpret legacy naive timestamps as host-local time, then normalize to UTC.
+  3. Keep malformed or unparseable entries rather than discarding evidence.
+  4. Archive only entries older than the retention window and below salience floor.
+  5. Append archived rows as explicit UTF-8 JSONL using UTC-dated snapshots.
+  6. Sanitize every string field at the persistence boundary.
+
+Never:
+  - delete episodic evidence outright;
+  - reinterpret legacy naive timestamps as already-UTC;
+  - persist workstation-specific paths or locale-dependent text.
+"""
 import datetime
 import json
 import os
