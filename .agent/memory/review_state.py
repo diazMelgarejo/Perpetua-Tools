@@ -58,7 +58,7 @@ def _lessons_sha(candidates_dir):
         return ""
     try:
         with open(lessons_path, "rb") as stream:
-            return hashlib.md5(stream.read()).hexdigest()[:12]
+            return hashlib.sha256(stream.read()).hexdigest()[:12]
     except OSError:
         return ""
 
