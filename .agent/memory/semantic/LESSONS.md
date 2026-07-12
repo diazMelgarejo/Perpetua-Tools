@@ -135,6 +135,7 @@
 - git merge-tree --write-tree takes exactly 2 positional branch args and auto-detects the merge-base; passing a 3rd positional arg silently produces a wrong/misleading result  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_be32d3a38cb6 -->
 - GitHub's per-PR mergeable/mergeStateStatus fields only compare each open PR against current main, never against sibling open PRs, so two open PRs can silently conflict with each other even when GitHub reports both as individually mergeable  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_3dc6aae095d2 -->
 - A git worktree's core.hooksPath can drift to an absolute path instead of the repo-relative .githooks, breaking any hook-verification script that does a strict string-equality check against '.githooks'  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_ce342af35284 -->
+- A TODO's non-essential acceptance criterion (e.g. a benchmark with no real workload to test against yet) should be explicitly deferred with a cross-repo doc link, not silently dropped or left as an unchecked box with no explanation  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_c1c47a25b008 -->
 
 ### 2026-06
 
