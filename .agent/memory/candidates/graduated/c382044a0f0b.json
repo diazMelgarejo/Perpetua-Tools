@@ -1,0 +1,43 @@
+{
+  "id": "c382044a0f0b",
+  "key": "manual_c38204",
+  "name": "manual_c38204",
+  "claim": "A blind find/replace private-IP-sanitization pass can silently break embedded example code inside documentation (fixture values replaced with themselves become no-ops, two roles collapsed onto one identical placeholder): after any automated sanitization pass over docs with code blocks, do a manual correctness re-read of those blocks \u2014 don't assume 'sanitized' means 'still illustrative and correct'.",
+  "conditions": [
+    "documentation",
+    "example code",
+    "fixture",
+    "placeholder",
+    "private-ip",
+    "sanitize"
+  ],
+  "evidence_ids": [
+    "2026-07-12T09:31:14.575165+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-12T09:31:14.575165+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-12T09:31:14.575165+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-12T09:31:14.663147+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "docs/wiki/2026-04-20-LM-Studio-autodiscovery-PLAN.md had 4 CodeRabbit findings, all from the same root cause: real IPs replaced with <YOUR_LAN_IP> everywhere, including places where two DISTINCT values (old/new fixture pair, mac/win roles, a real UDP-probe target) collapsed into one identical placeholder, making the example code contradictory or non-functional as written.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-12T09:31:14.575165+00:00"
+      ],
+      "lessons_sha": "6728b785a1ee"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-12T09:31:14.663136+00:00",
+  "reviewer": "learn.py",
+  "rationale": "docs/wiki/2026-04-20-LM-Studio-autodiscovery-PLAN.md had 4 CodeRabbit findings, all from the same root cause: real IPs replaced with <YOUR_LAN_IP> everywhere, including places where two DISTINCT values (old/new fixture pair, mac/win roles, a real UDP-probe target) collapsed into one identical placeholder, making the example code contradictory or non-functional as written."
+}
