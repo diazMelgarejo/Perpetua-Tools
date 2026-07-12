@@ -2,9 +2,9 @@
   "schema_version": 1,
   "base_sha": "00eda65cd2030ffc62b9c01b8360dd2d1719eaef",
   "base_version": "v0.9.0",
-  "note": "base is PT .agent/'s original scaffold version (see .agent/install.json); never been blended since",
+  "note": "base is PT .agent/'s original scaffold version (see .agent/install.json). vendor/agentic-stack's pinned gitlink has not advanced past this SHA (confirmed on origin/main post-PR#208); the 'v0.18.0' label refers to a version marker inside the submodule content at this same commit, not a later pin.",
   "last_blend": {
-    "at": "2026-07-11T14:58:10Z",
+    "at": "2026-07-12T18:00:00Z",
     "target_sha": "00eda65cd2030ffc62b9c01b8360dd2d1719eaef",
     "applied_clean": [
       "tools/show.py",
@@ -24,6 +24,7 @@
       "harness/salience.py",
       "skills/_index.md"
     ],
-    "conflicts": []
+    "conflicts": [],
+    "note": "Manually verified and re-applied 2026-07-12 during PR #206/#205/#207/#208 merge reconciliation: 9 of the 16 applied_clean files (tools/learn.py, tools/skill_loader.py, memory/{auto_dream,decay,memory_search,promote,render_lessons,review_state}.py, harness/hooks/on_failure.py) had their earlier-blended UTF-8/context-manager fixes silently reverted by an intervening merge that auto-resolved without flagging a conflict. Confirmed byte-for-byte match against the .blend-preview/ staged content (upstream agentic-stack's own fix) before re-committing. Lesson: an unconflicted auto-merge is not proof a fix survived -- verify content, not just absence of conflict markers, after any merge touching files with a known local-patch history."
   }
 }

@@ -355,3 +355,21 @@ skills: orama `git-history-surgery` → `reanchor-after-rewrite.md`, PT `scripts
 **Alternatives considered:** Pre-commit only (rejected — no tdd-skip); Playwright in same PR (rejected — scope).
 **Status:** active
 
+## 2026-07-13: Post-Review Micro-Remediation Pattern promoted to shared doctrine
+**Decision:** For post-review remediation on any open PR, follow the 6-phase Post-Review
+Micro-Remediation Pattern: Freeze (PR branch only) → Root-cause clustering (fix the
+abstraction, not each comment) → Branch discipline (cohesive commits, append not replace
+PR narrative) → Integration (safety ref before any reset; ancestry reset over revert
+chains; re-evaluate rebase necessity) → Verification (every finding fixed/superseded/
+documented, never silent) → Closure (merge only after approval).
+**Rationale:** Evolved through trial and error across PT PR #205/#206 (multiple review
+rounds, a rogue-commit incident on main, a branch reset, a follow-up review). Generalizes
+across code review, git workflow, multi-agent coordination, AutoResearch, and orchestration.
+**Alternatives considered:** Ad-hoc per-incident cleanup (rejected — no mechanical
+attribution, repeat incidents); revert chains for post-merge fixes (rejected — complicates
+reconciliation vs. a single auditable ancestry reset).
+**Status:** active — canonical doc `orama-system bin/orama-system/references/
+post-review-micro-remediation.md`; wired into 7 orama skills (agent-methodology,
+code-review, git-history-surgery, gstack, skillify, hermes-harness, mcp-orchestration).
+
+---
