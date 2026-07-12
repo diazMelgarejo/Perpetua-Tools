@@ -8,21 +8,21 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "harness"))
 from salience import salience_score
 
 from path_hygiene import sanitize_json_strings
+from time_utils import legacy_local_to_utc
 
 DECAY_DAYS = 90
 SALIENCE_FLOOR = 2.0
 
 
 def decay_old_entries(entries, archive_dir):
+    """Partition entries by age/salience and append archived rows as UTF-8 JSONL."""
     cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=DECAY_DAYS)
     kept, archived = [], []
     for entry in entries:
-        ts_str = entry.get("timestamp", "")
         try:
-            ts = datetime.datetime.fromisoformat(ts_str)
-            if ts.tzinfo is None:
-                local_tz = datetime.datetime.now().astimezone().tzinfo
-                ts = ts.replace(tzinfo=local_tz).astimezone(datetime.timezone.utc)
+            ts = legacy_local_to_utc(
+                datetime.datetime.fromisoformat(entry.get("timestamp", ""))
+            )
         except (TypeError, ValueError):
             kept.append(entry)
             continue
