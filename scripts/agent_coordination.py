@@ -12,6 +12,8 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+import aiosqlite
+
 _ROOT = Path(__file__).resolve().parent.parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
@@ -82,6 +84,62 @@ async def _all_phase_states(bus: GossipBus) -> dict[str, PhaseState]:
     return latest
 
 
+# ---------------------------------------------------------------------------
+# Atomic claim gate (fixes a real TOCTOU race in _queue_claim)
+#
+# _latest_task_snapshots() folds append-only events -- it has no way to stop
+# two concurrent CLI processes from both reading QUEUED, both passing
+# validation, and both emitting a task_claim event, since GossipBus.emit() is
+# a plain unconditional INSERT (orchestrator/gossip_bus.py). A side table with
+# a PRIMARY KEY on task_id gives the one guarantee an append-only log can't:
+# SQLite raises IntegrityError on the second INSERT for the same task_id, so
+# exactly one of two racing claimants gets a True back, no matter how close
+# together they run. This does not replace the snapshot-based status/
+# dependency checks in _queue_claim below -- those are still needed, this
+# closes the race window between that check and the emit that follows it.
+# ---------------------------------------------------------------------------
+_CREATE_CLAIMS_TABLE = """
+CREATE TABLE IF NOT EXISTS task_claims (
+    task_id    TEXT PRIMARY KEY,
+    agent_id   TEXT NOT NULL,
+    claimed_at REAL NOT NULL
+)
+"""
+
+
+async def _ensure_claims_table(bus: GossipBus) -> None:
+    async with aiosqlite.connect(bus._db_path) as db:
+        await db.execute(_CREATE_CLAIMS_TABLE)
+        await db.commit()
+
+
+async def _try_atomic_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool:
+    """Attempt the one atomic operation an append-only log can't provide.
+
+    Returns True if this call is the exclusive claimant, False if another
+    process's INSERT for the same task_id already committed first.
+    """
+    await _ensure_claims_table(bus)
+    async with aiosqlite.connect(bus._db_path) as db:
+        try:
+            await db.execute(
+                "INSERT INTO task_claims (task_id, agent_id, claimed_at) VALUES (?, ?, ?)",
+                (task_id, agent_id, time.time()),
+            )
+            await db.commit()
+            return True
+        except aiosqlite.IntegrityError:
+            return False
+
+
+async def _release_claim(bus: GossipBus, task_id: str) -> None:
+    """Free a task_id for reclaiming (on completion or requeue-after-failure)."""
+    await _ensure_claims_table(bus)
+    async with aiosqlite.connect(bus._db_path) as db:
+        await db.execute("DELETE FROM task_claims WHERE task_id = ?", (task_id,))
+        await db.commit()
+
+
 async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> None:
     """Claim a queued task after validating current state and dependencies."""
     snapshots = await _latest_task_snapshots(bus)
@@ -115,6 +173,13 @@ async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> None:
         print(f"ERROR: {task_id} unmet dependencies: {', '.join(unmet)}")
         return
 
+    # Atomic gate: the snapshot checks above can both pass for two racing
+    # claimants (read-then-write, no lock across the gap). This INSERT is
+    # the actual exclusion point -- only one caller gets True.
+    if not await _try_atomic_claim(bus, task_id, agent_id):
+        print(f"ERROR: {task_id} was claimed by another agent just now. Try a different task.")
+        return
+
     await bus.emit(
         "heartbeat",
         {
@@ -143,6 +208,10 @@ async def _queue_complete(bus: GossipBus, task_id: str, notes: str) -> None:
             "notes": notes,
         },
     )
+    # Free the atomic-claim row -- a completed task is rejected by the status
+    # check in _queue_claim regardless, but leaving dead rows around forever
+    # is just clutter in a table that should only ever hold live claims.
+    await _release_claim(bus, task_id)
     print(f"completed: {task_id}")
 
 
@@ -169,6 +238,10 @@ async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> None:
                 "notes": f"Retry {retry_count}/{max_retries}: {notes}",
             },
         )
+        # Must release here, not just on complete -- the task goes back to
+        # QUEUED and _queue_claim's atomic gate would otherwise reject every
+        # future claim attempt with a stale "already claimed" row forever.
+        await _release_claim(bus, task_id)
         print(f"failed: {task_id}, retry {retry_count}/{max_retries}")
         return
 
@@ -184,6 +257,7 @@ async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> None:
             "notes": f"Abandoned after {max_retries} retries: {notes}",
         },
     )
+    await _release_claim(bus, task_id)
     print(f"abandoned: {task_id} (max retries exceeded)")
 
 
