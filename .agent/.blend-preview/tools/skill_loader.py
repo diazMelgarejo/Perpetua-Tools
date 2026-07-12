@@ -11,14 +11,15 @@ def load_manifest():
     if not os.path.exists(MANIFEST):
         return []
     out = []
-    for line in open(MANIFEST):
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            out.append(json.loads(line))
-        except json.JSONDecodeError:
-            continue
+    with open(MANIFEST, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                out.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
     return out
 
 
@@ -62,10 +63,12 @@ def load_skill_full(name):
     skill_md = os.path.join(base, "SKILL.md")
     if not os.path.exists(skill_md):
         return None
-    content = open(skill_md).read()
+    with open(skill_md, encoding="utf-8") as f:
+        content = f.read()
     knowledge = os.path.join(base, "KNOWLEDGE.md")
     if os.path.exists(knowledge):
-        content += "\n\n---\n## Accumulated knowledge\n" + open(knowledge).read()
+        with open(knowledge, encoding="utf-8") as f:
+            content += "\n\n---\n## Accumulated knowledge\n" + f.read()
     return content
 
 
