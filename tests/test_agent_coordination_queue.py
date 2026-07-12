@@ -31,6 +31,7 @@ from scripts.agent_coordination import (
     _queue_list,
     _queue_status,
     _try_atomic_claim,
+    _release_claim_with_event,
 )
 from orchestrator.gossip_bus import GossipBus
 
@@ -520,3 +521,77 @@ async def test_priority_ordering_in_list(make_bus, capsys):
     # (Position check is approximate since output format matters)
     assert "CRITICAL" in captured.out
     assert "NORMAL" in captured.out
+
+
+# ────────────────────────────────────────────────────────────────────────────
+# Atomic release + terminal-event transaction (CodeRabbit review 4679555600,
+# scripts/agent_coordination.py:140 — the claim side was already atomic via
+# _try_atomic_claim; this closes the same gap for release: _release_claim
+# deleted the exclusive-claim row and the caller emitted the terminal event
+# (complete/failed/abandoned) as two separate commits).
+# ────────────────────────────────────────────────────────────────────────────
+
+
+async def test_release_claim_with_event_deletes_row_and_persists_event(make_bus):
+    bus = await make_bus()
+    await _try_atomic_claim(bus, "task-r1", "agent-a")
+
+    released = await _release_claim_with_event(
+        bus, "task-r1", "heartbeat", {"kind": "task_complete", "task_id": "task-r1"}
+    )
+
+    assert released is True
+    async with bus.connect() as db:
+        cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", ("task-r1",))
+        (claim_count,) = await cursor.fetchone()
+    assert claim_count == 0
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    complete_events = [
+        e for e in events
+        if e["payload"].get("task_id") == "task-r1" and e["payload"].get("kind") == "task_complete"
+    ]
+    assert len(complete_events) == 1
+
+
+async def test_release_claim_with_event_injected_failure_leaves_claim_row_intact(make_bus, monkeypatch):
+    """If the event insert raises inside the shared transaction, the release
+    DELETE in the same (uncommitted) transaction must not survive either --
+    a released-but-unreported task_id must not silently vanish from
+    task_claims, which would let a second agent claim it while the first
+    agent still believes it holds it."""
+    bus = await make_bus()
+    await _try_atomic_claim(bus, "task-r2", "agent-a")
+
+    async def _boom(self, db, event_type, payload, **kwargs):
+        raise RuntimeError("simulated event-insert failure")
+
+    monkeypatch.setattr(GossipBus, "insert_event", _boom)
+
+    with pytest.raises(RuntimeError, match="simulated event-insert failure"):
+        await _release_claim_with_event(
+            bus, "task-r2", "heartbeat", {"kind": "task_complete", "task_id": "task-r2"}
+        )
+
+    async with bus.connect() as db:
+        cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", ("task-r2",))
+        (claim_count,) = await cursor.fetchone()
+    assert claim_count == 1  # still held -- release did not partially apply
+
+
+async def test_queue_complete_releases_claim_and_completion_event_together(make_bus, capsys):
+    """End-to-end: _queue_complete's public entrypoint uses the atomic
+    release path, not the old two-commit sequence."""
+    bus = await make_bus()
+    await _queue_add(bus, "e2e-complete", "Phase-1", "NORMAL", "", None)
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    task_id = events[0]["payload"]["task_id"]
+    await _queue_claim(bus, task_id, "agent-a")
+
+    await _queue_complete(bus, task_id, "done")
+
+    async with bus.connect() as db:
+        cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", (task_id,))
+        (claim_count,) = await cursor.fetchone()
+    assert claim_count == 0
+    captured = capsys.readouterr()
+    assert f"completed: {task_id}" in captured.out

@@ -145,6 +145,43 @@ async def _release_claim(bus: GossipBus, task_id: str) -> None:
         await db.commit()
 
 
+async def _release_claim_with_event(
+    bus: GossipBus, task_id: str, event_type: str, payload: dict
+) -> bool:
+    """Atomically free ownership and record why, mirroring _try_atomic_claim's
+    guarantee for the release side.
+
+    Without this, a crash between a separate release DELETE and its event
+    emit could free a claim row with no record of why (forensics gap), or
+    record the terminal event while the row stays held -- blocking every
+    future _try_atomic_claim on that task_id with a stale "already claimed"
+    row forever. Same `BEGIN IMMEDIATE` + bounded-retry treatment as the
+    claim path; returns False (not raised) if lock contention exhausts all
+    retries, so callers can decide how to handle a release that didn't land.
+    """
+    for attempt in range(_LOCK_RETRIES):
+        async with bus.connect() as db:
+            try:
+                await db.execute("BEGIN IMMEDIATE")
+                await db.execute(_CREATE_CLAIMS_TABLE)
+                await db.execute("DELETE FROM task_claims WHERE task_id = ?", (task_id,))
+                row_id, safe_payload = await bus.insert_event(db, event_type, payload)
+                await db.commit()
+            except aiosqlite.OperationalError as exc:
+                await db.rollback()
+                locked = "locked" in str(exc).lower() or "busy" in str(exc).lower()
+                if locked and attempt + 1 < _LOCK_RETRIES:
+                    await asyncio.sleep(_LOCK_RETRY_SECONDS * (attempt + 1))
+                    continue
+                return False
+            except Exception:
+                await db.rollback()
+                raise
+        bus.schedule_embedding(row_id, safe_payload)
+        return True
+    return False
+
+
 async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> None:
     snapshots = await _latest_task_snapshots(bus)
     task_state = snapshots.get(task_id)
@@ -198,7 +235,9 @@ async def _queue_complete(bus: GossipBus, task_id: str, notes: str) -> None:
     if task_id not in snapshots:
         print(f"ERROR: task {task_id} not found")
         return
-    await bus.emit(
+    released = await _release_claim_with_event(
+        bus,
+        task_id,
         "heartbeat",
         {
             "kind": "task_complete",
@@ -207,7 +246,9 @@ async def _queue_complete(bus: GossipBus, task_id: str, notes: str) -> None:
             "notes": notes,
         },
     )
-    await _release_claim(bus, task_id)
+    if not released:
+        print(f"ERROR: {task_id} could not be completed; coordination database remained busy. Retry safely.")
+        return
     print(f"completed: {task_id}")
 
 
@@ -221,7 +262,9 @@ async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> None:
     retry_count = int(task_state.get("retry_count", 0)) + 1
     max_retries = int(task_state.get("max_retries", 3))
     if retry_count <= max_retries:
-        await bus.emit(
+        released = await _release_claim_with_event(
+            bus,
+            task_id,
             "heartbeat",
             {
                 "kind": "task_failed",
@@ -233,11 +276,15 @@ async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> None:
                 "notes": f"Retry {retry_count}/{max_retries}: {notes}",
             },
         )
-        await _release_claim(bus, task_id)
+        if not released:
+            print(f"ERROR: {task_id} could not be requeued; coordination database remained busy. Retry safely.")
+            return
         print(f"failed: {task_id}, retry {retry_count}/{max_retries}")
         return
 
-    await bus.emit(
+    released = await _release_claim_with_event(
+        bus,
+        task_id,
         "heartbeat",
         {
             "kind": "task_abandoned",
@@ -249,7 +296,9 @@ async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> None:
             "notes": f"Abandoned after {max_retries} retries: {notes}",
         },
     )
-    await _release_claim(bus, task_id)
+    if not released:
+        print(f"ERROR: {task_id} could not be abandoned; coordination database remained busy. Retry safely.")
+        return
     print(f"abandoned: {task_id} (max retries exceeded)")
 
 
