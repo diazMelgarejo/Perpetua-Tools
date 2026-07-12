@@ -29,14 +29,14 @@ class TestLoopbackAndPrivate:
         assert validate_model_endpoint_url("127.0.3.2:11434") == "http://127.0.3.2:11434"
 
     def test_rfc1918_192_allowed(self):
-        url = validate_model_endpoint_url("http://127.0.4.1:1234")
-        assert url == "http://127.0.4.1:1234"
+        url = validate_model_endpoint_url("http://192.168.1.1:1234")
+        assert url == "http://192.168.1.1:1234"
 
     def test_rfc1918_10_allowed(self):
-        assert validate_model_endpoint_url("http://127.0.1.1:1234") == "http://127.0.1.1:1234"
+        assert validate_model_endpoint_url("http://10.0.0.1:1234") == "http://10.0.0.1:1234"
 
     def test_rfc1918_172_allowed(self):
-        assert validate_model_endpoint_url("http://127.0.2.1:1234") == "http://127.0.2.1:1234"
+        assert validate_model_endpoint_url("http://172.16.0.1:1234") == "http://172.16.0.1:1234"
 
     def test_parse_comma_list(self):
         raw = "http://127.0.3.1:1234, http://127.0.0.1:1234"

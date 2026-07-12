@@ -26,7 +26,7 @@
       "ts": "2026-07-12T05:59:27.585396+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
-      "notes": "scripts/git/ensure_hooks_installed.sh does '[[ \"$hooks_path\" != \".githooks\" ]]' and failed commits twice in one session with 'core.hooksPath=/Users/.../Perpetua-Tools/.githooks \u2014 expected .githooks' inside worktrees. Fixed both times with 'git config core.hooksPath .githooks' (a config correction, not a hook bypass) before retrying the commit.",
+      "notes": "scripts/git/ensure_hooks_installed.sh does '[[ \"$hooks_path\" != \".githooks\" ]]' and failed commits twice in one session with 'core.hooksPath=$REPO_ROOT/.githooks \u2014 expected .githooks' inside worktrees. Fixed both times with 'git config core.hooksPath .githooks' (a config correction, not a hook bypass) before retrying the commit.",
       "provisional": false,
       "evidence_snapshot": [
         "2026-07-12T05:59:27.519456+00:00"
@@ -37,5 +37,5 @@
   "rejection_count": 0,
   "accepted_at": "2026-07-12T05:59:27.585389+00:00",
   "reviewer": "learn.py",
-  "rationale": "scripts/git/ensure_hooks_installed.sh does '[[ \"$hooks_path\" != \".githooks\" ]]' and failed commits twice in one session with 'core.hooksPath=/Users/.../Perpetua-Tools/.githooks \u2014 expected .githooks' inside worktrees. Fixed both times with 'git config core.hooksPath .githooks' (a config correction, not a hook bypass) before retrying the commit."
+  "rationale": "scripts/git/ensure_hooks_installed.sh does '[[ \"$hooks_path\" != \".githooks\" ]]' and failed commits twice in one session with 'core.hooksPath=$REPO_ROOT/.githooks \u2014 expected .githooks' inside worktrees. Fixed both times with 'git config core.hooksPath .githooks' (a config correction, not a hook bypass) before retrying the commit."
 }
