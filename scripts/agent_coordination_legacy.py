@@ -1128,6 +1128,21 @@ async def _amain(args: argparse.Namespace) -> None:
             await _queue_fail(bus, args.task_id, args.notes or "")
         elif args.subcmd == "status":
             await _queue_status(bus, args.agent)
+    elif args.cmd == "heartbeat":
+        if args.subcmd == "list":
+            await _heartbeat_list(bus)
+        elif args.subcmd == "check":
+            await _heartbeat_check(bus, args.agent_id)
+        elif args.subcmd == "dashboard":
+            await _heartbeat_dashboard(bus)
+        elif args.subcmd == "pulse":
+            await _heartbeat_pulse(bus, args.agent_id)
+        elif args.subcmd == "kill":
+            await _heartbeat_kill(bus, args.agent_id, args.reason)
+        elif args.subcmd == "timeline":
+            await _heartbeat_timeline(bus, args.agent_id, args.hours)
+        elif args.subcmd == "cleanup":
+            await _heartbeat_cleanup(bus)
     elif args.cmd == "buffer":
         if args.subcmd == "status":
             await _buffer_status(bus, args.agent)
@@ -1244,6 +1259,30 @@ def main() -> int:
 
     p_queue_status = queue_sub.add_parser("status", help="Show claimed queue work by agent")
     p_queue_status.add_argument("--agent", default=None)
+
+    # Heartbeat/liveness commands
+    p_heartbeat = sub.add_parser("heartbeat", help="Inspect and manage agent liveness")
+    heartbeat_sub = p_heartbeat.add_subparsers(dest="subcmd", required=True)
+
+    heartbeat_sub.add_parser("list", help="List tracked agent liveness")
+
+    p_heartbeat_check = heartbeat_sub.add_parser("check", help="Show one agent's liveness")
+    p_heartbeat_check.add_argument("agent_id")
+
+    heartbeat_sub.add_parser("dashboard", help="Show liveness summary")
+
+    p_heartbeat_pulse = heartbeat_sub.add_parser("pulse", help="Emit a pulse for this agent")
+    p_heartbeat_pulse.add_argument("agent_id")
+
+    p_heartbeat_kill = heartbeat_sub.add_parser("kill", help="Mark an agent killed")
+    p_heartbeat_kill.add_argument("agent_id")
+    p_heartbeat_kill.add_argument("--reason", required=True)
+
+    p_heartbeat_timeline = heartbeat_sub.add_parser("timeline", help="Show agent activity")
+    p_heartbeat_timeline.add_argument("agent_id")
+    p_heartbeat_timeline.add_argument("--hours", type=int, default=24)
+
+    heartbeat_sub.add_parser("cleanup", help="Auto-release claims held by DEAD agents")
 
     # Reorder buffer management (Phase 1.3.2)
     p_buffer = sub.add_parser("buffer", help="Manage reorder buffers for out-of-order claims")
