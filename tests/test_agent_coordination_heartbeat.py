@@ -19,6 +19,12 @@ from orchestrator.heartbeat_monitor import (
     LIVENESS_STALLED_SEC,
 )
 from orchestrator.gossip_bus import GossipBus
+from scripts.agent_coordination import (
+    _heartbeat_check as heartbeat_check,
+    _heartbeat_dashboard as heartbeat_dashboard,
+    _heartbeat_list as heartbeat_list,
+    _heartbeat_timeline as heartbeat_timeline,
+)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -581,5 +587,6 @@ async def test_agent_killed_marks_dead(bus):
     })
 
     agents = await find_agent_heartbeats(bus, "agent-1")
-    # Agent killed event should be tracked as heartbeat, so status may update
     assert "agent-1" in agents
+    assert agents["agent-1"]["status"] == "DEAD"
+    assert agents["agent-1"]["killed_reason"] == "manual kill"

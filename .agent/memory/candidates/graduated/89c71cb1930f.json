@@ -1,0 +1,43 @@
+{
+  "id": "89c71cb1930f",
+  "key": "manual_89c71c",
+  "name": "manual_89c71c",
+  "claim": "Concurrent 'git commit'/'git add' from multiple agent sessions on the same checkout produces two distinct failures needing different handling: (1) git's own index lock file contention (a 'File exists' error, or a security hook blocking that lock path) -- never delete that lock file yourself, retry the commit in a bounded loop instead, it clears on its own once the other process finishes; (2) 'nothing to commit' right after a git add -- the other session's commit already landed and cleared your staged changes between add and commit, so re-run git add immediately before retrying commit, not just the bare commit.",
+  "conditions": [
+    "commit",
+    "concurrent",
+    "git",
+    "lock",
+    "race",
+    "retry"
+  ],
+  "evidence_ids": [
+    "2026-07-12T00:30:38.838474+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-12T00:30:38.838474+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-12T00:30:38.838474+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-12T00:30:38.929645+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Hit twice in one session (2026-07-12) coordinating STM-gate doc commits over the GossipBus claim board with a concurrent Codex session. Codified as orama-system shell-hygiene SKILL.md section 6, cross-linked from docs/wiki/08-git-hygiene-and-branching.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-12T00:30:38.838474+00:00"
+      ],
+      "lessons_sha": "659ca6a81f63"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-12T00:30:38.929630+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Hit twice in one session (2026-07-12) coordinating STM-gate doc commits over the GossipBus claim board with a concurrent Codex session. Codified as orama-system shell-hygiene SKILL.md section 6, cross-linked from docs/wiki/08-git-hygiene-and-branching.md."
+}

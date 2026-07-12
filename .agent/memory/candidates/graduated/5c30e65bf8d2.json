@@ -1,0 +1,43 @@
+{
+  "id": "5c30e65bf8d2",
+  "key": "manual_5c30e6",
+  "name": "manual_5c30e6",
+  "claim": "An append-only event log (GossipBus-style: emit() is a plain INSERT, state is derived by folding events) cannot provide compare-and-swap on its own -- a read-validate-then-emit sequence (like a claim-board's claim operation) has a real TOCTOU race between separate OS processes, no matter how tight the code looks. The fix is a small side table with a UNIQUE/PRIMARY KEY constraint on the contested key (e.g. task_id), used ONLY as the exclusion point (INSERT, catch IntegrityError) -- keep the existing business-logic validation (status checks, dependency checks) as-is, the side table just closes the gap after them. Remember to release the row on every path that makes the resource reclaimable again (retry/requeue), not just on final completion, or a legitimate future claim gets permanently blocked by its own stale exclusion row.",
+  "conditions": [
+    "TOCTOU",
+    "append-only",
+    "atomic claim",
+    "compare-and-swap",
+    "gossipbus",
+    "race condition"
+  ],
+  "evidence_ids": [
+    "2026-07-12T01:47:43.904948+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-12T01:47:43.904948+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-12T01:47:43.904948+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-12T01:47:43.999289+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Fixed a real TOCTOU race in PT's scripts/agent_coordination.py _queue_claim (2026-07-12), found during a code review of the GossipBus claim board this session had been live-using all day. The previous 'concurrent' test only awaited two claims sequentially and never exercised the actual race window; a new asyncio.gather()-based test proved the fix and caught that the retry path also needed the release call, which the first draft of the fix missed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-12T01:47:43.904948+00:00"
+      ],
+      "lessons_sha": "f4489a1301d6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-12T01:47:43.999277+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Fixed a real TOCTOU race in PT's scripts/agent_coordination.py _queue_claim (2026-07-12), found during a code review of the GossipBus claim board this session had been live-using all day. The previous 'concurrent' test only awaited two claims sequentially and never exercised the actual race window; a new asyncio.gather()-based test proved the fix and caught that the retry path also needed the release call, which the first draft of the fix missed."
+}

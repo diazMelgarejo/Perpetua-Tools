@@ -1,0 +1,49 @@
+{
+  "id": "f1ab78c9a04c",
+  "key": "manual_f1ab78",
+  "name": "manual_f1ab78",
+  "claim": "Before wiring P5/P6/P13 security patterns into production, require a concrete witness/topology premise check against the current deployment; if there are no independent witnesses and no adversarial incidents, descope Byzantine/Sybil machinery to simpler liveness controls until the trust boundary changes.",
+  "conditions": [
+    "Fleet-Mode",
+    "LAN",
+    "P13",
+    "P5",
+    "P6",
+    "STM",
+    "descope",
+    "liveness",
+    "quorum",
+    "single-operator",
+    "threat-model",
+    "witness"
+  ],
+  "evidence_ids": [
+    "2026-07-11T23:17:49.814435+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T23:17:49.814435+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T23:17:49.814435+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T23:17:49.914072+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-12 STM next-increment gate: MULTIAGENT-SWARM-SECURITY-ANALYSIS.md addendum found current PT deployment is Mac+Win under one operator, with zero independent witnesses and only operational-flakiness incidents. The correct next step was to descope P5/P6/P13 wiring while keeping P9/P18/P2 fixes.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T23:17:49.814435+00:00"
+      ],
+      "lessons_sha": "f7867924a9fa"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T23:17:49.914064+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-12 STM next-increment gate: MULTIAGENT-SWARM-SECURITY-ANALYSIS.md addendum found current PT deployment is Mac+Win under one operator, with zero independent witnesses and only operational-flakiness incidents. The correct next step was to descope P5/P6/P13 wiring while keeping P9/P18/P2 fixes."
+}
