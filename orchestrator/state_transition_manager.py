@@ -22,6 +22,7 @@ Pattern source: PATTERN-MULTIAGENT-EXECUTION-PLAN.md (Iterations 1-10)
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from dataclasses import replace as dataclass_replace
@@ -36,9 +37,15 @@ from orchestrator.provenance import provenance_bucket
 from orchestrator.reputation import ReputationLedger
 from orchestrator.witness_quorum import validate_witness_quorum
 
+logger = logging.getLogger(__name__)
 
-class InvalidObservationError(ValueError):
-    """Observation failed a structural gate (stale, duplicate, malformed)."""
+# Terminal decisions that warrant operator visibility beyond the audit log —
+# these indicate a peer or observer behaving outside normal expectations
+# (contradictory reports, topology-poisoning signals). BUFFERED, STALE, and
+# DUPLICATE are routine traffic-shaping outcomes, not security signals.
+_SECURITY_SIGNIFICANT_DECISIONS = frozenset(
+    {"equivocation", "sybil_flagged"}
+)
 
 
 class DecisionType(str, Enum):
@@ -350,7 +357,6 @@ class StateTransitionManager:
         buffer = self._reorder_buffer.get(obs.peer_id)
         if buffer is None:
             buffer = OrderedDict()
-        self._touch_cache(self._reorder_buffer, obs.peer_id, buffer)
         key = (obs.epoch, obs.sequence)
         if key not in buffer and len(buffer) >= self._reorder_buffer_max:
             # Buffer capacity guard (P5/T5 in PATTERN-SYNTHESIS.md's DoS
@@ -359,6 +365,10 @@ class StateTransitionManager:
             # — from the caller's perspective this observation cannot be
             # applied in order right now, same practical outcome as a
             # too-far-in-the-past rejection, even though the cause differs.
+            # Deliberately does NOT touch the outer LRU below: a rejection
+            # stores nothing, so it must not refresh this peer's recency —
+            # otherwise repeated buffer-full spam would keep the peer's
+            # outer-map slot artificially "hot" against LRU eviction.
             return self._reject(
                 obs,
                 DecisionType.STALE,
@@ -368,6 +378,7 @@ class StateTransitionManager:
             )
         buffer[key] = (obs, old_status)
         buffer.move_to_end(key)
+        self._touch_cache(self._reorder_buffer, obs.peer_id, buffer)
         return StateTransitionResult(
             accepted=False,
             decision_type=DecisionType.BUFFERED,
@@ -478,17 +489,14 @@ class StateTransitionManager:
             decision_type = DecisionType.SYBIL_FLAGGED
 
         # [6] Audit commit (G8) — terminal decision, always recorded.
-        # Naming clarity: for an accepted decision (APPROVED or
-        # SYBIL_FLAGGED — the only two reachable here, since every rejecting
-        # gate above already returned), the audit trail's new_status should
-        # reflect the peer's actual reachability (REACHABLE/UNREACHABLE),
-        # not the internal decision label — SYBIL_FLAGGED in the status
-        # column reads as if the peer itself were rejected, when the
-        # observation was in fact accepted with a heuristic flag attached.
-        if decision_type in (DecisionType.APPROVED, DecisionType.SYBIL_FLAGGED):
-            new_status = obs.observation_type.value
-        else:
-            new_status = decision_type.value
+        # Naming clarity: decision_type is APPROVED or SYBIL_FLAGGED here —
+        # every rejecting gate above already returned — so the audit
+        # trail's new_status reflects the peer's actual reachability
+        # (REACHABLE/UNREACHABLE), not the internal decision label;
+        # SYBIL_FLAGGED in the status column would read as if the peer
+        # itself were rejected, when the observation was in fact accepted
+        # with a heuristic flag attached.
+        new_status = obs.observation_type.value
         audit_entry = self._audit_log.append(
             peer_id=obs.peer_id,
             old_status=old_status,
@@ -509,6 +517,26 @@ class StateTransitionManager:
         # gate, matching "after an observation successfully clears all
         # gates" in the plan.
         self._k_bucket.update(obs.peer_id, obs.timestamp)
+
+        if decision_type.value in _SECURITY_SIGNIFICANT_DECISIONS:
+            logger.warning(
+                "peer_observation %s peer_id=%s epoch=%s sequence=%s observer_id=%s "
+                "sybil_signal=%s",
+                decision_type.value,
+                obs.peer_id,
+                obs.epoch,
+                obs.sequence,
+                obs.observer_id,
+                sybil.signal.value,
+            )
+        else:
+            logger.debug(
+                "peer_observation %s peer_id=%s epoch=%s sequence=%s",
+                decision_type.value,
+                obs.peer_id,
+                obs.epoch,
+                obs.sequence,
+            )
 
         return StateTransitionResult(
             accepted=decision_type in (DecisionType.APPROVED, DecisionType.SYBIL_FLAGGED),
@@ -629,6 +657,26 @@ class StateTransitionManager:
             witnesses=(),
             signer=self._signer,
         )
+        if decision_type.value in _SECURITY_SIGNIFICANT_DECISIONS:
+            logger.warning(
+                "peer_observation rejected reason=%s peer_id=%s epoch=%s sequence=%s "
+                "observer_id=%s: %s",
+                decision_type.value,
+                obs.peer_id,
+                obs.epoch,
+                obs.sequence,
+                obs.observer_id,
+                reason,
+            )
+        else:
+            logger.debug(
+                "peer_observation rejected reason=%s peer_id=%s epoch=%s sequence=%s: %s",
+                decision_type.value,
+                obs.peer_id,
+                obs.epoch,
+                obs.sequence,
+                reason,
+            )
         return StateTransitionResult(
             accepted=False,
             decision_type=decision_type,
