@@ -2,7 +2,7 @@
 
 **Created:** 2026-07-11  
 **Source:** PR #203 blend completion (Codex review)  
-**Status:** Ready for agent assignment
+**Status:** Both queued tasks DONE (2026-07-12, PR #205); one acceptance item deferred to v2.5 (see Task 2)
 
 ---
 
@@ -13,7 +13,7 @@
 **Task ID:** TODO-stm-observation-dedup  
 **Priority:** Medium  
 **Effort:** 2–3 hours  
-**Status:** ⏳ QUEUED (awaiting agent assignment)
+**Status:** ✅ DONE (2026-07-12, PR #205 — see `2026-07-11-PHASE-2-BLOCKERS.md` § TODO #1)
 
 **Description:**
 `_seen_observations` cache in StateTransitionManager.py was declared but never read/written — dead scaffolding from Lineage B. Must implement bounded dedup to prevent replay attacks on duplicate observations.
@@ -60,7 +60,7 @@ self._dedup_ttl = 600  # 10 minutes
 **Task ID:** TODO-stm-concurrency-model  
 **Priority:** Medium  
 **Effort:** 1–2 hours  
-**Status:** ⏳ QUEUED (awaiting agent assignment)
+**Status:** ✅ DONE (2026-07-12, PR #205), one acceptance item DEFERRED — see `2026-07-11-PHASE-2-BLOCKERS.md` § TODO #2
 
 **Description:**
 Current per-peer `asyncio.Lock` pattern doesn't serialize the full StateTransitionManager pipeline. Concurrent `evaluate_observation` calls on the same peer can race on `_last_applied_key` and `_peer_locks`, leading to out-of-order state transitions or missed dedup checks. Sonnet's threading.RLock was rejected as unsafe for async.
@@ -120,11 +120,13 @@ async def evaluate_observation(self, obs, old_status):
 ## References
 
 - PR #203: https://github.com/diazMelgarejo/Perpetua-Tools/pull/203
+- PR #205 (this work): https://github.com/diazMelgarejo/Perpetua-Tools/pull/205
 - Blend verdict: `docs/phase-0-specifications/2026-07-11-PR203-BLEND-VERDICT.md`
 - Phase 2 blockers: `docs/phase-0-specifications/2026-07-11-PHASE-2-BLOCKERS.md`
 - Agent navigator: `docs/phase-0-specifications/README-PR203-BLEND.md`
+- Deferred benchmark item (Task 2) + P2P pattern context: `orama-system/docs/v2/03-safety-v2.5.md`, `orama-system/docs/v2/45-single-operator-lan-threat-model-descope.md` (D23)
 
 ---
 
-**Last Updated:** 2026-07-11  
-**Status:** Ready for Phase 2 agent assignment
+**Last Updated:** 2026-07-12  
+**Status:** Both tasks done (PR #205); benchmark item deferred to orama-system `docs/v2/03-safety-v2.5.md`
