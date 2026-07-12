@@ -1,0 +1,41 @@
+{
+  "id": "be32d3a38cb6",
+  "key": "manual_be32d3",
+  "name": "manual_be32d3",
+  "claim": "git merge-tree --write-tree takes exactly 2 positional branch args and auto-detects the merge-base; passing a 3rd positional arg silently produces a wrong/misleading result",
+  "conditions": [
+    "conflict-simulation",
+    "git",
+    "merge-tree",
+    "multi-pr"
+  ],
+  "evidence_ids": [
+    "2026-07-12T05:59:27.175346+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-12T05:59:27.175346+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-12T05:59:27.175346+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-12T05:59:27.270457+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "During cross-PR conflict simulation for #205/#206/#208, an explicit-base pairwise test was first written as 'git merge-tree --write-tree BASE branchA branchB' (3 positional args), which silently mishandled the 3rd arg and reported a false 'all pairs clean' result. The correct form keeps 2 positional branches and passes the base via the --merge-base=<tree-ish> flag: 'git merge-tree --write-tree --merge-base=BASE branchA branchB'. Re-running with the correct flag revealed the real conflicts.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-12T05:59:27.175346+00:00"
+      ],
+      "lessons_sha": "25a66e06f31d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-12T05:59:27.270450+00:00",
+  "reviewer": "learn.py",
+  "rationale": "During cross-PR conflict simulation for #205/#206/#208, an explicit-base pairwise test was first written as 'git merge-tree --write-tree BASE branchA branchB' (3 positional args), which silently mishandled the 3rd arg and reported a false 'all pairs clean' result. The correct form keeps 2 positional branches and passes the base via the --merge-base=<tree-ish> flag: 'git merge-tree --write-tree --merge-base=BASE branchA branchB'. Re-running with the correct flag revealed the real conflicts."
+}

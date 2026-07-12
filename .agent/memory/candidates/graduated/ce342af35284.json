@@ -1,0 +1,41 @@
+{
+  "id": "ce342af35284",
+  "key": "manual_ce342a",
+  "name": "manual_ce342a",
+  "claim": "A git worktree's core.hooksPath can drift to an absolute path instead of the repo-relative .githooks, breaking any hook-verification script that does a strict string-equality check against '.githooks'",
+  "conditions": [
+    "core.hooksPath",
+    "git",
+    "hooks",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-07-12T05:59:27.519456+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-12T05:59:27.519456+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-12T05:59:27.519456+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-12T05:59:27.585396+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "scripts/git/ensure_hooks_installed.sh does '[[ \"$hooks_path\" != \".githooks\" ]]' and failed commits twice in one session with 'core.hooksPath=/Users/.../Perpetua-Tools/.githooks \u2014 expected .githooks' inside worktrees. Fixed both times with 'git config core.hooksPath .githooks' (a config correction, not a hook bypass) before retrying the commit.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-12T05:59:27.519456+00:00"
+      ],
+      "lessons_sha": "d6d67ac767bb"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-12T05:59:27.585389+00:00",
+  "reviewer": "learn.py",
+  "rationale": "scripts/git/ensure_hooks_installed.sh does '[[ \"$hooks_path\" != \".githooks\" ]]' and failed commits twice in one session with 'core.hooksPath=/Users/.../Perpetua-Tools/.githooks \u2014 expected .githooks' inside worktrees. Fixed both times with 'git config core.hooksPath .githooks' (a config correction, not a hook bypass) before retrying the commit."
+}
