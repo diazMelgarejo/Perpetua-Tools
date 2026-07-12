@@ -1,0 +1,67 @@
+name: PR206 one-shot role placeholder correction
+
+on:
+  push:
+    branches:
+      - 2026-07-11-001-salvage-heartbeat-skill-wrapper
+    paths:
+      - .github/workflows/pr206-final-doc-placeholder-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  correct-lessons-placeholders:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 2026-07-11-001-salvage-heartbeat-skill-wrapper
+          fetch-depth: 0
+
+      - name: Correct role-specific LAN placeholders
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("docs/LESSONS.md")
+          text = path.read_text(encoding="utf-8")
+          heading = "## 2026-06-28 — LAN peer bidirectional talk attempts (Win session) | Cursor"
+          start = text.index(heading)
+          end = text.index("\n---\n", start)
+          section = text[start:end]
+
+          replacements = {
+              "| Win RTX | `<YOUR_LAN_IP>` | LM Studio + stack |":
+                  "| Win RTX | `<WIN_LAN_IP>` | LM Studio + stack |",
+              "| Mac Studio | `<YOUR_LAN_IP>` | **Not** `.110` (stale default) |":
+                  "| Mac Studio | `<MAC_LAN_IP>` | **Not** `<OLD_WIN_LAN_IP>` (stale default) |",
+              "subnet scan finds Mac at `.102`":
+                  "subnet scan finds Mac at `<MAC_LAN_IP>`",
+              "no `.110` fallback":
+                  "no `<OLD_WIN_LAN_IP>` fallback",
+              "removed `<YOUR_LAN_IP>` defaults":
+                  "removed ambiguous generic LAN-IP defaults",
+          }
+          for old, new in replacements.items():
+              if old not in section:
+                  raise SystemExit(f"expected text missing: {old}")
+              section = section.replace(old, new)
+
+          if "<YOUR_LAN_IP>" in section or "`.110`" in section or "`.102`" in section:
+              raise SystemExit("ambiguous or address-shaped placeholders remain in LAN section")
+
+          path.write_text(text[:start] + section + text[end:], encoding="utf-8")
+          PY
+
+      - name: Commit corrected documentation
+        run: |
+          if git diff --quiet -- docs/LESSONS.md; then
+            echo "No documentation change required"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/LESSONS.md
+          git commit -m "docs(lessons): preserve LAN endpoint role semantics"
+          git push origin HEAD:2026-07-11-001-salvage-heartbeat-skill-wrapper
