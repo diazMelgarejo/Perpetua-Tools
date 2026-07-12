@@ -1,5 +1,25 @@
 #!/usr/bin/env python3
-"""Opt-in SQLite FTS5 search over tracked memory documents."""
+"""Memory Search [BETA] — opt-in search over tracked memory documents.
+
+Responsibilities:
+  1. Index only tracked `.md` and `.jsonl` memory documents.
+  2. Prefer SQLite FTS5 when the local Python build supports it.
+  3. Fall back to ripgrep, then grep, without searching implementation files.
+  4. Rebuild when the index is missing, stale, corrupt, or contains deleted paths.
+  5. Surface per-file indexing failures instead of silently hiding blind spots.
+  6. Bound external fallback execution so a hung search process cannot block agents.
+
+Feature contract:
+  - Disabled by default; enable `memory_search_fts` in `.agent/memory/.features.json`.
+  - `--status` remains available while disabled so operators can inspect the mode.
+  - Text reads use explicit UTF-8 with replacement decoding for damaged legacy rows.
+  - Fallback queries use an option boundary and return an empty result on timeout.
+
+Usage:
+  python3 memory_search.py <query>
+  python3 memory_search.py --rebuild
+  python3 memory_search.py --status
+"""
 from __future__ import annotations
 
 import json
