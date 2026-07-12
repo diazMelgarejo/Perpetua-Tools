@@ -16,7 +16,7 @@ def reg():
     r = BackendRegistry()
     r._backends["ollama-local"] = _online("ollama-local", "http://localhost:11434/v1",
                                           BackendKind.OLLAMA, ["qwen3.5:9b-nvfp4"])
-    r._backends["lmstudio-win"] = _online("lmstudio-win", "http://192.168.254.103:1234/v1",
+    r._backends["lmstudio-win"] = _online("lmstudio-win", "http://127.0.1.1:1234/v1",
                                           BackendKind.LMSTUDIO, ["qwen3-coder-30b"])
     return r
 

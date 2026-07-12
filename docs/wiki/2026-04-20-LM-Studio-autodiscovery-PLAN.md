@@ -10,7 +10,7 @@
 
 **Tech Stack:** Python 3.9+ stdlib only (no ruamel.yaml dep — YAML patched with `re`), bash, `gh` CLI for GitHub sync, `fcntl` file locking.
 
-**Live endpoints confirmed:** Mac `192.168.254.107:1234` · Win `192.168.254.101:1234` — both serving 5 identical models via LM Link.
+**Live endpoints confirmed:** Mac `<YOUR_LAN_IP>:1234` · Win `<YOUR_LAN_IP>:1234` — both serving 5 identical models via LM Link.
 
 ---
 
@@ -86,12 +86,12 @@ import discover as D
 
 def test_hash_deterministic():
     ep = {"mac": {"ip": "127.0.0.1", "models": ["m1", "m2"]},
-          "win": {"ip": "192.168.254.101", "models": ["m3"]}}
+          "win": {"ip": "<YOUR_LAN_IP>", "models": ["m3"]}}
     assert D.compute_hash(ep) == D.compute_hash(ep)
 
 def test_hash_changes_on_ip_change():
     ep1 = {"mac": {"ip": "127.0.0.1", "models": ["m1"]}, "win": None}
-    ep2 = {"mac": {"ip": "192.168.254.107", "models": ["m1"]}, "win": None}
+    ep2 = {"mac": {"ip": "<YOUR_LAN_IP>", "models": ["m1"]}, "win": None}
     assert D.compute_hash(ep1) != D.compute_hash(ep2)
 
 def test_hash_model_order_independent():
@@ -147,11 +147,11 @@ DEVICES_YML = """\
 devices:
   - id: "mac-studio"
     os: macos
-    lan_ip: "192.168.254.103"
+    lan_ip: "<YOUR_LAN_IP>"
     ports: [1234]
   - id: "win-rtx3080"
     os: windows
-    lan_ip: "192.168.254.100"
+    lan_ip: "<YOUR_LAN_IP>"
     ports: [1234]
 """
 
@@ -159,22 +159,22 @@ def test_patch_devices_yml(tmp_path):
     cfg = tmp_path / "config"
     cfg.mkdir()
     (cfg / "devices.yml").write_text(DEVICES_YML)
-    D.patch_devices_yml("192.168.254.107", "192.168.254.101", tmp_path)
+    D.patch_devices_yml("<YOUR_LAN_IP>", "<YOUR_LAN_IP>", tmp_path)
     result = (cfg / "devices.yml").read_text()
-    assert '"192.168.254.107"' in result
-    assert '"192.168.254.101"' in result
-    assert "192.168.254.103" not in result
-    assert "192.168.254.100" not in result
+    assert '"<YOUR_LAN_IP>"' in result
+    assert '"<YOUR_LAN_IP>"' in result
+    assert "<YOUR_LAN_IP>" not in result
+    assert "<YOUR_LAN_IP>" not in result
 
 def test_patch_devices_yml_no_write_if_unchanged(tmp_path):
     cfg = tmp_path / "config"
     cfg.mkdir()
-    content = DEVICES_YML.replace("192.168.254.103", "192.168.254.107").replace("192.168.254.100", "192.168.254.101")
+    content = DEVICES_YML.replace("<YOUR_LAN_IP>", "<YOUR_LAN_IP>").replace("<YOUR_LAN_IP>", "<YOUR_LAN_IP>")
     (cfg / "devices.yml").write_text(content)
     import os
     mtime_before = os.stat(cfg / "devices.yml").st_mtime
     time.sleep(0.01)
-    D.patch_devices_yml("192.168.254.107", "192.168.254.101", tmp_path)
+    D.patch_devices_yml("<YOUR_LAN_IP>", "<YOUR_LAN_IP>", tmp_path)
     mtime_after = os.stat(cfg / "devices.yml").st_mtime
     assert mtime_before == mtime_after, "file should not be rewritten when unchanged"
 
@@ -185,20 +185,20 @@ def test_patch_openclaw_json(tmp_path, monkeypatch):
     oc = tmp_path / "openclaw.json"
     oc.write_text(json.dumps({
         "models": {"providers": {
-            "lmstudio-mac": {"baseUrl": "http://192.168.1.147:1234/v1", "models": []},
-            "lmstudio-win": {"baseUrl": "http://192.168.254.108:1234/v1", "models": []},
+            "lmstudio-mac": {"baseUrl": "http://<YOUR_LAN_IP>:1234/v1", "models": []},
+            "lmstudio-win": {"baseUrl": "http://<YOUR_LAN_IP>:1234/v1", "models": []},
         }},
         "meta": {"lastTouchedAt": "2026-01-01T00:00:00Z"}
     }))
     monkeypatch.setattr(D, "OPENCLAW_JSON", oc)
     endpoints = {
-        "mac": {"ip": "192.168.254.107", "models": ["qwen3.5-9b-mlx", "text-embedding-nomic"]},
-        "win": {"ip": "192.168.254.101", "models": ["qwen3.5-27b-distilled"]},
+        "mac": {"ip": "<YOUR_LAN_IP>", "models": ["qwen3.5-9b-mlx", "text-embedding-nomic"]},
+        "win": {"ip": "<YOUR_LAN_IP>", "models": ["qwen3.5-27b-distilled"]},
     }
     D.patch_openclaw_json(endpoints)
     cfg = json.loads(oc.read_text())
-    assert "192.168.254.107" in cfg["models"]["providers"]["lmstudio-mac"]["baseUrl"]
-    assert "192.168.254.101" in cfg["models"]["providers"]["lmstudio-win"]["baseUrl"]
+    assert "<YOUR_LAN_IP>" in cfg["models"]["providers"]["lmstudio-mac"]["baseUrl"]
+    assert "<YOUR_LAN_IP>" in cfg["models"]["providers"]["lmstudio-win"]["baseUrl"]
     # Embedding models excluded from provider list
     mac_ids = [m["id"] for m in cfg["models"]["providers"]["lmstudio-mac"]["models"]]
     assert "text-embedding-nomic" not in mac_ids
@@ -344,7 +344,7 @@ async def scan_subnet_async(subnet: str, port: int, exclude: set[str]) -> list[s
 def _mac_lan_ip() -> str | None:
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("192.168.254.1", 80))
+        s.connect(("<YOUR_LAN_IP>", 80))
         ip = s.getsockname()[0]; s.close()
         return ip if ip.startswith("192.168.254.") else None
     except Exception:
@@ -708,7 +708,7 @@ python3 ~/.openclaw/scripts/discover.py --force
 python3 scripts/discover.py --status
 ```
 
-Expected output includes `Mac: 192.168.254.107` and `Win: 192.168.254.101` (or both as `localhost`/LAN).
+Expected output includes `Mac: <YOUR_LAN_IP>` and `Win: <YOUR_LAN_IP>` (or both as `localhost`/LAN).
 
 - [ ] **Step 2.5: Commit test file**
 
@@ -736,8 +736,8 @@ cat > ~/.openclaw/profiles/lan-full.json << 'EOF'
   "hash": "default",
   "recovery_tier": 4,
   "endpoints": {
-    "mac": {"ip": "192.168.254.107", "port": 1234, "reachable": true},
-    "win": {"ip": "192.168.254.101", "port": 1234, "reachable": true}
+    "mac": {"ip": "<YOUR_LAN_IP>", "port": 1234, "reachable": true},
+    "win": {"ip": "<YOUR_LAN_IP>", "port": 1234, "reachable": true}
   },
   "models": {
     "mac": ["gemma-4-26b-a4b-it", "gemma-4-e4b-it", "qwen3.5-9b-mlx", "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2"],
@@ -765,7 +765,7 @@ cat > ~/.openclaw/profiles/win-only.json << 'EOF'
   "schema": 1, "timestamp": "2026-04-20T00:00:00Z", "hash": "default", "recovery_tier": 4,
   "endpoints": {
     "mac": {"ip": "", "port": 1234, "reachable": false},
-    "win": {"ip": "192.168.254.101", "port": 1234, "reachable": true}
+    "win": {"ip": "<YOUR_LAN_IP>", "port": 1234, "reachable": true}
   },
   "models": {
     "mac": [],
@@ -810,8 +810,8 @@ print('win:', cfg['models']['providers']['lmstudio-win']['baseUrl'])
 
 Expected:
 ```
-mac: http://localhost:1234/v1  (or http://192.168.254.107:1234/v1)
-win: http://192.168.254.101:1234/v1
+mac: http://localhost:1234/v1  (or http://<YOUR_LAN_IP>:1234/v1)
+win: http://<YOUR_LAN_IP>:1234/v1
 ```
 
 - [ ] **Step 4.2: If IPs still stale, force-patch manually**
@@ -823,7 +823,7 @@ from pathlib import Path
 p = Path.home() / ".openclaw/openclaw.json"
 cfg = json.loads(p.read_text())
 cfg["models"]["providers"]["lmstudio-mac"]["baseUrl"] = "http://localhost:1234/v1"
-cfg["models"]["providers"]["lmstudio-win"]["baseUrl"] = "http://192.168.254.101:1234/v1"
+cfg["models"]["providers"]["lmstudio-win"]["baseUrl"] = "http://<YOUR_LAN_IP>:1234/v1"
 p.write_text(json.dumps(cfg, indent=2))
 print("Patched.")
 EOF
@@ -1548,12 +1548,12 @@ original = content
 # Section-aware replacement
 content = re.sub(
     r'(- id: "mac-studio".*?lan_ip:\s*")[^"]+(")',
-    lambda m: m.group(1) + "192.168.254.107" + m.group(2),
+    lambda m: m.group(1) + "<YOUR_LAN_IP>" + m.group(2),
     content, flags=re.DOTALL
 )
 content = re.sub(
     r'(- id: "win-rtx3080".*?lan_ip:\s*")[^"]+(")',
-    lambda m: m.group(1) + "192.168.254.101" + m.group(2),
+    lambda m: m.group(1) + "<YOUR_LAN_IP>" + m.group(2),
     content, flags=re.DOTALL
 )
 
@@ -1592,11 +1592,11 @@ original = content
 content = re.sub(r'(\$\{LM_STUDIO_MAC_ENDPOINT:-)[^}]+(\})',
                  r'\g<1>http://localhost:1234\2', content)
 content = re.sub(r'(\$\{LM_STUDIO_WIN_ENDPOINTS:-)[^}:,\n]+',
-                 r'\g<1>http://192.168.254.101', content)
+                 r'\g<1>http://<YOUR_LAN_IP>', content)
 # Also patch static IPs outside env var blocks
-content = content.replace('"192.168.254.103"', '"192.168.254.107"')
-content = content.replace('"192.168.254.100"', '"192.168.254.101"')
-content = content.replace('"192.168.254.108"', '"192.168.254.101"')
+content = content.replace('"<YOUR_LAN_IP>"', '"<YOUR_LAN_IP>"')
+content = content.replace('"<YOUR_LAN_IP>"', '"<YOUR_LAN_IP>"')
+content = content.replace('"<YOUR_LAN_IP>"', '"<YOUR_LAN_IP>"')
 
 if content != original:
     gh_put("config/models.yml", content, sha, "fix(config): update LM Studio host defaults .107/.101 [skip ci]")
@@ -2002,7 +2002,7 @@ python3 scripts/discover.py --status
 Expected:
 ```
 Mac: ✅ localhost:1234 — 5 models
-Win: ✅ 192.168.254.101:1234 — 5 models
+Win: ✅ <YOUR_LAN_IP>:1234 — 5 models
 ```
 
 - [ ] **Step 15.3: Verify .env.lmstudio was written to local repos**

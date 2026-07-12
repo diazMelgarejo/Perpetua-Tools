@@ -69,7 +69,7 @@ from urllib.parse import urlparse
 # GPU_BOX: SSH target for the Windows RTX 3080.
 # Uses detect_active_tilting_ip() host if GPU_BOX not set, but SSH needs user@host
 # so we keep a separate env var. Default reflects the current 192.168.254.x subnet.
-GPU_BOX: str = os.environ.get("GPU_BOX", "WINUSER@192.168.254.100")
+GPU_BOX: str = os.environ.get("GPU_BOX", "WINUSER@192.0.2.1")
 GPU_REPO_PATH: str = os.environ.get("GPU_REPO_PATH", "autoresearch")
 
 # Primary: uditgoenka/autoresearch Claude Code plugin (env-var configurable).

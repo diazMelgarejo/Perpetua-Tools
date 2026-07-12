@@ -132,7 +132,7 @@ precedence backend on Mac.
 {
   "ts":               "2026-05-07T09:14:33",   // ISO-8601, local time
   "scenario":         "FULL_DISTRIBUTED",       // StartupScenario.value
-  "win_ip":           "192.168.1.108",          // last detected Windows IP (or null)
+  "win_ip":           "<YOUR_LAN_IP>",          // last detected Windows IP (or null)
   "mac_ol_latency_ms": 12,                      // Mac Ollama probe latency (or null)
   "win_lms_latency_ms": 480                     // Windows LM Studio probe latency (or null)
 }
