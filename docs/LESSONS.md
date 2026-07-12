@@ -2066,3 +2066,18 @@ Two tracking documents updated:
 1. Phase 2 integration backlog (formal TODO entries)
 2. Blend verdict doc (correction note added)
 
+## 2026-07-11 — agentic-stack `.agent/` Blend Tool + First Resolution Cycle
+
+Built `scripts/git/agentic-stack-agent-blend.sh` to replay PT's `.agent/` customizations
+across a `vendor/agentic-stack` pin bump (v0.9.0 → v0.18.0), mapping the AlphaClaw
+`feature/MacOS-post-install` reverse-merge precedent onto file-level `git merge-file`
+3-way merges (`.agent/` isn't its own submodule/branch, so the branch-level trick
+doesn't apply directly). 16 files merged/staged clean; 7 real conflicts walked through
+with the user via AskUserQuestion and resolved (2 needed combining both sides' fixes,
+not picking one — a wrong single-side pick would have silently reintroduced an
+already-fixed bug in each case). Brain-integration files stayed correctly blocked per
+orama doc 41 §5.
+
+Full writeup + reusable conflict-resolution playbook:
+[`wiki/11-agentic-stack-agent-blend.md`](wiki/11-agentic-stack-agent-blend.md).
+
