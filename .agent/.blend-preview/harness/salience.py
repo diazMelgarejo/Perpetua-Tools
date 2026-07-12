@@ -16,11 +16,16 @@ def salience_score(entry: dict) -> float:
     if not ts:
         return 0.0
     try:
-        # Negative age can happen during the naive-→-UTC migration window
-        # if a legacy naive-local timestamp now reads as a few hours in the
-        # future. Floor at 0 so recency stays in [0, 10] instead of inflating.
-        age_days = max(0, (datetime.datetime.now(datetime.timezone.utc) - _parse_timestamp(ts)).days)
-    except ValueError:
+        if not isinstance(ts, str):
+            raise ValueError("timestamp must be a string")
+        age_days = max(
+            0,
+            (
+                datetime.datetime.now(datetime.timezone.utc)
+                - _parse_timestamp(ts)
+            ).days,
+        )
+    except (TypeError, ValueError):
         age_days = 999
     pain = entry.get("pain_score", 5)
     importance = entry.get("importance", 5)
