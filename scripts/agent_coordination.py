@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stable coordination facade over the retained legacy CLI implementation."""
+"""Stable coordination facade over the retained core CLI implementation."""
 from __future__ import annotations
 
 import asyncio
@@ -14,7 +14,7 @@ _ROOT = Path(__file__).resolve().parent.parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from scripts import agent_coordination_legacy as _impl
+from scripts import agent_coordination_core as _impl
 from orchestrator.heartbeat_monitor import (
     cleanup_stale_claims,
     find_agent_heartbeats,
@@ -78,108 +78,105 @@ CREATE TABLE IF NOT EXISTS task_claims (
 )
 """
 _LOCK_RETRIES = 3
-_LOCK_RETRY_SECONDS = 0.05
+_LOCK_RETRY_DELAY = 0.05
 
 
 async def _ensure_claims_table(bus: GossipBus) -> None:
-    async with bus.connect() as db:
+    async with bus.transaction() as db:
         await db.execute(_CREATE_CLAIMS_TABLE)
         await db.commit()
 
 
-async def _try_atomic_claim(
-    bus: GossipBus,
-    task_id: str,
-    agent_id: str,
-    claim_payload: Optional[dict] = None,
-) -> bool:
-    """Atomically persist exclusive ownership and its append-only event.
-
-    `BEGIN IMMEDIATE` serializes writers before either mutation. Integrity
-    conflicts return False. Lock contention is retried briefly and then fails
-    cleanly without leaving a claim row or an event behind.
-    """
-    payload = claim_payload or {
-        "kind": "task_claim",
-        "task_id": task_id,
-        "assigned_agent": agent_id,
-        "status": QueuedTaskState.CLAIMED.value,
-        "worktree": current_worktree_label(),
-    }
+async def _try_atomic_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool:
+    """Attempt the exclusive task-claim insert with bounded lock retries."""
+    await _ensure_claims_table(bus)
     for attempt in range(_LOCK_RETRIES):
-        async with bus.connect() as db:
+        async with bus.transaction() as db:
             try:
                 await db.execute("BEGIN IMMEDIATE")
-                await db.execute(_CREATE_CLAIMS_TABLE)
                 await db.execute(
-                    "INSERT INTO task_claims (task_id, agent_id, claimed_at) "
-                    "VALUES (?, ?, ?)",
+                    "INSERT INTO task_claims (task_id, agent_id, claimed_at) VALUES (?, ?, ?)",
                     (task_id, agent_id, time.time()),
                 )
-                row_id, safe_payload = await bus.insert_event(
-                    db, "heartbeat", payload
+                await db.commit()
+                return True
+            except aiosqlite.IntegrityError:
+                await db.rollback()
+                return False
+            except aiosqlite.OperationalError as exc:
+                await db.rollback()
+                if "locked" not in str(exc).lower() or attempt + 1 == _LOCK_RETRIES:
+                    return False
+        await asyncio.sleep(_LOCK_RETRY_DELAY * (attempt + 1))
+    return False
+
+
+async def _try_atomic_claim_with_event(
+    bus: GossipBus, task_id: str, agent_id: str, event_type: str, payload: dict
+) -> bool:
+    """Commit the exclusive claim row and matching event in one transaction."""
+    await _ensure_claims_table(bus)
+    for attempt in range(_LOCK_RETRIES):
+        async with bus.transaction() as db:
+            try:
+                await db.execute("BEGIN IMMEDIATE")
+                await db.execute(
+                    "INSERT INTO task_claims (task_id, agent_id, claimed_at) VALUES (?, ?, ?)",
+                    (task_id, agent_id, time.time()),
                 )
+                row_id, safe_payload = await bus.emit_within(db, event_type, payload)
                 await db.commit()
             except aiosqlite.IntegrityError:
                 await db.rollback()
                 return False
             except aiosqlite.OperationalError as exc:
                 await db.rollback()
-                locked = "locked" in str(exc).lower() or "busy" in str(exc).lower()
-                if locked and attempt + 1 < _LOCK_RETRIES:
-                    await asyncio.sleep(_LOCK_RETRY_SECONDS * (attempt + 1))
-                    continue
-                return False
-            except Exception:
-                await db.rollback()
-                raise
-        bus.schedule_embedding(row_id, safe_payload)
-        return True
+                if "locked" not in str(exc).lower() or attempt + 1 == _LOCK_RETRIES:
+                    return False
+            else:
+                bus.schedule_embed(row_id, safe_payload)
+                return True
+        await asyncio.sleep(_LOCK_RETRY_DELAY * (attempt + 1))
     return False
 
 
-async def _release_claim(bus: GossipBus, task_id: str) -> None:
-    """Free a task_id for reclaiming (on completion or requeue-after-failure)."""
-    async with bus.connect() as db:
-        await db.execute(_CREATE_CLAIMS_TABLE)
-        await db.execute("DELETE FROM task_claims WHERE task_id = ?", (task_id,))
-        await db.commit()
+async def _release_claim(bus: GossipBus, task_id: str) -> bool:
+    await _ensure_claims_table(bus)
+    for attempt in range(_LOCK_RETRIES):
+        async with bus.transaction() as db:
+            try:
+                await db.execute("BEGIN IMMEDIATE")
+                await db.execute("DELETE FROM task_claims WHERE task_id = ?", (task_id,))
+                await db.commit()
+                return True
+            except aiosqlite.OperationalError as exc:
+                await db.rollback()
+                if "locked" not in str(exc).lower() or attempt + 1 == _LOCK_RETRIES:
+                    return False
+        await asyncio.sleep(_LOCK_RETRY_DELAY * (attempt + 1))
+    return False
 
 
 async def _release_claim_with_event(
     bus: GossipBus, task_id: str, event_type: str, payload: dict
 ) -> bool:
-    """Atomically free ownership and record why, mirroring _try_atomic_claim's
-    guarantee for the release side.
-
-    Without this, a crash between a separate release DELETE and its event
-    emit could free a claim row with no record of why (forensics gap), or
-    record the terminal event while the row stays held -- blocking every
-    future _try_atomic_claim on that task_id with a stale "already claimed"
-    row forever. Same `BEGIN IMMEDIATE` + bounded-retry treatment as the
-    claim path; returns False (not raised) if lock contention exhausts all
-    retries, so callers can decide how to handle a release that didn't land.
-    """
+    """Commit claim release and terminal event atomically."""
+    await _ensure_claims_table(bus)
     for attempt in range(_LOCK_RETRIES):
-        async with bus.connect() as db:
+        async with bus.transaction() as db:
             try:
                 await db.execute("BEGIN IMMEDIATE")
-                await db.execute(_CREATE_CLAIMS_TABLE)
                 await db.execute("DELETE FROM task_claims WHERE task_id = ?", (task_id,))
-                row_id, safe_payload = await bus.insert_event(db, event_type, payload)
+                row_id, safe_payload = await bus.emit_within(db, event_type, payload)
                 await db.commit()
             except aiosqlite.OperationalError as exc:
                 await db.rollback()
-                locked = "locked" in str(exc).lower() or "busy" in str(exc).lower()
-                if locked and attempt + 1 < _LOCK_RETRIES:
-                    await asyncio.sleep(_LOCK_RETRY_SECONDS * (attempt + 1))
-                    continue
-                return False
-            except Exception:
-                await db.rollback()
-                raise
-        bus.schedule_embedding(row_id, safe_payload)
-        return True
+                if "locked" not in str(exc).lower() or attempt + 1 == _LOCK_RETRIES:
+                    return False
+            else:
+                bus.schedule_embed(row_id, safe_payload)
+                return True
+        await asyncio.sleep(_LOCK_RETRY_DELAY * (attempt + 1))
     return False
 
 
@@ -189,13 +186,9 @@ async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> None:
     if not task_state:
         print(f"ERROR: task {task_id} not found")
         return
-
     status = task_state.get("status")
     if status == QueuedTaskState.CLAIMED.value:
-        print(
-            f"ERROR: {task_id} already claimed by "
-            f"{task_state.get('assigned_agent')}."
-        )
+        print(f"ERROR: {task_id} already claimed by {task_state.get('assigned_agent')}.")
         return
     if status == QueuedTaskState.COMPLETED.value:
         print(f"ERROR: {task_id} already completed. Cannot reclaim.")
@@ -203,35 +196,29 @@ async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> None:
     if status == "abandoned":
         print(f"ERROR: {task_id} was abandoned. Cannot reclaim.")
         return
-
-    depends_on = task_state.get("depends_on", [])
     unmet = [
         dependency
-        for dependency in depends_on
-        if snapshots.get(dependency, {}).get("status")
-        != QueuedTaskState.COMPLETED.value
+        for dependency in task_state.get("depends_on", [])
+        if snapshots.get(dependency, {}).get("status") != QueuedTaskState.COMPLETED.value
     ]
     if unmet:
         print(f"ERROR: {task_id} unmet dependencies: {', '.join(unmet)}")
         return
-
-    # Atomic gate: the snapshot checks above can both pass for two racing
-    # claimants (read-then-write, no lock across the gap). This INSERT is
-    # the actual exclusion point -- only one caller gets True. The claim row
-    # and its heartbeat event commit together (see _try_atomic_claim) so a
-    # crash between them can never leave one without the other.
-    payload = {
-        "kind": "task_claim",
-        "task_id": task_id,
-        "assigned_agent": agent_id,
-        "status": QueuedTaskState.CLAIMED.value,
-        "worktree": current_worktree_label(),
-    }
-    if not await _try_atomic_claim(bus, task_id, agent_id, payload):
-        print(
-            f"ERROR: {task_id} could not be claimed; another agent won "
-            "or the coordination database remained busy. Retry safely."
-        )
+    claimed = await _try_atomic_claim_with_event(
+        bus,
+        task_id,
+        agent_id,
+        "heartbeat",
+        {
+            "kind": "task_claim",
+            "task_id": task_id,
+            "assigned_agent": agent_id,
+            "status": QueuedTaskState.CLAIMED.value,
+            "worktree": current_worktree_label(),
+        },
+    )
+    if not claimed:
+        print(f"ERROR: {task_id} was claimed by another agent or the coordination database remained busy.")
         return
     print(f"claimed: {task_id} by {agent_id}")
 
@@ -241,12 +228,6 @@ async def _queue_complete(bus: GossipBus, task_id: str, notes: str) -> None:
     if task_id not in snapshots:
         print(f"ERROR: task {task_id} not found")
         return
-    # Free the atomic-claim row and record completion in one transaction --
-    # a completed task is rejected by the status check in _queue_claim
-    # regardless, but a crash between a separate release and emit could
-    # otherwise free the row with no event explaining why, or record the
-    # event while the row stays held (blocking every future claim on this
-    # task_id with a stale "already claimed" row forever).
     released = await _release_claim_with_event(
         bus,
         task_id,
@@ -259,7 +240,7 @@ async def _queue_complete(bus: GossipBus, task_id: str, notes: str) -> None:
         },
     )
     if not released:
-        print(f"ERROR: {task_id} could not be completed; coordination database remained busy. Retry safely.")
+        print(f"ERROR: {task_id} could not be completed; coordination database remained busy.")
         return
     print(f"completed: {task_id}")
 
@@ -270,14 +251,9 @@ async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> None:
     if not task_state:
         print(f"ERROR: task {task_id} not found")
         return
-
     retry_count = int(task_state.get("retry_count", 0)) + 1
     max_retries = int(task_state.get("max_retries", 3))
     if retry_count <= max_retries:
-        # Must release here, not just on complete -- the task goes back to
-        # QUEUED and _queue_claim's atomic gate would otherwise reject every
-        # future claim attempt with a stale "already claimed" row forever.
-        # Release + event committed together, same reasoning as _queue_complete.
         released = await _release_claim_with_event(
             bus,
             task_id,
@@ -297,7 +273,6 @@ async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> None:
             return
         print(f"failed: {task_id}, retry {retry_count}/{max_retries}")
         return
-
     released = await _release_claim_with_event(
         bus,
         task_id,
@@ -342,10 +317,10 @@ async def _queue_list(
             grouped["completed"][task_id] = state
         elif status in (QueuedTaskState.FAILED.value, "abandoned"):
             grouped["failed"][task_id] = state
-
     if not any(grouped.values()):
         print("no tasks match the given filters")
         return
+
     def _priority_rank(rows: dict, task_id: str) -> int:
         try:
             return TaskPriority.from_string(rows[task_id].get("priority", "NORMAL")).value
@@ -356,11 +331,7 @@ async def _queue_list(
         rows = grouped[label]
         if rows:
             print(f"\n{label.upper()} ({len(rows)} tasks):")
-            # Highest urgency first (TaskPriority.CRITICAL=1 .. LOW=4), task_id
-            # as a stable tiebreak -- the priority filter above already reads
-            # this same field, so surfacing it here is the display half of
-            # the same feature, not a separate concern.
-            for task_id in sorted(rows, key=lambda t: (_priority_rank(rows, t), t)):
+            for task_id in sorted(rows, key=lambda item: (_priority_rank(rows, item), item)):
                 state = rows[task_id]
                 print(
                     f"  {task_id} status={state.get('status', '?')} "
@@ -385,28 +356,16 @@ async def _queue_status(bus: GossipBus, agent_filter: Optional[str]) -> None:
 
 
 def _phase_sort_key(name: str) -> tuple[int, tuple[int, ...], str]:
-    """Sort Phase-N[.M[.…]] names numerically component-by-component, and
-    all other phase names lexically.
-
-    A float encoding of the minor version (e.g. "2.10" -> 2 + 0.10 = 2.1)
-    breaks ordering for any two-digit-or-longer minor component: Phase-2.10
-    would sort before Phase-2.9 because 0.10 < 0.9 as floats, even though
-    10 > 9 numerically. Parsing every dot-separated component into its own
-    integer and comparing as a tuple avoids that collision entirely.
-    """
     parts = name.split("-")
     if len(parts) >= 2 and parts[0] == "Phase":
         try:
-            components = tuple(int(n) for n in parts[1].split("."))
-            return (0, components, name)
+            return (0, tuple(int(number) for number in parts[1].split(".")), name)
         except (ValueError, IndexError):
             pass
     return (1, (), name)
 
 
 async def _phase_list(bus: GossipBus) -> None:
-    """List all phases with status, test progress, and any assignment/
-    dependency/blocker metadata attached to the phase state."""
     phases = await _all_phase_states(bus)
     if not phases:
         print("no phases tracked yet")
@@ -414,11 +373,7 @@ async def _phase_list(bus: GossipBus) -> None:
     for phase_name in sorted(phases, key=_phase_sort_key):
         phase = phases[phase_name]
         status_label = getattr(phase.status, "value", str(phase.status))
-        test_str = (
-            f"{phase.tests_passing}/{phase.total_tests}"
-            if phase.total_tests
-            else "0/0"
-        )
+        test_str = f"{phase.tests_passing}/{phase.total_tests}" if phase.total_tests else "0/0"
         print(f"{phase_name:30s} {status_label:12s} tests={test_str}")
         assigned = getattr(phase, "assigned_to", None) or []
         depends_on = getattr(phase, "depends_on", None) or []
@@ -482,7 +437,7 @@ async def _heartbeat_dashboard(bus: GossipBus) -> None:
     for data in agents.values():
         status = data.get("status", "?")
         counts[status] = counts.get(status, 0) + 1
-    print("summary: " + ", ".join(f"{k}={v}" for k, v in sorted(counts.items())))
+    print("summary: " + ", ".join(f"{key}={value}" for key, value in sorted(counts.items())))
     print(f"open_claims={len(claims)}")
     await _heartbeat_list(bus)
 
