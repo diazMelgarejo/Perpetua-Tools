@@ -8,7 +8,7 @@
 
 1. **Stash pop after rebase** — another agent pushed "PT-first orchestrator migration" while our stash was waiting. `git stash pop` produced add/add conflicts on every file we touched. `alphaclaw_bootstrap.py` got both versions appended; required Python line-by-line surgery.
 
-2. **Hardcoded LAN IP broke CI** — `/health` defaults changed to `192.168.254.103` (real LAN IP) in `fastapi_app.py` → broke `test_health_uses_plain_string_defaults` on all CI machines.
+2. **Hardcoded LAN IP broke CI** — `/health` defaults changed to `<YOUR_LAN_IP>` (real LAN IP) in `fastapi_app.py` → broke `test_health_uses_plain_string_defaults` on all CI machines.
 
 3. **Test module state contamination** — `importlib.reload(bridge)` + monkeypatch without restore leaked `AUTORESEARCH_DEFAULT_BRANCH = "dev"` into downstream tests.
 

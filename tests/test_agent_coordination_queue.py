@@ -524,12 +524,79 @@ async def test_priority_ordering_in_list(make_bus, capsys):
 
 
 # ────────────────────────────────────────────────────────────────────────────
-# Atomic release + terminal-event transaction (CodeRabbit review 4679555600,
-# scripts/agent_coordination.py:140 — the claim side was already atomic via
-# _try_atomic_claim; this closes the same gap for release: _release_claim
-# deleted the exclusive-claim row and the caller emitted the terminal event
-# (complete/failed/abandoned) as two separate commits).
+# Atomic claim/release + terminal-event transactions (CodeRabbit review
+# 4679555600, scripts/agent_coordination.py:140 — "Commit the claim row and
+# task event atomically"). _try_atomic_claim() and _release_claim_with_event()
+# commit their task_claims row mutation (INSERT / DELETE) and heartbeat event
+# in ONE SQLite transaction via GossipBus.connect() / insert_event(), closing
+# the gap where separate commits could leave a claim row with no
+# corresponding event -- or a terminal event recorded while the claim row
+# stays held, blocking every future claim on that task_id -- if the process
+# died between the two commits.
 # ────────────────────────────────────────────────────────────────────────────
+
+
+async def test_atomic_claim_persists_one_row_and_one_event(make_bus):
+    bus = await make_bus()
+
+    claimed = await _try_atomic_claim(
+        bus, "task-x", "agent-a", {"kind": "task_claim", "task_id": "task-x"}
+    )
+
+    assert claimed is True
+    async with bus.connect() as db:
+        cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", ("task-x",))
+        (claim_count,) = await cursor.fetchone()
+    assert claim_count == 1
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    matching = [e for e in events if e["payload"].get("task_id") == "task-x"]
+    assert len(matching) == 1
+
+
+async def test_atomic_claim_duplicate_claim_emits_no_second_event(make_bus):
+    bus = await make_bus()
+    await _try_atomic_claim(
+        bus, "task-y", "agent-a", {"kind": "task_claim", "task_id": "task-y"}
+    )
+
+    claimed_again = await _try_atomic_claim(
+        bus, "task-y", "agent-b", {"kind": "task_claim", "task_id": "task-y"}
+    )
+
+    assert claimed_again is False
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    matching = [e for e in events if e["payload"].get("task_id") == "task-y"]
+    assert len(matching) == 1  # still just the first claimant's event
+
+
+async def test_atomic_claim_injected_insert_failure_rolls_back_claim_row(make_bus, monkeypatch):
+    """If the event INSERT inside the shared transaction raises, the earlier
+    claim-row INSERT in the same (uncommitted) transaction must not survive
+    -- proving the two mutations really share one atomic unit, not just two
+    sequential statements against the same connection."""
+    bus = await make_bus()
+    # _try_atomic_claim's CREATE TABLE IF NOT EXISTS runs inside the same
+    # BEGIN IMMEDIATE transaction as the claim -- on a table-less DB, a
+    # rollback undoes the table creation too (SQLite DDL is transactional),
+    # which would make the post-failure SELECT below fail with "no such
+    # table" instead of exercising the rollback property under test.
+    # Ensure the table exists first via an unrelated successful claim.
+    await _try_atomic_claim(bus, "task-warm-up", "agent-a")
+
+    async def _boom(self, db, event_type, payload, **kwargs):
+        raise RuntimeError("simulated event-insert failure")
+
+    monkeypatch.setattr(GossipBus, "insert_event", _boom)
+
+    with pytest.raises(RuntimeError, match="simulated event-insert failure"):
+        await _try_atomic_claim(
+            bus, "task-z", "agent-a", {"kind": "task_claim", "task_id": "task-z"}
+        )
+
+    async with bus.connect() as db:
+        cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", ("task-z",))
+        (claim_count,) = await cursor.fetchone()
+    assert claim_count == 0  # rolled back along with the failed event insert
 
 
 async def test_release_claim_with_event_deletes_row_and_persists_event(make_bus):

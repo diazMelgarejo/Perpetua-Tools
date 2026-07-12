@@ -160,7 +160,7 @@ def test_persist_path_reload_detects_tampered_file(tmp_path):
 
     lines = log_path.read_text(encoding="utf-8").splitlines()
     tampered = lines[0].replace('"SUSPECT"', '"ACTIVE"')  # forge the first entry
-    log_path.write_text("\n".join([tampered] + lines[1:]) + "\n", encoding="utf-8")
+    log_path.write_text("\n".join([tampered, *lines[1:]]) + "\n", encoding="utf-8")
 
     with pytest.raises(ChainIntegrityError):
         AuditLog(persist_path=log_path)

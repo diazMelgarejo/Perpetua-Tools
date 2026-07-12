@@ -7,6 +7,7 @@ append-only audit chain. Out-of-order observations are buffered per peer.
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from dataclasses import replace as dataclass_replace
@@ -21,9 +22,15 @@ from orchestrator.provenance import provenance_bucket
 from orchestrator.reputation import ReputationLedger
 from orchestrator.witness_quorum import validate_witness_quorum
 
+logger = logging.getLogger(__name__)
 
-class InvalidObservationError(ValueError):
-    """Observation failed a structural gate."""
+# Terminal decisions that warrant operator visibility beyond the audit log —
+# these indicate a peer or observer behaving outside normal expectations
+# (contradictory reports, topology-poisoning signals). BUFFERED, STALE, and
+# DUPLICATE are routine traffic-shaping outcomes, not security signals.
+_SECURITY_SIGNIFICANT_DECISIONS = frozenset(
+    {"equivocation", "sybil_flagged"}
+)
 
 
 class DecisionType(str, Enum):
@@ -131,6 +138,18 @@ class StateTransitionManager:
         if len(cache) > self._max_cache_size:
             cache.popitem(last=False)
 
+    @staticmethod
+    def _dedup_key(obs: PeerObservation) -> str:
+        """Stable, compact identifier for an observation in the replay cache.
+
+        Replaying the exact same observation from the same observer must be
+        detected as a duplicate, but distinct observers must not collide when
+        reporting the same peer/epoch/sequence (that is normal witness quorum,
+        not a replay). The monotonic gate already rejects out-of-order
+        sequences, so a stale replay with an older sequence is caught there.
+        """
+        return f"{obs.peer_id}:{obs.epoch}:{obs.sequence}:{obs.observer_id}"
+
     async def evaluate_observation(
         self,
         obs: PeerObservation,
@@ -151,7 +170,10 @@ class StateTransitionManager:
         obs: PeerObservation,
         old_status: str,
     ) -> StateTransitionResult:
-        dedup_key = obs.to_json()
+        # [1] Dedup / monotonic gate — cheapest possible check, before any
+        # module call. Duplicate/stale observations should never even reach
+        # the equivocation log (they're not new information).
+        dedup_key = self._dedup_key(obs)
         if dedup_key in self._seen_observations:
             return self._reject(
                 obs, DecisionType.DUPLICATE, "Duplicate observation", old_status
@@ -184,19 +206,29 @@ class StateTransitionManager:
             result = dataclass_replace(result, flushed=tuple(flushed))
         return result
 
-    def _buffer_observation(
-        self, obs: PeerObservation, old_status: str
-    ) -> StateTransitionResult:
-        """Buffer one future sequence without replacing an existing payload.
+    def _buffer_observation(self, obs: PeerObservation, old_status: str) -> StateTransitionResult:
+        """Hold an out-of-order-ahead observation (P9) pending the missing
+        sequence. Not a terminal decision — no audit entry, not marked seen —
+        so the same observation re-submitted later still resolves correctly
+        once the gap fills or the buffer evicts it.
 
-        Retries carrying identical serialized observations are idempotent. A
-        different payload for the same epoch/sequence is rejected and audited;
-        the original buffered observation remains authoritative.
+        Retries carrying identical serialized observations for an
+        already-buffered (epoch, sequence) are idempotent. A different
+        payload for the same key is rejected and audited; the original
+        buffered observation remains authoritative — without this check,
+        `buffer[key] = (obs, old_status)` below would silently overwrite a
+        legitimately buffered entry with a conflicting one.
         """
+        if obs.is_stale:
+            return self._reject(
+                obs,
+                DecisionType.STALE,
+                f"Observation TTL expired while waiting for missing sequence (seq={obs.sequence})",
+                old_status,
+            )
         buffer = self._reorder_buffer.get(obs.peer_id)
         if buffer is None:
             buffer = OrderedDict()
-        self._touch_cache(self._reorder_buffer, obs.peer_id, buffer)
         key = (obs.epoch, obs.sequence)
         existing = buffer.get(key)
         if existing is not None:
@@ -222,6 +254,19 @@ class StateTransitionManager:
             )
 
         if len(buffer) >= self._reorder_buffer_max:
+            # Buffer capacity guard (P5/T5 in PATTERN-SYNTHESIS.md's DoS
+            # framing): an attacker flooding many far-future sequences for
+            # one peer_id must not grow memory unboundedly. Reject as STALE
+            # — from the caller's perspective this observation cannot be
+            # applied in order right now, same practical outcome as a
+            # too-far-in-the-past rejection, even though the cause differs.
+            # Not gated on "key not in buffer" — the existing-key check
+            # above already returned for any key already present, so every
+            # observation reaching here is genuinely new to this buffer.
+            # Deliberately does NOT touch the outer LRU below: a rejection
+            # stores nothing, so it must not refresh this peer's recency —
+            # otherwise repeated buffer-full spam would keep the peer's
+            # outer-map slot artificially "hot" against LRU eviction.
             return self._reject(
                 obs,
                 DecisionType.STALE,
@@ -231,6 +276,7 @@ class StateTransitionManager:
             )
         buffer[key] = (obs, old_status)
         buffer.move_to_end(key)
+        self._touch_cache(self._reorder_buffer, obs.peer_id, buffer)
         return StateTransitionResult(
             accepted=False,
             decision_type=DecisionType.BUFFERED,
@@ -264,7 +310,11 @@ class StateTransitionManager:
             if entry is None:
                 break
             buffered_obs, buffered_old_status = entry
-            buffered_dedup_key = buffered_obs.to_json()
+            if buffered_obs.is_stale:
+                # Skip expired buffered observations instead of committing
+                # them; they are no longer valid even though the gap filled.
+                continue
+            buffered_dedup_key = self._dedup_key(buffered_obs)
             if buffered_dedup_key in self._seen_observations:
                 self._touch_cache(
                     self._last_applied_key,
@@ -348,10 +398,19 @@ class StateTransitionManager:
         if sybil.signal in (SybilSignal.STRONG, SybilSignal.WEAK):
             decision_type = DecisionType.SYBIL_FLAGGED
 
+        # [6] Audit commit (G8) — terminal decision, always recorded.
+        # Naming clarity: decision_type is APPROVED or SYBIL_FLAGGED here —
+        # every rejecting gate above already returned — so the audit
+        # trail's new_status reflects the peer's actual reachability
+        # (REACHABLE/UNREACHABLE), not the internal decision label;
+        # SYBIL_FLAGGED in the status column would read as if the peer
+        # itself were rejected, when the observation was in fact accepted
+        # with a heuristic flag attached.
+        new_status = obs.observation_type.value
         audit_entry = self._audit_log.append(
             peer_id=obs.peer_id,
             old_status=old_status,
-            new_status=obs.observation_type.value,
+            new_status=new_status,
             witnesses=tuple(weighted.weighted_by_observer.keys()),
             signer=self._signer,
         )
@@ -360,6 +419,26 @@ class StateTransitionManager:
             self._last_applied_key, obs.peer_id, (obs.epoch, obs.sequence)
         )
         self._k_bucket.update(obs.peer_id, obs.timestamp)
+
+        if decision_type.value in _SECURITY_SIGNIFICANT_DECISIONS:
+            logger.warning(
+                "peer_observation %s peer_id=%s epoch=%s sequence=%s observer_id=%s "
+                "sybil_signal=%s",
+                decision_type.value,
+                obs.peer_id,
+                obs.epoch,
+                obs.sequence,
+                obs.observer_id,
+                sybil.signal.value,
+            )
+        else:
+            logger.debug(
+                "peer_observation %s peer_id=%s epoch=%s sequence=%s",
+                decision_type.value,
+                obs.peer_id,
+                obs.epoch,
+                obs.sequence,
+            )
 
         return StateTransitionResult(
             accepted=True,
@@ -426,16 +505,29 @@ class StateTransitionManager:
         self, obs: PeerObservation
     ) -> SybilCorrelation:
         correlated_pairs: List[Tuple[str, str]] = []
+        witness_ids = [w.peer_id for w in obs.witness_set]
+
+        # Signal 1: the observed peer is suspiciously close to one of its own
+        # witnesses in XOR-distance ID-space (a witness deliberately
+        # generated near the peer it's vouching for).
         for witness in obs.witness_set:
             if self._k_bucket.is_correlated(
                 obs.peer_id, witness.peer_id, self._sybil_proximity_bits
             ):
                 correlated_pairs.append((obs.peer_id, witness.peer_id))
 
+        # Signal 2: witnesses are suspiciously close to each other — a Sybil
+        # ring deliberately placing its identities near one another.
+        for i, id_a in enumerate(witness_ids):
+            for id_b in witness_ids[i + 1 :]:
+                if self._k_bucket.is_correlated(id_a, id_b, self._sybil_proximity_bits):
+                    correlated_pairs.append((id_a, id_b))
+
+        # Signal 3: many witnesses already share the observed peer's k-bucket.
         bucket_index = self._k_bucket.bucket_for(obs.peer_id)
         peers_in_bucket = self._k_bucket.peers_in_bucket(bucket_index)
-        witness_ids = {w.peer_id for w in obs.witness_set}
-        bucket_overlap = [peer for peer in peers_in_bucket if peer in witness_ids]
+        witness_peer_ids = set(witness_ids)
+        bucket_overlap = [p for p in peers_in_bucket if p in witness_peer_ids]
 
         if len(correlated_pairs) >= 2 or len(bucket_overlap) >= 2:
             signal = SybilSignal.STRONG
@@ -473,6 +565,26 @@ class StateTransitionManager:
             witnesses=(),
             signer=self._signer,
         )
+        if decision_type.value in _SECURITY_SIGNIFICANT_DECISIONS:
+            logger.warning(
+                "peer_observation rejected reason=%s peer_id=%s epoch=%s sequence=%s "
+                "observer_id=%s: %s",
+                decision_type.value,
+                obs.peer_id,
+                obs.epoch,
+                obs.sequence,
+                obs.observer_id,
+                reason,
+            )
+        else:
+            logger.debug(
+                "peer_observation rejected reason=%s peer_id=%s epoch=%s sequence=%s: %s",
+                decision_type.value,
+                obs.peer_id,
+                obs.epoch,
+                obs.sequence,
+                reason,
+            )
         return StateTransitionResult(
             accepted=False,
             decision_type=decision_type,

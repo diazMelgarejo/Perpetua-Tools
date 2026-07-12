@@ -139,6 +139,7 @@ async def _try_atomic_claim(
 
 
 async def _release_claim(bus: GossipBus, task_id: str) -> None:
+    """Free a task_id for reclaiming (on completion or requeue-after-failure)."""
     async with bus.connect() as db:
         await db.execute(_CREATE_CLAIMS_TABLE)
         await db.execute("DELETE FROM task_claims WHERE task_id = ?", (task_id,))
@@ -214,6 +215,11 @@ async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> None:
         print(f"ERROR: {task_id} unmet dependencies: {', '.join(unmet)}")
         return
 
+    # Atomic gate: the snapshot checks above can both pass for two racing
+    # claimants (read-then-write, no lock across the gap). This INSERT is
+    # the actual exclusion point -- only one caller gets True. The claim row
+    # and its heartbeat event commit together (see _try_atomic_claim) so a
+    # crash between them can never leave one without the other.
     payload = {
         "kind": "task_claim",
         "task_id": task_id,
@@ -235,6 +241,12 @@ async def _queue_complete(bus: GossipBus, task_id: str, notes: str) -> None:
     if task_id not in snapshots:
         print(f"ERROR: task {task_id} not found")
         return
+    # Free the atomic-claim row and record completion in one transaction --
+    # a completed task is rejected by the status check in _queue_claim
+    # regardless, but a crash between a separate release and emit could
+    # otherwise free the row with no event explaining why, or record the
+    # event while the row stays held (blocking every future claim on this
+    # task_id with a stale "already claimed" row forever).
     released = await _release_claim_with_event(
         bus,
         task_id,
@@ -262,6 +274,10 @@ async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> None:
     retry_count = int(task_state.get("retry_count", 0)) + 1
     max_retries = int(task_state.get("max_retries", 3))
     if retry_count <= max_retries:
+        # Must release here, not just on complete -- the task goes back to
+        # QUEUED and _queue_claim's atomic gate would otherwise reject every
+        # future claim attempt with a stale "already claimed" row forever.
+        # Release + event committed together, same reasoning as _queue_complete.
         released = await _release_claim_with_event(
             bus,
             task_id,
@@ -330,6 +346,12 @@ async def _queue_list(
     if not any(grouped.values()):
         print("no tasks match the given filters")
         return
+    def _priority_rank(rows: dict, task_id: str) -> int:
+        try:
+            return TaskPriority.from_string(rows[task_id].get("priority", "NORMAL")).value
+        except ValueError:
+            return TaskPriority.NORMAL.value
+
     for label in ("queued", "claimed", "completed", "failed"):
         rows = grouped[label]
         if rows:
@@ -338,13 +360,7 @@ async def _queue_list(
             # as a stable tiebreak -- the priority filter above already reads
             # this same field, so surfacing it here is the display half of
             # the same feature, not a separate concern.
-            def _priority_rank(task_id: str) -> int:
-                try:
-                    return TaskPriority.from_string(rows[task_id].get("priority", "NORMAL")).value
-                except ValueError:
-                    return TaskPriority.NORMAL.value
-
-            for task_id in sorted(rows, key=lambda t: (_priority_rank(t), t)):
+            for task_id in sorted(rows, key=lambda t: (_priority_rank(rows, t), t)):
                 state = rows[task_id]
                 print(
                     f"  {task_id} status={state.get('status', '?')} "
@@ -368,31 +384,51 @@ async def _queue_status(bus: GossipBus, agent_filter: Optional[str]) -> None:
         print(f"{state.get('assigned_agent', '?')}: {task_id}")
 
 
-def _phase_sort_key(name: str) -> tuple[int, float, str]:
+def _phase_sort_key(name: str) -> tuple[int, tuple[int, ...], str]:
+    """Sort Phase-N[.M[.…]] names numerically component-by-component, and
+    all other phase names lexically.
+
+    A float encoding of the minor version (e.g. "2.10" -> 2 + 0.10 = 2.1)
+    breaks ordering for any two-digit-or-longer minor component: Phase-2.10
+    would sort before Phase-2.9 because 0.10 < 0.9 as floats, even though
+    10 > 9 numerically. Parsing every dot-separated component into its own
+    integer and comparing as a tuple avoids that collision entirely.
+    """
     parts = name.split("-")
     if len(parts) >= 2 and parts[0] == "Phase":
         try:
-            numbers = parts[1].split(".")
-            major = int(numbers[0])
-            minor = float(f"0.{numbers[1]}") if len(numbers) > 1 else 0.0
-            return (0, major + minor, name)
+            components = tuple(int(n) for n in parts[1].split("."))
+            return (0, components, name)
         except (ValueError, IndexError):
             pass
-    return (1, 0.0, name)
+    return (1, (), name)
 
 
 async def _phase_list(bus: GossipBus) -> None:
+    """List all phases with status, test progress, and any assignment/
+    dependency/blocker metadata attached to the phase state."""
     phases = await _all_phase_states(bus)
     if not phases:
         print("no phases tracked yet")
         return
     for phase_name in sorted(phases, key=_phase_sort_key):
         phase = phases[phase_name]
-        status = getattr(phase.status, "value", str(phase.status))
-        print(
-            f"{phase_name:30s} {status:12s} "
-            f"tests={phase.tests_passing}/{phase.total_tests}"
+        status_label = getattr(phase.status, "value", str(phase.status))
+        test_str = (
+            f"{phase.tests_passing}/{phase.total_tests}"
+            if phase.total_tests
+            else "0/0"
         )
+        print(f"{phase_name:30s} {status_label:12s} tests={test_str}")
+        assigned = getattr(phase, "assigned_to", None) or []
+        depends_on = getattr(phase, "depends_on", None) or []
+        blockers = getattr(phase, "blockers", None) or []
+        if assigned:
+            print(f"  assigned_to: {', '.join(assigned)}")
+        if depends_on:
+            print(f"  depends_on: {', '.join(depends_on)}")
+        if blockers:
+            print(f"  blockers: {', '.join(blockers)}")
 
 
 def _format_age(seconds: int) -> str:

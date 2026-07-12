@@ -110,6 +110,16 @@ class AuditLog:
                     continue
                 try:
                     payload = json.loads(line)
+                except json.JSONDecodeError as exc:
+                    # Enrich with file/line context before it propagates —
+                    # a bare "Expecting value: line 1 column 1" is useless
+                    # without knowing which persisted audit file and row.
+                    raise json.JSONDecodeError(
+                        f"{exc.msg} (persist_path={self._persist_path}, line={line_number})",
+                        exc.doc,
+                        exc.pos,
+                    ) from exc
+                try:
                     persisted_hash = payload["hash"]
                     entry = AuditEntry(
                         sequence_number=payload["sequence_number"],
@@ -121,11 +131,17 @@ class AuditLog:
                         previous_hash=payload["previous_hash"],
                         signature=payload["signature"],
                     )
-                except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+                except (KeyError, TypeError, ValueError) as exc:
                     raise ChainIntegrityError(
                         f"invalid persisted audit row at line {line_number}: {exc}"
                     ) from exc
 
+                # Cross-check the stored hash against a hash recomputed fresh
+                # from content (AuditEntry.__post_init__) rather than trusting
+                # it — this is what makes a single-entry content tamper
+                # surface immediately on replay, including tampering with the
+                # LAST entry, which chain-link verification alone can't catch
+                # (nothing downstream references the last entry's hash).
                 if entry.hash != persisted_hash:
                     raise ChainIntegrityError(
                         f"entry {entry.sequence_number}: persisted hash does not match "
@@ -206,7 +222,9 @@ class AuditLog:
                 stream.flush()
                 os.fsync(stream.fileno())
 
-        # Memory may advance only after the sink has durably accepted the row.
+        # Memory may advance only after the sink has durably accepted the
+        # row: a write failure must not leave a gap between what's on disk
+        # and what verify_chain() sees in memory.
         self._entries.append(entry)
         return entry
 
