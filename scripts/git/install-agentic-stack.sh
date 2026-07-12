@@ -36,12 +36,13 @@ _run_doctor_fallback() {
 # --help as a positional adapter name), so a --help probe is not a reliable
 # version gate. The dry-run itself is side-effect-free either way.
 echo "[agentic-stack] upgrade --dry-run (no writes until you run upgrade --yes):"
-_dry_run_output="$(python3 -m harness_manager.cli upgrade --dry-run "$REPO_ROOT" 2>&1)" && {
+if _dry_run_output="$(python3 -m harness_manager.cli upgrade --dry-run "$REPO_ROOT" 2>&1)"; then
   printf '%s\n' "$_dry_run_output"
-} || {
-  printf '%s\n' "$_dry_run_output" | grep -qi "unrecognized\|no such\|unknown\|invalid choice" \
-    && _run_doctor_fallback || printf '%s\n' "$_dry_run_output"
-}
+elif printf '%s\n' "$_dry_run_output" | grep -qi "unrecognized\|no such\|unknown\|invalid choice"; then
+  _run_doctor_fallback
+else
+  printf '%s\n' "$_dry_run_output"
+fi
 
 echo "[agentic-stack] BLOCK upstream Brain integration — use Gbrain via gstack (doc 41 §5)"
 echo "[agentic-stack] PT .agent/ is union-merged at upgrade time; never commit into vendor/"
