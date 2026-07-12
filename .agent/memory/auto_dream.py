@@ -75,7 +75,7 @@ def _load_entries_locked(fd):
     if fd is None:
         if not os.path.exists(EPISODIC):
             return entries
-        with open(EPISODIC) as f:
+        with open(EPISODIC, encoding="utf-8") as f:
             stream = f.read()
     else:
         os.lseek(fd, 0, os.SEEK_SET)
@@ -106,7 +106,7 @@ def _write_entries_locked(fd, entries):
     payload = "".join(json.dumps(e) + "\n" for e in entries).encode("utf-8")
     if fd is None:
         # Windows: best-effort, matches _episodic_io fallback.
-        with open(EPISODIC, "w") as f:
+        with open(EPISODIC, "w", encoding="utf-8") as f:
             f.write(payload.decode("utf-8"))
         return
     os.ftruncate(fd, 0)
@@ -136,7 +136,11 @@ def _heuristic_prefilter(candidates_dir, semantic_dir):
     if not os.path.isdir(candidates_dir):
         return 0
     lessons_path = os.path.join(semantic_dir, "LESSONS.md")
-    existing = open(lessons_path, encoding="utf-8").read() if os.path.exists(lessons_path) else ""
+    if os.path.exists(lessons_path):
+        with open(lessons_path, encoding="utf-8") as f:
+            existing = f.read()
+    else:
+        existing = ""
     rejected = 0
     for fname in sorted(os.listdir(candidates_dir)):
         if not fname.endswith(".json"):
@@ -145,7 +149,7 @@ def _heuristic_prefilter(candidates_dir, semantic_dir):
         if not os.path.isfile(path):
             continue
         try:
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 cand = json.load(f)
         except (OSError, json.JSONDecodeError):
             continue

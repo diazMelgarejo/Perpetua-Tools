@@ -1,0 +1,43 @@
+{
+  "id": "f256c7674a8e",
+  "key": "manual_f256c7",
+  "name": "manual_f256c7",
+  "claim": "Perpetua-Tools' own multi-agent coordination primitives (scripts/agent_coordination.py's GossipBus-backed distributed task queue: claim/release/heartbeat, append-only events folded into current state) got real-world load-tested by accident: while multiple independent AI coding sessions worked concurrently on PT's own codebase (this exact coordination system among the files being changed), those sessions ended up coordinating with each other THROUGH the very primitives they were improving -- one session's committed fix became the next session's starting point, purely via git state on a shared branch, no explicit hand-off. This is orama-system eating its own dogfood while working on its own self-improvement: the system under construction was, unintentionally, also the coordination substrate for constructing it.",
+  "conditions": [
+    "concurrent-sessions",
+    "coordination",
+    "dogfooding",
+    "gossipbus",
+    "multi-agent",
+    "self-improvement"
+  ],
+  "evidence_ids": [
+    "2026-07-12T10:41:25.832988+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-12T10:41:25.832988+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-12T10:41:25.832988+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-12T10:41:25.946897+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR #206 (originally a small skill-wrapper salvage) absorbed STM security-pipeline hardening, atomic claim/release fixes, and memory-durability fixes because 4 sibling PRs (#205/#207/#208 plus this one) were being developed by concurrent AI sessions in real time, converging on and occasionally regressing each other's fixes to the same files. Reconciling the final merge required genuine harmonization across 19 conflicted files rather than picking a side -- both lineages had real, different improvements (BEGIN IMMEDIATE + retry defensiveness vs fsync + hash-cross-check crash-consistency) that needed blending, not choosing.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-12T10:41:25.832988+00:00"
+      ],
+      "lessons_sha": "6db6253c32dd"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-12T10:41:25.946889+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR #206 (originally a small skill-wrapper salvage) absorbed STM security-pipeline hardening, atomic claim/release fixes, and memory-durability fixes because 4 sibling PRs (#205/#207/#208 plus this one) were being developed by concurrent AI sessions in real time, converging on and occasionally regressing each other's fixes to the same files. Reconciling the final merge required genuine harmonization across 19 conflicted files rather than picking a side -- both lineages had real, different improvements (BEGIN IMMEDIATE + retry defensiveness vs fsync + hash-cross-check crash-consistency) that needed blending, not choosing."
+}
