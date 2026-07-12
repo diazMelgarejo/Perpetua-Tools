@@ -33,7 +33,7 @@ def decay_old_entries(entries, archive_dir):
         # UTC date so archive filenames align with the UTC cutoff above.
         today_utc = datetime.datetime.now(datetime.timezone.utc).date()
         path = os.path.join(archive_dir, f"archive_{today_utc}.jsonl")
-        with open(path, "a") as f:
+        with open(path, "a", encoding="utf-8") as f:
             for e in archived:
                 f.write(json.dumps(e) + "\n")
     return kept, archived

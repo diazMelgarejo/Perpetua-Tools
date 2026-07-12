@@ -149,8 +149,8 @@ def build_index() -> int:
             conn.execute("INSERT INTO memories VALUES (?, ?)",
                          (str(rel_path), content))
             indexed += 1
-        except Exception:
-            pass
+        except Exception as exc:
+            print(f"warning: failed to index {f}: {exc}", file=sys.stderr)
     conn.commit()
     conn.close()
     return indexed
@@ -227,7 +227,7 @@ def search_fallback(query: str):
     cmd, _ = _fallback_command(query, targets)
     if not cmd:
         return []
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
     files = [f for f in result.stdout.strip().split("\n") if f]
     return [
         (Path(f).relative_to(MEMORY_DIR), f"(match in {Path(f).name})")
@@ -269,7 +269,7 @@ def cmd_status():
     count = conn.execute("SELECT COUNT(*) FROM memories").fetchone()[0]
     conn.close()
     size_kb = INDEX_PATH.stat().st_size // 1024
-    print(f"Mode: FTS5")
+    print("Mode: FTS5")
     print(f"Index: {count} files indexed ({size_kb} KB)")
     print(f"Location: {INDEX_PATH}")
     print(f"Fallback available: {fallback_tool()}")
