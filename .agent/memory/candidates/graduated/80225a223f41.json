@@ -1,0 +1,42 @@
+{
+  "id": "80225a223f41",
+  "key": "manual_80225a",
+  "name": "manual_80225a",
+  "claim": "When resuming a previously-spawned Claude Agent-tool subagent, use SendMessage(to=<agentId>), never Agent() again \u2014 Agent() always spawns a fresh, unrelated agent with zero prior context.",
+  "conditions": [
+    "SendMessage",
+    "agent",
+    "resume",
+    "sendmessage",
+    "subagent"
+  ],
+  "evidence_ids": [
+    "2026-07-11T19:34:13.158819+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T19:34:13.158819+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T19:34:13.158819+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T19:34:13.243493+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "During PR #205 quad-CEO-review (2026-07-12), used Agent() twice intending to redirect/resume an existing subagent; both times it silently spawned a new unrelated agent instead. Caught only because the user asked directly. One of the accidental spawns became a useful control case (proved context isolation works correctly when NOT leaked).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T19:34:13.158819+00:00"
+      ],
+      "lessons_sha": "769b44b121c8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T19:34:13.243484+00:00",
+  "reviewer": "learn.py",
+  "rationale": "During PR #205 quad-CEO-review (2026-07-12), used Agent() twice intending to redirect/resume an existing subagent; both times it silently spawned a new unrelated agent instead. Caught only because the user asked directly. One of the accidental spawns became a useful control case (proved context isolation works correctly when NOT leaked)."
+}

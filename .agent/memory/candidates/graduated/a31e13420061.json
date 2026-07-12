@@ -1,0 +1,42 @@
+{
+  "id": "a31e13420061",
+  "key": "manual_a31e13",
+  "name": "manual_a31e13",
+  "claim": "A bare 'cd <dir> && <command>' in this Bash tool persists the cwd change to EVERY subsequent command in the session \u2014 it does not scope to that one line the way a subshell would. When checking a worktree/branch other than your main working tree (e.g. 'cd .claude/worktrees/X && git status'), always cd back to the main repo root immediately after, or use 'git -C <dir> <cmd>' instead of a bare cd to avoid drift.",
+  "conditions": [
+    "cd",
+    "cwd",
+    "git -C",
+    "persistent shell",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-07-11T23:18:23.553112+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T23:18:23.553112+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T23:18:23.553112+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T23:18:23.638633+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Drifted into .claude/worktrees/stm-pattern-integration (branch docs/stm-pattern-integration, an old pre-PR#205 checkout) after checking that worktree's git status during a stale-claim investigation, then unknowingly ran grep/git commands against the wrong checkout for several turns. No data loss (Edit/Write tool calls used absolute paths and landed correctly; the coordination board resolves via git-common-dir regardless of cwd), but caused real confusion diagnosing a false 'my gate edits are gone' alarm.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T23:18:23.553112+00:00"
+      ],
+      "lessons_sha": "cbeef159e76d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T23:18:23.638625+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Drifted into .claude/worktrees/stm-pattern-integration (branch docs/stm-pattern-integration, an old pre-PR#205 checkout) after checking that worktree's git status during a stale-claim investigation, then unknowingly ran grep/git commands against the wrong checkout for several turns. No data loss (Edit/Write tool calls used absolute paths and landed correctly; the coordination board resolves via git-common-dir regardless of cwd), but caused real confusion diagnosing a false 'my gate edits are gone' alarm."
+}

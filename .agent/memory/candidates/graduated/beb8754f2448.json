@@ -1,0 +1,45 @@
+{
+  "id": "beb8754f2448",
+  "key": "manual_beb875",
+  "name": "manual_beb875",
+  "claim": "Before hardening a BFT/permissionless-style threat model (Sybil detection, k-buckets, reputation-decay, equivocation slashing) in this codebase, re-check the premise against the actual deployment topology (single operator's own LAN, 1-100 self-owned nodes across L1/L2/L3, no external adversary with economic incentive) \u2014 the plan file that proposes such a model may explicitly foreclose this question ('is this the right problem is already answered') rather than answer it.",
+  "conditions": [
+    "BFT",
+    "byzantine",
+    "k-bucket",
+    "premise",
+    "quorum",
+    "sybil",
+    "threat-model",
+    "topology"
+  ],
+  "evidence_ids": [
+    "2026-07-11T19:34:42.160297+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T19:34:42.160297+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T19:34:42.160297+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T19:34:42.245919+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Quad-CEO-review of PR #205 (2026-07-12): 3 of 4 independent review voices (Codex + 2 Claude subagents) converged on this same threat-model mismatch without prompting each other. MULTIAGENT-SWARM-SECURITY-ANALYSIS.md's own topology table already documents the small self-owned-LAN scale; the STM integration plan's line 21 foreclosed re-checking this premise. Recorded as part of the P5/P6/P13 gate in PATTERN-SYNTHESIS.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T19:34:42.160297+00:00"
+      ],
+      "lessons_sha": "537b5a8bd209"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T19:34:42.245911+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Quad-CEO-review of PR #205 (2026-07-12): 3 of 4 independent review voices (Codex + 2 Claude subagents) converged on this same threat-model mismatch without prompting each other. MULTIAGENT-SWARM-SECURITY-ANALYSIS.md's own topology table already documents the small self-owned-LAN scale; the STM integration plan's line 21 foreclosed re-checking this premise. Recorded as part of the P5/P6/P13 gate in PATTERN-SYNTHESIS.md."
+}

@@ -1,0 +1,43 @@
+{
+  "id": "5e44eabf16dc",
+  "key": "manual_5e44ea",
+  "name": "manual_5e44ea",
+  "claim": "To invoke Kimi (Moonshot AI) for a review/coding task, use the native ~/.kimi-code/bin/kimi CLI directly (kimi --output-format text -p '<prompt>'), NOT openclaw agent --model openrouter/moonshotai/kimi-k2.6 \u2014 the latter fails with 'Model override is not allowed for agent main' because openclaw's main agent has a model allowlist. Also: -p/--prompt cannot be combined with -y/--yolo (errors 'Cannot combine --prompt with --yolo'); omit -y for read-only review prompts.",
+  "conditions": [
+    "cli",
+    "kimi",
+    "moonshot",
+    "multi-agent",
+    "openclaw",
+    "openrouter"
+  ],
+  "evidence_ids": [
+    "2026-07-11T19:48:51.462283+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T19:48:51.462283+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T19:48:51.462283+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T19:48:51.558342+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Discovered 2026-07-12 mid-dispatch of a 3-voice (Codex/Kimi/Claude) parallel Eng review for PR #205: first attempt routed Kimi through openclaw's main agent and failed silently into stderr with a routing-policy error; user then supplied 'which kimi' output pointing at the real CLI. Second attempt failed on flag conflict. Third attempt (no -y) succeeded.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T19:48:51.462283+00:00"
+      ],
+      "lessons_sha": "ffbb41d608f6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T19:48:51.558333+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Discovered 2026-07-12 mid-dispatch of a 3-voice (Codex/Kimi/Claude) parallel Eng review for PR #205: first attempt routed Kimi through openclaw's main agent and failed silently into stderr with a routing-policy error; user then supplied 'which kimi' output pointing at the real CLI. Second attempt failed on flag conflict. Third attempt (no -y) succeeded."
+}
