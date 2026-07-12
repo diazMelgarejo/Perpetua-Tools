@@ -83,7 +83,12 @@ def needs_rebuild() -> bool:
             indexed = {row[0] for row in conn.execute("SELECT filename FROM memories")}
     except sqlite3.OperationalError:
         return True
-    return bool(indexed - current)
+    # Symmetric difference: catch BOTH directions of drift — indexed rows
+    # whose files were deleted, AND filesystem files never indexed (e.g. an
+    # index rebuilt from a narrower _memory_files() glob in an older run,
+    # or a file written with an mtime <= index_mtime due to clock skew /
+    # same-tick creation, which the mtime fast-path above cannot detect).
+    return bool(indexed ^ current)
 
 
 def _read_jsonl(path: Path) -> str:
