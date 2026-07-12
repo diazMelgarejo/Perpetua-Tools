@@ -142,11 +142,18 @@ def search_fts5(query: str):
 
 
 def _fallback_command(query, targets):
-    """Return an argv-only command; `--` prevents option confusion."""
+    """Return an argv-only command; `--` prevents option confusion.
+
+    -F/fixed-strings forces literal keyword matching in both tools — without
+    it, rg treats query as a regex and grep as a BRE, so a query containing
+    metacharacters (., *, (, [, +, etc.) would silently match unintended
+    content instead of the literal keyword, inconsistent with the FTS5
+    term-based path this is a fallback for.
+    """
     if shutil.which("rg"):
-        return (["rg", "-li", "--", query, *targets], "ripgrep")
+        return (["rg", "-liF", "--", query, *targets], "ripgrep")
     if shutil.which("grep"):
-        return (["grep", "-ril", "--", query, *targets], "grep")
+        return (["grep", "-rilF", "--", query, *targets], "grep")
     return (None, None)
 
 
