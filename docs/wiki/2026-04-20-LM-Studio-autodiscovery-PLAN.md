@@ -147,11 +147,11 @@ DEVICES_YML = """\
 devices:
   - id: "mac-studio"
     os: macos
-    lan_ip: "<YOUR_LAN_IP>"
+    lan_ip: "<STALE_LAN_IP>"
     ports: [1234]
   - id: "win-rtx3080"
     os: windows
-    lan_ip: "<YOUR_LAN_IP>"
+    lan_ip: "<STALE_LAN_IP>"
     ports: [1234]
 """
 
@@ -159,22 +159,23 @@ def test_patch_devices_yml(tmp_path):
     cfg = tmp_path / "config"
     cfg.mkdir()
     (cfg / "devices.yml").write_text(DEVICES_YML)
-    D.patch_devices_yml("<YOUR_LAN_IP>", "<YOUR_LAN_IP>", tmp_path)
+    D.patch_devices_yml("<STALE_LAN_IP>", "<YOUR_LAN_IP>", tmp_path)
     result = (cfg / "devices.yml").read_text()
     assert '"<YOUR_LAN_IP>"' in result
-    assert '"<YOUR_LAN_IP>"' in result
-    assert "<YOUR_LAN_IP>" not in result
-    assert "<YOUR_LAN_IP>" not in result
+    assert "<STALE_LAN_IP>" not in result
 
 def test_patch_devices_yml_no_write_if_unchanged(tmp_path):
     cfg = tmp_path / "config"
     cfg.mkdir()
-    content = DEVICES_YML.replace("<YOUR_LAN_IP>", "<YOUR_LAN_IP>").replace("<YOUR_LAN_IP>", "<YOUR_LAN_IP>")
+    # Content already patched (post old->new replacement) -- patch_devices_yml
+    # is called with the same old/new pair as the test above, so there's
+    # nothing left to replace; this exercises the no-op/unchanged path.
+    content = DEVICES_YML.replace("<STALE_LAN_IP>", "<YOUR_LAN_IP>")
     (cfg / "devices.yml").write_text(content)
     import os
     mtime_before = os.stat(cfg / "devices.yml").st_mtime
     time.sleep(0.01)
-    D.patch_devices_yml("<YOUR_LAN_IP>", "<YOUR_LAN_IP>", tmp_path)
+    D.patch_devices_yml("<STALE_LAN_IP>", "<YOUR_LAN_IP>", tmp_path)
     mtime_after = os.stat(cfg / "devices.yml").st_mtime
     assert mtime_before == mtime_after, "file should not be rewritten when unchanged"
 
@@ -344,7 +345,11 @@ async def scan_subnet_async(subnet: str, port: int, exclude: set[str]) -> list[s
 def _mac_lan_ip() -> str | None:
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("<YOUR_LAN_IP>", 80))
+        # UDP "connect" never sends a packet -- it just makes the kernel pick
+        # the outbound-routing local address, so any always-routable public
+        # IP works as the target. 8.8.8.8 (Google DNS) is the standard idiom
+        # for this trick; it is not the machine's own address.
+        s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]; s.close()
         return ip if ip.startswith("192.168.254.") else None
     except Exception:
@@ -736,8 +741,8 @@ cat > ~/.openclaw/profiles/lan-full.json << 'EOF'
   "hash": "default",
   "recovery_tier": 4,
   "endpoints": {
-    "mac": {"ip": "<YOUR_LAN_IP>", "port": 1234, "reachable": true},
-    "win": {"ip": "<YOUR_LAN_IP>", "port": 1234, "reachable": true}
+    "mac": {"ip": "<YOUR_MAC_LAN_IP>", "port": 1234, "reachable": true},
+    "win": {"ip": "<YOUR_WINDOWS_IP>", "port": 1234, "reachable": true}
   },
   "models": {
     "mac": ["gemma-4-26b-a4b-it", "gemma-4-e4b-it", "qwen3.5-9b-mlx", "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2"],
@@ -1593,10 +1598,11 @@ content = re.sub(r'(\$\{LM_STUDIO_MAC_ENDPOINT:-)[^}]+(\})',
                  r'\g<1>http://localhost:1234\2', content)
 content = re.sub(r'(\$\{LM_STUDIO_WIN_ENDPOINTS:-)[^}:,\n]+',
                  r'\g<1>http://<YOUR_LAN_IP>', content)
-# Also patch static IPs outside env var blocks
-content = content.replace('"<YOUR_LAN_IP>"', '"<YOUR_LAN_IP>"')
-content = content.replace('"<YOUR_LAN_IP>"', '"<YOUR_LAN_IP>"')
-content = content.replace('"<YOUR_LAN_IP>"', '"<YOUR_LAN_IP>"')
+# Also patch static IPs outside env var blocks -- one old->new mapping applied
+# to every remaining static occurrence (the original had three separate
+# literal legacy IPs here; collapsed to a single placeholder pair since the
+# specific old values aren't load-bearing for this illustration).
+content = content.replace('"<STALE_LAN_IP>"', '"<YOUR_LAN_IP>"')
 
 if content != original:
     gh_put("config/models.yml", content, sha, "fix(config): update LM Studio host defaults .107/.101 [skip ci]")
