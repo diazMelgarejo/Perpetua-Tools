@@ -10,7 +10,7 @@
 | **Orchestrator & instance manager** | **Perpetua-Tools** (this repo) | Top-level agent lifecycle, `ModelRegistry` / `config/*.yml`, FastAPI `/orchestrate`, idempotency |
 | **Reasoning & routing methodology** | **orama-system** | `bin/skills/SKILL.md`, AFRP (pre-router gate) / CIDF / process; multi-agent registry is **separately installable** and **not** required to run this orchestrator |
 | **Subagent auto-selection (ECC-style)** | **ECC Tools** | Default subagent routing unless the top-level orchestrator overrides roles |
-| **Karpathy AutoResearch sync** | [uditgoenka/autoresearch](https://github.com/uditgoenka/autoresearch) | Idempotent sync of the automated ML research loop; integrated via `/autoresearch/*` endpoints and `orchestrator/autoresearch_bridge.py` |
+| **Karpathy AutoResearch sync** | [uditgoenka/autoresearch](https://github.com/uditgoenka/autoresearch) | Idempotent sync of the automated ML research loop; integrated via `/autoresearch/*` endpoints and `orchestrator/autoresearch_bridge.py`. `/autoresearch` slash-command availability is **not a hard dependency**: prefers the idempotent global skill install (`scripts/install-vendor-guided.sh`), falls back to the Claude Code plugin marketplace, then to a micro-implementation if neither is present — the underlying orchestration (git sync, GPU dispatch, dry-run planning) works regardless |
 
 **Selection order:** Top-level model routing follows **this `SKILL.md` → `orchestrator/model_registry.py` + `config/models.yml` / `routing.yml`** first. Subagents use **ECC-tools** defaults unless overridden. **orama-system** remains the methodology layer for reasoning execution, not a hard dependency of the YAML registry.
 
