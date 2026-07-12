@@ -63,30 +63,30 @@ def test_probe_endpoint_requires_httpx(monkeypatch):
 
 def test_pick_windows_lmstudio_host_prefers_configured_win_over_mac_mirror():
     chosen = lan_discovery.pick_windows_lmstudio_host(
-        ["192.168.254.105", "192.168.254.108"],
-        local_ip="192.168.254.105",
-        preferred_win_ip="192.168.254.108",
+        ["192.0.2.1", "192.0.2.2"],
+        local_ip="192.0.2.1",
+        preferred_win_ip="192.0.2.2",
     )
-    assert chosen == "192.168.254.108"
+    assert chosen == "192.0.2.2"
 
 
 def test_pick_windows_lmstudio_host_skips_local_when_multiple_remotes():
     chosen = lan_discovery.pick_windows_lmstudio_host(
-        ["192.168.254.105", "192.168.254.108"],
-        local_ip="192.168.254.105",
+        ["192.0.2.1", "192.0.2.2"],
+        local_ip="192.0.2.1",
         preferred_win_ip="",
     )
-    assert chosen == "192.168.254.108"
+    assert chosen == "192.0.2.2"
 
 
 def test_pick_windows_lmstudio_host_uses_win_ip_env(monkeypatch):
-    monkeypatch.setenv("WIN_IP", "192.168.254.108")
+    monkeypatch.setenv("WIN_IP", "192.0.2.2")
     chosen = lan_discovery.pick_windows_lmstudio_host(
-        ["192.168.254.105", "192.168.254.108"],
-        local_ip="192.168.254.105",
+        ["192.0.2.1", "192.0.2.2"],
+        local_ip="192.0.2.1",
         preferred_win_ip="",
     )
-    assert chosen == "192.168.254.108"
+    assert chosen == "192.0.2.2"
 
 
 def test_detect_local_subnet_logs_warning_on_fallback(monkeypatch, caplog):
@@ -97,7 +97,7 @@ def test_detect_local_subnet_logs_warning_on_fallback(monkeypatch, caplog):
 
     subnet = lan_discovery.LANDiscovery(subnet=None, ports=[11434]).subnet
 
-    assert subnet == "192.168.1.0/24"
+    assert subnet == "127.0.1.0/24"
     assert "Failed to auto-detect local subnet" in caplog.text
 
 
@@ -108,7 +108,7 @@ def test_read_discovery_win_url_rejects_malformed_timestamp(tmp_path, monkeypatc
             "watcher_heartbeat": "not-a-date",
             "endpoints": {
                 "win": {
-                    "ip": "192.168.254.108",
+                    "ip": "127.0.1.2",
                     "port": 1234,
                     "reachable": True,
                 }
@@ -129,7 +129,7 @@ def test_read_discovery_win_url_rejects_missing_timestamp(tmp_path, monkeypatch,
         json.dumps({
             "endpoints": {
                 "win": {
-                    "ip": "192.168.254.108",
+                    "ip": "127.0.1.2",
                     "port": 1234,
                     "reachable": True,
                 }

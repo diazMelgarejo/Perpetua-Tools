@@ -1,0 +1,41 @@
+{
+  "id": "3dc6aae095d2",
+  "key": "manual_3dc6aa",
+  "name": "manual_3dc6aa",
+  "claim": "GitHub's per-PR mergeable/mergeStateStatus fields only compare each open PR against current main, never against sibling open PRs, so two open PRs can silently conflict with each other even when GitHub reports both as individually mergeable",
+  "conditions": [
+    "conflict-detection",
+    "github",
+    "multi-pr",
+    "pull-request"
+  ],
+  "evidence_ids": [
+    "2026-07-12T05:59:27.382426+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-12T05:59:27.382426+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-12T05:59:27.382426+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-12T05:59:27.447898+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "User asked to review all open PRs and resolve conflicts; GitHub showed every PR as mergeable against main, but a local git merge-tree --write-tree --merge-base simulation between every pair of open branches revealed real 3-way conflicts (#205 vs #206, #205 vs #208, #206 vs #208) that GitHub's UI never surfaced. Relying on GitHub's mergeable status alone would have let a later merge silently break an earlier-landing PR.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-12T05:59:27.382426+00:00"
+      ],
+      "lessons_sha": "fdea7a002646"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-12T05:59:27.447889+00:00",
+  "reviewer": "learn.py",
+  "rationale": "User asked to review all open PRs and resolve conflicts; GitHub showed every PR as mergeable against main, but a local git merge-tree --write-tree --merge-base simulation between every pair of open branches revealed real 3-way conflicts (#205 vs #206, #205 vs #208, #206 vs #208) that GitHub's UI never surfaced. Relying on GitHub's mergeable status alone would have let a later merge silently break an earlier-landing PR."
+}

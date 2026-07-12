@@ -4,19 +4,15 @@ Each candidate JSON under memory/candidates/ carries:
   status:    staged | provisional | accepted | rejected | superseded
   decisions: append-only list of {ts, action, reviewer, notes, **fields}
 
-Host-agent CLI tools call into this module to transition state. Rejection and
-re-stage preserve full history so recurring candidates remain visible as churn.
+Host-agent CLI tools (.agent/tools/graduate.py, reject.py, reopen.py) call
+into this module to transition state. Rejection and re-stage preserve full
+history so a candidate that keeps reappearing is visibly churning rather
+than looking novel each time.
 """
-import datetime
-import hashlib
-import json
-import logging
-import os
-import re
+import os, json, datetime, hashlib, re, logging
 
 from path_hygiene import REVIEW_QUEUE_DYNAMIC_MARKER, sanitize_tracked_path_leaks
 
-_LOG = logging.getLogger(__name__)
 _REVIEW_QUEUE_MARKER_LINE = re.compile(
     rf"^{re.escape(REVIEW_QUEUE_DYNAMIC_MARKER)}\s*$",
     re.MULTILINE,
@@ -39,132 +35,132 @@ def _touch(candidate, action, reviewer, notes="", **fields):
 
 
 def _lessons_sha(candidates_dir):
-    """Short compatibility hash of current LESSONS.md, used to stamp decisions."""
+    """Short hash of current LESSONS.md, used to stamp decisions.
+
+    Re-staging logic uses this to tell 'semantic state changed since this
+    decision' apart from 'nothing has changed, skip to avoid churn'.
+    """
     lessons_path = os.path.join(
-        os.path.dirname(candidates_dir), "semantic", "LESSONS.md"
-    )
+        os.path.dirname(candidates_dir), "semantic", "LESSONS.md")
     if not os.path.exists(lessons_path):
         return ""
     try:
-        with open(lessons_path, "rb") as stream:
-            return hashlib.md5(stream.read(), usedforsecurity=False).hexdigest()[:12]
+        with open(lessons_path, "rb") as f:
+            return hashlib.md5(f.read()).hexdigest()[:12]
     except OSError:
         return ""
 
 
-def _stamp_evidence_and_lessons(candidate, candidates_dir):
-    """Attach evidence + lessons snapshots to the most recent decision."""
-    if not candidate.get("decisions"):
+def _stamp_evidence_and_lessons(cand, candidates_dir):
+    """Attach evidence + lessons snapshots to the most recent decision.
+
+    Called on every terminal-ish transition (rejected, graduated). Lets
+    write_candidates decide whether a later re-detection represents genuinely
+    new information or the same state we already judged.
+    """
+    if not cand.get("decisions"):
         return
-    last = candidate["decisions"][-1]
-    last["evidence_snapshot"] = list(candidate.get("evidence_ids", []))
+    last = cand["decisions"][-1]
+    last["evidence_snapshot"] = list(cand.get("evidence_ids", []))
     last["lessons_sha"] = _lessons_sha(candidates_dir)
 
 
 def load_candidate(path):
-    with open(path, encoding="utf-8") as stream:
-        return json.load(stream)
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
 
 
 def save_candidate(candidate, path):
-    with open(path, "w", encoding="utf-8") as stream:
-        json.dump(candidate, stream, indent=2)
-        stream.write("\n")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(candidate, f, indent=2)
 
 
 def stage_candidate(candidate_path, reviewer="auto_dream"):
     """Mark a freshly-written candidate as staged with an initial decision entry."""
-    candidate = load_candidate(candidate_path)
-    candidate.setdefault("status", "staged")
-    _touch(candidate, "staged", reviewer)
-    save_candidate(candidate, candidate_path)
+    cand = load_candidate(candidate_path)
+    cand.setdefault("status", "staged")
+    _touch(cand, "staged", reviewer)
+    save_candidate(cand, candidate_path)
 
 
 def _default_queue_path(candidates_dir):
+    """By convention, memory/candidates/ sits next to memory/working/REVIEW_QUEUE.md."""
     memory_dir = os.path.dirname(candidates_dir)
     return os.path.join(memory_dir, "working", "REVIEW_QUEUE.md")
 
 
 def _refresh_queue(candidates_dir):
-    """Refresh the review queue without interrupting lifecycle transitions."""
-    queue_path = _default_queue_path(candidates_dir)
-    try:
-        write_review_queue_summary(candidates_dir, queue_path)
-    except Exception:
-        _LOG.exception(
-            "failed to refresh candidate review queue",
-            extra={"candidates_dir": candidates_dir, "queue_path": queue_path},
-        )
+    """Keep REVIEW_QUEUE.md in sync after any lifecycle transition.
 
-
-def _move_candidate(candidate, dst, src):
-    """Write the candidate to its new lifecycle location, then remove the
-    old one — with rollback if the removal fails.
-
-    save_candidate() followed by a bare os.remove(src) leaves BOTH src and
-    dst present if the remove step raises (permissions, disk, concurrent
-    delete) after the write already succeeded — the candidate would then
-    exist in two lifecycle locations simultaneously, and callers scanning
-    by directory (staged/rejected/graduated) would double-count it. Roll
-    the destination write back if src removal fails, so exactly one
-    authoritative copy exists at all times.
+    build_context loads this file into every host session, so a stale file
+    makes reviewed items keep appearing as pending and reopened items stay
+    invisible until the next dream cycle.
     """
-    save_candidate(candidate, dst)
     try:
-        os.remove(src)
-    except OSError:
-        try:
-            os.remove(dst)
-        except OSError:
-            pass
-        raise
+        write_review_queue_summary(candidates_dir, _default_queue_path(candidates_dir))
+    except Exception as exc:
+        # Never let queue bookkeeping break a graduation / rejection action —
+        # but do leave a debug trail for why the summary went stale.
+        logging.debug("write_review_queue_summary failed: %s", exc)
 
 
 def mark_graduated(candidate_id, reviewer, rationale, candidates_dir,
-                    provisional=False):
-    """Move a staged candidate to candidates/graduated/ with an accept decision."""
+                   provisional=False):
+    """Move a staged candidate to candidates/graduated/ with an accept decision.
+
+    Returns the graduated candidate dict. Caller is responsible for writing
+    the structured lesson entry to semantic/lessons.jsonl and re-rendering
+    LESSONS.md — this function only handles the candidate side.
+    """
     src = os.path.join(candidates_dir, f"{candidate_id}.json")
     if not os.path.exists(src):
         raise FileNotFoundError(f"candidate not found: {candidate_id}")
-    candidate = load_candidate(src)
-    candidate["status"] = "provisional" if provisional else "accepted"
-    candidate["accepted_at"] = _now()
-    candidate["reviewer"] = reviewer
-    candidate["rationale"] = rationale
-    _touch(
-        candidate,
-        "graduated",
-        reviewer,
-        notes=rationale,
-        provisional=provisional,
-    )
-    _stamp_evidence_and_lessons(candidate, candidates_dir)
+    cand = load_candidate(src)
+    cand["status"] = "provisional" if provisional else "accepted"
+    cand["accepted_at"] = _now()
+    cand["reviewer"] = reviewer
+    cand["rationale"] = rationale
+    _touch(cand, "graduated", reviewer, notes=rationale,
+           provisional=provisional)
+    _stamp_evidence_and_lessons(cand, candidates_dir)
 
     graduated_dir = os.path.join(candidates_dir, "graduated")
     os.makedirs(graduated_dir, exist_ok=True)
     dst = os.path.join(graduated_dir, f"{candidate_id}.json")
-    _move_candidate(candidate, dst, src)
+    save_candidate(cand, dst)
+    os.remove(src)
     _refresh_queue(candidates_dir)
-    return candidate
+    return cand
 
 
 def mark_rejected(candidate_id, reviewer, reason, candidates_dir, **extra_stamp):
-    """Move a staged candidate to candidates/rejected/ with a reject decision."""
+    """Move a staged candidate to candidates/rejected/ with a reject decision.
+
+    rejection_count tracks how many times this id has been rejected — if it
+    keeps coming back, the reviewer sees churn instead of a 'fresh' item.
+
+    extra_stamp kwargs are merged into the decision entry. heuristic_prefilter
+    uses this to record which specific lessons triggered the duplicate rejection
+    (duplicate_claims=[...]); write_candidates later checks whether those
+    specific lessons are still present before re-staging, so unrelated LESSONS
+    edits don't cause the candidate to churn.
+    """
     src = os.path.join(candidates_dir, f"{candidate_id}.json")
     if not os.path.exists(src):
         raise FileNotFoundError(f"candidate not found: {candidate_id}")
-    candidate = load_candidate(src)
-    candidate["status"] = "rejected"
-    candidate["rejection_count"] = candidate.get("rejection_count", 0) + 1
-    _touch(candidate, "rejected", reviewer, notes=reason, **extra_stamp)
-    _stamp_evidence_and_lessons(candidate, candidates_dir)
+    cand = load_candidate(src)
+    cand["status"] = "rejected"
+    cand["rejection_count"] = cand.get("rejection_count", 0) + 1
+    _touch(cand, "rejected", reviewer, notes=reason, **extra_stamp)
+    _stamp_evidence_and_lessons(cand, candidates_dir)
 
     rejected_dir = os.path.join(candidates_dir, "rejected")
     os.makedirs(rejected_dir, exist_ok=True)
     dst = os.path.join(rejected_dir, f"{candidate_id}.json")
-    _move_candidate(candidate, dst, src)
+    save_candidate(cand, dst)
+    os.remove(src)
     _refresh_queue(candidates_dir)
-    return candidate
+    return cand
 
 
 def mark_reopened(candidate_id, reviewer, candidates_dir):
@@ -172,18 +168,19 @@ def mark_reopened(candidate_id, reviewer, candidates_dir):
     src = os.path.join(candidates_dir, "rejected", f"{candidate_id}.json")
     if not os.path.exists(src):
         raise FileNotFoundError(f"rejected candidate not found: {candidate_id}")
-    candidate = load_candidate(src)
-    candidate["status"] = "staged"
-    _touch(candidate, "reopened", reviewer)
+    cand = load_candidate(src)
+    cand["status"] = "staged"
+    _touch(cand, "reopened", reviewer)
 
     dst = os.path.join(candidates_dir, f"{candidate_id}.json")
-    _move_candidate(candidate, dst, src)
+    save_candidate(cand, dst)
+    os.remove(src)
     _refresh_queue(candidates_dir)
-    return candidate
+    return cand
 
 
 def _age_factor(staged_at):
-    """1.0 at stage time, grows to 2.0 for candidates about 14 days old."""
+    """1.0 at stage time, grows to 2.0 for candidates ~14 days old."""
     try:
         staged = datetime.datetime.fromisoformat(staged_at)
     except (ValueError, TypeError):
@@ -195,104 +192,105 @@ def _age_factor(staged_at):
 
 
 def candidate_priority(candidate):
-    """priority = cluster_size * canonical_salience * age_factor."""
+    """priority = cluster_size * canonical_salience * age_factor.
+
+    Reviewers attack high-priority items first. Older + more-recurrent +
+    higher-salience patterns deserve attention ahead of one-offs.
+    """
     return (
-        max(1, candidate.get("cluster_size", 1))
-        * max(0.1, candidate.get("canonical_salience", 0.1))
-        * _age_factor(candidate.get("staged_at", ""))
+        max(1, candidate.get("cluster_size", 1)) *
+        max(0.1, candidate.get("canonical_salience", 0.1)) *
+        _age_factor(candidate.get("staged_at", ""))
     )
 
 
 def list_candidates(candidates_dir, status="staged", sort_by="priority"):
     """Return candidate dicts with the given status, sorted by the key."""
-    search_dir = (
-        candidates_dir
-        if status == "staged"
-        else os.path.join(candidates_dir, status)
-    )
+    if status == "staged":
+        search_dir = candidates_dir
+    else:
+        search_dir = os.path.join(candidates_dir, status)
     if not os.path.isdir(search_dir):
         return []
 
-    output = []
-    for filename in os.listdir(search_dir):
-        if not filename.endswith(".json"):
+    out = []
+    for fname in os.listdir(search_dir):
+        if not fname.endswith(".json"):
             continue
-        path = os.path.join(search_dir, filename)
+        path = os.path.join(search_dir, fname)
         if not os.path.isfile(path):
             continue
         try:
-            with open(path, encoding="utf-8") as stream:
-                output.append(json.load(stream))
+            with open(path, encoding="utf-8") as f:
+                out.append(json.load(f))
         except (OSError, json.JSONDecodeError):
             continue
 
     if sort_by == "priority":
-        output.sort(key=candidate_priority, reverse=True)
+        out.sort(key=candidate_priority, reverse=True)
     elif sort_by == "age":
-        output.sort(key=lambda candidate: candidate.get("staged_at", ""))
-    return output
+        out.sort(key=lambda c: c.get("staged_at", ""))
+    return out
 
 
 def _read_review_queue_preamble(summary_path: str) -> str:
     """Preserve curated preamble; only replace the auto-generated tail."""
     if not os.path.exists(summary_path):
         return "# Review Queue\n\n"
-    with open(summary_path, encoding="utf-8") as stream:
-        text = stream.read()
+    with open(summary_path, encoding="utf-8") as f:
+        text = f.read()
     marker_lines = list(_REVIEW_QUEUE_MARKER_LINE.finditer(text))
     if marker_lines:
+        # Preamble docs may mention the marker inline; only line-anchored
+        # markers delimit the auto-generated tail (use the last one).
         return text[: marker_lines[-1].start()].rstrip() + "\n\n"
-    for separator in (
-        "\n\n**Pending:**",
-        "\n\n_No pending candidates._",
-        "\n## Priority order",
-    ):
-        if separator in text:
-            return text.split(separator)[0].rstrip() + "\n\n"
+    for sep in ("\n\n**Pending:**", "\n\n_No pending candidates._", "\n## Priority order"):
+        if sep in text:
+            return text.split(sep)[0].rstrip() + "\n\n"
     if text.startswith("# Review Queue"):
         return text
     return "# Review Queue\n\n"
 
 
 def write_review_queue_summary(candidates_dir, summary_path):
-    """Emit a compact REVIEW_QUEUE.md so the host agent sees the backlog."""
+    """Emit a compact REVIEW_QUEUE.md so the host agent sees the backlog.
+
+    On-demand review without a surfacing mechanism grows silent backlog.
+    This file sits in memory/working/ and gets loaded by context_budget into
+    every host session — impossible to miss.
+    """
     pending = list_candidates(candidates_dir, status="staged")
     os.makedirs(os.path.dirname(summary_path), exist_ok=True)
     preamble = _read_review_queue_preamble(summary_path)
 
     if not pending:
-        with open(summary_path, "w", encoding="utf-8") as stream:
-            stream.write(
-                f"{preamble}{REVIEW_QUEUE_DYNAMIC_MARKER}\n\n"
-                "_No pending candidates._\n"
-            )
+        with open(summary_path, "w", encoding="utf-8") as f:
+            f.write(f"{preamble}{REVIEW_QUEUE_DYNAMIC_MARKER}\n\n_No pending candidates._\n")
         return 0
 
-    staged_ats = [
-        candidate.get("staged_at", "")
-        for candidate in pending
-        if candidate.get("staged_at")
-    ]
+    staged_ats = [c.get("staged_at", "") for c in pending if c.get("staged_at")]
     oldest = min(staged_ats) if staged_ats else ""
-    lines = [REVIEW_QUEUE_DYNAMIC_MARKER, "", f"**Pending:** {len(pending)}"]
+    lines = [REVIEW_QUEUE_DYNAMIC_MARKER, ""]
+    lines.append(f"**Pending:** {len(pending)}")
     if oldest:
         lines.append(f"**Oldest staged:** {oldest}")
-    lines.extend([
-        "",
-        "Run `python .agent/tools/list_candidates.py` for detail, then:",
-        "- `python .agent/tools/graduate.py <id> --rationale \"...\"` to accept",
-        "- `python .agent/tools/reject.py <id> --reason \"...\"` to reject",
-        "- Review in a batch so cross-candidate contradictions are caught.",
-        "",
-        "## Priority order",
-        "",
-    ])
-    for candidate in pending:
+    lines.append("")
+    lines.append("Run `python .agent/tools/list_candidates.py` for detail, then:")
+    lines.append("- `python .agent/tools/graduate.py <id> --rationale \"...\"` to accept")
+    lines.append("- `python .agent/tools/reject.py <id> --reason \"...\"` to reject")
+    lines.append("- Review in a batch so cross-candidate contradictions are caught.")
+    lines.append("")
+    lines.append("## Priority order (top 10)")
+    lines.append("")
+    for cand in pending[:10]:
+        prio = candidate_priority(cand)
+        claim_preview = sanitize_tracked_path_leaks((cand.get("claim") or "")[:80])
         lines.append(
-            f"- `{candidate.get('id', '?')}` — "
-            f"{sanitize_tracked_path_leaks(candidate.get('claim', ''))}"
+            f"- **{cand.get('id')}** (priority={prio:.2f}, "
+            f"size={cand.get('cluster_size', '?')}, "
+            f"rejections={cand.get('rejection_count', 0)}) "
+            f"— {claim_preview}"
         )
-
-    with open(summary_path, "w", encoding="utf-8") as stream:
-        stream.write(preamble + "\n".join(lines).rstrip() + "\n")
+    with open(summary_path, "w", encoding="utf-8") as f:
+        f.write(preamble + "\n".join(lines) + "\n")
     return len(pending)

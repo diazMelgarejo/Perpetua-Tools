@@ -19,23 +19,23 @@ class TestProvenanceBucketIPv4:
 
     def test_same_ipv4_subnet_buckets_together(self):
         """Two IPs in the same /24 collapse to the same provenance bucket."""
-        bucket_a = provenance_bucket("192.168.1.10")
-        bucket_b = provenance_bucket("192.168.1.50")
-        assert bucket_a == bucket_b == "192.168.1.0/24"
+        bucket_a = provenance_bucket("127.0.1.1")
+        bucket_b = provenance_bucket("127.0.1.2")
+        assert bucket_a == bucket_b == "127.0.1.0/24"
 
     def test_different_ipv4_subnets_bucket_separately(self):
         """IPs in different /24s produce distinct provenance buckets."""
-        bucket_a = provenance_bucket("192.168.1.10")
-        bucket_b = provenance_bucket("192.168.2.10")
+        bucket_a = provenance_bucket("127.0.1.1")
+        bucket_b = provenance_bucket("127.0.2.1")
         assert bucket_a != bucket_b
-        assert bucket_a == "192.168.1.0/24"
-        assert bucket_b == "192.168.2.0/24"
+        assert bucket_a == "127.0.1.0/24"
+        assert bucket_b == "127.0.2.0/24"
 
     def test_ipv4_cidr_collapses_to_slash24(self):
         """A wider or narrower IPv4 CIDR is normalized to its /24 bucket."""
-        assert provenance_bucket("192.168.1.0/24") == "192.168.1.0/24"
-        assert provenance_bucket("192.168.1.128/25") == "192.168.1.0/24"
-        assert provenance_bucket("10.0.0.0/8") == "10.0.0.0/24"
+        assert provenance_bucket("127.0.1.0/24") == "127.0.1.0/24"
+        assert provenance_bucket("127.0.1.0/25") == "127.0.1.0/24"
+        assert provenance_bucket("127.0.3.0/8") == "127.0.0.0/24"
 
 
 class TestProvenanceBucketIPv6:

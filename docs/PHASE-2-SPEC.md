@@ -304,6 +304,7 @@ Uses FleetMode + PeerObservation to:
 - **Self-Healing Mesh Plan:** `orama-system/docs/plans/2026-07-08-self-healing-mesh-degradation-modes.md` § 4.1–4.3
 - **Phase 1 Baseline:** Phase 1.0–1.3 (PeerObservation, confidence scoring, witness quorum)
 - **Deliverable 1:** `D1` specification (peer observation schema, confidence thresholds)
+- **Sibling Phase 2 effort — StateTransitionManager hardening (separate lineage, same "Phase 2" label):** `docs/phase-0-specifications/PHASE-2-JOB-BOARD.md`, `docs/phase-0-specifications/2026-07-11-PHASE-2-BLOCKERS.md` (PR #205 — observation dedup + async-safe concurrency, not FleetMode/topology)
 
 ---
 

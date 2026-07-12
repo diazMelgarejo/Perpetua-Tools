@@ -308,8 +308,8 @@ Set `PERPETUA_TOOLS_PATH` before start — wrong sibling path degrades hardware 
 
 | Host | LAN IP | Notes |
 |------|--------|-------|
-| Win RTX | `192.168.254.100` | LM Studio + stack |
-| Mac Studio | `192.168.254.102` | **Not** `.110` (stale default) |
+| Win RTX | `<YOUR_LAN_IP>` | LM Studio + stack |
+| Mac Studio | `<YOUR_LAN_IP>` | **Not** `.110` (stale default) |
 
 ### What worked
 
@@ -326,7 +326,7 @@ Set `PERPETUA_TOOLS_PATH` before start — wrong sibling path degrades hardware 
 ### Code fixes (same session)
 
 - orama `discover.py`: Windows subnet scan; `start.ps1`: repo discover + `last_discovery.json`, no `.110` fallback
-- PT: removed `192.168.254.110` defaults from `agent_launcher.py` / `alphaclaw_bootstrap.py`
+- PT: removed `<YOUR_LAN_IP>` defaults from `agent_launcher.py` / `alphaclaw_bootstrap.py`
 
 ---
 
@@ -466,7 +466,7 @@ cd ../Perpetua-Tools && git pull --ff-only origin main
 
 3. **Plan corrections** — orama Hermes onboarding plan Phase 1 task 1 referenced `resolve_local_or_remote()` which does not exist in PT. Real primitives: `_loopback_host_from_endpoint`, `_is_local_endpoint`, `_get_local_ips` in `src/perpetua_tools/agent_launcher.py`. Plan corrected.
 
-4. **Win LM Studio live** — `http://192.168.254.102:1234` (also `localhost:1234` from the Win host). Models confirmed from `/v1/models`: `qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2`, `gemma-4-26b-a4b-it`, `text-embedding-qwen3-embedding-8b-i1-gguf-q6-k`.
+4. **Win LM Studio live** — `http://<YOUR_LAN_IP>:1234` (also `localhost:1234` from the Win host). Models confirmed from `/v1/models`: `qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2`, `gemma-4-26b-a4b-it`, `text-embedding-qwen3-embedding-8b-i1-gguf-q6-k`.
 
 ---
 
@@ -644,7 +644,7 @@ Import command: `/instinct-import .claude/homunculus/instincts/inherited/Perpetu
 
 - **IP misconfiguration was silent**: `agent_launcher.py` read `MAC_LMS_HOST`/`WINDOWS_IP` from env but neither was exported by start.sh or present in `.env`. Fallback hard-coded defaults (`.103`, `.100`) were always used. Actual LAN addresses are `.110` (Mac LM Studio) and `.108` (Windows).
 
-- **`.env.local` had wrong values**: `WINDOWS_IP=192.168.254.101` (off by several octets), `WINDOWS_PORT=1234` (LM Studio port incorrectly overriding the Ollama port — `REMOTE_WINDOWS_URL` pointed at LM Studio instead of Ollama). Fixed to `.108` / `11434`.
+- **`.env.local` had wrong values**: `WINDOWS_IP=<YOUR_LAN_IP>` (off by several octets), `WINDOWS_PORT=1234` (LM Studio port incorrectly overriding the Ollama port — `REMOTE_WINDOWS_URL` pointed at LM Studio instead of Ollama). Fixed to `.108` / `11434`.
 
 - **`agent_launcher.py` never called `load_dotenv()`**: it only saw shell-exported vars. Added `load_dotenv(".env")` + `load_dotenv(".env.local", override=True)` so `.env` files are always honoured.
 
@@ -656,8 +656,8 @@ Import command: `/instinct-import .claude/homunculus/instincts/inherited/Perpetu
 
 - Hard-coded defaults in `agent_launcher.py` updated: `.110` Mac LM Studio, `.108` Windows.
 - `network_autoconfig.py` `preferred_ips` updated to `.110` / `.108`.
-- `LM_STUDIO_MAC_ENDPOINT` in both repo `.env` files updated to `http://192.168.254.110:1234`.
-- `.env.local` corrected: `WINDOWS_IP=192.168.254.108`, `WINDOWS_PORT=11434`.
+- `LM_STUDIO_MAC_ENDPOINT` in both repo `.env` files updated to `http://<YOUR_LAN_IP>:1234`.
+- `.env.local` corrected: `WINDOWS_IP=<YOUR_LAN_IP>`, `WINDOWS_PORT=11434`.
 
 ### Open
 
@@ -749,7 +749,7 @@ Import command: `/instinct-import .claude/homunculus/instincts/inherited/Perpetu
 - **`capture_output=True` silences bootstrap scripts** — never use in user-facing install flows; let stdout/stderr stream through
 - **`npm install -g` does not guarantee execute bits** — `shutil.which()` finds the binary but `subprocess.run()` raises `PermissionError: [Errno 13]`; catching only `CalledProcessError` leaves it unhandled
 - **Hardcoded model names break inference** — LM Studio returns `400`, Ollama returns `404` when model isn't loaded; always resolve via `/v1/models` or `/api/tags` at runtime
-- **Windows GPU models cannot be called on Mac** — LAN isolation required; `192.168.254.103` (Windows) and `192.168.254.101` (Mac LMS) are distinct physical devices
+- **Windows GPU models cannot be called on Mac** — LAN isolation required; `<YOUR_LAN_IP>` (Windows) and `<YOUR_LAN_IP>` (Mac LMS) are distinct physical devices
 - **AgentTracker `agents.json` must not share path with routing state** — flat routing dicts cause `AgentRecord(**v)` `TypeError`
 
 ### Decisions made
@@ -881,7 +881,7 @@ Import command: `/instinct-import .claude/homunculus/instincts/inherited/Perpetu
 
 - **Stash pop after rebase** — `alphaclaw_bootstrap.py` got both versions appended; required Python line-by-line surgery
 - **Orphan branch in UTS** — `git merge-base` returned exit 1; fixed with `git reset --hard origin/main`
-- **Hardcoded LAN IP broke CI** — `192.168.254.103` in fastapi_app.py defaults broke `test_health_uses_plain_string_defaults`
+- **Hardcoded LAN IP broke CI** — `<YOUR_LAN_IP>` in fastapi_app.py defaults broke `test_health_uses_plain_string_defaults`
 - **Test module state contamination** — `importlib.reload()` without restore leaked `AUTORESEARCH_DEFAULT_BRANCH = "dev"` across tests
 
 ### Pre-Commit Checklist
@@ -1134,7 +1134,7 @@ spec.loader.exec_module(mod)       # otherwise dataclass field annotations fail
 
 - **Both LM Studio nodes load the same models** (MLX 9B and GGUF 27B):
   - Mac `localhost:1234`: `qwen3.5-9b-mlx` (ctx=56384, MLX), `qwen3.5-27b-...` (ctx=131072, GGUF)
-  - Win `192.168.254.103:1234`: `qwen3.5-27b-...` (ctx=131072, GGUF), `qwen3.5-9b-mlx` (ctx=56384)
+  - Win `<YOUR_LAN_IP>:1234`: `qwen3.5-27b-...` (ctx=131072, GGUF), `qwen3.5-9b-mlx` (ctx=56384)
 
 - **Both models are extended thinking/reasoning models.** They generate `<think>` blocks
   (stored in `reasoning_content`) before visible output. This makes agent turns slow:
@@ -1160,7 +1160,7 @@ spec.loader.exec_module(mod)       # otherwise dataclass field annotations fail
 - **Gemini free tier rate-limits fast** under repeated tests. Space out calls or use paid tier
   for production load. `google/gemini-3-flash-preview` is the working fallback for now.
 - **ollama-win stub needed** in openclaw.json to suppress setup_macos.py warning.
-  Added: `providers.ollama-win.baseUrl = http://192.168.254.103:11434`
+  Added: `providers.ollama-win.baseUrl = http://<YOUR_LAN_IP>:11434`
 
 ### Full Matrix Results
 
@@ -1257,7 +1257,7 @@ All fixes: `bash -n` passes. Three orama-system commits pushed: 86391c3, 128f7a6
 | Machine | DELL Precision Tower 3660 |
 | RAM | 32 GB |
 | GPU | NVIDIA RTX 3080 10GB VRAM |
-| LM Studio | `192.168.254.103:1234` |
+| LM Studio | `<YOUR_LAN_IP>:1234` |
 | CUDA constraint | ONE model at a time (RTX 3080 VRAM limit) |
 | Active model | `qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2` (GGUF) |
 | Secondary | `qwen3.5-9b-mlx` also loaded (but MLX won't run on CUDA; LM Studio falls back to CPU) |
@@ -1319,7 +1319,7 @@ Commit: `orama-system 3cba5bd`
 
 ## [2026-04-29] Win IP is dynamic — detect, never hardcode
 
-**Problem:** Win LM Studio IP was hardcoded as `192.168.254.103` in SKILL.md and
+**Problem:** Win LM Studio IP was hardcoded as `<YOUR_LAN_IP>` in SKILL.md and
 referenced in openclaw.json. After a DHCP reassignment Win moved to `.105`, breaking
 all Win agent dispatches.
 
@@ -1539,7 +1539,7 @@ python3 -m pytest tests/ -k "distributed or real_p50" -v
 **mac_probe.sh output (this Mac, 2026-05-08):**
 
 ```json
-{"model_id":"Mac14,9","ram_gb":16,"gpu_cores":16,"private_ip":"192.168.1.147","arch":"arm64","is_apple_silicon":true,"ai_tier":"standard","ollama_recommended_parallel":2}
+{"model_id":"Mac14,9","ram_gb":16,"gpu_cores":16,"private_ip":"<YOUR_LAN_IP>","arch":"arm64","is_apple_silicon":true,"ai_tier":"standard","ollama_recommended_parallel":2}
 ```
 
 **V2 spec:** `orama-system/docs/v2/14-supervisor-and-anthropic-patterns.md` — DB persistence, audit log, MAESTRO gates, SWARM guardrails (planning only).
@@ -1622,7 +1622,7 @@ hostname -I | awk '{print $1}'
   "model_id": "Mac14,9",
   "ram_gb": 16,
   "gpu_cores": 16,
-  "private_ip": "10.179.147.43",
+  "private_ip": "<YOUR_LAN_IP>",
   "arch": "arm64",
   "os": "Darwin",
   "is_apple_silicon": true,
@@ -1725,13 +1725,13 @@ run once per major update). Now makes `gbrain search "HITL"` work cross-session.
 
 ## [2026-05-28] Stop source-archaeology when hardware topology changes
 
-**Anti-pattern discovered:** 30+ tool calls tracing `lan_discovery.py` ancestry to find why CI returned `192.168.254.108` instead of `.103`, checking git logs, commit diffs, installed packages, and shadow modules — all because tests were written against a hardcoded `.103` fallback that was already wrong.
+**Anti-pattern discovered:** 30+ tool calls tracing `lan_discovery.py` ancestry to find why CI returned `<YOUR_LAN_IP>` instead of `.103`, checking git logs, commit diffs, installed packages, and shadow modules — all because tests were written against a hardcoded `.103` fallback that was already wrong.
 
 **Root cause (trivially obvious in hindsight):** The Windows GPU machine IP changed from `.103` → `.108`. Cursor had already created PRs #58/#59/#60 fixing this. The old CodeRabbit-added tests were stale.
 
 **Rule:** When a test fails with an unexpected IP/hostname, **check hardware topology first** (`discover.py` or the memory file `project_lan_topology.md`) before any code archaeology. Cost: 1 tool call. Saves 30+.
 
-**Pattern:** `assert result == "http://192.168.254.103"` FAILING with `http://192.168.254.108` → the hardware changed, not the code.
+**Pattern:** `assert result == "http://<YOUR_LAN_IP>"` FAILING with `http://<YOUR_LAN_IP>` → the hardware changed, not the code.
 
 **Corollary:** When Cursor/CodeRabbit have created new branches since your last session, `git fetch --all` and READ THOSE BRANCHES before diagnosing anything. They likely already fixed it.
 
@@ -2065,4 +2065,19 @@ Selective blend (commit 482d7199) completed by executing agent after Codex verif
 Two tracking documents updated:
 1. Phase 2 integration backlog (formal TODO entries)
 2. Blend verdict doc (correction note added)
+
+## 2026-07-11 — agentic-stack `.agent/` Blend Tool + First Resolution Cycle
+
+Built `scripts/git/agentic-stack-agent-blend.sh` to replay PT's `.agent/` customizations
+across a `vendor/agentic-stack` pin bump (v0.9.0 → v0.18.0), mapping the AlphaClaw
+`feature/MacOS-post-install` reverse-merge precedent onto file-level `git merge-file`
+3-way merges (`.agent/` isn't its own submodule/branch, so the branch-level trick
+doesn't apply directly). 16 files merged/staged clean; 7 real conflicts walked through
+with the user via AskUserQuestion and resolved (2 needed combining both sides' fixes,
+not picking one — a wrong single-side pick would have silently reintroduced an
+already-fixed bug in each case). Brain-integration files stayed correctly blocked per
+orama doc 41 §5.
+
+Full writeup + reusable conflict-resolution playbook:
+[`wiki/11-agentic-stack-agent-blend.md`](wiki/11-agentic-stack-agent-blend.md).
 

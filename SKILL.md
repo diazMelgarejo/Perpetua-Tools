@@ -10,7 +10,7 @@
 | **Orchestrator & instance manager** | **Perpetua-Tools** (this repo) | Top-level agent lifecycle, `ModelRegistry` / `config/*.yml`, FastAPI `/orchestrate`, idempotency |
 | **Reasoning & routing methodology** | **orama-system** | `bin/skills/SKILL.md`, AFRP (pre-router gate) / CIDF / process; multi-agent registry is **separately installable** and **not** required to run this orchestrator |
 | **Subagent auto-selection (ECC-style)** | **ECC Tools** | Default subagent routing unless the top-level orchestrator overrides roles |
-| **Karpathy AutoResearch sync** | [uditgoenka/autoresearch](https://github.com/uditgoenka/autoresearch) | Idempotent sync of the automated ML research loop; integrated via `/autoresearch/*` endpoints and `orchestrator/autoresearch_bridge.py` |
+| **Karpathy AutoResearch sync** | [uditgoenka/autoresearch](https://github.com/uditgoenka/autoresearch) | Idempotent sync of the automated ML research loop; integrated via `/autoresearch/*` endpoints and `orchestrator/autoresearch_bridge.py`. `/autoresearch` slash-command availability is **not a hard dependency**: prefers the idempotent global skill install (`scripts/install-vendor-guided.sh`), falls back to the Claude Code plugin marketplace, then to a micro-implementation if neither is present — the underlying orchestration (git sync, GPU dispatch, dry-run planning) works regardless |
 
 **Selection order:** Top-level model routing follows **this `SKILL.md` → `orchestrator/model_registry.py` + `config/models.yml` / `routing.yml`** first. Subagents use **ECC-tools** defaults unless overridden. **orama-system** remains the methodology layer for reasoning execution, not a hard dependency of the YAML registry.
 
@@ -87,7 +87,7 @@ Refer to [hardware/SKILL.md](https://github.com/diazMelgarejo/Perpetua-Tools/blo
 - **ALWAYS roles:** Coder, Checker, Refiner, Executor, Verifier, AutoResearch Coder
 - **NEVER Mac models:** `qwen3.5-9b-mlx`, `qwen3.5-9b-mlx-4bit`, `gemma-4-e4b-it`
 - **NEVER load MLX models on Windows** — MLX requires Apple Silicon Metal.
-- **Constraints:** `gpu_offload=40` layers max; validated fallbacks: `qwen3-coder:14b`, `gemma-4-26b-a4b-it`, then Ollama `qwen3.5:35b-a3b-q4_K_M` at `http://192.168.1.100:11434`.
+- **Constraints:** `gpu_offload=40` layers max; validated fallbacks: `qwen3-coder:14b`, `gemma-4-26b-a4b-it`, then Ollama `qwen3.5:35b-a3b-q4_K_M` at `http://<YOUR_WINDOWS_IP>:11434`.
 
 ### Canonical Model Routing Decision Tree
 ```
@@ -195,7 +195,7 @@ The `qwen3:30b-a3b-instruct-q4_K_M` model on Dell serves as:
 ```python
 CRITIC_CONFIG = {
     "model": "qwen3:30b-a3b-instruct-q4_K_M",
-    "endpoint": "http://192.168.1.100:11434",
+    "endpoint": "http://<YOUR_WINDOWS_IP>:11434",
     "temperature": 0.6,
     "max_tokens": 8192,
     "critic_prompt_template": """
@@ -241,13 +241,13 @@ critic_pass: true
 mode: lan_full
 # LM Studio endpoints — IPs are DHCP; read live values from ~/.openclaw/openclaw.json
 # Last confirmed 2026-04-29: Mac .106, Win .105
-lmstudio_mac: http://192.168.254.106:1234    # Qwen3.5-9B-MLX-4bit, verifier/orchestrator fallback
-lmstudio_win: http://192.168.254.105:1234    # Qwen3.5-27B, gpu_offload=40, context 16384
+lmstudio_mac: http://<YOUR_MAC_IP>:1234     # Qwen3.5-9B-MLX-4bit, verifier/orchestrator fallback
+lmstudio_win: http://<YOUR_WINDOWS_IP>:1234  # Qwen3.5-27B, gpu_offload=40, context 16384
 # Portal dashboard
-portal: http://192.168.254.106:8002          # LAN status (auto-refresh 10s)
+portal: http://<YOUR_MAC_IP>:8002            # LAN status (auto-refresh 10s)
 # Ollama lanes
-ollama_mac: http://192.168.254.106:11434     # glm-5.1:cloud local client
-ollama_win: http://192.168.254.105:11434     # qwen3-coder:14b / critic / backup
+ollama_mac: http://<YOUR_MAC_IP>:11434       # glm-5.1:cloud local client
+ollama_win: http://<YOUR_WINDOWS_IP>:11434   # qwen3-coder:14b / critic / backup
 cloud_enabled: true
 critic_pass: true
 fallback_chain:
@@ -328,7 +328,7 @@ This is the primary async communication channel between agents that never share 
 | `stash pop` add/add on every file | Another agent pushed to your files while you were working | `git checkout --theirs <file>` for yours, patch manually |
 | `rebase` produces add/add on ALL files | Branch has no common ancestor with main | `git reset --hard origin/main`, re-apply your files manually |
 | File appears duplicated / concatenated | Both versions of a conflict were appended | Python line-by-line surgery: keep only `lines[N:]` for the good half |
-| CI fails with `192.168.x.x` in assertion | LAN IP leaked into a source default | Replace with `127.0.0.1` in the source, not the test |
+| CI fails with `<YOUR_LAN_IP>.x.x` in assertion | LAN IP leaked into a source default | Replace with `127.0.0.1` in the source, not the test |
 | Module constant test contamination | `importlib.reload()` left stale env state | Add `autouse` fixture that reloads before AND after |
 
 ---

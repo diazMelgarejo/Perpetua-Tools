@@ -1,0 +1,44 @@
+{
+  "id": "9d1013fedd41",
+  "key": "manual_9d1013",
+  "name": "manual_9d1013",
+  "claim": "When a vendored submodule (agentic-stack) ships upgrades to a directory PT customized in-tree (.agent/), the AlphaClaw reverse-merge precedent (upstream always prevails on the integration line, but local customizations sit on the RECEIVING end of a union merge, never the source) maps to file-level 3-way merges via 'git merge-file base ours theirs', not a branch-level reverse-merge, since .agent/ isn't its own submodule/branch. Tool: scripts/git/agentic-stack-agent-blend.sh (status/apply/promote); base SHA tracked in .agent/.agentic-stack-blend-state.json, seeded from .agent/install.json's original scaffold version.",
+  "conditions": [
+    "3-way-merge",
+    "agentic-stack",
+    "alphaclaw-precedent",
+    "blend",
+    "doc-41",
+    "reverse-merge",
+    "upgrade"
+  ],
+  "evidence_ids": [
+    "2026-07-11T14:39:58.789479+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T14:39:58.789479+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T14:39:58.789479+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T14:39:58.895951+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Built and validated 2026-07-11 for the v0.9.0->v0.18.0 agentic-stack bump (PR #208): 18 clean merges (verified recall.py's UTF-8 customization survived), 7 genuine conflicts surfaced honestly (tools/learn.py: PT's sanitize_tracked_path_leaks() vs upstream's datetime.timezone.utc fix, same line), 2 Brain files correctly blocked per doc 41 \u00a75. Never advance the blend-state base while any file is still conflicted, or the next cycle diffs from the wrong point and silently drops upstream's intervening changes for those files.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T14:39:58.789479+00:00"
+      ],
+      "lessons_sha": "a3c1b0339af1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T14:39:58.895944+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Built and validated 2026-07-11 for the v0.9.0->v0.18.0 agentic-stack bump (PR #208): 18 clean merges (verified recall.py's UTF-8 customization survived), 7 genuine conflicts surfaced honestly (tools/learn.py: PT's sanitize_tracked_path_leaks() vs upstream's datetime.timezone.utc fix, same line), 2 Brain files correctly blocked per doc 41 \u00a75. Never advance the blend-state base while any file is still conflicted, or the next cycle diffs from the wrong point and silently drops upstream's intervening changes for those files."
+}

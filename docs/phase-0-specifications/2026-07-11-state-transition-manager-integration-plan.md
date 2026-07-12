@@ -795,3 +795,10 @@ Plan approved with the scope and API corrections above. Next step: implement `or
 | 14 | Program | Target `feature/phase-0-blocker-fixes` if Track D is active there, else `main` | Mechanical | P3 | Minimizes cross-branch merge work for the broader program | Force all STM work onto `main` regardless of broader program branch |
 | 15 | Program | **Supersedes #13** (2026-07-12): implement P9 reorder buffer inside STM after all, plus P18 bounded caches and P2 k-bucket maintenance in the same pass | Mechanical | P1 (completeness), P5 | A PR #205 code-review follow-up (antigravity-cli plan) found P9/P18/P2 still pseudocode-only per PATTERN-SYNTHESIS.md, plus a real `_peer_locks`/`_seen_observations` memory-leak risk under many distinct peer_ids; the original blast-radius concern (#13) was addressed by scoping the buffer to a private, per-peer, capped structure with no new public surface, not by staying out of STM | Ship a separate `ReorderBuffer` module and wire it externally (would re-fragment the same peer-ordering state STM already owns via `_last_applied_key`) |
 | 16 | Eng | Add `StateTransitionResult.flushed` as an additive field rather than changing `evaluate_observation()`'s return type to a list | Taste | P5, P3 (pragmatic) | Every existing caller reads a single `StateTransitionResult`; a list return type is a breaking change with no compensating benefit for the common (nothing flushed) case | Return `list[StateTransitionResult]` unconditionally, per the antigravity plan's original proposal |
+
+---
+
+## Related Documents
+
+- [`PATTERN-MULTIAGENT-EXECUTION-PLAN.md`](./PATTERN-MULTIAGENT-EXECUTION-PLAN.md) — Parent execution plan covering 20 P2P patterns (P1–P20) and 16 security gaps (G1–G16) across Perpetua-Tools and orama-system.
+- [`MULTIAGENT-SWARM-SECURITY-ANALYSIS.md`](./MULTIAGENT-SWARM-SECURITY-ANALYSIS.md) — Threat model mapping (T1–T7), gap severity analysis (G1–G16), and trust-boundary assessment that informs this integration milestone.

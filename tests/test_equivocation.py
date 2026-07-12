@@ -24,7 +24,7 @@ def make_obs(
             if observation_type == ObservationType.REACHABLE
             else DirectStatus.UNREACHABLE
         ),
-        endpoint="192.168.1.1:9000",
+        endpoint="127.0.1.1:9000",
         endpoint_epoch=epoch,
         sequence=sequence,
         observer_provenance=observer_provenance,

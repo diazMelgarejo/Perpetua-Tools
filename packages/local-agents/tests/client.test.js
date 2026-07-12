@@ -156,7 +156,7 @@ describe("LMStudioClient", () => {
   });
 
   it("resolveModel uses first available model", async () => {
-    const client = new LMStudioClient({ baseUrl: "http://192.168.254.101:1234" });
+    const client = new LMStudioClient({ baseUrl: "http://127.0.1.1:1234" });
     client.listModels = async () => ["mistral-7b-instruct", "phi-3"];
     const model = await client.resolveModel();
     expect(model).toBe("mistral-7b-instruct");
@@ -185,7 +185,7 @@ describe("LMStudioClient", () => {
   });
 
   it("ping returns ok:false when not reachable", async () => {
-    const client = new LMStudioClient({ baseUrl: "http://192.168.254.101:1234" });
+    const client = new LMStudioClient({ baseUrl: "http://127.0.1.1:1234" });
     client.resolveModel = async () => { throw new Error("ETIMEDOUT"); };
     const status = await client.ping();
     expect(status.ok).toBe(false);
