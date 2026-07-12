@@ -161,3 +161,18 @@ cannot doxx the owner in this public repo.
   `packages/local-agents`, and focused Python tests for orchestrator changes.
 - Full `python3 -m pytest` remains the broad gate when the local dev
   dependencies are installed.
+
+## Multi-PR Landing Order & Append-Only Log Conflicts
+
+When 2+ open PRs in this repo touch `.agent/memory/semantic/LESSONS.md` or
+`lessons.jsonl` (or any other append-only shared log), GitHub's per-PR
+`mergeable` check only compares each PR against current `main` — it will not
+warn you that two open PRs conflict with *each other*. Simulate the intended
+landing order locally first with `git merge-tree --write-tree
+--merge-base=<base> <branch1> <branch2>` (read-only, no side effects) before
+assuming a set of open PRs are independently mergeable. Resolve any real
+conflict by **union** (keep both sides' appended entries, never delete either),
+matching this file's Enforcement principles applied to memory/lesson records.
+Full case study, worked example, and the reasoning for merge-not-rebase when
+branches are already open PRs: `orama-system/SECURITY.md` § "Case study:
+append-only shared-file conflicts across independent PRs (2026-07-12)".
