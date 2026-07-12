@@ -83,10 +83,10 @@ def client():
             new=lambda: __import__("asyncio").sleep(
                 0,
                 result={
-                    "manager_endpoint": "http://192.168.254.103:11434",
+                    "manager_endpoint": "http://127.0.1.2:11434",
                     "manager_model": "glm-5.1:cloud",
                     "manager_backend": "mac-ollama",
-                    "coder_endpoint": "http://192.168.254.100:1234",
+                    "coder_endpoint": "http://127.0.1.1:1234",
                     "coder_model": "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2",
                     "coder_backend": "windows-lmstudio",
                     "distributed": True,

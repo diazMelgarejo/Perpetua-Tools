@@ -61,7 +61,7 @@
 **Mechanism:** Each witness carries (peer_id, ip_address, asn). When aggregating witness votes, deduplicate by ASN first: if 10 witnesses all originate from ASN 65000, count as **one logical witness** for quorum purposes. This breaks Sybil attacks where one entity spins up many identities on the same network.  
 **Threat defended:** T4 (Sybil witnesses — attacker can't easily acquire diverse ASN/subnet), T1 (quorum forging requires control of multiple network segments, detectable by ASN clustering).  
 **Cost:** WHOIS/GeoIP lookup per witness (~100ms cold, cached after); on-memory ASN dedup table (hundreds of bytes).  
-**Swarm application:** OpenClaw swarm observing "LM Studio at 192.168.254.104 is online" requires ≥2 witnesses from different ASN/subnets. On a LAN, substitute "different physical machine" dedup key; on WAN, use ASN/datacenters.  
+**Swarm application:** OpenClaw swarm observing "LM Studio at <YOUR_LAN_IP> is online" requires ≥2 witnesses from different ASN/subnets. On a LAN, substitute "different physical machine" dedup key; on WAN, use ASN/datacenters.  
 **PT implementation status:** ⚠️ Partial (D1 mentions "distinct network provenance" in T4 mitigation but doesn't formalize ASN/subnet dedup).  
 **Phase 1b enhancement:** Implement peer GeoIP lookup on startup; maintain ASN-indexed witness table; reject observations where >50% of witnesses share ASN.
 

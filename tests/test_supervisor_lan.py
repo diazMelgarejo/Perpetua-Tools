@@ -19,7 +19,7 @@ from orchestrator.supervisor import JobSpec, JobStatus, OrchestrationSupervisor,
 
 
 # ── Skip guard ────────────────────────────────────────────────────────────────
-_WIN_IP = os.getenv("WIN_IP", "192.168.254.108")
+_WIN_IP = os.getenv("WIN_IP", "127.0.1.1")
 _WIN_PORT = int(os.getenv("WIN_LMS_PORT", "1234"))
 
 
@@ -80,7 +80,7 @@ async def test_failclosed_when_win_offline(tmp_path):
     import os
     # Force an unreachable Win IP for this test
     original = os.getenv("WIN_IP")
-    os.environ["WIN_IP"] = "192.168.254.250"  # guaranteed unreachable
+    os.environ["WIN_IP"] = "127.0.1.2"  # guaranteed unreachable
 
     sup = OrchestrationSupervisor(state_dir=tmp_path)
     spec = JobSpec(

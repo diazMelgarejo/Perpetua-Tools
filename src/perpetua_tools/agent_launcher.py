@@ -126,7 +126,7 @@ _default_ollama_mac_endpoint = (
 )
 _ollama_mac_endpoint = os.getenv("OLLAMA_MAC_ENDPOINT", _default_ollama_mac_endpoint)
 # PT runs ON the Mac, so its own ("mac") ollama is always loopback. A stale LAN
-# IP from a previous subnet (e.g. 192.168.1.101) is never correct here — it only
+# IP from a previous subnet (e.g. 127.0.3.1) is never correct here — it only
 # breaks Mac-orchestrator selection (mac_ollama_ok=False -> manager falls off
 # ollama-localhost). Normalize any non-loopback mac endpoint to localhost, the
 # canonical value. Mirrors the Win endpoint's "live/canonical source beats stale
@@ -266,9 +266,9 @@ _win_lms_eps = os.getenv("LM_STUDIO_WIN_ENDPOINTS", "").strip()
 _win_lms_first = _win_lms_eps.split(",")[0].strip() if _win_lms_eps else ""
 if not os.getenv("WINDOWS_IP") and _win_lms_first:
     _pw = urlparse(_win_lms_first)
-    _win_ip_default = _pw.hostname or ("localhost" if RUNNING_ON_WINDOWS else "192.168.254.108")
+    _win_ip_default = _pw.hostname or ("localhost" if RUNNING_ON_WINDOWS else "192.0.2.4")
 else:
-    _win_ip_default = "localhost" if RUNNING_ON_WINDOWS else "192.168.254.108"
+    _win_ip_default = "localhost" if RUNNING_ON_WINDOWS else "192.0.2.4"
 
 _windows_ip = os.getenv("WINDOWS_IP", _win_ip_default)
 if RUNNING_ON_WINDOWS and not _is_loopback_host(_windows_ip):
@@ -460,7 +460,7 @@ def _get_local_ips() -> frozenset[str]:
         local.add(socket.gethostbyname(socket.gethostname()))
     except OSError:
         pass
-    for probe in ("8.8.8.8", "192.168.0.1", "10.0.0.1"):
+    for probe in ("8.8.8.8", "1.1.1.1"):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 s.settimeout(0.2)

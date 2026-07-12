@@ -300,7 +300,7 @@ def test_discovery_fallback_chain_order():
     # Scenario 1: Static seeds available
     config = {
         "discovery": {
-            "static_seeds": ["192.168.1.50:9000"],
+            "static_seeds": ["<YOUR_LAN_IP>:9000"],
         }
     }
     peers = discover_peers(config)

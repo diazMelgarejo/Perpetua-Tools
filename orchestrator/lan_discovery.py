@@ -14,7 +14,7 @@ Based on distributed AI orchestration patterns:
 
 Usage:
   python -m orchestrator.lan_discovery --scan
-  python -m orchestrator.lan_discovery --scan --subnet 192.168.1.0/24
+  python -m orchestrator.lan_discovery --scan --subnet 127.0.1.0/24
   python -m orchestrator.lan_discovery --interactive  # consent UI
 """
 
@@ -87,7 +87,7 @@ class LANDiscovery:
     def __init__(self, subnet: str = None, ports: List[int] = None):
         """
         Args:
-            subnet: CIDR notation (e.g., "192.168.1.0/24"). Auto-detects if None.
+            subnet: CIDR notation (e.g., "127.0.1.0/24"). Auto-detects if None.
             ports: List of ports to scan. Uses DEFAULT_PORTS if None.
         """
         self.subnet = subnet or self._detect_local_subnet()
@@ -97,7 +97,7 @@ class LANDiscovery:
     def _detect_local_subnet(self) -> str:
         """
         Auto-detect local subnet from machine's network interface.
-        Fallback to 192.168.1.0/24 if detection fails.
+        Fallback to 127.0.1.0/24 if detection fails.
         """
         try:
             import socket
@@ -109,10 +109,10 @@ class LANDiscovery:
             return subnet
         except Exception as exc:
             log.warning(
-                "Failed to auto-detect local subnet (%s); falling back to 192.168.1.0/24",
+                "Failed to auto-detect local subnet (%s); falling back to 127.0.1.0/24",
                 exc,
             )
-            return "192.168.1.0/24"  # Safe default
+            return "127.0.1.0/24"  # Safe default
 
     async def _probe_endpoint(self, host: str, port: int) -> Optional[AIEndpoint]:
         """
@@ -468,7 +468,7 @@ def detect_active_tilting_ip() -> str:
          config/models.yml ${...}, WIN_IP, etc. track the current DHCP lease
       3. LM_STUDIO_WIN_ENDPOINTS env var — backward-compat fallback (can go stale)
       4. Live subnet probe via NetworkAutoConfig
-      5. Hardcoded 192.168.254.108 (last-resort fallback)
+      5. Hardcoded 127.0.2.1 (last-resort fallback)
     """
     # 1. Explicit manual override always wins.
     override = os.environ.get("LAN_GPU_IP_OVERRIDE", "")
@@ -498,7 +498,7 @@ def detect_active_tilting_ip() -> str:
             Uses NetworkAutoConfig to determine the working local IP, probes the local /24 prefix for services labeled "lmstudio", and if any host is discovered returns "http://{host}". If no hosts are found, returns "http://{subnet}.108" where {subnet} is the first three octets of the working local IP.
             
             Returns:
-                str: Base HTTP URL of the discovered LM Studio host or the subnet fallback (e.g., "http://192.168.1.108").
+                str: Base HTTP URL of the discovered LM Studio host or the subnet fallback (e.g., "http://192.0.2.1").
             """
             configurer = NetworkAutoConfig()
             local_ip = configurer.get_working_local_ip()
@@ -544,16 +544,16 @@ def detect_active_tilting_ip() -> str:
         thread.join(timeout=25.0)
 
         if thread.is_alive():
-            log.warning("Active tilting IP discovery timed out after 25 seconds; falling back to 192.168.254.108")
-            return "http://192.168.254.108"
+            log.warning("Active tilting IP discovery timed out after 25 seconds; falling back to 127.0.2.1")
+            return "http://127.0.2.1"
             
         if result[0]:
             return result[0]
             
-        return "http://192.168.254.108"
+        return "http://127.0.2.1"
     except Exception as exc:
-        log.warning("Active tilting IP detection failed (%s); falling back to 192.168.254.108", exc)
-        return "http://192.168.254.108"
+        log.warning("Active tilting IP detection failed (%s); falling back to 127.0.2.1", exc)
+        return "http://127.0.2.1"
 
 
 async def main():
@@ -562,7 +562,7 @@ async def main():
     
     Parses the following CLI options and performs their associated actions:
     - --scan: scan the LAN for AI inference servers and save the resulting discovery state.
-    - --subnet: specify the CIDR subnet to scan (e.g., 192.168.1.0/24).
+    - --subnet: specify the CIDR subnet to scan (e.g., 127.0.1.0/24).
     - --interactive: present an interactive consent UI to mark discovered endpoints for orchestrator takeover.
     - --load: load previously saved discovery state and restore discovered endpoints.
     
@@ -585,7 +585,7 @@ async def main():
     parser.add_argument(
         "--subnet",
         type=str,
-        help="Subnet to scan in CIDR notation (e.g., 192.168.1.0/24)",
+        help="Subnet to scan in CIDR notation (e.g., 127.0.1.0/24)",
     )
     parser.add_argument(
         "--interactive",
