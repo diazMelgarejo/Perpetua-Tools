@@ -1,0 +1,43 @@
+{
+  "id": "a33c62ef731f",
+  "key": "manual_a33c62",
+  "name": "manual_a33c62",
+  "claim": "On a shared branch with multiple concurrent agent sessions, always 'git fetch + git log HEAD..origin/<branch>' before starting substantial fix/review work \u2014 a gap you're about to fill may already be closed by a concurrent session, and duplicate work risks silent collision or wasted effort.",
+  "conditions": [
+    "concurrent",
+    "duplicate work",
+    "fetch",
+    "multi-agent",
+    "shared branch",
+    "sync"
+  ],
+  "evidence_ids": [
+    "2026-07-12T09:30:58.706297+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-12T09:30:58.706297+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-12T09:30:58.706297+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-12T09:30:58.810514+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Repeated 3+ times in one extended session on PR205/PR206: independently re-implemented an already-landed atomic-transaction fix (had to discard and pull the real one), redid CEO/Eng review synthesis another session had already completed and closed out, and nearly re-fixed already-resolved CodeRabbit review comments. Each time, a fetch+log check would have caught it before spending the work.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-12T09:30:58.706297+00:00"
+      ],
+      "lessons_sha": "1d760cc2e62a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-12T09:30:58.810503+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Repeated 3+ times in one extended session on PR205/PR206: independently re-implemented an already-landed atomic-transaction fix (had to discard and pull the real one), redid CEO/Eng review synthesis another session had already completed and closed out, and nearly re-fixed already-resolved CodeRabbit review comments. Each time, a fetch+log check would have caught it before spending the work."
+}
