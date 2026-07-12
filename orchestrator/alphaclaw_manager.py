@@ -181,6 +181,16 @@ class RuntimePayload:
 
 # ─── Backend probe ─────────────────────────────────────────────────────────────
 
+def _resolve_peer_ips(mac_ip: str = "", win_ip: str = "") -> tuple[str, str]:
+    """Resolve mac/win IPs from explicit args, env vars, or documentation-net
+    defaults (192.0.2.0/24, RFC 5737 — intentionally non-routable placeholders,
+    not live LAN defaults).
+    """
+    mac_ip = mac_ip or os.getenv("MAC_IP", "192.0.2.2")
+    win_ip = win_ip or os.getenv("WIN_IP", "192.0.2.1")
+    return mac_ip, win_ip
+
+
 def probe_backends(
     mac_ip: str = "",
     win_ip: str = "",
@@ -195,8 +205,7 @@ def probe_backends(
 
     Returns a BackendProbeResult with reachability flags and IPs.
     """
-    mac_ip = mac_ip or os.getenv("MAC_IP", "192.0.2.2")
-    win_ip = win_ip or os.getenv("WIN_IP", "192.0.2.1")
+    mac_ip, win_ip = _resolve_peer_ips(mac_ip, win_ip)
 
     launcher = AGENT_LAUNCHER_SCRIPT
     if not launcher.is_file():
@@ -354,8 +363,7 @@ def bootstrap_alphaclaw(mac_ip: str = "", win_ip: str = "") -> AlphaClawState:
     if not bootstrap.is_file():
         return AlphaClawState(error=f"alphaclaw_bootstrap.py not found at {bootstrap}")
 
-    mac_ip = mac_ip or os.getenv("MAC_IP", "192.0.2.2")
-    win_ip = win_ip or os.getenv("WIN_IP", "192.0.2.1")
+    mac_ip, win_ip = _resolve_peer_ips(mac_ip, win_ip)
 
     env = _pt_subprocess_env({
         "PT_HOME": str(SCRIPT_DIR),
@@ -441,8 +449,7 @@ def resolve_runtime(
     The returned payload is the single source of truth for all services.
     orama reads it; it makes zero additional gateway decisions.
     """
-    mac_ip = mac_ip or os.getenv("MAC_IP", "192.0.2.2")
-    win_ip = win_ip or os.getenv("WIN_IP", "192.0.2.1")
+    mac_ip, win_ip = _resolve_peer_ips(mac_ip, win_ip)
 
     # Step 1: probe
     if skip_probe:

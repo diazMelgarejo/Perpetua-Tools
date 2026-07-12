@@ -1129,6 +1129,20 @@ async def _amain(args: argparse.Namespace) -> None:
         elif args.subcmd == "status":
             await _queue_status(bus, args.agent)
     elif args.cmd == "heartbeat":
+        # Lazy import: the heartbeat handlers live in agent_coordination.py,
+        # which imports this module at its own top level. A module-level
+        # import here would deadlock on circular init, so import at call
+        # time instead — safe because dispatch always runs after both
+        # modules have finished loading.
+        from scripts.agent_coordination import (
+            _heartbeat_list,
+            _heartbeat_check,
+            _heartbeat_dashboard,
+            _heartbeat_pulse,
+            _heartbeat_kill,
+            _heartbeat_timeline,
+            _heartbeat_cleanup,
+        )
         if args.subcmd == "list":
             await _heartbeat_list(bus)
         elif args.subcmd == "check":

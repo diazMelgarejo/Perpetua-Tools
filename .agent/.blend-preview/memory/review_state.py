@@ -9,7 +9,7 @@ into this module to transition state. Rejection and re-stage preserve full
 history so a candidate that keeps reappearing is visibly churning rather
 than looking novel each time.
 """
-import os, json, datetime, hashlib, re
+import os, json, datetime, hashlib, re, logging
 
 from path_hygiene import REVIEW_QUEUE_DYNAMIC_MARKER, sanitize_tracked_path_leaks
 

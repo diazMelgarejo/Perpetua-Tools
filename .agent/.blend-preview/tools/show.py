@@ -225,14 +225,14 @@ def lesson_stats():
                 if not line:
                     continue
                 try:
-                    l = json.loads(line)
+                    lesson = json.loads(line)
                 except json.JSONDecodeError:
                     continue
                 out["count"] += 1
-                if l.get("status") == "provisional":
+                if lesson.get("status") == "provisional":
                     out["provisional"] += 1
-                elif l.get("status") == "accepted":
-                    out["accepted"].append(l)
+                elif lesson.get("status") == "accepted":
+                    out["accepted"].append(lesson)
     elif os.path.exists(LESSONS_MD):
         out["from_md_fallback"] = True
         with open(LESSONS_MD, encoding="utf-8") as f:

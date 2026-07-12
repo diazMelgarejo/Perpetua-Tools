@@ -266,9 +266,15 @@ _win_lms_eps = os.getenv("LM_STUDIO_WIN_ENDPOINTS", "").strip()
 _win_lms_first = _win_lms_eps.split(",")[0].strip() if _win_lms_eps else ""
 if not os.getenv("WINDOWS_IP") and _win_lms_first:
     _pw = urlparse(_win_lms_first)
-    _win_ip_default = _pw.hostname or ("localhost" if RUNNING_ON_WINDOWS else "192.0.2.4")
+    # No fabricated cross-machine default: an unset WINDOWS_IP with no
+    # discovered LM Studio hostname must fail closed (empty host breaks any
+    # constructed URL immediately and obviously) rather than silently
+    # resolving to 192.0.2.4 — a TEST-NET-1 documentation address that looks
+    # plausible but never routes anywhere, turning a config gap into a
+    # confusing hang/timeout instead of a clear connection error.
+    _win_ip_default = _pw.hostname or ("localhost" if RUNNING_ON_WINDOWS else "")
 else:
-    _win_ip_default = "localhost" if RUNNING_ON_WINDOWS else "192.0.2.4"
+    _win_ip_default = "localhost" if RUNNING_ON_WINDOWS else ""
 
 _windows_ip = os.getenv("WINDOWS_IP", _win_ip_default)
 if RUNNING_ON_WINDOWS and not _is_loopback_host(_windows_ip):

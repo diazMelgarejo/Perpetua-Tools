@@ -355,18 +355,24 @@ async def _queue_status(bus: GossipBus, agent_filter: Optional[str]) -> None:
             )
 
 
-def _phase_sort_key(name: str) -> tuple[int, float, str]:
-    """Sort Phase-N names numerically and all other phase names lexically."""
+def _phase_sort_key(name: str) -> tuple[int, tuple[int, ...], str]:
+    """Sort Phase-N[.M[.…]] names numerically component-by-component, and
+    all other phase names lexically.
+
+    A float encoding of the minor version (e.g. "2.10" -> 2 + 0.10 = 2.1)
+    breaks ordering for any two-digit-or-longer minor component: Phase-2.10
+    would sort before Phase-2.9 because 0.10 < 0.9 as floats, even though
+    10 > 9 numerically. Parsing every dot-separated component into its own
+    integer and comparing as a tuple avoids that collision entirely.
+    """
     parts = name.split("-")
     if len(parts) >= 2 and parts[0] == "Phase":
         try:
-            nums = parts[1].split(".")
-            major = int(nums[0])
-            minor = float(f"0.{nums[1]}") if len(nums) > 1 else 0.0
-            return (0, major + minor, name)
+            components = tuple(int(n) for n in parts[1].split("."))
+            return (0, components, name)
         except (ValueError, IndexError):
             pass
-    return (1, 0.0, name)
+    return (1, (), name)
 
 
 async def _phase_list(bus: GossipBus) -> None:
