@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import datetime
+import importlib
 import importlib.util
 import json
+import logging
+import subprocess
 import sys
 from pathlib import Path
 
@@ -110,3 +114,89 @@ def test_promote_rolls_back_new_stage_when_prior_cleanup_fails(tmp_path, monkeyp
         promote.write_candidates({"candidate1": pattern}, str(candidates))
     assert not (candidates / "candidate1.json").exists()
     assert prior_path.exists()
+
+
+def test_on_failure_sanitizes_complete_record_and_nested_provenance(tmp_path, monkeypatch):
+    if str(AGENT) not in sys.path:
+        sys.path.insert(0, str(AGENT))
+    module = importlib.import_module("harness.hooks.on_failure")
+    captured = {}
+
+    def capture(path, entry):
+        captured["path"] = path
+        captured["entry"] = entry
+        return entry
+
+    monkeypatch.setattr(module, "EPISODIC", str(tmp_path / "events.jsonl"))
+    monkeypatch.setattr(module, "append_jsonl", capture)
+    monkeypatch.setattr(
+        module,
+        "build_source",
+        lambda skill: {"skill": skill, "path": "/home/example/source"},
+    )
+    module.on_failure(
+        "/home/example/skill",
+        "/home/example/action",
+        RuntimeError("failed in /home/example/worktree"),
+        context="context /home/example/context",
+        evidence_ids=["/home/example/evidence"],
+    )
+    encoded = json.dumps(captured["entry"])
+    assert "/home/example/" not in encoded
+    assert "$HOME/skill" in encoded
+    assert "$HOME/source" in encoded
+
+
+def test_on_failure_legacy_naive_timestamp_normalizes_to_utc():
+    if str(AGENT) not in sys.path:
+        sys.path.insert(0, str(AGENT))
+    module = importlib.import_module("harness.hooks.on_failure")
+    normalized = module._legacy_local_to_utc(datetime.datetime(2026, 1, 1, 12, 0, 0))
+    assert normalized.tzinfo is datetime.timezone.utc
+
+
+def test_decay_archive_sanitizes_nested_entry(tmp_path, monkeypatch):
+    decay = _load("pt_decay", MEMORY / "decay.py")
+    monkeypatch.setattr(decay, "salience_score", lambda _entry: 0.0)
+    old = {
+        "timestamp": "2000-01-01T00:00:00+00:00",
+        "detail": {"path": "/home/example/archive"},
+    }
+    kept, archived = decay.decay_old_entries([old], str(tmp_path))
+    assert kept == []
+    assert archived == [old]
+    payload = next(tmp_path.glob("archive_*.jsonl")).read_text(encoding="utf-8")
+    assert "/home/example/" not in payload
+    assert "$HOME/archive" in payload
+
+
+def test_review_queue_refresh_is_nonfatal_but_warning_visible(tmp_path, monkeypatch, caplog):
+    state = _load("pt_review_state_warning", MEMORY / "review_state.py")
+
+    def fail(*_args, **_kwargs):
+        raise OSError("queue unavailable")
+
+    monkeypatch.setattr(state, "write_review_queue_summary", fail)
+    with caplog.at_level(logging.WARNING):
+        state._refresh_queue(str(tmp_path))
+    assert "review queue refresh failed" in caplog.text
+
+
+def test_legacy_coordination_entrypoint_delegates_to_core_facade():
+    facade = importlib.import_module("scripts.agent_coordination")
+    legacy = importlib.import_module("scripts.agent_coordination_legacy")
+    assert facade._impl.__name__ == "scripts.agent_coordination_core"
+    assert legacy.main is facade.main
+
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "agent_coordination_legacy.py"), "--help"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        timeout=15,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "NameError" not in result.stderr
+    assert "usage" in result.stdout.lower()
