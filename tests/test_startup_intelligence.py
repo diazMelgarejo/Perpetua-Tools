@@ -72,18 +72,18 @@ def test_routing_hints_empty_history():
 
 def test_routing_hints_fast_backend():
     history = [
-        {"win_ip": "192.168.1.104", "win_lms_latency_ms": 400, "mac_ol_latency_ms": 12},
-        {"win_ip": "192.168.1.104", "win_lms_latency_ms": 600, "mac_ol_latency_ms": 15},
+        {"win_ip": "127.0.2.1", "win_lms_latency_ms": 400, "mac_ol_latency_ms": 12},
+        {"win_ip": "127.0.2.1", "win_lms_latency_ms": 600, "mac_ol_latency_ms": 15},
     ]
     hints = build_routing_hints(history)
-    assert hints["win_ip_hint"] == "192.168.1.104"
+    assert hints["win_ip_hint"] == "127.0.2.1"
     assert hints["suggested_timeout_win_lms"] == 3   # p50 = 500 < 2000
 
 
 def test_routing_hints_slow_backend():
     history = [
-        {"win_ip": "192.168.1.104", "win_lms_latency_ms": 2500},
-        {"win_ip": "192.168.1.104", "win_lms_latency_ms": 3100},
+        {"win_ip": "127.0.2.1", "win_lms_latency_ms": 2500},
+        {"win_ip": "127.0.2.1", "win_lms_latency_ms": 3100},
     ]
     hints = build_routing_hints(history)
     assert hints["suggested_timeout_win_lms"] == 6   # p50 = 2800 > 2000
@@ -98,7 +98,7 @@ def test_routing_hints_uses_last_5():
 
 def test_routing_hints_single_entry_no_p50():
     # Only 1 latency sample — not enough for median, p50 must be None
-    history = [{"win_ip": "10.0.0.1", "win_lms_latency_ms": 5000}]
+    history = [{"win_ip": "127.0.1.1", "win_lms_latency_ms": 5000}]
     hints = build_routing_hints(history)
     assert hints["win_lms_p50_ms"] is None
     assert hints["suggested_timeout_win_lms"] == 3   # unknown → safe default

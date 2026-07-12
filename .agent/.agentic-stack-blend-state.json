@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "base_sha": "00eda65cd2030ffc62b9c01b8360dd2d1719eaef",
+  "base_version": "v0.9.0",
+  "note": "base is PT .agent/'s original scaffold version (see .agent/install.json); never been blended since",
+  "last_blend": {
+    "at": "2026-07-11T14:58:10Z",
+    "target_sha": "00eda65cd2030ffc62b9c01b8360dd2d1719eaef",
+    "applied_clean": [
+      "tools/show.py",
+      "tools/recall.py",
+      "tools/learn.py",
+      "tools/skill_loader.py",
+      "tools/graduate.py",
+      "memory/render_lessons.py",
+      "memory/decay.py",
+      "memory/promote.py",
+      "memory/memory_search.py",
+      "memory/archive.py",
+      "memory/review_state.py",
+      "memory/auto_dream.py",
+      "harness/hooks/on_failure.py",
+      "harness/hooks/post_execution.py",
+      "harness/salience.py",
+      "skills/_index.md"
+    ],
+    "conflicts": []
+  }
+}

@@ -126,7 +126,7 @@ These are computed purely from `$RAM_GB` and are OS-independent:
   "model_id": "Mac14,9",
   "ram_gb": 16,
   "gpu_cores": 16,
-  "private_ip": "10.179.147.43",
+  "private_ip": "<YOUR_LAN_IP>",
   "arch": "arm64",
   "os": "Darwin",
   "is_apple_silicon": true,

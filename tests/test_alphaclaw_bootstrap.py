@@ -36,7 +36,7 @@ def test_locality_resolve_endpoint_heals_stale_lan_on_mac(monkeypatch):
     _reload_bootstrap(
         monkeypatch,
         ORAMA_PLATFORM="mac",
-        OLLAMA_MAC_ENDPOINT="http://192.168.254.110:11434",
+        OLLAMA_MAC_ENDPOINT="http://127.0.9.3:11434",
     )
     assert alphaclaw_bootstrap.RUNNING_ON_MAC is True
     assert alphaclaw_bootstrap.OLLAMA_MAC == "http://localhost:11434"
@@ -47,7 +47,7 @@ def test_locality_resolve_endpoint_heals_stale_lan_on_windows(monkeypatch):
     _reload_bootstrap(
         monkeypatch,
         ORAMA_PLATFORM="windows",
-        OLLAMA_WINDOWS_ENDPOINT="http://192.168.254.108:11434",
+        OLLAMA_WINDOWS_ENDPOINT="http://127.0.9.2:11434",
     )
     assert alphaclaw_bootstrap.RUNNING_ON_WINDOWS is True
     assert alphaclaw_bootstrap.OLLAMA_WIN == "http://localhost:11434"
@@ -59,7 +59,7 @@ def test_locality_resolve_endpoint_heals_csv_lms_win_on_windows(monkeypatch):
         monkeypatch,
         ORAMA_PLATFORM="windows",
         LM_STUDIO_WIN_ENDPOINTS=(
-            "http://192.168.254.108:1234,http://192.168.254.100:1234"
+            "http://127.0.9.2:1234,http://127.0.9.1:1234"
         ),
     )
     assert alphaclaw_bootstrap.RUNNING_ON_WINDOWS is True
@@ -71,9 +71,9 @@ def test_locality_resolve_endpoint_preserves_lan_when_remote(monkeypatch):
     _reload_bootstrap(
         monkeypatch,
         ORAMA_PLATFORM="mac",
-        OLLAMA_WINDOWS_ENDPOINT="http://192.168.254.108:11434",
+        OLLAMA_WINDOWS_ENDPOINT="http://127.0.9.2:11434",
     )
-    assert alphaclaw_bootstrap.OLLAMA_WIN == "http://192.168.254.108:11434"
+    assert alphaclaw_bootstrap.OLLAMA_WIN == "http://127.0.9.2:11434"
 
 
 def test_build_openclaw_config_ollama_mac_uses_healed_localhost(monkeypatch):
@@ -81,7 +81,7 @@ def test_build_openclaw_config_ollama_mac_uses_healed_localhost(monkeypatch):
     _reload_bootstrap(
         monkeypatch,
         ORAMA_PLATFORM="mac",
-        OLLAMA_MAC_ENDPOINT="http://192.168.254.110:11434",
+        OLLAMA_MAC_ENDPOINT="http://127.0.9.3:11434",
     )
     monkeypatch.setattr(alphaclaw_bootstrap, "_load_pt_state", lambda: {})
     config = alphaclaw_bootstrap.build_openclaw_config()
@@ -93,7 +93,7 @@ def test_build_openclaw_config_heals_stale_win_lms_from_routing_json(monkeypatch
     """Stale routing.json lmstudio_endpoint must not bypass Windows localhost heal."""
     _reload_bootstrap(monkeypatch, ORAMA_PLATFORM="windows")
     config = alphaclaw_bootstrap.build_openclaw_config(
-        pt={"lmstudio_endpoint": "http://192.168.254.108:1234"}
+        pt={"lmstudio_endpoint": "http://127.0.9.2:1234"}
     )
     win_lms = config["models"]["providers"]["lmstudio-win"]
     assert win_lms["baseUrl"] == "http://localhost:1234/v1"
@@ -103,7 +103,7 @@ def test_build_openclaw_config_heals_stale_mac_lms_from_routing_json(monkeypatch
     """Stale routing.json mac_lmstudio_endpoint must not bypass Mac localhost heal."""
     _reload_bootstrap(monkeypatch, ORAMA_PLATFORM="mac")
     config = alphaclaw_bootstrap.build_openclaw_config(
-        pt={"mac_lmstudio_endpoint": "http://192.168.254.110:1234"}
+        pt={"mac_lmstudio_endpoint": "http://127.0.9.3:1234"}
     )
     mac_lms = config["models"]["providers"]["lmstudio-mac"]
     assert mac_lms["baseUrl"] == "http://localhost:1234/v1"
@@ -131,9 +131,9 @@ def test_build_openclaw_config_heals_stale_lan_routing_json_on_mac(monkeypatch):
     config = alphaclaw_bootstrap.build_openclaw_config(
         pt={
             "manager_backend": "mac-ollama",
-            "manager_endpoint": "http://192.168.254.110:11434",
+            "manager_endpoint": "http://127.0.9.3:11434",
             "manager_model": "glm-5.1:cloud",
-            "mac_lmstudio_endpoint": "http://192.168.254.110:1234",
+            "mac_lmstudio_endpoint": "http://127.0.9.3:1234",
             "coder_backend": "mac-degraded",
             "mac_lmstudio_ok": True,
         }
@@ -146,7 +146,7 @@ def test_build_openclaw_config_heals_stale_lan_routing_json_on_mac(monkeypatch):
 def test_validate_pt_state_accepts_valid_routing_json():
     state = {
         "mac_lmstudio_endpoint": "http://localhost:1234",
-        "manager_endpoint": "http://192.168.254.110:11434",
+        "manager_endpoint": "http://127.0.9.3:11434",
         "coder_backend": "mac-degraded",
         "mac_lmstudio_ok": True,
         "future_field": "tolerated",
@@ -230,9 +230,9 @@ def test_module_constants_canonicalize_bare_env_scheme(monkeypatch):
     _reload_bootstrap(
         monkeypatch,
         ORAMA_PLATFORM="mac",
-        OLLAMA_WINDOWS_ENDPOINT="192.168.254.108:11434",
+        OLLAMA_WINDOWS_ENDPOINT="127.0.9.2:11434",
     )
-    assert alphaclaw_bootstrap.OLLAMA_WIN == "http://192.168.254.108:11434"
+    assert alphaclaw_bootstrap.OLLAMA_WIN == "http://127.0.9.2:11434"
 
 # ---------------------------------------------------------------------------
 # Additional tests for PR additions: _validate_pt_state, _validate_endpoint_host,
@@ -247,7 +247,8 @@ def test_validate_pt_state_accepts_empty_dict():
 
 def test_validate_pt_state_accepts_all_rfc1918_ranges():
     """All RFC-1918 address ranges must be accepted by _validate_pt_state."""
-    for host in ("10.0.0.1", "172.16.0.1", "172.31.255.255", "192.168.1.100"):
+    for host in ("10.0.0.1", "10.255.255.1", "172.16.0.1", "172.31.255.1",
+                 "192.168.0.1", "192.168.254.1"):
         state = {"manager_endpoint": f"http://{host}:11434"}
         result = alphaclaw_bootstrap._validate_pt_state(state)
         assert result["manager_endpoint"] == f"http://{host}:11434"
@@ -447,13 +448,13 @@ def test_heal_pt_endpoint_url_returns_canonical_not_raw(monkeypatch):
     _reload_bootstrap(monkeypatch, ORAMA_PLATFORM="mac")
     # On Mac, running_on_target=False for Windows endpoint — so it returns canonical
     result = alphaclaw_bootstrap._heal_pt_endpoint_url(
-        "192.168.254.110:11434",
+        "127.0.9.3:11434",
         running_on_target=False,
         port=11434,
     )
     # Should have http:// prefix (canonical), not bare host:port
     assert result.startswith("http://")
-    assert "192.168.254.110:11434" in result
+    assert "127.0.9.3:11434" in result
 
 
 def test_heal_pt_endpoint_url_empty_returns_empty(monkeypatch):
@@ -471,7 +472,7 @@ def test_heal_pt_endpoint_url_heals_to_localhost_when_on_target(monkeypatch):
     """When running on the target machine, LAN IP must be healed to localhost."""
     _reload_bootstrap(monkeypatch, ORAMA_PLATFORM="mac")
     result = alphaclaw_bootstrap._heal_pt_endpoint_url(
-        "http://192.168.254.110:11434",
+        "http://127.0.9.3:11434",
         running_on_target=True,
         port=11434,
     )
@@ -498,18 +499,18 @@ def test_heal_pt_endpoint_url_canonicalizes_bare_loopback_on_target(monkeypatch)
     )
     assert result == "http://localhost:11434"
 def test_validate_endpoint_host_accepts_rfc1918():
-    """_validate_endpoint_host must accept all valid RFC-1918 ranges."""
+    """_validate_endpoint_host must accept all valid RFC-1918 and loopback ranges."""
     for host in (
         "localhost",
         "127.0.0.1",
+        "127.0.1.1",
+        "127.0.9.3",
         "10.0.0.1",
-        "10.255.255.255",
+        "10.255.255.1",
         "172.16.0.1",
-        "172.24.0.1",
-        "172.30.0.1",
-        "172.31.255.255",
+        "172.31.255.1",
         "192.168.0.1",
-        "192.168.254.110",
+        "192.168.254.1",
     ):
         alphaclaw_bootstrap._validate_endpoint_host(
             "manager_endpoint", f"http://{host}:11434"

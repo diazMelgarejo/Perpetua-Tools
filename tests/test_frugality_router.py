@@ -33,7 +33,7 @@ def registry():
     reg = BackendRegistry()
     reg._backends["lmstudio-win"] = Backend(
         "lmstudio-win",
-        "http://192.168.254.103:1234/v1",
+        "http://127.0.1.1:1234/v1",
         BackendKind.LMSTUDIO,
         ("qwen3-coder-30b",),
         BackendHealth.ONLINE,

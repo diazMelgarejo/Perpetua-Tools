@@ -110,7 +110,7 @@ fallback_backend: ollama       # still valid for Ollama-compatible GGUF models
 cuda_available: true
 
 # LM STUDIO ENV — set in LM Studio UI or .env:
-# LM_STUDIO_WIN_ENDPOINTS=http://192.168.254.100:1234
+# LM_STUDIO_WIN_ENDPOINTS=http://<YOUR_LAN_IP>:1234
 # LMS_WIN_MODEL=Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2
 # LMS_WIN_GPU_OFFLOAD=40   # offload 40 layers to RTX 3080
 

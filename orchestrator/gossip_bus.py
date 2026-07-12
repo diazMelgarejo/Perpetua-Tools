@@ -131,7 +131,27 @@ class GossipBus:
         *,
         timestamp: Optional[float] = None,
     ) -> tuple[int, dict]:
-        """Insert an event using an existing transaction without committing."""
+        """Insert an event using a connection the caller already owns (see
+        `connect()`), instead of opening and committing one of its own --
+        the transaction primitive for combining an emit with another SQLite
+        mutation (e.g. an exclusive-claim row insert or a claim-release
+        delete) in one atomic commit. Closes the gap where two separate
+        commits could leave one mutation applied without the other after a
+        crash between them.
+
+        Does NOT commit and does NOT schedule the embed task: the caller
+        must commit its own transaction first (embedding pre-commit data
+        that might still roll back would embed content that was never
+        durably written), then call `schedule_embedding()` with this
+        method's return values once the commit has actually succeeded.
+
+        `timestamp` lets a caller pin an exact event time (e.g. replaying
+        history, backdating a test fixture) instead of always stamping
+        "now" -- defaults to `time.time()` if omitted.
+
+        Returns:
+            (row_id, safe_payload) -- pass both to schedule_embedding() after commit.
+        """
         import time
 
         from orchestrator.memory_governance import classify_and_redact

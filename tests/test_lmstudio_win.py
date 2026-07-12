@@ -31,18 +31,18 @@ class TestLMStudioWinBackendClass:
 
     def test_env_var_parses_single_endpoint(self):
         """Single URL parses correctly."""
-        with patch.dict(os.environ, {"LM_STUDIO_WIN_ENDPOINTS": "http://192.168.254.102:1234"}):
+        with patch.dict(os.environ, {"LM_STUDIO_WIN_ENDPOINTS": "http://127.0.1.1:1234"}):
             raw = os.environ["LM_STUDIO_WIN_ENDPOINTS"]
             endpoint = raw.split(",")[0].strip()
-            assert endpoint == "http://192.168.254.102:1234"
+            assert endpoint == "http://127.0.1.1:1234"
 
     def test_env_var_parses_multiple_endpoints_takes_first(self):
         """Multi-URL list: first entry is used for primary dispatch."""
-        multi = "http://192.168.254.102:1234,http://192.168.254.103:1234"
+        multi = "http://127.0.1.1:1234,http://127.0.1.2:1234"
         with patch.dict(os.environ, {"LM_STUDIO_WIN_ENDPOINTS": multi}):
             raw = os.environ["LM_STUDIO_WIN_ENDPOINTS"]
             endpoint = raw.split(",")[0].strip()
-            assert endpoint == "http://192.168.254.102:1234"
+            assert endpoint == "http://127.0.1.1:1234"
 
     def test_heavy_model_set_contains_qwen_27b(self):
         """The 27B Qwen model must be in the heavy-model set for GPU lock."""
@@ -109,7 +109,7 @@ class TestLMStudioWinWorker:
 
         mock_client.post = _capture_post
 
-        with patch.dict(os.environ, {"LM_STUDIO_WIN_ENDPOINTS": "http://192.168.254.102:1234"}):
+        with patch.dict(os.environ, {"LM_STUDIO_WIN_ENDPOINTS": "http://127.0.1.1:1234"}):
             with patch("httpx.AsyncClient", return_value=mock_client):
                 try:
                     result = await _lmstudio_win_worker(spec)
@@ -133,7 +133,7 @@ class TestLMStudioWinWorker:
         spec = self._make_spec(
             metadata={
                 "model": "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2",
-                "_win_endpoint": "http://192.168.254.102:1234",
+                "_win_endpoint": "http://127.0.1.1:1234",
             },
             prompt="Hello",
         )
@@ -190,7 +190,7 @@ class TestLMStudioWinWorker:
             async def get(self, url, **kw): return _FakeResp()   # probe
             async def post(self, url, **kw): return _FakeResp()  # request
 
-        with patch.dict(os.environ, {"LM_STUDIO_WIN_ENDPOINTS": "http://192.168.254.102:1234"}):
+        with patch.dict(os.environ, {"LM_STUDIO_WIN_ENDPOINTS": "http://127.0.1.1:1234"}):
             with patch("httpx.AsyncClient", return_value=_FakeClient()):
                 result = await _lmstudio_win_worker(spec)
 

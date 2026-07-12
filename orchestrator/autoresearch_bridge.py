@@ -4,10 +4,20 @@ Layer 4 integration: autoresearch as a managed foot-soldier.
 
 Architecture (post-migration)
 ------------------------------
-Primary mode:  uditgoenka/autoresearch Claude Code plugin
-               -> installed via `claude plugin marketplace add uditgoenka/autoresearch`
-               -> activated via `/autoresearch` and `/autoresearch:debug` slash commands
-               -> can execute anywhere (Mac, Windows, CI) without SSH
+`/autoresearch` slash command UX, no single hard dependency -- 3-tier fallback:
+  1. Global skill/command install (idempotent, filesystem-only check) --
+     `scripts/install-vendor-guided.sh` / `vendor/autoresearch/scripts/install.sh
+     --claude --global`, landing at ~/.claude/skills/autoresearch +
+     ~/.claude/commands/autoresearch*. Preferred: no subprocess, no network.
+  2. Claude Code plugin marketplace -- `claude plugin marketplace add
+     uditgoenka/autoresearch` + `claude plugin install autoresearch@autoresearch`.
+     Best-effort; any failure (missing `claude` binary, timeout, non-zero exit)
+     degrades instead of raising.
+  3. Micro-implementation fallback -- neither tier above is required for the
+     actual orchestration in this module (git sync, GPU dispatch, dry-run
+     planning); only the slash-command UX needs tier 1 or 2. See
+     `install_autoresearch_plugin()`.
+Any tier -> can execute anywhere (Mac, Windows, CI) without SSH.
 
 Secondary mode: When task_type is `ml-experiment`, the GPU runner at $GPU_BOX
                 is used as an optional `Verify` substrate via SSH, reading
@@ -27,7 +37,9 @@ Responsibilities
   the top-level Perpetua-Tools AgentTracker so lifecycle and idempotency are
   consistent with the rest of the stack.
 - Reading swarm_state.md for GPU lock status before dispatching any training run.
-- Installing the uditgoenka/autoresearch Claude Code plugin (idempotent).
+- Making the `/autoresearch` slash command available idempotently, preferring
+  the global skill install over the Claude Code plugin marketplace, and never
+  hard-failing if neither is present (see `install_autoresearch_plugin`).
 - Preparing dry-run plans that pass only state + goal/archetype metadata to the
   higher-level Perpetua/orama orchestrator path.
 
@@ -68,8 +80,12 @@ from urllib.parse import urlparse
 
 # GPU_BOX: SSH target for the Windows RTX 3080.
 # Uses detect_active_tilting_ip() host if GPU_BOX not set, but SSH needs user@host
-# so we keep a separate env var. Default reflects the current 192.168.254.x subnet.
-GPU_BOX: str = os.environ.get("GPU_BOX", "WINUSER@192.168.254.100")
+# so we keep a separate env var. No fabricated default: an unset GPU_BOX must
+# fail closed (ssh to an empty target errors immediately and clearly) rather
+# than silently resolving to 192.0.2.1 — a TEST-NET-1 documentation address
+# that looks like a real host but never routes anywhere. Callers should either
+# set GPU_BOX explicitly or use the existing use_http_local_preflight() path.
+GPU_BOX: str = os.environ.get("GPU_BOX", "")
 GPU_REPO_PATH: str = os.environ.get("GPU_REPO_PATH", "autoresearch")
 
 # Primary: uditgoenka/autoresearch Claude Code plugin (env-var configurable).
@@ -412,34 +428,78 @@ def probe_lm_studio_http() -> SyncResult:
         return SyncResult(ok=False, error=msg)
 
 
-# -- Claude Code plugin install ------------------------------------------------
+# -- Claude Code plugin / global skill install ----------------------------------
+
+def _global_autoresearch_install_present() -> bool:
+    """Check the idempotent global skill/command install set up by
+    scripts/install-vendor-guided.sh (vendor/autoresearch/scripts/install.sh
+    --claude --global). Pure filesystem check, no subprocess — checked first
+    since it's cheaper and has no external-binary dependency.
+    """
+    claude_config_dir = Path(os.environ.get("CLAUDE_CONFIG_DIR", "").strip() or str(Path.home() / ".claude"))
+    skill_dir = claude_config_dir / "skills" / "autoresearch"
+    command_file = claude_config_dir / "commands" / "autoresearch.md"
+    return skill_dir.is_dir() and command_file.is_file()
+
 
 def install_autoresearch_plugin() -> SyncResult:
-    """Install the uditgoenka/autoresearch Claude Code plugin idempotently."""
-    _progress("autoresearch-plugin", "Checking if plugin is already installed...")
-    list_result = subprocess.run(
-        ["claude", "plugin", "list"],
-        capture_output=True, text=True, timeout=30,
-    )
+    """Make the `/autoresearch` surface available, idempotently, with no hard
+    dependency on any single install path.
+
+    Priority:
+      1. Global skill/command install already present (see
+         `_global_autoresearch_install_present`) -> use it as-is, no subprocess.
+      2. Claude Code plugin marketplace (`claude plugin marketplace add/install`)
+         -> best-effort; a missing `claude` binary, timeout, or non-zero exit
+         degrades instead of raising.
+      3. Neither available -> micro-implementation fallback (`ok=True`,
+         `sha="micro-fallback"`): the rest of this module's orchestration
+         (git sync, GPU dispatch, dry-run planning) does not actually need the
+         plugin or global skill installed -- only the `/autoresearch` slash
+         command UX does. Callers should treat `sha == "micro-fallback"` as
+         "no rich UX, but the pipeline still runs."
+    """
+    if _global_autoresearch_install_present():
+        _progress("autoresearch-plugin", "OK global skill/command install found: using it, skipping plugin marketplace")
+        return SyncResult(ok=True, sha="global-skill-install")
+
+    _progress("autoresearch-plugin", "No global skill install found; checking Claude Code plugin marketplace...")
+    try:
+        list_result = subprocess.run(
+            ["claude", "plugin", "list"],
+            capture_output=True, text=True, timeout=30,
+        )
+    except (FileNotFoundError, OSError, subprocess.TimeoutExpired) as exc:
+        _progress("autoresearch-plugin", f"claude CLI unavailable ({exc}); falling back to micro-implementation")
+        return SyncResult(ok=True, sha="micro-fallback", error=str(exc))
+
     if list_result.returncode == 0 and "uditgoenka/autoresearch" in list_result.stdout:
         _progress("autoresearch-plugin", "OK plugin already installed: skipping")
         return SyncResult(ok=True, sha="already-installed")
 
-    _progress("autoresearch-plugin", "-> claude plugin marketplace add uditgoenka/autoresearch")
-    add_result = subprocess.run(
-        ["claude", "plugin", "marketplace", "add", "uditgoenka/autoresearch"],
-        capture_output=True, text=True, timeout=60,
-    )
-    if add_result.returncode != 0:
-        return SyncResult(ok=False, error=f"marketplace add failed: {add_result.stderr.strip()}")
+    try:
+        _progress("autoresearch-plugin", "-> claude plugin marketplace add uditgoenka/autoresearch")
+        add_result = subprocess.run(
+            ["claude", "plugin", "marketplace", "add", "uditgoenka/autoresearch"],
+            capture_output=True, text=True, timeout=60,
+        )
+        if add_result.returncode != 0:
+            err = f"marketplace add failed: {add_result.stderr.strip()}"
+            _progress("autoresearch-plugin", f"{err}; falling back to micro-implementation")
+            return SyncResult(ok=True, sha="micro-fallback", error=err)
 
-    _progress("autoresearch-plugin", "-> claude plugin install autoresearch@autoresearch")
-    install_result = subprocess.run(
-        ["claude", "plugin", "install", "autoresearch@autoresearch"],
-        capture_output=True, text=True, timeout=60,
-    )
-    if install_result.returncode != 0:
-        return SyncResult(ok=False, error=f"plugin install failed: {install_result.stderr.strip()}")
+        _progress("autoresearch-plugin", "-> claude plugin install autoresearch@autoresearch")
+        install_result = subprocess.run(
+            ["claude", "plugin", "install", "autoresearch@autoresearch"],
+            capture_output=True, text=True, timeout=60,
+        )
+        if install_result.returncode != 0:
+            err = f"plugin install failed: {install_result.stderr.strip()}"
+            _progress("autoresearch-plugin", f"{err}; falling back to micro-implementation")
+            return SyncResult(ok=True, sha="micro-fallback", error=err)
+    except (FileNotFoundError, OSError, subprocess.TimeoutExpired) as exc:
+        _progress("autoresearch-plugin", f"plugin install errored ({exc}); falling back to micro-implementation")
+        return SyncResult(ok=True, sha="micro-fallback", error=str(exc))
 
     _progress("autoresearch-plugin", "OK uditgoenka/autoresearch plugin installed")
     return SyncResult(ok=True)

@@ -7,6 +7,7 @@ per docs/phase-0-specifications/2026-07-11-state-transition-manager-integration-
 from __future__ import annotations
 
 import pytest
+import time
 from hypothesis import given, strategies as st
 
 from orchestrator.audit_log import AuditLog
@@ -48,7 +49,7 @@ def observation_factory(
         observer_id=observer_id,
         observation_type=observation_type,
         direct_status=DirectStatus.REACHABLE,
-        endpoint="192.168.1.100:9000",
+        endpoint="example-endpoint:9000",
         endpoint_epoch=1,
         witness_set=witness_set,
         ttl_seconds=ttl_seconds,
@@ -59,7 +60,7 @@ def witness_factory(
     *,
     peer_id: str = "witness_peer",
     observer_id: str = "observer_x",
-    observer_provenance: str = "192.168.9.1",
+    observer_provenance: str = "provenance-default",
 ) -> PeerObservation:
     """A witness is itself a (nested, non-recursive) PeerObservation — it has
     its own peer_id (used by Sybil ID-space correlation) distinct from
@@ -72,7 +73,7 @@ def witness_factory(
         observer_id=observer_id,
         observation_type=ObservationType.REACHABLE,
         direct_status=DirectStatus.REACHABLE,
-        endpoint="192.168.9.1:9000",
+        endpoint="example-endpoint:9000",
         endpoint_epoch=1,
         observer_provenance=observer_provenance,
         witness_set=(),
@@ -81,27 +82,27 @@ def witness_factory(
 
 
 def trusted_witnesses(n: int = 2) -> tuple:
-    """n witnesses with distinct observer_id and distinct /24 provenance —
+    """n witnesses with distinct observer_id and distinct provenance buckets —
     should pass both the independence quorum and provenance-bucket diversity."""
     return tuple(
         witness_factory(
             peer_id=f"witness_peer_{i}",
             observer_id=f"observer_{i}",
-            observer_provenance=f"192.168.{i}.1",
+            observer_provenance=f"provenance-{i}",
         )
         for i in range(n)
     )
 
 
 def sybil_witnesses_same_provenance(n: int = 3) -> tuple:
-    """n witnesses with distinct observer_id but the SAME /24 provenance —
+    """n witnesses with distinct observer_id but the SAME provenance bucket —
     passes the raw witness-count quorum but should be weighted down since
     they all collapse to one provenance bucket."""
     return tuple(
         witness_factory(
             peer_id=f"sybil_peer_{i}",
             observer_id=f"sybil_observer_{i}",
-            observer_provenance="10.0.0.5",  # same /24 for all
+            observer_provenance="provenance-shared",  # same bucket for all
         )
         for i in range(n)
     )
@@ -115,7 +116,7 @@ def sybil_witnesses_correlated_ids(n: int = 2, target_peer_id: str = "peer_abc")
         witness_factory(
             peer_id=target_peer_id,  # identical XOR distance = 0, trivially correlated
             observer_id=f"correlated_observer_{i}",
-            observer_provenance=f"172.16.{i}.1",
+            observer_provenance=f"provenance-correlated-{i}",
         )
         for i in range(n)
     )
@@ -237,7 +238,7 @@ class TestSybilCorrelation:
         # 2+ witnesses with peer_id identical to the target -> XOR distance 0,
         # trivially within any proximity_bits threshold -> STRONG signal.
         witnesses = sybil_witnesses_correlated_ids(2, target_peer_id="peer_abc") + (
-            witness_factory(peer_id="extra_independent", observer_id="observer_extra", observer_provenance="203.0.113.1"),
+            witness_factory(peer_id="extra_independent", observer_id="observer_extra", observer_provenance="provenance-independent"),
         )
         obs = observation_factory(peer_id="peer_abc", witness_set=witnesses)
 
@@ -251,20 +252,25 @@ class TestSybilCorrelation:
 
     @pytest.mark.asyncio
     async def test_sybil_weak_when_same_bucket(self, state_transition_manager, k_bucket):
-        # A single correlated pair (not >=2) should produce WEAK, not STRONG.
+        # Exactly one correlated pair (peer_abc <-> witness peer_abc, XOR
+        # distance 0) and no bucket overlap (only one witness shares the
+        # peer's bucket, and len(bucket_overlap) < 2) -- per
+        # _check_sybil_correlation's own threshold (>=2 correlated_pairs OR
+        # >=2 bucket_overlap => STRONG), this must resolve to exactly WEAK,
+        # not just "WEAK or STRONG" -- a test asserting the looser bound
+        # would not fail if the STRONG threshold regressed to >=1.
         witnesses = (
-            witness_factory(peer_id="peer_abc", observer_id="observer_close", observer_provenance="198.51.100.1"),
-            witness_factory(peer_id="far_peer_zzz", observer_id="observer_far", observer_provenance="203.0.113.1"),
+            witness_factory(peer_id="peer_abc", observer_id="observer_close", observer_provenance="provenance-close"),
+            witness_factory(peer_id="far_peer_zzz", observer_id="observer_far", observer_provenance="provenance-far"),
         )
         obs = observation_factory(peer_id="peer_abc", witness_set=witnesses)
 
         result = await state_transition_manager.evaluate_observation(obs)
 
         assert result.sybil_correlation is not None
-        assert result.sybil_correlation.signal in (SybilSignal.WEAK, SybilSignal.STRONG)
-        if result.sybil_correlation.signal == SybilSignal.WEAK:
-            assert result.accepted is True
-            assert result.decision_type == DecisionType.SYBIL_FLAGGED
+        assert result.sybil_correlation.signal == SybilSignal.WEAK
+        assert result.accepted is True
+        assert result.decision_type == DecisionType.SYBIL_FLAGGED
 
 
 class TestAuditCommit:
@@ -291,7 +297,7 @@ class TestAuditCommit:
         assert result.accepted is True
         assert entries_after == entries_before + 1
         assert result.audit_entry is not None
-        assert result.audit_hash if hasattr(result, "audit_hash") else result.audit_entry.hash
+        assert result.audit_entry.hash
 
 
 class TestDedupGate:
@@ -382,10 +388,8 @@ class TestReputationSwing:
         assert result_good.weighted_quorum.passes is True
 
         # Tank reputation, then a later (higher-sequence) observation from the
-        # same witnesses should now fail weighting. Different timestamp too --
-        # to_json() (the dedup key) doesn't include sequence, so an identical
-        # timestamp would make obs_bad look like a duplicate of obs_good and
-        # never reach the weighting step at all.
+        # same witnesses should now fail weighting. Different sequence ensures
+        # it is not caught by the dedup gate even if other fields coincide.
         for w in witnesses:
             for _ in range(10):
                 reputation.record_equivocation(w.observer_id)
@@ -401,7 +405,7 @@ class TestSybilDetection:
     @pytest.mark.asyncio
     async def test_sybil_detected_but_still_approved(self, state_transition_manager):
         witnesses = sybil_witnesses_correlated_ids(2, target_peer_id="peer_abc") + (
-            witness_factory(peer_id="extra_independent", observer_id="observer_extra", observer_provenance="203.0.113.1"),
+            witness_factory(peer_id="extra_independent", observer_id="observer_extra", observer_provenance="provenance-independent"),
         )
         obs = observation_factory(peer_id="peer_abc", witness_set=witnesses)
 
@@ -411,6 +415,34 @@ class TestSybilDetection:
         assert result.accepted is True
         assert result.decision_type == DecisionType.SYBIL_FLAGGED
         assert result.audit_entry is not None
+
+    @pytest.mark.asyncio
+    async def test_sybil_witness_witness_correlation(self, state_transition_manager):
+        """Two witnesses sharing the same peer_id are correlated with each other
+        even when the observed peer is distant — a Sybil-ring signal distinct
+        from peer-vs-witness proximity."""
+        witnesses = (
+            witness_factory(
+                peer_id="shared_sybil_peer",
+                observer_id="observer_a",
+                observer_provenance="provenance-sybil-a",
+            ),
+            witness_factory(
+                peer_id="shared_sybil_peer",
+                observer_id="observer_b",
+                observer_provenance="provenance-sybil-b",
+            ),
+        )
+        obs = observation_factory(peer_id="peer_abc", witness_set=witnesses)
+
+        result = await state_transition_manager.evaluate_observation(obs)
+
+        assert result.accepted is True
+        assert result.sybil_correlation.signal == SybilSignal.WEAK
+        assert any(
+            pair == ("shared_sybil_peer", "shared_sybil_peer")
+            for pair in result.sybil_correlation.correlated_pairs
+        )
 
 
 class TestEndToEndAudit:
@@ -668,6 +700,71 @@ class TestReorderBuffer:
         assert "peer_0" not in manager._reorder_buffer
         assert "peer_1" in manager._reorder_buffer
         assert "peer_2" in manager._reorder_buffer
+
+    @pytest.mark.asyncio
+    async def test_stale_gap_ahead_observation_is_rejected_not_buffered(self, state_transition_manager):
+        """A future-sequence observation that is already TTL-expired should be
+        rejected as STALE immediately, not buffered pending a gap fill."""
+        obs1 = observation_factory(sequence=1, witness_set=trusted_witnesses(2))
+        obs3 = observation_factory(
+            sequence=3,
+            timestamp=1.0,
+            ttl_seconds=1,
+            witness_set=trusted_witnesses(2),
+        )
+
+        await state_transition_manager.evaluate_observation(obs1)
+        result = await state_transition_manager.evaluate_observation(obs3)
+
+        assert result.accepted is False
+        assert result.decision_type == DecisionType.STALE
+        assert result.audit_entry is not None
+        assert obs1.peer_id not in state_transition_manager._reorder_buffer
+
+    @pytest.mark.asyncio
+    async def test_stale_buffered_observation_skipped_on_flush(self, state_transition_manager):
+        """A buffered observation that expires before the gap fills must not be
+        committed when the missing sequence arrives."""
+        now = time.time()
+        obs1 = observation_factory(
+            sequence=1, timestamp=now, witness_set=trusted_witnesses(2)
+        )
+        obs2 = observation_factory(
+            sequence=2,
+            timestamp=now + 2.0,
+            witness_set=trusted_witnesses(2),
+        )
+        # obs3 is buffered while fresh, then manually replaced with a stale clone
+        # to simulate TTL expiry while waiting for the gap fill.
+        obs3_fresh = observation_factory(
+            sequence=3,
+            timestamp=now + 3.0,
+            ttl_seconds=60,
+            witness_set=trusted_witnesses(2),
+        )
+        obs3_stale = observation_factory(
+            sequence=3,
+            timestamp=1.0,
+            ttl_seconds=1,
+            witness_set=trusted_witnesses(2),
+        )
+
+        await state_transition_manager.evaluate_observation(obs1)
+        await state_transition_manager.evaluate_observation(obs3_fresh)
+        # Simulate TTL expiry while buffered.
+        peer_id = obs1.peer_id
+        epoch = obs3_fresh.epoch
+        state_transition_manager._reorder_buffer[peer_id][(epoch, 3)] = (
+            obs3_stale,
+            "UNKNOWN",
+        )
+        result = await state_transition_manager.evaluate_observation(obs2)
+
+        assert result.accepted is True
+        assert result.decision_type == DecisionType.APPROVED
+        # obs3 expired while waiting, so it should not have been flushed as approved.
+        assert not any(r.accepted for r in result.flushed)
+        assert state_transition_manager._last_applied_key[peer_id] == (epoch, 2)
 
 
 class TestBoundedCaches:

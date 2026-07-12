@@ -26,22 +26,22 @@ class TestLoopbackAndPrivate:
 
     def test_bare_host_port_canonicalized(self):
         assert validate_model_endpoint_url("localhost:1234") == "http://localhost:1234"
-        assert validate_model_endpoint_url("192.168.1.50:11434") == "http://192.168.1.50:11434"
+        assert validate_model_endpoint_url("127.0.3.2:11434") == "http://127.0.3.2:11434"
 
     def test_rfc1918_192_allowed(self):
-        url = validate_model_endpoint_url("http://192.168.254.102:1234")
-        assert url == "http://192.168.254.102:1234"
+        url = validate_model_endpoint_url("http://192.168.1.1:1234")
+        assert url == "http://192.168.1.1:1234"
 
     def test_rfc1918_10_allowed(self):
-        assert validate_model_endpoint_url("http://10.0.0.5:1234") == "http://10.0.0.5:1234"
+        assert validate_model_endpoint_url("http://10.0.0.1:1234") == "http://10.0.0.1:1234"
 
     def test_rfc1918_172_allowed(self):
-        assert validate_model_endpoint_url("http://172.16.1.2:1234") == "http://172.16.1.2:1234"
+        assert validate_model_endpoint_url("http://172.16.0.1:1234") == "http://172.16.0.1:1234"
 
     def test_parse_comma_list(self):
-        raw = "http://192.168.1.1:1234, http://127.0.0.1:1234"
+        raw = "http://127.0.3.1:1234, http://127.0.0.1:1234"
         assert parse_model_endpoint_list(raw) == [
-            "http://192.168.1.1:1234",
+            "http://127.0.3.1:1234",
             "http://127.0.0.1:1234",
         ]
 
@@ -82,7 +82,7 @@ class TestMalformed:
 
     def test_credentials_rejected(self):
         with pytest.raises(ModelEndpointPolicyError, match="credentials"):
-            validate_model_endpoint_url("http://user:pass@192.168.1.1:1234")
+            validate_model_endpoint_url("http://user:pass@127.0.3.1:1234")
 
     def test_empty_rejected(self):
         with pytest.raises(ModelEndpointPolicyError, match="empty"):
@@ -105,9 +105,9 @@ class TestMalformed:
 
 class TestLoggingRedaction:
     def test_private_ip_redacted(self):
-        out = redact_endpoint_for_log("http://192.168.254.102:1234")
-        assert "254.102" not in out
-        assert "192.168.254.*" in out
+        out = redact_endpoint_for_log("http://127.0.4.1:1234")
+        assert "127.0.4.1" not in out
+        assert "127.0.4.*" in out
 
     def test_localhost_not_redacted(self):
         assert "localhost" in redact_endpoint_for_log("http://localhost:1234")

@@ -141,7 +141,11 @@ def main():
         return
 
     lessons_md = os.path.join(SEMANTIC, "LESSONS.md")
-    existing = open(lessons_md, encoding="utf-8").read() if os.path.exists(lessons_md) else ""
+    if os.path.exists(lessons_md):
+        with open(lessons_md, encoding="utf-8") as f:
+            existing = f.read()
+    else:
+        existing = ""
     # When superseding, exclude the target lesson from the duplicate check —
     # replacing a lesson with structurally-better content but same wording
     # is exactly what supersession is for.

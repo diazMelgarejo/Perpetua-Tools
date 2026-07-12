@@ -74,8 +74,8 @@ Hardware: Mac (L2 + L3 mainly), Win RTX3080 (L1 inference), transient peers (doc
 **OpenClaw scenario:** LM Studio crashed and restarted with new IP (same peer_id). Relay caches old observation with old IP. L2 observer accepts stale IP, routes work to dead address.
 
 **Attack vector:**
-- Observation O1: `{peer_id: LM-Studio-1, ip: 192.168.1.50, epoch: 5, timestamp: T}` is valid and cached.
-- LM Studio restarts, updates IP to `192.168.1.100`, sends heartbeat to L2.
+- Observation O1: `{peer_id: LM-Studio-1, ip: <YOUR_LAN_IP>, epoch: 5, timestamp: T}` is valid and cached.
+- LM Studio restarts, updates IP to `<YOUR_LAN_IP>`, sends heartbeat to L2.
 - Relay (caching O1) delays processing; sends O1 to another observer.
 - Observer has no way to know O1 is superseded without comparing epoch + timestamp.
 
@@ -462,6 +462,11 @@ Grepped `docs/LESSONS.md` for real incident history (DHCP/network/crash/timeout/
 **Not touched by this verdict:** P9 (reorder buffer), P18 (bounded caches), P2 (k-bucket maintenance) — already shipped in PR #205, useful regardless of the threat model (they protect against out-of-order/memory-growth issues that occur even with zero adversaries), not contingent on this addendum.
 
 ---
+
+## Related Documents
+
+- [`PATTERN-MULTIAGENT-EXECUTION-PLAN.md`](./PATTERN-MULTIAGENT-EXECUTION-PLAN.md) — Deep-research-driven execution plan for the 20 P2P security patterns (P1–P20) and 16 gaps (G1–G16) analyzed here.
+- [`2026-07-11-state-transition-manager-integration-plan.md`](./2026-07-11-state-transition-manager-integration-plan.md) — Concrete Perpetua-Tools milestone that wires P2/P5/P6/P13/P19 into a single `PeerObservation` security-decision pipeline and unblocks Track D (Fleet Mode Integration).
 
 *End of Multiagent Swarm Security Analysis. Ready for Phase 1b roadmap execution.*
 

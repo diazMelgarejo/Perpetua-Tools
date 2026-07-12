@@ -229,9 +229,27 @@ class TestHttpLocalPreflight:
 
 
 class TestInstallAutoresearchPlugin:
+    """install_autoresearch_plugin() is a 3-tier fallback, no hard dependency:
+    1. global skill/command install (filesystem-only)
+    2. Claude Code plugin marketplace (best-effort subprocess)
+    3. micro-implementation fallback (ok=True, sha="micro-fallback")
+
+    Tests for tiers 2-3 patch _global_autoresearch_install_present to False so
+    the plugin-marketplace path under test actually runs.
+    """
+
+    def test_skips_subprocess_when_global_install_present(self):
+        with patch.object(bridge, "_global_autoresearch_install_present", return_value=True), \
+             patch("subprocess.run") as mock_run:
+            result = bridge.install_autoresearch_plugin()
+        assert result.ok is True
+        assert result.sha == "global-skill-install"
+        mock_run.assert_not_called()
+
     def test_skips_if_already_installed(self):
         mock_list = MagicMock(returncode=0, stdout="uditgoenka/autoresearch  v1.0.0\n", stderr="")
-        with patch("subprocess.run", return_value=mock_list) as mock_run:
+        with patch.object(bridge, "_global_autoresearch_install_present", return_value=False), \
+             patch("subprocess.run", return_value=mock_list) as mock_run:
             result = bridge.install_autoresearch_plugin()
         assert result.ok is True
         assert result.sha == "already-installed"
@@ -241,20 +259,60 @@ class TestInstallAutoresearchPlugin:
         mock_list = MagicMock(returncode=0, stdout="other-plugin\n", stderr="")
         mock_add = MagicMock(returncode=0, stdout="", stderr="")
         mock_install = MagicMock(returncode=0, stdout="", stderr="")
-        with patch("subprocess.run", side_effect=[mock_list, mock_add, mock_install]) as mock_run:
+        with patch.object(bridge, "_global_autoresearch_install_present", return_value=False), \
+             patch("subprocess.run", side_effect=[mock_list, mock_add, mock_install]) as mock_run:
             result = bridge.install_autoresearch_plugin()
         assert result.ok is True
         commands = [" ".join(c[0][0]) for c in mock_run.call_args_list]
         assert any("marketplace" in c and "uditgoenka/autoresearch" in c for c in commands)
         assert any("plugin install" in c for c in commands)
 
-    def test_returns_error_if_marketplace_add_fails(self):
+    def test_falls_back_to_micro_implementation_if_marketplace_add_fails(self):
         mock_list = MagicMock(returncode=0, stdout="", stderr="")
         mock_add = MagicMock(returncode=1, stdout="", stderr="network error")
-        with patch("subprocess.run", side_effect=[mock_list, mock_add]):
+        with patch.object(bridge, "_global_autoresearch_install_present", return_value=False), \
+             patch("subprocess.run", side_effect=[mock_list, mock_add]):
             result = bridge.install_autoresearch_plugin()
-        assert result.ok is False
+        assert result.ok is True
+        assert result.sha == "micro-fallback"
         assert "marketplace add failed" in result.error
+
+    def test_falls_back_to_micro_implementation_if_claude_cli_missing(self):
+        with patch.object(bridge, "_global_autoresearch_install_present", return_value=False), \
+             patch("subprocess.run", side_effect=FileNotFoundError("claude: command not found")):
+            result = bridge.install_autoresearch_plugin()
+        assert result.ok is True
+        assert result.sha == "micro-fallback"
+        assert "claude" in result.error.lower() or "not found" in result.error.lower()
+
+    def test_falls_back_to_micro_implementation_if_plugin_install_fails(self):
+        mock_list = MagicMock(returncode=0, stdout="", stderr="")
+        mock_add = MagicMock(returncode=0, stdout="", stderr="")
+        mock_install = MagicMock(returncode=1, stdout="", stderr="install failed")
+        with patch.object(bridge, "_global_autoresearch_install_present", return_value=False), \
+             patch("subprocess.run", side_effect=[mock_list, mock_add, mock_install]):
+            result = bridge.install_autoresearch_plugin()
+        assert result.ok is True
+        assert result.sha == "micro-fallback"
+        assert "plugin install failed" in result.error
+
+
+class TestGlobalAutoresearchInstallPresent:
+    def test_true_when_both_skill_dir_and_command_file_exist(self, tmp_path, monkeypatch):
+        (tmp_path / "skills" / "autoresearch").mkdir(parents=True)
+        (tmp_path / "commands").mkdir(parents=True)
+        (tmp_path / "commands" / "autoresearch.md").write_text("stub")
+        monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(tmp_path))
+        assert bridge._global_autoresearch_install_present() is True
+
+    def test_false_when_only_skill_dir_exists(self, tmp_path, monkeypatch):
+        (tmp_path / "skills" / "autoresearch").mkdir(parents=True)
+        monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(tmp_path))
+        assert bridge._global_autoresearch_install_present() is False
+
+    def test_false_when_neither_exists(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(tmp_path))
+        assert bridge._global_autoresearch_install_present() is False
 
 
 class TestAutoplanDryRun:

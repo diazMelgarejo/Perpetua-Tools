@@ -30,7 +30,7 @@ def make_obs(
         timestamp=timestamp,
         observation_type=ObservationType.REACHABLE,
         direct_status=DirectStatus.REACHABLE,
-        endpoint="192.168.1.1:9000",
+        endpoint="127.0.1.1:9000",
         endpoint_epoch=epoch,
         sequence=sequence,
     )

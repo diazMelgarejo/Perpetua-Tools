@@ -1,0 +1,41 @@
+{
+  "id": "c1c47a25b008",
+  "key": "manual_c1c47a",
+  "name": "manual_c1c47a",
+  "claim": "A TODO's non-essential acceptance criterion (e.g. a benchmark with no real workload to test against yet) should be explicitly deferred with a cross-repo doc link, not silently dropped or left as an unchecked box with no explanation",
+  "conditions": [
+    "cross-repo",
+    "documentation",
+    "plan-tracking",
+    "todo-deferral"
+  ],
+  "evidence_ids": [
+    "2026-07-12T06:11:42.617309+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-12T06:11:42.617309+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-12T06:11:42.617309+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-12T06:11:42.687183+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT's STM concurrency work (PR #205) satisfied 4/5 acceptance criteria for async-safe concurrency; the 5th (benchmark latency under high-peer-count) had no real caller/workload to benchmark against. Rather than leave it unchecked or quietly drop it, it was marked DONE-with-deferral and cross-linked to orama-system docs/v2/03-safety-v2.5.md (the v2.5 safety-overlay milestone doc), which is also where D23's single-operator-LAN premise check lives \u2014 the same premise check that may make the benchmark moot entirely. This keeps the plan's completion status honest and gives a future reader the exact doc where the deferred item will be picked back up.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-12T06:11:42.617309+00:00"
+      ],
+      "lessons_sha": "3d2c1ee94a8d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-12T06:11:42.687174+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT's STM concurrency work (PR #205) satisfied 4/5 acceptance criteria for async-safe concurrency; the 5th (benchmark latency under high-peer-count) had no real caller/workload to benchmark against. Rather than leave it unchecked or quietly drop it, it was marked DONE-with-deferral and cross-linked to orama-system docs/v2/03-safety-v2.5.md (the v2.5 safety-overlay milestone doc), which is also where D23's single-operator-LAN premise check lives \u2014 the same premise check that may make the benchmark moot entirely. This keeps the plan's completion status honest and gives a future reader the exact doc where the deferred item will be picked back up."
+}
