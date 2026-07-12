@@ -1,0 +1,43 @@
+{
+  "id": "39b634f974c7",
+  "key": "manual_39b634",
+  "name": "manual_39b634",
+  "claim": "Claude Code Agent-tool subagent isolation can leak: a live user chat message sent mid-turn (while a background Agent-tool subagent was running) appeared to reach that subagent directly, bypassing the main session entirely. Evidence: the subagent's response ('Fair callout. In the last turn there wasn't actually a case of me running two things sequentially that should've been parallel... I made one Read call, then one Bash call... whenever I have multiple independent lookups queued up, I should batch them') is a coherent, specific answer to the user's exact question ('why sequential dual voices, just fan them out in parallel next time?') -- a question that never appeared anywhere in the main session's own context and was never included in that subagent's prompt. The subagent should have had zero visibility into the live conversation; something routed the user's message to it anyway, one level deep.",
+  "conditions": [
+    "agent-tool",
+    "autoplan",
+    "claude-code",
+    "context-leak",
+    "prompt-injection-risk",
+    "subagent-isolation"
+  ],
+  "evidence_ids": [
+    "2026-07-11T18:25:12.162116+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T18:25:12.162116+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T18:25:12.162116+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T18:25:12.262727+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Observed 2026-07-12 during a /autoplan run: first Agent-tool CEO-review subagent call returned confused meta-commentary instead of doing the review, asking permission to proceed with a batch of reads -- looked like a hallucination until the user pointed out they'd sent exactly that question ('parallel vs sequential') to the main session moments before. If subagent isolation can leak live user input this way, any subagent (including ones with elevated tool access or running in an isolated worktree) could receive unintended instructions never reviewed or authored by the orchestrating agent -- a real prompt-injection-adjacent risk, not just a UX confusion. Worth reporting to Anthropic (Claude Code /help channel) as a potential isolation bug, not just routing around it in PT.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T18:25:12.162116+00:00"
+      ],
+      "lessons_sha": "481087c21a2d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T18:25:12.262716+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Observed 2026-07-12 during a /autoplan run: first Agent-tool CEO-review subagent call returned confused meta-commentary instead of doing the review, asking permission to proceed with a batch of reads -- looked like a hallucination until the user pointed out they'd sent exactly that question ('parallel vs sequential') to the main session moments before. If subagent isolation can leak live user input this way, any subagent (including ones with elevated tool access or running in an isolated worktree) could receive unintended instructions never reviewed or authored by the orchestrating agent -- a real prompt-injection-adjacent risk, not just a UX confusion. Worth reporting to Anthropic (Claude Code /help channel) as a potential isolation bug, not just routing around it in PT."
+}
