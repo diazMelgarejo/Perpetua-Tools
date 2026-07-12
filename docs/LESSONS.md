@@ -308,13 +308,13 @@ Set `PERPETUA_TOOLS_PATH` before start — wrong sibling path degrades hardware 
 
 | Host | LAN IP | Notes |
 |------|--------|-------|
-| Win RTX | `<YOUR_LAN_IP>` | LM Studio + stack |
-| Mac Studio | `<YOUR_LAN_IP>` | **Not** `.110` (stale default) |
+| Win RTX | `<WIN_LAN_IP>` | LM Studio + stack |
+| Mac Studio | `<MAC_LAN_IP>` | **Not** `<OLD_WIN_LAN_IP>` (stale default) |
 
 ### What worked
 
 - Inference Mac↔Win over LM Studio HTTP (`:1234`) both directions
-- `discover.py --force` subnet scan finds Mac at `.102`; `last_discovery.json` updated
+- `discover.py --force` subnet scan finds Mac at `<MAC_LAN_IP>`; `last_discovery.json` updated
 - Win `probe_lan_peer.py` → Mac `portal-health` PASS after Mac `--lan-peer`
 
 ### What blocked full L2 round-trip
@@ -325,8 +325,8 @@ Set `PERPETUA_TOOLS_PATH` before start — wrong sibling path degrades hardware 
 
 ### Code fixes (same session)
 
-- orama `discover.py`: Windows subnet scan; `start.ps1`: repo discover + `last_discovery.json`, no `.110` fallback
-- PT: removed `<YOUR_LAN_IP>` defaults from `agent_launcher.py` / `alphaclaw_bootstrap.py`
+- orama `discover.py`: Windows subnet scan; `start.ps1`: repo discover + `last_discovery.json`, no `<OLD_WIN_LAN_IP>` fallback
+- PT: removed ambiguous generic LAN-IP defaults from `agent_launcher.py` / `alphaclaw_bootstrap.py`
 
 ---
 
