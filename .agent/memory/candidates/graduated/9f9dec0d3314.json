@@ -1,0 +1,42 @@
+{
+  "id": "9f9dec0d3314",
+  "key": "manual_9f9dec",
+  "name": "manual_9f9dec",
+  "claim": "Before switching git branches directly in a shared checkout, always run git status first -- if it shows uncommitted changes and this repo has other concurrent agent sessions active, those changes may belong to a live in-progress session, not stray state to discard. Do NOT git stash/checkout/reset past them. Per this repo's own CLAUDE.md \u00a7 8 ('create a worktree when the task requires parallel file writes by multiple agents'), spin up a worktree for your own task instead and leave the shared checkout untouched -- then fetch the actual target branch into that worktree if the task is against a specific existing PR/branch, not main.",
+  "conditions": [
+    "collision avoidance",
+    "concurrent session",
+    "git status",
+    "uncommitted changes",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-07-12T01:49:18.144246+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-12T01:49:18.144246+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-12T01:49:18.144246+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-12T01:49:18.217610+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Hit live during PR #208 CodeRabbit-fix work (2026-07-12): git status on phase-2-stm-concurrency-dedup showed uncommitted edits to exactly the files a concurrent Codex session was working on (agent_coordination.py, heartbeat_monitor.py, tests). Used a worktree instead of touching the shared checkout; the other session committed its own work cleanly a short time later with zero collision.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-12T01:49:18.144246+00:00"
+      ],
+      "lessons_sha": "db65b44c4942"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-12T01:49:18.217600+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Hit live during PR #208 CodeRabbit-fix work (2026-07-12): git status on phase-2-stm-concurrency-dedup showed uncommitted edits to exactly the files a concurrent Codex session was working on (agent_coordination.py, heartbeat_monitor.py, tests). Used a worktree instead of touching the shared checkout; the other session committed its own work cleanly a short time later with zero collision."
+}
