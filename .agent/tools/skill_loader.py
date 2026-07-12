@@ -1,18 +1,24 @@
 """Progressive disclosure: manifest always, full SKILL.md only when triggered."""
-import json, os
+import json
+import os
+import sys
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 SKILLS_DIR = os.path.join(ROOT, "skills")
 MANIFEST = os.path.join(SKILLS_DIR, "_manifest.jsonl")
 FEATURES_PATH = os.path.join(ROOT, "memory", ".features.json")
 
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+from feature_flags import feature_enabled as _feature_enabled  # noqa: E402
+
 
 def load_manifest():
     if not os.path.exists(MANIFEST):
         return []
     out = []
-    with open(MANIFEST, encoding="utf-8") as f:
-        for line in f:
+    with open(MANIFEST, encoding="utf-8") as stream:
+        for line in stream:
             line = line.strip()
             if not line:
                 continue
@@ -35,22 +41,17 @@ def match_triggers(user_input, manifest):
 
 
 def check_preconditions(skill):
-    for pre in skill.get("preconditions", []):
-        if pre.endswith("exists"):
-            path = pre.replace(" exists", "").strip()
+    for precondition in skill.get("preconditions", []):
+        if precondition.endswith("exists"):
+            path = precondition.replace(" exists", "").strip()
             if not os.path.exists(os.path.join(ROOT, "..", path)):
                 return False
     return True
 
 
 def feature_enabled(key):
-    try:
-        with open(FEATURES_PATH, encoding="utf-8") as f:
-            features = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return False
-    entry = features.get(key) or {}
-    return bool(entry.get("enabled"))
+    """Backward-compatible wrapper around the shared feature reader."""
+    return _feature_enabled(FEATURES_PATH, key)
 
 
 def skill_enabled(skill):
@@ -63,12 +64,12 @@ def load_skill_full(name):
     skill_md = os.path.join(base, "SKILL.md")
     if not os.path.exists(skill_md):
         return None
-    with open(skill_md, encoding="utf-8") as f:
-        content = f.read()
+    with open(skill_md, encoding="utf-8") as stream:
+        content = stream.read()
     knowledge = os.path.join(base, "KNOWLEDGE.md")
     if os.path.exists(knowledge):
-        with open(knowledge, encoding="utf-8") as f:
-            content += "\n\n---\n## Accumulated knowledge\n" + f.read()
+        with open(knowledge, encoding="utf-8") as stream:
+            content += "\n\n---\n## Accumulated knowledge\n" + stream.read()
     return content
 
 
