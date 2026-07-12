@@ -14,9 +14,28 @@ fi
 zero="0000000000000000000000000000000000000000"
 upstream_ref="${GIT_PUSH_UPSTREAM:-origin/main}"
 
+# Phase 0 (Post-Review Micro-Remediation doctrine): the reviewed PR branch is
+# the only write target until review is complete — direct pushes to main
+# must be an explicit, deliberate act, never an accident of habit or a
+# mistyped destination. This is advisory (bypassable with --no-verify, like
+# any local hook); the durable enforcement is GitHub branch protection on
+# main, which must be configured in repo Settings (a token without
+# `administration` scope cannot set this via API — verified 2026-07-13).
+# Escape hatch for genuine direct-to-main work: ALLOW_MAIN_PUSH=1 git push …
+MAIN_PUSH_GUARD_REF_RE='refs/heads/(main|master)$'
+
 while read -r local_ref local_oid remote_ref remote_oid; do
   [[ "$local_ref" =~ refs/heads/ ]] || continue
   [[ "$local_oid" == "$zero" ]] && continue
+
+  if [[ "$remote_ref" =~ $MAIN_PUSH_GUARD_REF_RE ]] && [[ "${ALLOW_MAIN_PUSH:-0}" != "1" ]]; then
+    echo "pre-push: blocked — direct push to ${remote_ref#refs/heads/} is disabled by Phase 0" >&2
+    echo "  (Post-Review Micro-Remediation doctrine: the PR branch is the only" >&2
+    echo "   write target until review is complete — see .agent/AGENTS.md)" >&2
+    echo "  Merge via the PR instead, or if this is genuinely intentional:" >&2
+    echo "    ALLOW_MAIN_PUSH=1 git push $remote_ref ..." >&2
+    exit 1
+  fi
 
   if [[ "$remote_oid" == "$zero" ]]; then
     if git rev-parse --verify "$upstream_ref" >/dev/null 2>&1; then

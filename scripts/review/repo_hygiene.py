@@ -497,7 +497,11 @@ def check_workflow_permissions(root: Path) -> list[str]:
         if not needs_write:
             continue
         rel = path.relative_to(root)
-        if "contents: write" not in text and "pull-requests: write" not in text:
+        if (
+            "contents: write" not in text
+            and "pull-requests: write" not in text
+            and "issues: write" not in text
+        ):
             errors.append(f"workflow may write but lacks explicit write permission: {rel}")
     return errors
 
