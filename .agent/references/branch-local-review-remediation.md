@@ -25,10 +25,28 @@ Moving a valid fix to the wrong branch creates mutually incompatible histories, 
 5. Fix the abstraction, not each symptom.
 6. Add focused regression tests for the invariant.
 7. Keep `main` unchanged until the branch passes review and merges.
-8. If a fix was accidentally applied elsewhere:
-   - restore the unintended branch to its previous content;
-   - replay the fix on the reviewed branch;
-   - document the branch-ownership failure in memory.
+8. If a fix was accidentally applied elsewhere, repair lineage before doing more feature work.
+
+## Wrong-branch recovery
+
+When review commits leak onto `main` or another integration branch:
+
+1. Identify the last clean commit that is also the reviewed PR's merge base.
+2. Prove the leaked content is preserved on the reviewed branch or another durable ref.
+3. With explicit operator authorization, move the unintended branch ref directly to the clean commit. Do not create a chain of inverse commits when the goal is to erase an accidental unpublished lineage.
+4. Compare the repaired base against the PR head.
+5. Rebase only when the PR is actually behind or its parentage prevents a clean review.
+
+Decision table:
+
+| Compare result | Action |
+| --- | --- |
+| `ahead > 0`, `behind = 0`, merge base equals repaired base | Leave PR history alone; no rebase |
+| `behind > 0`, no semantic overlap | Rebase or fast-forward-update the PR branch after simulation |
+| `behind > 0`, overlapping valid changes | Use integrative merge/rebase: synthesize both intents and retest |
+| Wrong branch contains unique work not preserved elsewhere | Create a safety ref first; never discard unique work |
+
+**Rebase is a means, not a cleanliness ritual.** Avoid rewriting an already reviewable branch merely to remove an old merge commit when the branch is fully based on the repaired `main` and has no missing base work.
 
 ## Pattern-level remediation
 
@@ -59,13 +77,14 @@ A single owning-boundary fix should protect all current and future call sites.
 - Fetch each owning file once per stable head.
 - Batch related findings into one cohesive commit.
 - Stop re-checking findings already proven fixed by current branch content and tests.
+- Read large files by narrow ranges; do not replace them unless the complete current content is available.
 
 ## Cross-skill application
 
 - **Agent methodology:** apply before delegating parallel work or assigning branch ownership.
 - **Code review:** bind every finding to the reviewed branch and classify by shared invariant.
 - **AutoResearchers:** each researcher records its branch, task claim, evidence, and handoff; research outputs do not mutate integration branches directly.
-- **Git discipline/history surgery:** preserve review lineage and use tree/content evidence before rebase, reset, or force operations.
+- **Git discipline/history surgery:** establish the merge base, preserve safety refs, and use measured divergence before reset, rebase, or force operations.
 - **Oramasys method:** use Context Immersion, integrative synthesis, TDD, and verification-before-done.
 
 ## Completion gate
