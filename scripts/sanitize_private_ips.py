@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Sanitize hardcoded private IPv4 addresses from tracked source/test files.
 
-Replaces RFC1918 and link-local (169.254.0.0/16) IPs with loopback-range
-(127.0.0.0/8) equivalents so tests and examples no longer leak real LAN
-topology.  The mapping preserves /24 relationships so subnet-aware tests
-(e.g. provenance bucketing) keep passing.
+Replaces RFC1918 IPs with loopback-range (127.0.0.0/8) equivalents so tests
+and examples no longer leak real LAN topology.  Link-local (169.254.0.0/16)
+addresses are intentionally left untouched (see _collect_private_ips).  The
+mapping preserves /24 relationships so subnet-aware tests (e.g. provenance
+bucketing) keep passing.
 
 Usage:
     python scripts/sanitize_private_ips.py --dry-run
@@ -163,49 +164,83 @@ def _collect_private_ips(text: str) -> Tuple[List[str], List[str]]:
 
 def main(argv: List[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--apply", action="store_true", help="Write changes to disk")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
+        "--apply", action="store_true", help="Write changes to disk"
+    )
+    mode.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview changes without writing (default when neither flag is given)",
+    )
     parser.add_argument("--paths", nargs="*", help="Restrict to specific paths")
     args = parser.parse_args(argv)
+    apply_changes = args.apply  # dry-run is the default whenever --apply is absent
 
     if args.paths:
         tracked = [Path(p) for p in args.paths]
     else:
         result = subprocess.run(
-            ["git", "ls-files"], capture_output=True, text=True, check=True
+            ["git", "ls-files"],
+            capture_output=True,
+            text=True,
+            check=True,
+            encoding="utf-8",
         )
         tracked = [Path(line) for line in result.stdout.splitlines() if line]
 
     files_to_process = [p for p in tracked if p.is_file() and _should_process(p)]
 
-    total_hosts = 0
-    total_cidrs = 0
-    changed_files: List[Path] = []
-
+    # Read every candidate file up front and collect ALL hosts/CIDRs across
+    # the whole tree before building the mapping. Building a fresh mapping
+    # per file (the previous behavior) numbered /24 prefixes independently
+    # in each file, so the SAME real IP could sanitize to a DIFFERENT
+    # loopback address depending on which file it appeared in — breaking
+    # cross-file consistency for anything that compares sanitized IPs
+    # between files (e.g. multi-file test fixtures referencing one host).
+    file_texts: Dict[Path, str] = {}
+    all_hosts: List[str] = []
+    all_cidrs: List[str] = []
     for path in files_to_process:
         try:
             text = path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             continue
-
         hosts, cidrs = _collect_private_ips(text)
         if not hosts and not cidrs:
             continue
+        file_texts[path] = text
+        all_hosts.extend(hosts)
+        all_cidrs.extend(cidrs)
 
-        mapping = _build_mapping(hosts, cidrs)
+    if not file_texts:
+        print("\nSummary: 0 file(s) changed, 0 host(s), 0 CIDR(s) replaced.")
+        return 0
 
+    # Stable ordering so mapping assignment is deterministic across runs
+    # regardless of file/dict iteration order.
+    mapping = _build_mapping(sorted(set(all_hosts)), sorted(set(all_cidrs)))
+
+    total_hosts = 0
+    total_cidrs = 0
+    changed_files: List[Path] = []
+
+    for path, text in file_texts.items():
         new_text = _replace_in_text(text, mapping)
         if new_text == text:
             continue
 
-        total_hosts += len(hosts)
-        total_cidrs += len(cidrs)
+        file_hosts, file_cidrs = _collect_private_ips(text)
+        total_hosts += len(file_hosts)
+        total_cidrs += len(file_cidrs)
         changed_files.append(path)
 
-        print(f"{'[apply] ' if args.apply else '[dry-run] '}{path}")
-        for old, new in sorted(mapping.items()):
-            print(f"    {old} -> {new}")
+        print(f"{'[apply] ' if apply_changes else '[dry-run] '}{path}")
+        for old in sorted(set(file_hosts) | set(file_cidrs)):
+            if old in mapping:
+                print(f"    {old} -> {mapping[old]}")
 
-        if args.apply:
+        if apply_changes:
             path.write_text(new_text, encoding="utf-8")
 
     print(

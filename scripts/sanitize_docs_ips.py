@@ -92,7 +92,11 @@ def main(argv: List[str] | None = None) -> int:
         tracked = [Path(p) for p in args.paths]
     else:
         result = subprocess.run(
-            ["git", "ls-files"], capture_output=True, text=True, check=True
+            ["git", "ls-files"],
+            capture_output=True,
+            text=True,
+            check=True,
+            encoding="utf-8",
         )
         tracked = [Path(line) for line in result.stdout.splitlines() if line]
 

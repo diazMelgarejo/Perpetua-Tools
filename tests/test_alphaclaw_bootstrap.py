@@ -247,7 +247,8 @@ def test_validate_pt_state_accepts_empty_dict():
 
 def test_validate_pt_state_accepts_all_rfc1918_ranges():
     """All RFC-1918 address ranges must be accepted by _validate_pt_state."""
-    for host in ("127.0.1.1", "127.0.3.1", "127.0.6.1", "127.0.8.1"):
+    for host in ("10.0.0.1", "10.255.255.1", "172.16.0.1", "172.31.255.1",
+                 "192.168.0.1", "192.168.254.1"):
         state = {"manager_endpoint": f"http://{host}:11434"}
         result = alphaclaw_bootstrap._validate_pt_state(state)
         assert result["manager_endpoint"] == f"http://{host}:11434"
@@ -498,18 +499,18 @@ def test_heal_pt_endpoint_url_canonicalizes_bare_loopback_on_target(monkeypatch)
     )
     assert result == "http://localhost:11434"
 def test_validate_endpoint_host_accepts_rfc1918():
-    """_validate_endpoint_host must accept all valid RFC-1918 ranges."""
+    """_validate_endpoint_host must accept all valid RFC-1918 and loopback ranges."""
     for host in (
         "localhost",
         "127.0.0.1",
         "127.0.1.1",
-        "127.0.2.1",
-        "127.0.3.1",
-        "127.0.4.1",
-        "127.0.5.1",
-        "127.0.6.1",
-        "127.0.7.1",
         "127.0.9.3",
+        "10.0.0.1",
+        "10.255.255.1",
+        "172.16.0.1",
+        "172.31.255.1",
+        "192.168.0.1",
+        "192.168.254.1",
     ):
         alphaclaw_bootstrap._validate_endpoint_host(
             "manager_endpoint", f"http://{host}:11434"

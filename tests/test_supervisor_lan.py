@@ -80,7 +80,7 @@ async def test_failclosed_when_win_offline(tmp_path):
     import os
     # Force an unreachable Win IP for this test
     original = os.getenv("WIN_IP")
-    os.environ["WIN_IP"] = "127.0.1.2"  # guaranteed unreachable
+    os.environ["WIN_IP"] = "192.0.2.99"  # TEST-NET-1 (RFC 5737) — never locally bindable, unlike a loopback address
 
     sup = OrchestrationSupervisor(state_dir=tmp_path)
     spec = JobSpec(
