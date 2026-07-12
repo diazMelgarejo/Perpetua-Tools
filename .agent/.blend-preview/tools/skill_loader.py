@@ -1,5 +1,6 @@
 """Progressive disclosure: manifest always, full SKILL.md only when triggered."""
-import json, os
+import json
+import os
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 SKILLS_DIR = os.path.join(ROOT, "skills")
@@ -11,14 +12,15 @@ def load_manifest():
     if not os.path.exists(MANIFEST):
         return []
     out = []
-    for line in open(MANIFEST):
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            out.append(json.loads(line))
-        except json.JSONDecodeError:
-            continue
+    with open(MANIFEST, encoding="utf-8") as stream:
+        for line in stream:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                out.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
     return out
 
 
@@ -44,8 +46,8 @@ def check_preconditions(skill):
 
 def feature_enabled(key):
     try:
-        with open(FEATURES_PATH, encoding="utf-8") as f:
-            features = json.load(f)
+        with open(FEATURES_PATH, encoding="utf-8") as stream:
+            features = json.load(stream)
     except (FileNotFoundError, json.JSONDecodeError):
         return False
     entry = features.get(key) or {}
@@ -62,10 +64,12 @@ def load_skill_full(name):
     skill_md = os.path.join(base, "SKILL.md")
     if not os.path.exists(skill_md):
         return None
-    content = open(skill_md).read()
+    with open(skill_md, encoding="utf-8") as stream:
+        content = stream.read()
     knowledge = os.path.join(base, "KNOWLEDGE.md")
     if os.path.exists(knowledge):
-        content += "\n\n---\n## Accumulated knowledge\n" + open(knowledge).read()
+        with open(knowledge, encoding="utf-8") as stream:
+            content += "\n\n---\n## Accumulated knowledge\n" + stream.read()
     return content
 
 
