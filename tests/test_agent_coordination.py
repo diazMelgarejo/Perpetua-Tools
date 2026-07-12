@@ -22,6 +22,8 @@ from scripts.agent_coordination import (
     _known_agent_ids,
     _list,
     _log,
+    _phase_list,
+    _phase_start,
     _register,
     _release,
     canonical_db_path,
@@ -151,6 +153,15 @@ async def test_log_emits_note(make_bus, capsys):
     note_events = [e for e in events if e["payload"].get("kind") == "agent_note"]
     assert len(note_events) == 1
     assert note_events[0]["payload"]["message"] == "hello from test"
+
+
+async def test_phase_list_handles_nonnumeric_phase_names(make_bus, capsys):
+    bus = await make_bus()
+    await _phase_start(bus, "StateTransitionManager-Integration", None, "agent-z")
+    await _phase_list(bus)
+
+    captured = capsys.readouterr()
+    assert "StateTransitionManager-Integration" in captured.out
 
 
 def test_canonical_repo_root_is_git_directory():
