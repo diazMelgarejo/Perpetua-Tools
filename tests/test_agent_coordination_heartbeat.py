@@ -563,7 +563,7 @@ async def test_agent_pulse_keeps_agent_alive(bus):
     # Check updated status
     agents2 = await find_agent_heartbeats(bus, "agent-1")
     ts2 = agents2["agent-1"]["last_heartbeat_ts"]
-    assert ts2 >= ts1  # Pulse updated the timestamp
+    assert ts2 > ts1  # Pulse advanced the timestamp
 
 
 @pytest.mark.asyncio
