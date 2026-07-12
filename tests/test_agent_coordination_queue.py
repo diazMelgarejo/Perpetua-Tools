@@ -12,6 +12,7 @@ directly with temporary GossipBus instances, verifying:
 """
 from __future__ import annotations
 
+import asyncio
 import sys
 from pathlib import Path
 
@@ -29,6 +30,7 @@ from scripts.agent_coordination import (
     _queue_fail,
     _queue_list,
     _queue_status,
+    _try_atomic_claim,
 )
 from orchestrator.gossip_bus import GossipBus
 
@@ -274,6 +276,28 @@ async def test_queue_fail_with_retry(make_bus, capsys):
     assert "retry 1/3" in captured.out
 
 
+async def test_claim_then_fail_then_reclaim_succeeds(make_bus, capsys):
+    """A retried task must become claimable again -- _queue_fail's retry path
+    has to release the atomic-claim row, or the same PRIMARY KEY that
+    prevents a real double-claim would also permanently lock out every
+    future legitimate reclaim of a requeued task."""
+    bus = await make_bus()
+    await _queue_add(bus, "flaky-work", "Phase-2", "NORMAL", "", None)
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    task_id = events[0]["payload"]["task_id"]
+
+    await _queue_claim(bus, task_id, "agent-a")
+    capsys.readouterr()
+
+    await _queue_fail(bus, task_id, "transient error")
+    capsys.readouterr()
+
+    await _queue_claim(bus, task_id, "agent-b")
+    captured = capsys.readouterr()
+    assert "claimed:" in captured.out
+    assert "ERROR" not in captured.out
+
+
 async def test_queue_fail_abandons_after_max_retries(make_bus, capsys):
     """_queue_fail abandons task after max_retries exceeded."""
     bus = await make_bus()
@@ -439,6 +463,46 @@ async def test_multiple_agents_cannot_claim_same_task(make_bus, capsys):
     await _queue_claim(bus, task_id, "agent-b")
     captured = capsys.readouterr()
     assert "ERROR" in captured.out
+
+
+async def test_atomic_claim_gate_exactly_one_winner_under_true_concurrency(make_bus):
+    """_try_atomic_claim is the actual exclusion point: fire two claims for the
+    SAME task_id truly concurrently (asyncio.gather, not sequential awaits) and
+    assert the SQLite PRIMARY KEY on task_claims lets exactly one through,
+    regardless of scheduling order. This is the real TOCTOU-race regression
+    test -- test_multiple_agents_cannot_claim_same_task above only proves the
+    sequential case, which the snapshot-based status check already handled
+    fine; it never exercised the actual race window between that check and
+    the emit that used to follow it unguarded."""
+    bus = await make_bus()
+    task_id = "race-task-001"
+
+    results = await asyncio.gather(
+        _try_atomic_claim(bus, task_id, "agent-a"),
+        _try_atomic_claim(bus, task_id, "agent-b"),
+    )
+
+    assert sorted(results) == [False, True]
+
+
+async def test_queue_claim_concurrent_race_only_one_succeeds(make_bus, capsys):
+    """Full-stack version of the race test: two _queue_claim calls fired via
+    asyncio.gather (not one-after-the-other) on the same freshly-queued task.
+    Exactly one must succeed -- which one is not deterministic, but the count
+    is: this is what the old sequential test could never actually prove."""
+    bus = await make_bus()
+    await _queue_add(bus, "hotly-contested-concurrent", "Phase-2", "CRITICAL", "", None)
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    task_id = events[0]["payload"]["task_id"]
+
+    await asyncio.gather(
+        _queue_claim(bus, task_id, "agent-a"),
+        _queue_claim(bus, task_id, "agent-b"),
+    )
+    captured = capsys.readouterr()
+
+    assert captured.out.count("claimed:") == 1
+    assert captured.out.count("ERROR") == 1
 
 
 async def test_priority_ordering_in_list(make_bus, capsys):

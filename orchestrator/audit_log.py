@@ -31,7 +31,8 @@ import hashlib
 import json
 import time
 from dataclasses import dataclass, field
-from typing import Callable, Optional
+from pathlib import Path
+from typing import Callable, Optional, Union
 
 
 @dataclass(frozen=True)
@@ -106,13 +107,45 @@ class AuditLog:
       from its content, and confirms it matches both the stored `hash` AND
       the NEXT entry's `previous_hash`. Any mismatch means content was
       altered after the fact, or an entry was inserted/removed/reordered.
+    - Optional durable sink (`persist_path`): each `append()` also writes
+      the entry's content fields as one JSON line to this file, and the
+      constructor replays any existing lines to rebuild in-memory state on
+      startup. Only content fields are persisted — `hash` is never stored
+      directly, since it is a pure function of content and is recomputed
+      by `AuditEntry.__post_init__` on replay; storing it separately would
+      let a corrupted file silently claim a false hash instead of the
+      mismatch surfacing on read. Descoped from the STM production-wiring
+      gate (P5/P6/P13 are not being wired at current single-operator-LAN
+      scale — see MULTIAGENT-SWARM-SECURITY-ANALYSIS.md's threat-model
+      addendum), but this module's forensic value holds regardless of that
+      verdict, so its durability gap is fixed independently.
 
     Spec reference: PATTERN-SYNTHESIS.md P19 + MULTIAGENT-SWARM-SECURITY-
     ANALYSIS.md G8.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, persist_path: Optional[Union[str, Path]] = None) -> None:
         self._entries: list[AuditEntry] = []
+        self._persist_path = Path(persist_path) if persist_path is not None else None
+        if self._persist_path is not None and self._persist_path.exists():
+            with self._persist_path.open("r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    payload = json.loads(line)
+                    self._entries.append(
+                        AuditEntry(
+                            sequence_number=payload["sequence_number"],
+                            timestamp=payload["timestamp"],
+                            peer_id=payload["peer_id"],
+                            old_status=payload["old_status"],
+                            new_status=payload["new_status"],
+                            witnesses=tuple(payload["witnesses"]),
+                            previous_hash=payload["previous_hash"],
+                            signature=payload["signature"],
+                        )
+                    )
 
     def append(
         self,
@@ -172,6 +205,19 @@ class AuditLog:
             signature=sig,
         )
         self._entries.append(entry)
+        if self._persist_path is not None:
+            payload = {
+                "sequence_number": entry.sequence_number,
+                "timestamp": entry.timestamp,
+                "peer_id": entry.peer_id,
+                "old_status": entry.old_status,
+                "new_status": entry.new_status,
+                "witnesses": list(entry.witnesses),
+                "previous_hash": entry.previous_hash,
+                "signature": entry.signature,
+            }
+            with self._persist_path.open("a", encoding="utf-8") as f:
+                f.write(json.dumps(payload) + "\n")
         return entry
 
     def entries(self) -> tuple[AuditEntry, ...]:

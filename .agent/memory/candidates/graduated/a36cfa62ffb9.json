@@ -1,0 +1,44 @@
+{
+  "id": "a36cfa62ffb9",
+  "key": "manual_a36cfa",
+  "name": "manual_a36cfa",
+  "claim": "When multiple independent review voices (Codex + Claude subagents) disagree or one contains a verified-false claim, save every voice verbatim in its own file with inline [FALSE, see caveat] or [CORRECTION, ...] annotations rather than silently correcting, omitting, or only synthesizing a summary \u2014 preserves full auditability and lets a human see exactly which claims were checked and how.",
+  "conditions": [
+    "CEO",
+    "autoplan",
+    "caveat",
+    "correction",
+    "multi-voice",
+    "review",
+    "verbatim"
+  ],
+  "evidence_ids": [
+    "2026-07-11T19:34:51.582684+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T19:34:51.582684+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T19:34:51.582684+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T19:34:51.673297+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "User explicit instruction 2026-07-12: 'save all the agent's Quad CEO review? i want to see them in parallel, compile them in a folder' for PR #205's 4-voice CEO review, which included one worktree-agent with a fully false central claim and one resumed-agent with a partially-corrected claim. Landed as docs/phase-0-specifications/2026-07-12-ceo-review-quad-voices/ (00-README.md index + 01-04 per-voice files).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T19:34:51.582684+00:00"
+      ],
+      "lessons_sha": "372e832dd97d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T19:34:51.673290+00:00",
+  "reviewer": "learn.py",
+  "rationale": "User explicit instruction 2026-07-12: 'save all the agent's Quad CEO review? i want to see them in parallel, compile them in a folder' for PR #205's 4-voice CEO review, which included one worktree-agent with a fully false central claim and one resumed-agent with a partially-corrected claim. Landed as docs/phase-0-specifications/2026-07-12-ceo-review-quad-voices/ (00-README.md index + 01-04 per-voice files)."
+}

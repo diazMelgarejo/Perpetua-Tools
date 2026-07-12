@@ -1,0 +1,42 @@
+{
+  "id": "b88743907e4e",
+  "key": "manual_b88743",
+  "name": "manual_b88743",
+  "claim": "EnterWorktree's default base branches from the repo's fresh default remote branch (e.g. origin/main), NOT whatever branch you actually need to work on. If the task is to fix something on an existing PR/feature branch, the worktree starts on the wrong branch -- immediately fetch and checkout the real target branch inside the new worktree (git fetch origin <branch>:<branch> && git checkout <branch>) before making any edits, rather than assuming the worktree already has the right content.",
+  "conditions": [
+    "EnterWorktree",
+    "PR branch",
+    "checkout",
+    "fetch",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-07-12T01:49:10.138949+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-12T01:49:10.138949+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-12T01:49:10.138949+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-12T01:49:10.256017+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Created a worktree for PR #208 CodeRabbit fixes (2026-07-12); it started on a fresh auto-generated branch from main, not PR #208's actual branch (2026-07-11-004-agentic-stack-upgrade-v0.18). Had to fetch+checkout the real branch before the target files even existed in the worktree.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-12T01:49:10.138949+00:00"
+      ],
+      "lessons_sha": "0022c5c1aec9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-12T01:49:10.255993+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Created a worktree for PR #208 CodeRabbit fixes (2026-07-12); it started on a fresh auto-generated branch from main, not PR #208's actual branch (2026-07-11-004-agentic-stack-upgrade-v0.18). Had to fetch+checkout the real branch before the target files even existed in the worktree."
+}
