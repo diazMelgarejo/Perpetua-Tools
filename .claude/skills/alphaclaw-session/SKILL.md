@@ -74,7 +74,7 @@ Choose the profile that matches which nodes are reachable right now.
 | Item | Value |
 |------|-------|
 | Mac LM Studio | `localhost:1234` |
-| Win LM Studio | `192.168.254.105:1234` |
+| Win LM Studio | `<YOUR_WINDOWS_IP>:1234` |
 | Active agents | all 6: main, mac-researcher, win-researcher, orchestrator, coder, autoresearcher |
 | Max parallel | 4 (2 per node, memory-bound) |
 | Primary model | `lmstudio-mac/qwen3.5-9b-mlx` |
@@ -86,7 +86,7 @@ python3 ~/.openclaw/scripts/discover.py --status | head -4
 # Expected:
 # Tier:    1
 #   mac: ✅ localhost:1234 — N models
-#   win: ✅ 192.168.254.105:1234 — N models
+#   win: ✅ <YOUR_WINDOWS_IP>:1234 — N models
 ```
 
 ### `mac-only` — Mac node only (Tier 2)
@@ -117,7 +117,7 @@ python3 ~/.openclaw/scripts/discover.py --status | head -4
 
 | Item | Value |
 |------|-------|
-| Win LM Studio | `192.168.254.105:1234` |
+| Win LM Studio | `<YOUR_WINDOWS_IP>:1234` |
 | Active agents | win-researcher, coder, autoresearcher |
 | Degraded | main, mac-researcher, orchestrator |
 
@@ -130,7 +130,7 @@ python3 ~/.openclaw/scripts/discover.py --status | head -4
 - Run `discover.py --status` before starting any multi-agent session
 - Use `--force` flag after any IP change or when nodes are suspected offline
 - Use `localhost:1234` for Mac self-referencing — always
-- Use `192.168.254.105:1234` for Win (from Mac); `192.168.254.106:1234` for Mac (from Win)
+- Use `<YOUR_WINDOWS_IP>:1234` for Win (from Mac); `<YOUR_MAC_IP>:1234` for Mac (from Win)
 - Include `Authorization: Bearer ...` on every gateway request (loopback, no TLS)
 - Monitor usage-tracker plugin logs when on Tier 3 (cloud) — costs are non-zero
 - Check `discover.py --status` FIRST when any agent call fails unexpectedly
@@ -158,12 +158,12 @@ python3 ~/.openclaw/scripts/discover.py --status | head -4
 ### Win node shows offline (drops to Tier 2)
 
 ```bash
-# Step 1: Let discover.py find the new IP automatically (it scans 192.168.254.1-254)
+# Step 1: Let discover.py find the new IP automatically (it scans your LAN subnet)
 python3 ~/.openclaw/scripts/discover.py      # always re-probes, updates openclaw.json + PT config
 
 # Step 2: Check result
 python3 ~/.openclaw/scripts/discover.py --status | head -6
-# Expected: Tier 1, win: ✅ 192.168.254.XXX:1234
+# Expected: Tier 1, win: ✅ <YOUR_WINDOWS_IP>:1234
 
 # Step 3 (only if Win is truly off, not just a DHCP reassignment):
 ping -c 1 "$(python3 -c "

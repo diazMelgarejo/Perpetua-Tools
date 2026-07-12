@@ -266,7 +266,7 @@ def test_malicious_relay_attempt_detected():
 ```python
 def test_ip_migration_epoch_increment():
     """
-    GIVEN: Peer migrates from 192.168.1.50:9000 (epoch=1) to 10.0.0.5:9000 (epoch=2)
+    GIVEN: Peer migrates from <YOUR_LAN_IP>:9000 (epoch=1) to <YOUR_LAN_IP>:9000 (epoch=2)
     WHEN: New observation arrives with higher epoch
     THEN:
         - Old observation tagged "ip_migrated" or marked STALE
@@ -276,7 +276,7 @@ def test_ip_migration_epoch_increment():
     """
     now = 1720614843
     old_obs = build_observation(
-        endpoint="192.168.1.50:9000",
+        endpoint="<YOUR_LAN_IP>:9000",
         endpoint_epoch=1,
         last_heartbeat_timestamp=now - 100,
         direct_status="REACHABLE",
@@ -285,7 +285,7 @@ def test_ip_migration_epoch_increment():
     
     # New heartbeat arrives: epoch=2, IP changed
     new_obs = build_observation(
-        endpoint="10.0.0.5:9000",
+        endpoint="<YOUR_LAN_IP>:9000",
         endpoint_epoch=2,
         last_heartbeat_timestamp=now,
         direct_status="REACHABLE",
@@ -315,7 +315,7 @@ def test_epoch_mismatch_stale_cached_entry():
     """
     now = 1720614843
     cached_obs = build_observation(
-        endpoint="192.168.1.50:9000",
+        endpoint="<YOUR_LAN_IP>:9000",
         endpoint_epoch=1,
         last_heartbeat_timestamp=now - 500,  # Very old
         direct_status="REACHABLE",
@@ -323,7 +323,7 @@ def test_epoch_mismatch_stale_cached_entry():
     
     new_heartbeat = {
         "endpoint_epoch": 3,  # Gap of 2 epochs!
-        "endpoint": "10.0.0.7:9000",
+        "endpoint": "<YOUR_LAN_IP>:9000",
     }
     
     # Check for mismatch
@@ -544,7 +544,7 @@ FIXTURE_FRESH_DIRECT = PeerObservation(
     target_peer_id="win-rtx5080-c4d8e2f1a3b7c9d5",
     observer_timestamp=1720614843.0,
     direct_status="REACHABLE",
-    endpoint="192.168.1.105:9000",
+    endpoint="<YOUR_LAN_IP>:9000",
     endpoint_epoch=2,
     last_heartbeat_timestamp=1720614843.0,
     last_probe_timestamp=1720614843.0,
@@ -556,7 +556,7 @@ FIXTURE_FRESH_DIRECT = PeerObservation(
         "latency_ms": 12.5,
         "heartbeat_received": {
             "node_id": "win-rtx5080-c4d8e2f1a3b7c9d5",
-            "endpoint": "192.168.1.105:9000",
+            "endpoint": "<YOUR_LAN_IP>:9000",
             "endpoint_epoch": 2,
             "backend_state": "WIN_LMSTUDIO",
             "timestamp": 1720614843.0,
@@ -586,7 +586,7 @@ FIXTURE_STALE_PASSIVE = PeerObservation(
     target_peer_id="win-unknown-peer-9e8d7c6b5a4f3e2d",
     observer_timestamp=1720614843.0,
     direct_status="STALE",
-    endpoint="192.168.1.200:9000",
+    endpoint="<YOUR_LAN_IP>:9000",
     endpoint_epoch=1,
     last_heartbeat_timestamp=1720614700.0,  # 143 seconds ago
     last_probe_timestamp=1720614700.0,
@@ -617,7 +617,7 @@ FIXTURE_UNVERIFIED_RELAY = PeerObservation(
     target_peer_id="win-rtx5080-c4d8e2f1a3b7c9d5",
     observer_timestamp=1720614843.0,
     direct_status="UNKNOWN",
-    endpoint="192.168.1.105:9000",
+    endpoint="<YOUR_LAN_IP>:9000",
     endpoint_epoch=2,
     last_heartbeat_timestamp=None,
     last_probe_timestamp=1720614833.0,  # Relay probe 10s ago
@@ -655,7 +655,7 @@ FIXTURE_TIMEOUT = PeerObservation(
     target_peer_id="unknown-offline-1a2b3c4d5e6f7a8b",
     observer_timestamp=1720614843.0,
     direct_status="TIMEOUT",
-    endpoint="192.168.1.150:9000",
+    endpoint="<YOUR_LAN_IP>:9000",
     endpoint_epoch=0,
     last_heartbeat_timestamp=None,  # Never succeeded
     last_probe_timestamp=1720614843.0,
@@ -690,7 +690,7 @@ FIXTURE_IP_MIGRATED = PeerObservation(
     target_peer_id="win-rtx5080-c4d8e2f1a3b7c9d5",
     observer_timestamp=1720614843.0,
     direct_status="STALE",  # Old address no longer valid
-    endpoint="192.168.1.50:9000",  # Old address
+    endpoint="<YOUR_LAN_IP>:9000",  # Old address
     endpoint_epoch=1,  # Old epoch
     last_heartbeat_timestamp=1720614700.0,  # 143 seconds ago
     last_probe_timestamp=1720614700.0,
@@ -709,7 +709,7 @@ FIXTURE_IP_MIGRATED = PeerObservation(
     backend_state_timestamp=1720614700.0,
     ttl_seconds=300,
     tags=["ip_migrated", "superseded", "epoch_mismatch"],
-    notes="Peer reported IP change (epoch 1→2); old address 192.168.1.50 no longer valid; see new observation with epoch=2",
+    notes="Peer reported IP change (epoch 1→2); old address <YOUR_LAN_IP> no longer valid; see new observation with epoch=2",
     source_id=None,
 )
 ```
@@ -721,7 +721,7 @@ FIXTURE_WITNESS_AGREEMENT = PeerObservation(
     target_peer_id="win-rtx5080-c4d8e2f1a3b7c9d5",
     observer_timestamp=1720614843.0,
     direct_status="REACHABLE",
-    endpoint="192.168.1.105:9000",
+    endpoint="<YOUR_LAN_IP>:9000",
     endpoint_epoch=2,
     last_heartbeat_timestamp=1720614843.0,
     last_probe_timestamp=1720614843.0,
@@ -733,7 +733,7 @@ FIXTURE_WITNESS_AGREEMENT = PeerObservation(
         "latency_ms": 14.2,
         "heartbeat_received": {
             "node_id": "win-rtx5080-c4d8e2f1a3b7c9d5",
-            "endpoint": "192.168.1.105:9000",
+            "endpoint": "<YOUR_LAN_IP>:9000",
             "endpoint_epoch": 2,
             "backend_state": "WIN_LMSTUDIO",
             "timestamp": 1720614843.0,
@@ -763,7 +763,7 @@ FIXTURE_WITNESS_DISAGREEMENT = PeerObservation(
     target_peer_id="win-unknown-peer-9e8d7c6b5a4f3e2d",
     observer_timestamp=1720614843.0,
     direct_status="REACHABLE",
-    endpoint="192.168.1.200:9000",
+    endpoint="<YOUR_LAN_IP>:9000",
     endpoint_epoch=2,
     last_heartbeat_timestamp=1720614843.0,
     last_probe_timestamp=1720614843.0,
@@ -775,7 +775,7 @@ FIXTURE_WITNESS_DISAGREEMENT = PeerObservation(
         "latency_ms": 45.3,
         "heartbeat_received": {
             "node_id": "win-unknown-peer-9e8d7c6b5a4f3e2d",
-            "endpoint": "192.168.1.200:9000",
+            "endpoint": "<YOUR_LAN_IP>:9000",
             "endpoint_epoch": 2,
             "timestamp": 1720614843.0,
             "signature": "xXyYzZ1122334455667788990011223344556677889900112233445566aAbBcC",
@@ -804,7 +804,7 @@ FIXTURE_STATIC_SEED = PeerObservation(
     target_peer_id="win-rtx5080-c4d8e2f1a3b7c9d5",
     observer_timestamp=1720614843.0,
     direct_status="REACHABLE",
-    endpoint="192.168.1.105:9000",
+    endpoint="<YOUR_LAN_IP>:9000",
     endpoint_epoch=2,
     last_heartbeat_timestamp=1720614800.0,  # 43 seconds ago (stale by normal standards)
     last_probe_timestamp=1720614800.0,
@@ -838,7 +838,7 @@ FIXTURE_MALICIOUS_RELAY = PeerObservation(
     target_peer_id="unknown-peer-deadbeef00001234",
     observer_timestamp=1720614843.0,
     direct_status="REACHABLE",
-    endpoint="192.168.1.222:9000",
+    endpoint="<YOUR_LAN_IP>:9000",
     endpoint_epoch=1,
     last_heartbeat_timestamp=1720614843.0,
     last_probe_timestamp=1720614843.0,
@@ -875,7 +875,7 @@ FIXTURE_DEGRADED_LINK = PeerObservation(
     target_peer_id="win-rtx5080-c4d8e2f1a3b7c9d5",
     observer_timestamp=1720614843.0,
     direct_status="DEGRADED",
-    endpoint="192.168.1.105:9000",
+    endpoint="<YOUR_LAN_IP>:9000",
     endpoint_epoch=2,
     last_heartbeat_timestamp=1720614843.0,
     last_probe_timestamp=1720614843.0,
@@ -887,7 +887,7 @@ FIXTURE_DEGRADED_LINK = PeerObservation(
         "latency_ms": 385.5,
         "heartbeat_received": {
             "node_id": "win-rtx5080-c4d8e2f1a3b7c9d5",
-            "endpoint": "192.168.1.105:9000",
+            "endpoint": "<YOUR_LAN_IP>:9000",
             "endpoint_epoch": 2,
             "backend_state": "WIN_LMSTUDIO",
             "timestamp": 1720614843.0,

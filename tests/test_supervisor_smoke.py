@@ -58,7 +58,7 @@ def test_submit_job_strips_client_win_endpoint(tmp_path):
             intent="echo",
             prompt="probe bypass",
             backend_hint="echo",
-            metadata={"_win_endpoint": "http://10.0.0.99:1234"},
+            metadata={"_win_endpoint": "http://127.0.1.1:1234"},
         )
         job_id = await sup.submit_job(spec)
         await sup.cancel(job_id)
@@ -288,13 +288,13 @@ async def test_dispatch_prefers_windows_coder_when_reachable(tmp_path, monkeypat
 
     async def fake_win_worker(spec):
         # Verify the dispatcher injects the pre-probed endpoint into metadata.
-        assert spec.metadata.get("_win_endpoint") == "http://192.168.254.103:1234"
+        assert spec.metadata.get("_win_endpoint") == "http://127.0.2.2:1234"
         return {"backend": "lmstudio-win", "output": "fake win result"}
 
     monkeypatch.setattr(
         OrchestrationSupervisor,
         "_get_reachable_windows_coder",
-        AsyncMock(return_value="http://192.168.254.103:1234"),
+        AsyncMock(return_value="http://127.0.2.2:1234"),
     )
     monkeypatch.setitem(reg_mod.WORKER_REGISTRY, "lmstudio-win", fake_win_worker)
 
@@ -309,7 +309,7 @@ async def test_dispatch_prefers_windows_coder_when_reachable(tmp_path, monkeypat
     assert result.get("routed_to_windows") is True, (
         f"Expected Windows coder routing but got: {result}"
     )
-    assert result.get("windows_endpoint") == "http://192.168.254.103:1234"
+    assert result.get("windows_endpoint") == "http://127.0.2.2:1234"
 
 
 @pytest.mark.asyncio
@@ -329,7 +329,7 @@ async def test_submit_then_win_preempt_uses_windows_model_not_mac_default(
     monkeypatch.setattr(
         OrchestrationSupervisor,
         "_get_reachable_windows_coder",
-        AsyncMock(return_value="http://192.168.254.103:1234"),
+        AsyncMock(return_value="http://127.0.2.2:1234"),
     )
     captured: dict[str, str] = {}
 
@@ -378,7 +378,7 @@ async def test_dispatch_injects_win_endpoint_for_explicit_lmstudio_win(tmp_path,
     monkeypatch.setattr(
         OrchestrationSupervisor,
         "_get_reachable_windows_coder",
-        AsyncMock(return_value="http://192.168.254.101:1234"),
+        AsyncMock(return_value="http://127.0.2.1:1234"),
     )
     monkeypatch.setitem(reg_mod.WORKER_REGISTRY, "lmstudio-win", fake_win_worker)
 
@@ -396,7 +396,7 @@ async def test_dispatch_injects_win_endpoint_for_explicit_lmstudio_win(tmp_path,
         "Explicit lmstudio-win should not set routed_to_windows flag"
     )
     # But _win_endpoint MUST be injected so the worker skips LM_STUDIO_WIN_ENDPOINTS
-    assert endpoint_injected.get("value") == "http://192.168.254.101:1234", (
+    assert endpoint_injected.get("value") == "http://127.0.2.1:1234", (
         f"_win_endpoint was not injected; got: {endpoint_injected}"
     )
 
@@ -715,7 +715,7 @@ async def test_dispatch_raises_affinity_error_when_windows_preemption_blocked(
     monkeypatch.setattr(
         OrchestrationSupervisor,
         "_get_reachable_windows_coder",
-        AsyncMock(return_value="http://192.168.254.103:1234"),
+        AsyncMock(return_value="http://127.0.2.2:1234"),
     )
     monkeypatch.setitem(reg_mod.WORKER_REGISTRY, "lmstudio-win", AsyncMock(
         return_value={"backend": "lmstudio-win", "output": "should not reach here"}

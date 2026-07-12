@@ -32,7 +32,7 @@ class TestWitnessQuorumBasic:
             observer_provenance="ASN-001",
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.1:9000",
+            endpoint="127.0.1.1:9000",
             endpoint_epoch=1,
             witness_set=(),  # Empty
         )
@@ -48,7 +48,7 @@ class TestWitnessQuorumBasic:
             observer_provenance="ASN-002",
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.2:9000",
+            endpoint="127.0.1.2:9000",
             endpoint_epoch=1,
         )
         obs = PeerObservation(
@@ -59,7 +59,7 @@ class TestWitnessQuorumBasic:
             observer_provenance="ASN-001",
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.1:9000",
+            endpoint="127.0.1.1:9000",
             endpoint_epoch=1,
             witness_set=(witness_a,),  # Only 1 witness
         )
@@ -75,7 +75,7 @@ class TestWitnessQuorumBasic:
             observer_provenance="ASN-002",
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.2:9000",
+            endpoint="127.0.1.2:9000",
             endpoint_epoch=1,
         )
         witness_b = PeerObservation(
@@ -86,7 +86,7 @@ class TestWitnessQuorumBasic:
             observer_provenance="ASN-003",
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.3:9000",
+            endpoint="127.0.1.3:9000",
             endpoint_epoch=1,
         )
         obs = PeerObservation(
@@ -97,7 +97,7 @@ class TestWitnessQuorumBasic:
             observer_provenance="ASN-001",
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.1:9000",
+            endpoint="127.0.1.1:9000",
             endpoint_epoch=1,
             witness_set=(witness_a, witness_b),
         )
@@ -118,7 +118,7 @@ class TestWitnessQuorumObserverDedup:
             observer_provenance="ASN-002",
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.2:9000",
+            endpoint="127.0.1.2:9000",
             endpoint_epoch=1,
         )
         witness_b = PeerObservation(
@@ -129,7 +129,7 @@ class TestWitnessQuorumObserverDedup:
             observer_provenance="ASN-003",  # Different provenance doesn't matter
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.3:9000",
+            endpoint="127.0.1.3:9000",
             endpoint_epoch=1,
         )
         obs = PeerObservation(
@@ -140,7 +140,7 @@ class TestWitnessQuorumObserverDedup:
             observer_provenance="ASN-001",
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.1:9000",
+            endpoint="127.0.1.1:9000",
             endpoint_epoch=1,
             witness_set=(witness_a, witness_b),
         )
@@ -157,7 +157,7 @@ class TestWitnessQuorumObserverDedup:
             observer_provenance="ASN-002",
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.2:9000",
+            endpoint="127.0.1.2:9000",
             endpoint_epoch=1,
         )
         witness_b = PeerObservation(
@@ -168,7 +168,7 @@ class TestWitnessQuorumObserverDedup:
             observer_provenance="ASN-999",  # Different provenance
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.99:9000",
+            endpoint="127.0.1.5:9000",
             endpoint_epoch=1,
         )
         obs = PeerObservation(
@@ -179,7 +179,7 @@ class TestWitnessQuorumObserverDedup:
             observer_provenance="ASN-001",
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.1:9000",
+            endpoint="127.0.1.1:9000",
             endpoint_epoch=1,
             witness_set=(witness_a, witness_b),
         )
@@ -200,7 +200,7 @@ class TestWitnessQuorumProvenanceDedup:
             observer_provenance=same_provenance,  # Same provenance
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.2:9000",
+            endpoint="127.0.1.2:9000",
             endpoint_epoch=1,
         )
         witness_b = PeerObservation(
@@ -211,7 +211,7 @@ class TestWitnessQuorumProvenanceDedup:
             observer_provenance=same_provenance,  # Same provenance again
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.3:9000",
+            endpoint="127.0.1.3:9000",
             endpoint_epoch=1,
         )
         obs = PeerObservation(
@@ -222,7 +222,7 @@ class TestWitnessQuorumProvenanceDedup:
             observer_provenance="ASN-001",
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.1:9000",
+            endpoint="127.0.1.1:9000",
             endpoint_epoch=1,
             witness_set=(witness_a, witness_b),
         )
@@ -239,7 +239,7 @@ class TestWitnessQuorumProvenanceDedup:
             observer_provenance=same_provenance,
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.2:9000",
+            endpoint="127.0.1.2:9000",
             endpoint_epoch=1,
         )
         witness_b = PeerObservation(
@@ -250,7 +250,7 @@ class TestWitnessQuorumProvenanceDedup:
             observer_provenance=same_provenance,  # But same provenance
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.3:9000",
+            endpoint="127.0.1.3:9000",
             endpoint_epoch=1,
         )
         obs = PeerObservation(
@@ -261,7 +261,7 @@ class TestWitnessQuorumProvenanceDedup:
             observer_provenance="ASN-001",
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.1:9000",
+            endpoint="127.0.1.1:9000",
             endpoint_epoch=1,
             witness_set=(witness_a, witness_b),
         )
@@ -281,7 +281,7 @@ class TestWitnessQuorumEdgeCases:
             observer_provenance="ASN-002",
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.2:9000",
+            endpoint="127.0.1.2:9000",
             endpoint_epoch=1,
         )
         witness_b = PeerObservation(
@@ -292,7 +292,7 @@ class TestWitnessQuorumEdgeCases:
             observer_provenance="ASN-002",  # Same provenance
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.2:9000",
+            endpoint="127.0.1.2:9000",
             endpoint_epoch=1,
         )
         obs = PeerObservation(
@@ -303,7 +303,7 @@ class TestWitnessQuorumEdgeCases:
             observer_provenance="ASN-001",
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.1:9000",
+            endpoint="127.0.1.1:9000",
             endpoint_epoch=1,
             witness_set=(witness_a, witness_b),
         )
@@ -319,7 +319,7 @@ class TestWitnessQuorumEdgeCases:
             observer_provenance="ASN-002",
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.2:9000",
+            endpoint="127.0.1.2:9000",
             endpoint_epoch=1,
         )
         witness_b = PeerObservation(
@@ -330,7 +330,7 @@ class TestWitnessQuorumEdgeCases:
             observer_provenance="ASN-003",  # Different provenance
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.3:9000",
+            endpoint="127.0.1.3:9000",
             endpoint_epoch=1,
         )
         witness_c = PeerObservation(
@@ -341,7 +341,7 @@ class TestWitnessQuorumEdgeCases:
             observer_provenance="ASN-004",
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.4:9000",
+            endpoint="127.0.1.4:9000",
             endpoint_epoch=1,
         )
         obs = PeerObservation(
@@ -352,7 +352,7 @@ class TestWitnessQuorumEdgeCases:
             observer_provenance="ASN-001",
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.1:9000",
+            endpoint="127.0.1.1:9000",
             endpoint_epoch=1,
             witness_set=(witness_a, witness_b, witness_c),
         )
@@ -368,7 +368,7 @@ class TestWitnessQuorumEdgeCases:
             observer_provenance="",  # Empty provenance (opaque literal bucket)
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.2:9000",
+            endpoint="127.0.1.2:9000",
             endpoint_epoch=1,
         )
         witness_b = PeerObservation(
@@ -379,7 +379,7 @@ class TestWitnessQuorumEdgeCases:
             observer_provenance="ASN-003",  # Non-empty provenance
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.3:9000",
+            endpoint="127.0.1.3:9000",
             endpoint_epoch=1,
         )
         obs = PeerObservation(
@@ -390,7 +390,7 @@ class TestWitnessQuorumEdgeCases:
             observer_provenance="ASN-001",
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.1:9000",
+            endpoint="127.0.1.1:9000",
             endpoint_epoch=1,
             witness_set=(witness_a, witness_b),
         )
@@ -421,7 +421,7 @@ class TestWitnessQuorumEdgeCases:
             observer_provenance="ASN-001",
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.1:9000",
+            endpoint="127.0.1.1:9000",
             endpoint_epoch=1,
             witness_set=tuple(witnesses),
         )
@@ -442,7 +442,7 @@ class TestWitnessQuorumUnreachable:
             observer_provenance="ASN-002",
             observation_type=ObservationType.UNREACHABLE,  # Note: UNREACHABLE
             direct_status=DirectStatus.UNREACHABLE,
-            endpoint="192.168.1.2:9000",
+            endpoint="127.0.1.2:9000",
             endpoint_epoch=1,
         )
         witness_b = PeerObservation(
@@ -453,7 +453,7 @@ class TestWitnessQuorumUnreachable:
             observer_provenance="ASN-003",
             observation_type=ObservationType.UNREACHABLE,  # Note: UNREACHABLE
             direct_status=DirectStatus.UNREACHABLE,
-            endpoint="192.168.1.3:9000",
+            endpoint="127.0.1.3:9000",
             endpoint_epoch=1,
         )
         obs = PeerObservation(
@@ -464,7 +464,7 @@ class TestWitnessQuorumUnreachable:
             observer_provenance="ASN-001",
             observation_type=ObservationType.UNREACHABLE,
             direct_status=DirectStatus.UNREACHABLE,
-            endpoint="192.168.1.1:9000",
+            endpoint="127.0.1.1:9000",
             endpoint_epoch=1,
             witness_set=(witness_a, witness_b),
         )
@@ -500,7 +500,7 @@ class TestWitnessQuorumSubnetDedup:
             observer_provenance="ASN-001",
             observation_type=ObservationType.REACHABLE,
             direct_status=DirectStatus.REACHABLE,
-            endpoint="192.168.1.1:9000",
+            endpoint="127.0.1.1:9000",
             endpoint_epoch=1,
             witness_set=tuple(witnesses),
         )

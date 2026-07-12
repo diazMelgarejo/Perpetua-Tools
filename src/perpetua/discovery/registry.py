@@ -16,7 +16,7 @@ from .probe import health_probe
 _SEEDS: tuple[tuple[str, str, BackendKind], ...] = (
     ("ollama-local", "http://localhost:11434/v1", BackendKind.OLLAMA),
     ("lmstudio-mac", "http://localhost:1234/v1", BackendKind.LMSTUDIO),   # MIRROR — discovery only
-    ("lmstudio-win", "http://192.168.254.103:1234/v1", BackendKind.LMSTUDIO),
+    ("lmstudio-win", "http://192.0.2.1:1234/v1", BackendKind.LMSTUDIO),
 )
 
 

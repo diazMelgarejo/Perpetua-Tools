@@ -74,8 +74,8 @@ Hardware: Mac (L2 + L3 mainly), Win RTX3080 (L1 inference), transient peers (doc
 **OpenClaw scenario:** LM Studio crashed and restarted with new IP (same peer_id). Relay caches old observation with old IP. L2 observer accepts stale IP, routes work to dead address.
 
 **Attack vector:**
-- Observation O1: `{peer_id: LM-Studio-1, ip: 192.168.1.50, epoch: 5, timestamp: T}` is valid and cached.
-- LM Studio restarts, updates IP to `192.168.1.100`, sends heartbeat to L2.
+- Observation O1: `{peer_id: LM-Studio-1, ip: <YOUR_LAN_IP>, epoch: 5, timestamp: T}` is valid and cached.
+- LM Studio restarts, updates IP to `<YOUR_LAN_IP>`, sends heartbeat to L2.
 - Relay (caching O1) delays processing; sends O1 to another observer.
 - Observer has no way to know O1 is superseded without comparing epoch + timestamp.
 

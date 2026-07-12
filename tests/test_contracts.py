@@ -310,11 +310,11 @@ def _make_session(**kwargs):
 
 def test_windows_coder_pool_reads_from_env(monkeypatch):
     """windows_coder_pool is populated from WIN_CODER_ENDPOINTS env var."""
-    monkeypatch.setenv("WIN_CODER_ENDPOINTS", "http://192.168.254.103:1234,http://192.168.254.104:1234")
+    monkeypatch.setenv("WIN_CODER_ENDPOINTS", "http://127.0.1.1:1234,http://127.0.1.2:1234")
     session = _make_session()
     assert session.windows_coder_pool == [
-        "http://192.168.254.103:1234",
-        "http://192.168.254.104:1234",
+        "http://127.0.1.1:1234",
+        "http://127.0.1.2:1234",
     ]
 
 
@@ -327,6 +327,6 @@ def test_windows_coder_pool_empty_when_env_not_set(monkeypatch):
 
 def test_windows_coder_pool_filters_empty_strings(monkeypatch):
     """windows_coder_pool skips empty entries from malformed env var."""
-    monkeypatch.setenv("WIN_CODER_ENDPOINTS", ",http://192.168.254.103:1234,,")
+    monkeypatch.setenv("WIN_CODER_ENDPOINTS", ",http://127.0.1.1:1234,,")
     session = _make_session()
-    assert session.windows_coder_pool == ["http://192.168.254.103:1234"]
+    assert session.windows_coder_pool == ["http://127.0.1.1:1234"]

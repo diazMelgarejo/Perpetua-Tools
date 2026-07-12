@@ -43,10 +43,10 @@ def registry():
 def client():
     async def fake_resolve_routing_state():
         return {
-            "manager_endpoint": "http://192.168.254.103:11434",
+            "manager_endpoint": "http://127.0.2.2:11434",
             "manager_model": "glm-5.1:cloud",
             "manager_backend": "mac-ollama",
-            "coder_endpoint": "http://192.168.254.100:1234",
+            "coder_endpoint": "http://127.0.2.1:1234",
             "coder_model": QWEN_PRIORITY_MODEL,
             "coder_backend": "windows-lmstudio",
             "distributed": True,
@@ -119,26 +119,26 @@ def test_active_tilting_ollama_win_uses_model_port_not_lmstudio(registry, monkey
     monkeypatch.delenv("PT_DISABLE_LIVE_MODEL_PROBES", raising=False)
     monkeypatch.setattr(
         "orchestrator.lan_discovery.detect_active_tilting_ip",
-        lambda: "http://192.168.254.108:1234",
+        lambda: "http://127.0.2.3:1234",
     )
 
     ollama_item = {
         "device": "win-rtx3080",
         "backend": "ollama",
-        "host": "${WIN_OLLAMA_ENDPOINT:-http://192.168.254.108}",
+        "host": "${WIN_OLLAMA_ENDPOINT:-http://127.0.2.3}",
         "port": 11434,
         "name": "qwen3-30b-autoresearch-critic",
     }
     lm_item = {
         "device": "win-rtx3080",
         "backend": "lm-studio",
-        "host": "${LM_STUDIO_WIN_ENDPOINT:-http://192.168.254.108}",
+        "host": "${LM_STUDIO_WIN_ENDPOINT:-http://127.0.2.3}",
         "port": 1234,
         "name": "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2",
     }
 
-    assert registry._resolve_host(ollama_item) == "http://192.168.254.108:11434"
-    assert registry._resolve_host(lm_item) == "http://192.168.254.108:1234"
+    assert registry._resolve_host(ollama_item) == "http://127.0.2.3:11434"
+    assert registry._resolve_host(lm_item) == "http://127.0.2.3:1234"
 
 
 def test_hardware_policy_blocks_windows_only_on_mac():
@@ -279,7 +279,7 @@ def test_mac_ollama_required_models_skip_on_windows_host(monkeypatch):
 
     monkeypatch.setattr(agent_launcher, "RUNNING_ON_MAC", False)
 
-    agent_launcher._ensure_mac_ollama_models_present([], "http://192.168.254.110:11434")
+    agent_launcher._ensure_mac_ollama_models_present([], "http://127.0.2.4:11434")
 
 
 def test_windows_host_keeps_local_windows_backend(monkeypatch):
@@ -607,7 +607,7 @@ def test_mac_lms_url_heals_stale_lan_env_on_mac(monkeypatch, request):
     request.addfinalizer(lambda: importlib.reload(agent_launcher))
 
     monkeypatch.setenv("ORAMA_PLATFORM", "mac")
-    monkeypatch.setenv("LM_STUDIO_MAC_ENDPOINT", "http://192.168.1.50:1234")
+    monkeypatch.setenv("LM_STUDIO_MAC_ENDPOINT", "http://127.0.1.1:1234")
     monkeypatch.delenv("MAC_LMS_HOST", raising=False)
 
     importlib.reload(agent_launcher)
@@ -623,7 +623,7 @@ def test_mac_lms_url_heals_stale_mac_lms_host_on_mac(monkeypatch, request):
 
     monkeypatch.setenv("ORAMA_PLATFORM", "mac")
     monkeypatch.delenv("LM_STUDIO_MAC_ENDPOINT", raising=False)
-    monkeypatch.setenv("MAC_LMS_HOST", "192.168.254.110")
+    monkeypatch.setenv("MAC_LMS_HOST", "192.0.2.1")
     monkeypatch.delenv("MAC_LMS_PORT", raising=False)
 
     importlib.reload(agent_launcher)
@@ -638,7 +638,7 @@ def test_windows_ip_heals_stale_lan_env_on_windows(monkeypatch, request):
     request.addfinalizer(lambda: importlib.reload(agent_launcher))
 
     monkeypatch.setenv("ORAMA_PLATFORM", "windows")
-    monkeypatch.setenv("WINDOWS_IP", "192.168.254.108")
+    monkeypatch.setenv("WINDOWS_IP", "192.0.2.2")
     monkeypatch.delenv("LM_STUDIO_WIN_ENDPOINTS", raising=False)
 
     importlib.reload(agent_launcher)

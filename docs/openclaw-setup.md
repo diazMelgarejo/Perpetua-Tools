@@ -11,7 +11,7 @@ LaunchAgent (ai.openclaw.gateway)
     │
     ├── /opt/homebrew/bin/node  → ~/.nvm/versions/node/v24.14.1/bin/node
     ├── dist/index.js  (openclaw global npm install)
-    ├── port 18789 (LAN: 0.0.0.0, dashboard: http://192.168.1.147:18789/)
+    ├── port 18789 (LAN: 0.0.0.0, dashboard: http://<YOUR_LAN_IP>:18789/)
     └── 4 plugins: memory-core, telegram, usage-tracker, whatsapp
 ```
 
