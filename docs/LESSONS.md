@@ -2081,3 +2081,45 @@ orama doc 41 §5.
 Full writeup + reusable conflict-resolution playbook:
 [`wiki/11-agentic-stack-agent-blend.md`](wiki/11-agentic-stack-agent-blend.md).
 
+## 2026-07-12 — orama-system eats its own dogfood: the coordination system coordinated its own construction | Claude Code
+
+**Session:** PR #206 (`chore(skills): salvage heartbeat wrapper...`) — started as a
+one-file skill-wrapper salvage; by merge time it also carried STM security-pipeline
+hardening, atomic claim/release transaction fixes, and memory-durability fixes.
+
+**What happened:** Four sibling branches (#205 STM concurrency, #206 this one, #207
+agentic-stack gitlink cleanup, #208 agentic-stack v0.18 bump) were being developed by
+multiple concurrent AI coding sessions against the same repo in real time. None of the
+sessions explicitly coordinated with each other. Instead, they coordinated *through
+the exact system under construction*: `scripts/agent_coordination.py`'s GossipBus-backed
+distributed task queue (claim → release → heartbeat, append-only events folded into
+current state) — the same primitives one session was actively hardening became, purely
+via shared git state on the branch, the de facto hand-off mechanism between sessions. One
+session's committed fix was the next session's starting point; a gap one session left
+open was frequently already closed by the time another session went looking for it.
+
+**Why this is notable, not just messy:** it's an unplanned, real-load stress test of
+the exact coordination guarantees being built — several sessions independently
+converged on solutions to the same problems (an atomic claim+event transaction, a
+Sybil witness-witness correlation signal, a dedup-key fix), and at least once one
+session's fix silently regressed another's in-flight work on the same file (a stale
+`obs.to_json()` dedup key reappeared on one branch after being fixed on another). That
+regression was only caught because the final merge was reconciled by genuine line-level
+harmonization across 19 conflicted files — not "pick HEAD or pick main" — preserving
+each lineage's real improvements (one favored defensive engineering: `BEGIN IMMEDIATE`
+write-locking, bounded retry-on-lock, event-loop guards; the other favored
+crash-consistency and documentation depth: `fsync`-backed durability, hash cross-checks
+on replay, thorough inline rationale) while dropping the handful of places a fix had
+quietly gone backward.
+
+**Lesson for future multi-agent sessions on a shared branch:** treat GossipBus/task-queue
+state as a real coordination channel even when no session explicitly designed it that
+way — `git fetch` + `git log HEAD..origin/<branch>` before starting substantial work
+catches most of this early; for the unavoidable remainder, resolve merge conflicts by
+reading and understanding both sides' *reasoning*, not by picking the side with more
+lines or the side that landed first.
+
+PR body updated with a matching explanation, appended before CodeRabbit's
+auto-generated summary (not replacing it):
+[PR #206](https://github.com/diazMelgarejo/Perpetua-Tools/pull/206).
+

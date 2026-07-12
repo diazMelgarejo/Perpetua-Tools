@@ -58,6 +58,21 @@ canonical — reject those candidates; use repo names + env vars instead.
 
 Full contract: `protocols/path-hygiene.md` · lessons `lesson_da04cbbae68b`, `lesson_456ea361526d`, `lesson_6fc89e22e3bb`.
 
+## Post-review micro-remediation (sister pattern to the one below)
+
+When addressing review findings on an ALREADY-OPEN PR (as opposed to merging
+independent branches): freeze main as a write target, cluster findings by
+root cause and fix the abstraction once, keep commits cohesive by failure
+class, and on any post-merge problem prefer a safety-ref-protected ancestry
+reset over accumulating revert commits.
+
+**Canonical doctrine (orama-way):**
+[orama `post-review-micro-remediation.md`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/references/post-review-micro-remediation.md)
+— 6 phases: Freeze → Root-cause clustering → Branch discipline → Integration
+(safety ref before reset) → Verification (fixed/superseded/documented, never
+silent) → Closure. This section is the portable-brain summary; the reference
+doc is authoritative.
+
 ## Multi-agent merge conflict protocol
 
 When merging nested branches produced by independent agents against a moving main, follow this protocol exactly. **Never guess conflict resolution.**

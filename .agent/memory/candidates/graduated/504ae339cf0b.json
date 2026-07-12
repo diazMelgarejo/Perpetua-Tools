@@ -1,0 +1,43 @@
+{
+  "id": "504ae339cf0b",
+  "key": "manual_504ae3",
+  "name": "manual_504ae3",
+  "claim": "An unconflicted git auto-merge is not proof a local fix survived it -- git can silently resolve a hunk in favor of the 'wrong' side (reverting a prior local patch back to its pre-fix state) without ever flagging a conflict, if the two sides' diffs don't textually overlap in a way git's 3-way merge detects. After any merge that touches files with a known local-patch history (e.g. an .agentic-stack-blend-state.json applied_clean list), diff the post-merge content against the expected patched content directly -- don't trust 'no conflict markers' as proof the fix is still there.",
+  "conditions": [
+    "blend-preview",
+    "local patch",
+    "merge conflict",
+    "silent revert",
+    "unconflicted merge",
+    "verify content"
+  ],
+  "evidence_ids": [
+    "2026-07-12T10:46:55.469831+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-12T10:46:55.469831+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-12T10:46:55.469831+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-12T10:46:55.556053+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "9 of 16 files with UTF-8/context-manager fixes mined from the agentic-stack v0.18 blend-preview got silently reverted by 'git merge origin/main' during PR #206 reconciliation -- none were flagged as conflicting, so the revert went unnoticed until an explicit post-push content verification (grep for bare open() calls) caught it. Re-applied and re-committed; updated .agentic-stack-blend-state.json's own record to note this exact gotcha for future blend cycles.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-12T10:46:55.469831+00:00"
+      ],
+      "lessons_sha": "992e70bc26e2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-12T10:46:55.556046+00:00",
+  "reviewer": "learn.py",
+  "rationale": "9 of 16 files with UTF-8/context-manager fixes mined from the agentic-stack v0.18 blend-preview got silently reverted by 'git merge origin/main' during PR #206 reconciliation -- none were flagged as conflicting, so the revert went unnoticed until an explicit post-push content verification (grep for bare open() calls) caught it. Re-applied and re-committed; updated .agentic-stack-blend-state.json's own record to note this exact gotcha for future blend cycles."
+}

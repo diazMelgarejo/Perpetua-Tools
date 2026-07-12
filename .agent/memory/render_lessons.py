@@ -174,7 +174,8 @@ def migrate_legacy_bullets(semantic_dir):
     md_path = os.path.join(semantic_dir, LESSONS_MD)
     if not os.path.exists(md_path):
         return 0
-    content = open(md_path, encoding="utf-8").read()
+    with open(md_path, encoding="utf-8") as f:
+        content = f.read()
     if SENTINEL not in content:
         return 0
 
@@ -279,7 +280,8 @@ def render_lessons(semantic_dir):
         auto_section = _build_auto_section(lessons)
 
         if os.path.exists(md_path):
-            existing = open(md_path, encoding="utf-8").read()
+            with open(md_path, encoding="utf-8") as f:
+                existing = f.read()
             if SENTINEL in existing:
                 prefix = existing.split(SENTINEL)[0].rstrip()
                 new = f"{prefix}\n\n{SENTINEL}\n\n{auto_section}"
@@ -306,7 +308,8 @@ def render_lessons(semantic_dir):
 
 
 def render_lessons_as_text(semantic_dir):
-    return open(render_lessons(semantic_dir), encoding="utf-8").read()
+    with open(render_lessons(semantic_dir), encoding="utf-8") as f:
+        return f.read()
 
 
 if __name__ == "__main__":
