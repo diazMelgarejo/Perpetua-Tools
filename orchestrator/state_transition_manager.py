@@ -248,6 +248,18 @@ class StateTransitionManager:
         if len(cache) > self._max_cache_size:
             cache.popitem(last=False)
 
+    @staticmethod
+    def _dedup_key(obs: PeerObservation) -> str:
+        """Stable, compact identifier for an observation in the replay cache.
+
+        Replaying the exact same observation from the same observer must be
+        detected as a duplicate, but distinct observers must not collide when
+        reporting the same peer/epoch/sequence (that is normal witness quorum,
+        not a replay). The monotonic gate already rejects out-of-order
+        sequences, so a stale replay with an older sequence is caught there.
+        """
+        return f"{obs.peer_id}:{obs.epoch}:{obs.sequence}:{obs.observer_id}"
+
     async def evaluate_observation(
         self,
         obs: PeerObservation,
@@ -292,7 +304,7 @@ class StateTransitionManager:
         # [1] Dedup / monotonic gate — cheapest possible check, before any
         # module call. Duplicate/stale observations should never even reach
         # the equivocation log (they're not new information).
-        dedup_key = obs.to_json()
+        dedup_key = self._dedup_key(obs)
         if dedup_key in self._seen_observations:
             return self._reject(obs, DecisionType.DUPLICATE, "Duplicate observation", old_status)
 
@@ -328,6 +340,13 @@ class StateTransitionManager:
         sequence. Not a terminal decision — no audit entry, not marked seen —
         so the same observation re-submitted later still resolves correctly
         once the gap fills or the buffer evicts it."""
+        if obs.is_stale:
+            return self._reject(
+                obs,
+                DecisionType.STALE,
+                f"Observation TTL expired while waiting for missing sequence (seq={obs.sequence})",
+                old_status,
+            )
         buffer = self._reorder_buffer.get(obs.peer_id)
         if buffer is None:
             buffer = OrderedDict()
@@ -375,7 +394,11 @@ class StateTransitionManager:
             if entry is None:
                 break
             buffered_obs, buffered_old_status = entry
-            buffered_dedup_key = buffered_obs.to_json()
+            if buffered_obs.is_stale:
+                # Skip expired buffered observations instead of committing
+                # them; they are no longer valid even though the gap filled.
+                continue
+            buffered_dedup_key = self._dedup_key(buffered_obs)
             if buffered_dedup_key in self._seen_observations:
                 continue  # defensive; should not happen given the gap-gate above
             flushed.append(self._apply_observation(buffered_obs, buffered_old_status, buffered_dedup_key))
@@ -545,6 +568,7 @@ class StateTransitionManager:
 
     def _check_sybil_correlation(self, obs: PeerObservation) -> SybilCorrelation:
         correlated_pairs: List[Tuple[str, str]] = []
+        witness_ids = [w.peer_id for w in obs.witness_set]
 
         # Signal 1: the observed peer is suspiciously close to one of its own
         # witnesses in XOR-distance ID-space (a witness deliberately
@@ -553,11 +577,18 @@ class StateTransitionManager:
             if self._k_bucket.is_correlated(obs.peer_id, witness.peer_id, self._sybil_proximity_bits):
                 correlated_pairs.append((obs.peer_id, witness.peer_id))
 
-        # Signal 2: many witnesses already share the observed peer's k-bucket.
+        # Signal 2: witnesses are suspiciously close to each other — a Sybil
+        # ring deliberately placing its identities near one another.
+        for i, id_a in enumerate(witness_ids):
+            for id_b in witness_ids[i + 1 :]:
+                if self._k_bucket.is_correlated(id_a, id_b, self._sybil_proximity_bits):
+                    correlated_pairs.append((id_a, id_b))
+
+        # Signal 3: many witnesses already share the observed peer's k-bucket.
         bucket_index = self._k_bucket.bucket_for(obs.peer_id)
         peers_in_bucket = self._k_bucket.peers_in_bucket(bucket_index)
-        witness_ids = {w.peer_id for w in obs.witness_set}
-        bucket_overlap = [p for p in peers_in_bucket if p in witness_ids]
+        witness_peer_ids = set(witness_ids)
+        bucket_overlap = [p for p in peers_in_bucket if p in witness_peer_ids]
 
         if len(correlated_pairs) >= 2 or len(bucket_overlap) >= 2:
             signal = SybilSignal.STRONG

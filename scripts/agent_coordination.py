@@ -385,11 +385,11 @@ async def _phase_list(bus: GossipBus) -> None:
             else "0/0"
         )
         print(f"{phase_name:30s} {status_label:12s} tests={test_str}")
-        owner = getattr(phase, "owner_agent", None) or getattr(phase, "agent", None)
+        assigned = getattr(phase, "assigned_to", None) or []
         depends_on = getattr(phase, "depends_on", None) or []
         blockers = getattr(phase, "blockers", None) or []
-        if owner:
-            print(f"  owner: {owner}")
+        if assigned:
+            print(f"  assigned_to: {', '.join(assigned)}")
         if depends_on:
             print(f"  depends_on: {', '.join(depends_on)}")
         if blockers:

@@ -90,9 +90,10 @@ async def find_agent_heartbeats(
                 'killed_reason': None,
             }
 
-        # Update last_heartbeat_ts (track most recent for each agent)
-        if agent not in last_ts_per_agent:
-            last_ts_per_agent[agent] = ev["ts"]
+        # Update last_heartbeat_ts (track most recent for each agent).
+        # Events are iterated oldest-first, so every later event for the same
+        # agent supersedes the previous timestamp.
+        last_ts_per_agent[agent] = ev["ts"]
 
         # Track registration
         if kind == "agent_register":
