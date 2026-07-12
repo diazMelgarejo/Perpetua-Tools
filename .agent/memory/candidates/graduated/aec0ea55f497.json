@@ -1,0 +1,42 @@
+{
+  "id": "aec0ea55f497",
+  "key": "manual_aec0ea",
+  "name": "manual_aec0ea",
+  "claim": "Agent-tool subagents run with isolation:'worktree' can see a STALE checkout of the branch relative to the orchestrating session's real-time state, and can hallucinate confident, specific-looking false claims from that staleness rather than reporting uncertainty. Observed: a subagent claimed 'this worktree's HEAD (65916c81) is a stale snapshot; main already carries commit 60636ad5 (P9 reorder buffer...)' -- but 60636ad5 was the orchestrating session's OWN just-pushed commit on a feature branch, never on main at all (git merge-base --is-ancestor 60636ad5 origin/main confirmed NO). The subagent's worktree checkout was simply behind the live branch tip; it inverted that into a false 'you're behind main' narrative stated with full confidence and specific SHAs, not hedged.",
+  "conditions": [
+    "autoplan",
+    "git-verification",
+    "hallucination-not-malice",
+    "subagent-staleness",
+    "worktree-isolation"
+  ],
+  "evidence_ids": [
+    "2026-07-11T18:25:27.469796+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T18:25:27.469796+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T18:25:27.469796+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T18:25:27.570728+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Observed 2026-07-12 during a /autoplan CEO-review subagent dispatch. Verified false via direct git commands before trusting it -- per the standing AFRP anti-handwaving rule, a subagent's confident claim with specific-looking evidence (real SHAs, real commit messages) is not automatically ground truth if it could stem from stale/isolated state. Always verify a subagent's git-state claims directly (branch --contains, merge-base --is-ancestor) before acting on 'you're out of sync with main' style findings, especially from worktree-isolated agents.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T18:25:27.469796+00:00"
+      ],
+      "lessons_sha": "89d65de6f1d8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T18:25:27.570721+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Observed 2026-07-12 during a /autoplan CEO-review subagent dispatch. Verified false via direct git commands before trusting it -- per the standing AFRP anti-handwaving rule, a subagent's confident claim with specific-looking evidence (real SHAs, real commit messages) is not automatically ground truth if it could stem from stale/isolated state. Always verify a subagent's git-state claims directly (branch --contains, merge-base --is-ancestor) before acting on 'you're out of sync with main' style findings, especially from worktree-isolated agents."
+}
