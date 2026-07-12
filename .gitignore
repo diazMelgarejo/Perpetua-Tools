@@ -115,5 +115,9 @@ vendor/oramaclaw/
 # Episodic runtime logs (not AGENT_LEARNINGS.jsonl)
 .agent/memory/episodic/*.log
 
+# agentic-stack-agent-blend.sh scratch staging (never commit; state lives in
+# .agent/.agentic-stack-blend-state.json instead, which IS tracked)
+.agent/.blend-preview/
+
 # Local build/node stamp (generated per install; never commit)
 **/.node_stamp

@@ -1,0 +1,44 @@
+{
+  "id": "df55c3d3eeb1",
+  "key": "manual_df55c3",
+  "name": "manual_df55c3",
+  "claim": "agentic-stack-agent-blend.sh conflict playbook (v0.9.0->v0.18.0 cycle): (1) dead-duplicate-line conflicts (PT has a stale naive computation immediately overwritten by a corrected one, upstream has just the clean line) -> take upstream. (2) naive-timestamp-interpretation conflicts -> keep PT's local-time-and-convert version, not upstream's assume-already-UTC shortcut, because PT's own historical writers used bare datetime.now().isoformat() which captures local time. (3) two independent same-line fixes (e.g. PT's path-sanitizer wrapper + upstream's tz-awareness fix) -> combine both, never pick one side, since either fix alone reintroduces an already-solved bug. (4) pure mechanical refactors (context-manager wrap, line reorder) -> take upstream. (5) new content merged into an existing non-blocked file that itself references a blocklisted skill (e.g. skills/_index.md gaining a '## brain' section) -> union everything except the blocklisted reference; the tool's path-level blocklist does not scan merged file CONTENT for blocked references, only new file paths -- a known gap.",
+  "conditions": [
+    "agentic-stack",
+    "blend",
+    "brain-blocklist",
+    "conflict-resolution",
+    "datetime-timezone",
+    "merge-file",
+    "playbook"
+  ],
+  "evidence_ids": [
+    "2026-07-11T14:59:37.994947+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-11T14:59:37.994947+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-11T14:59:37.994947+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-11T14:59:38.134111+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Walked all 7 real conflicts from the first blend cycle with the user via AskUserQuestion on 2026-07-11; full detail in docs/wiki/11-agentic-stack-agent-blend.md. Recorded so the next agentic-stack pin bump doesn't re-derive these judgment calls from scratch.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-11T14:59:37.994947+00:00"
+      ],
+      "lessons_sha": "0cd3de1dc23a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-11T14:59:38.134098+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Walked all 7 real conflicts from the first blend cycle with the user via AskUserQuestion on 2026-07-11; full detail in docs/wiki/11-agentic-stack-agent-blend.md. Recorded so the next agentic-stack pin bump doesn't re-derive these judgment calls from scratch."
+}
