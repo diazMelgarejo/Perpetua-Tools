@@ -9,6 +9,7 @@ import json
 import sys
 from pathlib import Path
 
+import httpx
 import pytest
 import respx
 from fastapi.testclient import TestClient
@@ -37,7 +38,7 @@ async def local_bus(tmp_db_path):
 async def test_bridge_no_peers_is_local(tmp_db_path):
     """Without peers, the bridge behaves like a plain GossipBus."""
     bridge = LanGossipBridge(db_path=tmp_db_path)
-    await bridge.local.init_db()
+    await bridge.init_db()
 
     await bridge.emit("heartbeat", {"kind": "test", "value": 1})
     events = await bridge.tail(limit=10, event_type="heartbeat")
@@ -47,13 +48,24 @@ async def test_bridge_no_peers_is_local(tmp_db_path):
 
 
 @pytest.mark.asyncio
+async def test_bridge_init_db_delegates_to_local_bus(tmp_db_path):
+    """LanGossipBridge supports the same initialization API as GossipBus."""
+    bridge = LanGossipBridge(db_path=tmp_db_path, peers=["http://peer-a.example:8000"])
+    await bridge.init_db()
+
+    await bridge.local.emit("heartbeat", {"kind": "local", "value": 7})
+    events = await bridge.local.tail(limit=10, event_type="heartbeat")
+    assert events[0]["payload"]["value"] == 7
+
+
+@pytest.mark.asyncio
 @respx.mock
 async def test_bridge_forwards_emit_to_peers(tmp_db_path):
     """Emitting an event POSTs it to every configured peer."""
     route = respx.post("http://peer-a.example:8000/gossip/emit").mock(
         return_value=Response(200, json={"ok": True})
     )
-    respx.post("http://peer-b.example:8000/gossip/emit").mock(
+    peer_b = respx.post("http://peer-b.example:8000/gossip/emit").mock(
         return_value=Response(200, json={"ok": True})
     )
 
@@ -62,11 +74,12 @@ async def test_bridge_forwards_emit_to_peers(tmp_db_path):
         peers=["http://peer-a.example:8000", "http://peer-b.example:8000"],
         timeout=1.0,
     )
-    await bridge.local.init_db()
+    await bridge.init_db()
 
     await bridge.emit("heartbeat", {"kind": "task_enqueue", "task_id": "t1"})
 
     assert route.called
+    assert peer_b.called
     body = json.loads(route.calls.last.request.content)
     assert body["event_type"] == "heartbeat"
     assert body["payload"]["task_id"] == "t1"
@@ -90,7 +103,7 @@ async def test_bridge_tail_merges_peer_events(tmp_db_path):
         peers=["http://peer-a.example:8000"],
         timeout=1.0,
     )
-    await bridge.local.init_db()
+    await bridge.init_db()
     await bridge.emit("heartbeat", {"kind": "task_enqueue", "task_id": "local"})
 
     events = await bridge.tail(limit=10, event_type="heartbeat")
@@ -118,7 +131,7 @@ async def test_bridge_tail_deduplicates_by_row_id(tmp_db_path):
         peers=["http://peer-a.example:8000"],
         timeout=1.0,
     )
-    await bridge.local.init_db()
+    await bridge.init_db()
     await bridge.emit("heartbeat", {"kind": "task_enqueue", "task_id": "shared"})
 
     events = await bridge.tail(limit=10, event_type="heartbeat")
@@ -126,14 +139,23 @@ async def test_bridge_tail_deduplicates_by_row_id(tmp_db_path):
 
 
 @pytest.mark.asyncio
+@respx.mock
 async def test_bridge_unreachable_peer_is_best_effort(tmp_db_path):
     """An unreachable peer does not break local emit or tail."""
+    peer_url = "http://peer-down.example:8000"
+    respx.post(f"{peer_url}/gossip/emit").mock(
+        side_effect=httpx.ConnectError("peer unreachable")
+    )
+    respx.get(f"{peer_url}/gossip/tail").mock(
+        side_effect=httpx.ConnectError("peer unreachable")
+    )
+
     bridge = LanGossipBridge(
         db_path=tmp_db_path,
-        peers=["http://localhost:1"],  # intentionally unreachable
+        peers=[peer_url],
         timeout=0.1,
     )
-    await bridge.local.init_db()
+    await bridge.init_db()
 
     await bridge.emit("heartbeat", {"kind": "test", "value": 2})
     events = await bridge.tail(limit=10)
