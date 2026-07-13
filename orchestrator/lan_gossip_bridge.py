@@ -65,7 +65,7 @@ class LanGossipBridge:
         payload: dict,
         *,
         timestamp: Optional[float] = None,
-    ) -> tuple[int, dict]:
+    ) -> tuple[int, str, dict]:
         return await self.local.insert_event(
             db, event_type, payload, timestamp=timestamp
         )
@@ -76,11 +76,15 @@ class LanGossipBridge:
     # ------------------------------------------------------------------
     # Cross-peer replication
     # ------------------------------------------------------------------
-    async def emit(self, event_type: EventType, payload: dict) -> None:
-        """Persist locally, then best-effort forward to every configured peer."""
-        await self.local.emit(event_type, payload)
+    async def emit(self, event_type: EventType, payload: dict) -> str:
+        """Persist locally, then best-effort forward to every configured peer.
+
+        Returns:
+            The globally unique event_uuid of the locally persisted event.
+        """
+        event_uuid = await self.local.emit(event_type, payload)
         if not self.peers:
-            return
+            return event_uuid
         event_value = getattr(event_type, "value", event_type)
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             tasks = [
@@ -94,6 +98,7 @@ class LanGossipBridge:
         for peer, result in zip(self.peers, results):
             if isinstance(result, Exception):
                 logger.debug("LAN gossip emit to peer %s failed: %r", peer, result)
+        return event_uuid
 
     async def tail(
         self, limit: int = 20, event_type: Optional[str] = None
@@ -127,12 +132,20 @@ class LanGossipBridge:
                 continue
             peer_events.extend(data.get("events", []))
 
-        merged = {ev.get("row_id"): ev for ev in peer_events if ev.get("row_id")}
+        # Deduplicate by globally unique uuid (not local-only row_id).
+        # Local events win on collision (authoritative durability).
+        merged: dict[str, dict] = {}
+        for ev in peer_events:
+            if ev.get("uuid"):
+                merged[ev["uuid"]] = ev
         for ev in local_events:
-            merged[ev.get("row_id")] = ev
-        return sorted(merged.values(), key=lambda e: e.get("row_id", 0), reverse=True)[
-            :limit
-        ]
+            if ev.get("uuid"):
+                merged[ev["uuid"]] = ev
+        return sorted(
+            merged.values(),
+            key=lambda e: (e.get("ts", 0), e.get("row_id", 0)),
+            reverse=True,
+        )[:limit]
 
     async def search(
         self,
