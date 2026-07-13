@@ -62,11 +62,18 @@ _gossip_bus: GossipBus | None = None
 
 
 def _init_gossip_db() -> None:
-    """Initialize the shared gossip bus SQLite schema (idempotent)."""
+    """Initialize the shared gossip bus SQLite schema (idempotent).
+
+    This function runs inside an executor worker thread during FastAPI
+    lifespan startup. Worker threads do not have a default event loop on
+    modern Python, so asyncio.get_event_loop().run_until_complete() would
+    raise RuntimeError. asyncio.run() creates and closes the loop in this
+    worker thread deterministically.
+    """
     global _gossip_bus
     try:
         _gossip_bus = GossipBus()
-        asyncio.get_event_loop().run_until_complete(_gossip_bus.init_db())
+        asyncio.run(_gossip_bus.init_db())
         _startup_log.info("GossipBus initialized: %s", _gossip_bus.db_path)
     except Exception as exc:  # noqa: BLE001
         _startup_log.warning("GossipBus init failed (non-fatal): %s", exc)
@@ -119,8 +126,7 @@ async def _lifespan(app: FastAPI):
         _startup_log.info(
             "Control-plane bearer auth active; token persisted to .state/control_plane_token"
         )
-    # GossipBus init is synchronous (SQLite schema creation); run in executor
-    # so it never blocks port binding.
+    # GossipBus init runs in executor so it never blocks port binding.
     asyncio.get_event_loop().run_in_executor(None, _init_gossip_db)
     # Both background tasks fire at t=0; neither blocks port binding.
     asyncio.get_event_loop().run_in_executor(None, _run_ecc_sync_bg)
@@ -455,6 +461,7 @@ def health(
 class _GossipEmitRequest(BaseModel):
     event_type: str
     payload: Dict[str, Any]
+    uuid: Optional[str] = None
 
 
 @app.post("/gossip/emit", tags=["gossip"])
@@ -462,7 +469,7 @@ async def gossip_emit(req: _GossipEmitRequest, request: Request):
     """Accept a gossip event from a LAN peer and persist it locally."""
     _require_gossip_auth(request)
     bus = _gossip_bus if _gossip_bus is not None else GossipBus()
-    event_uuid = await bus.emit(req.event_type, req.payload)
+    event_uuid = await bus.emit(req.event_type, req.payload, event_uuid=req.uuid)
     return {"ok": True, "uuid": event_uuid}
 
 
