@@ -11,13 +11,16 @@ best-effort (local durability is authoritative).
 """
 from __future__ import annotations
 
-import json
+import asyncio
+import logging
 import os
 from typing import Any, Optional
 
 import httpx
 
 from orchestrator.gossip_bus import EventType, GossipBus, resolve_gossip_db_path
+
+logger = logging.getLogger(__name__)
 
 
 class LanGossipBridge:
@@ -43,6 +46,15 @@ class LanGossipBridge:
     # ------------------------------------------------------------------
     # Local pass-through
     # ------------------------------------------------------------------
+    async def init_db(self) -> None:
+        """Initialize the local GossipBus database.
+
+        Exposing this on the bridge keeps callers on the public bus contract;
+        they no longer need to special-case ``bridge.local`` just to initialize
+        the underlying SQLite schema.
+        """
+        await self.local.init_db()
+
     async def connect(self):
         return self.local.connect()
 
@@ -69,16 +81,19 @@ class LanGossipBridge:
         await self.local.emit(event_type, payload)
         if not self.peers:
             return
+        event_value = getattr(event_type, "value", event_type)
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            for peer in self.peers:
-                try:
-                    await client.post(
-                        f"{peer.rstrip('/')}/gossip/emit",
-                        json={"event_type": event_type, "payload": payload},
-                    )
-                except Exception:
-                    # Best-effort: peer unreachable or misconfigured is not fatal.
-                    pass
+            tasks = [
+                client.post(
+                    f"{peer.rstrip('/')}/gossip/emit",
+                    json={"event_type": event_value, "payload": payload},
+                )
+                for peer in self.peers
+            ]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+        for peer, result in zip(self.peers, results):
+            if isinstance(result, Exception):
+                logger.debug("LAN gossip emit to peer %s failed: %r", peer, result)
 
     async def tail(
         self, limit: int = 20, event_type: Optional[str] = None
@@ -94,16 +109,23 @@ class LanGossipBridge:
             params["event_type"] = event_type
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            for peer in self.peers:
-                try:
-                    response = await client.get(
-                        f"{peer.rstrip('/')}/gossip/tail", params=params
-                    )
-                    response.raise_for_status()
-                    data = response.json()
-                    peer_events.extend(data.get("events", []))
-                except Exception:
-                    pass
+            tasks = [
+                client.get(f"{peer.rstrip('/')}/gossip/tail", params=params)
+                for peer in self.peers
+            ]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        for peer, result in zip(self.peers, results):
+            if isinstance(result, Exception):
+                logger.debug("LAN gossip tail from peer %s failed: %r", peer, result)
+                continue
+            try:
+                result.raise_for_status()
+                data = result.json()
+            except Exception as exc:
+                logger.debug("LAN gossip tail from peer %s failed: %r", peer, exc)
+                continue
+            peer_events.extend(data.get("events", []))
 
         merged = {ev.get("row_id"): ev for ev in peer_events if ev.get("row_id")}
         for ev in local_events:
