@@ -87,13 +87,19 @@ EventType = Literal[
 class GossipBus:
     """Append-only event log.
 
-    `insert_event()` is the public transaction primitive for callers that must
+    ``insert_event()`` is the public transaction primitive for callers that must
     make an event atomic with another SQLite mutation. The caller owns commit or
     rollback and schedules embedding only after a successful commit.
+
+    A bus created with no ``db_path`` resolves to the canonical
+    ``.state/perpetua_core.db`` path. Public read/write methods lazily initialize
+    the schema, so endpoint fallbacks and tests cannot accidentally touch an
+    uninitialized SQLite file.
     """
 
     def __init__(self, db_path: str | None = None):
         self._db_path = db_path if db_path is not None else resolve_gossip_db_path()
+        self._initialized = False
 
     @property
     def db_path(self) -> str:
@@ -125,7 +131,7 @@ class GossipBus:
             for (row_id,) in rows:
                 await db.execute(
                     "UPDATE gossip SET event_uuid = ? WHERE id = ?",
-                    (uuid.uuid4().hex, row_id)
+                    (uuid.uuid4().hex, row_id),
                 )
             await db.execute(_CREATE_FTS)
             await db.execute(_CREATE_FTS_AI)
@@ -143,6 +149,12 @@ class GossipBus:
                     "SELECT id, event_type, payload_json FROM gossip"
                 )
                 await db.commit()
+        self._initialized = True
+
+    async def _ensure_initialized(self) -> None:
+        """Create/migrate the backing schema before public reads and writes."""
+        if not self._initialized:
+            await self.init_db()
 
     async def insert_event(
         self,
@@ -151,29 +163,19 @@ class GossipBus:
         payload: dict,
         *,
         timestamp: Optional[float] = None,
+        event_uuid: Optional[str] = None,
     ) -> tuple[int, str, dict]:
-        """Insert an event using a connection the caller already owns (see
-        `connect()`), instead of opening and committing one of its own --
-        the transaction primitive for combining an emit with another SQLite
-        mutation (e.g. an exclusive-claim row insert or a claim-release
-        delete) in one atomic commit. Closes the gap where two separate
-        commits could leave one mutation applied without the other after a
-        crash between them.
+        """Insert an event using a connection the caller already owns.
 
-        Does NOT commit and does NOT schedule the embed task: the caller
-        must commit its own transaction first (embedding pre-commit data
-        that might still roll back would embed content that was never
-        durably written), then call `schedule_embedding()` with this
-        method's return values once the commit has actually succeeded.
-
-        `timestamp` lets a caller pin an exact event time (e.g. replaying
-        history, backdating a test fixture) instead of always stamping
-        "now" -- defaults to `time.time()` if omitted.
+        ``event_uuid`` is optional for local callers and required for faithful
+        LAN replay. Supplying it lets a receiving peer store the same logical
+        event under its own local row id while preserving a stable global event
+        identity for merge/deduplication.
 
         Returns:
-            (row_id, event_uuid, safe_payload) -- pass row_id and safe_payload
-            to schedule_embedding() after commit. event_uuid is for cross-peer
-            deduplication.
+            ``(row_id, event_uuid, safe_payload)``. Callers should pass
+            ``row_id`` and ``safe_payload`` to ``schedule_embedding()`` after
+            their outer transaction commits.
         """
         import time
 
@@ -182,9 +184,10 @@ class GossipBus:
         safe_payload, _memory_class = classify_and_redact(
             payload, event_type=event_type
         )
-        event_uuid = uuid.uuid4().hex
+        event_uuid = event_uuid or uuid.uuid4().hex
         cursor = await db.execute(
-            "INSERT INTO gossip (event_uuid, ts, event_type, payload_json, embed_status) "
+            "INSERT OR IGNORE INTO gossip "
+            "(event_uuid, ts, event_type, payload_json, embed_status) "
             "VALUES (?, ?, ?, ?, 'pending')",
             (
                 event_uuid,
@@ -193,6 +196,14 @@ class GossipBus:
                 json.dumps(safe_payload),
             ),
         )
+        if cursor.rowcount == 0:
+            existing = await db.execute(
+                "SELECT id, payload_json FROM gossip WHERE event_uuid = ?",
+                (event_uuid,),
+            )
+            row = await existing.fetchone()
+            if row is not None:
+                return int(row[0]), event_uuid, json.loads(row[1])
         return int(cursor.lastrowid), event_uuid, safe_payload
 
     def schedule_embedding(self, row_id: int, safe_payload: dict) -> None:
@@ -209,17 +220,27 @@ class GossipBus:
         _pending_embeds.add(task)
         task.add_done_callback(_pending_embeds.discard)
 
-    async def emit(self, event_type: EventType, payload: dict) -> str:
+    async def emit(
+        self,
+        event_type: EventType,
+        payload: dict,
+        *,
+        event_uuid: Optional[str] = None,
+    ) -> str:
         """Persist an event locally and return its globally unique UUID."""
+        await self._ensure_initialized()
         async with self.connect() as db:
-            row_id, event_uuid, safe_payload = await self.insert_event(db, event_type, payload)
+            row_id, stored_uuid, safe_payload = await self.insert_event(
+                db, event_type, payload, event_uuid=event_uuid
+            )
             await db.commit()
         self.schedule_embedding(row_id, safe_payload)
-        return event_uuid
+        return stored_uuid
 
     async def tail(
         self, limit: int = 20, event_type: Optional[str] = None
     ) -> list[dict]:
+        await self._ensure_initialized()
         async with self.connect() as db:
             if event_type:
                 cursor = await db.execute(
@@ -252,6 +273,7 @@ class GossipBus:
         limit: int = 10,
         event_type: Optional[str] = None,
     ) -> list[dict]:
+        await self._ensure_initialized()
         safe_query = _sanitize_fts_query(query)
         if not safe_query:
             return []
