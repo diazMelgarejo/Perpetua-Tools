@@ -1,79 +1,90 @@
 """Failures are learning. High pain score + rewrite flag after repeat offenses."""
-import json, datetime, os, sys
+import datetime
+import json
+import os
+import sys
+
+from ._episodic_io import append_jsonl, episodic_lock
 from ._provenance import build_source
-from ._episodic_io import append_jsonl
 
 ROOT = os.path.join(os.path.dirname(__file__), "..", "..")
 sys.path.insert(0, os.path.join(ROOT, "memory"))
-from path_hygiene import sanitize_tracked_path_leaks  # noqa: E402
+from path_hygiene import sanitize_json_strings  # noqa: E402
+from time_utils import legacy_local_to_utc  # noqa: E402
 
 EPISODIC = os.path.join(ROOT, "memory/episodic/AGENT_LEARNINGS.jsonl")
 FAILURE_THRESHOLD = 3
 WINDOW_DAYS = 14
 
 
+def _legacy_local_to_utc(ts):
+    """Backward-compatible alias for the shared memory timestamp policy."""
+    return legacy_local_to_utc(ts)
+
+
 def _count_recent_failures(skill_name):
+    """Count recent failures from a stable, replacement-decoded snapshot."""
     if not os.path.exists(EPISODIC):
         return 0
     cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=WINDOW_DAYS)
     count = 0
-    for line in open(EPISODIC):
-        line = line.strip()
-        if not line:
-            continue
+    with episodic_lock(EPISODIC, exclusive=False):
         try:
-            e = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if e.get("skill") != skill_name or e.get("result") != "failure":
-            continue
-        try:
-            ts = datetime.datetime.fromisoformat(e["timestamp"])
-            if ts.tzinfo is None:
-                ts = ts.replace(tzinfo=datetime.timezone.utc)
-            if ts > cutoff:
-                count += 1
-        except (KeyError, ValueError):
-            continue
+            stream = open(EPISODIC, encoding="utf-8", errors="replace")
+        except FileNotFoundError:
+            return 0
+        with stream:
+            for line in stream:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if entry.get("skill") != skill_name or entry.get("result") != "failure":
+                    continue
+                try:
+                    ts = legacy_local_to_utc(
+                        datetime.datetime.fromisoformat(entry["timestamp"])
+                    )
+                    if ts > cutoff:
+                        count += 1
+                except (KeyError, TypeError, ValueError):
+                    continue
     return count
 
 
 def on_failure(skill_name, action, error, context="", confidence=0.9,
                evidence_ids=None, importance=None, pain_score=None):
-    # Format reflection without the noisy `type(error).__name__:` prefix
-    # when the caller passes a pre-formatted string (the common case for
-    # hook callers). Only include the type name for actual Exception objects
-    # where it carries diagnostic value.
+    """Persist a sanitized failure episode and return the stored entry."""
     if isinstance(error, Exception):
-        _refl = (f"FAILURE in {skill_name}: {type(error).__name__}: "
-                 f"{str(error)[:200]}")
+        reflection = (
+            f"FAILURE in {skill_name}: {type(error).__name__}: "
+            f"{str(error)[:200]}"
+        )
     else:
-        _refl = f"FAILURE in {skill_name}: {str(error)[:200]}"
+        reflection = f"FAILURE in {skill_name}: {str(error)[:200]}"
 
-    # Let callers override the generic (7/8) defaults so a failed deploy or
-    # schema migration is recorded with its true importance and pain score;
-    # the dream-cycle salience can't distinguish failure severity otherwise.
     entry = {
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "skill": skill_name,
-        "action": sanitize_tracked_path_leaks(action[:200]),
+        "action": action[:200],
         "result": "failure",
-        "detail": sanitize_tracked_path_leaks(str(error)[:500]),
+        "detail": str(error)[:500],
         "pain_score": pain_score if pain_score is not None else 8,
         "importance": importance if importance is not None else 7,
-        "reflection": sanitize_tracked_path_leaks(_refl),
-        "context": sanitize_tracked_path_leaks(context[:300]),
+        "reflection": reflection,
+        "context": context[:300],
         "confidence": confidence,
         "source": build_source(skill_name),
         "evidence_ids": list(evidence_ids) if evidence_ids else [],
     }
-    # _count_recent_failures returns PRIOR failures only; add 1 for this one
-    # so the rewrite flag fires on the Nth failure, not the (N+1)th.
     recent = _count_recent_failures(skill_name) + 1
     if recent >= FAILURE_THRESHOLD:
         entry["reflection"] += (
             f" | THIS SKILL HAS FAILED {recent} TIMES IN {WINDOW_DAYS}d. "
-            f"Flag for rewrite."
+            "Flag for rewrite."
         )
         entry["pain_score"] = 10
-    return append_jsonl(EPISODIC, entry)
+    return append_jsonl(EPISODIC, sanitize_json_strings(entry))
