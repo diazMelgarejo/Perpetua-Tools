@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import collections
+import hmac
 import json
 import logging
 import os
@@ -42,7 +43,7 @@ from orchestrator.orama_bridge import (
     call_oramasys_mcp_or_bridge,
     parse_oramasys_timeout,
 )
-from orchestrator.gossip_bus import GossipBus
+from orchestrator.gossip_bus import GossipBus, resolve_gossip_db_path
 from orchestrator.lan_gossip_bridge import _load_peers as _load_gossip_peers
 
 _startup_log = logging.getLogger("orchestrator.fastapi_app")
@@ -55,6 +56,32 @@ _LOCAL_RUNTIME_BACKENDS = {"ollama", "lm-studio", "mlx"}
 # in this set the task can be collected before it completes.  Each task discards
 # itself via done-callback so the set stays bounded.
 _bg_startup_tasks: set[asyncio.Task] = set()
+
+# Shared gossip bus singleton — initialized once in lifespan, reused by endpoints.
+_gossip_bus: GossipBus | None = None
+
+
+def _init_gossip_db() -> None:
+    """Initialize the shared gossip bus SQLite schema (idempotent)."""
+    global _gossip_bus
+    try:
+        _gossip_bus = GossipBus()
+        asyncio.get_event_loop().run_until_complete(_gossip_bus.init_db())
+        _startup_log.info("GossipBus initialized: %s", _gossip_bus.db_path)
+    except Exception as exc:  # noqa: BLE001
+        _startup_log.warning("GossipBus init failed (non-fatal): %s", exc)
+
+
+def _require_gossip_auth(request: Request) -> None:
+    """Raise HTTPException(403) if GOSSIP_SHARED_SECRET is configured and the
+    request's X-Gossip-Secret header does not match (constant-time compare).
+    """
+    secret = os.getenv("GOSSIP_SHARED_SECRET", "").strip()
+    if not secret:
+        return  # No auth required when secret is not configured
+    header = request.headers.get("x-gossip-secret", "")
+    if not hmac.compare_digest(header, secret):
+        raise HTTPException(status_code=403, detail="Invalid gossip secret")
 
 
 def _run_ecc_sync_bg() -> None:
@@ -92,6 +119,9 @@ async def _lifespan(app: FastAPI):
         _startup_log.info(
             "Control-plane bearer auth active; token persisted to .state/control_plane_token"
         )
+    # GossipBus init is synchronous (SQLite schema creation); run in executor
+    # so it never blocks port binding.
+    asyncio.get_event_loop().run_in_executor(None, _init_gossip_db)
     # Both background tasks fire at t=0; neither blocks port binding.
     asyncio.get_event_loop().run_in_executor(None, _run_ecc_sync_bg)
     # Hold a strong reference so GC cannot collect the task before it runs (D_GCG-1).
@@ -428,20 +458,23 @@ class _GossipEmitRequest(BaseModel):
 
 
 @app.post("/gossip/emit", tags=["gossip"])
-async def gossip_emit(req: _GossipEmitRequest):
+async def gossip_emit(req: _GossipEmitRequest, request: Request):
     """Accept a gossip event from a LAN peer and persist it locally."""
-    bus = GossipBus()
-    await bus.emit(req.event_type, req.payload)
-    return {"ok": True}
+    _require_gossip_auth(request)
+    bus = _gossip_bus if _gossip_bus is not None else GossipBus()
+    event_uuid = await bus.emit(req.event_type, req.payload)
+    return {"ok": True, "uuid": event_uuid}
 
 
 @app.get("/gossip/tail", tags=["gossip"])
 async def gossip_tail(
+    request: Request,
     limit: int = Query(20, ge=1, le=1000),
     event_type: Optional[str] = Query(None),
 ):
     """Return newest local gossip events for LAN peer replication."""
-    bus = GossipBus()
+    _require_gossip_auth(request)
+    bus = _gossip_bus if _gossip_bus is not None else GossipBus()
     events = await bus.tail(limit=limit, event_type=event_type)
     return {"events": events, "peers": _load_gossip_peers()}
 
