@@ -5,6 +5,7 @@ import asyncio
 import json
 import os
 import re
+import uuid
 from pathlib import Path
 from typing import Literal, Optional
 
@@ -27,6 +28,7 @@ _MAX_PENDING = 500
 _CREATE_TABLE = """
 CREATE TABLE IF NOT EXISTS gossip (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_uuid   TEXT    NOT NULL,
     ts           REAL    NOT NULL,
     event_type   TEXT    NOT NULL,
     payload_json TEXT    NOT NULL,
@@ -54,6 +56,10 @@ END
 _CREATE_EMBED_IDX = """
 CREATE INDEX IF NOT EXISTS idx_gossip_embed_status
 ON gossip(embed_status) WHERE embed_status != 'embedded'
+"""
+_CREATE_UUID_IDX = """
+CREATE UNIQUE INDEX IF NOT EXISTS idx_gossip_event_uuid
+ON gossip(event_uuid)
 """
 
 _FTS5_OPERATOR_RE = re.compile(r'[\"\':\*\+\-\(\)\[\]\{\}\^]')
@@ -86,8 +92,8 @@ class GossipBus:
     rollback and schedules embedding only after a successful commit.
     """
 
-    def __init__(self, db_path: str = "perpetua_core.db"):
-        self._db_path = db_path
+    def __init__(self, db_path: str | None = None):
+        self._db_path = db_path if db_path is not None else resolve_gossip_db_path()
 
     @property
     def db_path(self) -> str:
@@ -101,16 +107,31 @@ class GossipBus:
     async def init_db(self) -> None:
         async with self.connect() as db:
             await db.execute(_CREATE_TABLE)
+            # Schema migration: add event_uuid to existing tables (idempotent).
+            try:
+                await db.execute("ALTER TABLE gossip ADD COLUMN event_uuid TEXT")
+            except Exception:
+                pass  # Column already exists
+            # Schema migration: add embed_status to legacy tables (idempotent).
             try:
                 await db.execute(
                     "ALTER TABLE gossip ADD COLUMN embed_status TEXT NOT NULL DEFAULT 'pending'"
                 )
             except Exception:
                 pass
+            # Backfill any rows missing event_uuid (legacy rows pre-migration).
+            cursor = await db.execute("SELECT id FROM gossip WHERE event_uuid IS NULL")
+            rows = await cursor.fetchall()
+            for (row_id,) in rows:
+                await db.execute(
+                    "UPDATE gossip SET event_uuid = ? WHERE id = ?",
+                    (uuid.uuid4().hex, row_id)
+                )
             await db.execute(_CREATE_FTS)
             await db.execute(_CREATE_FTS_AI)
             await db.execute(_CREATE_FTS_AD)
             await db.execute(_CREATE_EMBED_IDX)
+            await db.execute(_CREATE_UUID_IDX)
             await db.commit()
             cursor = await db.execute("SELECT COUNT(*) FROM gossip_fts")
             (fts_count,) = await cursor.fetchone()
@@ -130,7 +151,7 @@ class GossipBus:
         payload: dict,
         *,
         timestamp: Optional[float] = None,
-    ) -> tuple[int, dict]:
+    ) -> tuple[int, str, dict]:
         """Insert an event using a connection the caller already owns (see
         `connect()`), instead of opening and committing one of its own --
         the transaction primitive for combining an emit with another SQLite
@@ -150,7 +171,9 @@ class GossipBus:
         "now" -- defaults to `time.time()` if omitted.
 
         Returns:
-            (row_id, safe_payload) -- pass both to schedule_embedding() after commit.
+            (row_id, event_uuid, safe_payload) -- pass row_id and safe_payload
+            to schedule_embedding() after commit. event_uuid is for cross-peer
+            deduplication.
         """
         import time
 
@@ -159,16 +182,18 @@ class GossipBus:
         safe_payload, _memory_class = classify_and_redact(
             payload, event_type=event_type
         )
+        event_uuid = uuid.uuid4().hex
         cursor = await db.execute(
-            "INSERT INTO gossip (ts, event_type, payload_json, embed_status) "
-            "VALUES (?, ?, ?, 'pending')",
+            "INSERT INTO gossip (event_uuid, ts, event_type, payload_json, embed_status) "
+            "VALUES (?, ?, ?, ?, 'pending')",
             (
+                event_uuid,
                 time.time() if timestamp is None else timestamp,
                 event_type,
                 json.dumps(safe_payload),
             ),
         )
-        return int(cursor.lastrowid), safe_payload
+        return int(cursor.lastrowid), event_uuid, safe_payload
 
     def schedule_embedding(self, row_id: int, safe_payload: dict) -> None:
         """Schedule optional embedding after the containing transaction commits."""
@@ -184,11 +209,13 @@ class GossipBus:
         _pending_embeds.add(task)
         task.add_done_callback(_pending_embeds.discard)
 
-    async def emit(self, event_type: EventType, payload: dict) -> None:
+    async def emit(self, event_type: EventType, payload: dict) -> str:
+        """Persist an event locally and return its globally unique UUID."""
         async with self.connect() as db:
-            row_id, safe_payload = await self.insert_event(db, event_type, payload)
+            row_id, event_uuid, safe_payload = await self.insert_event(db, event_type, payload)
             await db.commit()
         self.schedule_embedding(row_id, safe_payload)
+        return event_uuid
 
     async def tail(
         self, limit: int = 20, event_type: Optional[str] = None
@@ -196,13 +223,13 @@ class GossipBus:
         async with self.connect() as db:
             if event_type:
                 cursor = await db.execute(
-                    "SELECT id, ts, event_type, payload_json FROM gossip "
+                    "SELECT id, event_uuid, ts, event_type, payload_json FROM gossip "
                     "WHERE event_type = ? ORDER BY id DESC LIMIT ?",
                     (event_type, limit),
                 )
             else:
                 cursor = await db.execute(
-                    "SELECT id, ts, event_type, payload_json FROM gossip "
+                    "SELECT id, event_uuid, ts, event_type, payload_json FROM gossip "
                     "ORDER BY id DESC LIMIT ?",
                     (limit,),
                 )
@@ -210,9 +237,10 @@ class GossipBus:
         return [
             {
                 "row_id": row[0],
-                "ts": row[1],
-                "event_type": row[2],
-                "payload": json.loads(row[3]),
+                "uuid": row[1],
+                "ts": row[2],
+                "event_type": row[3],
+                "payload": json.loads(row[4]),
             }
             for row in rows
         ]
@@ -231,7 +259,7 @@ class GossipBus:
             async with self.connect() as db:
                 if event_type:
                     cursor = await db.execute(
-                        """SELECT g.id, g.ts, g.event_type, g.payload_json
+                        """SELECT g.id, g.event_uuid, g.ts, g.event_type, g.payload_json
                            FROM gossip_fts f
                            JOIN gossip g ON g.id = f.rowid
                            WHERE gossip_fts MATCH ? AND g.event_type = ?
@@ -240,7 +268,7 @@ class GossipBus:
                     )
                 else:
                     cursor = await db.execute(
-                        """SELECT g.id, g.ts, g.event_type, g.payload_json
+                        """SELECT g.id, g.event_uuid, g.ts, g.event_type, g.payload_json
                            FROM gossip_fts f
                            JOIN gossip g ON g.id = f.rowid
                            WHERE gossip_fts MATCH ?
@@ -251,9 +279,10 @@ class GossipBus:
             return [
                 {
                     "row_id": row[0],
-                    "ts": row[1],
-                    "event_type": row[2],
-                    "payload": json.loads(row[3]),
+                    "uuid": row[1],
+                    "ts": row[2],
+                    "event_type": row[3],
+                    "payload": json.loads(row[4]),
                 }
                 for row in rows
             ]
