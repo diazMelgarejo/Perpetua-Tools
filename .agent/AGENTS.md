@@ -4,6 +4,12 @@ This folder is the portable brain. Any harness (Claude Code, Cursor, Windsurf,
 OpenCode, OpenClaw, Hermes, standalone Python) can mount it and get the
 same memory, skills, and protocols.
 
+## Rules
+
+1. Edit first, commit later - Make changes, AskUserQuestion if they're correct, commit if YES; no question or no answer is NOT a yes.
+2. Commit first, push later - Only push when everything is verified by the user and final. If unsure, use a disposable worktree.
+3. READ this first: https://github.com/diazMelgarejo/Perpetua-Tools/blob/main/SKILL.md
+
 ## Memory (read in this order)
 - `memory/personal/PREFERENCES.md` — stable user conventions
 - `memory/working/WORKSPACE.md` — current task state
