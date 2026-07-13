@@ -68,7 +68,7 @@ class LanGossipBridge:
         *,
         timestamp: Optional[float] = None,
         event_uuid: Optional[str] = None,
-    ) -> tuple[int, str, dict]:
+    ) -> tuple[int, str, dict, bool]:
         return await self.local.insert_event(
             db, event_type, payload, timestamp=timestamp, event_uuid=event_uuid
         )
