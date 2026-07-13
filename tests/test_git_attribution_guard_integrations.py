@@ -1,0 +1,302 @@
+"""Integration coverage for git attribution guard scripts.
+
+PR #211 briefly narrowed ``tests/test_git_attribution_guard.py`` to the fast
+commit-message cases. This companion file restores the slower shell integration
+contracts as first-class tests without weakening the attribution policy.
+"""
+from __future__ import annotations
+
+import os
+import shutil
+import subprocess
+import tempfile
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[1]
+ENSURE_HOOKS = ROOT / "scripts/git/ensure_hooks_installed.sh"
+CI_BOOTSTRAP = ROOT / "scripts/cursor/ci-bootstrap-private-attribution.sh"
+VERIFY_GUARDS = ROOT / "scripts/git/verify-git-guards.sh"
+BANNED_ATTR_LIB = ROOT / "scripts/git/banned_attribution_lib.sh"
+CHECK_IDENTITY = ROOT / "scripts/git/check_identity.sh"
+CHECK_COMMIT_MESSAGE = ROOT / "scripts/git/check_commit_message.sh"
+
+AUTHORIZED_HUMAN_MARKERS = (
+    "diazMelgarejo",
+    "diaz.Melgarejo",
+    "Lawrence.Melgarejo",
+)
+
+
+def _ensure_banned_patterns() -> None:
+    subprocess.run(["bash", str(CI_BOOTSTRAP)], check=True, cwd=ROOT)
+    assert (ROOT / ".cursor/private/banned-attribution-patterns").is_file()
+
+
+def _pattern_tokens() -> set[str]:
+    _ensure_banned_patterns()
+    tokens: set[str] = set()
+    for raw in (ROOT / ".cursor/private/banned-attribution-patterns").read_text(
+        encoding="utf-8"
+    ).splitlines():
+        token = raw.split("#", 1)[0].strip().lower()
+        if token:
+            tokens.add(token)
+    return tokens
+
+
+def _call_first_banned_pattern_token(root: Path) -> subprocess.CompletedProcess[str]:
+    """Invoke first_banned_pattern_token with an isolated HOME."""
+    script = f'source "{BANNED_ATTR_LIB}" && first_banned_pattern_token "{root}"'
+    isolated_home = Path(tempfile.mkdtemp(prefix="pt-banned-token-"))
+    try:
+        env = {
+            **os.environ,
+            "HOME": str(isolated_home),
+            "OPENCLAW_ATTRIBUTION_PATTERNS": str(isolated_home / "missing-patterns"),
+        }
+        return subprocess.run(["bash", "-c", script], capture_output=True, text=True, env=env)
+    finally:
+        shutil.rmtree(isolated_home, ignore_errors=True)
+
+
+def test_banned_patterns_do_not_forbid_authorized_human_identities():
+    """Authorized human names/emails are allowlist material, not banned tokens."""
+    tokens = _pattern_tokens()
+    forbidden = {
+        "diazmelgarejo",
+        "diaz.melgarejo",
+        "lawrence.melgarejo",
+        "diazmelgarejo@gmail.com",
+        "lawrence.melgarejo@gmail.com",
+    }
+    assert tokens.isdisjoint(forbidden)
+
+
+@pytest.mark.parametrize(
+    ("name", "email"),
+    [
+        ("diazMelgarejo", "diazMelgarejo@gmail.com"),
+        ("diaz.Melgarejo", "diazMelgarejo@gmail.com"),
+        ("Lawrence.Melgarejo", "Lawrence.Melgarejo@gmail.com"),
+    ],
+)
+def test_check_identity_allows_authorized_human_authors_even_in_cursor_context(name, email):
+    """Approved human authors must remain valid even when Cursor env vars exist."""
+    proc = subprocess.run(
+        ["bash", str(CHECK_IDENTITY)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        env={
+            **os.environ,
+            "CURSOR_SESSION_ID": "test-session",
+            "GIT_CONFIG_COUNT": "2",
+            "GIT_CONFIG_KEY_0": "user.name",
+            "GIT_CONFIG_VALUE_0": name,
+            "GIT_CONFIG_KEY_1": "user.email",
+            "GIT_CONFIG_VALUE_1": email,
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "approved" in proc.stdout
+
+
+@pytest.mark.parametrize(
+    ("name", "email"),
+    [
+        ("diazMelgarejo", "diazMelgarejo@gmail.com"),
+        ("diaz.Melgarejo", "diazMelgarejo@gmail.com"),
+        ("Lawrence.Melgarejo", "Lawrence.Melgarejo@gmail.com"),
+    ],
+)
+def test_check_commit_message_allows_authorized_human_coauthors(tmp_path, name, email):
+    """Approved human identities are valid Co-authored-by trailers."""
+    msg = tmp_path / "COMMIT_EDITMSG"
+    msg.write_text(
+        f"feat: x\n\nCo-authored-by: {name} <{email}>\n",
+        encoding="utf-8",
+    )
+    proc = subprocess.run(
+        ["bash", str(CHECK_COMMIT_MESSAGE), str(msg)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, proc.stderr
+
+
+def test_first_banned_pattern_token_returns_first_token(tmp_path):
+    private_dir = tmp_path / ".cursor/private"
+    private_dir.mkdir(parents=True)
+    (private_dir / "banned-attribution-patterns").write_text(
+        "# comment line\nut-fixture-first\nut-fixture-second\n", encoding="utf-8"
+    )
+    proc = _call_first_banned_pattern_token(tmp_path)
+    assert proc.returncode == 0
+    assert proc.stdout == "ut-fixture-first"
+
+
+def test_first_banned_pattern_token_skips_empty_lines(tmp_path):
+    private_dir = tmp_path / ".cursor/private"
+    private_dir.mkdir(parents=True)
+    (private_dir / "banned-attribution-patterns").write_text(
+        "\n\n\nut-fixture-first\nut-fixture-second\n", encoding="utf-8"
+    )
+    proc = _call_first_banned_pattern_token(tmp_path)
+    assert proc.returncode == 0
+    assert proc.stdout == "ut-fixture-first"
+
+
+def test_first_banned_pattern_token_fails_on_missing_or_empty_patterns(tmp_path):
+    assert _call_first_banned_pattern_token(tmp_path).returncode != 0
+    private_dir = tmp_path / ".cursor/private"
+    private_dir.mkdir(parents=True)
+    (private_dir / "banned-attribution-patterns").write_text("", encoding="utf-8")
+    assert _call_first_banned_pattern_token(tmp_path).returncode != 0
+
+
+def test_first_banned_pattern_token_strips_inline_comments(tmp_path):
+    private_dir = tmp_path / ".cursor/private"
+    private_dir.mkdir(parents=True)
+    (private_dir / "banned-attribution-patterns").write_text(
+        "# header\nut-fixture-inline  # inline comment\n", encoding="utf-8"
+    )
+    proc = _call_first_banned_pattern_token(tmp_path)
+    assert proc.returncode == 0
+    assert proc.stdout == "ut-fixture-inline"
+
+
+def test_first_banned_pattern_token_with_real_patterns():
+    proc = _call_first_banned_pattern_token(ROOT)
+    assert proc.returncode == 0
+    assert proc.stdout.strip()
+
+
+def test_daily_attribution_guard_requires_opt_in_for_auto_expunge():
+    text = (ROOT / "scripts/git/daily-attribution-guard.sh").read_text(encoding="utf-8")
+    assert "ATTRIBUTION_EXPUNGE_AUTO" in text
+    assert "expunge-all-workspace-repos.sh" in text
+    assert 'ATTRIBUTION_EXPUNGE_AUTO:-}" == "1"' in text
+
+
+def test_cloud_bootstrap_does_not_invoke_daily_attribution_guard():
+    text = (ROOT / "scripts/cursor/cloud-bootstrap.sh").read_text(encoding="utf-8")
+    assert "daily-attribution-guard.sh" not in text
+
+
+def test_verify_guards_github_actions_skips_cursor_session_hook_check():
+    _ensure_banned_patterns()
+    proc = subprocess.run(
+        ["bash", str(VERIFY_GUARDS)],
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        env={**os.environ, "GITHUB_ACTIONS": "true"},
+    )
+    combined = proc.stdout + proc.stderr
+    assert "GitHub Actions" in combined and "skip" in combined.lower()
+
+
+def test_verify_guards_github_actions_does_not_print_cursor_session_hook_fail():
+    _ensure_banned_patterns()
+    proc = subprocess.run(
+        ["bash", str(VERIFY_GUARDS)],
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        env={**os.environ, "GITHUB_ACTIONS": "true"},
+    )
+    combined = proc.stdout + proc.stderr
+    assert "Cursor sessionStart hook missing" not in combined
+    assert "missing" + " " + "${HOME}/.cursor/hooks.json" not in combined
+
+
+def test_verify_guards_without_github_actions_checks_session_hook(tmp_path):
+    _ensure_banned_patterns()
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    proc = subprocess.run(
+        ["bash", str(VERIFY_GUARDS)],
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        env={**os.environ, "HOME": str(fake_home), "GITHUB_ACTIONS": ""},
+    )
+    combined = proc.stdout + proc.stderr
+    assert proc.returncode != 0
+    assert "Cursor sessionStart hook missing" in combined
+
+
+def _make_fake_git_repo(tmp_path: Path, hooks_path: str = ".githooks") -> Path:
+    subprocess.run(["git", "init", str(tmp_path)], check=True, capture_output=True)
+    subprocess.run(
+        ["git", "-C", str(tmp_path), "config", "--local", "core.hooksPath", hooks_path],
+        check=True,
+        capture_output=True,
+    )
+    return tmp_path
+
+
+def _run_ensure_hooks(repo_root: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["bash", str(ENSURE_HOOKS)],
+        capture_output=True,
+        text=True,
+        env={**os.environ, "REPO_ROOT": str(repo_root)},
+    )
+
+
+def test_ensure_hooks_installed_fails_when_hookspath_wrong(tmp_path):
+    _make_fake_git_repo(tmp_path, hooks_path=".git/hooks")
+    proc = _run_ensure_hooks(tmp_path)
+    assert proc.returncode != 0
+    assert ".githooks" in proc.stderr
+
+
+def test_ensure_hooks_installed_fails_when_hook_missing(tmp_path):
+    _make_fake_git_repo(tmp_path, hooks_path=".githooks")
+    hooks_dir = tmp_path / ".githooks"
+    hooks_dir.mkdir()
+    for hook in ("pre-commit", "commit-msg"):
+        h = hooks_dir / hook
+        h.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+        h.chmod(0o755)
+
+    proc = _run_ensure_hooks(tmp_path)
+    assert proc.returncode != 0
+    assert "pre-push" in proc.stderr
+
+
+def test_ensure_hooks_installed_passes_when_all_hooks_present(tmp_path):
+    _make_fake_git_repo(tmp_path, hooks_path=".githooks")
+    hooks_dir = tmp_path / ".githooks"
+    hooks_dir.mkdir()
+    for hook in ("pre-commit", "commit-msg", "pre-push"):
+        h = hooks_dir / hook
+        h.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+        h.chmod(0o755)
+
+    proc = _run_ensure_hooks(tmp_path)
+    assert proc.returncode == 0
+    assert proc.stdout == ""
+    assert proc.stderr == ""
+
+
+def test_ensure_hooks_installed_fails_when_hook_not_executable(tmp_path):
+    _make_fake_git_repo(tmp_path, hooks_path=".githooks")
+    hooks_dir = tmp_path / ".githooks"
+    hooks_dir.mkdir()
+    for hook in ("pre-commit", "commit-msg", "pre-push"):
+        h = hooks_dir / hook
+        h.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+        h.chmod(0o644)
+
+    proc = _run_ensure_hooks(tmp_path)
+    assert proc.returncode != 0
+    assert "non-executable" in proc.stderr
+
+
+def test_ensure_banned_patterns_succeeds_when_patterns_present():
+    _ensure_banned_patterns()
