@@ -116,7 +116,7 @@ async def _try_atomic_claim(
                     "VALUES (?, ?, ?)",
                     (task_id, agent_id, time.time()),
                 )
-                row_id, safe_payload = await bus.insert_event(
+                row_id, _event_uuid, safe_payload = await bus.insert_event(
                     db, "heartbeat", payload
                 )
                 await db.commit()
@@ -166,7 +166,7 @@ async def _release_claim_with_event(
                 await db.execute("BEGIN IMMEDIATE")
                 await db.execute(_CREATE_CLAIMS_TABLE)
                 await db.execute("DELETE FROM task_claims WHERE task_id = ?", (task_id,))
-                row_id, safe_payload = await bus.insert_event(db, event_type, payload)
+                row_id, _event_uuid, safe_payload = await bus.insert_event(db, event_type, payload)
                 await db.commit()
             except aiosqlite.OperationalError as exc:
                 await db.rollback()
