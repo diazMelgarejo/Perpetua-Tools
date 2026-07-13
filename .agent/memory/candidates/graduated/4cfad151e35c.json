@@ -1,0 +1,42 @@
+{
+  "id": "4cfad151e35c",
+  "key": "manual_4cfad1",
+  "name": "manual_4cfad1",
+  "claim": "start.ps1 must be run with --lan-peer (not just --no-open) for LAN cross-machine coordination to actually work -- without it, PT/orama/Portal stay bound to localhost only, and the control-plane token never gets synced from PT's persisted state.",
+  "conditions": [
+    "control-plane-token",
+    "lan-bind",
+    "lan-peer",
+    "start.ps1",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-07-08T10:54:08.712198+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-08T10:54:08.712198+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-08T10:54:08.712198+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-08T10:54:08.793383+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "An entire session's worth of cross-machine auth failures (401s on portal-status, ws-peer) traced back to running start.ps1 --no-open exclusively -- LAN bind was never enabled, so the Mac could never reach this box's services, and vice versa. Only after restarting with --lan-peer --no-open did the peer probe have any chance of succeeding.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-08T10:54:08.712198+00:00"
+      ],
+      "lessons_sha": "5685f3db5c45"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-08T10:54:08.793376+00:00",
+  "reviewer": "learn.py",
+  "rationale": "An entire session's worth of cross-machine auth failures (401s on portal-status, ws-peer) traced back to running start.ps1 --no-open exclusively -- LAN bind was never enabled, so the Mac could never reach this box's services, and vice versa. Only after restarting with --lan-peer --no-open did the peer probe have any chance of succeeding."
+}
