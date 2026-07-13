@@ -5,6 +5,7 @@ import asyncio
 import json
 import os
 import re
+import sqlite3
 import uuid
 from pathlib import Path
 from typing import Literal, Optional
@@ -92,9 +93,9 @@ class GossipBus:
     rollback and schedules embedding only after a successful commit.
 
     A bus created with no ``db_path`` resolves to the canonical
-    ``.state/perpetua_core.db`` path. Public read/write methods lazily initialize
-    the schema, so endpoint fallbacks and tests cannot accidentally touch an
-    uninitialized SQLite file.
+    ``.state/perpetua_core.db`` path. Public read/write methods lazily
+    initialize the schema, so endpoint fallbacks and tests cannot accidentally
+    touch an uninitialized SQLite file.
     """
 
     def __init__(self, db_path: str | None = None):
@@ -116,14 +117,14 @@ class GossipBus:
             # Schema migration: add event_uuid to existing tables (idempotent).
             try:
                 await db.execute("ALTER TABLE gossip ADD COLUMN event_uuid TEXT")
-            except Exception:
+            except sqlite3.OperationalError:
                 pass  # Column already exists
             # Schema migration: add embed_status to legacy tables (idempotent).
             try:
                 await db.execute(
                     "ALTER TABLE gossip ADD COLUMN embed_status TEXT NOT NULL DEFAULT 'pending'"
                 )
-            except Exception:
+            except sqlite3.OperationalError:
                 pass
             # Backfill any rows missing event_uuid (legacy rows pre-migration).
             cursor = await db.execute("SELECT id FROM gossip WHERE event_uuid IS NULL")
@@ -164,7 +165,7 @@ class GossipBus:
         *,
         timestamp: Optional[float] = None,
         event_uuid: Optional[str] = None,
-    ) -> tuple[int, str, dict]:
+    ) -> tuple[int, str, dict, bool]:
         """Insert an event using a connection the caller already owns.
 
         ``event_uuid`` is optional for local callers and required for faithful
@@ -173,9 +174,11 @@ class GossipBus:
         identity for merge/deduplication.
 
         Returns:
-            ``(row_id, event_uuid, safe_payload)``. Callers should pass
-            ``row_id`` and ``safe_payload`` to ``schedule_embedding()`` after
-            their outer transaction commits.
+            ``(row_id, event_uuid, safe_payload, inserted)``. ``inserted`` is
+            ``True`` for a fresh row and ``False`` when the event_uuid already
+            existed (duplicate forwarded event). Callers should pass ``row_id``
+            and ``safe_payload`` to ``schedule_embedding()`` only when
+            ``inserted`` is ``True``.
         """
         import time
 
@@ -197,14 +200,15 @@ class GossipBus:
             ),
         )
         if cursor.rowcount == 0:
+            # Duplicate event_uuid — fetch existing row for idempotent return.
             existing = await db.execute(
                 "SELECT id, payload_json FROM gossip WHERE event_uuid = ?",
                 (event_uuid,),
             )
             row = await existing.fetchone()
             if row is not None:
-                return int(row[0]), event_uuid, json.loads(row[1])
-        return int(cursor.lastrowid), event_uuid, safe_payload
+                return int(row[0]), event_uuid, json.loads(row[1]), False
+        return int(cursor.lastrowid), event_uuid, safe_payload, True
 
     def schedule_embedding(self, row_id: int, safe_payload: dict) -> None:
         """Schedule optional embedding after the containing transaction commits."""
@@ -247,15 +251,21 @@ class GossipBus:
         *,
         event_uuid: Optional[str] = None,
     ) -> str:
-        """Persist an event locally and return its globally unique UUID."""
+        """Persist an event locally and return its globally unique UUID.
+
+        Embedding is only scheduled for genuinely new events; duplicate
+        forwarded events (detected via INSERT OR IGNORE) skip embedding to
+        avoid redundant work.
+        """
         await self._ensure_initialized()
         payload, event_uuid = self._extract_forwarded_uuid(payload, event_uuid)
         async with self.connect() as db:
-            row_id, stored_uuid, safe_payload = await self.insert_event(
+            row_id, stored_uuid, safe_payload, inserted = await self.insert_event(
                 db, event_type, payload, event_uuid=event_uuid
             )
             await db.commit()
-        self.schedule_embedding(row_id, safe_payload)
+        if inserted:
+            self.schedule_embedding(row_id, safe_payload)
         return stored_uuid
 
     async def tail(
