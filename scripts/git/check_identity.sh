@@ -7,6 +7,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 actual_name="$(git -C "$REPO_ROOT" config user.name || true)"
 actual_email="$(git -C "$REPO_ROOT" config user.email || true)"
 actual_email_lc="$(printf '%s' "$actual_email" | tr '[:upper:]' '[:lower:]')"
+actual_name_lc="$(printf '%s' "$actual_name" | tr '[:upper:]' '[:lower:]')"
 
 echo "git user.name=${actual_name:-<unset>}"
 echo "git user.email=${actual_email:-<unset>}"
@@ -55,7 +56,7 @@ author_domain_ok() {
   [[ -z "$domain" || "$domain" == "$email_lc" ]] && return 1
   local suffix
   for suffix in "${WELL_KNOWN_AUTHOR_DOMAIN_SUFFIXES[@]}"; do
-    if [[ "$domain" == "$suffix" || "$domain" == *."$suffix" ]]; then
+    if [[ "$domain" == "$suffix" || "$domain" == *".""$suffix" ]]; then
       return 0
     fi
   done
@@ -67,6 +68,7 @@ if [[ -z "$actual_name" || -z "$actual_email" ]]; then
   exit 1
 fi
 
+# Repo owner identity — approved regardless of name/email format
 if [[ "$actual_email_lc" == "diazmelgarejo@gmail.com" ]]; then
   echo "OK: approved git identity"
   exit 0
@@ -87,6 +89,12 @@ if [[ "$actual_email_lc" == "lawrence@bettermind.ph" ]]; then
   exit 0
 fi
 
+# Owner name patterns — approved regardless of which email is used
+if [[ "$actual_name_lc" == *"diazmelgarejo"* || "$actual_name_lc" == *"diaz.melgarejo"* || "$actual_name_lc" == *"lawrence.melgarejo"* ]]; then
+  echo "OK: approved git identity (repo owner)"
+  exit 0
+fi
+
 if [[ "$actual_name" == "Codex" && "$actual_email_lc" == "codex@openai.com" ]]; then
   echo "OK: approved AI agent git identity"
   exit 0
@@ -101,6 +109,7 @@ echo "ERROR: git identity must be one of:" >&2
 echo "  - * <diazMelgarejo@gmail.com>" >&2
 echo "  - * <Lawrence@cyre.me>" >&2
 echo "  - * <Lawrence.Melgarejo@gmail.com>" >&2
+echo "  - * (name contains diazMelgarejo, diaz.Melgarejo, or Lawrence.Melgarejo)" >&2
 echo "  - Codex <codex@openai.com>" >&2
 echo "  - a well-known AI/vendor domain (OpenAI, Anthropic, Kimi, Cursor, Google/Gemini, GitHub/Copilot, Microsoft, Perplexity, xAI/Grok)" >&2
 exit 1
