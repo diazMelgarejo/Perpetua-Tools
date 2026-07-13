@@ -220,6 +220,26 @@ class GossipBus:
         _pending_embeds.add(task)
         task.add_done_callback(_pending_embeds.discard)
 
+    def _extract_forwarded_uuid(
+        self, payload: dict, event_uuid: Optional[str]
+    ) -> tuple[dict, Optional[str]]:
+        """Read and strip the private LAN transport UUID envelope if present.
+
+        Current FastAPI endpoint models ignore unknown top-level fields, so LAN
+        peers also include ``_gossip_uuid`` inside the payload. The storage layer
+        strips that transport-only marker before persistence and uses it only as
+        the global event identity. This keeps old endpoint code compatible while
+        preventing envelope metadata from becoming searchable event content.
+        """
+        if event_uuid is not None or not isinstance(payload, dict):
+            return payload, event_uuid
+        forwarded_uuid = payload.get("_gossip_uuid")
+        if not isinstance(forwarded_uuid, str) or not forwarded_uuid:
+            return payload, event_uuid
+        clean_payload = dict(payload)
+        clean_payload.pop("_gossip_uuid", None)
+        return clean_payload, forwarded_uuid
+
     async def emit(
         self,
         event_type: EventType,
@@ -229,6 +249,7 @@ class GossipBus:
     ) -> str:
         """Persist an event locally and return its globally unique UUID."""
         await self._ensure_initialized()
+        payload, event_uuid = self._extract_forwarded_uuid(payload, event_uuid)
         async with self.connect() as db:
             row_id, stored_uuid, safe_payload = await self.insert_event(
                 db, event_type, payload, event_uuid=event_uuid
