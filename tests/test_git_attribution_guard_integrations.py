@@ -200,18 +200,20 @@ def test_verify_guards_github_actions_skips_cursor_session_hook_check():
     assert "skip user-level Cursor session hook checks" in combined
 
 
-def test_verify_guards_github_actions_does_not_print_cursor_session_hook_fail():
+def test_verify_guards_github_actions_does_not_print_cursor_session_hook_fail(tmp_path):
     _ensure_banned_patterns()
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
     proc = subprocess.run(
         ["bash", str(VERIFY_GUARDS)],
         capture_output=True,
         text=True,
         cwd=ROOT,
-        env={**os.environ, "GITHUB_ACTIONS": "true"},
+        env={**os.environ, "HOME": str(fake_home), "GITHUB_ACTIONS": "true"},
     )
     combined = proc.stdout + proc.stderr
     assert "Cursor sessionStart hook missing" not in combined
-    assert "missing" + " " + "${HOME}/.cursor/hooks.json" not in combined
+    assert f"missing {fake_home}/.cursor/hooks.json" not in combined
 
 
 def test_verify_guards_without_github_actions_checks_session_hook(tmp_path):
