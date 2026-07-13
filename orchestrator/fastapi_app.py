@@ -42,6 +42,8 @@ from orchestrator.orama_bridge import (
     call_oramasys_mcp_or_bridge,
     parse_oramasys_timeout,
 )
+from orchestrator.gossip_bus import GossipBus
+from orchestrator.lan_gossip_bridge import _load_peers as _load_gossip_peers
 
 _startup_log = logging.getLogger("orchestrator.fastapi_app")
 _GLM_ORCHESTRATOR_MODEL = "glm-5.1:cloud"
@@ -418,6 +420,30 @@ def health(
             mlx_host=safe_mlx,
         ),
     }
+
+
+class _GossipEmitRequest(BaseModel):
+    event_type: str
+    payload: Dict[str, Any]
+
+
+@app.post("/gossip/emit", tags=["gossip"])
+async def gossip_emit(req: _GossipEmitRequest):
+    """Accept a gossip event from a LAN peer and persist it locally."""
+    bus = GossipBus()
+    await bus.emit(req.event_type, req.payload)
+    return {"ok": True}
+
+
+@app.get("/gossip/tail", tags=["gossip"])
+async def gossip_tail(
+    limit: int = Query(20, ge=1, le=1000),
+    event_type: Optional[str] = Query(None),
+):
+    """Return newest local gossip events for LAN peer replication."""
+    bus = GossipBus()
+    events = await bus.tail(limit=limit, event_type=event_type)
+    return {"events": events, "peers": _load_gossip_peers()}
 
 
 @app.get("/budget", tags=["cost"])
