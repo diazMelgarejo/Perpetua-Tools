@@ -169,6 +169,7 @@ def test_first_banned_pattern_token_strips_inline_comments(tmp_path):
 
 
 def test_first_banned_pattern_token_with_real_patterns():
+    _ensure_banned_patterns()
     proc = _call_first_banned_pattern_token(ROOT)
     assert proc.returncode == 0
     assert proc.stdout.strip()
@@ -196,7 +197,7 @@ def test_verify_guards_github_actions_skips_cursor_session_hook_check():
         env={**os.environ, "GITHUB_ACTIONS": "true"},
     )
     combined = proc.stdout + proc.stderr
-    assert "GitHub Actions" in combined and "skip" in combined.lower()
+    assert "skip user-level Cursor session hook checks" in combined
 
 
 def test_verify_guards_github_actions_does_not_print_cursor_session_hook_fail():
