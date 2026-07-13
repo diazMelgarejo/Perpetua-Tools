@@ -90,13 +90,18 @@ class LanGossipBridge:
             return event_uuid
         event_value = getattr(event_type, "value", event_type)
         headers = _gossip_auth_headers()
+        forwarded_payload = dict(payload)
+        # Compatibility envelope: current FastAPI endpoint models may ignore
+        # unknown top-level request fields, so carry the UUID inside payload as
+        # well. GossipBus strips this private key before persistence.
+        forwarded_payload["_gossip_uuid"] = event_uuid
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             tasks = [
                 client.post(
                     f"{peer.rstrip('/')}/gossip/emit",
                     json={
                         "event_type": event_value,
-                        "payload": payload,
+                        "payload": forwarded_payload,
                         "uuid": event_uuid,
                     },
                     headers=headers,
