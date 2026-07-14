@@ -1,34 +1,43 @@
-"""Staging-only dream cycle. Mechanical work, no reasoning.
+"""Staging-only dream cycle for the PT agent-memory lifecycle.
 
-Responsibilities (in order):
-  1. load episodic entries
-  2. cluster + extract → structured patterns
-  3. stage candidates (lifecycle metadata baked in)
-  4. heuristic prefilter (length + exact-duplicate; obvious junk goes to rejected/)
-  5. decay old episodes + archive stale workspace
-  6. write REVIEW_QUEUE.md summary so the next host session sees the backlog
+Responsibilities, in order:
+  1. Load episodic JSONL under the shared sidecar lock.
+  2. Replacement-decode malformed UTF-8 and skip malformed JSON rows.
+  3. Cluster episodes and extract structured candidate patterns.
+  4. Stage candidates with lifecycle metadata; never graduate subjectively.
+  5. Heuristically reject obvious junk while preserving host review authority.
+  6. Decay low-salience episodes and archive stale workspace artifacts.
+  7. Atomically rewrite sanitized episodic state through fsynced temp replacement.
+  8. Refresh REVIEW_QUEUE.md so the next host session sees pending work.
 
-Never:
-  - subjective validation (host agent reviews via CLI tools)
-  - promotion to LESSONS.md (graduate.py does that)
-  - git commit (unattended repo writes are dangerous on a host hook)
+Durability and safety invariants:
+  - One stable sidecar lock spans the complete read-modify-write cycle.
+  - Every persisted JSON string passes through the tracked-path sanitizer.
+  - The destination is replaced only after the temporary file is flushed/fsynced.
+  - This module never graduates lessons and never commits unattended changes.
 """
-import contextlib, json, os
-from promote import cluster_and_extract, write_candidates
-from validate import heuristic_check
-from review_state import mark_rejected, write_review_queue_summary
-from decay import decay_old_entries
-from archive import archive_stale_workspace
+from __future__ import annotations
 
-# fcntl is POSIX-only. On Windows the dream cycle is best-effort: concurrent
-# writers there are rare (no shutdown hook = no parallel exits), and the lack
-# of locking matches the existing _episodic_io.py fallback.
-try:
-    import fcntl  # type: ignore[import-not-found]
-except ImportError:  # pragma: no cover — Windows
-    fcntl = None  # type: ignore[assignment]
+import contextlib
+import json
+import os
+import sys
+import tempfile
+
+from archive import archive_stale_workspace
+from decay import decay_old_entries
+from promote import cluster_and_extract, write_candidates
+from review_state import mark_rejected, write_review_queue_summary
+from validate import heuristic_check
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
+AGENT_ROOT = os.path.dirname(ROOT)
+HARNESS_HOOKS = os.path.join(AGENT_ROOT, "harness", "hooks")
+if HARNESS_HOOKS not in sys.path:
+    sys.path.insert(0, HARNESS_HOOKS)
+from _episodic_io import episodic_lock  # noqa: E402
+from path_hygiene import sanitize_json_strings  # noqa: E402
+
 EPISODIC = os.path.join(ROOT, "episodic/AGENT_LEARNINGS.jsonl")
 CANDIDATES = os.path.join(ROOT, "candidates")
 SEMANTIC = os.path.join(ROOT, "semantic")
@@ -39,84 +48,92 @@ CLUSTER_SIMILARITY = 0.3
 
 @contextlib.contextmanager
 def _episodic_locked():
-    """Hold an exclusive flock on AGENT_LEARNINGS.jsonl across the entire
-    dream-cycle read-modify-write window.
-
-    Without a window-spanning lock, an `append_jsonl()` call that lands
-    between `_load_entries_locked()` and `_write_entries_locked(kept)` is
-    silently truncated away by the rewrite. With this context manager,
-    every appender (`_episodic_io.append_jsonl`, which takes LOCK_EX on
-    the same file) blocks until the dream cycle releases the lock.
-
-    Yields the open file descriptor so callers can read/write without
-    racing on a second open(). On Windows (no fcntl) yields None and
-    falls back to the historical best-effort behavior.
-    """
-    if fcntl is None:
+    """Hold the shared sidecar lock across the dream read-modify-write cycle."""
+    with episodic_lock(EPISODIC, exclusive=True):
         yield None
-        return
-    os.makedirs(os.path.dirname(EPISODIC), exist_ok=True)
-    fd = os.open(EPISODIC, os.O_RDWR | os.O_CREAT, 0o644)
-    try:
-        fcntl.flock(fd, fcntl.LOCK_EX)
-        yield fd
-    finally:
-        try:
-            fcntl.flock(fd, fcntl.LOCK_UN)
-        finally:
-            os.close(fd)
 
 
-def _load_entries_locked(fd):
-    """Read all entries from the locked fd, or fall back to plain read on
-    Windows (fd is None when fcntl is unavailable).
-    """
+def _load_entries_locked(_fd):
+    """Read a replacement-decoded snapshot and skip malformed JSONL rows."""
     entries = []
-    if fd is None:
-        if not os.path.exists(EPISODIC):
-            return entries
-        with open(EPISODIC) as f:
-            stream = f.read()
-    else:
-        os.lseek(fd, 0, os.SEEK_SET)
-        chunks = []
-        while True:
-            buf = os.read(fd, 65536)
-            if not buf:
-                break
-            chunks.append(buf)
-        stream = b"".join(chunks).decode("utf-8", errors="replace")
-    for line in stream.splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            entries.append(json.loads(line))
-        except json.JSONDecodeError:
-            continue
+    try:
+        with open(EPISODIC, encoding="utf-8", errors="replace") as stream:
+            for line in stream:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entries.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+    except FileNotFoundError:
+        pass
     return entries
 
 
-def _write_entries_locked(fd, entries):
-    """Truncate-and-rewrite under the same lock _load_entries_locked used.
+def _write_all(fd, payload):
+    """Write every byte, preserving the pre-atomic-rewrite helper contract.
 
-    Holding one fd across read+write is what makes the operation atomic
-    against concurrent `append_jsonl()` calls.
+    The production episodic rewrite uses temp-file persistence plus ``os.replace``.
+    This helper remains for callers/tests that need a correct descriptor write-all
+    primitive and for other durability code that may reuse it.
     """
-    payload = "".join(json.dumps(e) + "\n" for e in entries).encode("utf-8")
-    if fd is None:
-        # Windows: best-effort, matches _episodic_io fallback.
-        with open(EPISODIC, "w") as f:
-            f.write(payload.decode("utf-8"))
-        return
-    os.ftruncate(fd, 0)
-    os.lseek(fd, 0, os.SEEK_SET)
-    os.write(fd, payload)
+    view = memoryview(payload)
+    written = 0
+    while written < len(view):
+        try:
+            count = os.write(fd, view[written:])
+        except InterruptedError:
+            continue
+        if count <= 0:
+            raise OSError("descriptor write made no progress")
+        written += count
 
 
-# Compatibility shims for any external caller that still imports the
-# pre-refactor names. Internal callers in run_dream_cycle use the locked
-# helpers directly so the lock spans the full cycle.
+def _write_entries_locked(_fd, entries):
+    """Atomically replace episodic JSONL after durable temp-file persistence.
+
+    The sidecar lock remains stable across ``os.replace``. The temporary file is
+    created in the destination directory so replacement stays on one filesystem.
+    """
+    os.makedirs(os.path.dirname(EPISODIC), exist_ok=True)
+    payload = "".join(
+        json.dumps(sanitize_json_strings(entry)) + "\n" for entry in entries
+    )
+    temp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            errors="strict",
+            dir=os.path.dirname(EPISODIC),
+            prefix=".agent-learnings-",
+            suffix=".tmp",
+            delete=False,
+        ) as stream:
+            temp_path = stream.name
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temp_path, EPISODIC)
+        temp_path = None
+        try:
+            dir_fd = os.open(os.path.dirname(EPISODIC), os.O_RDONLY)
+        except OSError:
+            dir_fd = None
+        if dir_fd is not None:
+            try:
+                os.fsync(dir_fd)
+            finally:
+                os.close(dir_fd)
+    finally:
+        if temp_path is not None:
+            try:
+                os.unlink(temp_path)
+            except FileNotFoundError:
+                pass
+
+
 def _load_entries():
     with _episodic_locked() as fd:
         return _load_entries_locked(fd)
@@ -128,15 +145,15 @@ def _write_entries(entries):
 
 
 def _heuristic_prefilter(candidates_dir, semantic_dir):
-    """Move obvious junk (too-short, exact duplicate) to rejected/ automatically.
-
-    Anything subjective — "is this really a useful lesson?" — is the host
-    agent's call, not this function's.
-    """
+    """Move obvious junk to rejected while leaving subjective review to hosts."""
     if not os.path.isdir(candidates_dir):
         return 0
     lessons_path = os.path.join(semantic_dir, "LESSONS.md")
-    existing = open(lessons_path, encoding="utf-8").read() if os.path.exists(lessons_path) else ""
+    if os.path.exists(lessons_path):
+        with open(lessons_path, encoding="utf-8", errors="replace") as stream:
+            existing = stream.read()
+    else:
+        existing = ""
     rejected = 0
     for fname in sorted(os.listdir(candidates_dir)):
         if not fname.endswith(".json"):
@@ -145,53 +162,48 @@ def _heuristic_prefilter(candidates_dir, semantic_dir):
         if not os.path.isfile(path):
             continue
         try:
-            with open(path) as f:
-                cand = json.load(f)
+            with open(path, encoding="utf-8", errors="replace") as stream:
+                candidate = json.load(stream)
         except (OSError, json.JSONDecodeError):
             continue
-        check = heuristic_check(cand, existing)
+        check = heuristic_check(candidate, existing)
         if not check["passed"]:
-            reason = ", ".join(check["reasons"])
-            # Record the specific lesson(s) that triggered the duplicate
-            # rejection so write_candidates can check whether THIS blocker
-            # is still there, not just whether LESSONS.md as a whole changed.
-            mark_rejected(cand["id"], "heuristic_prefilter", reason,
-                          candidates_dir,
-                          duplicate_claims=check.get("duplicates", []))
+            mark_rejected(
+                candidate["id"],
+                "heuristic_prefilter",
+                ", ".join(check["reasons"]),
+                candidates_dir,
+                duplicate_claims=check.get("duplicates", []),
+            )
             rejected += 1
     return rejected
 
 
 def run_dream_cycle():
-    # Hold the lock across the FULL read-modify-write window. Any
-    # append_jsonl() call from another harness blocks until we release.
-    # Without this, an append landing between read and rewrite would be
-    # truncated away.
+    """Run one locked staging, decay, archive, and review-queue cycle."""
     with _episodic_locked() as fd:
         entries = _load_entries_locked(fd)
         if not entries:
-            # Still refresh the review queue — candidates may have been staged
-            # in a previous cycle and the host agent loads REVIEW_QUEUE.md
-            # into every session via build_context, so a stale/missing file
-            # hides real work.
             pending = write_review_queue_summary(CANDIDATES, REVIEW_QUEUE)
             print(f"dream cycle: no entries (queue has {pending} pending)")
             return
 
         patterns = cluster_and_extract(entries, threshold=CLUSTER_SIMILARITY)
-        promotable = {k: p for k, p in patterns.items()
-                      if p.get("canonical_salience", 0) >= PROMOTION_THRESHOLD}
-
+        promotable = {
+            key: pattern
+            for key, pattern in patterns.items()
+            if pattern.get("canonical_salience", 0) >= PROMOTION_THRESHOLD
+        }
         staged = write_candidates(promotable, CANDIDATES)
         prefiltered = _heuristic_prefilter(CANDIDATES, SEMANTIC)
-
         kept, archived = decay_old_entries(
-            entries, archive_dir=os.path.join(ROOT, "episodic/snapshots"))
+            entries, archive_dir=os.path.join(ROOT, "episodic/snapshots")
+        )
         _write_entries_locked(fd, kept)
         archive_stale_workspace(
             working_dir=os.path.join(ROOT, "working"),
-            archive_dir=os.path.join(ROOT, "episodic/snapshots"))
-
+            archive_dir=os.path.join(ROOT, "episodic/snapshots"),
+        )
         pending = write_review_queue_summary(CANDIDATES, REVIEW_QUEUE)
 
     print(

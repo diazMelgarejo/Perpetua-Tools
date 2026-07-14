@@ -147,8 +147,12 @@ def test_persist_path_survives_across_instances(tmp_path):
 
 
 def test_persist_path_reload_detects_tampered_file(tmp_path):
-    """A hand-edited persisted file must fail verify_chain() on reload —
-    durability must not silently trust disk content over the hash chain."""
+    """A hand-edited persisted file must be rejected on reload -- durability
+    must not silently trust disk content over the hash chain. Construction
+    itself replays and verifies (AuditLog.__init__ calls _replay_persisted()
+    then verify_chain()), so a tampered file is fail-fast: the exception
+    fires from the constructor, not from a later explicit verify_chain()
+    call a careless caller might never make."""
     log_path = tmp_path / "audit.jsonl"
     log1 = AuditLog(persist_path=log_path)
     log1.append("peer-1", "ACTIVE", "SUSPECT", timestamp=1.0)
@@ -158,6 +162,5 @@ def test_persist_path_reload_detects_tampered_file(tmp_path):
     tampered = lines[0].replace('"SUSPECT"', '"ACTIVE"')  # forge the first entry
     log_path.write_text("\n".join([tampered, *lines[1:]]) + "\n", encoding="utf-8")
 
-    log2 = AuditLog(persist_path=log_path)
     with pytest.raises(ChainIntegrityError):
-        log2.verify_chain()
+        AuditLog(persist_path=log_path)
