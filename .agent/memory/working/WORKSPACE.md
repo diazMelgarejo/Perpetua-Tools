@@ -12,6 +12,7 @@ Status: continuity record updated; no product-code implementation started in thi
 - Read .agent/memory/working/CODEX_G7_CONTINUITY_2026-07-15.md before resuming this work.
 - Read .agent/memory/working/FLEET_MESH_AVALANCHE_TRACE_2026-07-14.md for the Phase 7 through Phase 10+ lineage.
 - Orama `main` contains the validated fleet-mesh `git mv` organization in `599a08e3` and the active G7 scaffold/research/plan integration in merge commit `c1a4a31d`. Read the continuity record for exact paths and remaining implementation work.
+- Orama `main` commit `65274e62` adds the G7 plan review refinements and a validated live-document link cleanup; fenced code and append-only historical ledgers remain excluded from link rewriting.
 - The active index, archive index, and G7 authenticated-SSE plan now form a directed navigation graph: canonical `docs/v2/` -> active fleet lineage -> G7 research and TDD handoff, with archive evidence returning to active authority. Keep it current when a new governing document or implementation artifact lands.
 
 ## PT Main State

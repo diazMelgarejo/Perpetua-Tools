@@ -181,6 +181,7 @@
 - When a user provides a verified Firecrawl installation, successful smoke test, research question, authority filter, output shape, and time cap, execute the bounded research pass immediately; do not repeatedly ask for setup or depth that is already supplied.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_24350aa70ab2 -->
 - When a constrained agent can reconstruct and write indexes but cannot run PT memory tooling, a capable PT session must verify the Git evidence, preserve the report as user-reported provenance, run the supported memory tools, and explicitly name any operation the original session did not execute.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_51061c3300bf -->
 - When reorganizing cross-repo plans, preserve history with git mv and maintain a directed authority graph: canonical docs feed active plans, active plans feed research and implementation handoffs, and archive material routes back to active authority.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_bcae4fa52d1c -->
+- When auditing Markdown links, skip fenced code and custom URI schemes, preserve append-only historical ledgers, and repair only resolvable live-document paths; otherwise a code literal or historical record can be mistaken for a red link.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_278bd77811ef -->
 
 ### 2026-06
 
