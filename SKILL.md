@@ -1,14 +1,15 @@
 # SKILL.md — Perpetua-Tools Model Selection Skill
 
-**Version:** `v0.9.9.7` · **Updated:** 2026-04-08
-**Repo:** https://github.com/diazMelgarejo/Perpetua-Tools · **Branch:** `main`
+> **Version:** `v1.1.1.0` · **Updated:** 2026-04-08
+> 
+> **Repo:** https://github.com/diazMelgarejo/Perpetua-Tools · **Branch:** `main`
 
 **Layering (all interoperable and independently configurable):**
 
 | Layer | Repo | Role |
 |-------|------|------|
 | **Orchestrator & instance manager** | **Perpetua-Tools** (this repo) | Top-level agent lifecycle, `ModelRegistry` / `config/*.yml`, FastAPI `/orchestrate`, idempotency |
-| **Reasoning & routing methodology** | **orama-system** | `bin/skills/SKILL.md`, AFRP (pre-router gate) / CIDF / process; multi-agent registry is **separately installable** and **not** required to run this orchestrator |
+| **Reasoning & routing methodology** | **orama-system** | [`bin/orama-system/SKILL.md`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/SKILL.md), AFRP (pre-router gate) / CIDF / process; multi-agent registry is **separately installable** and **not** required to run this orchestrator |
 | **Subagent auto-selection (ECC-style)** | **ECC Tools** | Default subagent routing unless the top-level orchestrator overrides roles |
 | **Karpathy AutoResearch sync** | [uditgoenka/autoresearch](https://github.com/uditgoenka/autoresearch) | Idempotent sync of the automated ML research loop; integrated via `/autoresearch/*` endpoints and `orchestrator/autoresearch_bridge.py`. `/autoresearch` slash-command availability is **not a hard dependency**: prefers the idempotent global skill install (`scripts/install-vendor-guided.sh`), falls back to the Claude Code plugin marketplace, then to a micro-implementation if neither is present — the underlying orchestration (git sync, GPU dispatch, dry-run planning) works regardless |
 
@@ -312,7 +313,7 @@ When bumping version, update ALL of these — no partial bumps:
 | `hardware/SKILL.md` | `Version:` header |
 | `README.md` | title + metadata table |
 
-**Current version: `v0.9.9.7`** — do not bump until explicitly instructed.
+**Current version: `v1.1.1.0`** — do not bump until explicitly instructed.
 
 ### Commit Message Contract (for agent-to-agent communication)
 Every commit body should include:
@@ -335,11 +336,11 @@ This is the primary async communication channel between agents that never share 
 
 ## Changelog
 
-### v0.9.9.7 (2026-04-12)
+### v1.1.1.0 (2026-04-12)
 - **AlphaClaw onboarding barrier fix**: `alphaclaw_bootstrap.py` writes a `package.json` anchor before install, prompts for `SETUP_PASSWORD` via `threading.Timer` (Windows-compatible 30s timeout), pre-writes `ALPHACLAW_INSTALL_DIR/.env` to bypass the first-run wizard, passes credentials via `Popen.env`. Gateway logs redirect to `ALPHACLAW_INSTALL_DIR/logs/alphaclaw.log` (was `DEVNULL`) — silent hangs are now diagnosable.
 - **`orchestrator/onboarding.py`** (new): manages `.state/onboarding.json` for portal v1.1 forward-compat and `start.sh` security warning. `is_secure()` / `read_onboarding_state()` / `write_onboarding_state()` with deep-merge semantics.
 - **AlphaClaw env vars confirmed from source**: `SETUP_PASSWORD` (required — startup fails without it); `ALPHACLAW_ROOT_DIR` (default `~/.alphaclaw`); `PORT` (alphaclaw UI default 3000; openclaw gateway is fixed at 18789); postinstall hook is TTY-safe (no `--ignore-scripts` needed).
-- **Version alignment**: runtime, package, and skill surfaces synchronized to `v0.9.9.7`.
+- **Version alignment**: runtime, package, and skill surfaces synchronized to `v1.1.1.0`.
 
 ### v0.9.9.1 (2026-04-04)
 - **LM Studio promoted to primary backend**: Win=Qwen3.5-27B (gpu_offload=40, context 16384); Mac=Qwen3.5-9B-MLX-4bit (context 4096 conservative)
