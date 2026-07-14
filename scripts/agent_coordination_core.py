@@ -87,6 +87,7 @@ from typing import Optional
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from orchestrator.gossip_bus import GossipBus  # noqa: E402
+from orchestrator.lan_gossip_bridge import make_gossip_bus  # noqa: E402
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1065,8 +1066,8 @@ async def _queue_status(bus: GossipBus, agent_filter: Optional[str]) -> None:
 
 
 async def _amain(args: argparse.Namespace) -> None:
-    bus = GossipBus(canonical_db_path())
-    await bus.init_db()
+    bus = make_gossip_bus(canonical_db_path())
+    await getattr(bus, "local", bus).init_db()
     if args.cmd == "register":
         await _register(bus, args.agent_id, args.agent_type, args.model or "?", args.notes or "")
     elif args.cmd == "agents":

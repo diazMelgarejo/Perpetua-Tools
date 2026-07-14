@@ -1,0 +1,42 @@
+{
+  "id": "fc919d717ef2",
+  "key": "manual_fc919d",
+  "name": "manual_fc919d",
+  "claim": "PowerShell's [Environment]::SetEnvironmentVariable(name, value, 'User') writes to the registry but does NOT refresh the CURRENT process's own $env: view -- an already-running shell keeps stale values, and any child process it spawns inherits the parent's stale in-memory env block, not a fresh registry read. Only a genuinely new top-level process (e.g. a fresh Task Scheduler tick) sees the update.",
+  "conditions": [
+    "environment-variable",
+    "powershell",
+    "registry",
+    "stale-env",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-07-08T10:54:09.134587+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-08T10:54:09.134587+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-08T10:54:09.134587+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-08T10:54:09.215700+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Set corrected auth tokens via SetEnvironmentVariable(...,'User') mid-session, then re-ran coord_pulse.ps1 from the same long-lived shell and it still failed with the OLD token -- cost a full extra debug cycle before realizing the fix was to set $env:VAR directly in the same invoking block instead of trusting the registry write to propagate immediately.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-08T10:54:09.134587+00:00"
+      ],
+      "lessons_sha": "274a2e49a644"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-08T10:54:09.215692+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Set corrected auth tokens via SetEnvironmentVariable(...,'User') mid-session, then re-ran coord_pulse.ps1 from the same long-lived shell and it still failed with the OLD token -- cost a full extra debug cycle before realizing the fix was to set $env:VAR directly in the same invoking block instead of trusting the registry write to propagate immediately."
+}
