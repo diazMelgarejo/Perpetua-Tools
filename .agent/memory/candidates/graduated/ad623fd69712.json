@@ -1,0 +1,69 @@
+{
+  "id": "ad623fd69712",
+  "key": "manual_ad623f",
+  "name": "manual_ad623f",
+  "claim": "SQLite schema migration ALTER TABLE blocks must catch sqlite3.OperationalError duplicate column specifically, not bare Exception. Bare except Exception masks real migration failures such as disk full, corrupt DB, or locked table. Preserve idempotency with specific exception types; let everything else propagate to the caller.",
+  "conditions": [
+    "alter",
+    "bare",
+    "blocks",
+    "caller",
+    "catch",
+    "column",
+    "corrupt",
+    "disk",
+    "duplicate",
+    "else",
+    "everything",
+    "except",
+    "exception",
+    "failures",
+    "full",
+    "idempotency",
+    "let",
+    "locked",
+    "masks",
+    "migration",
+    "operationalerror",
+    "preserve",
+    "propagate",
+    "real",
+    "schema",
+    "specific",
+    "specifically",
+    "sqlite",
+    "sqlite3",
+    "such",
+    "table",
+    "types"
+  ],
+  "evidence_ids": [
+    "2026-07-14T03:39:17.593964+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T03:39:17.593964+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T03:39:17.593964+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T03:39:17.676664+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Discovered in PR #211: GossipBus init_db swallowed real migration failures under bare except Exception. Must catch only OperationalError for duplicate-column.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T03:39:17.593964+00:00"
+      ],
+      "lessons_sha": "6f665854bff8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T03:39:17.676649+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Discovered in PR #211: GossipBus init_db swallowed real migration failures under bare except Exception. Must catch only OperationalError for duplicate-column."
+}

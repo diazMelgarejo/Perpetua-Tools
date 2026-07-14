@@ -1,0 +1,82 @@
+{
+  "id": "7cef6fb18db7",
+  "key": "manual_7cef6f",
+  "name": "manual_7cef6f",
+  "claim": "asyncio.get_event_loop.run_until_complete raises RuntimeError no current event loop in Python 3.11 plus worker threads created by run_in_executor. A broad except Exception around it silently masks the failure leaving the singleton None. Fix: use asyncio.run(coro) instead which creates and tears down a fresh event loop deterministically. Cannot call asyncio.run twice in the same thread so design worker-thread init functions as one-shot.",
+  "conditions": [
+    "around",
+    "asyncio",
+    "broad",
+    "call",
+    "cannot",
+    "coro",
+    "created",
+    "creates",
+    "current",
+    "design",
+    "deterministically",
+    "down",
+    "event",
+    "except",
+    "exception",
+    "failure",
+    "fix",
+    "fresh",
+    "functions",
+    "get_event_loop",
+    "init",
+    "instead",
+    "leaving",
+    "loop",
+    "masks",
+    "none",
+    "one-shot",
+    "plus",
+    "python",
+    "raises",
+    "run",
+    "run_in_executor",
+    "run_until_complete",
+    "runtimeerror",
+    "same",
+    "silently",
+    "singleton",
+    "tears",
+    "thread",
+    "threads",
+    "twice",
+    "use",
+    "which",
+    "worker",
+    "worker-thread"
+  ],
+  "evidence_ids": [
+    "2026-07-14T03:39:17.393584+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T03:39:17.393584+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T03:39:17.393584+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T03:39:17.477571+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Discovered in PR #211: threads from run_in_executor have no default event loop. asyncio.get_event_loop().run_until_complete() masked by bare except Exception.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T03:39:17.393584+00:00"
+      ],
+      "lessons_sha": "42255cfd687b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T03:39:17.477563+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Discovered in PR #211: threads from run_in_executor have no default event loop. asyncio.get_event_loop().run_until_complete() masked by bare except Exception."
+}
