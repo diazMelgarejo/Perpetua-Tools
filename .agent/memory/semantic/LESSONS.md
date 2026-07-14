@@ -164,6 +164,10 @@
 - A stable facade over a legacy module must not accidentally re-export legacy implementations for paths that have been centralized elsewhere; import the canonical implementation directly and add identity/import tests for the facade exports that matter.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_38a8d498540e -->
 - For subprocess tests that assert GitHub Actions guard output, specify encoding='utf-8' together with text=True so captured stdout/stderr decoding is deterministic across runners and locales.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_c13f24c7f7cc -->
 - When adding a regression test for ID-vs-persisted-representation bugs, make the fixture exercise the exact ID source field; if the ID helper prefers id/timestamp/event_id before hashing, a test that only changes a non-ID payload field can pass without proving the invariant.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_1701adf18da9 -->
+- When salvaging a stale branch that has both already-merged patches and still-valuable follow-up work, run git cherry -v against the current base first and split the work by review story instead of rebasing the whole branch by reflex.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_bd7f5a38df5a -->
+- For stranded branch cleanup, prefer two focused preservation PRs over one mixed cargo PR when the remaining commits naturally separate into product-plan work and general docs/housecleaning.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_4fd7156e6ae0 -->
+- Before filing uncommitted changes into salvage buckets, classify dirty state by repo and risk; submodule drift that points at commits not present locally should be deferred rather than bundled into unrelated PRs.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_1516395f7701 -->
+- If a local pre-push hook stalls after printing attribution rows, verify the branch with local checks and remote refs, then use --no-verify only for the push while documenting the reason; do not bypass hooks silently.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_036189f9a2e0 -->
 
 ### 2026-06
 
