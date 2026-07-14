@@ -1,0 +1,41 @@
+{
+  "id": "f82b8720eed5",
+  "key": "manual_f82b87",
+  "name": "manual_f82b87",
+  "claim": "Before opening preservation PRs for every unmerged branch, first list remote branches not merged into origin/main and existing open PR heads; create PRs only for remote branches with no open PR, and include a future-agent warning to append rather than replace the PR summary.",
+  "conditions": [
+    "future-agent-warning",
+    "github",
+    "pr-preservation",
+    "unmerged-branches"
+  ],
+  "evidence_ids": [
+    "2026-07-14T11:05:08.264218+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T11:05:08.264218+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T11:05:08.264218+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T11:05:08.362863+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-14 batch preservation pass across orama-system and Perpetua-Tools showed gh pr list can return zero while dozens of remote branches remain unmerged. Duplicate prevention and summary preservation keep review/audit context intact.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T11:05:08.264218+00:00"
+      ],
+      "lessons_sha": "afcda0852bf5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T11:05:08.362856+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-14 batch preservation pass across orama-system and Perpetua-Tools showed gh pr list can return zero while dozens of remote branches remain unmerged. Duplicate prevention and summary preservation keep review/audit context intact."
+}
