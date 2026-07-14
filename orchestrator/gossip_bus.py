@@ -117,15 +117,17 @@ class GossipBus:
             # Schema migration: add event_uuid to existing tables (idempotent).
             try:
                 await db.execute("ALTER TABLE gossip ADD COLUMN event_uuid TEXT")
-            except sqlite3.OperationalError:
-                pass  # Column already exists
+            except sqlite3.OperationalError as exc:
+                if "duplicate column" not in str(exc).lower():
+                    raise
             # Schema migration: add embed_status to legacy tables (idempotent).
             try:
                 await db.execute(
                     "ALTER TABLE gossip ADD COLUMN embed_status TEXT NOT NULL DEFAULT 'pending'"
                 )
-            except sqlite3.OperationalError:
-                pass
+            except sqlite3.OperationalError as exc:
+                if "duplicate column" not in str(exc).lower():
+                    raise
             # Backfill any rows missing event_uuid (legacy rows pre-migration).
             cursor = await db.execute("SELECT id FROM gossip WHERE event_uuid IS NULL")
             rows = await cursor.fetchall()
@@ -174,10 +176,10 @@ class GossipBus:
         identity for merge/deduplication.
 
         Returns:
-            ``(row_id, event_uuid, safe_payload, inserted)``. ``inserted`` is
+            ``(row_id, event_uuid, durable_payload, inserted)``. ``inserted`` is
             ``True`` for a fresh row and ``False`` when the event_uuid already
             existed (duplicate forwarded event). Callers should pass ``row_id``
-            and ``safe_payload`` to ``schedule_embedding()`` only when
+            and ``durable_payload`` to ``schedule_embedding()`` only when
             ``inserted`` is ``True``.
         """
         import time
@@ -204,13 +206,20 @@ class GossipBus:
         )
         if cursor.rowcount == 0:
             # Duplicate event_uuid — fetch existing row for idempotent return.
+            # Legacy rows may still contain private governance markers, so apply
+            # the same durable-payload sanitization used for fresh writes.
             existing = await db.execute(
                 "SELECT id, payload_json FROM gossip WHERE event_uuid = ?",
                 (event_uuid,),
             )
             row = await existing.fetchone()
             if row is not None:
-                return int(row[0]), event_uuid, json.loads(row[1]), False
+                duplicate_payload = json.loads(row[1])
+                if isinstance(duplicate_payload, dict):
+                    duplicate_payload = dict(duplicate_payload)
+                    duplicate_payload.pop("_memory_class", None)
+                    duplicate_payload.pop("_redaction_applied", None)
+                return int(row[0]), event_uuid, duplicate_payload, False
         return int(cursor.lastrowid), event_uuid, durable_payload, True
 
     def schedule_embedding(self, row_id: int, safe_payload: dict) -> None:

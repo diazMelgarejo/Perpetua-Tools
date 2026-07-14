@@ -14,16 +14,48 @@ _ROOT = Path(__file__).resolve().parent.parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from scripts import agent_coordination_legacy as _impl
-from orchestrator.heartbeat_monitor import (
+from scripts import agent_coordination_legacy as _impl  # noqa: E402
+from scripts.agent_coordination_legacy import (  # noqa: E402
+    GossipBus,
+    PhaseState,
+    QueuedTaskState,
+    TaskPriority,
+    current_worktree_label,
+)
+from orchestrator.heartbeat_monitor import (  # noqa: E402
     cleanup_stale_claims,
     find_agent_heartbeats,
     find_open_claims,
 )
 
-for _name, _value in vars(_impl).items():
-    if not _name.startswith("__"):
-        globals()[_name] = _value
+# Public legacy command helpers intentionally stay on the retained implementation;
+# queue/phase helpers below override only the corrected centralized paths.
+
+_register = _impl._register
+_agents = _impl._agents
+_claim = _impl._claim
+_release = _impl._release
+_list = _impl._list
+_log = _impl._log
+_phase_start = _impl._phase_start
+_phase_update = _impl._phase_update
+_phase_complete = _impl._phase_complete
+_phase_block = _impl._phase_block
+_phase_unblock = _impl._phase_unblock
+_phase_list = _impl._phase_list
+_phase_status = _impl._phase_status
+_detect_blockers = _impl._detect_blockers
+_claim_with_seq = _impl._claim_with_seq
+_buffer_status = _impl._buffer_status
+_buffer_drain = _impl._buffer_drain
+_workflow_critical_path = _impl._workflow_critical_path
+_queue_add = _impl._queue_add
+_queue_claim = _impl._queue_claim
+_queue_complete = _impl._queue_complete
+_queue_fail = _impl._queue_fail
+_queue_list = _impl._queue_list
+_queue_status = _impl._queue_status
+main = _impl.main
 
 
 async def _latest_task_snapshots(bus: GossipBus) -> dict[str, dict]:
@@ -129,7 +161,9 @@ async def _try_atomic_claim(
                 if locked and attempt + 1 < _LOCK_RETRIES:
                     await asyncio.sleep(_LOCK_RETRY_SECONDS * (attempt + 1))
                     continue
-                return False
+                if locked:
+                    return False
+                raise
             except Exception:
                 await db.rollback()
                 raise
@@ -167,7 +201,9 @@ async def _release_claim_with_event(
                 await db.execute("BEGIN IMMEDIATE")
                 await db.execute(_CREATE_CLAIMS_TABLE)
                 await db.execute("DELETE FROM task_claims WHERE task_id = ?", (task_id,))
-                row_id, _event_uuid, safe_payload, inserted = await bus.insert_event(db, event_type, payload)
+                row_id, _event_uuid, safe_payload, inserted = await bus.insert_event(
+                    db, event_type, payload
+                )
                 await db.commit()
             except aiosqlite.OperationalError as exc:
                 await db.rollback()
@@ -175,7 +211,9 @@ async def _release_claim_with_event(
                 if locked and attempt + 1 < _LOCK_RETRIES:
                     await asyncio.sleep(_LOCK_RETRY_SECONDS * (attempt + 1))
                     continue
-                return False
+                if locked:
+                    return False
+                raise
             except Exception:
                 await db.rollback()
                 raise

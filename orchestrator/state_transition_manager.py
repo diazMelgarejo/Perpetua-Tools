@@ -311,8 +311,24 @@ class StateTransitionManager:
                 break
             buffered_obs, buffered_old_status = entry
             if buffered_obs.is_stale:
-                # Skip expired buffered observations instead of committing
-                # them; they are no longer valid even though the gap filled.
+                # Expired buffered observations are still processed sequence
+                # positions: advance the watermark so later successors are
+                # not stranded behind a permanently stale gap.
+                buffered_dedup_key = self._dedup_key(buffered_obs)
+                self._touch_cache(self._seen_observations, buffered_dedup_key, None)
+                self._touch_cache(
+                    self._last_applied_key,
+                    peer_id,
+                    (buffered_obs.epoch, buffered_obs.sequence),
+                )
+                flushed.append(
+                    self._reject(
+                        buffered_obs,
+                        DecisionType.STALE,
+                        "Buffered observation expired before its gap filled",
+                        buffered_old_status,
+                    )
+                )
                 continue
             buffered_dedup_key = self._dedup_key(buffered_obs)
             if buffered_dedup_key in self._seen_observations:

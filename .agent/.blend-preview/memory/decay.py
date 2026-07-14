@@ -16,10 +16,9 @@ def decay_old_entries(entries, archive_dir):
         ts_str = e.get("timestamp", "")
         try:
             ts = datetime.datetime.fromisoformat(ts_str)
-            # Normalize naive timestamps: treat as local time, convert to UTC
-            if ts.tzinfo is None:
-                local_tz = datetime.datetime.now().astimezone().tzinfo
-                ts = ts.replace(tzinfo=local_tz).astimezone(datetime.timezone.utc)
+            # Normalize naive timestamps as historical local wall time;
+            # astimezone(UTC) uses the local offset for ts's date.
+            ts = ts.astimezone(datetime.timezone.utc)
         except ValueError:
             kept.append(e)
             continue

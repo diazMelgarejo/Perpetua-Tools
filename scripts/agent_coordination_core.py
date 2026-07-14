@@ -74,12 +74,11 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import json
 import subprocess
 import sys
 import time
 import uuid
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Optional
@@ -167,8 +166,11 @@ class ReorderBuffer:
             self.watermark = new_watermark
             return (emitted, new_watermark)
         else:
-            # claim.claim_num > watermark: buffer the claim (gap exists)
-            self.buffer[claim.claim_num] = claim
+            # claim.claim_num > watermark: buffer the claim (gap exists).
+            # Preserve the first buffered claim; later duplicates/conflicts
+            # must not overwrite the causal record that arrived first.
+            if claim.claim_num not in self.buffer:
+                self.buffer[claim.claim_num] = claim
             return ([], self.watermark)
 
     def drain(self) -> tuple[list[ClaimSequence], int]:
@@ -672,17 +674,24 @@ async def _get_reorder_buffers(bus: GossipBus) -> dict[str, ReorderBuffer]:
     events = await bus.tail(limit=1000, event_type="heartbeat")
     buffers: dict[str, ReorderBuffer] = {}
 
-    for ev in events:
+    for ev in reversed(events):
         p = ev["payload"]
-        if p.get("kind") != "claim_sequence":
-            continue
-
+        kind = p.get("kind")
         agent_id = p.get("agent_id")
+        if not agent_id:
+            continue
         if agent_id not in buffers:
             buffers[agent_id] = ReorderBuffer(agent_id=agent_id)
-
-        claim = ClaimSequence.from_payload(p)
-        buffers[agent_id].add_claim(claim)
+        if kind == "claim_sequence":
+            claim = ClaimSequence.from_payload(p)
+            buffers[agent_id].add_claim(claim)
+        elif kind == "buffer_drained":
+            new_watermark = p.get("new_watermark")
+            if isinstance(new_watermark, int):
+                buffers[agent_id].watermark = max(buffers[agent_id].watermark, new_watermark)
+                for seq_num in list(buffers[agent_id].buffer):
+                    if seq_num < buffers[agent_id].watermark:
+                        buffers[agent_id].buffer.pop(seq_num, None)
 
     return buffers
 
