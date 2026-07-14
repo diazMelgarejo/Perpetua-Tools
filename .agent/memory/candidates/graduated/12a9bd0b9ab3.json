@@ -1,0 +1,44 @@
+{
+  "id": "12a9bd0b9ab3",
+  "key": "manual_12a9bd",
+  "name": "manual_12a9bd",
+  "claim": "When using OramaSys skills from an OpenClaw workspace, resolve canonical skill cards from the checked-in orama-system repo under orama-system/bin/orama-system/skills, not from copied wrapper text or hardcoded workstation paths; run the wrapper's fetch/status/pull safety check before relying on the card.",
+  "conditions": [
+    "canonical",
+    "openclaw",
+    "orama-system",
+    "path-hygiene",
+    "skills",
+    "sync",
+    "wrapper"
+  ],
+  "evidence_ids": [
+    "2026-07-14T05:46:39.946499+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T05:46:39.946499+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T05:46:39.946499+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T05:46:40.032892+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-14 PR213 remediation: the heartbeat skill wrapper pointed to canonical cards in the OpenClaw orama-system checkout; loading the canonical SKILL.md avoided copying stale wrapper behavior and preserved path-hygiene.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T05:46:39.946499+00:00"
+      ],
+      "lessons_sha": "8393856a0840"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T05:46:40.032881+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-14 PR213 remediation: the heartbeat skill wrapper pointed to canonical cards in the OpenClaw orama-system checkout; loading the canonical SKILL.md avoided copying stale wrapper behavior and preserved path-hygiene."
+}

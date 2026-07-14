@@ -1,0 +1,43 @@
+{
+  "id": "83255f3cdcab",
+  "key": "manual_83255f",
+  "name": "manual_83255f",
+  "claim": "For PR remediation after a rogue or incomplete agent run, work newest blockers first, then audit backward through prior PRs; broadcast canonical methodology to subagents, keep vendor and ECC drift explicitly out of scope when requested, and only declare success after GitHub checks and local branch status are re-verified.",
+  "conditions": [
+    "backward-audit",
+    "github-checks",
+    "multi-agent",
+    "pr-remediation",
+    "scope",
+    "vendor-ecc"
+  ],
+  "evidence_ids": [
+    "2026-07-14T05:46:40.126941+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T05:46:40.126941+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T05:46:40.126941+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T05:46:40.201426+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-14 kimi-meta-remediation: PR213 was stabilized by fixing current CI first, then auditing PR212, PR211, and older merged PRs while excluding vendor/ecc-tools drift by explicit user instruction.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T05:46:40.126941+00:00"
+      ],
+      "lessons_sha": "235f63a2b3f7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T05:46:40.201420+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-14 kimi-meta-remediation: PR213 was stabilized by fixing current CI first, then auditing PR212, PR211, and older merged PRs while excluding vendor/ecc-tools drift by explicit user instruction."
+}
