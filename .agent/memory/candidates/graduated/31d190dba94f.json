@@ -1,0 +1,43 @@
+{
+  "id": "31d190dba94f",
+  "key": "manual_31d190",
+  "name": "manual_31d190",
+  "claim": "When splitting accumulated remediation work after a branch closes, classify every uncommitted or leftover change into an explicit bucket branch before opening PRs: feature-specific work gets its own branch, general housecleaning gets a separate branch, and each PR body must preserve a future-agent warning not to replace or delete the summary.",
+  "conditions": [
+    "branch-splitting",
+    "future-agent-warning",
+    "g7",
+    "housecleaning",
+    "leftover-changes",
+    "pr-descriptions"
+  ],
+  "evidence_ids": [
+    "2026-07-14T10:15:26.008791+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T10:15:26.008791+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T10:15:26.008791+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T10:15:26.312846+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-14 cleanup split kept G7 async notification work separate from non-G7 orama housecleaning, preserving reviewability and preventing future agents from collapsing PR descriptions.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T10:15:26.008791+00:00"
+      ],
+      "lessons_sha": "5dcc5f978fa0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T10:15:26.312833+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-14 cleanup split kept G7 async notification work separate from non-G7 orama housecleaning, preserving reviewability and preventing future agents from collapsing PR descriptions."
+}

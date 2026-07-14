@@ -1,0 +1,44 @@
+{
+  "id": "27354b2896b1",
+  "key": "manual_27354b",
+  "name": "manual_27354b",
+  "claim": "Do not write agent fan-out logs to predictable absolute /tmp paths; create a secure unique log directory under the repo or approved user tool state, reject symlinked reusable parents, and keep stdout/stderr per task for audit.",
+  "conditions": [
+    "antigravity",
+    "audit",
+    "fanout",
+    "logs",
+    "mktemp",
+    "symlink",
+    "tmp"
+  ],
+  "evidence_ids": [
+    "2026-07-14T10:15:26.622839+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T10:15:26.622839+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T10:15:26.622839+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T10:15:26.717586+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The Antigravity skill hardening replaced /tmp/name.out and /tmp/name.err with mktemp-created repo-local log directories and symlink checks to avoid local path-hijack attacks while preserving task evidence.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T10:15:26.622839+00:00"
+      ],
+      "lessons_sha": "3bcad5ce9c5c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T10:15:26.717575+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The Antigravity skill hardening replaced /tmp/name.out and /tmp/name.err with mktemp-created repo-local log directories and symlink checks to avoid local path-hijack attacks while preserving task evidence."
+}

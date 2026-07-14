@@ -1,0 +1,45 @@
+{
+  "id": "78b0efde1631",
+  "key": "manual_78b0ef",
+  "name": "manual_78b0ef",
+  "claim": "For Antigravity or Gemini-style headless agents, run a sandboxed plan/read-only pass first and require explicit human confirmation before switching to accept-edits or launching background edit fan-out; never treat sandboxing or headless mode as sufficient approval.",
+  "conditions": [
+    "accept-edits",
+    "antigravity",
+    "askuserquestion",
+    "background-fanout",
+    "gemini",
+    "headless",
+    "hitl",
+    "sandbox"
+  ],
+  "evidence_ids": [
+    "2026-07-14T10:15:26.434755+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T10:15:26.434755+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T10:15:26.434755+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T10:15:26.520081+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Gemini CLI docs say sandboxing reduces but does not eliminate risk, write and shell tools default to ask_user, and non-interactive plan workflows can fall through to YOLO-style execution after approval-mode transitions.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T10:15:26.434755+00:00"
+      ],
+      "lessons_sha": "b4882460a06f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T10:15:26.520065+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Gemini CLI docs say sandboxing reduces but does not eliminate risk, write and shell tools default to ask_user, and non-interactive plan workflows can fall through to YOLO-style execution after approval-mode transitions."
+}
