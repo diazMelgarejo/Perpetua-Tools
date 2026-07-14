@@ -58,6 +58,11 @@ async def find_agent_heartbeats(
 ) -> dict[str, dict]:
     """Collect latest heartbeat for each agent (or specific agent if agent_id given).
 
+    Registration begins a new liveness epoch. In particular, a fresh
+    ``agent_register`` clears any prior explicit kill marker so a restarted
+    process is assessed from its current events rather than remaining DEAD
+    forever because of historical state.
+
     Returns dict mapping agent_id -> {
         'last_heartbeat_ts': float,
         'status': str,  # ACTIVE/IDLE/STALLED/DEAD
@@ -81,7 +86,6 @@ async def find_agent_heartbeats(
 
         kind = p.get("kind")
 
-        # Initialize agent data if needed
         if agent not in agent_data:
             agent_data[agent] = {
                 'work_in_progress': None,
@@ -95,7 +99,6 @@ async def find_agent_heartbeats(
         # agent supersedes the previous timestamp.
         last_ts_per_agent[agent] = ev["ts"]
 
-        # Track registration
         if kind == "agent_register":
             agent_data[agent]['last_registration'] = p
             agent_data[agent]['registration_ts'] = ev["ts"]
@@ -103,9 +106,7 @@ async def find_agent_heartbeats(
             # no longer dead — clear any prior terminal kill state so it
             # can be scored by liveness again instead of being stuck DEAD.
             agent_data[agent]['killed_reason'] = None
-
-        # Track work-in-progress from claims
-        if kind == "agent_claim":
+        elif kind == "agent_claim":
             agent_data[agent]['work_in_progress'] = p.get("task")
         elif kind == "agent_release":
             if agent_data[agent].get('work_in_progress') == p.get("task"):
@@ -118,7 +119,6 @@ async def find_agent_heartbeats(
             # (docs use pulse, not just register, for recovery).
             agent_data[agent]['killed_reason'] = None
 
-    # Add computed status and uptime
     for agent, data in agent_data.items():
         last_ts = last_ts_per_agent.get(agent, time.time())
         status, _ = liveness_status(last_ts)
@@ -133,15 +133,7 @@ async def find_agent_heartbeats(
 
 
 async def find_open_claims(bus: GossipBus) -> list[dict]:
-    """Find all open (unclosed) task claims.
-
-    Returns list of {
-        'agent_id': str,
-        'task': str,
-        'claim_ts': float,
-        'worktree': str,
-    }
-    """
+    """Find all open (unclosed) task claims."""
     events = await bus.tail(limit=300, event_type="heartbeat")
     state: dict[str, dict] = {}
 
@@ -165,15 +157,7 @@ async def find_open_claims(bus: GossipBus) -> list[dict]:
 
 
 async def cleanup_stale_claims(bus: GossipBus, max_age_seconds: int = 1800) -> list[str]:
-    """Auto-release claims held by DEAD agents.
-
-    Args:
-        bus: GossipBus instance to query and emit release events.
-        max_age_seconds: Maximum age before agent considered dead (default 1800 = 30 min).
-
-    Returns:
-        List of released task IDs.
-    """
+    """Auto-release claims held by DEAD agents."""
     agents = await find_agent_heartbeats(bus)
     dead_agents = {aid for aid, data in agents.items() if data['status'] == 'DEAD'}
 

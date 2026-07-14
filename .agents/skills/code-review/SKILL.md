@@ -33,6 +33,14 @@ If the worktree is dirty, the branch is not tracking origin, or fast-forward is 
 
 Open and follow `bin/orama-system/skills/code-review/SKILL.md` (relative to the repo root). Do not copy behavior from this wrapper.
 
+## Review provenance and remediation
+
+For PR reviews, CI findings, and bot comments, also load:
+
+- [Branch-Local Review Remediation](../../../.agent/references/branch-local-review-remediation.md)
+
+Bind each finding to the exact reviewed branch and head. Cluster findings by shared invariant, fix the owning abstraction, add focused regression tests, and do not place review-only fixes on `main` before merge.
+
 ## Perpetua-Tools: hardware affinity reviews
 
 When the diff touches model IDs, routing, `openclaw.json`, `launch_researchers.py`,
@@ -41,6 +49,11 @@ or `hardware_policy.py`, also load **`.claude/skills/hardware-policy/SKILL.md`**
 1. No duplicate YAML parsers (`rg '_simple_policy_parse|def _forbidden'`)
 2. Alias ids covered in `model_hardware_policy.yml`
 3. `pytest tests/test_launch_researchers_affinity.py tests/test_hardware_routing.py -q`
+
+## Related skills
+
+- [`../agent-methodology/SKILL.md`](../agent-methodology/SKILL.md) — Apply the Oramasys context, synthesis, TDD, and verification stages.
+- [`../git-history-surgery/SKILL.md`](../git-history-surgery/SKILL.md) — Preserve review lineage when the branch needs rebase or recovery.
 
 ## Windows UTF-8 Note
 
