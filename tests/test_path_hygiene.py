@@ -63,3 +63,37 @@ def test_json_structure_sanitized():
     out = sanitize_json_strings(obj)
     assert "alice" not in out["path"]
     assert out["count"] == 5
+
+
+def test_decay_archive_id_matches_sanitized_persisted_json(tmp_path):
+    """Archive duplicate checks must use the same sanitized row that is persisted."""
+    import datetime
+    import json
+
+    from decay import _archive_entry_id, decay_old_entries
+
+    old = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=120)
+    entry = {
+        "id": "/Users/alice/private/project.log",
+        "timestamp": old.isoformat(),
+        "event": "tool_error",
+        "path": "/Users/alice/private/project.log",
+        "salience": 0,
+    }
+
+    kept, archived = decay_old_entries([entry], tmp_path)
+
+    assert kept == []
+    assert archived == [entry]
+
+    archive_path = next(tmp_path.glob("archive_*.jsonl"))
+    rows = [json.loads(line) for line in archive_path.read_text(encoding="utf-8").splitlines()]
+    assert len(rows) == 1
+    assert rows[0]["id"] == "$HOME/private/project.log"
+    assert rows[0]["path"] == "$HOME/private/project.log"
+    assert _archive_entry_id(rows[0]) != _archive_entry_id(entry)
+    assert _archive_entry_id(rows[0]) == "id:$HOME/private/project.log"
+
+    decay_old_entries([entry], tmp_path)
+    rows_after_retry = archive_path.read_text(encoding="utf-8").splitlines()
+    assert len(rows_after_retry) == 1

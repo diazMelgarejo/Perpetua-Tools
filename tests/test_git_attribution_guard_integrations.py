@@ -197,6 +197,7 @@ def _run_verify_guards_in_github_actions(*, home: Path | None = None) -> tuple[s
         ["bash", str(VERIFY_GUARDS)],
         capture_output=True,
         text=True,
+        encoding="utf-8",
         cwd=ROOT,
         env=env,
     )

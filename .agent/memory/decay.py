@@ -72,9 +72,10 @@ def decay_old_entries(entries, archive_dir):
                         seen_ids.add(_archive_entry_id(existing))
         with open(path, "a", encoding="utf-8") as stream:
             for entry in archived:
-                entry_id = _archive_entry_id(entry)
+                sanitized_entry = sanitize_json_strings(entry)
+                entry_id = _archive_entry_id(sanitized_entry)
                 if entry_id in seen_ids:
                     continue
-                stream.write(json.dumps(sanitize_json_strings(entry)) + "\n")
+                stream.write(json.dumps(sanitized_entry) + "\n")
                 seen_ids.add(entry_id)
     return kept, archived

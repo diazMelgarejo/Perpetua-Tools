@@ -22,14 +22,21 @@ from scripts.agent_coordination_legacy import (  # noqa: E402
     TaskPriority,
     current_worktree_label,
 )
+from scripts.agent_coordination_core import (  # noqa: E402
+    ClaimSequence,
+    ReorderBuffer,
+    _buffer_drain,
+    _buffer_status,
+    _claim_with_seq,
+    _get_reorder_buffers,
+    main,
+)
 from orchestrator.heartbeat_monitor import (  # noqa: E402
     cleanup_stale_claims,
     find_agent_heartbeats,
     find_open_claims,
 )
 
-ClaimSequence = _impl.ClaimSequence
-ReorderBuffer = _impl.ReorderBuffer
 canonical_db_path = _impl.canonical_db_path
 canonical_repo_root = _impl.canonical_repo_root
 
@@ -51,10 +58,6 @@ _phase_unblock = _impl._phase_unblock
 _phase_list = _impl._phase_list
 _phase_status = _impl._phase_status
 _detect_blockers = _impl._detect_blockers
-_get_reorder_buffers = _impl._get_reorder_buffers
-_claim_with_seq = _impl._claim_with_seq
-_buffer_status = _impl._buffer_status
-_buffer_drain = _impl._buffer_drain
 _workflow_critical_path = _impl._workflow_critical_path
 _queue_add = _impl._queue_add
 _queue_claim = _impl._queue_claim
@@ -62,7 +65,6 @@ _queue_complete = _impl._queue_complete
 _queue_fail = _impl._queue_fail
 _queue_list = _impl._queue_list
 _queue_status = _impl._queue_status
-main = _impl.main
 
 
 async def _latest_task_snapshots(bus: GossipBus) -> dict[str, dict]:
@@ -594,8 +596,6 @@ for _patched_name in (
     "_heartbeat_cleanup",
 ):
     setattr(_impl, _patched_name, globals()[_patched_name])
-
-main = _impl.main
 
 if __name__ == "__main__":
     raise SystemExit(main())
