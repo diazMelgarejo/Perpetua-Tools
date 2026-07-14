@@ -187,6 +187,26 @@ notification scaffold, tests, G7 analysis, production research, detailed TDD
 handoff, and this navigation graph. The G7 worktree still has pre-existing
 untracked `.firecrawl/` research cache; it remains excluded.
 
+## Post-Merge Review And Link Cleanup
+
+Orama `main` commit `65274e62` incorporated the G7 plan-review refinements and
+the live documentation-link cleanup after the G7 merge:
+
+- the bounded-queue test consumes a setup event before exercising overflow, so
+  no pending `__anext__()` changes the expected drop-oldest result;
+- the status-publisher task now includes an `api_status` integration spy proving
+  that the publisher receives only the `redact_portal_status_payload` result;
+- the SSE task now specifies periodic comment keepalives, cancellation-safe
+  subscription cleanup, and a route-local bounded ASGI send adapter compatible
+  with the plan's Python 3.10 floor;
+- the fleet/G7 navigation graph and current documentation links were repaired.
+
+The May RAG-plan item reported by a naive audit was a literal FTS5 regular
+expression inside a fenced code block, not a rendered Markdown link. The
+correct audit skips fenced code and custom URI schemes, preserves append-only
+historical ledgers, and checks all other local document targets. That audit
+passed for all non-ledger documents after the cleanup.
+
 ## PT Worktree State At The Time Of This Record
 
 Perpetua-Tools main was synchronized through commit 3be30907. That commit added the fleet avalanche trace. The short cross-repo pointer remains present.
