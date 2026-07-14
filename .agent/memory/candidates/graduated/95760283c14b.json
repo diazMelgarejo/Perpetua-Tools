@@ -1,0 +1,43 @@
+{
+  "id": "95760283c14b",
+  "key": "manual_957602",
+  "name": "manual_957602",
+  "claim": "When CodeRabbit comments on .agent memory archival, sanitize each archived JSON entry before computing its duplicate/archive identity and persist that exact sanitized object; otherwise duplicate detection can disagree with the tracked JSON representation and path-hygiene guarantees.",
+  "conditions": [
+    "agent-memory",
+    "archive-id",
+    "coderabbit",
+    "decay",
+    "duplicate-detection",
+    "path-hygiene"
+  ],
+  "evidence_ids": [
+    "2026-07-14T06:10:37.264585+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T06:10:37.264585+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T06:10:37.264585+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T06:10:37.341893+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-14 PR213 inline fix: .agent/memory/decay.py now calls sanitize_json_strings(entry), computes _archive_entry_id on that sanitized entry, writes the same object, and tests retry dedupe against sanitized persisted JSON.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T06:10:37.264585+00:00"
+      ],
+      "lessons_sha": "028e8e102bc9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T06:10:37.341884+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-14 PR213 inline fix: .agent/memory/decay.py now calls sanitize_json_strings(entry), computes _archive_entry_id on that sanitized entry, writes the same object, and tests retry dedupe against sanitized persisted JSON."
+}

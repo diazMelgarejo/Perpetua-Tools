@@ -1,0 +1,65 @@
+{
+  "id": "519cff57e7ee",
+  "key": "manual_519cff",
+  "name": "manual_519cff",
+  "claim": "When a function's return tuple grows (e.g. insert_event 2-tuple to 3-tuple to 4-tuple), grep the entire codebase for all call sites that unpack the return value before changing the signature. A single missed caller that unpacks the old signature breaks CI silently. Cost of one missed caller exceeds cost of auditing all of them.",
+  "conditions": [
+    "all",
+    "auditing",
+    "before",
+    "breaks",
+    "call",
+    "caller",
+    "changing",
+    "codebase",
+    "cost",
+    "entire",
+    "exceeds",
+    "function",
+    "grep",
+    "grows",
+    "insert_event",
+    "missed",
+    "old",
+    "one",
+    "return",
+    "signature",
+    "silently",
+    "single",
+    "sites",
+    "them",
+    "tuple",
+    "unpack",
+    "unpacks",
+    "value"
+  ],
+  "evidence_ids": [
+    "2026-07-14T03:39:17.164728+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T03:39:17.164728+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T03:39:17.164728+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T03:39:17.254342+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Discovered in PR #211: insert_event return signature changed from 3-tuple to 4-tuple and missed callers broke CI. Before changing any return signature, run grep -rn insert_event --include=*.py and audit every unpack site.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T03:39:17.164728+00:00"
+      ],
+      "lessons_sha": "c0f10576ccb8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T03:39:17.254334+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Discovered in PR #211: insert_event return signature changed from 3-tuple to 4-tuple and missed callers broke CI. Before changing any return signature, run grep -rn insert_event --include=*.py and audit every unpack site."
+}

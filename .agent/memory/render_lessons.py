@@ -109,9 +109,11 @@ def load_lessons(semantic_dir):
             if not line:
                 continue
             try:
-                out.append(json.loads(line))
+                lesson = json.loads(line)
             except json.JSONDecodeError:
                 continue
+            if isinstance(lesson, dict):
+                out.append(lesson)
     return out
 
 

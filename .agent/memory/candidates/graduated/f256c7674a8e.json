@@ -2,14 +2,12 @@
   "id": "f256c7674a8e",
   "key": "manual_f256c7",
   "name": "manual_f256c7",
-  "claim": "Perpetua-Tools' own multi-agent coordination primitives (scripts/agent_coordination.py's GossipBus-backed distributed task queue: claim/release/heartbeat, append-only events folded into current state) got real-world load-tested by accident: while multiple independent AI coding sessions worked concurrently on PT's own codebase (this exact coordination system among the files being changed), those sessions ended up coordinating with each other THROUGH the very primitives they were improving -- one session's committed fix became the next session's starting point, purely via git state on a shared branch, no explicit hand-off. This is orama-system eating its own dogfood while working on its own self-improvement: the system under construction was, unintentionally, also the coordination substrate for constructing it.",
+  "claim": "Perpetua-Tools' own shared-branch Git workflow was dogfooded by concurrent AI coding sessions: multiple sessions worked on the same reviewed branch, where one session's committed fix became another session's starting point through Git state. Do not infer unproven runtime queue, claim/release, heartbeat, or append-only event-folding usage from that evidence unless direct runtime evidence is attached.",
   "conditions": [
     "concurrent-sessions",
-    "coordination",
     "dogfooding",
-    "gossipbus",
-    "multi-agent",
-    "self-improvement"
+    "git-workflow",
+    "shared-branch"
   ],
   "evidence_ids": [
     "2026-07-12T10:41:25.832988+00:00"

@@ -5,6 +5,7 @@ import collections
 import hmac
 import json
 import logging
+import re as _re
 import os
 import time
 from contextlib import asynccontextmanager
@@ -43,7 +44,7 @@ from orchestrator.orama_bridge import (
     call_oramasys_mcp_or_bridge,
     parse_oramasys_timeout,
 )
-from orchestrator.gossip_bus import GossipBus, resolve_gossip_db_path
+from orchestrator.gossip_bus import GossipBus
 from orchestrator.lan_gossip_bridge import _load_peers as _load_gossip_peers
 
 _startup_log = logging.getLogger("orchestrator.fastapi_app")
@@ -745,9 +746,7 @@ def autoresearch_gpu_status() -> Dict[str, Any]:
 # Brainstorm ref: orama-system/docs/2026-05-08-v1-supervisor-brainstorm.md §5
 # Legacy /orchestrate route (orchestrator.py) stays intact — backwards compatible.
 
-import re as _re
-
-from orchestrator.supervisor import JobSpec, JobStatus, OrchestrationSupervisor, _new_id
+from orchestrator.supervisor import JobSpec, JobStatus, OrchestrationSupervisor, _new_id  # noqa: E402
 
 # Security: job_id flows into filesystem paths (.state/jobs/<id>/result.json)
 # via OrchestrationSupervisor. Validate the format at the HTTP boundary so a

@@ -115,13 +115,15 @@ def _read_jsonl(path: Path) -> str:
             continue
         try:
             entry = json.loads(raw)
+            if not isinstance(entry, dict):
+                continue
             parts = [
                 entry.get("action", ""),
                 entry.get("reflection", ""),
                 entry.get("detail", ""),
                 entry.get("skill", ""),
             ]
-            lines.append(" ".join(p for p in parts if p))
+            lines.append(" ".join(p for p in parts if isinstance(p, str) and p))
         except json.JSONDecodeError:
             continue
     return "\n".join(lines)

@@ -117,15 +117,17 @@ class GossipBus:
             # Schema migration: add event_uuid to existing tables (idempotent).
             try:
                 await db.execute("ALTER TABLE gossip ADD COLUMN event_uuid TEXT")
-            except sqlite3.OperationalError:
-                pass  # Column already exists
+            except sqlite3.OperationalError as exc:
+                if "duplicate column" not in str(exc).lower():
+                    raise
             # Schema migration: add embed_status to legacy tables (idempotent).
             try:
                 await db.execute(
                     "ALTER TABLE gossip ADD COLUMN embed_status TEXT NOT NULL DEFAULT 'pending'"
                 )
-            except sqlite3.OperationalError:
-                pass
+            except sqlite3.OperationalError as exc:
+                if "duplicate column" not in str(exc).lower():
+                    raise
             # Backfill any rows missing event_uuid (legacy rows pre-migration).
             cursor = await db.execute("SELECT id FROM gossip WHERE event_uuid IS NULL")
             rows = await cursor.fetchall()
@@ -174,10 +176,10 @@ class GossipBus:
         identity for merge/deduplication.
 
         Returns:
-            ``(row_id, event_uuid, safe_payload, inserted)``. ``inserted`` is
+            ``(row_id, event_uuid, durable_payload, inserted)``. ``inserted`` is
             ``True`` for a fresh row and ``False`` when the event_uuid already
             existed (duplicate forwarded event). Callers should pass ``row_id``
-            and ``safe_payload`` to ``schedule_embedding()`` only when
+            and ``durable_payload`` to ``schedule_embedding()`` only when
             ``inserted`` is ``True``.
         """
         import time
@@ -187,6 +189,9 @@ class GossipBus:
         safe_payload, _memory_class = classify_and_redact(
             payload, event_type=event_type
         )
+        durable_payload = dict(safe_payload)
+        durable_payload.pop("_memory_class", None)
+        durable_payload.pop("_redaction_applied", None)
         event_uuid = event_uuid or uuid.uuid4().hex
         cursor = await db.execute(
             "INSERT OR IGNORE INTO gossip "
@@ -196,19 +201,26 @@ class GossipBus:
                 event_uuid,
                 time.time() if timestamp is None else timestamp,
                 event_type,
-                json.dumps(safe_payload),
+                json.dumps(durable_payload),
             ),
         )
         if cursor.rowcount == 0:
             # Duplicate event_uuid — fetch existing row for idempotent return.
+            # Legacy rows may still contain private governance markers, so apply
+            # the same durable-payload sanitization used for fresh writes.
             existing = await db.execute(
                 "SELECT id, payload_json FROM gossip WHERE event_uuid = ?",
                 (event_uuid,),
             )
             row = await existing.fetchone()
             if row is not None:
-                return int(row[0]), event_uuid, json.loads(row[1]), False
-        return int(cursor.lastrowid), event_uuid, safe_payload, True
+                duplicate_payload = json.loads(row[1])
+                if isinstance(duplicate_payload, dict):
+                    duplicate_payload = dict(duplicate_payload)
+                    duplicate_payload.pop("_memory_class", None)
+                    duplicate_payload.pop("_redaction_applied", None)
+                return int(row[0]), event_uuid, duplicate_payload, False
+        return int(cursor.lastrowid), event_uuid, durable_payload, True
 
     def schedule_embedding(self, row_id: int, safe_payload: dict) -> None:
         """Schedule optional embedding after the containing transaction commits."""

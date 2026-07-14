@@ -1,0 +1,75 @@
+{
+  "id": "18e3dcbb5c1a",
+  "key": "manual_18e3dc",
+  "name": "manual_18e3dc",
+  "claim": "When harmonizing two divergent branches, use the integrative merge doctrine: synthesize never amputate. Apply resolution modes in order: additive, union, superset, synthesize, architecturally-correct, api-correct. Archive instead of delete when content must leave the active path. Never pick one side wholesale with --ours or --theirs without classifying the conflict mode first.",
+  "conditions": [
+    "active",
+    "additive",
+    "amputate",
+    "api-correct",
+    "apply",
+    "architecturally-correct",
+    "archive",
+    "branches",
+    "classifying",
+    "conflict",
+    "content",
+    "delete",
+    "divergent",
+    "doctrine",
+    "first",
+    "harmonizing",
+    "instead",
+    "integrative",
+    "leave",
+    "merge",
+    "mode",
+    "modes",
+    "never",
+    "one",
+    "order",
+    "ours",
+    "path",
+    "pick",
+    "resolution",
+    "side",
+    "superset",
+    "synthesize",
+    "theirs",
+    "two",
+    "union",
+    "use",
+    "wholesale",
+    "without"
+  ],
+  "evidence_ids": [
+    "2026-07-14T03:42:17.798792+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T03:42:17.798792+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T03:42:17.798792+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T03:42:17.862478+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Final Remedy 2026-07-14: Both PR #212 and PR #211 merged cleanly into corrected main using --no-ff with proper context. The orama-system integrative-merge.md reference provides the canonical six-mode resolution ladder.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T03:42:17.798792+00:00"
+      ],
+      "lessons_sha": "09133fe53079"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T03:42:17.862469+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Final Remedy 2026-07-14: Both PR #212 and PR #211 merged cleanly into corrected main using --no-ff with proper context. The orama-system integrative-merge.md reference provides the canonical six-mode resolution ladder."
+}

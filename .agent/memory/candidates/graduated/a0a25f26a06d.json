@@ -1,0 +1,66 @@
+{
+  "id": "a0a25f26a06d",
+  "key": "manual_a0a25f",
+  "name": "manual_a0a25f",
+  "claim": "INSERT OR IGNORE with cursor.rowcount equals 0 is the correct idempotent dedup pattern for cross-peer event replay. When IGNORE fires on a duplicate event_uuid with a UNIQUE index, cursor.rowcount is 0 and cursor.lastrowid is stale \u2014 do not return it. Instead SELECT the existing row by event_uuid and return its id for idempotent operation. This avoids a race-prone SELECT-then-INSERT sequence.",
+  "conditions": [
+    "avoids",
+    "correct",
+    "cross-peer",
+    "cursor",
+    "dedup",
+    "duplicate",
+    "equals",
+    "event",
+    "event_uuid",
+    "existing",
+    "fires",
+    "idempotent",
+    "ignore",
+    "index",
+    "insert",
+    "instead",
+    "lastrowid",
+    "operation",
+    "pattern",
+    "race-prone",
+    "replay",
+    "return",
+    "row",
+    "rowcount",
+    "select",
+    "select-then-insert",
+    "sequence",
+    "stale",
+    "unique"
+  ],
+  "evidence_ids": [
+    "2026-07-14T03:39:17.794001+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T03:39:17.794001+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T03:39:17.794001+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T03:39:17.878052+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Discovered in PR #211: GossipBus insert_event needed idempotent dedup. SELECT-then-INSERT is racy; INSERT OR IGNORE with fallback SELECT provides atomic dedup.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T03:39:17.794001+00:00"
+      ],
+      "lessons_sha": "b5815af2e2c8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T03:39:17.878038+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Discovered in PR #211: GossipBus insert_event needed idempotent dedup. SELECT-then-INSERT is racy; INSERT OR IGNORE with fallback SELECT provides atomic dedup."
+}
