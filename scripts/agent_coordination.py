@@ -28,9 +28,15 @@ from orchestrator.heartbeat_monitor import (  # noqa: E402
     find_open_claims,
 )
 
+ClaimSequence = _impl.ClaimSequence
+ReorderBuffer = _impl.ReorderBuffer
+canonical_db_path = _impl.canonical_db_path
+canonical_repo_root = _impl.canonical_repo_root
+
 # Public legacy command helpers intentionally stay on the retained implementation;
 # queue/phase helpers below override only the corrected centralized paths.
 
+_known_agent_ids = _impl._known_agent_ids
 _register = _impl._register
 _agents = _impl._agents
 _claim = _impl._claim
@@ -45,6 +51,7 @@ _phase_unblock = _impl._phase_unblock
 _phase_list = _impl._phase_list
 _phase_status = _impl._phase_status
 _detect_blockers = _impl._detect_blockers
+_get_reorder_buffers = _impl._get_reorder_buffers
 _claim_with_seq = _impl._claim_with_seq
 _buffer_status = _impl._buffer_status
 _buffer_drain = _impl._buffer_drain
