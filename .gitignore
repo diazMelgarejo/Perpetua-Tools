@@ -122,5 +122,9 @@ vendor/oramaclaw/
 # Local build/node stamp (generated per install; never commit)
 **/.node_stamp
 
+# Local clone retained only as an upstream reference. The supported integration
+# is the tracked vendor/agentic-stack submodule, not this scratch checkout.
+/packages/agentic-stack/
+
 # Agent memory runtime lockfiles (generated; never commit)
 .agent/memory/episodic/*.lock
