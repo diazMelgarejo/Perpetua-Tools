@@ -187,6 +187,9 @@ class GossipBus:
         safe_payload, _memory_class = classify_and_redact(
             payload, event_type=event_type
         )
+        durable_payload = dict(safe_payload)
+        durable_payload.pop("_memory_class", None)
+        durable_payload.pop("_redaction_applied", None)
         event_uuid = event_uuid or uuid.uuid4().hex
         cursor = await db.execute(
             "INSERT OR IGNORE INTO gossip "
@@ -196,7 +199,7 @@ class GossipBus:
                 event_uuid,
                 time.time() if timestamp is None else timestamp,
                 event_type,
-                json.dumps(safe_payload),
+                json.dumps(durable_payload),
             ),
         )
         if cursor.rowcount == 0:
@@ -208,7 +211,7 @@ class GossipBus:
             row = await existing.fetchone()
             if row is not None:
                 return int(row[0]), event_uuid, json.loads(row[1]), False
-        return int(cursor.lastrowid), event_uuid, safe_payload, True
+        return int(cursor.lastrowid), event_uuid, durable_payload, True
 
     def schedule_embedding(self, row_id: int, safe_payload: dict) -> None:
         """Schedule optional embedding after the containing transaction commits."""
