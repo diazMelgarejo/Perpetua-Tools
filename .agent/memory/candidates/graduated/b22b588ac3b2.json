@@ -1,0 +1,44 @@
+{
+  "id": "b22b588ac3b2",
+  "key": "manual_b22b58",
+  "name": "manual_b22b58",
+  "claim": "When a cross-repo implementation plan spans orama-system code and Perpetua-Tools memory, link artifacts by repo name, PR number, branch name, and repo-relative path only; sanitize any local source path to env anchors like $HOME and use the canonical memory pipeline instead of hand-editing generated lesson files.",
+  "conditions": [
+    "G7",
+    "Perpetua-Tools",
+    "cross-repo",
+    "memory-pipeline",
+    "orama-system",
+    "path-hygiene",
+    "traceability"
+  ],
+  "evidence_ids": [
+    "2026-07-14T10:39:05.631674+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T10:39:05.631674+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T10:39:05.631674+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T10:39:05.804183+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-14 G7 async notifications: PR #150 added cross-repo traceability from orama-system planning to PT memory follow-up and sanitized the Final-Remedy source path after the commit hook blocked a personal absolute path.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T10:39:05.631674+00:00"
+      ],
+      "lessons_sha": "0d625f85f279"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T10:39:05.804172+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-14 G7 async notifications: PR #150 added cross-repo traceability from orama-system planning to PT memory follow-up and sanitized the Final-Remedy source path after the commit hook blocked a personal absolute path."
+}
