@@ -1,0 +1,43 @@
+{
+  "id": "c7a96af333af",
+  "key": "manual_c7a96a",
+  "name": "manual_c7a96a",
+  "claim": "When a user says a remediation branch is closed and asks to commit to main, switch the target repo to main, fast-forward from origin first, ignore explicitly excluded vendor or ECC drift, then commit only intentional memory or doc changes.",
+  "conditions": [
+    "commit-scope",
+    "ecc",
+    "fast-forward",
+    "main-branch",
+    "memory",
+    "vendor-drift"
+  ],
+  "evidence_ids": [
+    "2026-07-14T10:15:26.836948+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T10:15:26.836948+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T10:15:26.836948+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T10:15:26.937079+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT main memory updates on 2026-07-14 had unrelated vendor/ecc-tools drift; the safe pattern was to sync main, leave vendor drift unstaged, and commit only .agent memory artifacts.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T10:15:26.836948+00:00"
+      ],
+      "lessons_sha": "c128ea86dfc3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T10:15:26.937067+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT main memory updates on 2026-07-14 had unrelated vendor/ecc-tools drift; the safe pattern was to sync main, leave vendor drift unstaged, and commit only .agent memory artifacts."
+}
