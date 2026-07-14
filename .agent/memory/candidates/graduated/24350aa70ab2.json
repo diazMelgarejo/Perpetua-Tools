@@ -1,0 +1,63 @@
+{
+  "id": "24350aa70ab2",
+  "key": "manual_24350a",
+  "name": "manual_24350a",
+  "claim": "When a user provides a verified Firecrawl installation, successful smoke test, research question, authority filter, output shape, and time cap, execute the bounded research pass immediately; do not repeatedly ask for setup or depth that is already supplied.",
+  "conditions": [
+    "already",
+    "ask",
+    "authority",
+    "bounded",
+    "cap",
+    "depth",
+    "execute",
+    "filter",
+    "firecrawl",
+    "immediately",
+    "installation",
+    "output",
+    "pass",
+    "provides",
+    "question",
+    "repeatedly",
+    "research",
+    "setup",
+    "shape",
+    "smoke",
+    "successful",
+    "supplied",
+    "test",
+    "time",
+    "user",
+    "verified"
+  ],
+  "evidence_ids": [
+    "2026-07-14T22:12:40.028472+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T22:12:40.028472+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T22:12:40.028472+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T22:12:40.232843+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A July 2026 G7 planning session lost time because the agent repeatedly treated an already-authenticated Firecrawl setup as incomplete. The corrective evidence is the saved research report and user feedback.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T22:12:40.028472+00:00"
+      ],
+      "lessons_sha": "6e86eafee7ca"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T22:12:40.232833+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A July 2026 G7 planning session lost time because the agent repeatedly treated an already-authenticated Firecrawl setup as incomplete. The corrective evidence is the saved research report and user feedback."
+}

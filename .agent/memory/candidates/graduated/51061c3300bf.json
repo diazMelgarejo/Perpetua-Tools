@@ -1,0 +1,63 @@
+{
+  "id": "51061c3300bf",
+  "key": "manual_51061c",
+  "name": "manual_51061c",
+  "claim": "When a constrained agent can reconstruct and write indexes but cannot run PT memory tooling, a capable PT session must verify the Git evidence, preserve the report as user-reported provenance, run the supported memory tools, and explicitly name any operation the original session did not execute.",
+  "conditions": [
+    "agent",
+    "any",
+    "cannot",
+    "capable",
+    "constrained",
+    "evidence",
+    "execute",
+    "explicitly",
+    "git",
+    "indexes",
+    "memory",
+    "name",
+    "operation",
+    "original",
+    "preserve",
+    "provenance",
+    "reconstruct",
+    "report",
+    "run",
+    "session",
+    "supported",
+    "tooling",
+    "tools",
+    "user-reported",
+    "verify",
+    "write"
+  ],
+  "evidence_ids": [
+    "2026-07-14T22:16:02.339079+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T22:16:02.339079+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T22:16:02.339079+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T22:16:02.409705+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A web Codex session reconstructed the fleet-mesh active/archive indexes but could not record its own experience through Python memory tools. Additive verified memory capture preserves the work without rewriting history.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T22:16:02.339079+00:00"
+      ],
+      "lessons_sha": "0d839e407f8a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T22:16:02.409698+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A web Codex session reconstructed the fleet-mesh active/archive indexes but could not record its own experience through Python memory tools. Additive verified memory capture preserves the work without rewriting history."
+}
