@@ -1,0 +1,42 @@
+{
+  "id": "278bd77811ef",
+  "key": "manual_278bd7",
+  "name": "manual_278bd7",
+  "claim": "When auditing Markdown links, skip fenced code and custom URI schemes, preserve append-only historical ledgers, and repair only resolvable live-document paths; otherwise a code literal or historical record can be mistaken for a red link.",
+  "conditions": [
+    "append-only-ledger",
+    "code-fences",
+    "custom-uri",
+    "documentation-cleanup",
+    "markdown-link-audit"
+  ],
+  "evidence_ids": [
+    "2026-07-14T22:47:08.007655+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T22:47:08.007655+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T22:47:08.007655+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T22:47:08.095154+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The May RAG FTS5 regex contained a literal bracket-parenthesis sequence that looked like Markdown to a naive scanner. A fence-aware audit found the real navigation defects without rewriting preserved historical lesson evidence.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T22:47:08.007655+00:00"
+      ],
+      "lessons_sha": "4c501e8ed85f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T22:47:08.095148+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The May RAG FTS5 regex contained a literal bracket-parenthesis sequence that looked like Markdown to a naive scanner. A fence-aware audit found the real navigation defects without rewriting preserved historical lesson evidence."
+}
