@@ -1,0 +1,42 @@
+{
+  "id": "f0a26d721940",
+  "key": "manual_f0a26d",
+  "name": "manual_f0a26d",
+  "claim": "The control-plane auth scheme has two independent lanes plus an outbound-only override: PT lane (PT_CONTROL_PLANE_TOKEN env + Perpetua-Tools/.state/control_plane_token file), orama lane (ORAMA_CONTROL_PLANE_TOKEN / ORAMA_CONTROL_PLANE_TOKEN_LOCAL env), and ORAMA_CONTROL_PLANE_TOKEN_PEER (tried first on outbound probes only). auth_mode reports unset/pt_only/orama_only/joint depending on which lanes have candidates; joint means either lane's token unlocks both services.",
+  "conditions": [
+    "auth-mode",
+    "control-plane-auth",
+    "lan-peer",
+    "probe-lan-peer",
+    "token-lanes"
+  ],
+  "evidence_ids": [
+    "2026-07-08T10:54:08.951936+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-08T10:54:08.951936+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-08T10:54:08.951936+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-08T10:54:09.032373+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Spent a long debugging arc assuming a single shared secret model before realizing probe_lan_peer.py's auth_mode field (in src/utils/control_plane_auth.py) already encodes this precisely. Setting ORAMA_CONTROL_PLANE_TOKEN directly (not just as PEER) was what actually fixed portal-status; PEER alone was enough for ws-peer but not portal-status, which needed the orama lane populated.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-08T10:54:08.951936+00:00"
+      ],
+      "lessons_sha": "b414616350e8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-08T10:54:09.032364+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Spent a long debugging arc assuming a single shared secret model before realizing probe_lan_peer.py's auth_mode field (in src/utils/control_plane_auth.py) already encodes this precisely. Setting ORAMA_CONTROL_PLANE_TOKEN directly (not just as PEER) was what actually fixed portal-status; PEER alone was enough for ws-peer but not portal-status, which needed the orama lane populated."
+}

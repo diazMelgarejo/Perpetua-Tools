@@ -5,6 +5,7 @@ import base64
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -131,7 +132,11 @@ def test_check_identity_allows_cursor_agent_at_cursor_dot_com():
 
 def test_ensure_banned_patterns_prefers_ci_bootstrap(tmp_path, monkeypatch):
     """CI bootstrap must satisfy the fixture without calling legacy orama/home sync."""
-    import tests.test_git_attribution_guard as module
+    # Pytest may collect this file as either a top-level module or a package
+    # module depending on checkout/package layout. Use the already-loaded module
+    # instead of re-importing ``tests.test_git_attribution_guard`` so the test
+    # validates bootstrap precedence, not Python import topology.
+    module = sys.modules[__name__]
 
     fake_root = tmp_path / "repo"
     fake_private = fake_root / ".cursor/private"
@@ -229,7 +234,7 @@ def test_check_commit_message_rejects_hermes_display_name_with_bad_email(tmp_pat
         ("feat: x\n\nCo-authored-by: Hermes <<attacker@evil.com>>\n", False),
         ("feat: x\n\nCo-authored-by: Claude <noreply@anthropic.com\n", True),
         ("feat: x\n\nCo-authored-by: <noreply@anthropic.com>\n", True),
-        ("feat: x\n\nCo-Authored-By: Qwen <ünïcödé@evil.com>\n", False),
+        ("feat: x\n\nCo-Authored-By: Qwen <\u00fcn\u00efc\u00f6d\u00e9@evil.com>\n", False),
         ("feat: x\n\nco-authored-by: hermes\n", True),
         ("feat: x\n\nCo-authored-by: Random Person <random@gmail.com>\n", False),
     ],
@@ -269,10 +274,10 @@ _BANNED_ATTR_LIB = ROOT / "scripts/git/banned_attribution_lib.sh"
 def _call_first_banned_pattern_token(root: Path) -> "subprocess.CompletedProcess[str]":
     """
     Invoke the `first_banned_pattern_token` shell function from the banned-attribution library using an isolated HOME.
-    
+
     Parameters:
         root (Path): Repository root passed as the argument to `first_banned_pattern_token`.
-    
+
     Returns:
         subprocess.CompletedProcess[str]: Completed process where `stdout` contains the function's output; `returncode` is 0 on success and non-zero on failure. The process also carries `stderr` for error diagnostics.
     """
@@ -349,7 +354,7 @@ def test_first_banned_pattern_token_strips_inline_comments(tmp_path):
     """first_banned_pattern_token strips inline comments and trailing whitespace."""
     private_dir = tmp_path / ".cursor/private"
     private_dir.mkdir(parents=True)
-    # Inline comment after token — list_banned_pattern_tokens strips it
+    # Inline comment after token -- list_banned_pattern_tokens strips it
     (private_dir / "banned-attribution-patterns").write_text(
         "# header\nut-fixture-inline  # inline comment\n", encoding="utf-8"
     )
@@ -382,7 +387,7 @@ def test_cloud_bootstrap_does_not_invoke_daily_attribution_guard():
 
 
 # ---------------------------------------------------------------------------
-# Tests for verify-git-guards.sh GITHUB_ACTIONS behavior (new in this PR)
+# Tests for verify-git-guards.sh GITHUB_ACTIONS behavior
 # ---------------------------------------------------------------------------
 
 _VERIFY_GUARDS = ROOT / "scripts/git/verify-git-guards.sh"
@@ -396,7 +401,7 @@ def test_verify_guards_github_actions_skips_cursor_session_hook_check():
         capture_output=True,
         text=True,
         cwd=ROOT,
-        env={**__import__("os").environ, "GITHUB_ACTIONS": "true"},
+        env={**os.environ, "GITHUB_ACTIONS": "true"},
     )
     combined = proc.stdout + proc.stderr
     assert "GitHub Actions" in combined and "skip" in combined.lower(), (
@@ -412,7 +417,7 @@ def test_verify_guards_github_actions_does_not_print_cursor_session_hook_fail():
         capture_output=True,
         text=True,
         cwd=ROOT,
-        env={**__import__("os").environ, "GITHUB_ACTIONS": "true"},
+        env={**os.environ, "GITHUB_ACTIONS": "true"},
     )
     combined = proc.stdout + proc.stderr
     assert "Cursor sessionStart hook missing" not in combined
@@ -425,7 +430,6 @@ def test_verify_guards_without_github_actions_checks_session_hook(tmp_path):
     # Use a fake HOME with no Cursor hooks so the check reliably fails
     fake_home = tmp_path / "home"
     fake_home.mkdir()
-    import os
     env = {
         **os.environ,
         "HOME": str(fake_home),
@@ -448,20 +452,24 @@ def test_verify_guards_github_actions_uses_first_banned_pattern_token():
     """When GITHUB_ACTIONS=true, verify-git-guards uses first_banned_pattern_token (no SIGPIPE)."""
     _ensure_banned_patterns()
     # The script calls first_banned_pattern_token; if it produces a fixture_token,
-    # it attempts to reject it — confirming the function was called successfully.
+    # it attempts to reject it -- confirming the function was called successfully.
     proc = subprocess.run(
         ["bash", str(_VERIFY_GUARDS)],
         capture_output=True,
         text=True,
         cwd=ROOT,
-        env={**__import__("os").environ, "GITHUB_ACTIONS": "true"},
+        env={**os.environ, "GITHUB_ACTIONS": "true"},
     )
     combined = proc.stdout + proc.stderr
     # Either the banned-pattern check passes (token found and commit rejected) or
-    # the script reports "banned pattern file empty" — in either case no SIGPIPE crash.
+    # the script reports "banned pattern file empty" -- in either case no SIGPIPE crash.
     assert "Traceback" not in combined  # no Python crash
     assert "Broken pipe" not in combined  # no SIGPIPE leaked to output
 
+
+# ---------------------------------------------------------------------------
+# Tests for ensure_hooks_installed.sh
+# ---------------------------------------------------------------------------
 
 def _make_fake_git_repo(tmp_path: Path, hooks_path: str = ".githooks") -> Path:
     """Initialize a minimal git repo in tmp_path with the given hooksPath config."""

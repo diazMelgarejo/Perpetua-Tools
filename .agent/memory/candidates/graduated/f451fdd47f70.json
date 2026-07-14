@@ -1,0 +1,42 @@
+{
+  "id": "f451fdd47f70",
+  "key": "manual_f451fd",
+  "name": "manual_f451fd",
+  "claim": "coord_pulse.ps1 and coord_monitor.ps1 do NOT source .env.local (only start.ps1 does, via scripts/env/load-local.ps1) -- any cross-machine config set only in .env.local (tokens, MAC_IP, timeouts) will not reach these scripts or the Scheduled Task that runs them. Persist such values as actual Windows User-level environment variables, not just .env.local, if coord scripts need them too.",
+  "conditions": [
+    "config-scope",
+    "coord-pulse",
+    "env-local",
+    "scheduled-task",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-07-08T10:54:09.370393+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-08T10:54:09.370393+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-08T10:54:09.370393+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-08T10:54:09.449703+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Fixed .env.local with the correct ORAMA_CONTROL_PLANE_TOKEN/MAC_IP/LAN_PEER_STATUS_TIMEOUT and confirmed start.ps1-launched services worked, but coord_pulse.ps1 run separately still failed with stale/default values until the same values were also set as persistent User env vars.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-08T10:54:09.370393+00:00"
+      ],
+      "lessons_sha": "278f391b8b19"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-08T10:54:09.449697+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Fixed .env.local with the correct ORAMA_CONTROL_PLANE_TOKEN/MAC_IP/LAN_PEER_STATUS_TIMEOUT and confirmed start.ps1-launched services worked, but coord_pulse.ps1 run separately still failed with stale/default values until the same values were also set as persistent User env vars."
+}
