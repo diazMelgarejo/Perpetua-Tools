@@ -1,0 +1,57 @@
+{
+  "id": "72c5dec9dd21",
+  "key": "manual_72c5de",
+  "name": "manual_72c5de",
+  "claim": "After context compaction, browser refresh, or a long-conversation reset, resume from committed working-memory records and live Git state before relying on an older surviving chat exchange.",
+  "conditions": [
+    "after",
+    "before",
+    "browser",
+    "chat",
+    "committed",
+    "compaction",
+    "context",
+    "exchange",
+    "git",
+    "live",
+    "long-conversation",
+    "older",
+    "records",
+    "refresh",
+    "relying",
+    "reset",
+    "resume",
+    "state",
+    "surviving",
+    "working-memory"
+  ],
+  "evidence_ids": [
+    "2026-07-14T22:12:40.028602+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T22:12:40.028602+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T22:12:40.028602+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T22:12:40.185878+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A user reported that a web Codex counterpart reverted to its last recorded thread after the chat became too long. Committed continuity records plus branch verification prevent repeated questions and stale assumptions.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T22:12:40.028602+00:00"
+      ],
+      "lessons_sha": "6e86eafee7ca"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T22:12:40.185871+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A user reported that a web Codex counterpart reverted to its last recorded thread after the chat became too long. Committed continuity records plus branch verification prevent repeated questions and stale assumptions."
+}

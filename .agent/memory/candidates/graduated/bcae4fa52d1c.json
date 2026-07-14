@@ -1,0 +1,43 @@
+{
+  "id": "bcae4fa52d1c",
+  "key": "manual_bcae4f",
+  "name": "manual_bcae4f",
+  "claim": "When reorganizing cross-repo plans, preserve history with git mv and maintain a directed authority graph: canonical docs feed active plans, active plans feed research and implementation handoffs, and archive material routes back to active authority.",
+  "conditions": [
+    "active-archive",
+    "authority-graph",
+    "cross-repo-plan",
+    "documentation-reorganization",
+    "git-mv",
+    "markdown-links"
+  ],
+  "evidence_ids": [
+    "2026-07-14T22:30:51.030426+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T22:30:51.030426+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T22:30:51.030426+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T22:30:51.111110+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The fleet-mesh relocation showed that physical moves without repaired links lose context, while all-to-all links blur authority. Direct high-value edges plus validated local links give the next agent a short, reliable path to governing evidence.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T22:30:51.030426+00:00"
+      ],
+      "lessons_sha": "71fd1d259eb5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T22:30:51.111102+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The fleet-mesh relocation showed that physical moves without repaired links lose context, while all-to-all links blur authority. Direct high-value edges plus validated local links give the next agent a short, reliable path to governing evidence."
+}
