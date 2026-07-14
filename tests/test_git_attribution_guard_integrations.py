@@ -187,31 +187,32 @@ def test_cloud_bootstrap_does_not_invoke_daily_attribution_guard():
     assert "daily-attribution-guard.sh" not in text
 
 
-def test_verify_guards_github_actions_skips_cursor_session_hook_check():
+def _run_verify_guards_in_github_actions(*, home: Path | None = None) -> tuple[subprocess.CompletedProcess[str], str]:
+    """Run VERIFY_GUARDS once with the GitHub Actions skip path enabled."""
     _ensure_banned_patterns()
+    env = {**os.environ, "GITHUB_ACTIONS": "true"}
+    if home is not None:
+        env["HOME"] = str(home)
     proc = subprocess.run(
         ["bash", str(VERIFY_GUARDS)],
         capture_output=True,
         text=True,
+        encoding="utf-8",
         cwd=ROOT,
-        env={**os.environ, "GITHUB_ACTIONS": "true"},
+        env=env,
     )
-    combined = proc.stdout + proc.stderr
+    return proc, proc.stdout + proc.stderr
+
+
+def test_verify_guards_github_actions_skips_cursor_session_hook_check():
+    _proc, combined = _run_verify_guards_in_github_actions()
     assert "skip user-level Cursor session hook checks" in combined
 
 
 def test_verify_guards_github_actions_does_not_print_cursor_session_hook_fail(tmp_path):
-    _ensure_banned_patterns()
     fake_home = tmp_path / "home"
     fake_home.mkdir()
-    proc = subprocess.run(
-        ["bash", str(VERIFY_GUARDS)],
-        capture_output=True,
-        text=True,
-        cwd=ROOT,
-        env={**os.environ, "HOME": str(fake_home), "GITHUB_ACTIONS": "true"},
-    )
-    combined = proc.stdout + proc.stderr
+    _proc, combined = _run_verify_guards_in_github_actions(home=fake_home)
     assert "Cursor sessionStart hook missing" not in combined
     assert f"missing {fake_home}/.cursor/hooks.json" not in combined
 

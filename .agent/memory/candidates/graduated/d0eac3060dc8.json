@@ -1,0 +1,43 @@
+{
+  "id": "d0eac3060dc8",
+  "key": "manual_d0eac3",
+  "name": "manual_d0eac3",
+  "claim": "Before saying a PR or branch is ready, run two sync passes if requested: fetch, fast-forward pull when clean, push, inspect PR checks, then repeat a final no-op sync; report any intentionally ignored drift separately instead of hiding it.",
+  "conditions": [
+    "checks",
+    "git",
+    "ignored-drift",
+    "pr-ready",
+    "push",
+    "sync"
+  ],
+  "evidence_ids": [
+    "2026-07-14T05:46:40.834371+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T05:46:40.834371+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T05:46:40.834371+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T05:46:40.906748+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-14 final PR213 handoff: repeated sync showed orama-system and kimi-meta-remediation were up to date, all PR checks passed, and only requested-ignored vendor/ecc-tools drift remained.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T05:46:40.834371+00:00"
+      ],
+      "lessons_sha": "bc8e5d4e0c3b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T05:46:40.906740+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-14 final PR213 handoff: repeated sync showed orama-system and kimi-meta-remediation were up to date, all PR checks passed, and only requested-ignored vendor/ecc-tools drift remained."
+}

@@ -28,7 +28,6 @@ from scripts.agent_coordination import (
     _buffer_status,
     _claim_with_seq,
     _get_reorder_buffers,
-    canonical_db_path,
 )
 from orchestrator.gossip_bus import GossipBus
 

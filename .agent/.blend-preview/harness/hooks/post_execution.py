@@ -18,9 +18,10 @@ EPISODIC = os.path.join(ROOT, "memory/episodic/AGENT_LEARNINGS.jsonl")
 
 
 def _safe_text(value, limit):
-    """Normalize, truncate, sanitize paths, then redact secrets before storage."""
-    text = str(value)[:limit]
-    return redact_text(sanitize_tracked_path_leaks(text))
+    """Normalize fully, sanitize path leaks, redact secrets, then truncate."""
+    text = str(value)
+    processed = redact_text(sanitize_tracked_path_leaks(text))
+    return processed[:limit]
 
 
 def log_execution(skill_name, action, result, success, reflection="",

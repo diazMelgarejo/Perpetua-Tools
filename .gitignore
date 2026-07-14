@@ -121,3 +121,6 @@ vendor/oramaclaw/
 
 # Local build/node stamp (generated per install; never commit)
 **/.node_stamp
+
+# Agent memory runtime lockfiles (generated; never commit)
+.agent/memory/episodic/*.lock

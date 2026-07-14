@@ -1,0 +1,43 @@
+{
+  "id": "c13f24c7f7cc",
+  "key": "manual_c13f24",
+  "name": "manual_c13f24",
+  "claim": "For subprocess tests that assert GitHub Actions guard output, specify encoding='utf-8' together with text=True so captured stdout/stderr decoding is deterministic across runners and locales.",
+  "conditions": [
+    "attribution-guard",
+    "ci",
+    "github-actions",
+    "subprocess",
+    "tests",
+    "utf-8"
+  ],
+  "evidence_ids": [
+    "2026-07-14T06:10:37.613849+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T06:10:37.613849+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T06:10:37.613849+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T06:10:37.686760+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-14 PR213 inline fix: _run_verify_guards_in_github_actions preserves command/env/capture behavior but now sets explicit UTF-8 decoding.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T06:10:37.613849+00:00"
+      ],
+      "lessons_sha": "463197be7a48"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T06:10:37.686755+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-14 PR213 inline fix: _run_verify_guards_in_github_actions preserves command/env/capture behavior but now sets explicit UTF-8 decoding."
+}

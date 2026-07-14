@@ -14,6 +14,7 @@ Never:
   - persist workstation-specific paths or locale-dependent text.
 """
 import datetime
+import hashlib
 import json
 import os
 import sys
@@ -26,6 +27,16 @@ from time_utils import legacy_local_to_utc
 
 DECAY_DAYS = 90
 SALIENCE_FLOOR = 2.0
+
+
+def _archive_entry_id(entry):
+    """Stable id used to make archive appends idempotent across retries."""
+    for key in ("id", "timestamp", "event_id"):
+        value = entry.get(key) if isinstance(entry, dict) else None
+        if value:
+            return f"{key}:{value}"
+    canonical = json.dumps(entry, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def decay_old_entries(entries, archive_dir):
@@ -49,7 +60,22 @@ def decay_old_entries(entries, archive_dir):
         os.makedirs(archive_dir, exist_ok=True)
         today_utc = datetime.datetime.now(datetime.timezone.utc).date()
         path = os.path.join(archive_dir, f"archive_{today_utc}.jsonl")
+        seen_ids = set()
+        if os.path.exists(path):
+            with open(path, encoding="utf-8", errors="replace") as stream:
+                for raw in stream:
+                    try:
+                        existing = json.loads(raw)
+                    except json.JSONDecodeError:
+                        continue
+                    if isinstance(existing, dict):
+                        seen_ids.add(_archive_entry_id(existing))
         with open(path, "a", encoding="utf-8") as stream:
             for entry in archived:
-                stream.write(json.dumps(sanitize_json_strings(entry)) + "\n")
+                sanitized_entry = sanitize_json_strings(entry)
+                entry_id = _archive_entry_id(sanitized_entry)
+                if entry_id in seen_ids:
+                    continue
+                stream.write(json.dumps(sanitized_entry) + "\n")
+                seen_ids.add(entry_id)
     return kept, archived

@@ -1,0 +1,43 @@
+{
+  "id": "a7c88d1aa43c",
+  "key": "manual_a7c88d",
+  "name": "manual_a7c88d",
+  "claim": "Do not rely on broad async audit agents as the only source of truth when they may time out; if teammates stall, split audits into smaller bounded tasks and independently verify critical checklists with local code inspection and GitHub status before closing the loop.",
+  "conditions": [
+    "agent-coordination",
+    "async-audit",
+    "checklist",
+    "heartbeat",
+    "timeout",
+    "verification"
+  ],
+  "evidence_ids": [
+    "2026-07-14T05:46:40.298086+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T05:46:40.298086+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T05:46:40.298086+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T05:46:40.374570+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-14 team fanout: broad PR211/PR212 audit runs timed out, but smaller scoped audits plus direct verification found the actual status and avoided blocking on dead or overbroad agents.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T05:46:40.298086+00:00"
+      ],
+      "lessons_sha": "d84fff607b8e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T05:46:40.374562+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-14 team fanout: broad PR211/PR212 audit runs timed out, but smaller scoped audits plus direct verification found the actual status and avoided blocking on dead or overbroad agents."
+}

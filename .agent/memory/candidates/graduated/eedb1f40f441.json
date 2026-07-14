@@ -1,0 +1,44 @@
+{
+  "id": "eedb1f40f441",
+  "key": "manual_eedb1f",
+  "name": "manual_eedb1f",
+  "claim": "When applying CodeRabbit comments, preserve the underlying invariant rather than just the diff shape: canonical guard scripts must be changed at their source and synced, duplicate gossip events must skip expensive embedding work, duplicate payload reads must be sanitized, and migration handlers should catch sqlite3.OperationalError narrowly so unexpected failures propagate.",
+  "conditions": [
+    "canonical-guard-scripts",
+    "coderabbit",
+    "embeddings",
+    "gossip-bus",
+    "root-cause",
+    "sanitization",
+    "sqlite"
+  ],
+  "evidence_ids": [
+    "2026-07-14T05:46:40.658742+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T05:46:40.658742+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T05:46:40.658742+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T05:46:40.725421+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-14 PR213 remediation of PR211 comments: the successful fixes were invariant-level changes across gossip_bus, fastapi_app, integration tests, and canonical attribution guard synchronization, not literal one-line edits.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T05:46:40.658742+00:00"
+      ],
+      "lessons_sha": "ec27c18faa5c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T05:46:40.725411+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-14 PR213 remediation of PR211 comments: the successful fixes were invariant-level changes across gossip_bus, fastapi_app, integration tests, and canonical attribution guard synchronization, not literal one-line edits."
+}

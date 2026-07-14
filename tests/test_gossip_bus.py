@@ -184,6 +184,81 @@ async def test_pending_embeds_set_prevents_gc(tmp_path):
         assert len(_pending_embeds) == 0, "Task must be discarded after done-callback"
 
 
+
+
+@pytest.mark.asyncio
+async def test_init_db_reraises_non_duplicate_column_operational_error(tmp_path, monkeypatch):
+    """Migration idempotency must not swallow unrelated SQLite failures."""
+    db_path = str(tmp_path / "migration.db")
+    bus = GossipBus(db_path)
+
+    original_connect = bus.connect
+
+    class FailingConnection:
+        def __init__(self, inner):
+            self._inner = inner
+            self._alter_seen = False
+
+        async def __aenter__(self):
+            self._db = await self._inner.__aenter__()
+            return self
+
+        async def __aexit__(self, *args):
+            return await self._inner.__aexit__(*args)
+
+        async def execute(self, sql, *args):
+            if sql.startswith("ALTER TABLE gossip ADD COLUMN event_uuid") and not self._alter_seen:
+                self._alter_seen = True
+                import sqlite3
+                raise sqlite3.OperationalError("disk I/O error")
+            return await self._db.execute(sql, *args)
+
+        async def commit(self):
+            return await self._db.commit()
+
+    monkeypatch.setattr(bus, "connect", lambda: FailingConnection(original_connect()))
+
+    with pytest.raises(Exception, match="disk I/O error"):
+        await bus.init_db()
+
+
+@pytest.mark.asyncio
+async def test_insert_event_duplicate_returns_sanitized_legacy_payload(tmp_path):
+    """Duplicate event_uuid return path must not leak legacy governance markers."""
+    import aiosqlite
+    import json
+
+    db_path = str(tmp_path / "duplicate.db")
+    bus = GossipBus(db_path)
+    await bus.init_db()
+    event_uuid = "duplicate-event"
+
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute(
+            "INSERT INTO gossip (event_uuid, ts, event_type, payload_json, embed_status) "
+            "VALUES (?, ?, ?, ?, 'pending')",
+            (
+                event_uuid,
+                1.0,
+                "dispatch",
+                json.dumps({
+                    "intent": "legacy",
+                    "_memory_class": "private",
+                    "_redaction_applied": True,
+                }),
+            ),
+        )
+        await db.commit()
+        row_id, stored_uuid, durable_payload, inserted = await bus.insert_event(
+            db, "dispatch", {"intent": "new"}, event_uuid=event_uuid
+        )
+
+    assert inserted is False
+    assert stored_uuid == event_uuid
+    assert row_id == 1
+    assert durable_payload == {"intent": "legacy"}
+
+
 # ---------------------------------------------------------------------------
 # tail() test
 # ---------------------------------------------------------------------------

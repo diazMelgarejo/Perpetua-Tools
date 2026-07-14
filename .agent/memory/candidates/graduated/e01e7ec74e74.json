@@ -1,0 +1,58 @@
+{
+  "id": "e01e7ec74e74",
+  "key": "manual_e01e7e",
+  "name": "manual_e01e7e",
+  "claim": "When a force-push replaces the HEAD of an open PR branch with a commit that is already merged into the PR target branch, GitHub automatically closes the PR as merged. This is a reliable way to detect that the force-push landed the intended ancestor work into the base.",
+  "conditions": [
+    "already",
+    "ancestor",
+    "automatically",
+    "base",
+    "branch",
+    "closes",
+    "commit",
+    "detect",
+    "force-push",
+    "github",
+    "head",
+    "intended",
+    "into",
+    "landed",
+    "merged",
+    "open",
+    "reliable",
+    "replaces",
+    "target",
+    "way",
+    "work"
+  ],
+  "evidence_ids": [
+    "2026-07-14T03:42:17.648755+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T03:42:17.648755+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T03:42:17.648755+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T03:42:17.711935+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Final Remedy 2026-07-14: After force-pushing PR #211 branch to 32f0b76 (which was already merged into corrected main via merge commit), GitHub detected the PR as MERGED. Confirmed both PR #211 and #212 showed MERGED status after their commits were pushed into main.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T03:42:17.648755+00:00"
+      ],
+      "lessons_sha": "f19dbe192ea5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T03:42:17.711928+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Final Remedy 2026-07-14: After force-pushing PR #211 branch to 32f0b76 (which was already merged into corrected main via merge commit), GitHub detected the PR as MERGED. Confirmed both PR #211 and #212 showed MERGED status after their commits were pushed into main."
+}
