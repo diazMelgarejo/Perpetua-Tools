@@ -1,0 +1,41 @@
+{
+  "id": "b260bd87eb89",
+  "key": "manual_b260bd",
+  "name": "manual_b260bd",
+  "claim": "When preserving many unmerged branches, process remote branches separately from local-only branches; local-only branches require an explicit push/sync step and may be unsafe or hook-blocked, while remote branches can get PRs immediately.",
+  "conditions": [
+    "branch-batching",
+    "hooks",
+    "local-only",
+    "remote-branches"
+  ],
+  "evidence_ids": [
+    "2026-07-14T11:05:08.451875+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T11:05:08.451875+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T11:05:08.451875+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T11:05:08.521271+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A batch attempt that mixed local push and PR creation timed out at the first local-only branch; separating remote PR creation from local branch publication allowed progress and produced clear blocked-branch reporting.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T11:05:08.451875+00:00"
+      ],
+      "lessons_sha": "2b1ef7437828"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T11:05:08.521266+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A batch attempt that mixed local push and PR creation timed out at the first local-only branch; separating remote PR creation from local branch publication allowed progress and produced clear blocked-branch reporting."
+}

@@ -1,0 +1,42 @@
+{
+  "id": "8560a9654f72",
+  "key": "manual_8560a9",
+  "name": "manual_8560a9",
+  "claim": "G7 async notifications in orama-system must remain a v1 portal MVP: preserve versioned SSE envelope fields for future v2.1 GossipMesh adapters, but do not implement mesh replication, durable replay, or v2.5 safety overlays in the G7 MVP branch.",
+  "conditions": [
+    "g7",
+    "gossipmesh",
+    "notifications",
+    "scope-control",
+    "v2-alignment"
+  ],
+  "evidence_ids": [
+    "2026-07-14T11:05:08.622710+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T11:05:08.622710+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T11:05:08.622710+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T11:05:08.698003+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The G7 MVP branch now documents and tests the adapter seam against docs/v2 without expanding scope. This prevents future agents from silently turning a local portal notification scaffold into a mesh/safety platform rewrite.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T11:05:08.622710+00:00"
+      ],
+      "lessons_sha": "c320d2329c8b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T11:05:08.697999+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The G7 MVP branch now documents and tests the adapter seam against docs/v2 without expanding scope. This prevents future agents from silently turning a local portal notification scaffold into a mesh/safety platform rewrite."
+}

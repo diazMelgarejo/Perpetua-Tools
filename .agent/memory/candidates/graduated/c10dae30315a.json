@@ -1,0 +1,40 @@
+{
+  "id": "c10dae30315a",
+  "key": "manual_c10dae",
+  "name": "manual_c10dae",
+  "claim": "Use python3, not python, in this macOS workspace when running PT/orama tests unless the repository explicitly provides a python shim.",
+  "conditions": [
+    "macos",
+    "pytest",
+    "python3"
+  ],
+  "evidence_ids": [
+    "2026-07-14T11:05:08.798648+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T11:05:08.798648+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T11:05:08.798648+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T11:05:08.869496+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The G7 notification test run failed with python: command not found, then passed with python3 -m pytest. This saves a false failure loop on macOS hosts configured without a python alias.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T11:05:08.798648+00:00"
+      ],
+      "lessons_sha": "2beba1021502"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T11:05:08.869491+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The G7 notification test run failed with python: command not found, then passed with python3 -m pytest. This saves a false failure loop on macOS hosts configured without a python alias."
+}
