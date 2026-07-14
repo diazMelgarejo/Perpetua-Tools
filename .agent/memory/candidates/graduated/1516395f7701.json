@@ -1,0 +1,42 @@
+{
+  "id": "1516395f7701",
+  "key": "manual_151639",
+  "name": "manual_151639",
+  "claim": "Before filing uncommitted changes into salvage buckets, classify dirty state by repo and risk; submodule drift that points at commits not present locally should be deferred rather than bundled into unrelated PRs.",
+  "conditions": [
+    "branch-salvage",
+    "dirty-worktree",
+    "safety",
+    "submodule-drift",
+    "vendor"
+  ],
+  "evidence_ids": [
+    "2026-07-14T07:01:55.215818+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T07:01:55.215818+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T07:01:55.215818+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T07:01:55.284134+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-14 Perpetua-Tools only had vendor/ecc-tools drift showing commits not present, so it was excluded from both G7 and housecleaning buckets and left for a dedicated reconciliation pass.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T07:01:55.215818+00:00"
+      ],
+      "lessons_sha": "f4c91fb325ef"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T07:01:55.284128+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-14 Perpetua-Tools only had vendor/ecc-tools drift showing commits not present, so it was excluded from both G7 and housecleaning buckets and left for a dedicated reconciliation pass."
+}

@@ -1,0 +1,42 @@
+{
+  "id": "bd7f5a38df5a",
+  "key": "manual_bd7f5a",
+  "name": "manual_bd7f5a",
+  "claim": "When salvaging a stale branch that has both already-merged patches and still-valuable follow-up work, run git cherry -v against the current base first and split the work by review story instead of rebasing the whole branch by reflex.",
+  "conditions": [
+    "branch-salvage",
+    "cherry-pick",
+    "git-history",
+    "review-scope",
+    "stale-branch"
+  ],
+  "evidence_ids": [
+    "2026-07-14T07:01:54.887744+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T07:01:54.887744+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T07:01:54.887744+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T07:01:54.970539+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-14 orama-system branch 2026-07-12-001-gstack-safe-upgrade had one patch-equivalent commit already merged via PR #148 and nine unique leftovers; git cherry -v made the safe split obvious.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T07:01:54.887744+00:00"
+      ],
+      "lessons_sha": "1b3bfe5fda53"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T07:01:54.970530+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-14 orama-system branch 2026-07-12-001-gstack-safe-upgrade had one patch-equivalent commit already merged via PR #148 and nine unique leftovers; git cherry -v made the safe split obvious."
+}

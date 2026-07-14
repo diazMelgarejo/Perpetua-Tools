@@ -1,0 +1,42 @@
+{
+  "id": "4fd7156e6ae0",
+  "key": "manual_4fd715",
+  "name": "manual_4fd715",
+  "claim": "For stranded branch cleanup, prefer two focused preservation PRs over one mixed cargo PR when the remaining commits naturally separate into product-plan work and general docs/housecleaning.",
+  "conditions": [
+    "branch-splitting",
+    "docs",
+    "hygiene",
+    "preservation",
+    "pull-request"
+  ],
+  "evidence_ids": [
+    "2026-07-14T07:01:55.064968+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T07:01:55.064968+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T07:01:55.064968+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T07:01:55.130818+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-14 G7 async notifications work was split from general orama-system docs/skills/security leftovers so reviewers can merge the planning artifact without accepting unrelated cleanup.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T07:01:55.064968+00:00"
+      ],
+      "lessons_sha": "b7e4579dafaf"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T07:01:55.130810+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-14 G7 async notifications work was split from general orama-system docs/skills/security leftovers so reviewers can merge the planning artifact without accepting unrelated cleanup."
+}
