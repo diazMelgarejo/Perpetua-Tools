@@ -99,6 +99,8 @@ def _read_jsonl(path: Path) -> str:
             entry = json.loads(raw)
         except json.JSONDecodeError:
             continue
+        if not isinstance(entry, dict):
+            continue
         parts = [
             entry.get("action", ""), entry.get("reflection", ""),
             entry.get("detail", ""), entry.get("skill", ""),

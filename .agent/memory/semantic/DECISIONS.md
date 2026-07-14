@@ -368,8 +368,7 @@ across code review, git workflow, multi-agent coordination, AutoResearch, and or
 **Alternatives considered:** Ad-hoc per-incident cleanup (rejected — no mechanical
 attribution, repeat incidents); revert chains for post-merge fixes (rejected — complicates
 reconciliation vs. a single auditable ancestry reset).
-**Status:** active — canonical doc `orama-system bin/orama-system/references/
-post-review-micro-remediation.md`; wired into 7 orama skills (agent-methodology,
+**Status:** active — canonical doc `bin/orama-system/references/post-review-micro-remediation.md`; wired into 7 orama skills (agent-methodology,
 code-review, git-history-surgery, gstack, skillify, hermes-harness, mcp-orchestration).
 
 ---

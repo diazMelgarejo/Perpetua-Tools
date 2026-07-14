@@ -1,0 +1,70 @@
+{
+  "id": "f9eebf061831",
+  "key": "manual_f9eebf",
+  "name": "manual_f9eebf",
+  "claim": "Before any force-push or branch reset on an open PR, create a safety ref (tag or branch) pointing at the commit about to be discarded. Use git push --force-with-lease with the exact expected remote SHA recorded before the push. This ensures no unique work is lost even during history surgery on shared branches.",
+  "conditions": [
+    "about",
+    "any",
+    "before",
+    "branch",
+    "branches",
+    "commit",
+    "create",
+    "discarded",
+    "during",
+    "ensures",
+    "even",
+    "exact",
+    "expected",
+    "force-push",
+    "force-with-lease",
+    "git",
+    "history",
+    "lost",
+    "open",
+    "pointing",
+    "push",
+    "recorded",
+    "ref",
+    "remote",
+    "reset",
+    "safety",
+    "sha",
+    "shared",
+    "surgery",
+    "tag",
+    "unique",
+    "use",
+    "work"
+  ],
+  "evidence_ids": [
+    "2026-07-14T03:42:17.315542+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T03:42:17.315542+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T03:42:17.315542+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T03:42:17.398645+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Final Remedy 2026-07-14: main rollback and PR #211 reset both required safety refs first. --force-with-lease with exact expected SHA prevented accidental overwrite of unintended commits.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T03:42:17.315542+00:00"
+      ],
+      "lessons_sha": "c9e42ebaac6c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T03:42:17.398636+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Final Remedy 2026-07-14: main rollback and PR #211 reset both required safety refs first. --force-with-lease with exact expected SHA prevented accidental overwrite of unintended commits."
+}

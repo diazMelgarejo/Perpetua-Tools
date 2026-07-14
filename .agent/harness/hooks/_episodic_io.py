@@ -29,8 +29,10 @@ def episodic_lock(path: str, *, exclusive: bool = True) -> Iterator[None]:
     """Coordinate readers and writers for ``path`` through a stable lock inode."""
     os.makedirs(os.path.dirname(path), exist_ok=True)
     if not _HAVE_FLOCK:
-        yield
-        return
+        raise RuntimeError(
+            "episodic JSONL locking requires POSIX fcntl; no Windows lock "
+            "backend is configured for this repository"
+        )
 
     with open(_lock_path(path), "a+b") as lock_stream:
         mode = fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH

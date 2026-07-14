@@ -23,7 +23,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.agent_coordination import (
     TaskPriority,
-    QueuedTaskState,
     _queue_add,
     _queue_claim,
     _queue_complete,
@@ -222,14 +221,13 @@ async def test_queue_claim_allows_when_deps_satisfied(make_bus, capsys):
 
     # Find task IDs
     blocker_id = None
-    dependent_id = None
     for ev in events:
         p = ev["payload"]
         if p.get("kind") == "task_enqueue":
             if "blocker" in p.get("task_name", ""):
                 blocker_id = p["task_id"]
             elif "dependent" in p.get("task_name", ""):
-                dependent_id = p["task_id"]
+                assert p["task_id"]
 
     # Complete the blocker
     await _queue_complete(bus, blocker_id, "Done")

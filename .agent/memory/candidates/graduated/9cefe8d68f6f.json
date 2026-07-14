@@ -1,0 +1,42 @@
+{
+  "id": "9cefe8d68f6f",
+  "key": "manual_9cefe8",
+  "name": "manual_9cefe8",
+  "claim": "For StateTransitionManager reorder buffers, a buffered observation that expires before its sequence gap fills must be rejected as stale without advancing the applied watermark; advancing the watermark lets later successors skip a sequence that was never accepted and breaks stale-gap CI coverage.",
+  "conditions": [
+    "ci",
+    "reorder-buffer",
+    "stale",
+    "state-transition-manager",
+    "watermark"
+  ],
+  "evidence_ids": [
+    "2026-07-14T05:46:40.486008+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T05:46:40.486008+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T05:46:40.486008+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T05:46:40.555680+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-14 PR213 CI: lint-and-test failed because stale buffered sequence 3 advanced last_applied_key past sequence 2; restoring no-watermark-advance made TestReorderBuffer green and PR213 CI pass.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T05:46:40.486008+00:00"
+      ],
+      "lessons_sha": "a8532b227f16"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T05:46:40.555666+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-14 PR213 CI: lint-and-test failed because stale buffered sequence 3 advanced last_applied_key past sequence 2; restoring no-watermark-advance made TestReorderBuffer green and PR213 CI pass."
+}

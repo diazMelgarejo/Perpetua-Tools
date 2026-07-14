@@ -1,0 +1,43 @@
+{
+  "id": "38a8d498540e",
+  "key": "manual_38a8d4",
+  "name": "manual_38a8d4",
+  "claim": "A stable facade over a legacy module must not accidentally re-export legacy implementations for paths that have been centralized elsewhere; import the canonical implementation directly and add identity/import tests for the facade exports that matter.",
+  "conditions": [
+    "agent-coordination",
+    "canonical-implementation",
+    "exports",
+    "facade",
+    "legacy-module",
+    "reorder-buffer"
+  ],
+  "evidence_ids": [
+    "2026-07-14T06:10:37.444306+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T06:10:37.444306+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T06:10:37.444306+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T06:10:37.520401+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-14 PR213 inline fix: scripts/agent_coordination.py now exports ClaimSequence, ReorderBuffer, _get_reorder_buffers, _claim_with_seq, _buffer_status, _buffer_drain, and main from scripts.agent_coordination_core, while unrelated legacy helpers remain unchanged.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T06:10:37.444306+00:00"
+      ],
+      "lessons_sha": "a3c5bc899500"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T06:10:37.520396+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-14 PR213 inline fix: scripts/agent_coordination.py now exports ClaimSequence, ReorderBuffer, _get_reorder_buffers, _claim_with_seq, _buffer_status, _buffer_drain, and main from scripts.agent_coordination_core, while unrelated legacy helpers remain unchanged."
+}
