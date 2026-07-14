@@ -1,0 +1,42 @@
+{
+  "id": "79413f608a27",
+  "key": "manual_79413f",
+  "name": "manual_79413f",
+  "claim": "When two branches independently evolve 'the same' fix (e.g. two GossipBus atomic-transaction APIs), don't blindly port one branch's implementation onto the other \u2014 check the target branch's own established style first (e.g. PR206's BEGIN IMMEDIATE + bounded lock-retry vs PR205's simpler transaction()-only pattern) and match that, or you introduce an inconsistent API surface within one branch.",
+  "conditions": [
+    "BEGIN IMMEDIATE",
+    "GossipBus",
+    "branch divergence",
+    "consistent API",
+    "port fix"
+  ],
+  "evidence_ids": [
+    "2026-07-12T09:45:09.547478+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-12T09:45:09.547478+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-12T09:45:09.547478+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-12T09:45:09.653437+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR205 and PR206 both needed the release-side half of an atomic claim/release fix. PR206 already had a more mature claim-side implementation (explicit BEGIN IMMEDIATE write-lock + retry-on-busy) than PR205's simpler version. Built the release-side fix to match each branch's own existing style rather than copy-pasting PR205's version onto PR206, which would have left two inconsistent transaction patterns in the same file.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-12T09:45:09.547478+00:00"
+      ],
+      "lessons_sha": "f2429aad7315"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-12T09:45:09.653428+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR205 and PR206 both needed the release-side half of an atomic claim/release fix. PR206 already had a more mature claim-side implementation (explicit BEGIN IMMEDIATE write-lock + retry-on-busy) than PR205's simpler version. Built the release-side fix to match each branch's own existing style rather than copy-pasting PR205's version onto PR206, which would have left two inconsistent transaction patterns in the same file."
+}

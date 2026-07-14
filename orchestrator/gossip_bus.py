@@ -1,33 +1,10 @@
-"""orchestrator/gossip_bus.py
-
-GossipBus — lightweight aiosqlite event log with:
-  - SQLite FTS5 BM25 keyword search (always available, zero deps)
-  - Fire-and-forget Ollama bge-m3 embedding into LanceDB (optional; fails closed)
-  - _pending_embeds GC guard (asyncio.create_task tasks held in module-level set)
-
-Backported from oramasys/perpetua-core design spec to diazMelgarejo/Perpetua-Tools v1.
-Reference: docs/superpowers/plans/2026-05-21-rag-memory-v1-plan.md Task 1
-
-Design decisions recorded:
-  D_GCG-1: Module-level _pending_embeds set prevents GC of in-flight asyncio tasks.
-            asyncio.create_task() only holds a weak reference; without this guard
-            the embedding is silently lost when the task object is collected.
-  D_FTS-1: _sanitize_fts_query() strips FTS5 operators BEFORE calling MATCH.
-            Real prompts contain quotes, colons, *, () — without sanitization
-            the OperationalError silently drops ALL keyword recall for the query.
-  D_EMB-1: embed_status column ('pending'|'embedded'|'failed') + index lets a
-            future Reaper daemon efficiently find rows to retry without full scan.
-  D_BPG-1: emit() never blocks on embed.  Cap _pending_embeds at 500 for
-            backpressure; rows stay 'pending' and FTS5 fallback still works.
-"""
+"""Lightweight SQLite gossip/event log with FTS5 and optional embeddings."""
 from __future__ import annotations
 
 import asyncio
 import json
 import os
 import re
-import time
-from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal, Optional
 
@@ -35,43 +12,18 @@ import aiosqlite
 
 
 def resolve_gossip_db_path(state_dir: Path | str | None = None) -> str:
-    """
-    Resolve the filesystem path to the GossipBus SQLite database file.
-    
-    If the `GOSSIP_DB_PATH` environment variable is set and non-empty, its value is returned.
-    Otherwise the function uses `state_dir` if provided; if `state_dir` is None it falls back to the `PT_STATE_DIR` environment variable or the default directory ".state".
-    The returned value is the absolute path to "perpetua_core.db" inside the chosen directory.
-    
-    Parameters:
-        state_dir (Path | str | None): Optional state directory to colocate the DB. If omitted, `PT_STATE_DIR` or ".state" is used.
-    
-    Returns:
-        str: Absolute filesystem path to "perpetua_core.db".
-    """
     explicit = os.environ.get("GOSSIP_DB_PATH", "").strip()
     if explicit:
         return explicit
-    if state_dir is not None:
-        root = Path(state_dir)
-    else:
-        root = Path(os.environ.get("PT_STATE_DIR", ".state"))
+    root = Path(state_dir) if state_dir is not None else Path(
+        os.environ.get("PT_STATE_DIR", ".state")
+    )
     return str((root / "perpetua_core.db").resolve())
 
 
-# ---------------------------------------------------------------------------
-# GC guard (D_GCG-1)
-# asyncio.get_running_loop() only holds a *weak* reference to tasks created
-# with create_task().  This module-level set holds a *strong* reference so
-# in-flight embedding tasks survive until their done-callback fires.
-# ---------------------------------------------------------------------------
 _pending_embeds: set[asyncio.Task] = set()
+_MAX_PENDING = 500
 
-_MAX_PENDING = 500  # backpressure cap; keep small to avoid unbounded growth
-
-
-# ---------------------------------------------------------------------------
-# FTS5 schema DDL
-# ---------------------------------------------------------------------------
 _CREATE_TABLE = """
 CREATE TABLE IF NOT EXISTS gossip (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -81,12 +33,10 @@ CREATE TABLE IF NOT EXISTS gossip (
     embed_status TEXT    NOT NULL DEFAULT 'pending'
 )
 """
-
 _CREATE_FTS = """
 CREATE VIRTUAL TABLE IF NOT EXISTS gossip_fts
 USING fts5(event_type, payload_json, content='gossip', content_rowid='id')
 """
-
 _CREATE_FTS_AI = """
 CREATE TRIGGER IF NOT EXISTS gossip_fts_ai
 AFTER INSERT ON gossip BEGIN
@@ -94,7 +44,6 @@ AFTER INSERT ON gossip BEGIN
   VALUES (new.id, new.event_type, new.payload_json);
 END
 """
-
 _CREATE_FTS_AD = """
 CREATE TRIGGER IF NOT EXISTS gossip_fts_ad
 AFTER DELETE ON gossip BEGIN
@@ -102,81 +51,67 @@ AFTER DELETE ON gossip BEGIN
   VALUES ('delete', old.id, old.event_type, old.payload_json);
 END
 """
-
 _CREATE_EMBED_IDX = """
 CREATE INDEX IF NOT EXISTS idx_gossip_embed_status
 ON gossip(embed_status) WHERE embed_status != 'embedded'
 """
 
-
-# ---------------------------------------------------------------------------
-# FTS5 query sanitizer (D_FTS-1 / Gap 2 fix from Antigravity Gemini 3.5 review)
-# ---------------------------------------------------------------------------
-# FTS5 reserved characters and operators that have special meaning in query syntax.
-# See https://sqlite.org/fts5.html#fts5_strings
 _FTS5_OPERATOR_RE = re.compile(r'[\"\':\*\+\-\(\)\[\]\{\}\^]')
 _FTS5_KEYWORDS = {"AND", "OR", "NOT", "NEAR"}
 
 
 def _sanitize_fts_query(query: str) -> str:
-    """Strip FTS5 syntactic characters so MATCH treats input as plain terms.
-
-    Quotes, colons, +/-/*, parens, and braces all have special meaning in
-    FTS5 query syntax.  Real user prompts contain them constantly — without
-    sanitization the entire keyword recall channel goes dark.  Reserved
-    keywords (AND/OR/NOT/NEAR) are lowercased to remove their operator
-    meaning; FTS5 only treats them as operators in uppercase.
-    """
     if not query:
         return ""
     cleaned = _FTS5_OPERATOR_RE.sub(" ", query)
-    tokens = [t.lower() if t in _FTS5_KEYWORDS else t for t in cleaned.split()]
+    tokens = [token.lower() if token in _FTS5_KEYWORDS else token for token in cleaned.split()]
     return " ".join(tokens).strip()
 
 
-# ---------------------------------------------------------------------------
-# GossipBus
-# ---------------------------------------------------------------------------
 EventType = Literal[
     "dispatch",
     "route",
     "result",
     "error",
     "heartbeat",
-    "fleet_topology_transition",  # Phase 4: topology change events
+    "fleet_topology_transition",
 ]
 
 
 class GossipBus:
-    """Append-only event log with FTS5 keyword search and optional LanceDB embeds.
+    """Append-only event log.
 
-    Usage:
-        bus = GossipBus("perpetua_core.db")
-        await bus.init_db()
-        await bus.emit("dispatch", {"prompt": "summarize Q3 report"})
-        hits = await bus.search("Q3 report")
+    `insert_event()` is the public transaction primitive for callers that must
+    make an event atomic with another SQLite mutation. The caller owns commit or
+    rollback and schedules embedding only after a successful commit.
     """
 
     def __init__(self, db_path: str = "perpetua_core.db"):
         self._db_path = db_path
 
+    @property
+    def db_path(self) -> str:
+        """Public database path for compatibility with transaction callers."""
+        return self._db_path
+
+    def connect(self):
+        """Return an aiosqlite connection context manager for this bus."""
+        return aiosqlite.connect(self._db_path)
+
     async def init_db(self) -> None:
-        """Create schema idempotently.  Safe to call on every startup."""
-        async with aiosqlite.connect(self._db_path) as db:
+        async with self.connect() as db:
             await db.execute(_CREATE_TABLE)
-            # Idempotent column migration for pre-existing schemas
             try:
                 await db.execute(
                     "ALTER TABLE gossip ADD COLUMN embed_status TEXT NOT NULL DEFAULT 'pending'"
                 )
             except Exception:
-                pass  # column already exists
+                pass
             await db.execute(_CREATE_FTS)
             await db.execute(_CREATE_FTS_AI)
             await db.execute(_CREATE_FTS_AD)
             await db.execute(_CREATE_EMBED_IDX)
             await db.commit()
-            # Backfill FTS index for pre-existing rows (idempotent)
             cursor = await db.execute("SELECT COUNT(*) FROM gossip_fts")
             (fts_count,) = await cursor.fetchone()
             cursor = await db.execute("SELECT COUNT(*) FROM gossip")
@@ -188,71 +123,77 @@ class GossipBus:
                 )
                 await db.commit()
 
-    async def emit(self, event_type: EventType, payload: dict) -> None:
-        """Append an event and fire a non-blocking embed task.
+    async def insert_event(
+        self,
+        db: aiosqlite.Connection,
+        event_type: EventType,
+        payload: dict,
+        *,
+        timestamp: Optional[float] = None,
+    ) -> tuple[int, dict]:
+        """Insert an event using a connection the caller already owns (see
+        `connect()`), instead of opening and committing one of its own --
+        the transaction primitive for combining an emit with another SQLite
+        mutation (e.g. an exclusive-claim row insert or a claim-release
+        delete) in one atomic commit. Closes the gap where two separate
+        commits could leave one mutation applied without the other after a
+        crash between them.
 
-        Never blocks on LanceDB / Ollama.  FTS5 is always synchronously written.
-        """
-        async with aiosqlite.connect(self._db_path) as db:
-            row_id, safe_payload = await self.emit_within(db, event_type, payload)
-            await db.commit()
-        self.schedule_embed(row_id, safe_payload)
+        Does NOT commit and does NOT schedule the embed task: the caller
+        must commit its own transaction first (embedding pre-commit data
+        that might still roll back would embed content that was never
+        durably written), then call `schedule_embedding()` with this
+        method's return values once the commit has actually succeeded.
 
-    @asynccontextmanager
-    async def transaction(self):
-        """Yield a raw aiosqlite connection for callers that must combine an
-        emit() with another mutation (e.g. an exclusive-claim row insert or a
-        claim-release delete) in one atomic commit -- closing the gap where
-        two separate commits could leave one mutation applied without the
-        other after a crash between them. Caller owns the transaction: must
-        call `await db.commit()` itself; an uncaught exception leaves the
-        connection's implicit transaction unresolved and aiosqlite rolls
-        back on connection close, same as any other
-        `async with aiosqlite.connect(...)` block.
-        """
-        async with aiosqlite.connect(self._db_path) as db:
-            yield db
-
-    async def emit_within(self, db, event_type: EventType, payload: dict) -> tuple[int, dict]:
-        """Same INSERT as emit(), but against a connection the caller already
-        owns (see `transaction()`) instead of opening and committing its own.
-        Does NOT commit and does NOT schedule the embed task -- the caller
-        must commit its own transaction first (embedding pre-commit data that
-        might still roll back would embed content that was never durably
-        written), then call `schedule_embed()` with this method's return
-        values once the commit has actually succeeded.
+        `timestamp` lets a caller pin an exact event time (e.g. replaying
+        history, backdating a test fixture) instead of always stamping
+        "now" -- defaults to `time.time()` if omitted.
 
         Returns:
-            (row_id, safe_payload) -- pass both to schedule_embed() after commit.
+            (row_id, safe_payload) -- pass both to schedule_embedding() after commit.
         """
+        import time
+
         from orchestrator.memory_governance import classify_and_redact
 
-        safe_payload, _memory_class = classify_and_redact(payload, event_type=event_type)
+        safe_payload, _memory_class = classify_and_redact(
+            payload, event_type=event_type
+        )
         cursor = await db.execute(
             "INSERT INTO gossip (ts, event_type, payload_json, embed_status) "
             "VALUES (?, ?, ?, 'pending')",
-            (time.time(), event_type, json.dumps(safe_payload)),
+            (
+                time.time() if timestamp is None else timestamp,
+                event_type,
+                json.dumps(safe_payload),
+            ),
         )
-        return cursor.lastrowid, safe_payload
+        return int(cursor.lastrowid), safe_payload
 
-    def schedule_embed(self, row_id: int, safe_payload: dict) -> None:
-        """Fire-and-forget embed for a row already committed to the gossip
-        table — never blocks the caller (D_BPG-1). _pending_embeds holds a
-        strong reference so GC cannot collect the task (D_GCG-1). Split out
-        from emit() so emit_within() callers can invoke this only after
-        their own transaction's commit succeeds."""
-        if len(_pending_embeds) < _MAX_PENDING:
-            task = asyncio.create_task(
-                self._embed_and_store(row_id, safe_payload),
-                name=f"embed-{row_id}",
-            )
-            _pending_embeds.add(task)
-            task.add_done_callback(_pending_embeds.discard)
-        # else: backpressure — row stays 'pending'; FTS5 fallback still works
+    def schedule_embedding(self, row_id: int, safe_payload: dict) -> None:
+        """Schedule optional embedding after the containing transaction commits."""
+        if len(_pending_embeds) >= _MAX_PENDING:
+            return
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return
+        task = loop.create_task(
+            self._embed_and_store(row_id, safe_payload), name=f"embed-{row_id}"
+        )
+        _pending_embeds.add(task)
+        task.add_done_callback(_pending_embeds.discard)
 
-    async def tail(self, limit: int = 20, event_type: Optional[str] = None) -> list[dict]:
-        """Return the most recent events, newest first."""
-        async with aiosqlite.connect(self._db_path) as db:
+    async def emit(self, event_type: EventType, payload: dict) -> None:
+        async with self.connect() as db:
+            row_id, safe_payload = await self.insert_event(db, event_type, payload)
+            await db.commit()
+        self.schedule_embedding(row_id, safe_payload)
+
+    async def tail(
+        self, limit: int = 20, event_type: Optional[str] = None
+    ) -> list[dict]:
+        async with self.connect() as db:
             if event_type:
                 cursor = await db.execute(
                     "SELECT id, ts, event_type, payload_json FROM gossip "
@@ -267,8 +208,13 @@ class GossipBus:
                 )
             rows = await cursor.fetchall()
         return [
-            {"row_id": r[0], "ts": r[1], "event_type": r[2], "payload": json.loads(r[3])}
-            for r in rows
+            {
+                "row_id": row[0],
+                "ts": row[1],
+                "event_type": row[2],
+                "payload": json.loads(row[3]),
+            }
+            for row in rows
         ]
 
     async def search(
@@ -278,17 +224,11 @@ class GossipBus:
         limit: int = 10,
         event_type: Optional[str] = None,
     ) -> list[dict]:
-        """BM25 full-text search over GossipBus event history.  Always works.
-
-        Sanitizes the query (strips FTS5 operators / quotes / colons) so real
-        user prompts work without raising OperationalError.  The try/except
-        around MATCH remains as defence-in-depth.
-        """
         safe_query = _sanitize_fts_query(query)
         if not safe_query:
             return []
         try:
-            async with aiosqlite.connect(self._db_path) as db:
+            async with self.connect() as db:
                 if event_type:
                     cursor = await db.execute(
                         """SELECT g.id, g.ts, g.event_type, g.payload_json
@@ -309,21 +249,21 @@ class GossipBus:
                     )
                 rows = await cursor.fetchall()
             return [
-                {"row_id": r[0], "ts": r[1], "event_type": r[2], "payload": json.loads(r[3])}
-                for r in rows
+                {
+                    "row_id": row[0],
+                    "ts": row[1],
+                    "event_type": row[2],
+                    "payload": json.loads(row[3]),
+                }
+                for row in rows
             ]
         except Exception:
-            return []  # defence-in-depth: FTS5 OperationalError → degrade gracefully
-
-    # ------------------------------------------------------------------
-    # Internal — embedding pipeline
-    # ------------------------------------------------------------------
+            return []
 
     async def _embed_and_store(self, row_id: int, payload: dict) -> None:
-        """Embed payload via Ollama bge-m3 and persist to LanceDB (optional)."""
         try:
-            from orchestrator.memory_embed import get_embedding  # noqa: PLC0415
-            from orchestrator.memory_store import get_lance_store  # noqa: PLC0415
+            from orchestrator.memory_embed import get_embedding
+            from orchestrator.memory_store import get_lance_store
 
             text = json.dumps(payload)
             embedding = await get_embedding(text)
@@ -334,7 +274,7 @@ class GossipBus:
             await self._update_embed_status(row_id, "failed")
 
     async def _update_embed_status(self, row_id: int, status: str) -> None:
-        async with aiosqlite.connect(self._db_path) as db:
+        async with self.connect() as db:
             await db.execute(
                 "UPDATE gossip SET embed_status = ? WHERE id = ?",
                 (status, row_id),

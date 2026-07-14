@@ -31,7 +31,6 @@ from scripts.agent_coordination import (
     _queue_list,
     _queue_status,
     _try_atomic_claim,
-    _try_atomic_claim_with_event,
     _release_claim_with_event,
 )
 from orchestrator.gossip_bus import GossipBus
@@ -525,30 +524,27 @@ async def test_priority_ordering_in_list(make_bus, capsys):
 
 
 # ────────────────────────────────────────────────────────────────────────────
-# Atomic claim/release + heartbeat-event transactions (CodeRabbit review
+# Atomic claim/release + terminal-event transactions (CodeRabbit review
 # 4679555600, scripts/agent_coordination.py:140 — "Commit the claim row and
-# task event atomically").
-#
-# _try_atomic_claim_with_event() and _release_claim_with_event() commit their
-# task_claims row mutation (INSERT / DELETE) and heartbeat event in ONE
-# SQLite transaction via GossipBus.transaction() / emit_within(), closing the
-# gap where the prior two-commit sequences (_try_atomic_claim()/_release_claim()
-# each followed by a separate bus.emit()) could leave a claim row with no
+# task event atomically"). _try_atomic_claim() and _release_claim_with_event()
+# commit their task_claims row mutation (INSERT / DELETE) and heartbeat event
+# in ONE SQLite transaction via GossipBus.connect() / insert_event(), closing
+# the gap where separate commits could leave a claim row with no
 # corresponding event -- or a terminal event recorded while the claim row
 # stays held, blocking every future claim on that task_id -- if the process
 # died between the two commits.
 # ────────────────────────────────────────────────────────────────────────────
 
 
-async def test_atomic_claim_with_event_persists_one_row_and_one_event(make_bus):
+async def test_atomic_claim_persists_one_row_and_one_event(make_bus):
     bus = await make_bus()
 
-    claimed = await _try_atomic_claim_with_event(
-        bus, "task-x", "agent-a", "heartbeat", {"kind": "task_claim", "task_id": "task-x"}
+    claimed = await _try_atomic_claim(
+        bus, "task-x", "agent-a", {"kind": "task_claim", "task_id": "task-x"}
     )
 
     assert claimed is True
-    async with bus.transaction() as db:
+    async with bus.connect() as db:
         cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", ("task-x",))
         (claim_count,) = await cursor.fetchone()
     assert claim_count == 1
@@ -557,14 +553,14 @@ async def test_atomic_claim_with_event_persists_one_row_and_one_event(make_bus):
     assert len(matching) == 1
 
 
-async def test_atomic_claim_with_event_duplicate_claim_emits_no_second_event(make_bus):
+async def test_atomic_claim_duplicate_claim_emits_no_second_event(make_bus):
     bus = await make_bus()
-    await _try_atomic_claim_with_event(
-        bus, "task-y", "agent-a", "heartbeat", {"kind": "task_claim", "task_id": "task-y"}
+    await _try_atomic_claim(
+        bus, "task-y", "agent-a", {"kind": "task_claim", "task_id": "task-y"}
     )
 
-    claimed_again = await _try_atomic_claim_with_event(
-        bus, "task-y", "agent-b", "heartbeat", {"kind": "task_claim", "task_id": "task-y"}
+    claimed_again = await _try_atomic_claim(
+        bus, "task-y", "agent-b", {"kind": "task_claim", "task_id": "task-y"}
     )
 
     assert claimed_again is False
@@ -573,24 +569,31 @@ async def test_atomic_claim_with_event_duplicate_claim_emits_no_second_event(mak
     assert len(matching) == 1  # still just the first claimant's event
 
 
-async def test_atomic_claim_with_event_injected_insert_failure_rolls_back_claim_row(make_bus, monkeypatch):
+async def test_atomic_claim_injected_insert_failure_rolls_back_claim_row(make_bus, monkeypatch):
     """If the event INSERT inside the shared transaction raises, the earlier
     claim-row INSERT in the same (uncommitted) transaction must not survive
     -- proving the two mutations really share one atomic unit, not just two
     sequential statements against the same connection."""
     bus = await make_bus()
+    # _try_atomic_claim's CREATE TABLE IF NOT EXISTS runs inside the same
+    # BEGIN IMMEDIATE transaction as the claim -- on a table-less DB, a
+    # rollback undoes the table creation too (SQLite DDL is transactional),
+    # which would make the post-failure SELECT below fail with "no such
+    # table" instead of exercising the rollback property under test.
+    # Ensure the table exists first via an unrelated successful claim.
+    await _try_atomic_claim(bus, "task-warm-up", "agent-a")
 
-    async def _boom(self, db, event_type, payload):
+    async def _boom(self, db, event_type, payload, **kwargs):
         raise RuntimeError("simulated event-insert failure")
 
-    monkeypatch.setattr(GossipBus, "emit_within", _boom)
+    monkeypatch.setattr(GossipBus, "insert_event", _boom)
 
     with pytest.raises(RuntimeError, match="simulated event-insert failure"):
-        await _try_atomic_claim_with_event(
-            bus, "task-z", "agent-a", "heartbeat", {"kind": "task_claim", "task_id": "task-z"}
+        await _try_atomic_claim(
+            bus, "task-z", "agent-a", {"kind": "task_claim", "task_id": "task-z"}
         )
 
-    async with bus.transaction() as db:
+    async with bus.connect() as db:
         cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", ("task-z",))
         (claim_count,) = await cursor.fetchone()
     assert claim_count == 0  # rolled back along with the failed event insert
@@ -598,15 +601,14 @@ async def test_atomic_claim_with_event_injected_insert_failure_rolls_back_claim_
 
 async def test_release_claim_with_event_deletes_row_and_persists_event(make_bus):
     bus = await make_bus()
-    await _try_atomic_claim_with_event(
-        bus, "task-r1", "agent-a", "heartbeat", {"kind": "task_claim", "task_id": "task-r1"}
-    )
+    await _try_atomic_claim(bus, "task-r1", "agent-a")
 
-    await _release_claim_with_event(
+    released = await _release_claim_with_event(
         bus, "task-r1", "heartbeat", {"kind": "task_complete", "task_id": "task-r1"}
     )
 
-    async with bus.transaction() as db:
+    assert released is True
+    async with bus.connect() as db:
         cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", ("task-r1",))
         (claim_count,) = await cursor.fetchone()
     assert claim_count == 0
@@ -619,27 +621,25 @@ async def test_release_claim_with_event_deletes_row_and_persists_event(make_bus)
 
 
 async def test_release_claim_with_event_injected_failure_leaves_claim_row_intact(make_bus, monkeypatch):
-    """If the event insert fails inside the shared transaction, the release
+    """If the event insert raises inside the shared transaction, the release
     DELETE in the same (uncommitted) transaction must not survive either --
     a released-but-unreported task_id must not silently vanish from
-    task_claims, which would otherwise let a second agent claim it while the
-    first agent still believes it holds it."""
+    task_claims, which would let a second agent claim it while the first
+    agent still believes it holds it."""
     bus = await make_bus()
-    await _try_atomic_claim_with_event(
-        bus, "task-r2", "agent-a", "heartbeat", {"kind": "task_claim", "task_id": "task-r2"}
-    )
+    await _try_atomic_claim(bus, "task-r2", "agent-a")
 
-    async def _boom(self, db, event_type, payload):
+    async def _boom(self, db, event_type, payload, **kwargs):
         raise RuntimeError("simulated event-insert failure")
 
-    monkeypatch.setattr(GossipBus, "emit_within", _boom)
+    monkeypatch.setattr(GossipBus, "insert_event", _boom)
 
     with pytest.raises(RuntimeError, match="simulated event-insert failure"):
         await _release_claim_with_event(
             bus, "task-r2", "heartbeat", {"kind": "task_complete", "task_id": "task-r2"}
         )
 
-    async with bus.transaction() as db:
+    async with bus.connect() as db:
         cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", ("task-r2",))
         (claim_count,) = await cursor.fetchone()
     assert claim_count == 1  # still held -- release did not partially apply
@@ -656,7 +656,7 @@ async def test_queue_complete_releases_claim_and_completion_event_together(make_
 
     await _queue_complete(bus, task_id, "done")
 
-    async with bus.transaction() as db:
+    async with bus.connect() as db:
         cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", (task_id,))
         (claim_count,) = await cursor.fetchone()
     assert claim_count == 0
