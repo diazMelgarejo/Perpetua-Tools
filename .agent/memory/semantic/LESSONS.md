@@ -172,6 +172,7 @@
 - For Antigravity or Gemini-style headless agents, run a sandboxed plan/read-only pass first and require explicit human confirmation before switching to accept-edits or launching background edit fan-out; never treat sandboxing or headless mode as sufficient approval.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_78b0efde1631 -->
 - Do not write agent fan-out logs to predictable absolute /tmp paths; create a secure unique log directory under the repo or approved user tool state, reject symlinked reusable parents, and keep stdout/stderr per task for audit.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_27354b2896b1 -->
 - When a user says a remediation branch is closed and asks to commit to main, switch the target repo to main, fast-forward from origin first, ignore explicitly excluded vendor or ECC drift, then commit only intentional memory or doc changes.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_c7a96af333af -->
+- When a cross-repo implementation plan spans orama-system code and Perpetua-Tools memory, link artifacts by repo name, PR number, branch name, and repo-relative path only; sanitize any local source path to env anchors like $HOME and use the canonical memory pipeline instead of hand-editing generated lesson files.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_b22b588ac3b2 -->
 
 ### 2026-06
 
