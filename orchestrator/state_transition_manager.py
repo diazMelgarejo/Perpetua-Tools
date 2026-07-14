@@ -291,10 +291,10 @@ class StateTransitionManager:
     def _flush_reorder_buffer(self, peer_id: str) -> List[StateTransitionResult]:
         """Drain contiguous successors without stranding later sequences.
 
-        A buffered observation that reaches the front and is terminally rejected
-        is still a processed sequence. Its watermark advances so later buffered
-        successors remain eligible. If processing raises, the entry is restored
-        and the exception propagates, preserving a retryable gap.
+        A buffered observation that reaches the front but has expired is rejected
+        without advancing the applied watermark; later successors must not skip
+        across an expired gap. If processing raises, the entry is restored and
+        the exception propagates, preserving a retryable gap.
         """
         buffer = self._reorder_buffer.get(peer_id)
         if not buffer:
@@ -311,16 +311,9 @@ class StateTransitionManager:
                 break
             buffered_obs, buffered_old_status = entry
             if buffered_obs.is_stale:
-                # Expired buffered observations are still processed sequence
-                # positions: advance the watermark so later successors are
-                # not stranded behind a permanently stale gap.
-                buffered_dedup_key = self._dedup_key(buffered_obs)
-                self._touch_cache(self._seen_observations, buffered_dedup_key, None)
-                self._touch_cache(
-                    self._last_applied_key,
-                    peer_id,
-                    (buffered_obs.epoch, buffered_obs.sequence),
-                )
+                # Expired buffered observations are not committed and must not
+                # advance the watermark; doing so would let later successors skip
+                # across a sequence that was never accepted.
                 flushed.append(
                     self._reject(
                         buffered_obs,
@@ -329,7 +322,7 @@ class StateTransitionManager:
                         buffered_old_status,
                     )
                 )
-                continue
+                break
             buffered_dedup_key = self._dedup_key(buffered_obs)
             if buffered_dedup_key in self._seen_observations:
                 self._touch_cache(
