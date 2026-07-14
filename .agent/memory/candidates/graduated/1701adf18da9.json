@@ -1,0 +1,42 @@
+{
+  "id": "1701adf18da9",
+  "key": "manual_1701ad",
+  "name": "manual_1701ad",
+  "claim": "When adding a regression test for ID-vs-persisted-representation bugs, make the fixture exercise the exact ID source field; if the ID helper prefers id/timestamp/event_id before hashing, a test that only changes a non-ID payload field can pass without proving the invariant.",
+  "conditions": [
+    "archive-id",
+    "decay",
+    "fixture-design",
+    "id-helper",
+    "regression-tests"
+  ],
+  "evidence_ids": [
+    "2026-07-14T06:10:37.783209+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-14T06:10:37.783209+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-14T06:10:37.783209+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-14T06:10:37.855733+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-14 PR213 review fix: the first decay regression used only a path field while _archive_entry_id preferred timestamp, so it was corrected to include a sanitizer-sensitive id field and prove retry dedupe uses sanitized IDs.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-14T06:10:37.783209+00:00"
+      ],
+      "lessons_sha": "7ce620882ea0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-14T06:10:37.855727+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-14 PR213 review fix: the first decay regression used only a path field while _archive_entry_id preferred timestamp, so it was corrected to include a sanitizer-sensitive id field and prove retry dedupe uses sanitized IDs."
+}
