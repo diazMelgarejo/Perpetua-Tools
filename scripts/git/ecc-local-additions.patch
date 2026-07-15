@@ -73,7 +73,7 @@ index 00000000..c656fba0
 @@ -0,0 +1 @@
 +{"ts":"2026-06-13T04:01:04.792Z","hook":"privacy-block","action":"warn","tool":"Bash","pattern":"secret"}
 diff --git a/.env.example b/.env.example
-index ec0ddba5..cce75490 100644
+index 9195bd4d..8230eac4 100644
 --- a/.env.example
 +++ b/.env.example
 @@ -10,6 +10,11 @@
