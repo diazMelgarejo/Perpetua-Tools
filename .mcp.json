@@ -7,6 +7,13 @@
         "exec bash \"$HOME/code/OpenClaw/orama-system/scripts/exa/exa-mcp-wrapper.sh\""
       ],
       "env": {}
+    },
+    "alphaclaw": {
+      "command": "node",
+      "args": [
+        "$HOME/code/OpenClaw/Perpetua-Tools/packages/alphaclaw-mcp/build/index.js"
+      ],
+      "env": {}
     }
   }
 }
