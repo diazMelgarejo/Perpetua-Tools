@@ -161,3 +161,34 @@ cannot doxx the owner in this public repo.
   `packages/local-agents`, and focused Python tests for orchestrator changes.
 - Full `python3 -m pytest` remains the broad gate when the local dev
   dependencies are installed.
+
+## Multi-PR Landing Order & Append-Only Log Conflicts
+
+When 2+ open PRs touch `.agent/memory/semantic/lessons.jsonl` (the shared
+semantic-memory source of truth), its rendered companion `LESSONS.md`, or
+another append-only shared log, GitHub's per-PR `mergeable` check only compares
+each PR against current `main`. It does not warn that sibling PRs conflict
+with each other.
+
+Record and simulate the intended landing order before merging with `git
+merge-tree --write-tree --merge-base=<base> <branch1> <branch2>`. The command
+leaves the source worktree, index, and branch refs unchanged, but writes a
+prospective merge tree object; inspect that result rather than assuming the
+open PRs are independently mergeable.
+
+Show both sides of every real conflict and classify it before resolving. Use
+**union** only after confirming both sides are complementary, verified
+append-only additions with neither duplicate IDs nor contradictory claims; for
+JSONL, deduplicate by stable ID while retaining the first recorded entry. Do
+not hand-merge rendered `LESSONS.md`: regenerate it through `graduate.py`.
+Same-ID conflicts, contradictory records, and every non-append conflict require
+an explicit human-directed resolution. Preserve each valid intent using the
+appropriate additive, union, superset, synthesize, architecturally-correct, or
+API-correct mode; never choose a whole file by branch origin alone.
+
+The working PT policy is the
+[Multi-agent merge conflict protocol](.agent/AGENTS.md#multi-agent-merge-conflict-protocol),
+which loads the canonical [integrative merge doctrine](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/oramasys-method/references/integrative-merge.md).
+For the original landing-order case study and why already-open PRs are merged
+rather than blindly rebased, see `orama-system/SECURITY.md` § "Case study:
+append-only shared-file conflicts across independent PRs (2026-07-12)".
