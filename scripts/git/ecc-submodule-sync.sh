@@ -6,12 +6,18 @@
 # gitlink and silently discards local-only files. We keep the committed gitlink
 # canonical (never a stale fork) and re-apply local extras from a saved patch.
 #
-# Workflow:
-#   ecc-submodule-sync.sh save      # snapshot local-only additions -> patch (run BEFORE updating)
-#   ecc-submodule-sync.sh restore   # re-apply the saved patch after an update
-#   ecc-submodule-sync.sh update    # save -> checkout recorded gitlink -> restore
-#   ecc-submodule-sync.sh upgrade   # save -> fetch -> checkout origin/main HEAD -> restore
-#   ecc-submodule-sync.sh status    # show gitlink vs submodule HEAD vs origin/main
+# This is a developer-maintenance utility. It is never a runtime, startup,
+# hook, CI, or automatic-upgrade mechanism.
+#
+# Manual workflow:
+#   ecc-submodule-sync.sh save --review
+#       # inspect the printed candidate and digest; this does not write the patch
+#   ecc-submodule-sync.sh save --approve <sha256>
+#       # re-check the same candidate, then atomically replace the patch
+#   ecc-submodule-sync.sh update    # checkout recorded gitlink -> restore
+#   ecc-submodule-sync.sh upgrade   # fetch -> checkout origin/main HEAD -> restore
+#   ecc-submodule-sync.sh restore   # re-apply the reviewed patch explicitly
+#   ecc-submodule-sync.sh status    # show recorded, checked-out, and cached upstream SHAs
 #
 # Lessons encoded 2026-06-21:
 #   - restore: --3way fails for added files (no base in the index).  Plain apply
@@ -20,9 +26,9 @@
 #     already where it needs to be.
 #   - upgrade: `git submodule update` syncs to the RECORDED gitlink, not
 #     origin/main.  `upgrade` is the dedicated verb for bumping to latest.
-#   - checkout: use -f to bypass "local changes would be overwritten" — tracked
-#     modifications are already captured in the patch by _save, so discarding
-#     them from the worktree before checkout is safe.
+#   - checkout: use -f only after verifying that every local difference exactly
+#     matches the already-reviewed patch. It must never silently snapshot or
+#     discard new worktree changes.
 #
 # The patch lives at scripts/git/ecc-local-additions.patch (tracked, so it
 # travels with the repo). It must stay free of secrets and workstation paths —
@@ -32,71 +38,253 @@ set -euo pipefail
 REPO="$(git rev-parse --show-toplevel)"
 SUB="$REPO/vendor/ecc-tools"
 PATCH="$REPO/scripts/git/ecc-local-additions.patch"
+MANIFEST="$REPO/scripts/git/ecc-local-overlay.tsv"
+CANDIDATE=""
+OVERLAY_COUNT=0
+OVERLAY_PATHS=("")
+OVERLAY_MODES=("")
+OVERLAY_INTENTS=("")
 
 die() { echo "ecc-submodule-sync: $*" >&2; exit 1; }
 [ -d "$SUB/.git" ] || [ -f "$SUB/.git" ] || die "submodule not initialized at vendor/ecc-tools"
 
-_save() {
-  # Capture everything that differs from the submodule's current HEAD:
-  # untracked files are staged via intent-to-add so they appear in the diff.
+_load_overlay_manifest() {
+  [ -r "$MANIFEST" ] || die "overlay registry missing: ${MANIFEST#$REPO/}"
+
+  local path mode intent known i
+  while IFS=$'\t' read -r path mode intent; do
+    case "$path" in
+      ""|\#*) continue ;;
+    esac
+    case "$mode" in
+      new-file|additive) ;;
+      *) die "overlay registry mode must be new-file or additive: $path" ;;
+    esac
+    [ -n "$intent" ] || die "overlay registry entry needs an intent: $path"
+    for ((i = 0; i < OVERLAY_COUNT; i++)); do
+      known="${OVERLAY_PATHS[$i]}"
+      [ "$path" != "$known" ] || die "duplicate overlay registry path: $path"
+    done
+    OVERLAY_PATHS[$OVERLAY_COUNT]="$path"
+    OVERLAY_MODES[$OVERLAY_COUNT]="$mode"
+    OVERLAY_INTENTS[$OVERLAY_COUNT]="$intent"
+    OVERLAY_COUNT=$((OVERLAY_COUNT + 1))
+  done < "$MANIFEST"
+
+  [ "$OVERLAY_COUNT" -gt 0 ] || die "overlay registry has no reviewed paths"
+}
+
+_sha256() {
+  if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$1" | awk '{print $1}'
+  elif command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}'
+  else
+    die "save: need shasum or sha256sum to approve a reviewed patch"
+  fi
+}
+
+_make_candidate() {
+  CANDIDATE=$(mktemp "${PATCH}.candidate.XXXXXX")
+
+  # Intent-to-add exposes untracked files in the diff without committing them.
   git -C "$SUB" add --intent-to-add -A 2>/dev/null || true
-  git -C "$SUB" diff HEAD > "$PATCH"
-  git -C "$SUB" reset -q 2>/dev/null || true   # undo intent-to-add staging
-  local n; n=$(grep -c '^diff ' "$PATCH" 2>/dev/null || echo 0)
+  git -C "$SUB" diff --binary HEAD > "$CANDIDATE"
+  git -C "$SUB" reset -q 2>/dev/null || true
+}
+
+_cleanup_candidate() {
+  if [ -n "${CANDIDATE:-}" ]; then
+    rm -f "$CANDIDATE"
+  fi
+  return 0
+}
+
+trap _cleanup_candidate EXIT
+
+_is_approved_path() {
+  local path="$1"
+  local i
+  for ((i = 0; i < OVERLAY_COUNT; i++)); do
+    [ "$path" = "${OVERLAY_PATHS[$i]}" ] && return 0
+  done
+  return 1
+}
+
+_overlay_intent() {
+  local path="$1" i
+  for ((i = 0; i < OVERLAY_COUNT; i++)); do
+    if [ "$path" = "${OVERLAY_PATHS[$i]}" ]; then
+      printf '%s' "${OVERLAY_INTENTS[$i]}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+_overlay_mode() {
+  local path="$1" i
+  for ((i = 0; i < OVERLAY_COUNT; i++)); do
+    if [ "$path" = "${OVERLAY_PATHS[$i]}" ]; then
+      printf '%s' "${OVERLAY_MODES[$i]}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+_validate_candidate() {
+  local candidate="$1"
+  [ -s "$candidate" ] || return 0
+
+  local path added removed intent mode n=0 expected_creates=0
+
+  while IFS=$'\t' read -r added removed path; do
+    [ -n "$path" ] || continue
+    n=$((n + 1))
+    _is_approved_path "$path" || die "save: drift at $path is not in the reviewed overlay registry; classify it before saving"
+    intent=$(_overlay_intent "$path")
+    [ -n "$intent" ] || die "save: overlay registry has no intent for $path"
+    mode=$(_overlay_mode "$path")
+    [ "$removed" = "0" ] || die "save: overlay path must be add-only: $path"
+    [ "$added" != "0" ] || die "save: overlay path must add content: $path"
+    [ "$mode" = "new-file" ] && expected_creates=$((expected_creates + 1))
+  done < <(git apply --numstat "$candidate")
+
+  local creates
+  creates=$(grep -c '^new file mode ' "$candidate" 2>/dev/null || true)
+  [ "$creates" -eq "$expected_creates" ] || die "save: overlay patch type does not match its reviewed mode"
+  [ "$n" -le "$OVERLAY_COUNT" ] || die "save: candidate exceeds approved overlay path count"
+}
+
+_print_candidate_assessment() {
+  local candidate="$1"
+  [ -s "$candidate" ] || { echo "  no local overlay drift"; return 0; }
+
+  local path added removed intent mode
+  while IFS=$'\t' read -r added removed path; do
+    [ -n "$path" ] || continue
+    intent=$(_overlay_intent "$path")
+    mode=$(_overlay_mode "$path")
+    printf '  approved %s: %s (%s)\n' "$mode" "$path" "$intent"
+  done < <(git apply --numstat "$candidate")
+}
+
+_review_candidate() {
+  _make_candidate
+  _validate_candidate "$CANDIDATE"
+
+  local digest n
+  digest=$(_sha256 "$CANDIDATE")
+  n=$(grep -c '^diff ' "$CANDIDATE" 2>/dev/null || true)
+  echo "save: reviewed candidate contains $n approved file diff(s)"
+  _print_candidate_assessment "$CANDIDATE"
+  [ "$n" -gt 0 ] && git apply --stat "$CANDIDATE"
+  echo "save: review the candidate above; it has not changed ${PATCH#$REPO/}"
+  echo "save: approve the exact candidate with:"
+  echo "  bash scripts/git/ecc-submodule-sync.sh save --approve $digest"
+  _cleanup_candidate
+  CANDIDATE=""
+}
+
+_approve_candidate() {
+  local expected="${1:-}"
+  [ -n "$expected" ] || die "save: provide the digest printed by 'save --review'"
+
+  _make_candidate
+  _validate_candidate "$CANDIDATE"
+
+  local actual n
+  actual=$(_sha256 "$CANDIDATE")
+  [ "$expected" = "$actual" ] || die "save: candidate changed since review; re-run 'save --review'"
+  n=$(grep -c '^diff ' "$CANDIDATE" 2>/dev/null || true)
+
   if [ "$n" -eq 0 ]; then
     rm -f "$PATCH"
-    echo "save: no local-only additions (patch removed)"
-  else
-    echo "save: $n file diff(s) -> ${PATCH#$REPO/}"
+    echo "save: approved empty overlay; patch removed"
+    _cleanup_candidate
+    CANDIDATE=""
+    return 0
   fi
+
+  mv "$CANDIDATE" "$PATCH"
+  CANDIDATE=""
+  echo "save: approved $n reviewed file diff(s) -> ${PATCH#$REPO/}"
+}
+
+_require_reviewed_overlay() {
+  _make_candidate
+  _validate_candidate "$CANDIDATE"
+
+  if [ -s "$CANDIDATE" ] && cmp -s "$CANDIDATE" "$PATCH"; then
+    _cleanup_candidate
+    CANDIDATE=""
+    return 0
+  fi
+  if [ ! -s "$CANDIDATE" ] && [ ! -e "$PATCH" ]; then
+    _cleanup_candidate
+    CANDIDATE=""
+    return 0
+  fi
+
+  die "unreviewed submodule changes detected; run 'save --review', inspect it, then run 'save --approve <sha256>' before update or upgrade"
 }
 
 _restore() {
   [ -s "$PATCH" ] || { echo "restore: no patch to apply"; return 0; }
+  _validate_candidate "$PATCH"
 
-  # Plain apply (no --3way): --3way fails for added files because there is no
-  # base version in the index to do a 3-way merge against.
-  #
-  # "already exists in working directory" is expected and benign: untracked new
-  # files survive `git checkout` intact, so their presence means _save's patch
-  # content is already on disk.  Treat it as success, not an error.
-  local out rc
-  out=$(git -C "$SUB" apply --whitespace=nowarn "$PATCH" 2>&1) && rc=0 || rc=$?
+  # Apply each reviewed path separately. A local-only file can legitimately
+  # survive checkout, but its "already exists" error must never suppress an
+  # additive overlay for a different upstream-owned file.
+  local i path mode out rc applied=0 present=0
+  for ((i = 0; i < OVERLAY_COUNT; i++)); do
+    path="${OVERLAY_PATHS[$i]}"
+    mode="${OVERLAY_MODES[$i]}"
+    out=$(git -C "$SUB" apply --whitespace=nowarn --include="$path" "$PATCH" 2>&1) && rc=0 || rc=$?
 
-  if [ "$rc" -eq 0 ]; then
-    echo "restore: local additions re-applied"
-    return 0
-  fi
+    if [ "$rc" -eq 0 ]; then
+      applied=$((applied + 1))
+      continue
+    fi
 
-  # Filter out the benign "already exists" noise.
-  local real_errors
-  real_errors=$(printf '%s\n' "$out" \
-    | grep '^error:' \
-    | grep -v "already exists in working directory" || true)
+    if [ "$mode" = "new-file" ] && printf '%s\n' "$out" | grep -q "already exists in working directory"; then
+      present=$((present + 1))
+      continue
+    fi
 
-  if [ -z "$real_errors" ]; then
-    local n; n=$(printf '%s\n' "$out" | grep -c "already exists" 2>/dev/null || echo 0)
-    echo "restore: $n new-file path(s) already present (survived checkout) — skipped"
-    return 0
-  fi
+    printf '%s\n' "$out" >&2
+    die "restore: $path did not apply cleanly — resolve its reviewed overlay before continuing"
+  done
 
-  printf '%s\n' "$out" >&2
-  die "restore: patch did not apply cleanly — resolve conflicts in $SUB, then re-run save"
+  [ "$applied" -gt 0 ] && echo "restore: $applied reviewed overlay path(s) re-applied"
+  [ "$present" -gt 0 ] && echo "restore: $present new-file overlay path(s) already present (survived checkout)"
 }
 
 _do_checkout() {
   # Check out SHA $1 in the submodule.
-  # Use -f to discard tracked-file modifications: _save already captured them
-  # in the patch, so losing the worktree copies is safe.
+  # _require_reviewed_overlay proves that no unreviewed change will be lost.
   local sha="$1"
   git -C "$SUB" checkout -f "$sha" 2>&1 | grep -v "^HEAD is now at" || true
   echo "  submodule HEAD -> $(git -C "$SUB" rev-parse --short HEAD)"
 }
 
+_load_overlay_manifest
+
 case "${1:-help}" in
 
   save)
-    _save
+    case "${2:-}" in
+      --review)
+        _review_candidate
+        ;;
+      --approve)
+        _approve_candidate "${3:-}"
+        ;;
+      *)
+        die "save is review-gated; run 'save --review', inspect it, then run 'save --approve <sha256>'"
+        ;;
+    esac
     ;;
 
   restore)
@@ -105,8 +293,8 @@ case "${1:-help}" in
 
   update)
     # Sync submodule worktree to the RECORDED gitlink (no network required).
-    # Use this to undo manual SHA bumps or recover a clean state.
-    _save || true
+    # It never creates or changes the patch; save is a separate manual chore.
+    _require_reviewed_overlay
     target=$(git -C "$REPO" ls-tree HEAD vendor/ecc-tools | awk '{print $3}')
     echo "update: checking out gitlink $target"
     _do_checkout "$target"
@@ -117,6 +305,8 @@ case "${1:-help}" in
   upgrade)
     # Bump submodule to the LATEST commit on origin/main, preserving local additions.
     # Unlike 'update', this advances the gitlink — stage and commit afterward.
+    # It never creates or changes the patch; save is a separate manual chore.
+    _require_reviewed_overlay
     echo "upgrade: fetching ecc-tools origin ..."
     git -C "$SUB" fetch origin 2>&1 | sed 's/^/  /' || true
 
@@ -129,7 +319,6 @@ case "${1:-help}" in
     fi
 
     echo "upgrade: $cur_sha -> $new_sha"
-    _save || true
     _do_checkout "$new_sha"
     _restore
     echo "upgrade: done"
@@ -139,9 +328,7 @@ case "${1:-help}" in
   status)
     echo "gitlink (recorded): $(git -C "$REPO" ls-tree HEAD vendor/ecc-tools | awk '{print $3}')"
     echo "submodule HEAD:     $(git -C "$SUB" rev-parse HEAD)"
-    # Fetch quietly so the canonical SHA reflects the true upstream state.
-    git -C "$SUB" fetch origin --quiet 2>/dev/null || true
-    echo "canonical (origin): $(git -C "$SUB" rev-parse origin/main 2>/dev/null || echo '?')"
+    echo "canonical (cached): $(git -C "$SUB" rev-parse origin/main 2>/dev/null || echo '?')"
     echo "pending local additions:"
     git -C "$SUB" status --short 2>/dev/null | sed 's/^/  /' || echo "  (clean)"
     ;;

@@ -1,21 +1,59 @@
 # vendor/ecc-tools — local-only additions
 
-The submodule gitlink is pinned to **canonical `928076c`** (origin/main of ecc-tools).
-Three files are local-only — not present upstream — and are preserved here so they
+The submodule gitlink is pinned to **canonical `ed387446`** (origin/main of ecc-tools,
+2026-07-15). Five reviewed local-only paths are preserved here so they
 survive `git submodule update`. They are re-applied by
 [`ecc-submodule-sync.sh`](ecc-submodule-sync.sh) from
-[`ecc-local-additions.patch`](ecc-local-additions.patch).
+[`ecc-local-additions.patch`](ecc-local-additions.patch). The companion
+[`ecc-local-overlay.tsv`](ecc-local-overlay.tsv) is the reviewed intent registry;
+the patch is only the portable application artifact.
 
-## What is unique (vs canonical 928076c)
+## What is currently preserved (vs canonical ed387446)
 
-| File | Lines | What it is |
-|------|-------|-----------|
-| `.agents/skills/frontend-design/agents/openai.yaml` | 7 | Codex/OpenAI agent surface (interface + policy) for the `frontend-design` skill — absent upstream. |
-| `.antigravity/ANTIGRAVITY.md` | 48 | "ECC for Gemini CLI" baseline workflow / review standards / security checks (Antigravity target). |
-| `.gemini/ANTIGRAVITY.md` | 48 | Same ECC-for-Gemini content, `.gemini/` location. |
+| File | Mode | Lines | What it is |
+|------|------|-------|-----------|
+| `.agents/skills/frontend-design/agents/openai.yaml` | `new-file` | 7 | Codex/OpenAI agent surface (interface + policy) for the `frontend-design` skill — absent upstream. |
+| `.antigravity/ANTIGRAVITY.md` | `new-file` | 48 | "ECC for Gemini CLI" baseline workflow / review standards / security checks (Antigravity target). |
+| `.gemini/ANTIGRAVITY.md` | `new-file` | 48 | Same ECC-for-Gemini content, `.gemini/` location. |
+| `.env.example` | `additive` | 5 | Empty optional Gemini key placeholders added to the upstream template; no credential value is preserved. |
+| `.claude/hooks/.logs/hook-log.jsonl` | `new-file` | 1 | Explicitly retained local hook-evidence record. It is not a general logging policy. |
 
-These three are the **entire** unique delta. Everything else that was sitting
-uncommitted in the submodule worktree was not unique.
+These five paths are the **entire approved local overlay**. Their intent is
+declared in `ecc-local-overlay.tsv`, rather than embedded as a blind snapshot in
+the shell script. Everything else found uncommitted in the submodule worktree
+remains separately classified until it is reviewed and either promoted through
+an upstream-compatible change or discarded from the local checkout. The patch
+is add-only: it must not modify an upstream ECC file.
+
+## Manual Review Gate
+
+`ecc-submodule-sync.sh` is a developer-maintenance helper, never an application
+runtime, startup, hook, CI, or automatic-upgrade mechanism. Its `save` command
+cannot replace the tracked patch in one step:
+
+```bash
+bash scripts/git/ecc-submodule-sync.sh save --review
+# Inspect the printed diff stat and digest. Then, only if it is intentional:
+bash scripts/git/ecc-submodule-sync.sh save --approve <sha256-from-review>
+```
+
+The script regenerates the candidate during approval and writes the patch only
+when its digest matches the reviewed value. It classifies each live difference
+against the reviewed intent registry, showing the path, mode, and purpose for
+allowed drift. `new-file` permits a local-only file; `additive` permits only
+added lines to a named upstream file. It rejects paths outside the registry,
+deletions, patch-type mismatches, and unreviewed submodule changes. `update`
+and `upgrade` restore the existing reviewed patch but never call `save`
+themselves. Restore applies each registered path independently, so an existing
+local-only file cannot mask a required `additive` overlay in a different file.
+
+## 2026-07-15 Reclassification
+
+The older three-way analysis below remains historical evidence. A later audit
+confirmed the first three paths plus the two additional paths above as the
+explicitly preserved overlay. It also separated malformed Markdown fence edits,
+lockfile-only resolution drift, and a checkout at an older upstream commit from
+this overlay; none of those categories belongs in this patch.
 
 ## Provenance (3-way analysis, 2026-06-13)
 
@@ -25,12 +63,14 @@ The submodule worktree had ~115 uncommitted local files on top of the stale gitl
 - **71** files — already merged upstream (local edits == canonical). Dropped.
 - **43** files — superseded by newer canonical versions (both diverged from base).
   Canonical wins; the stale local versions were discarded.
-- **3** files — genuinely local-only (the table above). Kept.
+- **3** files — genuinely local-only at the time (the first three rows above). Kept.
 
 ## Recovery
 
-- **Just the unique 3:** `bash scripts/git/ecc-submodule-sync.sh restore`
-  (or `update` to do save → submodule update → restore in one shot).
+- **Just the approved overlay:** `bash scripts/git/ecc-submodule-sync.sh restore`.
+- **Refresh the approved overlay after a deliberate review:** run `save --review`,
+  inspect the candidate, then run `save --approve <sha256>`. Only after that use
+  `update` or `upgrade`; neither command creates or rewrites the patch.
 - **The full pre-canonical local work** (all 115 files, including the 43 superseded):
   salvage branch **`985ee9b`** (`salvage/ecc-local-wip-pre-928076c`) inside the
   submodule's own git. It is local-only (never pushed to ecc-tools) and will be lost
@@ -40,5 +80,7 @@ The submodule worktree had ~115 uncommitted local files on top of the stale gitl
 
 ## Adding more local-only files later
 
-Run `bash scripts/git/ecc-submodule-sync.sh save` before any submodule update — it
-re-snapshots every worktree file that differs from the pinned gitlink into the patch.
+Run the manual review gate above before any submodule update. To propose a new
+overlay path, first amend `ecc-local-overlay.tsv` with its human-readable intent
+as part of a deliberate review. The script then requires approval of the exact
+candidate digest before it rewrites the patch.
