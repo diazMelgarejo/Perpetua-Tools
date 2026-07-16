@@ -72,8 +72,13 @@ describe("isDirectExecution", () => {
     assert.equal(isDirectExecution(indexUrl, false), false);
   });
 
-  it("returns false when argv path has trailing slash separator variant", () => {
-    // Adding a trailing slash changes path.resolve output, breaking equality
-    assert.equal(isDirectExecution(indexUrl, indexAbs + path.sep), false);
+  it("still matches when argv has a trailing separator (path.resolve normalizes it away)", () => {
+    // path.resolve() strips trailing separators before comparison, so
+    // "build/index.js/" resolves identically to "build/index.js" — this is
+    // correct, expected Node.js path behavior, not a bypass. The previous
+    // version of this test asserted the opposite (`false`) based on an
+    // incorrect claim that a trailing separator "breaks equality"; verified
+    // directly that path.resolve(p + path.sep) === path.resolve(p).
+    assert.equal(isDirectExecution(indexUrl, indexAbs + path.sep), true);
   });
 });
