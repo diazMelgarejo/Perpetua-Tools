@@ -19,7 +19,19 @@
       "Bash(find *)",
       "Bash(jq *)",
       "Bash(sort *)",
-      "Bash(uniq *)"
+      "Bash(uniq *)",
+      "Bash(gbrain sources list *)",
+      "Bash(gbrain search *)",
+      "Bash(openclaw agents list *)",
+      "Bash(openclaw status *)",
+      "Bash(gbrain doctor *)",
+      "Bash(openclaw agent --help)",
+      "Bash(gbrain --version)",
+      "mcp__github-copilot__get_file_contents",
+      "mcp__gbrain__query",
+      "mcp__code-review-graph__list_graph_stats_tool",
+      "mcp__code-review-graph__detect_changes_tool",
+      "mcp__gbrain__run_doctor"
     ]
   },
   "hooks": {

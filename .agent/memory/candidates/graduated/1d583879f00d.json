@@ -1,0 +1,40 @@
+{
+  "id": "1d583879f00d",
+  "key": "manual_1d5838",
+  "name": "manual_1d5838",
+  "claim": "Do not fire a manual git push immediately after a backgrounded shell command that itself ends in git push \u2014 check whether the background task actually completed first (via its notification/output), or the manual push races the async one and 'remote rejected: cannot lock ref, is at X but expected Y' looks like a real branch-divergence conflict when it is only local ref-tracking staleness from your own in-flight push.",
+  "conditions": [
+    "background-task",
+    "git-push",
+    "race-condition"
+  ],
+  "evidence_ids": [
+    "2026-07-16T04:54:35.963276+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-16T04:54:35.963276+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-16T04:54:35.963276+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-16T04:54:36.064916+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Hit this exact race on PT PR #241's locale-fix push: the backgrounded 'commit && push' had already landed f872d2ef on origin by the time a manual follow-up 'git push' ran against a stale local view of origin, producing a scary-looking rejection that a fetch immediately resolved as a non-issue.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-16T04:54:35.963276+00:00"
+      ],
+      "lessons_sha": "9b7e36ff99d2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-16T04:54:36.064909+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Hit this exact race on PT PR #241's locale-fix push: the backgrounded 'commit && push' had already landed f872d2ef on origin by the time a manual follow-up 'git push' ran against a stale local view of origin, producing a scary-looking rejection that a fetch immediately resolved as a non-issue."
+}
