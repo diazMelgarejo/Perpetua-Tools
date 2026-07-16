@@ -421,13 +421,27 @@ async function watchdogEvents() {
 }
 
 /**
+ * Map a requested line count to the gateway's byte-based `tail` query param.
+ * AlphaClaw serves GET /api/watchdog/logs?tail=<bytes> (not `lines`).
+ * @param {number} lines
+ * @returns {number}
+ */
+function watchdogLogTailBytes(lines = 50) {
+  const raw = Number(lines);
+  const capped =
+    Number.isFinite(raw) && raw > 0 ? Math.min(Math.floor(raw), 200) : 50;
+  return Math.min(Math.max(capped * 512, 1024), 65536);
+}
+
+/**
  * GET /api/watchdog/logs — log tail.
- * @param {number} n — number of lines to return (default 50)
+ * @param {number} n — approximate number of lines to return (default 50, max 200)
  */
 async function watchdogLogs(n = 50) {
   try {
-    const r = await _request("GET", `/api/watchdog/logs?lines=${n}`);
-    return { ok: r.status < 400, status: r.status, logs: r.body };
+    const tailBytes = watchdogLogTailBytes(n);
+    const r = await _request("GET", `/api/watchdog/logs?tail=${tailBytes}`);
+    return { ok: r.status < 400, status: r.status, logs: r.body, tailBytes };
   } catch (e) {
     return { ok: false, error: e.message };
   }
@@ -712,6 +726,7 @@ module.exports = {
   watchdogStatus,
   watchdogEvents,
   watchdogLogs,
+  watchdogLogTailBytes,
   watchdogRepair,
   tailLogs,
 
