@@ -1,0 +1,42 @@
+{
+  "id": "478769875d35",
+  "key": "manual_478769",
+  "name": "manual_478769",
+  "claim": "A shell fix that must guarantee a specific environment value (e.g. forcing UTF-8 locale before parsing tracked text) needs an unconditional assignment, not a ${VAR:-default} fallback \u2014 the fallback only fires when the var is unset/empty, so a caller's pre-existing conflicting value silently survives and the fix's stated guarantee is never met.",
+  "conditions": [
+    "coderabbit-review",
+    "env-var-fallback",
+    "locale",
+    "shell-script",
+    "utf-8"
+  ],
+  "evidence_ids": [
+    "2026-07-16T04:54:35.505754+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-16T04:54:35.505754+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-16T04:54:35.505754+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-16T04:54:35.615709+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Found on PT PR #241: export LC_ALL=\"${LC_ALL:-C.UTF-8}\" in ecc-submodule-sync.sh was copy-pasted verbatim from the fix plan itself, so both the plan and the implementation shared the same gap. CodeRabbit's automated re-review of the fix commit (8f04c4b1) caught it independently; manual review confirmed the same reasoning before seeing that comment.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-16T04:54:35.505754+00:00"
+      ],
+      "lessons_sha": "23a05146daf7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-16T04:54:35.615702+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Found on PT PR #241: export LC_ALL=\"${LC_ALL:-C.UTF-8}\" in ecc-submodule-sync.sh was copy-pasted verbatim from the fix plan itself, so both the plan and the implementation shared the same gap. CodeRabbit's automated re-review of the fix commit (8f04c4b1) caught it independently; manual review confirmed the same reasoning before seeing that comment."
+}
