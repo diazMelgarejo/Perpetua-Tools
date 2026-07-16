@@ -85,12 +85,15 @@ describe("readLogTail (backs alphaclaw_tail_logs)", () => {
     const root = makeTmpRoot();
     const logPath = path.join(root, "hourly-sync.log");
     const lines = Array.from({ length: 10 }, (_, i) => `line ${i}`);
+    lines[8] = "SETUP_PASSWORD=supersecret";
     fs.writeFileSync(logPath, lines.join("\n"));
     const result = readLogTail(logPath, [root], 3);
     assert.equal(result.found, true);
     assert.equal(result.lines, 3);
     assert.match(result.log ?? "", /line 9/);
     assert.doesNotMatch(result.log ?? "", /line 6/);
+    assert.doesNotMatch(result.log ?? "", /supersecret/);
+    assert.match(result.log ?? "", /\[REDACTED\]/);
   });
 
   it("clamps a negative/NaN/Infinity line count to the 50-line default", async () => {
@@ -98,8 +101,11 @@ describe("readLogTail (backs alphaclaw_tail_logs)", () => {
     const root = makeTmpRoot();
     const logPath = path.join(root, "hourly-sync.log");
     fs.writeFileSync(logPath, Array.from({ length: 60 }, (_, i) => `l${i}`).join("\n"));
-    const result = readLogTail(logPath, [root], -5);
-    assert.equal(result.lines, 50);
+
+    for (const invalidCount of [-5, NaN, Infinity]) {
+      const result = readLogTail(logPath, [root], invalidCount);
+      assert.equal(result.lines, 50, `Failed clamping for ${invalidCount}`);
+    }
   });
 
   it("caps an oversized line count at 200", async () => {
