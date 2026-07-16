@@ -1,0 +1,41 @@
+{
+  "id": "c67ec2e4ceea",
+  "key": "manual_c67ec2",
+  "name": "manual_c67ec2",
+  "claim": "Before applying a proposed security fix that reuses an existing auth/origin-check primitive, read that primitive's actual implementation and any documented design rationale \u2014 a function whose name suggests it blocks cross-origin requests may deliberately allow the specific origin you're trying to block, by design, for legitimate cross-service reasons",
+  "conditions": [
+    "plan-review",
+    "security-review",
+    "self-correction",
+    "verify-before-fix"
+  ],
+  "evidence_ids": [
+    "2026-07-16T01:28:24.323357+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-16T01:28:24.323357+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-16T01:28:24.323357+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-16T01:28:24.382118+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Proposed adding verify_lifecycle_origin() to the G7 notification stream route to block a co-resident localhost:3000 app from reading the stream via a bootstrapped session cookie. Reading the actual function found it deliberately treats ALL loopback ports as mutually trusted (documented: portal :8002 must accept POSTs from pages served on PT :8000 or orama :8001) \u2014 the fix would have been a no-op while the accompanying test asserted a 403 the real code could never produce. Caught before committing by verifying the primitive's behavior instead of trusting its name/purpose inference.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-16T01:28:24.323357+00:00"
+      ],
+      "lessons_sha": "cde32a159265"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-16T01:28:24.382109+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Proposed adding verify_lifecycle_origin() to the G7 notification stream route to block a co-resident localhost:3000 app from reading the stream via a bootstrapped session cookie. Reading the actual function found it deliberately treats ALL loopback ports as mutually trusted (documented: portal :8002 must accept POSTs from pages served on PT :8000 or orama :8001) \u2014 the fix would have been a no-op while the accompanying test asserted a 403 the real code could never produce. Caught before committing by verifying the primitive's behavior instead of trusting its name/purpose inference."
+}

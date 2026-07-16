@@ -1,0 +1,41 @@
+{
+  "id": "4a0d575a955a",
+  "key": "manual_4a0d57",
+  "name": "manual_4a0d57",
+  "claim": "A decision logged as 'accepted into scope' in a review's audit trail is not the same as that fix actually landing in the reviewed artifact's code \u2014 verify the fix is present in the actual code blocks/diff, not just recorded as a table row, before treating a plan or PR as ready",
+  "conditions": [
+    "autoplan",
+    "decision-tracking",
+    "eng-review",
+    "plan-review"
+  ],
+  "evidence_ids": [
+    "2026-07-16T01:28:24.186424+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-16T01:28:24.186424+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-16T01:28:24.186424+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-16T01:28:24.251832+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The G7 SSE plan's CEO phase logged 4 fixes as accepted-into-scope in its Decision Audit Trail, but none were actually edited into the plan's own TDD code blocks until the Eng phase's dual/triple-voice review (Claude subagent + a secondary cline critic, independently) caught the gap. An agentic worker executing the plan verbatim would have shipped both original bugs despite the plan file claiming they were fixed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-16T01:28:24.186424+00:00"
+      ],
+      "lessons_sha": "fe960ddf4943"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-16T01:28:24.251826+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The G7 SSE plan's CEO phase logged 4 fixes as accepted-into-scope in its Decision Audit Trail, but none were actually edited into the plan's own TDD code blocks until the Eng phase's dual/triple-voice review (Claude subagent + a secondary cline critic, independently) caught the gap. An agentic worker executing the plan verbatim would have shipped both original bugs despite the plan file claiming they were fixed."
+}
