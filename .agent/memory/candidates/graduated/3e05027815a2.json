@@ -1,0 +1,42 @@
+{
+  "id": "3e05027815a2",
+  "key": "manual_3e0502",
+  "name": "manual_3e0502",
+  "claim": "The 'decision accepted but never coded' failure mode recurs across review phases even after being caught once \u2014 each subsequent phase must independently re-verify that ALL prior phases' accepted fixes actually landed in the artifact, not just the fixes that phase itself is focused on",
+  "conditions": [
+    "autoplan",
+    "decision-tracking",
+    "dx-review",
+    "plan-review",
+    "recurring-pattern"
+  ],
+  "evidence_ids": [
+    "2026-07-16T01:36:45.626188+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-16T01:36:45.626188+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-16T01:36:45.626188+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-16T01:36:45.711611+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "On the G7 SSE plan, the Eng phase caught 3 CEO-accepted fixes that existed only as Decision Audit Trail rows, never in the plan's code. Fixed them. The very next phase (DX review) independently found 2 MORE instances of the exact same pattern (an undefined-variable route handler standing in for real code, and the dropped_events exposure decision never landing anywhere) that both the CEO and Eng phases' own dual-voice passes had missed. One catch does not inoculate a plan against the same failure mode recurring elsewhere in the same document.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-16T01:36:45.626188+00:00"
+      ],
+      "lessons_sha": "d3a32da27d3c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-16T01:36:45.711601+00:00",
+  "reviewer": "learn.py",
+  "rationale": "On the G7 SSE plan, the Eng phase caught 3 CEO-accepted fixes that existed only as Decision Audit Trail rows, never in the plan's code. Fixed them. The very next phase (DX review) independently found 2 MORE instances of the exact same pattern (an undefined-variable route handler standing in for real code, and the dropped_events exposure decision never landing anywhere) that both the CEO and Eng phases' own dual-voice passes had missed. One catch does not inoculate a plan against the same failure mode recurring elsewhere in the same document."
+}

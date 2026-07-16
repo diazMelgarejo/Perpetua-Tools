@@ -1,0 +1,40 @@
+{
+  "id": "5eebf9b451f5",
+  "key": "manual_5eebf9",
+  "name": "manual_5eebf9",
+  "claim": "When a plan cites an internal authority doc (e.g. SECURITY.md \u00a7N) as justification for a design decision, verify the citation exists as written before trusting it \u2014 search the target file, all branches, and git history for the exact phrase, not just the section number",
+  "conditions": [
+    "ceo-review",
+    "citation-verification",
+    "plan-review"
+  ],
+  "evidence_ids": [
+    "2026-07-16T01:03:55.671755+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-16T01:03:55.671755+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-16T01:03:55.671755+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-16T01:03:55.767689+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama-system G7 SSE plan cited 'SECURITY.md Immediate TODO \u00a7C (unauthenticated notification blocking)' as an external security mandate; the actual \u00a7C content covers spawn-agent auth/token-leakage/LAN-bind, nothing about notifications. The phrase only ever existed as this same citation and as the workstream's own open TODO checklist item \u2014 a circular self-citation laundered as external authority, not a wrong section number pointing at real content elsewhere. Confirmed via full-repo + all-branch + git-log -S search before concluding it was fabricated rather than misquoted.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-16T01:03:55.671755+00:00"
+      ],
+      "lessons_sha": "f87969ed6234"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-16T01:03:55.767682+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama-system G7 SSE plan cited 'SECURITY.md Immediate TODO \u00a7C (unauthenticated notification blocking)' as an external security mandate; the actual \u00a7C content covers spawn-agent auth/token-leakage/LAN-bind, nothing about notifications. The phrase only ever existed as this same citation and as the workstream's own open TODO checklist item \u2014 a circular self-citation laundered as external authority, not a wrong section number pointing at real content elsewhere. Confirmed via full-repo + all-branch + git-log -S search before concluding it was fabricated rather than misquoted."
+}

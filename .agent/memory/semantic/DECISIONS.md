@@ -372,3 +372,20 @@ reconciliation vs. a single auditable ancestry reset).
 code-review, git-history-surgery, gstack, skillify, hermes-harness, mcp-orchestration).
 
 ---
+## 2026-07-13: Git author identity is not a reliable human-vs-agent signal
+**Decision:** When investigating "who did this" in git history, do not treat a familiar
+git author identity (e.g. `cyre <Lawrence.Melgarejo@gmail.com>`) as proof of human
+authorship. Autonomous agents (AutoResearcher via `orchestrator/autoresearch_bridge.py`,
+and any other agent committing through this stack) inherit whatever git identity is
+locally configured — their commits are indistinguishable from human commits by author
+field alone.
+**Rationale:** `.github/workflows/pr206-final-doc-placeholder-fix.yml` (created and
+self-deleted 74 seconds apart, 2026-07-12 21:46-21:47) was initially misattributed to a
+benign human self-cleaning process based on its git author identity. Confirmed by the
+user: it was created by a rogue AutoResearcher agent run, not a human.
+**Alternatives considered:** Trusting git author field as sufficient forensic evidence
+(rejected — proven wrong by this incident).
+**Status:** active — future "who/why" investigations should cross-check autonomous-agent
+activity logs (e.g. AutoResearcher's own state/heartbeat records) alongside git log.
+
+---
