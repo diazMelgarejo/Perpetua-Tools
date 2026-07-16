@@ -1,0 +1,61 @@
+{
+  "id": "1a8b5403e949",
+  "key": "manual_1a8b54",
+  "name": "manual_1a8b54",
+  "claim": "A freshly-written process doctrine can be violated by its own author within the same session it was written \u2014 always back a doctrine with mechanical enforcement (a pre-push hook, a CI check), not just documentation, or the doctrine's own authoring is not exempt from the failure mode it was written to prevent.",
+  "conditions": [
+    "always",
+    "author",
+    "authoring",
+    "back",
+    "check",
+    "doctrine",
+    "documentation",
+    "enforcement",
+    "exempt",
+    "failure",
+    "freshly-written",
+    "hook",
+    "just",
+    "mechanical",
+    "mode",
+    "own",
+    "pre-push",
+    "prevent",
+    "process",
+    "same",
+    "session",
+    "violated",
+    "within",
+    "written"
+  ],
+  "evidence_ids": [
+    "2026-07-16T21:58:59.429212+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-16T21:58:59.429212+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-16T21:58:59.429212+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-16T21:58:59.601944+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The Post-Review Micro-Remediation doctrine's own authoring commit was pushed directly to main while a PR was still open, violating its own Phase 0 (never push to main during active review) in the act of writing that exact rule. Caught by one user question, fixed via the doctrine's own Phase 3 procedure, then closed by adding a pre-push guard + CI backstop so the same class of mistake is mechanically blocked, not just remembered.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-16T21:58:59.429212+00:00"
+      ],
+      "lessons_sha": "f61dd2779eaa"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-16T21:58:59.601928+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The Post-Review Micro-Remediation doctrine's own authoring commit was pushed directly to main while a PR was still open, violating its own Phase 0 (never push to main during active review) in the act of writing that exact rule. Caught by one user question, fixed via the doctrine's own Phase 3 procedure, then closed by adding a pre-push guard + CI backstop so the same class of mistake is mechanically blocked, not just remembered."
+}

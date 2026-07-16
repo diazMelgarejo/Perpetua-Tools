@@ -1,0 +1,74 @@
+{
+  "id": "c95aba599c4c",
+  "key": "manual_c95aba",
+  "name": "manual_c95aba",
+  "claim": "When two files cover overlapping content, do not assume the newer or smaller one is a duplicate of the older or larger one \u2014 check derivation direction (which came first, which was derived from which) before proposing any merge or consolidation, since merging an origin doctrine into its own later derivative is backwards even though the content genuinely overlaps.",
+  "conditions": [
+    "any",
+    "assume",
+    "backwards",
+    "before",
+    "came",
+    "check",
+    "consolidation",
+    "content",
+    "cover",
+    "derivation",
+    "derivative",
+    "derived",
+    "direction",
+    "doctrine",
+    "duplicate",
+    "even",
+    "files",
+    "first",
+    "genuinely",
+    "into",
+    "larger",
+    "later",
+    "merge",
+    "merging",
+    "newer",
+    "older",
+    "one",
+    "origin",
+    "overlapping",
+    "overlaps",
+    "own",
+    "proposing",
+    "since",
+    "smaller",
+    "though",
+    "two",
+    "which"
+  ],
+  "evidence_ids": [
+    "2026-07-16T21:59:09.364198+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-16T21:59:09.364198+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-16T21:59:09.364198+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-16T21:59:09.436104+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "content-insertion-framework.md was twice mis-framed during the same review pass \u2014 first as 'a stray file that doesn't exist,' then as 'a duplicate spec to merge into its own derived cidf/ package.' Both were wrong. It was the ORIGINAL source doctrine that cidf/ was later derived from. The fix was to add an inbound provenance citation, never to trim or merge the original.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-16T21:59:09.364198+00:00"
+      ],
+      "lessons_sha": "b745e4163cd9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-16T21:59:09.436089+00:00",
+  "reviewer": "learn.py",
+  "rationale": "content-insertion-framework.md was twice mis-framed during the same review pass \u2014 first as 'a stray file that doesn't exist,' then as 'a duplicate spec to merge into its own derived cidf/ package.' Both were wrong. It was the ORIGINAL source doctrine that cidf/ was later derived from. The fix was to add an inbound provenance citation, never to trim or merge the original."
+}
