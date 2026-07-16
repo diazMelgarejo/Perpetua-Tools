@@ -527,7 +527,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return toolResult(await adapter.status());
 
       case "alphaclaw_watchdog_logs": {
-        const lines = request.params.arguments?.lines ? Number(request.params.arguments.lines) : 50;
+        const raw = request.params.arguments?.lines
+          ? Number(request.params.arguments.lines)
+          : 50;
+        const lines =
+          Number.isFinite(raw) && raw > 0 ? Math.min(Math.floor(raw), 200) : 50;
         return toolResult(await adapter.watchdogLogs(lines));
       }
 
