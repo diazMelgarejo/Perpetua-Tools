@@ -35,8 +35,8 @@
 # repo_hygiene scans it like any tracked file.
 set -euo pipefail
 
-export LC_ALL="${LC_ALL:-C.UTF-8}"
-export LANG="${LANG:-C.UTF-8}"
+export LC_ALL=C.UTF-8
+export LANG=C.UTF-8
 
 REPO="$(git rev-parse --show-toplevel)"
 SUB="$REPO/vendor/ecc-tools"
