@@ -35,6 +35,9 @@
 # repo_hygiene scans it like any tracked file.
 set -euo pipefail
 
+export LC_ALL=C.UTF-8
+export LANG=C.UTF-8
+
 REPO="$(git rev-parse --show-toplevel)"
 SUB="$REPO/vendor/ecc-tools"
 PATCH="$REPO/scripts/git/ecc-local-additions.patch"
@@ -86,11 +89,20 @@ _sha256() {
 
 _make_candidate() {
   CANDIDATE=$(mktemp "${PATCH}.candidate.XXXXXX")
+  local tmp_index rc=0
+  tmp_index=$(mktemp "${PATCH}.index.XXXXXX")
 
-  # Intent-to-add exposes untracked files in the diff without committing them.
-  git -C "$SUB" add --intent-to-add -A 2>/dev/null || true
-  git -C "$SUB" diff --binary HEAD > "$CANDIDATE"
-  git -C "$SUB" reset -q 2>/dev/null || true
+  # Intent-to-add exposes untracked files in the diff. Use a temporary index so
+  # review generation never mutates the developer's real submodule index.
+  GIT_INDEX_FILE="$tmp_index" git -C "$SUB" read-tree HEAD || rc=$?
+  if [ "$rc" -eq 0 ]; then
+    GIT_INDEX_FILE="$tmp_index" git -C "$SUB" add --intent-to-add -A || rc=$?
+  fi
+  if [ "$rc" -eq 0 ]; then
+    GIT_INDEX_FILE="$tmp_index" git -C "$SUB" diff --binary HEAD > "$CANDIDATE" || rc=$?
+  fi
+  rm -f "$tmp_index"
+  [ "$rc" -eq 0 ] || return "$rc"
 }
 
 _cleanup_candidate() {
@@ -149,12 +161,43 @@ _validate_candidate() {
     [ "$removed" = "0" ] || die "save: overlay path must be add-only: $path"
     [ "$added" != "0" ] || die "save: overlay path must add content: $path"
     [ "$mode" = "new-file" ] && expected_creates=$((expected_creates + 1))
+    _validate_patch_mode "$candidate" "$path" "$mode"
   done < <(git apply --numstat "$candidate")
 
   local creates
   creates=$(grep -c '^new file mode ' "$candidate" 2>/dev/null || true)
   [ "$creates" -eq "$expected_creates" ] || die "save: overlay patch type does not match its reviewed mode"
   [ "$n" -le "$OVERLAY_COUNT" ] || die "save: candidate exceeds approved overlay path count"
+}
+
+_validate_patch_mode() {
+  local candidate="$1" path="$2" mode="$3"
+  local header
+  header=$(awk -v p="$path" '
+    $0 == "diff --git a/" p " b/" p { in_patch = 1; next }
+    /^diff --git / && in_patch { exit }
+    in_patch { print }
+  ' "$candidate")
+
+  [ -n "$header" ] || die "save: missing patch header for $path"
+  if printf '%s\n' "$header" | grep -Eq '^(old mode|new mode|deleted file mode|rename from|rename to|copy from|copy to) '; then
+    die "save: overlay path must not rename, copy, delete, or change file mode: $path"
+  fi
+  if printf '%s\n' "$header" | grep -Eq '^(new|old|deleted) file mode 120000'; then
+    die "save: overlay path must not be a symlink: $path"
+  fi
+
+  case "$mode" in
+    new-file)
+      printf '%s\n' "$header" | grep -q '^new file mode 100644$' \
+        || die "save: new-file overlay must be a regular 100644 file: $path"
+      ;;
+    additive)
+      if printf '%s\n' "$header" | grep -q '^new file mode '; then
+        die "save: additive overlay must not create a new file: $path"
+      fi
+      ;;
+  esac
 }
 
 _print_candidate_assessment() {
@@ -179,7 +222,11 @@ _review_candidate() {
   n=$(grep -c '^diff ' "$CANDIDATE" 2>/dev/null || true)
   echo "save: reviewed candidate contains $n approved file diff(s)"
   _print_candidate_assessment "$CANDIDATE"
-  [ "$n" -gt 0 ] && git apply --stat "$CANDIDATE"
+  if [ "$n" -gt 0 ]; then
+    git apply --stat "$CANDIDATE"
+    git apply --summary "$CANDIDATE"
+    sed -n '1,240p' "$CANDIDATE"
+  fi
   echo "save: review the candidate above; it has not changed ${PATCH#$REPO/}"
   echo "save: approve the exact candidate with:"
   echo "  bash scripts/git/ecc-submodule-sync.sh save --approve $digest"
@@ -234,34 +281,31 @@ _restore() {
   [ -s "$PATCH" ] || { echo "restore: no patch to apply"; return 0; }
   _validate_candidate "$PATCH"
 
-  # Plain apply (no --3way): --3way fails for added files because there is no
-  # base version in the index to do a 3-way merge against.
-  #
-  # "already exists in working directory" is expected and benign: untracked new
-  # files survive `git checkout` intact, so their presence means _save's patch
-  # content is already on disk.  Treat it as success, not an error.
-  local out rc
-  out=$(git -C "$SUB" apply --whitespace=nowarn "$PATCH" 2>&1) && rc=0 || rc=$?
+  # Apply each reviewed path separately. A local-only file can legitimately
+  # survive checkout, but its "already exists" error must never suppress an
+  # additive overlay for a different upstream-owned file.
+  local i path mode out rc applied=0 present=0
+  for ((i = 0; i < OVERLAY_COUNT; i++)); do
+    path="${OVERLAY_PATHS[$i]}"
+    mode="${OVERLAY_MODES[$i]}"
+    out=$(git -C "$SUB" apply --whitespace=nowarn --include="$path" "$PATCH" 2>&1) && rc=0 || rc=$?
 
-  if [ "$rc" -eq 0 ]; then
-    echo "restore: local additions re-applied"
-    return 0
-  fi
+    if [ "$rc" -eq 0 ]; then
+      applied=$((applied + 1))
+      continue
+    fi
 
-  # Filter out the benign "already exists" noise.
-  local real_errors
-  real_errors=$(printf '%s\n' "$out" \
-    | grep '^error:' \
-    | grep -v "already exists in working directory" || true)
+    if [ "$mode" = "new-file" ] && printf '%s\n' "$out" | grep -q "already exists in working directory"; then
+      present=$((present + 1))
+      continue
+    fi
 
-  if [ -z "$real_errors" ]; then
-    local n; n=$(printf '%s\n' "$out" | grep -c "already exists" 2>/dev/null || echo 0)
-    echo "restore: $n new-file path(s) already present (survived checkout) — skipped"
-    return 0
-  fi
+    printf '%s\n' "$out" >&2
+    die "restore: $path did not apply cleanly — resolve its reviewed overlay before continuing"
+  done
 
-  printf '%s\n' "$out" >&2
-  die "restore: patch did not apply cleanly — resolve conflicts in $SUB, then re-run save"
+  [ "$applied" -gt 0 ] && echo "restore: $applied reviewed overlay path(s) re-applied"
+  [ "$present" -gt 0 ] && echo "restore: $present new-file overlay path(s) already present (survived checkout)"
 }
 
 _do_checkout() {

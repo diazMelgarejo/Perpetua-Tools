@@ -1,0 +1,43 @@
+{
+  "id": "ad58015aee6c",
+  "key": "manual_ad5801",
+  "name": "manual_ad5801",
+  "claim": "When a review-fix PR has drifted behind current main, reconcile main first and resolve conflicts by synthesis, then apply reviewer comments; do not stack fixes on a stale branch.",
+  "conditions": [
+    "coderabbit",
+    "current-main",
+    "ecc-overlay",
+    "merge-conflict",
+    "pr-review",
+    "synthesis"
+  ],
+  "evidence_ids": [
+    "2026-07-16T03:57:21.421899+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-16T03:57:21.421899+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-16T03:57:21.421899+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-16T03:57:21.496796+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR #241 required merging current PT main, preserving main's newer restore behavior and memory/lockfile changes, then applying the ECC overlay hardening fixes in one cohesive follow-up commit.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-16T03:57:21.421899+00:00"
+      ],
+      "lessons_sha": "1d0152357ef9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-16T03:57:21.496786+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR #241 required merging current PT main, preserving main's newer restore behavior and memory/lockfile changes, then applying the ECC overlay hardening fixes in one cohesive follow-up commit."
+}
