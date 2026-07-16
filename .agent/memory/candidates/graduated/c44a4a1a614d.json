@@ -1,0 +1,70 @@
+{
+  "id": "c44a4a1a614d",
+  "key": "manual_c44a4a",
+  "name": "manual_c44a4a",
+  "claim": "For Exa MCP on OpenClaw machines, configure Codex as a stdio MCP pointing at orama-system/scripts/exa/exa-mcp-wrapper.sh, not as the bare https://mcp.exa.ai/mcp URL. The wrapper resolves EXA_API_KEY from OpenClaw config or macOS Keychain, shares one exa-mcp-daemon with Claude/orama-system/Perpetua-Tools/Codex, and exposes web_search_exa plus web_fetch_exa after a new Codex session loads MCP.",
+  "conditions": [
+    "after",
+    "bare",
+    "claude",
+    "codex",
+    "config",
+    "configure",
+    "exa",
+    "exa-mcp-daemon",
+    "exa-mcp-wrapper",
+    "exa_api_key",
+    "exposes",
+    "https",
+    "keychain",
+    "loads",
+    "machines",
+    "macos",
+    "mcp",
+    "new",
+    "one",
+    "openclaw",
+    "orama-system",
+    "perpetua-tools",
+    "plus",
+    "pointing",
+    "resolves",
+    "scripts",
+    "session",
+    "shares",
+    "stdio",
+    "url",
+    "web_fetch_exa",
+    "web_search_exa",
+    "wrapper"
+  ],
+  "evidence_ids": [
+    "2026-07-16T12:55:07.562070+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-16T12:55:07.562070+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-16T12:55:07.562070+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-16T12:55:07.676810+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Codex's remote HTTP Exa entry had no bearer token env var and could not use the existing OpenClaw secret path. The local wrapper smoke-tested successfully as exa-search-server and returned web_search_exa/web_fetch_exa.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-16T12:55:07.562070+00:00"
+      ],
+      "lessons_sha": "04555ed7f2f9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-16T12:55:07.676804+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Codex's remote HTTP Exa entry had no bearer token env var and could not use the existing OpenClaw secret path. The local wrapper smoke-tested successfully as exa-search-server and returned web_search_exa/web_fetch_exa."
+}
