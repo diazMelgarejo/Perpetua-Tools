@@ -1,0 +1,70 @@
+{
+  "id": "bb8f39c02526",
+  "key": "manual_bb8f39",
+  "name": "manual_bb8f39",
+  "claim": "Before any destructive git ancestry operation (force-reset, history rewrite, branch deletion), create a safety ref pointing at the commit about to be discarded first, unconditionally \u2014 this is what turns a scary 'we might have lost work' moment into a routine cherry-pick-and-reset, and costs nothing to do even when it turns out to be unnecessary.",
+  "conditions": [
+    "about",
+    "ancestry",
+    "any",
+    "before",
+    "branch",
+    "cherry-pick-and-reset",
+    "commit",
+    "costs",
+    "create",
+    "deletion",
+    "destructive",
+    "discarded",
+    "even",
+    "first",
+    "force-reset",
+    "git",
+    "history",
+    "into",
+    "lost",
+    "moment",
+    "nothing",
+    "operation",
+    "out",
+    "pointing",
+    "ref",
+    "rewrite",
+    "routine",
+    "safety",
+    "scary",
+    "turns",
+    "unconditionally",
+    "unnecessary",
+    "work"
+  ],
+  "evidence_ids": [
+    "2026-07-16T21:59:09.240386+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-16T21:59:09.240386+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-16T21:59:09.240386+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-16T21:59:09.312416+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "When a doctrine-authoring commit was mistakenly pushed to main, the safety ref created before touching anything (safety/main-doctrine-commit-20260713) meant the remediation was a 2-minute cherry-pick-and-reset instead of a recovery investigation. Repeated again during the PR#242 replay: cherry-picking only the real content commit onto fresh main, skipping a no-op backmerge commit, worked cleanly because nothing destructive happened until the safety net was already in place.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-16T21:59:09.240386+00:00"
+      ],
+      "lessons_sha": "62c48f468437"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-16T21:59:09.312400+00:00",
+  "reviewer": "learn.py",
+  "rationale": "When a doctrine-authoring commit was mistakenly pushed to main, the safety ref created before touching anything (safety/main-doctrine-commit-20260713) meant the remediation was a 2-minute cherry-pick-and-reset instead of a recovery investigation. Repeated again during the PR#242 replay: cherry-picking only the real content commit onto fresh main, skipping a no-op backmerge commit, worked cleanly because nothing destructive happened until the safety net was already in place."
+}

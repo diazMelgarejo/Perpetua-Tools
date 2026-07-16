@@ -1,0 +1,69 @@
+{
+  "id": "c0b337199888",
+  "key": "manual_c0b337",
+  "name": "manual_c0b337",
+  "claim": "A tool with multiple entry paths into the same durable record (e.g. an auto-derived path and a manual-override path) needs identical side effects on every path, or referential-integrity gaps will surface much later via something unrelated to the original write, rather than at the point where the gap was actually introduced.",
+  "conditions": [
+    "actually",
+    "auto-derived",
+    "durable",
+    "effects",
+    "entry",
+    "every",
+    "gap",
+    "gaps",
+    "identical",
+    "into",
+    "introduced",
+    "later",
+    "manual-override",
+    "much",
+    "multiple",
+    "needs",
+    "original",
+    "path",
+    "paths",
+    "point",
+    "rather",
+    "record",
+    "referential-integrity",
+    "same",
+    "side",
+    "something",
+    "surface",
+    "than",
+    "tool",
+    "unrelated",
+    "via",
+    "write"
+  ],
+  "evidence_ids": [
+    "2026-07-16T21:59:17.879103+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-16T21:59:17.879103+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-16T21:59:17.879103+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-16T21:59:17.959768+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "learn.py's manual-stage path wrote a candidate JSON promising an episodic evidence record via evidence_ids: [now], but never actually wrote that record -- unlike the auto-derived candidate path, which does mirror correctly. The gap sat undetected for a day until an unrelated PR carrying the lesson forward got a CodeRabbit referential-integrity review. Fixed by adding the same mirror write to the manual path.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-16T21:59:17.879103+00:00"
+      ],
+      "lessons_sha": "b87e58e51813"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-16T21:59:17.959750+00:00",
+  "reviewer": "learn.py",
+  "rationale": "learn.py's manual-stage path wrote a candidate JSON promising an episodic evidence record via evidence_ids: [now], but never actually wrote that record -- unlike the auto-derived candidate path, which does mirror correctly. The gap sat undetected for a day until an unrelated PR carrying the lesson forward got a CodeRabbit referential-integrity review. Fixed by adding the same mirror write to the manual path."
+}
