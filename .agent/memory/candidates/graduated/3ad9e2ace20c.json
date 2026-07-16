@@ -1,0 +1,63 @@
+{
+  "id": "3ad9e2ace20c",
+  "key": "manual_3ad9e2",
+  "name": "manual_3ad9e2",
+  "claim": "Git author identity is not a reliable signal for distinguishing human from autonomous-agent authorship in a stack where agents commit under whatever git identity is locally configured \u2014 cross-check autonomous-agent activity logs alongside git log before attributing a commit to a human based on the author field alone.",
+  "conditions": [
+    "activity",
+    "agents",
+    "alone",
+    "alongside",
+    "attributing",
+    "author",
+    "authorship",
+    "autonomous-agent",
+    "based",
+    "before",
+    "commit",
+    "configured",
+    "cross-check",
+    "distinguishing",
+    "field",
+    "git",
+    "human",
+    "identity",
+    "locally",
+    "log",
+    "logs",
+    "reliable",
+    "signal",
+    "stack",
+    "under",
+    "whatever"
+  ],
+  "evidence_ids": [
+    "2026-07-16T21:59:17.755467+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-16T21:59:17.755467+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-16T21:59:17.755467+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-16T21:59:17.826658+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A one-shot self-cleaning workflow (created and deleted 74 seconds apart) was initially attributed to a benign human process because its git author matched the usual human identity. It was actually created by a rogue AutoResearcher agent run, committing under that same locally-configured identity \u2014 indistinguishable from a human commit by author field alone.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-16T21:59:17.755467+00:00"
+      ],
+      "lessons_sha": "6f7578c5fdd4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-16T21:59:17.826641+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A one-shot self-cleaning workflow (created and deleted 74 seconds apart) was initially attributed to a benign human process because its git author matched the usual human identity. It was actually created by a rogue AutoResearcher agent run, committing under that same locally-configured identity \u2014 indistinguishable from a human commit by author field alone."
+}

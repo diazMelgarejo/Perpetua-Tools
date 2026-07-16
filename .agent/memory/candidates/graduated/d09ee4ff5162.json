@@ -1,0 +1,63 @@
+{
+  "id": "d09ee4ff5162",
+  "key": "manual_d09ee4",
+  "name": "manual_d09ee4",
+  "claim": "Do not fix a bug about untrustworthy manual bypasses of a tool by making another manual bypass of that same tool \u2014 implement the tool fix first, then dogfood the fixed tool itself to record any further lessons, so the fix's own credibility is demonstrated rather than undermined.",
+  "conditions": [
+    "about",
+    "another",
+    "any",
+    "bug",
+    "bypass",
+    "bypasses",
+    "credibility",
+    "demonstrated",
+    "dogfood",
+    "first",
+    "fix",
+    "fixed",
+    "further",
+    "implement",
+    "itself",
+    "lessons",
+    "making",
+    "manual",
+    "own",
+    "rather",
+    "record",
+    "same",
+    "than",
+    "tool",
+    "undermined",
+    "untrustworthy"
+  ],
+  "evidence_ids": [
+    "2026-07-16T21:59:25.340228+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-16T21:59:25.340228+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-16T21:59:25.340228+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-16T21:59:25.409594+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "While diagnosing learn.py's manual-stage episodic-mirror gap, the meta-lesson about the bug was deliberately kept at the episodic level only rather than hand-crafted into lessons.jsonl, because hand-writing a lessons.jsonl row outside the tool would repeat the exact 'manual entry bypassing normal tooling' pattern that caused the original gap. Once the fix landed, these very lessons were written by running the fixed learn.py for real, not by hand -- the dogfooding IS the proof.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-16T21:59:25.340228+00:00"
+      ],
+      "lessons_sha": "5672054f63a4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-16T21:59:25.409581+00:00",
+  "reviewer": "learn.py",
+  "rationale": "While diagnosing learn.py's manual-stage episodic-mirror gap, the meta-lesson about the bug was deliberately kept at the episodic level only rather than hand-crafted into lessons.jsonl, because hand-writing a lessons.jsonl row outside the tool would repeat the exact 'manual entry bypassing normal tooling' pattern that caused the original gap. Once the fix landed, these very lessons were written by running the fixed learn.py for real, not by hand -- the dogfooding IS the proof."
+}
