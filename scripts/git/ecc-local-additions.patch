@@ -1,6 +1,6 @@
 diff --git a/.agents/skills/frontend-design/agents/openai.yaml b/.agents/skills/frontend-design/agents/openai.yaml
 new file mode 100644
-index 00000000..ee2ab457
+index 0000000..ee2ab45
 --- /dev/null
 +++ b/.agents/skills/frontend-design/agents/openai.yaml
 @@ -0,0 +1,7 @@
@@ -13,7 +13,7 @@ index 00000000..ee2ab457
 +  allow_implicit_invocation: true
 diff --git a/.antigravity/ANTIGRAVITY.md b/.antigravity/ANTIGRAVITY.md
 new file mode 100644
-index 00000000..7b9b2d67
+index 0000000..7b9b2d6
 --- /dev/null
 +++ b/.antigravity/ANTIGRAVITY.md
 @@ -0,0 +1,48 @@
@@ -67,7 +67,7 @@ index 00000000..7b9b2d67
 +- `mcp-configs/` for shared connector baselines
 diff --git a/.claude/hooks/.logs/hook-log.jsonl b/.claude/hooks/.logs/hook-log.jsonl
 new file mode 100644
-index 00000000..c656fba0
+index 0000000..c656fba
 --- /dev/null
 +++ b/.claude/hooks/.logs/hook-log.jsonl
 @@ -0,0 +1 @@
@@ -90,7 +90,7 @@ index 9195bd4d..8230eac4 100644
  GITHUB_TOKEN=
 diff --git a/.gemini/ANTIGRAVITY.md b/.gemini/ANTIGRAVITY.md
 new file mode 100644
-index 00000000..7b9b2d67
+index 0000000..7b9b2d6
 --- /dev/null
 +++ b/.gemini/ANTIGRAVITY.md
 @@ -0,0 +1,48 @@
