@@ -1,0 +1,41 @@
+{
+  "id": "63c3a8bb65e0",
+  "key": "manual_63c3a8",
+  "name": "manual_63c3a8",
+  "claim": "When fixing a test to route through a real function instead of a synthetic fixture, verify every downstream assertion's indexing/shape assumptions too, not just the input construction \u2014 changing what data flows in without checking what the assertions expect out leaves a differently-broken test",
+  "conditions": [
+    "fix-verification",
+    "plan-review",
+    "post-approval-review",
+    "testing"
+  ],
+  "evidence_ids": [
+    "2026-07-16T01:53:59.606503+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-16T01:53:59.606503+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-16T01:53:59.606503+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-16T01:53:59.683284+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Fixed a plan's test to call the real redact_portal_status_payload() instead of a hand-rolled dict (closing the exact gap that hid a production bug), but left the assertion indexing into the wrapped dict shape as if it were still a plain list -- seen_by_publisher[0]['agents'][0] raised KeyError against the real dict-wrapped {'agents': [...], 'count': n} shape. An independent Codex GPT-5.5 pass caught it after the plan had already been marked APPROVED by 3 prior review phases (CEO, Eng, DX), none of which caught this because they were focused on the fixture's input construction, not the assertions consuming the corrected shape.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-16T01:53:59.606503+00:00"
+      ],
+      "lessons_sha": "1cbcf490d8ea"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-16T01:53:59.683279+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Fixed a plan's test to call the real redact_portal_status_payload() instead of a hand-rolled dict (closing the exact gap that hid a production bug), but left the assertion indexing into the wrapped dict shape as if it were still a plain list -- seen_by_publisher[0]['agents'][0] raised KeyError against the real dict-wrapped {'agents': [...], 'count': n} shape. An independent Codex GPT-5.5 pass caught it after the plan had already been marked APPROVED by 3 prior review phases (CEO, Eng, DX), none of which caught this because they were focused on the fixture's input construction, not the assertions consuming the corrected shape."
+}
