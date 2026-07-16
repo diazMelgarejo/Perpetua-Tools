@@ -1,0 +1,43 @@
+{
+  "id": "9b5f3cd393bd",
+  "key": "manual_9b5f3c",
+  "name": "manual_9b5f3c",
+  "claim": "For coordinated PR repair, always read the live job board and recent GossipBus events before acting; stale plan files are not enough when another agent may have dropped conflict or ownership hints.",
+  "conditions": [
+    "conflicts",
+    "coordination",
+    "gossipbus",
+    "job-board",
+    "multi-agent",
+    "pr-review"
+  ],
+  "evidence_ids": [
+    "2026-07-16T03:57:21.232258+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-16T03:57:21.232258+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-16T03:57:21.232258+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-16T03:57:21.313903+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR #241 looked straightforward from the local plan, but Claude's GossipBus event identified the real Step 0: the branch was conflicting/dirty against current main and needed synthesis before CodeRabbit fixes.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-16T03:57:21.232258+00:00"
+      ],
+      "lessons_sha": "da9c1f882e3b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-16T03:57:21.313896+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR #241 looked straightforward from the local plan, but Claude's GossipBus event identified the real Step 0: the branch was conflicting/dirty against current main and needed synthesis before CodeRabbit fixes."
+}

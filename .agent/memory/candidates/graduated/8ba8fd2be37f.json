@@ -1,0 +1,41 @@
+{
+  "id": "8ba8fd2be37f",
+  "key": "manual_8ba8fd",
+  "name": "manual_8ba8fd",
+  "claim": "When dual-voice adversarial review (independent Claude subagent + Codex) converges strongly against a plan, steelman the critiques before accepting the verdict \u2014 some adversarial findings dissolve on inspection (holding an MVP to a bar it explicitly disclaims in its own stated constraints), while others survive because they're verified against actual source code, not just argued",
+  "conditions": [
+    "adversarial-review",
+    "autoplan",
+    "ceo-review",
+    "plan-review"
+  ],
+  "evidence_ids": [
+    "2026-07-16T01:03:56.004198+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-16T01:03:56.004198+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-16T01:03:56.004198+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-16T01:03:56.067783+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "On the G7 SSE plan, Codex's critiques about v2-mesh-compatibility 'not earned' and process-local fan-out being a 'hidden commitment' both dissolved once checked against the plan's own Global Constraints section, which explicitly and prominently disclaims both. But the 2 Claude-subagent-found bugs (field-name mismatch, SSE timeout leak) survived the steelman pass because they were confirmed by reading the real source, not by argument. User explicitly requested the steelman pass mid-review after seeing the adversarial dual-voice findings, worried about pile-on bias.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-16T01:03:56.004198+00:00"
+      ],
+      "lessons_sha": "8c17af5fce69"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-16T01:03:56.067777+00:00",
+  "reviewer": "learn.py",
+  "rationale": "On the G7 SSE plan, Codex's critiques about v2-mesh-compatibility 'not earned' and process-local fan-out being a 'hidden commitment' both dissolved once checked against the plan's own Global Constraints section, which explicitly and prominently disclaims both. But the 2 Claude-subagent-found bugs (field-name mismatch, SSE timeout leak) survived the steelman pass because they were confirmed by reading the real source, not by argument. User explicitly requested the steelman pass mid-review after seeing the adversarial dual-voice findings, worried about pile-on bias."
+}
