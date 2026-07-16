@@ -11,9 +11,11 @@
     "alphaclaw": {
       "command": "node",
       "args": [
-        "$HOME/code/OpenClaw/Perpetua-Tools/packages/alphaclaw-mcp/build/index.js"
+        "packages/alphaclaw-mcp/build/index.js"
       ],
-      "env": {}
+      "env": {
+        "ALPHACLAW_MCP_PROFILE": "readonly"
+      }
     }
   }
 }
