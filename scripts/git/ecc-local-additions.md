@@ -1,7 +1,7 @@
 # vendor/ecc-tools — local-only additions
 
 The submodule gitlink is pinned to **canonical `ed387446`** (origin/main of ecc-tools,
-2026-07-15). Five reviewed local-only paths are preserved here so they
+2026-07-15). Five reviewed local overlay paths are preserved here so they
 survive `git submodule update`. They are re-applied by
 [`ecc-submodule-sync.sh`](ecc-submodule-sync.sh) from
 [`ecc-local-additions.patch`](ecc-local-additions.patch). The companion
@@ -44,7 +44,8 @@ allowed drift. `new-file` permits a local-only file; `additive` permits only
 added lines to a named upstream file. It rejects paths outside the registry,
 deletions, patch-type mismatches, and unreviewed submodule changes. `update`
 and `upgrade` restore the existing reviewed patch but never call `save`
-themselves.
+themselves. Restore applies each registered path independently, so an existing
+local-only file cannot mask a required `additive` overlay in a different file.
 
 ## 2026-07-15 Reclassification
 
