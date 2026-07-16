@@ -1,7 +1,7 @@
 # vendor/ecc-tools — local-only additions
 
 The submodule gitlink is pinned to **canonical `ed387446`** (origin/main of ecc-tools,
-2026-07-15). Five reviewed local-only paths are preserved here so they
+2026-07-15). Five reviewed local overlay paths are preserved here so they
 survive `git submodule update`. They are re-applied by
 [`ecc-submodule-sync.sh`](ecc-submodule-sync.sh) from
 [`ecc-local-additions.patch`](ecc-local-additions.patch). The companion

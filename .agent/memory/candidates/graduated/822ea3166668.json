@@ -1,0 +1,41 @@
+{
+  "id": "822ea3166668",
+  "key": "manual_822ea3",
+  "name": "manual_822ea3",
+  "claim": "Test fixtures that hand-build synthetic data instead of calling the real transformation function under test can hide production bugs that pass every test \u2014 verify test doubles call the actual function (e.g. the real redaction/serialization step), not a fixture shaped to match what the test author assumed the output would look like",
+  "conditions": [
+    "code-review",
+    "dual-voice-review",
+    "eng-review",
+    "testing"
+  ],
+  "evidence_ids": [
+    "2026-07-16T01:03:55.864833+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-16T01:03:55.864833+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-16T01:03:55.864833+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-16T01:03:55.927101+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PortalNotificationPublisher.publish() read item.get('state') and expected a list, but the real redact_agents_payload() returns a dict ({'agents': [...], 'count': n}) keyed by 'status' not 'state'. Both plan tests passed because they monkeypatched redact_portal_status_payload with a hand-written fixture using the wrong field name AND the wrong (unwrapped) shape, instead of calling the real function. Found by an independent Claude subagent CEO-review voice that read actual source rather than trusting the plan's own self-review, which claimed full type consistency.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-16T01:03:55.864833+00:00"
+      ],
+      "lessons_sha": "605a7922a4a9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-16T01:03:55.927095+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PortalNotificationPublisher.publish() read item.get('state') and expected a list, but the real redact_agents_payload() returns a dict ({'agents': [...], 'count': n}) keyed by 'status' not 'state'. Both plan tests passed because they monkeypatched redact_portal_status_payload with a hand-written fixture using the wrong field name AND the wrong (unwrapped) shape, instead of calling the real function. Found by an independent Claude subagent CEO-review voice that read actual source rather than trusting the plan's own self-review, which claimed full type consistency."
+}

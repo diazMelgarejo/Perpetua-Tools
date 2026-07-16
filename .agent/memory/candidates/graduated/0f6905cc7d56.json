@@ -1,0 +1,43 @@
+{
+  "id": "0f6905cc7d56",
+  "key": "manual_0f6905",
+  "name": "manual_0f6905",
+  "claim": "When testing an infinite-streaming (SSE) FastAPI/Starlette route, check for @app.middleware('http') decorators before assuming the test's own code is buggy -- that decorator registers Starlette's BaseHTTPMiddleware under the hood, which re-streams every response through an internal call_next() anyio memory-stream bridge that has a well-documented hang with infinite streaming bodies. No client-side httpx/TestClient timeout can interrupt it since the hang is server-side inside the middleware",
+  "conditions": [
+    "asgi",
+    "fastapi",
+    "middleware",
+    "sse",
+    "starlette",
+    "testing"
+  ],
+  "evidence_ids": [
+    "2026-07-16T02:43:01.851921+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-16T02:43:01.851921+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-16T02:43:01.851921+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-16T02:43:02.015117+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Spent significant time debugging what looked like a G7-specific SSE test hang (tried: async generator laziness fixes, httpx timeouts, ASGITransport direct calls) before tracing the actual root cause via a full Python traceback: orama-system's _control_plane_auth_middleware is registered via @app.middleware('http'), and Starlette's BaseHTTPMiddleware.call_next() bridge is what hangs, not the route code. Confirmed systemic (not G7-specific) by reproducing the identical hang on a completely unrelated pre-existing route (/events/peer-stream). Workaround: bypass TestClient/httpx streaming entirely for tests that only need to verify status/headers -- drive the raw ASGI protocol directly and capture just the http.response.start message, then cancel the task without waiting for the infinite body.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-16T02:43:01.851921+00:00"
+      ],
+      "lessons_sha": "786cf89b4d26"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-16T02:43:02.015108+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Spent significant time debugging what looked like a G7-specific SSE test hang (tried: async generator laziness fixes, httpx timeouts, ASGITransport direct calls) before tracing the actual root cause via a full Python traceback: orama-system's _control_plane_auth_middleware is registered via @app.middleware('http'), and Starlette's BaseHTTPMiddleware.call_next() bridge is what hangs, not the route code. Confirmed systemic (not G7-specific) by reproducing the identical hang on a completely unrelated pre-existing route (/events/peer-stream). Workaround: bypass TestClient/httpx streaming entirely for tests that only need to verify status/headers -- drive the raw ASGI protocol directly and capture just the http.response.start message, then cancel the task without waiting for the infinite body."
+}

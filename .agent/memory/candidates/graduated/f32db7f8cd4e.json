@@ -1,0 +1,41 @@
+{
+  "id": "f32db7f8cd4e",
+  "key": "manual_f32db7",
+  "name": "manual_f32db7",
+  "claim": "Async generators are lazy \u2014 code inside them (including subscription/registration side effects like hub.subscribe()) does not run until the generator is first iterated, not at generator-creation time. Emitting/triggering an event before a consumer has actually started iterating a lazily-created generator silently drops that event rather than erroring",
+  "conditions": [
+    "async-generators",
+    "asyncio",
+    "plan-review",
+    "testing"
+  ],
+  "evidence_ids": [
+    "2026-07-16T01:53:59.791583+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-16T01:53:59.791583+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-16T01:53:59.791583+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-16T01:53:59.863814+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A rewritten test created an async generator via iter_notification_sse(...) and immediately called hub.emit() before ever awaiting/iterating the generator, assuming the generator's internal hub.subscribe() call had already run. It hadn't -- no subscriber existed yet, so the emit was silently dropped, and the test would fall through to a 15s keepalive path instead of testing what it claimed to test. Fixed by starting the consumer as a background task and polling hub.subscriber_count until it's live before emitting. Caught by an independent Codex GPT-5.5 pass after 3 prior review phases missed it.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-16T01:53:59.791583+00:00"
+      ],
+      "lessons_sha": "11eced27a564"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-16T01:53:59.863810+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A rewritten test created an async generator via iter_notification_sse(...) and immediately called hub.emit() before ever awaiting/iterating the generator, assuming the generator's internal hub.subscribe() call had already run. It hadn't -- no subscriber existed yet, so the emit was silently dropped, and the test would fall through to a 15s keepalive path instead of testing what it claimed to test. Fixed by starting the consumer as a background task and polling hub.subscriber_count until it's live before emitting. Caught by an independent Codex GPT-5.5 pass after 3 prior review phases missed it."
+}
