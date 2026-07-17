@@ -12,6 +12,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 
 def _load_module(monkeypatch, tmp_path):
     """Load learn.py fresh with BASE/CANDIDATES pointed at tmp_path.
@@ -58,6 +60,7 @@ def test_stage_writes_episodic_mirror(monkeypatch, tmp_path):
     assert len(entries) == 1
     assert entries[0]["action"] == f"manual-stage:{cid}"
     assert entries[0]["source"]["skill"] == "learn"
+    assert Path(path).is_file()
 
 
 def test_evidence_id_resolves_to_the_mirror(monkeypatch, tmp_path):
@@ -82,12 +85,25 @@ def test_evidence_id_resolves_to_the_mirror(monkeypatch, tmp_path):
     assert matching[0]["evidence_ids"] == [evidence_ts]
 
 
-def test_append_episodic_mirror_fails_open_on_write_error(monkeypatch, tmp_path):
-    """The actual fail-open guarantee: _append_episodic_mirror itself
-    swallows OSError rather than propagating it.
+def test_stage_fails_closed_when_mirror_write_errors(monkeypatch, tmp_path):
+    """Mirror-write success is enforced: a forced OSError from the mirror
+    must propagate, leave no published candidate JSON, and leave no
+    success result behind.
     """
     mod, base = _load_module(monkeypatch, tmp_path)
-    # Point at a path that cannot be written (parent directory missing).
-    monkeypatch.setattr(mod, "BASE", str(tmp_path / "does-not-exist"))
-    # Must not raise.
-    mod._append_episodic_mirror("deadbeef", "some claim", "2026-01-01T00:00:00+00:00")
+
+    def _boom(*_args, **_kwargs):
+        raise OSError("forced mirror-write failure")
+
+    monkeypatch.setattr(mod, "_append_episodic_mirror", _boom)
+
+    with pytest.raises(OSError, match="forced mirror-write failure"):
+        mod.stage(
+            "Always serialize timestamps in UTC to avoid comparison bugs",
+            ["timestamps", "utc"],
+        )
+
+    candidates_dir = base / "memory" / "candidates"
+    assert list(candidates_dir.glob("*.json")) == []
+    assert list(candidates_dir.glob("*.tmp")) == []
+    assert _read_episodic(base) == []
