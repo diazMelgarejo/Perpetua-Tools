@@ -578,6 +578,18 @@ async def _phase_unblock(bus: GossipBus, phase_name: str, reason: str) -> None:
     print(f"unblocked: {phase_name}")
 
 
+def _phase_sort_key(name: str) -> tuple[int, tuple[int, ...] | tuple[()], str]:
+    """Sort Phase-N[.M[.…]] names numerically; other names lexically."""
+    parts = name.split("-")
+    if len(parts) >= 2 and parts[0] == "Phase":
+        try:
+            components = tuple(int(n) for n in parts[1].split("."))
+            return (0, components, name)
+        except (ValueError, IndexError):
+            pass
+    return (1, (), name)
+
+
 async def _phase_list(bus: GossipBus) -> None:
     """List all phases with status and test progress."""
     phases = await _all_phase_states(bus)
@@ -585,18 +597,7 @@ async def _phase_list(bus: GossipBus) -> None:
         print("no phases tracked yet")
         return
 
-    def phase_sort_key(name: str) -> tuple[int, tuple[int, ...], str]:
-        """Sort Phase-N[.M[...]] numerically; all other names lexically."""
-        parts = name.split("-")
-        if len(parts) >= 2 and parts[0] == "Phase":
-            try:
-                components = tuple(int(n) for n in parts[1].split("."))
-                return (0, components, name)
-            except (ValueError, IndexError):
-                pass
-        return (1, (), name)
-
-    for phase_name in sorted(phases.keys(), key=phase_sort_key):
+    for phase_name in sorted(phases.keys(), key=_phase_sort_key):
         phase = phases[phase_name]
         status_emoji = {
             PhaseStatus.COMPLETE: "✅",
@@ -905,15 +906,30 @@ async def _queue_add(bus: GossipBus, task_name: str, phase: str, priority: str, 
     print(f"enqueued: {task_id} ({phase}, {priority_enum.name})")
 
 
+_TASK_EVENT_KINDS = (
+    "task_enqueue",
+    "task_claim",
+    "task_complete",
+    "task_failed",
+    "task_abandoned",
+)
+
+
+async def _task_snapshot(bus: GossipBus, task_id: str) -> Optional[dict]:
+    """Fold append-only heartbeat events for one task into a merged snapshot."""
+    events = await bus.tail(limit=500, event_type="heartbeat")
+    snapshot: dict = {}
+    for ev in reversed(events):
+        p = ev["payload"]
+        if p.get("task_id") == task_id and p.get("kind") in _TASK_EVENT_KINDS:
+            snapshot.update(p)
+    return snapshot or None
+
+
 async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> None:
     """Claim a queued task, blocking if already claimed or deps not satisfied."""
     events = await bus.tail(limit=500, event_type="heartbeat")
-    task_state = None
-    for ev in events:
-        p = ev["payload"]
-        if p.get("task_id") == task_id and p.get("kind") in ("task_enqueue", "task_claim", "task_complete", "task_failed"):
-            task_state = p
-            break
+    task_state = await _task_snapshot(bus, task_id)
     if not task_state:
         print(f"ERROR: task {task_id} not found")
         return
@@ -958,13 +974,7 @@ async def _queue_complete(bus: GossipBus, task_id: str, notes: str) -> None:
 
 async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> None:
     """Mark a task as failed; retry logic applies if retry_count < max_retries."""
-    events = await bus.tail(limit=500, event_type="heartbeat")
-    task_state = None
-    for ev in events:
-        p = ev["payload"]
-        if p.get("task_id") == task_id and p.get("kind") in ("task_enqueue", "task_claim", "task_complete", "task_failed"):
-            task_state = p
-            break
+    task_state = await _task_snapshot(bus, task_id)
     if not task_state:
         print(f"ERROR: task {task_id} not found")
         return
