@@ -1,0 +1,82 @@
+{
+  "id": "eb4a1cb51115",
+  "key": "manual_eb4a1c",
+  "name": "manual_eb4a1c",
+  "claim": "LINT-006-style path-hygiene hooks flag literal absolute-path patterns even inside policy docs that WARN against them -- describe the pattern abstractly (e.g. 'an OS-specific absolute home-directory path') rather than spelling out the literal trigger string, in ALL docs explaining what not to do. Do NOT use a username placeholder notation either -- it still exposes directory structure; prefer reverse git repo-relative paths or path-free wording.",
+  "conditions": [
+    "absolute",
+    "absolute-path",
+    "abstractly",
+    "against",
+    "all",
+    "describe",
+    "directory",
+    "docs",
+    "either",
+    "even",
+    "explaining",
+    "exposes",
+    "flag",
+    "git",
+    "home-directory",
+    "hooks",
+    "inside",
+    "lint-006-style",
+    "literal",
+    "notation",
+    "os-specific",
+    "out",
+    "path",
+    "path-free",
+    "path-hygiene",
+    "paths",
+    "pattern",
+    "patterns",
+    "placeholder",
+    "policy",
+    "prefer",
+    "rather",
+    "repo-relative",
+    "reverse",
+    "spelling",
+    "still",
+    "string",
+    "structure",
+    "than",
+    "them",
+    "trigger",
+    "use",
+    "username",
+    "warn",
+    "wording"
+  ],
+  "evidence_ids": [
+    "2026-07-17T21:12:16.509161+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-17T21:12:16.509161+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-17T21:12:16.509161+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-17T21:12:41.269430+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Removes a live contradiction: this lesson recommended a username-placeholder notation that other, corrected path-hygiene lessons explicitly warn against.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-17T21:12:16.509161+00:00"
+      ],
+      "lessons_sha": "10b428404beb"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-17T21:12:41.269412+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Removes a live contradiction: this lesson recommended a username-placeholder notation that other, corrected path-hygiene lessons explicitly warn against."
+}
