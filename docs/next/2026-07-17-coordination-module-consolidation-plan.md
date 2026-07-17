@@ -16,6 +16,42 @@ Both Claude and Codex independently verified the extent of the duplication and a
 - Caller graph is clean: nothing outside `scripts/` and `tests/` imports any of these four files directly. A restructure is contained to this corner of the codebase.
 - Four live commands have **zero test coverage** today: `_heartbeat_pulse`, `_heartbeat_kill`, `_heartbeat_cleanup`, `_workflow_critical_path`. Migrating these without characterization tests first would mean trusting the migration instead of verifying it.
 
+## Analysis findings (from the phase-board root-cause writeup)
+
+The full diagnosis is in `docs/next/2026-07-17-phase-board-fragmentation-analysis.md`
+(authored on the PR #256 branch; on `main` once #256 merges). The four
+load-bearing findings, and how each maps onto this plan:
+
+1. **The crash was structural, not a typo.** `_phase_list` / its sort-key
+   helper existed three times (`_core.py`, `_legacy.py`, facade
+   `agent_coordination.py`); the fix landed only in the facade, while the
+   copy the live CLI actually runs (`_core.py`, via `main()`/`_amain()`)
+   still carried the bug. → *Target structure: single source of truth.*
+2. **A passing test coexisted with a broken CLI.** The existing test
+   imported `_phase_list` from the facade, resolving to the good, unused
+   implementation — real test, passed, wrong code path. Green tests do not
+   prove the CLI works when the tested symbol and the invoked symbol have
+   drifted apart. → *Step 4: parity tests through the real CLI path
+   (`main()`/subprocess), not facade imports.*
+3. **A subtler second bug was avoided by the correct fix.** The good version
+   used a tuple-of-ints sort key on purpose — a naive float cast mis-orders
+   minor versions past two digits (`Phase-2.10` before `Phase-2.9`). → *Step
+   2 sourcing rule: carry the tuple-of-ints `phase_sort_key`, never
+   re-introduce the float cast.*
+4. **Five hypotheses ruled out first** (stale bytecode, a shadowing
+   site-packages copy, `sorted()` skipping `key()` on a 1-element list, a
+   `conftest.py` swallowing the error, a duplicate test definition) — all
+   documented so the path isn't re-walked. → *Characterization-first,
+   verify-don't-trust posture throughout the migration.*
+
+The through-line: **a fix landing in one of several duplicate
+implementations doesn't help unless every caller actually reaches it.** One
+bug took three separate patches across three copies today; this plan removes
+the duplication so the next fix lands once. The analysis also flags the
+exact follow-up this plan fulfills — true de-duplication into one canonical
+implementation all callers import, rather than N copies kept consistent by
+hand.
+
 ## Scope boundary (agreed)
 
 This plan is **deliberately not part of PR #256**. PR #256 is the point fix (canonical gossip-DB path resolution + the phase-sort-key fix) and stays scoped to that. This is a separate, later PR/PRs.
@@ -30,7 +66,7 @@ This plan is **deliberately not part of PR #256**. PR #256 is the point fix (can
 
 Single source of truth per capability, under `orchestrator/coordination/` as first-class importable modules (not `scripts/`, since this is genuine orchestration logic other code may eventually want to import, not a one-off script):
 
-```
+```text
 orchestrator/coordination/
   paths.py           # canonical_repo_root, canonical_db_path, current_worktree_label
   claims.py          # register/claim/release/list/agents/log — the original basic claim board
@@ -64,6 +100,193 @@ python3 scripts/agent_coordination.py heartbeat list/check/dashboard/pulse/kill/
 python3 scripts/agent_coordination.py buffer status/drain
 python3 scripts/agent_coordination.py workflow critical-path
 ```
+
+## Scaffolding (reference only — NOT applied while the codebase is frozen)
+
+Everything below is target-state reference for whoever executes the
+migration. **None of it is applied in this PR** — several agents depend on
+the current code being frozen as-is, so this plan documents the shape of
+the work without performing it. Signatures below were read from the live
+code at this commit and are accurate as of freeze; re-verify against the
+tree before use.
+
+### Step 1 — characterization tests for the 4 uncovered commands
+
+The point of a characterization test is to pin *current* behavior exactly,
+so a later structural move that changes output fails loudly. These assert
+against the real CLI-reachable functions, not facade aliases. Live
+signatures at freeze: `_heartbeat_pulse(bus, agent_id)`,
+`_heartbeat_kill(bus, agent_id, reason)`, `_heartbeat_cleanup(bus)` (all
+defined in `scripts/agent_coordination.py`), and
+`_workflow_critical_path(bus)` (in `_core.py`/`_legacy.py`).
+
+```python
+# tests/test_agent_coordination_characterization.py  (NEW — step 1)
+"""Pin CURRENT behavior of the 4 previously-uncovered coordination commands
+before any consolidation move. If any assertion here changes during the
+migration, the migration changed behavior — which this refactor forbids."""
+import pytest
+
+from orchestrator.gossip_bus import GossipBus
+
+
+@pytest.fixture
+async def bus(tmp_path):
+    b = GossipBus(str(tmp_path / "char.db"))
+    await b.init_db()
+    return b
+
+
+@pytest.mark.asyncio
+async def test_heartbeat_pulse_emits_and_prints(bus, capsys):
+    from scripts.agent_coordination import _heartbeat_pulse, _register
+    await _register(bus, "agent-x", "worktree-a")
+    await _heartbeat_pulse(bus, "agent-x")
+    out = capsys.readouterr().out
+    # Characterize the exact current contract (update RHS to match observed
+    # output when first run — this is a pin, not an aspiration):
+    assert "agent-x" in out
+
+
+@pytest.mark.asyncio
+async def test_heartbeat_kill_marks_agent(bus, capsys):
+    from scripts.agent_coordination import _heartbeat_kill, _register
+    await _register(bus, "agent-y", "worktree-b")
+    await _heartbeat_kill(bus, "agent-y", "manual stop")
+    assert "agent-y" in capsys.readouterr().out
+
+
+@pytest.mark.asyncio
+async def test_heartbeat_cleanup_runs_clean_with_no_stale(bus, capsys):
+    from scripts.agent_coordination import _heartbeat_cleanup
+    await _heartbeat_cleanup(bus)
+    # No stale claims → the "nothing released" path. Pin whichever string
+    # the current code prints.
+    assert capsys.readouterr().out  # non-empty; tighten to exact text on first run
+
+
+@pytest.mark.asyncio
+async def test_workflow_critical_path_on_empty_board(bus, capsys):
+    from scripts.agent_coordination_core import _workflow_critical_path
+    await _workflow_critical_path(bus)
+    assert capsys.readouterr().out  # pin exact output on first run
+```
+
+> First-run protocol: run once, read the actual stdout, then replace each
+> loose `assert ... in out` / non-empty check with the exact observed
+> string. A characterization test is only as good as the precision of what
+> it pins.
+
+### Step 2 — module extraction pattern (move, don't copy)
+
+Each new module is the *single* home for its capability. Take the best
+existing version of each function (per the plan's step-2 sourcing rules),
+`git mv`-in-spirit it (move the body, delete the source), and leave the old
+files importing nothing new. Example for the smallest capability, `paths`:
+
+```python
+# orchestrator/coordination/paths.py  (NEW — step 2, `paths` first)
+"""Canonical repo/worktree/db path resolution — single source of truth.
+
+Moved (not copied) from scripts/agent_coordination_core.py at consolidation.
+The gossip-DB half of this already went canonical in PR #256
+(orchestrator/gossip_bus.py::_canonical_repo_state_dir); this module is the
+coordination-side counterpart so both agree on one repo root per worktree.
+"""
+from __future__ import annotations
+
+from pathlib import Path
+
+# Reuse the already-canonical resolver rather than re-deriving it — the
+# PR #256 fix is the single source of truth for "the repo root shared by
+# every worktree", and coordination paths must not fork from it.
+from orchestrator.gossip_bus import _canonical_repo_state_dir
+
+
+def canonical_repo_root() -> Path:
+    state = _canonical_repo_state_dir()
+    return state.parent if state is not None else Path.cwd()
+
+
+def canonical_db_path() -> str:
+    from orchestrator.gossip_bus import resolve_gossip_db_path
+    return resolve_gossip_db_path()
+
+
+def current_worktree_label() -> str:
+    # Move the current implementation verbatim; do not "improve" it here —
+    # behavior parity is the contract for this refactor.
+    ...
+```
+
+Per-module loop (run in full before starting the next module):
+
+```bash
+# For each capability in order: paths → claims → reorder_buffer → task_queue → phases
+uv run --offline python -m pytest tests/ -k "coordination or gossip" -v
+python3 scripts/review/repo_hygiene.py .
+git add -A && git commit -m "refactor(coord): extract <capability> to orchestrator/coordination/<mod>.py (move, no behavior change)"
+```
+
+### Step 3 — `scripts/agent_coordination.py` becomes CLI-only
+
+After extraction, the facade holds argparse wiring + dispatch + `print()`
+formatting, importing every function from the new modules. No business-logic
+bodies remain in `scripts/`. Shape:
+
+```python
+# scripts/agent_coordination.py  (SHRUNK — step 3)
+from orchestrator.coordination import paths, claims, reorder_buffer, task_queue, phases
+
+_DISPATCH = {
+    ("register",): claims._register,
+    ("claim",):    claims._claim,
+    ("queue", "add"):    task_queue._queue_add,
+    ("phase", "list"):   phases._phase_list,
+    ("workflow", "critical-path"): phases._workflow_critical_path,
+    # ... one row per subcommand; this table IS the CLI surface now
+}
+
+def main() -> int:
+    args = _build_parser().parse_args()
+    handler = _resolve(_DISPATCH, args)      # maps subcommand tuple → coroutine
+    return asyncio.run(_run(handler, args))
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+```
+
+### Step 4 — parity tests on the REAL CLI path, then delete
+
+The exact trap from today's bug (facade test passes, live CLI crashes) is
+avoided only if parity is asserted through `main()`/`_amain()`, not through
+facade-level imports. Drive the CLI as a subprocess so the test exercises
+the same entrypoint a user hits:
+
+```python
+# tests/test_agent_coordination_cli_parity.py  (NEW — step 4, gate before deletion)
+import subprocess, sys
+
+def _cli(*args):
+    return subprocess.run(
+        [sys.executable, "scripts/agent_coordination.py", *args],
+        capture_output=True, text=True, encoding="utf-8",
+    )
+
+def test_phase_list_via_real_cli_does_not_crash_on_nonnumeric():
+    # The regression class from the phase-board bug: must run the CLI path,
+    # not import _phase_list from the facade (which historically resolved to
+    # a different, already-fixed copy than the one main() actually calls).
+    _cli("phase", "start", "StateTransitionManager-Integration", "--agent", "a")
+    r = _cli("phase", "list")
+    assert r.returncode == 0
+    assert "StateTransitionManager-Integration" in r.stdout
+```
+
+Only once this passes for every migrated command are
+`agent_coordination_core.py`, `agent_coordination_legacy.py`, and
+`agent_coordination_phases.py` deleted (single commit, so the deletion is
+atomic and revertible).
 
 ## Verdict
 
