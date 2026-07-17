@@ -1,0 +1,42 @@
+{
+  "id": "aad99298632d",
+  "key": "manual_aad992",
+  "name": "manual_aad992",
+  "claim": "When judging whether a detached/orphaned commit represents at-risk unmerged work, ancestor and tree-identity checks alone are insufficient -- content can be fully 'already landed' via an entirely different, independently-derived commit path (convergent evolution, not a literal merge of that branch), which those checks would miss and wrongly flag as still at risk. Verify via git cherry <target> <candidate> <merge-base> (patch-id equivalence per commit) AND, for generated/graduated artifacts with stable content IDs, direct ID lookups against the target.",
+  "conditions": [
+    "branch-salvage",
+    "convergent-evolution",
+    "detached-head",
+    "git-cherry",
+    "orphan-commit-triage"
+  ],
+  "evidence_ids": [
+    "2026-07-17T08:46:43.888627+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-17T08:46:43.888627+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-17T08:46:43.888627+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-17T08:46:43.987127+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Investigated a detached commit (404d3001, kimi-meta-remediation branch) that 'git merge-base --is-ancestor' and a full tree-diff scan both said was NOT already on main. But git cherry showed all 6 unique commits patch-equivalent-absent yet content-wise, checking the 10 actual lesson-candidate IDs individually against main's lessons.jsonl showed all 10 already present -- the real payload had landed through PR #211/#212 via a proper re-graduation, not a merge of this branch. The branch was safe-to-delete bookkeeping, not lost work, but ancestor/tree checks alone would have wrongly suggested otherwise.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-17T08:46:43.888627+00:00"
+      ],
+      "lessons_sha": "9242b50694f6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-17T08:46:43.987119+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Investigated a detached commit (404d3001, kimi-meta-remediation branch) that 'git merge-base --is-ancestor' and a full tree-diff scan both said was NOT already on main. But git cherry showed all 6 unique commits patch-equivalent-absent yet content-wise, checking the 10 actual lesson-candidate IDs individually against main's lessons.jsonl showed all 10 already present -- the real payload had landed through PR #211/#212 via a proper re-graduation, not a merge of this branch. The branch was safe-to-delete bookkeeping, not lost work, but ancestor/tree checks alone would have wrongly suggested otherwise."
+}

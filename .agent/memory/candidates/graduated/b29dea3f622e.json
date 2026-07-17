@@ -1,0 +1,42 @@
+{
+  "id": "b29dea3f622e",
+  "key": "manual_b29dea",
+  "name": "manual_b29dea",
+  "claim": "For a launchd daemon wrapping a flaky/jam-prone tool, gate the real process behind a pre-flight self-heal + health-status check that exits 0 without starting the real process when unhealthy, and pair it with the plist's ThrottleInterval so a repeatedly-failing gate can't hot-loop respawns. A bare KeepAlive+RunAtLoad daemon with no gate just restarts into the same jam forever, silently accumulating failures.",
+  "conditions": [
+    "conditional-start",
+    "daemon-wrapper",
+    "launchd",
+    "self-heal",
+    "throttle-interval"
+  ],
+  "evidence_ids": [
+    "2026-07-17T08:46:43.433345+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-17T08:46:43.433345+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-17T08:46:43.433345+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-17T08:46:43.533810+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "gbrain autopilot (com.gbrain.autopilot, launchd KeepAlive) had accumulated 28 unacknowledged sync failures with nothing self-correcting it. Rewrote its wrapper to run gbrain-selfheal.sh + check gstack-gbrain-detect status==ok before ever exec'ing the real autopilot process, added plist ThrottleInterval=300. Verified end to end via the gate's own log: self-heal ran, gate passed, real process started only after health was confirmed. Reusable pattern for any launchd-wrapped daemon prone to silent jams, not gbrain-specific.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-17T08:46:43.433345+00:00"
+      ],
+      "lessons_sha": "1fb88058026e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-17T08:46:43.533800+00:00",
+  "reviewer": "learn.py",
+  "rationale": "gbrain autopilot (com.gbrain.autopilot, launchd KeepAlive) had accumulated 28 unacknowledged sync failures with nothing self-correcting it. Rewrote its wrapper to run gbrain-selfheal.sh + check gstack-gbrain-detect status==ok before ever exec'ing the real autopilot process, added plist ThrottleInterval=300. Verified end to end via the gate's own log: self-heal ran, gate passed, real process started only after health was confirmed. Reusable pattern for any launchd-wrapped daemon prone to silent jams, not gbrain-specific."
+}
