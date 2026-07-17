@@ -1,0 +1,42 @@
+{
+  "id": "19ee495bfae4",
+  "key": "manual_19ee49",
+  "name": "manual_19ee49",
+  "claim": "The agent-coordination job board's queue data does not live in the current worktree's own .state/perpetua_core.db -- canonical_db_path() resolves via 'git rev-parse --git-common-dir' to a single shared database relative to the repo's canonical root, common to every worktree. Querying or trusting a worktree-local .state/ copy directly is a trap: it can be empty or stale while the CLI (which always resolves the shared path) shows real data.",
+  "conditions": [
+    "coordination-db",
+    "git-common-dir",
+    "shared-state",
+    "sqlite",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-07-17T12:57:56.018628+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-17T12:57:56.018628+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-17T12:57:56.018628+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-17T12:57:56.123110+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Tried to inspect a job-board task's full payload by querying pt-main-memory-g7's own .state/perpetua_core.db directly with sqlite3 -- got 0 rows, looked like a real bug. The actual live database was at the main PT checkout's .state/perpetua_core.db, resolved via git-common-dir so it's shared across all worktrees by design. Not a bug; just queried the wrong file. Always resolve via the CLI or git-common-dir, never assume a worktree's own copy of a shared-state file is authoritative.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-17T12:57:56.018628+00:00"
+      ],
+      "lessons_sha": "3a3efd96c3aa"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-17T12:57:56.123097+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Tried to inspect a job-board task's full payload by querying pt-main-memory-g7's own .state/perpetua_core.db directly with sqlite3 -- got 0 rows, looked like a real bug. The actual live database was at the main PT checkout's .state/perpetua_core.db, resolved via git-common-dir so it's shared across all worktrees by design. Not a bug; just queried the wrong file. Always resolve via the CLI or git-common-dir, never assume a worktree's own copy of a shared-state file is authoritative."
+}
