@@ -32,6 +32,11 @@ from scripts.agent_coordination import (
     _try_atomic_claim,
     _release_claim_with_event,
 )
+from scripts.agent_coordination_core import (
+    _queue_add as _core_queue_add,
+    _queue_complete as _core_queue_complete,
+    _queue_list as _core_queue_list,
+)
 from orchestrator.gossip_bus import GossipBus
 
 
@@ -345,6 +350,27 @@ async def test_queue_list_groups_by_status(make_bus, capsys):
 
     assert "QUEUED" in captured.out or "CLAIMED" in captured.out
     assert "COMPLETED" in captured.out or "FAILED" in captured.out
+
+
+async def test_core_queue_list_uses_newest_task_event(make_bus, capsys):
+    """The CLI core must not let older enqueue payloads mask completion.
+
+    GossipBus.tail() returns newest-first. The core queue board used by the
+    command-line entrypoint must replay events old-to-new so terminal events
+    update status without losing metadata from the enqueue payload.
+    """
+    bus = await make_bus()
+    await _core_queue_add(bus, "payload-fix", "coord", "HIGH", "queued", None)
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    task_id = events[0]["payload"]["task_id"]
+    await _core_queue_complete(bus, task_id, "done")
+
+    capsys.readouterr()
+    await _core_queue_list(bus, phase_filter="coord", priority_filter=None, agent_filter=None)
+    captured = capsys.readouterr()
+
+    assert "COMPLETED" in captured.out
+    assert "QUEUED" not in captured.out
 
 
 async def test_queue_list_filters_by_phase(make_bus, capsys):
