@@ -8,6 +8,7 @@ not depend on the CLI argparse layer.
 """
 from __future__ import annotations
 
+import importlib
 import sys
 from pathlib import Path
 
@@ -170,6 +171,8 @@ async def test_phase_list_handles_nonnumeric_phase_names(make_bus, capsys):
     [agent_coordination_core, agent_coordination_legacy],
 )
 async def test_compat_phase_list_handles_nonnumeric_phase_names(module, make_bus, capsys):
+    if module is agent_coordination_legacy:
+        module = importlib.reload(module)
     bus = await make_bus()
     await module._phase_start(bus, "StateTransitionManager-Integration", None, "agent-z")
     await module._phase_list(bus)
@@ -185,6 +188,8 @@ async def test_compat_phase_list_handles_nonnumeric_phase_names(module, make_bus
 async def test_compat_phase_list_orders_dotted_numbers_numerically(
     module, make_bus, capsys
 ):
+    if module is agent_coordination_legacy:
+        module = importlib.reload(module)
     bus = await make_bus()
     await module._phase_start(bus, "Phase-2.10", None, "agent-z")
     await module._phase_start(bus, "Phase-2.9", None, "agent-z")
