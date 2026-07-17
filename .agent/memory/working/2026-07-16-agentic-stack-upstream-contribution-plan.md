@@ -229,3 +229,95 @@ upstream's actual test convention before placing the file).
    against this specific fix — worth a quick look before opening PR #1 in
    case someone already reported this exact bug, to reference the issue
    number in the PR rather than duplicating the report.
+
+---
+
+## EXECUTION STATUS — 2026-07-17 (fork created, branches pushed, PRs need manual creation)
+
+All planning decisions approved by operator. Fork created by operator at
+https://github.com/diazMelgarejo/agentic-stack. All 3 stacked branches
+pushed successfully (`contents:write` was sufficient for pushing to our own
+fork). PR creation against `codejunkie99/agentic-stack` still returns 403
+(`Resource not accessible by personal access token`) — same limitation hit
+on every PR-creation attempt this session; opening a PR against a repo we
+don't own needs `pull_request:write`, which this token doesn't have.
+
+**Ready-to-paste titles, bodies, and compare URLs for all 3 PRs:**
+`.agent/memory/working/2026-07-17-agentic-stack-pr-bodies-ready-to-paste.md`
+
+### Issue background check (Goal 2, done)
+
+- Upstream open issues: only #51 (OpenCode warning) and #54 (partnership
+  inquiry) — neither related.
+- Searched all issues/PRs for `episodic`, `evidence_ids`, `mirror`: the only
+  `episodic` hits are #45 (upgrade verb) and #13 (pi adapter missing
+  tool-call logging). **#13 confirmed NOT our bug** — it's about adapters not
+  auto-populating the episodic log at all; ours is `stage()` not mirroring a
+  specific manual event. No duplicate report exists. PR #1 introduces the
+  topic fresh.
+- Upstream has **no** `CONTRIBUTING.md`, **no** PR template, **no** test
+  suite anywhere in the tree. Titles follow Conventional Commits
+  (`feat:`, `feat(memory):`).
+
+### The constellation (Goal 2) — 3 stacked branches, built on pristine upstream `00eda65c`
+
+Prepared in a scratch checkout (`agentic-stack-fork/`, sibling to the repo
+checkouts), bundled to `agentic-stack-atomic-prs.bundle`, patches in
+`agentic-stack-patches/`. All 3 branches are now live on the fork itself
+(see EXECUTION STATUS below) — the local scratch copy was working storage,
+not a tracked artifact.
+
+```
+upstream/master (00eda65c, pristine — verified identical to PT's vendor pin)
+  └── atomic-01-episodic-mirror-fix     PR #1 (pilot)
+        │   commit 1: fix(memory): stage() mirrors manual lessons ...
+        │   commit 2: test(memory): cover the manual-stage episodic mirror  ← separable
+        └── atomic-02-utf8-encoding-fixes   PR #2 (stacked on #1)
+              │   commit: fix(io): force UTF-8 on stdout/stderr + candidate writes
+              └── atomic-03-context-manager-fix   PR #3 (stacked on #2)
+                    commit: fix(io): context manager in _lesson_already_appended
+```
+
+**Task-3 decisions, all honored:**
+- **(a) test in a separate commit** so the maintainer can cherry-pick it out —
+  done, commit 2 on PR #1 is the test alone.
+- **(b) reference the PT test** — the test file's docstring and the PR body
+  both cite the downstream PT suite that proved the fix.
+- **(c) politely ask the maintainer's preference** — PR #1 body (below) asks
+  whether they want the test included or dropped.
+- **Timing: do all, be transparent** — all 3 prepared at once; each PR body
+  states it stands on its own merit but is one of a set meant to land
+  together, "stars in a constellation."
+
+**Validation done locally:**
+- PR #1 patch applies cleanly to pristine upstream (not just to PT's blended
+  copy); syntax-checked; isolated functional test confirms `stage()` writes
+  exactly one episodic mirror whose timestamp equals the candidate's
+  `evidence_ids[0]`.
+- Standalone `unittest` (no pytest dep, since upstream has no test harness)
+  passes 3/3 at the top of the stack.
+- Final stacked `learn.py` diffed against PT's proven version: differs ONLY
+  by PT's `path_hygiene` import + `sanitize_tracked_path_leaks` calls
+  (correctly excluded — PT-local, patch #3) and a docstring trimmed of the
+  PT-specific diagnosis-doc reference for the upstream audience.
+
+### To finish Goal 2 (needs a PR-capable token — everything else is done)
+
+1. ~~Fork `codejunkie99/agentic-stack`~~ — done, `diazMelgarejo/agentic-stack`.
+2. ~~Push all 3 branches~~ — done: `atomic-01-episodic-mirror-fix`,
+   `atomic-02-utf8-encoding-fixes`, `atomic-03-context-manager-fix`, all
+   live on the fork right now.
+3. Open PR #1 (base `master`), then PR #2 (base
+   `atomic-01-episodic-mirror-fix`), then PR #3 (base
+   `atomic-02-utf8-encoding-fixes`) — titles, bodies, and direct compare
+   URLs are all in the ready-to-paste file above. Nothing left to write or
+   test; this is a paste-and-click operation once a suitable token or the
+   GitHub UI is available.
+
+### Goal 1 (PT-side catalog) — DONE
+
+Branch `agentic-stack-blend-state-sync` (commit `308fe4b`), pushed. Updates
+`.agent/.agentic-stack-blend-state.json` (new patch catalogued, prior event
+preserved under `blend_history`) + `scripts/git/agentic-stack-vendor.md`
+(pin-current note + patch-overlay-catalog section). No submodule bump (pin
+already current). Ready for its own PR.
