@@ -6,6 +6,7 @@ import json
 import os
 import re
 import sqlite3
+import subprocess
 import uuid
 from pathlib import Path
 from typing import Literal, Optional
@@ -13,13 +14,53 @@ from typing import Literal, Optional
 import aiosqlite
 
 
+def _canonical_repo_state_dir() -> Optional[Path]:
+    """Resolve ``.state`` relative to the repo root shared by every worktree.
+
+    ``git rev-parse --git-common-dir`` returns the same path regardless of
+    which worktree of a repo you're standing in, so every worktree converges
+    on one ``.state/`` instead of each growing its own fragmented copy. A
+    conventional checkout uses ``<repo>/.git`` as that common directory, but
+    bare and external Git directories are themselves the state anchor.
+    Returns None outside a git repo (e.g. a packaged deployment), where the
+    caller falls back to a plain cwd-relative path.
+    """
+    try:
+        common_dir = subprocess.check_output(
+            ["git", "rev-parse", "--git-common-dir"],
+            text=True,
+            encoding="utf-8",
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+        ).strip()
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+        return None
+    common_path = Path(common_dir).resolve()
+    state_anchor = common_path.parent if common_path.name == ".git" else common_path
+    return state_anchor / ".state"
+
+
+def resolve_default_state_dir() -> Path:
+    """Return the shared runtime state directory for this repo/worktree layout."""
+    env_dir = os.environ.get("PT_STATE_DIR", "").strip()
+    if env_dir:
+        return Path(env_dir)
+    return _canonical_repo_state_dir() or Path(".state")
+
+
+def is_default_state_dir_arg(state_dir: Path | str) -> bool:
+    """True when the caller left state_dir at the cwd-relative default ``.state``."""
+    return Path(state_dir) == Path(".state")
+
+
 def resolve_gossip_db_path(state_dir: Path | str | None = None) -> str:
     explicit = os.environ.get("GOSSIP_DB_PATH", "").strip()
     if explicit:
         return explicit
-    root = Path(state_dir) if state_dir is not None else Path(
-        os.environ.get("PT_STATE_DIR", ".state")
-    )
+    if state_dir is not None:
+        root = Path(state_dir)
+    else:
+        root = resolve_default_state_dir()
     return str((root / "perpetua_core.db").resolve())
 
 

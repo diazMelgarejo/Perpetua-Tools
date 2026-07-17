@@ -1,0 +1,41 @@
+{
+  "id": "d707ae4f06d9",
+  "key": "manual_d707ae",
+  "name": "manual_d707ae",
+  "claim": "When a test passes for code that looks obviously broken by inspection, before trusting the green result, check whether the test imports the function from a different module than the one the real entry point actually calls -- a facade re-exporting a corrected function, and a lower-level module keeping its own uncorrected copy under the same name, can both exist simultaneously with tests only exercising the fixed one.",
+  "conditions": [
+    "debugging",
+    "duplicate-implementation",
+    "false-positive-test",
+    "import-resolution"
+  ],
+  "evidence_ids": [
+    "2026-07-17T13:28:26.082441+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-17T13:28:26.082441+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-17T13:28:26.082441+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-17T13:28:26.180693+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Spent real effort ruling out bytecode caching, a stale .venv site-packages copy, a sorted()-skips-key()-for-1-item hypothesis (directly falsified with a 3-line repro), and conftest.py exception swallowing before finding the actual cause: three separate _phase_list implementations across agent_coordination.py/_core.py/_legacy.py, only one of which the existing test happened to import. Each ruled-out hypothesis was worth checking given the evidence at the time, but the fastest real signal would have been: grep the test's own import line for which module a suspiciously-passing test is actually calling into, before chasing environment-level explanations.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-17T13:28:26.082441+00:00"
+      ],
+      "lessons_sha": "f10bfbab503d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-17T13:28:26.180685+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Spent real effort ruling out bytecode caching, a stale .venv site-packages copy, a sorted()-skips-key()-for-1-item hypothesis (directly falsified with a 3-line repro), and conftest.py exception swallowing before finding the actual cause: three separate _phase_list implementations across agent_coordination.py/_core.py/_legacy.py, only one of which the existing test happened to import. Each ruled-out hypothesis was worth checking given the evidence at the time, but the fastest real signal would have been: grep the test's own import line for which module a suspiciously-passing test is actually calling into, before chasing environment-level explanations."
+}

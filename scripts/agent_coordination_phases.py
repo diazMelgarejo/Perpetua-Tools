@@ -265,17 +265,16 @@ async def _phase_list(bus: GossipBus) -> None:
         print("no phases tracked yet")
         return
 
-    # Sort by phase name (try numeric order for Phase-N.M patterns)
-    def phase_sort_key(name: str) -> tuple:
+    def phase_sort_key(name: str) -> tuple[int, tuple[int, ...], str]:
+        """Sort Phase-N[.M[...]] numerically; all other names lexically."""
         parts = name.split("-")
         if len(parts) >= 2 and parts[0] == "Phase":
             try:
-                # Handle "Phase-1.0", "Phase-1.1", etc.
-                nums = parts[1].split(".")
-                return (int(nums[0]), float(f"0.{nums[1]}") if len(nums) > 1 else 0)
+                components = tuple(int(n) for n in parts[1].split("."))
+                return (0, components, name)
             except (ValueError, IndexError):
                 pass
-        return (0, float(name))
+        return (1, (), name)
 
     for phase_name in sorted(phases.keys(), key=phase_sort_key):
         phase = phases[phase_name]
