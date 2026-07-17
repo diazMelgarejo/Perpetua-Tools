@@ -1,0 +1,41 @@
+{
+  "id": "4d3d2a1a1bc6",
+  "key": "manual_4d3d2a",
+  "name": "manual_4d3d2a",
+  "claim": "When a facade module has a comment saying 'X below overrides the retained legacy implementation,' verify the override actually reaches every real entry point, not just importers of the facade itself. A facade's local override only helps callers who import through the facade -- if the real CLI dispatcher (main()) is imported from a lower layer and resolves names via that layer's own module globals, it bypasses the facade's override entirely and keeps running the un-corrected version, even though the facade's own code and comments claim otherwise.",
+  "conditions": [
+    "name-resolution",
+    "override-doesnt-reach-entrypoint",
+    "phase-board",
+    "python-module-facade"
+  ],
+  "evidence_ids": [
+    "2026-07-17T13:28:25.813055+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-17T13:28:25.813055+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-17T13:28:25.813055+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-17T13:28:25.936932+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "scripts/agent_coordination.py aliased _phase_list to the legacy implementation, then locally redefined it with a fix and a comment claiming this 'overrides the corrected centralized path.' True for anyone importing _phase_list from agent_coordination.py -- but main() is imported from agent_coordination_core.py, whose own _amain() resolves _phase_list from ITS OWN module globals (Python's normal name resolution for functions), never touching the facade's override. The real CLI kept crashing on the exact bug the facade believed it had already fixed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-17T13:28:25.813055+00:00"
+      ],
+      "lessons_sha": "abd198c6574b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-17T13:28:25.936919+00:00",
+  "reviewer": "learn.py",
+  "rationale": "scripts/agent_coordination.py aliased _phase_list to the legacy implementation, then locally redefined it with a fix and a comment claiming this 'overrides the corrected centralized path.' True for anyone importing _phase_list from agent_coordination.py -- but main() is imported from agent_coordination_core.py, whose own _amain() resolves _phase_list from ITS OWN module globals (Python's normal name resolution for functions), never touching the facade's override. The real CLI kept crashing on the exact bug the facade believed it had already fixed."
+}
