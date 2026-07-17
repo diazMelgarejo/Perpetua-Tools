@@ -321,3 +321,41 @@ Branch `agentic-stack-blend-state-sync` (commit `308fe4b`), pushed. Updates
 preserved under `blend_history`) + `scripts/git/agentic-stack-vendor.md`
 (pin-current note + patch-overlay-catalog section). No submodule bump (pin
 already current). Ready for its own PR.
+
+---
+
+## CORRECTION — 2026-07-17: branches rebuilt with real ancestry
+
+**The user caught a real bug**: the compare URLs above returned "There
+isn't anything to compare... entirely different commit histories." Root
+cause: the 3 branches were originally built with `git init` in a scratch
+directory + files fetched via `curl`/GitHub's raw-content API — the file
+*contents* matched the real upstream commit `00eda65c` exactly, but the
+git *commits themselves* were fabricated, brand-new root commits with no
+parent and zero shared ancestry with `codejunkie99/agentic-stack`'s real
+history. GitHub's compare view requires an actual common ancestor commit
+object, not just matching file content.
+
+**Fix**: cloned the real fork (`diazMelgarejo/agentic-stack`, which has
+genuine shared history with upstream via GitHub's own fork mechanism),
+checked out the actual `00eda65c` commit from that real history, and
+re-applied the same 3 patches (via `git am` on the already-generated
+`.patch` files — no need to re-derive them, since the file content was
+correct all along) as new commits with real parentage. Force-pushed all 3
+branches.
+
+**Verified via the API, not just assumed**: `GET /compare/master...
+atomic-01-episodic-mirror-fix` now returns `status: ahead, ahead_by: 2,
+behind_by: 0` — a real, resolvable diff. Same check confirmed for PR #2
+and PR #3's stacked bases. All 3 compare URLs given to the user now work.
+
+**Lesson**: when preparing a patch against a real upstream repository for
+eventual PR submission, always work from an actual `git clone`/`git fetch`
+of that repository (or a fork of it) — never reconstruct file content via
+an API/raw-content fetch into a fresh `git init`. Matching file bytes is
+necessary but not sufficient; GitHub PRs and compare views need a real
+shared commit ancestor. This should have been done from the start; caught
+only because the user tried the actual link rather than trusting the
+verification I'd already claimed (isolated functional tests, syntax checks
+— all of which passed despite the ancestry being fake, since none of them
+exercised git ancestry at all).
