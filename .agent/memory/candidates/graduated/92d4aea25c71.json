@@ -1,0 +1,42 @@
+{
+  "id": "92d4aea25c71",
+  "key": "manual_92d4ae",
+  "name": "manual_92d4ae",
+  "claim": "When a fix has to be applied to more than one copy of the 'same' logic to actually work (e.g. patching a bug in 3+ near-identical files), treat that as a signal the duplication itself is the bug, not just today's instance of it -- propose consolidation to a single source of truth rather than accepting 'we fixed all the copies' as the resolution. Feature flags are the wrong tool for this: they solve toggleable runtime behavior, not accidental implementation drift that should never have diverged.",
+  "conditions": [
+    "PT-coordination",
+    "code-duplication",
+    "consolidation",
+    "feature-flags-anti-pattern",
+    "single-source-of-truth"
+  ],
+  "evidence_ids": [
+    "2026-07-17T13:39:53.233419+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-17T13:39:53.233419+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-17T13:39:53.233419+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-17T13:39:53.337820+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT's scripts/agent_coordination_core.py and _legacy.py were 94-98% byte-identical (verified two ways: context-diff line count and --no-index --numstat), with _core.py's only real value (a ReorderBuffer dedup fix, --seq claim support) buried inside a full duplicate rather than expressed as a diff. A third file, _phases.py, was orphaned dead code carrying a 4th copy of the same PhaseState/_phase_list logic. Today's phase-sort-key crash needed the same fix applied to all three living copies to actually reach the real CLI path -- a clear signal to consolidate, not just patch again next time.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-17T13:39:53.233419+00:00"
+      ],
+      "lessons_sha": "e03fbb2c3253"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-17T13:39:53.337808+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT's scripts/agent_coordination_core.py and _legacy.py were 94-98% byte-identical (verified two ways: context-diff line count and --no-index --numstat), with _core.py's only real value (a ReorderBuffer dedup fix, --seq claim support) buried inside a full duplicate rather than expressed as a diff. A third file, _phases.py, was orphaned dead code carrying a 4th copy of the same PhaseState/_phase_list logic. Today's phase-sort-key crash needed the same fix applied to all three living copies to actually reach the real CLI path -- a clear signal to consolidate, not just patch again next time."
+}
