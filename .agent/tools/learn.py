@@ -28,6 +28,7 @@ BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 CANDIDATES = os.path.join(BASE, "memory/candidates")
 sys.path.insert(0, os.path.join(BASE, "harness"))
 sys.path.insert(0, os.path.join(BASE, "memory"))
+from hooks._episodic_io import append_jsonl  # noqa: E402
 from text import word_set  # noqa: E402
 from cluster import pattern_id  # noqa: E402
 from path_hygiene import sanitize_tracked_path_leaks  # noqa: E402
@@ -89,9 +90,9 @@ def _append_episodic_mirror(cid, claim, ts, source="learn"):
         "source": {"skill": "learn", "profile": "manual", "run_id": f"manual_{cid[:6]}"},
         "evidence_ids": [ts],
     }
-    os.makedirs(os.path.dirname(episodic_path), exist_ok=True)
-    with open(episodic_path, "a", encoding="utf-8") as f:
-        f.write(json.dumps(entry) + "\n")
+    # append_jsonl acquires the episodic sidecar lock and fsyncs — required so
+    # concurrent auto_dream os.replace cycles cannot orphan this write.
+    append_jsonl(episodic_path, entry)
 
 
 def stage(claim, conditions, source="learn", importance=7):
