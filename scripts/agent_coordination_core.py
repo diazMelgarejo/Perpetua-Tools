@@ -915,9 +915,12 @@ _TASK_EVENT_KINDS = (
 )
 
 
-async def _task_snapshot(bus: GossipBus, task_id: str) -> Optional[dict]:
+async def _task_snapshot(
+    bus: GossipBus, task_id: str, events: Optional[list[dict]] = None
+) -> Optional[dict]:
     """Fold append-only heartbeat events for one task into a merged snapshot."""
-    events = await bus.tail(limit=500, event_type="heartbeat")
+    if events is None:
+        events = await bus.tail(limit=500, event_type="heartbeat")
     snapshot: dict = {}
     for ev in reversed(events):
         p = ev["payload"]
@@ -929,7 +932,7 @@ async def _task_snapshot(bus: GossipBus, task_id: str) -> Optional[dict]:
 async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> None:
     """Claim a queued task, blocking if already claimed or deps not satisfied."""
     events = await bus.tail(limit=500, event_type="heartbeat")
-    task_state = await _task_snapshot(bus, task_id)
+    task_state = await _task_snapshot(bus, task_id, events=events)
     if not task_state:
         print(f"ERROR: task {task_id} not found")
         return
