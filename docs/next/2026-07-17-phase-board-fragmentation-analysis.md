@@ -9,7 +9,7 @@ Status: fixed by Codex (`9642ae24`), this doc records the investigation and the 
 
 `python3 scripts/agent_coordination.py phase list` crashed on any non-`Phase-N.M`-shaped phase name:
 
-```
+```text
 ValueError: could not convert string to float: 'StateTransitionManager-Integration'
 ```
 
@@ -51,7 +51,7 @@ Codex applied the facade's already-correct tuple-of-ints sort key to `agent_coor
 
 ## Verification
 
-```
+```shell
 python3 scripts/agent_coordination.py phase list   # no longer crashes, prints correctly
 uv run --offline python -m pytest tests/test_agent_coordination.py tests/test_agent_coordination_phases.py tests/test_gossip_bus.py -v
 # 58 passed
