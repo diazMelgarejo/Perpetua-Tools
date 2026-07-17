@@ -1,0 +1,74 @@
+{
+  "id": "460ac276e494",
+  "key": "manual_460ac2",
+  "name": "manual_460ac2",
+  "claim": "Policy docs that explain forbidden path patterns must describe the pattern abstractly (e.g. 'an OS-specific absolute home-directory path') rather than spelling out the literal trigger string, or the path-hygiene linter will fail even on the warning doc itself. Do not use a username-placeholder notation either -- prefer reverse git repo-relative paths or path-free wording.",
+  "conditions": [
+    "absolute",
+    "abstractly",
+    "describe",
+    "doc",
+    "docs",
+    "either",
+    "even",
+    "explain",
+    "fail",
+    "forbidden",
+    "git",
+    "home-directory",
+    "itself",
+    "linter",
+    "literal",
+    "notation",
+    "os-specific",
+    "out",
+    "path",
+    "path-free",
+    "path-hygiene",
+    "paths",
+    "pattern",
+    "patterns",
+    "policy",
+    "prefer",
+    "rather",
+    "repo-relative",
+    "reverse",
+    "spelling",
+    "string",
+    "than",
+    "trigger",
+    "use",
+    "username-placeholder",
+    "warning",
+    "wording"
+  ],
+  "evidence_ids": [
+    "2026-07-17T21:13:02.159052+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-17T21:13:02.159052+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-17T21:13:02.159052+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-17T21:13:08.556205+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Removes the last live contradiction recommending username-placeholder notation; aligns with reverse git repo-relative paths as the standard.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-17T21:13:02.159052+00:00"
+      ],
+      "lessons_sha": "1a5fe30a8241"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-17T21:13:08.556183+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Removes the last live contradiction recommending username-placeholder notation; aligns with reverse git repo-relative paths as the standard."
+}
