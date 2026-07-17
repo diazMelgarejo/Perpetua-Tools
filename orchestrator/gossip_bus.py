@@ -31,8 +31,9 @@ def _canonical_repo_state_dir() -> Optional[Path]:
             text=True,
             encoding="utf-8",
             stderr=subprocess.DEVNULL,
+            timeout=5,
         ).strip()
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
         return None
     common_path = Path(common_dir).resolve()
     state_anchor = common_path.parent if common_path.name == ".git" else common_path
