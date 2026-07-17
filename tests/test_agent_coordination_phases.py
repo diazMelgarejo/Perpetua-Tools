@@ -24,6 +24,7 @@ from scripts.agent_coordination_phases import (  # noqa: E402
     _get_latest_phase_state,
     _phase_block,
     _phase_complete,
+    _phase_list,
     _phase_start,
     _phase_unblock,
     _phase_update,
@@ -223,6 +224,28 @@ async def test_phase_state_ordering(bus_with_db):
     assert len(phase_names) == len(phases_to_create)
     for phase_name, _ in phases_to_create:
         assert phase_name in phase_names
+
+
+@pytest.mark.asyncio
+async def test_phase_list_handles_nonnumeric_phase_names(bus_with_db, capsys):
+    bus = bus_with_db
+    await _phase_start(bus, "StateTransitionManager-Integration")
+    await _phase_list(bus)
+
+    captured = capsys.readouterr()
+    assert "StateTransitionManager-Integration" in captured.out
+
+
+@pytest.mark.asyncio
+async def test_phase_list_orders_dotted_numbers_numerically(bus_with_db, capsys):
+    bus = bus_with_db
+    await _phase_start(bus, "Phase-2.10")
+    await _phase_start(bus, "Phase-2.9")
+    await _phase_list(bus)
+
+    captured = capsys.readouterr()
+    listed = captured.out.splitlines()[2:]
+    assert "\n".join(listed).index("Phase-2.9") < "\n".join(listed).index("Phase-2.10")
 
 
 @pytest.mark.asyncio
