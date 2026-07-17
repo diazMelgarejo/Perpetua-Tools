@@ -242,7 +242,12 @@ class OrchestrationSupervisor:
             - Sets the process environment variable `PT_STATE_DIR` to the resolved state directory path.
             - Initializes in-memory runtime fields (active task map, cached gossip bus handle, and gossip failure flag).
         """
-        self._state_dir = Path(state_dir)
+        from orchestrator.gossip_bus import is_default_state_dir_arg, resolve_default_state_dir
+
+        if is_default_state_dir_arg(state_dir):
+            self._state_dir = resolve_default_state_dir()
+        else:
+            self._state_dir = Path(state_dir)
         self._jobs_file = self._state_dir / "jobs.jsonl"
         self._active: dict[str, asyncio.Task] = {}
         # Cached GossipBus (set on first _record_to_gossip; reused per
