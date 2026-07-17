@@ -1,0 +1,42 @@
+{
+  "id": "266cb200422e",
+  "key": "manual_266cb2",
+  "name": "manual_266cb2",
+  "claim": "A repo path migration (e.g. an iCloud-escape move) can leave stale references in places a repo-wide grep sweep never sees, because they live outside any repo. A launchd plist's WorkingDirectory in ~/Library/LaunchAgents/ is one such surface -- it silently kept feeding a background daemon the old pre-migration path for months after the move, with no tracked file anywhere pointing at it to catch in a grep -r oldpath check.",
+  "conditions": [
+    "audit-completeness",
+    "icloud-escape",
+    "launchd-plist",
+    "path-migration",
+    "workingdirectory"
+  ],
+  "evidence_ids": [
+    "2026-07-17T08:46:43.655140+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-17T08:46:43.655140+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-17T08:46:43.655140+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-17T08:46:43.754906+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "gbrain autopilot's plist WorkingDirectory still pointed at ~/Documents/Terminal xCode/claude/OpenClaw/... (pre-iCloud-escape) months after the repo moved to ~/code/OpenClaw. This alone likely explains part of the old-path-duplicate-source pattern already known for gbrain. When auditing a path migration for completeness, explicitly check ~/Library/LaunchAgents/*.plist (and any other out-of-repo config: cron, systemd user units, shell rc files) in addition to the standard in-repo grep sweep.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-17T08:46:43.655140+00:00"
+      ],
+      "lessons_sha": "00c9032e53fd"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-17T08:46:43.754891+00:00",
+  "reviewer": "learn.py",
+  "rationale": "gbrain autopilot's plist WorkingDirectory still pointed at ~/Documents/Terminal xCode/claude/OpenClaw/... (pre-iCloud-escape) months after the repo moved to ~/code/OpenClaw. This alone likely explains part of the old-path-duplicate-source pattern already known for gbrain. When auditing a path migration for completeness, explicitly check ~/Library/LaunchAgents/*.plist (and any other out-of-repo config: cron, systemd user units, shell rc files) in addition to the standard in-repo grep sweep."
+}
