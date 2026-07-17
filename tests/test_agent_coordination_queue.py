@@ -34,8 +34,12 @@ from scripts.agent_coordination import (
 )
 from scripts.agent_coordination_core import (
     _queue_add as _core_queue_add,
+    _queue_claim as _core_queue_claim,
     _queue_complete as _core_queue_complete,
+    _queue_fail as _core_queue_fail,
     _queue_list as _core_queue_list,
+    _phase_list as _core_phase_list,
+    _phase_start as _core_phase_start,
 )
 from orchestrator.gossip_bus import GossipBus
 
@@ -371,6 +375,32 @@ async def test_core_queue_list_uses_newest_task_event(make_bus, capsys):
 
     assert "COMPLETED" in captured.out
     assert "QUEUED" not in captured.out
+
+
+async def test_core_queue_fail_increments_retry_after_reclaim(make_bus, capsys):
+    """CLI core must merge task history so retry_count survives reclaim."""
+    bus = await make_bus()
+    await _core_queue_add(bus, "retry-work", "coord", "NORMAL", "", None)
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    task_id = events[0]["payload"]["task_id"]
+
+    await _core_queue_claim(bus, task_id, "agent-alpha")
+    await _core_queue_fail(bus, task_id, "first failure")
+    capsys.readouterr()
+
+    await _core_queue_claim(bus, task_id, "agent-alpha")
+    await _core_queue_fail(bus, task_id, "second failure")
+    captured = capsys.readouterr()
+
+    assert "retry 2/3" in captured.out
+
+
+async def test_core_phase_list_handles_nonnumeric_phase_names(make_bus, capsys):
+    bus = await make_bus()
+    await _core_phase_start(bus, "StateTransitionManager-Integration", None, "agent-z")
+    await _core_phase_list(bus)
+    captured = capsys.readouterr()
+    assert "StateTransitionManager-Integration" in captured.out
 
 
 async def test_queue_list_filters_by_phase(make_bus, capsys):
