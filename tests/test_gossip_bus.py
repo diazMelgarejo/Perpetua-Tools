@@ -17,6 +17,7 @@ from pathlib import Path
 
 from orchestrator.gossip_bus import (
     GossipBus,
+    _canonical_repo_state_dir,
     _pending_embeds,
     _sanitize_fts_query,
     resolve_default_state_dir,
@@ -471,24 +472,12 @@ def test_resolve_gossip_db_path_uses_pt_state_dir_env(tmp_path, monkeypatch):
     assert result == str((tmp_path / "perpetua_core.db").resolve())
 
 
-def test_resolve_gossip_db_path_defaults_to_canonical_repo_state(monkeypatch):
+def test_resolve_gossip_db_path_defaults_to_canonical_repo_state(isolated_env):
     """When no env vars and no state_dir are set, defaults to canonical repo .state."""
     from orchestrator.gossip_bus import resolve_gossip_db_path
 
-    monkeypatch.delenv("GOSSIP_DB_PATH", raising=False)
-    monkeypatch.delenv("PT_STATE_DIR", raising=False)
-
-    result = resolve_gossip_db_path()
-    common_dir = subprocess.check_output(
-        ["git", "rev-parse", "--git-common-dir"],
-        text=True,
-        encoding="utf-8",
-        stderr=subprocess.DEVNULL,
-    ).strip()
-    common_path = Path(common_dir).resolve()
-    state_anchor = common_path.parent if common_path.name == ".git" else common_path
-    expected = str((state_anchor / ".state" / "perpetua_core.db").resolve())
-    assert result == expected
+    expected = str((_canonical_repo_state_dir() / "perpetua_core.db").resolve())
+    assert resolve_gossip_db_path() == expected
 
 
 def test_resolve_gossip_db_path_state_dir_takes_precedence_over_pt_state_dir(tmp_path, monkeypatch):
