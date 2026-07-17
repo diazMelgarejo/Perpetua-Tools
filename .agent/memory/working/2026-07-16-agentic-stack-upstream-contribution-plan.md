@@ -86,7 +86,7 @@ upstream batch.
 
 ### Stacking model
 
-```
+```text
 upstream/master (00eda65c)
   │
   └── fork/atomic-01-episodic-mirror-fix        (PR #1 — pilot)
@@ -96,11 +96,13 @@ upstream/master (00eda65c)
               └── fork/atomic-03-context-manager-fix  (PR #3, stacked on #2)
 ```
 
-Each branch is created FROM the previous one (`git checkout -b atomic-02
-atomic-01`), so PR #2's diff view only shows its own delta once PR #1
-merges — standard stacked-PR practice. Each PR opens against **upstream**
-`codejunkie99/agentic-stack:master`, not against the fork's own default
-branch.
+**Chosen upstream strategy (single model):** branch ancestry is stacked on
+the fork (`atomic-02` created from `atomic-01`, `atomic-03` from
+`atomic-02`), but **every PR targets upstream `codejunkie99/agentic-stack:master`**.
+Do not use fork-only predecessor branches as GitHub merge bases on the
+upstream repo — those are not valid upstream bases. Until a predecessor
+merges, later PRs show a cumulative diff against `master`; once the
+predecessor lands, GitHub's view collapses to the next PR's own delta.
 
 ### Pilot: PR #1 — `atomic-01-episodic-mirror-fix`
 
@@ -126,15 +128,17 @@ so this diff must apply cleanly to the pristine upstream version):
 ```diff
 --- a/.agent/tools/learn.py
 +++ b/.agent/tools/learn.py
-@@ -54,6 +54,37 @@ def _lesson_already_appended(cid):
+@@ -1,5 +1,5 @@
+-import argparse, datetime, json, os, subprocess, sys
++import argparse, datetime, json, os, subprocess, sys, tempfile
+@@ -54,6 +54,34 @@ def _lesson_already_appended(cid):
      return False
  
  
 +def _append_episodic_mirror(cid, claim, ts, source="learn"):
 +    """Mirror a manual stage into AGENT_LEARNINGS.jsonl so evidence_ids
-+    referencing `ts` resolve to a real episodic record — matching the
-+    auto-derived candidate path's existing behavior. Never raises; a
-+    failure here must not block staging.
++    referencing `ts` resolve to a real episodic record. Raises OSError
++    on write failure — stage() must not publish until this succeeds.
 +    """
 +    episodic_path = os.path.join(BASE, "memory/episodic/AGENT_LEARNINGS.jsonl")
 +    entry = {
@@ -150,21 +154,36 @@ so this diff must apply cleanly to the pristine upstream version):
 +        "source": {"skill": "learn", "profile": "manual", "run_id": f"manual_{cid[:6]}"},
 +        "evidence_ids": [ts],
 +    }
-+    try:
-+        with open(episodic_path, "a", encoding="utf-8") as f:
-+            f.write(json.dumps(entry) + "\n")
-+    except OSError:
-+        pass  # fail-open: staging must succeed even if the mirror write fails
++    os.makedirs(os.path.dirname(episodic_path), exist_ok=True)
++    with open(episodic_path, "a", encoding="utf-8") as f:
++        f.write(json.dumps(entry) + "\n")
 +
 +
  def stage(claim, conditions, source="learn", importance=7):
      os.makedirs(CANDIDATES, exist_ok=True)
      cid = pattern_id(claim, conditions)
-@@ -78,6 +109,7 @@ def stage(claim, conditions, source="learn", importance=7):
+@@ -78,8 +106,30 @@ def stage(claim, conditions, source="learn", importance=7):
      path = os.path.join(CANDIDATES, f"{cid}.json")
-     with open(path, "w") as f:
-         json.dump(candidate, f, indent=2)
-+    _append_episodic_mirror(cid, claim, now, source)
+-    with open(path, "w") as f:
+-        json.dump(candidate, f, indent=2)
++    temp_path = None
++    try:
++        with tempfile.NamedTemporaryFile(
++            mode="w", encoding="utf-8", dir=CANDIDATES,
++            prefix=f".{cid}.", suffix=".tmp", delete=False,
++        ) as stream:
++            temp_path = stream.name
++            json.dump(candidate, stream, indent=2)
++            stream.flush()
++        _append_episodic_mirror(cid, claim, now, source)
++        os.replace(temp_path, path)
++        temp_path = None
++    finally:
++        if temp_path is not None:
++            try:
++                os.remove(temp_path)
++            except OSError:
++                pass
      return cid, path
 ```
 
@@ -172,12 +191,17 @@ so this diff must apply cleanly to the pristine upstream version):
 already proven against this exact function — needs path adjustment only,
 since upstream's repo layout is `.agent/tools/learn.py` directly at repo
 root rather than nested under a PT-style `tests/` directory; confirm
-upstream's actual test convention before placing the file).
+upstream's actual test convention before placing the file). Include the
+fail-closed case: forced mirror `OSError` propagates from `stage()`,
+leaves no published candidate JSON, and leaves no success result.
 
 **PR description should include:**
 - The bug: `stage()` writes `evidence_ids: [now]` but never creates a
   matching episodic record — a promise with nothing behind it.
-- The fix: minimal, additive, fail-open.
+- The fix: minimal, additive, **enforce mirror-write success** — candidate
+  is published via temp file + `os.replace` only after the episodic
+  mirror append succeeds. Manual staging succeeds only when both the
+  episodic record and candidate are persisted.
 - The proof: link to (or inline) the validation evidence — 3 unit tests +
   6 real-world invocations with 6/6 verified resolving evidence_ids.
 - Explicit note that this was found and fixed downstream (PT), and is
@@ -267,14 +291,14 @@ checkouts), bundled to `agentic-stack-atomic-prs.bundle`, patches in
 (see EXECUTION STATUS below) — the local scratch copy was working storage,
 not a tracked artifact.
 
-```
+```text
 upstream/master (00eda65c, pristine — verified identical to PT's vendor pin)
-  └── atomic-01-episodic-mirror-fix     PR #1 (pilot)
+  └── atomic-01-episodic-mirror-fix     PR #1 (pilot) → base upstream/master
         │   commit 1: fix(memory): stage() mirrors manual lessons ...
         │   commit 2: test(memory): cover the manual-stage episodic mirror  ← separable
-        └── atomic-02-utf8-encoding-fixes   PR #2 (stacked on #1)
+        └── atomic-02-utf8-encoding-fixes   PR #2 → base upstream/master
               │   commit: fix(io): force UTF-8 on stdout/stderr + candidate writes
-              └── atomic-03-context-manager-fix   PR #3 (stacked on #2)
+              └── atomic-03-context-manager-fix   PR #3 → base upstream/master
                     commit: fix(io): context manager in _lesson_already_appended
 ```
 
