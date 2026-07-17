@@ -4,7 +4,7 @@
   "base_version": "v0.9.0",
   "note": "base is PT .agent/'s original scaffold version (see .agent/install.json). vendor/agentic-stack's pinned gitlink has not advanced past this SHA (confirmed on origin/main post-PR#208); the 'v0.18.0' label refers to a version marker inside the submodule content at this same commit, not a later pin.",
   "last_blend": {
-    "at": "2026-07-12T18:00:00Z",
+    "at": "2026-07-16T22:30:00Z",
     "target_sha": "00eda65cd2030ffc62b9c01b8360dd2d1719eaef",
     "applied_clean": [
       "tools/show.py",
@@ -25,6 +25,43 @@
       "skills/_index.md"
     ],
     "conflicts": [],
-    "note": "Manually verified and re-applied 2026-07-12 during PR #206/#205/#207/#208 merge reconciliation: 9 of the 16 applied_clean files (tools/learn.py, tools/skill_loader.py, memory/{auto_dream,decay,memory_search,promote,render_lessons,review_state}.py, harness/hooks/on_failure.py) had their earlier-blended UTF-8/context-manager fixes silently reverted by an intervening merge that auto-resolved without flagging a conflict. Confirmed byte-for-byte match against the .blend-preview/ staged content (upstream agentic-stack's own fix) before re-committing. Lesson: an unconflicted auto-merge is not proof a fix survived -- verify content, not just absence of conflict markers, after any merge touching files with a known local-patch history."
-  }
+    "new_patches_since_prior": [
+      {
+        "file": "tools/learn.py",
+        "patch": "_append_episodic_mirror() + call site in stage()",
+        "intent": "Manual-stage path now mirrors the staging event into AGENT_LEARNINGS.jsonl so a candidate's evidence_ids[0] resolves to a real episodic record, matching the auto-derived path. Fixes a referential-integrity gap found via CodeRabbit on PT PR #246.",
+        "portable_upstream": true,
+        "depends_on_pt_only_code": false,
+        "landed": "PT main 702f08f (fix 95f047f, validated 61dee0d)",
+        "upstream_status": "candidate for contribution \u2014 see .agent/memory/working/2026-07-16-agentic-stack-upstream-contribution-plan.md (pilot PR #1)"
+      }
+    ],
+    "note": "Recorded 2026-07-16. vendor/agentic-stack pin is unchanged and confirmed current: git compare 00eda65c...upstream/master is ahead_by:0 behind_by:0 (identical). No submodule bump needed; this is a PT-side catalog update only, per the union-merge doctrine (never commit blended output into vendor/agentic-stack). The new episodic-mirror patch on tools/learn.py is the freshest local delta and the pilot for upstream contribution. Prior blend event (2026-07-12 reconciliation) preserved under blend_history."
+  },
+  "blend_history": [
+    {
+      "at": "2026-07-12T18:00:00Z",
+      "target_sha": "00eda65cd2030ffc62b9c01b8360dd2d1719eaef",
+      "applied_clean": [
+        "tools/show.py",
+        "tools/recall.py",
+        "tools/learn.py",
+        "tools/skill_loader.py",
+        "tools/graduate.py",
+        "memory/render_lessons.py",
+        "memory/decay.py",
+        "memory/promote.py",
+        "memory/memory_search.py",
+        "memory/archive.py",
+        "memory/review_state.py",
+        "memory/auto_dream.py",
+        "harness/hooks/on_failure.py",
+        "harness/hooks/post_execution.py",
+        "harness/salience.py",
+        "skills/_index.md"
+      ],
+      "conflicts": [],
+      "note": "Manually verified and re-applied 2026-07-12 during PR #206/#205/#207/#208 merge reconciliation: 9 of the 16 applied_clean files (tools/learn.py, tools/skill_loader.py, memory/{auto_dream,decay,memory_search,promote,render_lessons,review_state}.py, harness/hooks/on_failure.py) had their earlier-blended UTF-8/context-manager fixes silently reverted by an intervening merge that auto-resolved without flagging a conflict. Confirmed byte-for-byte match against the .blend-preview/ staged content (upstream agentic-stack's own fix) before re-committing. Lesson: an unconflicted auto-merge is not proof a fix survived -- verify content, not just absence of conflict markers, after any merge touching files with a known local-patch history."
+    }
+  ]
 }

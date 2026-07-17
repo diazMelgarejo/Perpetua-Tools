@@ -53,3 +53,17 @@ git commit -m "chore(vendor): bump agentic-stack submodule"
 
 Recorded gitlink: see `git ls-tree HEAD vendor/agentic-stack`.
 As of formalization (2026-06-26): `48fdc37` on upstream `master` (pre-v0.18.0 tag line in CHANGELOG).
+
+Pin verified current 2026-07-16: `00eda65c` matches upstream `master`
+exactly (`ahead_by: 0, behind_by: 0`). Any drift is in the blended `.agent/`
+overlay, not the submodule pin.
+
+## Patch-overlay catalog
+
+The blended local patches carried on top of the vendored skeleton are
+catalogued in [`.agent/.agentic-stack-blend-state.json`](../../.agent/.agentic-stack-blend-state.json)
+(`last_blend.applied_clean` + `new_patches_since_prior`, with prior events
+under `blend_history`). Consult that catalog — not a fresh `git diff` — to
+see which files carry local intent and whether each patch is portable
+upstream. Contribution-back planning for these patches lives in
+[`.agent/memory/working/2026-07-16-agentic-stack-upstream-contribution-plan.md`](../../.agent/memory/working/2026-07-16-agentic-stack-upstream-contribution-plan.md).
