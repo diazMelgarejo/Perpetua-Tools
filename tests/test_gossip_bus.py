@@ -12,7 +12,6 @@ from __future__ import annotations
 import asyncio
 import pytest
 
-import os
 import subprocess
 from pathlib import Path
 
@@ -266,30 +265,26 @@ def test_default_resolution_falls_back_outside_git_repo(isolated_env, tmp_path, 
 
 
 def test_supervisor_default_state_converges_with_fastapi_gossip_bus(
-    isolated_env, bare_repo_with_worktree
+    isolated_env, bare_repo_with_worktree, monkeypatch
 ):
     """FastAPI startup gossip, supervisor job emits, and memory_node must share
     one db — not split canonical startup from cwd-relative supervisor state."""
     from orchestrator.supervisor import OrchestrationSupervisor
 
     repo, worktree = bare_repo_with_worktree
-    cwd = os.getcwd()
-    try:
-        os.chdir(worktree)
-        fastapi_startup_path = resolve_gossip_db_path()
-        supervisor = OrchestrationSupervisor()
-        supervisor_gossip_path = resolve_gossip_db_path(supervisor._state_dir)
-        memory_node_path = resolve_gossip_db_path()
-        canonical_state = resolve_default_state_dir()
-    finally:
-        os.chdir(cwd)
+    monkeypatch.chdir(worktree)
+    fastapi_startup_path = resolve_gossip_db_path()
+    supervisor = OrchestrationSupervisor()
+    supervisor_gossip_path = resolve_gossip_db_path(supervisor._state_dir)
+    memory_node_path = resolve_gossip_db_path()
+    canonical_state = resolve_default_state_dir()
 
     expected = str((repo / ".state" / "perpetua_core.db").resolve())
     assert fastapi_startup_path == expected
     assert supervisor_gossip_path == expected
     assert memory_node_path == expected
     assert canonical_state == (repo / ".state").resolve()
-    assert str(supervisor._state_dir.resolve()) == str((repo / ".state").resolve())
+    assert supervisor._state_dir.resolve() == (repo / ".state").resolve()
 
 
 @pytest.mark.asyncio
