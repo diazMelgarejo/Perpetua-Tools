@@ -29,10 +29,13 @@ record.
 
 ## Fix
 
-Adds `_append_episodic_mirror()`, called right after the candidate file is
-written, using the same timestamp so `evidence_ids[0]` always resolves.
-Fail-open on `OSError` — a mirror-write failure never blocks staging.
-Minimal, additive, stdlib-only.
+Adds `_append_episodic_mirror()`, using the same timestamp so
+`evidence_ids[0]` resolves to a real episodic record. Manual staging
+**enforces mirror-write success**: the candidate is serialized to a temp
+file in `CANDIDATES`, the mirror append runs next (write errors
+propagate), and only then is the candidate published with `os.replace`.
+A visible staged candidate never carries a dangling `evidence_ids`
+value. Minimal, additive, stdlib-only.
 
 ## Verification
 
@@ -81,9 +84,9 @@ than surprising you with a queue.
 
 ---
 
-## PR #2 — base `atomic-01-episodic-mirror-fix` (open PR #1 first, so this base branch exists on GitHub's compare view)
+## PR #2 — base upstream `master` (stacked branch ancestry on the fork; open after #1 for cleaner review, but the GitHub base is always `master`)
 
-**Compare:** https://github.com/codejunkie99/agentic-stack/compare/diazMelgarejo:agentic-stack:atomic-01-episodic-mirror-fix...diazMelgarejo:agentic-stack:atomic-02-utf8-encoding-fixes?expand=1
+**Compare:** https://github.com/codejunkie99/agentic-stack/compare/master...diazMelgarejo:agentic-stack:atomic-02-utf8-encoding-fixes?expand=1
 
 **Title:** `fix(io): force UTF-8 on stdout/stderr and candidate writes`
 
@@ -117,9 +120,9 @@ downstream in Perpetua-Tools; contributing back.
 
 ---
 
-## PR #3 — base `atomic-02-utf8-encoding-fixes` (open PR #2 first)
+## PR #3 — base upstream `master` (stacked branch ancestry on the fork; open after #2 for cleaner review, but the GitHub base is always `master`)
 
-**Compare:** https://github.com/codejunkie99/agentic-stack/compare/diazMelgarejo:agentic-stack:atomic-02-utf8-encoding-fixes...diazMelgarejo:agentic-stack:atomic-03-context-manager-fix?expand=1
+**Compare:** https://github.com/codejunkie99/agentic-stack/compare/master...diazMelgarejo:agentic-stack:atomic-03-context-manager-fix?expand=1
 
 **Title:** `fix(io): use a context manager in _lesson_already_appended`
 
@@ -150,11 +153,14 @@ back.
 
 ## Order of operations
 
-1. Open PR #1 first (base `master` — works immediately, no dependency).
-2. Once #1 exists, GitHub's compare view will offer
-   `atomic-01-episodic-mirror-fix` as a valid base — open PR #2.
-3. Once #2 exists, open PR #3 the same way.
+1. Open PR #1 against upstream `master` (compare URL above).
+2. Open PR #2 against upstream `master` (same base). Until #1 merges, the
+   GitHub diff is cumulative (`#1` + `#2` commits); after #1 merges it
+   collapses to `#2`'s own delta. Preferred review order is still #1 then
+   #2, but the merge base stays `master` — never a fork-only predecessor.
+3. Open PR #3 against upstream `master` the same way.
 
 All 3 branches and their commits already exist on the fork right now —
-this ordering is only about which compare URL GitHub will resolve at each
-step, not about doing any more code work.
+this ordering is about review clarity, not about doing any more code
+work. Fork predecessor branches remain the *git* parents of later
+branches; they are not used as GitHub PR bases on upstream.
