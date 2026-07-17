@@ -132,6 +132,7 @@ def stage(claim, conditions, source="learn", importance=7):
             temp_path = stream.name
             json.dump(candidate, stream, indent=2)
             stream.flush()
+            os.fsync(stream.fileno())
         _append_episodic_mirror(cid, claim, now, source)
         os.replace(temp_path, path)
         temp_path = None
