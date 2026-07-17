@@ -19,7 +19,9 @@ def _canonical_repo_state_dir() -> Optional[Path]:
 
     ``git rev-parse --git-common-dir`` returns the same path regardless of
     which worktree of a repo you're standing in, so every worktree converges
-    on one ``.state/`` instead of each growing its own fragmented copy.
+    on one ``.state/`` instead of each growing its own fragmented copy. A
+    conventional checkout uses ``<repo>/.git`` as that common directory, but
+    bare and external Git directories are themselves the state anchor.
     Returns None outside a git repo (e.g. a packaged deployment), where the
     caller falls back to a plain cwd-relative path.
     """
@@ -27,11 +29,14 @@ def _canonical_repo_state_dir() -> Optional[Path]:
         common_dir = subprocess.check_output(
             ["git", "rev-parse", "--git-common-dir"],
             text=True,
+            encoding="utf-8",
             stderr=subprocess.DEVNULL,
         ).strip()
     except (subprocess.CalledProcessError, FileNotFoundError):
         return None
-    return Path(common_dir).resolve().parent / ".state"
+    common_path = Path(common_dir).resolve()
+    state_anchor = common_path.parent if common_path.name == ".git" else common_path
+    return state_anchor / ".state"
 
 
 def resolve_default_state_dir() -> Path:

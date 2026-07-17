@@ -173,21 +173,64 @@ def bare_repo_with_worktree(tmp_path):
 
 
 def test_default_resolution_converges_across_worktrees(
-    isolated_env, bare_repo_with_worktree
+    isolated_env, bare_repo_with_worktree, monkeypatch
 ):
     """Same repo, two different cwds (main checkout vs. worktree) — the
     default-resolved db path must be identical, not one-per-worktree."""
     repo, worktree = bare_repo_with_worktree
-    cwd = os.getcwd()
-    try:
-        os.chdir(repo)
-        path_from_repo = resolve_gossip_db_path()
-        os.chdir(worktree)
-        path_from_worktree = resolve_gossip_db_path()
-    finally:
-        os.chdir(cwd)
+    monkeypatch.chdir(repo)
+    path_from_repo = resolve_gossip_db_path()
+    monkeypatch.chdir(worktree)
+    path_from_worktree = resolve_gossip_db_path()
     assert path_from_repo == path_from_worktree
     assert path_from_repo == str((repo / ".state" / "perpetua_core.db").resolve())
+
+
+def test_default_resolution_anchors_bare_repo_state_at_common_dir(
+    isolated_env, monkeypatch, tmp_path
+):
+    bare_repo = tmp_path / "bare-repo"
+    subprocess.run(["git", "init", "--bare", "-q", str(bare_repo)], check=True)
+    monkeypatch.chdir(bare_repo)
+
+    assert resolve_gossip_db_path() == str(
+        (bare_repo / ".state" / "perpetua_core.db").resolve()
+    )
+
+
+def test_default_resolution_anchors_external_git_dir_at_common_dir(
+    isolated_env, monkeypatch, tmp_path
+):
+    external_git_dir = tmp_path / "external-git-dir"
+    subprocess.run(
+        ["git", "init", "--bare", "-q", str(external_git_dir)], check=True
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("GIT_DIR", str(external_git_dir))
+
+    assert resolve_gossip_db_path() == str(
+        (external_git_dir / ".state" / "perpetua_core.db").resolve()
+    )
+
+
+def test_default_resolution_decodes_git_common_dir_as_utf8(
+    isolated_env, monkeypatch, tmp_path
+):
+    checkout = tmp_path / "r\u00e9sum\u00e9"
+    common_dir = checkout / ".git"
+    common_dir.mkdir(parents=True)
+
+    def fake_check_output(command, **kwargs):
+        assert command == ["git", "rev-parse", "--git-common-dir"]
+        assert kwargs["text"] is True
+        assert kwargs["encoding"] == "utf-8"
+        return str(common_dir)
+
+    monkeypatch.setattr("orchestrator.gossip_bus.subprocess.check_output", fake_check_output)
+
+    assert resolve_gossip_db_path() == str(
+        (checkout / ".state" / "perpetua_core.db").resolve()
+    )
 
 
 def test_explicit_state_dir_still_wins(isolated_env, tmp_path):
@@ -217,12 +260,8 @@ def test_default_resolution_falls_back_outside_git_repo(isolated_env, tmp_path, 
     instead of raising — packaged/non-git deployments must still work."""
     non_repo = tmp_path / "not-a-repo"
     non_repo.mkdir()
-    cwd = os.getcwd()
-    try:
-        os.chdir(non_repo)
-        result = resolve_gossip_db_path()
-    finally:
-        os.chdir(cwd)
+    monkeypatch.chdir(non_repo)
+    result = resolve_gossip_db_path()
     assert result == str((non_repo / ".state" / "perpetua_core.db").resolve())
 
 
@@ -448,9 +487,12 @@ def test_resolve_gossip_db_path_defaults_to_canonical_repo_state(monkeypatch):
     common_dir = subprocess.check_output(
         ["git", "rev-parse", "--git-common-dir"],
         text=True,
+        encoding="utf-8",
         stderr=subprocess.DEVNULL,
     ).strip()
-    expected = str((Path(common_dir).resolve().parent / ".state" / "perpetua_core.db").resolve())
+    common_path = Path(common_dir).resolve()
+    state_anchor = common_path.parent if common_path.name == ".git" else common_path
+    expected = str((state_anchor / ".state" / "perpetua_core.db").resolve())
     assert result == expected
 
 
