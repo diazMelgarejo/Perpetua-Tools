@@ -905,6 +905,7 @@ async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> None:
         p = ev["payload"]
         if p.get("task_id") == task_id and p.get("kind") in ("task_enqueue", "task_claim", "task_complete", "task_failed"):
             task_state = p
+            break
     if not task_state:
         print(f"ERROR: task {task_id} not found")
         return
@@ -955,6 +956,7 @@ async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> None:
         p = ev["payload"]
         if p.get("task_id") == task_id and p.get("kind") in ("task_enqueue", "task_claim", "task_complete", "task_failed"):
             task_state = p
+            break
     if not task_state:
         print(f"ERROR: task {task_id} not found")
         return
@@ -986,12 +988,12 @@ async def _queue_list(bus: GossipBus, phase_filter: Optional[str], priority_filt
     """List queued tasks grouped by status, with optional filters."""
     events = await bus.tail(limit=1000, event_type="heartbeat")
     task_states = {}
-    for ev in events:
+    for ev in reversed(events):
         p = ev["payload"]
         task_id = p.get("task_id")
         if not task_id or p.get("kind") not in ("task_enqueue", "task_claim", "task_complete", "task_failed", "task_abandoned"):
             continue
-        task_states[task_id] = p
+        task_states.setdefault(task_id, {}).update(p)
     queued, claimed, completed, failed = {}, {}, {}, {}
     for task_id, state in task_states.items():
         if phase_filter and state.get("phase") != phase_filter:
@@ -1039,12 +1041,12 @@ async def _queue_status(bus: GossipBus, agent_filter: Optional[str]) -> None:
     """Show status of all claimed tasks per agent."""
     events = await bus.tail(limit=1000, event_type="heartbeat")
     task_states = {}
-    for ev in events:
+    for ev in reversed(events):
         p = ev["payload"]
         task_id = p.get("task_id")
         if not task_id or p.get("kind") not in ("task_enqueue", "task_claim", "task_complete", "task_failed", "task_abandoned"):
             continue
-        task_states[task_id] = p
+        task_states.setdefault(task_id, {}).update(p)
     agent_work = {}
     for task_id, state in task_states.items():
         if state.get("status") == QueuedTaskState.CLAIMED.value:
