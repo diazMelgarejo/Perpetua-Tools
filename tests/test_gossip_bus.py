@@ -12,7 +12,15 @@ from __future__ import annotations
 import asyncio
 import pytest
 
-from orchestrator.gossip_bus import GossipBus, _pending_embeds, _sanitize_fts_query
+import os
+import subprocess
+
+from orchestrator.gossip_bus import (
+    GossipBus,
+    _pending_embeds,
+    _sanitize_fts_query,
+    resolve_gossip_db_path,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -125,6 +133,95 @@ async def test_emit_creates_pending_row(bus):
         row = await cursor.fetchone()
     assert row is not None
     assert row[0] in ("pending", "embedded", "failed")
+
+
+# ---------------------------------------------------------------------------
+# resolve_gossip_db_path — default resolution must converge across worktrees,
+# not fragment per-cwd. Regression test for the multi-worktree job-board
+# split-brain incident (empty local .state/perpetua_core.db shadowing the
+# real shared one).
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def isolated_env(monkeypatch):
+    """Strip the env vars that would otherwise override default resolution."""
+    monkeypatch.delenv("GOSSIP_DB_PATH", raising=False)
+    monkeypatch.delenv("PT_STATE_DIR", raising=False)
+
+
+@pytest.fixture
+def bare_repo_with_worktree(tmp_path):
+    """A throwaway git repo with a second worktree, to prove both resolve
+    the same canonical .state path regardless of which one is cwd."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.email", "t@t.test"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "t"], cwd=repo, check=True)
+    (repo / "README.md").write_text("x")
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "init"], cwd=repo, check=True)
+
+    worktree = tmp_path / "worktree"
+    subprocess.run(
+        ["git", "worktree", "add", "-q", "-b", "wt-branch", str(worktree)],
+        cwd=repo, check=True,
+    )
+    return repo, worktree
+
+
+def test_default_resolution_converges_across_worktrees(
+    isolated_env, bare_repo_with_worktree
+):
+    """Same repo, two different cwds (main checkout vs. worktree) — the
+    default-resolved db path must be identical, not one-per-worktree."""
+    repo, worktree = bare_repo_with_worktree
+    cwd = os.getcwd()
+    try:
+        os.chdir(repo)
+        path_from_repo = resolve_gossip_db_path()
+        os.chdir(worktree)
+        path_from_worktree = resolve_gossip_db_path()
+    finally:
+        os.chdir(cwd)
+    assert path_from_repo == path_from_worktree
+    assert path_from_repo == str((repo / ".state" / "perpetua_core.db").resolve())
+
+
+def test_explicit_state_dir_still_wins(isolated_env, tmp_path):
+    """An explicit state_dir argument overrides canonical resolution."""
+    explicit = tmp_path / "explicit-state"
+    result = resolve_gossip_db_path(explicit)
+    assert result == str((explicit / "perpetua_core.db").resolve())
+
+
+def test_pt_state_dir_env_still_wins(isolated_env, monkeypatch, tmp_path):
+    """PT_STATE_DIR is still an explicit override, unaffected by the fix."""
+    override = tmp_path / "override-state"
+    monkeypatch.setenv("PT_STATE_DIR", str(override))
+    result = resolve_gossip_db_path()
+    assert result == str((override / "perpetua_core.db").resolve())
+
+
+def test_gossip_db_path_env_takes_priority(isolated_env, monkeypatch, tmp_path):
+    """GOSSIP_DB_PATH is the highest-priority override, unaffected by the fix."""
+    explicit_file = tmp_path / "explicit.db"
+    monkeypatch.setenv("GOSSIP_DB_PATH", str(explicit_file))
+    assert resolve_gossip_db_path() == str(explicit_file)
+
+
+def test_default_resolution_falls_back_outside_git_repo(isolated_env, tmp_path, monkeypatch):
+    """Outside any git repo, falls back to the pre-fix cwd-relative behavior
+    instead of raising — packaged/non-git deployments must still work."""
+    non_repo = tmp_path / "not-a-repo"
+    non_repo.mkdir()
+    cwd = os.getcwd()
+    try:
+        os.chdir(non_repo)
+        result = resolve_gossip_db_path()
+    finally:
+        os.chdir(cwd)
+    assert result == str((non_repo / ".state" / "perpetua_core.db").resolve())
 
 
 @pytest.mark.asyncio

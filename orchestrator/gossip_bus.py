@@ -6,6 +6,7 @@ import json
 import os
 import re
 import sqlite3
+import subprocess
 import uuid
 from pathlib import Path
 from typing import Literal, Optional
@@ -13,13 +14,35 @@ from typing import Literal, Optional
 import aiosqlite
 
 
+def _canonical_repo_state_dir() -> Optional[Path]:
+    """Resolve ``.state`` relative to the repo root shared by every worktree.
+
+    ``git rev-parse --git-common-dir`` returns the same path regardless of
+    which worktree of a repo you're standing in, so every worktree converges
+    on one ``.state/`` instead of each growing its own fragmented copy.
+    Returns None outside a git repo (e.g. a packaged deployment), where the
+    caller falls back to a plain cwd-relative path.
+    """
+    try:
+        common_dir = subprocess.check_output(
+            ["git", "rev-parse", "--git-common-dir"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+    return Path(common_dir).resolve().parent / ".state"
+
+
 def resolve_gossip_db_path(state_dir: Path | str | None = None) -> str:
     explicit = os.environ.get("GOSSIP_DB_PATH", "").strip()
     if explicit:
         return explicit
-    root = Path(state_dir) if state_dir is not None else Path(
-        os.environ.get("PT_STATE_DIR", ".state")
-    )
+    if state_dir is not None:
+        root = Path(state_dir)
+    else:
+        env_dir = os.environ.get("PT_STATE_DIR", "").strip()
+        root = Path(env_dir) if env_dir else (_canonical_repo_state_dir() or Path(".state"))
     return str((root / "perpetua_core.db").resolve())
 
 
