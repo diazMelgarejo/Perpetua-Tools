@@ -1,0 +1,43 @@
+{
+  "id": "a704e063983c",
+  "key": "manual_a704e0",
+  "name": "manual_a704e0",
+  "claim": "For a launchd job that invokes a repository Python CLI, use the repository virtualenv interpreter explicitly instead of bare python3: launchd does not inherit the interactive shell environment, so dependencies present in the developer shell can be absent from the service process.",
+  "conditions": [
+    "coordination",
+    "heartbeat",
+    "launchd",
+    "python",
+    "service-environment",
+    "virtualenv"
+  ],
+  "evidence_ids": [
+    "2026-07-17T08:53:38.718043+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-17T08:53:38.718043+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-17T08:53:38.718043+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-17T08:53:38.821492+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The local PT coordination monitor initially used bare python3 and could not import aiosqlite under launchd, while the same command worked interactively. Switching the job to .venv/bin/python restored the intended heartbeat pulse without changing repository code.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-17T08:53:38.718043+00:00"
+      ],
+      "lessons_sha": "658335407753"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-17T08:53:38.821482+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The local PT coordination monitor initially used bare python3 and could not import aiosqlite under launchd, while the same command worked interactively. Switching the job to .venv/bin/python restored the intended heartbeat pulse without changing repository code."
+}

@@ -1,0 +1,42 @@
+{
+  "id": "0dde46de783a",
+  "key": "manual_0dde46",
+  "name": "manual_0dde46",
+  "claim": "A live OS process with its cwd inside a git worktree is not proof that worktree's git content is actively being worked on -- the process may be an unrelated long-running daemon that simply happened to launch with that directory as its working directory, unconnected to the worktree's branch or files. Verify what the process actually does (its command line, what it's serving) before treating occupancy as an 'in use, do not touch' signal.",
+  "conditions": [
+    "false-positive",
+    "liveness-check",
+    "lsof",
+    "process-evidence",
+    "worktree-triage"
+  ],
+  "evidence_ids": [
+    "2026-07-17T12:57:56.250953+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-17T12:57:56.250953+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-17T12:57:56.250953+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-17T12:57:56.363035+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "During worktree-safety triage, lsof showed live processes rooted in .claude/worktrees/pr-203-stm-integration -- looked like active development. Checking ps showed they were exa-mcp-daemon.py and its node child, an MCP server that had been running 5+ days, unrelated to the STM integration work in that worktree. The worktree's last COMMIT was also 6 days old, but the real 'do not touch' signal was the 3 cherry-unique unmerged commits, not the live process -- the daemon was a coincidental side-finding worth flagging (removing the worktree could kill it) but not the actual liveness evidence.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-17T12:57:56.250953+00:00"
+      ],
+      "lessons_sha": "322e40e2a9be"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-17T12:57:56.363024+00:00",
+  "reviewer": "learn.py",
+  "rationale": "During worktree-safety triage, lsof showed live processes rooted in .claude/worktrees/pr-203-stm-integration -- looked like active development. Checking ps showed they were exa-mcp-daemon.py and its node child, an MCP server that had been running 5+ days, unrelated to the STM integration work in that worktree. The worktree's last COMMIT was also 6 days old, but the real 'do not touch' signal was the 3 cherry-unique unmerged commits, not the live process -- the daemon was a coincidental side-finding worth flagging (removing the worktree could kill it) but not the actual liveness evidence."
+}
