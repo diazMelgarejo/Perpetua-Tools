@@ -8,6 +8,7 @@ not depend on the CLI argparse layer.
 """
 from __future__ import annotations
 
+import importlib
 import sys
 from pathlib import Path
 
@@ -30,6 +31,7 @@ from scripts.agent_coordination import (
     canonical_repo_root,
     current_worktree_label,
 )
+from scripts import agent_coordination_core, agent_coordination_legacy
 from orchestrator.gossip_bus import GossipBus
 
 
@@ -162,6 +164,40 @@ async def test_phase_list_handles_nonnumeric_phase_names(make_bus, capsys):
 
     captured = capsys.readouterr()
     assert "StateTransitionManager-Integration" in captured.out
+
+
+@pytest.mark.parametrize(
+    "module",
+    [agent_coordination_core, agent_coordination_legacy],
+)
+async def test_compat_phase_list_handles_nonnumeric_phase_names(module, make_bus, capsys):
+    if module is agent_coordination_legacy:
+        module = importlib.reload(module)
+    bus = await make_bus()
+    await module._phase_start(bus, "StateTransitionManager-Integration", None, "agent-z")
+    await module._phase_list(bus)
+
+    captured = capsys.readouterr()
+    assert "StateTransitionManager-Integration" in captured.out
+
+
+@pytest.mark.parametrize(
+    "module",
+    [agent_coordination_core, agent_coordination_legacy],
+)
+async def test_compat_phase_list_orders_dotted_numbers_numerically(
+    module, make_bus, capsys
+):
+    if module is agent_coordination_legacy:
+        module = importlib.reload(module)
+    bus = await make_bus()
+    await module._phase_start(bus, "Phase-2.10", None, "agent-z")
+    await module._phase_start(bus, "Phase-2.9", None, "agent-z")
+    await module._phase_list(bus)
+
+    captured = capsys.readouterr()
+    listed = captured.out.splitlines()[2:]
+    assert "\n".join(listed).index("Phase-2.9") < "\n".join(listed).index("Phase-2.10")
 
 
 def test_canonical_repo_root_is_git_directory():

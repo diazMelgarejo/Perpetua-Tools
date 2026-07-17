@@ -1,0 +1,44 @@
+{
+  "id": "588e84dc733c",
+  "key": "manual_588e84",
+  "name": "manual_588e84",
+  "claim": "For PT gossip database state resolution, treat git rev-parse --git-common-dir ending in .git as a normal checkout whose state belongs at the checkout root, but treat bare repositories and external GIT_DIR common dirs as their own state anchors.",
+  "conditions": [
+    "bare-repo",
+    "external-git-dir",
+    "git-common-dir",
+    "gossip",
+    "pr256",
+    "pt",
+    "state-dir"
+  ],
+  "evidence_ids": [
+    "2026-07-17T15:00:05.335691+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-17T15:00:05.335691+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-17T15:00:05.335691+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-17T15:00:05.569675+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR #256 follow-up showed using common_dir.parent for every Git common dir incorrectly places .state beside bare repositories and external git dirs instead of under the common dir itself.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-17T15:00:05.335691+00:00"
+      ],
+      "lessons_sha": "0c22f27bcd20"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-17T15:00:05.569662+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR #256 follow-up showed using common_dir.parent for every Git common dir incorrectly places .state beside bare repositories and external git dirs instead of under the common dir itself."
+}

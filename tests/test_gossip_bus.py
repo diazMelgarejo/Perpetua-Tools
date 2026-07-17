@@ -12,7 +12,17 @@ from __future__ import annotations
 import asyncio
 import pytest
 
-from orchestrator.gossip_bus import GossipBus, _pending_embeds, _sanitize_fts_query
+import subprocess
+from pathlib import Path
+
+from orchestrator.gossip_bus import (
+    GossipBus,
+    _canonical_repo_state_dir,
+    _pending_embeds,
+    _sanitize_fts_query,
+    resolve_default_state_dir,
+    resolve_gossip_db_path,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -125,6 +135,157 @@ async def test_emit_creates_pending_row(bus):
         row = await cursor.fetchone()
     assert row is not None
     assert row[0] in ("pending", "embedded", "failed")
+
+
+# ---------------------------------------------------------------------------
+# resolve_gossip_db_path — default resolution must converge across worktrees,
+# not fragment per-cwd. Regression test for the multi-worktree job-board
+# split-brain incident (empty local .state/perpetua_core.db shadowing the
+# real shared one).
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def isolated_env(monkeypatch):
+    """Strip the env vars that would otherwise override default resolution."""
+    monkeypatch.delenv("GOSSIP_DB_PATH", raising=False)
+    monkeypatch.delenv("PT_STATE_DIR", raising=False)
+
+
+@pytest.fixture
+def bare_repo_with_worktree(tmp_path):
+    """A throwaway git repo with a second worktree, to prove both resolve
+    the same canonical .state path regardless of which one is cwd."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.email", "t@t.test"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "t"], cwd=repo, check=True)
+    (repo / "README.md").write_text("x")
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "init"], cwd=repo, check=True)
+
+    worktree = tmp_path / "worktree"
+    subprocess.run(
+        ["git", "worktree", "add", "-q", "-b", "wt-branch", str(worktree)],
+        cwd=repo, check=True,
+    )
+    return repo, worktree
+
+
+def test_default_resolution_converges_across_worktrees(
+    isolated_env, bare_repo_with_worktree, monkeypatch
+):
+    """Same repo, two different cwds (main checkout vs. worktree) — the
+    default-resolved db path must be identical, not one-per-worktree."""
+    repo, worktree = bare_repo_with_worktree
+    monkeypatch.chdir(repo)
+    path_from_repo = resolve_gossip_db_path()
+    monkeypatch.chdir(worktree)
+    path_from_worktree = resolve_gossip_db_path()
+    assert path_from_repo == path_from_worktree
+    assert path_from_repo == str((repo / ".state" / "perpetua_core.db").resolve())
+
+
+def test_default_resolution_anchors_bare_repo_state_at_common_dir(
+    isolated_env, monkeypatch, tmp_path
+):
+    bare_repo = tmp_path / "bare-repo"
+    subprocess.run(["git", "init", "--bare", "-q", str(bare_repo)], check=True)
+    monkeypatch.chdir(bare_repo)
+
+    assert resolve_gossip_db_path() == str(
+        (bare_repo / ".state" / "perpetua_core.db").resolve()
+    )
+
+
+def test_default_resolution_anchors_external_git_dir_at_common_dir(
+    isolated_env, monkeypatch, tmp_path
+):
+    external_git_dir = tmp_path / "external-git-dir"
+    subprocess.run(
+        ["git", "init", "--bare", "-q", str(external_git_dir)], check=True
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("GIT_DIR", str(external_git_dir))
+
+    assert resolve_gossip_db_path() == str(
+        (external_git_dir / ".state" / "perpetua_core.db").resolve()
+    )
+
+
+def test_default_resolution_decodes_git_common_dir_as_utf8(
+    isolated_env, monkeypatch, tmp_path
+):
+    checkout = tmp_path / "r\u00e9sum\u00e9"
+    common_dir = checkout / ".git"
+    common_dir.mkdir(parents=True)
+
+    def fake_check_output(command, **kwargs):
+        assert command == ["git", "rev-parse", "--git-common-dir"]
+        assert kwargs["text"] is True
+        assert kwargs["encoding"] == "utf-8"
+        return str(common_dir)
+
+    monkeypatch.setattr("orchestrator.gossip_bus.subprocess.check_output", fake_check_output)
+
+    assert resolve_gossip_db_path() == str(
+        (checkout / ".state" / "perpetua_core.db").resolve()
+    )
+
+
+def test_explicit_state_dir_still_wins(isolated_env, tmp_path):
+    """An explicit state_dir argument overrides canonical resolution."""
+    explicit = tmp_path / "explicit-state"
+    result = resolve_gossip_db_path(explicit)
+    assert result == str((explicit / "perpetua_core.db").resolve())
+
+
+def test_pt_state_dir_env_still_wins(isolated_env, monkeypatch, tmp_path):
+    """PT_STATE_DIR is still an explicit override, unaffected by the fix."""
+    override = tmp_path / "override-state"
+    monkeypatch.setenv("PT_STATE_DIR", str(override))
+    result = resolve_gossip_db_path()
+    assert result == str((override / "perpetua_core.db").resolve())
+
+
+def test_gossip_db_path_env_takes_priority(isolated_env, monkeypatch, tmp_path):
+    """GOSSIP_DB_PATH is the highest-priority override, unaffected by the fix."""
+    explicit_file = tmp_path / "explicit.db"
+    monkeypatch.setenv("GOSSIP_DB_PATH", str(explicit_file))
+    assert resolve_gossip_db_path() == str(explicit_file)
+
+
+def test_default_resolution_falls_back_outside_git_repo(isolated_env, tmp_path, monkeypatch):
+    """Outside any git repo, falls back to the pre-fix cwd-relative behavior
+    instead of raising — packaged/non-git deployments must still work."""
+    non_repo = tmp_path / "not-a-repo"
+    non_repo.mkdir()
+    monkeypatch.chdir(non_repo)
+    result = resolve_gossip_db_path()
+    assert result == str((non_repo / ".state" / "perpetua_core.db").resolve())
+
+
+def test_supervisor_default_state_converges_with_fastapi_gossip_bus(
+    isolated_env, bare_repo_with_worktree, monkeypatch
+):
+    """FastAPI startup gossip, supervisor job emits, and memory_node must share
+    one db — not split canonical startup from cwd-relative supervisor state."""
+    from orchestrator.supervisor import OrchestrationSupervisor
+
+    repo, worktree = bare_repo_with_worktree
+    monkeypatch.chdir(worktree)
+    fastapi_startup_path = resolve_gossip_db_path()
+    supervisor = OrchestrationSupervisor()
+    supervisor_gossip_path = resolve_gossip_db_path(supervisor._state_dir)
+    memory_node_path = resolve_gossip_db_path()
+    canonical_state = resolve_default_state_dir()
+
+    expected = str((repo / ".state" / "perpetua_core.db").resolve())
+    assert fastapi_startup_path == expected
+    assert supervisor_gossip_path == expected
+    assert memory_node_path == expected
+    assert canonical_state == (repo / ".state").resolve()
+    assert supervisor._state_dir.resolve() == (repo / ".state").resolve()
 
 
 @pytest.mark.asyncio
@@ -311,17 +472,12 @@ def test_resolve_gossip_db_path_uses_pt_state_dir_env(tmp_path, monkeypatch):
     assert result == str((tmp_path / "perpetua_core.db").resolve())
 
 
-def test_resolve_gossip_db_path_defaults_to_dot_state(monkeypatch):
-    """When no env vars and no state_dir are set, defaults to .state/perpetua_core.db."""
-    from pathlib import Path
+def test_resolve_gossip_db_path_defaults_to_canonical_repo_state(isolated_env):
+    """When no env vars and no state_dir are set, defaults to canonical repo .state."""
     from orchestrator.gossip_bus import resolve_gossip_db_path
 
-    monkeypatch.delenv("GOSSIP_DB_PATH", raising=False)
-    monkeypatch.delenv("PT_STATE_DIR", raising=False)
-
-    result = resolve_gossip_db_path()
-    expected = str((Path(".state") / "perpetua_core.db").resolve())
-    assert result == expected
+    expected = str((_canonical_repo_state_dir() / "perpetua_core.db").resolve())
+    assert resolve_gossip_db_path() == expected
 
 
 def test_resolve_gossip_db_path_state_dir_takes_precedence_over_pt_state_dir(tmp_path, monkeypatch):
