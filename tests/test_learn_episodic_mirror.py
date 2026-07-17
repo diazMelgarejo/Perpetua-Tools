@@ -85,6 +85,33 @@ def test_evidence_id_resolves_to_the_mirror(monkeypatch, tmp_path):
     assert matching[0]["evidence_ids"] == [evidence_ts]
 
 
+def test_stage_routes_episodic_mirror_through_append_jsonl(monkeypatch, tmp_path):
+    """Manual staging must use the locked append_jsonl helper so concurrent
+    auto_dream os.replace cycles cannot orphan mirror writes.
+    """
+    mod, base = _load_module(monkeypatch, tmp_path)
+    captured = []
+
+    def _capture(path, entry):
+        captured.append((path, dict(entry)))
+        episodic = base / "memory" / "episodic" / "AGENT_LEARNINGS.jsonl"
+        episodic.parent.mkdir(parents=True, exist_ok=True)
+        with episodic.open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps(entry) + "\n")
+        return entry
+
+    monkeypatch.setattr(mod, "append_jsonl", _capture)
+    cid, _path = mod.stage(
+        "Always serialize timestamps in UTC to avoid comparison bugs",
+        ["timestamps", "utc"],
+    )
+    assert len(captured) == 1
+    episodic_path, entry = captured[0]
+    assert episodic_path.endswith("AGENT_LEARNINGS.jsonl")
+    assert entry["action"] == f"manual-stage:{cid}"
+    assert entry["evidence_ids"]
+
+
 def test_stage_fails_closed_when_mirror_write_errors(monkeypatch, tmp_path):
     """Mirror-write success is enforced: a forced OSError from the mirror
     must propagate, leave no published candidate JSON, and leave no
