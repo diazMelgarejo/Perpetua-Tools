@@ -147,9 +147,13 @@ Daily driver, highest-leverage first:
 4. Update `memory/working/WORKSPACE.md` as you work; archive on completion.
 5. Never hand-edit `memory/semantic/LESSONS.md` — it's rendered from
    `lessons.jsonl`. Use `graduate.py` / `reject.py` instead.
-6. Follow `protocols/permissions.md`. Blocked means blocked.
-7. When a self-rewrite hook fires, propose conservative edits only.
-8. The harness is dumb on purpose. Reasoning lives in skills + the host agent.
+6. Continue using and committing `.agent/memory/**` through the established
+   memory tools when the work requires it, but never record the owner's Gmail
+   address in memory files, CONTRIBUTING.md, or PR templates; use a neutral
+   owner-identity label instead.
+7. Follow `protocols/permissions.md`. Blocked means blocked.
+8. When a self-rewrite hook fires, propose conservative edits only.
+9. The harness is dumb on purpose. Reasoning lives in skills + the host agent.
 
 ## Security Invariant Enforcement Protocol (OramaSys v2)
 

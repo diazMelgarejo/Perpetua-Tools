@@ -1985,7 +1985,7 @@ node <repo>/AlphaClaw/node_modules/openclaw/openclaw.mjs gateway --port 18789 --
 - **Cross-machine learning pathway**: Win AutoResearcher (`start.ps1` / Hermes) generates episodic evidence via skills (e.g. `skill-absorption-map`) → `auto_dream.py` clusters them into candidates in `.agent/memory/candidates/` → candidates persist across dream cycles until a human reviews on Mac. Win-originated candidates can sit `staged` for days (bb70a6833f36 was re-staged 47× over 12 days) because `auto_dream` runs on both machines but only a human session on either can graduate them.
 - **skill-absorption-map `FAILURE` label**: a diagnostic output, NOT a system crash. It means the map found unabsorbed skill clusters. Treat as architecture TODOs: `hermes-harness` should absorb `hermes-agent` + `pt-orama-harness-integration`; `perpetua-hardware` should absorb `local-inference`. Act as refactoring targets.
 - **Misfire 1 — `endpoint-policy-contract.yml` (2026-06-29, `cyre <Lawrence@cyre.me>`)**: Valid contract written to `.agent/` root instead of `.agent/protocols/`. The agent listed `AGENTS.md` in `required_local_files` — knowing the file exists is not the same as reading it for behavioral guidance. Correct move: read `.agent/AGENTS.md` BEFORE creating any file under `.agent/`.
-- **Misfire 2 — `.agent/lessons.md` (2026-07-04 07:15, `cyre <Lawrence.Melgarejo@gmail.com>`)**: Agent hand-wrote a markdown lessons file instead of using `python3 .agent/tools/learn.py`. Created a phantom file nothing reads, bypassing the full stage→graduate→render pipeline. Additional flag: `Lawrence.Melgarejo@gmail.com` is NOT in the canonical git identity allowlist (`Lawrence@cyre.me`, `diazMelgarejo@gmail.com`, `Codex <codex@openai.com>`).
+- **Misfire 2 — `.agent/lessons.md` (2026-07-04 07:15, owner Gmail identity)**: Agent hand-wrote a markdown lessons file instead of using `python3 .agent/tools/learn.py`. Created a phantom file nothing reads, bypassing the full stage→graduate→render pipeline. Correction: the owner Gmail identity is canonical; the actual defect was stale attribution tooling and wrong memory-file procedure.
 - **Anti-pattern — listing ≠ reading**: Cargo-culting a convention file's name into a checklist/plan while skipping its content is how AFRP Trigger 3 failures happen. A file that appears in your output as a reference MUST be opened and read before acting in its domain.
 
 ---
@@ -2122,4 +2122,3 @@ lines or the side that landed first.
 PR body updated with a matching explanation, appended before CodeRabbit's
 auto-generated summary (not replacing it):
 [PR #206](https://github.com/diazMelgarejo/Perpetua-Tools/pull/206).
-

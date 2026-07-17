@@ -68,11 +68,11 @@ author_domain_ok() {
   return 1
 }
 case "$author_email_lc" in
-  diazmelgarejo@gmail.com|lawrence@cyre.me|codex@openai.com)
+  diazmelgarejo@gmail.com|lawrence@cyre.me|lawrence.melgarejo@gmail.com|codex@openai.com)
     ;;
   *)
     if ! author_domain_ok "$author_email_lc"; then
-      echo "error: commit author email must be diazMelgarejo@gmail.com, Lawrence@cyre.me, codex@openai.com, or a well-known AI/vendor domain" >&2
+      echo "error: commit author email must be one of the approved owner emails, codex@openai.com, or a well-known AI/vendor domain" >&2
       exit 1
     fi
     ;;

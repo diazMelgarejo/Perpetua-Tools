@@ -308,6 +308,53 @@ def test_forbidden_identity_exception_is_exempt(tmp_path):
     assert errors == []
 
 
+def test_agent_memory_owner_gmail_identity_is_blocked(tmp_path):
+    repo_hygiene = load_repo_hygiene()
+    memory = tmp_path / ".agent" / "memory" / "episodic" / "AGENT_LEARNINGS.jsonl"
+    memory.parent.mkdir(parents=True)
+    token = "Lawrence.Melgarejo" + "@gmail.com"
+    memory.write_text(f'{{"author":"{token}"}}\n', encoding="utf-8")
+
+    errors = repo_hygiene.scan_redacted_owner_gmail_identity(
+        tmp_path, [".agent/memory/episodic/AGENT_LEARNINGS.jsonl"]
+    )
+
+    assert len(errors) == 1
+    assert "forbidden owner Gmail identity in portable guidance" in errors[0]
+
+
+def test_owner_gmail_identity_is_blocked_from_contributing_and_pr_template(tmp_path):
+    repo_hygiene = load_repo_hygiene()
+    token = "Lawrence.Melgarejo" + "@gmail.com"
+    contributing = tmp_path / "CONTRIBUTING.md"
+    contributing.write_text(f"Use {token}\n", encoding="utf-8")
+    template = tmp_path / ".github" / "pull_request_template.md"
+    template.parent.mkdir()
+    template.write_text(f"Do not use {token}\n", encoding="utf-8")
+
+    errors = repo_hygiene.scan_redacted_owner_gmail_identity(
+        tmp_path, ["CONTRIBUTING.md", ".github/pull_request_template.md"]
+    )
+
+    assert len(errors) == 2
+    assert any("CONTRIBUTING.md" in error for error in errors)
+    assert any(".github/pull_request_template.md" in error for error in errors)
+
+
+def test_owner_gmail_redaction_rule_allows_mechanical_allowlists(tmp_path):
+    repo_hygiene = load_repo_hygiene()
+    doc = tmp_path / ".github" / "AUTHORIZED_CONTRIBUTORS.md"
+    doc.parent.mkdir()
+    token = "Lawrence.Melgarejo" + "@gmail.com"
+    doc.write_text(f"cyre <{token}>\n", encoding="utf-8")
+
+    errors = repo_hygiene.scan_redacted_owner_gmail_identity(
+        tmp_path, [".github/AUTHORIZED_CONTRIBUTORS.md"]
+    )
+
+    assert errors == []
+
+
 # ---------------------------------------------------------------------------
 # CLAUDE.md — portable-paths rule (§ 6 Git Hygiene, lockstep w/ orama)
 #
@@ -424,4 +471,3 @@ def test_personal_path_windows_real_username_flagged(tmp_path):
     mod = load_repo_hygiene()
     errors = mod.scan_personal_paths(tmp_path, ["README.md"])
     assert any("alice" in e for e in errors), f"real username not flagged: {errors}"
-

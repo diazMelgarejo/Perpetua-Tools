@@ -217,6 +217,15 @@ GENERATED_ARTIFACT_EXCEPTIONS: frozenset[str] = frozenset({
     "packages/alphaclaw-mcp/build/index.js",
     "packages/alphaclaw-mcp/build/is-direct-execution.js",
 })
+AGENT_MEMORY_PREFIX = ".agent/memory/"
+OWNER_GMAIL_REDACTED_PATHS = (
+    AGENT_MEMORY_PREFIX,
+    "CONTRIBUTING.md",
+    ".github/pull_request_template.md",
+)
+MEMORY_FORBIDDEN_TOKENS = (
+    "Lawrence.Melgarejo" + "@gmail.com",
+)
 
 GENERATED_ARTIFACT_PATTERNS = (
     ".DS_Store",
@@ -317,6 +326,28 @@ def scan_forbidden_identity(root: Path, files: list[str]) -> list[str]:
         for token in FORBIDDEN_TOKENS:
             if token in text:
                 errors.append(f"forbidden identity token in tracked file: {rel}")
+                break
+    return errors
+
+
+def scan_redacted_owner_gmail_identity(root: Path, files: list[str]) -> list[str]:
+    errors: list[str] = []
+    for rel in files:
+        if not any(
+            rel == protected or rel.startswith(protected)
+            for protected in OWNER_GMAIL_REDACTED_PATHS
+        ):
+            continue
+        path = root / rel
+        if not path.is_file() or is_binary(path):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        for token in MEMORY_FORBIDDEN_TOKENS:
+            if token in text:
+                errors.append(f"forbidden owner Gmail identity in portable guidance: {rel}")
                 break
     return errors
 
@@ -537,6 +568,7 @@ def main() -> int:
     errors.extend(check_generated_artifact_tracking(files))
     errors.extend(check_git_internal_junk(root))
     errors.extend(check_workflow_permissions(root))
+    errors.extend(scan_redacted_owner_gmail_identity(root, files))
 
     for line in report_status(root):
         print(f"INFO: {line}")
