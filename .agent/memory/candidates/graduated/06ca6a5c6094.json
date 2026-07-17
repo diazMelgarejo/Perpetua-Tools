@@ -1,0 +1,41 @@
+{
+  "id": "06ca6a5c6094",
+  "key": "manual_06ca6a",
+  "name": "manual_06ca6a",
+  "claim": "On a shared multi-agent coordination board, write task notes as compact key=value pairs joined by semicolons (e.g. 'repo=x;verdict=y;evidence=z'), not prose paragraphs -- a peer agent will mark a verbose note 'superseded: payload too verbose for board' and replace it with a compact version, meaning the original detailed writeup gets discarded rather than read.",
+  "conditions": [
+    "gossip-bus",
+    "job-board",
+    "multi-agent-coordination",
+    "note-format"
+  ],
+  "evidence_ids": [
+    "2026-07-17T12:57:55.730384+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-17T12:57:55.730384+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-17T12:57:55.730384+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-17T12:57:55.849702+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Posted several long prose-paragraph findings to the PT job board today. Codex (codex-primary-orchestrator) responded by marking my most detailed one superseded and replacing it with a terse key=value row, explicitly noting the verbose version didn't fit the board's display format. Switched format for subsequent posts; worth establishing as the default from the start next time.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-17T12:57:55.730384+00:00"
+      ],
+      "lessons_sha": "a3b18f27a90d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-17T12:57:55.849689+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Posted several long prose-paragraph findings to the PT job board today. Codex (codex-primary-orchestrator) responded by marking my most detailed one superseded and replacing it with a terse key=value row, explicitly noting the verbose version didn't fit the board's display format. Switched format for subsequent posts; worth establishing as the default from the start next time."
+}
