@@ -34,6 +34,19 @@ def _canonical_repo_state_dir() -> Optional[Path]:
     return Path(common_dir).resolve().parent / ".state"
 
 
+def resolve_default_state_dir() -> Path:
+    """Return the shared runtime state directory for this repo/worktree layout."""
+    env_dir = os.environ.get("PT_STATE_DIR", "").strip()
+    if env_dir:
+        return Path(env_dir)
+    return _canonical_repo_state_dir() or Path(".state")
+
+
+def is_default_state_dir_arg(state_dir: Path | str) -> bool:
+    """True when the caller left state_dir at the cwd-relative default ``.state``."""
+    return Path(state_dir) == Path(".state")
+
+
 def resolve_gossip_db_path(state_dir: Path | str | None = None) -> str:
     explicit = os.environ.get("GOSSIP_DB_PATH", "").strip()
     if explicit:
@@ -41,8 +54,7 @@ def resolve_gossip_db_path(state_dir: Path | str | None = None) -> str:
     if state_dir is not None:
         root = Path(state_dir)
     else:
-        env_dir = os.environ.get("PT_STATE_DIR", "").strip()
-        root = Path(env_dir) if env_dir else (_canonical_repo_state_dir() or Path(".state"))
+        root = resolve_default_state_dir()
     return str((root / "perpetua_core.db").resolve())
 
 
