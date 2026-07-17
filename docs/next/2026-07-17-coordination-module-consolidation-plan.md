@@ -3,11 +3,11 @@
 Date: 2026-07-17
 Repository: `diazMelgarejo/Perpetua-Tools`
 Status: plan only — no migration performed yet
-Related: `docs/next/2026-07-17-phase-board-fragmentation-analysis.md` (the bug that motivated this), PT PR #256 (the point fix — deliberately kept separate from this plan per scope agreement below)
+Related: `2026-07-17-phase-board-fragmentation-analysis.md` (the bug that motivated this), PT PR #256 (the point fix — deliberately kept separate from this plan per scope agreement below)
 
 ## Why this exists
 
-Today's phase-board crash (`docs/next/2026-07-17-phase-board-fragmentation-analysis.md`) wasn't a one-off typo — it was a structural consequence of `scripts/agent_coordination.py`'s logic existing in four places at once (`agent_coordination.py`, `_core.py`, `_legacy.py`, `_phases.py`), with a fix landing in one and silently not reaching the others. The same failure mode will recur on the next fix unless the duplication itself is addressed, not just today's instance of it.
+Today's phase-board crash (`2026-07-17-phase-board-fragmentation-analysis.md`) wasn't a one-off typo — it was a structural consequence of `scripts/agent_coordination.py`'s logic existing in four places at once (`agent_coordination.py`, `_core.py`, `_legacy.py`, `_phases.py`), with a fix landing in one and silently not reaching the others. The same failure mode will recur on the next fix unless the duplication itself is addressed, not just today's instance of it.
 
 Both Claude and Codex independently verified the extent of the duplication and agree on the direction below (cross-checked via two different diff methods, consistent conclusion):
 
@@ -18,7 +18,7 @@ Both Claude and Codex independently verified the extent of the duplication and a
 
 ## Analysis findings (from the phase-board root-cause writeup)
 
-The full diagnosis is in `docs/next/2026-07-17-phase-board-fragmentation-analysis.md`
+The full diagnosis is in `2026-07-17-phase-board-fragmentation-analysis.md`
 (authored on the PR #256 branch; on `main` once #256 merges). The four
 load-bearing findings, and how each maps onto this plan:
 
@@ -205,7 +205,12 @@ from orchestrator.gossip_bus import _canonical_repo_state_dir
 
 def canonical_repo_root() -> Path:
     state = _canonical_repo_state_dir()
-    return state.parent if state is not None else Path.cwd()
+    if state is None:
+        raise RuntimeError(
+            "canonical_repo_root requires a git-backed repo; "
+            "_canonical_repo_state_dir() returned None"
+        )
+    return state.parent
 
 
 def canonical_db_path() -> str:
@@ -265,21 +270,29 @@ the same entrypoint a user hits:
 
 ```python
 # tests/test_agent_coordination_cli_parity.py  (NEW — step 4, gate before deletion)
-import subprocess, sys
+import os, subprocess, sys
+from pathlib import Path
 
-def _cli(*args):
+def _cli(*args, env=None, timeout=30):
     return subprocess.run(
         [sys.executable, "scripts/agent_coordination.py", *args],
         capture_output=True, text=True, encoding="utf-8",
+        env=env, timeout=timeout,
     )
 
-def test_phase_list_via_real_cli_does_not_crash_on_nonnumeric():
+def test_phase_list_via_real_cli_does_not_crash_on_nonnumeric(tmp_path: Path):
     # The regression class from the phase-board bug: must run the CLI path,
     # not import _phase_list from the facade (which historically resolved to
     # a different, already-fixed copy than the one main() actually calls).
-    _cli("phase", "start", "StateTransitionManager-Integration", "--agent", "a")
-    r = _cli("phase", "list")
-    assert r.returncode == 0
+    # Isolate state so the subprocess cannot touch the developer's live DB.
+    env = {**os.environ, "PT_STATE_DIR": str(tmp_path)}
+    started = _cli(
+        "phase", "start", "StateTransitionManager-Integration", "--agent", "a",
+        env=env,
+    )
+    assert started.returncode == 0, started.stderr
+    r = _cli("phase", "list", env=env)
+    assert r.returncode == 0, r.stderr
     assert "StateTransitionManager-Integration" in r.stdout
 ```
 
