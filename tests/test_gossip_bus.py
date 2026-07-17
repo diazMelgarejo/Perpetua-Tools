@@ -14,6 +14,7 @@ import pytest
 
 import os
 import subprocess
+from pathlib import Path
 
 from orchestrator.gossip_bus import (
     GossipBus,
@@ -408,16 +409,20 @@ def test_resolve_gossip_db_path_uses_pt_state_dir_env(tmp_path, monkeypatch):
     assert result == str((tmp_path / "perpetua_core.db").resolve())
 
 
-def test_resolve_gossip_db_path_defaults_to_dot_state(monkeypatch):
-    """When no env vars and no state_dir are set, defaults to .state/perpetua_core.db."""
-    from pathlib import Path
+def test_resolve_gossip_db_path_defaults_to_canonical_repo_state(monkeypatch):
+    """When no env vars and no state_dir are set, defaults to canonical repo .state."""
     from orchestrator.gossip_bus import resolve_gossip_db_path
 
     monkeypatch.delenv("GOSSIP_DB_PATH", raising=False)
     monkeypatch.delenv("PT_STATE_DIR", raising=False)
 
     result = resolve_gossip_db_path()
-    expected = str((Path(".state") / "perpetua_core.db").resolve())
+    common_dir = subprocess.check_output(
+        ["git", "rev-parse", "--git-common-dir"],
+        text=True,
+        stderr=subprocess.DEVNULL,
+    ).strip()
+    expected = str((Path(common_dir).resolve().parent / ".state" / "perpetua_core.db").resolve())
     assert result == expected
 
 
