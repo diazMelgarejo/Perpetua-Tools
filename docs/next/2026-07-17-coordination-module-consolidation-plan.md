@@ -334,3 +334,46 @@ fully-scoped list instead of a half-migrated tree:
 
 Both TODO items were deliberately not started in this PR per explicit
 instruction to pause implementation pending a joint session with Codex.
+
+## Handoff to Codex — status before the scrub/surgery session
+
+What landed on this branch since the TODO above was parked (interim
+hardening only, still no migration steps started):
+
+- **CodeRabbit review 4727106123, all 6 findings resolved.** 1 was already
+  fixed by prior work (verified, not re-touched); the other 5 were
+  genuinely still open despite the branch's privacy-hardening scope and
+  are now fixed: a hardcoded token removed from a tracked bootstrap script
+  (now sources from a CI secret or local config, synthetic placeholder as
+  last resort — never a real identity), a key-trim fix in the attribution
+  parser (implemented more robustly than the review's own literal
+  suggestion, which had a latent bug — verified functionally), a
+  previously-vacuous allowlist test now genuinely exercises its own logic,
+  `check_identity` now honors a configured private owner name instead of a
+  hardcoded fallback (kept backward compatible on purpose), and a
+  private-literal check that was wrongly gated behind an unrelated
+  readiness flag now runs unconditionally.
+- **New prevention mechanism, source-side.** `.agent/memory/path_hygiene.py`
+  gained `sanitize_private_identity_leaks()`, chained into the existing
+  `sanitize_tracked_path_leaks()` so every `.agent/memory` writer — `learn.py`
+  included — now redacts configured private identity/attribution literals
+  *before* they can reach `lessons.jsonl`, not just at the pre-commit gate
+  afterward. Pre-commit hooks were checked and were already correctly
+  wired (`repo_hygiene.py`'s `main()` already calls
+  `scan_private_verboten_literals`); the gap was entirely upstream, at the
+  point memory gets written. 7 new tests, full suite green.
+- **Current tracked tree on this branch: clean.** No forbidden-label hits,
+  consistent with the branch scrub report at
+  `docs/security/2026-07-18-pt-branch-metadata-scrub.md`.
+
+**Before proceeding with the scrub/surgery session:** that report
+explicitly scoped PT's side only and deferred orama-system "for a separate
+decision," noting orama-system history was not rewritten in that pass. If
+the same class of literal leak exists on the orama-system side, the
+source-side prevention fix above (or its equivalent) is worth landing
+there too before or alongside that repo's own history operation — same
+rationale: catching it at the write boundary means a future agent can't
+reintroduce the leak even if a pre-commit gate is ever bypassed or
+misconfigured. Otherwise nothing on the PT branch itself blocks the
+session from proceeding; the two TODO items above (migration execution,
+clinebot install pattern) remain exactly as parked.

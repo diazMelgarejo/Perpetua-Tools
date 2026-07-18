@@ -52,6 +52,7 @@ PERSONAL_PATH_EXCEPTIONS = {
     # path_hygiene unit tests use /Users/alice, /home/bob as test fixtures —
     # the file exists specifically to verify the scrubber catches these patterns.
     "tests/test_path_hygiene.py",
+    "tests/test_path_hygiene_identity_scrub.py",
 }
 # Hidden / bidirectional Unicode controls — Trojan-Source defense (CVE-2021-42574).
 # These can hide malicious code in diffs. Block in all tracked files except the

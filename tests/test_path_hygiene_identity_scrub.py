@@ -88,10 +88,10 @@ def test_redaction_composes_with_existing_path_scrub(configured_literals):
     """The two scrubs must not interfere with each other -- an identity
     literal and a workstation path in the same string are both redacted."""
     ph = _load_path_hygiene()
-    text = "synthetic.owner@example.invalid saved a file at /Users/someone/notes.md"
+    text = "synthetic.owner@example.invalid saved a file at /Users/alice/notes.md"
     result = ph.sanitize_tracked_path_leaks(text)
     assert "synthetic.owner@example.invalid" not in result
-    assert "/Users/someone" not in result
+    assert "/Users/alice" not in result
     assert "$HOME" in result
 
 
