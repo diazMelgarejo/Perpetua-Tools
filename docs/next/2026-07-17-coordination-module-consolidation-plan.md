@@ -230,7 +230,11 @@ Per-module loop (run in full before starting the next module):
 # For each capability in order: paths → claims → reorder_buffer → task_queue → phases
 uv run --offline python -m pytest tests/ -k "coordination or gossip" -v
 python3 scripts/review/repo_hygiene.py .
-git add -A && git commit -m "refactor(coord): extract <capability> to orchestrator/coordination/<mod>.py (move, no behavior change)"
+# Stage only the files that belong to this capability's move — never `git add -A`,
+# which can sweep in unrelated agent/doc/user changes sitting in the tree.
+# Or, leave commit creation to the operator entirely.
+git add orchestrator/coordination/<mod>.py scripts/agent_coordination.py tests/<relevant_test_file>.py
+git commit -m "refactor(coord): extract <capability> to orchestrator/coordination/<mod>.py (move, no behavior change)"
 ```
 
 ### Step 3 — `scripts/agent_coordination.py` becomes CLI-only
