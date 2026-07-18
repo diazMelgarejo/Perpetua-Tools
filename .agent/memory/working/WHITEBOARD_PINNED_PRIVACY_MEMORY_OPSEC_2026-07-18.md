@@ -30,6 +30,9 @@ at runtime.
   working notes, protocols, skills, rendered views, and generated summaries.
 - Report guard findings by category, file, and line. Do not print the matched
   secret or private literal.
+- `log()` and `heartbeat pulse()` are separate board events. Use `log()` for
+  status and `heartbeat pulse <agent_id>` for liveness; one does not imply the
+  other.
 - Prefer the strictest current guard as the multirepo standard for OramaSys v2.
 - Before ending a privacy/security session, close the loop: scan, test, commit,
   push, fetch, verify branch state, and inventory dirty worktrees.
@@ -43,12 +46,15 @@ at runtime.
 - Orama v2 now has a canonical portable-memory topology invariant document.
 - The coordination board carries a critical whiteboard item so offline agents
   can rediscover the rule when they come back online.
+- Claude added `HEARTBEAT_VS_LOG_LIVENESS_GAP_2026-07-18.md` and
+  `lesson_e8c57f92b1b9`, closing the gap where log-only activity still appears
+  stalled to liveness monitors.
 
 ## Cross-Repo Pointers
 
 - PT: `.agent/memory/semantic/DOMAIN_KNOWLEDGE.md`
 - PT: `.agent/memory/semantic/LESSONS.md`
+- PT: `.agent/memory/working/HEARTBEAT_VS_LOG_LIVENESS_GAP_2026-07-18.md`
 - PT: `scripts/review/repo_hygiene.py`
 - Orama: `docs/v2/47-portable-memory-local-topology-invariant.md`
 - Orama: `bin/orama-system/skills/oramasys-method/SKILL.md`
-
