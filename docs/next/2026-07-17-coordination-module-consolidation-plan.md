@@ -3,7 +3,7 @@
 
 Date: 2026-07-17 (revised 2026-07-18)
 Repository: `diazMelgarejo/Perpetua-Tools`
-Status: **revised after /autoplan CEO-phase dual-voice review + an independent parallel Codex engineering audit** — Part 1 ready to implement today; Part 2 (architecture) drafted, not yet executed; Part 3 explicitly deferred with caveats.
+Status: **revised after /autoplan CEO-phase dual-voice review + an independent parallel Codex engineering audit, then a full systematic re-audit against Codex's 7-finding follow-up review (`../references/coordination-module-consolidation-plan-review-2026-07-18.md`)** — Parts 1/1b/1c/1d ready to implement today (atomic-claim promotion, DB-error contract, exit-code/stderr/split-message fix, `PHASE_TRACKING.md` rewrite + quick-start); Part 2 (architecture) drafted, not yet executed; Part 3 explicitly deferred with caveats. All 7 of Codex's follow-up findings verified individually against current code and plan text — see the DX-phase findings section for the two (`PHASE_TRACKING.md`, progressive disclosure) that were caught mid-review as under-specified and corrected to concrete commitments rather than left as flagged ideas.
 Related: `2026-07-17-phase-board-fragmentation-analysis.md` (the bug that motivated this), PT PR #256 (merged — canonical gossip-DB path resolution), PT PR #259 (merged — a *second* independent duplicate-file patch, landed after this plan was first written), `../references/coordination-consolidation-plan-review-2026-07-18.md` (Codex follow-up review), and the [Python `argparse` sub-command documentation](https://docs.python.org/3/library/argparse.html#sub-commands) (primary-source dispatch pattern)
 
 ## Revision note — why this doc changed shape
@@ -227,6 +227,50 @@ no clean CLI message — inconsistent with the rest of the file post-Part-1. If
 Part 1b is scoped to only `gossip_bus.py`'s two functions, this gap will be
 missed since it's a different code path.
 
+### Part 1d — `PHASE_TRACKING.md` rewrite (doc-only, zero code risk, land alongside Part 1)
+
+**Committed here, not deferred** (self-audit correction, third review pass: the
+earlier draft filed this under Part 3's "Deferred" list with only "worth doing
+early" as a caveat — the same under-specified-gap pattern already corrected
+for Findings #4/#7 above; the fix belongs as a concrete deliverable, not a
+flagged idea). Verified before committing to this scope: `grep -n
+"PHASE_TRACKING" README.md CLAUDE.md` returns zero matches in either file —
+the discoverability gap is real, not assumed. `PHASE_TRACKING.md` is 304
+lines; heading count shows roughly 8 of the 29 real leaf commands documented.
+
+Concrete deliverable (one commit, doc-only):
+
+1. **Restructure CLI-surface-first**, per Codex's recommendation: real CLI
+   surface (`scripts/agent_coordination.py <cmd>`) first, then examples, then
+   historical/edge-case notes — not the reverse.
+2. **Cover all 29 leaf commands**, grouped by the same 6 families the parser
+   itself already uses (top-level, `phase`, `workflow`, `queue`, `heartbeat`,
+   `buffer` — see the real command inventory table above), not the current
+   ~8/29 (~28%).
+3. **Replace every `agent_coordination_phases.py` direct-invocation example**
+   with the equivalent `agent_coordination.py` invocation — per the DX-phase
+   finding below, `phases.py` bypasses LAN replication (`GossipBus(...)`
+   directly vs. `make_gossip_bus(...)`), so every worked example currently
+   models the one entrypoint proven to silently drop LAN propagation.
+4. **Fix the stale sort-key example.** Current doc (lines ~208-217) shows the
+   pre-fix float-cast algorithm (`"Phase-10.5" → (10, 0.5)`) as if current;
+   code has used the tuple-of-ints `_phase_sort_key` since `9642ae24`. Replace
+   with the real, current example.
+5. **Add the Quick Start section** (folds in Recommendation #6's first half,
+   steelmanned per the DX-phase correction below — the safe path, not the
+   unprotected basic-board path): `queue add` → `queue claim` → `queue
+   complete`, placed at the top, before the full command reference.
+6. **Fix discoverability.** Add a one-line pointer to `PHASE_TRACKING.md` in
+   both `README.md` and `CLAUDE.md` (currently absent from both — verified by
+   grep above) so a new agent doesn't need to already know to search for the
+   file.
+
+Sequencing: steps 1-4 and 6 land as one doc-only commit alongside Part 1/1c
+today — no code dependency, no migration risk. Step 5 (Quick Start) is the
+same commit, not a separate one, since splitting doc-accuracy from
+quick-start would let the quick-start section teach a structure the rest of
+the doc doesn't yet reflect.
+
 ---
 
 ## Part 2 — Revamped architecture draft (drafted now, not deferred; execution scheduled separately)
@@ -366,6 +410,8 @@ def main(argv: list[str] | None = None) -> int:
 ```
 
 Each handler stays a thin async adapter translating `argparse.Namespace` into a call on one canonical capability module — no business logic in the adapter layer, matching the original plan's own stated goal but now structurally enforced (no separate table to drift).
+
+**DX-phase finding, folded in here:** the current `main()` (`agent_coordination_core.py:1195-1330`) already puts `help=` strings on most leaves, but 5 of the 6 top-level commands (`register`, `agents`, `release`, `list`, `log`) have none — only `claim` does. Since every `add_parser(...)` call is being rewritten in this phase anyway, add the missing `help=` text here at zero incremental cost rather than as a separate patch to a function this phase is about to replace.
 
 **Real command inventory (29 leaf commands, replaces the original plan's 4-row illustrative example):**
 - 6 top-level: `register`, `agents`, `claim`, `release`, `list`, `log`
@@ -668,16 +714,21 @@ threading it through the return value, not gathering new information. Bundle all
 dispatch-rewrite work item above — they're one scriptability-contract change,
 not three separate ones.
 
-Deferred (do not block Part 1/2, but do not silently drop either):
+**Not deferred — see Part 1d above (self-audit correction, third review pass):**
 
-- [ ] **`PHASE_TRACKING.md` is actively wrong, not just incomplete.** Verified: it documents the *pre-fix* float-encoded sort-key algorithm (`"Phase-10.5" → (10, 0.5)"`) as current, when the code has used tuple-of-ints since `9642ae24`; it covers only ~8 of 29 commands (~28%) — the entire `queue`/`heartbeat`/`buffer`/basic-`claim` surface is undocumented; every worked example invokes `agent_coordination_phases.py` directly, the one entrypoint confirmed to bypass LAN replication (see the `liveness`/bus-constructor finding below); and `README.md`/`CLAUDE.md` don't reference this doc or the CLI at all, so discoverability depends on already knowing to grep for it. **Caveat: doc-only fix, zero code risk** — worth doing early (alongside Part 1, not gated on Part 2) precisely because it's cheap and currently actively misleads.
+- [x] **`PHASE_TRACKING.md` is actively wrong, not just incomplete.** Verified: it documents the *pre-fix* float-encoded sort-key algorithm (`"Phase-10.5" → (10, 0.5)"`) as current, when the code has used tuple-of-ints since `9642ae24`; it covers only ~8 of 29 commands (~28%) — the entire `queue`/`heartbeat`/`buffer`/basic-`claim` surface is undocumented; every worked example invokes `agent_coordination_phases.py` directly, the one entrypoint confirmed to bypass LAN replication (see the `liveness`/bus-constructor finding below); and `README.md`/`CLAUDE.md` don't reference this doc or the CLI at all (re-verified via `grep -n PHASE_TRACKING README.md CLAUDE.md` — zero matches in both), so discoverability depends on already knowing to grep for it. **Was mis-filed as "Deferred/doc-only, worth doing early" with no concrete commitment — the same under-specification pattern already corrected on Findings #4/#7. Corrected: now Part 1d, a scoped, committed, doc-only deliverable landing alongside Part 1 today**, not a flagged idea for later.
+
+Deferred (do not block Part 1/2, but do not silently drop either):
 - [ ] **`agent_coordination_phases.py` uses a different bus constructor than `core.py`/`legacy.py` (Claude DX subagent, confirmed by Codex and Kimi independently).** `phases.py:433` calls `GossipBus(canonical_db_path())` directly; `core.py:1094`/`legacy.py:1085` call `make_gossip_bus(canonical_db_path())`, which returns a `LanGossipBridge` instead of a plain local bus when `GOSSIP_PEERS` is configured (verified in `orchestrator/lan_gossip_bridge.py:195-205`) — this org's actual Mac+Win LAN setup. **Concrete consequence: `phase start`/`phase list`/etc. run via the standalone `phases.py` entrypoint never propagate across LAN, while the identical command via `agent_coordination.py` does.** A third, independently-discovered instance of the "silent divergence between copies" failure class this whole plan exists to fix — add to Phase 0F's inventory (record which bus constructor each entrypoint uses, not just which function handles the leaf), per the Eng-phase task_queue.py note above.
 - [ ] **Basic `claim`/`release` have zero collision/ownership protection, and it's undocumented (Claude DX subagent; Kimi independently confirmed `release` extends the same gap).** `_claim` (`agent_coordination_core.py:371-389`) does no pre-check before emitting — last-write-wins by design (an existing test asserts this as intended behavior), and `_release` lets any agent release any other agent's claim. Neither is documented as such anywhere; a new agent reasonably assumes `claim` (shorter, more discoverable than `queue claim`) has the same protection the plan is busy adding to `queue claim`. **Fix, cheap:** a one-line `--help`/docstring warning ("no collision protection — use `queue add`/`queue claim` for exclusive ownership") costs nothing and can land with Part 1's other doc touches.
 - [ ] **`queue complete`/`queue fail` don't verify caller identity against the claim owner (Claude DX subagent).** Neither parser (`agent_coordination_core.py:1287-1293`) nor implementation accepts/checks an `agent_id` against `assigned_agent` — any agent can complete or fail a task it never claimed. Same failure class as the queue-claim bug (missing protection in the tool whose purpose is preventing exactly this), just not a race condition — a missing authorization check. Add to Part 2's provenance table as a behavior gap to close during `task_queue.py`'s extraction, or explicitly re-defer with a caveat; currently absent from the plan entirely.
 - [ ] **Unreachable dead code: a second, unreachable `elif args.cmd == "claim"` branch in `agent_coordination_legacy.py` (Kimi, verified: lines 1091 and 1182).** The `--seq` handling at line 1182 can never execute — the first branch at 1091 always matches first. Harmless today (Part 1 doesn't touch `legacy.py`, and the live CLI runs through `core.py` where this bug doesn't exist), but it's a fourth, independently-found instance of "same code, divergent bugs," this time in dispatch order rather than business logic — worth noting so Phase 2's `legacy.py` migration doesn't accidentally try to preserve the unreachable branch's behavior as if it were live.
 - [ ] **No machine-readable output; every consumer must regex stdout (Claude DX subagent).** `queue add`'s generated `task_id` (`f"{phase}-{task_name}-{uuid.uuid4().hex[:8]}"`) is only ever printed as `enqueued: <task_id> (...)` — this plan's own Part 1 verification script has to `re.search(r'enqueued: (\S+)', ...)` to recover it. A `--json` flag on the mutating commands would be cheap to add during Part 2's extraction, since every handler is already being touched.
 - [ ] **`heartbeat kill` doesn't cascade to `heartbeat cleanup` (Claude DX subagent).** `kill` only marks an agent `DEAD` (`orchestrator/heartbeat_monitor.py:114,126`); it does not release that agent's claims — a separate `cleanup` call is required, and this two-step dance is undocumented anywhere. Consider a `--and-release` flag, or at minimum document the two-step requirement, during `liveness.py`'s Part 2 extraction.
-- [ ] **No canonical "first-run" path — 29 commands presented flat, no on-ramp (Codex, second review pass).** Steelmanned: the fix isn't more docs coverage (already tracked above), it's a *minimal happy-path sequence* a new agent can follow without reading the full command tree — e.g. `queue add` → `queue claim` → `queue complete` for the safe, atomic path (explicitly not `register`/`claim`/`release`, which is the unprotected basic-board path per the finding above — Codex's original suggested sequence pointed at the wrong, unsafe commands; corrected here). Cheap to add as a "Quick Start" section at the top of `PHASE_TRACKING.md`'s replacement once that doc is rewritten — sequencing this after the doc-accuracy fix above, not before, so the quick-start doesn't itself teach the wrong entrypoint.
+- [x] **No canonical "first-run" path (Codex, second review pass) — characterization corrected, fix now committed.** Codex's finding described "29 commands presented flat." Re-verified directly against `scripts/agent_coordination_core.py:1195-1330` (`main()`'s `build_parser` logic) before accepting that framing: it's **not accurate** — the parser already groups all 29 leaves into 6 subcommand families (`phase`, `workflow`, `queue`, `heartbeat`, `buffer`, plus 6 top-level), and most leaves already carry a terse `help=` string (e.g. `queue_sub.add_parser("claim", help="Claim a queued task")`). The real, narrower gap: (a) the top-level `ArgumentParser(description=...)` shows no quick-start guidance — `--help` at the root gives no on-ramp; (b) 5 of the 6 top-level leaves (`register`, `agents`, `release`, `list`, `log`) are missing `help=` strings entirely (only `claim` has one) — confirmed by reading `main()`'s parser-construction block directly, not assumed from the finding text.
+  Steelmanned fix, split by where it lands (Phase 3 already rewrites this exact function wholesale, so land there rather than hand-patching a function about to be replaced):
+  1. **Quick Start on-ramp**: `queue add` → `queue claim` → `queue complete`, the safe atomic path — explicitly **not** `register`/`claim`/`release`, which is the unprotected basic-board path per the finding above (Codex's original suggested sequence pointed at the wrong, unsafe commands; corrected here). Lands in Part 1d's `PHASE_TRACKING.md` rewrite today (doc-only, no code dependency) — not deferred to Phase 3.
+  2. **Missing top-level `help=` strings**: add during Part 2 Phase 3's `set_defaults()`-based parser rewrite, since every `add_parser(...)` call in the file is already being touched there — a one-line addition per leaf at zero incremental migration cost, not a separate follow-up.
 
 **One claim checked and NOT incorporated (for the record):** Codex's DX voice also
 reported a "queue retry behavior diverges between core (`retry_count <= max_retries`)
