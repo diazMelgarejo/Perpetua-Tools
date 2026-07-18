@@ -174,6 +174,11 @@ print(inspect.getsource(_queue_claim))
 # the live repo's coordination database instead of testing in isolation.
 python3 -c "
 import os, re, subprocess, sys, tempfile, concurrent.futures
+# Codex Eng-voice finding: GOSSIP_DB_PATH takes absolute precedence over
+# PT_STATE_DIR in resolve_gossip_db_path() (orchestrator/gossip_bus.py:56-64).
+# Setting only PT_STATE_DIR does not isolate this test if GOSSIP_DB_PATH
+# happens to be set in the ambient shell -- clear it explicitly.
+os.environ.pop('GOSSIP_DB_PATH', None)
 os.environ['PT_STATE_DIR'] = tempfile.mkdtemp()
 add = subprocess.run(
     [sys.executable, 'scripts/agent_coordination.py', 'queue', 'add', 'race-task', 'test', '--priority', 'HIGH'],
@@ -228,22 +233,29 @@ missed since it's a different code path.
 
 Incorporates Codex's parallel engineering audit and the corrections recorded in `../references/coordination-consolidation-plan-review-2026-07-18.md`. This supersedes the original plan's "Target structure" and "Migration sequence" sections below.
 
-### Target structure (revised — adds `liveness.py` and `__init__.py`)
+### Target structure (revised — adds `liveness.py`, `types.py`, and `__init__.py`)
 
 ```text
 orchestrator/coordination/
   __init__.py        # NEW — public API surface, explicit re-exports
+  types.py            # NEW (Codex Eng-voice finding) — ClaimSequence, ReorderBuffer,
+                      # TaskPriority, QueuedTaskState, PhaseStatus, PhaseState: shared
+                      # dataclasses/enums currently duplicated between core.py and
+                      # legacy.py. Every capability module below imports from here,
+                      # not from each other or from the compat shims.
   paths.py           # canonical_repo_root, canonical_db_path, current_worktree_label
   claims.py          # register/claim/release/list/agents/log — the original basic claim board
-  reorder_buffer.py  # ClaimSequence, ReorderBuffer, _claim_with_seq, _buffer_status, _buffer_drain
-  task_queue.py      # TaskPriority, QueuedTaskState, _queue_add/_claim/_complete/_fail/_list/_status
-                      # (post-Part-1: includes _try_atomic_claim, _release_claim, _release_claim_with_event)
-  phases.py          # PhaseStatus, PhaseState, _phase_start/_update/_complete/_block/_unblock/_list/_status,
-                      # _detect_blockers, _workflow_critical_path — using the already-fixed _phase_sort_key
+  reorder_buffer.py  # _claim_with_seq, _buffer_status, _buffer_drain (types from types.py)
+  task_queue.py      # _queue_add/_claim/_complete/_fail/_list/_status (types from types.py)
+                      # (post-Part-1: includes _try_atomic_claim, _release_claim_with_event)
+  phases.py          # _phase_start/_update/_complete/_block/_unblock/_list/_status,
+                      # _detect_blockers, _workflow_critical_path — using the already-fixed
+                      # _phase_sort_key (types from types.py)
   liveness.py         # NEW — the 7 heartbeat handlers + adapter boundary around orchestrator.heartbeat_monitor
-                      # (Codex's finding: the original 5-module target silently omitted heartbeat/liveness
-                      # ownership entirely, which would have reproduced "no business logic in scripts/"
-                      # as a false claim — pulse/kill/cleanup are not print formatting)
+                      # (Codex's CEO-phase finding: the original 5-module target silently omitted
+                      # heartbeat/liveness ownership entirely, which would have reproduced "no
+                      # business logic in scripts/" as a false claim — pulse/kill/cleanup are
+                      # not print formatting)
 ```
 
 ### Source-provenance table (replaces the original plan's coarse "generally core.py's" heuristic)
@@ -287,6 +299,37 @@ The original plan's "move, don't copy" instruction breaks mid-migration — a li
 3. Run focused tests (`coordination or gossip`) + repo hygiene.
 4. Continue capability by capability: `paths` → `claims` → `reorder_buffer` → `task_queue` → `phases` → `liveness` (smallest/lowest-risk first, `liveness` last since it's newly-scoped and touches `orchestrator.heartbeat_monitor`).
 5. Delete all three compatibility modules (`core.py`, `legacy.py`, `phases.py`) atomically, in one revertible commit, only after every capability routes through the canonical package and the Phase 4 gate below passes.
+
+**Codex Eng-voice finding — re-exports must not touch each file's own entrypoint.**
+`core.py`, `legacy.py`, and `phases.py` are not just importable modules — each has
+its own complete, independently-invocable `main()`, its own `argparse` parser
+construction, and its own `if __name__ == "__main__": raise SystemExit(main())`
+block (verified: `agent_coordination_phases.py` and `agent_coordination_core.py`
+both end this way). `PHASE_TRACKING.md` documents real direct invocation of
+`phases.py` this way. Step 2's re-exports must replace only the *capability*
+function bodies (`_phase_list`, `_queue_claim`, etc.) — never the `main()`/
+parser-building/`__main__` plumbing in any of the three files — or standalone
+invocation (`python3 scripts/agent_coordination_phases.py phase list`) breaks
+mid-migration, before Phase 5's atomic deletion even runs. This is separate from
+(and sharper than) Part 3's existing "`phases.py` usage is unverified" item —
+that item is about whether deletion is safe at all; this is about not breaking
+the documented standalone-invocation path *during* the migration, regardless of
+what Phase 5 eventually decides.
+
+**Shared schema types need an explicit home (Codex Eng-voice finding).**
+`ClaimSequence`, `ReorderBuffer`, `TaskPriority`, `QueuedTaskState`,
+`PhaseStatus`, and `PhaseState` are currently duplicated between `core.py` and
+`legacy.py` (verified: identical dataclass/enum definitions in both, e.g.
+`agent_coordination_core.py:97` and `agent_coordination_legacy.py:98`), but the
+target structure above names only capability modules plus `__init__.py` — no
+shared types module. Without one, extraction either imports through the
+package root (coupling every module to `__init__.py`'s import order) or keeps
+reaching back into the compatibility shims Phase 5 is supposed to delete —
+recreating the same duplication this plan exists to remove, one directory
+level higher. **Add `orchestrator/coordination/types.py`** to the Phase 1
+skeleton (package listing above) for these six shared dataclasses/enums; every
+capability module imports from it, not from each other or from the compat
+shims.
 
 **Phase 3 — parser-owned dispatch (replaces the original plan's hand-maintained `_DISPATCH` dict):**
 
@@ -367,6 +410,25 @@ def test_parser_exposes_exactly_29_leaf_commands():
     assert len(EXPECTED) == 29
     actual = _enumerate_leaf_paths(build_parser())  # recursive subparser walk
     assert actual == EXPECTED, f"missing={EXPECTED - actual} extra={actual - EXPECTED}"
+
+def test_leaf_argument_signatures_unchanged():
+    """Codex Eng-voice finding: leaf-count alone protects existence, not shape.
+    'queue add' could silently regress from positional 'phase' back to a
+    '--phase' flag (the exact bug Part 1's original verification script hit)
+    and the count-based test above would still pass. Snapshot each leaf's
+    argument names, whether positional or flag, and required-ness."""
+    from scripts.agent_coordination import build_parser
+    EXPECTED_SIGNATURES = {
+        ("queue", "add"): [("task_name", "positional"), ("phase", "positional"),
+                            ("--priority", "flag"), ("--notes", "flag"), ("--depends-on", "flag")],
+        ("queue", "claim"): [("task_id", "positional"), ("agent_id", "positional")],
+        ("phase", "start"): [("phase_name", "positional"), ("--depends-on", "flag"), ("--agent", "flag")],
+        # ... one row per leaf; fill in against the real parser at Phase 0F time,
+        # this is a template showing the shape, not the complete set.
+    }
+    actual = _enumerate_leaf_arguments(build_parser())  # walk each leaf's own argument list
+    for leaf, expected_args in EXPECTED_SIGNATURES.items():
+        assert actual[leaf] == expected_args, f"{leaf}: expected {expected_args}, got {actual[leaf]}"
 
 def test_phase_list_via_real_cli_does_not_crash_on_nonnumeric(tmp_path: Path):
     # The regression class from the phase-board bug AND the queue-claim bypass:
