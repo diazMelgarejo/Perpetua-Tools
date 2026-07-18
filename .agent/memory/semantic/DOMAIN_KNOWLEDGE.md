@@ -9,6 +9,37 @@
 - Vendor quirks ("service X rate-limits at 60 rpm, not the documented 100")
 - Domain-specific terminology
 
+## Cybersecurity / OpSec / SecOps - portable-memory invariants (verified 2026-07-18)
+
+Portable agent memory is a security boundary, not a diary. Tracked memory,
+skills, tests, docs, and guard source must be safe to copy across machines,
+repos, forks, PRs, and future v2 repositories.
+
+Rules that belong in git:
+- Name **categories** of sensitive data: private identity literals, private or
+  unclassified email addresses, workstation topology, temp-worktree topology,
+  device addresses, credentials, and secrets.
+- Enforce those categories with scanners that report category, file, and line.
+- Keep `.agent/` covered as a first-class scan target: source rows,
+  candidates, rendered lessons, working notes, protocols, skills, and generated
+  views all have to pass.
+- Treat supersession as distinct from sanitization. A newer rendered note does
+  not clean the old source row or archived candidate that produced it.
+- Use the strictest available local guard as the multirepo baseline for
+  OramaSys v2 / future `oramasys/*` repositories.
+
+Rules that stay outside git:
+- Concrete forbidden identity literals.
+- Concrete local path fragments and workspace topology examples.
+- Device-specific addresses, endpoint values, and session credentials.
+
+The repo guard loads those exact local-only values from the operator's private
+registry and never hardcodes them in tracked files. This avoids the
+self-defeating pattern where a rule leaks the literal it is supposed to ban.
+
+Cross-repo canonical companion: orama-system
+`docs/v2/47-portable-memory-local-topology-invariant.md`.
+
 ## Cross-Platform Line Endings & Encoding (verified 2026-07-08)
 
 Both PT and orama-system main enforce this at the repo layer (not per-developer
@@ -207,7 +238,7 @@ WS_CONNECTING (5 s timeout)
 **Plan:** `orama-system/docs/guides/lan-peer-bidirectional-talk-2026-06-28.md` §Implementation plan
 
 ### LLAMA_SERVER_BASE_URL — already in PowerShell profile, never missing
-- `%USERPROFILE%\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` line 1:
+- `the user PowerShell profile` line 1:
   `$env:LLAMA_SERVER_BASE_URL = "http://localhost:1234/v1"` — verified present.
 - Do NOT add it again. Not absent from PowerShell; just doesn't propagate to Bash tool.
 - Export explicitly in bash sessions: `export LLAMA_SERVER_BASE_URL="http://localhost:1234/v1"`
@@ -239,9 +270,9 @@ _(empty — populate as you go)_
 
 ## .agent/ system — origin and provenance
 
-**First commit:** `82bcbfae` — 2026-06-19 00:22 +0800, author: cyre <Lawrence@cyre.me>  
-**Commit message:** `docs: establish GEMINI.md mandate and agentic-stack context`  
-**Repository:** Perpetua-Tools (`diazMelgarejo/Perpetua-Tools`)  
+**First commit:** `82bcbfae` — 2026-06-19 00:22 +0800, author: cyre <<private email identity>>
+**Commit message:** `docs: establish GEMINI.md mandate and agentic-stack context`
+**Repository:** Perpetua-Tools (`diazMelgarejo/Perpetua-Tools`)
 **Added directly to `main`** (not via a PR)
 
 **install.json at first commit:**
@@ -251,7 +282,7 @@ _(empty — populate as you go)_
 
 **What it added in one shot (55 files):** complete memory system (episodic/semantic/working), all Python tools (graduate.py, learn.py, recall.py, show.py, etc.), harness layer (conductor.py, hooks/, protocols/), 6 initial skills. No other repo cited as origin.
 
-**Design intent (from AGENTS.md first line):**  
+**Design intent (from AGENTS.md first line):**
 > "This folder is the portable brain. Any harness (Claude Code, Cursor, Windsurf, OpenCode, OpenClaw, Hermes, standalone Python) can mount it and get the same memory, skills, and protocols."
 
 **Origin:** Built from scratch as a purpose-designed portable agent memory system. The version `0.9.0` suggests prior offline/local development before the first tracked commit. The design philosophy connects to ECC cross-harness thinking but the code is not derived from any prior tracked repo.
@@ -428,7 +459,7 @@ Slash: `/lan-peer-self-talk` · Plain: *Probe LAN peer via `probe_lan_peer.py --
 
 ## Mac↔Win co-orchestrator — file inbox + cursor-agent (2026-06-28)
 
-> **PT working card (start here):** `.agent/memory/working/CO_ORCHESTRATOR_LAN_PEER_2026-06-28.md`  
+> **PT working card (start here):** `.agent/memory/working/CO_ORCHESTRATOR_LAN_PEER_2026-06-28.md`
 > **orama playbook:** `../../orama-system/bin/orama-system/skills/hermes-harness/references/mac-co-orchestrator-playbook.md`
 
 ### Platform affinity

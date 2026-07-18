@@ -29,7 +29,7 @@ banned_patterns_ready() {
 }
 
 # list_banned_pattern_tokens streams banned-attribution pattern tokens (one per line) from the repository or user patterns file.
-# It resolves the patterns file (optional `root` argument), reads it line-by-line, removes inline comments (`#`) and all whitespace, skips empty tokens, and writes each remaining token to stdout on its own line.
+# It resolves the patterns file (optional `root` argument), reads it line-by-line, removes inline comments (`#`), trims leading/trailing whitespace, preserves internal whitespace, skips empty tokens, and writes each remaining token to stdout on its own line.
 # Usage: while read -r token; do ...; done < <(list_banned_pattern_tokens "$root")
 # Parameters:
 #   root (optional) — repository root directory to use when resolving the patterns file; if omitted, the script determines the root automatically.
@@ -43,7 +43,7 @@ list_banned_pattern_tokens() {
   fi
   while IFS= read -r token || [[ -n "$token" ]]; do
     token="${token%%#*}"
-    token="$(printf '%s' "$token" | tr -d '[:space:]')"
+    token="$(printf '%s' "$token" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
     [[ -n "$token" ]] || continue
     printf '%s\n' "$token"
   done <"$f"
@@ -59,7 +59,7 @@ first_banned_pattern_token() {
   fi
   while IFS= read -r token || [[ -n "$token" ]]; do
     token="${token%%#*}"
-    token="$(printf '%s' "$token" | tr -d '[:space:]')"
+    token="$(printf '%s' "$token" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
     [[ -n "$token" ]] || continue
     printf '%s' "$token"
     return 0

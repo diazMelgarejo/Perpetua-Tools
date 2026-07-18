@@ -218,7 +218,39 @@ GENERATED_ARTIFACT_EXCEPTIONS: frozenset[str] = frozenset({
     "packages/alphaclaw-mcp/build/is-direct-execution.js",
 })
 VERBOTEN_LITERALS_FILE = ".verboten-literals.local"
-
+EMAIL_LITERAL_RE = re.compile(
+    r"(?<![\w.+-])"
+    r"[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
+    r"(?![\w.-])"
+)
+AGENT_EMAIL_LITERAL_ALLOWED_DOMAINS = frozenset({
+    "openai.com",
+    "anthropic.com",
+    "cursor.com",
+    "cursor.sh",
+    "google.com",
+    "google.dev",
+    "github.com",
+    "microsoft.com",
+    "azure.com",
+    "perplexity.ai",
+    "x.ai",
+    "coderabbit.ai",
+    "mistral.ai",
+    "deepseek.com",
+    "cohere.com",
+    "meta.com",
+    "sourcegraph.com",
+    "devin.ai",
+    "codeium.com",
+    "kimi.ai",
+    # RFC 2606 / documentation fixtures only. Do not add personal mail domains.
+    "example.invalid",
+    "example.com",
+    "example.org",
+    "example.net",
+    "localhost",
+})
 GENERATED_ARTIFACT_PATTERNS = (
     ".DS_Store",
     "*/.DS_Store",
@@ -318,6 +350,20 @@ def private_literal_values(root: Path, key: str) -> list[str]:
     return values
 
 
+def local_topology_fragments(root: Path) -> list[str]:
+    """Load concrete local path/topology fragments from the local-only registry.
+
+    The repository may describe the invariant, but must not hardcode the
+    literal path fragments it bans from memory. Operators keep those fragments
+    beside the other off-repo verboten values, using keys such as
+    local_path_fragment, local_workspace_fragment, or verboten_path_fragment.
+    """
+    fragments: list[str] = []
+    for key in ("local_path_fragment", "local_workspace_fragment", "verboten_path_fragment"):
+        fragments.extend(private_literal_values(root, key))
+    return fragments
+
+
 def tracked_files(root: Path) -> list[str]:
     proc = run_git(root, "ls-files")
     if proc.returncode != 0:
@@ -410,6 +456,90 @@ def scan_private_verboten_literals(root: Path, files: list[str]) -> list[str]:
             break
         if hit:
             errors.append(f"private verboten literal in tracked file: {rel}")
+    return errors
+
+
+def scan_agent_private_surface(root: Path, files: list[str]) -> list[str]:
+    """Apply the strict portable-brain boundary to every tracked .agent file.
+
+    The local-only verboten registry remains the source of truth for exact
+    private owner / forbidden-attribution literals. The .agent boundary is a
+    stricter superset of the repo-wide guards because .agent is portable memory
+    and protocol state: a superseded lesson row, rendered markdown view, or
+    coordination note must not carry a private literal, personal path, local
+    temp path, workspace topology, or secret pattern silently.
+
+    Public bot/vendor domains and synthetic documentation domains are allowed
+    for full email literals; personal mail domains are not. Error messages
+    intentionally report only the path and line, never the literal value.
+    """
+    errors: list[str] = []
+    private_tokens = [
+        token.casefold()
+        for key in ("owner_gmail", "owner_name", "forbidden_attribution")
+        for token in private_literal_values(root, key)
+    ]
+    topology_tokens = [
+        token.casefold()
+        for token in local_topology_fragments(root)
+        if token
+    ]
+    for rel in files:
+        if not rel.startswith(".agent/"):
+            continue
+        path = root / rel
+        if not path.is_file() or is_binary(path):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        text_lc = text.casefold()
+        if any(token and token in text_lc for token in private_tokens):
+            errors.append(f"private verboten literal in .agent file: {rel}")
+            continue
+        for line_no, line in enumerate(text.splitlines(), 1):
+            personal = PERSONAL_PATH_PATTERN.search(line)
+            if personal:
+                username = personal.group(1) or (
+                    personal.group(2)
+                    if personal.lastindex and personal.lastindex >= 2
+                    else None
+                )
+                if username not in PERSONAL_PATH_PLACEHOLDERS:
+                    errors.append(
+                        f"personal absolute path in .agent file: {rel}:{line_no}"
+                    )
+                    break
+            line_lc = line.casefold()
+            if any(token and token in line_lc for token in topology_tokens):
+                errors.append(
+                    f"local/workspace path form in .agent file: {rel}:{line_no}"
+                )
+                break
+            if not _line_has_secret_placeholder(line):
+                for kind, pattern, _label in SECRET_PATTERNS:
+                    if pattern.search(line):
+                        errors.append(
+                            f"secret pattern ({kind}) in .agent file: {rel}:{line_no}"
+                        )
+                        break
+                else:
+                    pass
+                if errors and errors[-1].endswith(f"{rel}:{line_no}"):
+                    break
+            for match in EMAIL_LITERAL_RE.finditer(line):
+                email = match.group(0)
+                domain = email.rsplit("@", 1)[1].casefold()
+                if domain in AGENT_EMAIL_LITERAL_ALLOWED_DOMAINS:
+                    continue
+                errors.append(
+                    f"private/unclassified email literal in .agent file: {rel}:{line_no}"
+                )
+                break
+            else:
+                continue
+            break
     return errors
 
 
@@ -645,6 +775,7 @@ def main() -> int:
     errors.extend(check_git_internal_junk(root))
     errors.extend(check_workflow_permissions(root))
     errors.extend(scan_private_verboten_literals(root, files))
+    errors.extend(scan_agent_private_surface(root, files))
 
     for line in report_status(root):
         print(f"INFO: {line}")

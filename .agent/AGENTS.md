@@ -51,8 +51,8 @@ Workflow:
 
 | Do | Don't |
 |----|-------|
-| Repo-relative paths (`../../Perpetua-Tools/.agent`) | `C:\<user>\...`, `/\<user>/...` |
-| Env anchors (`$REPO_ROOT`, `PERPETUA_TOOLS_ROOT`) | `%USERPROFILE%\Downloads\...` workspace trees |
+| Repo-relative paths (`../../Perpetua-Tools/.agent`) | `OS-specific home-directory paths`, `OS-specific home-directory path form` |
+| Env anchors (`$REPO_ROOT`, `PERPETUA_TOOLS_ROOT`) | workspace-tree paths |
 | Generic `~/.gstack/projects/<slug>/` | Pinning "canonical workspace" paths in memory |
 | `orama-system` / `Perpetua-Tools` repo names | Teaching agents your Downloads folder layout |
 

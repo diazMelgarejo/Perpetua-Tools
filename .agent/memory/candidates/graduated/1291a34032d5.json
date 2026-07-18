@@ -1,0 +1,43 @@
+{
+  "id": "1291a34032d5",
+  "key": "manual_1291a3",
+  "name": "manual_1291a3",
+  "claim": "For agent memory privacy audits, scan both rendered views and source rows: episodic JSONL, semantic JSONL, candidates, working notes, protocols, skills, and generated summaries. Superseding a lesson is not sanitizing its source material.",
+  "conditions": [
+    "memory-guard",
+    "privacy-audit",
+    "rendered-views",
+    "sanitization",
+    "source-rows",
+    "supersession"
+  ],
+  "evidence_ids": [
+    "2026-07-18T08:59:49.145043+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T08:59:49.145043+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T08:59:49.145043+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T08:59:49.274321+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The memory leak was not fully resolved until the scan covered the whole .agent surface, including archived candidates and source JSONL rows, rather than only the current rendered lesson file or latest branch tree.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T08:59:49.145043+00:00"
+      ],
+      "lessons_sha": "7f5475493c5a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T08:59:49.274313+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The memory leak was not fully resolved until the scan covered the whole .agent surface, including archived candidates and source JSONL rows, rather than only the current rendered lesson file or latest branch tree."
+}

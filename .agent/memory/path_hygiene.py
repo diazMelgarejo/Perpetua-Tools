@@ -31,13 +31,29 @@ _LINUX_HOME      = re.compile(r"/home/(" + _SEG + r")/")
 _LINUX_HOME_TAIL = re.compile(r"/home/(" + _SEG + r")(?=[\"\'\s]|$)")
 _WIN_HOME      = re.compile(r"(?i)C:\\Users\\" + _WIN_SEG + r"\\")
 _WIN_HOME_TAIL = re.compile(r"(?i)C:\\Users\\" + _WIN_SEG)
-# Workspace-tree doxxing: even after home→%USERPROFILE% substitution, Downloads/SKILLS.md
-# layout must not persist in tracked memory (LINT-006 antipattern).
+# Workspace-tree doxxing: even after home-anchor substitution, user download
+# tree layout must not persist in tracked memory (LINT-006 antipattern).
+_WIN_HOME_ANCHOR = r"%USERPROFILE%"
+_UNIX_HOME_ANCHOR = r"\$HOME"
+_DOWNLOADS_SEGMENT = r"Downloads"
+_SKILLS_SEGMENT = r"SKILLS\.md"
 _WORKSPACE_DOXX_WIN = re.compile(
-    r"(?i)%USERPROFILE%\\Downloads\\SKILLS\.md\\u?l?trathink(?:\\[^\\\"\s]*)?"
+    r"(?i)"
+    + _WIN_HOME_ANCHOR
+    + r"\\"
+    + _DOWNLOADS_SEGMENT
+    + r"\\"
+    + _SKILLS_SEGMENT
+    + r"\\u?l?trathink(?:\\[^\\\"\s]*)?"
 )
 _WORKSPACE_DOXX_UNIX = re.compile(
-    r"(?i)\$HOME/Downloads/SKILLS\.md/u?l?trathink(?:/[^\s\"']*)?"
+    r"(?i)"
+    + _UNIX_HOME_ANCHOR
+    + r"/"
+    + _DOWNLOADS_SEGMENT
+    + r"/"
+    + _SKILLS_SEGMENT
+    + r"/u?l?trathink(?:/[^\s\"']*)?"
 )
 _WORKSPACE_ROOT = "<workspace-root>"
 

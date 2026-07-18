@@ -2,7 +2,7 @@
   "id": "94e345fe9e47",
   "key": "manual_94e345",
   "name": "manual_94e345",
-  "claim": "Recurring miss: writing literal workstation paths into TRACKED docs, then only fixing them after the no-workstation-paths hook / LINT-006 blocks the commit. Write paths abstractly the FIRST time: reverse git repo-relative paths (../../<repo-name>/...) from the file's own location, or $REPO_ROOT, or ~ for home, or path-free wording. Do NOT use a <user> placeholder -- it still exposes directory structure and contradicts the project's own path-hygiene standard elsewhere. Check the path-hygiene rule BEFORE writing a doc, not after the block.",
+  "claim": "Recurring miss: writing literal workstation paths into TRACKED docs, then only fixing them after the no-workstation-paths hook / LINT-006 blocks the commit. Write paths abstractly the FIRST time: reverse git repo-relative paths (../../<repo-name>/...) from the file's own location, or $REPO_ROOT, or ~ for home, or path-free wording. Do NOT use a username placeholder -- it still exposes directory structure and contradicts the project's own path-hygiene standard elsewhere. Check the path-hygiene rule BEFORE writing a doc, not after the block.",
   "conditions": [
     "abstractly",
     "after",
