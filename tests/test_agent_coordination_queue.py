@@ -22,6 +22,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.agent_coordination import (
+    ClaimResult,
     TaskPriority,
     _queue_add,
     _queue_claim,
@@ -190,8 +191,8 @@ async def test_queue_claim_rejects_already_claimed(make_bus, capsys):
     # Try to claim again
     await _queue_claim(bus, task_id, "agent-beta")
     captured = capsys.readouterr()
-    assert "ERROR" in captured.out
-    assert "already claimed" in captured.out
+    assert "ERROR" in captured.err
+    assert "already claimed" in captured.err
 
 
 async def test_queue_claim_blocks_on_unmet_dependencies(make_bus, capsys):
@@ -214,8 +215,8 @@ async def test_queue_claim_blocks_on_unmet_dependencies(make_bus, capsys):
     # Try to claim without dependency being completed
     await _queue_claim(bus, task_id, "agent-gamma")
     captured = capsys.readouterr()
-    assert "ERROR" in captured.out
-    assert "unmet dependencies" in captured.out
+    assert "ERROR" in captured.err
+    assert "unmet dependencies" in captured.err
 
 
 async def test_queue_claim_allows_when_deps_satisfied(make_bus, capsys):
@@ -517,7 +518,7 @@ async def test_multiple_agents_cannot_claim_same_task(make_bus, capsys):
     # Agent B attempts to claim
     await _queue_claim(bus, task_id, "agent-b")
     captured = capsys.readouterr()
-    assert "ERROR" in captured.out
+    assert "ERROR" in captured.err
 
 
 async def test_atomic_claim_gate_exactly_one_winner_under_true_concurrency(make_bus):
@@ -537,7 +538,12 @@ async def test_atomic_claim_gate_exactly_one_winner_under_true_concurrency(make_
         _try_atomic_claim(bus, task_id, "agent-b"),
     )
 
-    assert sorted(results) == [False, True]
+    # ClaimResult isn't orderable (no <), so compare by identity/membership
+    # rather than sorted(results) == [False, True].
+    assert results.count(ClaimResult.WON) == 1
+    losers = [r for r in results if r != ClaimResult.WON]
+    assert len(losers) == 1
+    assert losers[0] in (ClaimResult.LOST_RACE, ClaimResult.CONTENTION)
 
 
 async def test_queue_claim_concurrent_race_only_one_succeeds(make_bus, capsys):
@@ -557,7 +563,7 @@ async def test_queue_claim_concurrent_race_only_one_succeeds(make_bus, capsys):
     captured = capsys.readouterr()
 
     assert captured.out.count("claimed:") == 1
-    assert captured.out.count("ERROR") == 1
+    assert captured.err.count("ERROR") == 1
 
 
 async def test_priority_ordering_in_list(make_bus, capsys):
@@ -597,7 +603,7 @@ async def test_atomic_claim_persists_one_row_and_one_event(make_bus):
         bus, "task-x", "agent-a", {"kind": "task_claim", "task_id": "task-x"}
     )
 
-    assert claimed is True
+    assert claimed is ClaimResult.WON
     async with bus.connect() as db:
         cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", ("task-x",))
         (claim_count,) = await cursor.fetchone()
@@ -617,7 +623,7 @@ async def test_atomic_claim_duplicate_claim_emits_no_second_event(make_bus):
         bus, "task-y", "agent-b", {"kind": "task_claim", "task_id": "task-y"}
     )
 
-    assert claimed_again is False
+    assert claimed_again is ClaimResult.LOST_RACE
     events = await bus.tail(limit=10, event_type="heartbeat")
     matching = [e for e in events if e["payload"].get("task_id") == "task-y"]
     assert len(matching) == 1  # still just the first claimant's event

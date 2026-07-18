@@ -23,6 +23,7 @@ from scripts.agent_coordination_legacy import (  # noqa: E402
     current_worktree_label,
 )
 from scripts.agent_coordination_core import (  # noqa: E402
+    ClaimResult,
     ClaimSequence,
     ReorderBuffer,
     _buffer_drain,
