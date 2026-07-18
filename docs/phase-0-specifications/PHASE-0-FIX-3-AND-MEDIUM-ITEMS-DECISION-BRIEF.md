@@ -1,8 +1,9 @@
 # Phase 0 Fix #3 + Medium Items — Decision Brief
 
 **Date:** 2026-07-10  
-**Status:** Ready for manual review + formalization  
-**User Decision:** Asymmetric hysteresis (D2 model) — quick to suspect, slow to recover  
+**Status:** Decision record; pending user confirmation before implementation follows.
+**Proposed decision:** Asymmetric hysteresis (D2 model) — quick to suspect, slow to recover
+**Ranked handoff:** [phase0-and-orama-closure-rankings-2026-07-18.md](../../../../references/phase0-and-orama-closure-rankings-2026-07-18.md)
 
 ---
 
@@ -30,7 +31,7 @@ Two deliverables specify contradictory state machine hysteresis constants:
 
 **Rationale:** Conservative approach for distributed systems. Quick to suspect (2 polls ≈ 20s) protects against cascading failures. Slow to recover (3 polls ≈ 30s) prevents flapping on transient link glitches.
 
-### What Needs to Be Done (3 Tasks)
+### Proposed Follow-Up If Confirmed (3 Tasks)
 
 #### Task 3.1: Reconcile D1 § 2 (Schema)
 
@@ -49,7 +50,7 @@ StateTransitionManager constants:
 1. Rename `POLLS_TO_CONFIRM` → `PROMOTE_THRESHOLD` throughout D1 § 2 to match D2 terminology
 2. Add clarification: "PROMOTE_THRESHOLD = 2 positive polls triggers recovery/promotion to ACTIVE. DEMOTE_THRESHOLD = 3 negative polls triggers demotion from ACTIVE to SUSPECT; CONFIRM_DEAD_HOLD controls confirmed INACTIVE."
 3. Update the PeerRecord dataclass example to show both counters (`pending_count_promote`, `pending_count_demote`) tracking independently
-4. Verify section 2's "Properties" list includes all 5 constants: PROMOTE_THRESHOLD, DEMOTE_THRESHOLD, RECOVERY_GRACE, CONFIRM_DEAD_HOLD, POLLS_TO_CONFIRM (deprecated reference only, note it's renamed)
+4. Verify section 2's "Properties" list includes the active constants: PROMOTE_THRESHOLD, DEMOTE_THRESHOLD, CONFIRM_DEAD_HOLD, plus POLLS_TO_CONFIRM only as a deprecated renamed reference if it still appears.
 
 **File to update:** `DELIVERABLE-1-PEER-OBSERVATION-MODEL-REGENERATED-ITERATION-2.md` § 2 (Schema) + § 2.2 (StateTransitionManager class definition)
 
@@ -140,7 +141,7 @@ StateTransitionManager constants:
 - [ ] Recovery logic documented with exact CONFIRM_DEAD_HOLD window semantics
 - [ ] All edge cases E1–E10 listed with expected behavior
 - [ ] Pseudocode signature includes input types + return type + docstring
-- [ ] Constants (PROMOTE_THRESHOLD=2, DEMOTE_THRESHOLD=3, RECOVERY_GRACE=1, CONFIRM_DEAD_HOLD=90s) referenced in pseudocode
+- [ ] Constants (PROMOTE_THRESHOLD=2, DEMOTE_THRESHOLD=3, CONFIRM_DEAD_HOLD=90s) referenced in pseudocode
 
 ---
 
@@ -243,7 +244,7 @@ Expected: confidence = 0.00
    - Pros: Flexible; can disable in production for speed
    - Cons: API surface grows; two code paths to maintain
 
-**Decision:** Option 1 is mandatory for Phase 1. The STM validates monotonicity, timestamp freshness, replay/dedup keys, and observation type before any counter mutation.
+**Recommendation:** Option 1 (mandatory STM validation) is the Phase 1 choice. The STM validates monotonicity, timestamp freshness, replay/dedup keys, and observation type before any counter mutation.
 
 **Why it matters:**
 - Affects error handling in Phase 1 implementation
@@ -272,7 +273,7 @@ Expected: confidence = 0.00
 | **1.2** | StateTransitionManager integrated; all hysteresis, recovery, validation, witness-quorum, and counter-reset tests pass. | Telemetry dashboards and adaptive tuning. |
 | **1.3** | Epoch, sequence, nonce, and T7 monotonic apply gate implemented; all edge cases E1–E10 pass, including batch mid-threshold transitions. | Longer fuzz/property-test runs beyond the required blocker vectors. |
 
-**Decision:** Partial thresholds are not acceptable for blocker gates. Phase 1 can proceed only after each checkpoint's blocker-specific test vectors and listed edge cases pass.
+**Recommendation:** Partial thresholds are not acceptable for blocker gates. Phase 1 should proceed only after each checkpoint's blocker-specific test vectors and listed edge cases pass.
 
 **File impacted:** D1 § 6 (Integration Checkpoints)
 
@@ -374,8 +375,8 @@ Expected: confidence = 0.00
 
 ## Summary: What Decision-Maker Needs to Know
 
-### For Fix #3 (Now—REQUIRED)
-- **Asymmetric hysteresis (D2 model) is adopted.** This means:
+### For Fix #3 (Proposed, pending confirmation)
+- **Asymmetric hysteresis (D2 model) is the recommended choice.** This means:
   - Positive observations promote/recover peers toward ACTIVE after `PROMOTE_THRESHOLD=2`
   - Negative observations demote peers toward SUSPECT after `DEMOTE_THRESHOLD=3`, then confirmed INACTIVE only after the dead-hold window
   - Consequence: Better resilience to cascading failures; worse UX during transient link glitches
@@ -399,7 +400,7 @@ Expected: confidence = 0.00
 ## Next Steps (User Decision + Execution)
 
 ### Immediate (Today)
-- [ ] Confirm Fix #3 approach (asymmetric hysteresis) — **CONFIRMED by user above**
+- [ ] Confirm Fix #3 approach (asymmetric hysteresis) — **pending user confirmation**
 - [ ] Assign tasks 3.1, 3.2, 3.3 to implementer (estimate 2–3 hours)
 - [ ] Decide on Medium items M1–M7 (time-box to 30 minutes decision)
 - [ ] Re-review D1/D2/D4 via Cline review agent
@@ -409,4 +410,4 @@ Expected: confidence = 0.00
 - [ ] Phase 1 task scoping (based on checkpoint gate criteria from M4)
 
 ### Phase 1b Backlog
-- [ ] Implement decisions from M1–M7 as time permits
+- [ ] Implement decisions from M1–M7 after the user confirms them

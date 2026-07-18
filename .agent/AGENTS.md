@@ -87,6 +87,11 @@ When merging nested branches produced by independent agents against a moving mai
 [orama `integrative-merge.md`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/oramasys-method/references/integrative-merge.md)
 (synthesize, never amputate; six resolution modes). This section is the portable-brain summary; the skill reference is authoritative.
 
+**Board-job source line:** before claiming write work from GossipBus / job board
+rows, verify the row has `source_ref` and `expected_base_sha`; create a fresh
+worktree from that exact source and stop if `HEAD` differs. Same board plus same
+repo is not enough. See `references/branch-local-review-remediation.md`.
+
 ### Step-by-step
 
 1. **Simulate first — touch nothing.**
