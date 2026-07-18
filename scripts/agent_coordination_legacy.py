@@ -75,6 +75,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import re
 import subprocess
 import sys
 import time
@@ -881,12 +882,38 @@ async def _workflow_critical_path(bus: GossipBus) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-async def _queue_add(bus: GossipBus, task_name: str, phase: str, priority: str, notes: str, depends_on: Optional[str]) -> None:
-    """Enqueue a new task with optional priority and dependencies."""
+_SHA_RE = re.compile(r"^[0-9a-fA-F]{7,40}$")
+
+
+async def _queue_add(
+    bus: GossipBus,
+    task_name: str,
+    phase: str,
+    priority: str,
+    notes: str,
+    depends_on: Optional[str],
+    source_ref: Optional[str] = None,
+    expected_base_sha: Optional[str] = None,
+) -> None:
+    """Enqueue a new task with optional priority and dependencies.
+
+    source_ref/expected_base_sha mirror agent_coordination_core.py's schema
+    -- see that file for the full rationale (optional-and-validated, not
+    yet hard-required, per .agent/AGENTS.md's board-job source line
+    doctrine). This copy exists because the facade aliases _queue_add
+    directly to this module (_impl), not core.py.
+    """
+    if source_ref is not None and not source_ref.strip():
+        print("ERROR: source_ref, if given, must not be empty")
+        return
+    if expected_base_sha is not None and not _SHA_RE.match(expected_base_sha):
+        print(f"ERROR: expected_base_sha {expected_base_sha!r} is not a valid "
+              "git SHA (7-40 hex characters)")
+        return
     task_id = f"{phase}-{task_name}-{uuid.uuid4().hex[:8]}"
     priority_enum = TaskPriority.from_string(priority)
     depends_on_list = [t.strip() for t in depends_on.split(",")] if depends_on else []
-    await bus.emit("heartbeat", {
+    payload = {
         "kind": "task_enqueue",
         "task_id": task_id,
         "task_name": task_name,
@@ -899,7 +926,12 @@ async def _queue_add(bus: GossipBus, task_name: str, phase: str, priority: str, 
         "max_retries": 3,
         "depends_on": depends_on_list,
         "notes": notes,
-    })
+    }
+    if source_ref is not None:
+        payload["source_ref"] = source_ref.strip()
+    if expected_base_sha is not None:
+        payload["expected_base_sha"] = expected_base_sha
+    await bus.emit("heartbeat", payload)
     print(f"enqueued: {task_id} ({phase}, {priority_enum.name})")
 
 

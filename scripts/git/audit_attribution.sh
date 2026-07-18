@@ -12,7 +12,7 @@ HOOK="$REPO_ROOT/scripts/git/check_commit_message.sh"
 
 # Exact approved human and autonomous-agent author identities.
 # Do not replace these with broad domain or GitHub noreply wildcards.
-ALLOWED_HUMAN_AE="diazmelgarejo@gmail.com lawrence@cyre.me noreply@anthropic.com claude@anthropic.com codex@openai.com noreply@openai.com kimi-agent@kimi.ai cloud-kimi-agent@kimi.ai"
+ALLOWED_HUMAN_AE="noreply@anthropic.com claude@anthropic.com codex@openai.com noreply@openai.com kimi-agent@kimi.ai cloud-kimi-agent@kimi.ai"
 ALLOWED_BOT_ORAMA="cursor[bot]@users.noreply.github.com"
 ALLOWED_BOT_PT="dependabot[bot]@users.noreply.github.com coderabbitai[bot]@users.noreply.github.com openclaw-operator@users.noreply.github.com"
 ALLOWED_BOT_EMAILS="$ALLOWED_BOT_ORAMA $ALLOWED_BOT_PT"
@@ -73,7 +73,7 @@ banned_attribution_hit() {
     line_lc="$(printf '%s' "$line" | tr '[:upper:]' '[:lower:]')"
     case "$line_lc" in
       co-authored-by:*)
-        if line_matches_banned_pattern "$line_lc" "$REPO_ROOT"; then
+        if banned_patterns_ready "$REPO_ROOT" && line_matches_banned_pattern "$line_lc" "$REPO_ROOT"; then
           return 0
         fi
         if line_matches_private_forbidden_literal "$line_lc" "$REPO_ROOT"; then

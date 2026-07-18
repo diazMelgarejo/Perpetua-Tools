@@ -134,6 +134,7 @@ def test_audit_attribution_range_mode_reports_only_pushed_range():
         cwd=ROOT,
         capture_output=True,
         text=True,
+        encoding="utf-8",
         env={
             **os.environ,
             "GIT_AUDIT_RANGE": "HEAD..HEAD",
@@ -153,6 +154,7 @@ def test_audit_attribution_context_refs_are_explicit_opt_in():
         cwd=ROOT,
         capture_output=True,
         text=True,
+        encoding="utf-8",
         env={
             **os.environ,
             "GIT_AUDIT_RANGE": "HEAD..HEAD",

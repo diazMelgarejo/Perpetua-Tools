@@ -125,6 +125,60 @@ async def test_queue_add_creates_task(make_bus, capsys):
     assert "HIGH" in captured.out
 
 
+async def test_queue_add_without_source_fields_still_works(make_bus, capsys):
+    """Backward compat: omitting source_ref/expected_base_sha must still
+    succeed exactly as before -- every existing caller in this suite (and
+    any real caller that predates this schema) relies on this."""
+    bus = await make_bus()
+    await _queue_add(bus, "legacy-caller", "Phase-1", "NORMAL", "", None)
+    captured = capsys.readouterr()
+    assert "enqueued:" in captured.out
+
+    snapshots = await _latest_task_snapshots(bus)
+    task = next(iter(snapshots.values()))
+    assert "source_ref" not in task
+    assert "expected_base_sha" not in task
+
+
+async def test_queue_add_accepts_and_persists_valid_source_fields(make_bus, capsys):
+    """When provided and valid, source_ref/expected_base_sha are persisted
+    into the task's enqueue payload, satisfying .agent/AGENTS.md's
+    board-job source-line doctrine for claimants to verify against."""
+    bus = await make_bus()
+    await _core_queue_add(
+        bus, "reviewed-work", "Phase-1", "NORMAL", "",
+        None, source_ref="feature/example", expected_base_sha="a1b2c3d",
+    )
+    captured = capsys.readouterr()
+    assert "enqueued:" in captured.out
+
+    snapshots = await _latest_task_snapshots(bus)
+    task = next(iter(snapshots.values()))
+    assert task["source_ref"] == "feature/example"
+    assert task["expected_base_sha"] == "a1b2c3d"
+
+
+async def test_queue_add_rejects_empty_source_ref(make_bus, capsys):
+    bus = await make_bus()
+    await _core_queue_add(
+        bus, "bad-ref", "Phase-1", "NORMAL", "", None, source_ref="   ",
+    )
+    captured = capsys.readouterr()
+    assert "ERROR" in captured.err
+    assert "source_ref" in captured.err
+
+
+async def test_queue_add_rejects_invalid_sha(make_bus, capsys):
+    bus = await make_bus()
+    await _core_queue_add(
+        bus, "bad-sha", "Phase-1", "NORMAL", "", None,
+        expected_base_sha="not-a-sha!",
+    )
+    captured = capsys.readouterr()
+    assert "ERROR" in captured.err
+    assert "expected_base_sha" in captured.err
+
+
 async def test_queue_add_with_dependencies(make_bus, capsys):
     """_queue_add records dependency list."""
     bus = await make_bus()
@@ -862,7 +916,7 @@ async def test_real_cli_write_command_reports_clean_error_on_corrupt_db(tmp_path
 
     result = subprocess.run(
         [sys.executable, "scripts/agent_coordination.py", "queue", "add", "task", "Phase-1"],
-        capture_output=True, text=True, env=env, cwd=str(Path(__file__).resolve().parent.parent),
+        capture_output=True, text=True, encoding="utf-8", env=env, cwd=str(Path(__file__).resolve().parent.parent),
     )
     assert result.returncode != 0, f"expected nonzero exit, got 0: stdout={result.stdout!r}"
     assert "ERROR" in result.stderr, f"expected ERROR on stderr, got: {result.stderr!r}"
@@ -882,7 +936,7 @@ async def test_real_cli_read_command_reports_clean_error_on_corrupt_db(tmp_path)
 
     result = subprocess.run(
         [sys.executable, "scripts/agent_coordination.py", "queue", "list"],
-        capture_output=True, text=True, env=env, cwd=str(Path(__file__).resolve().parent.parent),
+        capture_output=True, text=True, encoding="utf-8", env=env, cwd=str(Path(__file__).resolve().parent.parent),
     )
     assert result.returncode != 0, f"expected nonzero exit, got 0: stdout={result.stdout!r}"
     assert "ERROR" in result.stderr, f"expected ERROR on stderr, got: {result.stderr!r}"

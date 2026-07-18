@@ -76,6 +76,7 @@ import argparse
 import asyncio
 import aiosqlite
 import json
+import re
 import subprocess
 import sys
 import time
@@ -919,12 +920,42 @@ async def _workflow_critical_path(bus: GossipBus) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-async def _queue_add(bus: GossipBus, task_name: str, phase: str, priority: str, notes: str, depends_on: Optional[str]) -> None:
-    """Enqueue a new task with optional priority and dependencies."""
+_SHA_RE = re.compile(r"^[0-9a-fA-F]{7,40}$")
+
+
+async def _queue_add(
+    bus: GossipBus,
+    task_name: str,
+    phase: str,
+    priority: str,
+    notes: str,
+    depends_on: Optional[str],
+    source_ref: Optional[str] = None,
+    expected_base_sha: Optional[str] = None,
+) -> bool | None:
+    """Enqueue a new task with optional priority and dependencies.
+
+    source_ref/expected_base_sha are optional here (not yet hard-required)
+    -- see .agent/AGENTS.md's "Board-job source line" doctrine, which this
+    schema is the producer-side half of. Making them mandatory outright
+    would break every existing caller across this repo's own test suite
+    with no coordinated update, and the doctrine explicitly spans this
+    repo and orama-system's shared convention -- flipping to hard-required
+    needs that cross-repo rollout done deliberately, not silently bundled
+    into one file's fix. When provided, both are validated and persisted;
+    omitting them still works, matching every existing caller unchanged.
+    """
+    if source_ref is not None and not source_ref.strip():
+        return _error("source_ref, if given, must not be empty")
+    if expected_base_sha is not None and not _SHA_RE.match(expected_base_sha):
+        return _error(
+            f"expected_base_sha {expected_base_sha!r} is not a valid git SHA "
+            "(7-40 hex characters)"
+        )
     task_id = f"{phase}-{task_name}-{uuid.uuid4().hex[:8]}"
     priority_enum = TaskPriority.from_string(priority)
     depends_on_list = [t.strip() for t in depends_on.split(",")] if depends_on else []
-    await bus.emit("heartbeat", {
+    payload = {
         "kind": "task_enqueue",
         "task_id": task_id,
         "task_name": task_name,
@@ -937,7 +968,12 @@ async def _queue_add(bus: GossipBus, task_name: str, phase: str, priority: str, 
         "max_retries": 3,
         "depends_on": depends_on_list,
         "notes": notes,
-    })
+    }
+    if source_ref is not None:
+        payload["source_ref"] = source_ref.strip()
+    if expected_base_sha is not None:
+        payload["expected_base_sha"] = expected_base_sha
+    await bus.emit("heartbeat", payload)
     print(f"enqueued: {task_id} ({phase}, {priority_enum.name})")
 
 
@@ -1439,6 +1475,8 @@ async def _amain(args: argparse.Namespace) -> int:
                 args.priority,
                 args.notes or "",
                 args.depends_on,
+                source_ref=args.source_ref,
+                expected_base_sha=args.expected_base_sha,
             )
         elif args.subcmd == "list":
             result = await _queue_list(bus, args.phase, args.priority, args.agent)
@@ -1566,6 +1604,14 @@ def main() -> int:
     )
     p_queue_add.add_argument("--notes", default="")
     p_queue_add.add_argument("--depends-on", default=None)
+    p_queue_add.add_argument(
+        "--source-ref", default=None,
+        help="Git ref (branch/commit-ish) this job's work should be based on"
+    )
+    p_queue_add.add_argument(
+        "--expected-base-sha", default=None,
+        help="Expected git SHA at --source-ref; claimants verify HEAD matches before starting work"
+    )
 
     p_queue_list = queue_sub.add_parser("list", help="List queued task snapshots")
     p_queue_list.add_argument("--phase", default=None)

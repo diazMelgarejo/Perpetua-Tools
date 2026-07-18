@@ -52,7 +52,7 @@ startup_timeout_sec = 30
 
 [mcp_servers.exa]
 command = "bash"
-args = ["-c", 'exec "$HOME/code/OpenClaw/orama-system/scripts/exa/exa-mcp-wrapper.sh"']
+args = ["-c", 'exec "$OPENCLAW_ROOT/orama-system/scripts/exa/exa-mcp-wrapper.sh"']
 startup_timeout_sec = 30
 
 [mcp_servers.memory]
