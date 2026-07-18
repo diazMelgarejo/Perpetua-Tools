@@ -208,6 +208,12 @@ Reference: the in-repo tests already do this correctly and can be used as a temp
 
 **Effort:** small — moving/replacing ~5 functions plus the path-resolver delegation, within one existing file, plus one corrected race-condition test. No new files, no deletions, no dispatch-table rewrite. Directly actionable today.
 
+**Mechanics — copy, then re-export, not a destructive move (Codex board note, 2026-07-18: "the queue ownership row still needs to be tied to the actual runtime owner" — resolved here).** "Move into `core.py`" above was ambiguous about what happens to the facade's own definitions afterward, and that ambiguity is exactly what made the Part 2 provenance table's "canonical source" label for queue claim/complete/fail incorrect. Resolved: the same copy-then-re-export pattern Part 2 Phase 2 already uses for the larger migration, applied here in miniature:
+
+1. Copy `_try_atomic_claim`, `_release_claim_with_event`, `_queue_claim`, `_queue_complete`, `_queue_fail` into `agent_coordination_core.py`, replacing core's own inferior versions in place — this is the version `main()` actually calls after Part 1 lands.
+2. In the facade (`agent_coordination.py`), replace its own local definitions of these five symbols with `from scripts.agent_coordination_core import _try_atomic_claim, _release_claim_with_event, _queue_claim, _queue_complete, _queue_fail` re-exports. This is required, not optional: the facade's existing patch loop (`agent_coordination.py:580-596`) still does `setattr(_impl, "_queue_claim", _queue_claim)` onto `agent_coordination_legacy`, and that loop must keep patching legacy with the atomic-safe versions — without this re-export step, the patch loop would silently start patching legacy with core's now-identical-but-independently-drifting copy instead of a single shared source, recreating the exact duplication-drift failure class this plan exists to fix, one Part earlier than intended.
+3. Net effect after Part 1: **`core.py` is the canonical implementation owner; the facade is a re-exporting pass-through that keeps `legacy.py`'s standalone invocation path patched correctly.** This is the runtime-owner correction the provenance table row below now reflects directly, rather than the ambiguous pre-Part-1 "facade" label.
+
 ### Part 1b — database-error contract (separate follow-up)
 
 `GossipBus.emit()` and `GossipBus.tail()` currently surface raw exceptions for
@@ -312,7 +318,7 @@ Per Codex's audit: a file-level heuristic is too coarse for a mixed implementati
 | Basic register/claim/release/list/agents/log | legacy/facade aliases | Preserve established basic board behavior — these are the original claim board, distinct from queued-task claim below. |
 | Reorder buffer and sequenced claim | core | Includes first-arrival dedup and drain-marker replay fixes. |
 | Queue add and queue data types | core/legacy after equivalence proof | Do not assume equivalence; verify it with a diff-based test before choosing. |
-| Queue claim/complete/fail/list/status | **facade** (post-Part-1: promoted into core) | Includes atomic claim/release transactions, retries, corrected display semantics — see Part 1 above, already resolved by the time Part 2 executes. |
+| Queue claim/complete/fail/list/status | **`core.py`** (Part 1's actual runtime owner post-landing; facade re-exports from core, it does not compete with it — see Part 1's "Mechanics" note above) | Includes atomic claim/release transactions, retries, corrected display semantics. Corrected label: earlier drafts bolded "facade" here, which was accurate pre-Part-1 but became stale the moment Part 1's copy-then-re-export mechanics were specified (Codex board note, 2026-07-18) — Phase 0F's runtime-identity re-verification step must confirm this against live code regardless, not trust this table blindly. |
 | Phase state mutations/status/workflow | core/legacy after equivalence proof | Keep tuple-of-integers phase ordering (`_phase_sort_key`), never re-introduce the float cast. |
 | Corrected phase state fold/list | facade or proven tree-twin | Already identical post-`9642ae24` — confirm, don't re-derive. |
 | Heartbeat commands (7) | facade plus `orchestrator.heartbeat_monitor` | Needs the new explicit `liveness.py` target module — was previously unowned in the target structure. |
@@ -721,7 +727,8 @@ not three separate ones.
 Deferred (do not block Part 1/2, but do not silently drop either):
 - [ ] **`agent_coordination_phases.py` uses a different bus constructor than `core.py`/`legacy.py` (Claude DX subagent, confirmed by Codex and Kimi independently).** `phases.py:433` calls `GossipBus(canonical_db_path())` directly; `core.py:1094`/`legacy.py:1085` call `make_gossip_bus(canonical_db_path())`, which returns a `LanGossipBridge` instead of a plain local bus when `GOSSIP_PEERS` is configured (verified in `orchestrator/lan_gossip_bridge.py:195-205`) — this org's actual Mac+Win LAN setup. **Concrete consequence: `phase start`/`phase list`/etc. run via the standalone `phases.py` entrypoint never propagate across LAN, while the identical command via `agent_coordination.py` does.** A third, independently-discovered instance of the "silent divergence between copies" failure class this whole plan exists to fix — add to Phase 0F's inventory (record which bus constructor each entrypoint uses, not just which function handles the leaf), per the Eng-phase task_queue.py note above.
 - [ ] **Basic `claim`/`release` have zero collision/ownership protection, and it's undocumented (Claude DX subagent; Kimi independently confirmed `release` extends the same gap).** `_claim` (`agent_coordination_core.py:371-389`) does no pre-check before emitting — last-write-wins by design (an existing test asserts this as intended behavior), and `_release` lets any agent release any other agent's claim. Neither is documented as such anywhere; a new agent reasonably assumes `claim` (shorter, more discoverable than `queue claim`) has the same protection the plan is busy adding to `queue claim`. **Fix, cheap:** a one-line `--help`/docstring warning ("no collision protection — use `queue add`/`queue claim` for exclusive ownership") costs nothing and can land with Part 1's other doc touches.
-- [ ] **`queue complete`/`queue fail` don't verify caller identity against the claim owner (Claude DX subagent).** Neither parser (`agent_coordination_core.py:1287-1293`) nor implementation accepts/checks an `agent_id` against `assigned_agent` — any agent can complete or fail a task it never claimed. Same failure class as the queue-claim bug (missing protection in the tool whose purpose is preventing exactly this), just not a race condition — a missing authorization check. Add to Part 2's provenance table as a behavior gap to close during `task_queue.py`'s extraction, or explicitly re-defer with a caveat; currently absent from the plan entirely.
+- [x] **`queue complete`/`queue fail` don't verify caller identity against the claim owner — explicit decision made (Claude DX subagent; Codex board note, 2026-07-18, flagged the earlier either/or phrasing as blocking final sign-off).** Verified directly: neither `queue complete` nor `queue fail`'s parser (`agent_coordination_core.py:1287-1293`) even accepts an `agent_id` argument — only `task_id` and `--notes` — so there's no caller identity available to check without also changing the CLI signature, not just the implementation. Any agent can complete or fail a task it never claimed. Same failure class as the queue-claim bug (missing protection in the tool whose purpose is preventing exactly this), just an authorization gap, not a race condition.
+  **Decision: explicitly deferred to a standalone follow-up PR, not bundled into Part 1 or Part 2.** Earlier drafts left this as an either/or ("close during extraction, or re-defer") — under-specified, now resolved. Reasoning: adding caller-identity enforcement requires a CLI signature change (a new `agent_id` argument on two leaves) plus a decision on failure behavior for existing unauthenticated callers — that is a genuine new capability/behavior change, which both Part 1 ("no dispatch-table rewrite... directly actionable today," i.e., no new args) and Part 2 (Non-goals: "No new capabilities added while consolidating," "No behavior changes bundled into Part 2's migration beyond what Part 1 explicitly fixes") explicitly rule out bundling. Structurally identical to the already-deferred "local topology in event labels" item below: a real, evidence-backed security gap, deliberately excluded from this consolidation's behavior-preserving scope rather than silently dropped. Caveat: track as its own authorization-hardening follow-up (add `agent_id` to both leaves, verify against `assigned_agent`, decide the rejection contract) — do not fold into `task_queue.py`'s Part 2 extraction, since extraction is supposed to be a structural move with zero behavior change, and this fix is a behavior change riding on the same file.
 - [ ] **Unreachable dead code: a second, unreachable `elif args.cmd == "claim"` branch in `agent_coordination_legacy.py` (Kimi, verified: lines 1091 and 1182).** The `--seq` handling at line 1182 can never execute — the first branch at 1091 always matches first. Harmless today (Part 1 doesn't touch `legacy.py`, and the live CLI runs through `core.py` where this bug doesn't exist), but it's a fourth, independently-found instance of "same code, divergent bugs," this time in dispatch order rather than business logic — worth noting so Phase 2's `legacy.py` migration doesn't accidentally try to preserve the unreachable branch's behavior as if it were live.
 - [ ] **No machine-readable output; every consumer must regex stdout (Claude DX subagent).** `queue add`'s generated `task_id` (`f"{phase}-{task_name}-{uuid.uuid4().hex[:8]}"`) is only ever printed as `enqueued: <task_id> (...)` — this plan's own Part 1 verification script has to `re.search(r'enqueued: (\S+)', ...)` to recover it. A `--json` flag on the mutating commands would be cheap to add during Part 2's extraction, since every handler is already being touched.
 - [ ] **`heartbeat kill` doesn't cascade to `heartbeat cleanup` (Claude DX subagent).** `kill` only marks an agent `DEAD` (`orchestrator/heartbeat_monitor.py:114,126`); it does not release that agent's claims — a separate `cleanup` call is required, and this two-step dance is undocumented anywhere. Consider a `--and-release` flag, or at minimum document the two-step requirement, during `liveness.py`'s Part 2 extraction.
@@ -739,6 +746,32 @@ positive, not incorporated. (Codex's other DX finding — reorder-buffer drain-m
 handling diverges between core and legacy — is real and verified, but it confirms
 rather than adds to the provenance table's existing "reorder buffer and sequenced
 claim | core" guidance, so no plan edit was needed for it.)
+
+## Related open work (does not block this plan, but shares the same closure discipline)
+
+`docs/phase-0-specifications/` (this repo, 28 files) tracks a **different**
+Phase 0 — the StateTransitionManager/peer-observation/heartbeat-liveness work,
+not the `agent_coordination*.py` consolidation this plan covers. Named here
+per explicit user direction, because the same "flagged but not committed"
+under-specification pattern this session corrected twice in this plan (§
+Findings #2/#6 above, and the two Codex board-flagged items just resolved in
+Part 1/Part 2) recurs there too, and a reader closing out this plan should
+know where the parallel open work lives rather than assume it's unrelated:
+
+- **`PHASE-0-TASK-LIST.md`** carries its own explicit supersession banner:
+  "superseded by the shipped STM path under `orchestrator/membership.py`...
+  keep this file for provenance; do not treat the task list as active work" —
+  already closed, not a live TODO list.
+- **Ranked closure state for the rest of that directory:**
+  [`phase0-and-orama-closure-rankings-2026-07-18.md`](../../../../references/phase0-and-orama-closure-rankings-2026-07-18.md)
+  (off-repo handoff doc) is the authoritative, already-maintained tracker —
+  ranks 1-3 done, ranks 5/7 active, rank 6 deferred-to-v2, rank 4 TODO-only.
+  Do not re-derive this list here; it would drift from the maintained copy.
+- **Structural parallel worth naming explicitly:** that ranking doc's own
+  crosslinks section has a path typo (`../perpetua-api/Perpetua-Tools/...`
+  where the real path is `perplexity-api/Perpetua-Tools/...`, per this repo's
+  own path in this plan's file header) — noted here for whoever next edits
+  that file, not fixed in this plan since it's a different document's bug.
 
 ## Verdict
 
