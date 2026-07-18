@@ -543,13 +543,83 @@ extension check (`agent_coordination_core.py:840`) uses strict `sub_duration +
 current_duration > max_duration`. With both sides `0.0`, `0.0 > 0.0` is `False`,
 so the chain never extends past a single node — `Phase-2` never appears in the
 "Longest chain" output at all. This is a real, currently-shipping bug in
-`_workflow_critical_path`, not introduced by this plan, but it means the
-"already fixed, no change needed" characterization test in Step 1 of Part 2's
-Phase 0F cannot simply pin current behavior as correct — it needs to pin the
-bug's existence and decide whether to fix it (change `>` to `>=`, or add an
-explicit tie-break) as part of this migration, or explicitly defer the fix to
-Part 3 while the test documents the known-broken behavior instead of a
-non-existent-correct one.
+`_workflow_critical_path`, not introduced by this plan.
+
+**Committed fix (Codex, second review pass — earlier draft of this note left
+the fix as an unresolved either/or; that was an under-specified gap, corrected
+here).** Simply changing `>` to `>=` is not sufficient — it would make whichever
+candidate is iterated last in `for dependent, deps in graph.items()` win ties,
+which is dict/graph insertion order (event-arrival order in the gossip log),
+not a semantically meaningful tiebreak. Codex's review is right to reject that.
+Fix: compare a full deterministic key, not a bare float — duration first
+(existing signal), then chain length (prefer the more complete/longer chain on
+a tie — a real product choice: showing more of the actual dependency sequence
+is more informative than an arbitrary single node), then the path itself as a
+lexicographic tuple (final, always-deterministic tiebreak, matching the
+`_phase_sort_key` precedent already in this file for exactly this reason):
+
+```python
+def longest_chain(node: str, visited: set[str]) -> tuple[list[str], float]:
+    if node in visited:
+        return ([], 0.0)
+    visited.add(node)
+    phase = phases.get(node)
+    if not phase:
+        return ([], 0.0)
+    current_duration = phase.estimated_duration_hours or 0.0
+    if phase.completed_at and phase.started_at:
+        current_duration = (phase.completed_at - phase.started_at) / 3600
+
+    def sort_key(path: list[str], duration: float) -> tuple[float, int, tuple[str, ...]]:
+        # Deterministic: duration, then chain length, then lexicographic path.
+        # Never compares on dict/graph iteration order.
+        return (duration, len(path), tuple(path))
+
+    max_path: list[str] = []
+    max_duration = 0.0
+    best_key = (0.0, 0, ())
+    for dependent, deps in graph.items():
+        if node in deps:
+            sub_path, sub_duration = longest_chain(dependent, visited.copy())
+            candidate_path = [node] + sub_path
+            candidate_duration = sub_duration + current_duration
+            candidate_key = sort_key(candidate_path, candidate_duration)
+            if candidate_key > best_key:
+                best_key, max_duration, max_path = candidate_key, candidate_duration, candidate_path
+
+    if not max_path:
+        max_path = [node]
+        max_duration = current_duration
+    return (max_path, max_duration)
+```
+
+The outer `for root in roots: if duration > longest_duration:` loop
+(`agent_coordination_core.py:850-854`) has the identical bare-float comparison
+bug across roots and needs the same `sort_key`-based fix, not just the inner
+recursive comparison.
+
+**Required regression fixtures (Codex's explicit requirement — add all three,
+not just the zero-duration case this session found):**
+1. **Zero-duration branches** — the case above (`Phase-1` → `Phase-2`, both
+   `estimated_duration_hours=0`): must select the 2-node chain, not collapse
+   to 1 node.
+2. **Equal-duration branches** — two sibling dependents of the same node with
+   identical nonzero durations but different downstream chain lengths: must
+   deterministically prefer the longer chain, and must return the *same*
+   result across repeated runs regardless of dict insertion order (assert by
+   running the computation with the graph's dependents inserted in two
+   different orders and comparing output).
+3. **Mixed-duration branches** — one shorter-but-longer-chain path vs. one
+   longer-single-hop path: must correctly prefer strictly greater total
+   duration over chain length (duration is the primary key, length only
+   breaks exact ties) — proves the fix didn't accidentally invert the
+   priority order.
+
+This is currently-shipping behavior, not introduced by this plan, but Phase 0F's
+"already fixed, no change needed" characterization posture doesn't apply here —
+this fix should land as part of Part 2's `phases.py` extraction (the function
+is being moved anyway), with the three fixtures above as permanent regression
+coverage, not deferred to Part 3.
 
 > First-run protocol unchanged: run once against real code, verify the assertions actually hold, tighten any placeholder before treating a characterization test as pinned.
 
@@ -572,6 +642,31 @@ These are real, evidence-backed follow-ups surfaced during this review. Deferred
 one compounds every other verification script in this plan, including Part 1's own:
 
 - [ ] **Exit code is always `0`, regardless of `ERROR:`/`WARNING:` output (Claude subagent + Kimi, independently — Kimi confirmed live: `python3 scripts/agent_coordination.py queue claim nonexistent-task agent-x` prints `ERROR: task nonexistent-task not found` and exits `0`).** `main()` in all three entrypoints ends `asyncio.run(_amain(args)); return 0` unconditionally — no exception path, no `sys.exit(1)`. Every scripted `subprocess.run(..., check=True)` caller (including this plan's own Part 1/Phase 4 verification scripts, which had to resort to `'ERROR:' in r.stdout` instead of checking return codes) cannot detect failure the normal way. **Caveat for why this isn't just deferred like the rest:** it's not a business-logic behavior change (Part 2's non-goal) — it's a scriptability contract fix, and every test this plan's own Phase 0F/4 gates depend on is already working around its absence. Thread a real exit code (or typed exceptions caught at `main()`) through as part of Part 2's Phase 3 dispatch rewrite, since `handle_*` adapters already return to a central `run()` — trivial to have it propagate/raise there.
+
+**Two more pieces of this same finding (Codex, second review pass — the earlier
+note above only committed to the exit-code half; under-specified, corrected
+here):** the fix is incomplete without also (a) routing `ERROR:`/`WARNING:`
+through `sys.stderr` instead of `print()`'s default stdout, so the two signals
+(stream + exit code) agree once both land together, and (b) splitting bundled
+ambiguous outcomes into distinct messages — concretely,
+`_try_atomic_claim`'s caller-facing text ("another agent won or the
+coordination database remained busy. Retry safely.",
+`agent_coordination.py:280-283`) collapses two genuinely different causes
+(lost a real race vs. hit lock contention) into one string. Verified precisely:
+`_try_atomic_claim` (`agent_coordination.py:164-176`) already distinguishes
+them internally via two separate `except` clauses (`aiosqlite.IntegrityError`
+→ lost the race; `aiosqlite.OperationalError` after retries exhausted →
+contention) — but both currently `return False`, collapsing the distinction at
+the *return* site, before it ever reaches the caller or the print statement.
+Fix: change the return type from bare `bool` to a small enum/result type
+(e.g. `WON | LOST_RACE | CONTENTION`) so the two `except` branches return
+distinct values instead of the same `False`; the caller then prints two
+distinct `ERROR:` messages. The information already exists at the exact point
+it's needed (each `except` clause knows which case it's in) — the fix is
+threading it through the return value, not gathering new information. Bundle all three
+(non-zero exit, stderr routing, split messages) into the same Part 2 Phase 3
+dispatch-rewrite work item above — they're one scriptability-contract change,
+not three separate ones.
 
 Deferred (do not block Part 1/2, but do not silently drop either):
 
