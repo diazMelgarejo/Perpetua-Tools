@@ -780,6 +780,15 @@ know where the parallel open work lives rather than assume it's unrelated:
   where the real path is `perplexity-api/Perpetua-Tools/...`, per this repo's
   own path in this plan's file header) — noted here for whoever next edits
   that file, not fixed in this plan since it's a different document's bug.
+- **Board-job source-line schema, cross-repo status:** `.agent/AGENTS.md`'s
+  "Board-job source line" doctrine (referenced by this plan's own concurrent
+  CodeRabbit-fix work on `_queue_add`) now has its cross-repo documentation
+  in `orama-system` at `docs/v2/48-board-job-source-line-schema.md` (OQ20 in
+  that repo's `06-open-questions.md`) — optional/provisional, not enforced,
+  since orama-system has no board/queue producer of its own to coordinate a
+  hard-required rollout with yet. Named here for the same reason as the
+  Phase 0 pointer above: a reader closing out this plan should know the
+  doctrine's cross-repo half is documented, not that it was silently dropped.
 
 ## Verdict
 
