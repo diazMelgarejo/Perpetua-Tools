@@ -35,6 +35,7 @@ from scripts.agent_coordination import (
     _try_atomic_claim,
     _release_claim_with_event,
 )
+from scripts import agent_coordination_core as _core
 from scripts.agent_coordination_core import (
     _queue_add as _core_queue_add,
     _queue_claim as _core_queue_claim,
@@ -372,6 +373,25 @@ async def test_claim_then_fail_then_reclaim_succeeds(make_bus, capsys):
     captured = capsys.readouterr()
     assert "claimed:" in captured.out
     assert "ERROR" not in captured.out
+
+
+async def test_core_queue_fail_increments_retry_after_reclaim(make_bus, capsys):
+    """Facade import must patch core queue helpers used by main()."""
+    bus = await make_bus()
+    await _core_queue_add(bus, "retry-work", "coord", "NORMAL", "", None)
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    task_id = events[0]["payload"]["task_id"]
+
+    await _core._queue_claim(bus, task_id, "agent-a")
+    capsys.readouterr()
+    await _core._queue_fail(bus, task_id, "first failure")
+    capsys.readouterr()
+    await _core._queue_claim(bus, task_id, "agent-a")
+    capsys.readouterr()
+
+    await _core._queue_fail(bus, task_id, "second failure")
+    captured = capsys.readouterr()
+    assert "retry 2/3" in captured.out
 
 
 async def test_queue_fail_abandons_after_max_retries(make_bus, capsys):
