@@ -312,7 +312,7 @@ def private_literal_values(root: Path, key: str) -> list[str]:
         raw_key, value = raw.split("=", 1)
         if raw_key.strip() != key:
             continue
-        value = "".join(value.split())
+        value = value.strip()
         if value:
             values.append(value)
     return values
@@ -353,18 +353,23 @@ def scan_forbidden_identity(root: Path, files: list[str]) -> list[str]:
 
 
 def scan_private_verboten_literals(root: Path, files: list[str]) -> list[str]:
-    tokens = [
+    gmail_tokens = {t.casefold() for t in private_literal_values(root, "owner_gmail")}
+    other_tokens = [
         token.casefold()
-        for key in ("owner_gmail", "owner_name", "forbidden_attribution")
+        for key in ("owner_name", "forbidden_attribution")
         for token in private_literal_values(root, key)
     ]
+    tokens = list(gmail_tokens) + other_tokens
     if not tokens:
         return []
     # Narrow, mechanically-defined exception: AUTHORIZED_CONTRIBUTORS.md's whole
-    # purpose is to list the real approved identity, so the canonical
-    # "cyre <email>" line there is not a leak. This does NOT exempt the file
-    # generally -- only that exact recognized format, so any other private
-    # token anywhere else (including elsewhere in the same file) still blocks.
+    # purpose is to list the real approved identity. Exempt ONLY a complete
+    # line that exactly matches "cyre <owner_gmail>" (after stripping
+    # surrounding whitespace) in that one file -- not a substring match
+    # anywhere in the text, and only for the owner_gmail token specifically.
+    # owner_name, forbidden_attribution, and any other occurrence of the
+    # email (embedded in a longer line, appearing elsewhere in the file, or
+    # anywhere in any other file) still block.
     errors: list[str] = []
     for rel in files:
         path = root / rel
@@ -374,20 +379,37 @@ def scan_private_verboten_literals(root: Path, files: list[str]) -> list[str]:
             text = path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             continue
-        text_lc = text.casefold()
         is_allowlisted_file = rel == ".github/AUTHORIZED_CONTRIBUTORS.md"
+        allowlisted_lines = (
+            {line.strip().casefold() for line in text.splitlines()}
+            if is_allowlisted_file
+            else set()
+        )
+        text_lc = text.casefold()
+        hit = False
         for token in tokens:
             if token not in text_lc:
                 continue
-            if is_allowlisted_file and f"cyre <{token}>" in text_lc:
-                # Approved mechanical format for this one file only; a bare
-                # occurrence of the token elsewhere in the same file still
-                # falls through to the error below.
-                remaining = text_lc.replace(f"cyre <{token}>", "")
-                if token not in remaining:
+            if (
+                is_allowlisted_file
+                and token in gmail_tokens
+                and f"cyre <{token}>" in allowlisted_lines
+            ):
+                # Every occurrence of this exact gmail token in the file must
+                # itself be confined to an exact allowlisted line -- check by
+                # removing all exact-match lines and re-testing, rather than
+                # a blanket substring replace.
+                remaining_lc = "\n".join(
+                    line
+                    for line in text.splitlines()
+                    if line.strip().casefold() != f"cyre <{token}>"
+                ).casefold()
+                if token not in remaining_lc:
                     continue
-            errors.append(f"private verboten literal in tracked file: {rel}")
+            hit = True
             break
+        if hit:
+            errors.append(f"private verboten literal in tracked file: {rel}")
     return errors
 
 

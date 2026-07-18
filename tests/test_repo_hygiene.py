@@ -412,6 +412,90 @@ def test_owner_gmail_redaction_rule_allows_mechanical_allowlists(tmp_path):
     assert len(ordinary_errors) == 1
 
 
+def test_private_literal_values_preserves_internal_whitespace(tmp_path):
+    """Regression: a spaced owner name like 'Private Owner' must survive
+    parsing intact, not get collapsed to 'PrivateOwner' -- only leading/
+    trailing whitespace should be trimmed."""
+    repo_hygiene = load_repo_hygiene()
+    literals = tmp_path / ".verboten-literals.local"
+    literals.write_text("owner_name =  Private Owner Name  \n", encoding="utf-8")
+
+    old = os.environ.get("OPENCLAW_VERBOTEN_LITERALS")
+    os.environ["OPENCLAW_VERBOTEN_LITERALS"] = str(literals)
+    try:
+        values = repo_hygiene.private_literal_values(tmp_path, "owner_name")
+    finally:
+        if old is None:
+            os.environ.pop("OPENCLAW_VERBOTEN_LITERALS", None)
+        else:
+            os.environ["OPENCLAW_VERBOTEN_LITERALS"] = old
+
+    assert values == ["Private Owner Name"]
+
+
+def test_allowlist_scoped_to_owner_gmail_only_not_owner_name(tmp_path):
+    """Regression: the AUTHORIZED_CONTRIBUTORS.md mechanical allowlist must
+    exempt only the owner_gmail token, never owner_name or
+    forbidden_attribution, even inside that same allowlisted file."""
+    repo_hygiene = load_repo_hygiene()
+    private_email = "private.owner@example.invalid"
+    private_name = "Private Owner Name"
+    literals = tmp_path / ".verboten-literals.local"
+    literals.write_text(
+        f"owner_gmail={private_email}\nowner_name={private_name}\n", encoding="utf-8"
+    )
+
+    old = os.environ.get("OPENCLAW_VERBOTEN_LITERALS")
+    os.environ["OPENCLAW_VERBOTEN_LITERALS"] = str(literals)
+    try:
+        allowlisted = tmp_path / ".github" / "AUTHORIZED_CONTRIBUTORS.md"
+        allowlisted.parent.mkdir(parents=True)
+        # Canonical exempt line, plus the owner name elsewhere in the SAME
+        # allowlisted file -- the name occurrence must still error.
+        allowlisted.write_text(
+            f"cyre <{private_email}>\nReviewed by {private_name}.\n", encoding="utf-8"
+        )
+        errors = repo_hygiene.scan_private_verboten_literals(
+            tmp_path, [".github/AUTHORIZED_CONTRIBUTORS.md"]
+        )
+    finally:
+        if old is None:
+            os.environ.pop("OPENCLAW_VERBOTEN_LITERALS", None)
+        else:
+            os.environ["OPENCLAW_VERBOTEN_LITERALS"] = old
+
+    assert len(errors) == 1
+
+
+def test_allowlist_requires_exact_full_line_not_embedded(tmp_path):
+    """Regression: the same email embedded in a longer line (not a standalone
+    exact 'cyre <email>' line) must still error -- substring matching alone
+    is not sufficient to grant the exemption."""
+    repo_hygiene = load_repo_hygiene()
+    private_email = "private.owner@example.invalid"
+    literals = tmp_path / ".verboten-literals.local"
+    literals.write_text(f"owner_gmail={private_email}\n", encoding="utf-8")
+
+    old = os.environ.get("OPENCLAW_VERBOTEN_LITERALS")
+    os.environ["OPENCLAW_VERBOTEN_LITERALS"] = str(literals)
+    try:
+        allowlisted = tmp_path / ".github" / "AUTHORIZED_CONTRIBUTORS.md"
+        allowlisted.parent.mkdir(parents=True)
+        allowlisted.write_text(
+            f"Contact cyre <{private_email}> for questions.\n", encoding="utf-8"
+        )
+        errors = repo_hygiene.scan_private_verboten_literals(
+            tmp_path, [".github/AUTHORIZED_CONTRIBUTORS.md"]
+        )
+    finally:
+        if old is None:
+            os.environ.pop("OPENCLAW_VERBOTEN_LITERALS", None)
+        else:
+            os.environ["OPENCLAW_VERBOTEN_LITERALS"] = old
+
+    assert len(errors) == 1
+
+
 # ---------------------------------------------------------------------------
 # CLAUDE.md — portable-paths rule (§ 6 Git Hygiene, lockstep w/ orama)
 #

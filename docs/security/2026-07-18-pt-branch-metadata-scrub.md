@@ -53,8 +53,8 @@ Applied branch-only history rewrite in a cleanroom clone:
 git filter-repo \
   --force \
   --refs refs/heads/docs/coordination-consolidation-plan-20260717 \
-  --mailmap /tmp/pt-owner-scrub.mailmap \
-  --replace-message /tmp/pt-owner-scrub-replace-message.txt
+  --mailmap ~/pt-owner-scrub.mailmap \
+  --replace-message ~/pt-owner-scrub-replace-message.txt
 ```
 
 The local-only filter files mapped private owner identity metadata to a neutral
@@ -90,7 +90,7 @@ clean for the targeted labels, but a future all-ref blob audit should use a
 faster offline object index or a narrowed candidate-ref set before making an
 all-history claim.
 
-## Coordination Notes
+## Orchestration Notes
 
 - Claude was notified through the PT coordination board before and after the
   rewrite.

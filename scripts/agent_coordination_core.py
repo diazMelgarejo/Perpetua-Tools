@@ -990,6 +990,7 @@ async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> None:
             "retry_count": retry_count,
             "max_retries": max_retries,
             "status": QueuedTaskState.QUEUED.value,
+            "assigned_agent": None,
             "notes": f"Retry {retry_count}/{max_retries}: {notes}",
         })
         print(f"failed: {task_id}, retry {retry_count}/{max_retries}")
@@ -1000,6 +1001,7 @@ async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> None:
             "retry_count": retry_count,
             "max_retries": max_retries,
             "status": "abandoned",
+            "assigned_agent": None,
             "notes": f"Abandoned after {max_retries} retries: {notes}",
         })
         print(f"abandoned: {task_id} (max retries exceeded)")

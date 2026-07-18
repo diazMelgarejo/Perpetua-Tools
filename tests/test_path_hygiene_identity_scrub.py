@@ -36,7 +36,7 @@ def configured_literals(monkeypatch):
     example.invalid-style values -- never a real identity, per this
     project's own testing standard for private-literal coverage.
     """
-    tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".local", delete=False)
+    tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".local", delete=False, encoding="utf-8")
     tmp.write(
         "owner_gmail=synthetic.owner@example.invalid\n"
         "owner_name=Synthetic.Owner\n"

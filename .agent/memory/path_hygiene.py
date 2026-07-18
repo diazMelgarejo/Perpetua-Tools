@@ -86,7 +86,7 @@ def _private_literal_values(key: str) -> list[str]:
         raw_key, value = raw.split("=", 1)
         if raw_key.strip() != key:
             continue
-        value = "".join(value.split())
+        value = value.strip()
         if value:
             values.append(value)
     return values
