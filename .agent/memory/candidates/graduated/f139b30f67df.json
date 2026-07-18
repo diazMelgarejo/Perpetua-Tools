@@ -1,0 +1,41 @@
+{
+  "id": "f139b30f67df",
+  "key": "manual_f139b3",
+  "name": "manual_f139b3",
+  "claim": "For multi-agent PR coordination, post the same status update through every genuinely distinct channel (job-board GossipBus note, a direct PR comment, a heartbeat pulse), not just one -- a partner agent may not be actively polling the board at any given moment, but a PR comment and a fresh heartbeat both leave an independently-discoverable trail. Redundant posting across channels is cheap; a missed handoff because only one channel was updated is not.",
+  "conditions": [
+    "PR-handoff",
+    "job-board",
+    "multi-agent-coordination",
+    "redundant-channels"
+  ],
+  "evidence_ids": [
+    "2026-07-18T03:12:53.233405+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T03:12:53.233405+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T03:12:53.233405+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T03:12:53.637353+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Across this session's PR166/169/256/257/258/259 coordination with Codex, the pattern that consistently worked was posting findings to GossipBus AND as a direct PR comment AND pulsing a fresh heartbeat, especially before a 'final push' or merge decision. When only one channel was updated, status sometimes lagged behind actual work by a full round-trip.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T03:12:53.233405+00:00"
+      ],
+      "lessons_sha": "3c84e9be3a69"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T03:12:53.637308+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Across this session's PR166/169/256/257/258/259 coordination with Codex, the pattern that consistently worked was posting findings to GossipBus AND as a direct PR comment AND pulsing a fresh heartbeat, especially before a 'final push' or merge decision. When only one channel was updated, status sometimes lagged behind actual work by a full round-trip."
+}
