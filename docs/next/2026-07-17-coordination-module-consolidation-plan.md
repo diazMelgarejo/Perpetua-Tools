@@ -308,3 +308,29 @@ atomic and revertible).
 ## Verdict
 
 The three-file split was a reasonable evolutionary safety move at the time (freeze what works, layer new features without touching frozen code) but has crossed into maintenance debt now that a single bug required three separate patches to actually fix. Replace it with characterization-first consolidation into one canonical module per capability — not another layer of patching across copies.
+
+## Deferred to next PR (TODO)
+
+This PR is docs-only — the plan above, plus interim hardening fixes on the frozen
+modules. None of the migration steps in "Scaffolding" are applied here. Parked
+explicitly rather than started partially, so the next PR begins from a clean,
+fully-scoped list instead of a half-migrated tree:
+
+- [ ] **Execute the migration sequence** (Steps 1-4 above): characterization
+      tests for the 4 uncovered commands → extract `orchestrator/coordination/{paths,claims,reorder_buffer,task_queue,phases}.py`
+      one capability at a time (move, not copy) → shrink `agent_coordination.py`
+      to CLI-only → CLI-parity tests on the real entrypoint → delete
+      `agent_coordination_core.py`, `agent_coordination_legacy.py`,
+      `agent_coordination_phases.py` in one atomic, revertible commit.
+- [ ] **Integrate the clinebot idempotent install pattern** into `install.sh`/
+      `start.sh` (`npm view <pkg> version` compare-before-install, `command -v`
+      guard, fail-open on unreachable registry). Pattern captured in PT
+      `.agent` memory as `lesson_6125fbdf46ec`. Job-board task
+      `Agent-Setup-Integrate clinebot idempotent install pattern into
+      install.sh/start.sh-595d71da`, currently claimed by
+      `claude-sonnet-g7-impl`, unimplemented.
+- [ ] **Merge PR #258** once the migration above lands and passes CI — merge
+      remains explicitly paused until then.
+
+Both TODO items were deliberately not started in this PR per explicit
+instruction to pause implementation pending a joint session with Codex.
