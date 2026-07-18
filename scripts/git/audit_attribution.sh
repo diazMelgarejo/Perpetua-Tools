@@ -73,7 +73,7 @@ banned_attribution_hit() {
     line_lc="$(printf '%s' "$line" | tr '[:upper:]' '[:lower:]')"
     case "$line_lc" in
       co-authored-by:*)
-        if line_matches_banned_pattern "$line_lc" "$REPO_ROOT"; then
+        if banned_patterns_ready "$REPO_ROOT" && line_matches_banned_pattern "$line_lc" "$REPO_ROOT"; then
           return 0
         fi
         if line_matches_private_forbidden_literal "$line_lc" "$REPO_ROOT"; then

@@ -87,10 +87,16 @@ When merging nested branches produced by independent agents against a moving mai
 [orama `integrative-merge.md`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/oramasys-method/references/integrative-merge.md)
 (synthesize, never amputate; six resolution modes). This section is the portable-brain summary; the skill reference is authoritative.
 
-**Board-job source line:** before claiming write work from GossipBus / job board
-rows, verify the row has `source_ref` and `expected_base_sha`; create a fresh
-worktree from that exact source and stop if `HEAD` differs. Same board plus same
-repo is not enough. See `references/branch-local-review-remediation.md`.
+**Board-job source line:** when claiming write work from a GossipBus / job
+board row that carries `source_ref` and `expected_base_sha`, create a fresh
+worktree from that exact source and stop if `HEAD` differs — same board plus
+same repo is not enough. These fields are currently **optional and
+provisional** (producer-side validated when present, not yet required on
+every row); treat their absence as "no source-line guarantee available" for
+that row, not as an error. See `references/branch-local-review-remediation.md`
+and, for the schema's cross-repo status and the open question on making it
+required in v2, `docs/v2/48-board-job-source-line-schema.md` in
+`orama-system`.
 
 ### Step-by-step
 

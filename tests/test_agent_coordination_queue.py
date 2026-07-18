@@ -35,12 +35,14 @@ from scripts.agent_coordination import (
     _try_atomic_claim,
     _release_claim_with_event,
 )
+from scripts import agent_coordination_core as _core
 from scripts.agent_coordination_core import (
     _queue_add as _core_queue_add,
     _queue_claim as _core_queue_claim,
     _queue_complete as _core_queue_complete,
     _queue_fail as _core_queue_fail,
     _queue_list as _core_queue_list,
+    _latest_task_snapshots,
     _phase_list as _core_phase_list,
     _phase_start as _core_phase_start,
 )
@@ -121,6 +123,60 @@ async def test_queue_add_creates_task(make_bus, capsys):
     assert "enqueued:" in captured.out
     assert "Phase-5" in captured.out
     assert "HIGH" in captured.out
+
+
+async def test_queue_add_without_source_fields_still_works(make_bus, capsys):
+    """Backward compat: omitting source_ref/expected_base_sha must still
+    succeed exactly as before -- every existing caller in this suite (and
+    any real caller that predates this schema) relies on this."""
+    bus = await make_bus()
+    await _queue_add(bus, "legacy-caller", "Phase-1", "NORMAL", "", None)
+    captured = capsys.readouterr()
+    assert "enqueued:" in captured.out
+
+    snapshots = await _latest_task_snapshots(bus)
+    task = next(iter(snapshots.values()))
+    assert "source_ref" not in task
+    assert "expected_base_sha" not in task
+
+
+async def test_queue_add_accepts_and_persists_valid_source_fields(make_bus, capsys):
+    """When provided and valid, source_ref/expected_base_sha are persisted
+    into the task's enqueue payload, satisfying .agent/AGENTS.md's
+    board-job source-line doctrine for claimants to verify against."""
+    bus = await make_bus()
+    await _core_queue_add(
+        bus, "reviewed-work", "Phase-1", "NORMAL", "",
+        None, source_ref="feature/example", expected_base_sha="a1b2c3d",
+    )
+    captured = capsys.readouterr()
+    assert "enqueued:" in captured.out
+
+    snapshots = await _latest_task_snapshots(bus)
+    task = next(iter(snapshots.values()))
+    assert task["source_ref"] == "feature/example"
+    assert task["expected_base_sha"] == "a1b2c3d"
+
+
+async def test_queue_add_rejects_empty_source_ref(make_bus, capsys):
+    bus = await make_bus()
+    await _core_queue_add(
+        bus, "bad-ref", "Phase-1", "NORMAL", "", None, source_ref="   ",
+    )
+    captured = capsys.readouterr()
+    assert "ERROR" in captured.err
+    assert "source_ref" in captured.err
+
+
+async def test_queue_add_rejects_invalid_sha(make_bus, capsys):
+    bus = await make_bus()
+    await _core_queue_add(
+        bus, "bad-sha", "Phase-1", "NORMAL", "", None,
+        expected_base_sha="not-a-sha!",
+    )
+    captured = capsys.readouterr()
+    assert "ERROR" in captured.err
+    assert "expected_base_sha" in captured.err
 
 
 async def test_queue_add_with_dependencies(make_bus, capsys):
@@ -257,6 +313,64 @@ async def test_queue_claim_allows_when_deps_satisfied(make_bus, capsys):
 # ────────────────────────────────────────────────────────────────────────────
 
 
+async def test_queue_complete_rejects_unclaimed_task(make_bus, capsys):
+    """Regression: _queue_complete must reject a task that is not currently
+    CLAIMED (never claimed, already completed, or abandoned) -- without
+    this guard, DELETE FROM task_claims WHERE task_id=? on a task with no
+    claim row silently deletes zero rows and _release_claim_with_event
+    still reports success, letting a task be "completed" that was never
+    actually claimed, or completed a second time."""
+    bus = await make_bus()
+    await _queue_add(bus, "never-claimed", "Phase-1", "NORMAL", "", None)
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    task_id = events[0]["payload"]["task_id"]
+
+    capsys.readouterr()
+    await _queue_complete(bus, task_id, "should be rejected")
+    captured = capsys.readouterr()
+    assert "ERROR" in captured.err
+    assert "not claimed" in captured.err
+
+    snapshots = await _latest_task_snapshots(bus)
+    assert snapshots[task_id].get("status") == "queued"
+
+
+async def test_queue_complete_rejects_double_completion(make_bus, capsys):
+    """Regression: completing an already-completed task must be rejected,
+    not silently accepted a second time."""
+    bus = await make_bus()
+    await _queue_add(bus, "done-work", "Phase-1", "NORMAL", "", None)
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    task_id = events[0]["payload"]["task_id"]
+
+    await _queue_claim(bus, task_id, "agent-a")
+    await _queue_complete(bus, task_id, "first completion")
+
+    capsys.readouterr()
+    await _queue_complete(bus, task_id, "second completion attempt")
+    captured = capsys.readouterr()
+    assert "ERROR" in captured.err
+    assert "already completed" in captured.err
+
+
+async def test_queue_fail_rejects_unclaimed_task(make_bus, capsys):
+    """Regression: _queue_fail must reject a task that is not currently
+    CLAIMED, the same guard as _queue_complete."""
+    bus = await make_bus()
+    await _queue_add(bus, "never-claimed", "Phase-1", "NORMAL", "", None)
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    task_id = events[0]["payload"]["task_id"]
+
+    capsys.readouterr()
+    await _queue_fail(bus, task_id, "should be rejected")
+    captured = capsys.readouterr()
+    assert "ERROR" in captured.err
+    assert "not claimed" in captured.err
+
+    snapshots = await _latest_task_snapshots(bus)
+    assert snapshots[task_id].get("status") == "queued"
+
+
 async def test_queue_complete_marks_done(make_bus, capsys):
     """_queue_complete marks task as COMPLETED."""
     bus = await make_bus()
@@ -265,6 +379,8 @@ async def test_queue_complete_marks_done(make_bus, capsys):
     events = await bus.tail(limit=10, event_type="heartbeat")
     task_id = events[0]["payload"]["task_id"]
 
+    await _queue_claim(bus, task_id, "agent-a")
+    capsys.readouterr()
     await _queue_complete(bus, task_id, "Implementation finished")
     captured = capsys.readouterr()
     assert f"completed: {task_id}" in captured.out
@@ -283,6 +399,8 @@ async def test_queue_fail_with_retry(make_bus, capsys):
     events = await bus.tail(limit=10, event_type="heartbeat")
     task_id = events[0]["payload"]["task_id"]
 
+    await _queue_claim(bus, task_id, "agent-a")
+    capsys.readouterr()
     # First failure — should retry
     await _queue_fail(bus, task_id, "Network timeout")
     captured = capsys.readouterr()
@@ -311,6 +429,25 @@ async def test_claim_then_fail_then_reclaim_succeeds(make_bus, capsys):
     assert "ERROR" not in captured.out
 
 
+async def test_core_queue_fail_increments_retry_after_reclaim(make_bus, capsys):
+    """Facade import must patch core queue helpers used by main()."""
+    bus = await make_bus()
+    await _core_queue_add(bus, "retry-work", "coord", "NORMAL", "", None)
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    task_id = events[0]["payload"]["task_id"]
+
+    await _core._queue_claim(bus, task_id, "agent-a")
+    capsys.readouterr()
+    await _core._queue_fail(bus, task_id, "first failure")
+    capsys.readouterr()
+    await _core._queue_claim(bus, task_id, "agent-a")
+    capsys.readouterr()
+
+    await _core._queue_fail(bus, task_id, "second failure")
+    captured = capsys.readouterr()
+    assert "retry 2/3" in captured.out
+
+
 async def test_queue_fail_abandons_after_max_retries(make_bus, capsys):
     """_queue_fail abandons task after max_retries exceeded."""
     bus = await make_bus()
@@ -319,11 +456,15 @@ async def test_queue_fail_abandons_after_max_retries(make_bus, capsys):
     events = await bus.tail(limit=10, event_type="heartbeat")
     task_id = events[0]["payload"]["task_id"]
 
-    # Fail 3 times
+    # Fail 3 times -- each retry requeues the task, so it must be re-claimed
+    # before the next failure attempt (a fail can only apply to a
+    # currently-claimed task).
     for i in range(3):
+        await _queue_claim(bus, task_id, "agent-a")
         await _queue_fail(bus, task_id, f"Attempt {i+1} failed")
 
     # On 4th failure, should abandon
+    await _queue_claim(bus, task_id, "agent-a")
     capsys.readouterr()
     await _queue_fail(bus, task_id, "Final attempt failed")
     captured = capsys.readouterr()
@@ -350,7 +491,9 @@ async def test_queue_list_groups_by_status(make_bus, capsys):
     # Claim one, complete one, fail one
     if len(task_ids) >= 3:
         await _queue_claim(bus, task_ids[0], "agent-x")
+        await _queue_claim(bus, task_ids[1], "agent-y")
         await _queue_complete(bus, task_ids[1], "")
+        await _queue_claim(bus, task_ids[2], "agent-z")
         await _queue_fail(bus, task_ids[2], "test failure")
 
     capsys.readouterr()
@@ -372,6 +515,7 @@ async def test_core_queue_list_uses_newest_task_event(make_bus, capsys):
     await _core_queue_add(bus, "payload-fix", "coord", "HIGH", "queued", None)
     events = await bus.tail(limit=10, event_type="heartbeat")
     task_id = events[0]["payload"]["task_id"]
+    await _core_queue_claim(bus, task_id, "agent-alpha")
     await _core_queue_complete(bus, task_id, "done")
 
     capsys.readouterr()
@@ -772,7 +916,7 @@ async def test_real_cli_write_command_reports_clean_error_on_corrupt_db(tmp_path
 
     result = subprocess.run(
         [sys.executable, "scripts/agent_coordination.py", "queue", "add", "task", "Phase-1"],
-        capture_output=True, text=True, env=env, cwd=str(Path(__file__).resolve().parent.parent),
+        capture_output=True, text=True, encoding="utf-8", env=env, cwd=str(Path(__file__).resolve().parent.parent),
     )
     assert result.returncode != 0, f"expected nonzero exit, got 0: stdout={result.stdout!r}"
     assert "ERROR" in result.stderr, f"expected ERROR on stderr, got: {result.stderr!r}"
@@ -792,7 +936,7 @@ async def test_real_cli_read_command_reports_clean_error_on_corrupt_db(tmp_path)
 
     result = subprocess.run(
         [sys.executable, "scripts/agent_coordination.py", "queue", "list"],
-        capture_output=True, text=True, env=env, cwd=str(Path(__file__).resolve().parent.parent),
+        capture_output=True, text=True, encoding="utf-8", env=env, cwd=str(Path(__file__).resolve().parent.parent),
     )
     assert result.returncode != 0, f"expected nonzero exit, got 0: stdout={result.stdout!r}"
     assert "ERROR" in result.stderr, f"expected ERROR on stderr, got: {result.stderr!r}"

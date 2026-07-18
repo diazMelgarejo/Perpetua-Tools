@@ -75,6 +75,8 @@ from __future__ import annotations
 import argparse
 import asyncio
 import aiosqlite
+import json
+import re
 import subprocess
 import sys
 import time
@@ -89,7 +91,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from orchestrator.gossip_bus import (  # noqa: E402
     GossipBus,
     GossipBusError,
-    resolve_default_state_dir,
+    _canonical_repo_state_dir,
     resolve_gossip_db_path,
 )
 from orchestrator.lan_gossip_bridge import make_gossip_bus  # noqa: E402
@@ -323,8 +325,16 @@ class PhaseState:
 
 
 def canonical_repo_root() -> Path:
-    """Resolve the shared repo root common to every worktree of this repo."""
-    return resolve_default_state_dir().resolve().parent
+    """Resolve the shared repo root common to every worktree of this repo.
+
+    Deliberately independent of resolve_default_state_dir() and PT_STATE_DIR
+    -- runtime state location is a configurable override (multiple
+    instances, tests, custom layouts); repository identity is not, and must
+    never be influenced by where state happens to be pointed. Falls back to
+    cwd only when git resolution itself fails (not in a repo).
+    """
+    state = _canonical_repo_state_dir()
+    return state.parent if state is not None else Path.cwd()
 
 
 def canonical_db_path() -> str:
@@ -910,12 +920,42 @@ async def _workflow_critical_path(bus: GossipBus) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-async def _queue_add(bus: GossipBus, task_name: str, phase: str, priority: str, notes: str, depends_on: Optional[str]) -> None:
-    """Enqueue a new task with optional priority and dependencies."""
+_SHA_RE = re.compile(r"^[0-9a-fA-F]{7,40}$")
+
+
+async def _queue_add(
+    bus: GossipBus,
+    task_name: str,
+    phase: str,
+    priority: str,
+    notes: str,
+    depends_on: Optional[str],
+    source_ref: Optional[str] = None,
+    expected_base_sha: Optional[str] = None,
+) -> bool | None:
+    """Enqueue a new task with optional priority and dependencies.
+
+    source_ref/expected_base_sha are optional here (not yet hard-required)
+    -- see .agent/AGENTS.md's "Board-job source line" doctrine, which this
+    schema is the producer-side half of. Making them mandatory outright
+    would break every existing caller across this repo's own test suite
+    with no coordinated update, and the doctrine explicitly spans this
+    repo and orama-system's shared convention -- flipping to hard-required
+    needs that cross-repo rollout done deliberately, not silently bundled
+    into one file's fix. When provided, both are validated and persisted;
+    omitting them still works, matching every existing caller unchanged.
+    """
+    if source_ref is not None and not source_ref.strip():
+        return _error("source_ref, if given, must not be empty")
+    if expected_base_sha is not None and not _SHA_RE.match(expected_base_sha):
+        return _error(
+            f"expected_base_sha {expected_base_sha!r} is not a valid git SHA "
+            "(7-40 hex characters)"
+        )
     task_id = f"{phase}-{task_name}-{uuid.uuid4().hex[:8]}"
     priority_enum = TaskPriority.from_string(priority)
     depends_on_list = [t.strip() for t in depends_on.split(",")] if depends_on else []
-    await bus.emit("heartbeat", {
+    payload = {
         "kind": "task_enqueue",
         "task_id": task_id,
         "task_name": task_name,
@@ -928,7 +968,12 @@ async def _queue_add(bus: GossipBus, task_name: str, phase: str, priority: str, 
         "max_retries": 3,
         "depends_on": depends_on_list,
         "notes": notes,
-    })
+    }
+    if source_ref is not None:
+        payload["source_ref"] = source_ref.strip()
+    if expected_base_sha is not None:
+        payload["expected_base_sha"] = expected_base_sha
+    await bus.emit("heartbeat", payload)
     print(f"enqueued: {task_id} ({phase}, {priority_enum.name})")
 
 
@@ -941,14 +986,61 @@ _TASK_EVENT_KINDS = (
 )
 
 
+async def _fetch_task_events(bus: GossipBus, task_id: Optional[str] = None) -> list[dict]:
+    """Fetch task-lifecycle events (task_enqueue/claim/complete/failed/
+    abandoned), optionally scoped to one task_id, directly via a targeted
+    SQL query rather than a size-bounded tail() call filtered in Python.
+
+    No LIMIT, and deliberately so: bus.tail(event_type="heartbeat") also
+    carries agent-liveness pulses and other unrelated heartbeat traffic
+    that has nothing to do with tasks, so a size-bounded window over that
+    combined stream can silently drop an old-but-still-open task's
+    founding task_enqueue event (dependencies, retry_limit, initial phase)
+    once enough unrelated heartbeat volume accumulates -- corrupting that
+    task's folded snapshot with no error, no warning. This query is
+    already narrowed to just the 5 task-relevant kinds at the SQL level
+    (and, when task_id is given, to that one task too), so an unbounded
+    fetch stays cheap regardless of how large the bus grows, and a task's
+    full history is always available to fold correctly.
+
+    Returned oldest-first (ORDER BY id ASC) so callers can fold by plain
+    forward iteration + dict.update(), letting later (newer) events'
+    fields naturally overwrite earlier ones -- no reversed() needed.
+    """
+    kind_placeholders = ",".join("?" for _ in _TASK_EVENT_KINDS)
+    query = (
+        "SELECT id, event_uuid, ts, event_type, payload_json FROM gossip "
+        "WHERE event_type = 'heartbeat' "
+        f"AND json_extract(payload_json, '$.kind') IN ({kind_placeholders})"
+    )
+    params: list = list(_TASK_EVENT_KINDS)
+    if task_id is not None:
+        query += " AND json_extract(payload_json, '$.task_id') = ?"
+        params.append(task_id)
+    query += " ORDER BY id ASC"
+    async with bus.connect() as db:
+        cursor = await db.execute(query, params)
+        rows = await cursor.fetchall()
+    return [
+        {
+            "row_id": row[0],
+            "uuid": row[1],
+            "ts": row[2],
+            "event_type": row[3],
+            "payload": json.loads(row[4]),
+        }
+        for row in rows
+    ]
+
+
 async def _task_snapshot(
     bus: GossipBus, task_id: str, events: Optional[list[dict]] = None
 ) -> Optional[dict]:
     """Fold append-only heartbeat events for one task into a merged snapshot."""
     if events is None:
-        events = await bus.tail(limit=500, event_type="heartbeat")
+        events = await _fetch_task_events(bus, task_id=task_id)
     snapshot: dict = {}
-    for ev in reversed(events):
+    for ev in events:
         p = ev["payload"]
         if p.get("task_id") == task_id and p.get("kind") in _TASK_EVENT_KINDS:
             snapshot.update(p)
@@ -973,10 +1065,12 @@ async def _ensure_claims_table(bus: GossipBus) -> None:
 
 
 async def _latest_task_snapshots(bus: GossipBus) -> dict[str, dict]:
-    """Fold newest-first append-only events into current task snapshots."""
-    events = await bus.tail(limit=1000, event_type="heartbeat")
+    """Fold append-only events into current task snapshots, across every
+    task's complete history -- see _fetch_task_events for why this must not
+    be a size-bounded window."""
+    events = await _fetch_task_events(bus)
     snapshots: dict[str, dict] = {}
-    for event in reversed(events):
+    for event in events:
         payload = event["payload"]
         task_id = payload.get("task_id")
         if not task_id or payload.get("kind") not in _TASK_EVENT_KINDS:
@@ -1135,8 +1229,19 @@ async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | No
 
 async def _queue_complete(bus: GossipBus, task_id: str, notes: str) -> bool | None:
     snapshots = await _latest_task_snapshots(bus)
-    if task_id not in snapshots:
+    task_state = snapshots.get(task_id)
+    if not task_state:
         return _error(f"task {task_id} not found")
+    status = task_state.get("status")
+    if status != QueuedTaskState.CLAIMED.value:
+        if status == QueuedTaskState.COMPLETED.value:
+            return _error(f"{task_id} is already completed.")
+        if status == "abandoned":
+            return _error(f"{task_id} was abandoned; cannot complete.")
+        return _error(
+            f"{task_id} is not claimed (status: {status or 'unknown'}); "
+            "only a currently-claimed task can be completed."
+        )
     # Free the atomic-claim row and record completion in one transaction --
     # a completed task is rejected by the status check in _queue_claim
     # regardless, but a crash between a separate release and emit could
@@ -1167,6 +1272,16 @@ async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> bool | None:
     task_state = snapshots.get(task_id)
     if not task_state:
         return _error(f"task {task_id} not found")
+    status = task_state.get("status")
+    if status != QueuedTaskState.CLAIMED.value:
+        if status == QueuedTaskState.COMPLETED.value:
+            return _error(f"{task_id} is already completed; cannot fail.")
+        if status == "abandoned":
+            return _error(f"{task_id} was already abandoned.")
+        return _error(
+            f"{task_id} is not claimed (status: {status or 'unknown'}); "
+            "only a currently-claimed task can be failed."
+        )
     retry_count = int(task_state.get("retry_count", 0)) + 1
     max_retries = int(task_state.get("max_retries", 3))
     if retry_count <= max_retries:
@@ -1360,6 +1475,8 @@ async def _amain(args: argparse.Namespace) -> int:
                 args.priority,
                 args.notes or "",
                 args.depends_on,
+                source_ref=args.source_ref,
+                expected_base_sha=args.expected_base_sha,
             )
         elif args.subcmd == "list":
             result = await _queue_list(bus, args.phase, args.priority, args.agent)
@@ -1487,6 +1604,14 @@ def main() -> int:
     )
     p_queue_add.add_argument("--notes", default="")
     p_queue_add.add_argument("--depends-on", default=None)
+    p_queue_add.add_argument(
+        "--source-ref", default=None,
+        help="Git ref (branch/commit-ish) this job's work should be based on"
+    )
+    p_queue_add.add_argument(
+        "--expected-base-sha", default=None,
+        help="Expected git SHA at --source-ref; claimants verify HEAD matches before starting work"
+    )
 
     p_queue_list = queue_sub.add_parser("list", help="List queued task snapshots")
     p_queue_list.add_argument("--phase", default=None)

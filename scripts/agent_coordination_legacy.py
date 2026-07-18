@@ -75,6 +75,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import re
 import subprocess
 import sys
 import time
@@ -86,7 +87,7 @@ from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from orchestrator.gossip_bus import GossipBus  # noqa: E402
+from orchestrator.gossip_bus import GossipBus, _canonical_repo_state_dir  # noqa: E402
 from orchestrator.lan_gossip_bridge import make_gossip_bus  # noqa: E402
 
 
@@ -294,11 +295,17 @@ class PhaseState:
 
 
 def canonical_repo_root() -> Path:
-    """Resolve the shared repo root common to every worktree of this repo."""
-    common_dir = subprocess.check_output(
-        ["git", "rev-parse", "--git-common-dir"], text=True
-    ).strip()
-    return Path(common_dir).resolve().parent
+    """Resolve the shared repo root common to every worktree of this repo.
+
+    Delegates to gossip_bus._canonical_repo_state_dir(), the single
+    canonical resolver -- it already handles submodule/bare-repo anchoring,
+    a subprocess timeout, and error fallback correctly; this file's own
+    prior inline reimplementation had none of those and would raise
+    uncaught on a git failure. Falls back to cwd only when git resolution
+    itself fails (not in a repo).
+    """
+    state = _canonical_repo_state_dir()
+    return state.parent if state is not None else Path.cwd()
 
 
 def canonical_db_path() -> str:
@@ -875,12 +882,38 @@ async def _workflow_critical_path(bus: GossipBus) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-async def _queue_add(bus: GossipBus, task_name: str, phase: str, priority: str, notes: str, depends_on: Optional[str]) -> None:
-    """Enqueue a new task with optional priority and dependencies."""
+_SHA_RE = re.compile(r"^[0-9a-fA-F]{7,40}$")
+
+
+async def _queue_add(
+    bus: GossipBus,
+    task_name: str,
+    phase: str,
+    priority: str,
+    notes: str,
+    depends_on: Optional[str],
+    source_ref: Optional[str] = None,
+    expected_base_sha: Optional[str] = None,
+) -> None:
+    """Enqueue a new task with optional priority and dependencies.
+
+    source_ref/expected_base_sha mirror agent_coordination_core.py's schema
+    -- see that file for the full rationale (optional-and-validated, not
+    yet hard-required, per .agent/AGENTS.md's board-job source line
+    doctrine). This copy exists because the facade aliases _queue_add
+    directly to this module (_impl), not core.py.
+    """
+    if source_ref is not None and not source_ref.strip():
+        print("ERROR: source_ref, if given, must not be empty")
+        return
+    if expected_base_sha is not None and not _SHA_RE.match(expected_base_sha):
+        print(f"ERROR: expected_base_sha {expected_base_sha!r} is not a valid "
+              "git SHA (7-40 hex characters)")
+        return
     task_id = f"{phase}-{task_name}-{uuid.uuid4().hex[:8]}"
     priority_enum = TaskPriority.from_string(priority)
     depends_on_list = [t.strip() for t in depends_on.split(",")] if depends_on else []
-    await bus.emit("heartbeat", {
+    payload = {
         "kind": "task_enqueue",
         "task_id": task_id,
         "task_name": task_name,
@@ -893,7 +926,12 @@ async def _queue_add(bus: GossipBus, task_name: str, phase: str, priority: str, 
         "max_retries": 3,
         "depends_on": depends_on_list,
         "notes": notes,
-    })
+    }
+    if source_ref is not None:
+        payload["source_ref"] = source_ref.strip()
+    if expected_base_sha is not None:
+        payload["expected_base_sha"] = expected_base_sha
+    await bus.emit("heartbeat", payload)
     print(f"enqueued: {task_id} ({phase}, {priority_enum.name})")
 
 
@@ -909,9 +947,19 @@ _TASK_EVENT_KINDS = (
 async def _task_snapshot(
     bus: GossipBus, task_id: str, events: Optional[list[dict]] = None
 ) -> Optional[dict]:
-    """Fold append-only heartbeat events for one task into a merged snapshot."""
+    """Fold append-only heartbeat events for one task into a merged snapshot.
+
+    Same size-bounded-window risk as agent_coordination_core.py had (an old
+    task's founding task_enqueue event can fall outside the window once
+    enough unrelated heartbeat traffic accumulates) -- the real fix (an
+    unbounded, SQL-narrowed _fetch_task_events query) lives there, not
+    duplicated a third time here, since this whole file is already parked
+    for deletion via docs/next/2026-07-17-coordination-module-
+    consolidation-plan.md's migration step. Bumped the window substantially
+    as an interim mitigation, not a structural fix.
+    """
     if events is None:
-        events = await bus.tail(limit=500, event_type="heartbeat")
+        events = await bus.tail(limit=5000, event_type="heartbeat")
     snapshot: dict = {}
     for ev in reversed(events):
         p = ev["payload"]
@@ -922,7 +970,7 @@ async def _task_snapshot(
 
 async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> None:
     """Claim a queued task, blocking if already claimed or deps not satisfied."""
-    events = await bus.tail(limit=500, event_type="heartbeat")
+    events = await bus.tail(limit=5000, event_type="heartbeat")
     task_state = await _task_snapshot(bus, task_id, events=events)
     if not task_state:
         print(f"ERROR: task {task_id} not found")
@@ -957,6 +1005,15 @@ async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> None:
 
 async def _queue_complete(bus: GossipBus, task_id: str, notes: str) -> None:
     """Mark a task as completed."""
+    task_state = await _task_snapshot(bus, task_id)
+    if not task_state:
+        print(f"ERROR: task {task_id} not found")
+        return
+    status = task_state.get("status")
+    if status != QueuedTaskState.CLAIMED.value:
+        print(f"ERROR: {task_id} is not claimed (status: {status or 'unknown'}); "
+              "only a currently-claimed task can be completed.")
+        return
     await bus.emit("heartbeat", {
         "kind": "task_complete",
         "task_id": task_id,
@@ -971,6 +1028,11 @@ async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> None:
     task_state = await _task_snapshot(bus, task_id)
     if not task_state:
         print(f"ERROR: task {task_id} not found")
+        return
+    status = task_state.get("status")
+    if status != QueuedTaskState.CLAIMED.value:
+        print(f"ERROR: {task_id} is not claimed (status: {status or 'unknown'}); "
+              "only a currently-claimed task can be failed.")
         return
     retry_count = task_state.get("retry_count", 0) + 1
     max_retries = task_state.get("max_retries", 3)
