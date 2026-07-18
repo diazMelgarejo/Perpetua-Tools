@@ -1,0 +1,42 @@
+{
+  "id": "07e0aca4e41a",
+  "key": "manual_07e0ac",
+  "name": "manual_07e0ac",
+  "claim": "G7 portal notification MVP must preserve v2 adapter seams (version, type, event_type, ts, source, data, payload envelope fields) without implementing v2.1 GossipMesh replication, v2.5 safety overlays, or mesh endpoints in the v1 MVP branch. Test constants lock the future-spec references so later edits cannot silently expand scope.",
+  "conditions": [
+    "g7",
+    "gossipmesh",
+    "notifications",
+    "scope-control",
+    "v2-alignment"
+  ],
+  "evidence_ids": [
+    "2026-07-18T01:59:57.994314+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T01:59:57.994314+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T01:59:57.994314+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T01:59:58.086042+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-14: G7-Async-notifications-mvp branch aligned with docs/v2 specs; tests and constants prevent scope creep into mesh/safety features.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T01:59:57.994314+00:00"
+      ],
+      "lessons_sha": "ced52b4a1c2f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T01:59:58.086026+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-14: G7-Async-notifications-mvp branch aligned with docs/v2 specs; tests and constants prevent scope creep into mesh/safety features."
+}

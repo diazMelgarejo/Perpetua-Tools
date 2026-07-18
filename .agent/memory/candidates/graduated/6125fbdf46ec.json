@@ -1,0 +1,42 @@
+{
+  "id": "6125fbdf46ec",
+  "key": "manual_6125fb",
+  "name": "manual_6125fb",
+  "claim": "For idempotent clinebot CLI installation in install.sh/start.sh, compare installed version against npm registry via 'npm view <package> version' before installing; skip if versions match to avoid redundant fetches. Use 'command -v' guard before calling --version to prevent errors on missing binary, and fall back to the current install if the registry is unreachable.",
+  "conditions": [
+    "clinebot",
+    "idempotent-install",
+    "install-sh",
+    "npm-view",
+    "startup"
+  ],
+  "evidence_ids": [
+    "2026-07-18T01:59:57.230472+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T01:59:57.230472+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T01:59:57.230472+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T01:59:57.330496+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Discussed 2026-07-14: npm view is a lightweight registry metadata query (~50ms, no download). This pattern works for any npm-published CLI tool (clinebot, firecrawl-cli, etc.) and prevents redundant installs in CI/startup scripts.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T01:59:57.230472+00:00"
+      ],
+      "lessons_sha": "ea4478038fbc"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T01:59:57.330484+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Discussed 2026-07-14: npm view is a lightweight registry metadata query (~50ms, no download). This pattern works for any npm-published CLI tool (clinebot, firecrawl-cli, etc.) and prevents redundant installs in CI/startup scripts."
+}
