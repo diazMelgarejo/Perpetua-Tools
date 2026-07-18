@@ -123,6 +123,10 @@ EventType = Literal[
     "error",
     "heartbeat",
     "fleet_topology_transition",
+    "fleet_topology_stale",
+    "fleet_topology_recovered",
+    "split_brain_detected",
+    "split_brain_resolved",
 ]
 
 
