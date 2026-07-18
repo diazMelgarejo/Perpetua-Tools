@@ -86,7 +86,7 @@ from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from orchestrator.gossip_bus import GossipBus  # noqa: E402
+from orchestrator.gossip_bus import GossipBus, _canonical_repo_state_dir  # noqa: E402
 from orchestrator.lan_gossip_bridge import make_gossip_bus  # noqa: E402
 
 
@@ -294,11 +294,17 @@ class PhaseState:
 
 
 def canonical_repo_root() -> Path:
-    """Resolve the shared repo root common to every worktree of this repo."""
-    common_dir = subprocess.check_output(
-        ["git", "rev-parse", "--git-common-dir"], text=True
-    ).strip()
-    return Path(common_dir).resolve().parent
+    """Resolve the shared repo root common to every worktree of this repo.
+
+    Delegates to gossip_bus._canonical_repo_state_dir(), the single
+    canonical resolver -- it already handles submodule/bare-repo anchoring,
+    a subprocess timeout, and error fallback correctly; this file's own
+    prior inline reimplementation had none of those and would raise
+    uncaught on a git failure. Falls back to cwd only when git resolution
+    itself fails (not in a repo).
+    """
+    state = _canonical_repo_state_dir()
+    return state.parent if state is not None else Path.cwd()
 
 
 def canonical_db_path() -> str:
@@ -909,9 +915,19 @@ _TASK_EVENT_KINDS = (
 async def _task_snapshot(
     bus: GossipBus, task_id: str, events: Optional[list[dict]] = None
 ) -> Optional[dict]:
-    """Fold append-only heartbeat events for one task into a merged snapshot."""
+    """Fold append-only heartbeat events for one task into a merged snapshot.
+
+    Same size-bounded-window risk as agent_coordination_core.py had (an old
+    task's founding task_enqueue event can fall outside the window once
+    enough unrelated heartbeat traffic accumulates) -- the real fix (an
+    unbounded, SQL-narrowed _fetch_task_events query) lives there, not
+    duplicated a third time here, since this whole file is already parked
+    for deletion via docs/next/2026-07-17-coordination-module-
+    consolidation-plan.md's migration step. Bumped the window substantially
+    as an interim mitigation, not a structural fix.
+    """
     if events is None:
-        events = await bus.tail(limit=500, event_type="heartbeat")
+        events = await bus.tail(limit=5000, event_type="heartbeat")
     snapshot: dict = {}
     for ev in reversed(events):
         p = ev["payload"]
@@ -922,7 +938,7 @@ async def _task_snapshot(
 
 async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> None:
     """Claim a queued task, blocking if already claimed or deps not satisfied."""
-    events = await bus.tail(limit=500, event_type="heartbeat")
+    events = await bus.tail(limit=5000, event_type="heartbeat")
     task_state = await _task_snapshot(bus, task_id, events=events)
     if not task_state:
         print(f"ERROR: task {task_id} not found")
@@ -957,6 +973,15 @@ async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> None:
 
 async def _queue_complete(bus: GossipBus, task_id: str, notes: str) -> None:
     """Mark a task as completed."""
+    task_state = await _task_snapshot(bus, task_id)
+    if not task_state:
+        print(f"ERROR: task {task_id} not found")
+        return
+    status = task_state.get("status")
+    if status != QueuedTaskState.CLAIMED.value:
+        print(f"ERROR: {task_id} is not claimed (status: {status or 'unknown'}); "
+              "only a currently-claimed task can be completed.")
+        return
     await bus.emit("heartbeat", {
         "kind": "task_complete",
         "task_id": task_id,
@@ -971,6 +996,11 @@ async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> None:
     task_state = await _task_snapshot(bus, task_id)
     if not task_state:
         print(f"ERROR: task {task_id} not found")
+        return
+    status = task_state.get("status")
+    if status != QueuedTaskState.CLAIMED.value:
+        print(f"ERROR: {task_id} is not claimed (status: {status or 'unknown'}); "
+              "only a currently-claimed task can be failed.")
         return
     retry_count = task_state.get("retry_count", 0) + 1
     max_retries = task_state.get("max_retries", 3)

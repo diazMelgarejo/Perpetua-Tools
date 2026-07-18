@@ -207,6 +207,18 @@ def test_canonical_repo_root_is_git_directory():
     assert (root / ".git").exists() or (root / ".git").is_symlink()
 
 
+def test_canonical_repo_root_independent_of_pt_state_dir(monkeypatch):
+    """Regression: canonical_repo_root() must derive the repo root from git
+    directly, never from resolve_default_state_dir()/PT_STATE_DIR -- runtime
+    state location is a configurable override; repository identity is not,
+    and must never be influenced by where state happens to be pointed."""
+    real_root = canonical_repo_root()
+    monkeypatch.setenv("PT_STATE_DIR", "/tmp/totally-unrelated-scratch-dir")
+    root_with_override = canonical_repo_root()
+    assert root_with_override == real_root
+    assert "totally-unrelated-scratch-dir" not in str(root_with_override)
+
+
 def test_canonical_db_path_looks_sane():
     path = canonical_db_path()
     assert path.endswith(".state/perpetua_core.db")

@@ -57,7 +57,20 @@ class LanGossipBridge:
         """
         await self.local.init_db()
 
-    async def connect(self):
+    def connect(self):
+        """Return the local bus's connection context manager directly.
+
+        Deliberately a plain method, not async def -- GossipBus.connect()
+        itself returns an aiosqlite context manager object synchronously
+        (aiosqlite.connect() is awaitable-and-context-manager, not a plain
+        coroutine). Wrapping this in async def would make bridge.connect()
+        return a coroutine instead, breaking `async with bus.connect() as
+        db:` for every caller (_ensure_claims_table, the claim/release
+        helpers, etc.) that expects the same drop-in contract as the plain
+        GossipBus this class wraps -- they'd need an extra `await` just to
+        unwrap the coroutine before the context manager becomes usable,
+        which none of them do or should have to.
+        """
         return self.local.connect()
 
     async def insert_event(

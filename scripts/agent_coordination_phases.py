@@ -23,7 +23,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-import subprocess
 import sys
 import time
 from dataclasses import dataclass, field
@@ -33,7 +32,7 @@ from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from orchestrator.gossip_bus import GossipBus  # noqa: E402
+from orchestrator.gossip_bus import GossipBus, _canonical_repo_state_dir  # noqa: E402
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -105,11 +104,17 @@ class PhaseState:
 
 
 def canonical_repo_root() -> Path:
-    """Resolve the shared repo root common to every worktree of this repo."""
-    common_dir = subprocess.check_output(
-        ["git", "rev-parse", "--git-common-dir"], text=True
-    ).strip()
-    return Path(common_dir).resolve().parent
+    """Resolve the shared repo root common to every worktree of this repo.
+
+    Delegates to gossip_bus._canonical_repo_state_dir(), the single
+    canonical resolver -- it already handles submodule/bare-repo anchoring,
+    a subprocess timeout, and error fallback correctly; this file's own
+    prior inline reimplementation had none of those and would raise
+    uncaught on a git failure. Falls back to cwd only when git resolution
+    itself fails (not in a repo).
+    """
+    state = _canonical_repo_state_dir()
+    return state.parent if state is not None else Path.cwd()
 
 
 def canonical_db_path() -> str:
