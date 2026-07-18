@@ -80,3 +80,77 @@ line_matches_banned_pattern() {
   done < <(list_banned_pattern_tokens "$root" 2>/dev/null || true)
   return 1
 }
+
+openclaw_workspace_root() {
+  local root="${1:-}"
+  if [[ -z "$root" ]]; then
+    root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+  fi
+  local cur="$root"
+  while [[ "$cur" != "/" && -n "$cur" ]]; do
+    if [[ -d "$cur/orama-system" ]]; then
+      printf '%s' "$cur"
+      return 0
+    fi
+    cur="$(dirname "$cur")"
+  done
+  printf '%s' "$root"
+}
+
+verboten_literals_file() {
+  local root="${1:-}"
+  if [[ -n "${OPENCLAW_VERBOTEN_LITERALS:-}" ]]; then
+    printf '%s' "$OPENCLAW_VERBOTEN_LITERALS"
+    return 0
+  fi
+  printf '%s/.verboten-literals.local' "$(openclaw_workspace_root "$root")"
+}
+
+list_private_literal_values() {
+  local root="${1:-}" selector="${2:-}" f raw key value
+  f="$(verboten_literals_file "$root")"
+  [[ -f "$f" ]] || return 1
+  while IFS= read -r raw || [[ -n "$raw" ]]; do
+    raw="${raw%%#*}"
+    raw="$(printf '%s' "$raw" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+    [[ -n "$raw" ]] || continue
+    case "$raw" in
+      *=*)
+        key="${raw%%=*}"
+        key="$(printf '%s' "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+        value="${raw#*=}"
+        value="$(printf '%s' "$value" | tr -d '[:space:]')"
+        [[ -n "$value" ]] || continue
+        [[ -z "$selector" || "$key" == "$selector" ]] || continue
+        printf '%s\n' "$value"
+        ;;
+    esac
+  done <"$f"
+}
+
+private_owner_email_ok() {
+  local email_lc="$1" root="${2:-}" token token_lc
+  while IFS= read -r token; do
+    token_lc="$(printf '%s' "$token" | tr '[:upper:]' '[:lower:]')"
+    [[ "$email_lc" == "$token_lc" ]] && return 0
+  done < <(list_private_literal_values "$root" owner_gmail 2>/dev/null || true)
+  return 1
+}
+
+private_owner_name_ok() {
+  local name_lc="$1" root="${2:-}" token token_lc
+  while IFS= read -r token; do
+    token_lc="$(printf '%s' "$token" | tr '[:upper:]' '[:lower:]')"
+    [[ "$name_lc" == *"$token_lc"* ]] && return 0
+  done < <(list_private_literal_values "$root" owner_name 2>/dev/null || true)
+  return 1
+}
+
+line_matches_private_forbidden_literal() {
+  local line_lc="$1" root="${2:-}" token token_lc
+  while IFS= read -r token; do
+    token_lc="$(printf '%s' "$token" | tr '[:upper:]' '[:lower:]')"
+    [[ "$line_lc" == *"$token_lc"* ]] && return 0
+  done < <(list_private_literal_values "$root" forbidden_attribution 2>/dev/null || true)
+  return 1
+}

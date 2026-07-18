@@ -19,7 +19,6 @@ from pathlib import Path
 APPROVED_IDENTITIES = {
     ("cyre", "Lawrence@cyre.me"),
     ("cyre", "diazMelgarejo@gmail.com"),
-    ("cyre", "Lawrence.Melgarejo@gmail.com"),
     ("Codex", "codex@openai.com"),
 }
 # Keep in sync with scripts/git/check_identity.sh (local hooks + pre-commit).
@@ -53,6 +52,7 @@ PERSONAL_PATH_EXCEPTIONS = {
     # path_hygiene unit tests use /Users/alice, /home/bob as test fixtures —
     # the file exists specifically to verify the scrubber catches these patterns.
     "tests/test_path_hygiene.py",
+    "tests/test_path_hygiene_identity_scrub.py",
 }
 # Hidden / bidirectional Unicode controls — Trojan-Source defense (CVE-2021-42574).
 # These can hide malicious code in diffs. Block in all tracked files except the
@@ -217,6 +217,7 @@ GENERATED_ARTIFACT_EXCEPTIONS: frozenset[str] = frozenset({
     "packages/alphaclaw-mcp/build/index.js",
     "packages/alphaclaw-mcp/build/is-direct-execution.js",
 })
+VERBOTEN_LITERALS_FILE = ".verboten-literals.local"
 
 GENERATED_ARTIFACT_PATTERNS = (
     ".DS_Store",
@@ -287,6 +288,36 @@ def run_git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
+def openclaw_workspace_root(root: Path) -> Path:
+    for candidate in (root, *root.parents):
+        if (candidate / "orama-system").is_dir():
+            return candidate
+    return root
+
+
+def private_literal_values(root: Path, key: str) -> list[str]:
+    configured_path = os.getenv("OPENCLAW_VERBOTEN_LITERALS")
+    path = Path(configured_path) if configured_path else openclaw_workspace_root(root) / VERBOTEN_LITERALS_FILE
+    if not path.is_file():
+        return []
+    values: list[str] = []
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return []
+    for raw in lines:
+        raw = raw.split("#", 1)[0].strip()
+        if not raw or "=" not in raw:
+            continue
+        raw_key, value = raw.split("=", 1)
+        if raw_key.strip() != key:
+            continue
+        value = "".join(value.split())
+        if value:
+            values.append(value)
+    return values
+
+
 def tracked_files(root: Path) -> list[str]:
     proc = run_git(root, "ls-files")
     if proc.returncode != 0:
@@ -318,6 +349,45 @@ def scan_forbidden_identity(root: Path, files: list[str]) -> list[str]:
             if token in text:
                 errors.append(f"forbidden identity token in tracked file: {rel}")
                 break
+    return errors
+
+
+def scan_private_verboten_literals(root: Path, files: list[str]) -> list[str]:
+    tokens = [
+        token.casefold()
+        for key in ("owner_gmail", "owner_name", "forbidden_attribution")
+        for token in private_literal_values(root, key)
+    ]
+    if not tokens:
+        return []
+    # Narrow, mechanically-defined exception: AUTHORIZED_CONTRIBUTORS.md's whole
+    # purpose is to list the real approved identity, so the canonical
+    # "cyre <email>" line there is not a leak. This does NOT exempt the file
+    # generally -- only that exact recognized format, so any other private
+    # token anywhere else (including elsewhere in the same file) still blocks.
+    errors: list[str] = []
+    for rel in files:
+        path = root / rel
+        if not path.is_file() or is_binary(path):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        text_lc = text.casefold()
+        is_allowlisted_file = rel == ".github/AUTHORIZED_CONTRIBUTORS.md"
+        for token in tokens:
+            if token not in text_lc:
+                continue
+            if is_allowlisted_file and f"cyre <{token}>" in text_lc:
+                # Approved mechanical format for this one file only; a bare
+                # occurrence of the token elsewhere in the same file still
+                # falls through to the error below.
+                remaining = text_lc.replace(f"cyre <{token}>", "")
+                if token not in remaining:
+                    continue
+            errors.append(f"private verboten literal in tracked file: {rel}")
+            break
     return errors
 
 
@@ -476,7 +546,22 @@ def check_identity(root: Path) -> list[str]:
     email = run_git(root, "config", "user.email").stdout.strip()
     if os.getenv("GITHUB_ACTIONS") == "true" and not name and not email:
         return []
-    if (name, email) not in APPROVED_IDENTITIES:
+    identities = set(APPROVED_IDENTITIES)
+    private_emails = {
+        value.casefold() for value in private_literal_values(root, "owner_gmail")
+    }
+    private_names = [
+        value.casefold() for value in private_literal_values(root, "owner_name")
+    ]
+    # Backward compatible: if no owner_name is configured, fall back to the
+    # prior hardcoded "cyre" pairing rather than silently rejecting every
+    # private-email identity for configs that never set owner_name.
+    name_tokens = private_names or ["cyre"]
+    private_identity_ok = (
+        email.casefold() in private_emails
+        and any(token in name.casefold() for token in name_tokens)
+    )
+    if (name, email) not in identities and not private_identity_ok:
         expected = " or ".join(f"{n} <{e}>" for n, e in sorted(APPROVED_IDENTITIES))
         return [
             "git identity mismatch: "
@@ -537,6 +622,7 @@ def main() -> int:
     errors.extend(check_generated_artifact_tracking(files))
     errors.extend(check_git_internal_junk(root))
     errors.extend(check_workflow_permissions(root))
+    errors.extend(scan_private_verboten_literals(root, files))
 
     for line in report_status(root):
         print(f"INFO: {line}")

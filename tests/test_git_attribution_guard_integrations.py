@@ -25,7 +25,6 @@ CHECK_COMMIT_MESSAGE = ROOT / "scripts/git/check_commit_message.sh"
 AUTHORIZED_HUMAN_MARKERS = (
     "diazMelgarejo",
     "diaz.Melgarejo",
-    "Lawrence.Melgarejo",
 )
 
 
@@ -44,6 +43,16 @@ def _pattern_tokens() -> set[str]:
         if token:
             tokens.add(token)
     return tokens
+
+
+def _private_owner_email_fixture(tmp_path: Path) -> tuple[Path, str]:
+    private_email = "private.owner@gmail.com"
+    literals = tmp_path / "verboten.local"
+    literals.write_text(
+        f"owner_gmail={private_email}\nowner_name=Private.Owner\n",
+        encoding="utf-8",
+    )
+    return literals, private_email
 
 
 def _call_first_banned_pattern_token(root: Path) -> subprocess.CompletedProcess[str]:
@@ -67,22 +76,13 @@ def test_banned_patterns_do_not_forbid_authorized_human_identities():
     forbidden = {
         "diazmelgarejo",
         "diaz.melgarejo",
-        "lawrence.melgarejo",
         "diazmelgarejo@gmail.com",
-        "lawrence.melgarejo@gmail.com",
     }
     assert tokens.isdisjoint(forbidden)
 
 
-@pytest.mark.parametrize(
-    ("name", "email"),
-    [
-        ("diazMelgarejo", "diazMelgarejo@gmail.com"),
-        ("diaz.Melgarejo", "diazMelgarejo@gmail.com"),
-        ("Lawrence.Melgarejo", "Lawrence.Melgarejo@gmail.com"),
-    ],
-)
-def test_check_identity_allows_authorized_human_authors_even_in_cursor_context(name, email):
+@pytest.mark.parametrize("name", ["diazMelgarejo", "diaz.Melgarejo"])
+def test_check_identity_allows_public_authorized_human_authors_even_in_cursor_context(name):
     """Approved human authors must remain valid even when Cursor env vars exist."""
     proc = subprocess.run(
         ["bash", str(CHECK_IDENTITY)],
@@ -96,26 +96,42 @@ def test_check_identity_allows_authorized_human_authors_even_in_cursor_context(n
             "GIT_CONFIG_KEY_0": "user.name",
             "GIT_CONFIG_VALUE_0": name,
             "GIT_CONFIG_KEY_1": "user.email",
-            "GIT_CONFIG_VALUE_1": email,
+            "GIT_CONFIG_VALUE_1": "diazMelgarejo@gmail.com",
         },
     )
     assert proc.returncode == 0, proc.stderr
     assert "approved" in proc.stdout
 
 
-@pytest.mark.parametrize(
-    ("name", "email"),
-    [
-        ("diazMelgarejo", "diazMelgarejo@gmail.com"),
-        ("diaz.Melgarejo", "diazMelgarejo@gmail.com"),
-        ("Lawrence.Melgarejo", "Lawrence.Melgarejo@gmail.com"),
-    ],
-)
-def test_check_commit_message_allows_authorized_human_coauthors(tmp_path, name, email):
+def test_check_identity_allows_private_owner_email_from_external_file(tmp_path):
+    """The private owner email is allowed only through a local-only literals file."""
+    literals, private_email = _private_owner_email_fixture(tmp_path)
+    proc = subprocess.run(
+        ["bash", str(CHECK_IDENTITY)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        env={
+            **os.environ,
+            "CURSOR_SESSION_ID": "test-session",
+            "OPENCLAW_VERBOTEN_LITERALS": str(literals),
+            "GIT_CONFIG_COUNT": "2",
+            "GIT_CONFIG_KEY_0": "user.name",
+            "GIT_CONFIG_VALUE_0": "Private.Owner",
+            "GIT_CONFIG_KEY_1": "user.email",
+            "GIT_CONFIG_VALUE_1": private_email,
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "approved" in proc.stdout
+
+
+@pytest.mark.parametrize("name", ["diazMelgarejo", "diaz.Melgarejo"])
+def test_check_commit_message_allows_public_authorized_human_coauthors(tmp_path, name):
     """Approved human identities are valid Co-authored-by trailers."""
     msg = tmp_path / "COMMIT_EDITMSG"
     msg.write_text(
-        f"feat: x\n\nCo-authored-by: {name} <{email}>\n",
+        f"feat: x\n\nCo-authored-by: {name} <diazMelgarejo@gmail.com>\n",
         encoding="utf-8",
     )
     proc = subprocess.run(
@@ -123,6 +139,23 @@ def test_check_commit_message_allows_authorized_human_coauthors(tmp_path, name, 
         cwd=ROOT,
         capture_output=True,
         text=True,
+    )
+    assert proc.returncode == 0, proc.stderr
+
+
+def test_check_commit_message_allows_private_owner_email_from_external_file(tmp_path):
+    literals, private_email = _private_owner_email_fixture(tmp_path)
+    msg = tmp_path / "COMMIT_EDITMSG"
+    msg.write_text(
+        f"feat: x\n\nCo-authored-by: Private.Owner <{private_email}>\n",
+        encoding="utf-8",
+    )
+    proc = subprocess.run(
+        ["bash", str(CHECK_COMMIT_MESSAGE), str(msg)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        env={**os.environ, "OPENCLAW_VERBOTEN_LITERALS": str(literals)},
     )
     assert proc.returncode == 0, proc.stderr
 

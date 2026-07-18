@@ -5,6 +5,10 @@ set -euo pipefail
 
 msg_file="${1:?commit message file required}"
 [[ -f "$msg_file" ]] || { echo "ERROR: missing commit message file: $msg_file" >&2; exit 1; }
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# shellcheck source=banned_attribution_lib.sh
+source "$SCRIPT_DIR/banned_attribution_lib.sh"
 
 ALLOWED_EXACT_COAUTHOR_EMAILS=(
   cursoragent@cursor.com
@@ -18,7 +22,6 @@ ALLOWED_EXACT_COAUTHOR_EMAILS=(
 
 ALLOWED_GMAIL_COAUTHORS=(
   diazmelgarejo@gmail.com
-  lawrence.melgarejo@gmail.com
 )
 
 WELL_KNOWN_COAUTHOR_DOMAIN_SUFFIXES=(
@@ -80,7 +83,6 @@ WELL_KNOWN_COAUTHOR_NAME_MARKERS=(
   kimi
   diazmelgarejo
   diaz.melgarejo
-  lawrence.melgarejo
 )
 
 email_domain_ok() {
@@ -104,6 +106,7 @@ gmail_allowed() {
       return 0
     fi
   done
+  private_owner_email_ok "$email_lc" "$REPO_ROOT" && return 0
   return 1
 }
 
@@ -137,6 +140,7 @@ coauthor_line_ok() {
       return 0
     fi
   done
+  private_owner_name_ok "$line_lc" "$REPO_ROOT" && return 0
 
   return 1
 }
@@ -145,6 +149,11 @@ while IFS= read -r line || [[ -n "$line" ]]; do
   case "$line" in
     [Cc]o-[Aa]uthor*)
       line_lc="$(printf '%s' "$line" | tr '[:upper:]' '[:lower:]')"
+      if line_matches_private_forbidden_literal "$line_lc" "$REPO_ROOT"; then
+        echo "ERROR: Co-authored-by contains forbidden private attribution" >&2
+        echo "  $line" >&2
+        exit 1
+      fi
       if ! coauthor_line_ok "$line_lc"; then
         echo "ERROR: Co-authored-by not on approved co-author policy:" >&2
         echo "  $line" >&2

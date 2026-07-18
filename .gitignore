@@ -5,6 +5,7 @@
 !.env.local.example
 .env.local
 .env.lmstudio
+.verboten-literals.local
 *.pem
 *.key
 *.p12
