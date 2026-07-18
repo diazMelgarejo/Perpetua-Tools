@@ -22,6 +22,7 @@ from scripts.agent_coordination_legacy import (  # noqa: E402
     TaskPriority,
     current_worktree_label,
 )
+from scripts import agent_coordination_core as _core  # noqa: E402
 from scripts.agent_coordination_core import (  # noqa: E402
     ClaimResult,
     ClaimSequence,
@@ -272,7 +273,11 @@ for _patched_name in (
     "_heartbeat_timeline",
     "_heartbeat_cleanup",
 ):
-    setattr(_impl, _patched_name, globals()[_patched_name])
+    _patched = globals()[_patched_name]
+    setattr(_impl, _patched_name, _patched)
+    # core.main() is the real CLI entrypoint; legacy-only patches left the
+    # broken core implementations live for queue fail/claim/complete.
+    setattr(_core, _patched_name, _patched)
 
 if __name__ == "__main__":
     raise SystemExit(main())
