@@ -61,15 +61,26 @@ implementation to carry forward, not four ~94-98%-identical partial ones.
 The architecture work is not premature investment in a soon-to-be-replaced
 repo; it's cleanup so v2 doesn't inherit the ambiguity.
 
-Also verified as reassuring, already-resolved context: the user separately
-raised "the database is scattered in 5 places." Confirmed — 5 call sites
-resolve a gossip DB path (`orchestrator/memory_node.py`,
-`orchestrator/supervisor.py` ×2, `orchestrator/lan_gossip_bridge.py` ×2). All
-5 already route through the single canonical `resolve_gossip_db_path()` /
-`_canonical_repo_state_dir()` resolver that PR #256 (merged) introduced. The
-DB-path fragmentation this describes is real history, not a live gap — it's
-already fixed, and is distinct from (but related in spirit to) the *code*
-fragmentation (4 file copies) this plan addresses.
+Partially reassuring, partially a correction: the user separately raised "the
+database is scattered in 5 places." An earlier pass confirmed 5 call sites
+(`orchestrator/memory_node.py`, `orchestrator/supervisor.py` ×2,
+`orchestrator/lan_gossip_bridge.py` ×2) all route through the canonical
+`resolve_gossip_db_path()` / `_canonical_repo_state_dir()` resolver PR #256
+introduced — that part is genuinely fixed. **What that pass missed: the
+`agent_coordination*.py` file family — the exact subject of this plan — has
+its own, separate, triplicated path resolver that does NOT go through
+`resolve_gossip_db_path()` at all.** `agent_coordination_core.py:298-307`,
+`agent_coordination_legacy.py` (same lines), and `agent_coordination_phases.py`
+each independently define their own `canonical_repo_root()` /
+`canonical_db_path()` via a direct `git rev-parse --git-common-dir` call —
+none of them read `PT_STATE_DIR`, `GOSSIP_DB_PATH`, or any env var. `main()`'s
+real dispatch path (`core._amain()`) calls this non-canonical, env-blind
+version, not `gossip_bus.py`'s resolver. Caught by this session's Eng-phase
+Claude subagent review, independently of both CEO voices and Codex's
+engineering audit — the same "fix landed in one copy, not others" failure
+class this plan exists to fix, recurring a third time, this time in path
+resolution rather than business logic. See Part 1's revised verification
+section and the new provenance-table row below.
 
 ## Why this exists
 
@@ -140,12 +151,15 @@ This plan is **deliberately not part of PR #256**. PR #256 is the point fix (can
 
 | Symbol | Source to promote into `core.py` | Why |
 |---|---|---|
-| `_try_atomic_claim`, `_release_claim`, `_release_claim_with_event` | facade (`agent_coordination.py:131-229`) | The only implementations with real atomicity (`BEGIN IMMEDIATE` + UNIQUE-constrained `task_claims` table + retry-on-lock). Core's current versions have no such protection. |
+| `canonical_repo_root`, `canonical_db_path` | delegate to `orchestrator.gossip_bus`'s `resolve_gossip_db_path()`/`resolve_default_state_dir()` instead of re-deriving independently | **New (Eng-phase finding):** core's own version of these two functions is a third, undiscovered duplicate — env-var-blind, doesn't honor `PT_STATE_DIR`/`GOSSIP_DB_PATH`. `agent_coordination_legacy.py` and `agent_coordination_phases.py` carry byte-for-byte copies. This is required for Part 1's own verification gate to actually run isolated — without it, every "isolated" subprocess test below silently writes to the real repo's live coordination database. |
+| `_try_atomic_claim`, `_release_claim_with_event` | facade (`agent_coordination.py:131-182, 193-232`) | The only implementations with real atomicity (`BEGIN IMMEDIATE` + UNIQUE-constrained `task_claims` table + retry-on-lock). Core's current versions have no such protection. (`_release_claim`, the bare no-event variant, has zero call sites anywhere in `scripts/`, `orchestrator/`, or `tests/` — confirmed by grep. Drop it rather than promote unused surface area.) |
 | `_queue_claim`, `_queue_complete`, `_queue_fail` | facade | Facade's versions call the atomic helpers above; core's don't. |
 | `_phase_list` | already fixed identically in both (post-`9642ae24`) — no change needed, just confirm both stay in sync until Part 2 deletes the duplicate | — |
 | 7 heartbeat handlers (`list`, `check`, `dashboard`, `pulse`, `kill`, `timeline`, `cleanup`) | no Part 1 move | Core already parses and dispatches all seven leaves through lazy facade imports. Characterize that live path in Phase 0F, then migrate the handlers once into `liveness.py` in Part 2. |
 
 **Verification (required before landing Part 1):**
+
+The original draft of this section had two bugs found by this session's own Eng-phase review, corrected below: the race script's hardcoded task ID never matches what `_queue_add` actually generates (`f"{phase}-{task_name}-{uuid.uuid4().hex[:8]}"`, not the literal string passed in), and `PT_STATE_DIR` doesn't isolate anything until the `canonical_db_path` fix above lands — both are folded into the corrected script:
 
 ```bash
 # Confirm main() now resolves the atomic-safe implementations:
@@ -155,15 +169,24 @@ from scripts.agent_coordination_core import _queue_claim
 print(inspect.getsource(_queue_claim))
 "  # must show _try_atomic_claim in the body, not a plain emit
 
-# Real CLI-path race test — the actual bug being fixed:
+# Real CLI-path race test — the actual bug being fixed. Requires the
+# canonical_db_path delegation above to be in place first, or this pollutes
+# the live repo's coordination database instead of testing in isolation.
 python3 -c "
-import asyncio, os, tempfile
+import os, re, subprocess, sys, tempfile, concurrent.futures
 os.environ['PT_STATE_DIR'] = tempfile.mkdtemp()
-import subprocess, sys
-subprocess.run([sys.executable, 'scripts/agent_coordination.py', 'queue', 'add', 'race-task', 'test', '--priority', 'HIGH'], check=True)
-import concurrent.futures
+add = subprocess.run(
+    [sys.executable, 'scripts/agent_coordination.py', 'queue', 'add', 'race-task', 'test', '--priority', 'HIGH'],
+    capture_output=True, text=True, check=True,
+)
+m = re.search(r'enqueued: (\S+)', add.stdout)
+assert m, f'could not parse task_id from queue add output: {add.stdout!r}'
+task_id = m.group(1)
 def claim(agent_num):
-    return subprocess.run([sys.executable, 'scripts/agent_coordination.py', 'queue', 'claim', 'race-task', f'agent-{agent_num}'], capture_output=True, text=True)
+    return subprocess.run(
+        [sys.executable, 'scripts/agent_coordination.py', 'queue', 'claim', task_id, f'agent-{agent_num}'],
+        capture_output=True, text=True,
+    )
 with concurrent.futures.ThreadPoolExecutor(4) as ex:
     results = list(ex.map(claim, range(4)))
 successes = [r for r in results if 'claimed:' in r.stdout]
@@ -176,7 +199,9 @@ uv run --offline python -m pytest tests/ -k "coordination or gossip" -v
 python3 scripts/review/repo_hygiene.py .
 ```
 
-**Effort:** small — moving/replacing ~6 functions within one existing file, plus one new race-condition test. No new files, no deletions, no dispatch-table rewrite. Directly actionable today.
+Reference: the in-repo tests already do this correctly and can be used as a template — `tests/test_agent_coordination_queue.py::test_multiple_agents_cannot_claim_same_task` and `::test_queue_claim_concurrent_race_only_one_succeeds` both extract the real `task_id` from the emitted event before claiming, rather than assuming it.
+
+**Effort:** small — moving/replacing ~5 functions plus the path-resolver delegation, within one existing file, plus one corrected race-condition test. No new files, no deletions, no dispatch-table rewrite. Directly actionable today.
 
 ### Part 1b — database-error contract (separate follow-up)
 
@@ -187,6 +212,15 @@ not part of the queue-claim atomicity repair. Implement it in a separate commit
 with real-entrypoint tests that cover representative read and write failures
 across command families. Do not normalize only the functions touched by Part 1,
 which would leave the CLI with inconsistent error behavior.
+
+**Scope note (Eng-phase finding):** this must also cover the atomic-claim code
+Part 1 promotes, not only plain `emit()`/`tail()`. `_try_atomic_claim` and
+`_release_claim_with_event` already handle `aiosqlite.IntegrityError` and
+lock-related `OperationalError` cleanly, but any other exception (disk full,
+corruption) falls through their bare `except Exception: rollback; raise` with
+no clean CLI message — inconsistent with the rest of the file post-Part-1. If
+Part 1b is scoped to only `gossip_bus.py`'s two functions, this gap will be
+missed since it's a different code path.
 
 ---
 
@@ -230,6 +264,8 @@ Per Codex's audit: a file-level heuristic is too coarse for a mixed implementati
 For every row, before extraction: record source file, symbol, current CLI reachability, tests that exercise it, and the reason it wins. "Best" must be evidence-backed, not asserted.
 
 **`claim` vs `queue claim` — distinct semantics, do not conflate.** These are two different claim mechanisms (the original basic board claim vs. the atomic queued-task claim) that happen to share the verb "claim" in the CLI surface. Keep separate adapter and domain-function names for each even where they overlap syntactically.
+
+**`task_queue.py` breaks the package's own abstraction boundary (Eng-phase finding).** The other five modules touch only `GossipBus.emit()`/`tail()` — an event-log-only interface. `_try_atomic_claim`/`_release_claim_with_event` reach past that: they call `bus.connect()` directly, issue raw `BEGIN IMMEDIATE`, own a private `task_claims` table, and catch `aiosqlite.IntegrityError`/`OperationalError` by name. `task_queue.py` is the only module with a second, SQLite-specific dependency surface the package boundary doesn't abstract. Resolve one of two ways during Phase 1 (package skeleton): promote a proper `GossipBus.atomic_claim()` public primitive so `task_queue.py` stays on the same interface as its siblings, or explicitly document the asymmetry in this table rather than let it stay implicit.
 
 ### Migration sequence (revised — adds Phase 0F freeze + mandatory temporary re-exports)
 
@@ -425,13 +461,33 @@ async def test_heartbeat_cleanup_releases_actually_stale_claim(bus, capsys, monk
 
 @pytest.mark.asyncio
 async def test_workflow_critical_path_orders_by_dependency(bus, capsys):
+    # Eng-phase finding: the original version of this test captured output
+    # spanning both _phase_start calls, so it passed on _phase_start's own
+    # "started: Phase-1 ..." print noise -- not on _workflow_critical_path's
+    # actual output. Isolate the capture to just the call under test.
     from scripts.agent_coordination_core import _workflow_critical_path, _phase_start
     await _phase_start(bus, "Phase-1", None, "agent-a")
     await _phase_start(bus, "Phase-2", ["Phase-1"], "agent-b")
+    capsys.readouterr()  # discard setup noise from the two _phase_start calls
     await _workflow_critical_path(bus)
     out = capsys.readouterr().out
     assert out.index("Phase-1") < out.index("Phase-2")  # dependency ordering, not just non-empty
 ```
+
+**Real bug this isolation exposes, not just a test artifact:** with the capture
+correctly isolated, this test currently *fails* against live code. Both phases
+have zero `estimated_duration_hours`/elapsed time, and `longest_chain`'s chain-
+extension check (`agent_coordination_core.py:840`) uses strict `sub_duration +
+current_duration > max_duration`. With both sides `0.0`, `0.0 > 0.0` is `False`,
+so the chain never extends past a single node — `Phase-2` never appears in the
+"Longest chain" output at all. This is a real, currently-shipping bug in
+`_workflow_critical_path`, not introduced by this plan, but it means the
+"already fixed, no change needed" characterization test in Step 1 of Part 2's
+Phase 0F cannot simply pin current behavior as correct — it needs to pin the
+bug's existence and decide whether to fix it (change `>` to `>=`, or add an
+explicit tie-break) as part of this migration, or explicitly defer the fix to
+Part 3 while the test documents the known-broken behavior instead of a
+non-existent-correct one.
 
 > First-run protocol unchanged: run once against real code, verify the assertions actually hold, tighten any placeholder before treating a characterization test as pinned.
 
@@ -445,6 +501,8 @@ These are real, evidence-backed follow-ups surfaced during this review. Deferred
 - [ ] **`agent_coordination_phases.py`'s actual current usage is unverified.** `PHASE_TRACKING.md` documents direct invocation, but nobody has confirmed whether those documented workflows are still followed day-to-day or are themselves stale docs. **Caveat: Phase 5's deletion gate must re-check this specifically** (e.g., a deprecation-warning period on the standalone-invocation path before outright removal), not just confirm the Python-level caller graph is clean — the whole point of this finding was that caller-graph alone missed it once already.
 - [ ] **Integrate the clinebot idempotent install pattern** into `install.sh`/`start.sh`. Pattern captured in PT `.agent` memory as `lesson_6125fbdf46ec`. Job-board task `Agent-Setup-Integrate clinebot idempotent install pattern into install.sh/start.sh-595d71da`, currently claimed by `claude-sonnet-g7-impl`, unimplemented. **Caveat: fully unrelated to coordination consolidation** — kept here only because it was riding along in the prior revision's TODO list; track it independently, it has no dependency relationship to Parts 1-2.
 - [ ] **Merge PR #260.** Per the CEO-phase consensus (both dual voices, independently): **un-gate this.** The prior revision paused #260's merge on completing the full migration; both reviews flagged that as sitting on already-reviewed, unrelated value (CodeRabbit fixes, the portable-memory prevention mechanism, 7 passing tests) for an artificial dependency. Caveat: this is a reversal of an explicit prior instruction from earlier in this session — flagging it rather than silently changing it. Recommend merging #260 on its own merits once its own review gates pass, independent of Part 1/2/3's timeline.
+- [ ] **Fixed-window event replay can silently drop terminal state under real load (Eng-phase finding, pre-existing).** Every read path in this file family (`_latest_task_snapshots` limit=1000, `_all_phase_states`/`_get_latest_phase_state` limit=500, `find_agent_heartbeats`/`find_open_claims` limit=200-500, `_get_reorder_buffers` limit=1000) folds the most recent N events *across all kinds*, not the most recent N events for the specific task/phase/agent being queried. Under sustained heartbeat/pulse traffic — the exact load this tool is built for — an older task's `task_complete` event can scroll past the window before a later `_queue_claim` check runs, causing a false `ERROR: task not found` for a task that genuinely completed. **Caveat: predates this plan, Part 2's "no behavior change" scope carries it forward unexamined by design** — worth its own follow-up (per-key windowing or a materialized-state table) rather than folding into a behavior-preserving refactor.
+- [ ] **`_try_atomic_claim`/`_release_claim_with_event` retry budget is unvalidated past 4-way concurrency (Eng-phase finding).** `_LOCK_RETRIES = 3`, `_LOCK_RETRY_SECONDS = 0.05` gives ~150-300ms of backoff before returning an ambiguous "another agent won or the database remained busy" message. Part 1's corrected race test only proves correctness at 4-way concurrency, not at this org's actual observed multi-agent swarm sizes. **Caveat: not a known bug, just an unproven assumption** — worth a load test at realistic fleet size before relying on the retry budget under real contention, not blocking Part 1's landing.
 
 ## Verdict
 
