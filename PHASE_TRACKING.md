@@ -196,7 +196,7 @@ ETA (if started now): +31.5 hours
 
 ### Storage
 
-All phase events are stored in GossipBus using "phase_event" events:
+Phase transitions are stored under GossipBus event **type** `"heartbeat"` (the same event type used by queue and liveness events), distinguished by payload **kind** `"phase_event"` — event type and payload kind are two different fields, not the same thing (verified against `scripts/agent_coordination_core.py`'s `_phase_start`/`_phase_update`/etc., which all call `bus.emit("heartbeat", {"kind": "phase_event", ...})`):
 
 ```json
 {
