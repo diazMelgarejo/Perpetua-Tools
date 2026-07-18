@@ -42,6 +42,7 @@ from scripts.agent_coordination_core import (
     _phase_list as _core_phase_list,
     _phase_start as _core_phase_start,
 )
+import scripts.agent_coordination_core as core_cli
 from orchestrator.gossip_bus import GossipBus
 
 
@@ -213,8 +214,9 @@ async def test_queue_claim_blocks_on_unmet_dependencies(make_bus, capsys):
     task_id = events[0]["payload"]["task_id"]
 
     # Try to claim without dependency being completed
-    await _queue_claim(bus, task_id, "agent-gamma")
+    result = await _queue_claim(bus, task_id, "agent-gamma")
     captured = capsys.readouterr()
+    assert result is False
     assert "ERROR" in captured.err
     assert "unmet dependencies" in captured.err
 
@@ -564,6 +566,41 @@ async def test_queue_claim_concurrent_race_only_one_succeeds(make_bus, capsys):
 
     assert captured.out.count("claimed:") == 1
     assert captured.err.count("ERROR") == 1
+
+
+def test_queue_claim_cli_returns_nonzero_on_duplicate_claim(tmp_path, monkeypatch, capsys):
+    """The live CLI must return nonzero on queue-claim failure."""
+    db_path = tmp_path / "queue_cli.db"
+    bus = GossipBus(str(db_path))
+
+    async def _setup():
+        await bus.init_db()
+        await _queue_add(bus, "cli-duplicate", "Phase-1", "NORMAL", "", None)
+        events = await bus.tail(limit=10, event_type="heartbeat")
+        task_id = events[0]["payload"]["task_id"]
+        await _queue_claim(bus, task_id, "agent-alpha")
+        return task_id
+
+    task_id = asyncio.run(_setup())
+    capsys.readouterr()
+
+    monkeypatch.setattr(core_cli, "canonical_db_path", lambda: str(db_path))
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "agent_coordination.py",
+            "queue",
+            "claim",
+            task_id,
+            "agent-beta",
+        ],
+    )
+    exit_code = core_cli.main()
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert "ERROR" in captured.err
 
 
 async def test_priority_ordering_in_list(make_bus, capsys):

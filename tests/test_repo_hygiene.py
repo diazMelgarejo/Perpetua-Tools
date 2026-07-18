@@ -309,7 +309,7 @@ def test_forbidden_identity_exception_is_exempt(tmp_path):
     assert errors == []
 
 
-def test_agent_memory_owner_gmail_identity_is_blocked(tmp_path):
+def test_agent_memory_owner_gmail_identity_is_blocked(tmp_path, monkeypatch):
     repo_hygiene = load_repo_hygiene()
     literals = tmp_path / "verboten.local"
     private_email = "private.owner@example.invalid"
@@ -317,27 +317,20 @@ def test_agent_memory_owner_gmail_identity_is_blocked(tmp_path):
         f"owner_gmail={private_email}\nowner_name=Private.Owner\n",
         encoding="utf-8",
     )
-    old = os.environ.get("OPENCLAW_VERBOTEN_LITERALS")
-    os.environ["OPENCLAW_VERBOTEN_LITERALS"] = str(literals)
+    monkeypatch.setenv("OPENCLAW_VERBOTEN_LITERALS", str(literals))
     memory = tmp_path / ".agent" / "memory" / "episodic" / "AGENT_LEARNINGS.jsonl"
     memory.parent.mkdir(parents=True)
     memory.write_text(f'{{"author":"{private_email}"}}\n', encoding="utf-8")
 
-    try:
-        errors = repo_hygiene.scan_private_verboten_literals(
-            tmp_path, [".agent/memory/episodic/AGENT_LEARNINGS.jsonl"]
-        )
-    finally:
-        if old is None:
-            os.environ.pop("OPENCLAW_VERBOTEN_LITERALS", None)
-        else:
-            os.environ["OPENCLAW_VERBOTEN_LITERALS"] = old
+    errors = repo_hygiene.scan_private_verboten_literals(
+        tmp_path, [".agent/memory/episodic/AGENT_LEARNINGS.jsonl"]
+    )
 
     assert len(errors) == 1
     assert "private verboten literal in tracked file" in errors[0]
 
 
-def test_private_verboten_literals_are_blocked_case_insensitively(tmp_path):
+def test_private_verboten_literals_are_blocked_case_insensitively(tmp_path, monkeypatch):
     repo_hygiene = load_repo_hygiene()
     literals = tmp_path / "verboten.local"
     private_email = "private.owner@example.invalid"
@@ -349,8 +342,7 @@ def test_private_verboten_literals_are_blocked_case_insensitively(tmp_path):
         f"forbidden_attribution={forbidden_attr}\n",
         encoding="utf-8",
     )
-    old = os.environ.get("OPENCLAW_VERBOTEN_LITERALS")
-    os.environ["OPENCLAW_VERBOTEN_LITERALS"] = str(literals)
+    monkeypatch.setenv("OPENCLAW_VERBOTEN_LITERALS", str(literals))
     contributing = tmp_path / "CONTRIBUTING.md"
     contributing.write_text(f"Use {private_email.upper()}\n", encoding="utf-8")
     template = tmp_path / ".github" / "pull_request_template.md"
@@ -360,53 +352,40 @@ def test_private_verboten_literals_are_blocked_case_insensitively(tmp_path):
         encoding="utf-8",
     )
 
-    try:
-        errors = repo_hygiene.scan_private_verboten_literals(
-            tmp_path, ["CONTRIBUTING.md", ".github/pull_request_template.md"]
-        )
-    finally:
-        if old is None:
-            os.environ.pop("OPENCLAW_VERBOTEN_LITERALS", None)
-        else:
-            os.environ["OPENCLAW_VERBOTEN_LITERALS"] = old
+    errors = repo_hygiene.scan_private_verboten_literals(
+        tmp_path, ["CONTRIBUTING.md", ".github/pull_request_template.md"]
+    )
 
     assert len(errors) == 2
     assert any("CONTRIBUTING.md" in error for error in errors)
     assert any(".github/pull_request_template.md" in error for error in errors)
 
 
-def test_owner_gmail_redaction_rule_allows_mechanical_allowlists(tmp_path):
+def test_owner_gmail_redaction_rule_allows_mechanical_allowlists(tmp_path, monkeypatch):
     repo_hygiene = load_repo_hygiene()
     private_email = "private.owner@example.invalid"
     literals = tmp_path / ".cursor-private-literals"
     literals.write_text(f"owner_gmail={private_email}\n", encoding="utf-8")
 
-    old = os.environ.get("OPENCLAW_VERBOTEN_LITERALS")
-    os.environ["OPENCLAW_VERBOTEN_LITERALS"] = str(literals)
-    try:
-        # The approved mechanical format: AUTHORIZED_CONTRIBUTORS.md's own
-        # canonical identity line. Must be exempt.
-        allowlisted = tmp_path / ".github" / "AUTHORIZED_CONTRIBUTORS.md"
-        allowlisted.parent.mkdir(parents=True)
-        allowlisted.write_text(f"cyre <{private_email}>\n", encoding="utf-8")
+    monkeypatch.setenv("OPENCLAW_VERBOTEN_LITERALS", str(literals))
+    # The approved mechanical format: AUTHORIZED_CONTRIBUTORS.md's own
+    # canonical identity line. Must be exempt.
+    allowlisted = tmp_path / ".github" / "AUTHORIZED_CONTRIBUTORS.md"
+    allowlisted.parent.mkdir(parents=True)
+    allowlisted.write_text(f"cyre <{private_email}>\n", encoding="utf-8")
 
-        # An ordinary occurrence elsewhere must still be blocked -- this is
-        # the assertion that was missing before, which is what let the prior
-        # version of this test pass vacuously (tokens was always empty).
-        ordinary = tmp_path / "NOTES.md"
-        ordinary.write_text(f"contact: {private_email}\n", encoding="utf-8")
+    # An ordinary occurrence elsewhere must still be blocked -- this is
+    # the assertion that was missing before, which is what let the prior
+    # version of this test pass vacuously (tokens was always empty).
+    ordinary = tmp_path / "NOTES.md"
+    ordinary.write_text(f"contact: {private_email}\n", encoding="utf-8")
 
-        allowlisted_errors = repo_hygiene.scan_private_verboten_literals(
-            tmp_path, [".github/AUTHORIZED_CONTRIBUTORS.md"]
-        )
-        ordinary_errors = repo_hygiene.scan_private_verboten_literals(
-            tmp_path, ["NOTES.md"]
-        )
-    finally:
-        if old is None:
-            os.environ.pop("OPENCLAW_VERBOTEN_LITERALS", None)
-        else:
-            os.environ["OPENCLAW_VERBOTEN_LITERALS"] = old
+    allowlisted_errors = repo_hygiene.scan_private_verboten_literals(
+        tmp_path, [".github/AUTHORIZED_CONTRIBUTORS.md"]
+    )
+    ordinary_errors = repo_hygiene.scan_private_verboten_literals(
+        tmp_path, ["NOTES.md"]
+    )
 
     assert allowlisted_errors == []
     assert len(ordinary_errors) == 1
