@@ -234,6 +234,10 @@ no clean CLI message — inconsistent with the rest of the file post-Part-1. If
 Part 1b is scoped to only `gossip_bus.py`'s two functions, this gap will be
 missed since it's a different code path.
 
+### Part 1c — exit code / stderr / split-message fix (today, standalone — see "DX-phase findings" below for full spec)
+
+**Committed, not deferred, not gated on Part 2 Phase 3** (self-audit correction, fourth review pass — an earlier draft incorrectly said this fix bundles into Phase 3's parser rewrite; verified `main()`'s exit path has no structural dependency on argparse dispatch). Full spec, code citations, and the corrected three-part fix (non-zero exit, `sys.stderr` routing, `WON`/`LOST_RACE`/`CONTENTION` result-enum split) live in the "DX-phase findings" section below, under the bullet beginning "Exit code is always `0`" — kept there rather than duplicated here since it's tightly cross-referenced with the Claude/Kimi/Codex attribution chain that found and refined it across three review passes. Effort: small — one return-type change in `_try_atomic_claim`/`_release_claim_with_event`, `sys.exit()`/exception propagation in `main()`, `print(..., file=sys.stderr)` on error paths. No new files, no dispatch-table rewrite.
+
 ### Part 1d — `PHASE_TRACKING.md` rewrite (doc-only, zero code risk, land alongside Part 1)
 
 **Committed here, not deferred** (self-audit correction, third review pass: the
@@ -695,7 +699,8 @@ These are real, evidence-backed follow-ups surfaced during this review. Deferred
 **Strongly recommend folding into Part 1 as "Part 1c" rather than deferring** — this
 one compounds every other verification script in this plan, including Part 1's own:
 
-- [ ] **Exit code is always `0`, regardless of `ERROR:`/`WARNING:` output (Claude subagent + Kimi, independently — Kimi confirmed live: `python3 scripts/agent_coordination.py queue claim nonexistent-task agent-x` prints `ERROR: task nonexistent-task not found` and exits `0`).** `main()` in all three entrypoints ends `asyncio.run(_amain(args)); return 0` unconditionally — no exception path, no `sys.exit(1)`. Every scripted `subprocess.run(..., check=True)` caller (including this plan's own Part 1/Phase 4 verification scripts, which had to resort to `'ERROR:' in r.stdout` instead of checking return codes) cannot detect failure the normal way. **Caveat for why this isn't just deferred like the rest:** it's not a business-logic behavior change (Part 2's non-goal) — it's a scriptability contract fix, and every test this plan's own Phase 0F/4 gates depend on is already working around its absence. Thread a real exit code (or typed exceptions caught at `main()`) through as part of Part 2's Phase 3 dispatch rewrite, since `handle_*` adapters already return to a central `run()` — trivial to have it propagate/raise there.
+- [ ] **Exit code is always `0`, regardless of `ERROR:`/`WARNING:` output (Claude subagent + Kimi, independently — Kimi confirmed live: `python3 scripts/agent_coordination.py queue claim nonexistent-task agent-x` prints `ERROR: task nonexistent-task not found` and exits `0`).** `main()` in `agent_coordination_core.py:1361-1500` ends `return 0` unconditionally — no exception path, no `sys.exit(1)` — verified directly, no other statement between `_amain()`'s call and the unconditional return. Every scripted `subprocess.run(..., check=True)` caller (including this plan's own Part 1/Phase 4 verification scripts, which had to resort to `'ERROR:' in r.stdout` instead of checking return codes) cannot detect failure the normal way. **Caveat for why this isn't just deferred like the rest:** it's not a business-logic behavior change (Part 2's non-goal) — it's a scriptability contract fix, and every test this plan's own Phase 0F/4 gates depend on is already working around its absence.
+  **Landing site, corrected (self-audit, fourth review pass): this does NOT require Part 2 Phase 3's parser rewrite.** An earlier draft of this note said to bundle the fix into Phase 3's dispatch rewrite — that was an unnecessary coupling, not a real dependency. Verified: `main()` (`agent_coordination_core.py:1361`) is a plain function wrapping `asyncio.run(_amain(args))` with nothing structurally tying it to argparse's dispatch mechanism — a nonzero-exit signal can propagate through today's dispatch just as easily as tomorrow's `set_defaults(handler=...)` one. **Part 1c is therefore a real, standalone, today-scoped fix**, consistent with this plan's own Status line ("Parts 1/1b/1c/1d ready to implement today") — not deferred to Part 2.
 
 **Two more pieces of this same finding (Codex, second review pass — the earlier
 note above only committed to the exit-code half; under-specified, corrected
@@ -717,10 +722,11 @@ Fix: change the return type from bare `bool` to a small enum/result type
 distinct values instead of the same `False`; the caller then prints two
 distinct `ERROR:` messages. The information already exists at the exact point
 it's needed (each `except` clause knows which case it's in) — the fix is
-threading it through the return value, not gathering new information. Bundle all three
-(non-zero exit, stderr routing, split messages) into the same Part 2 Phase 3
-dispatch-rewrite work item above — they're one scriptability-contract change,
-not three separate ones.
+threading it through the return value, not gathering new information. All
+three (non-zero exit, stderr routing, split messages) are one scriptability-
+contract change, landing together in **Part 1c, today** — see the corrected
+landing-site note above; none of the three requires Part 2 Phase 3's parser
+rewrite.
 
 **Not deferred — see Part 1d above (self-audit correction, third review pass):**
 
