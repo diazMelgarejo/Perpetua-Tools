@@ -4,7 +4,7 @@
 Date: 2026-07-17 (revised 2026-07-18)
 Repository: `diazMelgarejo/Perpetua-Tools`
 Status: **revised after /autoplan CEO-phase dual-voice review + an independent parallel Codex engineering audit** — Part 1 ready to implement today; Part 2 (architecture) drafted, not yet executed; Part 3 explicitly deferred with caveats.
-Related: `2026-07-17-phase-board-fragmentation-analysis.md` (the bug that motivated this), PT PR #256 (merged — canonical gossip-DB path resolution), PT PR #259 (merged — a *second* independent duplicate-file patch, landed after this plan was first written), `references/coordination-consolidation-review-handoff-2026-07-18.md` (Codex's parallel engineering audit — read in full before touching code), `references/python-argparse-subcommand-dispatch-guidance-2026-07-18.md` (primary-source dispatch pattern)
+Related: `2026-07-17-phase-board-fragmentation-analysis.md` (the bug that motivated this), PT PR #256 (merged — canonical gossip-DB path resolution), PT PR #259 (merged — a *second* independent duplicate-file patch, landed after this plan was first written), `../references/coordination-consolidation-plan-review-2026-07-18.md` (Codex follow-up review), and the [Python `argparse` sub-command documentation](https://docs.python.org/3/library/argparse.html#sub-commands) (primary-source dispatch pattern)
 
 ## Revision note — why this doc changed shape
 
@@ -21,7 +21,7 @@ same two duplicate files (`agent_coordination_core.py`,
 `gh pr view 259`.
 
 While that review ran, Codex separately produced an independent engineering
-audit (the two `references/` docs above) and found something more serious
+audit, later distilled into the follow-up review linked above, and found something more serious
 than either CEO voice: **the live CLI entrypoint bypasses the facade's
 corrected, atomic queue-claim implementation.** This session verified it
 directly, line by line:
@@ -134,7 +134,7 @@ This plan is **deliberately not part of PR #256**. PR #256 is the point fix (can
 
 ## Part 1 — Immediate fix (today, small, no module extraction)
 
-**Goal:** eliminate the live queue-claim atomicity bypass and the phase-sort dispatch bypass, without touching `legacy.py` or `phases.py` and without starting the 5-module migration. This is a correctness fix to the file `main()` actually executes, using the same "test through the real CLI path" discipline the root-cause doc itself established.
+**Goal:** eliminate the live queue-claim atomicity bypass, while verifying that the already-landed phase-sort correction remains reachable through the real CLI. Do this without touching `legacy.py` or `phases.py` and without starting the package migration. This is a correctness fix to the file `main()` actually executes, using the same "test through the real CLI path" discipline the root-cause doc itself established.
 
 **Scope — move into `agent_coordination_core.py`, replacing its own inferior versions in place (not a new module, not a deletion of `legacy.py`/`phases.py`):**
 
@@ -143,9 +143,7 @@ This plan is **deliberately not part of PR #256**. PR #256 is the point fix (can
 | `_try_atomic_claim`, `_release_claim`, `_release_claim_with_event` | facade (`agent_coordination.py:131-229`) | The only implementations with real atomicity (`BEGIN IMMEDIATE` + UNIQUE-constrained `task_claims` table + retry-on-lock). Core's current versions have no such protection. |
 | `_queue_claim`, `_queue_complete`, `_queue_fail` | facade | Facade's versions call the atomic helpers above; core's don't. |
 | `_phase_list` | already fixed identically in both (post-`9642ae24`) — no change needed, just confirm both stay in sync until Part 2 deletes the duplicate | — |
-| 7 heartbeat handlers (`list`, `check`, `dashboard`, `pulse`, `kill`, `timeline`, `cleanup`) | facade | Currently only exist in the facade at all; core's `_amain()` doesn't dispatch to heartbeat subcommands today because `main()` is imported from core but heartbeat argparse wiring lives in the facade — **verify this dispatch gap directly before writing the fix**, don't assume symmetry with queue/phase. |
-
-**Also fix while in this file (cheap, same root cause, verified in this session's Section 2 architecture review):** `GossipBus.emit()` and `GossipBus.tail()` (`orchestrator/gossip_bus.py`) have zero exception handling. Every coordination command that calls them (which is all of them) will surface a raw Python traceback on any sqlite lock/disk/corruption error instead of a clean message. Wrap both call sites used by the promoted functions above with a narrow `try/except (sqlite3.OperationalError, OSError)` → clean `ERROR: coordination database unavailable (<reason>)` message. Do not touch `gossip_bus.py`'s own `search()`/`_embed_and_store()` catch-alls — out of scope, pre-existing, unrelated to this fix.
+| 7 heartbeat handlers (`list`, `check`, `dashboard`, `pulse`, `kill`, `timeline`, `cleanup`) | no Part 1 move | Core already parses and dispatches all seven leaves through lazy facade imports. Characterize that live path in Phase 0F, then migrate the handlers once into `liveness.py` in Part 2. |
 
 **Verification (required before landing Part 1):**
 
@@ -162,14 +160,15 @@ python3 -c "
 import asyncio, os, tempfile
 os.environ['PT_STATE_DIR'] = tempfile.mkdtemp()
 import subprocess, sys
-subprocess.run([sys.executable, 'scripts/agent_coordination.py', 'queue', 'add', 'race-task', '--phase', 'test', '--priority', 'HIGH'])
+subprocess.run([sys.executable, 'scripts/agent_coordination.py', 'queue', 'add', 'race-task', 'test', '--priority', 'HIGH'], check=True)
 import concurrent.futures
-def claim():
-    return subprocess.run([sys.executable, 'scripts/agent_coordination.py', 'queue', 'claim', 'race-task', 'agent-'+str(id(object()))], capture_output=True, text=True)
+def claim(agent_num):
+    return subprocess.run([sys.executable, 'scripts/agent_coordination.py', 'queue', 'claim', 'race-task', f'agent-{agent_num}'], capture_output=True, text=True)
 with concurrent.futures.ThreadPoolExecutor(4) as ex:
-    results = list(ex.map(lambda _: claim(), range(4)))
+    results = list(ex.map(claim, range(4)))
 successes = [r for r in results if 'claimed:' in r.stdout]
 assert len(successes) == 1, f'expected exactly 1 successful claim, got {len(successes)}: {[r.stdout for r in results]}'
+assert all('ERROR:' in r.stdout for r in results if r not in successes), [r.stdout for r in results]
 print('OK: exactly one claim succeeded under 4-way concurrency')
 "
 
@@ -177,13 +176,23 @@ uv run --offline python -m pytest tests/ -k "coordination or gossip" -v
 python3 scripts/review/repo_hygiene.py .
 ```
 
-**Effort:** small — moving/replacing ~6 functions plus 2 narrow try/except blocks within one existing file, plus one new race-condition test. No new files, no deletions, no dispatch-table rewrite. Directly actionable today.
+**Effort:** small — moving/replacing ~6 functions within one existing file, plus one new race-condition test. No new files, no deletions, no dispatch-table rewrite. Directly actionable today.
+
+### Part 1b — database-error contract (separate follow-up)
+
+`GossipBus.emit()` and `GossipBus.tail()` currently surface raw exceptions for
+SQLite lock, disk, and corruption failures. Normalizing those failures into a
+stable CLI error is useful, but it is a separate observable behavior change,
+not part of the queue-claim atomicity repair. Implement it in a separate commit
+with real-entrypoint tests that cover representative read and write failures
+across command families. Do not normalize only the functions touched by Part 1,
+which would leave the CLI with inconsistent error behavior.
 
 ---
 
 ## Part 2 — Revamped architecture draft (drafted now, not deferred; execution scheduled separately)
 
-Incorporates Codex's parallel engineering handoff (`references/coordination-consolidation-review-handoff-2026-07-18.md`) in full. This supersedes the original plan's "Target structure" and "Migration sequence" sections below.
+Incorporates Codex's parallel engineering audit and the corrections recorded in `../references/coordination-consolidation-plan-review-2026-07-18.md`. This supersedes the original plan's "Target structure" and "Migration sequence" sections below.
 
 ### Target structure (revised — adds `liveness.py` and `__init__.py`)
 
@@ -220,7 +229,7 @@ Per Codex's audit: a file-level heuristic is too coarse for a mixed implementati
 
 For every row, before extraction: record source file, symbol, current CLI reachability, tests that exercise it, and the reason it wins. "Best" must be evidence-backed, not asserted.
 
-**`claim` vs `queue claim` — distinct semantics, do not conflate.** Per Codex's argparse guidance doc: these are two different claim mechanisms (the original basic board claim vs. the atomic queued-task claim) that happen to share the verb "claim" in the CLI surface. Keep separate adapter and domain-function names for each even where they overlap syntactically.
+**`claim` vs `queue claim` — distinct semantics, do not conflate.** These are two different claim mechanisms (the original basic board claim vs. the atomic queued-task claim) that happen to share the verb "claim" in the CLI surface. Keep separate adapter and domain-function names for each even where they overlap syntactically.
 
 ### Migration sequence (revised — adds Phase 0F freeze + mandatory temporary re-exports)
 
@@ -245,7 +254,7 @@ The original plan's "move, don't copy" instruction breaks mid-migration — a li
 
 **Phase 3 — parser-owned dispatch (replaces the original plan's hand-maintained `_DISPATCH` dict):**
 
-Per `references/python-argparse-subcommand-dispatch-guidance-2026-07-18.md` (primary source: [Python's official argparse docs](https://docs.python.org/3/library/argparse.html#sub-commands)): a separately-maintained parser and dispatch table can drift silently — which is structurally the same failure class as everything else in this document. Use `set_defaults(handler=...)` on each leaf subparser instead, so parser registration and handler registration are one operation:
+Per [Python's official `argparse` docs](https://docs.python.org/3/library/argparse.html#sub-commands), a separately-maintained parser and dispatch table can drift silently — which is structurally the same failure class as everything else in this document. Use `set_defaults(handler=...)` on each leaf subparser instead, so parser registration and handler registration are one operation:
 
 ```python
 def build_parser() -> argparse.ArgumentParser:
@@ -393,18 +402,25 @@ async def test_heartbeat_kill_marks_agent_and_liveness_interpretation(bus, capsy
 
 
 @pytest.mark.asyncio
-async def test_heartbeat_cleanup_releases_actually_stale_claim(bus, capsys):
+async def test_heartbeat_cleanup_releases_actually_stale_claim(bus, capsys, monkeypatch):
     # An empty-board no-op does not characterize cleanup -- create a real
     # stale claim first.
     from scripts.agent_coordination import _heartbeat_cleanup, _claim, _register
+    from orchestrator import heartbeat_monitor
+    real_now = heartbeat_monitor.time.time()
     await _register(bus, "agent-z", "worktree-c", "sonnet", "")
     await _claim(bus, "agent-z", "stale-task", "")
-    # (test harness must age the claim past the staleness threshold, or
-    # monkeypatch the threshold check -- fill in against the real
-    # cleanup_stale_claims() implementation before this test is trusted.)
+    monkeypatch.setattr(
+        heartbeat_monitor.time,
+        "time",
+        lambda: real_now + heartbeat_monitor.LIVENESS_STALLED_SEC + 1,
+    )
     await _heartbeat_cleanup(bus)
     events = await bus.tail(limit=10, event_type="heartbeat")
-    assert any(e["payload"].get("kind") == "claim_released" for e in events)
+    releases = [e for e in events if e["payload"].get("kind") == "agent_release"]
+    assert len(releases) == 1
+    assert releases[0]["payload"]["task"] == "stale-task"
+    assert releases[0]["payload"]["auto_released"] is True
 
 
 @pytest.mark.asyncio
