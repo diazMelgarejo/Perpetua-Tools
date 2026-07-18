@@ -34,6 +34,8 @@ from scripts.agent_coordination_core import (  # noqa: E402
     _queue_fail,
     _release_claim_with_event,
     _try_atomic_claim,
+    canonical_db_path,
+    canonical_repo_root,
     main,
 )
 from orchestrator.heartbeat_monitor import (  # noqa: E402
@@ -41,9 +43,6 @@ from orchestrator.heartbeat_monitor import (  # noqa: E402
     find_agent_heartbeats,
     find_open_claims,
 )
-
-canonical_db_path = _impl.canonical_db_path
-canonical_repo_root = _impl.canonical_repo_root
 
 # Public legacy command helpers intentionally stay on the retained implementation;
 # queue/phase helpers below override only the corrected centralized paths.

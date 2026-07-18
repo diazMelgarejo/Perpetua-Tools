@@ -446,8 +446,14 @@ async def _log(bus: GossipBus, agent_id: str, message: str) -> None:
 
 async def _get_latest_phase_state(bus: GossipBus, phase_name: str) -> Optional[PhaseState]:
     """Retrieve the latest state for a given phase."""
+    # bus.tail() already returns newest-first (ORDER BY id DESC) -- do NOT
+    # reversed() this. An earlier version wrapped it in reversed() under the
+    # mistaken belief tail() returned oldest-first, which made this function
+    # return the OLDEST matching phase_event instead of the newest (confirmed
+    # via repro: start -> update -> complete returned IN_PROGRESS, not
+    # COMPLETE). Iterate the list as-is; the first match is the true latest.
     events = await bus.tail(limit=500, event_type="heartbeat")
-    for ev in reversed(events):  # newest first
+    for ev in events:  # newest first
         p = ev["payload"]
         if p.get("kind") == "phase_event" and p.get("phase_name") == phase_name:
             return PhaseState.from_payload(p)
@@ -456,9 +462,12 @@ async def _get_latest_phase_state(bus: GossipBus, phase_name: str) -> Optional[P
 
 async def _all_phase_states(bus: GossipBus) -> dict[str, PhaseState]:
     """Retrieve the latest state for all phases."""
+    # Same fix as _get_latest_phase_state above: no reversed() needed, tail()
+    # is already newest-first. First occurrence per phase_name while
+    # iterating newest-first is the true latest state for that phase.
     events = await bus.tail(limit=500, event_type="heartbeat")
     latest: dict[str, PhaseState] = {}
-    for ev in reversed(events):  # oldest first, newer overwrites
+    for ev in events:  # newest first
         p = ev["payload"]
         if p.get("kind") != "phase_event":
             continue
