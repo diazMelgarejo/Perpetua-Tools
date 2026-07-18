@@ -1,0 +1,41 @@
+{
+  "id": "01a9f16fae23",
+  "key": "manual_01a9f1",
+  "name": "manual_01a9f1",
+  "claim": "A CodeRabbit review comment's stated line number is a snapshot against the commit it reviewed, not a durable pointer -- if the target file has grown or been edited since (new commits, other agents' concurrent pushes), re-locate the finding by its quoted content or code snippet before assuming the line reference is still valid. A stale line reference pointing at unrelated content is a signal the finding may already be resolved or moved, not a signal to force a fix at the wrong location.",
+  "conditions": [
+    "coderabbit",
+    "concurrent-edits",
+    "pr-review-triage",
+    "stale-line-reference"
+  ],
+  "evidence_ids": [
+    "2026-07-18T03:12:55.733488+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T03:12:55.733488+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T03:12:55.733488+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T03:12:56.145537+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "On PT PR #258, a 'bootstrap banned-attribution-patterns before running the scan' nitpick cited AGENT_LEARNINGS.jsonl lines 223-226, but by the time it was addressed the file had grown from ~180 to 237+ lines from concurrent commits, and those line numbers pointed at entirely unrelated, much more recent content. Correctly treated as stale-and-skip rather than editing the wrong lines to satisfy the letter of the comment.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T03:12:55.733488+00:00"
+      ],
+      "lessons_sha": "aa532cb57082"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T03:12:56.145487+00:00",
+  "reviewer": "learn.py",
+  "rationale": "On PT PR #258, a 'bootstrap banned-attribution-patterns before running the scan' nitpick cited AGENT_LEARNINGS.jsonl lines 223-226, but by the time it was addressed the file had grown from ~180 to 237+ lines from concurrent commits, and those line numbers pointed at entirely unrelated, much more recent content. Correctly treated as stale-and-skip rather than editing the wrong lines to satisfy the letter of the comment."
+}
