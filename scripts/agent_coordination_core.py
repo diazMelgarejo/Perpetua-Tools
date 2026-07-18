@@ -74,6 +74,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import aiosqlite
 import subprocess
 import sys
 import time
@@ -85,7 +86,11 @@ from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from orchestrator.gossip_bus import GossipBus  # noqa: E402
+from orchestrator.gossip_bus import (  # noqa: E402
+    GossipBus,
+    resolve_default_state_dir,
+    resolve_gossip_db_path,
+)
 from orchestrator.lan_gossip_bridge import make_gossip_bus  # noqa: E402
 
 
@@ -297,14 +302,11 @@ class PhaseState:
 
 def canonical_repo_root() -> Path:
     """Resolve the shared repo root common to every worktree of this repo."""
-    common_dir = subprocess.check_output(
-        ["git", "rev-parse", "--git-common-dir"], text=True
-    ).strip()
-    return Path(common_dir).resolve().parent
+    return resolve_default_state_dir().resolve().parent
 
 
 def canonical_db_path() -> str:
-    return str(canonical_repo_root() / ".state" / "perpetua_core.db")
+    return resolve_gossip_db_path()
 
 
 def current_worktree_label() -> str:
@@ -929,73 +931,251 @@ async def _task_snapshot(
     return snapshot or None
 
 
-async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> None:
-    """Claim a queued task, blocking if already claimed or deps not satisfied."""
-    events = await bus.tail(limit=500, event_type="heartbeat")
-    task_state = await _task_snapshot(bus, task_id, events=events)
-    if not task_state:
-        print(f"ERROR: task {task_id} not found")
-        return
-    if task_state.get("status") == QueuedTaskState.CLAIMED.value:
-        existing_agent = task_state.get("assigned_agent")
-        print(f"ERROR: {task_id} already claimed by {existing_agent}.")
-        return
-    if task_state.get("status") == QueuedTaskState.COMPLETED.value:
-        print(f"ERROR: {task_id} already completed. Cannot reclaim.")
-        return
-    depends_on = task_state.get("depends_on", [])
-    if depends_on:
-        completed_tasks = set()
-        for ev in events:
-            p = ev["payload"]
-            if p.get("kind") == "task_complete" and p.get("task_id") in depends_on:
-                completed_tasks.add(p["task_id"])
-        unmet_deps = [tid for tid in depends_on if tid not in completed_tasks]
-        if unmet_deps:
-            print(f"ERROR: {task_id} unmet dependencies: {', '.join(unmet_deps)}")
-            return
-    await bus.emit("heartbeat", {
+_CREATE_CLAIMS_TABLE = """
+CREATE TABLE IF NOT EXISTS task_claims (
+    task_id    TEXT PRIMARY KEY,
+    agent_id   TEXT NOT NULL,
+    claimed_at REAL NOT NULL
+)
+"""
+_LOCK_RETRIES = 3
+_LOCK_RETRY_SECONDS = 0.05
+
+
+async def _ensure_claims_table(bus: GossipBus) -> None:
+    async with bus.connect() as db:
+        await db.execute(_CREATE_CLAIMS_TABLE)
+        await db.commit()
+
+
+async def _latest_task_snapshots(bus: GossipBus) -> dict[str, dict]:
+    """Fold newest-first append-only events into current task snapshots."""
+    events = await bus.tail(limit=1000, event_type="heartbeat")
+    snapshots: dict[str, dict] = {}
+    for event in reversed(events):
+        payload = event["payload"]
+        task_id = payload.get("task_id")
+        if not task_id or payload.get("kind") not in _TASK_EVENT_KINDS:
+            continue
+        snapshots.setdefault(task_id, {}).update(payload)
+    return snapshots
+
+
+async def _try_atomic_claim(
+    bus: GossipBus,
+    task_id: str,
+    agent_id: str,
+    claim_payload: Optional[dict] = None,
+) -> bool:
+    """Atomically persist exclusive ownership and its append-only event.
+
+    `BEGIN IMMEDIATE` serializes writers before either mutation. Integrity
+    conflicts return False. Lock contention is retried briefly and then fails
+    cleanly without leaving a claim row or an event behind.
+    """
+    payload = claim_payload or {
         "kind": "task_claim",
         "task_id": task_id,
         "assigned_agent": agent_id,
         "status": QueuedTaskState.CLAIMED.value,
         "worktree": current_worktree_label(),
-    })
+    }
+    for attempt in range(_LOCK_RETRIES):
+        async with bus.connect() as db:
+            try:
+                await db.execute("BEGIN IMMEDIATE")
+                await db.execute(_CREATE_CLAIMS_TABLE)
+                await db.execute(
+                    "INSERT INTO task_claims (task_id, agent_id, claimed_at) "
+                    "VALUES (?, ?, ?)",
+                    (task_id, agent_id, time.time()),
+                )
+                row_id, _event_uuid, safe_payload, inserted = await bus.insert_event(
+                    db, "heartbeat", payload
+                )
+                await db.commit()
+            except aiosqlite.IntegrityError:
+                await db.rollback()
+                return False
+            except aiosqlite.OperationalError as exc:
+                await db.rollback()
+                locked = "locked" in str(exc).lower() or "busy" in str(exc).lower()
+                if locked and attempt + 1 < _LOCK_RETRIES:
+                    await asyncio.sleep(_LOCK_RETRY_SECONDS * (attempt + 1))
+                    continue
+                if locked:
+                    return False
+                raise
+            except Exception:
+                await db.rollback()
+                raise
+        if inserted:
+            bus.schedule_embedding(row_id, safe_payload)
+        return True
+    return False
+
+
+async def _release_claim_with_event(
+    bus: GossipBus, task_id: str, event_type: str, payload: dict
+) -> bool:
+    """Atomically free ownership and record why, mirroring _try_atomic_claim's
+    guarantee for the release side.
+
+    Without this, a crash between a separate release DELETE and its event
+    emit could free a claim row with no record of why (forensics gap), or
+    record the terminal event while the row stays held -- blocking every
+    future _try_atomic_claim on that task_id with a stale "already claimed"
+    row forever. Same `BEGIN IMMEDIATE` + bounded-retry treatment as the
+    claim path; returns False (not raised) if lock contention exhausts all
+    retries, so callers can decide how to handle a release that didn't land.
+    """
+    for attempt in range(_LOCK_RETRIES):
+        async with bus.connect() as db:
+            try:
+                await db.execute("BEGIN IMMEDIATE")
+                await db.execute(_CREATE_CLAIMS_TABLE)
+                await db.execute("DELETE FROM task_claims WHERE task_id = ?", (task_id,))
+                row_id, _event_uuid, safe_payload, inserted = await bus.insert_event(
+                    db, event_type, payload
+                )
+                await db.commit()
+            except aiosqlite.OperationalError as exc:
+                await db.rollback()
+                locked = "locked" in str(exc).lower() or "busy" in str(exc).lower()
+                if locked and attempt + 1 < _LOCK_RETRIES:
+                    await asyncio.sleep(_LOCK_RETRY_SECONDS * (attempt + 1))
+                    continue
+                if locked:
+                    return False
+                raise
+            except Exception:
+                await db.rollback()
+                raise
+        if inserted:
+            bus.schedule_embedding(row_id, safe_payload)
+        return True
+    return False
+
+
+async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> None:
+    snapshots = await _latest_task_snapshots(bus)
+    task_state = snapshots.get(task_id)
+    if not task_state:
+        print(f"ERROR: task {task_id} not found")
+        return
+
+    status = task_state.get("status")
+    if status == QueuedTaskState.CLAIMED.value:
+        print(
+            f"ERROR: {task_id} already claimed by "
+            f"{task_state.get('assigned_agent')}."
+        )
+        return
+    if status == QueuedTaskState.COMPLETED.value:
+        print(f"ERROR: {task_id} already completed. Cannot reclaim.")
+        return
+    if status == "abandoned":
+        print(f"ERROR: {task_id} was abandoned. Cannot reclaim.")
+        return
+
+    depends_on = task_state.get("depends_on", [])
+    unmet = [
+        dependency
+        for dependency in depends_on
+        if snapshots.get(dependency, {}).get("status")
+        != QueuedTaskState.COMPLETED.value
+    ]
+    if unmet:
+        print(f"ERROR: {task_id} unmet dependencies: {', '.join(unmet)}")
+        return
+
+    # Atomic gate: the snapshot checks above can both pass for two racing
+    # claimants (read-then-write, no lock across the gap). This INSERT is
+    # the actual exclusion point -- only one caller gets True. The claim row
+    # and its heartbeat event commit together (see _try_atomic_claim) so a
+    # crash between them can never leave one without the other.
+    payload = {
+        "kind": "task_claim",
+        "task_id": task_id,
+        "assigned_agent": agent_id,
+        "status": QueuedTaskState.CLAIMED.value,
+        "worktree": current_worktree_label(),
+    }
+    if not await _try_atomic_claim(bus, task_id, agent_id, payload):
+        print(
+            f"ERROR: {task_id} could not be claimed; another agent won "
+            "or the coordination database remained busy. Retry safely."
+        )
+        return
     print(f"claimed: {task_id} by {agent_id}")
 
 
 async def _queue_complete(bus: GossipBus, task_id: str, notes: str) -> None:
-    """Mark a task as completed."""
-    await bus.emit("heartbeat", {
-        "kind": "task_complete",
-        "task_id": task_id,
-        "status": QueuedTaskState.COMPLETED.value,
-        "notes": notes,
-    })
+    snapshots = await _latest_task_snapshots(bus)
+    if task_id not in snapshots:
+        print(f"ERROR: task {task_id} not found")
+        return
+    # Free the atomic-claim row and record completion in one transaction --
+    # a completed task is rejected by the status check in _queue_claim
+    # regardless, but a crash between a separate release and emit could
+    # otherwise free the row with no event explaining why, or record the
+    # event while the row stays held (blocking every future claim on this
+    # task_id with a stale "already claimed" row forever).
+    released = await _release_claim_with_event(
+        bus,
+        task_id,
+        "heartbeat",
+        {
+            "kind": "task_complete",
+            "task_id": task_id,
+            "status": QueuedTaskState.COMPLETED.value,
+            "notes": notes,
+        },
+    )
+    if not released:
+        print(f"ERROR: {task_id} could not be completed; coordination database remained busy. Retry safely.")
+        return
     print(f"completed: {task_id}")
 
 
 async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> None:
-    """Mark a task as failed; retry logic applies if retry_count < max_retries."""
-    task_state = await _task_snapshot(bus, task_id)
+    snapshots = await _latest_task_snapshots(bus)
+    task_state = snapshots.get(task_id)
     if not task_state:
         print(f"ERROR: task {task_id} not found")
         return
-    retry_count = task_state.get("retry_count", 0) + 1
-    max_retries = task_state.get("max_retries", 3)
-    if retry_count < max_retries:
-        await bus.emit("heartbeat", {
-            "kind": "task_failed",
-            "task_id": task_id,
-            "retry_count": retry_count,
-            "max_retries": max_retries,
-            "status": QueuedTaskState.QUEUED.value,
-            "assigned_agent": None,
-            "notes": f"Retry {retry_count}/{max_retries}: {notes}",
-        })
+    retry_count = int(task_state.get("retry_count", 0)) + 1
+    max_retries = int(task_state.get("max_retries", 3))
+    if retry_count <= max_retries:
+        # Must release here, not just on complete -- the task goes back to
+        # QUEUED and _queue_claim's atomic gate would otherwise reject every
+        # future claim attempt with a stale "already claimed" row forever.
+        # Release + event committed together, same reasoning as _queue_complete.
+        released = await _release_claim_with_event(
+            bus,
+            task_id,
+            "heartbeat",
+            {
+                "kind": "task_failed",
+                "task_id": task_id,
+                "retry_count": retry_count,
+                "max_retries": max_retries,
+                "status": QueuedTaskState.QUEUED.value,
+                "assigned_agent": None,
+                "notes": f"Retry {retry_count}/{max_retries}: {notes}",
+            },
+        )
+        if not released:
+            print(f"ERROR: {task_id} could not be requeued; coordination database remained busy. Retry safely.")
+            return
         print(f"failed: {task_id}, retry {retry_count}/{max_retries}")
-    else:
-        await bus.emit("heartbeat", {
+        return
+
+    released = await _release_claim_with_event(
+        bus,
+        task_id,
+        "heartbeat",
+        {
             "kind": "task_abandoned",
             "task_id": task_id,
             "retry_count": retry_count,
@@ -1003,8 +1183,12 @@ async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> None:
             "status": "abandoned",
             "assigned_agent": None,
             "notes": f"Abandoned after {max_retries} retries: {notes}",
-        })
-        print(f"abandoned: {task_id} (max retries exceeded)")
+        },
+    )
+    if not released:
+        print(f"ERROR: {task_id} could not be abandoned; coordination database remained busy. Retry safely.")
+        return
+    print(f"abandoned: {task_id} (max retries exceeded)")
 
 
 async def _queue_list(bus: GossipBus, phase_filter: Optional[str], priority_filter: Optional[str], agent_filter: Optional[str]) -> None:
