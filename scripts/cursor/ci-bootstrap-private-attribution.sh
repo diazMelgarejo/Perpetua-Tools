@@ -7,14 +7,6 @@ HOME="${HOME:-/home/ubuntu}"
 OPENCLAW="${HOME}/.cursor/openclaw"
 PRIVATE="${REPO_ROOT}/.cursor/private"
 
-decode_b64_line() {
-  local raw decoded
-  raw="$(printf '%s' "$1" | base64 -d 2>/dev/null || true)"
-  decoded="$(printf '%s' "$raw" | tr -d '[:space:]')"
-  [[ -n "$decoded" ]] || return 0
-  printf '%s\n' "$decoded"
-}
-
 mkdir -p "$OPENCLAW/private-lessons" "$PRIVATE"
 chmod 700 "$OPENCLAW" "$PRIVATE" 2>/dev/null || true
 
@@ -26,8 +18,7 @@ fi
 
 {
   echo "# Banned attribution tokens (one per line, case-insensitive substring match)"
-  decode_b64_line "ZGFydGguc2VyaW91cw=="
-  decode_b64_line "bmltYm9zYQ=="
+  echo "nimbosa"
 } >"$PATTERNS_OPENCLAW"
 chmod 600 "$PATTERNS_OPENCLAW"
 install -m 0600 "$PATTERNS_OPENCLAW" "${PRIVATE}/banned-attribution-patterns"

@@ -19,7 +19,6 @@ from pathlib import Path
 APPROVED_IDENTITIES = {
     ("cyre", "Lawrence@cyre.me"),
     ("cyre", "diazMelgarejo@gmail.com"),
-    ("cyre", "Lawrence.Melgarejo@gmail.com"),
     ("Codex", "codex@openai.com"),
 }
 # Keep in sync with scripts/git/check_identity.sh (local hooks + pre-commit).
@@ -217,15 +216,7 @@ GENERATED_ARTIFACT_EXCEPTIONS: frozenset[str] = frozenset({
     "packages/alphaclaw-mcp/build/index.js",
     "packages/alphaclaw-mcp/build/is-direct-execution.js",
 })
-AGENT_MEMORY_PREFIX = ".agent/memory/"
-OWNER_GMAIL_REDACTED_PATHS = (
-    AGENT_MEMORY_PREFIX,
-    "CONTRIBUTING.md",
-    ".github/pull_request_template.md",
-)
-MEMORY_FORBIDDEN_TOKENS = (
-    "Lawrence.Melgarejo" + "@gmail.com",
-)
+VERBOTEN_LITERALS_FILE = ".verboten-literals.local"
 
 GENERATED_ARTIFACT_PATTERNS = (
     ".DS_Store",
@@ -296,6 +287,36 @@ def run_git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
+def openclaw_workspace_root(root: Path) -> Path:
+    for candidate in (root, *root.parents):
+        if (candidate / "orama-system").is_dir():
+            return candidate
+    return root
+
+
+def private_literal_values(root: Path, key: str) -> list[str]:
+    configured_path = os.getenv("OPENCLAW_VERBOTEN_LITERALS")
+    path = Path(configured_path) if configured_path else openclaw_workspace_root(root) / VERBOTEN_LITERALS_FILE
+    if not path.is_file():
+        return []
+    values: list[str] = []
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return []
+    for raw in lines:
+        raw = raw.split("#", 1)[0].strip()
+        if not raw or "=" not in raw:
+            continue
+        raw_key, value = raw.split("=", 1)
+        if raw_key.strip() != key:
+            continue
+        value = "".join(value.split())
+        if value:
+            values.append(value)
+    return values
+
+
 def tracked_files(root: Path) -> list[str]:
     proc = run_git(root, "ls-files")
     if proc.returncode != 0:
@@ -330,14 +351,16 @@ def scan_forbidden_identity(root: Path, files: list[str]) -> list[str]:
     return errors
 
 
-def scan_redacted_owner_gmail_identity(root: Path, files: list[str]) -> list[str]:
+def scan_private_verboten_literals(root: Path, files: list[str]) -> list[str]:
+    tokens = [
+        token.casefold()
+        for key in ("owner_gmail", "owner_name", "forbidden_attribution")
+        for token in private_literal_values(root, key)
+    ]
+    if not tokens:
+        return []
     errors: list[str] = []
     for rel in files:
-        if not any(
-            rel == protected or rel.startswith(protected)
-            for protected in OWNER_GMAIL_REDACTED_PATHS
-        ):
-            continue
         path = root / rel
         if not path.is_file() or is_binary(path):
             continue
@@ -345,9 +368,10 @@ def scan_redacted_owner_gmail_identity(root: Path, files: list[str]) -> list[str
             text = path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             continue
-        for token in MEMORY_FORBIDDEN_TOKENS:
-            if token in text:
-                errors.append(f"forbidden owner Gmail identity in portable guidance: {rel}")
+        text_lc = text.casefold()
+        for token in tokens:
+            if token in text_lc:
+                errors.append(f"private verboten literal in tracked file: {rel}")
                 break
     return errors
 
@@ -507,7 +531,9 @@ def check_identity(root: Path) -> list[str]:
     email = run_git(root, "config", "user.email").stdout.strip()
     if os.getenv("GITHUB_ACTIONS") == "true" and not name and not email:
         return []
-    if (name, email) not in APPROVED_IDENTITIES:
+    identities = set(APPROVED_IDENTITIES)
+    identities.update(("cyre", value) for value in private_literal_values(root, "owner_gmail"))
+    if (name, email) not in identities:
         expected = " or ".join(f"{n} <{e}>" for n, e in sorted(APPROVED_IDENTITIES))
         return [
             "git identity mismatch: "
@@ -568,7 +594,7 @@ def main() -> int:
     errors.extend(check_generated_artifact_tracking(files))
     errors.extend(check_git_internal_junk(root))
     errors.extend(check_workflow_permissions(root))
-    errors.extend(scan_redacted_owner_gmail_identity(root, files))
+    errors.extend(scan_private_verboten_literals(root, files))
 
     for line in report_status(root):
         print(f"INFO: {line}")

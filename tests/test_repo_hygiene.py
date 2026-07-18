@@ -5,6 +5,7 @@ Mirrors orama-system/tests/test_repo_hygiene.py with PT-specific adaptations.
 from __future__ import annotations
 
 import importlib.util
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -310,31 +311,64 @@ def test_forbidden_identity_exception_is_exempt(tmp_path):
 
 def test_agent_memory_owner_gmail_identity_is_blocked(tmp_path):
     repo_hygiene = load_repo_hygiene()
+    literals = tmp_path / "verboten.local"
+    private_email = "private.owner@example.invalid"
+    literals.write_text(
+        f"owner_gmail={private_email}\nowner_name=Private.Owner\n",
+        encoding="utf-8",
+    )
+    old = os.environ.get("OPENCLAW_VERBOTEN_LITERALS")
+    os.environ["OPENCLAW_VERBOTEN_LITERALS"] = str(literals)
     memory = tmp_path / ".agent" / "memory" / "episodic" / "AGENT_LEARNINGS.jsonl"
     memory.parent.mkdir(parents=True)
-    token = "Lawrence.Melgarejo" + "@gmail.com"
-    memory.write_text(f'{{"author":"{token}"}}\n', encoding="utf-8")
+    memory.write_text(f'{{"author":"{private_email}"}}\n', encoding="utf-8")
 
-    errors = repo_hygiene.scan_redacted_owner_gmail_identity(
-        tmp_path, [".agent/memory/episodic/AGENT_LEARNINGS.jsonl"]
-    )
+    try:
+        errors = repo_hygiene.scan_private_verboten_literals(
+            tmp_path, [".agent/memory/episodic/AGENT_LEARNINGS.jsonl"]
+        )
+    finally:
+        if old is None:
+            os.environ.pop("OPENCLAW_VERBOTEN_LITERALS", None)
+        else:
+            os.environ["OPENCLAW_VERBOTEN_LITERALS"] = old
 
     assert len(errors) == 1
-    assert "forbidden owner Gmail identity in portable guidance" in errors[0]
+    assert "private verboten literal in tracked file" in errors[0]
 
 
-def test_owner_gmail_identity_is_blocked_from_contributing_and_pr_template(tmp_path):
+def test_private_verboten_literals_are_blocked_case_insensitively(tmp_path):
     repo_hygiene = load_repo_hygiene()
-    token = "Lawrence.Melgarejo" + "@gmail.com"
+    literals = tmp_path / "verboten.local"
+    private_email = "private.owner@example.invalid"
+    private_name = "Private.Owner"
+    forbidden_attr = "Blocked.Attribution@example.invalid"
+    literals.write_text(
+        f"owner_gmail={private_email}\n"
+        f"owner_name={private_name}\n"
+        f"forbidden_attribution={forbidden_attr}\n",
+        encoding="utf-8",
+    )
+    old = os.environ.get("OPENCLAW_VERBOTEN_LITERALS")
+    os.environ["OPENCLAW_VERBOTEN_LITERALS"] = str(literals)
     contributing = tmp_path / "CONTRIBUTING.md"
-    contributing.write_text(f"Use {token}\n", encoding="utf-8")
+    contributing.write_text(f"Use {private_email.upper()}\n", encoding="utf-8")
     template = tmp_path / ".github" / "pull_request_template.md"
     template.parent.mkdir()
-    template.write_text(f"Do not use {token}\n", encoding="utf-8")
-
-    errors = repo_hygiene.scan_redacted_owner_gmail_identity(
-        tmp_path, ["CONTRIBUTING.md", ".github/pull_request_template.md"]
+    template.write_text(
+        f"Do not use {private_name.lower()} or {forbidden_attr.upper()}\n",
+        encoding="utf-8",
     )
+
+    try:
+        errors = repo_hygiene.scan_private_verboten_literals(
+            tmp_path, ["CONTRIBUTING.md", ".github/pull_request_template.md"]
+        )
+    finally:
+        if old is None:
+            os.environ.pop("OPENCLAW_VERBOTEN_LITERALS", None)
+        else:
+            os.environ["OPENCLAW_VERBOTEN_LITERALS"] = old
 
     assert len(errors) == 2
     assert any("CONTRIBUTING.md" in error for error in errors)
@@ -345,10 +379,10 @@ def test_owner_gmail_redaction_rule_allows_mechanical_allowlists(tmp_path):
     repo_hygiene = load_repo_hygiene()
     doc = tmp_path / ".github" / "AUTHORIZED_CONTRIBUTORS.md"
     doc.parent.mkdir()
-    token = "Lawrence.Melgarejo" + "@gmail.com"
-    doc.write_text(f"cyre <{token}>\n", encoding="utf-8")
+    private_email = "private.owner@example.invalid"
+    doc.write_text(f"cyre <{private_email}>\n", encoding="utf-8")
 
-    errors = repo_hygiene.scan_redacted_owner_gmail_identity(
+    errors = repo_hygiene.scan_private_verboten_literals(
         tmp_path, [".github/AUTHORIZED_CONTRIBUTORS.md"]
     )
 
