@@ -1,0 +1,42 @@
+{
+  "id": "6c176e735ab4",
+  "key": "manual_6c176e",
+  "name": "manual_6c176e",
+  "claim": "A tracked repo may define the RULE for banning a private literal (loader, invariant, synthetic fixtures, neutral failure labels) but must never spell the literal itself anywhere in tracked content -- not in the ban rule, not in an allowlist, not in a test fixture, not in memory. If a rule quotes the secret it exists to forbid, the rule is self-defeating. The correct two-layer design: tracked repo = policy + loader + synthetic fixtures; a local-only file outside the repo (or ignored runtime state) = the actual values, read case-insensitively. Also: 'don't leak this value' must never be read as 'stop recording memory' -- the fix is to sanitize memory, not amputate it.",
+  "conditions": [
+    "memory-hygiene",
+    "private-literals",
+    "secret-handling",
+    "self-quoting-paradox",
+    "v2-migration"
+  ],
+  "evidence_ids": [
+    "2026-07-18T05:44:26.257031+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T05:44:26.257031+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T05:44:26.257031+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T05:44:26.381586+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Formalizes the working note .agent/memory/working/PRIVATE_LITERALS_AND_LOCAL_TOPOLOGY_V2_LESSON_2026-07-18.md (PR #260 branch): the first attempted private-literal-ban fix was conceptually wrong because it kept spelling the literal in the ban rule/allowlist/tests/docs while trying to forbid it. Corrected via PT's private_literal_values()/.verboten-literals.local loader (repo=policy+loader+synthetic fixtures, local file=actual values, case-insensitive match). Explicitly relevant to v2: more agents, more repos, more generated docs/memory/PR-bodies increases the surface area for an agent to accidentally copy a private value forward from a transcript, reflog, or stale memory entry into v2's tracked state.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T05:44:26.257031+00:00"
+      ],
+      "lessons_sha": "2775f227f0be"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T05:44:26.381576+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Formalizes the working note .agent/memory/working/PRIVATE_LITERALS_AND_LOCAL_TOPOLOGY_V2_LESSON_2026-07-18.md (PR #260 branch): the first attempted private-literal-ban fix was conceptually wrong because it kept spelling the literal in the ban rule/allowlist/tests/docs while trying to forbid it. Corrected via PT's private_literal_values()/.verboten-literals.local loader (repo=policy+loader+synthetic fixtures, local file=actual values, case-insensitive match). Explicitly relevant to v2: more agents, more repos, more generated docs/memory/PR-bodies increases the surface area for an agent to accidentally copy a private value forward from a transcript, reflog, or stale memory entry into v2's tracked state."
+}
