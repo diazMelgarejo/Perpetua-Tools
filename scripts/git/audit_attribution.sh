@@ -85,39 +85,41 @@ banned_attribution_hit() {
   return 1
 }
 
-refs=(HEAD main origin/main)
-for ref in "${refs[@]}"; do
-  sha=$(git rev-parse -q --verify "$ref" 2>/dev/null) || { printf '%s\tMISSING\t-\t-\t-\t-\n' "$ref"; continue; }
-  banned=0 bad_author=0 bad_co=0 count=0
-  while read -r h; do
-    count=$((count+1))
-    tmp=$(mktemp)
-    git log -1 --format=%B "$h" > "$tmp"
-    ae=$(git log -1 --format=%ae "$h")
-    ce=$(git log -1 --format=%ce "$h")
-    an=$(git log -1 --format=%an "$h")
-    cn=$(git log -1 --format=%cn "$h")
-    ae_lc="$(printf '%s' "$ae" | tr '[:upper:]' '[:lower:]')"
-    ce_lc="$(printf '%s' "$ce" | tr '[:upper:]' '[:lower:]')"
-    an_lc="$(printf '%s' "$an" | tr '[:upper:]' '[:lower:]')"
-    cn_lc="$(printf '%s' "$cn" | tr '[:upper:]' '[:lower:]')"
-    body_lc="$(cat "$tmp" | tr '[:upper:]' '[:lower:]')"
-    if banned_attribution_hit "$ae_lc" "$an_lc" "$ce_lc" "$cn_lc" "$body_lc"; then
-      banned=$((banned+1))
-    fi
-    if ! author_ok "$ae_lc" "$an_lc"; then
-      bad_author=$((bad_author+1))
-    fi
-    if [[ -x "$HOOK" ]] && ! "$HOOK" "$tmp" >/dev/null 2>&1; then
-      bad_co=$((bad_co+1))
-    fi
-    rm -f "$tmp"
-  done < <(git log -"$N" --format=%H "$ref" 2>/dev/null)
-  clean=no
-  [[ $banned -eq 0 && $bad_author -eq 0 && $bad_co -eq 0 ]] && clean=yes
-  printf '%s\t%s\tbanned=%s\tbad_author=%s\tbad_coauthor=%s\tcommits=%s\tclean=%s\trepo_bot=%s\n' \
-    "$ref" "${sha:0:12}" "$banned" "$bad_author" "$bad_co" "$count" "$clean" "${PREFERRED_BOT:-any}"
-done
+if [[ -z "${GIT_AUDIT_RANGE:-}" || "${GIT_AUDIT_INCLUDE_CONTEXT_REFS:-0}" == "1" ]]; then
+  refs=(HEAD main origin/main)
+  for ref in "${refs[@]}"; do
+    sha=$(git rev-parse -q --verify "$ref" 2>/dev/null) || { printf '%s\tMISSING\t-\t-\t-\t-\n' "$ref"; continue; }
+    banned=0 bad_author=0 bad_co=0 count=0
+    while read -r h; do
+      count=$((count+1))
+      tmp=$(mktemp)
+      git log -1 --format=%B "$h" > "$tmp"
+      ae=$(git log -1 --format=%ae "$h")
+      ce=$(git log -1 --format=%ce "$h")
+      an=$(git log -1 --format=%an "$h")
+      cn=$(git log -1 --format=%cn "$h")
+      ae_lc="$(printf '%s' "$ae" | tr '[:upper:]' '[:lower:]')"
+      ce_lc="$(printf '%s' "$ce" | tr '[:upper:]' '[:lower:]')"
+      an_lc="$(printf '%s' "$an" | tr '[:upper:]' '[:lower:]')"
+      cn_lc="$(printf '%s' "$cn" | tr '[:upper:]' '[:lower:]')"
+      body_lc="$(cat "$tmp" | tr '[:upper:]' '[:lower:]')"
+      if banned_attribution_hit "$ae_lc" "$an_lc" "$ce_lc" "$cn_lc" "$body_lc"; then
+        banned=$((banned+1))
+      fi
+      if ! author_ok "$ae_lc" "$an_lc"; then
+        bad_author=$((bad_author+1))
+      fi
+      if [[ -x "$HOOK" ]] && ! "$HOOK" "$tmp" >/dev/null 2>&1; then
+        bad_co=$((bad_co+1))
+      fi
+      rm -f "$tmp"
+    done < <(git log -"$N" --format=%H "$ref" 2>/dev/null)
+    clean=no
+    [[ $banned -eq 0 && $bad_author -eq 0 && $bad_co -eq 0 ]] && clean=yes
+    printf '%s\t%s\tbanned=%s\tbad_author=%s\tbad_coauthor=%s\tcommits=%s\tclean=%s\trepo_bot=%s\n' \
+      "$ref" "${sha:0:12}" "$banned" "$bad_author" "$bad_co" "$count" "$clean" "${PREFERRED_BOT:-any}"
+  done
+fi
 
 if [[ -n "${GIT_AUDIT_RANGE:-}" ]]; then
   range_banned=0 range_bad_author=0 range_bad_co=0 range_count=0
