@@ -21,6 +21,7 @@ VERIFY_GUARDS = ROOT / "scripts/git/verify-git-guards.sh"
 BANNED_ATTR_LIB = ROOT / "scripts/git/banned_attribution_lib.sh"
 CHECK_IDENTITY = ROOT / "scripts/git/check_identity.sh"
 CHECK_COMMIT_MESSAGE = ROOT / "scripts/git/check_commit_message.sh"
+AUDIT_ATTRIBUTION = ROOT / "scripts/git/audit_attribution.sh"
 
 AUTHORIZED_HUMAN_MARKERS = (
     "diazMelgarejo",
@@ -124,6 +125,47 @@ def test_check_identity_allows_private_owner_email_from_external_file(tmp_path):
     )
     assert proc.returncode == 0, proc.stderr
     assert "approved" in proc.stdout
+
+
+def test_audit_attribution_range_mode_reports_only_pushed_range():
+    """Pre-push range mode must not report unrelated inherited ref summaries."""
+    proc = subprocess.run(
+        ["bash", str(AUDIT_ATTRIBUTION), "0"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        env={
+            **os.environ,
+            "GIT_AUDIT_RANGE": "HEAD..HEAD",
+            "GIT_AUDIT_STRICT": "1",
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    lines = [line for line in proc.stdout.splitlines() if line.strip()]
+    assert lines
+    assert all(line.startswith("RANGE\t") for line in lines), proc.stdout
+
+
+def test_audit_attribution_context_refs_are_explicit_opt_in():
+    """Manual diagnostics can still request HEAD/main/origin summaries."""
+    proc = subprocess.run(
+        ["bash", str(AUDIT_ATTRIBUTION), "0"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        env={
+            **os.environ,
+            "GIT_AUDIT_RANGE": "HEAD..HEAD",
+            "GIT_AUDIT_STRICT": "1",
+            "GIT_AUDIT_INCLUDE_CONTEXT_REFS": "1",
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "RANGE\tHEAD..HEAD\t" in proc.stdout
+    assert any(
+        line.startswith(("HEAD\t", "main\t", "origin/main\t"))
+        for line in proc.stdout.splitlines()
+    ), proc.stdout
 
 
 @pytest.mark.parametrize("name", ["diazMelgarejo", "diaz.Melgarejo"])
