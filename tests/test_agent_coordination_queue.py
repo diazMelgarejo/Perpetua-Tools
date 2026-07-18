@@ -13,6 +13,8 @@ directly with temporary GossipBus instances, verifying:
 from __future__ import annotations
 
 import asyncio
+import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -42,7 +44,7 @@ from scripts.agent_coordination_core import (
     _phase_list as _core_phase_list,
     _phase_start as _core_phase_start,
 )
-from orchestrator.gossip_bus import GossipBus
+from orchestrator.gossip_bus import GossipBus, GossipBusError
 
 
 @pytest.fixture
@@ -648,10 +650,11 @@ async def test_atomic_claim_injected_insert_failure_rolls_back_claim_row(make_bu
 
     monkeypatch.setattr(GossipBus, "insert_event", _boom)
 
-    with pytest.raises(RuntimeError, match="simulated event-insert failure"):
+    with pytest.raises(GossipBusError, match="claim on 'task-z' failed") as exc_info:
         await _try_atomic_claim(
             bus, "task-z", "agent-a", {"kind": "task_claim", "task_id": "task-z"}
         )
+    assert isinstance(exc_info.value.__cause__, RuntimeError)
 
     async with bus.connect() as db:
         cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", ("task-z",))
@@ -694,15 +697,69 @@ async def test_release_claim_with_event_injected_failure_leaves_claim_row_intact
 
     monkeypatch.setattr(GossipBus, "insert_event", _boom)
 
-    with pytest.raises(RuntimeError, match="simulated event-insert failure"):
+    with pytest.raises(GossipBusError, match="release of 'task-r2' failed") as exc_info:
         await _release_claim_with_event(
             bus, "task-r2", "heartbeat", {"kind": "task_complete", "task_id": "task-r2"}
         )
+    assert isinstance(exc_info.value.__cause__, RuntimeError)
 
     async with bus.connect() as db:
         cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", ("task-r2",))
         (claim_count,) = await cursor.fetchone()
     assert claim_count == 1  # still held -- release did not partially apply
+
+
+# ────────────────────────────────────────────────────────────────────────────
+# Part 1b: database-error contract, real-entrypoint coverage. A corrupted
+# database file (not a permission trick, which is root-bypassable in some CI
+# environments) reliably fails BOTH reads and writes with a real
+# sqlite3/aiosqlite exception, exercising the actual GossipBusError wrapping
+# through the real CLI subprocess -- not just the direct-call unit tests
+# above.
+# ────────────────────────────────────────────────────────────────────────────
+
+
+def _corrupt_db_file(db_path):
+    with open(db_path, "wb") as f:
+        f.write(b"not a sqlite database")
+
+
+async def test_real_cli_write_command_reports_clean_error_on_corrupt_db(tmp_path):
+    """A write command (queue add) against a corrupted database exits
+    nonzero with a clean ERROR: message on stderr -- not a raw traceback,
+    and not exit code 0 with the failure buried in stdout."""
+    db_path = tmp_path / "corrupt.db"
+    _corrupt_db_file(db_path)
+    env = {**os.environ, "GOSSIP_DB_PATH": str(db_path)}
+    env.pop("PT_STATE_DIR", None)
+
+    result = subprocess.run(
+        [sys.executable, "scripts/agent_coordination.py", "queue", "add", "task", "Phase-1"],
+        capture_output=True, text=True, env=env, cwd=str(Path(__file__).resolve().parent.parent),
+    )
+    assert result.returncode != 0, f"expected nonzero exit, got 0: stdout={result.stdout!r}"
+    assert "ERROR" in result.stderr, f"expected ERROR on stderr, got: {result.stderr!r}"
+    assert "Traceback" not in result.stderr, "raw traceback leaked instead of a clean GossipBusError message"
+    assert "ERROR" not in result.stdout, f"ERROR text leaked onto stdout: {result.stdout!r}"
+
+
+async def test_real_cli_read_command_reports_clean_error_on_corrupt_db(tmp_path):
+    """A read command (queue list) against a corrupted database exits
+    nonzero with a clean ERROR: message on stderr, same contract as the
+    write-path test above -- Part 1b must cover both directions, not just
+    emit()."""
+    db_path = tmp_path / "corrupt.db"
+    _corrupt_db_file(db_path)
+    env = {**os.environ, "GOSSIP_DB_PATH": str(db_path)}
+    env.pop("PT_STATE_DIR", None)
+
+    result = subprocess.run(
+        [sys.executable, "scripts/agent_coordination.py", "queue", "list"],
+        capture_output=True, text=True, env=env, cwd=str(Path(__file__).resolve().parent.parent),
+    )
+    assert result.returncode != 0, f"expected nonzero exit, got 0: stdout={result.stdout!r}"
+    assert "ERROR" in result.stderr, f"expected ERROR on stderr, got: {result.stderr!r}"
+    assert "Traceback" not in result.stderr, "raw traceback leaked instead of a clean GossipBusError message"
 
 
 async def test_queue_complete_releases_claim_and_completion_event_together(make_bus, capsys):

@@ -88,6 +88,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from orchestrator.gossip_bus import (  # noqa: E402
     GossipBus,
+    GossipBusError,
     resolve_default_state_dir,
     resolve_gossip_db_path,
 )
@@ -1028,10 +1029,10 @@ async def _try_atomic_claim(
                     continue
                 if locked:
                     return ClaimResult.CONTENTION
-                raise
-            except Exception:
+                raise GossipBusError(f"claim on {task_id!r} failed: {exc}") from exc
+            except Exception as exc:
                 await db.rollback()
-                raise
+                raise GossipBusError(f"claim on {task_id!r} failed: {exc}") from exc
         if inserted:
             bus.schedule_embedding(row_id, safe_payload)
         return ClaimResult.WON
@@ -1070,10 +1071,10 @@ async def _release_claim_with_event(
                     continue
                 if locked:
                     return False
-                raise
-            except Exception:
+                raise GossipBusError(f"release of {task_id!r} failed: {exc}") from exc
+            except Exception as exc:
                 await db.rollback()
-                raise
+                raise GossipBusError(f"release of {task_id!r} failed: {exc}") from exc
         if inserted:
             bus.schedule_embedding(row_id, safe_payload)
         return True
@@ -1542,7 +1543,11 @@ def main() -> int:
     p_buffer_drain.add_argument("agent_id", help="Agent ID to drain")
 
     args = ap.parse_args()
-    return asyncio.run(_amain(args))
+    try:
+        return asyncio.run(_amain(args))
+    except GossipBusError as exc:
+        _error(str(exc))
+        return 1
 
 
 if __name__ == "__main__":
