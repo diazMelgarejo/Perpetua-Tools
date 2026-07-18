@@ -117,7 +117,8 @@ list_private_literal_values() {
     case "$raw" in
       *=*)
         key="${raw%%=*}"
-        value="${raw#"$key="}"
+        key="$(printf '%s' "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+        value="${raw#*=}"
         value="$(printf '%s' "$value" | tr -d '[:space:]')"
         [[ -n "$value" ]] || continue
         [[ -z "$selector" || "$key" == "$selector" ]] || continue

@@ -359,6 +359,11 @@ def scan_private_verboten_literals(root: Path, files: list[str]) -> list[str]:
     ]
     if not tokens:
         return []
+    # Narrow, mechanically-defined exception: AUTHORIZED_CONTRIBUTORS.md's whole
+    # purpose is to list the real approved identity, so the canonical
+    # "cyre <email>" line there is not a leak. This does NOT exempt the file
+    # generally -- only that exact recognized format, so any other private
+    # token anywhere else (including elsewhere in the same file) still blocks.
     errors: list[str] = []
     for rel in files:
         path = root / rel
@@ -369,10 +374,19 @@ def scan_private_verboten_literals(root: Path, files: list[str]) -> list[str]:
         except UnicodeDecodeError:
             continue
         text_lc = text.casefold()
+        is_allowlisted_file = rel == ".github/AUTHORIZED_CONTRIBUTORS.md"
         for token in tokens:
-            if token in text_lc:
-                errors.append(f"private verboten literal in tracked file: {rel}")
-                break
+            if token not in text_lc:
+                continue
+            if is_allowlisted_file and f"cyre <{token}>" in text_lc:
+                # Approved mechanical format for this one file only; a bare
+                # occurrence of the token elsewhere in the same file still
+                # falls through to the error below.
+                remaining = text_lc.replace(f"cyre <{token}>", "")
+                if token not in remaining:
+                    continue
+            errors.append(f"private verboten literal in tracked file: {rel}")
+            break
     return errors
 
 
@@ -532,8 +546,21 @@ def check_identity(root: Path) -> list[str]:
     if os.getenv("GITHUB_ACTIONS") == "true" and not name and not email:
         return []
     identities = set(APPROVED_IDENTITIES)
-    identities.update(("cyre", value) for value in private_literal_values(root, "owner_gmail"))
-    if (name, email) not in identities:
+    private_emails = {
+        value.casefold() for value in private_literal_values(root, "owner_gmail")
+    }
+    private_names = [
+        value.casefold() for value in private_literal_values(root, "owner_name")
+    ]
+    # Backward compatible: if no owner_name is configured, fall back to the
+    # prior hardcoded "cyre" pairing rather than silently rejecting every
+    # private-email identity for configs that never set owner_name.
+    name_tokens = private_names or ["cyre"]
+    private_identity_ok = (
+        email.casefold() in private_emails
+        and any(token in name.casefold() for token in name_tokens)
+    )
+    if (name, email) not in identities and not private_identity_ok:
         expected = " or ".join(f"{n} <{e}>" for n, e in sorted(APPROVED_IDENTITIES))
         return [
             "git identity mismatch: "

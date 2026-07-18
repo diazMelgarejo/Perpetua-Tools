@@ -16,9 +16,26 @@ if [[ -s "$PATTERNS_OPENCLAW" && -s "${PRIVATE}/banned-attribution-patterns" ]];
   exit 0
 fi
 
+# Never hardcode a real banned identity in this tracked script (it would
+# itself trip scan-tracked-banned-tokens.sh). Source it from a CI secret env
+# var first, falling back to an already-materialized local ignored file if
+# one exists from a prior bootstrap on this machine. If neither is
+# available (fresh checkout, no secret configured -- e.g. local dev or this
+# repo's own test suite), fall back to an obviously-synthetic placeholder
+# token so the bootstrap still succeeds and downstream guards still have a
+# non-empty patterns file to check against, without ever embedding a real
+# identity literal in tracked source.
+TOKEN="${PT_BANNED_ATTRIBUTION_TOKEN:-}"
+if [[ -z "$TOKEN" && -s "${PRIVATE}/banned-attribution-patterns" ]]; then
+  TOKEN="$(grep -v '^#' "${PRIVATE}/banned-attribution-patterns" | head -1)"
+fi
+if [[ -z "$TOKEN" ]]; then
+  TOKEN="unconfigured-banned-attribution-placeholder"
+fi
+
 {
   echo "# Banned attribution tokens (one per line, case-insensitive substring match)"
-  echo "nimbosa"
+  printf '%s\n' "$TOKEN"
 } >"$PATTERNS_OPENCLAW"
 chmod 600 "$PATTERNS_OPENCLAW"
 install -m 0600 "$PATTERNS_OPENCLAW" "${PRIVATE}/banned-attribution-patterns"

@@ -54,17 +54,20 @@ author_ok() {
 
 banned_attribution_hit() {
   local ae_lc="$1" an_lc="$2" ce_lc="$3" cn_lc="$4" body_lc="$5"
-  if ! banned_patterns_ready "$REPO_ROOT"; then
-    return 1
-  fi
-  line_matches_banned_pattern "$ae_lc" "$REPO_ROOT" && return 0
+  # Private-literal checks (from the gitignored local/CI-provided literals
+  # file) must run regardless of whether the separate tracked patterns
+  # source is ready -- these are two independent sources, and a missing
+  # patterns file must not silently disable the private-literal guard too.
   line_matches_private_forbidden_literal "$ae_lc" "$REPO_ROOT" && return 0
-  line_matches_banned_pattern "$an_lc" "$REPO_ROOT" && return 0
   line_matches_private_forbidden_literal "$an_lc" "$REPO_ROOT" && return 0
-  line_matches_banned_pattern "$ce_lc" "$REPO_ROOT" && return 0
   line_matches_private_forbidden_literal "$ce_lc" "$REPO_ROOT" && return 0
-  line_matches_banned_pattern "$cn_lc" "$REPO_ROOT" && return 0
   line_matches_private_forbidden_literal "$cn_lc" "$REPO_ROOT" && return 0
+  if banned_patterns_ready "$REPO_ROOT"; then
+    line_matches_banned_pattern "$ae_lc" "$REPO_ROOT" && return 0
+    line_matches_banned_pattern "$an_lc" "$REPO_ROOT" && return 0
+    line_matches_banned_pattern "$ce_lc" "$REPO_ROOT" && return 0
+    line_matches_banned_pattern "$cn_lc" "$REPO_ROOT" && return 0
+  fi
   local line
   while IFS= read -r line; do
     line_lc="$(printf '%s' "$line" | tr '[:upper:]' '[:lower:]')"

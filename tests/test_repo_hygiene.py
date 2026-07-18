@@ -377,16 +377,39 @@ def test_private_verboten_literals_are_blocked_case_insensitively(tmp_path):
 
 def test_owner_gmail_redaction_rule_allows_mechanical_allowlists(tmp_path):
     repo_hygiene = load_repo_hygiene()
-    doc = tmp_path / ".github" / "AUTHORIZED_CONTRIBUTORS.md"
-    doc.parent.mkdir()
     private_email = "private.owner@example.invalid"
-    doc.write_text(f"cyre <{private_email}>\n", encoding="utf-8")
+    literals = tmp_path / ".cursor-private-literals"
+    literals.write_text(f"owner_gmail={private_email}\n", encoding="utf-8")
 
-    errors = repo_hygiene.scan_private_verboten_literals(
-        tmp_path, [".github/AUTHORIZED_CONTRIBUTORS.md"]
-    )
+    old = os.environ.get("OPENCLAW_VERBOTEN_LITERALS")
+    os.environ["OPENCLAW_VERBOTEN_LITERALS"] = str(literals)
+    try:
+        # The approved mechanical format: AUTHORIZED_CONTRIBUTORS.md's own
+        # canonical identity line. Must be exempt.
+        allowlisted = tmp_path / ".github" / "AUTHORIZED_CONTRIBUTORS.md"
+        allowlisted.parent.mkdir(parents=True)
+        allowlisted.write_text(f"cyre <{private_email}>\n", encoding="utf-8")
 
-    assert errors == []
+        # An ordinary occurrence elsewhere must still be blocked -- this is
+        # the assertion that was missing before, which is what let the prior
+        # version of this test pass vacuously (tokens was always empty).
+        ordinary = tmp_path / "NOTES.md"
+        ordinary.write_text(f"contact: {private_email}\n", encoding="utf-8")
+
+        allowlisted_errors = repo_hygiene.scan_private_verboten_literals(
+            tmp_path, [".github/AUTHORIZED_CONTRIBUTORS.md"]
+        )
+        ordinary_errors = repo_hygiene.scan_private_verboten_literals(
+            tmp_path, ["NOTES.md"]
+        )
+    finally:
+        if old is None:
+            os.environ.pop("OPENCLAW_VERBOTEN_LITERALS", None)
+        else:
+            os.environ["OPENCLAW_VERBOTEN_LITERALS"] = old
+
+    assert allowlisted_errors == []
+    assert len(ordinary_errors) == 1
 
 
 # ---------------------------------------------------------------------------
