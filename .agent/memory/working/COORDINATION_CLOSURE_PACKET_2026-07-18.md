@@ -10,7 +10,7 @@ The privacy and portable-memory closure is complete.
 
 PT PR #260:
 - Branch: `replace/pr258-clean-snapshot-20260718`
-- Tip: `604ff7fe`
+- Tip: `41521e0c`
 - State: pushed and synced
 - PR: `https://github.com/diazMelgarejo/Perpetua-Tools/pull/260`
 
@@ -28,6 +28,7 @@ PT:
   rules.
 - Added a Cybersecurity / OpSec / SecOps domain rule to PT memory.
 - Added a durable whiteboard pinned note for future agents.
+- Added a heartbeat-vs-log liveness handoff note for future coordination loops.
 - Kept exact private values out of tracked files; guards load them from an
   off-repo local-only registry.
 
@@ -43,7 +44,7 @@ Orama:
 
 PT:
 - `python3 scripts/review/repo_hygiene.py .` passed.
-- Full `.agent` scan covered 329 files with 0 errors.
+- Full `.agent` scan covered 332 files with 0 errors.
 - Focused hygiene and attribution tests passed: 82/82.
 
 Orama:
@@ -84,6 +85,9 @@ at runtime.
   - rendered summaries
 - Guard output should report category, file, and line only. Do not print matched
   private values.
+- Board `log()` messages and `heartbeat pulse()` events are separate. Posting
+  detailed logs does not refresh liveness; long-running agents must call
+  `heartbeat pulse <agent_id>` directly and periodically.
 - Before ending a security/privacy session: scan, test, commit, push, fetch,
   verify branch state, and inventory dirty worktrees.
 - Keep the critical whiteboard queue item open until all offline agents have
@@ -96,6 +100,8 @@ at runtime.
 - PR #260: closure comment posted.
 - Critical queue item remains open:
   `Coordination-whiteboard-pinned-privacy-memory-opsec-20260718-879de23f`.
+- Claude added the heartbeat-vs-log liveness-gap handoff and confirmed the
+  stalled-state fix by pulsing its heartbeat directly.
 
 ## Offline LAN Handoff
 
@@ -113,9 +119,9 @@ PT:
 - `.agent/memory/semantic/DOMAIN_KNOWLEDGE.md`
 - `.agent/memory/semantic/LESSONS.md`
 - `.agent/memory/working/WHITEBOARD_PINNED_PRIVACY_MEMORY_OPSEC_2026-07-18.md`
+- `.agent/memory/working/HEARTBEAT_VS_LOG_LIVENESS_GAP_2026-07-18.md`
 - `scripts/review/repo_hygiene.py`
 
 Orama:
 - `docs/v2/47-portable-memory-local-topology-invariant.md`
 - `bin/orama-system/skills/oramasys-method/SKILL.md`
-
