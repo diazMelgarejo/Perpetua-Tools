@@ -1,0 +1,43 @@
+{
+  "id": "1d7c9a778f3a",
+  "key": "manual_1d7c9a",
+  "name": "manual_1d7c9a",
+  "claim": "When wiring code-review-graph (CRG) MCP server to Claude Code, use the global ~/.claude.json with the same uvx/ollama/bge-m3 config used in the project-level .mcp.json. CRG runs via uvx code-review-graph serve, not as a standalone binary. The env vars PYTHON, CRG_OPENAI_API_KEY=ollama, CRG_OPENAI_BASE_URL=http://localhost:11434/v1, CRG_OPENAI_MODEL=bge-m3, CRG_OPENAI_DIMENSION=1024, and CRG_ACCEPT_CLOUD_EGRESS=1 must match exactly for embeddings to work.",
+  "conditions": [
+    "bge-m3",
+    "claude-code",
+    "code-review-graph",
+    "crg",
+    "mcp",
+    "uvx"
+  ],
+  "evidence_ids": [
+    "2026-07-18T01:45:42.685460+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T01:45:42.685460+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T01:45:42.685460+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T01:45:43.124690+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-14: CRG was configured in OpenClaw/.mcp.json and .codex/mcp.json but missing from ~/.claude.json, so Claude Code could not reach it globally. The project-level config had the correct uvx env setup; the global config needed the same block.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T01:45:42.685460+00:00"
+      ],
+      "lessons_sha": "981d3c20dae1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T01:45:43.124672+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-14: CRG was configured in OpenClaw/.mcp.json and .codex/mcp.json but missing from ~/.claude.json, so Claude Code could not reach it globally. The project-level config had the correct uvx env setup; the global config needed the same block."
+}
