@@ -1,0 +1,72 @@
+{
+  "id": "12fc53a7bc0f",
+  "key": "manual_12fc53",
+  "name": "manual_12fc53",
+  "claim": "Do not declare a Git scrub operation globally complete until its scope is explicit and verified: branch metadata/message rewrites, current-tree sanitization, PR-branch replay, and all-ref blob scans are separate gates. If the all-ref blob scan timed out or was deferred, say so and keep the gap tracked instead of implying history-wide blob removal.",
+  "conditions": [
+    "all-ref",
+    "blob",
+    "branch",
+    "complete",
+    "current-tree",
+    "declare",
+    "deferred",
+    "explicit",
+    "gap",
+    "gates",
+    "git",
+    "globally",
+    "history-wide",
+    "implying",
+    "instead",
+    "keep",
+    "message",
+    "metadata",
+    "operation",
+    "out",
+    "pr-branch",
+    "removal",
+    "replay",
+    "rewrites",
+    "sanitization",
+    "say",
+    "scan",
+    "scans",
+    "scope",
+    "scrub",
+    "separate",
+    "timed",
+    "tracked",
+    "until",
+    "verified"
+  ],
+  "evidence_ids": [
+    "2026-07-18T05:02:32.334627+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T05:02:32.334627+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T05:02:32.334627+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T05:02:32.452024+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR258's branch-scoped scrub cleaned author/committer metadata and selected message bodies, and the reanchored PR branch was rebuilt with sanitized tracked files and clean metadata. That does not prove every historical blob across all refs is clean; Claude correctly flagged the all-ref blob scan as a remaining verification gap.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T05:02:32.334627+00:00"
+      ],
+      "lessons_sha": "9889035256b2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T05:02:32.452015+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR258's branch-scoped scrub cleaned author/committer metadata and selected message bodies, and the reanchored PR branch was rebuilt with sanitized tracked files and clean metadata. That does not prove every historical blob across all refs is clean; Claude correctly flagged the all-ref blob scan as a remaining verification gap."
+}
