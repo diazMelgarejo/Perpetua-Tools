@@ -17,7 +17,7 @@ import pytest
 # Ensure project root is on path for scripts/agent_coordination + orchestrator.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from scripts.agent_coordination import (
+from orchestrator.coordination.cli import (
     _agents,
     _claim,
     _known_agent_ids,
@@ -31,7 +31,8 @@ from scripts.agent_coordination import (
     canonical_repo_root,
     current_worktree_label,
 )
-from scripts import agent_coordination_core, agent_coordination_legacy
+import orchestrator.coordination.cli as agent_coordination_core
+import orchestrator.coordination.cli as agent_coordination_legacy
 from orchestrator.gossip_bus import GossipBus
 
 
