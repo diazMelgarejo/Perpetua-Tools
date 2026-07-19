@@ -32,6 +32,7 @@ from orchestrator.coordination.types import (
     ReorderBuffer,
 )
 from orchestrator.gossip_bus import GossipBus
+from conftest import emit_noise_batch
 
 
 @pytest.fixture
@@ -480,11 +481,7 @@ async def test_get_reorder_buffers_survives_heartbeat_noise_beyond_tail_window(m
     await _claim_with_seq(bus, "agent-1", 0, "task/a", "")
     await _claim_with_seq(bus, "agent-1", 2, "task/c", "")
 
-    for i in range(1500):
-        await bus.emit(
-            "heartbeat",
-            {"kind": "agent_pulse", "agent_id": f"noise-{i % 10}", "seq": i},
-        )
+    await emit_noise_batch(bus, 1500, modulo=10)
 
     buffers = await _get_reorder_buffers(bus)
     assert "agent-1" in buffers
