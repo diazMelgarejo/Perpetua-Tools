@@ -28,9 +28,11 @@ from scripts.agent_coordination_core import (  # noqa: E402
     ReleaseResult,
     ClaimSequence,
     ReorderBuffer,
+    _all_phase_states,
     _buffer_drain,
     _buffer_status,
     _claim_with_seq,
+    _get_latest_phase_state,
     _get_reorder_buffers,
     _queue_claim,
     _queue_complete,
@@ -69,30 +71,6 @@ _phase_status = _impl._phase_status
 _detect_blockers = _impl._detect_blockers
 _workflow_critical_path = _impl._workflow_critical_path
 _queue_add = _impl._queue_add
-
-
-async def _get_latest_phase_state(
-    bus: GossipBus, phase_name: str
-) -> Optional[PhaseState]:
-    events = await bus.tail(limit=500, event_type="heartbeat")
-    for event in events:
-        payload = event["payload"]
-        if payload.get("kind") == "phase_event" and payload.get("phase_name") == phase_name:
-            return PhaseState.from_payload(payload)
-    return None
-
-
-async def _all_phase_states(bus: GossipBus) -> dict[str, PhaseState]:
-    events = await bus.tail(limit=500, event_type="heartbeat")
-    latest: dict[str, PhaseState] = {}
-    for event in events:
-        payload = event["payload"]
-        if payload.get("kind") != "phase_event":
-            continue
-        phase_name = payload.get("phase_name")
-        if phase_name and phase_name not in latest:
-            latest[phase_name] = PhaseState.from_payload(payload)
-    return latest
 
 
 _CREATE_CLAIMS_TABLE = """
