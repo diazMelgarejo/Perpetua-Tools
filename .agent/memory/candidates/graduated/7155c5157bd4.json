@@ -1,0 +1,41 @@
+{
+  "id": "7155c5157bd4",
+  "key": "manual_7155c5",
+  "name": "manual_7155c5",
+  "claim": "When fixing a suspected data-staleness bug, verify the fix against real production data, not just synthetic tests -- a synthetic test proves the LOGIC is correct against the schema you assumed; it doesn't prove the real data actually has that shape or that the bug was really hitting production. Copy the live DB/state to a scratch location, run the fixed function against it directly, and compare old vs new field values for a known-affected real record before trusting the fix.",
+  "conditions": [
+    "regression-test-limits",
+    "staleness-bug-fix",
+    "synthetic-vs-real-data",
+    "verify-against-production"
+  ],
+  "evidence_ids": [
+    "2026-07-19T06:10:46.439399+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-19T06:10:46.439399+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-19T06:10:46.439399+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-19T06:10:46.549393+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Applied fixing find_agent_heartbeats()'s stale-Worktree bug: wrote a passing synthetic regression test first, but only trusted the fix after also running it against a copy of the actual live perpetua_core.db and confirming codex-primary-orchestrator's real record showed the old frozen field alongside the new correct one. The synthetic test alone would not have caught a schema mismatch between assumed and real event payloads.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-19T06:10:46.439399+00:00"
+      ],
+      "lessons_sha": "5b59a76fdb99"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-19T06:10:46.549382+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Applied fixing find_agent_heartbeats()'s stale-Worktree bug: wrote a passing synthetic regression test first, but only trusted the fix after also running it against a copy of the actual live perpetua_core.db and confirming codex-primary-orchestrator's real record showed the old frozen field alongside the new correct one. The synthetic test alone would not have caught a schema mismatch between assumed and real event payloads."
+}

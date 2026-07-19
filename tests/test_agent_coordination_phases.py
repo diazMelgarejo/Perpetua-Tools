@@ -16,9 +16,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from orchestrator import gossip_bus as gossip_bus_module  # noqa: E402
 from orchestrator.gossip_bus import GossipBus  # noqa: E402
-from scripts.agent_coordination_phases import (  # noqa: E402
-    PhaseState,
-    PhaseStatus,
+from coordination_test_helpers import emit_noise_batch  # noqa: E402
+from orchestrator.coordination.cli import (  # noqa: E402
     _all_phase_states,
     _detect_blockers,
     _get_latest_phase_state,
@@ -28,6 +27,10 @@ from scripts.agent_coordination_phases import (  # noqa: E402
     _phase_start,
     _phase_unblock,
     _phase_update,
+)
+from orchestrator.coordination.types import (  # noqa: E402
+    PhaseState,
+    PhaseStatus,
 )
 
 
@@ -306,11 +309,7 @@ async def test_phase_states_survive_heartbeat_noise_beyond_tail_window(bus_with_
     await _phase_start(bus, "Phase-Noise")
     await _phase_complete(bus, "Phase-Noise")
 
-    for i in range(1500):
-        await bus.emit(
-            "heartbeat",
-            {"kind": "agent_pulse", "agent_id": f"noise-{i % 5}", "seq": i},
-        )
+    await emit_noise_batch(bus, 1500, modulo=5)
 
     phases = await _all_phase_states(bus)
     phase = await _get_latest_phase_state(bus, "Phase-Noise")
