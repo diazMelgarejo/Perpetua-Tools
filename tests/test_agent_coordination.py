@@ -38,6 +38,7 @@ from orchestrator.coordination.paths import (
 import orchestrator.coordination.cli as agent_coordination_core
 import orchestrator.coordination.cli as agent_coordination_legacy
 from orchestrator.gossip_bus import GossipBus
+from conftest import emit_noise_batch
 
 
 @pytest.fixture
@@ -146,11 +147,7 @@ async def test_list_survives_heartbeat_noise_beyond_tail_window(make_bus, capsys
     await _register(bus, "claimer", "cli-tool", "model-x", "noise test")
     await _claim(bus, "claimer", "important-task", "hold this")
 
-    for i in range(1500):
-        await bus.emit(
-            "heartbeat",
-            {"kind": "agent_pulse", "agent_id": f"noise-{i % 10}", "seq": i},
-        )
+    await emit_noise_batch(bus, 1500, modulo=10)
 
     await _list(bus, None)
     captured = capsys.readouterr()

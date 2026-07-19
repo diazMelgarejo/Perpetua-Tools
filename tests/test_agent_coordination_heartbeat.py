@@ -19,6 +19,7 @@ from orchestrator.heartbeat_monitor import (
     LIVENESS_STALLED_SEC,
 )
 from orchestrator.gossip_bus import GossipBus
+from conftest import emit_noise_batch
 from orchestrator.coordination.cli import (
     _heartbeat_check as heartbeat_check,
     _heartbeat_dashboard as heartbeat_dashboard,
@@ -610,11 +611,7 @@ async def test_find_agent_heartbeats_survives_heartbeat_noise_beyond_tail_window
         "worktree": "main@/path",
     })
 
-    for i in range(1500):
-        await bus.emit(
-            "heartbeat",
-            {"kind": "agent_pulse", "agent_id": f"noise-{i % 10}", "seq": i},
-        )
+    await emit_noise_batch(bus, 1500, modulo=10)
 
     agents = await find_agent_heartbeats(bus, agent_id="victim")
     assert "victim" in agents
@@ -639,11 +636,7 @@ async def test_find_open_claims_survives_heartbeat_noise_beyond_tail_window(bus)
         "notes": "",
     })
 
-    for i in range(1500):
-        await bus.emit(
-            "heartbeat",
-            {"kind": "agent_pulse", "agent_id": f"noise-{i % 10}", "seq": i},
-        )
+    await emit_noise_batch(bus, 1500, modulo=10)
 
     claims = await find_open_claims(bus)
     assert len(claims) == 1
