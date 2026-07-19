@@ -133,6 +133,26 @@ async def test_list_task_filter_excludes_other_tasks(make_bus, capsys):
     assert "task/other" not in open_lines[0]
 
 
+@pytest.mark.asyncio
+async def test_list_survives_heartbeat_noise_beyond_tail_window(make_bus, capsys):
+    """Legacy list must not drop open claims once unrelated heartbeat volume
+    exceeds bus.tail()'s size-bounded window."""
+    bus = await make_bus()
+    await _register(bus, "claimer", "cli-tool", "model-x", "noise test")
+    await _claim(bus, "claimer", "important-task", "hold this")
+
+    for i in range(1500):
+        await bus.emit(
+            "heartbeat",
+            {"kind": "agent_pulse", "agent_id": f"noise-{i % 10}", "seq": i},
+        )
+
+    await _list(bus, None)
+    captured = capsys.readouterr()
+    assert "OPEN  important-task" in captured.out
+    assert "claimer" in captured.out
+
+
 async def test_agents_lists_registered_agent(make_bus, capsys):
     bus = await make_bus()
     await _register(bus, "agent-z", "human", "model-z", "agents list test")

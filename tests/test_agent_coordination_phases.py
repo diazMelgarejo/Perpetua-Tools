@@ -298,5 +298,26 @@ async def test_phase_completion_requires_no_blockers(bus_with_db):
     assert phase.status == PhaseStatus.COMPLETE
 
 
+@pytest.mark.asyncio
+async def test_phase_states_survive_heartbeat_noise_beyond_tail_window(bus_with_db):
+    """phase list/status must not drop completed phases once unrelated
+    heartbeat volume exceeds bus.tail()'s size-bounded window."""
+    bus = bus_with_db
+    await _phase_start(bus, "Phase-Noise")
+    await _phase_complete(bus, "Phase-Noise")
+
+    for i in range(1500):
+        await bus.emit(
+            "heartbeat",
+            {"kind": "agent_pulse", "agent_id": f"noise-{i % 5}", "seq": i},
+        )
+
+    phases = await _all_phase_states(bus)
+    phase = await _get_latest_phase_state(bus, "Phase-Noise")
+    assert "Phase-Noise" in phases
+    assert phase is not None
+    assert phase.status == PhaseStatus.COMPLETE
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

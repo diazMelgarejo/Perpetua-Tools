@@ -15,6 +15,7 @@ Stale claims from DEAD agents are automatically released to unblock other agents
 """
 from __future__ import annotations
 
+import json
 import time
 from typing import Optional
 
@@ -25,6 +26,53 @@ from orchestrator.gossip_bus import GossipBus
 LIVENESS_ACTIVE_SEC = 60
 LIVENESS_IDLE_SEC = 300
 LIVENESS_STALLED_SEC = 1800
+
+_AGENT_LIVENESS_KINDS = (
+    "agent_register",
+    "agent_claim",
+    "agent_release",
+    "agent_killed",
+    "agent_pulse",
+)
+_AGENT_CLAIM_KINDS = ("agent_claim", "agent_release")
+
+
+async def _fetch_heartbeat_events(
+    bus: GossipBus,
+    kinds: tuple[str, ...],
+    agent_id: Optional[str] = None,
+) -> list[dict]:
+    """Fetch agent-lifecycle heartbeat events via SQL, not a bounded tail().
+
+    Unrelated heartbeat traffic (task queue events, phase events, other
+    agents' pulses) can push an agent's registration or latest pulse out of a
+    size-bounded tail window, making live agents disappear from monitoring or
+    open claims vanish from dashboards/cleanup.
+    """
+    kind_placeholders = ",".join("?" for _ in kinds)
+    query = (
+        "SELECT id, event_uuid, ts, event_type, payload_json FROM gossip "
+        "WHERE event_type = 'heartbeat' "
+        f"AND json_extract(payload_json, '$.kind') IN ({kind_placeholders})"
+    )
+    params: list = list(kinds)
+    if agent_id is not None:
+        query += " AND json_extract(payload_json, '$.agent_id') = ?"
+        params.append(agent_id)
+    query += " ORDER BY id ASC"
+    async with bus.connect() as db:
+        cursor = await db.execute(query, params)
+        rows = await cursor.fetchall()
+    return [
+        {
+            "row_id": row[0],
+            "uuid": row[1],
+            "ts": row[2],
+            "event_type": row[3],
+            "payload": json.loads(row[4]),
+        }
+        for row in rows
+    ]
 
 
 def liveness_status(last_activity_ts: float) -> tuple[str, int]:
@@ -71,12 +119,12 @@ async def find_agent_heartbeats(
         'last_registration': dict,  # latest register event
     }
     """
-    events = await bus.tail(limit=500, event_type="heartbeat")
+    events = await _fetch_heartbeat_events(bus, _AGENT_LIVENESS_KINDS, agent_id)
 
     agent_data: dict[str, dict] = {}
     last_ts_per_agent: dict[str, float] = {}
 
-    for ev in reversed(events):  # oldest first
+    for ev in events:
         p = ev["payload"]
         agent = p.get("agent_id")
         if not agent:
@@ -134,10 +182,10 @@ async def find_agent_heartbeats(
 
 async def find_open_claims(bus: GossipBus) -> list[dict]:
     """Find all open (unclosed) task claims."""
-    events = await bus.tail(limit=300, event_type="heartbeat")
+    events = await _fetch_heartbeat_events(bus, _AGENT_CLAIM_KINDS)
     state: dict[str, dict] = {}
 
-    for ev in reversed(events):  # oldest first
+    for ev in events:
         p = ev["payload"]
         if p.get("kind") not in ("agent_claim", "agent_release"):
             continue
