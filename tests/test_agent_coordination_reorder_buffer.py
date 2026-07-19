@@ -21,7 +21,7 @@ import pytest
 # Ensure project root is on path for scripts/agent_coordination + orchestrator.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from scripts.agent_coordination import (
+from orchestrator.coordination.cli import (
     ClaimSequence,
     ReorderBuffer,
     _buffer_drain,

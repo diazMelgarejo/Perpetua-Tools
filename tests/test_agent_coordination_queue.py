@@ -23,7 +23,7 @@ import pytest
 # Ensure project root is on path for scripts/agent_coordination + orchestrator.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from scripts.agent_coordination import (
+from orchestrator.coordination.cli import (
     ClaimResult,
     ReleaseResult,
     TaskPriority,
@@ -36,8 +36,8 @@ from scripts.agent_coordination import (
     _try_atomic_claim,
     _release_claim_with_event,
 )
-from scripts import agent_coordination_core as _core
-from scripts.agent_coordination_core import (
+import orchestrator.coordination.cli as _core
+from orchestrator.coordination.cli import (
     _queue_add as _core_queue_add,
     _queue_claim as _core_queue_claim,
     _queue_complete as _core_queue_complete,
@@ -47,7 +47,7 @@ from scripts.agent_coordination_core import (
     _phase_list as _core_phase_list,
     _phase_start as _core_phase_start,
 )
-import scripts.agent_coordination_core as core_cli
+import orchestrator.coordination.cli as core_cli
 from orchestrator.gossip_bus import GossipBus, GossipBusError
 
 

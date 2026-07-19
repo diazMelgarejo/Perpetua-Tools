@@ -19,7 +19,7 @@ from orchestrator.heartbeat_monitor import (
     LIVENESS_STALLED_SEC,
 )
 from orchestrator.gossip_bus import GossipBus
-from scripts.agent_coordination import (
+from orchestrator.coordination.cli import (
     _heartbeat_check as heartbeat_check,
     _heartbeat_dashboard as heartbeat_dashboard,
     _heartbeat_list as heartbeat_list,
