@@ -38,6 +38,7 @@ __pycache__/
 .claude/.DS_Store
 .claude/launch.json
 .claude/worktrees/
+.claude/settings.local.json
 .vscode/.secrets/
 .vscode/.tokens/
 .vscode/*.local.json
