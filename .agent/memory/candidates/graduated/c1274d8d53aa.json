@@ -1,0 +1,42 @@
+{
+  "id": "c1274d8d53aa",
+  "key": "manual_c1274d",
+  "name": "manual_c1274d",
+  "claim": "A PR/plan being 'merged' does not mean its corresponding implementation code landed -- PR#260 (docs-only 'clean replay of coordination consolidation plan') merged into main, but the actual ~35 commits of real code (atomic-claim promotion, security fixes, CI provisioning) it described were still sitting unpushed in a local worktree, never having gone through their own PR. Verify by diffing actual file content between the branch and main (git diff origin/main..branch -- <core files>), not by checking merge status alone -- a title like 'docs: X' or 'clean replay' is itself a signal to check, not just a label.",
+  "conditions": [
+    "docs-only-pr",
+    "implementation-gap",
+    "plan-vs-code",
+    "pr-merged",
+    "verify-before-push"
+  ],
+  "evidence_ids": [
+    "2026-07-19T06:03:55.001290+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-19T06:03:55.001290+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-19T06:03:55.001290+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-19T06:03:55.114493+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Discovered when asked to push everything to main after being told a PR merged -- almost pushed nothing useful (main already had the docs) or worse, would have needed to force unreviewed security-sensitive code through if I hadn't checked first. Caught via git diff --stat before acting, per this session's established verify-before-trust discipline.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-19T06:03:55.001290+00:00"
+      ],
+      "lessons_sha": "b9a451f758da"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-19T06:03:55.114484+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Discovered when asked to push everything to main after being told a PR merged -- almost pushed nothing useful (main already had the docs) or worse, would have needed to force unreviewed security-sensitive code through if I hadn't checked first. Caught via git diff --stat before acting, per this session's established verify-before-trust discipline."
+}

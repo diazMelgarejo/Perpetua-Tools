@@ -1,0 +1,42 @@
+{
+  "id": "2b40ad92abc0",
+  "key": "manual_2b40ad",
+  "name": "manual_2b40ad",
+  "claim": "Tests that flood many synthetic events to exceed a size-bounded window (e.g. 'survives heartbeat noise beyond tail window' tests) should never loop 'for i in range(N): await bus.emit(...)' -- each emit() is its own SQLite transaction with its own fsync-backed commit, making N=1500 take 30-50+ seconds per test. Batch instead: open one bus.connect(), call bus.insert_event(db, ...) N times (same schema/redaction path as emit(), just skips the per-call commit), then one db.commit(). The noise events' individual content is never asserted on by these tests, only their bulk existence -- batching changes nothing about what's verified.",
+  "conditions": [
+    "conftest",
+    "emit-noise",
+    "event-flood",
+    "sqlite-batching",
+    "test-performance"
+  ],
+  "evidence_ids": [
+    "2026-07-19T06:03:21.986354+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-19T06:03:21.986354+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-19T06:03:21.986354+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-19T06:03:22.092646+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Found when the full coordination test suite (183 tests) was hitting a 120s+ combined timeout. Isolated to 7 near-identical flood loops across 5 test files, all fixable with one shared conftest.py helper (emit_noise_batch). Measured: one such test went 48.84s -> 0.77s (63x), full suite 120s+ -> 16.36s.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-19T06:03:21.986354+00:00"
+      ],
+      "lessons_sha": "a042894a363b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-19T06:03:22.092638+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Found when the full coordination test suite (183 tests) was hitting a 120s+ combined timeout. Isolated to 7 near-identical flood loops across 5 test files, all fixable with one shared conftest.py helper (emit_noise_batch). Measured: one such test went 48.84s -> 0.77s (63x), full suite 120s+ -> 16.36s."
+}
