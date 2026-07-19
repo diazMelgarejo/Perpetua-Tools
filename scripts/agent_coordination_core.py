@@ -1335,14 +1335,11 @@ async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> bool | None:
 
 async def _queue_list(bus: GossipBus, phase_filter: Optional[str], priority_filter: Optional[str], agent_filter: Optional[str]) -> None:
     """List queued tasks grouped by status, with optional filters."""
-    events = await bus.tail(limit=1000, event_type="heartbeat")
-    task_states = {}
-    for ev in reversed(events):
-        p = ev["payload"]
-        task_id = p.get("task_id")
-        if not task_id or p.get("kind") not in ("task_enqueue", "task_claim", "task_complete", "task_failed", "task_abandoned"):
-            continue
-        task_states.setdefault(task_id, {}).update(p)
+    # Same unbounded fold as claim/fail/complete -- a size-bounded tail() over
+    # the combined heartbeat stream can drop a task's founding task_enqueue
+    # once enough unrelated pulse traffic accumulates, making open work vanish
+    # from the board with no error (see _fetch_task_events).
+    task_states = await _latest_task_snapshots(bus)
     queued, claimed, completed, failed = {}, {}, {}, {}
     for task_id, state in task_states.items():
         if phase_filter and state.get("phase") != phase_filter:
@@ -1388,14 +1385,7 @@ async def _queue_list(bus: GossipBus, phase_filter: Optional[str], priority_filt
 
 async def _queue_status(bus: GossipBus, agent_filter: Optional[str]) -> None:
     """Show status of all claimed tasks per agent."""
-    events = await bus.tail(limit=1000, event_type="heartbeat")
-    task_states = {}
-    for ev in reversed(events):
-        p = ev["payload"]
-        task_id = p.get("task_id")
-        if not task_id or p.get("kind") not in ("task_enqueue", "task_claim", "task_complete", "task_failed", "task_abandoned"):
-            continue
-        task_states.setdefault(task_id, {}).update(p)
+    task_states = await _latest_task_snapshots(bus)
     agent_work = {}
     for task_id, state in task_states.items():
         if state.get("status") == QueuedTaskState.CLAIMED.value:

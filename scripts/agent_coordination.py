@@ -34,6 +34,8 @@ from scripts.agent_coordination_core import (  # noqa: E402
     _queue_claim,
     _queue_complete,
     _queue_fail,
+    _queue_list,
+    _queue_status,
     _release_claim_with_event,
     _try_atomic_claim,
     canonical_db_path,
@@ -66,8 +68,6 @@ _phase_status = _impl._phase_status
 _detect_blockers = _impl._detect_blockers
 _workflow_critical_path = _impl._workflow_critical_path
 _queue_add = _impl._queue_add
-_queue_list = _impl._queue_list
-_queue_status = _impl._queue_status
 
 
 async def _get_latest_phase_state(
