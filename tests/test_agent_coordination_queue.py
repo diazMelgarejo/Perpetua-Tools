@@ -51,6 +51,7 @@ from orchestrator.coordination.types import (
     TaskPriority,
 )
 from orchestrator.gossip_bus import GossipBus, GossipBusError
+from conftest import emit_noise_batch
 
 
 @pytest.fixture
@@ -539,11 +540,7 @@ async def test_queue_list_survives_heartbeat_noise_beyond_tail_window(make_bus, 
     events = await bus.tail(limit=10, event_type="heartbeat")
     task_id = events[0]["payload"]["task_id"]
 
-    for i in range(1500):
-        await bus.emit(
-            "heartbeat",
-            {"kind": "agent_pulse", "agent_id": f"noise-{i % 5}", "seq": i},
-        )
+    await emit_noise_batch(bus, 1500, modulo=5)
 
     capsys.readouterr()
     await _queue_list(bus, None, None, None)
@@ -560,11 +557,7 @@ async def test_queue_status_survives_heartbeat_noise_beyond_tail_window(make_bus
     task_id = events[0]["payload"]["task_id"]
     await _core_queue_claim(bus, task_id, "agent-noise")
 
-    for i in range(1500):
-        await bus.emit(
-            "heartbeat",
-            {"kind": "agent_pulse", "agent_id": "noise", "seq": i},
-        )
+    await emit_noise_batch(bus, 1500)
 
     capsys.readouterr()
     await _queue_status(bus, None)
