@@ -1,0 +1,43 @@
+{
+  "id": "993fbaeab76b",
+  "key": "manual_993fba",
+  "name": "manual_993fba",
+  "claim": "A parser's can_parse() must dry-run the actual operation (not just check required-field presence) to honor a documented fail-closed/no-stack-trace contract. Field presence alone is insufficient: FableExportParser-skeleton.py's can_parse() checked that current_leaf_message_uuid and every parent_message_uuid key existed, but a missing-uuid reference or a parent cycle would still make can_parse() return True and then parse() raise ValueError -- violating distill_session.py's documented 'parse failures exit 2, no traceback' contract. Fix: wrap the real operation (the lineage walk) in a try/except inside can_parse() itself and return False on failure, so an unwalkable input never reaches parse() at all. General pattern: when a format-detection method's job is to gate a fallible operation, it must attempt (or fully dry-run) that operation, not merely check for the keys the operation will need.",
+  "conditions": [
+    "can-parse",
+    "distill-session",
+    "fable5-parser",
+    "fail-closed",
+    "parser-design",
+    "stack-trace-leak"
+  ],
+  "evidence_ids": [
+    "2026-07-19T02:17:44.388818+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-19T02:17:44.388818+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-19T02:17:44.388818+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-19T02:17:44.464246+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Caught by Codex's 2026-07-19 review (references/Fable-5-plan-and-parser-review-to-Claude-2026-07-19.md finding 1), which reproduced the exact gap with a synthetic missing-uuid leaf pointer. Fixed and re-verified against Codex's exact repro plus a new parent-cycle case and an unrecognized-sender case (a second, related finding: can_parse() must also reject senders outside {human,assistant}, not let them pass through role-mapping unchanged) -- all fail closed with zero exceptions reaching the loader.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-19T02:17:44.388818+00:00"
+      ],
+      "lessons_sha": "6e488b512b63"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-19T02:17:44.464240+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Caught by Codex's 2026-07-19 review (references/Fable-5-plan-and-parser-review-to-Claude-2026-07-19.md finding 1), which reproduced the exact gap with a synthetic missing-uuid leaf pointer. Fixed and re-verified against Codex's exact repro plus a new parent-cycle case and an unrecognized-sender case (a second, related finding: can_parse() must also reject senders outside {human,assistant}, not let them pass through role-mapping unchanged) -- all fail closed with zero exceptions reaching the loader."
+}
