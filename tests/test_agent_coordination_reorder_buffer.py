@@ -22,12 +22,14 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from orchestrator.coordination.cli import (
-    ClaimSequence,
-    ReorderBuffer,
     _buffer_drain,
     _buffer_status,
     _claim_with_seq,
     _get_reorder_buffers,
+)
+from orchestrator.coordination.types import (
+    ClaimSequence,
+    ReorderBuffer,
 )
 from orchestrator.gossip_bus import GossipBus
 

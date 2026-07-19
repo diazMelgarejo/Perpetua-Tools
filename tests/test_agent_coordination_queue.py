@@ -24,9 +24,6 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from orchestrator.coordination.cli import (
-    ClaimResult,
-    ReleaseResult,
-    TaskPriority,
     _queue_add,
     _queue_claim,
     _queue_complete,
@@ -48,6 +45,11 @@ from orchestrator.coordination.cli import (
     _phase_start as _core_phase_start,
 )
 import orchestrator.coordination.cli as core_cli
+from orchestrator.coordination.types import (
+    ClaimResult,
+    ReleaseResult,
+    TaskPriority,
+)
 from orchestrator.gossip_bus import GossipBus, GossipBusError
 
 
