@@ -53,6 +53,24 @@ async def test_bridge_init_db_delegates_to_local_bus(tmp_db_path):
     bridge = LanGossipBridge(db_path=tmp_db_path, peers=["http://peer-a.example:8000"])
     await bridge.init_db()
 
+
+@pytest.mark.asyncio
+async def test_bridge_connect_is_usable_directly_with_async_with(tmp_db_path):
+    """Regression: connect() must be a plain method returning the context
+    manager directly, matching GossipBus.connect()'s own contract -- not
+    `async def`, which would make `bridge.connect()` return a coroutine
+    instead, breaking `async with bridge.connect() as db:` for every caller
+    (_ensure_claims_table, the claim/release helpers) that relies on the
+    same drop-in usage as the plain GossipBus this class wraps.
+    """
+    bridge = LanGossipBridge(db_path=tmp_db_path)
+    await bridge.init_db()
+
+    async with bridge.connect() as db:
+        cursor = await db.execute("SELECT 1")
+        row = await cursor.fetchone()
+        assert row == (1,)
+
     await bridge.local.emit("heartbeat", {"kind": "local", "value": 7})
     events = await bridge.local.tail(limit=10, event_type="heartbeat")
     assert events[0]["payload"]["value"] == 7

@@ -1,0 +1,72 @@
+{
+  "id": "5935f8f6c7c8",
+  "key": "manual_5935f8",
+  "name": "manual_5935f8",
+  "claim": "When a branch suddenly shows hundreds of commits after a privacy scrub or metadata rewrite, treat the count as an ancestry-rewrite symptom, not as a semantic diff. Find the byte-identical tree twin on current main, then replay only first-parent commits above that twin while skipping merge artifacts; verify the new merge-base is current main before force-with-lease.",
+  "conditions": [
+    "above",
+    "after",
+    "ancestry-rewrite",
+    "artifacts",
+    "before",
+    "branch",
+    "byte-identical",
+    "commits",
+    "count",
+    "current",
+    "diff",
+    "find",
+    "first-parent",
+    "force-with-lease",
+    "hundreds",
+    "main",
+    "merge",
+    "merge-base",
+    "metadata",
+    "new",
+    "only",
+    "privacy",
+    "replay",
+    "rewrite",
+    "scrub",
+    "semantic",
+    "shows",
+    "skipping",
+    "suddenly",
+    "symptom",
+    "treat",
+    "tree",
+    "twin",
+    "verify",
+    "while"
+  ],
+  "evidence_ids": [
+    "2026-07-18T05:02:24.787167+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T05:02:24.787167+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T05:02:24.787167+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T05:02:24.899925+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR258 initially appeared to have hundreds of new commits after concurrent privacy/attribution rewrite work. Direct merge produced broad synthetic conflicts. Tree-twin anchoring found the real old-to-new anchor and replayed only the meaningful PR deltas onto current main, producing a mergeable branch with green checks.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T05:02:24.787167+00:00"
+      ],
+      "lessons_sha": "ed094752498d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T05:02:24.899917+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR258 initially appeared to have hundreds of new commits after concurrent privacy/attribution rewrite work. Direct merge produced broad synthetic conflicts. Tree-twin anchoring found the real old-to-new anchor and replayed only the meaningful PR deltas onto current main, producing a mergeable branch with green checks."
+}

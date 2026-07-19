@@ -1,0 +1,45 @@
+{
+  "id": "15461ca8cceb",
+  "key": "manual_15461c",
+  "name": "manual_15461c",
+  "claim": "For coordination-board write jobs, same board and same repo are not enough: the board row must name or derive a source_ref and expected_base_sha, and every agent must create a fresh worktree from that exact ref and verify HEAD before editing.",
+  "conditions": [
+    "GossipBus",
+    "board",
+    "branch-lineage",
+    "coordination",
+    "expected_base_sha",
+    "handoff",
+    "source_ref",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-07-18T17:14:55.238926+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T17:14:55.238926+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T17:14:55.238926+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T17:14:55.368734+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A Codex/Claude PR260 handoff coordinated on the same board but used different checked-out branches, creating avoidable duplicate splice work. The durable fix is to make source branch and base SHA part of the board job contract before any writes.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T17:14:55.238926+00:00"
+      ],
+      "lessons_sha": "fa8a4cc9a065"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T17:14:55.368722+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A Codex/Claude PR260 handoff coordinated on the same board but used different checked-out branches, creating avoidable duplicate splice work. The durable fix is to make source branch and base SHA part of the board job contract before any writes."
+}

@@ -1,0 +1,66 @@
+{
+  "id": "8480717916c1",
+  "key": "manual_848071",
+  "name": "manual_848071",
+  "claim": "When scrubbing private identity from Git history while another agent owns a worktree, wait for the partner's final push, use the final remote tip as the cleanroom scrub base, then force-with-lease only from that observed SHA so previous history stays attached and partner work is preserved.",
+  "conditions": [
+    "agent",
+    "another",
+    "attached",
+    "base",
+    "cleanroom",
+    "final",
+    "force-with-lease",
+    "git",
+    "history",
+    "identity",
+    "observed",
+    "only",
+    "owns",
+    "partner",
+    "preserved",
+    "previous",
+    "private",
+    "push",
+    "remote",
+    "scrub",
+    "scrubbing",
+    "sha",
+    "stays",
+    "tip",
+    "use",
+    "wait",
+    "while",
+    "work",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-07-18T03:42:31.771895+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T03:42:31.771895+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T03:42:31.771895+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T03:42:31.889705+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The 2026-07-18 PR258 scrub first produced a divergent local rewrite; after coordinating with Claude, the scrub was rebuilt from the final Claude-pushed tip in a disposable cleanroom clone before push.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T03:42:31.771895+00:00"
+      ],
+      "lessons_sha": "d5372c8269b3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T03:42:31.889699+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The 2026-07-18 PR258 scrub first produced a divergent local rewrite; after coordinating with Claude, the scrub was rebuilt from the final Claude-pushed tip in a disposable cleanroom clone before push."
+}

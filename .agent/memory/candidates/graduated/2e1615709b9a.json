@@ -1,0 +1,44 @@
+{
+  "id": "2e1615709b9a",
+  "key": "manual_2e1615",
+  "name": "manual_2e1615",
+  "claim": "Do not call a git scrub or surgery operation complete without naming its verified scope: current tree, commit metadata, PR-unique blob range, and repository-wide all-ref blob history are separate gates with separate evidence.",
+  "conditions": [
+    "all-ref",
+    "blob-scan",
+    "branch-unique",
+    "closeout",
+    "scope",
+    "scrub",
+    "verification"
+  ],
+  "evidence_ids": [
+    "2026-07-18T05:37:06.263503+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T05:37:06.263503+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T05:37:06.263503+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T05:37:06.460959+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR258 had clean current-tree and PR-unique range evidence while inherited main history still had separate all-ref hits. The correct closeout language reports the verified branch scope and keeps repo-wide expunge as a distinct follow-up unless it is actually run and passes.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T05:37:06.263503+00:00"
+      ],
+      "lessons_sha": "978fd80dd0ea"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T05:37:06.460947+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR258 had clean current-tree and PR-unique range evidence while inherited main history still had separate all-ref hits. The correct closeout language reports the verified branch scope and keeps repo-wide expunge as a distinct follow-up unless it is actually run and passes."
+}

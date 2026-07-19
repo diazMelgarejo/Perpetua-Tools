@@ -1,0 +1,44 @@
+{
+  "id": "1a52685ebdea",
+  "key": "manual_1a5268",
+  "name": "manual_1a5268",
+  "claim": "Never wrap backticked code spans inside double-quoted shell strings when posting coordination-board updates; backticks trigger command substitution and silently drop the enclosed text. Use single quotes, escaped backticks, or a here-doc instead.",
+  "conditions": [
+    "GossipBus",
+    "backticks",
+    "board",
+    "command-substitution",
+    "log",
+    "quoting",
+    "shell"
+  ],
+  "evidence_ids": [
+    "2026-07-18T17:00:25.640313+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T17:00:25.640313+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T17:00:25.640313+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T17:00:25.763187+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A coordination-board log lost literal command text because the sender used unescaped backticks inside a double-quoted shell string; the storage layer was fine, the bug was on the sender side.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T17:00:25.640313+00:00"
+      ],
+      "lessons_sha": "650a40b5832c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T17:00:25.763178+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A coordination-board log lost literal command text because the sender used unescaped backticks inside a double-quoted shell string; the storage layer was fine, the bug was on the sender side."
+}

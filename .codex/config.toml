@@ -51,8 +51,8 @@ args = ["-y", "@upstash/context7-mcp@latest"]
 startup_timeout_sec = 30
 
 [mcp_servers.exa]
-command = "npx"
-args = ["-y", "mcp-remote", "https://mcp.exa.ai/mcp"]
+command = "bash"
+args = ["-c", 'exec "$OPENCLAW_ROOT/orama-system/scripts/exa/exa-mcp-wrapper.sh"']
 startup_timeout_sec = 30
 
 [mcp_servers.memory]

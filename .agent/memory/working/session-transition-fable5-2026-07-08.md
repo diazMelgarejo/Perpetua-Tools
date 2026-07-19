@@ -9,7 +9,7 @@ Date: 2026-07-08
   documented: `.gitattributes` (`* text=auto eol=lf` default + named CRLF
   exceptions) + `.editorconfig`, `git add --renormalize .` run and verified
   lossless (`--ignore-cr-at-eol` empty) in both repos before committing.
-- ClineBot's `/tmp/reanchor_all.sh` fixed: was operating in-place on the live
+- ClineBot's `<local-temp>` fixed: was operating in-place on the live
   orama-system checkout (collision risk with concurrent sessions — observed
   HEAD flickering during this session), a `.gitattributes` hide-trick that
   was a silent no-op (`git checkout -- .` undid the `mv` on the very next

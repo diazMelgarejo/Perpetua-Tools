@@ -13,6 +13,8 @@ directly with temporary GossipBus instances, verifying:
 from __future__ import annotations
 
 import asyncio
+import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -22,6 +24,8 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.agent_coordination import (
+    ClaimResult,
+    ReleaseResult,
     TaskPriority,
     _queue_add,
     _queue_claim,
@@ -32,12 +36,19 @@ from scripts.agent_coordination import (
     _try_atomic_claim,
     _release_claim_with_event,
 )
+from scripts import agent_coordination_core as _core
 from scripts.agent_coordination_core import (
     _queue_add as _core_queue_add,
+    _queue_claim as _core_queue_claim,
     _queue_complete as _core_queue_complete,
+    _queue_fail as _core_queue_fail,
     _queue_list as _core_queue_list,
+    _latest_task_snapshots,
+    _phase_list as _core_phase_list,
+    _phase_start as _core_phase_start,
 )
-from orchestrator.gossip_bus import GossipBus
+import scripts.agent_coordination_core as core_cli
+from orchestrator.gossip_bus import GossipBus, GossipBusError
 
 
 @pytest.fixture
@@ -115,6 +126,60 @@ async def test_queue_add_creates_task(make_bus, capsys):
     assert "HIGH" in captured.out
 
 
+async def test_queue_add_without_source_fields_still_works(make_bus, capsys):
+    """Backward compat: omitting source_ref/expected_base_sha must still
+    succeed exactly as before -- every existing caller in this suite (and
+    any real caller that predates this schema) relies on this."""
+    bus = await make_bus()
+    await _queue_add(bus, "legacy-caller", "Phase-1", "NORMAL", "", None)
+    captured = capsys.readouterr()
+    assert "enqueued:" in captured.out
+
+    snapshots = await _latest_task_snapshots(bus)
+    task = next(iter(snapshots.values()))
+    assert "source_ref" not in task
+    assert "expected_base_sha" not in task
+
+
+async def test_queue_add_accepts_and_persists_valid_source_fields(make_bus, capsys):
+    """When provided and valid, source_ref/expected_base_sha are persisted
+    into the task's enqueue payload, satisfying .agent/AGENTS.md's
+    board-job source-line doctrine for claimants to verify against."""
+    bus = await make_bus()
+    await _core_queue_add(
+        bus, "reviewed-work", "Phase-1", "NORMAL", "",
+        None, source_ref="feature/example", expected_base_sha="a1b2c3d",
+    )
+    captured = capsys.readouterr()
+    assert "enqueued:" in captured.out
+
+    snapshots = await _latest_task_snapshots(bus)
+    task = next(iter(snapshots.values()))
+    assert task["source_ref"] == "feature/example"
+    assert task["expected_base_sha"] == "a1b2c3d"
+
+
+async def test_queue_add_rejects_empty_source_ref(make_bus, capsys):
+    bus = await make_bus()
+    await _core_queue_add(
+        bus, "bad-ref", "Phase-1", "NORMAL", "", None, source_ref="   ",
+    )
+    captured = capsys.readouterr()
+    assert "ERROR" in captured.err
+    assert "source_ref" in captured.err
+
+
+async def test_queue_add_rejects_invalid_sha(make_bus, capsys):
+    bus = await make_bus()
+    await _core_queue_add(
+        bus, "bad-sha", "Phase-1", "NORMAL", "", None,
+        expected_base_sha="not-a-sha!",
+    )
+    captured = capsys.readouterr()
+    assert "ERROR" in captured.err
+    assert "expected_base_sha" in captured.err
+
+
 async def test_queue_add_with_dependencies(make_bus, capsys):
     """_queue_add records dependency list."""
     bus = await make_bus()
@@ -186,8 +251,8 @@ async def test_queue_claim_rejects_already_claimed(make_bus, capsys):
     # Try to claim again
     await _queue_claim(bus, task_id, "agent-beta")
     captured = capsys.readouterr()
-    assert "ERROR" in captured.out
-    assert "already claimed" in captured.out
+    assert "ERROR" in captured.err
+    assert "already claimed" in captured.err
 
 
 async def test_queue_claim_blocks_on_unmet_dependencies(make_bus, capsys):
@@ -208,10 +273,11 @@ async def test_queue_claim_blocks_on_unmet_dependencies(make_bus, capsys):
     task_id = events[0]["payload"]["task_id"]
 
     # Try to claim without dependency being completed
-    await _queue_claim(bus, task_id, "agent-gamma")
+    result = await _queue_claim(bus, task_id, "agent-gamma")
     captured = capsys.readouterr()
-    assert "ERROR" in captured.out
-    assert "unmet dependencies" in captured.out
+    assert result is False
+    assert "ERROR" in captured.err
+    assert "unmet dependencies" in captured.err
 
 
 async def test_queue_claim_allows_when_deps_satisfied(make_bus, capsys):
@@ -235,7 +301,8 @@ async def test_queue_claim_allows_when_deps_satisfied(make_bus, capsys):
                 assert p["task_id"]
 
     # Complete the blocker
-    await _queue_complete(bus, blocker_id, "Done")
+    await _queue_claim(bus, blocker_id, "agent-blocker-owner")
+    await _queue_complete(bus, blocker_id, "agent-blocker-owner", "Done")
 
     # Now dependent should be claimable
     # (Note: full test requires task_id matching logic; simplified version)
@@ -248,6 +315,64 @@ async def test_queue_claim_allows_when_deps_satisfied(make_bus, capsys):
 # ────────────────────────────────────────────────────────────────────────────
 
 
+async def test_queue_complete_rejects_unclaimed_task(make_bus, capsys):
+    """Regression: _queue_complete must reject a task that is not currently
+    CLAIMED (never claimed, already completed, or abandoned) -- without
+    this guard, DELETE FROM task_claims WHERE task_id=? on a task with no
+    claim row silently deletes zero rows and _release_claim_with_event
+    still reports success, letting a task be "completed" that was never
+    actually claimed, or completed a second time."""
+    bus = await make_bus()
+    await _queue_add(bus, "never-claimed", "Phase-1", "NORMAL", "", None)
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    task_id = events[0]["payload"]["task_id"]
+
+    capsys.readouterr()
+    await _queue_complete(bus, task_id, "agent-x", "should be rejected")
+    captured = capsys.readouterr()
+    assert "ERROR" in captured.err
+    assert "not claimed" in captured.err
+
+    snapshots = await _latest_task_snapshots(bus)
+    assert snapshots[task_id].get("status") == "queued"
+
+
+async def test_queue_complete_rejects_double_completion(make_bus, capsys):
+    """Regression: completing an already-completed task must be rejected,
+    not silently accepted a second time."""
+    bus = await make_bus()
+    await _queue_add(bus, "done-work", "Phase-1", "NORMAL", "", None)
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    task_id = events[0]["payload"]["task_id"]
+
+    await _queue_claim(bus, task_id, "agent-a")
+    await _queue_complete(bus, task_id, "agent-a", "first completion")
+
+    capsys.readouterr()
+    await _queue_complete(bus, task_id, "agent-a", "second completion attempt")
+    captured = capsys.readouterr()
+    assert "ERROR" in captured.err
+    assert "already completed" in captured.err
+
+
+async def test_queue_fail_rejects_unclaimed_task(make_bus, capsys):
+    """Regression: _queue_fail must reject a task that is not currently
+    CLAIMED, the same guard as _queue_complete."""
+    bus = await make_bus()
+    await _queue_add(bus, "never-claimed", "Phase-1", "NORMAL", "", None)
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    task_id = events[0]["payload"]["task_id"]
+
+    capsys.readouterr()
+    await _queue_fail(bus, task_id, "agent-x", "should be rejected")
+    captured = capsys.readouterr()
+    assert "ERROR" in captured.err
+    assert "not claimed" in captured.err
+
+    snapshots = await _latest_task_snapshots(bus)
+    assert snapshots[task_id].get("status") == "queued"
+
+
 async def test_queue_complete_marks_done(make_bus, capsys):
     """_queue_complete marks task as COMPLETED."""
     bus = await make_bus()
@@ -256,7 +381,9 @@ async def test_queue_complete_marks_done(make_bus, capsys):
     events = await bus.tail(limit=10, event_type="heartbeat")
     task_id = events[0]["payload"]["task_id"]
 
-    await _queue_complete(bus, task_id, "Implementation finished")
+    await _queue_claim(bus, task_id, "agent-a")
+    capsys.readouterr()
+    await _queue_complete(bus, task_id, "agent-a", "Implementation finished")
     captured = capsys.readouterr()
     assert f"completed: {task_id}" in captured.out
 
@@ -274,8 +401,10 @@ async def test_queue_fail_with_retry(make_bus, capsys):
     events = await bus.tail(limit=10, event_type="heartbeat")
     task_id = events[0]["payload"]["task_id"]
 
+    await _queue_claim(bus, task_id, "agent-a")
+    capsys.readouterr()
     # First failure — should retry
-    await _queue_fail(bus, task_id, "Network timeout")
+    await _queue_fail(bus, task_id, "agent-a", "Network timeout")
     captured = capsys.readouterr()
     assert "retry 1/3" in captured.out
 
@@ -293,13 +422,32 @@ async def test_claim_then_fail_then_reclaim_succeeds(make_bus, capsys):
     await _queue_claim(bus, task_id, "agent-a")
     capsys.readouterr()
 
-    await _queue_fail(bus, task_id, "transient error")
+    await _queue_fail(bus, task_id, "agent-a", "transient error")
     capsys.readouterr()
 
     await _queue_claim(bus, task_id, "agent-b")
     captured = capsys.readouterr()
     assert "claimed:" in captured.out
     assert "ERROR" not in captured.out
+
+
+async def test_facade_patches_core_queue_helpers_for_retry_after_reclaim(make_bus, capsys):
+    """Facade import must patch core queue helpers used by main()."""
+    bus = await make_bus()
+    await _core_queue_add(bus, "retry-work", "coord", "NORMAL", "", None)
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    task_id = events[0]["payload"]["task_id"]
+
+    await _core._queue_claim(bus, task_id, "agent-a")
+    capsys.readouterr()
+    await _core._queue_fail(bus, task_id, "agent-a", "first failure")
+    capsys.readouterr()
+    await _core._queue_claim(bus, task_id, "agent-a")
+    capsys.readouterr()
+
+    await _core._queue_fail(bus, task_id, "agent-a", "second failure")
+    captured = capsys.readouterr()
+    assert "retry 2/3" in captured.out
 
 
 async def test_queue_fail_abandons_after_max_retries(make_bus, capsys):
@@ -310,13 +458,17 @@ async def test_queue_fail_abandons_after_max_retries(make_bus, capsys):
     events = await bus.tail(limit=10, event_type="heartbeat")
     task_id = events[0]["payload"]["task_id"]
 
-    # Fail 3 times
+    # Fail 3 times -- each retry requeues the task, so it must be re-claimed
+    # before the next failure attempt (a fail can only apply to a
+    # currently-claimed task).
     for i in range(3):
-        await _queue_fail(bus, task_id, f"Attempt {i+1} failed")
+        await _queue_claim(bus, task_id, "agent-a")
+        await _queue_fail(bus, task_id, "agent-a", f"Attempt {i+1} failed")
 
     # On 4th failure, should abandon
+    await _queue_claim(bus, task_id, "agent-a")
     capsys.readouterr()
-    await _queue_fail(bus, task_id, "Final attempt failed")
+    await _queue_fail(bus, task_id, "agent-a", "Final attempt failed")
     captured = capsys.readouterr()
     assert "abandoned" in captured.out
 
@@ -341,8 +493,10 @@ async def test_queue_list_groups_by_status(make_bus, capsys):
     # Claim one, complete one, fail one
     if len(task_ids) >= 3:
         await _queue_claim(bus, task_ids[0], "agent-x")
-        await _queue_complete(bus, task_ids[1], "")
-        await _queue_fail(bus, task_ids[2], "test failure")
+        await _queue_claim(bus, task_ids[1], "agent-y")
+        await _queue_complete(bus, task_ids[1], "agent-y", "")
+        await _queue_claim(bus, task_ids[2], "agent-z")
+        await _queue_fail(bus, task_ids[2], "agent-z", "test failure")
 
     capsys.readouterr()
     await _queue_list(bus, None, None, None)
@@ -363,7 +517,8 @@ async def test_core_queue_list_uses_newest_task_event(make_bus, capsys):
     await _core_queue_add(bus, "payload-fix", "coord", "HIGH", "queued", None)
     events = await bus.tail(limit=10, event_type="heartbeat")
     task_id = events[0]["payload"]["task_id"]
-    await _core_queue_complete(bus, task_id, "done")
+    await _core_queue_claim(bus, task_id, "agent-alpha")
+    await _core_queue_complete(bus, task_id, "agent-alpha", "done")
 
     capsys.readouterr()
     await _core_queue_list(bus, phase_filter="coord", priority_filter=None, agent_filter=None)
@@ -371,6 +526,32 @@ async def test_core_queue_list_uses_newest_task_event(make_bus, capsys):
 
     assert "COMPLETED" in captured.out
     assert "QUEUED" not in captured.out
+
+
+async def test_core_queue_fail_increments_retry_after_reclaim(make_bus, capsys):
+    """CLI core must merge task history so retry_count survives reclaim."""
+    bus = await make_bus()
+    await _core_queue_add(bus, "retry-work", "coord", "NORMAL", "", None)
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    task_id = events[0]["payload"]["task_id"]
+
+    await _core_queue_claim(bus, task_id, "agent-alpha")
+    await _core_queue_fail(bus, task_id, "agent-alpha", "first failure")
+    capsys.readouterr()
+
+    await _core_queue_claim(bus, task_id, "agent-alpha")
+    await _core_queue_fail(bus, task_id, "agent-alpha", "second failure")
+    captured = capsys.readouterr()
+
+    assert "retry 2/3" in captured.out
+
+
+async def test_core_phase_list_handles_nonnumeric_phase_names(make_bus, capsys):
+    bus = await make_bus()
+    await _core_phase_start(bus, "StateTransitionManager-Integration", None, "agent-z")
+    await _core_phase_list(bus)
+    captured = capsys.readouterr()
+    assert "StateTransitionManager-Integration" in captured.out
 
 
 async def test_queue_list_filters_by_phase(make_bus, capsys):
@@ -487,7 +668,7 @@ async def test_multiple_agents_cannot_claim_same_task(make_bus, capsys):
     # Agent B attempts to claim
     await _queue_claim(bus, task_id, "agent-b")
     captured = capsys.readouterr()
-    assert "ERROR" in captured.out
+    assert "ERROR" in captured.err
 
 
 async def test_atomic_claim_gate_exactly_one_winner_under_true_concurrency(make_bus):
@@ -507,7 +688,12 @@ async def test_atomic_claim_gate_exactly_one_winner_under_true_concurrency(make_
         _try_atomic_claim(bus, task_id, "agent-b"),
     )
 
-    assert sorted(results) == [False, True]
+    # ClaimResult isn't orderable (no <), so compare by identity/membership
+    # rather than sorted(results) == [False, True].
+    assert results.count(ClaimResult.WON) == 1
+    losers = [r for r in results if r != ClaimResult.WON]
+    assert len(losers) == 1
+    assert losers[0] in (ClaimResult.LOST_RACE, ClaimResult.CONTENTION)
 
 
 async def test_queue_claim_concurrent_race_only_one_succeeds(make_bus, capsys):
@@ -527,7 +713,42 @@ async def test_queue_claim_concurrent_race_only_one_succeeds(make_bus, capsys):
     captured = capsys.readouterr()
 
     assert captured.out.count("claimed:") == 1
-    assert captured.out.count("ERROR") == 1
+    assert captured.err.count("ERROR") == 1
+
+
+def test_queue_claim_cli_returns_nonzero_on_duplicate_claim(tmp_path, monkeypatch, capsys):
+    """The live CLI must return nonzero on queue-claim failure."""
+    db_path = tmp_path / "queue_cli.db"
+    bus = GossipBus(str(db_path))
+
+    async def _setup():
+        await bus.init_db()
+        await _queue_add(bus, "cli-duplicate", "Phase-1", "NORMAL", "", None)
+        events = await bus.tail(limit=10, event_type="heartbeat")
+        task_id = events[0]["payload"]["task_id"]
+        await _queue_claim(bus, task_id, "agent-alpha")
+        return task_id
+
+    task_id = asyncio.run(_setup())
+    capsys.readouterr()
+
+    monkeypatch.setattr(core_cli, "canonical_db_path", lambda: str(db_path))
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "agent_coordination.py",
+            "queue",
+            "claim",
+            task_id,
+            "agent-beta",
+        ],
+    )
+    exit_code = core_cli.main()
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert "ERROR" in captured.err
 
 
 async def test_priority_ordering_in_list(make_bus, capsys):
@@ -567,7 +788,7 @@ async def test_atomic_claim_persists_one_row_and_one_event(make_bus):
         bus, "task-x", "agent-a", {"kind": "task_claim", "task_id": "task-x"}
     )
 
-    assert claimed is True
+    assert claimed is ClaimResult.WON
     async with bus.connect() as db:
         cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", ("task-x",))
         (claim_count,) = await cursor.fetchone()
@@ -587,7 +808,7 @@ async def test_atomic_claim_duplicate_claim_emits_no_second_event(make_bus):
         bus, "task-y", "agent-b", {"kind": "task_claim", "task_id": "task-y"}
     )
 
-    assert claimed_again is False
+    assert claimed_again is ClaimResult.LOST_RACE
     events = await bus.tail(limit=10, event_type="heartbeat")
     matching = [e for e in events if e["payload"].get("task_id") == "task-y"]
     assert len(matching) == 1  # still just the first claimant's event
@@ -612,10 +833,11 @@ async def test_atomic_claim_injected_insert_failure_rolls_back_claim_row(make_bu
 
     monkeypatch.setattr(GossipBus, "insert_event", _boom)
 
-    with pytest.raises(RuntimeError, match="simulated event-insert failure"):
+    with pytest.raises(GossipBusError, match="claim on 'task-z' failed") as exc_info:
         await _try_atomic_claim(
             bus, "task-z", "agent-a", {"kind": "task_claim", "task_id": "task-z"}
         )
+    assert isinstance(exc_info.value.__cause__, RuntimeError)
 
     async with bus.connect() as db:
         cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", ("task-z",))
@@ -627,11 +849,11 @@ async def test_release_claim_with_event_deletes_row_and_persists_event(make_bus)
     bus = await make_bus()
     await _try_atomic_claim(bus, "task-r1", "agent-a")
 
-    released = await _release_claim_with_event(
+    result = await _release_claim_with_event(
         bus, "task-r1", "heartbeat", {"kind": "task_complete", "task_id": "task-r1"}
     )
 
-    assert released is True
+    assert result == ReleaseResult.RELEASED
     async with bus.connect() as db:
         cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", ("task-r1",))
         (claim_count,) = await cursor.fetchone()
@@ -658,15 +880,69 @@ async def test_release_claim_with_event_injected_failure_leaves_claim_row_intact
 
     monkeypatch.setattr(GossipBus, "insert_event", _boom)
 
-    with pytest.raises(RuntimeError, match="simulated event-insert failure"):
+    with pytest.raises(GossipBusError, match="release of 'task-r2' failed") as exc_info:
         await _release_claim_with_event(
             bus, "task-r2", "heartbeat", {"kind": "task_complete", "task_id": "task-r2"}
         )
+    assert isinstance(exc_info.value.__cause__, RuntimeError)
 
     async with bus.connect() as db:
         cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", ("task-r2",))
         (claim_count,) = await cursor.fetchone()
     assert claim_count == 1  # still held -- release did not partially apply
+
+
+# ────────────────────────────────────────────────────────────────────────────
+# Part 1b: database-error contract, real-entrypoint coverage. A corrupted
+# database file (not a permission trick, which is root-bypassable in some CI
+# environments) reliably fails BOTH reads and writes with a real
+# sqlite3/aiosqlite exception, exercising the actual GossipBusError wrapping
+# through the real CLI subprocess -- not just the direct-call unit tests
+# above.
+# ────────────────────────────────────────────────────────────────────────────
+
+
+def _corrupt_db_file(db_path):
+    with open(db_path, "wb") as f:
+        f.write(b"not a sqlite database")
+
+
+async def test_real_cli_write_command_reports_clean_error_on_corrupt_db(tmp_path):
+    """A write command (queue add) against a corrupted database exits
+    nonzero with a clean ERROR: message on stderr -- not a raw traceback,
+    and not exit code 0 with the failure buried in stdout."""
+    db_path = tmp_path / "corrupt.db"
+    _corrupt_db_file(db_path)
+    env = {**os.environ, "GOSSIP_DB_PATH": str(db_path)}
+    env.pop("PT_STATE_DIR", None)
+
+    result = subprocess.run(
+        [sys.executable, "scripts/agent_coordination.py", "queue", "add", "task", "Phase-1"],
+        capture_output=True, text=True, encoding="utf-8", env=env, cwd=str(Path(__file__).resolve().parent.parent),
+    )
+    assert result.returncode != 0, f"expected nonzero exit, got 0: stdout={result.stdout!r}"
+    assert "ERROR" in result.stderr, f"expected ERROR on stderr, got: {result.stderr!r}"
+    assert "Traceback" not in result.stderr, "raw traceback leaked instead of a clean GossipBusError message"
+    assert "ERROR" not in result.stdout, f"ERROR text leaked onto stdout: {result.stdout!r}"
+
+
+async def test_real_cli_read_command_reports_clean_error_on_corrupt_db(tmp_path):
+    """A read command (queue list) against a corrupted database exits
+    nonzero with a clean ERROR: message on stderr, same contract as the
+    write-path test above -- Part 1b must cover both directions, not just
+    emit()."""
+    db_path = tmp_path / "corrupt.db"
+    _corrupt_db_file(db_path)
+    env = {**os.environ, "GOSSIP_DB_PATH": str(db_path)}
+    env.pop("PT_STATE_DIR", None)
+
+    result = subprocess.run(
+        [sys.executable, "scripts/agent_coordination.py", "queue", "list"],
+        capture_output=True, text=True, encoding="utf-8", env=env, cwd=str(Path(__file__).resolve().parent.parent),
+    )
+    assert result.returncode != 0, f"expected nonzero exit, got 0: stdout={result.stdout!r}"
+    assert "ERROR" in result.stderr, f"expected ERROR on stderr, got: {result.stderr!r}"
+    assert "Traceback" not in result.stderr, "raw traceback leaked instead of a clean GossipBusError message"
 
 
 async def test_queue_complete_releases_claim_and_completion_event_together(make_bus, capsys):
@@ -678,7 +954,7 @@ async def test_queue_complete_releases_claim_and_completion_event_together(make_
     task_id = events[0]["payload"]["task_id"]
     await _queue_claim(bus, task_id, "agent-a")
 
-    await _queue_complete(bus, task_id, "done")
+    await _queue_complete(bus, task_id, "agent-a", "done")
 
     async with bus.connect() as db:
         cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", (task_id,))

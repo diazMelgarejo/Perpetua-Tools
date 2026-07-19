@@ -2,6 +2,8 @@
 
 **Date:** 2026-07-10  
 **Status:** Ready for user decision (yes/no/defer per item)  
+**Note:** Recommendations below are not decisions; unresolved items stay open until the user confirms them.
+**Ranked handoff:** [phase0-and-orama-closure-rankings-2026-07-18.md](../../../../references/phase0-and-orama-closure-rankings-2026-07-18.md)
 **Purpose:** M1–M7 are Phase 1b candidates. They do NOT block Phase 1 start. This doc formats each item as a decision matrix so you can make rapid yes/no/defer choices.
 
 ---
@@ -75,7 +77,7 @@ Expected: confidence = 0.00
 
 **Recommendation:** **OPTION A** (mandatory STM validation). Caller-side validation may reduce errors earlier, but it cannot replace STM's own checks.
 
-**Decision:** ☑ A (validate in STM) ☐ B (trust caller; rejected for Phase 1) ☐ C (optional hook later)
+**Decision:** ☐ A (validate in STM) ☐ B (trust caller; rejected for Phase 1) ☐ C (optional hook later) → **User picks one**
 
 ---
 
@@ -106,7 +108,7 @@ Expected: confidence = 0.00
 
 Parallel task execution is allowed only for independent implementation work. A checkpoint is not complete until its full blocker-specific gate passes.
 
-**Decision for each checkpoint:** ☑ Firm (all blocker-specific vectors pass)
+**Decision for each checkpoint:** ☐ Firm (all blocker-specific vectors pass) → **User confirms per checkpoint**
 
 ---
 
@@ -199,8 +201,8 @@ Parallel task execution is allowed only for independent implementation work. A c
 ```text
 M1 Sequence bit-width:           [A] Keep uint32 / [B] uint64 / [C] detect wrap
 M2 Ghost-peer witnesses:          [A] No witnesses / [B] Witnesses ok, proof=0 zeros score
-M3 STM validation:                [A] Validate in STM (mandatory)
-M4 Checkpoint 1.0 gate:           [firm] all blocker-specific vectors pass
+M3 STM validation:                [undecided] A / B / C
+M4 Checkpoint 1.0 gate:           [undecided] firm / partial
 M4 Checkpoint 1.1 gate:           [firm] all blocker-specific vectors pass
 M4 Checkpoint 1.2 gate:           [firm] all blocker-specific vectors pass
 M4 Checkpoint 1.3 gate:           [firm] all blocker-specific vectors pass
@@ -225,4 +227,4 @@ M7 Rate limiting:                 [A] Static Phase 1 / [B] Static + Adaptive Pha
 | **M7** | Static Phase 1, adaptive Phase 1b | Low | Conservative start; add tuning as feedback emerges |
 
 **Total decision time:** ~30 minutes (format: yes/no/defer per item)  
-**Phase 1 impact:** M1–M7 are all Phase 1 optional; no blockers if deferred
+**Phase 1 impact:** M1–M7 are all Phase 1 optional; no blockers if deferred, but unresolved decisions must not be mistaken for closure.

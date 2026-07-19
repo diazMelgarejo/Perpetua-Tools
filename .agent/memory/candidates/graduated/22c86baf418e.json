@@ -1,0 +1,44 @@
+{
+  "id": "22c86baf418e",
+  "key": "manual_22c86b",
+  "name": "manual_22c86b",
+  "claim": "Tracked security rules must name sensitive categories only; concrete forbidden identity literals, device values, and local topology fragments stay in an off-repo local-only registry that guards can load without hardcoding the values they forbid.",
+  "conditions": [
+    "category-only",
+    "guards",
+    "local-registry",
+    "opsec",
+    "portable-memory",
+    "privacy",
+    "secops"
+  ],
+  "evidence_ids": [
+    "2026-07-18T08:59:49.145414+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T08:59:49.145414+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T08:59:49.145414+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T08:59:49.405094+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Today showed that negative security rules can leak the same private value they are trying to ban when examples or literals are committed. The durable pattern is a tracked category-level invariant plus an untracked operator registry for exact values.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T08:59:49.145414+00:00"
+      ],
+      "lessons_sha": "7f5475493c5a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T08:59:49.405083+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Today showed that negative security rules can leak the same private value they are trying to ban when examples or literals are committed. The durable pattern is a tracked category-level invariant plus an untracked operator registry for exact values."
+}
