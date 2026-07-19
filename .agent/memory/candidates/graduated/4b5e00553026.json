@@ -1,0 +1,43 @@
+{
+  "id": "4b5e00553026",
+  "key": "manual_4b5e00",
+  "name": "manual_4b5e00",
+  "claim": "heartbeat cleanup (auto-release claims held by DEAD agents) does NOT release stale job-queue claims. Verified empirically 2026-07-19: agent claude-sonnet-g7-impl was DEAD (13h+ stale heartbeat), 'agent_coordination_core.py heartbeat cleanup' ran and reported 'no stale claims released', and the queue task it held stayed CLAIMED. Queue-task ownership and heartbeat liveness are two separate tracking systems that do not auto-reconcile. To reclaim a queue task from a dead agent: verify liveness with 'heartbeat check <agent_id>' first (do not trust the CLAIMED state alone), then proceed directly to 'queue complete <task_id>' (which does not check current claim holder) rather than waiting on or relying on cleanup automation.",
+  "conditions": [
+    "cleanup-gap",
+    "coordination",
+    "gossipbus",
+    "heartbeat",
+    "queue-claim",
+    "stale-claim"
+  ],
+  "evidence_ids": [
+    "2026-07-19T02:17:23.995136+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-19T02:17:23.995136+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-19T02:17:23.995136+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-19T02:17:24.065407+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Discovered while reclaiming job-board task 595d71da (clinebot idempotent-install) from a 13h-dead agent. This mirrors the session's earlier lesson about not trusting a board's reported 'complete' status at face value (a different agent's stale-branch false claim) -- here the gap is that even the coordination tool's own cleanup command doesn't cover this claim type, so verification must be manual (heartbeat check), not assumed automatic.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-19T02:17:23.995136+00:00"
+      ],
+      "lessons_sha": "575f7b7e24d2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-19T02:17:24.065402+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Discovered while reclaiming job-board task 595d71da (clinebot idempotent-install) from a 13h-dead agent. This mirrors the session's earlier lesson about not trusting a board's reported 'complete' status at face value (a different agent's stale-branch false claim) -- here the gap is that even the coordination tool's own cleanup command doesn't cover this claim type, so verification must be manual (heartbeat check), not assumed automatic."
+}
