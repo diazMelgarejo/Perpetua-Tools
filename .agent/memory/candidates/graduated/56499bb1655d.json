@@ -1,0 +1,57 @@
+{
+  "id": "56499bb1655d",
+  "key": "manual_56499b",
+  "name": "manual_56499b",
+  "claim": "Memory privacy review must inspect generated lesson conditions and episodic recall snippets, not just prose; derived tokens from private identities or local topology are leaks too.",
+  "conditions": [
+    "conditions",
+    "derived",
+    "episodic",
+    "generated",
+    "identities",
+    "inspect",
+    "just",
+    "leaks",
+    "lesson",
+    "local",
+    "memory",
+    "privacy",
+    "private",
+    "prose",
+    "recall",
+    "review",
+    "snippets",
+    "tokens",
+    "too",
+    "topology"
+  ],
+  "evidence_ids": [
+    "2026-07-18T01:49:09.247533+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T01:49:09.247533+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T01:49:09.247533+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T01:49:09.356463+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A stale PT lesson had neutralized prose but still carried derived identity fragments in conditions and staging records. Future memory repair must sanitize claim, rationale, conditions, candidates, rendered lessons, and episodic summaries together.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T01:49:09.247533+00:00"
+      ],
+      "lessons_sha": "23b209334a5d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T01:49:09.356456+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A stale PT lesson had neutralized prose but still carried derived identity fragments in conditions and staging records. Future memory repair must sanitize claim, rationale, conditions, candidates, rendered lessons, and episodic summaries together."
+}

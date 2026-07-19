@@ -1,0 +1,71 @@
+{
+  "id": "bae7623ebd72",
+  "key": "manual_bae762",
+  "name": "manual_bae762",
+  "claim": "Negative security rules must not hardcode the concrete local fragments they forbid. Store exact private identity, attribution, device, endpoint, path, workspace, and topology fragments only in an off-repo local-only registry; tracked docs, tests, skills, and guards name categories and load the registry at runtime with synthetic fixtures for tests.",
+  "conditions": [
+    "attribution",
+    "categories",
+    "concrete",
+    "device",
+    "docs",
+    "endpoint",
+    "exact",
+    "fixtures",
+    "forbid",
+    "fragments",
+    "guards",
+    "hardcode",
+    "identity",
+    "load",
+    "local",
+    "local-only",
+    "name",
+    "negative",
+    "off-repo",
+    "only",
+    "path",
+    "private",
+    "registry",
+    "rules",
+    "runtime",
+    "security",
+    "skills",
+    "store",
+    "synthetic",
+    "tests",
+    "they",
+    "topology",
+    "tracked",
+    "workspace"
+  ],
+  "evidence_ids": [
+    "2026-07-18T08:51:26.233174+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T08:51:26.233174+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T08:51:26.233174+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T08:51:26.359583+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR #260 follow-up: even a guard or policy doc can self-leak by spelling the local topology it bans. The durable pattern is category-only tracked rules plus local-only configured fragments.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T08:51:26.233174+00:00"
+      ],
+      "lessons_sha": "abd57cddd3fc"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T08:51:26.359565+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR #260 follow-up: even a guard or policy doc can self-leak by spelling the local topology it bans. The durable pattern is category-only tracked rules plus local-only configured fragments."
+}

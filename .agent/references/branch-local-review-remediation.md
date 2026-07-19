@@ -12,6 +12,12 @@ review → reviewed branch → remediation commits → CI → merge → main
 
 Do not transplant review-specific fixes onto `main` or an unrelated branch before the reviewed branch merges.
 
+For coordination-board work, **the board row must also identify the source
+line**. "Same board" and "same repo" are not enough: each worktree has its own
+checked-out branch and file state. Before any write, resolve and record
+`source_ref` plus `expected_base_sha`, then work from a fresh worktree at that
+exact base.
+
 ## Why
 
 Moving a valid fix to the wrong branch creates mutually incompatible histories, invalidates review provenance, multiplies conflicts, and makes agents repair coordination damage instead of the original defect.
@@ -19,13 +25,15 @@ Moving a valid fix to the wrong branch creates mutually incompatible histories, 
 ## Required workflow
 
 1. Resolve the reviewed PR and exact head branch.
-2. Refresh from that head before every write; never rely on a cached blob SHA after another agent commits.
-3. Cluster findings by shared invariant and owning abstraction.
-4. Inspect each owning file once where possible.
-5. Fix the abstraction, not each symptom.
-6. Add focused regression tests for the invariant.
-7. Keep `main` unchanged until the branch passes review and merges.
-8. If a fix was accidentally applied elsewhere:
+2. For board/GossipBus jobs, write or verify the board row's `source_ref` and `expected_base_sha`.
+3. Create a fresh worktree from that exact source; verify `git rev-parse HEAD` equals the expected base before editing.
+4. Refresh from that head before every write; never rely on a cached blob SHA after another agent commits.
+5. Cluster findings by shared invariant and owning abstraction.
+6. Inspect each owning file once where possible.
+7. Fix the abstraction, not each symptom.
+8. Add focused regression tests for the invariant.
+9. Keep `main` unchanged until the branch passes review and merges.
+10. If a fix was accidentally applied elsewhere:
    - restore the unintended branch to its previous content;
    - replay the fix on the reviewed branch;
    - document the branch-ownership failure in memory.
@@ -46,6 +54,8 @@ A single owning-boundary fix should protect all current and future call sites.
 ## Multi-agent rules
 
 - One task has one owning branch until merge.
+- One board row has one source ref and one expected base SHA before writes.
+- Board state is shared; checked-out files are not. Do not work from the primary checkout just because it is the same repo.
 - Agents may read other branches but may not move review fixes across branches without explicit operator direction.
 - Announce file ownership before editing shared files.
 - Re-fetch a file after any concurrent branch advance.

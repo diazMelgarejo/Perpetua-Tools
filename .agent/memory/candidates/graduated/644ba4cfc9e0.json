@@ -1,0 +1,60 @@
+{
+  "id": "644ba4cfc9e0",
+  "key": "manual_644ba4",
+  "name": "manual_644ba4",
+  "claim": "Keep using PT .agent memory for significant work, but do not record the owner's literal Gmail address in memory files; use a neutral owner-identity label while keeping allowlists and attribution tooling authoritative elsewhere.",
+  "conditions": [
+    "address",
+    "agent",
+    "allowlists",
+    "attribution",
+    "authoritative",
+    "elsewhere",
+    "files",
+    "gmail",
+    "keep",
+    "keeping",
+    "label",
+    "literal",
+    "memory",
+    "neutral",
+    "owner",
+    "owner-identity",
+    "record",
+    "significant",
+    "tooling",
+    "use",
+    "using",
+    "while",
+    "work"
+  ],
+  "evidence_ids": [
+    "2026-07-17T23:34:49.134798+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-17T23:34:49.134798+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-17T23:34:49.134798+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-17T23:34:49.325377+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The owner clarified that memory capture must continue; only the literal Gmail address is prohibited inside .agent/memory so portable memory does not preserve personal contact details.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-17T23:34:49.134798+00:00"
+      ],
+      "lessons_sha": "9a3329b9f5e6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-17T23:34:49.325362+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The owner clarified that memory capture must continue; only the literal Gmail address is prohibited inside .agent/memory so portable memory does not preserve personal contact details."
+}

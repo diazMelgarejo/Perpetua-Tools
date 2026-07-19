@@ -1,0 +1,44 @@
+{
+  "id": "0a498556c5a0",
+  "key": "manual_0a4985",
+  "name": "manual_0a4985",
+  "claim": "Hold everything carried forward into the v2 migration -- code, docs, branches, and memory itself -- to the same standard exercised across today's PT PR #256/#258/#260 arc: (1) Trace a recurring bug to its structural root before patching a symptom -- the coordination-board crash was 3 duplicate _phase_list implementations with only 1 reachable by the real CLI, not a typo (root-caused, PR #256 merged: canonical GossipBus DB-path resolution). (2) When a fix's full scope exceeds the immediate patch, split them explicitly: land the point fix separately, write the larger consolidation as a docs-only plan, and park the actual execution as an explicit TODO checklist rather than leaving it half-done -- a half-migrated tree is exactly the kind of old garbage a v2 cutover must not inherit. (3) Any git-history operation's claimed scope must equal its verified scope: metadata scrub, current-tree sanitization, PR/branch re-anchor, and all-ref blob scan are four separate gates (see lesson_12fc53a7bc0f, lesson_2e1615709b9a) -- a pass on one gate is never evidence for another, and 'complete' claims must be evidence-backed per gate. (4) Prefer reviewed content replay over blind merge when ancestry is contaminated or noisy -- tree-twin reanchor first, clean-replacement-PR when no exact twin exists (see lesson_5935f8f6c7c8, lesson_857bba9d8f89). (5) When peer agents hand off work mid-task -- rate-limit stall, branch replacement, scope split -- verify by artifact presence (a commit, a file, a passing scan), never by trusting a transcript or a prior claim at face value. (6) When two agents independently reflect on the same episode, read what the other already graduated before adding a new lesson, and contribute genuinely new synthesis instead of restating -- redundant near-duplicate entries are their own small version of the garbage this doctrine exists to keep out.",
+  "conditions": [
+    "consolidation-plan",
+    "coordination-board",
+    "git-history-surgery",
+    "multi-agent",
+    "session-reflection",
+    "v2-migration",
+    "verification-gates"
+  ],
+  "evidence_ids": [
+    "2026-07-18T05:44:45.016589+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T05:44:45.016589+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T05:44:45.016589+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T05:44:45.127656+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-18 full-day arc, distilled per explicit user request ahead of the v2 migration ('we do not want to bring old garbage into our new house'). Sequence: PR #256 (root-caused + merged) -> PR #258 (docs-only consolidation plan; migration execution + clinebot install.sh/start.sh integration deliberately parked as an explicit TODO checklist in docs/next/2026-07-17-coordination-module-consolidation-plan.md rather than left ambiguous) -> a branch-scoped git filter-repo privacy scrub produced 750+ apparent new commits (pure rewritten-ancestry noise, not real divergence) -> tree-twin reanchoring (content-verified via git show/diff before checkout -B, never blind-merged) -> Codex's own all-ref blob scan proved the reanchor alone did not prove blob-level cleanliness (248 hits, 206 inherited from origin/main, 13 PR-unique -- a genuinely open, tracked gap, not swept under a 'complete' claim) -> the clean-replacement-PR maneuver executed and landed as PT PR #260, replaying the exact final tree onto current main and dropping the noisy intervening history from the review surface. The resulting doctrine is now written into orama-system's canonical git-history-surgery skill (bin/orama-system/skills/git-history-surgery/, commit 36fd6b9a on orama-system main) plus a concrete, reusable all-ref blob scanner reusing PT's existing private_literal_values()/.verboten-literals.local abstraction instead of a parallel one. Also folded in: the multi-agent stale-claim release/reclaim pattern from earlier in the same session (lesson_40b554e8fb35) and the private-literal self-quoting-paradox fix (lesson_6c176e735ab4) -- both are the same discipline applied to different surfaces (job-board handoffs, secret governance) as the git-surgery gates.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T05:44:45.016589+00:00"
+      ],
+      "lessons_sha": "595f5803e121"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T05:44:45.127647+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-18 full-day arc, distilled per explicit user request ahead of the v2 migration ('we do not want to bring old garbage into our new house'). Sequence: PR #256 (root-caused + merged) -> PR #258 (docs-only consolidation plan; migration execution + clinebot install.sh/start.sh integration deliberately parked as an explicit TODO checklist in docs/next/2026-07-17-coordination-module-consolidation-plan.md rather than left ambiguous) -> a branch-scoped git filter-repo privacy scrub produced 750+ apparent new commits (pure rewritten-ancestry noise, not real divergence) -> tree-twin reanchoring (content-verified via git show/diff before checkout -B, never blind-merged) -> Codex's own all-ref blob scan proved the reanchor alone did not prove blob-level cleanliness (248 hits, 206 inherited from origin/main, 13 PR-unique -- a genuinely open, tracked gap, not swept under a 'complete' claim) -> the clean-replacement-PR maneuver executed and landed as PT PR #260, replaying the exact final tree onto current main and dropping the noisy intervening history from the review surface. The resulting doctrine is now written into orama-system's canonical git-history-surgery skill (bin/orama-system/skills/git-history-surgery/, commit 36fd6b9a on orama-system main) plus a concrete, reusable all-ref blob scanner reusing PT's existing private_literal_values()/.verboten-literals.local abstraction instead of a parallel one. Also folded in: the multi-agent stale-claim release/reclaim pattern from earlier in the same session (lesson_40b554e8fb35) and the private-literal self-quoting-paradox fix (lesson_6c176e735ab4) -- both are the same discipline applied to different surfaces (job-board handoffs, secret governance) as the git-surgery gates."
+}

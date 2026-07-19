@@ -1,0 +1,42 @@
+{
+  "id": "d48b0df6d948",
+  "key": "manual_d48b0d",
+  "name": "manual_d48b0d",
+  "claim": "When a function claims to return 'the latest' item from an already-newest-first ordered list (e.g. GossipBus.tail(), ORDER BY id DESC), check whether it wraps that list in reversed() before returning the first match. reversed() of an already-newest-first list gives oldest-first, silently inverting the intended behavior -- and a stale comment claiming 'newest first' or 'newer overwrites' right next to the bug is not evidence the code is correct, it's evidence someone's mental model was inverted when they wrote it.",
+  "conditions": [
+    "GossipBus.tail",
+    "ORDER BY id DESC",
+    "latest state",
+    "newest first",
+    "reversed"
+  ],
+  "evidence_ids": [
+    "2026-07-18T17:47:42.547440+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T17:47:42.547440+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T17:47:42.547440+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T17:47:42.662928+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Found live in scripts/agent_coordination_core.py: _get_latest_phase_state and _all_phase_states both wrapped an already-newest-first bus.tail() result in reversed(), then returned/kept the first match -- silently returning the OLDEST matching phase event instead of the newest. Reproduced concretely: phase_start -> phase_update -> phase_complete (3 events) returned PhaseStatus.IN_PROGRESS, not COMPLETE. Reachable through 9 call sites including the guard meant to prevent restarting a completed phase. Caught by an independent DX-phase review voice (Codex), not by reading the code alone -- the comment right next to the bug ('# newer overwrites') actively contradicted what the code did, which is why it survived undetected.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T17:47:42.547440+00:00"
+      ],
+      "lessons_sha": "4ce8e7840a82"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T17:47:42.662916+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Found live in scripts/agent_coordination_core.py: _get_latest_phase_state and _all_phase_states both wrapped an already-newest-first bus.tail() result in reversed(), then returned/kept the first match -- silently returning the OLDEST matching phase event instead of the newest. Reproduced concretely: phase_start -> phase_update -> phase_complete (3 events) returned PhaseStatus.IN_PROGRESS, not COMPLETE. Reachable through 9 call sites including the guard meant to prevent restarting a completed phase. Caught by an independent DX-phase review voice (Codex), not by reading the code alone -- the comment right next to the bug ('# newer overwrites') actively contradicted what the code did, which is why it survived undetected."
+}

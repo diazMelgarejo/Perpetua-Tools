@@ -19,7 +19,6 @@ from pathlib import Path
 APPROVED_IDENTITIES = {
     ("cyre", "Lawrence@cyre.me"),
     ("cyre", "diazMelgarejo@gmail.com"),
-    ("cyre", "Lawrence.Melgarejo@gmail.com"),
     ("Codex", "codex@openai.com"),
 }
 # Keep in sync with scripts/git/check_identity.sh (local hooks + pre-commit).
@@ -53,6 +52,7 @@ PERSONAL_PATH_EXCEPTIONS = {
     # path_hygiene unit tests use /Users/alice, /home/bob as test fixtures —
     # the file exists specifically to verify the scrubber catches these patterns.
     "tests/test_path_hygiene.py",
+    "tests/test_path_hygiene_identity_scrub.py",
 }
 # Hidden / bidirectional Unicode controls — Trojan-Source defense (CVE-2021-42574).
 # These can hide malicious code in diffs. Block in all tracked files except the
@@ -217,7 +217,40 @@ GENERATED_ARTIFACT_EXCEPTIONS: frozenset[str] = frozenset({
     "packages/alphaclaw-mcp/build/index.js",
     "packages/alphaclaw-mcp/build/is-direct-execution.js",
 })
-
+VERBOTEN_LITERALS_FILE = ".verboten-literals.local"
+EMAIL_LITERAL_RE = re.compile(
+    r"(?<![\w.+-])"
+    r"[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
+    r"(?![\w.-])"
+)
+AGENT_EMAIL_LITERAL_ALLOWED_DOMAINS = frozenset({
+    "openai.com",
+    "anthropic.com",
+    "cursor.com",
+    "cursor.sh",
+    "google.com",
+    "google.dev",
+    "github.com",
+    "microsoft.com",
+    "azure.com",
+    "perplexity.ai",
+    "x.ai",
+    "coderabbit.ai",
+    "mistral.ai",
+    "deepseek.com",
+    "cohere.com",
+    "meta.com",
+    "sourcegraph.com",
+    "devin.ai",
+    "codeium.com",
+    "kimi.ai",
+    # RFC 2606 / documentation fixtures only. Do not add personal mail domains.
+    "example.invalid",
+    "example.com",
+    "example.org",
+    "example.net",
+    "localhost",
+})
 GENERATED_ARTIFACT_PATTERNS = (
     ".DS_Store",
     "*/.DS_Store",
@@ -287,6 +320,50 @@ def run_git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
+def openclaw_workspace_root(root: Path) -> Path:
+    for candidate in (root, *root.parents):
+        if (candidate / "orama-system").is_dir():
+            return candidate
+    return root
+
+
+def private_literal_values(root: Path, key: str) -> list[str]:
+    configured_path = os.getenv("OPENCLAW_VERBOTEN_LITERALS")
+    path = Path(configured_path) if configured_path else openclaw_workspace_root(root) / VERBOTEN_LITERALS_FILE
+    if not path.is_file():
+        return []
+    values: list[str] = []
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return []
+    for raw in lines:
+        raw = raw.split("#", 1)[0].strip()
+        if not raw or "=" not in raw:
+            continue
+        raw_key, value = raw.split("=", 1)
+        if raw_key.strip() != key:
+            continue
+        value = value.strip()
+        if value:
+            values.append(value)
+    return values
+
+
+def local_topology_fragments(root: Path) -> list[str]:
+    """Load concrete local path/topology fragments from the local-only registry.
+
+    The repository may describe the invariant, but must not hardcode the
+    literal path fragments it bans from memory. Operators keep those fragments
+    beside the other off-repo verboten values, using keys such as
+    local_path_fragment, local_workspace_fragment, or verboten_path_fragment.
+    """
+    fragments: list[str] = []
+    for key in ("local_path_fragment", "local_workspace_fragment", "verboten_path_fragment"):
+        fragments.extend(private_literal_values(root, key))
+    return fragments
+
+
 def tracked_files(root: Path) -> list[str]:
     proc = run_git(root, "ls-files")
     if proc.returncode != 0:
@@ -318,6 +395,151 @@ def scan_forbidden_identity(root: Path, files: list[str]) -> list[str]:
             if token in text:
                 errors.append(f"forbidden identity token in tracked file: {rel}")
                 break
+    return errors
+
+
+def scan_private_verboten_literals(root: Path, files: list[str]) -> list[str]:
+    gmail_tokens = {t.casefold() for t in private_literal_values(root, "owner_gmail")}
+    other_tokens = [
+        token.casefold()
+        for key in ("owner_name", "forbidden_attribution")
+        for token in private_literal_values(root, key)
+    ]
+    tokens = list(gmail_tokens) + other_tokens
+    if not tokens:
+        return []
+    # Narrow, mechanically-defined exception: AUTHORIZED_CONTRIBUTORS.md's whole
+    # purpose is to list the real approved identity. Exempt ONLY a complete
+    # line that exactly matches "cyre <owner_gmail>" (after stripping
+    # surrounding whitespace) in that one file -- not a substring match
+    # anywhere in the text, and only for the owner_gmail token specifically.
+    # owner_name, forbidden_attribution, and any other occurrence of the
+    # email (embedded in a longer line, appearing elsewhere in the file, or
+    # anywhere in any other file) still block.
+    errors: list[str] = []
+    for rel in files:
+        path = root / rel
+        if not path.is_file() or is_binary(path):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        is_allowlisted_file = rel == ".github/AUTHORIZED_CONTRIBUTORS.md"
+        allowlisted_lines = (
+            {line.strip().casefold() for line in text.splitlines()}
+            if is_allowlisted_file
+            else set()
+        )
+        text_lc = text.casefold()
+        hit = False
+        for token in tokens:
+            if token not in text_lc:
+                continue
+            if (
+                is_allowlisted_file
+                and token in gmail_tokens
+                and f"cyre <{token}>" in allowlisted_lines
+            ):
+                # Every occurrence of this exact gmail token in the file must
+                # itself be confined to an exact allowlisted line -- check by
+                # removing all exact-match lines and re-testing, rather than
+                # a blanket substring replace.
+                remaining_lc = "\n".join(
+                    line
+                    for line in text.splitlines()
+                    if line.strip().casefold() != f"cyre <{token}>"
+                ).casefold()
+                if token not in remaining_lc:
+                    continue
+            hit = True
+            break
+        if hit:
+            errors.append(f"private verboten literal in tracked file: {rel}")
+    return errors
+
+
+def scan_agent_private_surface(root: Path, files: list[str]) -> list[str]:
+    """Apply the strict portable-brain boundary to every tracked .agent file.
+
+    The local-only verboten registry remains the source of truth for exact
+    private owner / forbidden-attribution literals. The .agent boundary is a
+    stricter superset of the repo-wide guards because .agent is portable memory
+    and protocol state: a superseded lesson row, rendered markdown view, or
+    coordination note must not carry a private literal, personal path, local
+    temp path, workspace topology, or secret pattern silently.
+
+    Public bot/vendor domains and synthetic documentation domains are allowed
+    for full email literals; personal mail domains are not. Error messages
+    intentionally report only the path and line, never the literal value.
+    """
+    errors: list[str] = []
+    private_tokens = [
+        token.casefold()
+        for key in ("owner_gmail", "owner_name", "forbidden_attribution")
+        for token in private_literal_values(root, key)
+    ]
+    topology_tokens = [
+        token.casefold()
+        for token in local_topology_fragments(root)
+        if token
+    ]
+    for rel in files:
+        if not rel.startswith(".agent/"):
+            continue
+        path = root / rel
+        if not path.is_file() or is_binary(path):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        text_lc = text.casefold()
+        if any(token and token in text_lc for token in private_tokens):
+            errors.append(f"private verboten literal in .agent file: {rel}")
+            continue
+        for line_no, line in enumerate(text.splitlines(), 1):
+            personal = PERSONAL_PATH_PATTERN.search(line)
+            if personal:
+                username = personal.group(1) or (
+                    personal.group(2)
+                    if personal.lastindex and personal.lastindex >= 2
+                    else None
+                )
+                if username not in PERSONAL_PATH_PLACEHOLDERS:
+                    errors.append(
+                        f"personal absolute path in .agent file: {rel}:{line_no}"
+                    )
+                    break
+            line_lc = line.casefold()
+            if any(token and token in line_lc for token in topology_tokens):
+                errors.append(
+                    f"local/workspace path form in .agent file: {rel}:{line_no}"
+                )
+                break
+            if not _line_has_secret_placeholder(line):
+                for kind, pattern, _label in SECRET_PATTERNS:
+                    if pattern.search(line):
+                        errors.append(
+                            f"secret pattern ({kind}) in .agent file: {rel}:{line_no}"
+                        )
+                        break
+                else:
+                    pass
+                if errors and errors[-1].endswith(f"{rel}:{line_no}"):
+                    break
+            for match in EMAIL_LITERAL_RE.finditer(line):
+                email = match.group(0)
+                domain = email.rsplit("@", 1)[1].casefold()
+                if domain in AGENT_EMAIL_LITERAL_ALLOWED_DOMAINS:
+                    continue
+                errors.append(
+                    f"private/unclassified email literal in .agent file: {rel}:{line_no}"
+                )
+                break
+            else:
+                continue
+            break
     return errors
 
 
@@ -476,7 +698,22 @@ def check_identity(root: Path) -> list[str]:
     email = run_git(root, "config", "user.email").stdout.strip()
     if os.getenv("GITHUB_ACTIONS") == "true" and not name and not email:
         return []
-    if (name, email) not in APPROVED_IDENTITIES:
+    identities = set(APPROVED_IDENTITIES)
+    private_emails = {
+        value.casefold() for value in private_literal_values(root, "owner_gmail")
+    }
+    private_names = [
+        value.casefold() for value in private_literal_values(root, "owner_name")
+    ]
+    # Backward compatible: if no owner_name is configured, fall back to the
+    # prior hardcoded "cyre" pairing rather than silently rejecting every
+    # private-email identity for configs that never set owner_name.
+    name_tokens = private_names or ["cyre"]
+    private_identity_ok = (
+        email.casefold() in private_emails
+        and any(token in name.casefold() for token in name_tokens)
+    )
+    if (name, email) not in identities and not private_identity_ok:
         expected = " or ".join(f"{n} <{e}>" for n, e in sorted(APPROVED_IDENTITIES))
         return [
             "git identity mismatch: "
@@ -537,6 +774,8 @@ def main() -> int:
     errors.extend(check_generated_artifact_tracking(files))
     errors.extend(check_git_internal_junk(root))
     errors.extend(check_workflow_permissions(root))
+    errors.extend(scan_private_verboten_literals(root, files))
+    errors.extend(scan_agent_private_surface(root, files))
 
     for line in report_status(root):
         print(f"INFO: {line}")

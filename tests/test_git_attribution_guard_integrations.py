@@ -21,11 +21,11 @@ VERIFY_GUARDS = ROOT / "scripts/git/verify-git-guards.sh"
 BANNED_ATTR_LIB = ROOT / "scripts/git/banned_attribution_lib.sh"
 CHECK_IDENTITY = ROOT / "scripts/git/check_identity.sh"
 CHECK_COMMIT_MESSAGE = ROOT / "scripts/git/check_commit_message.sh"
+AUDIT_ATTRIBUTION = ROOT / "scripts/git/audit_attribution.sh"
 
 AUTHORIZED_HUMAN_MARKERS = (
     "diazMelgarejo",
     "diaz.Melgarejo",
-    "Lawrence.Melgarejo",
 )
 
 
@@ -44,6 +44,16 @@ def _pattern_tokens() -> set[str]:
         if token:
             tokens.add(token)
     return tokens
+
+
+def _private_owner_email_fixture(tmp_path: Path) -> tuple[Path, str]:
+    private_email = "private.owner@gmail.com"
+    literals = tmp_path / "verboten.local"
+    literals.write_text(
+        f"owner_gmail={private_email}\nowner_name=Private.Owner\n",
+        encoding="utf-8",
+    )
+    return literals, private_email
 
 
 def _call_first_banned_pattern_token(root: Path) -> subprocess.CompletedProcess[str]:
@@ -67,22 +77,13 @@ def test_banned_patterns_do_not_forbid_authorized_human_identities():
     forbidden = {
         "diazmelgarejo",
         "diaz.melgarejo",
-        "lawrence.melgarejo",
         "diazmelgarejo@gmail.com",
-        "lawrence.melgarejo@gmail.com",
     }
     assert tokens.isdisjoint(forbidden)
 
 
-@pytest.mark.parametrize(
-    ("name", "email"),
-    [
-        ("diazMelgarejo", "diazMelgarejo@gmail.com"),
-        ("diaz.Melgarejo", "diazMelgarejo@gmail.com"),
-        ("Lawrence.Melgarejo", "Lawrence.Melgarejo@gmail.com"),
-    ],
-)
-def test_check_identity_allows_authorized_human_authors_even_in_cursor_context(name, email):
+@pytest.mark.parametrize("name", ["diazMelgarejo", "diaz.Melgarejo"])
+def test_check_identity_allows_public_authorized_human_authors_even_in_cursor_context(name):
     """Approved human authors must remain valid even when Cursor env vars exist."""
     proc = subprocess.run(
         ["bash", str(CHECK_IDENTITY)],
@@ -96,26 +97,85 @@ def test_check_identity_allows_authorized_human_authors_even_in_cursor_context(n
             "GIT_CONFIG_KEY_0": "user.name",
             "GIT_CONFIG_VALUE_0": name,
             "GIT_CONFIG_KEY_1": "user.email",
-            "GIT_CONFIG_VALUE_1": email,
+            "GIT_CONFIG_VALUE_1": "diazMelgarejo@gmail.com",
         },
     )
     assert proc.returncode == 0, proc.stderr
     assert "approved" in proc.stdout
 
 
-@pytest.mark.parametrize(
-    ("name", "email"),
-    [
-        ("diazMelgarejo", "diazMelgarejo@gmail.com"),
-        ("diaz.Melgarejo", "diazMelgarejo@gmail.com"),
-        ("Lawrence.Melgarejo", "Lawrence.Melgarejo@gmail.com"),
-    ],
-)
-def test_check_commit_message_allows_authorized_human_coauthors(tmp_path, name, email):
+def test_check_identity_allows_private_owner_email_from_external_file(tmp_path):
+    """The private owner email is allowed only through a local-only literals file."""
+    literals, private_email = _private_owner_email_fixture(tmp_path)
+    proc = subprocess.run(
+        ["bash", str(CHECK_IDENTITY)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        env={
+            **os.environ,
+            "CURSOR_SESSION_ID": "test-session",
+            "OPENCLAW_VERBOTEN_LITERALS": str(literals),
+            "GIT_CONFIG_COUNT": "2",
+            "GIT_CONFIG_KEY_0": "user.name",
+            "GIT_CONFIG_VALUE_0": "Private.Owner",
+            "GIT_CONFIG_KEY_1": "user.email",
+            "GIT_CONFIG_VALUE_1": private_email,
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "approved" in proc.stdout
+
+
+def test_audit_attribution_range_mode_reports_only_pushed_range():
+    """Pre-push range mode must not report unrelated inherited ref summaries."""
+    proc = subprocess.run(
+        ["bash", str(AUDIT_ATTRIBUTION), "0"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env={
+            **os.environ,
+            "GIT_AUDIT_RANGE": "HEAD..HEAD",
+            "GIT_AUDIT_STRICT": "1",
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    lines = [line for line in proc.stdout.splitlines() if line.strip()]
+    assert lines
+    assert all(line.startswith("RANGE\t") for line in lines), proc.stdout
+
+
+def test_audit_attribution_context_refs_are_explicit_opt_in():
+    """Manual diagnostics can still request HEAD/main/origin summaries."""
+    proc = subprocess.run(
+        ["bash", str(AUDIT_ATTRIBUTION), "0"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env={
+            **os.environ,
+            "GIT_AUDIT_RANGE": "HEAD..HEAD",
+            "GIT_AUDIT_STRICT": "1",
+            "GIT_AUDIT_INCLUDE_CONTEXT_REFS": "1",
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "RANGE\tHEAD..HEAD\t" in proc.stdout
+    assert any(
+        line.startswith(("HEAD\t", "main\t", "origin/main\t"))
+        for line in proc.stdout.splitlines()
+    ), proc.stdout
+
+
+@pytest.mark.parametrize("name", ["diazMelgarejo", "diaz.Melgarejo"])
+def test_check_commit_message_allows_public_authorized_human_coauthors(tmp_path, name):
     """Approved human identities are valid Co-authored-by trailers."""
     msg = tmp_path / "COMMIT_EDITMSG"
     msg.write_text(
-        f"feat: x\n\nCo-authored-by: {name} <{email}>\n",
+        f"feat: x\n\nCo-authored-by: {name} <diazMelgarejo@gmail.com>\n",
         encoding="utf-8",
     )
     proc = subprocess.run(
@@ -123,6 +183,23 @@ def test_check_commit_message_allows_authorized_human_coauthors(tmp_path, name, 
         cwd=ROOT,
         capture_output=True,
         text=True,
+    )
+    assert proc.returncode == 0, proc.stderr
+
+
+def test_check_commit_message_allows_private_owner_email_from_external_file(tmp_path):
+    literals, private_email = _private_owner_email_fixture(tmp_path)
+    msg = tmp_path / "COMMIT_EDITMSG"
+    msg.write_text(
+        f"feat: x\n\nCo-authored-by: Private.Owner <{private_email}>\n",
+        encoding="utf-8",
+    )
+    proc = subprocess.run(
+        ["bash", str(CHECK_COMMIT_MESSAGE), str(msg)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        env={**os.environ, "OPENCLAW_VERBOTEN_LITERALS": str(literals)},
     )
     assert proc.returncode == 0, proc.stderr
 

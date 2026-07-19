@@ -387,7 +387,7 @@ async def test_buffer_drain_empty_buffer(make_bus, capsys):
     await _buffer_drain(bus, "agent-nonexistent")
 
     captured = capsys.readouterr()
-    assert "ERROR: no buffer state" in captured.out
+    assert "ERROR: no buffer state" in captured.err
 
 
 # ─────────────────────────────────────────────────────────────────────────────

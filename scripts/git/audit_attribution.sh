@@ -12,9 +12,9 @@ HOOK="$REPO_ROOT/scripts/git/check_commit_message.sh"
 
 # Exact approved human and autonomous-agent author identities.
 # Do not replace these with broad domain or GitHub noreply wildcards.
-ALLOWED_HUMAN_AE="diazmelgarejo@gmail.com lawrence@cyre.me lawrence.melgarejo@gmail.com noreply@anthropic.com claude@anthropic.com codex@openai.com kimi-agent@kimi.ai cloud-kimi-agent@kimi.ai"
+ALLOWED_HUMAN_AE="diazmelgarejo@gmail.com lawrence@cyre.me noreply@anthropic.com claude@anthropic.com codex@openai.com noreply@openai.com kimi-agent@kimi.ai cloud-kimi-agent@kimi.ai"
 ALLOWED_BOT_ORAMA="cursor[bot]@users.noreply.github.com"
-ALLOWED_BOT_PT="dependabot[bot]@users.noreply.github.com coderabbitai[bot]@users.noreply.github.com"
+ALLOWED_BOT_PT="dependabot[bot]@users.noreply.github.com coderabbitai[bot]@users.noreply.github.com openclaw-operator@users.noreply.github.com"
 ALLOWED_BOT_EMAILS="$ALLOWED_BOT_ORAMA $ALLOWED_BOT_PT"
 
 repo_name="$(basename "$REPO_ROOT")"
@@ -48,24 +48,35 @@ author_ok() {
   for h in $ALLOWED_HUMAN_AE; do
     [[ "$ae_lc" == "$h" ]] && return 0
   done
+  private_owner_email_ok "$ae_lc" "$REPO_ROOT" && return 0
   return 1
 }
 
 banned_attribution_hit() {
   local ae_lc="$1" an_lc="$2" ce_lc="$3" cn_lc="$4" body_lc="$5"
-  if ! banned_patterns_ready "$REPO_ROOT"; then
-    return 1
+  # Private-literal checks (from the gitignored local/CI-provided literals
+  # file) must run regardless of whether the separate tracked patterns
+  # source is ready -- these are two independent sources, and a missing
+  # patterns file must not silently disable the private-literal guard too.
+  line_matches_private_forbidden_literal "$ae_lc" "$REPO_ROOT" && return 0
+  line_matches_private_forbidden_literal "$an_lc" "$REPO_ROOT" && return 0
+  line_matches_private_forbidden_literal "$ce_lc" "$REPO_ROOT" && return 0
+  line_matches_private_forbidden_literal "$cn_lc" "$REPO_ROOT" && return 0
+  if banned_patterns_ready "$REPO_ROOT"; then
+    line_matches_banned_pattern "$ae_lc" "$REPO_ROOT" && return 0
+    line_matches_banned_pattern "$an_lc" "$REPO_ROOT" && return 0
+    line_matches_banned_pattern "$ce_lc" "$REPO_ROOT" && return 0
+    line_matches_banned_pattern "$cn_lc" "$REPO_ROOT" && return 0
   fi
-  line_matches_banned_pattern "$ae_lc" "$REPO_ROOT" && return 0
-  line_matches_banned_pattern "$an_lc" "$REPO_ROOT" && return 0
-  line_matches_banned_pattern "$ce_lc" "$REPO_ROOT" && return 0
-  line_matches_banned_pattern "$cn_lc" "$REPO_ROOT" && return 0
   local line
   while IFS= read -r line; do
     line_lc="$(printf '%s' "$line" | tr '[:upper:]' '[:lower:]')"
     case "$line_lc" in
       co-authored-by:*)
-        if line_matches_banned_pattern "$line_lc" "$REPO_ROOT"; then
+        if banned_patterns_ready "$REPO_ROOT" && line_matches_banned_pattern "$line_lc" "$REPO_ROOT"; then
+          return 0
+        fi
+        if line_matches_private_forbidden_literal "$line_lc" "$REPO_ROOT"; then
           return 0
         fi
         ;;
@@ -74,39 +85,41 @@ banned_attribution_hit() {
   return 1
 }
 
-refs=(HEAD main origin/main)
-for ref in "${refs[@]}"; do
-  sha=$(git rev-parse -q --verify "$ref" 2>/dev/null) || { printf '%s\tMISSING\t-\t-\t-\t-\n' "$ref"; continue; }
-  banned=0 bad_author=0 bad_co=0 count=0
-  while read -r h; do
-    count=$((count+1))
-    tmp=$(mktemp)
-    git log -1 --format=%B "$h" > "$tmp"
-    ae=$(git log -1 --format=%ae "$h")
-    ce=$(git log -1 --format=%ce "$h")
-    an=$(git log -1 --format=%an "$h")
-    cn=$(git log -1 --format=%cn "$h")
-    ae_lc="$(printf '%s' "$ae" | tr '[:upper:]' '[:lower:]')"
-    ce_lc="$(printf '%s' "$ce" | tr '[:upper:]' '[:lower:]')"
-    an_lc="$(printf '%s' "$an" | tr '[:upper:]' '[:lower:]')"
-    cn_lc="$(printf '%s' "$cn" | tr '[:upper:]' '[:lower:]')"
-    body_lc="$(cat "$tmp" | tr '[:upper:]' '[:lower:]')"
-    if banned_attribution_hit "$ae_lc" "$an_lc" "$ce_lc" "$cn_lc" "$body_lc"; then
-      banned=$((banned+1))
-    fi
-    if ! author_ok "$ae_lc" "$an_lc"; then
-      bad_author=$((bad_author+1))
-    fi
-    if [[ -x "$HOOK" ]] && ! "$HOOK" "$tmp" >/dev/null 2>&1; then
-      bad_co=$((bad_co+1))
-    fi
-    rm -f "$tmp"
-  done < <(git log -"$N" --format=%H "$ref" 2>/dev/null)
-  clean=no
-  [[ $banned -eq 0 && $bad_author -eq 0 && $bad_co -eq 0 ]] && clean=yes
-  printf '%s\t%s\tbanned=%s\tbad_author=%s\tbad_coauthor=%s\tcommits=%s\tclean=%s\trepo_bot=%s\n' \
-    "$ref" "${sha:0:12}" "$banned" "$bad_author" "$bad_co" "$count" "$clean" "${PREFERRED_BOT:-any}"
-done
+if [[ -z "${GIT_AUDIT_RANGE:-}" || "${GIT_AUDIT_INCLUDE_CONTEXT_REFS:-0}" == "1" ]]; then
+  refs=(HEAD main origin/main)
+  for ref in "${refs[@]}"; do
+    sha=$(git rev-parse -q --verify "$ref" 2>/dev/null) || { printf '%s\tMISSING\t-\t-\t-\t-\n' "$ref"; continue; }
+    banned=0 bad_author=0 bad_co=0 count=0
+    while read -r h; do
+      count=$((count+1))
+      tmp=$(mktemp)
+      git log -1 --format=%B "$h" > "$tmp"
+      ae=$(git log -1 --format=%ae "$h")
+      ce=$(git log -1 --format=%ce "$h")
+      an=$(git log -1 --format=%an "$h")
+      cn=$(git log -1 --format=%cn "$h")
+      ae_lc="$(printf '%s' "$ae" | tr '[:upper:]' '[:lower:]')"
+      ce_lc="$(printf '%s' "$ce" | tr '[:upper:]' '[:lower:]')"
+      an_lc="$(printf '%s' "$an" | tr '[:upper:]' '[:lower:]')"
+      cn_lc="$(printf '%s' "$cn" | tr '[:upper:]' '[:lower:]')"
+      body_lc="$(cat "$tmp" | tr '[:upper:]' '[:lower:]')"
+      if banned_attribution_hit "$ae_lc" "$an_lc" "$ce_lc" "$cn_lc" "$body_lc"; then
+        banned=$((banned+1))
+      fi
+      if ! author_ok "$ae_lc" "$an_lc"; then
+        bad_author=$((bad_author+1))
+      fi
+      if [[ -x "$HOOK" ]] && ! "$HOOK" "$tmp" >/dev/null 2>&1; then
+        bad_co=$((bad_co+1))
+      fi
+      rm -f "$tmp"
+    done < <(git log -"$N" --format=%H "$ref" 2>/dev/null)
+    clean=no
+    [[ $banned -eq 0 && $bad_author -eq 0 && $bad_co -eq 0 ]] && clean=yes
+    printf '%s\t%s\tbanned=%s\tbad_author=%s\tbad_coauthor=%s\tcommits=%s\tclean=%s\trepo_bot=%s\n' \
+      "$ref" "${sha:0:12}" "$banned" "$bad_author" "$bad_co" "$count" "$clean" "${PREFERRED_BOT:-any}"
+  done
+fi
 
 if [[ -n "${GIT_AUDIT_RANGE:-}" ]]; then
   range_banned=0 range_bad_author=0 range_bad_co=0 range_count=0

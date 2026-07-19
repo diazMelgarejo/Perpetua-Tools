@@ -20,7 +20,7 @@ description of residual risk.
 - Read [`SECURITY.md`](SECURITY.md) and
   [`.github/AUTHORIZED_CONTRIBUTORS.md`](.github/AUTHORIZED_CONTRIBUTORS.md).
 - Commit identity must match `AUTHORIZED_CONTRIBUTORS.md`: the owner authors as
-  `diazMelgarejo@gmail.com` or `Lawrence@cyre.me`; AI-assisted commits list the
+  one of the owner emails listed there; AI-assisted commits list the
   assistant as `Co-authored-by`, never as the git author. Note that git author
   identity does **not** by itself distinguish a human from an autonomous agent
   in this stack — agents inherit the local git config.
@@ -51,8 +51,10 @@ Do **not** open public issues for vulnerabilities — follow
 Changes to `.agent/memory/` should go through the memory tooling
 (`.agent/tools/learn.py`, `graduate.py`, and friends), not hand-edited JSONL,
 so referential integrity (a lesson's `evidence_ids` resolving to a real
-episodic record) is preserved. If you must reconstruct a record by hand,
-verify the invariant programmatically and say so in the PR.
+episodic record) is preserved. Do not record the owner's Gmail address in
+memory files, CONTRIBUTING.md, or PR templates; use a neutral owner-identity
+label instead. If you must reconstruct a record by hand, verify the invariant
+programmatically and say so in the PR.
 
 ## Review and follow-up
 

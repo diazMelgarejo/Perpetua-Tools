@@ -53,6 +53,18 @@ def is_default_state_dir_arg(state_dir: Path | str) -> bool:
     return Path(state_dir) == Path(".state")
 
 
+class GossipBusError(Exception):
+    """A GossipBus operation failed against the underlying SQLite store.
+
+    Raised by emit()/tail() (and re-raised by the atomic-claim helpers in
+    scripts/agent_coordination_core.py for the same class of failure) so
+    every caller-facing surface -- CLI, tests -- has one stable exception
+    type to catch, instead of letting raw sqlite3/aiosqlite/OSError
+    exceptions (lock contention, disk full, corruption) propagate as
+    uncaught tracebacks.
+    """
+
+
 def resolve_gossip_db_path(state_dir: Path | str | None = None) -> str:
     explicit = os.environ.get("GOSSIP_DB_PATH", "").strip()
     if explicit:
@@ -123,6 +135,10 @@ EventType = Literal[
     "error",
     "heartbeat",
     "fleet_topology_transition",
+    "fleet_topology_stale",
+    "fleet_topology_recovered",
+    "split_brain_detected",
+    "split_brain_resolved",
 ]
 
 
@@ -153,46 +169,51 @@ class GossipBus:
         return aiosqlite.connect(self._db_path)
 
     async def init_db(self) -> None:
-        async with self.connect() as db:
-            await db.execute(_CREATE_TABLE)
-            # Schema migration: add event_uuid to existing tables (idempotent).
-            try:
-                await db.execute("ALTER TABLE gossip ADD COLUMN event_uuid TEXT")
-            except sqlite3.OperationalError as exc:
-                if "duplicate column" not in str(exc).lower():
-                    raise
-            # Schema migration: add embed_status to legacy tables (idempotent).
-            try:
-                await db.execute(
-                    "ALTER TABLE gossip ADD COLUMN embed_status TEXT NOT NULL DEFAULT 'pending'"
-                )
-            except sqlite3.OperationalError as exc:
-                if "duplicate column" not in str(exc).lower():
-                    raise
-            # Backfill any rows missing event_uuid (legacy rows pre-migration).
-            cursor = await db.execute("SELECT id FROM gossip WHERE event_uuid IS NULL")
-            rows = await cursor.fetchall()
-            for (row_id,) in rows:
-                await db.execute(
-                    "UPDATE gossip SET event_uuid = ? WHERE id = ?",
-                    (uuid.uuid4().hex, row_id),
-                )
-            await db.execute(_CREATE_FTS)
-            await db.execute(_CREATE_FTS_AI)
-            await db.execute(_CREATE_FTS_AD)
-            await db.execute(_CREATE_EMBED_IDX)
-            await db.execute(_CREATE_UUID_IDX)
-            await db.commit()
-            cursor = await db.execute("SELECT COUNT(*) FROM gossip_fts")
-            (fts_count,) = await cursor.fetchone()
-            cursor = await db.execute("SELECT COUNT(*) FROM gossip")
-            (row_count,) = await cursor.fetchone()
-            if row_count > 0 and fts_count == 0:
-                await db.execute(
-                    "INSERT INTO gossip_fts(rowid, event_type, payload_json) "
-                    "SELECT id, event_type, payload_json FROM gossip"
-                )
+        try:
+            async with self.connect() as db:
+                await db.execute(_CREATE_TABLE)
+                # Schema migration: add event_uuid to existing tables (idempotent).
+                try:
+                    await db.execute("ALTER TABLE gossip ADD COLUMN event_uuid TEXT")
+                except sqlite3.OperationalError as exc:
+                    if "duplicate column" not in str(exc).lower():
+                        raise
+                # Schema migration: add embed_status to legacy tables (idempotent).
+                try:
+                    await db.execute(
+                        "ALTER TABLE gossip ADD COLUMN embed_status TEXT NOT NULL DEFAULT 'pending'"
+                    )
+                except sqlite3.OperationalError as exc:
+                    if "duplicate column" not in str(exc).lower():
+                        raise
+                # Backfill any rows missing event_uuid (legacy rows pre-migration).
+                cursor = await db.execute("SELECT id FROM gossip WHERE event_uuid IS NULL")
+                rows = await cursor.fetchall()
+                for (row_id,) in rows:
+                    await db.execute(
+                        "UPDATE gossip SET event_uuid = ? WHERE id = ?",
+                        (uuid.uuid4().hex, row_id),
+                    )
+                await db.execute(_CREATE_FTS)
+                await db.execute(_CREATE_FTS_AI)
+                await db.execute(_CREATE_FTS_AD)
+                await db.execute(_CREATE_EMBED_IDX)
+                await db.execute(_CREATE_UUID_IDX)
                 await db.commit()
+                cursor = await db.execute("SELECT COUNT(*) FROM gossip_fts")
+                (fts_count,) = await cursor.fetchone()
+                cursor = await db.execute("SELECT COUNT(*) FROM gossip")
+                (row_count,) = await cursor.fetchone()
+                if row_count > 0 and fts_count == 0:
+                    await db.execute(
+                        "INSERT INTO gossip_fts(rowid, event_type, payload_json) "
+                        "SELECT id, event_type, payload_json FROM gossip"
+                    )
+                    await db.commit()
+        except (aiosqlite.Error, sqlite3.Error, OSError) as exc:
+            raise GossipBusError(
+                f"failed to initialize the coordination database: {exc}"
+            ) from exc
         self._initialized = True
 
     async def _ensure_initialized(self) -> None:
@@ -312,11 +333,16 @@ class GossipBus:
         """
         await self._ensure_initialized()
         payload, event_uuid = self._extract_forwarded_uuid(payload, event_uuid)
-        async with self.connect() as db:
-            row_id, stored_uuid, safe_payload, inserted = await self.insert_event(
-                db, event_type, payload, event_uuid=event_uuid
-            )
-            await db.commit()
+        try:
+            async with self.connect() as db:
+                row_id, stored_uuid, safe_payload, inserted = await self.insert_event(
+                    db, event_type, payload, event_uuid=event_uuid
+                )
+                await db.commit()
+        except (aiosqlite.Error, sqlite3.Error, OSError) as exc:
+            raise GossipBusError(
+                f"failed to write event to the coordination database: {exc}"
+            ) from exc
         if inserted:
             self.schedule_embedding(row_id, safe_payload)
         return stored_uuid
@@ -325,20 +351,25 @@ class GossipBus:
         self, limit: int = 20, event_type: Optional[str] = None
     ) -> list[dict]:
         await self._ensure_initialized()
-        async with self.connect() as db:
-            if event_type:
-                cursor = await db.execute(
-                    "SELECT id, event_uuid, ts, event_type, payload_json FROM gossip "
-                    "WHERE event_type = ? ORDER BY id DESC LIMIT ?",
-                    (event_type, limit),
-                )
-            else:
-                cursor = await db.execute(
-                    "SELECT id, event_uuid, ts, event_type, payload_json FROM gossip "
-                    "ORDER BY id DESC LIMIT ?",
-                    (limit,),
-                )
-            rows = await cursor.fetchall()
+        try:
+            async with self.connect() as db:
+                if event_type:
+                    cursor = await db.execute(
+                        "SELECT id, event_uuid, ts, event_type, payload_json FROM gossip "
+                        "WHERE event_type = ? ORDER BY id DESC LIMIT ?",
+                        (event_type, limit),
+                    )
+                else:
+                    cursor = await db.execute(
+                        "SELECT id, event_uuid, ts, event_type, payload_json FROM gossip "
+                        "ORDER BY id DESC LIMIT ?",
+                        (limit,),
+                    )
+                rows = await cursor.fetchall()
+        except (aiosqlite.Error, sqlite3.Error, OSError) as exc:
+            raise GossipBusError(
+                f"failed to read events from the coordination database: {exc}"
+            ) from exc
         return [
             {
                 "row_id": row[0],

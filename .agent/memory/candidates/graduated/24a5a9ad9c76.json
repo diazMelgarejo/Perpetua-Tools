@@ -1,0 +1,68 @@
+{
+  "id": "24a5a9ad9c76",
+  "key": "manual_24a5a9",
+  "name": "manual_24a5a9",
+  "claim": "Email addresses in ALLOWED_GMAIL_COAUTHORS are NEVER checked for non-gmail domains. The gmail_allowed() gate in check_commit_message.sh only runs when the email ends in @gmail.com or @googlemail.com. Any personal domain (e.g. a custom vanity domain) stored in ALLOWED_GMAIL_COAUTHORS will silently fall through to DENIED. Fix: put non-gmail personal/org addresses in ALLOWED_EXACT_COAUTHOR_EMAILS instead.",
+  "conditions": [
+    "addresses",
+    "allowed_exact_coauthor_emails",
+    "allowed_gmail_coauthors",
+    "any",
+    "check_commit_message",
+    "checked",
+    "com",
+    "custom",
+    "denied",
+    "domain",
+    "domains",
+    "email",
+    "ends",
+    "fall",
+    "fix",
+    "gate",
+    "gmail",
+    "gmail_allowed",
+    "googlemail",
+    "instead",
+    "never",
+    "non-gmail",
+    "only",
+    "org",
+    "personal",
+    "put",
+    "runs",
+    "silently",
+    "stored",
+    "through",
+    "vanity"
+  ],
+  "evidence_ids": [
+    "2026-07-18T23:51:18.804479+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T23:51:18.804479+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T23:51:18.804479+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T23:51:54.722268+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Generalized the illustrative domain example, no real private domain remains.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T23:51:18.804479+00:00"
+      ],
+      "lessons_sha": "38cf524f8658"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T23:51:54.722251+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Generalized the illustrative domain example, no real private domain remains."
+}

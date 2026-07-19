@@ -30,7 +30,7 @@ PR #206 is merged and out of scope. All work here is PR #211 only.
 - Confirmed RC5 coverage already includes authorized authors/co-authors:
   - `diazMelgarejo`
   - `diaz.Melgarejo`
-  - `Lawrence.Melgarejo`
+  - configured private owner name
 - Confirmed those authorized identities are asserted absent from generated banned attribution tokens.
 
 ## Pending verification

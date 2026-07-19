@@ -85,6 +85,26 @@ jobs:
       - name: Verify git guards
         run: bash scripts/git/verify-git-guards.sh
 
+      - name: Provision verboten-literals for CI
+        # CI checks out this repo in isolation, so repo_hygiene.py's
+        # openclaw_workspace_root() ancestor walk never finds a sibling
+        # orama-system/ directory the way a local multi-repo checkout does --
+        # the private-literal scan silently checks against nothing on CI
+        # today. If OPENCLAW_VERBOTEN_LITERALS_CONTENT is provisioned as a
+        # repo secret (operator action, not this workflow), write it to an
+        # ephemeral runner-temp file and point OPENCLAW_VERBOTEN_LITERALS at
+        # it for the rest of this job. No-op (and the scan stays empty, same
+        # as today) if the secret isn't set -- safe default for forked-repo
+        # PRs, which never receive secrets.
+        if: ${{ env.OPENCLAW_VERBOTEN_LITERALS_CONTENT != '' }}
+        env:
+          OPENCLAW_VERBOTEN_LITERALS_CONTENT: ${{ secrets.OPENCLAW_VERBOTEN_LITERALS_CONTENT }}
+        run: |
+          literals_path="$RUNNER_TEMP/.verboten-literals.local"
+          printf '%s\n' "$OPENCLAW_VERBOTEN_LITERALS_CONTENT" > "$literals_path"
+          chmod 600 "$literals_path"
+          echo "OPENCLAW_VERBOTEN_LITERALS=$literals_path" >> "$GITHUB_ENV"
+
       - name: Repo hygiene gate
         run: python3 scripts/review/repo_hygiene.py .
 

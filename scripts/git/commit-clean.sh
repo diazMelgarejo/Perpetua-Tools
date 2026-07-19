@@ -18,6 +18,9 @@ repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
   exit 1
 }
 cd "$repo_root"
+SCRIPT_DIR="$repo_root/scripts/git"
+# shellcheck source=banned_attribution_lib.sh
+source "$SCRIPT_DIR/banned_attribution_lib.sh"
 
 message=""
 amend=0
@@ -71,8 +74,8 @@ case "$author_email_lc" in
   diazmelgarejo@gmail.com|lawrence@cyre.me|codex@openai.com)
     ;;
   *)
-    if ! author_domain_ok "$author_email_lc"; then
-      echo "error: commit author email must be diazMelgarejo@gmail.com, Lawrence@cyre.me, codex@openai.com, or a well-known AI/vendor domain" >&2
+    if ! private_owner_email_ok "$author_email_lc" "$repo_root" && ! author_domain_ok "$author_email_lc"; then
+      echo "error: commit author email must be one of the approved owner emails, codex@openai.com, or a well-known AI/vendor domain" >&2
       exit 1
     fi
     ;;
