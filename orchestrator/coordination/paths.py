@@ -23,6 +23,9 @@ def current_worktree_label() -> str:
         branch = subprocess.check_output(
             ["git", "branch", "--show-current"], text=True
         ).strip()
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, OSError):
+        # OSError covers FileNotFoundError (git not on PATH) and other
+        # exec-level failures -- worktree labeling must never crash an
+        # emit path just because git itself is unavailable or unexecutable.
         branch = "?"
     return f"{branch}@{Path.cwd()}"

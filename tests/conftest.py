@@ -39,28 +39,11 @@ def disable_ecc_sync_for_tests():
         os.environ["ECC_SYNC_ENABLED"] = prev
 
 
-async def emit_noise_batch(bus, count, *, kind="agent_pulse", modulo=10):
-    """Insert `count` synthetic heartbeat events in ONE transaction.
-
-    Several tests verify that a real function (phase/task/reorder-buffer
-    folding) still finds the right event once unrelated heartbeat volume
-    exceeds an old size-bounded tail() window -- historically written as
-    `for i in range(1500): await bus.emit(...)`, which is 1500 individual
-    SQLite transactions (each with its own fsync-backed commit) and takes
-    30-50s per test. The noise events' individual content doesn't matter
-    here, only that they exist in bulk -- so this reuses the same
-    GossipBus.insert_event() the real emit() calls (identical schema,
-    redaction, payload handling), just inside one connection/commit instead
-    of `count` of them. Does not schedule embeddings for the noise rows
-    (irrelevant to what these tests assert, and would itself spawn `count`
-    background tasks).
-    """
-    async with bus.connect() as db:
-        for i in range(count):
-            await bus.insert_event(
-                db, "heartbeat", {"kind": kind, "agent_id": f"noise-{i % modulo}", "seq": i}
-            )
-        await db.commit()
+# emit_noise_batch moved to tests/coordination_test_helpers.py -- a bare
+# `from conftest import X` is ambiguous once more than one conftest.py
+# exists in the tree (tests/scripts/conftest.py also exists, for
+# shell-script tests), and that ambiguity broke CI collection for every
+# coordination test module. Import from the dedicated module instead.
 
 
 @pytest.fixture(autouse=True)

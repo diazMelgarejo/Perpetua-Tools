@@ -272,15 +272,25 @@ async def _heartbeat_kill(bus: GossipBus, agent_id: str, reason: str) -> None:
     print(f"killed: {agent_id}")
 
 
+_TIMELINE_STATUS_LABELS = {
+    "agent_register": "REGISTERED",
+    "agent_claim": "CLAIMED",
+    "agent_release": "RELEASED",
+}
+
+
 async def _heartbeat_timeline(bus: GossipBus, agent_id: str, hours: int) -> None:
     cutoff = time.time() - hours * 3600
     events = await bus.tail(limit=1000, event_type="heartbeat")
+    print(f"Timeline for {agent_id}:")
     for event in reversed(events):
         payload = event["payload"]
         if event["ts"] < cutoff or payload.get("agent_id") != agent_id:
             continue
+        kind = payload.get("kind", "?")
+        status = _TIMELINE_STATUS_LABELS.get(kind, kind)
         print(
-            f"{int(event['ts'])} {payload.get('kind', '?')} "
+            f"{int(event['ts'])} {status} "
             f"{payload.get('task') or payload.get('reason') or ''}"
         )
 
