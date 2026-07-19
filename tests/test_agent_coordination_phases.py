@@ -17,8 +17,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from orchestrator import gossip_bus as gossip_bus_module  # noqa: E402
 from orchestrator.gossip_bus import GossipBus  # noqa: E402
 from orchestrator.coordination.cli import (  # noqa: E402
-    PhaseState,
-    PhaseStatus,
     _all_phase_states,
     _detect_blockers,
     _get_latest_phase_state,
@@ -28,6 +26,10 @@ from orchestrator.coordination.cli import (  # noqa: E402
     _phase_start,
     _phase_unblock,
     _phase_update,
+)
+from orchestrator.coordination.types import (  # noqa: E402
+    PhaseState,
+    PhaseStatus,
 )
 
 
