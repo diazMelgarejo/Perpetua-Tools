@@ -51,7 +51,7 @@ from orchestrator.coordination.types import (
     TaskPriority,
 )
 from orchestrator.gossip_bus import GossipBus, GossipBusError
-from conftest import emit_noise_batch
+from coordination_test_helpers import emit_noise_batch
 
 
 @pytest.fixture

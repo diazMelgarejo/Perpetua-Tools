@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from orchestrator import gossip_bus as gossip_bus_module  # noqa: E402
 from orchestrator.gossip_bus import GossipBus  # noqa: E402
-from conftest import emit_noise_batch  # noqa: E402
+from coordination_test_helpers import emit_noise_batch  # noqa: E402
 from orchestrator.coordination.cli import (  # noqa: E402
     _all_phase_states,
     _detect_blockers,
