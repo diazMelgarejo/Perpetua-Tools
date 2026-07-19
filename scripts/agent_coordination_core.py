@@ -94,6 +94,7 @@ from orchestrator.gossip_bus import (  # noqa: E402
     _canonical_repo_state_dir,
     resolve_gossip_db_path,
 )
+from orchestrator.heartbeat_monitor import find_open_claims  # noqa: E402
 from orchestrator.lan_gossip_bridge import make_gossip_bus  # noqa: E402
 
 
@@ -437,30 +438,21 @@ async def _release(bus: GossipBus, agent_id: str, task: str) -> None:
 
 
 async def _list(bus: GossipBus, task_filter: str | None) -> None:
-    events = await bus.tail(limit=200, event_type="heartbeat")
-    # Reduce to open claims: last event per task wins; a release cancels a claim.
-    state: dict[str, dict] = {}
-    for ev in reversed(events):  # oldest first
-        p = ev["payload"]
-        if p.get("kind") not in ("agent_claim", "agent_release"):
-            continue
-        task = p.get("task", "?")
-        if task_filter and task != task_filter:
-            continue
-        if p["kind"] == "agent_claim":
-            state[task] = {
-                "agent_id": p.get("agent_id"),
-                "worktree": p.get("worktree"),
-                "notes": p.get("notes", ""),
-                "ts": ev["ts"],
-            }
-        else:
-            state.pop(task, None)
-    if not state:
+    # Reuse the unbounded SQL fold from heartbeat_monitor — a size-bounded
+    # tail() over the combined heartbeat stream can drop founding agent_claim
+    # events once enough unrelated pulse traffic accumulates.
+    claims = await find_open_claims(bus)
+    if task_filter:
+        claims = [claim for claim in claims if claim.get("task") == task_filter]
+    if not claims:
         print("no open claims" + (f" for '{task_filter}'" if task_filter else ""))
         return
-    for task, info in state.items():
-        print(f"OPEN  {task}  <- {info['agent_id']}  ({info['worktree']})  {info['notes']}")
+    for claim in claims:
+        task = claim.get("task", "?")
+        print(
+            f"OPEN  {task}  <- {claim.get('agent_id')}  "
+            f"({claim.get('worktree')})  {claim.get('notes', '')}"
+        )
 
 
 async def _log(bus: GossipBus, agent_id: str, message: str) -> None:
@@ -730,13 +722,44 @@ async def _detect_blockers(
 # Reorder Buffer Management Functions (Phase 1.3.2)
 # ─────────────────────────────────────────────────────────────────────────────
 
+_REORDER_BUFFER_KINDS = ("claim_sequence", "buffer_drained")
+
+
+async def _fetch_reorder_buffer_events(bus: GossipBus) -> list[dict]:
+    """Fetch reorder-buffer events via SQL, not a bounded tail().
+
+    Unrelated heartbeat traffic can push claim_sequence / buffer_drained
+    events out of a size-bounded tail window, resetting watermarks and
+    making buffered sequential claims vanish from buffer status/drain paths.
+    """
+    kind_placeholders = ",".join("?" for _ in _REORDER_BUFFER_KINDS)
+    query = (
+        "SELECT id, event_uuid, ts, event_type, payload_json FROM gossip "
+        "WHERE event_type = 'heartbeat' "
+        f"AND json_extract(payload_json, '$.kind') IN ({kind_placeholders}) "
+        "ORDER BY id ASC"
+    )
+    async with bus.connect() as db:
+        cursor = await db.execute(query, list(_REORDER_BUFFER_KINDS))
+        rows = await cursor.fetchall()
+    return [
+        {
+            "row_id": row[0],
+            "uuid": row[1],
+            "ts": row[2],
+            "event_type": row[3],
+            "payload": json.loads(row[4]),
+        }
+        for row in rows
+    ]
+
 
 async def _get_reorder_buffers(bus: GossipBus) -> dict[str, ReorderBuffer]:
     """Reconstruct all per-agent reorder buffers from GossipBus event log."""
-    events = await bus.tail(limit=1000, event_type="heartbeat")
+    events = await _fetch_reorder_buffer_events(bus)
     buffers: dict[str, ReorderBuffer] = {}
 
-    for ev in reversed(events):
+    for ev in events:
         p = ev["payload"]
         kind = p.get("kind")
         agent_id = p.get("agent_id")
