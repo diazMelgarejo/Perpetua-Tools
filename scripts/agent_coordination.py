@@ -25,6 +25,7 @@ from scripts.agent_coordination_legacy import (  # noqa: E402
 from scripts import agent_coordination_core as _core  # noqa: E402
 from scripts.agent_coordination_core import (  # noqa: E402
     ClaimResult,
+    ReleaseResult,
     ClaimSequence,
     ReorderBuffer,
     _buffer_drain,

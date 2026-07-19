@@ -25,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.agent_coordination import (
     ClaimResult,
+    ReleaseResult,
     TaskPriority,
     _queue_add,
     _queue_claim,
@@ -300,7 +301,8 @@ async def test_queue_claim_allows_when_deps_satisfied(make_bus, capsys):
                 assert p["task_id"]
 
     # Complete the blocker
-    await _queue_complete(bus, blocker_id, "Done")
+    await _queue_claim(bus, blocker_id, "agent-blocker-owner")
+    await _queue_complete(bus, blocker_id, "agent-blocker-owner", "Done")
 
     # Now dependent should be claimable
     # (Note: full test requires task_id matching logic; simplified version)
@@ -326,7 +328,7 @@ async def test_queue_complete_rejects_unclaimed_task(make_bus, capsys):
     task_id = events[0]["payload"]["task_id"]
 
     capsys.readouterr()
-    await _queue_complete(bus, task_id, "should be rejected")
+    await _queue_complete(bus, task_id, "agent-x", "should be rejected")
     captured = capsys.readouterr()
     assert "ERROR" in captured.err
     assert "not claimed" in captured.err
@@ -344,10 +346,10 @@ async def test_queue_complete_rejects_double_completion(make_bus, capsys):
     task_id = events[0]["payload"]["task_id"]
 
     await _queue_claim(bus, task_id, "agent-a")
-    await _queue_complete(bus, task_id, "first completion")
+    await _queue_complete(bus, task_id, "agent-a", "first completion")
 
     capsys.readouterr()
-    await _queue_complete(bus, task_id, "second completion attempt")
+    await _queue_complete(bus, task_id, "agent-a", "second completion attempt")
     captured = capsys.readouterr()
     assert "ERROR" in captured.err
     assert "already completed" in captured.err
@@ -362,7 +364,7 @@ async def test_queue_fail_rejects_unclaimed_task(make_bus, capsys):
     task_id = events[0]["payload"]["task_id"]
 
     capsys.readouterr()
-    await _queue_fail(bus, task_id, "should be rejected")
+    await _queue_fail(bus, task_id, "agent-x", "should be rejected")
     captured = capsys.readouterr()
     assert "ERROR" in captured.err
     assert "not claimed" in captured.err
@@ -381,7 +383,7 @@ async def test_queue_complete_marks_done(make_bus, capsys):
 
     await _queue_claim(bus, task_id, "agent-a")
     capsys.readouterr()
-    await _queue_complete(bus, task_id, "Implementation finished")
+    await _queue_complete(bus, task_id, "agent-a", "Implementation finished")
     captured = capsys.readouterr()
     assert f"completed: {task_id}" in captured.out
 
@@ -402,7 +404,7 @@ async def test_queue_fail_with_retry(make_bus, capsys):
     await _queue_claim(bus, task_id, "agent-a")
     capsys.readouterr()
     # First failure — should retry
-    await _queue_fail(bus, task_id, "Network timeout")
+    await _queue_fail(bus, task_id, "agent-a", "Network timeout")
     captured = capsys.readouterr()
     assert "retry 1/3" in captured.out
 
@@ -420,7 +422,7 @@ async def test_claim_then_fail_then_reclaim_succeeds(make_bus, capsys):
     await _queue_claim(bus, task_id, "agent-a")
     capsys.readouterr()
 
-    await _queue_fail(bus, task_id, "transient error")
+    await _queue_fail(bus, task_id, "agent-a", "transient error")
     capsys.readouterr()
 
     await _queue_claim(bus, task_id, "agent-b")
@@ -429,7 +431,7 @@ async def test_claim_then_fail_then_reclaim_succeeds(make_bus, capsys):
     assert "ERROR" not in captured.out
 
 
-async def test_core_queue_fail_increments_retry_after_reclaim(make_bus, capsys):
+async def test_facade_patches_core_queue_helpers_for_retry_after_reclaim(make_bus, capsys):
     """Facade import must patch core queue helpers used by main()."""
     bus = await make_bus()
     await _core_queue_add(bus, "retry-work", "coord", "NORMAL", "", None)
@@ -438,12 +440,12 @@ async def test_core_queue_fail_increments_retry_after_reclaim(make_bus, capsys):
 
     await _core._queue_claim(bus, task_id, "agent-a")
     capsys.readouterr()
-    await _core._queue_fail(bus, task_id, "first failure")
+    await _core._queue_fail(bus, task_id, "agent-a", "first failure")
     capsys.readouterr()
     await _core._queue_claim(bus, task_id, "agent-a")
     capsys.readouterr()
 
-    await _core._queue_fail(bus, task_id, "second failure")
+    await _core._queue_fail(bus, task_id, "agent-a", "second failure")
     captured = capsys.readouterr()
     assert "retry 2/3" in captured.out
 
@@ -461,12 +463,12 @@ async def test_queue_fail_abandons_after_max_retries(make_bus, capsys):
     # currently-claimed task).
     for i in range(3):
         await _queue_claim(bus, task_id, "agent-a")
-        await _queue_fail(bus, task_id, f"Attempt {i+1} failed")
+        await _queue_fail(bus, task_id, "agent-a", f"Attempt {i+1} failed")
 
     # On 4th failure, should abandon
     await _queue_claim(bus, task_id, "agent-a")
     capsys.readouterr()
-    await _queue_fail(bus, task_id, "Final attempt failed")
+    await _queue_fail(bus, task_id, "agent-a", "Final attempt failed")
     captured = capsys.readouterr()
     assert "abandoned" in captured.out
 
@@ -492,9 +494,9 @@ async def test_queue_list_groups_by_status(make_bus, capsys):
     if len(task_ids) >= 3:
         await _queue_claim(bus, task_ids[0], "agent-x")
         await _queue_claim(bus, task_ids[1], "agent-y")
-        await _queue_complete(bus, task_ids[1], "")
+        await _queue_complete(bus, task_ids[1], "agent-y", "")
         await _queue_claim(bus, task_ids[2], "agent-z")
-        await _queue_fail(bus, task_ids[2], "test failure")
+        await _queue_fail(bus, task_ids[2], "agent-z", "test failure")
 
     capsys.readouterr()
     await _queue_list(bus, None, None, None)
@@ -516,7 +518,7 @@ async def test_core_queue_list_uses_newest_task_event(make_bus, capsys):
     events = await bus.tail(limit=10, event_type="heartbeat")
     task_id = events[0]["payload"]["task_id"]
     await _core_queue_claim(bus, task_id, "agent-alpha")
-    await _core_queue_complete(bus, task_id, "done")
+    await _core_queue_complete(bus, task_id, "agent-alpha", "done")
 
     capsys.readouterr()
     await _core_queue_list(bus, phase_filter="coord", priority_filter=None, agent_filter=None)
@@ -534,11 +536,11 @@ async def test_core_queue_fail_increments_retry_after_reclaim(make_bus, capsys):
     task_id = events[0]["payload"]["task_id"]
 
     await _core_queue_claim(bus, task_id, "agent-alpha")
-    await _core_queue_fail(bus, task_id, "first failure")
+    await _core_queue_fail(bus, task_id, "agent-alpha", "first failure")
     capsys.readouterr()
 
     await _core_queue_claim(bus, task_id, "agent-alpha")
-    await _core_queue_fail(bus, task_id, "second failure")
+    await _core_queue_fail(bus, task_id, "agent-alpha", "second failure")
     captured = capsys.readouterr()
 
     assert "retry 2/3" in captured.out
@@ -847,11 +849,11 @@ async def test_release_claim_with_event_deletes_row_and_persists_event(make_bus)
     bus = await make_bus()
     await _try_atomic_claim(bus, "task-r1", "agent-a")
 
-    released = await _release_claim_with_event(
+    result = await _release_claim_with_event(
         bus, "task-r1", "heartbeat", {"kind": "task_complete", "task_id": "task-r1"}
     )
 
-    assert released is True
+    assert result == ReleaseResult.RELEASED
     async with bus.connect() as db:
         cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", ("task-r1",))
         (claim_count,) = await cursor.fetchone()
@@ -952,7 +954,7 @@ async def test_queue_complete_releases_claim_and_completion_event_together(make_
     task_id = events[0]["payload"]["task_id"]
     await _queue_claim(bus, task_id, "agent-a")
 
-    await _queue_complete(bus, task_id, "done")
+    await _queue_complete(bus, task_id, "agent-a", "done")
 
     async with bus.connect() as db:
         cursor = await db.execute("SELECT COUNT(*) FROM task_claims WHERE task_id = ?", (task_id,))

@@ -969,95 +969,41 @@ async def _task_snapshot(
 
 
 async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> None:
-    """Claim a queued task, blocking if already claimed or deps not satisfied."""
-    events = await bus.tail(limit=5000, event_type="heartbeat")
-    task_state = await _task_snapshot(bus, task_id, events=events)
-    if not task_state:
-        print(f"ERROR: task {task_id} not found")
-        return
-    if task_state.get("status") == QueuedTaskState.CLAIMED.value:
-        existing_agent = task_state.get("assigned_agent")
-        print(f"ERROR: {task_id} already claimed by {existing_agent}.")
-        return
-    if task_state.get("status") == QueuedTaskState.COMPLETED.value:
-        print(f"ERROR: {task_id} already completed. Cannot reclaim.")
-        return
-    depends_on = task_state.get("depends_on", [])
-    if depends_on:
-        completed_tasks = set()
-        for ev in events:
-            p = ev["payload"]
-            if p.get("kind") == "task_complete" and p.get("task_id") in depends_on:
-                completed_tasks.add(p["task_id"])
-        unmet_deps = [tid for tid in depends_on if tid not in completed_tasks]
-        if unmet_deps:
-            print(f"ERROR: {task_id} unmet dependencies: {', '.join(unmet_deps)}")
-            return
-    await bus.emit("heartbeat", {
-        "kind": "task_claim",
-        "task_id": task_id,
-        "assigned_agent": agent_id,
-        "status": QueuedTaskState.CLAIMED.value,
-        "worktree": current_worktree_label(),
-    })
-    print(f"claimed: {task_id} by {agent_id}")
+    """Delegates to agent_coordination_core's atomic implementation.
+
+    This file's own prior implementation duplicated the claim logic without
+    _try_atomic_claim()'s BEGIN IMMEDIATE exclusion -- a genuine race where
+    two callers could both pass the snapshot check and both emit a
+    task_claim event, double-claiming the same task. Delegating closes that
+    gap here rather than fixing it a third time in a file already parked
+    for deletion via the consolidation plan's migration step. The facade
+    (scripts/agent_coordination.py) already routes real CLI usage through
+    core.py's version directly; this makes any remaining direct caller of
+    this module's own name get the same safe behavior.
+    """
+    from scripts.agent_coordination_core import _queue_claim as _core_queue_claim
+    await _core_queue_claim(bus, task_id, agent_id)
 
 
-async def _queue_complete(bus: GossipBus, task_id: str, notes: str) -> None:
-    """Mark a task as completed."""
-    task_state = await _task_snapshot(bus, task_id)
-    if not task_state:
-        print(f"ERROR: task {task_id} not found")
-        return
-    status = task_state.get("status")
-    if status != QueuedTaskState.CLAIMED.value:
-        print(f"ERROR: {task_id} is not claimed (status: {status or 'unknown'}); "
-              "only a currently-claimed task can be completed.")
-        return
-    await bus.emit("heartbeat", {
-        "kind": "task_complete",
-        "task_id": task_id,
-        "status": QueuedTaskState.COMPLETED.value,
-        "notes": notes,
-    })
-    print(f"completed: {task_id}")
+async def _queue_complete(bus: GossipBus, task_id: str, agent_id: str, notes: str) -> None:
+    """Delegates to agent_coordination_core's atomic implementation.
+
+    See _queue_claim's docstring above -- same reasoning, and this file's
+    prior version additionally bypassed _release_claim_with_event() and its
+    ownership-conditioned delete entirely, using a bare bus.emit() with no
+    claim-row cleanup or race protection at all.
+    """
+    from scripts.agent_coordination_core import _queue_complete as _core_queue_complete
+    await _core_queue_complete(bus, task_id, agent_id, notes)
 
 
-async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> None:
-    """Mark a task as failed; retry logic applies if retry_count < max_retries."""
-    task_state = await _task_snapshot(bus, task_id)
-    if not task_state:
-        print(f"ERROR: task {task_id} not found")
-        return
-    status = task_state.get("status")
-    if status != QueuedTaskState.CLAIMED.value:
-        print(f"ERROR: {task_id} is not claimed (status: {status or 'unknown'}); "
-              "only a currently-claimed task can be failed.")
-        return
-    retry_count = task_state.get("retry_count", 0) + 1
-    max_retries = task_state.get("max_retries", 3)
-    if retry_count < max_retries:
-        await bus.emit("heartbeat", {
-            "kind": "task_failed",
-            "task_id": task_id,
-            "retry_count": retry_count,
-            "max_retries": max_retries,
-            "status": QueuedTaskState.QUEUED.value,
-            "assigned_agent": None,
-            "notes": f"Retry {retry_count}/{max_retries}: {notes}",
-        })
-        print(f"failed: {task_id}, retry {retry_count}/{max_retries}")
-    else:
-        await bus.emit("heartbeat", {
-            "kind": "task_abandoned",
-            "task_id": task_id,
-            "retry_count": retry_count,
-            "max_retries": max_retries,
-            "status": "abandoned",
-            "assigned_agent": None,
-            "notes": f"Abandoned after {max_retries} retries: {notes}",
-        })
-        print(f"abandoned: {task_id} (max retries exceeded)")
+async def _queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) -> None:
+    """Delegates to agent_coordination_core's atomic implementation.
+
+    See _queue_claim's docstring above for the shared reasoning.
+    """
+    from scripts.agent_coordination_core import _queue_fail as _core_queue_fail
+    await _core_queue_fail(bus, task_id, agent_id, notes)
 
 
 async def _queue_list(bus: GossipBus, phase_filter: Optional[str], priority_filter: Optional[str], agent_filter: Optional[str]) -> None:

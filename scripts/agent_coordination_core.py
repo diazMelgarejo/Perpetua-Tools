@@ -255,6 +255,13 @@ class ClaimResult(Enum):
     CONTENTION = "contention"
 
 
+class ReleaseResult(Enum):
+    """Atomic release outcomes that need distinct caller-facing messages."""
+    RELEASED = "released"
+    LOST_RACE = "lost_race"
+    CONTENTION = "contention"
+
+
 def _error(message: str) -> bool:
     print(f"ERROR: {message}", file=sys.stderr)
     return False
@@ -1134,8 +1141,12 @@ async def _try_atomic_claim(
 
 
 async def _release_claim_with_event(
-    bus: GossipBus, task_id: str, event_type: str, payload: dict
-) -> bool:
+    bus: GossipBus,
+    task_id: str,
+    event_type: str,
+    payload: dict,
+    expected_agent_id: Optional[str] = None,
+) -> ReleaseResult:
     """Atomically free ownership and record why, mirroring _try_atomic_claim's
     guarantee for the release side.
 
@@ -1144,15 +1155,36 @@ async def _release_claim_with_event(
     record the terminal event while the row stays held -- blocking every
     future _try_atomic_claim on that task_id with a stale "already claimed"
     row forever. Same `BEGIN IMMEDIATE` + bounded-retry treatment as the
-    claim path; returns False (not raised) if lock contention exhausts all
-    retries, so callers can decide how to handle a release that didn't land.
+    claim path.
+
+    expected_agent_id, when given, makes the DELETE conditional on the
+    caller actually being the current claim holder, and checks the deleted
+    rowcount before emitting the event at all. Without this, the snapshot
+    status check callers do beforehand is a read-then-write race: between
+    that read and this transaction, the claim can have already changed
+    hands (failed and reclaimed by someone else) -- a stale caller's
+    unconditional `DELETE FROM task_claims WHERE task_id = ?` would then
+    delete the NEW claimant's row and emit a terminal event out from under
+    them. Conditioning on `agent_id` and checking rowcount == 1 turns that
+    race into a clean LOST_RACE rather than silent data corruption.
     """
     for attempt in range(_LOCK_RETRIES):
         async with bus.connect() as db:
             try:
                 await db.execute("BEGIN IMMEDIATE")
                 await db.execute(_CREATE_CLAIMS_TABLE)
-                await db.execute("DELETE FROM task_claims WHERE task_id = ?", (task_id,))
+                if expected_agent_id is not None:
+                    cursor = await db.execute(
+                        "DELETE FROM task_claims WHERE task_id = ? AND agent_id = ?",
+                        (task_id, expected_agent_id),
+                    )
+                    if cursor.rowcount != 1:
+                        await db.rollback()
+                        return ReleaseResult.LOST_RACE
+                else:
+                    await db.execute(
+                        "DELETE FROM task_claims WHERE task_id = ?", (task_id,)
+                    )
                 row_id, _event_uuid, safe_payload, inserted = await bus.insert_event(
                     db, event_type, payload
                 )
@@ -1164,15 +1196,15 @@ async def _release_claim_with_event(
                     await asyncio.sleep(_LOCK_RETRY_SECONDS * (attempt + 1))
                     continue
                 if locked:
-                    return False
+                    return ReleaseResult.CONTENTION
                 raise GossipBusError(f"release of {task_id!r} failed: {exc}") from exc
             except Exception as exc:
                 await db.rollback()
                 raise GossipBusError(f"release of {task_id!r} failed: {exc}") from exc
         if inserted:
             bus.schedule_embedding(row_id, safe_payload)
-        return True
-    return False
+        return ReleaseResult.RELEASED
+    return ReleaseResult.CONTENTION
 
 
 async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | None:
@@ -1227,7 +1259,7 @@ async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | No
     print(f"claimed: {task_id} by {agent_id}")
 
 
-async def _queue_complete(bus: GossipBus, task_id: str, notes: str) -> bool | None:
+async def _queue_complete(bus: GossipBus, task_id: str, agent_id: str, notes: str) -> bool | None:
     snapshots = await _latest_task_snapshots(bus)
     task_state = snapshots.get(task_id)
     if not task_state:
@@ -1242,13 +1274,18 @@ async def _queue_complete(bus: GossipBus, task_id: str, notes: str) -> bool | No
             f"{task_id} is not claimed (status: {status or 'unknown'}); "
             "only a currently-claimed task can be completed."
         )
+    if task_state.get("assigned_agent") != agent_id:
+        return _error(
+            f"{task_id} is claimed by {task_state.get('assigned_agent')!r}, "
+            f"not {agent_id!r}; only the current claimant can complete it."
+        )
     # Free the atomic-claim row and record completion in one transaction --
     # a completed task is rejected by the status check in _queue_claim
     # regardless, but a crash between a separate release and emit could
     # otherwise free the row with no event explaining why, or record the
     # event while the row stays held (blocking every future claim on this
     # task_id with a stale "already claimed" row forever).
-    released = await _release_claim_with_event(
+    result = await _release_claim_with_event(
         bus,
         task_id,
         "heartbeat",
@@ -1258,8 +1295,14 @@ async def _queue_complete(bus: GossipBus, task_id: str, notes: str) -> bool | No
             "status": QueuedTaskState.COMPLETED.value,
             "notes": notes,
         },
+        expected_agent_id=agent_id,
     )
-    if not released:
+    if result == ReleaseResult.LOST_RACE:
+        return _error(
+            f"{task_id}'s claim changed before completion landed (raced by "
+            "another agent); refresh status and retry if appropriate."
+        )
+    if result == ReleaseResult.CONTENTION:
         return _error(
             f"{task_id} could not be completed; coordination database remained "
             "busy. Retry safely."
@@ -1267,7 +1310,7 @@ async def _queue_complete(bus: GossipBus, task_id: str, notes: str) -> bool | No
     print(f"completed: {task_id}")
 
 
-async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> bool | None:
+async def _queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) -> bool | None:
     snapshots = await _latest_task_snapshots(bus)
     task_state = snapshots.get(task_id)
     if not task_state:
@@ -1282,6 +1325,11 @@ async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> bool | None:
             f"{task_id} is not claimed (status: {status or 'unknown'}); "
             "only a currently-claimed task can be failed."
         )
+    if task_state.get("assigned_agent") != agent_id:
+        return _error(
+            f"{task_id} is claimed by {task_state.get('assigned_agent')!r}, "
+            f"not {agent_id!r}; only the current claimant can fail it."
+        )
     retry_count = int(task_state.get("retry_count", 0)) + 1
     max_retries = int(task_state.get("max_retries", 3))
     if retry_count <= max_retries:
@@ -1289,7 +1337,7 @@ async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> bool | None:
         # QUEUED and _queue_claim's atomic gate would otherwise reject every
         # future claim attempt with a stale "already claimed" row forever.
         # Release + event committed together, same reasoning as _queue_complete.
-        released = await _release_claim_with_event(
+        result = await _release_claim_with_event(
             bus,
             task_id,
             "heartbeat",
@@ -1302,8 +1350,14 @@ async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> bool | None:
                 "assigned_agent": None,
                 "notes": f"Retry {retry_count}/{max_retries}: {notes}",
             },
+            expected_agent_id=agent_id,
         )
-        if not released:
+        if result == ReleaseResult.LOST_RACE:
+            return _error(
+                f"{task_id}'s claim changed before the failure landed (raced "
+                "by another agent); refresh status and retry if appropriate."
+            )
+        if result == ReleaseResult.CONTENTION:
             return _error(
                 f"{task_id} could not be requeued; coordination database "
                 "remained busy. Retry safely."
@@ -1311,7 +1365,7 @@ async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> bool | None:
         print(f"failed: {task_id}, retry {retry_count}/{max_retries}")
         return
 
-    released = await _release_claim_with_event(
+    result = await _release_claim_with_event(
         bus,
         task_id,
         "heartbeat",
@@ -1324,8 +1378,14 @@ async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> bool | None:
             "assigned_agent": None,
             "notes": f"Abandoned after {max_retries} retries: {notes}",
         },
+        expected_agent_id=agent_id,
     )
-    if not released:
+    if result == ReleaseResult.LOST_RACE:
+        return _error(
+            f"{task_id}'s claim changed before abandonment landed (raced by "
+            "another agent); refresh status and retry if appropriate."
+        )
+    if result == ReleaseResult.CONTENTION:
         return _error(
             f"{task_id} could not be abandoned; coordination database remained "
             "busy. Retry safely."
@@ -1483,9 +1543,9 @@ async def _amain(args: argparse.Namespace) -> int:
         elif args.subcmd == "claim":
             result = await _queue_claim(bus, args.task_id, args.agent_id)
         elif args.subcmd == "complete":
-            result = await _queue_complete(bus, args.task_id, args.notes or "")
+            result = await _queue_complete(bus, args.task_id, args.agent_id, args.notes or "")
         elif args.subcmd == "fail":
-            result = await _queue_fail(bus, args.task_id, args.notes or "")
+            result = await _queue_fail(bus, args.task_id, args.agent_id, args.notes or "")
         elif args.subcmd == "status":
             result = await _queue_status(bus, args.agent)
     elif args.cmd == "heartbeat":
@@ -1624,10 +1684,12 @@ def main() -> int:
 
     p_queue_complete = queue_sub.add_parser("complete", help="Mark a queued task complete")
     p_queue_complete.add_argument("task_id")
+    p_queue_complete.add_argument("agent_id", help="Must match the task's current claimant")
     p_queue_complete.add_argument("--notes", default="")
 
     p_queue_fail = queue_sub.add_parser("fail", help="Mark a queued task failed/retry")
     p_queue_fail.add_argument("task_id")
+    p_queue_fail.add_argument("agent_id", help="Must match the task's current claimant")
     p_queue_fail.add_argument("--notes", default="")
 
     p_queue_status = queue_sub.add_parser("status", help="Show claimed queue work by agent")
