@@ -38,7 +38,7 @@ from orchestrator.coordination.paths import (
 import orchestrator.coordination.cli as agent_coordination_core
 import orchestrator.coordination.cli as agent_coordination_legacy
 from orchestrator.gossip_bus import GossipBus
-from conftest import emit_noise_batch
+from coordination_test_helpers import emit_noise_batch
 
 
 @pytest.fixture
@@ -251,3 +251,51 @@ def test_current_worktree_label_contains_cwd_or_branch():
     label = current_worktree_label()
     # Format: branch@cwd. Either component is enough to sanity-check.
     assert str(Path.cwd()) in label or "?" in label
+
+
+def test_current_worktree_label_survives_missing_git(monkeypatch):
+    """Regression: git being unavailable (FileNotFoundError) or otherwise
+    unexecutable must not crash worktree labeling -- only
+    subprocess.CalledProcessError was caught before, leaving every other
+    OSError (git not on PATH, permission denied, etc.) to propagate and
+    crash any emit path that calls this."""
+    import subprocess as sp
+
+    def _boom(*a, **k):
+        raise FileNotFoundError("git not found")
+
+    monkeypatch.setattr(sp, "check_output", _boom)
+    label = current_worktree_label()
+    assert label.startswith("?@")
+
+
+async def test_known_agent_ids_survives_noise_beyond_old_limit(monkeypatch, tmp_path):
+    """Regression: an agent registered before 200+ unrelated heartbeat
+    events must still be discoverable -- the old bus.tail(limit=200) window
+    silently dropped registrations once enough noise accumulated, since
+    'heartbeat' also carries task-queue and phase-event traffic, not just
+    agent lifecycle events."""
+    bus = GossipBus(str(tmp_path / "noise.db"))
+    await bus.init_db()
+    await _register(bus, "agent-old", "worker", "?", "")
+    for i in range(300):
+        await bus.emit("heartbeat", {"kind": "agent_pulse", "agent_id": f"noise-{i}"})
+    ids = await _known_agent_ids(bus)
+    assert "agent-old" in ids
+
+
+async def test_heartbeat_timeline_has_header_and_mapped_status(tmp_path, capsys):
+    """Regression: timeline output must lead with a 'Timeline for {agent}'
+    header and translate raw event kinds (agent_register/agent_claim/
+    agent_release) to the friendlier REGISTERED/CLAIMED/RELEASED labels."""
+    from orchestrator.coordination.cli import _heartbeat_timeline
+
+    bus = GossipBus(str(tmp_path / "timeline.db"))
+    await bus.init_db()
+    await _register(bus, "agent-x", "worker", "?", "")
+
+    capsys.readouterr()
+    await _heartbeat_timeline(bus, "agent-x", 24)
+    out = capsys.readouterr().out
+    assert "Timeline for agent-x:" in out
+    assert "REGISTERED" in out

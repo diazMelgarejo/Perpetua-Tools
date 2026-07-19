@@ -13,12 +13,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from orchestrator.gossip_bus import GossipBus  # noqa: E402
-from orchestrator.heartbeat_monitor import find_open_claims  # noqa: E402
+from orchestrator.heartbeat_monitor import _fetch_heartbeat_events, find_open_claims  # noqa: E402
 from orchestrator.coordination.paths import current_worktree_label  # noqa: E402
+
+_AGENT_REGISTER_KINDS = ("agent_register",)
 
 
 async def _known_agent_ids(bus: GossipBus) -> set[str]:
-    events = await bus.tail(limit=200, event_type="heartbeat")
+    events = await _fetch_heartbeat_events(bus, _AGENT_REGISTER_KINDS)
     return {
         ev["payload"]["agent_id"]
         for ev in events
@@ -50,9 +52,9 @@ async def register_agent(
 
 async def list_agents(bus: GossipBus) -> None:
     """List agents registered on the coordination board."""
-    events = await bus.tail(limit=200, event_type="heartbeat")
+    events = await _fetch_heartbeat_events(bus, _AGENT_REGISTER_KINDS)
     latest: dict[str, dict] = {}
-    for ev in reversed(events):  # oldest first, so later overwrites
+    for ev in events:  # already oldest-first, so later overwrites
         p = ev["payload"]
         if p.get("kind") != "agent_register":
             continue

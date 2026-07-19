@@ -19,7 +19,7 @@ from orchestrator.heartbeat_monitor import (
     LIVENESS_STALLED_SEC,
 )
 from orchestrator.gossip_bus import GossipBus
-from conftest import emit_noise_batch
+from coordination_test_helpers import emit_noise_batch
 from orchestrator.coordination.cli import (
     _heartbeat_check as heartbeat_check,
     _heartbeat_dashboard as heartbeat_dashboard,
