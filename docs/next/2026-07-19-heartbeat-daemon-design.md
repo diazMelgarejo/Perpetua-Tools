@@ -13,7 +13,18 @@ Splitting them avoids over-building: the bug has a five-line fix; the daemon
 is a real design question that deserves its own decision, not inheritance
 from the bug's urgency.
 
-### Problem 1 (bug, not scoped here as a daemon): stale `Worktree:` field
+### Problem 1 (bug, not scoped here as a daemon): stale `Worktree:` field — FIXED
+
+Implemented (was "not implemented in this doc" when first written — now
+done, same PR): `find_agent_heartbeats()` tracks a `current_worktree` field
+updated from any event carrying a `worktree` key, `last_registration`
+stays a true historical snapshot, `_heartbeat_check` reads
+`current_worktree` first. Verified two ways: a new regression test
+(`test_find_agent_heartbeats_current_worktree_updates_from_pulse`) and
+directly against real production data — `codex-primary-orchestrator`'s
+actual board state showed `last_registration` frozen at a 2026-07-17
+branch while `current_worktree` correctly reported its real current
+location.
 
 **Root cause, verified by reading the code, not guessed:**
 `orchestrator/heartbeat_monitor.py::find_agent_heartbeats()` builds each
