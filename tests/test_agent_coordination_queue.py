@@ -528,6 +528,50 @@ async def test_core_queue_list_uses_newest_task_event(make_bus, capsys):
     assert "QUEUED" not in captured.out
 
 
+async def test_queue_list_survives_heartbeat_noise_beyond_tail_window(make_bus, capsys):
+    """queue list must not drop open tasks once unrelated heartbeat volume
+    exceeds bus.tail()'s size-bounded window -- the claim path already uses
+    the unbounded _fetch_task_events fold; list/status must match."""
+    bus = await make_bus()
+    await _core_queue_add(bus, "survives-noise", "Phase-9", "CRITICAL", "", None)
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    task_id = events[0]["payload"]["task_id"]
+
+    for i in range(1500):
+        await bus.emit(
+            "heartbeat",
+            {"kind": "agent_pulse", "agent_id": f"noise-{i % 5}", "seq": i},
+        )
+
+    capsys.readouterr()
+    await _queue_list(bus, None, None, None)
+    captured = capsys.readouterr()
+
+    assert task_id in captured.out
+    assert "QUEUED" in captured.out
+
+
+async def test_queue_status_survives_heartbeat_noise_beyond_tail_window(make_bus, capsys):
+    bus = await make_bus()
+    await _core_queue_add(bus, "claimed-under-noise", "Phase-1", "NORMAL", "", None)
+    events = await bus.tail(limit=10, event_type="heartbeat")
+    task_id = events[0]["payload"]["task_id"]
+    await _core_queue_claim(bus, task_id, "agent-noise")
+
+    for i in range(1500):
+        await bus.emit(
+            "heartbeat",
+            {"kind": "agent_pulse", "agent_id": "noise", "seq": i},
+        )
+
+    capsys.readouterr()
+    await _queue_status(bus, None)
+    captured = capsys.readouterr()
+
+    assert task_id in captured.out
+    assert "agent-noise" in captured.out
+
+
 async def test_core_queue_fail_increments_retry_after_reclaim(make_bus, capsys):
     """CLI core must merge task history so retry_count survives reclaim."""
     bus = await make_bus()
