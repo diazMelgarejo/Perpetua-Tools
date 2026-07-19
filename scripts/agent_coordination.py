@@ -34,6 +34,7 @@ from scripts.agent_coordination_core import (  # noqa: E402
     _claim_with_seq,
     _get_latest_phase_state,
     _get_reorder_buffers,
+    _list,
     _queue_claim,
     _queue_complete,
     _queue_fail,
@@ -59,7 +60,6 @@ _register = _impl._register
 _agents = _impl._agents
 _claim = _impl._claim
 _release = _impl._release
-_list = _impl._list
 _log = _impl._log
 _phase_start = _impl._phase_start
 _phase_update = _impl._phase_update

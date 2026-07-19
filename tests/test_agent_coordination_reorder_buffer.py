@@ -467,3 +467,25 @@ def test_reorder_buffer_wrap_around_high_seq_nums():
     emitted, watermark = buf.add_claim(claim500_retry)
     assert len(emitted) == 0  # Still gap at 1-499
     assert watermark == 1
+
+
+@pytest.mark.asyncio
+async def test_get_reorder_buffers_survives_heartbeat_noise_beyond_tail_window(make_bus):
+    """Reorder buffer reconstruction must not lose watermarks/buffered seqs once
+    unrelated heartbeat volume exceeds bus.tail()'s size-bounded window."""
+    bus = await make_bus()
+
+    await _claim_with_seq(bus, "agent-1", 0, "task/a", "")
+    await _claim_with_seq(bus, "agent-1", 2, "task/c", "")
+
+    for i in range(1500):
+        await bus.emit(
+            "heartbeat",
+            {"kind": "agent_pulse", "agent_id": f"noise-{i % 10}", "seq": i},
+        )
+
+    buffers = await _get_reorder_buffers(bus)
+    assert "agent-1" in buffers
+    buf1 = buffers["agent-1"]
+    assert buf1.watermark == 1
+    assert 2 in buf1.buffer
