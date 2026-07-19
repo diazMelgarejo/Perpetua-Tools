@@ -49,11 +49,15 @@ fi
 
 email_lc="$(git config --local user.email 2>/dev/null | tr '[:upper:]' '[:lower:]' || true)"
 case "$email_lc" in
-  diazmelgarejo@gmail.com | lawrence@cyre.me | lawrence.melgarejo@gmail.com | codex@openai.com)
+  diazmelgarejo@gmail.com | lawrence@cyre.me | codex@openai.com)
     ok "user.email=${email_lc}"
     ;;
   *)
-    fail "user.email=${email_lc:-<unset>} — expected diazmelgarejo@gmail.com, lawrence@cyre.me, lawrence.melgarejo@gmail.com, or codex@openai.com"
+    if private_owner_email_ok "$email_lc" "$REPO_ROOT"; then
+      ok "user.email=<configured private owner email>"
+    else
+      fail "user.email=${email_lc:-<unset>} — expected diazmelgarejo@gmail.com, lawrence@cyre.me, configured private owner email, or codex@openai.com"
+    fi
     ;;
 esac
 

@@ -3,6 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# shellcheck source=banned_attribution_lib.sh
+source "$SCRIPT_DIR/banned_attribution_lib.sh"
 
 actual_name="$(git -C "$REPO_ROOT" config user.name || true)"
 actual_email="$(git -C "$REPO_ROOT" config user.email || true)"
@@ -79,7 +81,7 @@ if [[ "$actual_email_lc" == "lawrence@cyre.me" ]]; then
   exit 0
 fi
 
-if [[ "$actual_email_lc" == "lawrence.melgarejo@gmail.com" ]]; then
+if private_owner_email_ok "$actual_email_lc" "$REPO_ROOT"; then
   echo "OK: approved git identity"
   exit 0
 fi
@@ -90,7 +92,7 @@ if [[ "$actual_email_lc" == "lawrence@bettermind.ph" ]]; then
 fi
 
 # Owner name patterns — approved regardless of which email is used
-if [[ "$actual_name_lc" == *"diazmelgarejo"* || "$actual_name_lc" == *"diaz.melgarejo"* || "$actual_name_lc" == *"lawrence.melgarejo"* ]]; then
+if [[ "$actual_name_lc" == *"diazmelgarejo"* || "$actual_name_lc" == *"diaz.melgarejo"* ]] || private_owner_name_ok "$actual_name_lc" "$REPO_ROOT"; then
   echo "OK: approved git identity (repo owner)"
   exit 0
 fi
@@ -108,8 +110,8 @@ fi
 echo "ERROR: git identity must be one of:" >&2
 echo "  - * <diazMelgarejo@gmail.com>" >&2
 echo "  - * <Lawrence@cyre.me>" >&2
-echo "  - * <Lawrence.Melgarejo@gmail.com>" >&2
-echo "  - * (name contains diazMelgarejo, diaz.Melgarejo, or Lawrence.Melgarejo)" >&2
+echo "  - * <configured private owner email>" >&2
+echo "  - * (name contains diazMelgarejo, diaz.Melgarejo, or configured private owner name)" >&2
 echo "  - Codex <codex@openai.com>" >&2
 echo "  - a well-known AI/vendor domain (OpenAI, Anthropic, Kimi, Cursor, Google/Gemini, GitHub/Copilot, Microsoft, Perplexity, xAI/Grok)" >&2
 exit 1

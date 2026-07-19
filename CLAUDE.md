@@ -74,6 +74,7 @@ git add -A && git commit -m "chore(ecc): post-merge instinct import sync" && git
 | [`docs/wiki/README.md`](docs/wiki/README.md) | Wiki index |
 | [`docs/adapter-interface-contract.md`](docs/adapter-interface-contract.md) | Living AlphaClaw API surface — update after every upstream merge |
 | [`docs/wiki/07-multi-agent-collab.md`](docs/wiki/07-multi-agent-collab.md) | Version registry, scope claims, conflict recovery |
+| [`PHASE_TRACKING.md`](PHASE_TRACKING.md) | Phase workflow and distributed task queue CLI reference |
 | [`../orama-system/docs/2026-05-14--UNIFIED-ABSORPTION-PLAN.md`](../orama-system/docs/2026-05-14--UNIFIED-ABSORPTION-PLAN.md) | Canonical architecture — PT is L2 in this plan |
 
 ---

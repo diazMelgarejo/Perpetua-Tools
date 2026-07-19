@@ -9,7 +9,7 @@ and AI-generated artifacts (including `learn.py` claims and autoplan restore com
 
 | Pattern | Why |
 |---------|-----|
-| `C:\<user>\...` / `/\<user>/...` / `/home/<name>/...` | Exposes username + machine layout |
+| `OS-specific home-directory paths` / `OS-specific home-directory path form` / `OS-specific home-directory path` | Exposes username + machine layout |
 | `%USERPROFILE%\<segment>\...` (Downloads tree) | Still doxxes directory layout |
 | `$HOME/<segment>/SKILLS.md/...` | Same — env var does not sanitize structure |
 | `<user>` placeholders in paths | Leaks typical layout |
@@ -42,7 +42,7 @@ After `lessons.jsonl` edits: **re-render** `LESSONS.md` via `render_lessons.py` 
 
 ## Policy docs that *explain* forbidden patterns
 
-Use notation like `C:\<user>\...` or `/Users/<name>/...` only — never your real path.
+Use notation like `OS-specific home-directory paths` or `OS-specific home-directory path` only — never your real path.
 See `lesson_8c6e3368a308`.
 
 ## Related lessons

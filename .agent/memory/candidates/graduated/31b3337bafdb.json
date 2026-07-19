@@ -1,0 +1,42 @@
+{
+  "id": "31b3337bafdb",
+  "key": "manual_31b333",
+  "name": "manual_31b333",
+  "claim": "Mnemonic for the portable-memory security invariant: 'secure persistent memory = persistently secure memory.' Memory that persists across sessions is only as trustworthy as the discipline that keeps it clean on every single write -- not a one-time cleanup. Tracked memory (episodic/semantic JSONL, rendered lessons, working notes) names categories only; exact private/local values live off-repo and are loaded by guards at runtime, never hardcoded even inside the rule that forbids them.",
+  "conditions": [
+    "memory-hygiene",
+    "opsec-secops",
+    "security-invariant",
+    "session-closure",
+    "v2-migration"
+  ],
+  "evidence_ids": [
+    "2026-07-18T09:21:13.472351+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T09:21:13.472351+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T09:21:13.472351+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T09:21:13.602185+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Closing distillation for the 2026-07-18 PT PR #256/#258/#260 arc, requested verbatim by the user as the session's final wrap-up mnemonic. Cross-references the fuller doctrine already captured in lesson_6c176e735ab4 (self-quoting-paradox fix), lesson_0a498556c5a0 (day-arc v2-readiness synthesis), and Codex's closure work: .agent/memory/semantic/DOMAIN_KNOWLEDGE.md 'Cybersecurity / OpSec / SecOps' section, .agent/memory/working/COORDINATION_CLOSURE_PACKET_2026-07-18.md, and orama-system docs/v2/47-portable-memory-local-topology-invariant.md (commit b6fea437). OpSec = the discipline of not letting your own operational output (memory, logs, board notes, grep results) reveal what you're protecting; SecOps = the tooling/process that enforces and verifies that discipline (repo_hygiene.py, the local-only registry loader, the all-ref blob scanner). Today's whole arc was both at once: agents practicing OpSec while building the SecOps tooling to prove it.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T09:21:13.472351+00:00"
+      ],
+      "lessons_sha": "8f6aeccaf692"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T09:21:13.602176+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Closing distillation for the 2026-07-18 PT PR #256/#258/#260 arc, requested verbatim by the user as the session's final wrap-up mnemonic. Cross-references the fuller doctrine already captured in lesson_6c176e735ab4 (self-quoting-paradox fix), lesson_0a498556c5a0 (day-arc v2-readiness synthesis), and Codex's closure work: .agent/memory/semantic/DOMAIN_KNOWLEDGE.md 'Cybersecurity / OpSec / SecOps' section, .agent/memory/working/COORDINATION_CLOSURE_PACKET_2026-07-18.md, and orama-system docs/v2/47-portable-memory-local-topology-invariant.md (commit b6fea437). OpSec = the discipline of not letting your own operational output (memory, logs, board notes, grep results) reveal what you're protecting; SecOps = the tooling/process that enforces and verifies that discipline (repo_hygiene.py, the local-only registry loader, the all-ref blob scanner). Today's whole arc was both at once: agents practicing OpSec while building the SecOps tooling to prove it."
+}

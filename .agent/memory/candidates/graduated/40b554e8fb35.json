@@ -1,0 +1,43 @@
+{
+  "id": "40b554e8fb35",
+  "key": "manual_40b554",
+  "name": "manual_40b554",
+  "claim": "When a peer agent (e.g. ClinePass-DeepSeek-v4-flash) stalls on rate-limit mid-task on the GossipBus job board, release its stale claim via 'queue fail <task_id> --notes <reason>' before re-claiming under your own agent_id \u2014 a direct 'queue claim' on an already-claimed task fails outright. Verify any task the peer claimed 'done' in its own transcript but never posted task_complete for (check commit presence directly) before closing it on their behalf.",
+  "conditions": [
+    "coordination",
+    "gossipbus",
+    "job-board",
+    "multi-agent",
+    "rate-limit",
+    "task-handoff"
+  ],
+  "evidence_ids": [
+    "2026-07-18T03:35:37.162382+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T03:35:37.162382+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T03:35:37.162382+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T03:35:37.254442+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "ClinePass-DeepSeek-v4-flash hit a 429 daily rate limit with 3 HIGH-priority tasks claimed and one silently completed (commit c0dd1333 present but no task_complete event posted). User explicitly asked to take ownership while deferring actual code-integration work ('git surgery') to a joint session with Codex \u2014 so unfinished migration/implementation work should be parked as an explicit TODO checklist in the plan doc (docs/next/) rather than left as an ambiguous claimed-but-silent task.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T03:35:37.162382+00:00"
+      ],
+      "lessons_sha": "e16ac21956f7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T03:35:37.254434+00:00",
+  "reviewer": "learn.py",
+  "rationale": "ClinePass-DeepSeek-v4-flash hit a 429 daily rate limit with 3 HIGH-priority tasks claimed and one silently completed (commit c0dd1333 present but no task_complete event posted). User explicitly asked to take ownership while deferring actual code-integration work ('git surgery') to a joint session with Codex \u2014 so unfinished migration/implementation work should be parked as an explicit TODO checklist in the plan doc (docs/next/) rather than left as an ambiguous claimed-but-silent task."
+}

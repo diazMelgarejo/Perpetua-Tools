@@ -75,6 +75,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import re
 import subprocess
 import sys
 import time
@@ -86,7 +87,7 @@ from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from orchestrator.gossip_bus import GossipBus  # noqa: E402
+from orchestrator.gossip_bus import GossipBus, _canonical_repo_state_dir  # noqa: E402
 from orchestrator.lan_gossip_bridge import make_gossip_bus  # noqa: E402
 
 
@@ -294,11 +295,17 @@ class PhaseState:
 
 
 def canonical_repo_root() -> Path:
-    """Resolve the shared repo root common to every worktree of this repo."""
-    common_dir = subprocess.check_output(
-        ["git", "rev-parse", "--git-common-dir"], text=True
-    ).strip()
-    return Path(common_dir).resolve().parent
+    """Resolve the shared repo root common to every worktree of this repo.
+
+    Delegates to gossip_bus._canonical_repo_state_dir(), the single
+    canonical resolver -- it already handles submodule/bare-repo anchoring,
+    a subprocess timeout, and error fallback correctly; this file's own
+    prior inline reimplementation had none of those and would raise
+    uncaught on a git failure. Falls back to cwd only when git resolution
+    itself fails (not in a repo).
+    """
+    state = _canonical_repo_state_dir()
+    return state.parent if state is not None else Path.cwd()
 
 
 def canonical_db_path() -> str:
@@ -576,6 +583,18 @@ async def _phase_unblock(bus: GossipBus, phase_name: str, reason: str) -> None:
     print(f"unblocked: {phase_name}")
 
 
+def _phase_sort_key(name: str) -> tuple[int, tuple[int, ...] | tuple[()], str]:
+    """Sort Phase-N[.M[.…]] names numerically; other names lexically."""
+    parts = name.split("-")
+    if len(parts) >= 2 and parts[0] == "Phase":
+        try:
+            components = tuple(int(n) for n in parts[1].split("."))
+            return (0, components, name)
+        except (ValueError, IndexError):
+            pass
+    return (1, (), name)
+
+
 async def _phase_list(bus: GossipBus) -> None:
     """List all phases with status and test progress."""
     phases = await _all_phase_states(bus)
@@ -583,18 +602,7 @@ async def _phase_list(bus: GossipBus) -> None:
         print("no phases tracked yet")
         return
 
-    def phase_sort_key(name: str) -> tuple[int, tuple[int, ...], str]:
-        """Sort Phase-N[.M[...]] numerically; all other names lexically."""
-        parts = name.split("-")
-        if len(parts) >= 2 and parts[0] == "Phase":
-            try:
-                components = tuple(int(n) for n in parts[1].split("."))
-                return (0, components, name)
-            except (ValueError, IndexError):
-                pass
-        return (1, (), name)
-
-    for phase_name in sorted(phases.keys(), key=phase_sort_key):
+    for phase_name in sorted(phases.keys(), key=_phase_sort_key):
         phase = phases[phase_name]
         status_emoji = {
             PhaseStatus.COMPLETE: "✅",
@@ -874,12 +882,38 @@ async def _workflow_critical_path(bus: GossipBus) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-async def _queue_add(bus: GossipBus, task_name: str, phase: str, priority: str, notes: str, depends_on: Optional[str]) -> None:
-    """Enqueue a new task with optional priority and dependencies."""
+_SHA_RE = re.compile(r"^[0-9a-fA-F]{7,40}$")
+
+
+async def _queue_add(
+    bus: GossipBus,
+    task_name: str,
+    phase: str,
+    priority: str,
+    notes: str,
+    depends_on: Optional[str],
+    source_ref: Optional[str] = None,
+    expected_base_sha: Optional[str] = None,
+) -> None:
+    """Enqueue a new task with optional priority and dependencies.
+
+    source_ref/expected_base_sha mirror agent_coordination_core.py's schema
+    -- see that file for the full rationale (optional-and-validated, not
+    yet hard-required, per .agent/AGENTS.md's board-job source line
+    doctrine). This copy exists because the facade aliases _queue_add
+    directly to this module (_impl), not core.py.
+    """
+    if source_ref is not None and not source_ref.strip():
+        print("ERROR: source_ref, if given, must not be empty")
+        return
+    if expected_base_sha is not None and not _SHA_RE.match(expected_base_sha):
+        print(f"ERROR: expected_base_sha {expected_base_sha!r} is not a valid "
+              "git SHA (7-40 hex characters)")
+        return
     task_id = f"{phase}-{task_name}-{uuid.uuid4().hex[:8]}"
     priority_enum = TaskPriority.from_string(priority)
     depends_on_list = [t.strip() for t in depends_on.split(",")] if depends_on else []
-    await bus.emit("heartbeat", {
+    payload = {
         "kind": "task_enqueue",
         "task_id": task_id,
         "task_name": task_name,
@@ -892,95 +926,84 @@ async def _queue_add(bus: GossipBus, task_name: str, phase: str, priority: str, 
         "max_retries": 3,
         "depends_on": depends_on_list,
         "notes": notes,
-    })
+    }
+    if source_ref is not None:
+        payload["source_ref"] = source_ref.strip()
+    if expected_base_sha is not None:
+        payload["expected_base_sha"] = expected_base_sha
+    await bus.emit("heartbeat", payload)
     print(f"enqueued: {task_id} ({phase}, {priority_enum.name})")
 
 
+_TASK_EVENT_KINDS = (
+    "task_enqueue",
+    "task_claim",
+    "task_complete",
+    "task_failed",
+    "task_abandoned",
+)
+
+
+async def _task_snapshot(
+    bus: GossipBus, task_id: str, events: Optional[list[dict]] = None
+) -> Optional[dict]:
+    """Fold append-only heartbeat events for one task into a merged snapshot.
+
+    Same size-bounded-window risk as agent_coordination_core.py had (an old
+    task's founding task_enqueue event can fall outside the window once
+    enough unrelated heartbeat traffic accumulates) -- the real fix (an
+    unbounded, SQL-narrowed _fetch_task_events query) lives there, not
+    duplicated a third time here, since this whole file is already parked
+    for deletion via docs/next/2026-07-17-coordination-module-
+    consolidation-plan.md's migration step. Bumped the window substantially
+    as an interim mitigation, not a structural fix.
+    """
+    if events is None:
+        events = await bus.tail(limit=5000, event_type="heartbeat")
+    snapshot: dict = {}
+    for ev in reversed(events):
+        p = ev["payload"]
+        if p.get("task_id") == task_id and p.get("kind") in _TASK_EVENT_KINDS:
+            snapshot.update(p)
+    return snapshot or None
+
+
 async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> None:
-    """Claim a queued task, blocking if already claimed or deps not satisfied."""
-    events = await bus.tail(limit=500, event_type="heartbeat")
-    task_state = None
-    for ev in events:
-        p = ev["payload"]
-        if p.get("task_id") == task_id and p.get("kind") in ("task_enqueue", "task_claim", "task_complete", "task_failed"):
-            task_state = p
-            break
-    if not task_state:
-        print(f"ERROR: task {task_id} not found")
-        return
-    if task_state.get("status") == QueuedTaskState.CLAIMED.value:
-        existing_agent = task_state.get("assigned_agent")
-        print(f"ERROR: {task_id} already claimed by {existing_agent}.")
-        return
-    if task_state.get("status") == QueuedTaskState.COMPLETED.value:
-        print(f"ERROR: {task_id} already completed. Cannot reclaim.")
-        return
-    depends_on = task_state.get("depends_on", [])
-    if depends_on:
-        completed_tasks = set()
-        for ev in events:
-            p = ev["payload"]
-            if p.get("kind") == "task_complete" and p.get("task_id") in depends_on:
-                completed_tasks.add(p["task_id"])
-        unmet_deps = [tid for tid in depends_on if tid not in completed_tasks]
-        if unmet_deps:
-            print(f"ERROR: {task_id} unmet dependencies: {', '.join(unmet_deps)}")
-            return
-    await bus.emit("heartbeat", {
-        "kind": "task_claim",
-        "task_id": task_id,
-        "assigned_agent": agent_id,
-        "status": QueuedTaskState.CLAIMED.value,
-        "worktree": current_worktree_label(),
-    })
-    print(f"claimed: {task_id} by {agent_id}")
+    """Delegates to agent_coordination_core's atomic implementation.
+
+    This file's own prior implementation duplicated the claim logic without
+    _try_atomic_claim()'s BEGIN IMMEDIATE exclusion -- a genuine race where
+    two callers could both pass the snapshot check and both emit a
+    task_claim event, double-claiming the same task. Delegating closes that
+    gap here rather than fixing it a third time in a file already parked
+    for deletion via the consolidation plan's migration step. The facade
+    (scripts/agent_coordination.py) already routes real CLI usage through
+    core.py's version directly; this makes any remaining direct caller of
+    this module's own name get the same safe behavior.
+    """
+    from scripts.agent_coordination_core import _queue_claim as _core_queue_claim
+    await _core_queue_claim(bus, task_id, agent_id)
 
 
-async def _queue_complete(bus: GossipBus, task_id: str, notes: str) -> None:
-    """Mark a task as completed."""
-    await bus.emit("heartbeat", {
-        "kind": "task_complete",
-        "task_id": task_id,
-        "status": QueuedTaskState.COMPLETED.value,
-        "notes": notes,
-    })
-    print(f"completed: {task_id}")
+async def _queue_complete(bus: GossipBus, task_id: str, agent_id: str, notes: str) -> None:
+    """Delegates to agent_coordination_core's atomic implementation.
+
+    See _queue_claim's docstring above -- same reasoning, and this file's
+    prior version additionally bypassed _release_claim_with_event() and its
+    ownership-conditioned delete entirely, using a bare bus.emit() with no
+    claim-row cleanup or race protection at all.
+    """
+    from scripts.agent_coordination_core import _queue_complete as _core_queue_complete
+    await _core_queue_complete(bus, task_id, agent_id, notes)
 
 
-async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> None:
-    """Mark a task as failed; retry logic applies if retry_count < max_retries."""
-    events = await bus.tail(limit=500, event_type="heartbeat")
-    task_state = None
-    for ev in events:
-        p = ev["payload"]
-        if p.get("task_id") == task_id and p.get("kind") in ("task_enqueue", "task_claim", "task_complete", "task_failed"):
-            task_state = p
-            break
-    if not task_state:
-        print(f"ERROR: task {task_id} not found")
-        return
-    retry_count = task_state.get("retry_count", 0) + 1
-    max_retries = task_state.get("max_retries", 3)
-    if retry_count < max_retries:
-        await bus.emit("heartbeat", {
-            "kind": "task_failed",
-            "task_id": task_id,
-            "retry_count": retry_count,
-            "max_retries": max_retries,
-            "status": QueuedTaskState.QUEUED.value,
-            "notes": f"Retry {retry_count}/{max_retries}: {notes}",
-        })
-        print(f"failed: {task_id}, retry {retry_count}/{max_retries}")
-    else:
-        await bus.emit("heartbeat", {
-            "kind": "task_abandoned",
-            "task_id": task_id,
-            "retry_count": retry_count,
-            "max_retries": max_retries,
-            "status": "abandoned",
-            "notes": f"Abandoned after {max_retries} retries: {notes}",
-        })
-        print(f"abandoned: {task_id} (max retries exceeded)")
+async def _queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) -> None:
+    """Delegates to agent_coordination_core's atomic implementation.
+
+    See _queue_claim's docstring above for the shared reasoning.
+    """
+    from scripts.agent_coordination_core import _queue_fail as _core_queue_fail
+    await _core_queue_fail(bus, task_id, agent_id, notes)
 
 
 async def _queue_list(bus: GossipBus, phase_filter: Optional[str], priority_filter: Optional[str], agent_filter: Optional[str]) -> None:

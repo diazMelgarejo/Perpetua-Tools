@@ -1,69 +1,85 @@
 # Phase-Based Workflow Tracking
 
-This document describes the phase tracking system for Perpetua-Tools, which enables orchestration and visibility into multi-phase work streams.
-
-## Overview
-
-Phase-based workflow tracking provides:
-
-- **Phase State Tracking**: Monitor each phase's status (not_started, in_progress, blocked, complete)
-- **Test Progress**: Track test counts and passing rates per phase
-- **Agent Assignment**: Record which agents are working on each phase
-- **Dependency Management**: Define inter-phase dependencies and detect automatic blockers
-- **Critical Path Analysis**: Calculate the longest dependency chain and estimated time to completion (ETA)
-- **Blocker Management**: Explicitly block phases and track reasons for blockage
+This document describes the phase tracking and distributed task queue surface of `scripts/agent_coordination.py`.
 
 ## Quick Start
 
-### 1. Initialize a Phase
+The safe, atomic path for handing off work is the **queue**, not the legacy `register/claim/release` board (the legacy board is advisory and unprotected against races):
 
 ```bash
-python3 scripts/agent_coordination_phases.py phase start Phase-1.0 --agent kimi-g1
+# 1. Enqueue a task
+python3 scripts/agent_coordination.py queue add "implement-auth" "Phase-1.0" --priority high --notes "add passwordless login"
+
+# 2. Claim it atomically (only one agent wins)
+python3 scripts/agent_coordination.py queue claim <task_id> <agent_id>
+
+# 3. Complete it
+python3 scripts/agent_coordination.py queue complete <task_id> --notes "merged in commit abc123"
 ```
 
-### 2. Track Progress
+## CLI Reference
+
+`scripts/agent_coordination.py` exposes 29 leaf commands grouped in six families.
+
+### Top-level coordination (legacy advisory board)
+
+**`list` and `queue list` are two separate, disjoint surfaces — not two views of the same data.** `list` shows the legacy advisory-board `claim`/`release` entries only. `queue list` (below) shows atomic `queue add`/`queue claim` task entries only. A task enqueued with `queue add` will never appear in plain `list`, and a claim made with plain `claim` will never appear in `queue list`. If you enqueued or claimed something and can't find it, check you're using the matching surface, not the other one.
 
 ```bash
-# Update test counts (50/69 passing)
-python3 scripts/agent_coordination_phases.py phase update Phase-1.0 --tests-passing 50/69 --agent kimi-g1
-
-# Or just update passing count
-python3 scripts/agent_coordination_phases.py phase update Phase-1.0 --tests-passing 69
+python3 scripts/agent_coordination.py register <agent_id> <agent_type> [model] [notes]
+python3 scripts/agent_coordination.py agents
+python3 scripts/agent_coordination.py claim <agent_id> <task_name> [notes] [--seq N]
+python3 scripts/agent_coordination.py release <agent_id> <task_name>
+python3 scripts/agent_coordination.py list [task_name]
+python3 scripts/agent_coordination.py log <agent_id> <message>
 ```
 
-### 3. List All Phases
+### Phase tracking
 
 ```bash
-python3 scripts/agent_coordination_phases.py phase list
+python3 scripts/agent_coordination.py phase list
+python3 scripts/agent_coordination.py phase status <phase_name>
+python3 scripts/agent_coordination.py phase start <phase_name> [--depends-on phase1,phase2] [--agent agent_id]
+python3 scripts/agent_coordination.py phase update <phase_name> --tests-passing 50/69 [--agent agent_id]
+python3 scripts/agent_coordination.py phase complete <phase_name>
+python3 scripts/agent_coordination.py phase block <phase_name> --reason "reason text"
+python3 scripts/agent_coordination.py phase unblock <phase_name> --reason "reason text"
 ```
 
-### 4. Get Detailed Status
+### Distributed task queue
 
 ```bash
-python3 scripts/agent_coordination_phases.py phase status Phase-1.0
+python3 scripts/agent_coordination.py queue add <task_name> <phase> [--priority critical|high|normal|low] [--notes "..."] [--depends-on task_id,...]
+python3 scripts/agent_coordination.py queue list [--phase <phase>] [--priority <level>] [--agent <agent_id>]
+python3 scripts/agent_coordination.py queue claim <task_id> <agent_id>
+python3 scripts/agent_coordination.py queue complete <task_id> [--notes "..."]
+python3 scripts/agent_coordination.py queue fail <task_id> [--notes "..."]
+python3 scripts/agent_coordination.py queue status [--agent <agent_id>]
 ```
 
-### 5. Complete a Phase
+### Heartbeat / liveness
 
 ```bash
-python3 scripts/agent_coordination_phases.py phase complete Phase-1.0
+python3 scripts/agent_coordination.py heartbeat list
+python3 scripts/agent_coordination.py heartbeat check <agent_id>
+python3 scripts/agent_coordination.py heartbeat dashboard
+python3 scripts/agent_coordination.py heartbeat pulse <agent_id>
+python3 scripts/agent_coordination.py heartbeat kill <agent_id> --reason "reason text"
+python3 scripts/agent_coordination.py heartbeat timeline <agent_id> [--hours N]
+python3 scripts/agent_coordination.py heartbeat cleanup
 ```
 
-### 6. Manage Blockers
+### Reorder buffer
 
 ```bash
-# Block a phase
-python3 scripts/agent_coordination_phases.py phase block Phase-2 --reason "waiting for Phase-1.0 API"
-
-# Unblock when ready
-python3 scripts/agent_coordination_phases.py phase unblock Phase-2 --reason "waiting for Phase-1.0 API"
+python3 scripts/agent_coordination.py buffer status [--agent <agent_id>]
+python3 scripts/agent_coordination.py buffer drain <agent_id>
 ```
 
-### 7. Critical Path Analysis
+### Workflow analysis
 
 ```bash
-# Show the longest dependency chain and ETA
-python3 scripts/agent_coordination_phases.py workflow critical-path
+python3 scripts/agent_coordination.py workflow critical-path
 ```
 
 ## Data Model
@@ -103,28 +119,28 @@ Phases progress through these states:
 
 ```bash
 # Start Phase-1.0
-python3 scripts/agent_coordination_phases.py phase start Phase-1.0 --agent kimi-g1
+python3 scripts/agent_coordination.py phase start Phase-1.0 --agent kimi-g1
 
 # Track progress throughout the phase
-python3 scripts/agent_coordination_phases.py phase update Phase-1.0 --tests-passing 35/69
-python3 scripts/agent_coordination_phases.py phase update Phase-1.0 --tests-passing 69/69
+python3 scripts/agent_coordination.py phase update Phase-1.0 --tests-passing 35/69
+python3 scripts/agent_coordination.py phase update Phase-1.0 --tests-passing 69/69
 
 # Mark complete
-python3 scripts/agent_coordination_phases.py phase complete Phase-1.0
+python3 scripts/agent_coordination.py phase complete Phase-1.0
 ```
 
 ### Phase-2 (depends on Phase-1.0)
 
 ```bash
 # Define dependency
-python3 scripts/agent_coordination_phases.py phase start Phase-2 --depends-on Phase-1.0 --agent agy-flash
+python3 scripts/agent_coordination.py phase start Phase-2 --depends-on Phase-1.0 --agent agy-flash
 
 # If Phase-1.0 is blocked, this will show as a blocker
-python3 scripts/agent_coordination_phases.py phase status Phase-2
+python3 scripts/agent_coordination.py phase status Phase-2
 
 # Once Phase-1.0 completes, proceed with work
-python3 scripts/agent_coordination_phases.py phase update Phase-2 --tests-passing 16/16
-python3 scripts/agent_coordination_phases.py phase complete Phase-2
+python3 scripts/agent_coordination.py phase update Phase-2 --tests-passing 16/16
+python3 scripts/agent_coordination.py phase complete Phase-2
 ```
 
 ### Parallel Phases
@@ -133,11 +149,11 @@ Phases can run in parallel if they have no dependencies:
 
 ```bash
 # Start Phase-3 and Phase-4 in parallel
-python3 scripts/agent_coordination_phases.py phase start Phase-3 --depends-on Phase-2 --agent kimi-g1
-python3 scripts/agent_coordination_phases.py phase start Phase-4 --depends-on Phase-2 --agent agy-flash
+python3 scripts/agent_coordination.py phase start Phase-3 --depends-on Phase-2 --agent kimi-g1
+python3 scripts/agent_coordination.py phase start Phase-4 --depends-on Phase-2 --agent agy-flash
 
 # Both can progress concurrently
-python3 scripts/agent_coordination_phases.py phase list
+python3 scripts/agent_coordination.py phase list
 # Both show "🔄 IN_PROGRESS" simultaneously
 ```
 
@@ -147,7 +163,7 @@ The system automatically detects which phases are blocking a given phase by chec
 
 ```bash
 # If Phase-3 depends on Phase-2 and Phase-4 isn't complete:
-python3 scripts/agent_coordination_phases.py phase status Phase-3
+python3 scripts/agent_coordination.py phase status Phase-3
 
 # Output shows:
 # Dependencies: Phase-2, Phase-4
@@ -159,7 +175,7 @@ python3 scripts/agent_coordination_phases.py phase status Phase-3
 Shows the longest chain of dependent phases and the total time to complete if run sequentially:
 
 ```bash
-python3 scripts/agent_coordination_phases.py workflow critical-path
+python3 scripts/agent_coordination.py workflow critical-path
 ```
 
 Example output:
@@ -180,7 +196,7 @@ ETA (if started now): +31.5 hours
 
 ### Storage
 
-All phase events are stored in GossipBus using "phase_event" events:
+Phase transitions are stored under GossipBus event **type** `"heartbeat"` (the same event type used by queue and liveness events), distinguished by payload **kind** `"phase_event"` — event type and payload kind are two different fields, not the same thing (verified against `scripts/agent_coordination_core.py`'s `_phase_start`/`_phase_update`/etc., which all call `bus.emit("heartbeat", {"kind": "phase_event", ...})`):
 
 ```json
 {
@@ -207,14 +223,16 @@ All phase events are stored in GossipBus using "phase_event" events:
 
 ### Deterministic Sorting
 
-Phases are sorted using a numeric pattern matcher:
+Phases are sorted using a numeric component matcher. Each dot-separated component is parsed as an integer and compared as a tuple, so two-digit minor versions order correctly:
 
-- "Phase-1.0" → (1, 0.0)
-- "Phase-1.1" → (1, 0.1)
-- "Phase-2" → (2, 0.0)
-- "Phase-10.5" → (10, 0.5)
+- "Phase-1.0" → `(0, (1, 0), "Phase-1.0")`
+- "Phase-1.1" → `(0, (1, 1), "Phase-1.1")`
+- "Phase-2" → `(0, (2,), "Phase-2")`
+- "Phase-2.10" → `(0, (2, 10), "Phase-2.10")`
+- "Phase-10.5" → `(0, (10, 5), "Phase-10.5")`
+- "OtherName" → `(1, (), "OtherName")`
 
-This ensures correct ordering even with mixed naming conventions.
+This ensures `Phase-2.10` sorts after `Phase-2.9`, which a naive float encoding would get wrong.
 
 ## Test Coverage
 
@@ -237,24 +255,18 @@ Run tests with:
 python3 -m pytest tests/test_agent_coordination_phases.py -v
 ```
 
-## Integration with agent_coordination.py
+## Integration with the Queue
 
-The phase tracking module (`agent_coordination_phases.py`) is designed to complement the existing agent coordination system in `scripts/agent_coordination.py`:
-
-- **Legacy API** (agent_coordination.py): Register agents, claim/release tasks
-- **Phase Tracking** (agent_coordination_phases.py): Track multi-phase workflows
-
-They share the same GossipBus database, so you can use both systems together:
+The queue and phase systems share the same GossipBus database. Use phases for coarse-grained workflow state and the queue for atomic task handoff:
 
 ```bash
-# Register an agent
-python3 scripts/agent_coordination.py register kimi-g1 cli-tool kimi-code
-
 # Track phase workflow
-python3 scripts/agent_coordination_phases.py phase start Phase-1.0 --agent kimi-g1
+python3 scripts/agent_coordination.py phase start Phase-1.0 --agent kimi-g1
 
-# Claim specific tasks within the phase
-python3 scripts/agent_coordination.py claim kimi-g1 "Phase-1.0::PeerObservation"
+# Enqueue and claim specific tasks within the phase
+python3 scripts/agent_coordination.py queue add "PeerObservation" "Phase-1.0" --priority high
+python3 scripts/agent_coordination.py queue claim <task_id> kimi-g1
+python3 scripts/agent_coordination.py queue complete <task_id>
 ```
 
 ## Future Extensions
@@ -275,7 +287,7 @@ Planned enhancements:
 If you get "Phase 'X' not found", ensure you ran `phase start` first:
 
 ```bash
-python3 scripts/agent_coordination_phases.py phase start Phase-1.0
+python3 scripts/agent_coordination.py phase start Phase-1.0
 ```
 
 ### Cannot complete phase with blockers
@@ -284,14 +296,14 @@ Blockers must be removed before completion:
 
 ```bash
 # See what's blocking
-python3 scripts/agent_coordination_phases.py phase status Phase-2
+python3 scripts/agent_coordination.py phase status Phase-2
 
 # Remove each blocker
-python3 scripts/agent_coordination_phases.py phase unblock Phase-2 --reason "waiting for API"
-python3 scripts/agent_coordination_phases.py phase unblock Phase-2 --reason "design review"
+python3 scripts/agent_coordination.py phase unblock Phase-2 --reason "waiting for API"
+python3 scripts/agent_coordination.py phase unblock Phase-2 --reason "design review"
 
 # Now you can complete
-python3 scripts/agent_coordination_phases.py phase complete Phase-2
+python3 scripts/agent_coordination.py phase complete Phase-2
 ```
 
 ### Cannot restart a completed phase
@@ -300,5 +312,5 @@ Completed phases cannot be restarted. To track a new instance, use a different p
 
 ```bash
 # Instead of restarting Phase-1.0
-python3 scripts/agent_coordination_phases.py phase start Phase-1.0b --agent new-agent
+python3 scripts/agent_coordination.py phase start Phase-1.0b --agent new-agent
 ```

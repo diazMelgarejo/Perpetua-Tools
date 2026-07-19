@@ -74,6 +74,9 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import aiosqlite
+import json
+import re
 import subprocess
 import sys
 import time
@@ -85,7 +88,12 @@ from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from orchestrator.gossip_bus import GossipBus  # noqa: E402
+from orchestrator.gossip_bus import (  # noqa: E402
+    GossipBus,
+    GossipBusError,
+    _canonical_repo_state_dir,
+    resolve_gossip_db_path,
+)
 from orchestrator.lan_gossip_bridge import make_gossip_bus  # noqa: E402
 
 
@@ -240,6 +248,34 @@ class PhaseStatus(Enum):
     COMPLETE = "complete"
 
 
+class ClaimResult(Enum):
+    """Atomic claim outcomes that need distinct caller-facing messages."""
+    WON = "won"
+    LOST_RACE = "lost_race"
+    CONTENTION = "contention"
+
+
+class ReleaseResult(Enum):
+    """Atomic release outcomes that need distinct caller-facing messages."""
+    RELEASED = "released"
+    LOST_RACE = "lost_race"
+    CONTENTION = "contention"
+
+
+def _error(message: str) -> bool:
+    print(f"ERROR: {message}", file=sys.stderr)
+    return False
+
+
+def _warning(message: str) -> bool:
+    print(f"WARNING: {message}", file=sys.stderr)
+    return False
+
+
+def _exit_code(result: object) -> int:
+    return 1 if result is False else 0
+
+
 @dataclass
 class PhaseState:
     """Represents a workflow phase and its current state."""
@@ -296,15 +332,20 @@ class PhaseState:
 
 
 def canonical_repo_root() -> Path:
-    """Resolve the shared repo root common to every worktree of this repo."""
-    common_dir = subprocess.check_output(
-        ["git", "rev-parse", "--git-common-dir"], text=True
-    ).strip()
-    return Path(common_dir).resolve().parent
+    """Resolve the shared repo root common to every worktree of this repo.
+
+    Deliberately independent of resolve_default_state_dir() and PT_STATE_DIR
+    -- runtime state location is a configurable override (multiple
+    instances, tests, custom layouts); repository identity is not, and must
+    never be influenced by where state happens to be pointed. Falls back to
+    cwd only when git resolution itself fails (not in a repo).
+    """
+    state = _canonical_repo_state_dir()
+    return state.parent if state is not None else Path.cwd()
 
 
 def canonical_db_path() -> str:
-    return str(canonical_repo_root() / ".state" / "perpetua_core.db")
+    return resolve_gossip_db_path()
 
 
 def current_worktree_label() -> str:
@@ -444,8 +485,14 @@ async def _log(bus: GossipBus, agent_id: str, message: str) -> None:
 
 async def _get_latest_phase_state(bus: GossipBus, phase_name: str) -> Optional[PhaseState]:
     """Retrieve the latest state for a given phase."""
+    # bus.tail() already returns newest-first (ORDER BY id DESC) -- do NOT
+    # reversed() this. An earlier version wrapped it in reversed() under the
+    # mistaken belief tail() returned oldest-first, which made this function
+    # return the OLDEST matching phase_event instead of the newest (confirmed
+    # via repro: start -> update -> complete returned IN_PROGRESS, not
+    # COMPLETE). Iterate the list as-is; the first match is the true latest.
     events = await bus.tail(limit=500, event_type="heartbeat")
-    for ev in reversed(events):  # newest first
+    for ev in events:  # newest first
         p = ev["payload"]
         if p.get("kind") == "phase_event" and p.get("phase_name") == phase_name:
             return PhaseState.from_payload(p)
@@ -454,9 +501,12 @@ async def _get_latest_phase_state(bus: GossipBus, phase_name: str) -> Optional[P
 
 async def _all_phase_states(bus: GossipBus) -> dict[str, PhaseState]:
     """Retrieve the latest state for all phases."""
+    # Same fix as _get_latest_phase_state above: no reversed() needed, tail()
+    # is already newest-first. First occurrence per phase_name while
+    # iterating newest-first is the true latest state for that phase.
     events = await bus.tail(limit=500, event_type="heartbeat")
     latest: dict[str, PhaseState] = {}
-    for ev in reversed(events):  # oldest first, newer overwrites
+    for ev in events:  # newest first
         p = ev["payload"]
         if p.get("kind") != "phase_event":
             continue
@@ -471,12 +521,11 @@ async def _phase_start(
     phase_name: str,
     depends_on: Optional[list[str]] = None,
     agent_id: Optional[str] = None,
-) -> None:
+) -> bool | None:
     """Start a phase (transition to in_progress)."""
     existing = await _get_latest_phase_state(bus, phase_name)
     if existing and existing.status == PhaseStatus.COMPLETE:
-        print(f"WARNING: Phase '{phase_name}' is already COMPLETE. Cannot restart.")
-        return
+        return _warning(f"Phase '{phase_name}' is already COMPLETE. Cannot restart.")
 
     phase = existing or PhaseState(phase_name=phase_name, status=PhaseStatus.NOT_STARTED)
     phase.status = PhaseStatus.IN_PROGRESS
@@ -496,12 +545,11 @@ async def _phase_update(
     tests_passing: Optional[int] = None,
     total_tests: Optional[int] = None,
     agent_id: Optional[str] = None,
-) -> None:
+) -> bool | None:
     """Update phase test progress."""
     phase = await _get_latest_phase_state(bus, phase_name)
     if not phase:
-        print(f"ERROR: Phase '{phase_name}' not found. Run 'phase start' first.")
-        return
+        return _error(f"Phase '{phase_name}' not found. Run 'phase start' first.")
 
     if tests_passing is not None:
         phase.tests_passing = tests_passing
@@ -519,12 +567,11 @@ async def _phase_update(
     print(f"updated: {phase_name} {phase.tests_passing}/{phase.total_tests}{pct}")
 
 
-async def _phase_complete(bus: GossipBus, phase_name: str) -> None:
+async def _phase_complete(bus: GossipBus, phase_name: str) -> bool | None:
     """Mark phase as complete."""
     phase = await _get_latest_phase_state(bus, phase_name)
     if not phase:
-        print(f"ERROR: Phase '{phase_name}' not found.")
-        return
+        return _error(f"Phase '{phase_name}' not found.")
 
     if phase.status == PhaseStatus.COMPLETE:
         print(f"Phase '{phase_name}' is already complete.")
@@ -532,11 +579,10 @@ async def _phase_complete(bus: GossipBus, phase_name: str) -> None:
 
     # Verify blockers are cleared
     if phase.blockers:
-        print(
-            f"WARNING: Phase '{phase_name}' has blockers: {phase.blockers}. "
-            f"Clear them before marking complete."
+        return _warning(
+            f"Phase '{phase_name}' has blockers: {phase.blockers}. "
+            "Clear them before marking complete."
         )
-        return
 
     phase.status = PhaseStatus.COMPLETE
     phase.completed_at = time.time()
@@ -544,12 +590,11 @@ async def _phase_complete(bus: GossipBus, phase_name: str) -> None:
     print(f"completed: {phase_name}")
 
 
-async def _phase_block(bus: GossipBus, phase_name: str, reason: str) -> None:
+async def _phase_block(bus: GossipBus, phase_name: str, reason: str) -> bool | None:
     """Mark phase as blocked."""
     phase = await _get_latest_phase_state(bus, phase_name)
     if not phase:
-        print(f"ERROR: Phase '{phase_name}' not found.")
-        return
+        return _error(f"Phase '{phase_name}' not found.")
 
     phase.status = PhaseStatus.BLOCKED
     if reason not in phase.blockers:
@@ -559,12 +604,11 @@ async def _phase_block(bus: GossipBus, phase_name: str, reason: str) -> None:
     print(f"blocked: {phase_name} — {reason}")
 
 
-async def _phase_unblock(bus: GossipBus, phase_name: str, reason: str) -> None:
+async def _phase_unblock(bus: GossipBus, phase_name: str, reason: str) -> bool | None:
     """Unblock a phase by removing a specific blocker."""
     phase = await _get_latest_phase_state(bus, phase_name)
     if not phase:
-        print(f"ERROR: Phase '{phase_name}' not found.")
-        return
+        return _error(f"Phase '{phase_name}' not found.")
 
     if reason in phase.blockers:
         phase.blockers.remove(reason)
@@ -578,6 +622,18 @@ async def _phase_unblock(bus: GossipBus, phase_name: str, reason: str) -> None:
     print(f"unblocked: {phase_name}")
 
 
+def _phase_sort_key(name: str) -> tuple[int, tuple[int, ...] | tuple[()], str]:
+    """Sort Phase-N[.M[.…]] names numerically; other names lexically."""
+    parts = name.split("-")
+    if len(parts) >= 2 and parts[0] == "Phase":
+        try:
+            components = tuple(int(n) for n in parts[1].split("."))
+            return (0, components, name)
+        except (ValueError, IndexError):
+            pass
+    return (1, (), name)
+
+
 async def _phase_list(bus: GossipBus) -> None:
     """List all phases with status and test progress."""
     phases = await _all_phase_states(bus)
@@ -585,18 +641,7 @@ async def _phase_list(bus: GossipBus) -> None:
         print("no phases tracked yet")
         return
 
-    def phase_sort_key(name: str) -> tuple[int, tuple[int, ...], str]:
-        """Sort Phase-N[.M[...]] numerically; all other names lexically."""
-        parts = name.split("-")
-        if len(parts) >= 2 and parts[0] == "Phase":
-            try:
-                components = tuple(int(n) for n in parts[1].split("."))
-                return (0, components, name)
-            except (ValueError, IndexError):
-                pass
-        return (1, (), name)
-
-    for phase_name in sorted(phases.keys(), key=phase_sort_key):
+    for phase_name in sorted(phases.keys(), key=_phase_sort_key):
         phase = phases[phase_name]
         status_emoji = {
             PhaseStatus.COMPLETE: "✅",
@@ -764,12 +809,11 @@ async def _buffer_status(bus: GossipBus, agent_filter: Optional[str] = None) -> 
             print(f"  buffered_seqs: {status['buffered_seqs']}")
 
 
-async def _buffer_drain(bus: GossipBus, agent_id: str) -> None:
+async def _buffer_drain(bus: GossipBus, agent_id: str) -> bool | None:
     """Force-drain buffered claims for an agent (emit all held claims)."""
     buffers = await _get_reorder_buffers(bus)
     if agent_id not in buffers:
-        print(f"ERROR: no buffer state for agent {agent_id}")
-        return
+        return _error(f"no buffer state for agent {agent_id}")
 
     buffer = buffers[agent_id]
     if not buffer.buffer:
@@ -883,12 +927,42 @@ async def _workflow_critical_path(bus: GossipBus) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-async def _queue_add(bus: GossipBus, task_name: str, phase: str, priority: str, notes: str, depends_on: Optional[str]) -> None:
-    """Enqueue a new task with optional priority and dependencies."""
+_SHA_RE = re.compile(r"^[0-9a-fA-F]{7,40}$")
+
+
+async def _queue_add(
+    bus: GossipBus,
+    task_name: str,
+    phase: str,
+    priority: str,
+    notes: str,
+    depends_on: Optional[str],
+    source_ref: Optional[str] = None,
+    expected_base_sha: Optional[str] = None,
+) -> bool | None:
+    """Enqueue a new task with optional priority and dependencies.
+
+    source_ref/expected_base_sha are optional here (not yet hard-required)
+    -- see .agent/AGENTS.md's "Board-job source line" doctrine, which this
+    schema is the producer-side half of. Making them mandatory outright
+    would break every existing caller across this repo's own test suite
+    with no coordinated update, and the doctrine explicitly spans this
+    repo and orama-system's shared convention -- flipping to hard-required
+    needs that cross-repo rollout done deliberately, not silently bundled
+    into one file's fix. When provided, both are validated and persisted;
+    omitting them still works, matching every existing caller unchanged.
+    """
+    if source_ref is not None and not source_ref.strip():
+        return _error("source_ref, if given, must not be empty")
+    if expected_base_sha is not None and not _SHA_RE.match(expected_base_sha):
+        return _error(
+            f"expected_base_sha {expected_base_sha!r} is not a valid git SHA "
+            "(7-40 hex characters)"
+        )
     task_id = f"{phase}-{task_name}-{uuid.uuid4().hex[:8]}"
     priority_enum = TaskPriority.from_string(priority)
     depends_on_list = [t.strip() for t in depends_on.split(",")] if depends_on else []
-    await bus.emit("heartbeat", {
+    payload = {
         "kind": "task_enqueue",
         "task_id": task_id,
         "task_name": task_name,
@@ -901,95 +975,422 @@ async def _queue_add(bus: GossipBus, task_name: str, phase: str, priority: str, 
         "max_retries": 3,
         "depends_on": depends_on_list,
         "notes": notes,
-    })
+    }
+    if source_ref is not None:
+        payload["source_ref"] = source_ref.strip()
+    if expected_base_sha is not None:
+        payload["expected_base_sha"] = expected_base_sha
+    await bus.emit("heartbeat", payload)
     print(f"enqueued: {task_id} ({phase}, {priority_enum.name})")
 
 
-async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> None:
-    """Claim a queued task, blocking if already claimed or deps not satisfied."""
-    events = await bus.tail(limit=500, event_type="heartbeat")
-    task_state = None
+_TASK_EVENT_KINDS = (
+    "task_enqueue",
+    "task_claim",
+    "task_complete",
+    "task_failed",
+    "task_abandoned",
+)
+
+
+async def _fetch_task_events(bus: GossipBus, task_id: Optional[str] = None) -> list[dict]:
+    """Fetch task-lifecycle events (task_enqueue/claim/complete/failed/
+    abandoned), optionally scoped to one task_id, directly via a targeted
+    SQL query rather than a size-bounded tail() call filtered in Python.
+
+    No LIMIT, and deliberately so: bus.tail(event_type="heartbeat") also
+    carries agent-liveness pulses and other unrelated heartbeat traffic
+    that has nothing to do with tasks, so a size-bounded window over that
+    combined stream can silently drop an old-but-still-open task's
+    founding task_enqueue event (dependencies, retry_limit, initial phase)
+    once enough unrelated heartbeat volume accumulates -- corrupting that
+    task's folded snapshot with no error, no warning. This query is
+    already narrowed to just the 5 task-relevant kinds at the SQL level
+    (and, when task_id is given, to that one task too), so an unbounded
+    fetch stays cheap regardless of how large the bus grows, and a task's
+    full history is always available to fold correctly.
+
+    Returned oldest-first (ORDER BY id ASC) so callers can fold by plain
+    forward iteration + dict.update(), letting later (newer) events'
+    fields naturally overwrite earlier ones -- no reversed() needed.
+    """
+    kind_placeholders = ",".join("?" for _ in _TASK_EVENT_KINDS)
+    query = (
+        "SELECT id, event_uuid, ts, event_type, payload_json FROM gossip "
+        "WHERE event_type = 'heartbeat' "
+        f"AND json_extract(payload_json, '$.kind') IN ({kind_placeholders})"
+    )
+    params: list = list(_TASK_EVENT_KINDS)
+    if task_id is not None:
+        query += " AND json_extract(payload_json, '$.task_id') = ?"
+        params.append(task_id)
+    query += " ORDER BY id ASC"
+    async with bus.connect() as db:
+        cursor = await db.execute(query, params)
+        rows = await cursor.fetchall()
+    return [
+        {
+            "row_id": row[0],
+            "uuid": row[1],
+            "ts": row[2],
+            "event_type": row[3],
+            "payload": json.loads(row[4]),
+        }
+        for row in rows
+    ]
+
+
+async def _task_snapshot(
+    bus: GossipBus, task_id: str, events: Optional[list[dict]] = None
+) -> Optional[dict]:
+    """Fold append-only heartbeat events for one task into a merged snapshot."""
+    if events is None:
+        events = await _fetch_task_events(bus, task_id=task_id)
+    snapshot: dict = {}
     for ev in events:
         p = ev["payload"]
-        if p.get("task_id") == task_id and p.get("kind") in ("task_enqueue", "task_claim", "task_complete", "task_failed"):
-            task_state = p
-            break
-    if not task_state:
-        print(f"ERROR: task {task_id} not found")
-        return
-    if task_state.get("status") == QueuedTaskState.CLAIMED.value:
-        existing_agent = task_state.get("assigned_agent")
-        print(f"ERROR: {task_id} already claimed by {existing_agent}.")
-        return
-    if task_state.get("status") == QueuedTaskState.COMPLETED.value:
-        print(f"ERROR: {task_id} already completed. Cannot reclaim.")
-        return
-    depends_on = task_state.get("depends_on", [])
-    if depends_on:
-        completed_tasks = set()
-        for ev in events:
-            p = ev["payload"]
-            if p.get("kind") == "task_complete" and p.get("task_id") in depends_on:
-                completed_tasks.add(p["task_id"])
-        unmet_deps = [tid for tid in depends_on if tid not in completed_tasks]
-        if unmet_deps:
-            print(f"ERROR: {task_id} unmet dependencies: {', '.join(unmet_deps)}")
-            return
-    await bus.emit("heartbeat", {
+        if p.get("task_id") == task_id and p.get("kind") in _TASK_EVENT_KINDS:
+            snapshot.update(p)
+    return snapshot or None
+
+
+_CREATE_CLAIMS_TABLE = """
+CREATE TABLE IF NOT EXISTS task_claims (
+    task_id    TEXT PRIMARY KEY,
+    agent_id   TEXT NOT NULL,
+    claimed_at REAL NOT NULL
+)
+"""
+_LOCK_RETRIES = 3
+_LOCK_RETRY_SECONDS = 0.05
+
+
+async def _ensure_claims_table(bus: GossipBus) -> None:
+    async with bus.connect() as db:
+        await db.execute(_CREATE_CLAIMS_TABLE)
+        await db.commit()
+
+
+async def _latest_task_snapshots(bus: GossipBus) -> dict[str, dict]:
+    """Fold append-only events into current task snapshots, across every
+    task's complete history -- see _fetch_task_events for why this must not
+    be a size-bounded window."""
+    events = await _fetch_task_events(bus)
+    snapshots: dict[str, dict] = {}
+    for event in events:
+        payload = event["payload"]
+        task_id = payload.get("task_id")
+        if not task_id or payload.get("kind") not in _TASK_EVENT_KINDS:
+            continue
+        snapshots.setdefault(task_id, {}).update(payload)
+    return snapshots
+
+
+async def _try_atomic_claim(
+    bus: GossipBus,
+    task_id: str,
+    agent_id: str,
+    claim_payload: Optional[dict] = None,
+) -> ClaimResult:
+    """Atomically persist exclusive ownership and its append-only event.
+
+    `BEGIN IMMEDIATE` serializes writers before either mutation. Integrity
+    conflicts report a lost race. Lock contention is retried briefly and then
+    reports contention without leaving a claim row or an event behind.
+    """
+    payload = claim_payload or {
         "kind": "task_claim",
         "task_id": task_id,
         "assigned_agent": agent_id,
         "status": QueuedTaskState.CLAIMED.value,
         "worktree": current_worktree_label(),
-    })
+    }
+    for attempt in range(_LOCK_RETRIES):
+        async with bus.connect() as db:
+            try:
+                await db.execute("BEGIN IMMEDIATE")
+                await db.execute(_CREATE_CLAIMS_TABLE)
+                await db.execute(
+                    "INSERT INTO task_claims (task_id, agent_id, claimed_at) "
+                    "VALUES (?, ?, ?)",
+                    (task_id, agent_id, time.time()),
+                )
+                row_id, _event_uuid, safe_payload, inserted = await bus.insert_event(
+                    db, "heartbeat", payload
+                )
+                await db.commit()
+            except aiosqlite.IntegrityError:
+                await db.rollback()
+                return ClaimResult.LOST_RACE
+            except aiosqlite.OperationalError as exc:
+                await db.rollback()
+                locked = "locked" in str(exc).lower() or "busy" in str(exc).lower()
+                if locked and attempt + 1 < _LOCK_RETRIES:
+                    await asyncio.sleep(_LOCK_RETRY_SECONDS * (attempt + 1))
+                    continue
+                if locked:
+                    return ClaimResult.CONTENTION
+                raise GossipBusError(f"claim on {task_id!r} failed: {exc}") from exc
+            except Exception as exc:
+                await db.rollback()
+                raise GossipBusError(f"claim on {task_id!r} failed: {exc}") from exc
+        if inserted:
+            bus.schedule_embedding(row_id, safe_payload)
+        return ClaimResult.WON
+    return ClaimResult.CONTENTION
+
+
+async def _release_claim_with_event(
+    bus: GossipBus,
+    task_id: str,
+    event_type: str,
+    payload: dict,
+    expected_agent_id: Optional[str] = None,
+) -> ReleaseResult:
+    """Atomically free ownership and record why, mirroring _try_atomic_claim's
+    guarantee for the release side.
+
+    Without this, a crash between a separate release DELETE and its event
+    emit could free a claim row with no record of why (forensics gap), or
+    record the terminal event while the row stays held -- blocking every
+    future _try_atomic_claim on that task_id with a stale "already claimed"
+    row forever. Same `BEGIN IMMEDIATE` + bounded-retry treatment as the
+    claim path.
+
+    expected_agent_id, when given, makes the DELETE conditional on the
+    caller actually being the current claim holder, and checks the deleted
+    rowcount before emitting the event at all. Without this, the snapshot
+    status check callers do beforehand is a read-then-write race: between
+    that read and this transaction, the claim can have already changed
+    hands (failed and reclaimed by someone else) -- a stale caller's
+    unconditional `DELETE FROM task_claims WHERE task_id = ?` would then
+    delete the NEW claimant's row and emit a terminal event out from under
+    them. Conditioning on `agent_id` and checking rowcount == 1 turns that
+    race into a clean LOST_RACE rather than silent data corruption.
+    """
+    for attempt in range(_LOCK_RETRIES):
+        async with bus.connect() as db:
+            try:
+                await db.execute("BEGIN IMMEDIATE")
+                await db.execute(_CREATE_CLAIMS_TABLE)
+                if expected_agent_id is not None:
+                    cursor = await db.execute(
+                        "DELETE FROM task_claims WHERE task_id = ? AND agent_id = ?",
+                        (task_id, expected_agent_id),
+                    )
+                    if cursor.rowcount != 1:
+                        await db.rollback()
+                        return ReleaseResult.LOST_RACE
+                else:
+                    await db.execute(
+                        "DELETE FROM task_claims WHERE task_id = ?", (task_id,)
+                    )
+                row_id, _event_uuid, safe_payload, inserted = await bus.insert_event(
+                    db, event_type, payload
+                )
+                await db.commit()
+            except aiosqlite.OperationalError as exc:
+                await db.rollback()
+                locked = "locked" in str(exc).lower() or "busy" in str(exc).lower()
+                if locked and attempt + 1 < _LOCK_RETRIES:
+                    await asyncio.sleep(_LOCK_RETRY_SECONDS * (attempt + 1))
+                    continue
+                if locked:
+                    return ReleaseResult.CONTENTION
+                raise GossipBusError(f"release of {task_id!r} failed: {exc}") from exc
+            except Exception as exc:
+                await db.rollback()
+                raise GossipBusError(f"release of {task_id!r} failed: {exc}") from exc
+        if inserted:
+            bus.schedule_embedding(row_id, safe_payload)
+        return ReleaseResult.RELEASED
+    return ReleaseResult.CONTENTION
+
+
+async def _queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | None:
+    snapshots = await _latest_task_snapshots(bus)
+    task_state = snapshots.get(task_id)
+    if not task_state:
+        return _error(f"task {task_id} not found")
+
+    status = task_state.get("status")
+    if status == QueuedTaskState.CLAIMED.value:
+        return _error(
+            f"{task_id} already claimed by {task_state.get('assigned_agent')}."
+        )
+    if status == QueuedTaskState.COMPLETED.value:
+        return _error(f"{task_id} already completed. Cannot reclaim.")
+    if status == "abandoned":
+        return _error(f"{task_id} was abandoned. Cannot reclaim.")
+
+    depends_on = task_state.get("depends_on", [])
+    unmet = [
+        dependency
+        for dependency in depends_on
+        if snapshots.get(dependency, {}).get("status")
+        != QueuedTaskState.COMPLETED.value
+    ]
+    if unmet:
+        return _error(f"{task_id} unmet dependencies: {', '.join(unmet)}")
+
+    # Atomic gate: the snapshot checks above can both pass for two racing
+    # claimants (read-then-write, no lock across the gap). This INSERT is
+    # the actual exclusion point -- only one caller gets True. The claim row
+    # and its heartbeat event commit together (see _try_atomic_claim) so a
+    # crash between them can never leave one without the other.
+    payload = {
+        "kind": "task_claim",
+        "task_id": task_id,
+        "assigned_agent": agent_id,
+        "status": QueuedTaskState.CLAIMED.value,
+        "worktree": current_worktree_label(),
+    }
+    claim_result = await _try_atomic_claim(bus, task_id, agent_id, payload)
+    if claim_result == ClaimResult.LOST_RACE:
+        return _error(
+            f"{task_id} could not be claimed; another agent won the race. "
+            "Refresh status and retry if appropriate."
+        )
+    if claim_result == ClaimResult.CONTENTION:
+        return _error(
+            f"{task_id} could not be claimed; coordination database remained "
+            "busy. Retry safely."
+        )
     print(f"claimed: {task_id} by {agent_id}")
 
 
-async def _queue_complete(bus: GossipBus, task_id: str, notes: str) -> None:
-    """Mark a task as completed."""
-    await bus.emit("heartbeat", {
-        "kind": "task_complete",
-        "task_id": task_id,
-        "status": QueuedTaskState.COMPLETED.value,
-        "notes": notes,
-    })
+async def _queue_complete(bus: GossipBus, task_id: str, agent_id: str, notes: str) -> bool | None:
+    snapshots = await _latest_task_snapshots(bus)
+    task_state = snapshots.get(task_id)
+    if not task_state:
+        return _error(f"task {task_id} not found")
+    status = task_state.get("status")
+    if status != QueuedTaskState.CLAIMED.value:
+        if status == QueuedTaskState.COMPLETED.value:
+            return _error(f"{task_id} is already completed.")
+        if status == "abandoned":
+            return _error(f"{task_id} was abandoned; cannot complete.")
+        return _error(
+            f"{task_id} is not claimed (status: {status or 'unknown'}); "
+            "only a currently-claimed task can be completed."
+        )
+    if task_state.get("assigned_agent") != agent_id:
+        return _error(
+            f"{task_id} is claimed by {task_state.get('assigned_agent')!r}, "
+            f"not {agent_id!r}; only the current claimant can complete it."
+        )
+    # Free the atomic-claim row and record completion in one transaction --
+    # a completed task is rejected by the status check in _queue_claim
+    # regardless, but a crash between a separate release and emit could
+    # otherwise free the row with no event explaining why, or record the
+    # event while the row stays held (blocking every future claim on this
+    # task_id with a stale "already claimed" row forever).
+    result = await _release_claim_with_event(
+        bus,
+        task_id,
+        "heartbeat",
+        {
+            "kind": "task_complete",
+            "task_id": task_id,
+            "status": QueuedTaskState.COMPLETED.value,
+            "notes": notes,
+        },
+        expected_agent_id=agent_id,
+    )
+    if result == ReleaseResult.LOST_RACE:
+        return _error(
+            f"{task_id}'s claim changed before completion landed (raced by "
+            "another agent); refresh status and retry if appropriate."
+        )
+    if result == ReleaseResult.CONTENTION:
+        return _error(
+            f"{task_id} could not be completed; coordination database remained "
+            "busy. Retry safely."
+        )
     print(f"completed: {task_id}")
 
 
-async def _queue_fail(bus: GossipBus, task_id: str, notes: str) -> None:
-    """Mark a task as failed; retry logic applies if retry_count < max_retries."""
-    events = await bus.tail(limit=500, event_type="heartbeat")
-    task_state = None
-    for ev in events:
-        p = ev["payload"]
-        if p.get("task_id") == task_id and p.get("kind") in ("task_enqueue", "task_claim", "task_complete", "task_failed"):
-            task_state = p
-            break
+async def _queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) -> bool | None:
+    snapshots = await _latest_task_snapshots(bus)
+    task_state = snapshots.get(task_id)
     if not task_state:
-        print(f"ERROR: task {task_id} not found")
-        return
-    retry_count = task_state.get("retry_count", 0) + 1
-    max_retries = task_state.get("max_retries", 3)
-    if retry_count < max_retries:
-        await bus.emit("heartbeat", {
-            "kind": "task_failed",
-            "task_id": task_id,
-            "retry_count": retry_count,
-            "max_retries": max_retries,
-            "status": QueuedTaskState.QUEUED.value,
-            "notes": f"Retry {retry_count}/{max_retries}: {notes}",
-        })
+        return _error(f"task {task_id} not found")
+    status = task_state.get("status")
+    if status != QueuedTaskState.CLAIMED.value:
+        if status == QueuedTaskState.COMPLETED.value:
+            return _error(f"{task_id} is already completed; cannot fail.")
+        if status == "abandoned":
+            return _error(f"{task_id} was already abandoned.")
+        return _error(
+            f"{task_id} is not claimed (status: {status or 'unknown'}); "
+            "only a currently-claimed task can be failed."
+        )
+    if task_state.get("assigned_agent") != agent_id:
+        return _error(
+            f"{task_id} is claimed by {task_state.get('assigned_agent')!r}, "
+            f"not {agent_id!r}; only the current claimant can fail it."
+        )
+    retry_count = int(task_state.get("retry_count", 0)) + 1
+    max_retries = int(task_state.get("max_retries", 3))
+    if retry_count <= max_retries:
+        # Must release here, not just on complete -- the task goes back to
+        # QUEUED and _queue_claim's atomic gate would otherwise reject every
+        # future claim attempt with a stale "already claimed" row forever.
+        # Release + event committed together, same reasoning as _queue_complete.
+        result = await _release_claim_with_event(
+            bus,
+            task_id,
+            "heartbeat",
+            {
+                "kind": "task_failed",
+                "task_id": task_id,
+                "retry_count": retry_count,
+                "max_retries": max_retries,
+                "status": QueuedTaskState.QUEUED.value,
+                "assigned_agent": None,
+                "notes": f"Retry {retry_count}/{max_retries}: {notes}",
+            },
+            expected_agent_id=agent_id,
+        )
+        if result == ReleaseResult.LOST_RACE:
+            return _error(
+                f"{task_id}'s claim changed before the failure landed (raced "
+                "by another agent); refresh status and retry if appropriate."
+            )
+        if result == ReleaseResult.CONTENTION:
+            return _error(
+                f"{task_id} could not be requeued; coordination database "
+                "remained busy. Retry safely."
+            )
         print(f"failed: {task_id}, retry {retry_count}/{max_retries}")
-    else:
-        await bus.emit("heartbeat", {
+        return
+
+    result = await _release_claim_with_event(
+        bus,
+        task_id,
+        "heartbeat",
+        {
             "kind": "task_abandoned",
             "task_id": task_id,
             "retry_count": retry_count,
             "max_retries": max_retries,
             "status": "abandoned",
+            "assigned_agent": None,
             "notes": f"Abandoned after {max_retries} retries: {notes}",
-        })
-        print(f"abandoned: {task_id} (max retries exceeded)")
+        },
+        expected_agent_id=agent_id,
+    )
+    if result == ReleaseResult.LOST_RACE:
+        return _error(
+            f"{task_id}'s claim changed before abandonment landed (raced by "
+            "another agent); refresh status and retry if appropriate."
+        )
+    if result == ReleaseResult.CONTENTION:
+        return _error(
+            f"{task_id} could not be abandoned; coordination database remained "
+            "busy. Retry safely."
+        )
+    print(f"abandoned: {task_id} (max retries exceeded)")
 
 
 async def _queue_list(bus: GossipBus, phase_filter: Optional[str], priority_filter: Optional[str], agent_filter: Optional[str]) -> None:
@@ -1075,34 +1476,35 @@ async def _queue_status(bus: GossipBus, agent_filter: Optional[str]) -> None:
         print("no claimed tasks" + (f" for agent {agent_filter}" if agent_filter else ""))
 
 
-async def _amain(args: argparse.Namespace) -> None:
+async def _amain(args: argparse.Namespace) -> int:
     bus = make_gossip_bus(canonical_db_path())
     await getattr(bus, "local", bus).init_db()
+    result = None
     if args.cmd == "register":
-        await _register(bus, args.agent_id, args.agent_type, args.model or "?", args.notes or "")
+        result = await _register(bus, args.agent_id, args.agent_type, args.model or "?", args.notes or "")
     elif args.cmd == "agents":
-        await _agents(bus)
+        result = await _agents(bus)
     elif args.cmd == "claim":
         if hasattr(args, "seq") and args.seq is not None:
             # New claim with sequence number (Phase 1.3.2)
-            await _claim_with_seq(bus, args.agent_id, args.seq, args.task, args.notes or "")
+            result = await _claim_with_seq(bus, args.agent_id, args.seq, args.task, args.notes or "")
         else:
             # Legacy claim without sequence number
-            await _claim(bus, args.agent_id, args.task, args.notes or "")
+            result = await _claim(bus, args.agent_id, args.task, args.notes or "")
     elif args.cmd == "release":
-        await _release(bus, args.agent_id, args.task)
+        result = await _release(bus, args.agent_id, args.task)
     elif args.cmd == "list":
-        await _list(bus, args.task)
+        result = await _list(bus, args.task)
     elif args.cmd == "log":
-        await _log(bus, args.agent_id, args.message)
+        result = await _log(bus, args.agent_id, args.message)
     elif args.cmd == "phase":
         if args.subcmd == "list":
-            await _phase_list(bus)
+            result = await _phase_list(bus)
         elif args.subcmd == "status":
-            await _phase_status(bus, args.phase_name)
+            result = await _phase_status(bus, args.phase_name)
         elif args.subcmd == "start":
             depends_on = args.depends_on.split(",") if args.depends_on else None
-            await _phase_start(bus, args.phase_name, depends_on, args.agent)
+            result = await _phase_start(bus, args.phase_name, depends_on, args.agent)
         elif args.subcmd == "update":
             # Parse "50/69" format if provided
             tests_passing = None
@@ -1114,36 +1516,38 @@ async def _amain(args: argparse.Namespace) -> None:
                     total_tests = int(tt)
                 else:
                     tests_passing = int(args.tests_passing)
-            await _phase_update(bus, args.phase_name, tests_passing, total_tests, args.agent)
+            result = await _phase_update(bus, args.phase_name, tests_passing, total_tests, args.agent)
         elif args.subcmd == "complete":
-            await _phase_complete(bus, args.phase_name)
+            result = await _phase_complete(bus, args.phase_name)
         elif args.subcmd == "block":
-            await _phase_block(bus, args.phase_name, args.reason)
+            result = await _phase_block(bus, args.phase_name, args.reason)
         elif args.subcmd == "unblock":
-            await _phase_unblock(bus, args.phase_name, args.reason)
+            result = await _phase_unblock(bus, args.phase_name, args.reason)
     elif args.cmd == "workflow":
         if args.subcmd == "critical-path":
-            await _workflow_critical_path(bus)
+            result = await _workflow_critical_path(bus)
     elif args.cmd == "queue":
         if args.subcmd == "add":
-            await _queue_add(
+            result = await _queue_add(
                 bus,
                 args.task_name,
                 args.phase,
                 args.priority,
                 args.notes or "",
                 args.depends_on,
+                source_ref=args.source_ref,
+                expected_base_sha=args.expected_base_sha,
             )
         elif args.subcmd == "list":
-            await _queue_list(bus, args.phase, args.priority, args.agent)
+            result = await _queue_list(bus, args.phase, args.priority, args.agent)
         elif args.subcmd == "claim":
-            await _queue_claim(bus, args.task_id, args.agent_id)
+            result = await _queue_claim(bus, args.task_id, args.agent_id)
         elif args.subcmd == "complete":
-            await _queue_complete(bus, args.task_id, args.notes or "")
+            result = await _queue_complete(bus, args.task_id, args.agent_id, args.notes or "")
         elif args.subcmd == "fail":
-            await _queue_fail(bus, args.task_id, args.notes or "")
+            result = await _queue_fail(bus, args.task_id, args.agent_id, args.notes or "")
         elif args.subcmd == "status":
-            await _queue_status(bus, args.agent)
+            result = await _queue_status(bus, args.agent)
     elif args.cmd == "heartbeat":
         # Lazy import — see the identical circular-import note in
         # agent_coordination_legacy.py's heartbeat dispatch.
@@ -1157,24 +1561,25 @@ async def _amain(args: argparse.Namespace) -> None:
             _heartbeat_cleanup,
         )
         if args.subcmd == "list":
-            await _heartbeat_list(bus)
+            result = await _heartbeat_list(bus)
         elif args.subcmd == "check":
-            await _heartbeat_check(bus, args.agent_id)
+            result = await _heartbeat_check(bus, args.agent_id)
         elif args.subcmd == "dashboard":
-            await _heartbeat_dashboard(bus)
+            result = await _heartbeat_dashboard(bus)
         elif args.subcmd == "pulse":
-            await _heartbeat_pulse(bus, args.agent_id)
+            result = await _heartbeat_pulse(bus, args.agent_id)
         elif args.subcmd == "kill":
-            await _heartbeat_kill(bus, args.agent_id, args.reason)
+            result = await _heartbeat_kill(bus, args.agent_id, args.reason)
         elif args.subcmd == "timeline":
-            await _heartbeat_timeline(bus, args.agent_id, args.hours)
+            result = await _heartbeat_timeline(bus, args.agent_id, args.hours)
         elif args.subcmd == "cleanup":
-            await _heartbeat_cleanup(bus)
+            result = await _heartbeat_cleanup(bus)
     elif args.cmd == "buffer":
         if args.subcmd == "status":
-            await _buffer_status(bus, args.agent)
+            result = await _buffer_status(bus, args.agent)
         elif args.subcmd == "drain":
-            await _buffer_drain(bus, args.agent_id)
+            result = await _buffer_drain(bus, args.agent_id)
+    return _exit_code(result)
 
 
 def main() -> int:
@@ -1259,6 +1664,14 @@ def main() -> int:
     )
     p_queue_add.add_argument("--notes", default="")
     p_queue_add.add_argument("--depends-on", default=None)
+    p_queue_add.add_argument(
+        "--source-ref", default=None,
+        help="Git ref (branch/commit-ish) this job's work should be based on"
+    )
+    p_queue_add.add_argument(
+        "--expected-base-sha", default=None,
+        help="Expected git SHA at --source-ref; claimants verify HEAD matches before starting work"
+    )
 
     p_queue_list = queue_sub.add_parser("list", help="List queued task snapshots")
     p_queue_list.add_argument("--phase", default=None)
@@ -1271,10 +1684,12 @@ def main() -> int:
 
     p_queue_complete = queue_sub.add_parser("complete", help="Mark a queued task complete")
     p_queue_complete.add_argument("task_id")
+    p_queue_complete.add_argument("agent_id", help="Must match the task's current claimant")
     p_queue_complete.add_argument("--notes", default="")
 
     p_queue_fail = queue_sub.add_parser("fail", help="Mark a queued task failed/retry")
     p_queue_fail.add_argument("task_id")
+    p_queue_fail.add_argument("agent_id", help="Must match the task's current claimant")
     p_queue_fail.add_argument("--notes", default="")
 
     p_queue_status = queue_sub.add_parser("status", help="Show claimed queue work by agent")
@@ -1315,8 +1730,11 @@ def main() -> int:
     p_buffer_drain.add_argument("agent_id", help="Agent ID to drain")
 
     args = ap.parse_args()
-    asyncio.run(_amain(args))
-    return 0
+    try:
+        return asyncio.run(_amain(args))
+    except GossipBusError as exc:
+        _error(str(exc))
+        return 1
 
 
 if __name__ == "__main__":

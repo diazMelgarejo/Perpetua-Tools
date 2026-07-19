@@ -29,7 +29,7 @@
       "ts": "2026-07-14T10:15:26.717586+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
-      "notes": "The Antigravity skill hardening replaced /tmp/name.out and /tmp/name.err with mktemp-created repo-local log directories and symlink checks to avoid local path-hijack attacks while preserving task evidence.",
+      "notes": "The Antigravity skill hardening replaced <local-out-temp> and <local-err-temp> with mktemp-created repo-local log directories and symlink checks to avoid local path-hijack attacks while preserving task evidence.",
       "provisional": false,
       "evidence_snapshot": [
         "2026-07-14T10:15:26.622839+00:00"
@@ -40,5 +40,5 @@
   "rejection_count": 0,
   "accepted_at": "2026-07-14T10:15:26.717575+00:00",
   "reviewer": "learn.py",
-  "rationale": "The Antigravity skill hardening replaced /tmp/name.out and /tmp/name.err with mktemp-created repo-local log directories and symlink checks to avoid local path-hijack attacks while preserving task evidence."
+  "rationale": "The Antigravity skill hardening replaced separate local output and error paths with mktemp-created repo-local log directories and symlink checks to avoid local path-hijack attacks while preserving task evidence."
 }

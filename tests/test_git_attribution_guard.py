@@ -363,6 +363,18 @@ def test_first_banned_pattern_token_strips_inline_comments(tmp_path):
     assert proc.stdout == "ut-fixture-inline"
 
 
+def test_first_banned_pattern_token_preserves_internal_whitespace(tmp_path):
+    """Only edge whitespace is trimmed; multi-word patterns remain intact."""
+    private_dir = tmp_path / ".cursor/private"
+    private_dir.mkdir(parents=True)
+    (private_dir / "banned-attribution-patterns").write_text(
+        "  Private Owner Name  # inline comment\n", encoding="utf-8"
+    )
+    proc = _call_first_banned_pattern_token(tmp_path)
+    assert proc.returncode == 0
+    assert proc.stdout == "Private Owner Name"
+
+
 def test_first_banned_pattern_token_with_real_patterns():
     """first_banned_pattern_token works against repo private patterns."""
     _ensure_banned_patterns()

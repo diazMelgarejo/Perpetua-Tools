@@ -2,6 +2,10 @@
 
 **Navigation:** entry point for Phase 0 → deliverables: [D1 current](DELIVERABLE-1-PEER-OBSERVATION-MODEL-REGENERATED-ITERATION-2.md) · [D1 expanded (superseded)](DELIVERABLE-1-PEER-OBSERVATION-MODEL-EXPANDED.md) · [D1 test specs](peer_observation_tdd.md) · [D2](DELIVERABLE-2-HEARTBEAT-LIVENESS-REGENERATED.md) · [D4](DELIVERABLE-4-THREAT-MODEL-REGENERATED.md) · [pattern research](PATTERN-SYNTHESIS.md) · → next: [Phase 1 scope](PHASE-1-SCOPE-DRAFT.md)
 
+> **Status:** superseded by the shipped STM path under `orchestrator/membership.py`.
+> Keep this file for provenance; do not treat the task list as active work.
+> Ranked handoff: [phase0-and-orama-closure-rankings-2026-07-18.md](../../../../references/phase0-and-orama-closure-rankings-2026-07-18.md)
+
 **Duration:** 17.5 hours over 2–3 weeks
 **Approach:** TDD (test specs → design → consensus)
 **Checkpoints:** Every 2 days (async design review)
