@@ -162,6 +162,41 @@ async def test_find_agent_heartbeats_single_agent(bus):
 
 
 @pytest.mark.asyncio
+async def test_find_agent_heartbeats_current_worktree_updates_from_pulse(bus, capsys):
+    """Regression for the exact staleness bug hit twice with a live agent
+    this session: register at worktree A, later pulse from worktree B (no
+    re-register) -- current_worktree (and heartbeat_check's printed output)
+    must reflect B, not stay frozen at A forever."""
+    await bus.emit("heartbeat", {
+        "kind": "agent_register",
+        "agent_id": "roamer",
+        "agent_type": "cli-tool",
+        "model": "claude-3.5",
+        "worktree": "docs/old-branch@/path/one",
+        "notes": "",
+    })
+    await bus.emit("heartbeat", {
+        "kind": "agent_pulse",
+        "agent_id": "roamer",
+        "worktree": "feature/new-branch@/path/two",
+        "timestamp": time.time(),
+    })
+
+    agents = await find_agent_heartbeats(bus)
+    data = agents["roamer"]
+    assert data['current_worktree'] == "feature/new-branch@/path/two"
+    # last_registration stays a true historical snapshot -- must NOT be
+    # mutated by the pulse, only current_worktree should move.
+    assert data['last_registration']['worktree'] == "docs/old-branch@/path/one"
+
+    capsys.readouterr()
+    await heartbeat_check(bus, "roamer")
+    captured = capsys.readouterr()
+    assert "feature/new-branch@/path/two" in captured.out
+    assert "docs/old-branch@/path/one" not in captured.out
+
+
+@pytest.mark.asyncio
 async def test_find_agent_heartbeats_with_work_in_progress(bus):
     """Agent tracking shows current task."""
     await bus.emit("heartbeat", {
