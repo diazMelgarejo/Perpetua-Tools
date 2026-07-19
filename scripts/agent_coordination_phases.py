@@ -33,6 +33,7 @@ from typing import Optional
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from orchestrator.gossip_bus import GossipBus, _canonical_repo_state_dir  # noqa: E402
+from scripts.agent_coordination_core import _fetch_phase_events  # noqa: E402
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -128,26 +129,20 @@ def canonical_db_path() -> str:
 
 async def _get_latest_phase_state(bus: GossipBus, phase_name: str) -> Optional[PhaseState]:
     """Retrieve the latest state for a given phase."""
-    events = await bus.tail(limit=500, event_type="heartbeat")
-    for ev in events:  # newest first (tail returns in reverse order)
-        p = ev["payload"]
-        if p.get("kind") == "phase_event" and p.get("phase_name") == phase_name:
-            return PhaseState.from_payload(p)
-    return None
+    snapshot: Optional[dict] = None
+    for event in await _fetch_phase_events(bus, phase_name=phase_name):
+        snapshot = event["payload"]
+    return PhaseState.from_payload(snapshot) if snapshot else None
 
 
 async def _all_phase_states(bus: GossipBus) -> dict[str, PhaseState]:
     """Retrieve the latest state for all phases."""
-    events = await bus.tail(limit=500, event_type="heartbeat")
     latest: dict[str, PhaseState] = {}
-    for ev in events:  # newest first
-        p = ev["payload"]
-        if p.get("kind") != "phase_event":
-            continue
-        phase_name = p.get("phase_name")
-        # Only store if not seen yet (this is the newest for this phase)
-        if phase_name and phase_name not in latest:
-            latest[phase_name] = PhaseState.from_payload(p)
+    for event in await _fetch_phase_events(bus):
+        payload = event["payload"]
+        phase_name = payload.get("phase_name")
+        if phase_name:
+            latest[phase_name] = PhaseState.from_payload(payload)
     return latest
 
 
