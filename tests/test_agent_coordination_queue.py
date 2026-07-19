@@ -23,10 +23,7 @@ import pytest
 # Ensure project root is on path for scripts/agent_coordination + orchestrator.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from scripts.agent_coordination import (
-    ClaimResult,
-    ReleaseResult,
-    TaskPriority,
+from orchestrator.coordination.cli import (
     _queue_add,
     _queue_claim,
     _queue_complete,
@@ -36,8 +33,8 @@ from scripts.agent_coordination import (
     _try_atomic_claim,
     _release_claim_with_event,
 )
-from scripts import agent_coordination_core as _core
-from scripts.agent_coordination_core import (
+import orchestrator.coordination.cli as _core
+from orchestrator.coordination.cli import (
     _queue_add as _core_queue_add,
     _queue_claim as _core_queue_claim,
     _queue_complete as _core_queue_complete,
@@ -47,8 +44,14 @@ from scripts.agent_coordination_core import (
     _phase_list as _core_phase_list,
     _phase_start as _core_phase_start,
 )
-import scripts.agent_coordination_core as core_cli
+import orchestrator.coordination.cli as core_cli
+from orchestrator.coordination.types import (
+    ClaimResult,
+    ReleaseResult,
+    TaskPriority,
+)
 from orchestrator.gossip_bus import GossipBus, GossipBusError
+from coordination_test_helpers import emit_noise_batch
 
 
 @pytest.fixture
@@ -537,11 +540,7 @@ async def test_queue_list_survives_heartbeat_noise_beyond_tail_window(make_bus, 
     events = await bus.tail(limit=10, event_type="heartbeat")
     task_id = events[0]["payload"]["task_id"]
 
-    for i in range(1500):
-        await bus.emit(
-            "heartbeat",
-            {"kind": "agent_pulse", "agent_id": f"noise-{i % 5}", "seq": i},
-        )
+    await emit_noise_batch(bus, 1500, modulo=5)
 
     capsys.readouterr()
     await _queue_list(bus, None, None, None)
@@ -558,11 +557,7 @@ async def test_queue_status_survives_heartbeat_noise_beyond_tail_window(make_bus
     task_id = events[0]["payload"]["task_id"]
     await _core_queue_claim(bus, task_id, "agent-noise")
 
-    for i in range(1500):
-        await bus.emit(
-            "heartbeat",
-            {"kind": "agent_pulse", "agent_id": "noise", "seq": i},
-        )
+    await emit_noise_batch(bus, 1500)
 
     capsys.readouterr()
     await _queue_status(bus, None)
