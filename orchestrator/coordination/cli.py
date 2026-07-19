@@ -224,7 +224,7 @@ async def _heartbeat_check(bus: GossipBus, agent_id: str) -> None:
     print(f"Status: {data.get('status', '?')}")
     print(f"Type: {registration.get('agent_type', '?')}")
     print(f"Model: {registration.get('model', '?')}")
-    print(f"Worktree: {registration.get('worktree', '?')}")
+    print(f"Worktree: {data.get('current_worktree') or registration.get('worktree', '?')}")
     print(f"Work: {data.get('work_in_progress') or '-'}")
     if data.get("killed_reason"):
         print(f"Killed: {data['killed_reason']}")
