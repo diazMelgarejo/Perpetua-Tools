@@ -476,37 +476,62 @@ async def _log(bus: GossipBus, agent_id: str, message: str) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+async def _fetch_phase_events(
+    bus: GossipBus, phase_name: Optional[str] = None
+) -> list[dict]:
+    """Fetch phase lifecycle events directly via SQL, not a size-bounded tail().
+
+    Same rationale as _fetch_task_events: unrelated heartbeat traffic can push
+    a phase's founding or terminal events out of a bounded tail window,
+    making completed phases vanish from the board or allowing restarts.
+    """
+    query = (
+        "SELECT id, event_uuid, ts, event_type, payload_json FROM gossip "
+        "WHERE event_type = 'heartbeat' "
+        "AND json_extract(payload_json, '$.kind') = ?"
+    )
+    params: list = ["phase_event"]
+    if phase_name is not None:
+        query += " AND json_extract(payload_json, '$.phase_name') = ?"
+        params.append(phase_name)
+    query += " ORDER BY id ASC"
+    async with bus.connect() as db:
+        cursor = await db.execute(query, params)
+        rows = await cursor.fetchall()
+    return [
+        {
+            "row_id": row[0],
+            "uuid": row[1],
+            "ts": row[2],
+            "event_type": row[3],
+            "payload": json.loads(row[4]),
+        }
+        for row in rows
+    ]
+
+
+async def _latest_phase_states(bus: GossipBus) -> dict[str, PhaseState]:
+    """Fold append-only phase events into current phase snapshots."""
+    latest: dict[str, PhaseState] = {}
+    for event in await _fetch_phase_events(bus):
+        payload = event["payload"]
+        phase_name = payload.get("phase_name")
+        if phase_name:
+            latest[phase_name] = PhaseState.from_payload(payload)
+    return latest
+
+
 async def _get_latest_phase_state(bus: GossipBus, phase_name: str) -> Optional[PhaseState]:
     """Retrieve the latest state for a given phase."""
-    # bus.tail() already returns newest-first (ORDER BY id DESC) -- do NOT
-    # reversed() this. An earlier version wrapped it in reversed() under the
-    # mistaken belief tail() returned oldest-first, which made this function
-    # return the OLDEST matching phase_event instead of the newest (confirmed
-    # via repro: start -> update -> complete returned IN_PROGRESS, not
-    # COMPLETE). Iterate the list as-is; the first match is the true latest.
-    events = await bus.tail(limit=500, event_type="heartbeat")
-    for ev in events:  # newest first
-        p = ev["payload"]
-        if p.get("kind") == "phase_event" and p.get("phase_name") == phase_name:
-            return PhaseState.from_payload(p)
-    return None
+    snapshot: Optional[dict] = None
+    for event in await _fetch_phase_events(bus, phase_name=phase_name):
+        snapshot = event["payload"]
+    return PhaseState.from_payload(snapshot) if snapshot else None
 
 
 async def _all_phase_states(bus: GossipBus) -> dict[str, PhaseState]:
     """Retrieve the latest state for all phases."""
-    # Same fix as _get_latest_phase_state above: no reversed() needed, tail()
-    # is already newest-first. First occurrence per phase_name while
-    # iterating newest-first is the true latest state for that phase.
-    events = await bus.tail(limit=500, event_type="heartbeat")
-    latest: dict[str, PhaseState] = {}
-    for ev in events:  # newest first
-        p = ev["payload"]
-        if p.get("kind") != "phase_event":
-            continue
-        phase_name = p.get("phase_name")
-        if phase_name and phase_name not in latest:
-            latest[phase_name] = PhaseState.from_payload(p)
-    return latest
+    return await _latest_phase_states(bus)
 
 
 async def _phase_start(
