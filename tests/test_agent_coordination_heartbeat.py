@@ -19,7 +19,8 @@ from orchestrator.heartbeat_monitor import (
     LIVENESS_STALLED_SEC,
 )
 from orchestrator.gossip_bus import GossipBus
-from scripts.agent_coordination import (
+from coordination_test_helpers import emit_noise_batch
+from orchestrator.coordination.cli import (
     _heartbeat_check as heartbeat_check,
     _heartbeat_dashboard as heartbeat_dashboard,
     _heartbeat_list as heartbeat_list,
@@ -158,6 +159,41 @@ async def test_find_agent_heartbeats_single_agent(bus):
     assert data['last_registration']['agent_id'] == "test-agent-1"
     assert data['last_registration']['model'] == "claude-3.5"
     assert data['work_in_progress'] is None
+
+
+@pytest.mark.asyncio
+async def test_find_agent_heartbeats_current_worktree_updates_from_pulse(bus, capsys):
+    """Regression for the exact staleness bug hit twice with a live agent
+    this session: register at worktree A, later pulse from worktree B (no
+    re-register) -- current_worktree (and heartbeat_check's printed output)
+    must reflect B, not stay frozen at A forever."""
+    await bus.emit("heartbeat", {
+        "kind": "agent_register",
+        "agent_id": "roamer",
+        "agent_type": "cli-tool",
+        "model": "claude-3.5",
+        "worktree": "docs/old-branch@/path/one",
+        "notes": "",
+    })
+    await bus.emit("heartbeat", {
+        "kind": "agent_pulse",
+        "agent_id": "roamer",
+        "worktree": "feature/new-branch@/path/two",
+        "timestamp": time.time(),
+    })
+
+    agents = await find_agent_heartbeats(bus)
+    data = agents["roamer"]
+    assert data['current_worktree'] == "feature/new-branch@/path/two"
+    # last_registration stays a true historical snapshot -- must NOT be
+    # mutated by the pulse, only current_worktree should move.
+    assert data['last_registration']['worktree'] == "docs/old-branch@/path/one"
+
+    capsys.readouterr()
+    await heartbeat_check(bus, "roamer")
+    captured = capsys.readouterr()
+    assert "feature/new-branch@/path/two" in captured.out
+    assert "docs/old-branch@/path/one" not in captured.out
 
 
 @pytest.mark.asyncio
@@ -610,11 +646,7 @@ async def test_find_agent_heartbeats_survives_heartbeat_noise_beyond_tail_window
         "worktree": "main@/path",
     })
 
-    for i in range(1500):
-        await bus.emit(
-            "heartbeat",
-            {"kind": "agent_pulse", "agent_id": f"noise-{i % 10}", "seq": i},
-        )
+    await emit_noise_batch(bus, 1500, modulo=10)
 
     agents = await find_agent_heartbeats(bus, agent_id="victim")
     assert "victim" in agents
@@ -639,11 +671,7 @@ async def test_find_open_claims_survives_heartbeat_noise_beyond_tail_window(bus)
         "notes": "",
     })
 
-    for i in range(1500):
-        await bus.emit(
-            "heartbeat",
-            {"kind": "agent_pulse", "agent_id": f"noise-{i % 10}", "seq": i},
-        )
+    await emit_noise_batch(bus, 1500, modulo=10)
 
     claims = await find_open_claims(bus)
     assert len(claims) == 1

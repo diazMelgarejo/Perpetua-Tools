@@ -116,7 +116,13 @@ async def find_agent_heartbeats(
         'status': str,  # ACTIVE/IDLE/STALLED/DEAD
         'work_in_progress': str|None,
         'uptime_seconds': int,
-        'last_registration': dict,  # latest register event
+        'last_registration': dict,  # latest register event (historical snapshot)
+        'current_worktree': str|None,  # worktree from the MOST RECENT event
+            # that carried one (register or pulse) -- do not read
+            # last_registration['worktree'] for display purposes, it freezes
+            # at whatever worktree was active on first registration and never
+            # updates if the agent later moves without re-registering. See
+            # docs/next/2026-07-19-heartbeat-daemon-design.md Problem 1.
     }
     """
     events = await _fetch_heartbeat_events(bus, _AGENT_LIVENESS_KINDS, agent_id)
@@ -140,12 +146,20 @@ async def find_agent_heartbeats(
                 'last_registration': {},
                 'registration_ts': None,
                 'killed_reason': None,
+                'current_worktree': None,
             }
 
         # Update last_heartbeat_ts (track most recent for each agent).
         # Events are iterated oldest-first, so every later event for the same
         # agent supersedes the previous timestamp.
         last_ts_per_agent[agent] = ev["ts"]
+
+        # Track current_worktree from ANY event that carries one (register
+        # or pulse), independent of last_registration -- this is the fresh
+        # signal, unlike last_registration which is a one-time snapshot.
+        worktree = p.get("worktree")
+        if worktree:
+            agent_data[agent]['current_worktree'] = worktree
 
         if kind == "agent_register":
             agent_data[agent]['last_registration'] = p

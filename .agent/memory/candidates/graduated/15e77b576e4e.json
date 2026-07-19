@@ -1,0 +1,42 @@
+{
+  "id": "15e77b576e4e",
+  "key": "manual_15e77b",
+  "name": "manual_15e77b",
+  "claim": "orchestrator/heartbeat_monitor.py's find_agent_heartbeats() only updates the displayed 'Worktree' field from agent_register events, never from agent_pulse -- even though agent_pulse events already carry their own fresh worktree field (current_worktree_label() at pulse time, same as register). Result: an agent that registers once then moves to a different worktree without re-registering shows a permanently stale Worktree in every future 'heartbeat check'/'heartbeat list', with no error. Fix (not yet applied, 5 lines): update a current_worktree field from ANY event carrying a worktree key (register or pulse, whichever is most recent), keep last_registration as a true historical snapshot, have the display layer read current_worktree instead.",
+  "conditions": [
+    "coordination-board",
+    "find-agent-heartbeats",
+    "heartbeat",
+    "stale-metadata",
+    "worktree-staleness"
+  ],
+  "evidence_ids": [
+    "2026-07-19T06:03:21.691843+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-19T06:03:21.691843+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-19T06:03:21.691843+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-19T06:03:21.814292+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Hit this exact bug twice in one session with codex-primary-orchestrator, both times requiring real investigation (checking git worktree list, primary checkout branch, gossip event history) to confirm it was stale metadata and not a genuine second live worktree. Root-caused by reading find_agent_heartbeats()'s actual fold logic rather than assuming a daemon was needed -- documented in docs/next/2026-07-19-heartbeat-daemon-design.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-19T06:03:21.691843+00:00"
+      ],
+      "lessons_sha": "5b57a08ff0ea"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-19T06:03:21.814283+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Hit this exact bug twice in one session with codex-primary-orchestrator, both times requiring real investigation (checking git worktree list, primary checkout branch, gossip event history) to confirm it was stale metadata and not a genuine second live worktree. Root-caused by reading find_agent_heartbeats()'s actual fold logic rather than assuming a daemon was needed -- documented in docs/next/2026-07-19-heartbeat-daemon-design.md."
+}
