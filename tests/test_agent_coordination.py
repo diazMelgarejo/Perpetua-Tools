@@ -17,18 +17,22 @@ import pytest
 # Ensure project root is on path for scripts/agent_coordination + orchestrator.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from orchestrator.coordination.cli import (
-    _agents,
-    _claim,
+from orchestrator.coordination.claims import (
     _known_agent_ids,
-    _list,
-    _log,
+    claim_task as _claim,
+    list_agents as _agents,
+    list_claims as _list,
+    log_message as _log,
+    register_agent as _register,
+    release_task as _release,
+)
+from orchestrator.coordination.cli import (
     _phase_list,
     _phase_start,
-    _register,
-    _release,
-    canonical_db_path,
     canonical_repo_root,
+)
+from orchestrator.coordination.paths import (
+    canonical_db_path,
     current_worktree_label,
 )
 import orchestrator.coordination.cli as agent_coordination_core
