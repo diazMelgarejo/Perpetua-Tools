@@ -590,3 +590,62 @@ async def test_agent_killed_marks_dead(bus):
     assert "agent-1" in agents
     assert agents["agent-1"]["status"] == "DEAD"
     assert agents["agent-1"]["killed_reason"] == "manual kill"
+
+
+@pytest.mark.asyncio
+async def test_find_agent_heartbeats_survives_heartbeat_noise_beyond_tail_window(bus):
+    """Agent liveness must not disappear once unrelated heartbeat volume
+    exceeds bus.tail()'s size-bounded window."""
+    await bus.emit("heartbeat", {
+        "kind": "agent_register",
+        "agent_id": "victim",
+        "agent_type": "cli-tool",
+        "model": "model-x",
+        "worktree": "main@/path",
+        "notes": "",
+    })
+    await bus.emit("heartbeat", {
+        "kind": "agent_pulse",
+        "agent_id": "victim",
+        "worktree": "main@/path",
+    })
+
+    for i in range(1500):
+        await bus.emit(
+            "heartbeat",
+            {"kind": "agent_pulse", "agent_id": f"noise-{i % 10}", "seq": i},
+        )
+
+    agents = await find_agent_heartbeats(bus, agent_id="victim")
+    assert "victim" in agents
+    assert agents["victim"]["status"] == "ACTIVE"
+
+
+@pytest.mark.asyncio
+async def test_find_open_claims_survives_heartbeat_noise_beyond_tail_window(bus):
+    await bus.emit("heartbeat", {
+        "kind": "agent_register",
+        "agent_id": "claimer",
+        "agent_type": "cli-tool",
+        "model": "model-x",
+        "worktree": "main@/path",
+        "notes": "",
+    })
+    await bus.emit("heartbeat", {
+        "kind": "agent_claim",
+        "agent_id": "claimer",
+        "task": "important-task",
+        "worktree": "main@/path",
+        "notes": "",
+    })
+
+    for i in range(1500):
+        await bus.emit(
+            "heartbeat",
+            {"kind": "agent_pulse", "agent_id": f"noise-{i % 10}", "seq": i},
+        )
+
+    claims = await find_open_claims(bus)
+    assert len(claims) == 1
+    assert claims[0]["task"] == "important-task"
+    assert claims[0]["agent_id"] == "claimer"
