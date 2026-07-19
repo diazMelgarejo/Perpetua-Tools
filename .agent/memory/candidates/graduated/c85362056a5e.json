@@ -1,0 +1,44 @@
+{
+  "id": "c85362056a5e",
+  "key": "manual_c85362",
+  "name": "manual_c85362",
+  "claim": "Job-board task titles referencing generic filenames (e.g. 'install.sh/start.sh') are not repo-scoped and can point at the wrong repo entirely. The clinebot idempotent-install task (595d71da, pattern captured in lesson_6125fbdf46ec) named install.sh/start.sh generically, but PT has no start.sh and zero clinebot references anywhere -- the real target was orama-system, which has both files and the actual cline-agent skill. Always verify which repo contains the referenced files (grep across candidate repos) before implementing a board task, rather than assuming the repo you're already in. Separately: for a CLI-tool idempotent-install/version-check tied to an opt-in OpenClaw agent (like cline-agent), colocate the script inside that agent's own skill scripts/ dir and call it from the agent's binding/reconciliation script (e.g. bind_cline_backend.sh), NOT wired into start.sh's unconditional per-boot sequence -- that unconditional pattern (see scripts/setup_codex.sh) is reserved for universally-required tools like Codex, and forcing a network version-check on every machine boot for an opt-in tool most users never touch is the wrong default.",
+  "conditions": [
+    "cline-agent",
+    "clinebot",
+    "install-sh",
+    "job-board",
+    "repo-scoping",
+    "skill-placement",
+    "start-sh"
+  ],
+  "evidence_ids": [
+    "2026-07-19T02:17:44.027038+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-19T02:17:44.027038+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-19T02:17:44.027038+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-19T02:17:44.112508+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Implemented 2026-07-19: created bin/orama-system/skills/cline-openclaw-agent/scripts/ensure_cline_cli.sh, wired into bind_cline_backend.sh's existing command -v cline gate instead of start.sh, after confirming via grep that PT had no start.sh/clinebot at all. User's own steer ('best in orama with skills?') confirmed skill-scoped placement over the initially-drafted top-level scripts/setup_cline.sh mirroring codex. Verified live + via bind_cline_backend.sh --dry-run end to end; orama-system commit 75997300 on branch 2026-07-19-001-clinebot-idempotent-install.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-19T02:17:44.027038+00:00"
+      ],
+      "lessons_sha": "23b4a971265d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-19T02:17:44.112500+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Implemented 2026-07-19: created bin/orama-system/skills/cline-openclaw-agent/scripts/ensure_cline_cli.sh, wired into bind_cline_backend.sh's existing command -v cline gate instead of start.sh, after confirming via grep that PT had no start.sh/clinebot at all. User's own steer ('best in orama with skills?') confirmed skill-scoped placement over the initially-drafted top-level scripts/setup_cline.sh mirroring codex. Verified live + via bind_cline_backend.sh --dry-run end to end; orama-system commit 75997300 on branch 2026-07-19-001-clinebot-idempotent-install."
+}

@@ -94,6 +94,7 @@ from orchestrator.gossip_bus import (  # noqa: E402
     _canonical_repo_state_dir,
     resolve_gossip_db_path,
 )
+from orchestrator.heartbeat_monitor import find_open_claims  # noqa: E402
 from orchestrator.lan_gossip_bridge import make_gossip_bus  # noqa: E402
 
 
@@ -444,30 +445,21 @@ async def _release(bus: GossipBus, agent_id: str, task: str) -> None:
 
 
 async def _list(bus: GossipBus, task_filter: str | None) -> None:
-    events = await bus.tail(limit=200, event_type="heartbeat")
-    # Reduce to open claims: last event per task wins; a release cancels a claim.
-    state: dict[str, dict] = {}
-    for ev in reversed(events):  # oldest first
-        p = ev["payload"]
-        if p.get("kind") not in ("agent_claim", "agent_release"):
-            continue
-        task = p.get("task", "?")
-        if task_filter and task != task_filter:
-            continue
-        if p["kind"] == "agent_claim":
-            state[task] = {
-                "agent_id": p.get("agent_id"),
-                "worktree": p.get("worktree"),
-                "notes": p.get("notes", ""),
-                "ts": ev["ts"],
-            }
-        else:
-            state.pop(task, None)
-    if not state:
+    # Reuse the unbounded SQL fold from heartbeat_monitor — a size-bounded
+    # tail() over the combined heartbeat stream can drop founding agent_claim
+    # events once enough unrelated pulse traffic accumulates.
+    claims = await find_open_claims(bus)
+    if task_filter:
+        claims = [claim for claim in claims if claim.get("task") == task_filter]
+    if not claims:
         print("no open claims" + (f" for '{task_filter}'" if task_filter else ""))
         return
-    for task, info in state.items():
-        print(f"OPEN  {task}  <- {info['agent_id']}  ({info['worktree']})  {info['notes']}")
+    for claim in claims:
+        task = claim.get("task", "?")
+        print(
+            f"OPEN  {task}  <- {claim.get('agent_id')}  "
+            f"({claim.get('worktree')})  {claim.get('notes', '')}"
+        )
 
 
 async def _log(bus: GossipBus, agent_id: str, message: str) -> None:
@@ -483,37 +475,62 @@ async def _log(bus: GossipBus, agent_id: str, message: str) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+async def _fetch_phase_events(
+    bus: GossipBus, phase_name: Optional[str] = None
+) -> list[dict]:
+    """Fetch phase lifecycle events directly via SQL, not a size-bounded tail().
+
+    Same rationale as _fetch_task_events: unrelated heartbeat traffic can push
+    a phase's founding or terminal events out of a bounded tail window,
+    making completed phases vanish from the board or allowing restarts.
+    """
+    query = (
+        "SELECT id, event_uuid, ts, event_type, payload_json FROM gossip "
+        "WHERE event_type = 'heartbeat' "
+        "AND json_extract(payload_json, '$.kind') = ?"
+    )
+    params: list = ["phase_event"]
+    if phase_name is not None:
+        query += " AND json_extract(payload_json, '$.phase_name') = ?"
+        params.append(phase_name)
+    query += " ORDER BY id ASC"
+    async with bus.connect() as db:
+        cursor = await db.execute(query, params)
+        rows = await cursor.fetchall()
+    return [
+        {
+            "row_id": row[0],
+            "uuid": row[1],
+            "ts": row[2],
+            "event_type": row[3],
+            "payload": json.loads(row[4]),
+        }
+        for row in rows
+    ]
+
+
+async def _latest_phase_states(bus: GossipBus) -> dict[str, PhaseState]:
+    """Fold append-only phase events into current phase snapshots."""
+    latest: dict[str, PhaseState] = {}
+    for event in await _fetch_phase_events(bus):
+        payload = event["payload"]
+        phase_name = payload.get("phase_name")
+        if phase_name:
+            latest[phase_name] = PhaseState.from_payload(payload)
+    return latest
+
+
 async def _get_latest_phase_state(bus: GossipBus, phase_name: str) -> Optional[PhaseState]:
     """Retrieve the latest state for a given phase."""
-    # bus.tail() already returns newest-first (ORDER BY id DESC) -- do NOT
-    # reversed() this. An earlier version wrapped it in reversed() under the
-    # mistaken belief tail() returned oldest-first, which made this function
-    # return the OLDEST matching phase_event instead of the newest (confirmed
-    # via repro: start -> update -> complete returned IN_PROGRESS, not
-    # COMPLETE). Iterate the list as-is; the first match is the true latest.
-    events = await bus.tail(limit=500, event_type="heartbeat")
-    for ev in events:  # newest first
-        p = ev["payload"]
-        if p.get("kind") == "phase_event" and p.get("phase_name") == phase_name:
-            return PhaseState.from_payload(p)
-    return None
+    snapshot: Optional[dict] = None
+    for event in await _fetch_phase_events(bus, phase_name=phase_name):
+        snapshot = event["payload"]
+    return PhaseState.from_payload(snapshot) if snapshot else None
 
 
 async def _all_phase_states(bus: GossipBus) -> dict[str, PhaseState]:
     """Retrieve the latest state for all phases."""
-    # Same fix as _get_latest_phase_state above: no reversed() needed, tail()
-    # is already newest-first. First occurrence per phase_name while
-    # iterating newest-first is the true latest state for that phase.
-    events = await bus.tail(limit=500, event_type="heartbeat")
-    latest: dict[str, PhaseState] = {}
-    for ev in events:  # newest first
-        p = ev["payload"]
-        if p.get("kind") != "phase_event":
-            continue
-        phase_name = p.get("phase_name")
-        if phase_name and phase_name not in latest:
-            latest[phase_name] = PhaseState.from_payload(p)
-    return latest
+    return await _latest_phase_states(bus)
 
 
 async def _phase_start(
@@ -712,13 +729,44 @@ async def _detect_blockers(
 # Reorder Buffer Management Functions (Phase 1.3.2)
 # ─────────────────────────────────────────────────────────────────────────────
 
+_REORDER_BUFFER_KINDS = ("claim_sequence", "buffer_drained")
+
+
+async def _fetch_reorder_buffer_events(bus: GossipBus) -> list[dict]:
+    """Fetch reorder-buffer events via SQL, not a bounded tail().
+
+    Unrelated heartbeat traffic can push claim_sequence / buffer_drained
+    events out of a size-bounded tail window, resetting watermarks and
+    making buffered sequential claims vanish from buffer status/drain paths.
+    """
+    kind_placeholders = ",".join("?" for _ in _REORDER_BUFFER_KINDS)
+    query = (
+        "SELECT id, event_uuid, ts, event_type, payload_json FROM gossip "
+        "WHERE event_type = 'heartbeat' "
+        f"AND json_extract(payload_json, '$.kind') IN ({kind_placeholders}) "
+        "ORDER BY id ASC"
+    )
+    async with bus.connect() as db:
+        cursor = await db.execute(query, list(_REORDER_BUFFER_KINDS))
+        rows = await cursor.fetchall()
+    return [
+        {
+            "row_id": row[0],
+            "uuid": row[1],
+            "ts": row[2],
+            "event_type": row[3],
+            "payload": json.loads(row[4]),
+        }
+        for row in rows
+    ]
+
 
 async def _get_reorder_buffers(bus: GossipBus) -> dict[str, ReorderBuffer]:
     """Reconstruct all per-agent reorder buffers from GossipBus event log."""
-    events = await bus.tail(limit=1000, event_type="heartbeat")
+    events = await _fetch_reorder_buffer_events(bus)
     buffers: dict[str, ReorderBuffer] = {}
 
-    for ev in reversed(events):
+    for ev in events:
         p = ev["payload"]
         kind = p.get("kind")
         agent_id = p.get("agent_id")
@@ -1395,14 +1443,11 @@ async def _queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) -
 
 async def _queue_list(bus: GossipBus, phase_filter: Optional[str], priority_filter: Optional[str], agent_filter: Optional[str]) -> None:
     """List queued tasks grouped by status, with optional filters."""
-    events = await bus.tail(limit=1000, event_type="heartbeat")
-    task_states = {}
-    for ev in reversed(events):
-        p = ev["payload"]
-        task_id = p.get("task_id")
-        if not task_id or p.get("kind") not in ("task_enqueue", "task_claim", "task_complete", "task_failed", "task_abandoned"):
-            continue
-        task_states.setdefault(task_id, {}).update(p)
+    # Same unbounded fold as claim/fail/complete -- a size-bounded tail() over
+    # the combined heartbeat stream can drop a task's founding task_enqueue
+    # once enough unrelated pulse traffic accumulates, making open work vanish
+    # from the board with no error (see _fetch_task_events).
+    task_states = await _latest_task_snapshots(bus)
     queued, claimed, completed, failed = {}, {}, {}, {}
     for task_id, state in task_states.items():
         if phase_filter and state.get("phase") != phase_filter:
@@ -1448,14 +1493,7 @@ async def _queue_list(bus: GossipBus, phase_filter: Optional[str], priority_filt
 
 async def _queue_status(bus: GossipBus, agent_filter: Optional[str]) -> None:
     """Show status of all claimed tasks per agent."""
-    events = await bus.tail(limit=1000, event_type="heartbeat")
-    task_states = {}
-    for ev in reversed(events):
-        p = ev["payload"]
-        task_id = p.get("task_id")
-        if not task_id or p.get("kind") not in ("task_enqueue", "task_claim", "task_complete", "task_failed", "task_abandoned"):
-            continue
-        task_states.setdefault(task_id, {}).update(p)
+    task_states = await _latest_task_snapshots(bus)
     agent_work = {}
     for task_id, state in task_states.items():
         if state.get("status") == QueuedTaskState.CLAIMED.value:
