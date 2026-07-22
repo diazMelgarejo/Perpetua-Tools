@@ -1,0 +1,41 @@
+{
+  "id": "bb27e0ba2dce",
+  "key": "manual_bb27e0",
+  "name": "manual_bb27e0",
+  "claim": "When a fast-forward sync is blocked by a local uncommitted change of unknown provenance (not authored this session), git stash it with a descriptive message rather than discarding it or guessing whether to keep it -- preserves the work for later review without blocking the sync or silently destroying something intentional.",
+  "conditions": [
+    "fast-forward",
+    "git-stash",
+    "local-changes",
+    "unknown-provenance"
+  ],
+  "evidence_ids": [
+    "2026-07-22T13:31:31.271297+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T13:31:31.271297+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T13:31:31.271297+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T13:31:31.384619+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A local .codex/config.toml diff (bash-wrapper exa MCP vs npx mcp-remote) blocked a 22-commit fast-forward. Comparing the stashed version to the newly-synced upstream version showed upstream had deliberately kept the more robust bash-resolver approach -- reapplying the stash would have been a regression, but discarding it outright would have destroyed someone else's work without knowing why it existed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T13:31:31.271297+00:00"
+      ],
+      "lessons_sha": "a7d204a51596"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T13:31:31.384607+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A local .codex/config.toml diff (bash-wrapper exa MCP vs npx mcp-remote) blocked a 22-commit fast-forward. Comparing the stashed version to the newly-synced upstream version showed upstream had deliberately kept the more robust bash-resolver approach -- reapplying the stash would have been a regression, but discarding it outright would have destroyed someone else's work without knowing why it existed."
+}
