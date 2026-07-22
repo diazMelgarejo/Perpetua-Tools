@@ -1,0 +1,41 @@
+{
+  "id": "29b258503227",
+  "key": "manual_29b258",
+  "name": "manual_29b258",
+  "claim": "A single dependency's own advisory family can have multiple, differently-scoped instances in one repo (e.g. the same package resolved at two different major versions via two different parent dependency chains) -- fixing one instance does not close the Dependabot alert for the other. Check for sibling instances of the same package (npm ls / pnpm why across all resolutions) before declaring an advisory family closed.",
+  "conditions": [
+    "dependency-vulnerability",
+    "multiple-resolutions",
+    "scoped-override",
+    "sibling-instances"
+  ],
+  "evidence_ids": [
+    "2026-07-22T11:24:59.184459+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T11:24:59.184459+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T11:24:59.184459+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T11:24:59.266423+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-22: orama-system had brace-expansion at both 5.0.6 (via minimatch@10, typescript-eslint chain) and 1.1.15 (via minimatch@3.1.5, older eslint chain) -- each with its own Dependabot alert (#8 and #9) and its own vulnerable-range/fix-version pair. Fixed #8 first via a scoped pnpm override, correctly left #9's instance untouched at the time (different major API, needed separate handling) -- but should have checked for the sibling instance immediately rather than discovering it as a fresh alert later.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T11:24:59.184459+00:00"
+      ],
+      "lessons_sha": "2e0043571ea7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T11:24:59.266416+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-22: orama-system had brace-expansion at both 5.0.6 (via minimatch@10, typescript-eslint chain) and 1.1.15 (via minimatch@3.1.5, older eslint chain) -- each with its own Dependabot alert (#8 and #9) and its own vulnerable-range/fix-version pair. Fixed #8 first via a scoped pnpm override, correctly left #9's instance untouched at the time (different major API, needed separate handling) -- but should have checked for the sibling instance immediately rather than discovering it as a fresh alert later."
+}
