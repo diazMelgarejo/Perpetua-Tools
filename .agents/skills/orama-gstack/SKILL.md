@@ -1,14 +1,14 @@
 ---
 name: orama-gstack
-description: "gstack v1.12.2.0 integration sub-skill. Full routing table for web browsing, QA, shipping, planning reviews, design, DX audits, retros, and GBrain. Activates for: /browse, /qa, /ship, /review, /investigate, /design-review, /canary…"
+description: "orama-system's own remediation, conflict-resolution, and fix layer for gstack and gbrain — fork-patch tracking, safe-upgrade workflow, gbrain failure-mode diagnostics, and a routing index into gstack's own skills. Renamed from 'gstack'…"
 ---
 
-# gstack
+# gstack-gbrain
 
 This is a thin wrapper. The canonical skill lives in this repo at the path below
 (resolve the repo root at runtime — paths are never hardcoded).
 
-- Canonical skill path (repo-relative): `bin/orama-system/gstack/SKILL.md`
+- Canonical skill path (repo-relative): `bin/orama-system/gstack-gbrain/SKILL.md`
 
 ## Before Use
 
@@ -16,7 +16,7 @@ Before relying on the canonical card, check whether the canonical repository can
 
 ```bash
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-cd "$ROOT/bin/orama-system/gstack"
+cd "$ROOT/bin/orama-system/gstack-gbrain"
 git fetch origin --prune
 git status --short --branch
 ```
@@ -31,7 +31,7 @@ If the worktree is dirty, the branch is not tracking origin, or fast-forward is 
 
 ## Load Canonical Skill
 
-Open and follow `bin/orama-system/gstack/SKILL.md` (relative to the repo root). Do not copy behavior from this wrapper.
+Open and follow `bin/orama-system/gstack-gbrain/SKILL.md` (relative to the repo root). Do not copy behavior from this wrapper.
 
 ## Windows UTF-8 Note
 
