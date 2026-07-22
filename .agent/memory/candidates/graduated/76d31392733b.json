@@ -27,7 +27,7 @@
       "ts": "2026-07-22T12:25:33.940184+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
-      "notes": "2026-07-22: /tmp/orama-pr190-ci-fix-handoff-20260719.md described PR190 as BLOCKED with a circular-dependency problem needing orchestrator resolution -- but PR190 had already merged successfully 3 days prior with the CI check passing, meaning the blocking problem no longer existed by the time the handoff was read. The handoff correctly diagnosed the root cause and even named the right fix (Option B), but its BLOCKED status was stale.",
+      "notes": "2026-07-22: a scratch handoff doc for the PR190 CI-fix thread described PR190 as BLOCKED with a circular-dependency problem needing orchestrator resolution -- but PR190 had already merged successfully 3 days prior with the CI check passing, meaning the blocking problem no longer existed by the time the handoff was read. The handoff correctly diagnosed the root cause and even named the right fix (Option B), but its BLOCKED status was stale.",
       "provisional": false,
       "evidence_snapshot": [
         "2026-07-22T12:25:33.823680+00:00"
@@ -38,5 +38,5 @@
   "rejection_count": 0,
   "accepted_at": "2026-07-22T12:25:33.940174+00:00",
   "reviewer": "learn.py",
-  "rationale": "2026-07-22: /tmp/orama-pr190-ci-fix-handoff-20260719.md described PR190 as BLOCKED with a circular-dependency problem needing orchestrator resolution -- but PR190 had already merged successfully 3 days prior with the CI check passing, meaning the blocking problem no longer existed by the time the handoff was read. The handoff correctly diagnosed the root cause and even named the right fix (Option B), but its BLOCKED status was stale."
+  "rationale": "2026-07-22: a scratch handoff doc for the PR190 CI-fix thread described PR190 as BLOCKED with a circular-dependency problem needing orchestrator resolution -- but PR190 had already merged successfully 3 days prior with the CI check passing, meaning the blocking problem no longer existed by the time the handoff was read. The handoff correctly diagnosed the root cause and even named the right fix (Option B), but its BLOCKED status was stale."
 }
