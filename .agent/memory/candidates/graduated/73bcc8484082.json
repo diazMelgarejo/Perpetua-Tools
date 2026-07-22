@@ -1,0 +1,43 @@
+{
+  "id": "73bcc8484082",
+  "key": "manual_73bcc8",
+  "name": "manual_73bcc8",
+  "claim": "GitHub Actions pull_request checkout leaves HEAD at a synthetic server-side test-merge commit, not the PR branch tip \u2014 audit ${{ github.event.pull_request.head.sha }} for attribution/author checks, never HEAD, or a clean PR gets falsely flagged for an author it never actually had.",
+  "conditions": [
+    "attribution",
+    "ci",
+    "github-actions",
+    "head-sha",
+    "pull_request",
+    "synthetic-merge-commit"
+  ],
+  "evidence_ids": [
+    "2026-07-22T04:44:31.864470+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T04:44:31.864470+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T04:44:31.864470+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T04:44:31.941822+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT/orama PR #190's Git hygiene CI failed on the PR author's registered GitHub account email as bad_author even though every real commit on the branch was authored by the approved (non-owner-gmail) git identity. Root cause: actions/checkout on pull_request events checks out refs/pull/N/merge, and that synthetic merge commit's author is synthesized server-side from the PR author's GitHub account email, unrelated to any git identity used on the branch. Fixed by auditing github.event.pull_request.head.sha instead of HEAD in the CI workflow.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T04:44:31.864470+00:00"
+      ],
+      "lessons_sha": "d0e0add579aa"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T04:44:31.941816+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT/orama PR #190's Git hygiene CI failed on the PR author's registered GitHub account email as bad_author even though every real commit on the branch was authored by the approved (non-owner-gmail) git identity. Root cause: actions/checkout on pull_request events checks out refs/pull/N/merge, and that synthetic merge commit's author is synthesized server-side from the PR author's GitHub account email, unrelated to any git identity used on the branch. Fixed by auditing github.event.pull_request.head.sha instead of HEAD in the CI workflow."
+}
