@@ -1,0 +1,42 @@
+{
+  "id": "591f16da8636",
+  "key": "manual_591f16",
+  "name": "manual_591f16",
+  "claim": "When another agent's uncommitted work is found sitting in a shared checkout, do not assume it is either live-in-progress OR safe-to-discard from presence alone -- verify liveness independently per artifact type. For code changes tied to a specific PR/CI problem: check the PR's actual current state (gh pr view --json state,statusCheckRollup) and whether the underlying CI job is already green without the change -- a fix left uncommitted can be stale because the real fix already landed a different way. For memory/lesson commits: verify correctness of content instead (does the claim hold up, is it properly anonymized) rather than staleness, since memory entries don't go stale the way code fixes do.",
+  "conditions": [
+    "concurrent-agent",
+    "pr-status-check",
+    "shared-checkout",
+    "stale-vs-live",
+    "verification-per-artifact-type"
+  ],
+  "evidence_ids": [
+    "2026-07-22T12:25:16.846702+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T12:25:16.846702+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T12:25:16.846702+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T12:25:17.149479+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-22: found two artifacts from the same concurrent agent (ClinePass-DeepSeek-v4-flash) in the same session -- an uncommitted repo_hygiene.py/check_identity.sh edit from a 2026-07-19 PR190 handoff (turned out stale: PR190 already merged 3 days ago with Git hygiene passing, the runtime private_owner_email_ok() check already covered the case, discarding was correct) and a same-session memory-lesson commit (turned out legitimate: well-formed, correctly anonymized, reached the same conclusion independently). Treating both under one blanket rule (either 'always trust' or 'always discard') would have been wrong for one of the two.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T12:25:16.846702+00:00"
+      ],
+      "lessons_sha": "c431c998af4a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T12:25:17.149468+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-22: found two artifacts from the same concurrent agent (ClinePass-DeepSeek-v4-flash) in the same session -- an uncommitted repo_hygiene.py/check_identity.sh edit from a 2026-07-19 PR190 handoff (turned out stale: PR190 already merged 3 days ago with Git hygiene passing, the runtime private_owner_email_ok() check already covered the case, discarding was correct) and a same-session memory-lesson commit (turned out legitimate: well-formed, correctly anonymized, reached the same conclusion independently). Treating both under one blanket rule (either 'always trust' or 'always discard') would have been wrong for one of the two."
+}
