@@ -1,0 +1,7 @@
+# SHA-256 of canonical lower-case identity strings:
+#   <author name> <<author email>>
+#
+# This registry lets CI authorize exact private owner identities without
+# publishing the underlying address or depending on operator-local files.
+# One digest per line; blank lines and comments are ignored.
+6eafa823be2762a845783ee34cdfe952586086c6ebb6d09bf6816cab1ec6b8e7
