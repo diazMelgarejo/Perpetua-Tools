@@ -1,0 +1,41 @@
+{
+  "id": "1264cf97caaa",
+  "key": "manual_1264cf",
+  "name": "manual_1264cf",
+  "claim": "Self-reflection, fleet-mesh completion session (2026-07-19/22): the session's own discipline of 'verify against real data, not synthetic assumptions' was violated once by the same agent enforcing it -- D8's first-pass diagnosis ('shared token not deployed, operator must sync it') was a plausible-sounding conclusion accepted after testing only the SINGLE resolved token, when testing the small, already-locally-available set of candidate tokens (2 total) would have found the real answer (a working second candidate) immediately and for near-zero extra cost. The self-correction (D9) happened, and was logged honestly per this workspace's standing discipline rather than silently edited over -- but the more honest lesson is that 'exhaust the cheap local checks before concluding something needs an operator/external action' should be a reflex applied BEFORE writing a finding down, not a repair applied after. Positive pattern worth keeping, not just the failure: despite high output volume this session (3 real production bugs found+fixed+tested in the fleet-mesh chain alone, on top of the earlier coordination-module work), every fix was still verified two ways (synthetic regression test AND live real-data check) before being reported done -- the discipline held under volume, it just missed applying itself one level earlier on D8 specifically.",
+  "conditions": [
+    "cheap-checks-first",
+    "honest-session-review",
+    "premature-external-blocker",
+    "self-reflection"
+  ],
+  "evidence_ids": [
+    "2026-07-22T14:10:09.107177+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T14:10:09.107177+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T14:10:09.107177+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T14:10:09.227897+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Requested explicitly (self-reflection ask). The pattern (jumping to 'X needs an operator/external fix' before exhausting cheap local verification) is worth naming as its own reflex-level check, distinct from the already-graduated 'verify against real data' lesson (lesson_7155c5157bd4) -- that lesson is about not trusting synthetic tests alone; this one is about not trusting the FIRST plausible external-blocker explanation before checking what's already available locally.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T14:10:09.107177+00:00"
+      ],
+      "lessons_sha": "9350aa082650"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T14:10:09.227885+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Requested explicitly (self-reflection ask). The pattern (jumping to 'X needs an operator/external fix' before exhausting cheap local verification) is worth naming as its own reflex-level check, distinct from the already-graduated 'verify against real data' lesson (lesson_7155c5157bd4) -- that lesson is about not trusting synthetic tests alone; this one is about not trusting the FIRST plausible external-blocker explanation before checking what's already available locally."
+}
