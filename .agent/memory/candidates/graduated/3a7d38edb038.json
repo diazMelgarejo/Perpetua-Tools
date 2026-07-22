@@ -1,0 +1,42 @@
+{
+  "id": "3a7d38edb038",
+  "key": "manual_3a7d38",
+  "name": "manual_3a7d38",
+  "claim": "When fixing CI attribution guard failures for an unapproved author email, do not hardcode the email into tracked APPROVED_IDENTITIES if it is also configured in .verboten-literals.local \u2014 the private literal scanner will block it. Instead rely on private_owner_email_ok() which reads from the same verboten literals file at runtime and approves the email without leaking it into git.",
+  "conditions": [
+    "attribution-guard",
+    "ci-fix",
+    "circular-dependency",
+    "private-owner-email",
+    "verboten-literal"
+  ],
+  "evidence_ids": [
+    "2026-07-22T12:14:40.801803+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T12:14:40.801803+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T12:14:40.801803+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T12:14:41.096197+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-19: PR #190 CI fix for orama-system failed with verboten literal error because <owner Gmail identity> is in .verboten-literals.local (owner_gmail). Hardcoding it in repo_hygiene.py triggered the scanner. The correct fix is to verify private_owner_email_ok is called before the ERROR fallthrough in check_identity.sh and remove the hardcoded addition.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T12:14:40.801803+00:00"
+      ],
+      "lessons_sha": "2a56d6d4705e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T12:14:41.096189+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-19: PR #190 CI fix for orama-system failed with verboten literal error because <owner Gmail identity> is in .verboten-literals.local (owner_gmail). Hardcoding it in repo_hygiene.py triggered the scanner. The correct fix is to verify private_owner_email_ok is called before the ERROR fallthrough in check_identity.sh and remove the hardcoded addition."
+}

@@ -1,0 +1,41 @@
+{
+  "id": "73afb9d8a3a7",
+  "key": "manual_73afb9",
+  "name": "manual_73afb9",
+  "claim": "Shell environment can become unresponsive when background git push processes (started with & or nohup) remain alive. Before starting new git/shell work in a session, check for and clean up any orphaned background git processes: ps -axo pid,stat,command | grep 'git push' | grep -v grep | awk '{print $1}' | xargs kill 2>/dev/null",
+  "conditions": [
+    "background-processes",
+    "git-lock",
+    "shell-hygiene",
+    "timeouts"
+  ],
+  "evidence_ids": [
+    "2026-07-22T12:14:42.348473+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T12:14:42.348473+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T12:14:42.348473+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T12:14:42.475103+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-19: Multiple consecutive git push commands timed out in the tool window. Background processes accumulated and locked the shell's git lock files, causing every subsequent run_commands call to hang for 30s.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T12:14:42.348473+00:00"
+      ],
+      "lessons_sha": "db42f765c55a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T12:14:42.475096+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-19: Multiple consecutive git push commands timed out in the tool window. Background processes accumulated and locked the shell's git lock files, causing every subsequent run_commands call to hang for 30s."
+}
