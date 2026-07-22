@@ -1,0 +1,41 @@
+{
+  "id": "4addc997be28",
+  "key": "manual_4addc9",
+  "name": "manual_4addc9",
+  "claim": "The force-delete-branch git command is blocked by this workstation's dangerous-cmd-block hook even for branches independently verified as fully superseded \u2014 when cleanup is needed, write a standalone reviewable shell script to a location outside the hook-restricted session (e.g. OpenClaw/references/) rather than attempting the deletes inline.",
+  "conditions": [
+    "branch-delete",
+    "cleanup-script",
+    "hand-off-pattern",
+    "hook-blocked"
+  ],
+  "evidence_ids": [
+    "2026-07-22T10:04:26.254974+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T10:04:26.254974+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T10:04:26.254974+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T10:04:26.341759+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-22: attempted the force-delete-branch command on a confirmed-safe branch during a 33-branch cleanup and was blocked. The correct pattern (used successfully) is generate-and-hand-off: produce a dry-run-tested script the user runs themselves outside the restricted session, rather than repeatedly retrying blocked commands.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T10:04:26.254974+00:00"
+      ],
+      "lessons_sha": "c4f12e5b7e93"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T10:04:26.341755+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-22: attempted the force-delete-branch command on a confirmed-safe branch during a 33-branch cleanup and was blocked. The correct pattern (used successfully) is generate-and-hand-off: produce a dry-run-tested script the user runs themselves outside the restricted session, rather than repeatedly retrying blocked commands."
+}
