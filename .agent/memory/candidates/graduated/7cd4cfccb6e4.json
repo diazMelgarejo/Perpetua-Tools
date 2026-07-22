@@ -1,0 +1,43 @@
+{
+  "id": "7cd4cfccb6e4",
+  "key": "manual_7cd4cf",
+  "name": "manual_7cd4cf",
+  "claim": "When landing substantive work (real code change, closed plan, fix other agents would want to know about), post a one-line GossipBus whiteboard log (scripts/agent_coordination.py log <agent_id> <message>) plus a references/results/<peer>-<date>-<topic>.md peer-inbox drop for anything needing more than one line -- not just for coord-N fan-outs. The whiteboard log is the pointer, the peer-inbox drop is the persistent record.",
+  "conditions": [
+    "agent-coordination",
+    "gossipbus",
+    "hermes-harness",
+    "peer-inbox",
+    "session-closeout",
+    "whiteboard"
+  ],
+  "evidence_ids": [
+    "2026-07-22T11:13:35.388377+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T11:13:35.388377+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T11:13:35.388377+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T11:13:35.477995+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-22: operationalized into hermes-harness/SKILL.md (v1.1.0.0->1.1.1.0, orama-system commit 143db101) after doing this ad-hoc during a frugality/privacy-gate + repo-hygiene close-out session. Worked example: orama-system bin/orama-system/skills/hermes-harness/references/results/mac-2026-07-22-frugality-p3-and-repo-closeout-status.md. Prevents a peer checking the board mid-work from rediscovering landed work independently.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T11:13:35.388377+00:00"
+      ],
+      "lessons_sha": "844129c28b53"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T11:13:35.477984+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-22: operationalized into hermes-harness/SKILL.md (v1.1.0.0->1.1.1.0, orama-system commit 143db101) after doing this ad-hoc during a frugality/privacy-gate + repo-hygiene close-out session. Worked example: orama-system bin/orama-system/skills/hermes-harness/references/results/mac-2026-07-22-frugality-p3-and-repo-closeout-status.md. Prevents a peer checking the board mid-work from rediscovering landed work independently."
+}
