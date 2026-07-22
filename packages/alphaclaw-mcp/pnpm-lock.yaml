@@ -14,9 +14,18 @@ importers:
       '@diazmelgarejo/alphaclaw-adapter':
         specifier: file:../alphaclaw-adapter
         version: file:../alphaclaw-adapter
+      '@hono/node-server':
+        specifier: 2.0.5
+        version: 2.0.5(hono@4.12.27)
       '@modelcontextprotocol/sdk':
         specifier: ^1.6.1
         version: 1.29.0(zod@4.4.3)
+      fast-uri:
+        specifier: 3.1.4
+        version: 3.1.4
+      hono:
+        specifier: 4.12.27
+        version: 4.12.27
     devDependencies:
       '@types/node':
         specifier: ^22.14.0
@@ -196,6 +205,12 @@ packages:
     peerDependencies:
       hono: ^4
 
+  '@hono/node-server@2.0.5':
+    resolution: {integrity: sha512-yQFvDmyDo3y6rEOJZDUYPJ49DIKTPpIk4kGvm40xx4Ejne0Pu9a1+exxPN+C1UppWK/WGZX9F++/Xs231tE86g==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      hono: ^4
+
   '@modelcontextprotocol/sdk@1.29.0':
     resolution: {integrity: sha512-zo37mZA9hJWpULgkRpowewez1y6ML5GsXJPY8FI0tBBCd77HEvza4jDqRKOXgHNn867PVGCyTdzqpz0izu5ZjQ==}
     engines: {node: '>=18'}
@@ -340,6 +355,9 @@ packages:
   fast-uri@3.1.2:
     resolution: {integrity: sha512-rVjf7ArG3LTk+FS6Yw81V1DLuZl1bRbNrev6Tmd/9RaroeeRRJhAt7jg/6YFxbvAQXUCavSoZhPPj6oOx+5KjQ==}
 
+  fast-uri@3.1.4:
+    resolution: {integrity: sha512-8JnbkQ4juDyvYs4mgFGQqg4yCYtFDtUtmp2QIQq11ZZe5CFQ5wcqm1rqDgAh/QdMySuBnPzMUiJUNZG5N/AiQw==}
+
   finalhandler@2.1.1:
     resolution: {integrity: sha512-S8KoZgRZN+a5rNwqTxlZZePjT/4cnm0ROV70LedRHZ0p8u9fRID0hJUZQpkKLzro8LfmC8sx23bY6tVNxv8pQA==}
     engines: {node: '>= 18.0.0'}
@@ -382,6 +400,10 @@ packages:
 
   hono@4.12.25:
     resolution: {integrity: sha512-2NFaIyNVgJmBs/ecmtGzlmluTFs5cHEWGTdu0t1HBwYzoGXOL5nUQBRMXsXWla5i4KkG//QMzVP88m1+I3fdAQ==}
+    engines: {node: '>=16.9.0'}
+
+  hono@4.12.27:
+    resolution: {integrity: sha512-1yrb/+w6HWQJrUCLkJ2IF5jNIPvvFkblV5RNOYl6bV+OA6p9GLcMpHFFGTosSvHvcAUibuUukRqhlYI4z32C7Q==}
     engines: {node: '>=16.9.0'}
 
   http-errors@2.0.1:
@@ -672,6 +694,10 @@ snapshots:
     dependencies:
       hono: 4.12.25
 
+  '@hono/node-server@2.0.5(hono@4.12.27)':
+    dependencies:
+      hono: 4.12.27
+
   '@modelcontextprotocol/sdk@1.29.0(zod@4.4.3)':
     dependencies:
       '@hono/node-server': 1.19.14(hono@4.12.25)
@@ -866,6 +892,8 @@ snapshots:
 
   fast-uri@3.1.2: {}
 
+  fast-uri@3.1.4: {}
+
   finalhandler@2.1.1:
     dependencies:
       debug: 4.4.3
@@ -913,6 +941,8 @@ snapshots:
       function-bind: 1.1.2
 
   hono@4.12.25: {}
+
+  hono@4.12.27: {}
 
   http-errors@2.0.1:
     dependencies:

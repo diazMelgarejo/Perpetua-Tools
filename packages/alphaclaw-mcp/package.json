@@ -17,8 +17,11 @@
     "test": "npm run build && node --test tests/mcp-profiles.test.mjs"
   },
   "dependencies": {
+    "@diazmelgarejo/alphaclaw-adapter": "file:../alphaclaw-adapter",
+    "@hono/node-server": "2.0.5",
     "@modelcontextprotocol/sdk": "^1.6.1",
-    "@diazmelgarejo/alphaclaw-adapter": "file:../alphaclaw-adapter"
+    "fast-uri": "3.1.4",
+    "hono": "4.12.27"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
