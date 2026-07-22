@@ -89,7 +89,9 @@ When PT has already resolved a runtime payload in memory, orama may apply it **w
 
 **CLI bootstrap** still **delegates** to PT when `PT_HOME/alphaclaw_bootstrap.py` exists (`bootstrap_openclaw()` subprocess).
 
-### Implementation gap (`ACC` — Gate 2/3 follow-up)
+### Implementation gap (`ACC` — Gate 2/3 follow-up) — ✅ RESOLVED 2026-07-22 (stale text below)
+
+**Re-verified 2026-07-22:** this gap no longer exists. `orchestrator/control_plane.reconcile_gateway()` (`control_plane.py:76`) includes `openclaw_config` in its returned dict, and `alphaclaw_manager.RuntimePayload` carries it too (`alphaclaw_manager.py:118, 398`). Item #7 in the Work Items table below already recorded this as resolved via commit `0bcc99e1`; the paragraph immediately below was simply never updated to match — a stale-doc-contradiction of the kind this repo has hit before (verify against live code, not just one section of a doc, before trusting a "gap" description). Original text kept for historical context:
 
 `orchestrator/control_plane.reconcile_gateway()` returns gateway status but **does not** include `openclaw_config` today (unlike the mocked shape in `tests/test_control_plane.py`). `alphaclaw_manager.RuntimePayload` also omits `openclaw_config`.
 
@@ -134,14 +136,14 @@ git ls-tree -r HEAD --name-only | rg '^lib/(mcp|agents)/'
 
 | # | Item | SSEA |
 |---|------|------|
-| 1 | Live smoke + `local-agents` tests | **SEC:** auth order D4; no password in logs |
-| 2 | Retire `lib/mcp` on **D3** branch only | **SAF** after #4 and #1 |
-| 3 | Gate 3: orama → PT adapter (not direct `OPENCLAW_GATEWAY`) | **ACC** |
+| 1 | Live smoke + `local-agents` tests | **SEC:** auth order D4; no password in logs — ✅ **`local-agents` unit tests RESOLVED 2026-07-22:** `npm install && npm test` → 22/22 pass (missing `node_modules` was the only blocker, no code gap). `alphaclaw-mcp` sibling suite also verified green (6/6) same session. **Live smoke itself (the `SETUP_PASSWORD` password-order flow) not yet re-run — genuinely needs a live AlphaClaw instance, deferred per 2026-07-22 v2-migration directive below.** |
+| 2 | Retire `lib/mcp` on **D3** branch only | **SAF** after #4 and #1 — **DEFERRED to v2 oramasys post-migration (2026-07-22 directive):** sequencing depends on #1's live-smoke leg, not yet done; ambiguous until that's clear. |
+| 3 | Gate 3: orama → PT adapter (not direct `OPENCLAW_GATEWAY`) | **ACC** — **DEFERRED to v2 oramasys post-migration (2026-07-22 directive):** described only architecturally here ("route through PT so L3 never holds L1 secrets"), no concrete file-level task specified — genuinely ambiguous, not a quick-fix. |
 | 4 | ✅ **Done 2026-06-14 (`929b627`):** `stopServer()` + PID file + unit tests in `alphaclaw-adapter` | **SAF** |
 | 5 | ✅ **Verified 2026-06-01:** `agent_launcher.py` present at PT root (38631B) | **ACC** |
 | 6 | ✅ **RESOLVED 2026-06-06:** the broken hand-written `.mcpb` knockoffs were removed and replaced by real submodule-built MCPB (commit `aa91283` / #69; JSON knockoffs deleted). No `.mcpb` files remain in tracked source. Remaining `../../local-agents/src/orchestrator.js` imports live in `packages/alphaclaw-mcp/{src,build}/index.*` and are **correct** — from `alphaclaw-mcp/src/`, `../../local-agents/...` resolves to `packages/local-agents/src/orchestrator.js` (target verified present). Tools non-empty (15 ⊇ 14). | **ACC** |
 | 7 | ✅ **RESOLVED:** entrypoints documented (D5); `openclaw_config` + `role_routing` wired into `reconcile_gateway` payload (`orchestrator/alphaclaw_manager.py:80-81, 354-355`, commit `0bcc99e`). | **EFF** |
-| 8 | Gate 3 E2E + Gate 4 @ **0.9.9.9** | **ACC** |
+| 8 | Gate 3 E2E + Gate 4 @ **0.9.9.9** | **ACC** — **DEFERRED to v2 oramasys post-migration (2026-07-22 directive):** depends on #3 (undecided), so genuinely blocked, not just unstarted. |
 
 ---
 
