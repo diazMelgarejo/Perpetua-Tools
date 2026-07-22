@@ -1,0 +1,42 @@
+{
+  "id": "00f3e059181b",
+  "key": "manual_00f3e0",
+  "name": "manual_00f3e0",
+  "claim": "Never trust reanchor_scan.sh's NEEDS-REANCHOR verdict alone as unmerged work \u2014 after a squash-merge, individual commit patch-ids never match main even though all content landed. Confirm with git diff main..<branch> --stat (near-empty = fully absorbed) plus git log main --grep for the absorbing squash-merge commit title before concluding a branch has real unmerged content.",
+  "conditions": [
+    "branch-audit",
+    "false-positive",
+    "reanchor-scan",
+    "squash-merge",
+    "tree-twin"
+  ],
+  "evidence_ids": [
+    "2026-07-22T10:04:40.937877+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T10:04:40.937877+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T10:04:40.937877+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T10:04:41.018961+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-22 branch cleanup audit: reanchor_scan.sh flagged 13 branches across orama-system + Perpetua-Tools as NEEDS-REANCHOR. Individually verifying each via diff+log-grep found ALL were already fully superseded by squash-merges (PR #146, #142, #183, #203, #211, #258-267, #260/#263) -- zero actually contained unmerged unique work. Trusting the scan's raw verdict would have wrongly treated finished, reviewed work as still-pending.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T10:04:40.937877+00:00"
+      ],
+      "lessons_sha": "41ca9c144500"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T10:04:41.018954+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-22 branch cleanup audit: reanchor_scan.sh flagged 13 branches across orama-system + Perpetua-Tools as NEEDS-REANCHOR. Individually verifying each via diff+log-grep found ALL were already fully superseded by squash-merges (PR #146, #142, #183, #203, #211, #258-267, #260/#263) -- zero actually contained unmerged unique work. Trusting the scan's raw verdict would have wrongly treated finished, reviewed work as still-pending."
+}
