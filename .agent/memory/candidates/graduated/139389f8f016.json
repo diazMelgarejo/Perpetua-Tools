@@ -1,0 +1,43 @@
+{
+  "id": "139389f8f016",
+  "key": "manual_139389",
+  "name": "manual_139389",
+  "claim": "Never hardcode a fixed relative offset (e.g. dollar-OPENCLAW_ROOT-slash-orama-system, or a literal dollar-HOME path) to locate a sibling repo in MCP/tool configs -- the checkout topology varies (orama-system can be a direct sibling of a caller, or one level removed/aunt to it, e.g. Perpetua-Tools nested under perplexity-api/). Use a cache-first, then walk-from-PWD (sibling and aunt cases), then bounded-find resolver instead.",
+  "conditions": [
+    "exa-mcp",
+    "hardcoded-path",
+    "mcp-config",
+    "orama-root",
+    "path-resolution",
+    "topology-portable"
+  ],
+  "evidence_ids": [
+    "2026-07-22T10:44:13.199581+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T10:44:13.199581+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T10:44:13.199581+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T10:44:13.284292+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-22: found .codex/config.toml's exa MCP entry had silently drifted from a hardcoded ORAMA_ROOT-relative path to a completely different transport (npx mcp-remote to a public endpoint) -- likely because the original hardcoded path was fragile and someone worked around it rather than fixing the resolution. Both orama-system/.mcp.json and Perpetua-Tools/.mcp.json had the same hardcoded-HOME-path fragility. Fixed with a portable resolver (orama-system/scripts/exa/resolve-orama-root.sh) plus inline cache-first/walk/find bootstraps in each config, since MCP config launch commands can't depend on a script living inside the very repo they're trying to locate.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T10:44:13.199581+00:00"
+      ],
+      "lessons_sha": "81d0dfe3b3fa"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T10:44:13.284283+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-22: found .codex/config.toml's exa MCP entry had silently drifted from a hardcoded ORAMA_ROOT-relative path to a completely different transport (npx mcp-remote to a public endpoint) -- likely because the original hardcoded path was fragile and someone worked around it rather than fixing the resolution. Both orama-system/.mcp.json and Perpetua-Tools/.mcp.json had the same hardcoded-HOME-path fragility. Fixed with a portable resolver (orama-system/scripts/exa/resolve-orama-root.sh) plus inline cache-first/walk/find bootstraps in each config, since MCP config launch commands can't depend on a script living inside the very repo they're trying to locate."
+}
