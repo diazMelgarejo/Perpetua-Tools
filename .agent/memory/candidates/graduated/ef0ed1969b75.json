@@ -1,0 +1,42 @@
+{
+  "id": "ef0ed1969b75",
+  "key": "manual_ef0ed1",
+  "name": "manual_ef0ed1",
+  "claim": "The shared orama-system working directory can be branch-switched by a concurrent process mid-session without warning -- observed twice in one session (both times to 2026-07-19-001-clinebot-idempotent-install). git push origin main is unaffected (targets origin explicitly regardless of local checkout state), but any command relying on the current checkout (git status, git diff, file reads via relative path) can silently reflect the wrong branch's content. Before trusting a file-content check in a shared checkout, verify git branch --show-current matches main first.",
+  "conditions": [
+    "concurrent-branch-switch",
+    "false-data-loss",
+    "git-reflog-verification",
+    "orama-system",
+    "shared-checkout"
+  ],
+  "evidence_ids": [
+    "2026-07-22T11:29:28.536783+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T11:29:28.536783+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T11:29:28.536783+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T11:29:28.638961+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-22: system-reminder file snapshots showed stale/reverted content (old SKILL.md versions, old .mcp.json paths, GOAL.md reappearing) that looked like data loss but was actually a concurrent checkout to a different branch -- confirmed via git reflog, no data was lost. Happened a second time later the same session. This is a repeatable, not one-off, risk in this specific shared checkout.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T11:29:28.536783+00:00"
+      ],
+      "lessons_sha": "0695a51c4423"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T11:29:28.638950+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-22: system-reminder file snapshots showed stale/reverted content (old SKILL.md versions, old .mcp.json paths, GOAL.md reappearing) that looked like data loss but was actually a concurrent checkout to a different branch -- confirmed via git reflog, no data was lost. Happened a second time later the same session. This is a repeatable, not one-off, risk in this specific shared checkout."
+}
