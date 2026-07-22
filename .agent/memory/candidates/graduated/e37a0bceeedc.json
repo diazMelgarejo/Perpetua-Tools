@@ -1,0 +1,41 @@
+{
+  "id": "e37a0bceeedc",
+  "key": "manual_e37a0b",
+  "name": "manual_e37a0b",
+  "claim": "A spike/PR's own \"Not in scope / follow-on\" section is a load-bearing TODO list \u2014 before concluding a wiring gap is undocumented or an accidental oversight, check whether the original implementation doc already named and deferred it.",
+  "conditions": [
+    "deferred-followup",
+    "spike-doc",
+    "todo-audit",
+    "wiring-gap"
+  ],
+  "evidence_ids": [
+    "2026-07-22T09:29:58.365871+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T09:29:58.365871+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T09:29:58.365871+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T09:29:58.448744+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT #199's spike doc explicitly listed \"wire into all dispatch paths (supervisor, fastapi_app)\" under deferred follow-on work back on 2026-06-29; it sat unpicked for ~3 weeks. Treating this as a fresh discovery this session would have overstated the finding as a bug rather than a known backlog item.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T09:29:58.365871+00:00"
+      ],
+      "lessons_sha": "f1bb00121a0b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T09:29:58.448738+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT #199's spike doc explicitly listed \"wire into all dispatch paths (supervisor, fastapi_app)\" under deferred follow-on work back on 2026-06-29; it sat unpicked for ~3 weeks. Treating this as a fresh discovery this session would have overstated the finding as a bug rather than a known backlog item."
+}
