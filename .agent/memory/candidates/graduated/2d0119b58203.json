@@ -1,0 +1,42 @@
+{
+  "id": "2d0119b58203",
+  "key": "manual_2d0119",
+  "name": "manual_2d0119",
+  "claim": "A plan status banner like \"RESOLVED\" or \"shipped\" on a merged module means unit tests passed and code landed \u2014 not that any real dispatch path calls it. Verify real callers (grep/CRG) before trusting a shipped/resolved claim for wiring status.",
+  "conditions": [
+    "frugality_router",
+    "resolved",
+    "shipped",
+    "status-banner",
+    "wiring-verification"
+  ],
+  "evidence_ids": [
+    "2026-07-22T09:29:58.523593+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T09:29:58.523593+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T09:29:58.523593+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T09:29:58.606914+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "v1.1-definitive.md's \"RESOLVED 2026-06-14 \u2014 v1.1 shipped: ... frugality ...\" banner was accurate for what it claimed (module merged, tests passing) but easy to misread as \"wired into production dispatch,\" which frugality_router.py never was. This ambiguity cost real investigation time this session before the gbrain trace clarified it.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T09:29:58.523593+00:00"
+      ],
+      "lessons_sha": "8629fc580659"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T09:29:58.606909+00:00",
+  "reviewer": "learn.py",
+  "rationale": "v1.1-definitive.md's \"RESOLVED 2026-06-14 \u2014 v1.1 shipped: ... frugality ...\" banner was accurate for what it claimed (module merged, tests passing) but easy to misread as \"wired into production dispatch,\" which frugality_router.py never was. This ambiguity cost real investigation time this session before the gbrain trace clarified it."
+}
