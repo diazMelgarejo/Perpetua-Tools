@@ -1,0 +1,42 @@
+{
+  "id": "9fac191b11e1",
+  "key": "manual_9fac19",
+  "name": "manual_9fac19",
+  "claim": "Never trust an automation-authored fix PR's commit message/diagnosis alone \u2014 verify it actually changed something (git diff parent commit, or gh pr view additions/deletions/changedFiles) before relying on or merging it; a correct diagnosis can still ship as a genuinely empty commit.",
+  "conditions": [
+    "automation-pr",
+    "ci-autofix",
+    "cursor-bot",
+    "empty-commit",
+    "verify-before-trust"
+  ],
+  "evidence_ids": [
+    "2026-07-22T04:44:32.006333+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T04:44:32.006333+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T04:44:32.006333+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T04:44:32.076060+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Cursor's 'Fix CI failures' automation opened a fix PR with an accurate root-cause diagnosis (audit PR head SHA, not the synthetic merge commit) in its commit message and PR body, but the actual commit had a tree byte-identical to its parent \u2014 zero real changes. The PR looked 'blank' to the user and kept nagging/reappearing because closing it never resolved the CI failure it was reacting to. Confirmed via git diff <sha>^ <sha> --stat showing 0 files changed, and tree-hash comparison.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T04:44:32.006333+00:00"
+      ],
+      "lessons_sha": "4aa59e0ce1f9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T04:44:32.076054+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Cursor's 'Fix CI failures' automation opened a fix PR with an accurate root-cause diagnosis (audit PR head SHA, not the synthetic merge commit) in its commit message and PR body, but the actual commit had a tree byte-identical to its parent \u2014 zero real changes. The PR looked 'blank' to the user and kept nagging/reappearing because closing it never resolved the CI failure it was reacting to. Confirmed via git diff <sha>^ <sha> --stat showing 0 files changed, and tree-hash comparison."
+}

@@ -1,0 +1,43 @@
+{
+  "id": "9b5f4875f056",
+  "key": "manual_9b5f48",
+  "name": "manual_9b5f48",
+  "claim": "orama-system's discover_endpoints()/last_discovery.json originally supported exactly one Windows LM Studio peer (endpoints.win) \u2014 tracking a second concurrent Windows GPU box requires an additive win_peers array (via $WIN_PEER_IPS), not overloading the single win slot, to avoid breaking lm_link_watch.py/lm_link_status.py which only ever read endpoints.win.",
+  "conditions": [
+    "lan-discovery",
+    "multi-gpu",
+    "orama-system",
+    "schema-extension",
+    "win-peers",
+    "windows-peer"
+  ],
+  "evidence_ids": [
+    "2026-07-22T04:44:32.431889+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T04:44:32.431889+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T04:44:32.431889+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T04:44:32.507431+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A multi-machine plan called for running two Windows GPU boxes as concurrent AutoResearcher peers, but the original discover_endpoints() had result = {'mac': None, 'win': None} \u2014 a single win slot that a second peer's discovery would silently overwrite. Landed an additive win_peers list (probe_extra_win_peers(), wired through filter_endpoints_for_policy/compute_hash/save_discovery_state) as the minimal MVP schema extension; existing single-peer consumers are untouched.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T04:44:32.431889+00:00"
+      ],
+      "lessons_sha": "dae9897b5cc9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T04:44:32.507420+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A multi-machine plan called for running two Windows GPU boxes as concurrent AutoResearcher peers, but the original discover_endpoints() had result = {'mac': None, 'win': None} \u2014 a single win slot that a second peer's discovery would silently overwrite. Landed an additive win_peers list (probe_extra_win_peers(), wired through filter_endpoints_for_policy/compute_hash/save_discovery_state) as the minimal MVP schema extension; existing single-peer consumers are untouched."
+}
