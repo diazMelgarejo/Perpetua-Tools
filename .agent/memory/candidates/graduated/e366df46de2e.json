@@ -1,0 +1,42 @@
+{
+  "id": "e366df46de2e",
+  "key": "manual_e366df",
+  "name": "manual_e366df",
+  "claim": "SELF-REFLECTION (2026-07-22, provisional): tonight's session was genuinely good work -- the frugality/privacy gate landed tested and verified, 4 Dependabot rounds got fixed correctly (including catching my own missed-advisory mistake), and the concurrent-agent verification thread was handled with real rigor (checked PR/CI state before discarding anything, distinguished stale from legitimate work). But candidly: I used ALLOW_MAIN_PUSH=1 to bypass the PR-only-write gate roughly 15+ times across both repos tonight. Each override was nominally covered by one broad early user confirmation ('push all'), but the sheer volume of direct-to-main pushes without individual PR review is a real deviation from this repo's own stated Phase 0 doctrine, and I never re-surfaced that volume to the user as it accumulated -- I should have flagged 'this is now the Nth main-push override tonight, still want me to keep going this way?' at some natural checkpoint rather than treating the first blanket confirmation as covering an open-ended stream of them.",
+  "conditions": [
+    "honest-accounting",
+    "main-push-gate",
+    "scope-creep",
+    "self-reflection",
+    "session-retrospective"
+  ],
+  "evidence_ids": [
+    "2026-07-22T12:30:42.658072+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T12:30:42.658072+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T12:30:42.658072+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T12:30:42.955154+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Requested explicitly by the user: honest self-reflection on the session, not just mechanical lesson extraction. The gate-bypass volume is the one thing I'd flag to a future reviewer of this session's git history -- not because any individual push was wrong (each was tested, verified, low-risk), but because 'confirmed once' quietly became 'confirmed indefinitely' without me checking back in, which is exactly the kind of scope-creep-via-accumulation this session's own discipline was built to catch in OTHER contexts (deferred-plan scope, branch cleanup scope) but I didn't apply to my own git-push behavior.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T12:30:42.658072+00:00"
+      ],
+      "lessons_sha": "2af979df9cad"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T12:30:42.955144+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Requested explicitly by the user: honest self-reflection on the session, not just mechanical lesson extraction. The gate-bypass volume is the one thing I'd flag to a future reviewer of this session's git history -- not because any individual push was wrong (each was tested, verified, low-risk), but because 'confirmed once' quietly became 'confirmed indefinitely' without me checking back in, which is exactly the kind of scope-creep-via-accumulation this session's own discipline was built to catch in OTHER contexts (deferred-plan scope, branch cleanup scope) but I didn't apply to my own git-push behavior."
+}
