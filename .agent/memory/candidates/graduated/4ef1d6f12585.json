@@ -1,0 +1,43 @@
+{
+  "id": "4ef1d6f12585",
+  "key": "manual_4ef1d6",
+  "name": "manual_4ef1d6",
+  "claim": "Before hardcoding a personal/private identity literal (email, name) into a tracked repo file to satisfy a CI check, look for an existing private-literal escape hatch first (e.g. banned_attribution_lib.sh's private_owner_email_ok() reading .verboten-literals.local) \u2014 the repo's own pre-commit hygiene hook will correctly block the literal-hardcoding path, and the real fix is usually a different bug (CI not bootstrapping the private value, or auditing the wrong ref), not a missing allowlist entry.",
+  "conditions": [
+    "anti-doxxing",
+    "attribution-guard",
+    "orama-system",
+    "owner-email",
+    "privacy",
+    "verboten-literal"
+  ],
+  "evidence_ids": [
+    "2026-07-22T04:44:32.142490+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T04:44:32.142490+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T04:44:32.142490+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T04:44:32.213680+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Attempted to fix an orama-system PR's attribution failure by adding the owner's private gmail literally to ALLOWED_HUMAN_AE in audit_attribution.sh; the local pre-commit hook (scan_private_verboten_literals in repo_hygiene.py) correctly blocked the commit because that email is registered as an owner_gmail private literal. audit_attribution.sh's author_ok() already calls private_owner_email_ok() for exactly this case \u2014 the actual bug was CI auditing the wrong commit ref (the synthetic merge commit), not a missing allowlist entry. Reverted the hardcoding, fixed the real ref bug instead.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T04:44:32.142490+00:00"
+      ],
+      "lessons_sha": "e547ea2cfdf4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T04:44:32.213675+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Attempted to fix an orama-system PR's attribution failure by adding the owner's private gmail literally to ALLOWED_HUMAN_AE in audit_attribution.sh; the local pre-commit hook (scan_private_verboten_literals in repo_hygiene.py) correctly blocked the commit because that email is registered as an owner_gmail private literal. audit_attribution.sh's author_ok() already calls private_owner_email_ok() for exactly this case \u2014 the actual bug was CI auditing the wrong commit ref (the synthetic merge commit), not a missing allowlist entry. Reverted the hardcoding, fixed the real ref bug instead."
+}
