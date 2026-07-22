@@ -64,6 +64,15 @@ class ModelTarget:
     # name=claude-4-5-thinking -> api_model=claude-sonnet-4-5). Dispatchers
     # should send `api_model`, never `name`.
     api_model: str = ""
+    # Optional frugality_router.py tier classification (0-6, see
+    # orchestrator/frugality_router.py TIERS / fable5-tier-based-routing
+    # skill). Additive-only field (2026-07-22): route_task() does not read
+    # or filter on this yet — see docs/plans/2026-07-22-p4-skill-trimming-
+    # p3-frugality-wiring.md and its follow-up reconciliation plan for why.
+    # Set it in models.yml per-model as that reconciliation lands; leaving
+    # it unset (None) is always safe and does not change existing routing
+    # behavior.
+    frugality_tier: Optional[int] = None
 
     def __post_init__(self) -> None:
         if not self.api_model:
@@ -174,6 +183,7 @@ class ModelRegistry:
                     online=online,
                     reasoning=item.get("reasoning", "general"),
                     api_model=item.get("api_model", ""),
+                    frugality_tier=item.get("frugality_tier"),
                 )
             )
         return sorted(targets, key=lambda x: x.priority)
