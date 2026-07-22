@@ -1,0 +1,43 @@
+{
+  "id": "f560abe457f4",
+  "key": "manual_f560ab",
+  "name": "manual_f560ab",
+  "claim": ".agent/harness/hooks/_episodic_io.py's episodic_lock() hard-raised RuntimeError on any Windows Python with no fcntl -- completely blocking learn.py/memory writes on every Windows agent, not just one session. Fixed by adding an msvcrt.locking()-based Windows lock path alongside the POSIX fcntl one (both lock a 1-byte region of a sidecar .lock file; msvcrt has no shared-lock primitive so both exclusive and shared requests take the same exclusive lock there, which is correct -- just slightly more serializing than POSIX).",
+  "conditions": [
+    "critical-bug",
+    "episodic-lock",
+    "fcntl",
+    "memory-system",
+    "msvcrt",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-07-22T13:31:32.015077+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T13:31:32.015077+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T13:31:32.015077+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T13:31:32.127127+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Every learn.py call failed hard on this Windows box until this fix -- a landed commit had introduced fcntl-only locking with a bare 'raise RuntimeError' for the Windows case, with no fallback at all, silently breaking memory-writing for the entire Windows side of this fleet. Fixed and verified live: the exact lesson-graduation call that failed before now succeeds.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T13:31:32.015077+00:00"
+      ],
+      "lessons_sha": "ea40676e14f1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T13:31:32.127118+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Every learn.py call failed hard on this Windows box until this fix -- a landed commit had introduced fcntl-only locking with a bare 'raise RuntimeError' for the Windows case, with no fallback at all, silently breaking memory-writing for the entire Windows side of this fleet. Fixed and verified live: the exact lesson-graduation call that failed before now succeeds."
+}
