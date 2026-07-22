@@ -31,9 +31,7 @@ author_ok() {
   local an_lc="$2"
   # Cursor Agent is an ALLOWED author/committer identity (attribution policy:
   # mainstream agents are permitted). The real hard ban is the VERBOTEN
-  # auto-injected pattern, caught independently by banned_attribution_hit()
-  # regardless of who authored the commit — so allowing this identity does not
-  # weaken the guard. (Previously rejected; relaxed per policy 2026-06-03.)
+  # auto-injected pattern, caught independently by banned_attribution_hit().
   if [[ "$ae_lc" == "cursoragent@cursor.com" ]] || [[ "$an_lc" == *cursor*agent* ]]; then
     return 0
   fi
@@ -48,16 +46,15 @@ author_ok() {
   for h in $ALLOWED_HUMAN_AE; do
     [[ "$ae_lc" == "$h" ]] && return 0
   done
+  # CI-stable exact private identity authorization. The tracked registry stores
+  # only a non-reversible hash; operator-local identities remain additive.
+  private_identity_fingerprint_ok "$an_lc" "$ae_lc" "$REPO_ROOT" && return 0
   private_owner_email_ok "$ae_lc" "$REPO_ROOT" && return 0
   return 1
 }
 
 banned_attribution_hit() {
   local ae_lc="$1" an_lc="$2" ce_lc="$3" cn_lc="$4" body_lc="$5"
-  # Private-literal checks (from the gitignored local/CI-provided literals
-  # file) must run regardless of whether the separate tracked patterns
-  # source is ready -- these are two independent sources, and a missing
-  # patterns file must not silently disable the private-literal guard too.
   line_matches_private_forbidden_literal "$ae_lc" "$REPO_ROOT" && return 0
   line_matches_private_forbidden_literal "$an_lc" "$REPO_ROOT" && return 0
   line_matches_private_forbidden_literal "$ce_lc" "$REPO_ROOT" && return 0
@@ -68,7 +65,7 @@ banned_attribution_hit() {
     line_matches_banned_pattern "$ce_lc" "$REPO_ROOT" && return 0
     line_matches_banned_pattern "$cn_lc" "$REPO_ROOT" && return 0
   fi
-  local line
+  local line line_lc
   while IFS= read -r line; do
     line_lc="$(printf '%s' "$line" | tr '[:upper:]' '[:lower:]')"
     case "$line_lc" in
@@ -102,7 +99,7 @@ if [[ -z "${GIT_AUDIT_RANGE:-}" || "${GIT_AUDIT_INCLUDE_CONTEXT_REFS:-0}" == "1"
       ce_lc="$(printf '%s' "$ce" | tr '[:upper:]' '[:lower:]')"
       an_lc="$(printf '%s' "$an" | tr '[:upper:]' '[:lower:]')"
       cn_lc="$(printf '%s' "$cn" | tr '[:upper:]' '[:lower:]')"
-      body_lc="$(cat "$tmp" | tr '[:upper:]' '[:lower:]')"
+      body_lc="$(tr '[:upper:]' '[:lower:]' < "$tmp")"
       if banned_attribution_hit "$ae_lc" "$an_lc" "$ce_lc" "$cn_lc" "$body_lc"; then
         banned=$((banned+1))
       fi
@@ -135,7 +132,7 @@ if [[ -n "${GIT_AUDIT_RANGE:-}" ]]; then
     ce_lc="$(printf '%s' "$ce" | tr '[:upper:]' '[:lower:]')"
     an_lc="$(printf '%s' "$an" | tr '[:upper:]' '[:lower:]')"
     cn_lc="$(printf '%s' "$cn" | tr '[:upper:]' '[:lower:]')"
-    body_lc="$(cat "$tmp" | tr '[:upper:]' '[:lower:]')"
+    body_lc="$(tr '[:upper:]' '[:lower:]' < "$tmp")"
     if banned_attribution_hit "$ae_lc" "$an_lc" "$ce_lc" "$cn_lc" "$body_lc"; then
       range_banned=$((range_banned + 1))
       echo "banned_attribution: $h $(git log -1 --oneline "$h")" >&2

@@ -70,7 +70,7 @@ if [[ -z "$actual_name" || -z "$actual_email" ]]; then
   exit 1
 fi
 
-# Repo owner identity — approved regardless of name/email format
+# Repo owner identity — approved regardless of name/email format.
 if [[ "$actual_email_lc" == "diazmelgarejo@gmail.com" ]]; then
   echo "OK: approved git identity"
   exit 0
@@ -78,6 +78,14 @@ fi
 
 if [[ "$actual_email_lc" == "lawrence@cyre.me" ]]; then
   echo "OK: approved git identity"
+  exit 0
+fi
+
+# Exact private owner identities are authorized by a tracked SHA-256 fingerprint.
+# This works identically on local machines and CI without publishing the address
+# or depending on .verboten-literals.local being provisioned.
+if private_identity_fingerprint_ok "$actual_name_lc" "$actual_email_lc" "$REPO_ROOT"; then
+  echo "OK: approved private owner identity fingerprint"
   exit 0
 fi
 
@@ -110,6 +118,7 @@ fi
 echo "ERROR: git identity must be one of:" >&2
 echo "  - * <diazMelgarejo@gmail.com>" >&2
 echo "  - * <Lawrence@cyre.me>" >&2
+echo "  - an exact tracked private-owner identity fingerprint" >&2
 echo "  - * <configured private owner email>" >&2
 echo "  - * (name contains diazMelgarejo, diaz.Melgarejo, or configured private owner name)" >&2
 echo "  - Codex <codex@openai.com>" >&2
