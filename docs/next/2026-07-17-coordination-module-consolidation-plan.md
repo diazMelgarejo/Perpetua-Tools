@@ -3,6 +3,19 @@
 
 Date: 2026-07-17 (revised 2026-07-18)
 Repository: `diazMelgarejo/Perpetua-Tools`
+
+> **2026-07-22 closure update:** Parts 1/1b/1c/1d **confirmed landed** —
+> squash-merged via `28c425f9 fix(coord): implement coordination-module
+> consolidation Parts 1-1d + PR #260 review fixes (#263)`. Part 2 remains
+> **deferred to v2 oramasys** (post-migration): its gate — "Phase 0F's live
+> re-verification" — doesn't correspond to any `Phase 0F` document or
+> artifact anywhere in this repo, so the block is genuinely ambiguous, not
+> just unstarted. Part 3 stays explicitly deferred per its own text below.
+> Full ledger + reasoning:
+> `orama-system/docs/plans/2026-07-22-cross-repo-out-of-scope-closure.md`
+> (item #7) and `orama-system/references/tiered-model-implementation-
+> navigator.md` § Cross-Repo Plan Register.
+
 Status: **`/autoplan` CLOSED — dispatch-ready for Part 1/1b/1c/1d.** Sequence: CEO-phase dual-voice review → independent parallel Codex engineering audit → systematic re-audit against Codex's 7-finding follow-up review (`../references/coordination-module-consolidation-plan-review-2026-07-18.md`) → two Codex-board-flagged blockers resolved (queue-ownership runtime-owner labeling; queue complete/fail authorization decision) → final adversarial gate (Codex + Kimi, independent). Codex's final gate pass caught one more real, code-verified gap (the queue-ownership promotion overclaimed `list`/`status` alongside `claim`/`complete`/`fail`) — fixed by splitting the provenance-table row rather than expanding Part 1's scope. Kimi's parallel gate pass was run against a stale primary-checkout copy of this file (dispatch error — wrong `--add-dir`) and its findings do not apply to this text; spot-checked its specific claims (heartbeat module ownership, `task_queue.py`/`phases.py` helper functions, `--seq` legacy support) against the current plan directly and confirmed each was already addressed. **Parts 1/1b/1c/1d ready to implement today** (atomic-claim promotion + scoped queue-ownership correction, DB-error contract, exit-code/stderr/split-message fix, `PHASE_TRACKING.md` rewrite + quick-start); Part 2 (architecture) drafted, not yet executed, gated behind Part 1 landing and Phase 0F's live re-verification; Part 3 explicitly deferred with caveats.
 Related: `2026-07-17-phase-board-fragmentation-analysis.md` (the bug that motivated this), PT PR #256 (merged — canonical gossip-DB path resolution), PT PR #259 (merged — a *second* independent duplicate-file patch, landed after this plan was first written), `../references/coordination-consolidation-plan-review-2026-07-18.md` (Codex follow-up review), and the [Python `argparse` sub-command documentation](https://docs.python.org/3/library/argparse.html#sub-commands) (primary-source dispatch pattern)
 
