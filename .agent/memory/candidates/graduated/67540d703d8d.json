@@ -1,0 +1,41 @@
+{
+  "id": "67540d703d8d",
+  "key": "manual_67540d",
+  "name": "manual_67540d",
+  "claim": "Self-reflection: when a user's fix instruction could reasonably be read as either instance-specific or class-general, default to checking for the general case BEFORE presenting the narrow fix as done, rather than shipping the narrow fix and waiting for the user to ask 2-3 more times to broaden it.",
+  "conditions": [
+    "fix-scope-judgment",
+    "proactive-scoping",
+    "self-reflection",
+    "user-directed-iteration"
+  ],
+  "evidence_ids": [
+    "2026-07-22T07:16:04.464870+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T07:16:04.464870+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-07-22T07:16:04.464870+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T07:16:04.545151+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "This session's skill-naming collision fix took three user prompts to reach its final, correct scope: first a narrow CI-identity-secret fix, then 'cross-reference all skills', then 'generalize the mechanism in both'. Each was the right next question for the user to ask, but a more proactive first pass -- checking the full manifest for other collisions and proposing a shared mechanism up front, once the first instance revealed the bug class existed -- would have reached the same correct endpoint in one turn instead of three. Not every fix needs this (most really are instance-specific), but a fix that stems from 'I found a bug in how X is checked' is a signal worth pausing on before declaring done.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-07-22T07:16:04.464870+00:00"
+      ],
+      "lessons_sha": "cc6cf03b13da"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T07:16:04.545142+00:00",
+  "reviewer": "learn.py",
+  "rationale": "This session's skill-naming collision fix took three user prompts to reach its final, correct scope: first a narrow CI-identity-secret fix, then 'cross-reference all skills', then 'generalize the mechanism in both'. Each was the right next question for the user to ask, but a more proactive first pass -- checking the full manifest for other collisions and proposing a shared mechanism up front, once the first instance revealed the bug class existed -- would have reached the same correct endpoint in one turn instead of three. Not every fix needs this (most really are instance-specific), but a fix that stems from 'I found a bug in how X is checked' is a signal worth pausing on before declaring done."
+}

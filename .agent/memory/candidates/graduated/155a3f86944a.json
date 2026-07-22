@@ -1,0 +1,41 @@
+{
+  "id": "155a3f86944a",
+  "key": "manual_155a3f",
+  "name": "manual_155a3f",
+  "claim": "After any git commit whose 'files changed' count looks smaller than what was staged, verify with git show --stat HEAD before trusting the commit captured everything -- a successful exit code does not guarantee every staged file actually landed if something touched the working tree or index between add and commit.",
+  "conditions": [
+    "git-commit",
+    "post-commit-check",
+    "silent-partial-commit",
+    "verification"
+  ],
+  "evidence_ids": [
+    "2026-07-22T07:16:04.315235+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T07:16:04.315235+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T07:16:04.315235+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T07:16:04.392732+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "In orama-system's own (non-shared) checkout, git add staged 10 files but the resulting commit showed only 4 files changed, with no error surfaced. Caught only because git show --stat HEAD was checked immediately after instead of assuming success from exit code 0; the remaining 6 files were still present as uncommitted changes and were re-staged and committed separately. Root cause not fully diagnosed (possibly the pre-commit hook's own repo-hygiene invocation touching state, or brief concurrent activity), but the fix -- always verify post-commit, not just pre-commit -- holds regardless of cause.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T07:16:04.315235+00:00"
+      ],
+      "lessons_sha": "638b6ea0863e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T07:16:04.392724+00:00",
+  "reviewer": "learn.py",
+  "rationale": "In orama-system's own (non-shared) checkout, git add staged 10 files but the resulting commit showed only 4 files changed, with no error surfaced. Caught only because git show --stat HEAD was checked immediately after instead of assuming success from exit code 0; the remaining 6 files were still present as uncommitted changes and were re-staged and committed separately. Root cause not fully diagnosed (possibly the pre-commit hook's own repo-hygiene invocation touching state, or brief concurrent activity), but the fix -- always verify post-commit, not just pre-commit -- holds regardless of cause."
+}

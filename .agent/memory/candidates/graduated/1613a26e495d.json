@@ -1,0 +1,42 @@
+{
+  "id": "1613a26e495d",
+  "key": "manual_1613a2",
+  "name": "manual_1613a2",
+  "claim": "A stale local git lock file in a repo that is NOT known to be actively shared with another agent may still be a false positive -- verify with lsof and ps before removing it, since an unrelated system process (e.g. a macOS Virtualization.framework XPC service) can hold a stray read-only file descriptor on the lock path without any real git write in progress.",
+  "conditions": [
+    "diagnose-before-acting",
+    "false-positive",
+    "git",
+    "lock-file",
+    "macos"
+  ],
+  "evidence_ids": [
+    "2026-07-22T07:16:04.167807+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T07:16:04.167807+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T07:16:04.167807+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T07:16:04.242754+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A git add in orama-system's checkout was blocked by the standard 'another git process seems to be running' message from a leftover lock file. lsof showed the only handle open on it was a read-only file descriptor from com.apple.Virtualization.VirtualMachine.xpc (an unrelated macOS system process, not a git process), and ps confirmed no actual git write process existed. Removed the zero-byte stale lock only after confirming this, rather than either blindly deleting it or blindly assuming a real conflict and waiting/aborting.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T07:16:04.167807+00:00"
+      ],
+      "lessons_sha": "03de3148f531"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T07:16:04.242745+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A git add in orama-system's checkout was blocked by the standard 'another git process seems to be running' message from a leftover lock file. lsof showed the only handle open on it was a read-only file descriptor from com.apple.Virtualization.VirtualMachine.xpc (an unrelated macOS system process, not a git process), and ps confirmed no actual git write process existed. Removed the zero-byte stale lock only after confirming this, rather than either blindly deleting it or blindly assuming a real conflict and waiting/aborting."
+}
