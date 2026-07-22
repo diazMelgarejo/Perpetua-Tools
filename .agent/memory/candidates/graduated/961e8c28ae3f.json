@@ -1,0 +1,42 @@
+{
+  "id": "961e8c28ae3f",
+  "key": "manual_961e8c",
+  "name": "manual_961e8c",
+  "claim": "When building schema validation or a packaging format that mirrors an external tool's spec (e.g. Anthropic's packaged-skill frontmatter rules), fetch that tool's actual source (quick_validate.py-style scripts, not just prose docs) and reimplement from the real rules -- don't infer limits/allowed-fields from documentation prose or memory, which can be stale or incomplete.",
+  "conditions": [
+    "anthropic",
+    "external-spec",
+    "schema-validation",
+    "skill-packaging",
+    "source-of-truth"
+  ],
+  "evidence_ids": [
+    "2026-07-22T07:16:03.693203+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T07:16:03.693203+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T07:16:03.693203+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T07:16:03.774033+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Building orama-system's package_skill.py (.skill packaging for skillify), fetched anthropics/claude-plugins-official's actual quick_validate.py and package_skill.py source rather than guessing at the 1024-char description limit, the exact ALLOWED_PROPERTIES set, or the zip-exclude patterns. Confirmed the docs-prose numbers (from an earlier ad-hoc Cowork session's dogfood-upgrade-log.md) were accurate, but having the real source made the reimplementation provably correct rather than plausible.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T07:16:03.693203+00:00"
+      ],
+      "lessons_sha": "058c261ff8e5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T07:16:03.774027+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Building orama-system's package_skill.py (.skill packaging for skillify), fetched anthropics/claude-plugins-official's actual quick_validate.py and package_skill.py source rather than guessing at the 1024-char description limit, the exact ALLOWED_PROPERTIES set, or the zip-exclude patterns. Confirmed the docs-prose numbers (from an earlier ad-hoc Cowork session's dogfood-upgrade-log.md) were accurate, but having the real source made the reimplementation provably correct rather than plausible."
+}

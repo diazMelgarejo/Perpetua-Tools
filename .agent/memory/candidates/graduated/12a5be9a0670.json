@@ -1,0 +1,42 @@
+{
+  "id": "12a5be9a0670",
+  "key": "manual_12a5be",
+  "name": "manual_12a5be",
+  "claim": "Doc-processing regexes over a real repo's markdown must be tested against ALL the citation/link styles actually in use, not just the first file checked -- a repo commonly mixes markdown-link form and plain-backtick-path form for the same kind of cross-reference, and a regex tuned to only one form silently drops the other.",
+  "conditions": [
+    "citation-styles",
+    "dogfooding",
+    "markdown",
+    "regex",
+    "testing"
+  ],
+  "evidence_ids": [
+    "2026-07-22T07:16:03.857159+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T07:16:03.857159+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T07:16:03.857159+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T07:16:03.934347+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "package_skill.py's cross-repo-reference bundler initially only matched markdown-link syntax pointing at a references file two levels up. Testing against skillify's SKILL.md (which uses real links) looked correct, but testing against oramasys-method's SKILL.md (which cites the same references as plain backtick-quoted paths) revealed it silently produced a .skill package with two dead reference paths while bundling an unrelated file. Caught before ever shipping by dogfooding against BOTH real skills, not just the one used to write the regex.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T07:16:03.857159+00:00"
+      ],
+      "lessons_sha": "6af8f01622c5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T07:16:03.934338+00:00",
+  "reviewer": "learn.py",
+  "rationale": "package_skill.py's cross-repo-reference bundler initially only matched markdown-link syntax pointing at a references file two levels up. Testing against skillify's SKILL.md (which uses real links) looked correct, but testing against oramasys-method's SKILL.md (which cites the same references as plain backtick-quoted paths) revealed it silently produced a .skill package with two dead reference paths while bundling an unrelated file. Caught before ever shipping by dogfooding against BOTH real skills, not just the one used to write the regex."
+}
