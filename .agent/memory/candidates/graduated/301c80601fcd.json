@@ -1,0 +1,42 @@
+{
+  "id": "301c80601fcd",
+  "key": "manual_301c80",
+  "name": "manual_301c80",
+  "claim": "A stale environment variable (e.g. GITHUB_TOKEN) can shadow an otherwise-valid credential-manager login (gh's keyring auth), making a tool report 'invalid token' or 401 when the real, working credential is one env-unset away.",
+  "conditions": [
+    "auth-401",
+    "credential-precedence",
+    "env-shadowing",
+    "gh-cli",
+    "github-token"
+  ],
+  "evidence_ids": [
+    "2026-07-23T06:42:59.546338+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T06:42:59.546338+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T06:42:59.546338+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T06:42:59.674504+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-22/23: gh auth status showed 'Failed to log in using token (GITHUB_TOKEN) - the token is invalid' while a separate keyring-based login for the same account showed valid scopes but Active account: false. A prior session had already concluded gh auth was broken and needed manual operator retry -- it was actually a local env var shadowing a working credential the whole time. Fixed with 'env -u GITHUB_TOKEN gh ...' for the specific invocation; both PRs opened cleanly afterward.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T06:42:59.546338+00:00"
+      ],
+      "lessons_sha": "a98b5742d3ad"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T06:42:59.674499+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-22/23: gh auth status showed 'Failed to log in using token (GITHUB_TOKEN) - the token is invalid' while a separate keyring-based login for the same account showed valid scopes but Active account: false. A prior session had already concluded gh auth was broken and needed manual operator retry -- it was actually a local env var shadowing a working credential the whole time. Fixed with 'env -u GITHUB_TOKEN gh ...' for the specific invocation; both PRs opened cleanly afterward."
+}
