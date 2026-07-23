@@ -36,6 +36,18 @@ def test_windows_home_tail():
     assert "%USERPROFILE%" in result
 
 
+def test_tmp_path_is_redacted():
+    """Regression: a /tmp/<file> reference (ephemeral, workstation-specific,
+    routinely gone by the time anyone reads the tracked text later) must be
+    redacted like /Users//home paths -- this exact class of leak reached
+    two tracked memory files (a graduated candidate JSON and lessons.jsonl)
+    before this coverage existed."""
+    text = "described in /tmp/orama-pr190-ci-fix-handoff-20260719.md as blocked"
+    result = sanitize_tracked_path_leaks(text)
+    assert "/tmp/" not in result
+    assert "<local-tmp-file>" in result
+
+
 def test_no_false_positive_on_system_path():
     # /usr/local/bin should never be touched
     text = "installed at /usr/local/bin/python3"

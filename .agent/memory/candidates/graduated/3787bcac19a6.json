@@ -1,0 +1,38 @@
+{
+  "id": "3787bcac19a6",
+  "key": "manual_3787bc",
+  "name": "manual_3787bc",
+  "claim": "Hermes self-improve must not maintain a forked hermes-harness SKILL.md under ~/.hermes/skills/hermes-harness/. Absorb unique content into orama canonical references first, then run install_hermes_thin_skills.py harness redirect and hermes curator pin hermes-harness.",
+  "conditions": [
+    "hermes-harness self-improve absorption curator pin redirect"
+  ],
+  "evidence_ids": [
+    "2026-07-23T06:10:14.866977+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T06:10:14.866977+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T06:10:14.866977+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T06:10:14.990869+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-23: Hermes patched local harness with condensed references and workstation paths; canonical superset now includes plan-integration, lan-peer-coordination, update-all-agents-comms.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T06:10:14.866977+00:00"
+      ],
+      "lessons_sha": "900f62b9ba6a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T06:10:14.990869+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-23: Hermes patched local harness with condensed references and workstation paths; canonical superset now includes plan-integration, lan-peer-coordination, update-all-agents-comms."
+}
