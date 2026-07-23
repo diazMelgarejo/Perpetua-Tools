@@ -2,7 +2,7 @@
   "id": "cdd062f9a500",
   "key": "manual_cdd062",
   "name": "manual_cdd062",
-  "claim": "When a client-side auth resolver picks 'the one preferred token' (e.g. candidates[0] of a priority list) and a peer/service rejects it, don't conclude the credential isn't deployed -- test every LOCALLY AVAILABLE candidate directly against the target first. In a real incident, a second local token candidate was accepted (HTTP 200) by the exact service that rejected the first one; the fix was retrying across candidates client-side, not an operator syncing anything. Single-token resolvers used for AUTHENTICATION should retry across all available candidates on 401/403 before surfacing an operator-actionable error, mirroring how multi-candidate retry is already used elsewhere in the same codebase for exactly this reason.",
+  "claim": "When a client-side auth resolver picks 'the one preferred token' (e.g. candidates[0] of a priority list) and a peer/service rejects it, don't conclude the credential isn't deployed -- test every LOCALLY AVAILABLE candidate directly against the target first. In a real incident, a second local token candidate was accepted (HTTP 200) by the exact service that rejected the first one; the fix was retrying across candidates client-side, not an operator syncing anything. Single-token resolvers used for AUTHENTICATION should retry across all available candidates on HTTP 401 responses before surfacing an operator-actionable error, mirroring how multi-candidate retry is already used elsewhere in the same codebase for exactly this reason.",
   "conditions": [
     "auth-retry",
     "client-side-bug",
