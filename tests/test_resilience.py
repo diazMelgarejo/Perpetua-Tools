@@ -200,6 +200,57 @@ def test_orchestrator_starts_without_redis_package(monkeypatch):
     assert resp.result == ""
 
 
+def test_orchestrate_privacy_critical_wins_over_finance_realtime(monkeypatch):
+    """privacy_critical must not be bypassed when is_finance_realtime is also set.
+
+    Before the fix: is_finance_realtime was checked first, sending sensitive
+    payloads to Perplexity cloud despite privacy_critical=True.
+    """
+    import asyncio
+
+    orch_mod = _load_orchestrator_module()
+    calls = {"perplexity": 0, "oramasys": 0}
+
+    async def _perplexity(*a, **kw):
+        calls["perplexity"] += 1
+        return "cloud leak"
+
+    async def _oramasys(*a, **kw):
+        calls["oramasys"] += 1
+        return "local ok"
+
+    async def _none(*a, **kw):
+        return None
+
+    monkeypatch.setattr(orch_mod, "call_perplexity", _perplexity)
+    monkeypatch.setattr(orch_mod, "call_oramasys", _oramasys)
+    monkeypatch.setattr(orch_mod, "call_lmstudio", _none)
+    monkeypatch.setattr(orch_mod, "call_ollama", _none)
+
+    class _FakeRedis:
+        async def get(self, *a): return None
+        async def incr(self, *a): pass
+        async def incrbyfloat(self, *a): pass
+        async def keys(self, *a): return []
+        async def setex(self, *a): pass
+
+    monkeypatch.setattr(orch_mod, "r", _FakeRedis())
+
+    req = orch_mod.OrchestrationRequest(
+        task_description="sensitive finance memo",
+        is_finance_realtime=True,
+        privacy_critical=True,
+        enable_critic=False,
+    )
+    handler = getattr(orch_mod.orchestrate, "__wrapped__", orch_mod.orchestrate)
+    resp = asyncio.run(handler(req, None))
+
+    assert calls["perplexity"] == 0, "privacy_critical must never call Perplexity"
+    assert calls["oramasys"] == 1
+    assert resp.result == "local ok"
+    assert any("Privacy critical" in msg for msg in resp.routing_log)
+
+
 def test_health_reports_redis_unavailable_when_ping_fails(monkeypatch):
     orch_mod = _load_orchestrator_module()
 
