@@ -1,0 +1,41 @@
+{
+  "id": "cdd062f9a500",
+  "key": "manual_cdd062",
+  "name": "manual_cdd062",
+  "claim": "When a client-side auth resolver picks 'the one preferred token' (e.g. candidates[0] of a priority list) and a peer/service rejects it, don't conclude the credential isn't deployed -- test every LOCALLY AVAILABLE candidate directly against the target first. In a real incident, a second local token candidate was accepted (HTTP 200) by the exact service that rejected the first one; the fix was retrying across candidates client-side, not an operator syncing anything. Single-token resolvers used for AUTHENTICATION should retry across all available candidates on HTTP 401 responses before surfacing an operator-actionable error, mirroring how multi-candidate retry is already used elsewhere in the same codebase for exactly this reason.",
+  "conditions": [
+    "auth-retry",
+    "client-side-bug",
+    "false-operator-blocker",
+    "token-candidates"
+  ],
+  "evidence_ids": [
+    "2026-07-22T14:08:54.542643+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T14:08:54.542643+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T14:08:54.542643+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T14:08:54.800163+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Two call sites (a topology-query script and a peer-file-drop script) each called a single-token resolver instead of the multi-candidate list a THIRD script in the same file already used successfully. Cost one full investigation cycle (correctly-worded but wrong root-cause finding, self-corrected) before the real bug (client retry gap, not token deployment) was found by directly testing each candidate.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T14:08:54.542643+00:00"
+      ],
+      "lessons_sha": "315230f79291"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T14:08:54.800155+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Two call sites (a topology-query script and a peer-file-drop script) each called a single-token resolver instead of the multi-candidate list a THIRD script in the same file already used successfully. Cost one full investigation cycle (correctly-worded but wrong root-cause finding, self-corrected) before the real bug (client retry gap, not token deployment) was found by directly testing each candidate."
+}
