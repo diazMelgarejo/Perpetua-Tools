@@ -1,0 +1,38 @@
+{
+  "id": "c6a1c671fc90",
+  "key": "manual_c6a1c6",
+  "name": "manual_c6a1c6",
+  "claim": "When win_job_queue pending=0 after coord-023 drain, pulse\u00d73 returns idle unless operator fans out new win-coder-* or win-autoresearcher-* cards to local inbox with correct topic (autoresearch/gpu-run for researcher)",
+  "conditions": [
+    "topic"
+  ],
+  "evidence_ids": [
+    "2026-07-23T07:24:17.646823+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T07:24:17.646823+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T07:24:17.646823+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T07:24:17.769034+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Cycle 021-022 empty queue",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T07:24:17.646823+00:00"
+      ],
+      "lessons_sha": "d243be283fae"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T07:24:17.769034+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Cycle 021-022 empty queue"
+}
