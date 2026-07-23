@@ -54,6 +54,14 @@ PERSONAL_PATH_EXCEPTIONS = {
     "tests/test_path_hygiene.py",
     "tests/test_path_hygiene_identity_scrub.py",
 }
+# Files that legitimately name a topology-fragment pattern (e.g. "/tmp/") in
+# their own source as documentation or as the regex definition itself, not
+# as a leaked path. Same rationale as PERSONAL_PATH_EXCEPTIONS above --
+# a rule that defines a pattern necessarily contains that pattern's text.
+TOPOLOGY_TOKEN_EXCEPTIONS = {
+    ".agent/memory/path_hygiene.py",
+    "tests/test_path_hygiene.py",
+}
 # Hidden / bidirectional Unicode controls — Trojan-Source defense (CVE-2021-42574).
 # These can hide malicious code in diffs. Block in all tracked files except the
 # hygiene script and its tests, which name the codepoints for documentation.
@@ -513,6 +521,7 @@ def scan_agent_private_surface(root: Path, files: list[str]) -> list[str]:
             rel.startswith(".agent/memory/candidates/graduated/")
             and rel.endswith(".json")
         )
+        is_topology_exempt_file = rel in TOPOLOGY_TOKEN_EXCEPTIONS
         text_lc = text.casefold()
         if any(token and token in text_lc for token in private_tokens):
             errors.append(f"private verboten literal in .agent file: {rel}")
@@ -532,7 +541,7 @@ def scan_agent_private_surface(root: Path, files: list[str]) -> list[str]:
                     break
             line_lc = line.casefold()
             has_private_ip = _RFC1918_PRIVATE_IP_RE.search(line)
-            if not (is_graduated_lesson and has_private_ip):
+            if not (is_graduated_lesson and has_private_ip) and not is_topology_exempt_file:
                 if any(token and token in line_lc for token in topology_tokens):
                     errors.append(
                         f"local/workspace path form in .agent file: {rel}:{line_no}"
