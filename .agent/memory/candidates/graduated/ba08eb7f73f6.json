@@ -1,0 +1,62 @@
+{
+  "id": "ba08eb7f73f6",
+  "key": "manual_ba08eb",
+  "name": "manual_ba08eb",
+  "claim": "Place side-effecting setup such as PATH mutation and partner-CLI discovery in CLI launchers after all read-only and lifecycle early-exit handlers, so modes like --stop, --status, --list, --validate, and --fleet-status never run it.",
+  "conditions": [
+    "after",
+    "all",
+    "cli",
+    "discovery",
+    "early-exit",
+    "fleet-status",
+    "handlers",
+    "launchers",
+    "lifecycle",
+    "like",
+    "list",
+    "modes",
+    "mutation",
+    "never",
+    "partner-cli",
+    "path",
+    "place",
+    "read-only",
+    "run",
+    "setup",
+    "side-effecting",
+    "status",
+    "stop",
+    "such",
+    "validate"
+  ],
+  "evidence_ids": [
+    "2026-07-23T06:16:19.459947+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T06:16:19.459947+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T06:16:19.459947+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T06:16:19.553938+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "We moved ensure-partner-cli-paths.ps1 below the --stop / --status / --list / --fleet-status blocks in start.ps1 so a status check does not mutate the environment. Early exits must be truly side-effect free.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T06:16:19.459947+00:00"
+      ],
+      "lessons_sha": "cf9569761db1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T06:16:19.553930+00:00",
+  "reviewer": "learn.py",
+  "rationale": "We moved ensure-partner-cli-paths.ps1 below the --stop / --status / --list / --fleet-status blocks in start.ps1 so a status check does not mutate the environment. Early exits must be truly side-effect free."
+}

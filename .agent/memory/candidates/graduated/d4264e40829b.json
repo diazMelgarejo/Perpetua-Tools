@@ -1,0 +1,53 @@
+{
+  "id": "d4264e40829b",
+  "key": "manual_d4264e",
+  "name": "manual_d4264e",
+  "claim": "In PowerShell launcher scripts, invoke helper scripts with the call operator '&' rather than dot-sourcing '.' so helper variables and functions do not leak into the caller's scope.",
+  "conditions": [
+    "call",
+    "caller",
+    "dot-sourcing",
+    "functions",
+    "helper",
+    "into",
+    "invoke",
+    "launcher",
+    "leak",
+    "operator",
+    "powershell",
+    "rather",
+    "scope",
+    "scripts",
+    "than",
+    "variables"
+  ],
+  "evidence_ids": [
+    "2026-07-23T06:16:19.104981+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T06:16:19.104981+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T06:16:19.104981+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T06:16:19.197772+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "start.ps1 sources .paths.ps1 via dot-source by design (it must export variables), but helper scripts like ensure-partner-cli-paths.ps1 should run in their own scope. Using '&' keeps the launcher scope clean and avoids accidental overrides.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T06:16:19.104981+00:00"
+      ],
+      "lessons_sha": "602a1c1d171d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T06:16:19.197763+00:00",
+  "reviewer": "learn.py",
+  "rationale": "start.ps1 sources .paths.ps1 via dot-source by design (it must export variables), but helper scripts like ensure-partner-cli-paths.ps1 should run in their own scope. Using '&' keeps the launcher scope clean and avoids accidental overrides."
+}
