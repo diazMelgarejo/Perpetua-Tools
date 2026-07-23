@@ -1,0 +1,38 @@
+{
+  "id": "5674ea3acf97",
+  "key": "manual_5674ea",
+  "name": "manual_5674ea",
+  "claim": "Before coord rinse when remote is ahead, git pull --rebase origin main on BOTH orama-system and Perpetua-Tools first \u2014 coord_comms_board and mesh-gap fixes landed on orama 90bdd047 while Win queue was idle",
+  "conditions": [
+    "sync-first"
+  ],
+  "evidence_ids": [
+    "2026-07-23T07:24:15.067079+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T07:24:15.067079+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T07:24:15.067079+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T07:24:15.221949+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Cycle 022 sync 2026-07-23",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T07:24:15.067079+00:00"
+      ],
+      "lessons_sha": "67ce27043a95"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T07:24:15.221949+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Cycle 022 sync 2026-07-23"
+}

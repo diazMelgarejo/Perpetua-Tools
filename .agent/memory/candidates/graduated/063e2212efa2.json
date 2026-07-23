@@ -1,0 +1,38 @@
+{
+  "id": "063e2212efa2",
+  "key": "manual_063e22",
+  "name": "manual_063e22",
+  "claim": "Windows git pre-commit runs python3 via bash hook \u2014 put Hermes venv Scripts on PATH and provide python3.exe shim (copy of python.exe) or repo_hygiene.py hook silently falls back and commits may fail on Co-authored-by policy",
+  "conditions": [
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-07-23T07:24:16.905414+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T07:24:16.905414+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T07:24:16.905414+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T07:24:17.032983+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Cycle 021 commit friction",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T07:24:16.905414+00:00"
+      ],
+      "lessons_sha": "81845a215431"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T07:24:17.032983+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Cycle 021 commit friction"
+}
