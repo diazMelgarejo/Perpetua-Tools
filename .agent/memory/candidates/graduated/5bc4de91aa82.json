@@ -1,0 +1,38 @@
+{
+  "id": "5bc4de91aa82",
+  "key": "manual_5bc4de",
+  "name": "manual_5bc4de",
+  "claim": "When absorbing Hermes-local reference files into orama canonical, sanitize hardcoded LAN IPs and workstation paths to env-var form (LINT-006), merge into references/ under hermes-harness, then delete orphaned ~/.hermes/skills/hermes-harness/references copies via install script HARNESS_ORPHAN_REFERENCES.",
+  "conditions": [
+    "absorption hermes-harness references LINT-006 orphan"
+  ],
+  "evidence_ids": [
+    "2026-07-23T06:10:16.192370+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T06:10:16.192370+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T06:10:16.192370+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T06:10:16.327529+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-23 coord-027: lan-peer-coordination absorbed from Hermes fork with IP sanitization.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T06:10:16.192370+00:00"
+      ],
+      "lessons_sha": "61fabf484108"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T06:10:16.327529+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-23 coord-027: lan-peer-coordination absorbed from Hermes fork with IP sanitization."
+}
