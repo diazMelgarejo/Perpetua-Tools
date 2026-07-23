@@ -31,6 +31,13 @@ _LINUX_HOME      = re.compile(r"/home/(" + _SEG + r")/")
 _LINUX_HOME_TAIL = re.compile(r"/home/(" + _SEG + r")(?=[\"\'\s]|$)")
 _WIN_HOME      = re.compile(r"(?i)C:\\Users\\" + _WIN_SEG + r"\\")
 _WIN_HOME_TAIL = re.compile(r"(?i)C:\\Users\\" + _WIN_SEG)
+# Ephemeral scratch paths (/tmp/<file>) are workstation-specific and
+# routinely non-existent by the time anyone reads the tracked text later --
+# same class of leak as /Users//home, just without a username segment to
+# preserve. No placeholder path is meaningful here (there's nothing a
+# portable equivalent could point at), so the whole reference is replaced
+# with a neutral description rather than a path-shaped stand-in.
+_TMP_PATH = re.compile(r"/tmp/" + _SEG)
 # Workspace-tree doxxing: even after home-anchor substitution, user download
 # tree layout must not persist in tracked memory (LINT-006 antipattern).
 _WIN_HOME_ANCHOR = r"%USERPROFILE%"
@@ -153,6 +160,7 @@ def sanitize_tracked_path_leaks(text: str) -> str:
     text = _WIN_HOME_TAIL.sub("%USERPROFILE%", text)
     text = _WORKSPACE_DOXX_WIN.sub(_WORKSPACE_ROOT, text)
     text = _WORKSPACE_DOXX_UNIX.sub(_WORKSPACE_ROOT, text)
+    text = _TMP_PATH.sub("<local-tmp-file>", text)
     return text
 
 
