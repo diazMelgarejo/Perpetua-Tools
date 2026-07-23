@@ -1,0 +1,41 @@
+{
+  "id": "f8b66fd3ba91",
+  "key": "manual_f8b66f",
+  "name": "manual_f8b66f",
+  "claim": "When two branches independently fix the same narrow bug and one fix is part of a broader systematic rework already landed on origin/main, prefer the systematic upstream version during merge over keeping a smaller manual point-fix, even if the manual fix is correct -- reduces future duplicate-fix drift and keeps the fix consistent with whatever else the systematic rework touched.",
+  "conditions": [
+    "duplicate-fix",
+    "merge-conflict-resolution",
+    "systematic-vs-manual",
+    "upstream-preference"
+  ],
+  "evidence_ids": [
+    "2026-07-23T06:43:00.096221+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T06:43:00.096221+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T06:43:00.096221+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T06:43:00.170964+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-22/23: this branch hand-fixed a session-scratch-path leak in a graduated lesson file; origin/main independently fixed the identical class of leak as part of a repo_hygiene.py -> repo_hygiene_core.py rework touching many files. Took origin/main's version on merge -- functionally identical content, but consistent with the rest of that rework instead of a one-off.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T06:43:00.096221+00:00"
+      ],
+      "lessons_sha": "bd839b730410"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T06:43:00.170958+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-22/23: this branch hand-fixed a session-scratch-path leak in a graduated lesson file; origin/main independently fixed the identical class of leak as part of a repo_hygiene.py -> repo_hygiene_core.py rework touching many files. Took origin/main's version on merge -- functionally identical content, but consistent with the rest of that rework instead of a one-off."
+}

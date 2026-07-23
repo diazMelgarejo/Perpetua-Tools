@@ -1,0 +1,42 @@
+{
+  "id": "c3e6acc960a4",
+  "key": "manual_c3e6ac",
+  "name": "manual_c3e6ac",
+  "claim": "In a merge/seed function that folds a REMOTE peer's self-reported data into LOCAL state, never derive the local entity's own identity from the remote payload -- even in the 'first response, no prior state' bootstrap branch where it's tempting to just reuse whatever field the peer sent. A real bug: a topology-merge function's bootstrap branch set local_node = peer_data['local_node'] (the PEER's own hostname), which then made the local node equal its own single peer-list entry, silently miscounting peers_reachable to 0. Always seed local identity from a LOCAL source (hostname, config, env) even when no prior local state exists yet.",
+  "conditions": [
+    "bootstrap-branch",
+    "local-identity",
+    "merge-function",
+    "peer-data-leak",
+    "topology-merge"
+  ],
+  "evidence_ids": [
+    "2026-07-22T14:09:17.209171+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T14:09:17.209171+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T14:09:17.209171+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T14:09:17.328891+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Found live, running the fleet-mesh mother plan against real peer data for the first time -- masked for the session's entire prior history by an unrelated auth bug that always failed before reaching this code path. Fixed with socket.gethostname(); regression tests added asserting local_node never equals a value the peer payload supplied.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T14:09:17.209171+00:00"
+      ],
+      "lessons_sha": "e377b3fdcaa9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T14:09:17.328882+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Found live, running the fleet-mesh mother plan against real peer data for the first time -- masked for the session's entire prior history by an unrelated auth bug that always failed before reaching this code path. Fixed with socket.gethostname(); regression tests added asserting local_node never equals a value the peer payload supplied."
+}
