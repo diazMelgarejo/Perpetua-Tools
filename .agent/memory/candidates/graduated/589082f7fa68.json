@@ -1,0 +1,54 @@
+{
+  "id": "589082f7fa68",
+  "key": "manual_589082",
+  "name": "manual_589082",
+  "claim": "LAN peer outbox flush is best-effort: if the target peer portal is unreachable, the queued file stays in the outbox until the peer comes back online or the operator clears it.",
+  "conditions": [
+    "back",
+    "best-effort",
+    "clears",
+    "comes",
+    "file",
+    "flush",
+    "lan",
+    "online",
+    "operator",
+    "outbox",
+    "peer",
+    "portal",
+    "queued",
+    "stays",
+    "target",
+    "unreachable",
+    "until"
+  ],
+  "evidence_ids": [
+    "2026-07-23T06:16:19.817324+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T06:16:19.817324+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T06:16:19.817324+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T06:16:19.909389+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "lan_peer_assign.py flush-outbox returns partial failure when a peer drop fails; start.ps1 logs a warning and continues rather than treating the failure as fatal. The queued message will be retried on the next successful --lan-peer startup or coord_pulse tick.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T06:16:19.817324+00:00"
+      ],
+      "lessons_sha": "b60533162f13"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T06:16:19.909380+00:00",
+  "reviewer": "learn.py",
+  "rationale": "lan_peer_assign.py flush-outbox returns partial failure when a peer drop fails; start.ps1 logs a warning and continues rather than treating the failure as fatal. The queued message will be retried on the next successful --lan-peer startup or coord_pulse tick."
+}
