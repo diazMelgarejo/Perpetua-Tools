@@ -1,40 +1,38 @@
 """orchestrator/alphaclaw_tls_proxy.py -- Perpetua-Tools
 
-Minimum scaffolding to make HTTPS possible in front of the AlphaClaw
-gateway. AlphaClaw (Node.js/Express) has no native HTTPS -- it runs its
-internal HTTP server on loopback only. This module is the PT-authoritative
-answer to "how does a bearer token ever reach AlphaClaw over TLS": a
-local-only HTTPS reverse proxy, self-signed, terminating TLS in front of
-AlphaClaw's existing HTTP port.
+Full-featured (v1-scoped) HTTPS-in-front-of-AlphaClaw local reverse proxy,
+wired into orchestrator/alphaclaw_manager.py's own gateway-resolution flow
+(see bootstrap_alphaclaw() / _maybe_wrap_gateway_with_tls() there). This
+module never resolves AlphaClaw's own address or decides whether to run --
+alphaclaw_manager.py owns both, matching its documented architecture
+invariant. This module only knows how to: generate/persist a self-signed
+cert, pin its fingerprint (TOFU), and terminate TLS in front of a given
+upstream port.
 
-Scope note (read before extending this file): this is deliberately the
-MINIMUM scaffolding, not the full plan. It provides genuine, working
-HTTPS termination + forwarding + a fresh self-signed cert per run -- what
-it does NOT yet do: fingerprint pinning / TOFU persistence, certificate
-rotation policy, mTLS, or wiring into alphaclaw_manager.py's
-AlphaClawState.gateway_url by default (that integration, and everything
-else deferred, is tracked in the full plan -- see "Companion plan" below).
+AlphaClaw (Node.js/Express) has no native HTTPS -- it runs its internal
+HTTP server on loopback only. This is the PT-authoritative answer to "how
+does a bearer token ever reach AlphaClaw over TLS".
 
-Architecture invariant this respects (see alphaclaw_manager.py's own
-docstring): PT is authoritative for gateway discovery, route choice,
-topology, and readiness. This proxy lives in orchestrator/, not a
-standalone packages/ package, because the decision of whether/when to run
-it is a PT gateway-management decision, not something orama-system or any
-other consumer should own independently.
+Scope note: certificate rotation policy beyond a fixed 365-day expiry,
+mTLS, and admin-pinned (as opposed to TOFU-only) fingerprints remain
+deferred to the full plan -- see "Companion plan" below. What IS real
+here: certificate persistence across restarts (a fresh cert every process
+start would make TOFU pinning meaningless -- the whole point of pinning
+is noticing when the cert *changes*), and fingerprint mismatch detection.
 
 Companion plan (full design, deferred): orama-system
-docs/v2/49-peer-mesh-auth-tls-v2-plan.md, section A.2 -- ingests the
-original alphaclaw-tls package sketch (there proposed as a standalone
-Python package under Perpetua-Tools/packages/) and reconciles it with
-this file's actual home in orchestrator/, since alphaclaw_manager.py's
-own architecture invariant means gateway-adjacent TLS logic belongs in PT
-core, not a separately-versioned package.
-Companion PR: orama-system PR (stacked on #197) that ingests the same 3
-security-hardening design docs this module implements the PT half of.
+docs/v2/49-peer-mesh-auth-tls-v2-plan.md. This module implements plan
+section A.1 (certificate provisioning: Option C, auto-generated + TOFU)
+and A.2 (the AlphaClaw HTTPS gap), reconciled into orchestrator/ rather
+than the plan's original standalone-package sketch -- see
+docs/next/2026-07-24-alphaclaw-tls-proxy-scaffolding.md for why.
+Companion PR: orama-system PR stacked on #197, same 3 ingested docs.
 """
 from __future__ import annotations
 
+import hashlib
 import http.server
+import json
 import logging
 import socketserver
 import ssl
@@ -60,6 +58,8 @@ except ImportError:
 
 CERT_DIR = Path.home() / ".openclaw" / "alphaclaw_tls"
 DEFAULT_PROXY_PORT = 3345
+CERT_VALIDITY_DAYS = 365
+_MIN_REMAINING_DAYS_TO_REUSE = 7  # rotate proactively, not right at expiry
 
 
 class AlphaClawTlsUnavailable(RuntimeError):
@@ -68,6 +68,77 @@ class AlphaClawTlsUnavailable(RuntimeError):
     now" and fall back to their own existing behavior -- never silently
     downgrade a bearer-token request to plain HTTP on this exception; the
     caller decides whether that's acceptable, this module doesn't."""
+
+
+class AlphaClawCertFingerprintMismatch(RuntimeError):
+    """Raised when the proxy's certificate fingerprint no longer matches
+    the previously-pinned (TOFU) value. This is the MITM-detection signal
+    the whole point of pinning exists for -- callers must NOT silently
+    accept the new cert; surface this to the operator."""
+
+
+def _cert_fingerprint(cert_path: Path) -> str:
+    """SHA-256 fingerprint of the certificate's DER bytes."""
+    if not _CRYPTOGRAPHY_AVAILABLE:
+        raise AlphaClawTlsUnavailable("'cryptography' library not available")
+    cert = x509.load_pem_x509_certificate(cert_path.read_bytes())
+    return hashlib.sha256(cert.public_bytes(serialization.Encoding.DER)).hexdigest()
+
+
+def _fingerprint_store_path() -> Path:
+    """Computed fresh from CERT_DIR each call, not cached at import time --
+    tests (and any future caller) that override CERT_DIR after import must
+    see that override reflected here, not a stale path baked in earlier."""
+    return CERT_DIR / "fingerprint.json"
+
+
+def _load_pinned_fingerprint() -> Optional[str]:
+    store = _fingerprint_store_path()
+    if not store.is_file():
+        return None
+    try:
+        data = json.loads(store.read_text(encoding="utf-8"))
+        return data.get("fingerprint")
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def _store_pinned_fingerprint(fingerprint: str) -> None:
+    store = _fingerprint_store_path()
+    store.parent.mkdir(parents=True, exist_ok=True)
+    store.write_text(
+        json.dumps(
+            {"fingerprint": fingerprint, "pinned_at": datetime.now(timezone.utc).isoformat()},
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+
+def verify_or_pin_fingerprint(cert_path: Path) -> str:
+    """TOFU: pin the fingerprint on first sight; on every later call,
+    verify it hasn't changed. Raises AlphaClawCertFingerprintMismatch if
+    it has -- this is a MITM-detection signal, not a routine event, and
+    must never be silently auto-repinned by this function.
+
+    Returns the current (verified-or-newly-pinned) fingerprint.
+    """
+    current = _cert_fingerprint(cert_path)
+    pinned = _load_pinned_fingerprint()
+    if pinned is None:
+        _store_pinned_fingerprint(current)
+        _log.info("AlphaClaw TLS: pinned certificate fingerprint (first sight): %s...", current[:16])
+        return current
+    if pinned != current:
+        raise AlphaClawCertFingerprintMismatch(
+            f"AlphaClaw TLS certificate fingerprint changed: pinned={pinned[:16]}... "
+            f"current={current[:16]}... This may mean the cert was legitimately "
+            "rotated (e.g. after CERT_DIR was cleared) or may indicate a MITM "
+            "attack. Verify out-of-band, then delete "
+            f"{_fingerprint_store_path()} to accept the new certificate explicitly -- "
+            "this is never done automatically."
+        )
+    return current
 
 
 @dataclass
@@ -83,6 +154,7 @@ class AlphaClawTlsProxy:
     proxy_port: int = DEFAULT_PROXY_PORT
     _server: Optional[socketserver.ThreadingTCPServer] = None
     _thread: Optional[threading.Thread] = None
+    fingerprint: str = ""
 
     def _generate_cert(self) -> tuple[Path, Path]:
         if not _CRYPTOGRAPHY_AVAILABLE:
@@ -95,6 +167,27 @@ class AlphaClawTlsProxy:
         cert_path = CERT_DIR / "alphaclaw.crt"
         key_path = CERT_DIR / "alphaclaw.key"
 
+        # Reuse an existing, still-valid certificate rather than generating
+        # a fresh one every process start -- TOFU fingerprint pinning is
+        # meaningless if the pinned value changes on every restart. Only
+        # regenerate when the cert is missing or genuinely close to expiry.
+        if cert_path.is_file() and key_path.is_file():
+            try:
+                existing = x509.load_pem_x509_certificate(cert_path.read_bytes())
+                remaining = existing.not_valid_after_utc - datetime.now(timezone.utc)
+                if remaining.days > _MIN_REMAINING_DAYS_TO_REUSE:
+                    _log.debug(
+                        "AlphaClaw TLS: reusing existing certificate (expires in %d days)",
+                        remaining.days,
+                    )
+                    return cert_path, key_path
+                _log.info(
+                    "AlphaClaw TLS: existing certificate expires in %d days, regenerating",
+                    remaining.days,
+                )
+            except (ValueError, OSError) as exc:
+                _log.warning("AlphaClaw TLS: existing certificate unreadable (%s), regenerating", exc)
+
         key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         subject = issuer = x509.Name(
             [x509.NameAttribute(NameOID.COMMON_NAME, "localhost")]
@@ -106,7 +199,7 @@ class AlphaClawTlsProxy:
             .public_key(key.public_key())
             .serial_number(x509.random_serial_number())
             .not_valid_before(datetime.now(timezone.utc))
-            .not_valid_after(datetime.now(timezone.utc) + timedelta(days=365))
+            .not_valid_after(datetime.now(timezone.utc) + timedelta(days=CERT_VALIDITY_DAYS))
             .add_extension(
                 x509.SubjectAlternativeName(
                     [
@@ -134,10 +227,18 @@ class AlphaClawTlsProxy:
         which is the correct signal -- this class does not track its own
         "already running" state beyond the OS-level port bind).
 
+        Verifies the certificate's fingerprint against the TOFU-pinned
+        value before binding -- raises AlphaClawCertFingerprintMismatch
+        rather than silently serving a changed certificate. Callers that
+        want to run without pinning (e.g. tests, or an explicit operator
+        override) should catch that exception themselves; this method
+        never suppresses it.
+
         Returns the https:// URL callers should use in place of the
         AlphaClaw HTTP URL.
         """
         cert_path, key_path = self._generate_cert()
+        self.fingerprint = verify_or_pin_fingerprint(cert_path)
 
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.minimum_version = ssl.TLSVersion.TLSv1_2

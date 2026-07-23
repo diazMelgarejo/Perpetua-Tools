@@ -110,6 +110,58 @@ def test_cert_generation_raises_clear_error_without_cryptography(tmp_path, monke
         proxy.start()
 
 
+@pytest.mark.skipif(
+    not _CRYPTOGRAPHY_AVAILABLE, reason="'cryptography' library not installed"
+)
+def test_cert_is_reused_across_restarts_not_regenerated(tmp_path, monkeypatch):
+    """TOFU fingerprint pinning is meaningless if the cert (and therefore
+    its fingerprint) changes on every process start -- verify a second
+    proxy instance pointed at the same CERT_DIR gets the SAME certificate,
+    not a freshly generated one."""
+    import orchestrator.alphaclaw_tls_proxy as mod
+
+    monkeypatch.setattr(mod, "CERT_DIR", tmp_path / "alphaclaw_tls")
+
+    proxy1 = AlphaClawTlsProxy(upstream_port=9999, proxy_port=_free_port())
+    cert1, _ = proxy1._generate_cert()
+    fingerprint1 = mod.verify_or_pin_fingerprint(cert1)
+
+    proxy2 = AlphaClawTlsProxy(upstream_port=9999, proxy_port=_free_port())
+    cert2, _ = proxy2._generate_cert()
+    fingerprint2 = mod.verify_or_pin_fingerprint(cert2)
+
+    assert fingerprint1 == fingerprint2
+    assert cert1 == cert2  # literally the same file path, reused in place
+
+
+@pytest.mark.skipif(
+    not _CRYPTOGRAPHY_AVAILABLE, reason="'cryptography' library not installed"
+)
+def test_fingerprint_mismatch_detected_when_cert_changes_but_pin_persists(tmp_path, monkeypatch):
+    """The realistic MITM/cert-swap scenario: the certificate file changes
+    but the previously-pinned fingerprint record is untouched. Must raise,
+    never silently re-pin. (Deleting the pin file together with the cert
+    is a DIFFERENT scenario -- legitimate first-sight-again reset, covered
+    implicitly by the reuse test above never hitting this path at all.)"""
+    import orchestrator.alphaclaw_tls_proxy as mod
+
+    monkeypatch.setattr(mod, "CERT_DIR", tmp_path / "alphaclaw_tls")
+
+    proxy1 = AlphaClawTlsProxy(upstream_port=9999, proxy_port=_free_port())
+    cert1, key1 = proxy1._generate_cert()
+    mod.verify_or_pin_fingerprint(cert1)
+
+    # Simulate only the cert+key changing (attacker swap, or a rotation
+    # that bypassed this module's own reuse logic) -- pin file untouched.
+    cert1.unlink()
+    key1.unlink()
+    proxy2 = AlphaClawTlsProxy(upstream_port=9999, proxy_port=_free_port())
+    cert2, _ = proxy2._generate_cert()
+
+    with pytest.raises(mod.AlphaClawCertFingerprintMismatch):
+        mod.verify_or_pin_fingerprint(cert2)
+
+
 def _free_port() -> int:
     import socket
 
