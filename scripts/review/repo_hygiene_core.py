@@ -419,7 +419,7 @@ def scan_private_verboten_literals(root: Path, files: list[str]) -> list[str]:
     tokens = list(gmail_tokens) + other_tokens
     if not tokens:
         return []
-    # Narrow, mechanically-defined exception: AUTHORIZED_CONTRIBUTORS.md\'s whole
+    # Narrow, mechanically-defined exception: AUTHORIZED_CONTRIBUTORS.md's whole
     # purpose is to list the real approved identity. Exempt ONLY a complete
     # line that exactly matches "cyre <owner_gmail>" (after stripping
     # surrounding whitespace) in that one file -- not a substring match
@@ -742,7 +742,7 @@ def check_identity(root: Path) -> list[str]:
         expected = " or ".join(f"{n} <{e}>" for n, e in sorted(APPROVED_IDENTITIES))
         return [
             "git identity mismatch: "
-            f"found {name or \'<unset>\'} <{email or \'<unset>\'}>; "
+            f"found {name or '<unset>'} <{email or '<unset>'}>; "
             f"expected {expected}"
         ]
     return []
