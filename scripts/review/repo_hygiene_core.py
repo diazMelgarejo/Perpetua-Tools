@@ -515,11 +515,26 @@ def scan_agent_private_surface(root: Path, files: list[str]) -> list[str]:
             continue
         # Graduated lesson candidates legitimately contain RFC 1918 private
         # IPs as operational evidence (e.g. DHCP drift, LAN peer addresses).
-        # Skip topology-token scanning only for these files, only on lines
-        # that contain a private IP literal. All other .agent guards remain.
-        is_graduated_lesson = (
-            rel.startswith(".agent/memory/candidates/graduated/")
-            and rel.endswith(".json")
+        # The exemption must follow the content through the whole memory
+        # pipeline it flows through after graduation -- lessons.jsonl (the
+        # accepted/superseded canonical store), its rendered LESSONS.md
+        # view, and the episodic mirror -- not just the initial staging
+        # file, or the same already-approved evidence gets flagged again
+        # the moment it's accepted and rendered. Skip topology/RFC1918
+        # scanning only for these files, only on lines that contain a
+        # private IP literal. All other .agent guards remain active.
+        operational_evidence_exempt = (
+            rel
+            in {
+                ".agent/memory/semantic/lessons.jsonl",
+                ".agent/memory/semantic/LESSONS.md",
+                ".agent/memory/semantic/DECISIONS.md",
+                ".agent/memory/episodic/AGENT_LEARNINGS.jsonl",
+            }
+            or (
+                rel.startswith(".agent/memory/candidates/graduated/")
+                and rel.endswith(".json")
+            )
         )
         is_topology_exempt_file = rel in TOPOLOGY_TOKEN_EXCEPTIONS
         text_lc = text.casefold()
@@ -541,7 +556,17 @@ def scan_agent_private_surface(root: Path, files: list[str]) -> list[str]:
                     break
             line_lc = line.casefold()
             has_private_ip = _RFC1918_PRIVATE_IP_RE.search(line)
-            if not (is_graduated_lesson and has_private_ip) and not is_topology_exempt_file:
+            # RFC1918 IPs are unconditionally sensitive topology info,
+            # independent of any configured secret -- graduated candidate
+            # JSON is the one narrow, deliberate exemption (operational
+            # network evidence). Every other .agent file still blocks them
+            # outright, with no local-registry configuration required.
+            if has_private_ip and not operational_evidence_exempt:
+                errors.append(
+                    f"private RFC1918 network topology in .agent file: {rel}:{line_no}"
+                )
+                break
+            if not (operational_evidence_exempt and has_private_ip) and not is_topology_exempt_file:
                 if any(token and token in line_lc for token in topology_tokens):
                     errors.append(
                         f"local/workspace path form in .agent file: {rel}:{line_no}"
@@ -558,18 +583,18 @@ def scan_agent_private_surface(root: Path, files: list[str]) -> list[str]:
                     pass
                 if errors and errors[-1].endswith(f"{rel}:{line_no}"):
                     break
-            if not (is_graduated_lesson and has_private_ip):
-                for match in EMAIL_LITERAL_RE.finditer(line):
-                    email = match.group(0)
-                    domain = email.rsplit("@", 1)[1].casefold()
-                    if domain in AGENT_EMAIL_LITERAL_ALLOWED_DOMAINS:
-                        continue
-                    errors.append(
-                        f"private/unclassified email literal in .agent file: {rel}:{line_no}"
-                    )
-                    break
-                else:
+            # The graduated-lesson RFC1918 exemption above covers IP
+            # literals only. An email literal on the same line is a
+            # DIFFERENT, independent leak and must still be caught --
+            # deliberately NOT gated by operational_evidence_exempt/has_private_ip.
+            for match in EMAIL_LITERAL_RE.finditer(line):
+                email = match.group(0)
+                domain = email.rsplit("@", 1)[1].casefold()
+                if domain in AGENT_EMAIL_LITERAL_ALLOWED_DOMAINS:
                     continue
+                errors.append(
+                    f"private/unclassified email literal in .agent file: {rel}:{line_no}"
+                )
                 break
             else:
                 continue
