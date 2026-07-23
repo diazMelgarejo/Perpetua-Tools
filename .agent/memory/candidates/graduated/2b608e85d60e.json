@@ -1,0 +1,42 @@
+{
+  "id": "2b608e85d60e",
+  "key": "manual_2b608e",
+  "name": "manual_2b608e",
+  "claim": "Self-reflection: the same failure mode -- assuming a coordination channel works because it worked before or looks fine from an interactive check, without verifying its actual current mechanism/state -- appeared independently on all 3 fleet nodes in one session, not just this agent. Mac logged status updates to a board that never left the machine (intra-machine SQLite, confirmed only by reading the tool's own docstring). win-rtx5080 filename-guessed expected inbox replies instead of doing a full inbox listing, missing 2 already-delivered messages. win-rtx3080 had a Scheduled Task silently go Disabled for 10 days while interactive/manual checks (which used a different env-loading path) kept looking healthy. None of these were caught by symptom-level monitoring -- each required someone to check the actual underlying mechanism (source code, full directory listing, Get-ScheduledTask state) rather than trusting the higher-level signal. When multi-agent coordination seems to be silently dropping messages, the fix is rarely 'retry harder' -- it's checking whether the channel believed to be working is the one actually being used.",
+  "conditions": [
+    "cross-node-pattern",
+    "multi-agent-coordination",
+    "self-reflection",
+    "silent-channel-failure",
+    "verify-actual-mechanism"
+  ],
+  "evidence_ids": [
+    "2026-07-23T07:08:27.906223+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T07:08:27.906223+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T07:08:27.906223+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T07:08:27.992006+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-23: this pattern surfaced 3 times independently within about an hour of real fleet-mesh coordination work, across 3 different machines and 2 different AI systems -- strong enough repetition to treat as a general class of bug, not 3 unrelated incidents. Worth periodic, deliberate 'is this channel actually connected' checks in any multi-node coordination setup, especially ones assembled incrementally across sessions where no single agent designed the whole comms topology.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T07:08:27.906223+00:00"
+      ],
+      "lessons_sha": "e43a95f4b0e1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T07:08:27.991995+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-23: this pattern surfaced 3 times independently within about an hour of real fleet-mesh coordination work, across 3 different machines and 2 different AI systems -- strong enough repetition to treat as a general class of bug, not 3 unrelated incidents. Worth periodic, deliberate 'is this channel actually connected' checks in any multi-node coordination setup, especially ones assembled incrementally across sessions where no single agent designed the whole comms topology."
+}
