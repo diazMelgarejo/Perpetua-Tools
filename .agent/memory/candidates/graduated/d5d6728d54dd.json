@@ -1,0 +1,38 @@
+{
+  "id": "d5d6728d54dd",
+  "key": "manual_d5d672",
+  "name": "manual_d5d672",
+  "claim": "Recurring coord comms board heartbeat uses coord_comms_board.ps1 (-Minutes 5 -Json), NOT a hardwired loop in start.ps1. One tick probes peer, checks board/pulse health, lists peer inbox, runs heartbeat pulse, and returns structured checks. Schedule via Windows Task Scheduler (OramaCoordCommsBoard) or operator harness; Mac uses launchd wrapper around coord_pulse.sh plus agent_coordination health.",
+  "conditions": [
+    "coord_comms_board Task Scheduler heartbeat 5-minute comms board"
+  ],
+  "evidence_ids": [
+    "2026-07-23T06:24:29.621952+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T06:24:29.621952+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T06:24:29.621952+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T06:24:29.740302+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-23 orama e207b6be: new thin wrapper + update-all-agents-comms.md step 6; keeps start.ps1 lifecycle clean.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T06:24:29.621952+00:00"
+      ],
+      "lessons_sha": "59e4a594ca1f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T06:24:29.740302+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-23 orama e207b6be: new thin wrapper + update-all-agents-comms.md step 6; keeps start.ps1 lifecycle clean."
+}
