@@ -1,0 +1,59 @@
+{
+  "id": "17277889dbee",
+  "key": "manual_172778",
+  "name": "manual_172778",
+  "claim": "Preserve the UTF-8 BOM for PowerShell 5.1 scripts when editing them with a file editor; if the BOM is stripped, PowerShell 5.1 reads the file as the system ANSI codepage and fails to parse Unicode content such as em-dashes or Greek letters.",
+  "conditions": [
+    "ansi",
+    "bom",
+    "codepage",
+    "content",
+    "editing",
+    "editor",
+    "em-dashes",
+    "fails",
+    "file",
+    "greek",
+    "letters",
+    "parse",
+    "powershell",
+    "preserve",
+    "reads",
+    "scripts",
+    "stripped",
+    "such",
+    "system",
+    "them",
+    "unicode",
+    "utf-8"
+  ],
+  "evidence_ids": [
+    "2026-07-23T06:16:18.726541+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T06:16:18.726541+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T06:16:18.726541+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T06:16:18.838678+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "While rehabilitating start.ps1 we saw the file stop parsing after an editor rewrite removed the BOM; re-adding the BOM restored execution. Tracked Python files should stay UTF-8 without BOM, but PowerShell 5.1 launchers are the exception.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T06:16:18.726541+00:00"
+      ],
+      "lessons_sha": "e56cd5d7657b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T06:16:18.838668+00:00",
+  "reviewer": "learn.py",
+  "rationale": "While rehabilitating start.ps1 we saw the file stop parsing after an editor rewrite removed the BOM; re-adding the BOM restored execution. Tracked Python files should stay UTF-8 without BOM, but PowerShell 5.1 launchers are the exception."
+}
