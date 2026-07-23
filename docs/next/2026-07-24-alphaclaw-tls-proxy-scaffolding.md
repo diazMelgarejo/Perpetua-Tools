@@ -1,7 +1,11 @@
-# AlphaClaw TLS Proxy — Minimum Scaffolding (companion to orama-system PR)
+# AlphaClaw TLS Proxy — Wired Into PT's Gateway Resolution (companion to orama-system PR)
 
-**Status:** minimum scaffolding landed; full plan deferred.
-**Date:** 2026-07-24
+**Status:** implemented and wired into `bootstrap_alphaclaw()`'s own
+resolution flow, opt-in via `ALPHACLAW_TLS_ENABLED`. Deferred items below
+remain deferred; everything else in the original 3 ingested plan docs'
+"v1" column for this specific surface (certificate provisioning, AlphaClaw
+HTTPS gap) is real and tested, not just scaffolded.
+**Date:** 2026-07-24 (scaffolding), updated same day (full wiring)
 **Companion orama-system PR:** `security/02-peer-mesh-auth-tls-v2-plan`
 (stacked on PR #197), which ingests 3 security-hardening design docs and
 records the full plan canonically at
@@ -20,40 +24,66 @@ this warrants a synced ADR pointer.
 
 `orchestrator/alphaclaw_tls_proxy.py` — a local-only (127.0.0.1-bound)
 HTTPS reverse proxy that terminates TLS in front of AlphaClaw's existing
-HTTP-only gateway, generating a fresh self-signed certificate per run.
-Verified end-to-end with a real TLS handshake against a real fake-upstream
-HTTP server (`tests/test_alphaclaw_tls_proxy.py`), not just unit-level
-mocking.
+HTTP-only gateway. Real features, not stubs:
+
+- **Certificate generation + persistence.** A self-signed cert is
+  generated once and reused across restarts (regenerated only when
+  missing or within 7 days of its 365-day expiry) -- a fresh cert every
+  process start would make fingerprint pinning meaningless.
+- **TOFU fingerprint pinning.** First start pins the cert's SHA-256
+  fingerprint; every subsequent start verifies it hasn't changed, raising
+  `AlphaClawCertFingerprintMismatch` (a real MITM-detection signal, never
+  silently auto-repinned) if it has.
+- **Real TLS termination + forwarding**, verified end-to-end with a
+  genuine TLS handshake against a genuine fake-upstream HTTP server.
+
+`orchestrator/alphaclaw_manager.py` — wired in via
+`alphaclaw_tls_enabled()` (env gate, `ALPHACLAW_TLS_ENABLED`, matching
+`dangerous_workers.py`'s established truthy-parsing convention) and
+`_maybe_wrap_gateway_with_tls()`, called from `bootstrap_alphaclaw()`'s
+own success path. This is the **only** place `gateway_url`'s scheme is
+ever decided — `AlphaClawState` and `RuntimePayload` both gained
+`tls_enabled`/`tls_fingerprint` fields so orama-system can *see* whether
+TLS is active, but orama never decides to use it; it only ever reads
+whatever PT already resolved. This is the direct, working implementation
+of the architecture invariant this whole exercise was about: **PT is
+authoritative for gateway discovery, route choice, topology, and
+readiness; orama-system makes zero gateway decisions.**
 
 **Why it lives in `orchestrator/`, not a new `packages/` package:** the
 original design sketch (in the 3 ingested plan docs) proposed a standalone
 `packages/alphaclaw-tls` package. Checking `orchestrator/alphaclaw_manager.py`'s
-own docstring first (its explicit architecture invariant: "PT is
-authoritative for gateway discovery, route choice, topology, and
-readiness... orama-system makes zero gateway decisions") showed that
-invariant would be violated by a separately-versioned package — whether
-to run TLS in front of AlphaClaw is exactly the kind of gateway-management
-decision that module already owns. Reconciled by placing this module
-alongside it instead.
+own docstring first (its explicit architecture invariant, quoted above)
+showed that invariant would be violated by a separately-versioned
+package -- whether/how to expose AlphaClaw's gateway is exactly the kind
+of decision that module already owns exclusively. Reconciled by placing
+this module alongside it, and by making `bootstrap_alphaclaw()` itself
+the only call site that ever touches `gateway_url`'s scheme.
 
 ## What's explicitly NOT done yet (see the orama v2 plan for the full list)
 
-- No fingerprint pinning / TOFU persistence across runs (fresh cert every
-  process start right now)
-- Not wired into `AlphaClawState.gateway_url` / the `--resolve` flow --
-  `AlphaClawTlsProxy` is a standalone class today; a caller must construct
-  and start it explicitly. Wiring it into the default resolve path is
-  deferred, matching the orama plan's own "v1 minimum, not full rollout"
-  scope for this PR.
-- No certificate rotation policy
+- No admin-pinned fingerprints (`PEER_PINNED_FINGERPRINTS`-style
+  pre-seeding) — TOFU-only for now, matching the plan's own v1 scope
+- No certificate rotation *policy* beyond the fixed 365-day expiry check
+- Not auto-enabled by default (`ALPHACLAW_TLS_ENABLED` opt-in) — matching
+  the plan's "existing deployments" answer (v1 warns/opts-in, never
+  enforces)
 - mTLS, audit logging, the pluggable auth-provider architecture (BUZZ/
   Twitter/Google) — all orama-side and PT-side v2 work tracked in the
   companion doc, not started here
+- Peer-mesh bearer-token TLS (the `query_peer_topology.py` side of the
+  companion plan) is a separate surface, already landed independently on
+  orama PR #197 as its own v1 minimum
 
 ## Cross-references (for continuity post-merge)
 
-- Code: `orchestrator/alphaclaw_tls_proxy.py`'s own module docstring
-  points back to this file and the orama plan doc.
-- Tests: `tests/test_alphaclaw_tls_proxy.py`'s module docstring does the same.
+- Code: `orchestrator/alphaclaw_tls_proxy.py` and
+  `orchestrator/alphaclaw_manager.py`'s own module/function docstrings
+  point back to this file and the orama plan doc.
+- Tests: `tests/test_alphaclaw_tls_proxy.py` (proxy internals: cert
+  persistence, fingerprint pinning, real TLS forwarding) and
+  `tests/test_alphaclaw_manager_tls_wiring.py` (the actual wiring:
+  env-gate behavior, no-op cases, real end-to-end gateway_url
+  replacement, graceful degradation on failure) both point here.
 - orama-system side: `docs/v2/49-peer-mesh-auth-tls-v2-plan.md`'s "MVP
   wiring" section names this exact module by its intended path.
