@@ -309,6 +309,53 @@ def test_forbidden_identity_exception_is_exempt(tmp_path):
     assert errors == []
 
 
+def test_path_hygiene_source_exempt_from_own_topology_pattern(tmp_path, monkeypatch):
+    """Regression: .agent/memory/path_hygiene.py's own source (comment and
+    regex definition) legitimately contains the literal /tmp/ pattern it
+    exists to redact elsewhere -- it must not trip its own scanner. This
+    exact self-reference broke CI after adding /tmp/ coverage to the
+    sanitizer."""
+    repo_hygiene = load_repo_hygiene()
+    literals = tmp_path / "verboten.local"
+    literals.write_text("local_path_fragment=/tmp/\n", encoding="utf-8")
+    monkeypatch.setenv("OPENCLAW_VERBOTEN_LITERALS", str(literals))
+
+    real_source = Path(".agent/memory/path_hygiene.py").resolve()
+    agent_dir = tmp_path / ".agent" / "memory"
+    agent_dir.mkdir(parents=True)
+    target = agent_dir / "path_hygiene.py"
+    target.write_text(real_source.read_text(encoding="utf-8"), encoding="utf-8")
+
+    errors = repo_hygiene.scan_agent_private_surface(
+        tmp_path, [".agent/memory/path_hygiene.py"]
+    )
+
+    assert errors == []
+
+
+def test_topology_token_exemption_does_not_hide_real_leaks(tmp_path, monkeypatch):
+    """Regression: the self-exemption must be scoped to the specific
+    documenting files only -- an actual /tmp/ leak in an unrelated tracked
+    .agent file must still be caught."""
+    repo_hygiene = load_repo_hygiene()
+    literals = tmp_path / "verboten.local"
+    literals.write_text("local_path_fragment=/tmp/\n", encoding="utf-8")
+    monkeypatch.setenv("OPENCLAW_VERBOTEN_LITERALS", str(literals))
+
+    agent_dir = tmp_path / ".agent" / "memory" / "semantic"
+    agent_dir.mkdir(parents=True)
+    lessons = agent_dir / "lessons.jsonl"
+    lessons.write_text(
+        '{"claim": "described in /tmp/some-real-leak.md"}\n', encoding="utf-8"
+    )
+
+    errors = repo_hygiene.scan_agent_private_surface(
+        tmp_path, [".agent/memory/semantic/lessons.jsonl"]
+    )
+
+    assert len(errors) == 1
+
+
 def test_agent_memory_owner_gmail_identity_is_blocked(tmp_path, monkeypatch):
     repo_hygiene = load_repo_hygiene()
     literals = tmp_path / "verboten.local"
