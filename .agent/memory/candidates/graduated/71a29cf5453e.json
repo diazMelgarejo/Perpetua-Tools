@@ -1,0 +1,38 @@
+{
+  "id": "71a29cf5453e",
+  "key": "manual_71a29c",
+  "name": "manual_71a29c",
+  "claim": "update-all-agents-comms step 6 adds optional 5-minute recurring board checks via coord_comms_board.ps1; informational broadcasts still do not require win_job_queue enqueue unless a coder job is intended.",
+  "conditions": [
+    "update-all-agents-comms coord_comms_board enqueue informational"
+  ],
+  "evidence_ids": [
+    "2026-07-23T06:24:30.463215+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T06:24:30.463215+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T06:24:30.463215+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T06:24:30.582379+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Extends coord-026/027 recipe in update-all-agents-comms.md without changing GossipBus+fanout core.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T06:24:30.463215+00:00"
+      ],
+      "lessons_sha": "54ba2754a570"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T06:24:30.582379+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Extends coord-026/027 recipe in update-all-agents-comms.md without changing GossipBus+fanout core."
+}

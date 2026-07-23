@@ -381,6 +381,9 @@
 - Place side-effecting setup such as PATH mutation and partner-CLI discovery in CLI launchers after all read-only and lifecycle early-exit handlers, so modes like --stop, --status, --list, --validate, and --fleet-status never run it.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_ba08eb7f73f6 -->
 - LAN peer outbox flush is best-effort: if the target peer portal is unreachable, the queued file stays in the outbox until the peer comes back online or the operator clears it.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_589082f7fa68 -->
 - Before acting on a code-review finding, pull origin/main first so the reviewed commit is actually present in the local working tree.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_77a6c0a44e89 -->
+- Recurring coord comms board heartbeat uses coord_comms_board.ps1 (-Minutes 5 -Json), NOT a hardwired loop in start.ps1. One tick probes peer, checks board/pulse health, lists peer inbox, runs heartbeat pulse, and returns structured checks. Schedule via Windows Task Scheduler (OramaCoordCommsBoard) or operator harness; Mac uses launchd wrapper around coord_pulse.sh plus agent_coordination health.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_d5d6728d54dd -->
+- Operator sync+lessons+sync requests must start with git pull on BOTH orama-system and Perpetua-Tools before assuming memory is current — Mac or another Win session may have pushed lessons or coord docs while idle.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_93db6b6c6143 -->
+- update-all-agents-comms step 6 adds optional 5-minute recurring board checks via coord_comms_board.ps1; informational broadcasts still do not require win_job_queue enqueue unless a coder job is intended.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_71a29cf5453e -->
 
 ### 2026-06
 
