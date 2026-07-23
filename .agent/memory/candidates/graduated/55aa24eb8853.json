@@ -1,0 +1,38 @@
+{
+  "id": "55aa24eb8853",
+  "key": "manual_55aa24",
+  "name": "manual_55aa24",
+  "claim": "Update all agent comms means both channels in one pass: GossipBus log the same one-line pointer to all six agent lanes (win-cursor, win-coder, win-autoresearcher, mac-orchestrator, mac-researcher, hermes) plus peer-inbox markdown fanout to win local and mac peer via lan_peer_assign.py fanout manifest.",
+  "conditions": [
+    "GossipBus coord fanout update-all-agents-comms lan_peer_assign"
+  ],
+  "evidence_ids": [
+    "2026-07-23T06:10:15.314691+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T06:10:15.314691+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T06:10:15.314691+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T06:10:15.444117+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-23: codified in hermes-harness references/update-all-agents-comms.md; coord-026/027 broadcasts.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T06:10:15.314691+00:00"
+      ],
+      "lessons_sha": "3808ed235e18"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T06:10:15.444117+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-23: codified in hermes-harness references/update-all-agents-comms.md; coord-026/027 broadcasts."
+}
