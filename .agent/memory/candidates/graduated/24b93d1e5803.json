@@ -1,0 +1,38 @@
+{
+  "id": "24b93d1e5803",
+  "key": "manual_24b93d",
+  "name": "manual_24b93d",
+  "claim": "windows-hermes-setup Hermes self-improve skill must remain a thin redirect to orama commands/windows-hermes-setup plus references/windows-hermes-setup.md; curator pin windows-hermes-setup after canonical absorption prevents re-patching.",
+  "conditions": [
+    "windows-hermes-setup redirect curator pin"
+  ],
+  "evidence_ids": [
+    "2026-07-23T06:10:16.669422+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T06:10:16.669422+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T06:10:16.669422+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T06:10:16.808183+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-23 session arc: same pattern as hermes-harness fork absorption.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T06:10:16.669422+00:00"
+      ],
+      "lessons_sha": "e898a2e4169b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T06:10:16.808183+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-23 session arc: same pattern as hermes-harness fork absorption."
+}
