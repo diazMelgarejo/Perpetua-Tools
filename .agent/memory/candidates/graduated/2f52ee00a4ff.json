@@ -1,0 +1,38 @@
+{
+  "id": "2f52ee00a4ff",
+  "key": "manual_2f52ee",
+  "name": "manual_2f52ee",
+  "claim": "Hermes background curator refuses skill_manage patches when the target SKILL.md was not loaded via skill_view in the same review turn. Call skill_view before patch; prefer editing orama canonical and refreshing thin wrappers instead of patching Hermes-local skill bodies.",
+  "conditions": [
+    "hermes curator skill_manage skill_view self-improve"
+  ],
+  "evidence_ids": [
+    "2026-07-23T06:10:15.709403+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T06:10:15.709403+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T06:10:15.709403+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T06:10:15.843263+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-23 agent.log: Refusing background curator patch for hermes-harness until skill_view completed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T06:10:15.709403+00:00"
+      ],
+      "lessons_sha": "b25707b4ee9c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T06:10:15.842263+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-23 agent.log: Refusing background curator patch for hermes-harness until skill_view completed."
+}

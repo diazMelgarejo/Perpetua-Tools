@@ -1,0 +1,38 @@
+{
+  "id": "e82175aed461",
+  "key": "manual_e82175",
+  "name": "manual_e82175",
+  "claim": "CRG code-review-graph embeddings use platform-specific OpenAI-compat URLs: macOS/Linux Ollama at localhost:11434/v1, all Windows hosts LM Studio at localhost:1234/v1. sync-cursor-mcp.sh and openclaw-env.sh patch CRG_OPENAI_BASE_URL at sync time; do not commit machine-local .cursor/mcp.json overrides.",
+  "conditions": [
+    "CRG code-review-graph 11434 1234 Windows mcp.json sync-cursor-mcp"
+  ],
+  "evidence_ids": [
+    "2026-07-23T06:10:14.172535+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T06:10:14.172535+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T06:10:14.172535+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T06:10:14.545106+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-23 Win RTX5080 session: ECC ships macOS template; F3 resolved via crg-platform-endpoints.md SSoT and platform-aware sync script.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T06:10:14.172535+00:00"
+      ],
+      "lessons_sha": "2c93fa601e61"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T06:10:14.545106+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-23 Win RTX5080 session: ECC ships macOS template; F3 resolved via crg-platform-endpoints.md SSoT and platform-aware sync script."
+}
