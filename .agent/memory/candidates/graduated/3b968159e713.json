@@ -1,0 +1,43 @@
+{
+  "id": "3b968159e713",
+  "key": "manual_3b9681",
+  "name": "manual_3b9681",
+  "claim": "Do not call ScheduleWakeup to re-arm a recurring check that a CronCreate recurring job already covers -- CronCreate jobs with recurring:true fire automatically on their own cron schedule without any further action; calling ScheduleWakeup on top of one creates a second, redundant wakeup mechanism that can double-fire the same work. Manage an existing recurring cron job's lifecycle with CronList/CronDelete, not ScheduleWakeup (which is the /loop dynamic-mode continuation tool, not a general recurring-task primitive).",
+  "conditions": [
+    "cron",
+    "crondelete",
+    "double-fire",
+    "recurring-task",
+    "schedulewakeup",
+    "scheduling"
+  ],
+  "evidence_ids": [
+    "2026-07-23T07:08:27.622287+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T07:08:27.622287+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T07:08:27.622287+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T07:08:27.717819+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-23: after setting up a CronCreate every-minute PR-merge-watch job, a later turn (itself a firing of that same cron job) ended by calling ScheduleWakeup for 60s out of habit from prior /loop-style sessions -- would have caused the cron job and the manual wakeup to both fire the same check within the same minute. Caught and cancelled it immediately via ScheduleWakeup stop:true before it could double-fire.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T07:08:27.622287+00:00"
+      ],
+      "lessons_sha": "a1c9377d23c7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T07:08:27.717811+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-23: after setting up a CronCreate every-minute PR-merge-watch job, a later turn (itself a firing of that same cron job) ended by calling ScheduleWakeup for 60s out of habit from prior /loop-style sessions -- would have caused the cron job and the manual wakeup to both fire the same check within the same minute. Caught and cancelled it immediately via ScheduleWakeup stop:true before it could double-fire."
+}
