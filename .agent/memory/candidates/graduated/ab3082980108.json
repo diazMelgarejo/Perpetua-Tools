@@ -1,0 +1,38 @@
+{
+  "id": "ab3082980108",
+  "key": "manual_ab3082",
+  "name": "manual_ab3082",
+  "claim": "Cross-machine agent coordination uses lan_peer_assign drop --peer (markdown inbox), NOT GossipBus agent_coordination.py log \u2014 GossipBus is intra-machine whiteboard only per update-all-agents-comms.md step 1-2",
+  "conditions": [
+    "cross-host"
+  ],
+  "evidence_ids": [
+    "2026-07-23T07:24:16.213985+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T07:24:16.213985+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T07:24:16.213985+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T07:24:16.335478+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-028 what-next + mesh bridge",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T07:24:16.213985+00:00"
+      ],
+      "lessons_sha": "2f1c71c8922a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T07:24:16.335478+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-028 what-next + mesh bridge"
+}
