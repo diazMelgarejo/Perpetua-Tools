@@ -18,6 +18,15 @@ def _reload_bootstrap(monkeypatch, **env: str) -> None:
     importlib.reload(alphaclaw_bootstrap)
 
 
+def test_alphaclaw_install_dir_expands_tilde_from_env(monkeypatch):
+    """Literal ~/.alphaclaw from dotenv must resolve under the user home, not PT cwd."""
+    _reload_bootstrap(monkeypatch, ALPHACLAW_INSTALL_DIR="~/.alphaclaw")
+    assert alphaclaw_bootstrap.ALPHACLAW_INSTALL_DIR.is_absolute()
+    assert alphaclaw_bootstrap.ALPHACLAW_INSTALL_DIR == (
+        Path.home() / ".alphaclaw"
+    ).resolve()
+
+
 def test_invalid_openclaw_gateway_port_does_not_crash_import(monkeypatch):
     """Malformed OPENCLAW_GATEWAY_PORT must fall back instead of crashing at import."""
     _reload_bootstrap(monkeypatch, OPENCLAW_GATEWAY_PORT="notaport")

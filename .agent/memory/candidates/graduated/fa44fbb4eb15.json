@@ -1,0 +1,45 @@
+{
+  "id": "fa44fbb4eb15",
+  "key": "manual_fa44fb",
+  "name": "manual_fa44fb",
+  "claim": "Any filesystem path read from python-dotenv or os.environ (especially ALPHACLAW_INSTALL_DIR) must pass through Path(...).expanduser().resolve() before mkdir, subprocess cwd=, or writing ALPHACLAW_ROOT_DIR back into a .env file. python-dotenv does not expand tilde \u2014 a literal ~/.alphaclaw value is a relative path and, when alphaclaw_bootstrap runs with cwd at the PT repo root, creates a junk literal ~/ directory under the repo (Perpetua-Tools/~/.alphaclaw/). Use utils.env_paths.resolve_alphaclaw_install_dir() instead of ad-hoc Path(os.getenv(...)).",
+  "conditions": [
+    "alphaclaw",
+    "bootstrap",
+    "dotenv",
+    "env_paths",
+    "expanduser",
+    "install_dir",
+    "pathlib",
+    "tilde"
+  ],
+  "evidence_ids": [
+    "2026-07-24T23:19:40.955910+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-24T23:19:40.955910+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-24T23:19:40.955910+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-24T23:19:41.070739+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-22 incident: 352MB junk tree from bootstrap; 2026-07-25 fixed via src/utils/env_paths.py + tests. Wiki: docs/wiki/12-literal-tilde-alphaclaw-install-dir.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-24T23:19:40.955910+00:00"
+      ],
+      "lessons_sha": "69fab6ca368c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-24T23:19:41.070733+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-22 incident: 352MB junk tree from bootstrap; 2026-07-25 fixed via src/utils/env_paths.py + tests. Wiki: docs/wiki/12-literal-tilde-alphaclaw-install-dir.md"
+}

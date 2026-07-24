@@ -40,6 +40,8 @@ import urllib.request
 import argparse
 from pathlib import Path
 
+from utils.env_paths import resolve_alphaclaw_install_dir
+
 # ── env / key paths ───────────────────────────────────────────────────────────
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -230,8 +232,7 @@ def _probe_gateway_sync(port: int = 18789) -> bool:
 
 def detect_alphaclaw() -> tuple[bool, bool]:
     """Return (installed, gateway_running)."""
-    install_dir = Path(os.getenv("ALPHACLAW_INSTALL_DIR",
-                                 str(Path.home() / ".alphaclaw")))
+    install_dir = resolve_alphaclaw_install_dir()
     installed = (
         check_command("alphaclaw")
         or (install_dir / "node_modules" / "@chrysb" / "alphaclaw").exists()
@@ -242,8 +243,7 @@ def detect_alphaclaw() -> tuple[bool, bool]:
 
 def _install_alphaclaw_interactive() -> bool:
     """Install @chrysb/alphaclaw and start the gateway. Returns True on success."""
-    install_dir = Path(os.getenv("ALPHACLAW_INSTALL_DIR",
-                                 str(Path.home() / ".alphaclaw")))
+    install_dir = resolve_alphaclaw_install_dir()
     install_dir.mkdir(parents=True, exist_ok=True)
 
     bootstrap = _BOOTSTRAP_SCRIPT
@@ -330,8 +330,7 @@ def run_wizard(args: argparse.Namespace) -> None:
                         env=_pt_subprocess_env(),
                     )
                 else:
-                    install_dir = Path(os.getenv("ALPHACLAW_INSTALL_DIR",
-                                                  str(Path.home() / ".alphaclaw")))
+                    install_dir = resolve_alphaclaw_install_dir()
                     subprocess.Popen(["npx", "alphaclaw", "start"],
                                      cwd=str(install_dir))
                 print()
