@@ -84,6 +84,14 @@ lan = [
     # Falls back to socket-based IP detection if not installed.
     "netifaces>=0.11.0",
 ]
+windows-security = [
+    # Windows-only. Enforces a restrictive ACL (owner + Administrators,
+    # deny Everyone) on the AlphaClaw TLS cert/key/fingerprint store via
+    # orchestrator/alphaclaw_tls_proxy.py's _secure_path_win32(). Falls
+    # back to an icacls subprocess if not installed -- see
+    # docs/next/2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md.
+    "pywin32>=227; sys_platform == 'win32'",
+]
 dev = [
     "pytest>=7.4",
     "pytest-asyncio>=0.23",

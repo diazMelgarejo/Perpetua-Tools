@@ -56,12 +56,19 @@ flagged on review 4770121389 of PR #276 — also on origin.
    4770121389 addressed; re-check for newer rounds).
 2. **Manual smoke:** `ALPHACLAW_TLS_ENABLED=1` + real AlphaClaw gateway on
    loopback.
-3. **Windows ACL enforcement for cert store** — plan filed at
-   [`2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md`](2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md),
-   not yet implemented. Fixes the deprecated `SetFileSecurity` API the
-   original draft's code sample used (its own references already flagged
-   the deprecation but the sample hadn't been updated) — replaced with
-   `SetNamedSecurityInfo` per current Microsoft guidance.
+3. **Windows ACL enforcement for cert store** — minimal implementation
+   done per the plan at
+   [`2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md`](2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md):
+   `_secure_path()` + pywin32 (`SetNamedSecurityInfo`, not the deprecated
+   `SetFileSecurity`) with an `icacls` subprocess fallback, all 7 call
+   sites replaced, 8 new unit tests (mocked win32security), 17/17 tests
+   green. **Not yet verified on real Windows hardware** — needs manual
+   verification per the plan's §5.2 on both the current RTX 3080 Windows
+   machine and the incoming RTX 5080 replacement before this is trusted in
+   production. Also still open: confirming
+   `hasattr(win32security, "PROTECTED_DACL_SECURITY_INFORMATION")` on the
+   actual target pywin32 build (plan §Provenance note), and adding
+   `pywin32` to the Windows install path.
 4. **v2 deferred** (see below): admin-pinned fingerprints, rotation policy,
    mTLS, auto-enable.
 5. **Companion orama doc** merges with `security/02-peer-mesh-auth-tls-v2-plan`
@@ -126,12 +133,14 @@ the only call site that ever touches `gateway_url`'s scheme.
 - Not auto-enabled by default (`ALPHACLAW_TLS_ENABLED` opt-in) — matching
   the plan's "existing deployments" answer (v1 warns/opts-in, never
   enforces)
-- **Windows ACL enforcement for the cert/key/fingerprint store** — currently
-  POSIX-only (`chmod 0o600`/`0o700`); on Windows, `Path.chmod()` only
-  toggles the read-only attribute and does not restrict other local users'
-  read access. Plan filed:
-  [`2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md`](2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md)
-  (not implemented)
+- **Windows ACL enforcement for the cert/key/fingerprint store** — minimal
+  implementation landed (`_secure_path()`, pywin32 + icacls fallback, 7
+  call sites, 8 unit tests). Plan:
+  [`2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md`](2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md).
+  Still open: real-hardware verification on the current RTX 3080 Windows
+  machine and the incoming RTX 5080 replacement (plan §5.2), confirming
+  `PROTECTED_DACL_SECURITY_INFORMATION` availability on the actual pywin32
+  build in use, and adding `pywin32` to the Windows install path.
 - mTLS, audit logging, the pluggable auth-provider architecture (BUZZ/
   Twitter/Google) — all orama-side and PT-side v2 work tracked in the
   companion doc, not started here
