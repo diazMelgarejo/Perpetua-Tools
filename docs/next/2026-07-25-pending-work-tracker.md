@@ -50,11 +50,16 @@ turn TLS on, when asked, works and is tested."
 - [ ] **Not started:** mTLS
 - [ ] **Not started:** auto-enabling by default — `ALPHACLAW_TLS_ENABLED`
       is opt-in; no auto-detection of fresh-vs-existing install
-- [ ] **Not started / documented limitation:** file-permission enforcement
-      (0600/0700) is POSIX mode bits only — no effect on Windows, which is
-      ACL-based. No `icacls`/pywin32 ACL enforcement implemented; the gap
-      is documented explicitly in the module's own docstring, not silently
-      assumed to be covered.
+- [ ] **Not started / documented limitation, follow-up needed soon:**
+      file-permission enforcement (0600/0700) is POSIX mode bits only — no
+      effect on Windows, which is ACL-based. No `icacls`/pywin32 ACL
+      enforcement implemented; the gap is documented explicitly in the
+      module's own docstring, not silently assumed to be covered.
+      Raised in [PR #276 review 4769699297](https://github.com/diazMelgarejo/Perpetua-Tools/pull/276#pullrequestreview-4769699297)
+      (finding: "Replace POSIX-only permission handling... with Windows
+      ACL enforcement using an appropriate supported mechanism such as
+      icacls or pywin32"). Companion item in orama-system's own tracker —
+      see that repo's `docs/next/2026-07-25-pending-work-tracker.md`.
 - [ ] PR #276 itself: open, not yet merged. Review 4769478731's 4 findings
       all addressed; check for newer review rounds before assuming clean.
 
