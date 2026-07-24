@@ -29,6 +29,9 @@ of open work across both repos"):
 | `2026-07-17-tool-use-limits-session-reflection.md` | Session retrospective | Honest retrospective — not a plan, no action items to close |
 | `2026-07-17-frugal-pr-review-triage-pattern.md` | PR review triage pattern | Extracted from live use on PR #256, not hypothetical — reference pattern, not a pending task |
 | `2026-07-19-heartbeat-daemon-design.md` | Heartbeat daemon design | DESIGN ONLY per explicit instruction — "scope now, build later"; not re-verified this pass, still design-stage |
+| `2026-07-24-alphaclaw-tls-proxy-scaffolding.md` | AlphaClaw TLS proxy — v1 wiring status | v1 complete, PR #276 open; re-verified 2026-07-24 (pytest green) |
+| `2026-07-25-pending-work-tracker.md` | Cross-repo pending-work tracker | See file — tracks PT #276 / orama #197 follow-ups |
+| `2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md` | Windows ACL enforcement for the AlphaClaw TLS cert/key store | PLAN — not implemented; deprecated `SetFileSecurity` call in the source draft fixed to `SetNamedSecurityInfo` before filing, re-verified 2026-07-24 (EXA + Firecrawl against Microsoft/pywin32 docs) |
 
 Everything above except the coordination-module-consolidation-plan (which
 this session's P3 trace directly touched, hence the full re-verify) is
