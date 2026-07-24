@@ -395,13 +395,9 @@ async def reconcile(req: ReconcileRequest, request: Request):
 @limiter.limit("20/minute")
 async def orchestrate(req: OrchestrationRequest, request: Request):
     routing_log = []
-    if req.is_finance_realtime:
-        routing_log.append("Routing to Perplexity Grok 4.1 for real-time finance/events")
-        result = await call_perplexity(req.task_description, model="grok-beta")
-        if not result:
-            routing_log.append("Cloud failed, falling back to local Qwen3.5-35B research")
-            result = await call_ollama(req.task_description, "qwen3.5:35b-a3b-q4_K_M", OLLAMA_WINDOWS_ENDPOINT)
-    elif req.privacy_critical:
+    # privacy_critical must win over is_finance_realtime: SKILL.md routes
+    # "Privacy Critical? → YES → ALWAYS local, skip cloud".
+    if req.privacy_critical:
         # v1.1 P4 frugality wiring (additive, 2026-07-22): each hop below is
         # now gated through orchestrator.gate.gate_permits() -- the same
         # canonical policy gate ModelRegistry.route_task() consults -- before
@@ -452,6 +448,12 @@ async def orchestrate(req: OrchestrationRequest, request: Request):
                 result = await call_ollama(req.task_description, ollama_model, OLLAMA_WINDOWS_ENDPOINT)
             else:
                 routing_log.append(f"Frugality gate denied Ollama ({ollama_model}): {denied_reason}")
+    elif req.is_finance_realtime:
+        routing_log.append("Routing to Perplexity Grok 4.1 for real-time finance/events")
+        result = await call_perplexity(req.task_description, model="grok-beta")
+        if not result:
+            routing_log.append("Cloud failed, falling back to local Qwen3.5-35B research")
+            result = await call_ollama(req.task_description, "qwen3.5:35b-a3b-q4_K_M", OLLAMA_WINDOWS_ENDPOINT)
     else:
         routing_log.append("Standard orchestration. Calling Perplexity cloud.")
         result = await call_perplexity(req.task_description)

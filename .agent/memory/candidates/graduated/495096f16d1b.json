@@ -1,0 +1,43 @@
+{
+  "id": "495096f16d1b",
+  "key": "manual_495096",
+  "name": "manual_495096",
+  "claim": "After 'gh pr merge' on any branch other than main (a stacked/dependent PR whose base is a feature branch), immediately git fetch that branch and reconcile the local checkout before doing any further local work on it. gh pr merge updates the branch on GitHub only -- a local checkout of that same branch does not auto-update, and continuing local merges (e.g. pulling in main) can silently operate on the stale pre-merge file content with no error and no conflict marker, quietly reverting a fix that appears to have already landed.",
+  "conditions": [
+    "git-workflow",
+    "inviolable",
+    "local-remote-divergence",
+    "merge-ordering",
+    "silent-regression",
+    "stacked-pr"
+  ],
+  "evidence_ids": [
+    "2026-07-23T12:01:18.462233+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T12:01:18.462233+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T12:01:18.462233+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T12:01:18.640286+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-23: merged a stacked PR via gh pr merge (base was a feature branch, not main), then continued doing local git merge operations on that same branch's LOCAL checkout without ever fetching the remote's new tip. A subsequent 'sync main' merge silently carried forward the stale, pre-fix version of a file -- no conflict, no error -- and the regression only surfaced later when an unrelated test started failing for a reason that traced back to a missing function. Root-caused via git log -- <file> showing the fix commit wasn't in local history at all, then git fetch + git rev-parse confirming local and origin had diverged. Also codified in orama-system's git-history-surgery skill (Non-Negotiables + a new 'Absorbing external/automated PR content' section: sync all remotes FIRST, replay new/adapted content LAST, never interleaved).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T12:01:18.462233+00:00"
+      ],
+      "lessons_sha": "b6cd3ce982e3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T12:01:18.640272+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-23: merged a stacked PR via gh pr merge (base was a feature branch, not main), then continued doing local git merge operations on that same branch's LOCAL checkout without ever fetching the remote's new tip. A subsequent 'sync main' merge silently carried forward the stale, pre-fix version of a file -- no conflict, no error -- and the regression only surfaced later when an unrelated test started failing for a reason that traced back to a missing function. Root-caused via git log -- <file> showing the fix commit wasn't in local history at all, then git fetch + git rev-parse confirming local and origin had diverged. Also codified in orama-system's git-history-surgery skill (Non-Negotiables + a new 'Absorbing external/automated PR content' section: sync all remotes FIRST, replay new/adapted content LAST, never interleaved)."
+}
