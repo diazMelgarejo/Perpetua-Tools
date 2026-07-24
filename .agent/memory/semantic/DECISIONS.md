@@ -129,7 +129,7 @@ No manual edits to versioned surfaces. Historical docs are excluded intentionall
 
 **Decision:** When integrating Hermes-generated memory into tracked .agent/memory/ files, always sanitize absolute workstation paths before committing. Hermes runs on the physical workstation and naturally includes real paths in its memory outputs. These must be converted to relative paths (../../) or env vars ($REPO_ROOT, $OPENCLAW_ROOT) before they enter tracked files.
 
-**Evidence:** 2026-06-23-memory-update-01 contained `%USERPROFILE%\Downloads\SKILLS.md\uLtrathink\Perplexity-Tools` — this violates LINT-006 and the repo's own anti-doxxing lesson. The uLtrathink spelling anchor was preserved; the absolute path was replaced with env var guidance.
+**Evidence:** 2026-06-23-memory-update-01 contained `<workspace-root>` — this violates LINT-006 and the repo's own anti-doxxing lesson. The uLtrathink spelling anchor was preserved; the absolute path was replaced with env var guidance.
 
 **Status:** active.
 
@@ -374,7 +374,7 @@ code-review, git-history-surgery, gstack, skillify, hermes-harness, mcp-orchestr
 ---
 ## 2026-07-13: Git author identity is not a reliable human-vs-agent signal
 **Decision:** When investigating "who did this" in git history, do not treat a familiar
-git author identity (e.g. `<the repo's approved identity>`) as proof of human
+git author identity (e.g. `cyre <owner Gmail identity>`) as proof of human
 authorship. Autonomous agents (AutoResearcher via `orchestrator/autoresearch_bridge.py`,
 and any other agent committing through this stack) inherit whatever git identity is
 locally configured — their commits are indistinguishable from human commits by author

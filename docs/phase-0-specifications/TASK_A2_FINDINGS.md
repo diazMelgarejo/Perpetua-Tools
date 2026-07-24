@@ -1,8 +1,11 @@
 # Task A2: Confidence Scoring Function — Findings Report
 
 **Date:** 2026-07-10  
-**Status:** Implementation complete, all tests passing (12/12 ✓)  
-**Formula Validation:** Formula is correct per spec; minor spec comment discrepancies identified.
+**Status:** Historical scratchpad report; superseded by the shipped multiplicative implementation.
+**Formula Validation:** The additive scratch implementation below is not the current production path.
+
+> **Correction:** the live `compute_confidence()` path is in `orchestrator/membership.py`, and it uses the multiplicative formula described in the closure audit. Treat the report below as provenance for the deleted scratchpad only.
+> Ranked handoff: [phase0-and-orama-closure-rankings-2026-07-18.md](../../../../references/phase0-and-orama-closure-rankings-2026-07-18.md)
 
 ---
 
@@ -12,7 +15,7 @@
 - **Main function:** `confidence_scoring.py:compute_confidence()`
 - **Signature:** `compute_confidence(proof_score, freshness_score, witness_agreement, witness_disagreement=0) → float [0.0, 1.0]`
 
-### Formula (Implemented)
+### Formula (Historical Scratchpad; not current)
 ```python
 confidence = (proof_score × 0.5) + (freshness_score × 0.3) + (witness_bonus × 0.2)
 
@@ -144,26 +147,36 @@ This is **correct behavior** per spec § 3.1:
 
 ---
 
+### Current Shipped Formula
+
+The current shipped implementation is multiplicative and belongs in `orchestrator/membership.py`, not in this scratch report:
+
+```python
+confidence = proof_score * freshness_factor * witness_multiplier
+```
+
+Use the in-repo closure audit under `docs/references/` for the active proof/freshness/witness contract and keep this file as a historical note only.
+
 ## Conclusion
 
-**Formula validates. All tests pass (12/12).**
+**This report validates the deleted scratchpad, not current mainline.**
 
 **Three key points:**
 
-1. **Formula is mathematically sound** — witness bonus scales correctly, disagreement penalty is properly conditional, component weights sum to 100% of the confidence range.
+1. The additive scratch formula above is historical and should not be treated as production truth.
+2. The shipped implementation uses the multiplicative formula in `orchestrator/membership.py`.
+3. Any future TDD or documentation updates should point at the shipped multiplicative path and its tests, not this scratchpad.
 
-2. **Witness solo bonus (0.04 minimum) is intentional** — designed to give credit to a single observer with good proof/freshness, but still vulnerable to multi-observer disagreement.
-
-3. **Spec examples contain arithmetic rounding/display differences** — the implemented formula is correct per the mathematical specification, even where the spec's example comments diverge (0.35 vs. 0.40, 0.95 vs. 1.0).
-
-**Recommendation:** Formula is production-ready. Deploy as-is. Address spec example typos in documentation update.
+**Recommendation:** Retain this file only as provenance. Do not use it as the source of truth for the current confidence contract.
 
 ---
 
 ## Implementation Files
 
-- **Confidence function:** `/private/tmp/claude-501/-Users-lawrencecyremelgarejo-code-OpenClaw/0a13d9d5-dba6-48e0-9e32-bbe4ecc651f8/scratchpad/confidence_scoring.py`
-- **Test suite:** Same file, `test_confidence_scoring()` function
-- **Analysis:** Same file, `analyze_formula_logic()` function
+- **Confidence function:** historical scratchpad only; not merged
+- **Test suite:** historical scratchpad only; not merged
+- **Analysis:** historical scratchpad only; not merged
+
+See `../../../../references/coordination-and-plans-completeness-audit-2026-07-18.md` for the live status summary that supersedes this scratch report.
 
 All code is ready for integration into `Phase 1 Task 3: Implement scoring formula, wire into detection loop`.

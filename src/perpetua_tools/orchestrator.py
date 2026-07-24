@@ -40,6 +40,7 @@ from orchestrator.audit_log import AuditLog
 from orchestrator.distance_bucket import KBucketTable
 from orchestrator.equivocation import EquivocationLog
 from orchestrator.reputation import ReputationLedger
+from orchestrator.gate import gate_permits, load_frugality_tier_by_name
 try:
     from loguru import logger
 except ImportError:
@@ -96,6 +97,16 @@ LMS_API_TOKEN: str = os.getenv("LM_STUDIO_API_TOKEN", "")
 LMS_WIN_MODEL: str = os.getenv("LMS_WIN_MODEL", "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2")
 LMS_MAC_MODEL: str = os.getenv("LMS_MAC_MODEL", "Qwen3.5-9B-MLX-4bit")
 LMS_TIMEOUT: float = float(os.getenv("LM_STUDIO_TIMEOUT", "120"))
+
+# v1.1 P4 frugality wiring (additive, 2026-07-22): pre-dispatch policy gate
+# lookup table, read once at import time from config/models.yml (no live
+# probes, no network I/O -- see orchestrator/gate.py). A model absent from
+# models.yml, or present without a `frugality_tier` key, resolves to None
+# here; gate_permits() always permits an unclassified (`None`) tier -- the
+# gate "has no opinion" -- so the privacy_critical branch below is a pure
+# superset of its pre-gate behavior until frugality_tier values are set for
+# the models it actually dispatches to.
+_FRUGALITY_TIER_BY_MODEL: Dict[str, Optional[int]] = load_frugality_tier_by_name()
 
 # sec: validate API key is configured at startup
 if not PERPLEXITY_API_KEY:
@@ -384,27 +395,64 @@ async def reconcile(req: ReconcileRequest, request: Request):
 @limiter.limit("20/minute")
 async def orchestrate(req: OrchestrationRequest, request: Request):
     routing_log = []
-    if req.is_finance_realtime:
+    # privacy_critical must win over is_finance_realtime: SKILL.md routes
+    # "Privacy Critical? → YES → ALWAYS local, skip cloud".
+    if req.privacy_critical:
+        # v1.1 P4 frugality wiring (additive, 2026-07-22): each hop below is
+        # now gated through orchestrator.gate.gate_permits() -- the same
+        # canonical policy gate ModelRegistry.route_task() consults -- before
+        # dispatch. A model with no config/models.yml frugality_tier entry
+        # (e.g. oramasys, which is a meta-orchestrator endpoint, not a single
+        # model) always permits: the gate has no opinion and this branch
+        # falls through to the exact pre-gate chain unchanged. A model whose
+        # classified frugality_tier exceeds the privacy_critical ceiling is
+        # skipped (never dispatched) and the next fallback hop is tried --
+        # see orchestrator/gate.py's override contract for how a human-
+        # confirmed escalation is (and is not) possible.
+        routing_log.append("Privacy critical: routing to Oramasys → LM Studio Win → LM Studio Mac → Ollama.")
+        result = None
+
+        oramasys_tier = _FRUGALITY_TIER_BY_MODEL.get("oramasys")
+        allowed, denied_reason = gate_permits(oramasys_tier, privacy_critical=True)
+        if allowed:
+            result = await call_oramasys(req.task_description)
+        else:
+            routing_log.append(f"Frugality gate denied Oramasys: {denied_reason}")
+
+        if not result:
+            routing_log.append("Oramasys unavailable, trying LM Studio Win agents.")
+            win_tier = _FRUGALITY_TIER_BY_MODEL.get(LMS_WIN_MODEL)
+            allowed, denied_reason = gate_permits(win_tier, privacy_critical=True)
+            if allowed:
+                for ep in LMS_WIN_ENDPOINTS:
+                    result = await call_lmstudio(req.task_description, endpoint=ep, model=LMS_WIN_MODEL)
+                    if result:
+                        routing_log.append(f"LM Studio Win answered ({ep}).")
+                        break
+            else:
+                routing_log.append(f"Frugality gate denied LM Studio Win ({LMS_WIN_MODEL}): {denied_reason}")
+        if not result:
+            routing_log.append("LM Studio Win failed, trying LM Studio Mac.")
+            mac_tier = _FRUGALITY_TIER_BY_MODEL.get(LMS_MAC_MODEL)
+            allowed, denied_reason = gate_permits(mac_tier, privacy_critical=True)
+            if allowed:
+                result = await call_lmstudio(req.task_description, endpoint=LMS_MAC_ENDPOINT, model=LMS_MAC_MODEL)
+            else:
+                routing_log.append(f"Frugality gate denied LM Studio Mac ({LMS_MAC_MODEL}): {denied_reason}")
+        if not result:
+            routing_log.append("LM Studio Mac failed, falling back to Ollama.")
+            ollama_model = "qwen3.5:35b-a3b-q4_K_M"
+            ollama_tier = _FRUGALITY_TIER_BY_MODEL.get(ollama_model)
+            allowed, denied_reason = gate_permits(ollama_tier, privacy_critical=True)
+            if allowed:
+                result = await call_ollama(req.task_description, ollama_model, OLLAMA_WINDOWS_ENDPOINT)
+            else:
+                routing_log.append(f"Frugality gate denied Ollama ({ollama_model}): {denied_reason}")
+    elif req.is_finance_realtime:
         routing_log.append("Routing to Perplexity Grok 4.1 for real-time finance/events")
         result = await call_perplexity(req.task_description, model="grok-beta")
         if not result:
             routing_log.append("Cloud failed, falling back to local Qwen3.5-35B research")
-            result = await call_ollama(req.task_description, "qwen3.5:35b-a3b-q4_K_M", OLLAMA_WINDOWS_ENDPOINT)
-    elif req.privacy_critical:
-        routing_log.append("Privacy critical: routing to Oramasys → LM Studio Win → LM Studio Mac → Ollama.")
-        result = await call_oramasys(req.task_description)
-        if not result:
-            routing_log.append("Oramasys unavailable, trying LM Studio Win agents.")
-            for ep in LMS_WIN_ENDPOINTS:
-                result = await call_lmstudio(req.task_description, endpoint=ep, model=LMS_WIN_MODEL)
-                if result:
-                    routing_log.append(f"LM Studio Win answered ({ep}).")
-                    break
-        if not result:
-            routing_log.append("LM Studio Win failed, trying LM Studio Mac.")
-            result = await call_lmstudio(req.task_description, endpoint=LMS_MAC_ENDPOINT, model=LMS_MAC_MODEL)
-        if not result:
-            routing_log.append("LM Studio Mac failed, falling back to Ollama.")
             result = await call_ollama(req.task_description, "qwen3.5:35b-a3b-q4_K_M", OLLAMA_WINDOWS_ENDPOINT)
     else:
         routing_log.append("Standard orchestration. Calling Perplexity cloud.")

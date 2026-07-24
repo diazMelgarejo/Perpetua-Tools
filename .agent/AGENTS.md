@@ -51,8 +51,8 @@ Workflow:
 
 | Do | Don't |
 |----|-------|
-| Repo-relative paths (`../../Perpetua-Tools/.agent`) | `C:\<user>\...`, `/\<user>/...` |
-| Env anchors (`$REPO_ROOT`, `PERPETUA_TOOLS_ROOT`) | `%USERPROFILE%\Downloads\...` workspace trees |
+| Repo-relative paths (`../../Perpetua-Tools/.agent`) | `OS-specific home-directory paths`, `OS-specific home-directory path form` |
+| Env anchors (`$REPO_ROOT`, `PERPETUA_TOOLS_ROOT`) | workspace-tree paths |
 | Generic `~/.gstack/projects/<slug>/` | Pinning "canonical workspace" paths in memory |
 | `orama-system` / `Perpetua-Tools` repo names | Teaching agents your Downloads folder layout |
 
@@ -86,6 +86,17 @@ When merging nested branches produced by independent agents against a moving mai
 **Canonical doctrine (orama-way):** load **oramasys-method** →
 [orama `integrative-merge.md`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/oramasys-method/references/integrative-merge.md)
 (synthesize, never amputate; six resolution modes). This section is the portable-brain summary; the skill reference is authoritative.
+
+**Board-job source line:** when claiming write work from a GossipBus / job
+board row that carries `source_ref` and `expected_base_sha`, create a fresh
+worktree from that exact source and stop if `HEAD` differs — same board plus
+same repo is not enough. These fields are currently **optional and
+provisional** (producer-side validated when present, not yet required on
+every row); treat their absence as "no source-line guarantee available" for
+that row, not as an error. See `references/branch-local-review-remediation.md`
+and, for the schema's cross-repo status and the open question on making it
+required in v2, `docs/v2/48-board-job-source-line-schema.md` in
+`orama-system`.
 
 ### Step-by-step
 
@@ -147,9 +158,13 @@ Daily driver, highest-leverage first:
 4. Update `memory/working/WORKSPACE.md` as you work; archive on completion.
 5. Never hand-edit `memory/semantic/LESSONS.md` — it's rendered from
    `lessons.jsonl`. Use `graduate.py` / `reject.py` instead.
-6. Follow `protocols/permissions.md`. Blocked means blocked.
-7. When a self-rewrite hook fires, propose conservative edits only.
-8. The harness is dumb on purpose. Reasoning lives in skills + the host agent.
+6. Continue using and committing `.agent/memory/**` through the established
+   memory tools when the work requires it, but never record the owner's Gmail
+   address in memory files, CONTRIBUTING.md, or PR templates; use a neutral
+   owner-identity label instead.
+7. Follow `protocols/permissions.md`. Blocked means blocked.
+8. When a self-rewrite hook fires, propose conservative edits only.
+9. The harness is dumb on purpose. Reasoning lives in skills + the host agent.
 
 ## Security Invariant Enforcement Protocol (OramaSys v2)
 

@@ -5,6 +5,7 @@ Mirrors orama-system/tests/test_repo_hygiene.py with PT-specific adaptations.
 from __future__ import annotations
 
 import importlib.util
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -308,13 +309,393 @@ def test_forbidden_identity_exception_is_exempt(tmp_path):
     assert errors == []
 
 
+def test_path_hygiene_source_exempt_from_own_topology_pattern(tmp_path, monkeypatch):
+    """Regression: .agent/memory/path_hygiene.py's own source (comment and
+    regex definition) legitimately contains the literal /tmp/ pattern it
+    exists to redact elsewhere -- it must not trip its own scanner. This
+    exact self-reference broke CI after adding /tmp/ coverage to the
+    sanitizer."""
+    repo_hygiene = load_repo_hygiene()
+    literals = tmp_path / "verboten.local"
+    literals.write_text("local_path_fragment=/tmp/\n", encoding="utf-8")
+    monkeypatch.setenv("OPENCLAW_VERBOTEN_LITERALS", str(literals))
+
+    real_source = Path(".agent/memory/path_hygiene.py").resolve()
+    agent_dir = tmp_path / ".agent" / "memory"
+    agent_dir.mkdir(parents=True)
+    target = agent_dir / "path_hygiene.py"
+    target.write_text(real_source.read_text(encoding="utf-8"), encoding="utf-8")
+
+    errors = repo_hygiene.scan_agent_private_surface(
+        tmp_path, [".agent/memory/path_hygiene.py"]
+    )
+
+    assert errors == []
+
+
+def test_topology_token_exemption_does_not_hide_real_leaks(tmp_path, monkeypatch):
+    """Regression: the self-exemption must be scoped to the specific
+    documenting files only -- an actual /tmp/ leak in an unrelated tracked
+    .agent file must still be caught."""
+    repo_hygiene = load_repo_hygiene()
+    literals = tmp_path / "verboten.local"
+    literals.write_text("local_path_fragment=/tmp/\n", encoding="utf-8")
+    monkeypatch.setenv("OPENCLAW_VERBOTEN_LITERALS", str(literals))
+
+    agent_dir = tmp_path / ".agent" / "memory" / "semantic"
+    agent_dir.mkdir(parents=True)
+    lessons = agent_dir / "lessons.jsonl"
+    lessons.write_text(
+        '{"claim": "described in /tmp/some-real-leak.md"}\n', encoding="utf-8"
+    )
+
+    errors = repo_hygiene.scan_agent_private_surface(
+        tmp_path, [".agent/memory/semantic/lessons.jsonl"]
+    )
+
+    assert len(errors) == 1
+
+
+def test_agent_memory_owner_gmail_identity_is_blocked(tmp_path, monkeypatch):
+    repo_hygiene = load_repo_hygiene()
+    literals = tmp_path / "verboten.local"
+    private_email = "private.owner@example.invalid"
+    literals.write_text(
+        f"owner_gmail={private_email}\nowner_name=Private.Owner\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("OPENCLAW_VERBOTEN_LITERALS", str(literals))
+    memory = tmp_path / ".agent" / "memory" / "episodic" / "AGENT_LEARNINGS.jsonl"
+    memory.parent.mkdir(parents=True)
+    memory.write_text(f'{{"author":"{private_email}"}}\n', encoding="utf-8")
+
+    errors = repo_hygiene.scan_private_verboten_literals(
+        tmp_path, [".agent/memory/episodic/AGENT_LEARNINGS.jsonl"]
+    )
+
+    assert len(errors) == 1
+    assert "private verboten literal in tracked file" in errors[0]
+
+
+def test_private_verboten_literals_are_blocked_case_insensitively(tmp_path, monkeypatch):
+    repo_hygiene = load_repo_hygiene()
+    literals = tmp_path / "verboten.local"
+    private_email = "private.owner@example.invalid"
+    private_name = "Private.Owner"
+    forbidden_attr = "Blocked.Attribution@example.invalid"
+    literals.write_text(
+        f"owner_gmail={private_email}\n"
+        f"owner_name={private_name}\n"
+        f"forbidden_attribution={forbidden_attr}\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("OPENCLAW_VERBOTEN_LITERALS", str(literals))
+    contributing = tmp_path / "CONTRIBUTING.md"
+    contributing.write_text(f"Use {private_email.upper()}\n", encoding="utf-8")
+    template = tmp_path / ".github" / "pull_request_template.md"
+    template.parent.mkdir()
+    template.write_text(
+        f"Do not use {private_name.lower()} or {forbidden_attr.upper()}\n",
+        encoding="utf-8",
+    )
+
+    errors = repo_hygiene.scan_private_verboten_literals(
+        tmp_path, ["CONTRIBUTING.md", ".github/pull_request_template.md"]
+    )
+
+    assert len(errors) == 2
+    assert any("CONTRIBUTING.md" in error for error in errors)
+    assert any(".github/pull_request_template.md" in error for error in errors)
+
+
+def test_owner_gmail_redaction_rule_allows_mechanical_allowlists(tmp_path, monkeypatch):
+    repo_hygiene = load_repo_hygiene()
+    private_email = "private.owner@example.invalid"
+    literals = tmp_path / ".cursor-private-literals"
+    literals.write_text(f"owner_gmail={private_email}\n", encoding="utf-8")
+
+    monkeypatch.setenv("OPENCLAW_VERBOTEN_LITERALS", str(literals))
+    # The approved mechanical format: AUTHORIZED_CONTRIBUTORS.md's own
+    # canonical identity line. Must be exempt.
+    allowlisted = tmp_path / ".github" / "AUTHORIZED_CONTRIBUTORS.md"
+    allowlisted.parent.mkdir(parents=True)
+    allowlisted.write_text(f"cyre <{private_email}>\n", encoding="utf-8")
+
+    # An ordinary occurrence elsewhere must still be blocked -- this is
+    # the assertion that was missing before, which is what let the prior
+    # version of this test pass vacuously (tokens was always empty).
+    ordinary = tmp_path / "NOTES.md"
+    ordinary.write_text(f"contact: {private_email}\n", encoding="utf-8")
+
+    allowlisted_errors = repo_hygiene.scan_private_verboten_literals(
+        tmp_path, [".github/AUTHORIZED_CONTRIBUTORS.md"]
+    )
+    ordinary_errors = repo_hygiene.scan_private_verboten_literals(
+        tmp_path, ["NOTES.md"]
+    )
+
+    assert allowlisted_errors == []
+    assert len(ordinary_errors) == 1
+
+
+def test_private_literal_values_preserves_internal_whitespace(tmp_path):
+    """Regression: a spaced owner name like 'Private Owner' must survive
+    parsing intact, not get collapsed to 'PrivateOwner' -- only leading/
+    trailing whitespace should be trimmed."""
+    repo_hygiene = load_repo_hygiene()
+    literals = tmp_path / ".verboten-literals.local"
+    literals.write_text("owner_name =  Private Owner Name  \n", encoding="utf-8")
+
+    old = os.environ.get("OPENCLAW_VERBOTEN_LITERALS")
+    os.environ["OPENCLAW_VERBOTEN_LITERALS"] = str(literals)
+    try:
+        values = repo_hygiene.private_literal_values(tmp_path, "owner_name")
+    finally:
+        if old is None:
+            os.environ.pop("OPENCLAW_VERBOTEN_LITERALS", None)
+        else:
+            os.environ["OPENCLAW_VERBOTEN_LITERALS"] = old
+
+    assert values == ["Private Owner Name"]
+
+
+def test_allowlist_scoped_to_owner_gmail_only_not_owner_name(tmp_path):
+    """Regression: the AUTHORIZED_CONTRIBUTORS.md mechanical allowlist must
+    exempt only the owner_gmail token, never owner_name or
+    forbidden_attribution, even inside that same allowlisted file."""
+    repo_hygiene = load_repo_hygiene()
+    private_email = "private.owner@example.invalid"
+    private_name = "Private Owner Name"
+    literals = tmp_path / ".verboten-literals.local"
+    literals.write_text(
+        f"owner_gmail={private_email}\nowner_name={private_name}\n", encoding="utf-8"
+    )
+
+    old = os.environ.get("OPENCLAW_VERBOTEN_LITERALS")
+    os.environ["OPENCLAW_VERBOTEN_LITERALS"] = str(literals)
+    try:
+        allowlisted = tmp_path / ".github" / "AUTHORIZED_CONTRIBUTORS.md"
+        allowlisted.parent.mkdir(parents=True)
+        # Canonical exempt line, plus the owner name elsewhere in the SAME
+        # allowlisted file -- the name occurrence must still error.
+        allowlisted.write_text(
+            f"cyre <{private_email}>\nReviewed by {private_name}.\n", encoding="utf-8"
+        )
+        errors = repo_hygiene.scan_private_verboten_literals(
+            tmp_path, [".github/AUTHORIZED_CONTRIBUTORS.md"]
+        )
+    finally:
+        if old is None:
+            os.environ.pop("OPENCLAW_VERBOTEN_LITERALS", None)
+        else:
+            os.environ["OPENCLAW_VERBOTEN_LITERALS"] = old
+
+    assert len(errors) == 1
+
+
+def test_allowlist_requires_exact_full_line_not_embedded(tmp_path):
+    """Regression: the same email embedded in a longer line (not a standalone
+    exact 'cyre <email>' line) must still error -- substring matching alone
+    is not sufficient to grant the exemption."""
+    repo_hygiene = load_repo_hygiene()
+    private_email = "private.owner@example.invalid"
+    literals = tmp_path / ".verboten-literals.local"
+    literals.write_text(f"owner_gmail={private_email}\n", encoding="utf-8")
+
+    old = os.environ.get("OPENCLAW_VERBOTEN_LITERALS")
+    os.environ["OPENCLAW_VERBOTEN_LITERALS"] = str(literals)
+    try:
+        allowlisted = tmp_path / ".github" / "AUTHORIZED_CONTRIBUTORS.md"
+        allowlisted.parent.mkdir(parents=True)
+        allowlisted.write_text(
+            f"Contact cyre <{private_email}> for questions.\n", encoding="utf-8"
+        )
+        errors = repo_hygiene.scan_private_verboten_literals(
+            tmp_path, [".github/AUTHORIZED_CONTRIBUTORS.md"]
+        )
+    finally:
+        if old is None:
+            os.environ.pop("OPENCLAW_VERBOTEN_LITERALS", None)
+        else:
+            os.environ["OPENCLAW_VERBOTEN_LITERALS"] = old
+
+    assert len(errors) == 1
+
+
+# ---------------------------------------------------------------------------
+# scan_agent_private_surface
+# ---------------------------------------------------------------------------
+
+def test_agent_private_surface_blocks_unclassified_email_literal(tmp_path):
+    repo_hygiene = load_repo_hygiene()
+    memory = tmp_path / ".agent" / "memory" / "semantic" / "lessons.jsonl"
+    memory.parent.mkdir(parents=True)
+    memory.write_text(
+        '{"claim":"contact synthetic.owner@private-mail.test"}\n',
+        encoding="utf-8",
+    )
+
+    errors = repo_hygiene.scan_agent_private_surface(
+        tmp_path, [".agent/memory/semantic/lessons.jsonl"]
+    )
+
+    assert len(errors) == 1
+    assert "private/unclassified email literal in .agent file" in errors[0]
+    assert "synthetic.owner@private-mail.test" not in errors[0]
+
+
+def test_agent_private_surface_allows_public_bot_and_synthetic_email_domains(tmp_path):
+    repo_hygiene = load_repo_hygiene()
+    memory = tmp_path / ".agent" / "memory" / "semantic" / "lessons.jsonl"
+    memory.parent.mkdir(parents=True)
+    memory.write_text(
+        '{"claim":"Codex <codex@openai.com>; fixture <agent@example.invalid>"}\n',
+        encoding="utf-8",
+    )
+
+    errors = repo_hygiene.scan_agent_private_surface(
+        tmp_path, [".agent/memory/semantic/lessons.jsonl"]
+    )
+
+    assert errors == []
+
+
+def test_agent_private_surface_blocks_configured_verboten_literals(tmp_path):
+    repo_hygiene = load_repo_hygiene()
+    literals = tmp_path / ".verboten-literals.local"
+    literals.write_text(
+        "owner_name=Private Owner Name\n"
+        "forbidden_attribution=blocked-handle\n",
+        encoding="utf-8",
+    )
+    old = os.environ.get("OPENCLAW_VERBOTEN_LITERALS")
+    os.environ["OPENCLAW_VERBOTEN_LITERALS"] = str(literals)
+    try:
+        memory = tmp_path / ".agent" / "memory" / "working" / "note.md"
+        memory.parent.mkdir(parents=True)
+        memory.write_text("Reviewed by Private Owner Name.\n", encoding="utf-8")
+        errors = repo_hygiene.scan_agent_private_surface(
+            tmp_path, [".agent/memory/working/note.md"]
+        )
+    finally:
+        if old is None:
+            os.environ.pop("OPENCLAW_VERBOTEN_LITERALS", None)
+        else:
+            os.environ["OPENCLAW_VERBOTEN_LITERALS"] = old
+
+    assert len(errors) == 1
+    assert "private verboten literal in .agent file" in errors[0]
+    assert "Private Owner Name" not in errors[0]
+
+
+def test_agent_private_surface_blocks_local_temp_and_workspace_paths(tmp_path):
+    repo_hygiene = load_repo_hygiene()
+    literals = tmp_path / ".verboten-literals.local"
+    literals.write_text(
+        "local_path_fragment=LOCAL_TEMP_MARKER\n"
+        "local_workspace_fragment=LOCAL_WORKSPACE_MARKER\n",
+        encoding="utf-8",
+    )
+    old = os.environ.get("OPENCLAW_VERBOTEN_LITERALS")
+    os.environ["OPENCLAW_VERBOTEN_LITERALS"] = str(literals)
+    memory = tmp_path / ".agent" / "memory" / "working" / "note.md"
+    memory.parent.mkdir(parents=True)
+    memory.write_text(
+        "Use LOCAL_TEMP_MARKER/session/out.log and LOCAL_WORKSPACE_MARKER/cache.\n",
+        encoding="utf-8",
+    )
+
+    try:
+        errors = repo_hygiene.scan_agent_private_surface(
+            tmp_path, [".agent/memory/working/note.md"]
+        )
+    finally:
+        if old is None:
+            os.environ.pop("OPENCLAW_VERBOTEN_LITERALS", None)
+        else:
+            os.environ["OPENCLAW_VERBOTEN_LITERALS"] = old
+
+    assert len(errors) == 1
+    assert "local/workspace path form in .agent file" in errors[0]
+    assert "LOCAL_TEMP_MARKER" not in errors[0]
+
+
+def test_agent_private_surface_loads_topology_fragments_from_local_registry(tmp_path):
+    repo_hygiene = load_repo_hygiene()
+    literals = tmp_path / ".verboten-literals.local"
+    literals.write_text("local_workspace_fragment=LOCAL_WORKSPACE_MARKER\n", encoding="utf-8")
+    old = os.environ.get("OPENCLAW_VERBOTEN_LITERALS")
+    os.environ["OPENCLAW_VERBOTEN_LITERALS"] = str(literals)
+    memory = tmp_path / ".agent" / "memory" / "working" / "note.md"
+    memory.parent.mkdir(parents=True)
+    memory.write_text(
+        "Do not pin LOCAL_WORKSPACE_MARKER as a canonical root.\n", encoding="utf-8"
+    )
+
+    try:
+        errors = repo_hygiene.scan_agent_private_surface(
+            tmp_path, [".agent/memory/working/note.md"]
+        )
+    finally:
+        if old is None:
+            os.environ.pop("OPENCLAW_VERBOTEN_LITERALS", None)
+        else:
+            os.environ["OPENCLAW_VERBOTEN_LITERALS"] = old
+
+    assert len(errors) == 1
+    assert "local/workspace path form in .agent file" in errors[0]
+    assert "LOCAL_WORKSPACE_MARKER" not in errors[0]
+
+
+def test_agent_private_surface_blocks_placeholder_path_forms(tmp_path):
+    repo_hygiene = load_repo_hygiene()
+    literals = tmp_path / ".verboten-literals.local"
+    literals.write_text("verboten_path_fragment=LOCAL_PLACEHOLDER_MARKER\n", encoding="utf-8")
+    old = os.environ.get("OPENCLAW_VERBOTEN_LITERALS")
+    os.environ["OPENCLAW_VERBOTEN_LITERALS"] = str(literals)
+    memory = tmp_path / ".agent" / "protocols" / "path-hygiene.md"
+    memory.parent.mkdir(parents=True)
+    memory.write_text("Avoid examples like LOCAL_PLACEHOLDER_MARKER.\n", encoding="utf-8")
+
+    try:
+        errors = repo_hygiene.scan_agent_private_surface(
+            tmp_path, [".agent/protocols/path-hygiene.md"]
+        )
+    finally:
+        if old is None:
+            os.environ.pop("OPENCLAW_VERBOTEN_LITERALS", None)
+        else:
+            os.environ["OPENCLAW_VERBOTEN_LITERALS"] = old
+
+    assert len(errors) == 1
+    assert "local/workspace path form in .agent file" in errors[0]
+
+
+def test_agent_private_surface_blocks_secret_patterns(tmp_path):
+    repo_hygiene = load_repo_hygiene()
+    memory = tmp_path / ".agent" / "memory" / "working" / "note.md"
+    memory.parent.mkdir(parents=True)
+    memory.write_text(
+        "CLINE_API_KEY=" + "s" + "k-" + ("AbCdEf1234567890GhIjKlMn") + "\n",
+        encoding="utf-8",
+    )
+
+    errors = repo_hygiene.scan_agent_private_surface(
+        tmp_path, [".agent/memory/working/note.md"]
+    )
+
+    assert len(errors) == 1
+    assert "secret pattern" in errors[0]
+    assert "sk-" not in errors[0]
+
+
 # ---------------------------------------------------------------------------
 # CLAUDE.md — portable-paths rule (§ 6 Git Hygiene, lockstep w/ orama)
 #
 # Additive coverage (does not replace scripts/review/repo_hygiene.py checks):
 #   a) CLAUDE.md is NOT in PERSONAL_PATH_EXCEPTIONS — navigation doc stays scanned
 #   b) The live CLAUDE.md on main passes scan_personal_paths (portable tokens only)
-#   c) Synthetic CLAUDE.md fixtures prove /Users/<real>/ and /home/<user>/ leaks
+#   c) Synthetic CLAUDE.md fixtures prove concrete home-directory path leaks
 #      are still blocked — enforcement is independent of how § 6 prose is worded
 # Canonical rule: ../orama-system/docs/wiki/08-git-hygiene-and-branching.md
 # ---------------------------------------------------------------------------
@@ -361,7 +742,7 @@ def test_claude_md_with_workstation_path_is_blocked(tmp_path):
 
 
 def test_claude_md_with_home_path_is_blocked(tmp_path):
-    """/home/<user>/ paths in CLAUDE.md are blocked (Linux workstation leak)."""
+    """Concrete Linux home-directory paths in CLAUDE.md are blocked."""
     repo_hygiene = load_repo_hygiene()
     claude_md = tmp_path / "CLAUDE.md"
     claude_md.write_text(
@@ -424,4 +805,3 @@ def test_personal_path_windows_real_username_flagged(tmp_path):
     mod = load_repo_hygiene()
     errors = mod.scan_personal_paths(tmp_path, ["README.md"])
     assert any("alice" in e for e in errors), f"real username not flagged: {errors}"
-

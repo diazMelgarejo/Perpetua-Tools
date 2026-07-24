@@ -72,7 +72,6 @@ BIDI_CONTROL_CHARS = {
 }
 BIDI_CONTROL_EXCEPTIONS = {
     "scripts/review/repo_hygiene.py",
-    "scripts/review/repo_hygiene_core.py",
     "tests/test_repo_hygiene.py",
 }
 # Mojibake (LINT-007): UTF-8 text mis-decoded as cp1252/latin-1 then re-saved.

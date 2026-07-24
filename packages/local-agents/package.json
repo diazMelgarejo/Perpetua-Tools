@@ -12,12 +12,21 @@
     "test": "vitest run tests/client.test.js",
     "test:boundary": "node --test tests/path-boundary.test.cjs"
   },
-  "keywords": ["ollama", "lmstudio", "local-agent", "mcp"],
+  "keywords": [
+    "ollama",
+    "lmstudio",
+    "local-agent",
+    "mcp"
+  ],
   "license": "MIT",
-  "engines": { "node": ">=22.14.0" },
+  "engines": {
+    "node": ">=22.14.0"
+  },
   "dependencies": {
+    "@hono/node-server": "^2.0.11",
     "@modelcontextprotocol/sdk": "^1.6.1",
-    "hono": "^4.12.25"
+    "fast-uri": "^3.1.4",
+    "hono": "^4.12.27"
   },
   "devDependencies": {
     "vitest": "^4.1.8"

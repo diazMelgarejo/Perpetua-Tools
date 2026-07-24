@@ -5,6 +5,7 @@
 !.env.local.example
 .env.local
 .env.lmstudio
+.verboten-literals.local
 *.pem
 *.key
 *.p12
@@ -37,6 +38,7 @@ __pycache__/
 .claude/.DS_Store
 .claude/launch.json
 .claude/worktrees/
+.claude/settings.local.json
 .vscode/.secrets/
 .vscode/.tokens/
 .vscode/*.local.json

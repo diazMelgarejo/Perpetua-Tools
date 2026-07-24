@@ -39,6 +39,13 @@ def disable_ecc_sync_for_tests():
         os.environ["ECC_SYNC_ENABLED"] = prev
 
 
+# emit_noise_batch moved to tests/coordination_test_helpers.py -- a bare
+# `from conftest import X` is ambiguous once more than one conftest.py
+# exists in the tree (tests/scripts/conftest.py also exists, for
+# shell-script tests), and that ambiguity broke CI collection for every
+# coordination test module. Import from the dedicated module instead.
+
+
 @pytest.fixture(autouse=True)
 def _orama_insecure_dev_for_tests(monkeypatch, tmp_path):
     monkeypatch.setenv("ORAMA_INSECURE_DEV", "1")

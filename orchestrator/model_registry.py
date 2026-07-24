@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 import yaml
 
 from orchestrator.connectivity import endpoint_online as _endpoint_online
+from orchestrator.gate import filter_chain_by_gate
 from utils.endpoint_policy_core import build_transport_url
 
 _DISABLE_LIVE_PROBES = {"1", "true", "yes", "on"}
@@ -64,6 +65,15 @@ class ModelTarget:
     # name=claude-4-5-thinking -> api_model=claude-sonnet-4-5). Dispatchers
     # should send `api_model`, never `name`.
     api_model: str = ""
+    # Optional frugality_router.py tier classification (0-6, see
+    # orchestrator/frugality_router.py TIERS / fable5-tier-based-routing
+    # skill). Additive-only field (2026-07-22): route_task() does not read
+    # or filter on this yet — see docs/plans/2026-07-22-p4-skill-trimming-
+    # p3-frugality-wiring.md and its follow-up reconciliation plan for why.
+    # Set it in models.yml per-model as that reconciliation lands; leaving
+    # it unset (None) is always safe and does not change existing routing
+    # behavior.
+    frugality_tier: Optional[int] = None
 
     def __post_init__(self) -> None:
         if not self.api_model:
@@ -174,6 +184,7 @@ class ModelRegistry:
                     online=online,
                     reasoning=item.get("reasoning", "general"),
                     api_model=item.get("api_model", ""),
+                    frugality_tier=item.get("frugality_tier"),
                 )
             )
         return sorted(targets, key=lambda x: x.priority)
@@ -193,11 +204,33 @@ class ModelRegistry:
     # ── routing ───────────────────────────────────────────────────────────────
 
     def route_task(
-        self, task_type: str, preferred_device: Optional[str] = None
+        self,
+        task_type: str,
+        preferred_device: Optional[str] = None,
+        *,
+        privacy_critical: bool = False,
+        override_confirmed: bool = False,
+        override_reason: Optional[str] = None,
     ) -> List[ModelTarget]:
         """
         Returns ordered fallback chain for a task_type.
         Local/preferred device models come first; online models serve as fallback.
+
+        v1.1 P4 frugality wiring (additive, 2026-07-22): before returning,
+        the chain is passed through `orchestrator.gate.filter_chain_by_gate()`
+        -- the same canonical policy gate (backed by
+        `orchestrator/frugality_router.py`) that `src/perpetua_tools/
+        orchestrator.py`'s `/orchestrate` `privacy_critical` branch consults.
+        Candidates whose `frugality_tier` is unset in `config/models.yml`
+        are always kept unchanged -- the gate has no opinion about them, so
+        existing callers that never pass the new keyword-only args see
+        byte-identical output to before this change. A candidate with a
+        classified `frugality_tier` is dropped only when that tier exceeds
+        the current `ORAMASYS_OFFLINE` / `privacy_critical` ceiling; see
+        `gate.py`'s override contract for how (and why) that can be relaxed.
+        `privacy_critical`/`override_confirmed`/`override_reason` are
+        additive keyword-only args -- existing positional-arg callers
+        (`route_task(task_type, preferred_device)`) are unaffected.
         """
         routes = self.routing_cfg.get("routes", {})
         route = routes.get(task_type, routes.get("default", {}))
@@ -211,7 +244,14 @@ class ModelRegistry:
                 if key not in seen:
                     ordered.append(candidate)
                     seen.add(key)
-        return ordered
+
+        return filter_chain_by_gate(
+            ordered,
+            task_type=task_type,
+            privacy_critical=privacy_critical,
+            override_confirmed=override_confirmed,
+            override_reason=override_reason,
+        )
 
     def device_info(self, device_name: str) -> Dict[str, Any]:
         return self.devices.get("devices", {}).get(device_name, {})

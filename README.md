@@ -90,6 +90,8 @@ curl -X POST http://localhost:8000/orchestrate \\
   -d '{"task": "Refactor auth module", "task_type": "coding", "preferred_device": "mac-studio"}'
 ```
 
+For the phase-tracking and distributed task queue CLI, see [`PHASE_TRACKING.md`](PHASE_TRACKING.md).
+
 ---
 
 ## Perplexity Client

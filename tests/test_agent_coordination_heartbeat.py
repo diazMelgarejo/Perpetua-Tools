@@ -18,8 +18,15 @@ from orchestrator.heartbeat_monitor import (
     LIVENESS_IDLE_SEC,
     LIVENESS_STALLED_SEC,
 )
+from orchestrator.coordination.task_queue import (
+    queue_add,
+    queue_claim,
+    latest_task_snapshots,
+)
+from orchestrator.coordination.types import QueuedTaskState
 from orchestrator.gossip_bus import GossipBus
-from scripts.agent_coordination import (
+from coordination_test_helpers import emit_noise_batch
+from orchestrator.coordination.cli import (
     _heartbeat_check as heartbeat_check,
     _heartbeat_dashboard as heartbeat_dashboard,
     _heartbeat_list as heartbeat_list,
@@ -158,6 +165,41 @@ async def test_find_agent_heartbeats_single_agent(bus):
     assert data['last_registration']['agent_id'] == "test-agent-1"
     assert data['last_registration']['model'] == "claude-3.5"
     assert data['work_in_progress'] is None
+
+
+@pytest.mark.asyncio
+async def test_find_agent_heartbeats_current_worktree_updates_from_pulse(bus, capsys):
+    """Regression for the exact staleness bug hit twice with a live agent
+    this session: register at worktree A, later pulse from worktree B (no
+    re-register) -- current_worktree (and heartbeat_check's printed output)
+    must reflect B, not stay frozen at A forever."""
+    await bus.emit("heartbeat", {
+        "kind": "agent_register",
+        "agent_id": "roamer",
+        "agent_type": "cli-tool",
+        "model": "claude-3.5",
+        "worktree": "docs/old-branch@/path/one",
+        "notes": "",
+    })
+    await bus.emit("heartbeat", {
+        "kind": "agent_pulse",
+        "agent_id": "roamer",
+        "worktree": "feature/new-branch@/path/two",
+        "timestamp": time.time(),
+    })
+
+    agents = await find_agent_heartbeats(bus)
+    data = agents["roamer"]
+    assert data['current_worktree'] == "feature/new-branch@/path/two"
+    # last_registration stays a true historical snapshot -- must NOT be
+    # mutated by the pulse, only current_worktree should move.
+    assert data['last_registration']['worktree'] == "docs/old-branch@/path/one"
+
+    capsys.readouterr()
+    await heartbeat_check(bus, "roamer")
+    captured = capsys.readouterr()
+    assert "feature/new-branch@/path/two" in captured.out
+    assert "docs/old-branch@/path/one" not in captured.out
 
 
 @pytest.mark.asyncio
@@ -376,6 +418,52 @@ async def test_cleanup_stale_claims_dead_agent(bus):
     assert released == []  # Recently claimed, not dead yet
 
 
+@pytest.mark.asyncio
+async def test_cleanup_stale_claims_releases_dead_agent_queue_claim(bus, monkeypatch):
+    """Queue claims must be released when the holding agent is DEAD."""
+    await bus.emit("heartbeat", {
+        "kind": "agent_register",
+        "agent_id": "dead-agent",
+        "agent_type": "cli-tool",
+        "model": "model-1",
+        "worktree": "main@/path",
+        "notes": "",
+    })
+    await queue_add(bus, "stale-work", "Phase-1", "NORMAL", "", None)
+    snapshots = await latest_task_snapshots(bus)
+    task_id = next(iter(snapshots))
+    await queue_claim(bus, task_id, "dead-agent")
+
+    real_find = find_agent_heartbeats
+
+    async def _dead_only(_bus, agent_id=None):
+        agents = await real_find(_bus, agent_id)
+        if "dead-agent" in agents:
+            agents["dead-agent"] = dict(agents["dead-agent"])
+            agents["dead-agent"]["status"] = "DEAD"
+        return agents
+
+    monkeypatch.setattr(
+        "orchestrator.heartbeat_monitor.find_agent_heartbeats",
+        _dead_only,
+    )
+
+    released = await cleanup_stale_claims(bus)
+    assert task_id in released
+
+    async with bus.connect() as db:
+        cursor = await db.execute(
+            "SELECT COUNT(*) FROM task_claims WHERE task_id = ?",
+            (task_id,),
+        )
+        (claim_count,) = await cursor.fetchone()
+    assert claim_count == 0
+
+    snapshots = await latest_task_snapshots(bus)
+    assert snapshots[task_id]["status"] == QueuedTaskState.QUEUED.value
+    assert await queue_claim(bus, task_id, "agent-b") is None
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Output Tests: Dashboard and Display Functions
 # ─────────────────────────────────────────────────────────────────────────────
@@ -590,3 +678,54 @@ async def test_agent_killed_marks_dead(bus):
     assert "agent-1" in agents
     assert agents["agent-1"]["status"] == "DEAD"
     assert agents["agent-1"]["killed_reason"] == "manual kill"
+
+
+@pytest.mark.asyncio
+async def test_find_agent_heartbeats_survives_heartbeat_noise_beyond_tail_window(bus):
+    """Agent liveness must not disappear once unrelated heartbeat volume
+    exceeds bus.tail()'s size-bounded window."""
+    await bus.emit("heartbeat", {
+        "kind": "agent_register",
+        "agent_id": "victim",
+        "agent_type": "cli-tool",
+        "model": "model-x",
+        "worktree": "main@/path",
+        "notes": "",
+    })
+    await bus.emit("heartbeat", {
+        "kind": "agent_pulse",
+        "agent_id": "victim",
+        "worktree": "main@/path",
+    })
+
+    await emit_noise_batch(bus, 1500, modulo=10)
+
+    agents = await find_agent_heartbeats(bus, agent_id="victim")
+    assert "victim" in agents
+    assert agents["victim"]["status"] == "ACTIVE"
+
+
+@pytest.mark.asyncio
+async def test_find_open_claims_survives_heartbeat_noise_beyond_tail_window(bus):
+    await bus.emit("heartbeat", {
+        "kind": "agent_register",
+        "agent_id": "claimer",
+        "agent_type": "cli-tool",
+        "model": "model-x",
+        "worktree": "main@/path",
+        "notes": "",
+    })
+    await bus.emit("heartbeat", {
+        "kind": "agent_claim",
+        "agent_id": "claimer",
+        "task": "important-task",
+        "worktree": "main@/path",
+        "notes": "",
+    })
+
+    await emit_noise_batch(bus, 1500, modulo=10)
+
+    claims = await find_open_claims(bus)
+    assert len(claims) == 1
+    assert claims[0]["task"] == "important-task"
+    assert claims[0]["agent_id"] == "claimer"

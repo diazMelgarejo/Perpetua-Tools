@@ -16,9 +16,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from orchestrator import gossip_bus as gossip_bus_module  # noqa: E402
 from orchestrator.gossip_bus import GossipBus  # noqa: E402
-from scripts.agent_coordination_phases import (  # noqa: E402
-    PhaseState,
-    PhaseStatus,
+from coordination_test_helpers import emit_noise_batch  # noqa: E402
+from orchestrator.coordination.cli import (  # noqa: E402
     _all_phase_states,
     _detect_blockers,
     _get_latest_phase_state,
@@ -28,6 +27,10 @@ from scripts.agent_coordination_phases import (  # noqa: E402
     _phase_start,
     _phase_unblock,
     _phase_update,
+)
+from orchestrator.coordination.types import (  # noqa: E402
+    PhaseState,
+    PhaseStatus,
 )
 
 
@@ -295,6 +298,23 @@ async def test_phase_completion_requires_no_blockers(bus_with_db):
     await _phase_unblock(bus, "Phase-8", "API not ready")
     await _phase_complete(bus, "Phase-8")
     phase = await _get_latest_phase_state(bus, "Phase-8")
+    assert phase.status == PhaseStatus.COMPLETE
+
+
+@pytest.mark.asyncio
+async def test_phase_states_survive_heartbeat_noise_beyond_tail_window(bus_with_db):
+    """phase list/status must not drop completed phases once unrelated
+    heartbeat volume exceeds bus.tail()'s size-bounded window."""
+    bus = bus_with_db
+    await _phase_start(bus, "Phase-Noise")
+    await _phase_complete(bus, "Phase-Noise")
+
+    await emit_noise_batch(bus, 1500, modulo=5)
+
+    phases = await _all_phase_states(bus)
+    phase = await _get_latest_phase_state(bus, "Phase-Noise")
+    assert "Phase-Noise" in phases
+    assert phase is not None
     assert phase.status == PhaseStatus.COMPLETE
 
 
