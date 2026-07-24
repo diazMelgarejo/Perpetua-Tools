@@ -43,6 +43,8 @@ remain plain `http://` unless an operator explicitly sets that env var.
 Do not read the checkmarks above as "TLS is on" — they mean "the code to
 turn TLS on, when asked, works and is tested."
 
+- [x] Stalled-client / Slowloris mitigation (`handler.timeout` +
+      `daemon_threads`) — `3bb36c8a`, **local only, not yet pushed**
 - [ ] **Not started:** admin-pinned fingerprints (`PEER_PINNED_FINGERPRINTS`
       pre-seeding) — TOFU-only today
 - [ ] **Not started:** certificate rotation *policy* beyond the fixed
@@ -65,29 +67,22 @@ turn TLS on, when asked, works and is tested."
 
 ---
 
-## 2. Identity audit consolidation — Phase 1 only
+## 2. Identity audit consolidation — Phases 1–2 on orama PR #217
 
-**Branch:** orama-system `2026-07-19-002-fleet-mesh-oob-fixes` (PR #197)
+**Branch:** orama-system `2026-07-24-005b-identity-audit-plan` (PR #217)
 **Plan doc:** `orama-system/docs/plans/2026-07-24-unified-identity-audit-integrated-plan.md`
-**PT impact:** Phase 3 of that plan is a dedicated PT sync PR, not yet opened.
+**PT impact:** Phase 3 is a dedicated PT sync PR, not yet opened. Unrelated
+`.agent` lessons landed on this TLS branch (`7dd01a76`) — do not mix into PR
+#276 review.
 
 - [x] Phase 1 — `identity-policy.json`, `identity-policy.schema.json`,
-      `audit_engine.py` (17 passing tests). Fail-closed, no vendor-domain
-      wildcard, no universal bot wildcard, private identities excluded
-      from the tracked file.
-- [ ] **Not started:** Phase 2 — wire `repo_hygiene.py`, `check_identity.sh`,
-      `audit_attribution.sh` through the engine, one consumer at a time
-      (plan section 10, Phase 2). Currently these three still run fully
-      independent logic; the engine exists but nothing calls it yet.
-- [ ] **Not started:** Phase 3 — cross-repo sync into a clean PT checkout,
-      a dedicated PT synchronization PR (plan explicitly says NOT PR #276
-      — keep that PR's TLS scope focused).
-- [ ] **Not started:** Phase 4 — remove the 3 old hardcoded identity lists
-      once all consumers are green.
-- **For a PT agent picking this up:** nothing to do here yet. Phase 1 must
-  land and Phase 2 must be green in orama-system first; Phase 3 is the
-  trigger for PT-side work, and it gets its own PR, never bundled into an
-  unrelated PT branch.
+      `audit_engine.py` (orama)
+- [x] Phase 2 — wire `repo_hygiene.py`, `check_identity.sh`,
+      `audit_attribution.sh` to engine (orama PR #217)
+- [ ] Phase 3 — sync manifest + parity to PT (dedicated PR)
+- [ ] Phase 4 — remove old hardcoded lists after all consumers green
+- **For a PT agent picking this up:** Phase 3 is the trigger — dedicated
+  sync PR only, never bundled into PR #276.
 
 ---
 
