@@ -549,6 +549,55 @@ async def queue_list(bus: GossipBus, phase_filter: Optional[str], priority_filte
         print("no tasks match the given filters")
 
 
+async def cleanup_stale_queue_claims(
+    bus: GossipBus, dead_agent_ids: set[str]
+) -> list[str]:
+    """Re-queue tasks whose atomic ``task_claims`` row is held by dead agents.
+
+    ``heartbeat cleanup`` already auto-releases legacy ``agent_claim`` rows,
+    but the distributed queue's exclusion gate lives in ``task_claims``. A
+    dead claimant leaves that row behind forever unless we delete it and emit a
+    requeue event, which otherwise blocks every future ``queue claim``.
+    """
+    if not dead_agent_ids:
+        return []
+
+    placeholders = ",".join("?" for _ in dead_agent_ids)
+    async with bus.connect() as db:
+        await db.execute(_CREATE_CLAIMS_TABLE)
+        cursor = await db.execute(
+            f"SELECT task_id, agent_id FROM task_claims "
+            f"WHERE agent_id IN ({placeholders})",
+            tuple(sorted(dead_agent_ids)),
+        )
+        rows = await cursor.fetchall()
+
+    released: list[str] = []
+    snapshots = await latest_task_snapshots(bus)
+    for task_id, agent_id in rows:
+        task_state = snapshots.get(task_id, {})
+        result = await release_claim_with_event(
+            bus,
+            task_id,
+            "heartbeat",
+            {
+                "kind": "task_failed",
+                "task_id": task_id,
+                "retry_count": int(task_state.get("retry_count", 0)),
+                "max_retries": int(task_state.get("max_retries", 3)),
+                "status": QueuedTaskState.QUEUED.value,
+                "assigned_agent": None,
+                "notes": (
+                    f"Auto-released: agent {agent_id} dead; task returned to queue"
+                ),
+            },
+            expected_agent_id=agent_id,
+        )
+        if result == ReleaseResult.RELEASED:
+            released.append(task_id)
+    return released
+
+
 async def queue_status(bus: GossipBus, agent_filter: Optional[str]) -> None:
     """Show status of all claimed tasks per agent."""
     task_states = await latest_task_snapshots(bus)
