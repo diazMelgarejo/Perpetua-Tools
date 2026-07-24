@@ -1,0 +1,58 @@
+{
+  "id": "950d450b3d5b",
+  "key": "manual_950d45",
+  "name": "manual_950d45",
+  "claim": "Git identity policy is canonical in orama-system (identity-policy.json + audit_engine.py); Perpetua-Tools must consume byte-identical copies via sync-attribution-guard-scripts.sh \u2014 never maintain a third independent allowlist in PT scripts or repo_hygiene.",
+  "conditions": [
+    "allowlist",
+    "audit_engine",
+    "byte-identical",
+    "canonical",
+    "consume",
+    "copies",
+    "git",
+    "identity",
+    "identity-policy",
+    "independent",
+    "json",
+    "maintain",
+    "never",
+    "orama-system",
+    "perpetua-tools",
+    "policy",
+    "repo_hygiene",
+    "scripts",
+    "sync-attribution-guard-scripts",
+    "third",
+    "via"
+  ],
+  "evidence_ids": [
+    "2026-07-24T06:56:36.397806+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-24T06:56:36.397806+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-24T06:56:36.397806+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-24T06:56:36.514555+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR #197/#209-#214 incident: partial updates across three hardcoded allowlists produced contradictory CI and spurious history-rewrite PRs. Integrated plan Phase 3 syncs guards to PT on a dedicated PR, separate from PR #276 TLS scope. Orama PR #217 landed Phases 1-2.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-24T06:56:36.397806+00:00"
+      ],
+      "lessons_sha": "28d92bc2658c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-24T06:56:36.514548+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR #197/#209-#214 incident: partial updates across three hardcoded allowlists produced contradictory CI and spurious history-rewrite PRs. Integrated plan Phase 3 syncs guards to PT on a dedicated PR, separate from PR #276 TLS scope. Orama PR #217 landed Phases 1-2."
+}

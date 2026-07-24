@@ -1,0 +1,64 @@
+{
+  "id": "d2e714a9ff11",
+  "key": "manual_d2e714",
+  "name": "manual_d2e714",
+  "claim": "When matching repo_bot_identities, normalize GitHub noreply bot emails by stripping a leading numeric ID prefix (pattern: digits+ before local-part) so commits using id+cursor[bot]@users.noreply.github.com match policy entries for cursor[bot]@users.noreply.github.com \u2014 without reintroducing a universal *[bot] wildcard.",
+  "conditions": [
+    "before",
+    "bot",
+    "com",
+    "commits",
+    "cursor",
+    "digits",
+    "emails",
+    "entries",
+    "github",
+    "leading",
+    "local-part",
+    "match",
+    "matching",
+    "noreply",
+    "normalize",
+    "numeric",
+    "pattern",
+    "policy",
+    "prefix",
+    "reintroducing",
+    "repo_bot_identities",
+    "stripping",
+    "universal",
+    "users",
+    "using",
+    "wildcard",
+    "without"
+  ],
+  "evidence_ids": [
+    "2026-07-24T06:56:36.742517+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-24T06:56:36.742517+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-24T06:56:36.742517+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-24T06:56:36.848310+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "audit_attribution flagged commits #214/#215 as bad_author until audit_engine._normalize_github_noreply_email landed (orama 610ec484). Exact repo-scoped bot list stays; only the prefix normalization bridges GitHub commit metadata to policy.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-24T06:56:36.742517+00:00"
+      ],
+      "lessons_sha": "26814c20083b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-24T06:56:36.848303+00:00",
+  "reviewer": "learn.py",
+  "rationale": "audit_attribution flagged commits #214/#215 as bad_author until audit_engine._normalize_github_noreply_email landed (orama 610ec484). Exact repo-scoped bot list stays; only the prefix normalization bridges GitHub commit metadata to policy."
+}

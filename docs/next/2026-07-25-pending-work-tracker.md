@@ -1,0 +1,111 @@
+# Pending & Partially-Implemented Work — Perpetua-Tools
+
+**Purpose:** a single place to find every unfinished or partially-landed
+plan across recent sessions, so the next agent (human or AI) doesn't have
+to reconstruct status from commit archaeology. Cross-linked with
+[`orama-system/docs/next/2026-07-25-pending-work-tracker.md`](https://github.com/diazMelgarejo/orama-system/blob/main/docs/next/2026-07-25-pending-work-tracker.md)
+— check both; several items span both repos.
+
+**Last updated:** 2026-07-24, from the branch each item's code actually
+lives on (never a summary written from a different branch — see the
+"lessons and action must land on the same branch" rule in `SECURITY.md`).
+
+---
+
+## 1. AlphaClaw TLS proxy — mostly done, small gaps remain
+
+**Branch:** `security/alphaclaw-tls-proxy-scaffold` (PR #276)
+**Companion:** orama-system `security/02-peer-mesh-auth-tls-v2-plan`
+(stacked on orama PR #197) — canonical design doc:
+`orama-system/docs/v2/49-peer-mesh-auth-tls-v2-plan.md`
+
+- [x] Real TLS termination + forwarding (`orchestrator/alphaclaw_tls_proxy.py`)
+- [x] Certificate persistence across restarts
+- [x] TOFU fingerprint pinning with mismatch detection
+- [x] Wired into `alphaclaw_manager.py`'s `bootstrap_alphaclaw()` via
+      `_maybe_wrap_gateway_with_tls()`, gated by `ALPHACLAW_TLS_ENABLED`
+- [x] Chunked request-body decoding (with strict framing validation and a
+      size limit — malformed chunk sizes/truncated reads return a clean
+      400, never an uncaught exception), hop-by-hop response-header
+      stripping, streamed (not fully-buffered) response forwarding,
+      configurable timeout
+- [x] File permissions (0600/0700) explicit and set atomically at file
+      creation (not write-then-chmod, which leaves a TOCTOU window),
+      re-applied on every start so pre-existing directories/files from
+      before this fix get tightened too
+- [x] Previous proxy instance stopped before replacing (no socket/thread leak)
+- [x] TLS failures populate the resolved state's `error` field, not just logs
+
+**Important — opt-in, not active by default:** every item above is real
+and tested, but `ALPHACLAW_TLS_ENABLED` is unset by default. On this
+branch, `AlphaClawState.gateway_url` and the default `--resolve` output
+remain plain `http://` unless an operator explicitly sets that env var.
+Do not read the checkmarks above as "TLS is on" — they mean "the code to
+turn TLS on, when asked, works and is tested."
+
+- [x] Stalled-client / Slowloris mitigation (`handler.timeout` +
+      `daemon_threads`) — `3bb36c8a`, **local only, not yet pushed**
+- [ ] **Not started:** admin-pinned fingerprints (`PEER_PINNED_FINGERPRINTS`
+      pre-seeding) — TOFU-only today
+- [ ] **Not started:** certificate rotation *policy* beyond the fixed
+      365-day expiry check
+- [ ] **Not started:** mTLS
+- [ ] **Not started:** auto-enabling by default — `ALPHACLAW_TLS_ENABLED`
+      is opt-in; no auto-detection of fresh-vs-existing install
+- [ ] **Not started / documented limitation, follow-up needed soon:**
+      file-permission enforcement (0600/0700) is POSIX mode bits only — no
+      effect on Windows, which is ACL-based. No `icacls`/pywin32 ACL
+      enforcement implemented; the gap is documented explicitly in the
+      module's own docstring, not silently assumed to be covered.
+      Raised in [PR #276 review 4769699297](https://github.com/diazMelgarejo/Perpetua-Tools/pull/276#pullrequestreview-4769699297)
+      (finding: "Replace POSIX-only permission handling... with Windows
+      ACL enforcement using an appropriate supported mechanism such as
+      icacls or pywin32"). Companion item in orama-system's own tracker —
+      see that repo's `docs/next/2026-07-25-pending-work-tracker.md`.
+- [ ] PR #276 itself: open, not yet merged. Review 4769478731's 4 findings
+      all addressed; check for newer review rounds before assuming clean.
+
+---
+
+## 2. Identity audit consolidation — Phases 1–2 on orama PR #217
+
+**Branch:** orama-system `2026-07-24-005b-identity-audit-plan` (PR #217)
+**Plan doc:** `orama-system/docs/plans/2026-07-24-unified-identity-audit-integrated-plan.md`
+**PT impact:** Phase 3 is a dedicated PT sync PR, not yet opened. Unrelated
+`.agent` lessons landed on this TLS branch (`7dd01a76`) — do not mix into PR
+#276 review.
+
+- [x] Phase 1 — `identity-policy.json`, `identity-policy.schema.json`,
+      `audit_engine.py` (orama)
+- [x] Phase 2 — wire `repo_hygiene.py`, `check_identity.sh`,
+      `audit_attribution.sh` to engine (orama PR #217)
+- [ ] Phase 3 — sync manifest + parity to PT (dedicated PR)
+- [ ] Phase 4 — remove old hardcoded lists after all consumers green
+- **For a PT agent picking this up:** Phase 3 is the trigger — dedicated
+  sync PR only, never bundled into PR #276.
+
+---
+
+## 3. Peer-mesh TLS + pluggable auth (BUZZ/Twitter/Google) — plan only
+
+**Branch:** orama-system `security/02-peer-mesh-auth-tls-v2-plan`
+**Canonical doc:** `orama-system/docs/v2/49-peer-mesh-auth-tls-v2-plan.md`
+**PT impact:** none yet — this is entirely orama-side (`src/secure_transport.py`,
+`src/peer_cert_manager.py`, `src/auth/`), separate from AlphaClaw's TLS
+(item 1 above), which already works.
+
+- [x] v1 minimum: bearer tokens never sent over unauthenticated HTTP, in
+      both `query_peer_topology.py` and `lan_peer_assign.py`
+- [ ] **Not started:** everything else — see the plan doc's own "Decisions"
+      table for the full v1/v2 split, 13 open questions all pre-answered
+      but none implemented.
+
+---
+
+## How to use this file
+
+Before starting work referenced here, verify the branch tip matches what's
+listed above (branches move) and check for review comments newer than
+what's summarized. Update this file's checkboxes in the same commit as
+the work that completes them, on the same branch — never a separate
+tracking-only commit on a different branch.
