@@ -101,9 +101,9 @@ SOUL_SRC: Path = (
     else Path(_UTS_HOME) / "bin" / "agents"
 )
 
-ALPHACLAW_INSTALL_DIR = Path(
-    os.getenv("ALPHACLAW_INSTALL_DIR", str(Path.home() / ".alphaclaw"))
-)
+from utils.env_paths import resolve_alphaclaw_install_dir
+
+ALPHACLAW_INSTALL_DIR = resolve_alphaclaw_install_dir()
 
 # env-var defaults (exported by start.sh)
 # Locality rule (2026-06-24): when running ON a machine, always reach its
