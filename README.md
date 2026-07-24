@@ -51,6 +51,7 @@ Perpetua-Tools/
 ├── config/
 │   ├── devices.yml                   ← Mac, Windows, shared-Ollama profiles
 │   ├── models.yml                    ← All models: local + online, per device + backend
+│   ├── LOCAL-RUNTIME-OVERLAY.md      ← discovery may write LAN IPs locally; never commit
 │   └── routing.yml                   ← task_type → role → model fallback chain
 ├── .state/                           ← Runtime: agents.json, budget.json (gitignored)
 ├── .env.example
