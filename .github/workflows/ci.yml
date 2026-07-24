@@ -108,6 +108,9 @@ jobs:
       - name: Repo hygiene gate
         run: python3 scripts/review/repo_hygiene.py .
 
+      - name: Local runtime overlay gate (committed config)
+        run: python3 scripts/git/check_local_runtime_overlay.py . --mode tree
+
       - name: Audit branch commit attribution (PR commits)
         if: github.event_name == 'pull_request'
         env:

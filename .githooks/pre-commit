@@ -4,6 +4,24 @@ ROOT="$(git rev-parse --show-toplevel)"
 
 "$ROOT/scripts/git/ensure_hooks_installed.sh"
 
+# Local-runtime overlay: block committing discovery-written LAN IPs in config YAML.
+export PYTHONUTF8=1
+export PYTHONIOENCODING=utf-8
+for py in \
+  "$ROOT/.venv/Scripts/python.exe" \
+  "$ROOT/.venv/bin/python" \
+  python3 \
+  python; do
+  if command -v "$py" >/dev/null 2>&1 && "$py" -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 9) else 1)" >/dev/null 2>&1; then
+  if "$py" "$ROOT/scripts/git/check_local_runtime_overlay.py" "$ROOT"; then
+    :
+  else
+    exit 1
+  fi
+  break
+  fi
+done
+
 # Full hygiene gate — same checks as CI (identity, forbidden tokens, paths, etc.).
 export PYTHONUTF8=1
 export PYTHONIOENCODING=utf-8
