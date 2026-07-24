@@ -18,6 +18,12 @@ from orchestrator.heartbeat_monitor import (
     LIVENESS_IDLE_SEC,
     LIVENESS_STALLED_SEC,
 )
+from orchestrator.coordination.task_queue import (
+    queue_add,
+    queue_claim,
+    latest_task_snapshots,
+)
+from orchestrator.coordination.types import QueuedTaskState
 from orchestrator.gossip_bus import GossipBus
 from coordination_test_helpers import emit_noise_batch
 from orchestrator.coordination.cli import (
@@ -410,6 +416,52 @@ async def test_cleanup_stale_claims_dead_agent(bus):
     # by checking that recent claims don't get released
     released = await cleanup_stale_claims(bus)
     assert released == []  # Recently claimed, not dead yet
+
+
+@pytest.mark.asyncio
+async def test_cleanup_stale_claims_releases_dead_agent_queue_claim(bus, monkeypatch):
+    """Queue claims must be released when the holding agent is DEAD."""
+    await bus.emit("heartbeat", {
+        "kind": "agent_register",
+        "agent_id": "dead-agent",
+        "agent_type": "cli-tool",
+        "model": "model-1",
+        "worktree": "main@/path",
+        "notes": "",
+    })
+    await queue_add(bus, "stale-work", "Phase-1", "NORMAL", "", None)
+    snapshots = await latest_task_snapshots(bus)
+    task_id = next(iter(snapshots))
+    await queue_claim(bus, task_id, "dead-agent")
+
+    real_find = find_agent_heartbeats
+
+    async def _dead_only(_bus, agent_id=None):
+        agents = await real_find(_bus, agent_id)
+        if "dead-agent" in agents:
+            agents["dead-agent"] = dict(agents["dead-agent"])
+            agents["dead-agent"]["status"] = "DEAD"
+        return agents
+
+    monkeypatch.setattr(
+        "orchestrator.heartbeat_monitor.find_agent_heartbeats",
+        _dead_only,
+    )
+
+    released = await cleanup_stale_claims(bus)
+    assert task_id in released
+
+    async with bus.connect() as db:
+        cursor = await db.execute(
+            "SELECT COUNT(*) FROM task_claims WHERE task_id = ?",
+            (task_id,),
+        )
+        (claim_count,) = await cursor.fetchone()
+    assert claim_count == 0
+
+    snapshots = await latest_task_snapshots(bus)
+    assert snapshots[task_id]["status"] == QueuedTaskState.QUEUED.value
+    assert await queue_claim(bus, task_id, "agent-b") is None
 
 
 # ─────────────────────────────────────────────────────────────────────────────

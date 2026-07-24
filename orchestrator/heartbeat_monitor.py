@@ -241,4 +241,10 @@ async def cleanup_stale_claims(bus: GossipBus, max_age_seconds: int = 1800) -> l
         )
         released_tasks.append(claim["task"])
 
+    # Queue claims use task_claims rows as the atomic gate; legacy cleanup
+    # above only handles agent_claim/agent_release heartbeats.
+    from orchestrator.coordination.task_queue import cleanup_stale_queue_claims
+
+    released_tasks.extend(await cleanup_stale_queue_claims(bus, dead_agents))
+
     return released_tasks
