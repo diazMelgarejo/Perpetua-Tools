@@ -22,7 +22,7 @@ Canonical live topology also flows through ignored runtime files
 
 1. **Never commit** RFC1918 / operator LAN values in these two files. Pre-commit blocks staged content.
 2. **Never `git checkout` / `git restore`** these paths to “clean up” before pull, rebase, or integrity checks. Stash them if a merge would overwrite them: `git stash push -m "runtime overlay" -- config/devices.yml config/models.yml`.
-3. **After pull / merge**, let discovery refresh them, or `git stash pop` if you stashed.
+3. **After pull / merge**, let discovery refresh them, or restore stash with hooks safeguard: `git -c core.hooksPath=/dev/null stash pop` then `bash scripts/git/install-local-hooks.sh` (see orama [`stash-hooks-safeguard`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/git-history-surgery/references/stash-hooks-safeguard-reference-card.md) card).
 4. **`git status` showing `M config/devices.yml`** is normal on an active machine — not a hygiene failure.
 
 ## Integrity checks (fresh clone vs local)
@@ -55,6 +55,7 @@ Undo with `--no-skip-worktree`. This is **local only** (not committed).
 - orama skill cards (canonical git doctrine):
   - [`local-runtime-overlay-reference-card.md`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/using-git-worktrees/references/local-runtime-overlay-reference-card.md)
   - [`fresh-main-integrity-diff-claygo.md`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/using-git-worktrees/references/fresh-main-integrity-diff-claygo.md)
+  - [`stash-hooks-safeguard-reference-card.md`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/git-history-surgery/references/stash-hooks-safeguard-reference-card.md)
 - `../orama-system/docs/wiki/08-git-hygiene-and-branching.md` — stash-first + overlay + CLAYGO (orama wiki)
 - `../orama-system/docs/v2/17-hardware-policy-enforcement.md` — hardware topology layer
 - `../orama-system/docs/v2/47-portable-memory-local-topology-invariant.md` — tracked policy vs local fragments
