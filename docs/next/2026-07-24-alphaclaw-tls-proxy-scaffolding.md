@@ -1,16 +1,64 @@
 # AlphaClaw TLS Proxy — Wired Into PT's Gateway Resolution (companion to orama-system PR)
 
-**Status:** implemented and wired into `bootstrap_alphaclaw()`'s own
-resolution flow, opt-in via `ALPHACLAW_TLS_ENABLED`. Deferred items below
-remain deferred; everything else in the original 3 ingested plan docs'
-"v1" column for this specific surface (certificate provisioning, AlphaClaw
-HTTPS gap) is real and tested, not just scaffolded.
-**Date:** 2026-07-24 (scaffolding), updated same day (full wiring)
+**Status:** **v1 complete and working** — opt-in via `ALPHACLAW_TLS_ENABLED`;
+PR [#276](https://github.com/diazMelgarejo/Perpetua-Tools/pull/276) open for
+review/merge. Deferred v2 items below remain deferred.
+**Stage:** implementation done → **PR review / merge** (not scaffolding).
+**Last re-verified:** 2026-07-24 (pytest green on this machine).
+**Date:** 2026-07-24 (scaffolding), updated same day (full wiring), re-verified
+2026-07-24 (stage + Slowloris hardening committed locally).
+**Branch:** `security/alphaclaw-tls-proxy-scaffold` (PR #276)
 **Companion orama-system PR:** `security/02-peer-mesh-auth-tls-v2-plan`
 (stacked on PR #197), which ingests 3 security-hardening design docs and
 records the full plan canonically at
 [`orama-system/docs/v2/49-peer-mesh-auth-tls-v2-plan.md`](https://github.com/diazMelgarejo/orama-system/blob/main/docs/v2/49-peer-mesh-auth-tls-v2-plan.md)
 (once merged; branch link until then).
+
+## Is it working? (2026-07-24)
+
+**Yes — when explicitly enabled.** `ALPHACLAW_TLS_ENABLED` defaults off; with
+it unset, `bootstrap_alphaclaw()` keeps plain `http://` gateway URLs (by design).
+
+| Check | Result |
+|---|---|
+| `pytest tests/test_alphaclaw_tls_proxy.py` | **9/9 passed** |
+| `pytest tests/test_alphaclaw_manager_tls_wiring.py` | **12/12 passed** |
+| Cert persistence + TOFU pinning | Covered by proxy tests |
+| `bootstrap_alphaclaw()` → `https://` when env on | Covered by wiring tests |
+| TLS failure → graceful HTTP fallback | Covered by wiring tests |
+| Malformed chunked body → HTTP 400 | Covered (review follow-up, on branch) |
+| Stalled-client / Slowloris mitigation | **`3bb36c8a` — local commit, not yet on origin** |
+
+**Not live-validated here:** a running AlphaClaw process with
+`ALPHACLAW_TLS_ENABLED=1` against a real gateway on this machine (unit/e2e
+tests use fake upstream servers only). That is the remaining manual smoke
+step before calling it "production-ready."
+
+**Tracker:** item-level checklist lives in
+`docs/next/2026-07-25-pending-work-tracker.md` §1 (kept in sync with this
+note).
+
+## Local-only commits (ahead of `origin/security/alphaclaw-tls-proxy-scaffold`)
+
+| Commit | In TLS scope? | Summary |
+|---|---|---|
+| `3bb36c8a` | **Yes** | Handler socket timeout + `daemon_threads` (Slowloris-style stall) |
+| `7dd01a76` | No (identity audit memory) | `.agent` lessons from orama PR #217 — keep out of TLS review narrative |
+
+Push `3bb36c8a` before the next PR review round; consider moving `7dd01a76`
+to a dedicated branch per the identity-audit plan's PT-scope rule.
+
+## What's next (move along)
+
+1. **Push** `3bb36c8a` and refresh PR #276.
+2. **Merge PR #276** once review is clean (review 4769478731 addressed; re-check
+   for newer rounds).
+3. **Manual smoke:** `ALPHACLAW_TLS_ENABLED=1` + real AlphaClaw gateway on
+   loopback.
+4. **v2 deferred** (see below): admin-pinned fingerprints, rotation policy,
+   mTLS, auto-enable, Windows ACL enforcement for cert store.
+5. **Companion orama doc** merges with `security/02-peer-mesh-auth-tls-v2-plan`
+   when that stack lands.
 
 This note is intentionally NOT a new ADR — per `docs/adr/ADR-004`'s own
 header, PT's ADR files are generated pointers to orama-system's canonical
@@ -36,6 +84,9 @@ HTTP-only gateway. Real features, not stubs:
   silently auto-repinned) if it has.
 - **Real TLS termination + forwarding**, verified end-to-end with a
   genuine TLS handshake against a genuine fake-upstream HTTP server.
+- **Stalled-client bounds** (2026-07-24): `_ProxyHandler.timeout` wired to
+  `proxy_timeout`; `ThreadingTCPServer.daemon_threads = True` so a hung
+  handler cannot block `stop()` or process exit (`3bb36c8a`).
 
 `orchestrator/alphaclaw_manager.py` — wired in via
 `alphaclaw_tls_enabled()` (env gate, `ALPHACLAW_TLS_ENABLED`, matching
@@ -81,7 +132,8 @@ the only call site that ever touches `gateway_url`'s scheme.
   `orchestrator/alphaclaw_manager.py`'s own module/function docstrings
   point back to this file and the orama plan doc.
 - Tests: `tests/test_alphaclaw_tls_proxy.py` (proxy internals: cert
-  persistence, fingerprint pinning, real TLS forwarding) and
+  persistence, fingerprint pinning, real TLS forwarding, stalled-client
+  bounds) and
   `tests/test_alphaclaw_manager_tls_wiring.py` (the actual wiring:
   env-gate behavior, no-op cases, real end-to-end gateway_url
   replacement, graceful degradation on failure) both point here.
