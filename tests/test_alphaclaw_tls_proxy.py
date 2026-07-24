@@ -95,6 +95,31 @@ def test_proxy_binds_loopback_only(fake_upstream, tmp_path, monkeypatch):
         proxy.stop()
 
 
+def test_proxy_bounds_stalled_client_connections(fake_upstream, tmp_path, monkeypatch):
+    """Regression: a client that opens the TLS handshake and then sends
+    headers/chunk data arbitrarily slowly (or not at all) must not hang
+    its handler thread forever -- ThreadingTCPServer spawns one thread
+    per connection with no cap, so unbounded stalls are a Slowloris-style
+    resource exhaustion. Verifies both halves of the fix: the handler's
+    socket-level read timeout is actually wired to proxy_timeout, and
+    handler threads are daemon so a hung one can't block process exit."""
+    import orchestrator.alphaclaw_tls_proxy as mod
+
+    monkeypatch.setattr(mod, "CERT_DIR", tmp_path / "alphaclaw_tls")
+
+    proxy = AlphaClawTlsProxy(
+        upstream_port=fake_upstream, proxy_port=_free_port(), proxy_timeout=7.0
+    )
+    proxy.start()
+    try:
+        assert proxy._server is not None
+        assert proxy._server.daemon_threads is True
+        handler_cls = proxy._server.RequestHandlerClass
+        assert handler_cls.timeout == 7.0
+    finally:
+        proxy.stop()
+
+
 @pytest.mark.skipif(
     not _CRYPTOGRAPHY_AVAILABLE, reason="'cryptography' library not installed"
 )
