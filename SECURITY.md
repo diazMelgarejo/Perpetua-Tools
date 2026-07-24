@@ -192,3 +192,46 @@ which loads the canonical [integrative merge doctrine](https://github.com/diazMe
 For the original landing-order case study and why already-open PRs are merged
 rather than blindly rebased, see `orama-system/SECURITY.md` § "Case study:
 append-only shared-file conflicts across independent PRs (2026-07-12)".
+
+## Lessons and Action Must Land on the Same Branch (mandatory)
+
+**Never commit `.agent/memory/` lessons about code, a fix, or a decision to a
+different branch than the one the actual change lives on — always, no
+exceptions.** Lessons describing work that only exists on an unmerged PR
+branch must be committed to that same branch, not to `main` or any other
+branch, even when the lesson content itself is otherwise accurate and
+well-written.
+
+**Why this is a hard rule, not a style preference:** `main`'s tracked memory
+is read as a description of what `main` actually contains. A lesson on `main`
+that references a file, function, or decision that only exists on an unmerged
+branch is a false claim about `main`'s own contents — a reader (human or
+agent) following the lesson's own file references finds nothing. This is the
+same class of problem the "Multi-PR Landing Order" section above exists to
+prevent for shared append-only files in general, applied specifically to the
+case where the *branch itself*, not just the merge order, is wrong.
+
+**Concrete incident (2026-07-23):** 5 lessons describing a new
+`orchestrator/alphaclaw_tls_proxy.py` module and its wiring into
+`alphaclaw_manager.py` were committed and pushed directly to `main`, while
+the actual code lived only on an unmerged feature branch
+(`security/alphaclaw-tls-proxy-scaffold`). Caught by the operator, not by any
+automated check. Corrected by resetting `main` back to its exact pre-mistake
+tip (`git push --force-with-lease`, since nothing had landed on top of the
+mistaken commits — verified this was true before force-pushing, and force-
+pushing `main` still required the operator's explicit authorization per the
+"Ask before rewriting" rule this repo already follows for any shared branch
+rewrite) and re-committing the same lesson content onto the actual feature
+branch, so the lessons and the code they describe travel together and land
+in `main` in the same commit when that PR merges.
+
+**The correct sequence, always:**
+1. Determine which branch the action being reflected on actually lives on —
+   the current working branch for in-progress work, or the branch a PR
+   merged from if reflecting after the fact.
+2. Stage and graduate the lesson via `learn.py`/`graduate.py` on **that**
+   branch, never on `main` or an unrelated branch, unless the action itself
+   was *already* merged to `main` at the time the lesson is written.
+3. Verify before pushing: does the branch you are about to push memory to
+   actually contain the file(s)/decision the lesson references? If not, stop
+   — commit to the correct branch instead.

@@ -120,3 +120,57 @@ def test_wrap_degrades_gracefully_on_proxy_failure(monkeypatch, tmp_path):
     assert result.gateway_url == "http://127.0.0.1:18789"  # unchanged
     assert result.tls_enabled is False
     assert result.running is True  # gateway resolution itself unaffected
+
+
+def test_wrap_populates_error_field_on_failure(monkeypatch, tmp_path):
+    """Regression: a TLS start failure must be visible in the returned
+    state's own error field, not just logged -- a fingerprint mismatch in
+    particular is a real security signal that must reach the resolved
+    runtime payload, where an operator not watching logs can still see it."""
+    import orchestrator.alphaclaw_tls_proxy as tls_mod
+    import orchestrator.alphaclaw_manager as manager_mod
+
+    monkeypatch.setattr(manager_mod, "_active_tls_proxy", None)
+    monkeypatch.setattr(tls_mod, "_CRYPTOGRAPHY_AVAILABLE", False)
+    monkeypatch.setattr(tls_mod, "CERT_DIR", tmp_path / "alphaclaw_tls")
+    monkeypatch.setenv("ALPHACLAW_TLS_ENABLED", "1")
+
+    state = AlphaClawState(running=True, port=18789, gateway_url="http://127.0.0.1:18789")
+    result = _maybe_wrap_gateway_with_tls(state)
+
+    assert result.error, "failure must populate the error field, not just log it"
+    assert "TLS" in result.error
+
+
+def test_wrap_stops_previous_proxy_instance_before_replacing(monkeypatch, tmp_path):
+    """Regression: calling this repeatedly (re-resolution, retries) must
+    not leak a new socket + daemon thread per call -- the previous active
+    proxy instance must be stopped before a new one starts."""
+    import orchestrator.alphaclaw_tls_proxy as tls_mod
+    import orchestrator.alphaclaw_manager as manager_mod
+
+    monkeypatch.setattr(tls_mod, "CERT_DIR", tmp_path / "alphaclaw_tls")
+    monkeypatch.setenv("ALPHACLAW_TLS_ENABLED", "1")
+
+    stopped = {"n": 0}
+
+    class _FakeProxy:
+        def __init__(self, upstream_port):
+            self.fingerprint = "aabbccdd" * 8
+
+        def start(self):
+            return "https://127.0.0.1:9999"
+
+        def stop(self):
+            stopped["n"] += 1
+
+    monkeypatch.setattr(tls_mod, "AlphaClawTlsProxy", _FakeProxy)
+
+    state = AlphaClawState(running=True, port=18789, gateway_url="http://127.0.0.1:18789")
+    _maybe_wrap_gateway_with_tls(state)
+    assert stopped["n"] == 0  # nothing to stop on the first call
+
+    _maybe_wrap_gateway_with_tls(state)
+    assert stopped["n"] == 1  # the first instance was stopped before the second started
+
+    manager_mod._active_tls_proxy = None  # don't leak into other tests
