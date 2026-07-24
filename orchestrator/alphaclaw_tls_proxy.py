@@ -20,6 +20,20 @@ here: certificate persistence across restarts (a fresh cert every process
 start would make TOFU pinning meaningless -- the whole point of pinning
 is noticing when the cert *changes*), and fingerprint mismatch detection.
 
+Platform limitation, not silently glossed over: file-permission
+enforcement (CERT_DIR, the private key, the certificate, and the
+fingerprint pin file) uses POSIX mode bits (os.chmod / os.open with an
+explicit mode). This restricts access on Linux and macOS. On Windows,
+these calls have no meaningful effect -- Windows access control is ACL-
+based, not mode-bit-based, and this module does not set any ACL. On
+Windows, the private key and pin file are protected only by the OS
+default ACL for the user's own profile directory (typically already
+excludes other non-administrator local users, but this module makes no
+explicit guarantee and applies no additional restriction). Real ACL
+enforcement (icacls, or pywin32's security APIs) is not implemented --
+tracked as a known gap, not assumed to be covered by the POSIX-oriented
+code above.
+
 Companion plan (full design, deferred): orama-system
 docs/v2/49-peer-mesh-auth-tls-v2-plan.md. This module implements plan
 section A.1 (certificate provisioning: Option C, auto-generated + TOFU)
@@ -34,6 +48,7 @@ import hashlib
 import http.server
 import json
 import logging
+import os
 import socketserver
 import ssl
 import threading
@@ -106,19 +121,24 @@ def _load_pinned_fingerprint() -> Optional[str]:
 def _store_pinned_fingerprint(fingerprint: str) -> None:
     store = _fingerprint_store_path()
     store.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    store.write_text(
-        json.dumps(
-            {"fingerprint": fingerprint, "pinned_at": datetime.now(timezone.utc).isoformat()},
-            indent=2,
-        ),
-        encoding="utf-8",
-    )
-    # Explicit chmod, not just mkdir's mode= -- the process umask can still
-    # widen a file's actual permissions on write regardless of the
-    # directory's mode; never rely on umask alone for a security-relevant
-    # file. Also covers the case where the file already existed with wider
-    # permissions from before this fix.
-    store.chmod(0o600)
+    # mkdir's mode= is ignored when the directory already exists (and
+    # isn't applied to already-existing intermediate parents) -- a
+    # directory from before this permissions fix would keep its original,
+    # wider mode. Explicit chmod covers that case unconditionally.
+    store.parent.chmod(0o700)
+    payload = json.dumps(
+        {"fingerprint": fingerprint, "pinned_at": datetime.now(timezone.utc).isoformat()},
+        indent=2,
+    ).encode("utf-8")
+    # Create with the restrictive mode atomically at open time, not via a
+    # write-then-chmod sequence -- write-then-chmod leaves a real (if
+    # narrow) TOCTOU window on multi-user systems where the file is
+    # readable at its default (umask-derived) permissions before the
+    # chmod call lands. O_CREAT|O_TRUNC so this still works whether the
+    # file is new or being overwritten.
+    fd = os.open(str(store), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "wb") as f:
+        f.write(payload)
 
 
 def _cert_not_after_utc(cert: x509.Certificate) -> datetime:
@@ -189,6 +209,7 @@ class AlphaClawTlsProxy:
                 "existing HTTP behavior."
             )
         CERT_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
+        CERT_DIR.chmod(0o700)  # covers directories that predate this fix
         cert_path = CERT_DIR / "alphaclaw.crt"
         key_path = CERT_DIR / "alphaclaw.key"
         generation_mode = "renewed"
@@ -241,20 +262,22 @@ class AlphaClawTlsProxy:
             )
             .sign(key, hashes.SHA256())
         )
-        key_path.write_bytes(
-            key.private_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PrivateFormat.PKCS8,
-                encryption_algorithm=serialization.NoEncryption(),
-            )
+        key_bytes = key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
         )
+        # Atomic restrictive-mode creation for the private key -- a
+        # write-then-chmod sequence leaves a real (if narrow) TOCTOU
+        # window on multi-user systems where the key is readable at its
+        # default (umask-derived) permissions before the chmod call
+        # lands. The cert itself isn't sensitive, but kept at the same
+        # mode immediately after write for consistency (no reason to
+        # leave it wider even briefly).
+        fd = os.open(str(key_path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "wb") as f:
+            f.write(key_bytes)
         cert_path.write_bytes(cert.public_bytes(serialization.Encoding.PEM))
-        # Explicit chmod, not just mkdir's mode= -- the process umask can
-        # still widen a file's actual permissions on write regardless of
-        # the directory's mode. The private key especially must never be
-        # group/world-readable; the cert is technically public but kept at
-        # the same restrictive mode for consistency (no reason to widen it).
-        key_path.chmod(0o600)
         cert_path.chmod(0o600)
         return cert_path, key_path, generation_mode
 
@@ -316,6 +339,7 @@ class AlphaClawTlsProxy:
             "upgrade",
         }
         _CHUNK_SIZE = 65536
+        _MAX_BODY_SIZE = 100 * 1024 * 1024  # 100MB -- generous for AlphaClaw's own API payloads, bounds a malicious/buggy client's memory impact
 
         class _ProxyHandler(http.server.BaseHTTPRequestHandler):
             def _read_request_body(self) -> Optional[bytes]:
@@ -331,25 +355,83 @@ class AlphaClawTlsProxy:
                 wire). Fully de-chunks into a single buffer here, then
                 forwards upstream with an explicit Content-Length --
                 correct framing, not a streaming pass-through.
+
+                Raises ValueError on any malformed framing (non-hex chunk
+                size, negative/oversized Content-Length, an unexpectedly
+                blank chunk-size line) and OSError on a read that comes up
+                short (client disconnected mid-chunk) -- both signal a
+                genuinely malformed or truncated request. An earlier
+                version of this method treated a blank chunk-size line the
+                same as the normal zero-size terminator, which silently
+                forwarded a truncated body upstream instead of surfacing
+                the problem; callers must not treat either exception as
+                "no body", only as "this request is broken."
                 """
                 if self.headers.get("Transfer-Encoding", "").lower() == "chunked":
                     chunks: list[bytes] = []
+                    total = 0
                     while True:
-                        size_line = self.rfile.readline().strip()
+                        size_line = self.rfile.readline()
                         if not size_line:
-                            break
-                        chunk_size = int(size_line.split(b";", 1)[0], 16)
+                            # Genuinely empty read (not just an empty chunk
+                            # size) means the connection ended mid-frame --
+                            # a truncated request, not a valid terminator.
+                            raise OSError("connection ended while reading chunk size")
+                        size_line = size_line.strip()
+                        if not size_line:
+                            raise ValueError("blank chunk-size line (malformed chunked framing)")
+                        try:
+                            chunk_size = int(size_line.split(b";", 1)[0], 16)
+                        except ValueError as exc:
+                            raise ValueError(f"non-hex chunk size {size_line!r}") from exc
+                        if chunk_size < 0:
+                            raise ValueError(f"negative chunk size {chunk_size}")
                         if chunk_size == 0:
                             self.rfile.readline()  # trailing CRLF after the 0-size chunk
                             break
-                        chunks.append(self.rfile.read(chunk_size))
+                        total += chunk_size
+                        if total > _MAX_BODY_SIZE:
+                            raise ValueError(f"chunked body exceeds {_MAX_BODY_SIZE} byte limit")
+                        data = self.rfile.read(chunk_size)
+                        if len(data) != chunk_size:
+                            raise OSError(
+                                f"incomplete chunk read: expected {chunk_size} bytes, got {len(data)}"
+                            )
+                        chunks.append(data)
                         self.rfile.readline()  # CRLF after each chunk's data
                     return b"".join(chunks)
-                length = int(self.headers.get("Content-Length", 0))
-                return self.rfile.read(length) if length else None
+                raw_length = self.headers.get("Content-Length")
+                if raw_length is None:
+                    return None
+                try:
+                    length = int(raw_length)
+                except ValueError as exc:
+                    raise ValueError(f"non-numeric Content-Length {raw_length!r}") from exc
+                if length < 0:
+                    raise ValueError(f"negative Content-Length {length}")
+                if length > _MAX_BODY_SIZE:
+                    raise ValueError(f"Content-Length {length} exceeds {_MAX_BODY_SIZE} byte limit")
+                if length == 0:
+                    return None
+                data = self.rfile.read(length)
+                if len(data) != length:
+                    raise OSError(f"incomplete body read: expected {length} bytes, got {len(data)}")
+                return data
 
             def _forward(self, method: str) -> None:
-                body = self._read_request_body()
+                try:
+                    body = self._read_request_body()
+                except (ValueError, OSError) as exc:
+                    # Malformed framing must never propagate out of this
+                    # handler -- an uncaught exception here aborts the
+                    # connection via socketserver's own error handling with
+                    # no HTTP response at all, degrading a single bad
+                    # request into a silent connection drop instead of a
+                    # clean, diagnosable 400.
+                    self.send_response(400)
+                    self.end_headers()
+                    self.wfile.write(f"Malformed request body: {exc}".encode("utf-8"))
+                    return
                 url = f"http://127.0.0.1:{upstream}{self.path}"
                 req = urllib.request.Request(url, method=method, data=body)
                 for header, value in self.headers.items():

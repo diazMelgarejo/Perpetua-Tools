@@ -95,6 +95,46 @@ def test_proxy_binds_loopback_only(fake_upstream, tmp_path, monkeypatch):
         proxy.stop()
 
 
+@pytest.mark.skipif(
+    not _CRYPTOGRAPHY_AVAILABLE, reason="'cryptography' library not installed"
+)
+def test_proxy_returns_400_on_malformed_chunked_body(fake_upstream, tmp_path, monkeypatch):
+    """Regression: a non-hex chunk-size line (malformed client, or a
+    client that disconnects mid-chunk) must not crash the connection
+    handler uncaught -- it must return a clean 400 and leave the proxy
+    able to serve subsequent requests."""
+    import http.client
+    import orchestrator.alphaclaw_tls_proxy as mod
+
+    monkeypatch.setattr(mod, "CERT_DIR", tmp_path / "alphaclaw_tls")
+
+    proxy = AlphaClawTlsProxy(upstream_port=fake_upstream, proxy_port=_free_port())
+    proxy.start()
+    time.sleep(0.2)
+
+    try:
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+
+        conn = http.client.HTTPSConnection("127.0.0.1", proxy.proxy_port, context=ctx)
+        conn.putrequest("POST", "/v1/models")
+        conn.putheader("Transfer-Encoding", "chunked")
+        conn.endheaders()
+        conn.send(b"ZZZ\r\nhello\r\n0\r\n\r\n")  # non-hex chunk size
+        resp = conn.getresponse()
+        assert resp.status == 400
+        resp.read()
+
+        # Proxy must still be alive and correct for the next request.
+        conn2 = http.client.HTTPSConnection("127.0.0.1", proxy.proxy_port, context=ctx)
+        conn2.request("GET", "/v1/models")
+        resp2 = conn2.getresponse()
+        assert resp2.status == 200
+    finally:
+        proxy.stop()
+
+
 def test_cert_generation_raises_clear_error_without_cryptography(tmp_path, monkeypatch):
     """When 'cryptography' isn't available, callers get a specific,
     catchable exception -- never a silent fallback to plain HTTP chosen
