@@ -333,6 +333,10 @@ class AlphaClawTlsProxy:
 
         upstream = self.upstream_port
         timeout = self.proxy_timeout
+        # Class-body attribute assignments can't read an enclosing-function
+        # local of the SAME name (shadowed by the class's own binding), so
+        # _ProxyHandler.timeout below reads this differently-named alias.
+        _handler_socket_timeout = timeout
         _HOP_BY_HOP_HEADERS = {
             "connection", "keep-alive", "proxy-authenticate",
             "proxy-authorization", "te", "trailers", "transfer-encoding",
@@ -342,6 +346,17 @@ class AlphaClawTlsProxy:
         _MAX_BODY_SIZE = 100 * 1024 * 1024  # 100MB -- generous for AlphaClaw's own API payloads, bounds a malicious/buggy client's memory impact
 
         class _ProxyHandler(http.server.BaseHTTPRequestHandler):
+            # Bounds blocking rfile.read()/readline() calls on the client
+            # socket -- without this, a client that opens the TLS handshake
+            # and then sends headers/chunk data arbitrarily slowly (or not
+            # at all) hangs this handler thread indefinitely. ThreadingTCPServer
+            # spawns one thread per connection with no cap, so N stalled
+            # clients pin N threads forever (Slowloris-style). This module's
+            # own threat model is local multi-user, not just remote, so a
+            # low-privileged local user opening a few slow connections is
+            # in-scope.
+            timeout = _handler_socket_timeout
+
             def _read_request_body(self) -> Optional[bytes]:
                 """Read the client's request body, handling both
                 Content-Length and Transfer-Encoding: chunked framing.
@@ -487,6 +502,11 @@ class AlphaClawTlsProxy:
         self._server = socketserver.ThreadingTCPServer(
             ("127.0.0.1", self.proxy_port), _ProxyHandler
         )
+        # Per-connection handler threads default to non-daemon, so a handler
+        # stuck past _ProxyHandler.timeout (e.g. a slow client mid-read when
+        # stop() is called) would otherwise block process exit / stop()'s
+        # own join indefinitely.
+        self._server.daemon_threads = True
         self._server.socket = context.wrap_socket(self._server.socket, server_side=True)
         self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
         self._thread.start()
