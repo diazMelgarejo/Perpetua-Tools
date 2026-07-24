@@ -1,0 +1,83 @@
+{
+  "id": "21f7df113ec2",
+  "key": "manual_21f7df",
+  "name": "manual_21f7df",
+  "claim": "An uncommitted edit in a working tree is not safe from loss just because it hasn't been overwritten -- switching to a DIFFERENT repository's checkout (a different directory entirely, not just a different branch of the same repo) and back can leave the original repo's uncommitted working-tree changes gone, with no error or warning. When work must span two repositories in the same turn, commit (even a small, single-purpose commit) before switching context, rather than treating a multi-step edit as safe to leave uncommitted while attention moves elsewhere.",
+  "conditions": [
+    "attention",
+    "back",
+    "because",
+    "before",
+    "branch",
+    "changes",
+    "checkout",
+    "commit",
+    "context",
+    "different",
+    "directory",
+    "edit",
+    "elsewhere",
+    "entirely",
+    "error",
+    "even",
+    "gone",
+    "hasn",
+    "just",
+    "leave",
+    "loss",
+    "moves",
+    "multi-step",
+    "original",
+    "overwritten",
+    "rather",
+    "repo",
+    "repositories",
+    "repository",
+    "safe",
+    "same",
+    "single-purpose",
+    "small",
+    "span",
+    "switching",
+    "than",
+    "treating",
+    "tree",
+    "turn",
+    "two",
+    "uncommitted",
+    "warning",
+    "while",
+    "work",
+    "working",
+    "working-tree"
+  ],
+  "evidence_ids": [
+    "2026-07-24T02:22:23.033301+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-24T02:22:23.033301+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-24T02:22:23.033301+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-24T02:22:36.715061+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "A real, if minor, data-loss incident -- caught only because the content was reconstructable.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-24T02:22:23.033301+00:00"
+      ],
+      "lessons_sha": "e4af6b889480"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-24T02:22:36.715044+00:00",
+  "reviewer": "host-agent",
+  "rationale": "A real, if minor, data-loss incident -- caught only because the content was reconstructable."
+}

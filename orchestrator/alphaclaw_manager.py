@@ -117,6 +117,8 @@ class AlphaClawState:
     gateway_url: str = ""
     openclaw_config: dict | None = None
     role_routing: dict | None = None
+    tls_enabled: bool = False
+    tls_fingerprint: str = ""
 
 
 def _port_from_gateway_url(url: str) -> int:
@@ -174,6 +176,9 @@ class RuntimePayload:
     alphaclaw_port: int = 0
     alphaclaw_running: bool = False
     alphaclaw_commandeered: bool = False
+    alphaclaw_gateway_url: str = ""
+    alphaclaw_tls_enabled: bool = False
+    alphaclaw_tls_fingerprint: str = ""
     probe_error: str = ""
     bootstrap_error: str = ""
     env_exports: dict[str, str] = field(default_factory=dict)
@@ -352,6 +357,114 @@ def validate_routing_affinity(model_id: str, platform: str) -> bool:
 
 # ─── AlphaClaw bootstrap ───────────────────────────────────────────────────────
 
+def alphaclaw_tls_enabled() -> bool:
+    """Env gate for the local HTTPS-in-front-of-AlphaClaw proxy, matching
+    the parsing convention already established by
+    orchestrator/dangerous_workers.py's PT_ALLOW_DANGEROUS_CLI_WORKERS.
+
+    Off by default: this is new, optional-today infrastructure (see
+    docs/v2/49-peer-mesh-auth-tls-v2-plan.md in orama-system for the full
+    plan this is the v1 slice of) -- opt-in, not a behavior change to any
+    existing deployment until an operator explicitly asks for it.
+    """
+    v = (os.environ.get("ALPHACLAW_TLS_ENABLED") or "").strip().lower()
+    return v in ("1", "true", "yes", "on")
+
+
+_active_tls_proxy = None  # type: ignore[var-annotated]
+"""The currently-running AlphaClawTlsProxy, if any. Module-level because
+bootstrap_alphaclaw() can be called repeatedly across the process lifetime
+(re-resolution, retries) -- without tracking this, each call would leak a
+new socket + daemon thread rather than replacing the previous one."""
+
+
+def _maybe_wrap_gateway_with_tls(state: AlphaClawState) -> AlphaClawState:
+    """If ALPHACLAW_TLS_ENABLED, start a local HTTPS proxy in front of the
+    resolved AlphaClaw gateway and return state with gateway_url replaced.
+
+    This is the ONLY place gateway_url's scheme is decided -- matching
+    this module's own architecture invariant (PT is authoritative for
+    gateway discovery, route choice, topology, and readiness; orama-system
+    makes zero gateway decisions). orama never independently decides to
+    use HTTPS; it only ever reads whatever gateway_url PT resolved here.
+
+    Never raises to the caller -- a TLS failure degrades to the original
+    (HTTP) state with the error recorded, rather than blocking gateway
+    resolution entirely. bootstrap_alphaclaw()'s own non-fatal-error
+    convention is preserved: TLS is an enhancement to a working gateway,
+    not a precondition for having one. Unlike the original version of this
+    function, the failure IS now visible in the returned state's own
+    `error` field (previously only logged) -- a fingerprint mismatch in
+    particular is a real security signal that must reach the resolved
+    runtime payload, not just a log line an operator might not be
+    watching.
+    """
+    global _active_tls_proxy
+    if not alphaclaw_tls_enabled():
+        return state
+    if not state.running or not state.port:
+        return state
+    if _active_tls_proxy is not None:
+        try:
+            _active_tls_proxy.stop()
+        except OSError as exc:
+            _log.debug("AlphaClaw TLS: error stopping previous proxy instance: %s", exc)
+        _active_tls_proxy = None
+    try:
+        from orchestrator.alphaclaw_tls_proxy import (
+            AlphaClawCertFingerprintMismatch,
+            AlphaClawTlsProxy,
+            AlphaClawTlsUnavailable,
+        )
+
+        proxy = AlphaClawTlsProxy(upstream_port=state.port)
+        https_url = proxy.start()
+        _active_tls_proxy = proxy
+        _log.info(
+            "AlphaClaw TLS: gateway now served at %s (upstream http on port %d), "
+            "fingerprint=%s...",
+            https_url, state.port, proxy.fingerprint[:16],
+        )
+        return AlphaClawState(
+            running=state.running,
+            port=state.port,
+            commandeered=state.commandeered,
+            started=state.started,
+            error=state.error,
+            gateway_url=https_url,
+            openclaw_config=state.openclaw_config,
+            role_routing=state.role_routing,
+            tls_enabled=True,
+            tls_fingerprint=proxy.fingerprint,
+        )
+    except (AlphaClawTlsUnavailable, AlphaClawCertFingerprintMismatch, OSError) as exc:
+        # Narrowed from a bare `except Exception` -- catching everything
+        # here would also swallow genuine programming errors (a typo'd
+        # attribute, an import cycle) as if they were routine "TLS isn't
+        # available" cases. A fingerprint mismatch especially must not be
+        # confused with an ordinary startup failure -- it's a MITM-
+        # detection signal (see alphaclaw_tls_proxy.py's own docstring).
+        tls_error = f"AlphaClaw TLS unavailable ({type(exc).__name__}): {exc}"
+        _log.error(
+            "AlphaClaw TLS: could not start proxy (%s) -- gateway remains "
+            "on plain HTTP. If this is a certificate fingerprint mismatch, "
+            "investigate before dismissing it.",
+            tls_error,
+        )
+        return AlphaClawState(
+            running=state.running,
+            port=state.port,
+            commandeered=state.commandeered,
+            started=state.started,
+            error=state.error or tls_error,
+            gateway_url=state.gateway_url,
+            openclaw_config=state.openclaw_config,
+            role_routing=state.role_routing,
+            tls_enabled=False,
+            tls_fingerprint="",
+        )
+
+
 def bootstrap_alphaclaw(mac_ip: str = "", win_ip: str = "") -> AlphaClawState:
     """
     Delegate to alphaclaw_bootstrap.py — PT's canonical AlphaClaw lifecycle.
@@ -388,7 +501,7 @@ def bootstrap_alphaclaw(mac_ip: str = "", win_ip: str = "") -> AlphaClawState:
             state = _read_alphaclaw_state()
             gateway_url = str(payload.get("gateway_url") or state.gateway_url or "")
             port = _port_from_gateway_url(gateway_url) or state.port
-            return AlphaClawState(
+            resolved = AlphaClawState(
                 running=bool(payload.get("gateway_ready", state.running)),
                 port=port,
                 commandeered=bool(payload.get("commandeered", state.commandeered)),
@@ -398,6 +511,11 @@ def bootstrap_alphaclaw(mac_ip: str = "", win_ip: str = "") -> AlphaClawState:
                 openclaw_config=payload.get("openclaw_config"),
                 role_routing=payload.get("role_routing"),
             )
+            # The ONLY place gateway_url's scheme is decided -- see
+            # _maybe_wrap_gateway_with_tls's own docstring for the
+            # architecture-invariant rationale. No-op unless
+            # ALPHACLAW_TLS_ENABLED is set.
+            return _maybe_wrap_gateway_with_tls(resolved)
         return AlphaClawState(error=f"bootstrap exited {result.returncode}")
     except subprocess.TimeoutExpired:
         return AlphaClawState(error="alphaclaw_bootstrap.py timed out after 120s")
@@ -516,6 +634,8 @@ def resolve_runtime(
     }
     if ac_state.running and ac_state.port:
         env_exports["ALPHACLAW_PORT"] = str(ac_state.port)
+    if ac_state.gateway_url:
+        env_exports["ALPHACLAW_GATEWAY_URL"] = ac_state.gateway_url
 
     return RuntimePayload(
         mode=mode.mode,
@@ -528,6 +648,9 @@ def resolve_runtime(
         alphaclaw_port=ac_state.port,
         alphaclaw_running=ac_state.running,
         alphaclaw_commandeered=ac_state.commandeered,
+        alphaclaw_gateway_url=ac_state.gateway_url,
+        alphaclaw_tls_enabled=ac_state.tls_enabled,
+        alphaclaw_tls_fingerprint=ac_state.tls_fingerprint,
         probe_error=probe.error,
         bootstrap_error=bootstrap_error,
         env_exports=env_exports,
