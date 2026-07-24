@@ -1,0 +1,68 @@
+{
+  "id": "7294fcbe0c37",
+  "key": "manual_7294fc",
+  "name": "manual_7294fc",
+  "claim": "repo_bot_identities keys in identity-policy.json are repository directory names (orama-system, Perpetua-Tools); audit_engine derives repo_name from basename(REPO_ROOT). Local worktrees whose folder name does not match a policy key will not match repo bots until synced into a correctly named checkout or CI run.",
+  "conditions": [
+    "audit_engine",
+    "basename",
+    "bots",
+    "checkout",
+    "correctly",
+    "derives",
+    "directory",
+    "folder",
+    "identity-policy",
+    "into",
+    "json",
+    "key",
+    "keys",
+    "local",
+    "match",
+    "name",
+    "named",
+    "names",
+    "orama-system",
+    "perpetua-tools",
+    "policy",
+    "repo",
+    "repo_bot_identities",
+    "repo_name",
+    "repo_root",
+    "repository",
+    "run",
+    "synced",
+    "until",
+    "whose",
+    "worktrees"
+  ],
+  "evidence_ids": [
+    "2026-07-24T06:56:37.063797+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-24T06:56:37.063797+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-24T06:56:37.063797+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-24T06:56:37.168845+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Smoke test on orama-system-identity-audit-plan worktree showed bad_author=2 and repo_bot=any because basename was not orama-system; same commits approved when repo_name=orama-system after bot-prefix normalization.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-24T06:56:37.063797+00:00"
+      ],
+      "lessons_sha": "deaa2fb15eb6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-24T06:56:37.168839+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Smoke test on orama-system-identity-audit-plan worktree showed bad_author=2 and repo_bot=any because basename was not orama-system; same commits approved when repo_name=orama-system after bot-prefix normalization."
+}
