@@ -123,12 +123,14 @@ def test_cert_is_reused_across_restarts_not_regenerated(tmp_path, monkeypatch):
     monkeypatch.setattr(mod, "CERT_DIR", tmp_path / "alphaclaw_tls")
 
     proxy1 = AlphaClawTlsProxy(upstream_port=9999, proxy_port=_free_port())
-    cert1, _ = proxy1._generate_cert()
+    cert1, _, _ = proxy1._generate_cert()
     fingerprint1 = mod.verify_or_pin_fingerprint(cert1)
 
     proxy2 = AlphaClawTlsProxy(upstream_port=9999, proxy_port=_free_port())
-    cert2, _ = proxy2._generate_cert()
+    cert2, _, mode2 = proxy2._generate_cert()
     fingerprint2 = mod.verify_or_pin_fingerprint(cert2)
+
+    assert mode2 == "reused"
 
     assert fingerprint1 == fingerprint2
     assert cert1 == cert2  # literally the same file path, reused in place
@@ -148,7 +150,7 @@ def test_fingerprint_mismatch_detected_when_cert_changes_but_pin_persists(tmp_pa
     monkeypatch.setattr(mod, "CERT_DIR", tmp_path / "alphaclaw_tls")
 
     proxy1 = AlphaClawTlsProxy(upstream_port=9999, proxy_port=_free_port())
-    cert1, key1 = proxy1._generate_cert()
+    cert1, key1, _ = proxy1._generate_cert()
     mod.verify_or_pin_fingerprint(cert1)
 
     # Simulate only the cert+key changing (attacker swap, or a rotation
@@ -156,10 +158,10 @@ def test_fingerprint_mismatch_detected_when_cert_changes_but_pin_persists(tmp_pa
     cert1.unlink()
     key1.unlink()
     proxy2 = AlphaClawTlsProxy(upstream_port=9999, proxy_port=_free_port())
-    cert2, _ = proxy2._generate_cert()
+    cert2, _, _ = proxy2._generate_cert()
 
     with pytest.raises(mod.AlphaClawCertFingerprintMismatch):
-        mod.verify_or_pin_fingerprint(cert2)
+        proxy2.start()
 
 
 def _free_port() -> int:
@@ -168,3 +170,48 @@ def _free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
+
+
+@pytest.mark.skipif(
+    not _CRYPTOGRAPHY_AVAILABLE, reason="'cryptography' library not installed"
+)
+def test_generate_cert_reuses_existing_cert_on_second_call(tmp_path, monkeypatch):
+    """Regression: cryptography exposes not_valid_after (naive UTC), not
+    not_valid_after_utc -- the reuse path must not crash on restart."""
+    import orchestrator.alphaclaw_tls_proxy as mod
+
+    monkeypatch.setattr(mod, "CERT_DIR", tmp_path / "alphaclaw_tls")
+
+    proxy = AlphaClawTlsProxy(upstream_port=9999, proxy_port=_free_port())
+    cert1, _, mode1 = proxy._generate_cert()
+    assert mode1 == "renewed"
+
+    cert2, _, mode2 = proxy._generate_cert()
+    assert mode2 == "reused"
+    assert cert1 == cert2
+
+
+@pytest.mark.skipif(
+    not _CRYPTOGRAPHY_AVAILABLE, reason="'cryptography' library not installed"
+)
+def test_expiry_rotation_updates_pin_without_mismatch(tmp_path, monkeypatch):
+    """Legitimate expiry-driven rotation must update the TOFU pin, not
+    brick TLS until an operator manually deletes fingerprint.json."""
+    import orchestrator.alphaclaw_tls_proxy as mod
+
+    monkeypatch.setattr(mod, "CERT_DIR", tmp_path / "alphaclaw_tls")
+
+    proxy1 = AlphaClawTlsProxy(upstream_port=9999, proxy_port=_free_port())
+    cert1, _, _ = proxy1._generate_cert()
+    fp1 = mod.verify_or_pin_fingerprint(cert1)
+
+    monkeypatch.setattr(mod, "_MIN_REMAINING_DAYS_TO_REUSE", 365)
+
+    proxy2 = AlphaClawTlsProxy(upstream_port=9999, proxy_port=_free_port())
+    https_url = proxy2.start()
+
+    assert https_url.startswith("https://")
+    assert proxy2.fingerprint != fp1
+    assert mod._load_pinned_fingerprint() == proxy2.fingerprint
+
+    proxy2.stop()
