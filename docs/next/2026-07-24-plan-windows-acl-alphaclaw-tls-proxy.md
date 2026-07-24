@@ -6,9 +6,16 @@
 **Priority:** Major | Security & Privacy
 **Effort:** Heavy lift (single utility function + 5 call sites)
 **Date:** 2026-07-24
-**Status:** PLAN — not implemented. Deferred v2 item, tracked in the companion
-scaffolding doc [`2026-07-24-alphaclaw-tls-proxy-scaffolding.md`](2026-07-24-alphaclaw-tls-proxy-scaffolding.md)
-§"What's explicitly NOT done yet" as "Windows ACL enforcement for cert store."
+**Status:** Minimal implementation DONE (2026-07-24) -- `_secure_path()` +
+`_secure_path_win32()` + `_secure_path_icacls()` added, all 7 call sites
+replaced, 8 unit tests added (mocked win32security), 17/17 tests in this
+module green. **NOT yet verified on real Windows hardware** -- this was
+implemented without a Windows machine available this session. Before
+trusting this in production, run the §5.2 manual verification steps on
+both the current RTX 3080 Windows machine and the incoming RTX 5080
+replacement, and confirm `PROTECTED_DACL_SECURITY_INFORMATION` availability
+per the provenance note below. Tracked in the companion scaffolding doc
+[`2026-07-24-alphaclaw-tls-proxy-scaffolding.md`](2026-07-24-alphaclaw-tls-proxy-scaffolding.md).
 
 ## Provenance and verification note
 
@@ -538,14 +545,14 @@ windows-security = ["pywin32>=227"]
 
 | Step | Action | Effort | Risk |
 |------|--------|--------|------|
-| 1 | Add `_secure_path()`, `_secure_path_win32()`, `_secure_path_icacls()` to `alphaclaw_tls_proxy.py` | 1 hr | None — new code, no existing behavior changed |
-| 2 | Replace 7 call sites (chmod → _secure_path, os.open mode → post-creation _secure_path) | 30 min | Low — mechanical replacements |
-| 3 | Update module docstring — remove "Platform limitation" paragraph | 5 min | None |
-| 4 | Add unit tests with mock_win32 fixture | 45 min | None — tests are new |
-| 5 | On a real Windows box: verify `hasattr(win32security, "PROTECTED_DACL_SECURITY_INFORMATION")` and record the result in this doc | 10 min | None — read-only check |
-| 6 | Run CI on PR (ubuntu + macos + windows matrix) | 15 min | Low — CI already runs tests |
-| 7 | Manual verification on Windows: verify other-user access denied | 20 min | Low — one-time check |
-| 8 | Update companion doc `docs/next/2026-07-24-alphaclaw-tls-proxy-scaffolding.md`'s "explicitly NOT done yet" list | 5 min | None |
+| 1 | Add `_secure_path()`, `_secure_path_win32()`, `_secure_path_icacls()` to `alphaclaw_tls_proxy.py` | 1 hr | **DONE** (2026-07-24) |
+| 2 | Replace 7 call sites (chmod → _secure_path, os.open mode → post-creation _secure_path) | 30 min | **DONE** (2026-07-24) |
+| 3 | Update module docstring — remove "Platform limitation" paragraph | 5 min | **DONE** (2026-07-24) |
+| 4 | Add unit tests with mock_win32 fixture | 45 min | **DONE** (2026-07-24) — 8 tests, `tests/test_alphaclaw_tls_proxy_permissions.py` |
+| 5 | On a real Windows box: verify `hasattr(win32security, "PROTECTED_DACL_SECURITY_INFORMATION")` and record the result in this doc | 10 min | **PENDING** — needs the actual RTX 3080 Windows machine (or its incoming RTX 5080 replacement); no Windows hardware available this session |
+| 6 | Run CI on PR (ubuntu + macos + windows matrix) | 15 min | **PENDING** — not yet opened as a PR |
+| 7 | Manual verification on Windows: verify other-user access denied | 20 min | **PENDING** — needs real Windows hardware (RTX 3080 now, RTX 5080 soon); this is the actual functional proof, not just unit tests against a mock |
+| 8 | Update companion doc `docs/next/2026-07-24-alphaclaw-tls-proxy-scaffolding.md`'s "explicitly NOT done yet" list | 5 min | **DONE** (2026-07-24) |
 
 **Total effort: ~3 hours**
 **Risk: Low** — all changes are additive (new function + call site replacements). No existing behavior changes on POSIX. On Windows, permissions become more restrictive (strictly safer).
