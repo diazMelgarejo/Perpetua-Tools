@@ -6,7 +6,7 @@ to reconstruct status from commit archaeology. Cross-linked with
 [`orama-system/docs/next/2026-07-25-pending-work-tracker.md`](https://github.com/diazMelgarejo/orama-system/blob/main/docs/next/2026-07-25-pending-work-tracker.md)
 — check both; several items span both repos.
 
-**Last updated:** 2026-07-25, from the branch each item's code actually
+**Last updated:** 2026-07-24, from the branch each item's code actually
 lives on (never a summary written from a different branch — see the
 "lessons and action must land on the same branch" rule in `SECURITY.md`).
 
@@ -24,11 +24,25 @@ lives on (never a summary written from a different branch — see the
 - [x] TOFU fingerprint pinning with mismatch detection
 - [x] Wired into `alphaclaw_manager.py`'s `bootstrap_alphaclaw()` via
       `_maybe_wrap_gateway_with_tls()`, gated by `ALPHACLAW_TLS_ENABLED`
-- [x] Chunked request-body decoding, hop-by-hop response-header stripping,
-      streamed (not fully-buffered) response forwarding, configurable timeout
-- [x] File permissions (0600/0700) explicit, not umask-dependent
+- [x] Chunked request-body decoding (with strict framing validation and a
+      size limit — malformed chunk sizes/truncated reads return a clean
+      400, never an uncaught exception), hop-by-hop response-header
+      stripping, streamed (not fully-buffered) response forwarding,
+      configurable timeout
+- [x] File permissions (0600/0700) explicit and set atomically at file
+      creation (not write-then-chmod, which leaves a TOCTOU window),
+      re-applied on every start so pre-existing directories/files from
+      before this fix get tightened too
 - [x] Previous proxy instance stopped before replacing (no socket/thread leak)
 - [x] TLS failures populate the resolved state's `error` field, not just logs
+
+**Important — opt-in, not active by default:** every item above is real
+and tested, but `ALPHACLAW_TLS_ENABLED` is unset by default. On this
+branch, `AlphaClawState.gateway_url` and the default `--resolve` output
+remain plain `http://` unless an operator explicitly sets that env var.
+Do not read the checkmarks above as "TLS is on" — they mean "the code to
+turn TLS on, when asked, works and is tested."
+
 - [ ] **Not started:** admin-pinned fingerprints (`PEER_PINNED_FINGERPRINTS`
       pre-seeding) — TOFU-only today
 - [ ] **Not started:** certificate rotation *policy* beyond the fixed
@@ -36,6 +50,11 @@ lives on (never a summary written from a different branch — see the
 - [ ] **Not started:** mTLS
 - [ ] **Not started:** auto-enabling by default — `ALPHACLAW_TLS_ENABLED`
       is opt-in; no auto-detection of fresh-vs-existing install
+- [ ] **Not started / documented limitation:** file-permission enforcement
+      (0600/0700) is POSIX mode bits only — no effect on Windows, which is
+      ACL-based. No `icacls`/pywin32 ACL enforcement implemented; the gap
+      is documented explicitly in the module's own docstring, not silently
+      assumed to be covered.
 - [ ] PR #276 itself: open, not yet merged. Review 4769478731's 4 findings
       all addressed; check for newer review rounds before assuming clean.
 
