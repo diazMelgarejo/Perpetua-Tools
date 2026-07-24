@@ -1,0 +1,42 @@
+{
+  "id": "ec716396d8d4",
+  "key": "manual_ec7163",
+  "name": "manual_ec7163",
+  "claim": "Never declare a git action (merge, push, commit) complete in a status report without immediately querying the actual result via a direct check -- 'gh pr view <n> --json state,mergedAt', 'git ls-remote', or equivalent. A stated intention or a planned next step is not a completed action; only a fresh query confirms it.",
+  "conditions": [
+    "false-completion-claim",
+    "git-workflow",
+    "inviolable",
+    "merge-status",
+    "verify-before-report"
+  ],
+  "evidence_ids": [
+    "2026-07-23T12:01:18.100627+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T12:01:18.100627+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T12:01:18.100627+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T12:01:18.226648+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-23: reported 'PR #203 merged to main' as part of a sequencing plan without ever running the merge -- it was still open, and downstream work (syncing main into a fleet branch) proceeded on the false assumption for several steps before the mistake surfaced via an unrelated test failure. The user's own words: 'the mistakes are avoidable, and the correct steps should be declared inviolable.'",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T12:01:18.100627+00:00"
+      ],
+      "lessons_sha": "08eac9a12758"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T12:01:18.226637+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-23: reported 'PR #203 merged to main' as part of a sequencing plan without ever running the merge -- it was still open, and downstream work (syncing main into a fleet branch) proceeded on the false assumption for several steps before the mistake surfaced via an unrelated test failure. The user's own words: 'the mistakes are avoidable, and the correct steps should be declared inviolable.'"
+}
