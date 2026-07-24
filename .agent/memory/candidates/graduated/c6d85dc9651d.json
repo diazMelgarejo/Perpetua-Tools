@@ -1,0 +1,43 @@
+{
+  "id": "c6d85dc9651d",
+  "key": "manual_c6d85d",
+  "name": "manual_c6d85d",
+  "claim": "A graduated lesson must specify the exact step, not just the general instinct -- 'fetch and reconcile' or 'verify before reporting' sound complete but leave a real agent free to satisfy them shallowly (fetch into what? verify by checking what, specifically?). Before graduating a lesson, ask: if a future agent does the laziest thing that technically satisfies this wording, does the original mistake still happen? If yes, the lesson needs a named target (which ref, which field, which exact command) and a concrete verification bar (the SPECIFIC expected value, not just 'a check returned something'), not a restated intention.",
+  "conditions": [
+    "concrete-verification",
+    "graduation-bar",
+    "learn-py",
+    "lesson-quality",
+    "meta-lesson",
+    "specificity"
+  ],
+  "evidence_ids": [
+    "2026-07-24T04:32:51.422210+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-24T04:32:51.422210+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-24T04:32:51.422210+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-24T04:32:51.571280+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-23/24: two lessons from this same session (495096f16d1b 'fetch and reconcile', ec716396d8d4 'verify before reporting') were both correct in spirit but vague enough that CodeRabbit's review of PT PR #273 flagged both as underspecified. Both were superseded (7abeaebaa146, a453667e0a35) with concrete versions: name the exact base ref + protect local work + explicit diff-before-merge; and confirm the SPECIFIC expected SHA/status/content, not just that some remote state exists (a bare 'git ls-remote shows a ref' proves the ref exists, not that it's the intended commit). The pattern generalizes: a lesson that only restates the general instinct that already failed once is likely to fail the same way again.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-24T04:32:51.422210+00:00"
+      ],
+      "lessons_sha": "d1a108b06830"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-24T04:32:51.571270+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-23/24: two lessons from this same session (495096f16d1b 'fetch and reconcile', ec716396d8d4 'verify before reporting') were both correct in spirit but vague enough that CodeRabbit's review of PT PR #273 flagged both as underspecified. Both were superseded (7abeaebaa146, a453667e0a35) with concrete versions: name the exact base ref + protect local work + explicit diff-before-merge; and confirm the SPECIFIC expected SHA/status/content, not just that some remote state exists (a bare 'git ls-remote shows a ref' proves the ref exists, not that it's the intended commit). The pattern generalizes: a lesson that only restates the general instinct that already failed once is likely to fail the same way again."
+}
