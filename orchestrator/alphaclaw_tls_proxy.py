@@ -20,19 +20,22 @@ here: certificate persistence across restarts (a fresh cert every process
 start would make TOFU pinning meaningless -- the whole point of pinning
 is noticing when the cert *changes*), and fingerprint mismatch detection.
 
-Platform limitation, not silently glossed over: file-permission
-enforcement (CERT_DIR, the private key, the certificate, and the
-fingerprint pin file) uses POSIX mode bits (os.chmod / os.open with an
-explicit mode). This restricts access on Linux and macOS. On Windows,
-these calls have no meaningful effect -- Windows access control is ACL-
-based, not mode-bit-based, and this module does not set any ACL. On
-Windows, the private key and pin file are protected only by the OS
-default ACL for the user's own profile directory (typically already
-excludes other non-administrator local users, but this module makes no
-explicit guarantee and applies no additional restriction). Real ACL
-enforcement (icacls, or pywin32's security APIs) is not implemented --
-tracked as a known gap, not assumed to be covered by the POSIX-oriented
-code above.
+File-permission enforcement (CERT_DIR, the private key, the certificate,
+and the fingerprint pin file) is cross-platform via ``_secure_path()``:
+POSIX mode bits (0o700/0o600) on Linux/macOS, an explicit restrictive DACL
+(owner + Administrators only, deny Everyone) on Windows via pywin32's
+``win32security.SetNamedSecurityInfo``, with an ``icacls`` subprocess
+fallback when pywin32 isn't installed. See
+docs/next/2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md for the full
+design and threat model.
+
+**Not yet independently verified on real Windows hardware** (2026-07-24):
+this was implemented and unit-tested (mocked win32security) without a
+Windows machine available this session. Before trusting this in
+production, verify on an actual Windows box -- both the current RTX 3080
+Windows machine and the incoming RTX 5080 replacement -- per the plan
+doc's §5.2 manual verification steps and its provenance note on
+``PROTECTED_DACL_SECURITY_INFORMATION`` availability.
 
 Companion plan (full design, deferred): orama-system
 docs/v2/49-peer-mesh-auth-tls-v2-plan.md. This module implements plan
@@ -49,6 +52,7 @@ import http.server
 import json
 import logging
 import os
+import platform
 import socketserver
 import ssl
 import threading
@@ -60,6 +64,19 @@ from pathlib import Path
 from typing import Optional
 
 _log = logging.getLogger(__name__)
+
+_IS_WINDOWS = platform.system() == "Windows"
+
+if _IS_WINDOWS:
+    try:
+        import ntsecuritycon as con
+        import win32api
+        import win32security
+        _WIN32_AVAILABLE = True
+    except ImportError:
+        _WIN32_AVAILABLE = False
+else:
+    _WIN32_AVAILABLE = False
 
 try:
     from cryptography import x509
@@ -92,6 +109,116 @@ class AlphaClawCertFingerprintMismatch(RuntimeError):
     accept the new cert; surface this to the operator."""
 
 
+def _secure_path(path: Path, is_directory: bool = False) -> None:
+    """Enforce restrictive permissions on a sensitive path.
+
+    POSIX (Linux/macOS): chmod 0o700 for directories, 0o600 for files.
+    Windows (primary):   Explicit DACL -- owner + Administrators only,
+                         deny Everyone else.
+    Windows (fallback):  icacls subprocess if pywin32 is unavailable.
+
+    See docs/next/2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md for
+    the full design, threat model, and why SetNamedSecurityInfo is used
+    instead of the deprecated SetFileSecurity.
+    """
+    if _IS_WINDOWS:
+        if _WIN32_AVAILABLE:
+            _secure_path_win32(path, is_directory)
+        else:
+            _secure_path_icacls(path, is_directory)
+    else:
+        mode = 0o700 if is_directory else 0o600
+        path.chmod(mode)
+
+
+def _secure_path_win32(path: Path, is_directory: bool) -> None:
+    """Windows ACL via pywin32: owner + Administrators full control, deny
+    Everyone else.
+
+    Uses SetNamedSecurityInfo rather than the deprecated SetFileSecurity --
+    Microsoft's own API docs mark SetFileSecurity obsolete and direct
+    callers to SetNamedSecurityInfo instead:
+    https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-setfilesecuritya
+    """
+    owner_sid, _, _ = win32security.LookupAccountName("", win32api.GetUserName())
+    admins_sid, _, _ = win32security.LookupAccountName("", "Administrators")
+    everyone_sid, _, _ = win32security.LookupAccountName("", "Everyone")
+
+    dacl = win32security.ACL()
+
+    access_mask = con.FILE_ALL_ACCESS
+    if is_directory:
+        access_mask |= con.FILE_DELETE_CHILD
+
+    # Explicit deny takes precedence over allows regardless of ACE order,
+    # but ordering DENY before ALLOW here documents that precedence
+    # explicitly rather than relying on the reader knowing it.
+    dacl.AddAccessDeniedAce(win32security.ACL_REVISION, access_mask, everyone_sid)
+    dacl.AddAccessAllowedAce(win32security.ACL_REVISION, access_mask, owner_sid)
+    dacl.AddAccessAllowedAce(win32security.ACL_REVISION, access_mask, admins_sid)
+
+    # Set only the DACL; leave owner/group/SACL alone. PROTECTED_DACL_
+    # SECURITY_INFORMATION additionally strips inherited ACEs instead of
+    # merging with them -- only applied if this pywin32 build exposes the
+    # constant. NOT independently verified on real Windows hardware this
+    # session -- see the module docstring and the plan doc's provenance
+    # note before relying on inheritance actually being stripped.
+    security_info = win32security.DACL_SECURITY_INFORMATION
+    if hasattr(win32security, "PROTECTED_DACL_SECURITY_INFORMATION"):
+        security_info |= win32security.PROTECTED_DACL_SECURITY_INFORMATION
+
+    win32security.SetNamedSecurityInfo(
+        str(path),
+        win32security.SE_FILE_OBJECT,
+        security_info,
+        None,
+        None,
+        dacl,
+        None,
+    )
+
+
+def _secure_path_icacls(path: Path, is_directory: bool) -> None:
+    """Windows ACL fallback via icacls subprocess, used only when pywin32
+    is unavailable.
+
+    Less elegant than pywin32 but works without any external dependency.
+    The subprocess race window is acceptable here because CERT_DIR is
+    restricted first, limiting exposure to files created inside it.
+    """
+    import getpass
+    import subprocess
+
+    user = getpass.getuser()
+    target = str(path)
+
+    if is_directory:
+        # (OI)(CI) -- Object Inherit + Container Inherit, so child
+        # files/dirs created later inherit the same restrictions.
+        grant_owner = f"{user}:(OI)(CI)(F)"
+        grant_admins = "Administrators:(OI)(CI)(F)"
+        deny_everyone = "Everyone:(OI)(CI)(F)"
+    else:
+        grant_owner = f"{user}:(F)"
+        grant_admins = "Administrators:(F)"
+        deny_everyone = "Everyone:(F)"
+
+    cmd = [
+        "icacls", target,
+        "/inheritance:r",
+        "/grant:r", grant_owner,
+        "/grant:r", grant_admins,
+        "/deny", deny_everyone,
+    ]
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        _log.warning(
+            "icacls failed to restrict permissions on %s: %s",
+            target, result.stderr.strip(),
+        )
+
+
 def _cert_fingerprint(cert_path: Path) -> str:
     """SHA-256 fingerprint of the certificate's DER bytes."""
     if not _CRYPTOGRAPHY_AVAILABLE:
@@ -120,25 +247,30 @@ def _load_pinned_fingerprint() -> Optional[str]:
 
 def _store_pinned_fingerprint(fingerprint: str) -> None:
     store = _fingerprint_store_path()
-    store.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    # mkdir's mode= is ignored when the directory already exists (and
-    # isn't applied to already-existing intermediate parents) -- a
-    # directory from before this permissions fix would keep its original,
-    # wider mode. Explicit chmod covers that case unconditionally.
-    store.parent.chmod(0o700)
+    store.parent.mkdir(parents=True, exist_ok=True)
+    # Covers both a directory that predates this permissions fix (mkdir
+    # is a no-op when the dir already exists) and Windows, where mkdir's
+    # mode= argument has no effect at all -- _secure_path() is the single
+    # cross-platform enforcement point, applied unconditionally.
+    _secure_path(store.parent, is_directory=True)
     payload = json.dumps(
         {"fingerprint": fingerprint, "pinned_at": datetime.now(timezone.utc).isoformat()},
         indent=2,
     ).encode("utf-8")
-    # Create with the restrictive mode atomically at open time, not via a
-    # write-then-chmod sequence -- write-then-chmod leaves a real (if
-    # narrow) TOCTOU window on multi-user systems where the file is
-    # readable at its default (umask-derived) permissions before the
-    # chmod call lands. O_CREAT|O_TRUNC so this still works whether the
-    # file is new or being overwritten.
-    fd = os.open(str(store), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-    with os.fdopen(fd, "wb") as f:
-        f.write(payload)
+    # Create the file first (mode= is POSIX-only; passing it here would be
+    # a no-op on Windows and misleading to a reader), then apply the
+    # cross-platform restriction immediately after. A write-then-restrict
+    # sequence leaves a real (if narrow) TOCTOU window on multi-user
+    # systems -- see _secure_path_win32's docstring and the module
+    # docstring's note on this being unverified on real Windows hardware.
+    # O_CREAT|O_TRUNC so this still works whether the file is new or being
+    # overwritten.
+    fd = os.open(str(store), os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(payload)
+    finally:
+        _secure_path(store, is_directory=False)
 
 
 def _cert_not_after_utc(cert: x509.Certificate) -> datetime:
@@ -208,8 +340,8 @@ class AlphaClawTlsProxy:
                 "TLS certificate. Install it, or fall back to your own "
                 "existing HTTP behavior."
             )
-        CERT_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
-        CERT_DIR.chmod(0o700)  # covers directories that predate this fix
+        CERT_DIR.mkdir(parents=True, exist_ok=True)
+        _secure_path(CERT_DIR, is_directory=True)  # covers dirs that predate this fix
         cert_path = CERT_DIR / "alphaclaw.crt"
         key_path = CERT_DIR / "alphaclaw.key"
         generation_mode = "renewed"
@@ -228,8 +360,8 @@ class AlphaClawTlsProxy:
                         remaining.days,
                     )
                     # Covers files that predate this permissions fix.
-                    key_path.chmod(0o600)
-                    cert_path.chmod(0o600)
+                    _secure_path(key_path, is_directory=False)
+                    _secure_path(cert_path, is_directory=False)
                     return cert_path, key_path, "reused"
                 _log.info(
                     "AlphaClaw TLS: existing certificate expires in %d days, regenerating",
@@ -267,18 +399,25 @@ class AlphaClawTlsProxy:
             format=serialization.PrivateFormat.PKCS8,
             encryption_algorithm=serialization.NoEncryption(),
         )
-        # Atomic restrictive-mode creation for the private key -- a
-        # write-then-chmod sequence leaves a real (if narrow) TOCTOU
-        # window on multi-user systems where the key is readable at its
-        # default (umask-derived) permissions before the chmod call
-        # lands. The cert itself isn't sensitive, but kept at the same
-        # mode immediately after write for consistency (no reason to
-        # leave it wider even briefly).
-        fd = os.open(str(key_path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-        with os.fdopen(fd, "wb") as f:
-            f.write(key_bytes)
+        # Restrictive-mode creation for the private key -- mode= on
+        # os.open is POSIX-only (a no-op on Windows), so the file is
+        # created plainly and _secure_path() applies the cross-platform
+        # restriction immediately after, in a finally so it still runs if
+        # the write itself fails. This leaves a narrow TOCTOU window on
+        # multi-user systems between creation and the restriction landing
+        # -- see _secure_path_win32's docstring and the module docstring's
+        # note on this being unverified on real Windows hardware.
+        fd = os.open(str(key_path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
+        try:
+            with os.fdopen(fd, "wb") as f:
+                f.write(key_bytes)
+        finally:
+            _secure_path(key_path, is_directory=False)
         cert_path.write_bytes(cert.public_bytes(serialization.Encoding.PEM))
-        cert_path.chmod(0o600)
+        # The cert itself isn't sensitive, but kept at the same restriction
+        # immediately after write for consistency (no reason to leave it
+        # wider even briefly).
+        _secure_path(cert_path, is_directory=False)
         return cert_path, key_path, generation_mode
 
     def start(self) -> str:
