@@ -23,9 +23,9 @@ is noticing when the cert *changes*), and fingerprint mismatch detection.
 File-permission enforcement (CERT_DIR, the private key, the certificate,
 and the fingerprint pin file) is cross-platform via ``_secure_path()``:
 POSIX mode bits (0o700/0o600) on Linux/macOS, an explicit restrictive DACL
-(owner + Administrators only, deny Everyone) on Windows via pywin32's
-``win32security.SetNamedSecurityInfo``, with an ``icacls`` subprocess
-fallback when pywin32 isn't installed. See
+(owner + Administrators only; implicit deny for all other principals) on
+Windows via pywin32's ``win32security.SetNamedSecurityInfo``, with an
+``icacls`` subprocess fallback when pywin32 isn't installed. See
 docs/next/2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md for the full
 design and threat model.
 
@@ -113,8 +113,7 @@ def _secure_path(path: Path, is_directory: bool = False) -> None:
     """Enforce restrictive permissions on a sensitive path.
 
     POSIX (Linux/macOS): chmod 0o700 for directories, 0o600 for files.
-    Windows (primary):   Explicit DACL -- owner + Administrators only,
-                         deny Everyone else.
+    Windows (primary):   Explicit allow-only DACL -- owner + Administrators.
     Windows (fallback):  icacls subprocess if pywin32 is unavailable.
 
     See docs/next/2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md for
@@ -132,8 +131,14 @@ def _secure_path(path: Path, is_directory: bool = False) -> None:
 
 
 def _secure_path_win32(path: Path, is_directory: bool) -> None:
-    """Windows ACL via pywin32: owner + Administrators full control, deny
-    Everyone else.
+    """Windows ACL via pywin32: owner + Administrators full control only.
+
+    Do NOT add an explicit DENY for Everyone -- the owner is always a
+    member of Everyone, and deny ACEs take precedence over allow ACEs, so
+    DENY Everyone would lock the owner out of their own key/cert files and
+    break TLS startup. Restrictive semantics come from an allow-only DACL
+    with inheritance stripped (PROTECTED_DACL): everyone else is denied
+    implicitly.
 
     Uses SetNamedSecurityInfo rather than the deprecated SetFileSecurity --
     Microsoft's own API docs mark SetFileSecurity obsolete and direct
@@ -141,8 +146,8 @@ def _secure_path_win32(path: Path, is_directory: bool) -> None:
     https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-setfilesecuritya
     """
     owner_sid, _, _ = win32security.LookupAccountName("", win32api.GetUserName())
-    admins_sid, _, _ = win32security.LookupAccountName("", "Administrators")
-    everyone_sid, _, _ = win32security.LookupAccountName("", "Everyone")
+    # Well-known SID avoids localized "Administrators" display-name lookups.
+    admins_sid = win32security.ConvertStringSidToSid("S-1-5-32-544")
 
     dacl = win32security.ACL()
 
@@ -150,10 +155,6 @@ def _secure_path_win32(path: Path, is_directory: bool) -> None:
     if is_directory:
         access_mask |= con.FILE_DELETE_CHILD
 
-    # Explicit deny takes precedence over allows regardless of ACE order,
-    # but ordering DENY before ALLOW here documents that precedence
-    # explicitly rather than relying on the reader knowing it.
-    dacl.AddAccessDeniedAce(win32security.ACL_REVISION, access_mask, everyone_sid)
     dacl.AddAccessAllowedAce(win32security.ACL_REVISION, access_mask, owner_sid)
     dacl.AddAccessAllowedAce(win32security.ACL_REVISION, access_mask, admins_sid)
 
@@ -196,19 +197,19 @@ def _secure_path_icacls(path: Path, is_directory: bool) -> None:
         # (OI)(CI) -- Object Inherit + Container Inherit, so child
         # files/dirs created later inherit the same restrictions.
         grant_owner = f"{user}:(OI)(CI)(F)"
-        grant_admins = "Administrators:(OI)(CI)(F)"
-        deny_everyone = "Everyone:(OI)(CI)(F)"
+        grant_admins = "*S-1-5-32-544:(OI)(CI)(F)"
     else:
         grant_owner = f"{user}:(F)"
-        grant_admins = "Administrators:(F)"
-        deny_everyone = "Everyone:(F)"
+        grant_admins = "*S-1-5-32-544:(F)"
 
+    # Allow-only grants after /inheritance:r -- do NOT /deny Everyone; the
+    # owner is in Everyone and deny ACEs win over allow ACEs, which would
+    # lock the process out of its own cert/key files.
     cmd = [
         "icacls", target,
         "/inheritance:r",
         "/grant:r", grant_owner,
         "/grant:r", grant_admins,
-        "/deny", deny_everyone,
     ]
 
     result = subprocess.run(cmd, capture_output=True, text=True)

@@ -32,6 +32,7 @@ def mock_win32():
     mock_win32.LookupAccountName = MagicMock(
         side_effect=lambda _, name: (f"SID-{name}", "DOMAIN", 1)
     )
+    mock_win32.ConvertStringSidToSid = MagicMock(return_value="SID-Administrators")
     mock_win32.SetNamedSecurityInfo = MagicMock()
 
     mock_acl = MagicMock()
@@ -45,17 +46,19 @@ def mock_win32():
         yield mock_win32, mock_acl
 
 
-def test_secure_path_win32_creates_dacl_with_three_aces(mock_win32):
-    """Windows ACL path creates exactly 3 ACEs: DENY Everyone, ALLOW
-    owner, ALLOW Administrators -- and uses SetNamedSecurityInfo, not the
-    deprecated SetFileSecurity."""
+def test_secure_path_win32_creates_allow_only_dacl(mock_win32):
+    """Windows ACL path grants owner + Administrators only. An explicit
+    DENY for Everyone must not be used -- the owner is in Everyone and
+    deny ACEs take precedence over allow ACEs, which would lock the
+    process out of its own cert/key files."""
     mock_sec, mock_acl = mock_win32
     test_path = Path("C:/test/key.pem")
 
     tls_proxy._secure_path_win32(test_path, is_directory=False)
 
-    assert mock_acl.AddAccessDeniedAce.call_count == 1
+    mock_acl.AddAccessDeniedAce.assert_not_called()
     assert mock_acl.AddAccessAllowedAce.call_count == 2
+    mock_sec.ConvertStringSidToSid.assert_called_once_with("S-1-5-32-544")
     mock_sec.SetNamedSecurityInfo.assert_called_once()
 
 
@@ -67,11 +70,9 @@ def test_secure_path_win32_directory_includes_delete_child(mock_win32):
 
     tls_proxy._secure_path_win32(test_path, is_directory=True)
 
-    # Every AddAccess*Ace call's access_mask argument (2nd positional) must
-    # include the FILE_DELETE_CHILD bit for a directory.
-    for call in list(mock_acl.AddAccessDeniedAce.call_args_list) + list(
-        mock_acl.AddAccessAllowedAce.call_args_list
-    ):
+    # Every AddAccessAllowedAce call's access_mask argument (2nd positional)
+    # must include the FILE_DELETE_CHILD bit for a directory.
+    for call in mock_acl.AddAccessAllowedAce.call_args_list:
         access_mask = call.args[1]
         assert access_mask & 0x0040, "FILE_DELETE_CHILD bit missing for directory ACE"
 
@@ -103,9 +104,8 @@ def test_secure_path_falls_back_to_icacls_when_pywin32_unavailable():
 
 
 def test_secure_path_icacls_builds_expected_command():
-    """The icacls fallback builds a deny-Everyone, grant-owner,
-    grant-Administrators command with /inheritance:r, and folds in
-    (OI)(CI) for directories so children inherit the restriction."""
+    """The icacls fallback uses allow-only grants after /inheritance:r.
+    It must not /deny Everyone -- that would lock the owner out."""
     with patch("subprocess.run") as mock_run, \
          patch("getpass.getuser", return_value="testuser"):
         mock_run.return_value = MagicMock(returncode=0, stderr="")
@@ -114,9 +114,9 @@ def test_secure_path_icacls_builds_expected_command():
     cmd = mock_run.call_args.args[0]
     assert cmd[0] == "icacls"
     assert "/inheritance:r" in cmd
+    assert "/deny" not in cmd
     assert any("testuser" in c and "(OI)(CI)(F)" in c for c in cmd)
-    assert any("Administrators" in c and "(OI)(CI)(F)" in c for c in cmd)
-    assert any("Everyone" in c and "(OI)(CI)(F)" in c for c in cmd)
+    assert any("S-1-5-32-544" in c and "(OI)(CI)(F)" in c for c in cmd)
 
 
 def test_secure_path_icacls_logs_warning_on_failure(caplog):
