@@ -105,7 +105,7 @@ def _load_pinned_fingerprint() -> Optional[str]:
 
 def _store_pinned_fingerprint(fingerprint: str) -> None:
     store = _fingerprint_store_path()
-    store.parent.mkdir(parents=True, exist_ok=True)
+    store.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     store.write_text(
         json.dumps(
             {"fingerprint": fingerprint, "pinned_at": datetime.now(timezone.utc).isoformat()},
@@ -113,6 +113,12 @@ def _store_pinned_fingerprint(fingerprint: str) -> None:
         ),
         encoding="utf-8",
     )
+    # Explicit chmod, not just mkdir's mode= -- the process umask can still
+    # widen a file's actual permissions on write regardless of the
+    # directory's mode; never rely on umask alone for a security-relevant
+    # file. Also covers the case where the file already existed with wider
+    # permissions from before this fix.
+    store.chmod(0o600)
 
 
 def _cert_not_after_utc(cert: x509.Certificate) -> datetime:
@@ -153,13 +159,14 @@ def verify_or_pin_fingerprint(cert_path: Path) -> str:
 class AlphaClawTlsProxy:
     """Local-only HTTPS reverse proxy in front of AlphaClaw's HTTP port.
 
-    Binds to 127.0.0.1 ONLY -- never reachable from the LAN. Generates a
-    fresh self-signed certificate on first start each run (no persistence
-    or fingerprint pinning yet -- see module docstring's scope note).
+    Binds to 127.0.0.1 ONLY -- never reachable from the LAN. Certificates
+    are persisted under CERT_DIR and reused across restarts; fingerprint
+    pinning (TOFU) is enforced on start() -- see module docstring.
     """
 
     upstream_port: int
     proxy_port: int = DEFAULT_PROXY_PORT
+    proxy_timeout: float = 60.0
     _server: Optional[socketserver.ThreadingTCPServer] = None
     _thread: Optional[threading.Thread] = None
     fingerprint: str = ""
@@ -181,7 +188,7 @@ class AlphaClawTlsProxy:
                 "TLS certificate. Install it, or fall back to your own "
                 "existing HTTP behavior."
             )
-        CERT_DIR.mkdir(parents=True, exist_ok=True)
+        CERT_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
         cert_path = CERT_DIR / "alphaclaw.crt"
         key_path = CERT_DIR / "alphaclaw.key"
         generation_mode = "renewed"
@@ -199,6 +206,9 @@ class AlphaClawTlsProxy:
                         "AlphaClaw TLS: reusing existing certificate (expires in %d days)",
                         remaining.days,
                     )
+                    # Covers files that predate this permissions fix.
+                    key_path.chmod(0o600)
+                    cert_path.chmod(0o600)
                     return cert_path, key_path, "reused"
                 _log.info(
                     "AlphaClaw TLS: existing certificate expires in %d days, regenerating",
@@ -239,6 +249,13 @@ class AlphaClawTlsProxy:
             )
         )
         cert_path.write_bytes(cert.public_bytes(serialization.Encoding.PEM))
+        # Explicit chmod, not just mkdir's mode= -- the process umask can
+        # still widen a file's actual permissions on write regardless of
+        # the directory's mode. The private key especially must never be
+        # group/world-readable; the cert is technically public but kept at
+        # the same restrictive mode for consistency (no reason to widen it).
+        key_path.chmod(0o600)
+        cert_path.chmod(0o600)
         return cert_path, key_path, generation_mode
 
     def start(self) -> str:
@@ -292,23 +309,75 @@ class AlphaClawTlsProxy:
         context.load_cert_chain(str(cert_path), str(key_path))
 
         upstream = self.upstream_port
+        timeout = self.proxy_timeout
+        _HOP_BY_HOP_HEADERS = {
+            "connection", "keep-alive", "proxy-authenticate",
+            "proxy-authorization", "te", "trailers", "transfer-encoding",
+            "upgrade",
+        }
+        _CHUNK_SIZE = 65536
 
         class _ProxyHandler(http.server.BaseHTTPRequestHandler):
-            def _forward(self, method: str) -> None:
+            def _read_request_body(self) -> Optional[bytes]:
+                """Read the client's request body, handling both
+                Content-Length and Transfer-Encoding: chunked framing.
+
+                http.server does not decode chunked request bodies for
+                us -- a client sending chunked data (no Content-Length,
+                which is legal and something a real HTTP client can
+                legitimately do) would previously be silently dropped
+                (Content-Length defaulted to 0, so no body was read at
+                all, even though real body bytes were sitting on the
+                wire). Fully de-chunks into a single buffer here, then
+                forwards upstream with an explicit Content-Length --
+                correct framing, not a streaming pass-through.
+                """
+                if self.headers.get("Transfer-Encoding", "").lower() == "chunked":
+                    chunks: list[bytes] = []
+                    while True:
+                        size_line = self.rfile.readline().strip()
+                        if not size_line:
+                            break
+                        chunk_size = int(size_line.split(b";", 1)[0], 16)
+                        if chunk_size == 0:
+                            self.rfile.readline()  # trailing CRLF after the 0-size chunk
+                            break
+                        chunks.append(self.rfile.read(chunk_size))
+                        self.rfile.readline()  # CRLF after each chunk's data
+                    return b"".join(chunks)
                 length = int(self.headers.get("Content-Length", 0))
-                body = self.rfile.read(length) if length else None
+                return self.rfile.read(length) if length else None
+
+            def _forward(self, method: str) -> None:
+                body = self._read_request_body()
                 url = f"http://127.0.0.1:{upstream}{self.path}"
                 req = urllib.request.Request(url, method=method, data=body)
                 for header, value in self.headers.items():
-                    if header.lower() not in ("host", "content-length"):
+                    if header.lower() not in ("host", "content-length", "transfer-encoding"):
                         req.add_header(header, value)
+                if body is not None:
+                    req.add_header("Content-Length", str(len(body)))
                 try:
-                    with urllib.request.urlopen(req, timeout=30) as resp:
+                    with urllib.request.urlopen(req, timeout=timeout) as resp:
                         self.send_response(resp.status)
                         for header, value in resp.getheaders():
-                            self.send_header(header, value)
+                            # Hop-by-hop headers describe THIS connection's
+                            # framing (upstream <-> proxy), not the one the
+                            # proxy <-> client connection uses -- forwarding
+                            # them verbatim (Transfer-Encoding especially)
+                            # would desynchronize the client's framing from
+                            # what this handler actually sends below.
+                            if header.lower() not in _HOP_BY_HOP_HEADERS:
+                                self.send_header(header, value)
                         self.end_headers()
-                        self.wfile.write(resp.read())
+                        # Stream in fixed-size chunks rather than resp.read()
+                        # (unconditional full buffering) -- bounds peak
+                        # memory for large AlphaClaw responses.
+                        while True:
+                            chunk = resp.read(_CHUNK_SIZE)
+                            if not chunk:
+                                break
+                            self.wfile.write(chunk)
                 except urllib.error.HTTPError as exc:
                     self.send_response(exc.code)
                     self.end_headers()

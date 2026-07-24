@@ -371,6 +371,13 @@ def alphaclaw_tls_enabled() -> bool:
     return v in ("1", "true", "yes", "on")
 
 
+_active_tls_proxy = None  # type: ignore[var-annotated]
+"""The currently-running AlphaClawTlsProxy, if any. Module-level because
+bootstrap_alphaclaw() can be called repeatedly across the process lifetime
+(re-resolution, retries) -- without tracking this, each call would leak a
+new socket + daemon thread rather than replacing the previous one."""
+
+
 def _maybe_wrap_gateway_with_tls(state: AlphaClawState) -> AlphaClawState:
     """If ALPHACLAW_TLS_ENABLED, start a local HTTPS proxy in front of the
     resolved AlphaClaw gateway and return state with gateway_url replaced.
@@ -385,17 +392,34 @@ def _maybe_wrap_gateway_with_tls(state: AlphaClawState) -> AlphaClawState:
     (HTTP) state with the error recorded, rather than blocking gateway
     resolution entirely. bootstrap_alphaclaw()'s own non-fatal-error
     convention is preserved: TLS is an enhancement to a working gateway,
-    not a precondition for having one.
+    not a precondition for having one. Unlike the original version of this
+    function, the failure IS now visible in the returned state's own
+    `error` field (previously only logged) -- a fingerprint mismatch in
+    particular is a real security signal that must reach the resolved
+    runtime payload, not just a log line an operator might not be
+    watching.
     """
+    global _active_tls_proxy
     if not alphaclaw_tls_enabled():
         return state
     if not state.running or not state.port:
         return state
+    if _active_tls_proxy is not None:
+        try:
+            _active_tls_proxy.stop()
+        except OSError as exc:
+            _log.debug("AlphaClaw TLS: error stopping previous proxy instance: %s", exc)
+        _active_tls_proxy = None
     try:
-        from orchestrator.alphaclaw_tls_proxy import AlphaClawTlsProxy
+        from orchestrator.alphaclaw_tls_proxy import (
+            AlphaClawCertFingerprintMismatch,
+            AlphaClawTlsProxy,
+            AlphaClawTlsUnavailable,
+        )
 
         proxy = AlphaClawTlsProxy(upstream_port=state.port)
         https_url = proxy.start()
+        _active_tls_proxy = proxy
         _log.info(
             "AlphaClaw TLS: gateway now served at %s (upstream http on port %d), "
             "fingerprint=%s...",
@@ -413,18 +437,32 @@ def _maybe_wrap_gateway_with_tls(state: AlphaClawState) -> AlphaClawState:
             tls_enabled=True,
             tls_fingerprint=proxy.fingerprint,
         )
-    except Exception as exc:
-        # Includes AlphaClawTlsUnavailable and AlphaClawCertFingerprintMismatch.
-        # The latter is a real security signal (see alphaclaw_tls_proxy.py's
-        # own docstring) -- logged loudly here, but still non-fatal to
-        # gateway resolution, matching this function's own contract above.
+    except (AlphaClawTlsUnavailable, AlphaClawCertFingerprintMismatch, OSError) as exc:
+        # Narrowed from a bare `except Exception` -- catching everything
+        # here would also swallow genuine programming errors (a typo'd
+        # attribute, an import cycle) as if they were routine "TLS isn't
+        # available" cases. A fingerprint mismatch especially must not be
+        # confused with an ordinary startup failure -- it's a MITM-
+        # detection signal (see alphaclaw_tls_proxy.py's own docstring).
+        tls_error = f"AlphaClaw TLS unavailable ({type(exc).__name__}): {exc}"
         _log.error(
-            "AlphaClaw TLS: could not start proxy (%s: %s) -- gateway "
-            "remains on plain HTTP. If this is a certificate fingerprint "
-            "mismatch, investigate before dismissing it.",
-            type(exc).__name__, exc,
+            "AlphaClaw TLS: could not start proxy (%s) -- gateway remains "
+            "on plain HTTP. If this is a certificate fingerprint mismatch, "
+            "investigate before dismissing it.",
+            tls_error,
         )
-        return state
+        return AlphaClawState(
+            running=state.running,
+            port=state.port,
+            commandeered=state.commandeered,
+            started=state.started,
+            error=state.error or tls_error,
+            gateway_url=state.gateway_url,
+            openclaw_config=state.openclaw_config,
+            role_routing=state.role_routing,
+            tls_enabled=False,
+            tls_fingerprint="",
+        )
 
 
 def bootstrap_alphaclaw(mac_ip: str = "", win_ip: str = "") -> AlphaClawState:
