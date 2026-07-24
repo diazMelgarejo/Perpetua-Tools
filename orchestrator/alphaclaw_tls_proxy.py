@@ -115,6 +115,14 @@ def _store_pinned_fingerprint(fingerprint: str) -> None:
     )
 
 
+def _cert_not_after_utc(cert: x509.Certificate) -> datetime:
+    """Return the certificate expiry as a timezone-aware UTC datetime."""
+    not_after = cert.not_valid_after
+    if not_after.tzinfo is None:
+        return not_after.replace(tzinfo=timezone.utc)
+    return not_after.astimezone(timezone.utc)
+
+
 def verify_or_pin_fingerprint(cert_path: Path) -> str:
     """TOFU: pin the fingerprint on first sight; on every later call,
     verify it hasn't changed. Raises AlphaClawCertFingerprintMismatch if
@@ -156,7 +164,17 @@ class AlphaClawTlsProxy:
     _thread: Optional[threading.Thread] = None
     fingerprint: str = ""
 
-    def _generate_cert(self) -> tuple[Path, Path]:
+    def _generate_cert(self) -> tuple[Path, Path, str]:
+        """Return cert paths plus how they were obtained.
+
+        Modes:
+        - ``reused``: existing on-disk cert is still valid -- caller must
+          verify the TOFU pin against it.
+        - ``rotated``: we regenerated because the prior cert was near
+          expiry -- caller may update the pin (legitimate rotation).
+        - ``renewed``: cert was missing or unreadable -- caller must treat
+          an existing pin as a mismatch signal (possible tampering).
+        """
         if not _CRYPTOGRAPHY_AVAILABLE:
             raise AlphaClawTlsUnavailable(
                 "'cryptography' library not available -- cannot generate a "
@@ -166,6 +184,7 @@ class AlphaClawTlsProxy:
         CERT_DIR.mkdir(parents=True, exist_ok=True)
         cert_path = CERT_DIR / "alphaclaw.crt"
         key_path = CERT_DIR / "alphaclaw.key"
+        generation_mode = "renewed"
 
         # Reuse an existing, still-valid certificate rather than generating
         # a fresh one every process start -- TOFU fingerprint pinning is
@@ -174,18 +193,19 @@ class AlphaClawTlsProxy:
         if cert_path.is_file() and key_path.is_file():
             try:
                 existing = x509.load_pem_x509_certificate(cert_path.read_bytes())
-                remaining = existing.not_valid_after_utc - datetime.now(timezone.utc)
+                remaining = _cert_not_after_utc(existing) - datetime.now(timezone.utc)
                 if remaining.days > _MIN_REMAINING_DAYS_TO_REUSE:
                     _log.debug(
                         "AlphaClaw TLS: reusing existing certificate (expires in %d days)",
                         remaining.days,
                     )
-                    return cert_path, key_path
+                    return cert_path, key_path, "reused"
                 _log.info(
                     "AlphaClaw TLS: existing certificate expires in %d days, regenerating",
                     remaining.days,
                 )
-            except (ValueError, OSError) as exc:
+                generation_mode = "rotated"
+            except (ValueError, OSError, AttributeError) as exc:
                 _log.warning("AlphaClaw TLS: existing certificate unreadable (%s), regenerating", exc)
 
         key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
@@ -219,7 +239,7 @@ class AlphaClawTlsProxy:
             )
         )
         cert_path.write_bytes(cert.public_bytes(serialization.Encoding.PEM))
-        return cert_path, key_path
+        return cert_path, key_path, generation_mode
 
     def start(self) -> str:
         """Start the proxy (idempotent-ish: safe to call once; calling
@@ -237,8 +257,35 @@ class AlphaClawTlsProxy:
         Returns the https:// URL callers should use in place of the
         AlphaClaw HTTP URL.
         """
-        cert_path, key_path = self._generate_cert()
-        self.fingerprint = verify_or_pin_fingerprint(cert_path)
+        cert_path, key_path, generation_mode = self._generate_cert()
+        if generation_mode == "rotated":
+            current = _cert_fingerprint(cert_path)
+            pinned = _load_pinned_fingerprint()
+            if pinned is not None and pinned != current:
+                _log.warning(
+                    "AlphaClaw TLS: certificate rotated due to expiry; "
+                    "updating pinned fingerprint from %s... to %s...",
+                    pinned[:16],
+                    current[:16],
+                )
+            _store_pinned_fingerprint(current)
+            self.fingerprint = current
+        elif generation_mode == "renewed" and _load_pinned_fingerprint() is not None:
+            # Cert disappeared or became unreadable while a pin still exists.
+            # Never silently re-pin -- that would mask cert substitution.
+            current = _cert_fingerprint(cert_path)
+            pinned = _load_pinned_fingerprint()
+            if pinned != current:
+                raise AlphaClawCertFingerprintMismatch(
+                    f"AlphaClaw TLS certificate fingerprint changed: pinned={pinned[:16]}... "
+                    f"current={current[:16]}... Certificate files were missing or "
+                    "unreadable and were regenerated. Verify out-of-band, then delete "
+                    f"{_fingerprint_store_path()} to accept the new certificate explicitly -- "
+                    "this is never done automatically."
+                )
+            self.fingerprint = current
+        else:
+            self.fingerprint = verify_or_pin_fingerprint(cert_path)
 
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.minimum_version = ssl.TLSVersion.TLSv1_2
