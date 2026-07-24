@@ -1,0 +1,40 @@
+{
+  "id": "fb36c00f3db7",
+  "key": "manual_fb36c0",
+  "name": "manual_fb36c0",
+  "claim": "graduated/ candidate JSON files under .agent/memory/candidates/graduated/ are the PERMANENT audit trail (reviewer, rationale, timestamp) once mark_graduated() moves them there -- there is no sanctioned prune/archive path, so a branch that deletes them did so by mistake, not legitimate cleanup",
+  "conditions": [
+    "graduated-candidates",
+    "memory-lifecycle",
+    "verify-before-replay"
+  ],
+  "evidence_ids": [
+    "2026-07-24T11:32:09.727649+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-24T11:32:09.727649+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-24T11:32:09.727649+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-24T11:32:10.055219+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Nearly replayed a 5-file deletion from an abandoned branch (pr260-work) as 'trivial post-graduation cleanup' before checking .agent/memory/review_state.py's mark_graduated() implementation and confirming graduated/ is a permanent destination, not a temp holding pen. archive.py only handles stale WORKSPACE.md files, unrelated. Caught before committing; restored the files instead of replaying the deletion.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-24T11:32:09.727649+00:00"
+      ],
+      "lessons_sha": "f2438fa60845"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-24T11:32:10.055206+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Nearly replayed a 5-file deletion from an abandoned branch (pr260-work) as 'trivial post-graduation cleanup' before checking .agent/memory/review_state.py's mark_graduated() implementation and confirming graduated/ is a permanent destination, not a temp holding pen. archive.py only handles stale WORKSPACE.md files, unrelated. Caught before committing; restored the files instead of replaying the deletion."
+}
