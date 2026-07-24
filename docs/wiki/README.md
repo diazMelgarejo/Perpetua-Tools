@@ -22,6 +22,7 @@ This wiki organizes hard-won lessons by topic. Each page contains root cause, ex
 | 09 | [Hardware Affinity](09-hardware-affinity.md) | NEVER_MAC, LM Studio proxy gotcha, PR #128-#131 gap chain, canonical API |
 | 10 | [Line Endings & Encoding](10-line-endings-and-encoding.md) | `.gitattributes` + `.editorconfig` + `git add --renormalize .`; LF in repo, UTF-8 no BOM; kills phantom CRLF checkout diffs |
 | 11 | [agentic-stack `.agent/` Blend](11-agentic-stack-agent-blend.md) | AlphaClaw reverse-merge precedent mapped to file-level 3-way merges; conflict-resolution playbook from the v0.9.0→v0.18.0 cycle |
+| 12 | [Literal `~/` alphaclaw Install Dir](12-literal-tilde-alphaclaw-install-dir.md) | Tilde in `ALPHACLAW_INSTALL_DIR` + missing `expanduser()` → junk `~/` tree; fixed via `utils/env_paths.py` |
 
 ---
 
@@ -76,3 +77,4 @@ Some lessons are shared across PT and UTS. Canonical entry lives where the bug w
 | 2026-04-12 | [Multi-Agent Collab](07-multi-agent-collab.md) | [UTS/06](https://github.com/diazMelgarejo/orama-system/blob/main/docs/wiki/06-multi-agent-collab.md) |
 | 2026-04-13 | [Startup IP Detection](06-startup-ip-detection.md) | [UTS/07](https://github.com/diazMelgarejo/orama-system/blob/main/docs/wiki/07-startup-ip-detection.md) |
 | 2026-07-08 | [Line Endings & Encoding](10-line-endings-and-encoding.md) *(canonical)* | [UTS/17](https://github.com/diazMelgarejo/orama-system/blob/main/docs/wiki/17-line-endings-and-encoding.md) |
+| 2026-07-22 | [Literal `~/` alphaclaw Install Dir](12-literal-tilde-alphaclaw-install-dir.md) *(canonical)* | [UTS/18](https://github.com/diazMelgarejo/orama-system/blob/main/docs/wiki/18-literal-tilde-alphaclaw-install-dir.md) |

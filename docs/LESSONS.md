@@ -2122,3 +2122,22 @@ lines or the side that landed first.
 PR body updated with a matching explanation, appended before CodeRabbit's
 auto-generated summary (not replacing it):
 [PR #206](https://github.com/diazMelgarejo/Perpetua-Tools/pull/206).
+
+## 2026-07-25 — Literal `~/` under Perpetua-Tools — `ALPHACLAW_INSTALL_DIR` tilde bug | Cursor
+
+**Incident:** `Perpetua-Tools/~/.alphaclaw/` (~352 MB) created 2026-07-22 in ~2 minutes by
+`alphaclaw_bootstrap --bootstrap` — not a recurring daemon.
+
+**Root cause:** PT `.env` had `ALPHACLAW_INSTALL_DIR=~/.alphaclaw`; python-dotenv loads
+tilde literally; `Path(...)` without `.expanduser()` is relative when bootstrap `cwd` is
+PT repo root → literal `~/` folder under the repo. Nested `~/.alphaclaw/~/.alphaclaw/`
+from writing `ALPHACLAW_ROOT_DIR='~/.alphaclaw'` into junk `.env`.
+
+**Fix:** `src/utils/env_paths.py` (`resolve_alphaclaw_install_dir`), wired in
+`alphaclaw_bootstrap.py` + `setup_wizard.py`; regression tests; `.gitignore` `/~/`;
+wiki [`12-literal-tilde-alphaclaw-install-dir.md`](wiki/12-literal-tilde-alphaclaw-install-dir.md)
+(+ orama mirror wiki/18). Merge archive deleted after additive merge to real install dir.
+
+**Agent memory:** `lesson_fa44fbb4eb15`, `lesson_6bab6d268971`.
+
+→ [wiki/12-literal-tilde-alphaclaw-install-dir.md](wiki/12-literal-tilde-alphaclaw-install-dir.md)

@@ -1,0 +1,44 @@
+{
+  "id": "6bab6d268971",
+  "key": "manual_6bab6d",
+  "name": "manual_6bab6d",
+  "claim": "When forensic-tracing a mysterious directory appearing inside a git repo (especially a literal folder named tilde), check whether any bootstrap or install script uses an env-derived Path without expanduser while running with cwd at the repo root \u2014 and whether PT .env sets ALPHACLAW_INSTALL_DIR to a tilde-prefixed string loaded by python-dotenv. Entry points: orama start.sh \u2192 orchestrator.alphaclaw_manager --resolve, POST /runtime/bootstrap, setup_wizard after load_dotenv, direct alphaclaw_bootstrap --bootstrap. orama discover.py already expands correctly; the bug class lives in PT path resolution.",
+  "conditions": [
+    "alphaclaw_manager",
+    "bootstrap",
+    "forensic",
+    "junk-directory",
+    "literal-tilde",
+    "setup_wizard",
+    "start.sh"
+  ],
+  "evidence_ids": [
+    "2026-07-24T23:19:51.391431+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-24T23:19:51.391431+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-24T23:19:51.391431+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-24T23:19:51.493150+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-25 root-cause trace for Perpetua-Tools/~/ junk; documented in docs/wiki/12 and orama wiki/18.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-24T23:19:51.391431+00:00"
+      ],
+      "lessons_sha": "621ae5bfb58b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-24T23:19:51.493145+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-25 root-cause trace for Perpetua-Tools/~/ junk; documented in docs/wiki/12 and orama wiki/18."
+}
