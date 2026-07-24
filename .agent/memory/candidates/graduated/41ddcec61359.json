@@ -1,0 +1,43 @@
+{
+  "id": "41ddcec61359",
+  "key": "manual_41ddce",
+  "name": "manual_41ddce",
+  "claim": "Global security-invariant hand-off across Anthropic surfaces, verified 2026-07-18: Claude Cowork has a dedicated persistent-instructions field at claude.ai/settings/cowork -> 'Global instructions' (plain static text, applies to every Cowork session; does NOT auto-sync from a linked doc -- paste condensed text, re-derive from source when it changes). Cowork's own chat-memory does not carry into Cowork sessions (memory there is project-scoped only), so Global Instructions is the correct mechanism, not 'memory' in the adaptive sense. Claude Design has no equivalent global-instructions field verified; it inherits an org design system and reaches repo-level policy only via the /design-sync + claude-design MCP bridge into Claude Code, where a repo's CLAUDE.md already applies. Best source doc to derive the paste-in text from: orama-system's bin/orama-system/skills/security/SKILL.md (condensed, self-contained, purpose-built for this) over docs/v2/47-portable-memory-local-topology-invariant.md (authoritative but written as a cross-referenced v2 spec, not paste-shaped) or PT's DOMAIN_KNOWLEDGE.md OpSec/SecOps entry (good PT-specific implementation detail, less general).",
+  "conditions": [
+    "anthropic-surfaces",
+    "claude-design",
+    "cowork",
+    "global-instructions",
+    "security-invariant",
+    "v2-migration"
+  ],
+  "evidence_ids": [
+    "2026-07-18T09:46:02.870911+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T09:46:02.870911+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T09:46:02.870911+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T09:46:03.015091+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "User asked how to propagate the day's portable-memory security invariant (lesson_6c176e735ab4, lesson_0a498556c5a0, lesson_31b3337bafdb) beyond PT/orama-system into other Anthropic surfaces (Claude Cowork, Claude Design, claude.ai chat) as a durable global policy. Verified via official support.claude.com docs (not guessed) before answering, since both products post-date this agent's training cutoff. Prevents a future agent from either skipping this propagation step or guessing at UI that may not exist.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T09:46:02.870911+00:00"
+      ],
+      "lessons_sha": "412489212e9c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T09:46:03.015082+00:00",
+  "reviewer": "learn.py",
+  "rationale": "User asked how to propagate the day's portable-memory security invariant (lesson_6c176e735ab4, lesson_0a498556c5a0, lesson_31b3337bafdb) beyond PT/orama-system into other Anthropic surfaces (Claude Cowork, Claude Design, claude.ai chat) as a durable global policy. Verified via official support.claude.com docs (not guessed) before answering, since both products post-date this agent's training cutoff. Prevents a future agent from either skipping this propagation step or guessing at UI that may not exist."
+}

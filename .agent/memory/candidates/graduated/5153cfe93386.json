@@ -1,0 +1,44 @@
+{
+  "id": "5153cfe93386",
+  "key": "manual_5153cf",
+  "name": "manual_5153cf",
+  "claim": "ClinePass GLM-5.2, BigModel GLM-5.2, and ClinePass DeepSeek V4 Flash are three distinct paths, not interchangeable tiers of one chain. ClinePass GLM-5.2 (cline-pass/glm-5.2, api.cline.bot, WorkOS OAuth, Cline Credits billing) is tier 1 of the glm52-fallback chain; BigModel GLM-5.2 (open.bigmodel.cn, plain API key via GLM52_API_KEY) is tier 2; OpenRouter free and local Ollama are tiers 3-4. ClinePass DeepSeek V4 Flash (cline-pass/deepseek-v4-flash) is NOT in that chain at all -- it is a separate parallel fan-out dispatch lane (same ClinePass provider/billing, different model slug) used like Kimi/Codex for headless review/plan/implementation work, per bin/orama-system/skills/clinepass-deepseek-flash/SKILL.md's explicit access policy: 'Do not silently fall back to GLM, Pro, Kimi, OpenRouter, direct Cline API, or any provider key path.'",
+  "conditions": [
+    "bigmodel",
+    "clinepass",
+    "deepseek-v4-flash",
+    "fallback-chain",
+    "fan-out",
+    "glm-5.2",
+    "provider-topology"
+  ],
+  "evidence_ids": [
+    "2026-07-19T02:17:23.711669+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-19T02:17:23.711669+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-19T02:17:23.711669+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-19T02:17:23.861306+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "User asked to disambiguate BigModel vs ClinePass auth, then asked whether ClinePass DeepSeek V4 Flash was tier 3 of that fallback chain. Verified by reading glm52-fallback/SKILL.md (4-tier chain) and clinepass-deepseek-flash/SKILL.md (explicit ClinePass-only isolation policy) directly rather than guessing from the shared 'ClinePass' vocabulary. A live heartbeat entry (agent 'ClinePass-DeepSeek-v4-flash', DEAD) confirms this route has actually been exercised, not just documented aspirationally.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-19T02:17:23.711669+00:00"
+      ],
+      "lessons_sha": "987b27af4254"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-19T02:17:23.861296+00:00",
+  "reviewer": "learn.py",
+  "rationale": "User asked to disambiguate BigModel vs ClinePass auth, then asked whether ClinePass DeepSeek V4 Flash was tier 3 of that fallback chain. Verified by reading glm52-fallback/SKILL.md (4-tier chain) and clinepass-deepseek-flash/SKILL.md (explicit ClinePass-only isolation policy) directly rather than guessing from the shared 'ClinePass' vocabulary. A live heartbeat entry (agent 'ClinePass-DeepSeek-v4-flash', DEAD) confirms this route has actually been exercised, not just documented aspirationally."
+}

@@ -1,0 +1,43 @@
+{
+  "id": "fe447a995aed",
+  "key": "manual_fe447a",
+  "name": "manual_fe447a",
+  "claim": "The frugality/privacy reconciliation decision (2026-07-22): frugality_router.py's resolve_route() becomes the single canonical policy gate that route_task() and orchestrator.py's /orchestrate privacy_critical branch both call; human override is required for any escalation past its default policy, resolved via AskUserQuestion (or host equivalent) when available, else a CLI prompt or dashboard modal \u2014 never a silent config-only bypass.",
+  "conditions": [
+    "AskUserQuestion",
+    "decision-record",
+    "frugality_router",
+    "override",
+    "privacy_critical",
+    "single-gate"
+  ],
+  "evidence_ids": [
+    "2026-07-22T09:30:40.597901+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T09:30:40.597901+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T09:30:40.597901+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T09:30:40.681364+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Human-confirmed decision closing the previously-open 'single gate vs opt-in layer' design question in docs/plans/2026-07-22-frugality-privacy-reconciliation-and-navigator-closeout.md Item 1. Recorded so a future implementer doesn't re-litigate the gate-vs-parallel-layer question or accidentally add a silent override path.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T09:30:40.597901+00:00"
+      ],
+      "lessons_sha": "5038bcb62072"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T09:30:40.681358+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Human-confirmed decision closing the previously-open 'single gate vs opt-in layer' design question in docs/plans/2026-07-22-frugality-privacy-reconciliation-and-navigator-closeout.md Item 1. Recorded so a future implementer doesn't re-litigate the gate-vs-parallel-layer question or accidentally add a silent override path."
+}

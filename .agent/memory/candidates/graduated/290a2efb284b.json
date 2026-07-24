@@ -1,0 +1,60 @@
+{
+  "id": "290a2efb284b",
+  "key": "manual_290a2e",
+  "name": "manual_290a2e",
+  "claim": "For native Cline CLI ClinePass auth, provider id and model id are different: provider setup uses clinepass, while DeepSeek V4 Flash uses model id cline-pass/deepseek-v4-flash; errors about another provider rejecting the slug are auth/config failures, not model spelling failures.",
+  "conditions": [
+    "about",
+    "another",
+    "auth",
+    "cli",
+    "cline",
+    "cline-pass",
+    "clinepass",
+    "config",
+    "deepseek",
+    "deepseek-v4-flash",
+    "different",
+    "errors",
+    "failures",
+    "flash",
+    "model",
+    "native",
+    "provider",
+    "rejecting",
+    "setup",
+    "slug",
+    "spelling",
+    "uses",
+    "while"
+  ],
+  "evidence_ids": [
+    "2026-07-18T01:53:06.064932+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T01:53:06.064932+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T01:53:06.064932+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T01:53:06.171912+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "EXA plus Firecrawl verified the official ClinePass model list, and local Cline auth reported that provider clinepass requires API-key setup. The correct repair is configuring the ClinePass provider from local secrets, not switching model routes.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T01:53:06.064932+00:00"
+      ],
+      "lessons_sha": "b0626cd27d7b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T01:53:06.171902+00:00",
+  "reviewer": "learn.py",
+  "rationale": "EXA plus Firecrawl verified the official ClinePass model list, and local Cline auth reported that provider clinepass requires API-key setup. The correct repair is configuring the ClinePass provider from local secrets, not switching model routes."
+}

@@ -1,0 +1,41 @@
+{
+  "id": "03e8b69e416a",
+  "key": "manual_03e8b6",
+  "name": "manual_03e8b6",
+  "claim": "A file's large diff against current main doesn't always mean unmerged work is missing -- check whether main's version became a thin delegator to a new module (grep for import/from lines) before concluding a gap exists",
+  "conditions": [
+    "branch-audit",
+    "coordination-module",
+    "git",
+    "structural-supersession"
+  ],
+  "evidence_ids": [
+    "2026-07-24T11:32:10.291046+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-24T11:32:10.291046+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-24T11:32:10.291046+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-24T11:32:10.419541+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A stale branch's 1,663-line diff against main for agent_coordination_core.py looked like a huge unlanded gap. Main's actual file was 23 lines -- a thin wrapper delegating to a new orchestrator/coordination module from an unrelated, already-merged refactor (PR #264/#267). The branch's capability wasn't missing from main; the whole file had been restructured. Replaying the old diff would have fought the new architecture instead of adding value.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-24T11:32:10.291046+00:00"
+      ],
+      "lessons_sha": "a140c96f1c73"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-24T11:32:10.419529+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A stale branch's 1,663-line diff against main for agent_coordination_core.py looked like a huge unlanded gap. Main's actual file was 23 lines -- a thin wrapper delegating to a new orchestrator/coordination module from an unrelated, already-merged refactor (PR #264/#267). The branch's capability wasn't missing from main; the whole file had been restructured. Replaying the old diff would have fought the new architecture instead of adding value."
+}

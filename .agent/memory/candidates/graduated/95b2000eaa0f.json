@@ -1,0 +1,42 @@
+{
+  "id": "95b2000eaa0f",
+  "key": "manual_95b200",
+  "name": "manual_95b200",
+  "claim": "lan_peer_assign.py's 'read' command (non-JSON mode) crashes on Windows with UnicodeEncodeError when a peer message body contains non-cp1252 characters (e.g. arrow U+2192) -- print() hits the Windows console codepage, not UTF-8. Use --json plus PYTHONIOENCODING=utf-8 to read message bodies reliably on Windows.",
+  "conditions": [
+    "encoding",
+    "lan_peer_assign",
+    "peer-inbox",
+    "unicode",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-07-22T13:31:09.282844+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T13:31:09.282844+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T13:31:09.282844+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T13:31:09.573789+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Hit live reading a real Mac coordination message containing a unicode arrow in its title -- plain 'lan_peer_assign.py read --peer ...' crashed with a traceback instead of printing the body.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T13:31:09.282844+00:00"
+      ],
+      "lessons_sha": "414154921aff"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T13:31:09.573781+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Hit live reading a real Mac coordination message containing a unicode arrow in its title -- plain 'lan_peer_assign.py read --peer ...' crashed with a traceback instead of printing the body."
+}

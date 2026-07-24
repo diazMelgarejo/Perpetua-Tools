@@ -374,7 +374,7 @@ code-review, git-history-surgery, gstack, skillify, hermes-harness, mcp-orchestr
 ---
 ## 2026-07-13: Git author identity is not a reliable human-vs-agent signal
 **Decision:** When investigating "who did this" in git history, do not treat a familiar
-git author identity (e.g. `cyre <Lawrence.Melgarejo@gmail.com>`) as proof of human
+git author identity (e.g. `<the repo's approved identity>`) as proof of human
 authorship. Autonomous agents (AutoResearcher via `orchestrator/autoresearch_bridge.py`,
 and any other agent committing through this stack) inherit whatever git identity is
 locally configured — their commits are indistinguishable from human commits by author

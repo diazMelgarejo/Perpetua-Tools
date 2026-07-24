@@ -1,0 +1,52 @@
+{
+  "id": "77a6c0a44e89",
+  "key": "manual_77a6c0",
+  "name": "manual_77a6c0",
+  "claim": "Before acting on a code-review finding, pull origin/main first so the reviewed commit is actually present in the local working tree.",
+  "conditions": [
+    "acting",
+    "actually",
+    "before",
+    "code-review",
+    "commit",
+    "finding",
+    "first",
+    "local",
+    "main",
+    "origin",
+    "present",
+    "pull",
+    "reviewed",
+    "tree",
+    "working"
+  ],
+  "evidence_ids": [
+    "2026-07-23T06:16:20.167017+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T06:16:20.167017+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T06:16:20.167017+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T06:16:20.260065+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A review may reference a commit that merged to main after the local clone was last updated; applying the finding against stale files can produce wrong or conflicting edits. Today's sync of orama-system and Perpetua-Tools brought in several already-merged fixes that would have been reworked otherwise.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T06:16:20.167017+00:00"
+      ],
+      "lessons_sha": "62ca38e6f475"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T06:16:20.260058+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A review may reference a commit that merged to main after the local clone was last updated; applying the finding against stale files can produce wrong or conflicting edits. Today's sync of orama-system and Perpetua-Tools brought in several already-merged fixes that would have been reworked otherwise."
+}

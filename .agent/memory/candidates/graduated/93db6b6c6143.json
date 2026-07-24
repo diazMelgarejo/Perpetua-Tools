@@ -1,0 +1,38 @@
+{
+  "id": "93db6b6c6143",
+  "key": "manual_93db6b",
+  "name": "manual_93db6b",
+  "claim": "Operator sync+lessons+sync requests must start with git pull on BOTH orama-system and Perpetua-Tools before assuming memory is current \u2014 Mac or another Win session may have pushed lessons or coord docs while idle.",
+  "conditions": [
+    "sync pull lessons memory both repos idle"
+  ],
+  "evidence_ids": [
+    "2026-07-23T06:24:30.105687+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T06:24:30.105687+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T06:24:30.105687+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T06:24:30.226153+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-23 repeat request: local was at ec1268b but origin had 9275991 (5 new lessons) and orama had e207b6be (coord_comms_board).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T06:24:30.105687+00:00"
+      ],
+      "lessons_sha": "ebec4f864615"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T06:24:30.226153+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-23 repeat request: local was at ec1268b but origin had 9275991 (5 new lessons) and orama had e207b6be (coord_comms_board)."
+}

@@ -1,0 +1,38 @@
+{
+  "id": "9cef5321917e",
+  "key": "manual_9cef53",
+  "name": "manual_9cef53",
+  "claim": "coord-029 mesh gap: win-rtx5080 fixed disabled OramaCoordPulse scheduled task; win-rtx3080 must verify OramaCoordPulse State=Ready and last run exit 0 after any peer Disabled-task alert \u2014 OramaServiceWatchdog may stay Disabled by operator choice",
+  "conditions": [
+    "watchdog"
+  ],
+  "evidence_ids": [
+    "2026-07-23T07:24:15.609948+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T07:24:15.609948+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T07:24:15.609948+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T07:24:15.736382+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "win-2026-07-23-002-ack",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T07:24:15.609948+00:00"
+      ],
+      "lessons_sha": "2907f96a1269"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T07:24:15.736382+00:00",
+  "reviewer": "learn.py",
+  "rationale": "win-2026-07-23-002-ack"
+}

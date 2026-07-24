@@ -1,0 +1,41 @@
+{
+  "id": "0bd12ef63a5c",
+  "key": "manual_0bd12e",
+  "name": "manual_0bd12e",
+  "claim": "When asked to pick up a coding partner's stalled/incomplete work (a rate-limited or credit-exhausted agent's claimed-but-unfinished tasks), enter a dedicated worktree first rather than working in the shared main checkout -- even for read-mostly coordination work, a shared checkout can be mid-merge, mid-edit, or hold uncommitted state from the other live agent, and a worktree gives an isolated, disposable workspace that can't collide with concurrent work.",
+  "conditions": [
+    "concurrent-agents",
+    "credit-exhaustion",
+    "stalled-agent-handoff",
+    "worktree-isolation"
+  ],
+  "evidence_ids": [
+    "2026-07-18T03:12:54.439707+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T03:12:54.439707+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T03:12:54.439707+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T03:12:54.892731+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Explicitly instructed this session ('do it ALL on a separate worktree to avoid conflict with ongoing tasks from CODEX'). Using EnterWorktree with a name (not attempting to reuse or reset the main checkout's branch) avoided any risk of clobbering Codex's in-flight edits in the shared PT checkout, which at the time held uncommitted memory-episodic drift and a stale branch pointer unrelated to the task at hand.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T03:12:54.439707+00:00"
+      ],
+      "lessons_sha": "f6cda74c2a74"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T03:12:54.892703+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Explicitly instructed this session ('do it ALL on a separate worktree to avoid conflict with ongoing tasks from CODEX'). Using EnterWorktree with a name (not attempting to reuse or reset the main checkout's branch) avoided any risk of clobbering Codex's in-flight edits in the shared PT checkout, which at the time held uncommitted memory-episodic drift and a stale branch pointer unrelated to the task at hand."
+}

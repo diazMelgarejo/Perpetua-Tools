@@ -2,7 +2,7 @@
   "id": "c3b24dc506a6",
   "key": "manual_c3b24d",
   "name": "manual_c3b24d",
-  "claim": "The correct move to record lessons is exactly one command: python3 .agent/tools/learn.py '<your claim>' --rationale '<why this holds>'. That stages, graduates, and re-renders memory/semantic/LESSONS.md automatically. Do NOT create any markdown file by hand in .agent/ -- not at root, not anywhere. .agent/lessons.md does not exist in the AGENTS.md structure; nothing reads it; creating one produces a phantom file. Note on attribution: cyre <Lawrence.Melgarejo@gmail.com> IS a canonical git identity for this repo -- the earlier version of this lesson incorrectly flagged it as non-canonical. The actual defect was a stale scripts/git/repo_hygiene.py allowlist that hadn't been updated to include it; the fix is keeping the allowlist current, not avoiding the identity.",
+  "claim": "The correct move to record lessons is exactly one command: python3 .agent/tools/learn.py '<your claim>' --rationale '<why this holds>'. That stages, graduates, and re-renders memory/semantic/LESSONS.md automatically. Do NOT create any markdown file by hand in .agent/ -- not at root, not anywhere. .agent/lessons.md does not exist in the AGENTS.md structure; nothing reads it; creating one produces a phantom file. Note on attribution: <the repo's approved identity> IS a canonical git identity for this repo -- the earlier version of this lesson incorrectly flagged it as non-canonical. The actual defect was a stale scripts/git/repo_hygiene.py allowlist that hadn't been updated to include it; the fix is keeping the allowlist current, not avoiding the identity.",
   "conditions": [
     "actual",
     "agent",
@@ -88,7 +88,7 @@
       "ts": "2026-07-17T21:10:40.686337+00:00",
       "action": "graduated",
       "reviewer": "host-agent",
-      "notes": "Corrects the attribution-policy claim: Lawrence.Melgarejo@gmail.com is canonical; the defect was a stale allowlist, not the identity.",
+      "notes": "Corrects the attribution-policy claim: <approved Gmail alias> is canonical; the defect was a stale allowlist, not the identity.",
       "provisional": false,
       "evidence_snapshot": [
         "2026-07-17T21:10:35.153349+00:00"
@@ -99,5 +99,5 @@
   "rejection_count": 0,
   "accepted_at": "2026-07-17T21:10:40.686317+00:00",
   "reviewer": "host-agent",
-  "rationale": "Corrects the attribution-policy claim: Lawrence.Melgarejo@gmail.com is canonical; the defect was a stale allowlist, not the identity."
+  "rationale": "Corrects the attribution-policy claim: <approved Gmail alias> is canonical; the defect was a stale allowlist, not the identity."
 }

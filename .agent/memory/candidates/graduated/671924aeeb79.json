@@ -1,0 +1,75 @@
+{
+  "id": "671924aeeb79",
+  "key": "manual_671924",
+  "name": "manual_671924",
+  "claim": "Superseding or rendering a memory lesson is not a privacy scrub: sanitize the source JSONL/candidate/episodic row and every derived view, then run a strict .agent portable-brain scan covering exact local-only verboten literals, private/unclassified full emails, personal paths, workspace topology, local-temp paths, and secret patterns before commit.",
+  "conditions": [
+    "agent",
+    "before",
+    "candidate",
+    "commit",
+    "covering",
+    "derived",
+    "emails",
+    "episodic",
+    "every",
+    "exact",
+    "full",
+    "jsonl",
+    "lesson",
+    "literals",
+    "local-only",
+    "local-temp",
+    "memory",
+    "paths",
+    "patterns",
+    "personal",
+    "portable-brain",
+    "privacy",
+    "private",
+    "rendering",
+    "row",
+    "run",
+    "sanitize",
+    "scan",
+    "scrub",
+    "secret",
+    "source",
+    "strict",
+    "superseding",
+    "topology",
+    "unclassified",
+    "verboten",
+    "view",
+    "workspace"
+  ],
+  "evidence_ids": [
+    "2026-07-18T08:43:06.733766+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T08:43:06.733766+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T08:43:06.733766+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T08:43:06.851412+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR #260 follow-up: a superseded rendered lesson hid that the source memory row still carried private identity text. The durable fix is source scrubbing plus an executable .agent guard, not display-only supersession.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T08:43:06.733766+00:00"
+      ],
+      "lessons_sha": "e7e9dfd081c7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T08:43:06.851404+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR #260 follow-up: a superseded rendered lesson hid that the source memory row still carried private identity text. The durable fix is source scrubbing plus an executable .agent guard, not display-only supersession."
+}

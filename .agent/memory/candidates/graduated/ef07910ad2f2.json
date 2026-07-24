@@ -1,0 +1,42 @@
+{
+  "id": "ef07910ad2f2",
+  "key": "manual_ef0791",
+  "name": "manual_ef0791",
+  "claim": "When asked to 'generalize' or 'merge' a fix rather than patch the one broken instance, extract ONE shared implementation called from every site that needs it, and separately audit the whole class the bug belongs to (not just the reported instance) for other latent members -- a fix scoped to only what was reported leaves siblings of the same bug undiscovered.",
+  "conditions": [
+    "audit-the-class",
+    "collision-guard",
+    "generalization",
+    "root-cause",
+    "shared-implementation"
+  ],
+  "evidence_ids": [
+    "2026-07-22T07:16:04.014979+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T07:16:04.014979+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T07:16:04.014979+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T07:16:04.093766+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A skill-naming collision bug was first fixed narrowly (allow-list one name). When asked to generalize, extracted a single shared collision-check script called from both the naming-time intake workflow and the publish-time sync script, then cross-referenced the repo's full skill manifest against the external suite's own roster and found a second latent collision (this repo's own skill literally sharing the external suite's top-level name) that nobody had reported yet, purely from checking the whole class rather than stopping at the one instance.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T07:16:04.014979+00:00"
+      ],
+      "lessons_sha": "5295add333c3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T07:16:04.093753+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A skill-naming collision bug was first fixed narrowly (allow-list one name). When asked to generalize, extracted a single shared collision-check script called from both the naming-time intake workflow and the publish-time sync script, then cross-referenced the repo's full skill manifest against the external suite's own roster and found a second latent collision (this repo's own skill literally sharing the external suite's top-level name) that nobody had reported yet, purely from checking the whole class rather than stopping at the one instance."
+}

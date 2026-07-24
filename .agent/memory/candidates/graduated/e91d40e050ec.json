@@ -1,0 +1,71 @@
+{
+  "id": "e91d40e050ec",
+  "key": "manual_e91d40",
+  "name": "manual_e91d40",
+  "claim": "When a shared condition gates two logically-independent checks (e.g. \"skip check A\" reusing the same boolean that correctly gates \"skip check B\"), a scenario that legitimately satisfies the shared condition for check A will silently also skip check B, even though check B has no relationship to why the exemption exists. Before reusing an existing exemption/skip condition for a new check, ask whether the new check's OWN reason for existing has anything to do with the original exemption's reason -- if not, it needs its own independent condition, not a shared one.",
+  "conditions": [
+    "also",
+    "anything",
+    "ask",
+    "before",
+    "boolean",
+    "check",
+    "checks",
+    "condition",
+    "correctly",
+    "even",
+    "exemption",
+    "existing",
+    "exists",
+    "gates",
+    "independent",
+    "legitimately",
+    "logically-independent",
+    "needs",
+    "new",
+    "one",
+    "original",
+    "own",
+    "reason",
+    "relationship",
+    "reusing",
+    "same",
+    "satisfies",
+    "scenario",
+    "shared",
+    "silently",
+    "skip",
+    "though",
+    "two",
+    "whether"
+  ],
+  "evidence_ids": [
+    "2026-07-23T06:01:21.085113+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T06:01:21.085113+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T06:01:21.085113+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T06:01:53.293368+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Concrete, verified real bug from this session's own scanner code.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T06:01:21.085113+00:00"
+      ],
+      "lessons_sha": "d1fbe0ec1588"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T06:01:53.293352+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Concrete, verified real bug from this session's own scanner code."
+}

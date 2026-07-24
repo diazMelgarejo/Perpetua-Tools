@@ -1,0 +1,42 @@
+{
+  "id": "f2913a809609",
+  "key": "manual_f2913a",
+  "name": "manual_f2913a",
+  "claim": "When fixing a Dependabot alert by bumping to its first_patched_version, check the package's own recent release notes (not just the one CVE range) for newer security releases beyond that version -- a single npm view/gh api release-notes fetch can surface a later advisory that gets silently skipped if you stop reading after finding the version that satisfies the original alert.",
+  "conditions": [
+    "dependabot",
+    "missed-advisory",
+    "release-notes",
+    "self-correction",
+    "vulnerability-fix"
+  ],
+  "evidence_ids": [
+    "2026-07-22T11:24:59.007957+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T11:24:59.007957+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T11:24:59.007957+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T11:24:59.099407+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-22: fixed @hono/node-server to 2.0.5 (satisfies the path-traversal alert's first_patched_version), but the same release-notes fetch I ran to check for breaking changes ALSO showed a v2.0.10 entry titled 'Security fixes... WebSocket handshake memory-leak DoS' -- and I didn't act on it, only noticing 3 new Dependabot alerts (77-79) after pushing. Caught and fixed same session, but the miss was avoidable: the information was already in front of me.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T11:24:59.007957+00:00"
+      ],
+      "lessons_sha": "f152ac139db0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T11:24:59.099399+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-22: fixed @hono/node-server to 2.0.5 (satisfies the path-traversal alert's first_patched_version), but the same release-notes fetch I ran to check for breaking changes ALSO showed a v2.0.10 entry titled 'Security fixes... WebSocket handshake memory-leak DoS' -- and I didn't act on it, only noticing 3 new Dependabot alerts (77-79) after pushing. Caught and fixed same session, but the miss was avoidable: the information was already in front of me."
+}

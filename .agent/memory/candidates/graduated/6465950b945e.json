@@ -1,0 +1,42 @@
+{
+  "id": "6465950b945e",
+  "key": "manual_646595",
+  "name": "manual_646595",
+  "claim": "When another agent already holds a queue claim on a review/task you'd otherwise do, don't compete for it -- post a board note deferring ownership explicitly, then contribute as a labeled supplementary independent voice instead (grounded in a clean isolated worktree at the pushed tip, not the other agent's live/dirty one), with findings posted as a PR comment clearly marked 'second opinion, not a replacement.' This mirrors the established multi-voice review pattern (Codex/Kimi/Claude concurrent reviews synthesized after) but applies it even when one voice already formally owns the task -- redundant coverage from a different angle is still useful, competing for the same claim is not.",
+  "conditions": [
+    "independent-voice",
+    "multi-agent-coordination",
+    "pr-review-pattern",
+    "queue-claim-conflict",
+    "supplementary-review"
+  ],
+  "evidence_ids": [
+    "2026-07-19T06:04:20.338374+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-19T06:04:20.338374+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-19T06:04:20.338374+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-19T06:04:20.520135+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Used successfully on PR #267: kimi-for-coding held the review-task claim, so instead of contending for it, ran an independent 4-facet review (Haiku-controller fan-out to kimi CLI + direct verification when the CLI hit its billing quota), posted as a clearly-labeled PR comment. Resolved a genuine open question (the queue_complete/queue_fail agent_id ownership-check soundness) that the task's original owner hadn't gotten to yet, without any claim conflict or duplicated board state.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-19T06:04:20.338374+00:00"
+      ],
+      "lessons_sha": "586f30ccbe28"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-19T06:04:20.520127+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Used successfully on PR #267: kimi-for-coding held the review-task claim, so instead of contending for it, ran an independent 4-facet review (Haiku-controller fan-out to kimi CLI + direct verification when the CLI hit its billing quota), posted as a clearly-labeled PR comment. Resolved a genuine open question (the queue_complete/queue_fail agent_id ownership-check soundness) that the task's original owner hadn't gotten to yet, without any claim conflict or duplicated board state."
+}

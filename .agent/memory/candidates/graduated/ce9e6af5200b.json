@@ -1,0 +1,42 @@
+{
+  "id": "ce9e6af5200b",
+  "key": "manual_ce9e6a",
+  "name": "manual_ce9e6a",
+  "claim": "frugality_router.py, routing.yml's task_type exclusion, and orchestrator.py's req.privacy_critical chain are not three competing implementations \u2014 routing.yml + orchestrator.py compose as designed (general policy + explicit override); frugality_router.py is a separate, genuinely-unwired addition whose own spike doc named the wiring gap as deferred follow-on work on 2026-06-29, never a silent omission.",
+  "conditions": [
+    "frugality_router",
+    "orchestrator.py",
+    "privacy_critical",
+    "reconciliation",
+    "route_task"
+  ],
+  "evidence_ids": [
+    "2026-07-22T09:29:58.197567+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T09:29:58.197567+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T09:29:58.197567+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T09:29:58.288536+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-22 /autoplan pass on the tiered-model navigator initially framed this as three unreconciled privacy systems; tracing hermes-harness assignment/result records (mac-orchestrator-frugality-router-spike.md, win-coder-pt199-frugality-review.md) plus v1.1-definitive.md's own text showed the framing was wrong \u2014 two paths already work together, one has a named-but-unpicked TODO. Prevents re-treating a scoped, known gap as an emergency architecture collision.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T09:29:58.197567+00:00"
+      ],
+      "lessons_sha": "da1f1a9a1b64"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T09:29:58.288527+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-22 /autoplan pass on the tiered-model navigator initially framed this as three unreconciled privacy systems; tracing hermes-harness assignment/result records (mac-orchestrator-frugality-router-spike.md, win-coder-pt199-frugality-review.md) plus v1.1-definitive.md's own text showed the framing was wrong \u2014 two paths already work together, one has a named-but-unpicked TODO. Prevents re-treating a scoped, known gap as an emergency architecture collision."
+}

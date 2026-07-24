@@ -1,0 +1,42 @@
+{
+  "id": "6b2d04ef9fae",
+  "key": "manual_6b2d04",
+  "name": "manual_6b2d04",
+  "claim": "Deployed copies of orama-system scripts under ~/.openclaw/scripts/ can silently drift stale vs the canonical repo copy in orama-system/scripts/ \u2014 diff them (ignoring CRLF) before trusting the deployed version's behavior, especially after a documented anti-pattern removal in the repo.",
+  "conditions": [
+    "deployment-drift",
+    "discover.py",
+    "lan-ip-hygiene",
+    "openclaw-scripts",
+    "stale-deploy"
+  ],
+  "evidence_ids": [
+    "2026-07-22T04:44:32.281370+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T04:44:32.281370+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T04:44:32.281370+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T04:44:32.358829+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A deployed ~/.openclaw/scripts/discover.py still contained patch_devices_yml()/patch_models_yml() \u2014 functions that write live LAN IPs into git-tracked config/devices.yml and config/models.yml. The canonical orama-system/scripts/discover.py removed these 2026-07-08 specifically because they were a doxxing/hygiene footgun (documented inline in the current source). The deployed copy was never re-synced after that fix landed. Found via diff of CRLF-stripped deployed vs canonical, since a naive diff falsely reported the entire file as different due to line-ending differences.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T04:44:32.281370+00:00"
+      ],
+      "lessons_sha": "ce1312f9e4df"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T04:44:32.358823+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A deployed ~/.openclaw/scripts/discover.py still contained patch_devices_yml()/patch_models_yml() \u2014 functions that write live LAN IPs into git-tracked config/devices.yml and config/models.yml. The canonical orama-system/scripts/discover.py removed these 2026-07-08 specifically because they were a doxxing/hygiene footgun (documented inline in the current source). The deployed copy was never re-synced after that fix landed. Found via diff of CRLF-stripped deployed vs canonical, since a naive diff falsely reported the entire file as different due to line-ending differences."
+}

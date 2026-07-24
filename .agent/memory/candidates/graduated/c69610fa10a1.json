@@ -1,0 +1,42 @@
+{
+  "id": "c69610fa10a1",
+  "key": "manual_c69610",
+  "name": "manual_c69610",
+  "claim": "When two branches independently append new entries to the same shared, append-only log file (a lessons JSONL/MD file, an audit trail) at the same position, git reports a real content conflict even though both additions are semantically compatible -- resolve by taking the union of both sides (all lines from both), never by arbitrarily picking one side, which silently discards real content.",
+  "conditions": [
+    "append-only-log",
+    "concurrent-agents",
+    "git-merge-conflict",
+    "memory-log",
+    "union-resolution"
+  ],
+  "evidence_ids": [
+    "2026-07-23T06:42:59.862123+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-23T06:42:59.862123+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-23T06:42:59.862123+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-23T06:42:59.937883+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-22/23: merging origin/main into a lesson-graduation branch produced 4 conflicts in .agent/memory/*; 3 were exactly this pattern (two sessions each graduated their own new lessons at the same file position). Resolved as a union across all three files -- verified JSON/JSONL still parse and repo_hygiene.py still passes after the merge.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-23T06:42:59.862123+00:00"
+      ],
+      "lessons_sha": "60081764c696"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-23T06:42:59.937878+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-22/23: merging origin/main into a lesson-graduation branch produced 4 conflicts in .agent/memory/*; 3 were exactly this pattern (two sessions each graduated their own new lessons at the same file position). Resolved as a union across all three files -- verified JSON/JSONL still parse and repo_hygiene.py still passes after the merge."
+}

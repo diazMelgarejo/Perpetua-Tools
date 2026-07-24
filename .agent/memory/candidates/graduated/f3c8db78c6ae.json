@@ -1,0 +1,41 @@
+{
+  "id": "f3c8db78c6ae",
+  "key": "manual_f3c8db",
+  "name": "manual_f3c8db",
+  "claim": "A synthetic test fixture and the code under test can both encode the SAME wrong schema assumption, in which case the test suite passing proves nothing about real data -- it just proves internal self-consistency. A real incident: a topology-display function assumed peer entries were dicts and crashed on the canonical writer's real flat-string schema; 125 existing tests never caught it because the fixture file's mocks used the exact same wrong dict-shaped assumption the buggy code expected, rather than what the actual writer produced. When a reader/writer pair is implemented far apart in time (or by different agents/sessions), verify the reader against the WRITER's actual canonical schema/dataclass directly -- not against a fixture that may have inherited the same wrong assumption as the code it's meant to catch bugs in.",
+  "conditions": [
+    "reader-writer-mismatch",
+    "schema-drift",
+    "synthetic-fixture-blind-spot",
+    "test-false-confidence"
+  ],
+  "evidence_ids": [
+    "2026-07-22T14:09:17.561381+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-22T14:09:17.561381+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-22T14:09:17.561381+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-22T14:09:17.674581+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Second instance of this exact class of gap in one session (first: lesson_7155c5157bd4, verify-against-real-data for a heartbeat-worktree bug). Confirmed by reading the canonical PT dataclass's own field type (peers: list[str]) directly rather than trusting either the buggy code or its matching-wrong fixture.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-22T14:09:17.561381+00:00"
+      ],
+      "lessons_sha": "ec7eae5e3e54"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-22T14:09:17.674571+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Second instance of this exact class of gap in one session (first: lesson_7155c5157bd4, verify-against-real-data for a heartbeat-worktree bug). Confirmed by reading the canonical PT dataclass's own field type (peers: list[str]) directly rather than trusting either the buggy code or its matching-wrong fixture."
+}

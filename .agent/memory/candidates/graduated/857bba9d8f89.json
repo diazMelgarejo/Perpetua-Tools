@@ -1,0 +1,42 @@
+{
+  "id": "857bba9d8f89",
+  "key": "manual_857bba",
+  "name": "manual_857bba",
+  "claim": "When replacing a contaminated or noisy PR branch, preserve the old PR final tree as the first clean replay commit; add later memory or audit notes as separate follow-up commits only after proving the replacement diff matches the saved old PR snapshot.",
+  "conditions": [
+    "PR",
+    "history-surgery",
+    "memory-followup",
+    "replacement",
+    "tree-diff"
+  ],
+  "evidence_ids": [
+    "2026-07-18T05:37:06.263482+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T05:37:06.263482+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T05:37:06.263482+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T05:37:06.369443+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR258 showed that bundling a later memory/surgery note into the first replacement replay makes the old-vs-new content comparison ambiguous. The cleaner maneuver is exact-tree replay first, then optional memory-only follow-up.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T05:37:06.263482+00:00"
+      ],
+      "lessons_sha": "978fd80dd0ea"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T05:37:06.369433+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR258 showed that bundling a later memory/surgery note into the first replacement replay makes the old-vs-new content comparison ambiguous. The cleaner maneuver is exact-tree replay first, then optional memory-only follow-up."
+}

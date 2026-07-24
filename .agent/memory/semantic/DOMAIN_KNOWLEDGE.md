@@ -239,7 +239,7 @@ _(empty — populate as you go)_
 
 ## .agent/ system — origin and provenance
 
-**First commit:** `82bcbfae` — 2026-06-19 00:22 +0800, author: cyre <Lawrence@cyre.me>  
+**First commit:** `82bcbfae` — 2026-06-19 00:22 +0800, author: <the repo's approved identity>  
 **Commit message:** `docs: establish GEMINI.md mandate and agentic-stack context`  
 **Repository:** Perpetua-Tools (`diazMelgarejo/Perpetua-Tools`)  
 **Added directly to `main`** (not via a PR)

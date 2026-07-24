@@ -1,0 +1,57 @@
+{
+  "id": "58ec2dc24e62",
+  "key": "manual_58ec2d",
+  "name": "manual_58ec2d",
+  "claim": "Cline fan-out routes must verify provider auth, not only model slugs; if a ClinePass model is routed through another provider, stop and repair auth/config instead of silently switching models.",
+  "conditions": [
+    "another",
+    "auth",
+    "cline",
+    "clinepass",
+    "config",
+    "fan-out",
+    "instead",
+    "model",
+    "models",
+    "only",
+    "provider",
+    "repair",
+    "routed",
+    "routes",
+    "silently",
+    "slugs",
+    "stop",
+    "switching",
+    "through",
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-07-18T01:47:23.197918+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-18T01:47:23.197918+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-18T01:47:23.197918+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-18T01:47:23.323259+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A DeepSeek Flash ClinePass smoke run accepted the CLI command shape but failed because the active provider rejected the ClinePass model slug. The durable fix is a provider-auth gate plus local help verification, with prompts and logs scrubbed of private values.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-18T01:47:23.197918+00:00"
+      ],
+      "lessons_sha": "44d4d3bab338"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-18T01:47:23.323252+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A DeepSeek Flash ClinePass smoke run accepted the CLI command shape but failed because the active provider rejected the ClinePass model slug. The durable fix is a provider-auth gate plus local help verification, with prompts and logs scrubbed of private values."
+}
