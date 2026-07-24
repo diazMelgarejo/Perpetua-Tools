@@ -27,7 +27,7 @@ it unset, `bootstrap_alphaclaw()` keeps plain `http://` gateway URLs (by design)
 | `bootstrap_alphaclaw()` → `https://` when env on | Covered by wiring tests |
 | TLS failure → graceful HTTP fallback | Covered by wiring tests |
 | Malformed chunked body → HTTP 400 | Covered (review follow-up, on branch) |
-| Stalled-client / Slowloris mitigation | **`3bb36c8a` — local commit, not yet on origin** |
+| Stalled-client / Slowloris mitigation | `3bb36c8a` — on origin as of 2026-07-24 |
 
 **Not live-validated here:** a running AlphaClaw process with
 `ALPHACLAW_TLS_ENABLED=1` against a real gateway on this machine (unit/e2e
@@ -38,25 +38,32 @@ step before calling it "production-ready."
 `docs/next/2026-07-25-pending-work-tracker.md` §1 (kept in sync with this
 note).
 
-## Local-only commits (ahead of `origin/security/alphaclaw-tls-proxy-scaffold`)
+## Commit history note (re-verified 2026-07-24)
 
-| Commit | In TLS scope? | Summary |
-|---|---|---|
-| `3bb36c8a` | **Yes** | Handler socket timeout + `daemon_threads` (Slowloris-style stall) |
-| `7dd01a76` | No (identity audit memory) | `.agent` lessons from orama PR #217 — keep out of TLS review narrative |
+`3bb36c8a` (Slowloris fix) and `7dd01a76` (identity-audit lessons) are both
+on `origin/security/alphaclaw-tls-proxy-scaffold` as of 2026-07-24 — the
+prior "local-only, not yet on origin" note above was stale; re-checked via
+`git log` against a fresh `git fetch`. `7dd01a76` remains out of TLS scope
+(identity-audit memory, not this proxy work) but is harmless riding along on
+this branch.
 
-Push `3bb36c8a` before the next PR review round; consider moving `7dd01a76`
-to a dedicated branch per the identity-audit plan's PT-scope rule.
+A follow-up commit (`7bed40ea`) qualifies a lesson-wording claim CodeRabbit
+flagged on review 4770121389 of PR #276 — also on origin.
 
 ## What's next (move along)
 
-1. **Push** `3bb36c8a` and refresh PR #276.
-2. **Merge PR #276** once review is clean (review 4769478731 addressed; re-check
-   for newer rounds).
-3. **Manual smoke:** `ALPHACLAW_TLS_ENABLED=1` + real AlphaClaw gateway on
+1. **Merge PR #276** once review is clean (review 4769478731 and
+   4770121389 addressed; re-check for newer rounds).
+2. **Manual smoke:** `ALPHACLAW_TLS_ENABLED=1` + real AlphaClaw gateway on
    loopback.
+3. **Windows ACL enforcement for cert store** — plan filed at
+   [`2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md`](2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md),
+   not yet implemented. Fixes the deprecated `SetFileSecurity` API the
+   original draft's code sample used (its own references already flagged
+   the deprecation but the sample hadn't been updated) — replaced with
+   `SetNamedSecurityInfo` per current Microsoft guidance.
 4. **v2 deferred** (see below): admin-pinned fingerprints, rotation policy,
-   mTLS, auto-enable, Windows ACL enforcement for cert store.
+   mTLS, auto-enable.
 5. **Companion orama doc** merges with `security/02-peer-mesh-auth-tls-v2-plan`
    when that stack lands.
 
@@ -119,6 +126,12 @@ the only call site that ever touches `gateway_url`'s scheme.
 - Not auto-enabled by default (`ALPHACLAW_TLS_ENABLED` opt-in) — matching
   the plan's "existing deployments" answer (v1 warns/opts-in, never
   enforces)
+- **Windows ACL enforcement for the cert/key/fingerprint store** — currently
+  POSIX-only (`chmod 0o600`/`0o700`); on Windows, `Path.chmod()` only
+  toggles the read-only attribute and does not restrict other local users'
+  read access. Plan filed:
+  [`2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md`](2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md)
+  (not implemented)
 - mTLS, audit logging, the pluggable auth-provider architecture (BUZZ/
   Twitter/Google) — all orama-side and PT-side v2 work tracked in the
   companion doc, not started here
