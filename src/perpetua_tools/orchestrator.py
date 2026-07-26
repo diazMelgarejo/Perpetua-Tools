@@ -15,6 +15,15 @@ Usage
 """
 from __future__ import annotations  # PEP 563: postpone annotation eval (Python 3.9 compat)
 
+import warnings
+
+warnings.warn(
+    "src.perpetua_tools.orchestrator is deprecated — use orchestrator.fastapi_app:app "
+    "(control-plane auth + gossip gates)",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 import os
 import json
 import asyncio

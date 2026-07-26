@@ -1,0 +1,57 @@
+{
+  "id": "4fa51e1f1d6b",
+  "key": "manual_4fa51e",
+  "name": "manual_4fa51e",
+  "claim": "Mesh security PR merge order: orama #223 first, operator backup on all nodes, then orama #224 and PT #287 together, verify mesh, then orama #222 last \u2014 never merge IP expunge before local caches and GOSSIP_SHARED_SECRET exist.",
+  "conditions": [
+    "all",
+    "backup",
+    "before",
+    "caches",
+    "exist",
+    "expunge",
+    "first",
+    "gossip_shared_secret",
+    "last",
+    "local",
+    "merge",
+    "mesh",
+    "never",
+    "nodes",
+    "operator",
+    "orama",
+    "order",
+    "security",
+    "together",
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-07-26T19:35:25.554725+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-26T19:35:25.554725+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-26T19:35:25.554725+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-26T19:35:25.632552+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Documented operator safety ladder from cross-repo mesh hardening session 2026-07-26; prevents fleet outage from premature tracked IP removal.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-26T19:35:25.554725+00:00"
+      ],
+      "lessons_sha": "90c14ead1b66"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-26T19:35:25.632541+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Documented operator safety ladder from cross-repo mesh hardening session 2026-07-26; prevents fleet outage from premature tracked IP removal."
+}

@@ -1,0 +1,58 @@
+{
+  "id": "43e613777d39",
+  "key": "manual_43e613",
+  "name": "manual_43e613",
+  "claim": "dotenv_merge harmonize_dotenv_keys is integrative: fill missing or empty keys only, update the last duplicate declaration, rotate via commented supersede \u2014 never delete operator values or history.",
+  "conditions": [
+    "commented",
+    "declaration",
+    "delete",
+    "dotenv_merge",
+    "duplicate",
+    "empty",
+    "fill",
+    "harmonize_dotenv_keys",
+    "history",
+    "integrative",
+    "keys",
+    "last",
+    "missing",
+    "never",
+    "only",
+    "operator",
+    "rotate",
+    "supersede",
+    "update",
+    "values",
+    "via"
+  ],
+  "evidence_ids": [
+    "2026-07-26T19:35:25.680811+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-26T19:35:25.680811+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-26T19:35:25.680811+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-26T19:35:25.751258+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit review on orama #223; shared by PT scripts/mesh/dotenv_merge.py ported in PR #287.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-26T19:35:25.680811+00:00"
+      ],
+      "lessons_sha": "f295337f45ec"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-26T19:35:25.751248+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit review on orama #223; shared by PT scripts/mesh/dotenv_merge.py ported in PR #287."
+}
