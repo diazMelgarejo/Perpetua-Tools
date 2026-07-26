@@ -1,0 +1,70 @@
+{
+  "id": "a8b9334fb8d3",
+  "key": "manual_a8b933",
+  "name": "manual_a8b933",
+  "claim": "OpenClaw code review gate: Vera (codex-agent, orama.verifier) reviews ALL code-bearing completion claims (Rourke, Penn scripts, Cole, Relay code paths) \u2014 pipeline stage 4.5 invariant. Sage (gemini-coder) is optional Relay analyzer only; never default reviewer after Antigravity demotion",
+  "conditions": [
+    "after",
+    "all",
+    "analyzer",
+    "antigravity",
+    "claims",
+    "code",
+    "code-bearing",
+    "codex-agent",
+    "cole",
+    "completion",
+    "default",
+    "demotion",
+    "gate",
+    "gemini-coder",
+    "invariant",
+    "never",
+    "only",
+    "openclaw",
+    "optional",
+    "orama",
+    "paths",
+    "penn",
+    "pipeline",
+    "relay",
+    "review",
+    "reviewer",
+    "reviews",
+    "rourke",
+    "sage",
+    "scripts",
+    "stage",
+    "vera",
+    "verifier"
+  ],
+  "evidence_ids": [
+    "2026-07-26T01:00:15.291657+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-26T01:00:15.291657+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-26T01:00:15.291657+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-26T01:00:15.402884+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "EDITED-03 said Sage reviews Cole+Penn; operator AFRP decision harmonized to Vera universal. REVIEWER_PROMPT.md at main/docs/oramasys/.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-26T01:00:15.291657+00:00"
+      ],
+      "lessons_sha": "16ea39936d0c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-26T01:00:15.402873+00:00",
+  "reviewer": "learn.py",
+  "rationale": "EDITED-03 said Sage reviews Cole+Penn; operator AFRP decision harmonized to Vera universal. REVIEWER_PROMPT.md at main/docs/oramasys/."
+}

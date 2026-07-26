@@ -1,0 +1,64 @@
+{
+  "id": "d7d098444586",
+  "key": "manual_d7d098",
+  "name": "manual_d7d098",
+  "claim": "After adding any OpenClaw agent: update hub REGISTRY.yml, CROSSREF.md master table, orchestrator subagents.allowAgents, and AGENTS.md Fleet navigation block in the new workspace \u2014 or future agents will be lost between plans and live config",
+  "conditions": [
+    "adding",
+    "after",
+    "agent",
+    "agents",
+    "allowagents",
+    "any",
+    "between",
+    "block",
+    "config",
+    "crossref",
+    "fleet",
+    "future",
+    "hub",
+    "live",
+    "lost",
+    "master",
+    "navigation",
+    "new",
+    "openclaw",
+    "orchestrator",
+    "plans",
+    "registry",
+    "subagents",
+    "table",
+    "update",
+    "workspace",
+    "yml"
+  ],
+  "evidence_ids": [
+    "2026-07-26T01:00:15.631857+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-26T01:00:15.631857+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-26T01:00:15.631857+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-26T01:00:15.744306+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Anti-loss spine built 2026-07-26. 17 agents verified against openclaw.json.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-26T01:00:15.631857+00:00"
+      ],
+      "lessons_sha": "29fb4cf5c59b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-26T01:00:15.744297+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Anti-loss spine built 2026-07-26. 17 agents verified against openclaw.json."
+}
