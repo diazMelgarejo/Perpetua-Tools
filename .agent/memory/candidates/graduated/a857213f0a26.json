@@ -1,0 +1,53 @@
+{
+  "id": "a857213f0a26",
+  "key": "manual_a85721",
+  "name": "manual_a85721",
+  "claim": "When PT_BIND_LAN=1, Perpetua FastAPI gossip endpoints fail closed with HTTP 503 if GOSSIP_SHARED_SECRET is unset; validate X-Gossip-Secret with hmac.compare_digest when secret is configured.",
+  "conditions": [
+    "closed",
+    "compare_digest",
+    "configured",
+    "endpoints",
+    "fail",
+    "fastapi",
+    "gossip",
+    "gossip_shared_secret",
+    "hmac",
+    "http",
+    "perpetua",
+    "pt_bind_lan",
+    "secret",
+    "unset",
+    "validate",
+    "x-gossip-secret"
+  ],
+  "evidence_ids": [
+    "2026-07-26T19:35:25.912898+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-26T19:35:25.912898+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-26T19:35:25.912898+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-26T19:35:25.976585+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT #287 mesh_auth.py; prevents silent unauthenticated LAN gossip after LAN bind.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-26T19:35:25.912898+00:00"
+      ],
+      "lessons_sha": "0a9a39c64970"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-26T19:35:25.976576+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT #287 mesh_auth.py; prevents silent unauthenticated LAN gossip after LAN bind."
+}

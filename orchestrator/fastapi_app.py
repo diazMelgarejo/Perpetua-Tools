@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import collections
-import hmac
 import json
 import logging
 import re as _re
@@ -80,17 +79,7 @@ def _init_gossip_db() -> None:
         _startup_log.warning("GossipBus init failed (non-fatal): %s", exc)
 
 
-def _require_gossip_auth(request: Request) -> None:
-    """Raise HTTPException(403) if GOSSIP_SHARED_SECRET is configured and the
-    request's X-Gossip-Secret header does not match (constant-time compare).
-    """
-    secret = os.getenv("GOSSIP_SHARED_SECRET", "").strip()
-    if not secret:
-        return  # No auth required when secret is not configured
-    header = request.headers.get("x-gossip-secret", "")
-    if not hmac.compare_digest(header, secret):
-        raise HTTPException(status_code=403, detail="Invalid gossip secret")
-
+from orchestrator.mesh_auth import require_gossip_auth as _require_gossip_auth
 
 def _run_ecc_sync_bg() -> None:
     """Blocking ECC sync run in a worker thread so startup stays responsive."""

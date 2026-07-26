@@ -9,10 +9,16 @@
 - [x] `install_hermes_profiles.py` with `--sync` idempotent body compare
 - [x] `install-hermes-harness.ps1` verify-first profiles + thin wrappers
 - [x] `platform/windows/install.ps1` calls harness sync + `-RunDoctor`
-- [x] `install.sh` Hermes harness hook (full repo checkout)
-- [x] OpenClaw overlay sync script (Mac operator)
-- [x] Harness reference cards (portable brain map, migration, profile install)
+- [x] `install.sh` mesh hook (python secrets)
+- [x] **`install.ps1`** + `Invoke-MeshLocalCache.ps1` (PT #287 — Windows parity)
 - [x] Tests: `tests/test_hermes_profiles.py` (6 passing)
+
+## Mesh security (PT #287 + orama #223/#224)
+
+- [x] `orchestrator/mesh_auth.py` — `PT_BIND_LAN=1` fail-closed gossip auth
+- [x] `scripts/mesh/*` ported from orama #223
+- [x] Milestones doc: `.agent/memory/working/MESH_SECURITY_MIGRATION_2026-07-26.md`
+- [ ] Operator: RTX 5080 `install.ps1` → mesh secrets + gossip smoke test
 
 ## Idempotent install doctrine
 

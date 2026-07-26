@@ -5,6 +5,8 @@
 # Installs Claude Desktop LLM extensions (real MCPB from vendor submodule) by default.
 # Does not require AlphaClaw. Claude Code MCP: packages/alphaclaw-mcp (separate).
 #
+# Windows companion: install.ps1 (same flags; mesh via Invoke-MeshLocalCache.ps1)
+#
 # Usage:
 #   bash install.sh                    # submodule + build MCPB + stage bundles
 #   bash install.sh --open             # also open .mcpb on macOS (Claude Desktop UI)
@@ -64,6 +66,13 @@ if [[ "$SKIP_MCPB" -eq 0 ]]; then
 else
   echo "  (skipped MCPB build — --skip-mcpb)"
 fi
+
+MESH_DIR="$SCRIPT_DIR/scripts/mesh"
+if [[ -f "$MESH_DIR/ensure_local_mesh_secrets.py" ]]; then
+  python3 "$MESH_DIR/ensure_local_mesh_secrets.py" \
+    || echo "  warn: GOSSIP_SHARED_SECRET not written — run ensure_local_mesh_secrets.py manually" >&2
+fi
+# Win parity: scripts/mesh/Invoke-MeshLocalCache.ps1 (install.ps1 -Mode Install)
 
 if [[ "$RUN_VENDOR_GUIDE" -eq 1 ]]; then
   guide_args=("${GUIDE_SKIP_ARGS[@]}")
