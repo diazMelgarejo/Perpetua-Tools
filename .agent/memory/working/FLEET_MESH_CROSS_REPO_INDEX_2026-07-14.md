@@ -25,6 +25,15 @@ When resuming SOLO / PAIR / FLEET, Phase 7/G7, Phase 8, Phase 9, or Phase 10+ wo
 3. Treat `PHASE-6-IMPLEMENTATION.md` as completed evidence, not the root plan.
 4. Use `docs/archive/fleet-mesh/README.md` only for historical provenance.
 
+## OpenClaw live fleet (MERGE-10, 2026-07-26)
+
+Operator-local retrofit (not yet promoted to orama git):
+
+- **PT playbook:** `.agent/references/openclaw-oramasys-fleet-retrofit-playbook.md`
+- **Session:** `.agent/memory/working/OPENCLAW_MERGE10_FLEET_RETROFIT_2026-07-26.md`
+- **Live hub:** `${ALPHACLAW_INSTALL_DIR}/.openclaw/workspace/docs/oramasys/CROSSREF.md` (17 agents)
+- **Recall:** `python .agent/tools/recall.py "openclaw fleet merge-10"`
+
 ## Git-mv note
 
 The Orama connector pass added canonical indexes without moving legacy source files because the available connector path could not perform a true local `git mv` over the current tree. A future local checkout should physically move the indexed documents with `git mv` if the project wants path relocation in addition to canonical indexing.

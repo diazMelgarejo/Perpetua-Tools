@@ -39,6 +39,11 @@ Workflow:
 - `skills/_manifest.jsonl`
 - Load SKILL.md only when triggers match task
 
+## Fleet / OpenClaw retrofit (2026-07-26)
+- **Playbook:** `references/openclaw-oramasys-fleet-retrofit-playbook.md` — MERGE-10 retrofit, 17-agent map, promotion to orama
+- **Session:** `memory/working/OPENCLAW_MERGE10_FLEET_RETROFIT_2026-07-26.md`
+- **Recall:** `python .agent/tools/recall.py "openclaw fleet merge-10"` before OpenClaw agent work
+
 ## Protocols
 - `protocols/permissions.md`
 - `protocols/delegation.md`

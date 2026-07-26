@@ -1,0 +1,55 @@
+{
+  "id": "ef2bd9372c3a",
+  "key": "manual_ef2bd9",
+  "name": "manual_ef2bd9",
+  "claim": "OpenClaw fleet retrofit (MERGE-10): retrofit existing agent workspaces and main hub docs/oramasys/ \u2014 never create a parallel ~/.openclaw/fleet/ tree; Atlas is openclaw id main at ALPHACLAW_INSTALL_DIR/.openclaw/workspace",
+  "conditions": [
+    "agent",
+    "alphaclaw_install_dir",
+    "atlas",
+    "create",
+    "docs",
+    "existing",
+    "fleet",
+    "hub",
+    "main",
+    "merge-10",
+    "never",
+    "openclaw",
+    "oramasys",
+    "parallel",
+    "retrofit",
+    "tree",
+    "workspace",
+    "workspaces"
+  ],
+  "evidence_ids": [
+    "2026-07-26T01:00:14.174796+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-26T01:00:14.174796+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-26T01:00:14.174796+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-26T01:00:14.317465+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PLAN-09 proposed fleet hub; operator rejected parallel infrastructure. MERGE-10 executed 2026-07-26 with CROSSREF spine at main/docs/oramasys/. Playbook: .agent/references/openclaw-oramasys-fleet-retrofit-playbook.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-26T01:00:14.174796+00:00"
+      ],
+      "lessons_sha": "24db086c826a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-26T01:00:14.317455+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PLAN-09 proposed fleet hub; operator rejected parallel infrastructure. MERGE-10 executed 2026-07-26 with CROSSREF spine at main/docs/oramasys/. Playbook: .agent/references/openclaw-oramasys-fleet-retrofit-playbook.md"
+}
