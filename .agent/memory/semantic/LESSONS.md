@@ -434,6 +434,7 @@
 - After adding any OpenClaw agent: update hub REGISTRY.yml, CROSSREF.md master table, orchestrator subagents.allowAgents, and AGENTS.md Fleet navigation block in the new workspace — or future agents will be lost between plans and live config  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_d7d098444586 -->
 - Before editing orama-system bin/agents or promoting PLAN-08 repo scaffold: M3 dry-run must pass (Glen orchestrator to Rourke coder to Vera codex-agent chain citing VISION and GOALS); OpenClaw retrofit is operator-local experiment boundary until then  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_b1749d2e8081 -->
 - Raft EDITED-03 personas map to OpenClaw ids: Cole=cole-agent, Hermes=hermes-agent, Penn alias on coder, Arthur=mac-researcher, Sage=gemini-coder, Nova=kimi-agent, Rex=grok-agent; persona YAML at main/docs/oramasys/personas/ — use AskUserQuestion on binding conflicts, never guess  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_74e4ea5c91b2 -->
+- Hermes + orama bin/agents idempotent sync: install.ps1 wires install-hermes-harness.ps1; profiles use install_hermes_profiles.py --sync (verify distillate body first, skip when already matched); thin wrappers verify-first then install on drift. Existing Hermes brain skips app install — wire/sync only. RTX 3080 existing vs RTX 5080 fresh both safe to re-run.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_eac06b9279d6 -->
 
 ### 2026-06
 

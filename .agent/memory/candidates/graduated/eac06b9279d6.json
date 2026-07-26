@@ -1,0 +1,72 @@
+{
+  "id": "eac06b9279d6",
+  "key": "manual_eac06b",
+  "name": "manual_eac06b",
+  "claim": "Hermes + orama bin/agents idempotent sync: install.ps1 wires install-hermes-harness.ps1; profiles use install_hermes_profiles.py --sync (verify distillate body first, skip when already matched); thin wrappers verify-first then install on drift. Existing Hermes brain skips app install \u2014 wire/sync only. RTX 3080 existing vs RTX 5080 fresh both safe to re-run.",
+  "conditions": [
+    "agents",
+    "already",
+    "app",
+    "bin",
+    "body",
+    "both",
+    "brain",
+    "distillate",
+    "drift",
+    "existing",
+    "first",
+    "fresh",
+    "hermes",
+    "idempotent",
+    "install",
+    "install-hermes-harness",
+    "install_hermes_profiles",
+    "matched",
+    "only",
+    "orama",
+    "profiles",
+    "ps1",
+    "re-run",
+    "rtx",
+    "safe",
+    "skip",
+    "skips",
+    "sync",
+    "thin",
+    "use",
+    "verify",
+    "verify-first",
+    "wire",
+    "wires",
+    "wrappers"
+  ],
+  "evidence_ids": [
+    "2026-07-26T08:09:27.348847+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-26T08:09:27.348847+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-26T08:09:27.348847+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-26T08:09:27.461540+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-26 Hermes OpenClaw staging on orama main 6fff3f6c; Win live test on 3080 and 5080.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-26T08:09:27.348847+00:00"
+      ],
+      "lessons_sha": "c01eb24b1daa"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-26T08:09:27.461523+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-26 Hermes OpenClaw staging on orama main 6fff3f6c; Win live test on 3080 and 5080."
+}
