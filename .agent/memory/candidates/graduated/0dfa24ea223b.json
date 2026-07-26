@@ -1,0 +1,64 @@
+{
+  "id": "0dfa24ea223b",
+  "key": "manual_0dfa24",
+  "name": "manual_0dfa24",
+  "claim": "When harmonizing OpenClaw agent SOUL/IDENTITY files with Oramasys souls: integrative merge only \u2014 append ## Oramasys role overlay; preserve OpenClaw Core Truths and oramaclaw generated blocks; never wholesale replace (especially gemini-coder CORRECTION history)",
+  "conditions": [
+    "agent",
+    "append",
+    "blocks",
+    "core",
+    "correction",
+    "especially",
+    "files",
+    "gemini-coder",
+    "generated",
+    "harmonizing",
+    "history",
+    "identity",
+    "integrative",
+    "merge",
+    "never",
+    "only",
+    "openclaw",
+    "oramaclaw",
+    "oramasys",
+    "overlay",
+    "preserve",
+    "replace",
+    "role",
+    "soul",
+    "souls",
+    "truths",
+    "wholesale"
+  ],
+  "evidence_ids": [
+    "2026-07-26T01:00:14.583664+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-26T01:00:14.583664+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-26T01:00:14.583664+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-26T01:00:14.701563+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "MERGE-10 retrofit across 17 workspaces. Violating this loses audit trails and generic OpenClaw bootstrap semantics.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-26T01:00:14.583664+00:00"
+      ],
+      "lessons_sha": "56c3f9b60e0b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-26T01:00:14.701549+00:00",
+  "reviewer": "learn.py",
+  "rationale": "MERGE-10 retrofit across 17 workspaces. Violating this loses audit trails and generic OpenClaw bootstrap semantics."
+}

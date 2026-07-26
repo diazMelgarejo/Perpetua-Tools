@@ -1,0 +1,64 @@
+{
+  "id": "b1749d2e8081",
+  "key": "manual_b1749d",
+  "name": "manual_b1749d",
+  "claim": "Before editing orama-system bin/agents or promoting PLAN-08 repo scaffold: M3 dry-run must pass (Glen orchestrator to Rourke coder to Vera codex-agent chain citing VISION and GOALS); OpenClaw retrofit is operator-local experiment boundary until then",
+  "conditions": [
+    "agents",
+    "before",
+    "bin",
+    "boundary",
+    "chain",
+    "citing",
+    "coder",
+    "codex-agent",
+    "dry-run",
+    "editing",
+    "experiment",
+    "glen",
+    "goals",
+    "openclaw",
+    "operator-local",
+    "orama-system",
+    "orchestrator",
+    "pass",
+    "plan-08",
+    "promoting",
+    "repo",
+    "retrofit",
+    "rourke",
+    "scaffold",
+    "until",
+    "vera",
+    "vision"
+  ],
+  "evidence_ids": [
+    "2026-07-26T01:00:15.962883+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-26T01:00:15.962883+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-26T01:00:15.962883+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-26T01:00:16.076946+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "MERGE-10 promotion gate. Parallel experiment must not commit half-validated souls into git.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-26T01:00:15.962883+00:00"
+      ],
+      "lessons_sha": "d2e72dce92b5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-26T01:00:16.076933+00:00",
+  "reviewer": "learn.py",
+  "rationale": "MERGE-10 promotion gate. Parallel experiment must not commit half-validated souls into git."
+}

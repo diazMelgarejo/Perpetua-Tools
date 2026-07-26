@@ -389,3 +389,29 @@ user: it was created by a rogue AutoResearcher agent run, not a human.
 activity logs (e.g. AutoResearcher's own state/heartbeat records) alongside git log.
 
 ---
+## 2026-07-26: OpenClaw MERGE-10 fleet retrofit — retrofit live workspaces, not parallel fleet hub
+
+**Decision:** Materialize Oramasys/Raft multi-agent design by **retrofitting** existing OpenClaw
+agent workspaces (17 agents in `openclaw.json`) with integrative merge (append SOUL/GOALS overlays,
+preserve oramaclaw blocks). Fleet org metadata lives in **main workspace**
+`${ALPHACLAW_INSTALL_DIR}/.openclaw/workspace/docs/oramasys/` (CROSSREF, REGISTRY, personas) —
+**not** a separate `~/.openclaw/fleet/` tree. Promotion to `orama-system` bin/agents (PLAN-08) waits
+for M3 dry-run pass.
+
+**Rationale:** PLAN-09 fleet hub would duplicate infrastructure and orphan generic OpenClaw
+templates. MERGE-10 + EDITED-03 fold keeps stable `openclaw_id`s, adds anti-loss CROSSREF spine,
+and gates orama git edits until operator validates Glen→Rourke→Vera chain.
+
+**Alternatives considered:** `~/.openclaw/fleet/` central hub (PLAN-09 — rejected); wholesale SOUL
+replace (rejected — integrative merge); Sage as default reviewer for Cole/Penn (rejected post-
+Antigravity — Vera universal, Sage optional analyzer).
+
+**Status:** active — executed in operator local OpenClaw state 2026-07-26; orama/PT git promotion pending.
+
+**Links:**
+- PT playbook: `.agent/references/openclaw-oramasys-fleet-retrofit-playbook.md`
+- Session: `.agent/memory/working/OPENCLAW_MERGE10_FLEET_RETROFIT_2026-07-26.md`
+- Plan: `OpenClaw/references/raft-openclaw-MERGE-PLAN-10.md` (sibling workspace, not in PT repo)
+- Live hub: `${ALPHACLAW_INSTALL_DIR}/.openclaw/workspace/docs/oramasys/CROSSREF.md`
+
+---

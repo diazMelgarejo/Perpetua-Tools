@@ -1,0 +1,62 @@
+{
+  "id": "8d5d1f5540ee",
+  "key": "manual_8d5d1f",
+  "name": "manual_8d5d1f",
+  "claim": "Create new OpenClaw agents with openclaw agents add --workspace --model --non-interactive --json; do not hand-edit openclaw.json for agent creation. Extend orchestrator subagents.allowAgents with openclaw config set agents.list[N].subagents --strict-json --merge \u2014 config patch on agents.list refuses full-array replace",
+  "conditions": [
+    "add",
+    "agent",
+    "agents",
+    "allowagents",
+    "config",
+    "create",
+    "creation",
+    "extend",
+    "full-array",
+    "hand-edit",
+    "json",
+    "list",
+    "merge",
+    "model",
+    "new",
+    "non-interactive",
+    "openclaw",
+    "orchestrator",
+    "patch",
+    "refuses",
+    "replace",
+    "set",
+    "strict-json",
+    "subagents",
+    "workspace"
+  ],
+  "evidence_ids": [
+    "2026-07-26T01:00:14.953848+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-26T01:00:14.953848+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-26T01:00:14.953848+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-26T01:00:15.068863+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "openclaw-new-agent skill + live failure on config patch 2026-07-26. N = index of orchestrator in agents.list (verify with config get agents.list).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-26T01:00:14.953848+00:00"
+      ],
+      "lessons_sha": "445f363c7886"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-26T01:00:15.068852+00:00",
+  "reviewer": "learn.py",
+  "rationale": "openclaw-new-agent skill + live failure on config patch 2026-07-26. N = index of orchestrator in agents.list (verify with config get agents.list)."
+}
