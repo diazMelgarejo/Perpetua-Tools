@@ -137,7 +137,33 @@ references/AGENT-CROSSREF.md → plan-side index → live CROSSREF.md
 
 - PT: `.agent/references/openclaw-oramasys-fleet-retrofit-playbook.md` (this file)
 - PT: `.agent/memory/working/OPENCLAW_MERGE10_FLEET_RETROFIT_2026-07-26.md`
+- PT: `.agent/memory/working/2026-07-26-merge10-memory-pipeline-proof.md` (AGENTS.md compliance proof)
 - OpenClaw: `references/raft-openclaw-MERGE-PLAN-10.md`
 - OpenClaw: `references/AGENT-CROSSREF.md`
 - orama: `VISION.md`, `bin/orama-system/config/agent_registry.json`
 - Skill: `openclaw-new-agent`, `oramasys-method` integrative merge
+
+## How to add lessons to PT memory (AGENTS.md contract)
+
+Future agents capturing retrofit or promotion work **must** use the pipeline — not hand-edit `LESSONS.md`.
+
+```bash
+cd Perpetua-Tools
+
+# 1. Recall before acting
+python3 .agent/tools/recall.py "openclaw fleet merge-10"
+
+# 2. One-shot graduate (creates episodic mirror + graduated/ audit + lessons.jsonl row)
+python3 .agent/tools/learn.py "<specific claim>" --rationale "<incident + why>"
+
+# 3. Log significant session outcome
+python3 .agent/tools/memory_reflect.py <skill> <action> <outcome> \
+  --importance 8 --note "<context>" \
+  --evidence <episodic-timestamp-or-lesson_id>
+
+# 4. Update WORKSPACE.md; add DECISIONS.md entry if architectural
+# 5. Verify: python3 .agent/tools/show.py
+# 6. Commit .agent/** on a branch; merge via PR (main push blocked by Phase 0 hook)
+```
+
+**Proof chain:** each `learn.py` lesson has `evidence_ids` → episodic `manual-stage:<id>` row → `graduated/<id>.json` with `decisions[]`.
