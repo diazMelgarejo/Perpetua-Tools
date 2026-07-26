@@ -1,7 +1,6 @@
 # Hermes + OpenClaw staging — progress tracker (2026-07-26)
 
-> **orama plans:** `orama-system/docs/plans/2026-07-26-hermes-*`  
-> **Canonical staging:** `orama-system/bin/agents/` + `REGISTRY.yml`
+> **orama `main`:** `6fff3f6c` (idempotent harness sync) + `68aad64f` (bin/agents flesh-out)
 
 ## Done
 
