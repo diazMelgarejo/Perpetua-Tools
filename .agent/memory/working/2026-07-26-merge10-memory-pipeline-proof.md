@@ -32,12 +32,22 @@ Each `learn.py` call creates:
 | `lesson_ef2bd9372c3a` | `ef2bd9372c3a` | `2026-07-26T01:00:14.174796+00:00` |
 | `lesson_0dfa24ea223b` | `0dfa24ea223b` | `2026-07-26T01:00:14.583664+00:00` |
 | `lesson_8d5d1f5540ee` | `8d5d1f5540ee` | `2026-07-26T01:00:14.953848+00:00` |
-| `lesson_a8b9334fb8d3` | `a8b9334fb8d3` | `2026-07-26T01:00:15.271...` (see jsonl) |
+| `lesson_a8b9334fb8d3` | `a8b9334fb8d3` | `2026-07-26T01:00:15.291657+00:00` |
 | `lesson_d7d098444586` | `d7d098444586` | `2026-07-26T01:00:15.631857+00:00` |
 | `lesson_b1749d2e8081` | `b1749d2e8081` | `2026-07-26T01:00:15.962883+00:00` |
 | `lesson_74e4ea5c91b2` | `74e4ea5c91b2` | `2026-07-26T01:00:16.310448+00:00` |
 
 Session summary episodic: `2026-07-26T01:00:21.944608+00:00` (`openclaw-fleet-retrofit` / `merge-10-complete`)
+
+## Canonical hub anchor
+
+All current operational references use:
+
+```text
+ALPHACLAW_INSTALL_DIR/.openclaw/workspace/docs/oramasys/
+```
+
+The original episodic `manual-stage` rows are append-only historical evidence and are not rewritten in place. Their corresponding graduated candidate records carry explicit `corrected` decisions that normalize the reviewer-prompt and persona paths while retaining the original evidence timestamps.
 
 ## Verification commands (re-run anytime)
 
@@ -50,16 +60,17 @@ python3 .agent/tools/recall.py "openclaw fleet merge-10"
 # Brain dashboard (episodes, accepted lesson count, graduated candidates)
 python3 .agent/tools/show.py
 
-# Spot-check one graduated audit trail
-python3 -c "import json; print(json.dumps(json.load(open('.agent/memory/candidates/graduated/ef2bd9372c3a.json')), indent=2)[:800])"
+# Spot-check corrected graduated audit trails
+python3 -c "import json; print(json.dumps(json.load(open('.agent/memory/candidates/graduated/a8b9334fb8d3.json', encoding='utf-8')), indent=2))"
+python3 -c "import json; print(json.dumps(json.load(open('.agent/memory/candidates/graduated/74e4ea5c91b2.json', encoding='utf-8')), indent=2))"
 
-# Confirm lesson row has evidence_ids
-rg 'lesson_ef2bd9372c3a' .agent/memory/semantic/lessons.jsonl
+# Confirm exact evidence IDs
+rg 'lesson_(ef2bd9372c3a|0dfa24ea223b|8d5d1f5540ee|a8b9334fb8d3|d7d098444586|b1749d2e8081|74e4ea5c91b2)' .agent/memory/semantic/lessons.jsonl
 ```
 
 ## recall.py output (2026-07-26 verify)
 
-```
+```text
 Consulted lessons for intent: 'openclaw fleet merge-10'
   → returned 3 (top: lesson_ef2bd9372c3a MERGE-10 retrofit, lesson_d7d098444586 CROSSREF propagation)
 ```
@@ -68,6 +79,7 @@ Consulted lessons for intent: 'openclaw fleet merge-10'
 
 - Did not hand-edit `LESSONS.md` (rendered artifact only)
 - Did not skip `graduated/` JSON audit files
+- Did not rewrite historical episodic rows; corrections are appended to candidate decision history
 - Did not push directly to `main` (pre-push hook Phase 0 — PR required)
 
 ## How future agents should add more lessons from this work
