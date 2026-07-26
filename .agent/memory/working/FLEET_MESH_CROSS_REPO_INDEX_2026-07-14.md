@@ -31,6 +31,7 @@ Operator-local retrofit (not yet promoted to orama git):
 
 - **PT playbook:** `.agent/references/openclaw-oramasys-fleet-retrofit-playbook.md`
 - **Session:** `.agent/memory/working/OPENCLAW_MERGE10_FLEET_RETROFIT_2026-07-26.md`
+- **Mesh security (PR #287):** `.agent/memory/working/MESH_SECURITY_MIGRATION_2026-07-26.md`
 - **Live hub:** `${ALPHACLAW_INSTALL_DIR}/.openclaw/workspace/docs/oramasys/CROSSREF.md` (17 agents)
 - **Recall:** `python .agent/tools/recall.py "openclaw fleet merge-10"`
 
