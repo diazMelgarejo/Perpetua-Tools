@@ -26,6 +26,8 @@ class DotenvModule(Protocol):
         supersede_timestamp: str | None = None,
     ) -> list[str]: ...
 
+    def read_dotenv_key(self, path: Path, key: str) -> str: ...
+
 
 class SecretsModule(Protocol):
     ROOT: Path
@@ -89,6 +91,41 @@ def test_harmonize_dotenv_rotation_supersedes_without_deleting(
     assert "# superseded 2026-07-26T19:00:00+00:00: GOSSIP_SHARED_SECRET=old-secret" in text
     assert "GOSSIP_SHARED_SECRET=new-secret" in text
     assert "old-secret" in text
+
+
+def test_harmonize_dotenv_keeps_existing_without_appending_duplicate(
+    dotenv_mod: DotenvModule, tmp_path: Path
+) -> None:
+    env_file = tmp_path / ".env.local"
+    env_file.write_text("GOSSIP_SHARED_SECRET=keep-me\n", encoding="utf-8")
+    dotenv_mod.harmonize_dotenv_keys(
+        env_file,
+        {"GOSSIP_SHARED_SECRET": "keep-me"},
+        managed_keys=frozenset({"GOSSIP_SHARED_SECRET"}),
+    )
+    text = env_file.read_text(encoding="utf-8")
+    assert text.count("GOSSIP_SHARED_SECRET=") == 1
+    assert "keep-me" in text
+
+
+def test_adopts_existing_env_local_secret_without_mesh_store(
+    secrets_mod: SecretsModule, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    repo_root = tmp_path / "perpetua"
+    repo_root.mkdir()
+    (repo_root / ".local").mkdir()
+    monkeypatch.setattr(secrets_mod, "ROOT", repo_root)
+    monkeypatch.setattr(secrets_mod, "LOCAL_DIR", repo_root / ".local")
+    monkeypatch.setattr(secrets_mod, "SECRETS_JSON", repo_root / ".local" / "mesh-secrets.json")
+
+    env_file = repo_root / ".env.local"
+    env_file.write_text("GOSSIP_SHARED_SECRET=env-only-secret\n", encoding="utf-8")
+
+    secret = secrets_mod.ensure_gossip_secret(force=False)
+    assert secret == "env-only-secret"
+    assert env_file.read_text(encoding="utf-8").count("GOSSIP_SHARED_SECRET=") == 1
+    store = __import__("json").loads(secrets_mod.SECRETS_JSON.read_text(encoding="utf-8"))
+    assert store["GOSSIP_SHARED_SECRET"] == "env-only-secret"
 
 
 def test_force_rotation_updates_env_and_archive(

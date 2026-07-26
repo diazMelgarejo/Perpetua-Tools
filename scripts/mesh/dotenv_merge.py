@@ -36,6 +36,27 @@ def _managed_line_indices(lines: list[str], keys: frozenset[str]) -> dict[str, l
     return indices
 
 
+def _unquote_dotenv_value(raw: str) -> str:
+    value = raw.strip()
+    if value.startswith(('"', "'")) and value.endswith(('"', "'")) and len(value) >= 2:
+        return value[1:-1].strip()
+    return value
+
+
+def read_dotenv_key(path: Path, key: str) -> str:
+    """Return the effective (last) non-empty value for ``key`` in a dotenv file."""
+    if not path.is_file():
+        return ""
+    last = ""
+    for line in path.read_text(encoding="utf-8").splitlines():
+        match = _KEY_LINE_RE.match(line)
+        if match and match.group(1) == key:
+            candidate = _unquote_dotenv_value(match.group(2))
+            if candidate:
+                last = candidate
+    return last
+
+
 def harmonize_dotenv_keys(
     path: Path,
     values: dict[str, str],
@@ -109,6 +130,8 @@ def harmonize_dotenv_keys(
             touched.append(key)
         else:
             out.append(line)
+            if key in pending:
+                pending.pop(key)
 
     if pending:
         if out and out[-1] != "":
