@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import collections
-import hmac
 import json
 import logging
 import re as _re
@@ -80,21 +79,7 @@ def _init_gossip_db() -> None:
         _startup_log.warning("GossipBus init failed (non-fatal): %s", exc)
 
 
-def _require_gossip_auth(request: Request) -> None:
-    """Require GOSSIP_SHARED_SECRET when LAN-bound; validate header when set."""
-    secret = os.getenv("GOSSIP_SHARED_SECRET", "").strip()
-    lan_bind = os.getenv("PT_BIND_LAN", "").strip().lower() in ("1", "true", "yes")
-    if lan_bind and not secret:
-        raise HTTPException(
-            status_code=503,
-            detail="GOSSIP_SHARED_SECRET required when PT_BIND_LAN=1 — run ensure_local_mesh_secrets.py",
-        )
-    if not secret:
-        return
-    header = request.headers.get("x-gossip-secret", "")
-    if not hmac.compare_digest(header, secret):
-        raise HTTPException(status_code=403, detail="Invalid gossip secret")
-
+from orchestrator.mesh_auth import require_gossip_auth as _require_gossip_auth
 
 def _run_ecc_sync_bg() -> None:
     """Blocking ECC sync run in a worker thread so startup stays responsive."""

@@ -65,6 +65,12 @@ else
   echo "  (skipped MCPB build — --skip-mcpb)"
 fi
 
+MESH_DIR="$SCRIPT_DIR/scripts/mesh"
+if [[ -f "$MESH_DIR/ensure_local_mesh_secrets.py" ]]; then
+  python3 "$MESH_DIR/ensure_local_mesh_secrets.py" \
+    || echo "  warn: GOSSIP_SHARED_SECRET not written — run ensure_local_mesh_secrets.py manually" >&2
+fi
+
 if [[ "$RUN_VENDOR_GUIDE" -eq 1 ]]; then
   guide_args=("${GUIDE_SKIP_ARGS[@]}")
   [[ "$NON_INTERACTIVE" -eq 1 ]] && guide_args+=(--non-interactive)
