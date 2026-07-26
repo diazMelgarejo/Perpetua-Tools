@@ -2,7 +2,7 @@
   "id": "a8b9334fb8d3",
   "key": "manual_a8b933",
   "name": "manual_a8b933",
-  "claim": "OpenClaw code review gate: Vera (codex-agent, orama.verifier) reviews ALL code-bearing completion claims (Rourke, Penn scripts, Cole, Relay code paths) \u2014 pipeline stage 4.5 invariant. Sage (gemini-coder) is optional Relay analyzer only; never default reviewer after Antigravity demotion",
+  "claim": "OpenClaw code review gate: Vera (codex-agent, orama.verifier) reviews ALL code-bearing completion claims (Rourke, Penn scripts, Cole, Relay code paths) — pipeline stage 4.5 invariant. Sage (gemini-coder) is optional Relay analyzer only; never default reviewer after Antigravity demotion",
   "conditions": [
     "after",
     "all",
@@ -55,16 +55,22 @@
       "ts": "2026-07-26T01:00:15.402884+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
-      "notes": "EDITED-03 said Sage reviews Cole+Penn; operator AFRP decision harmonized to Vera universal. REVIEWER_PROMPT.md at main/docs/oramasys/.",
+      "notes": "EDITED-03 said Sage reviews Cole+Penn; operator AFRP decision harmonized to Vera universal. REVIEWER_PROMPT.md at ALPHACLAW_INSTALL_DIR/.openclaw/workspace/docs/oramasys/REVIEWER_PROMPT.md.",
       "provisional": false,
       "evidence_snapshot": [
         "2026-07-26T01:00:15.291657+00:00"
       ],
       "lessons_sha": "16ea39936d0c"
+    },
+    {
+      "ts": "2026-07-26T01:50:36+00:00",
+      "action": "corrected",
+      "reviewer": "CodeRabbit remediation",
+      "notes": "Normalized REVIEWER_PROMPT.md to the canonical ALPHACLAW_INSTALL_DIR/.openclaw/workspace/docs/oramasys/ anchor; original evidence timestamp retained."
     }
   ],
   "rejection_count": 0,
   "accepted_at": "2026-07-26T01:00:15.402873+00:00",
   "reviewer": "learn.py",
-  "rationale": "EDITED-03 said Sage reviews Cole+Penn; operator AFRP decision harmonized to Vera universal. REVIEWER_PROMPT.md at main/docs/oramasys/."
+  "rationale": "EDITED-03 said Sage reviews Cole+Penn; operator AFRP decision harmonized to Vera universal. Canonical reviewer prompt: ALPHACLAW_INSTALL_DIR/.openclaw/workspace/docs/oramasys/REVIEWER_PROMPT.md."
 }
