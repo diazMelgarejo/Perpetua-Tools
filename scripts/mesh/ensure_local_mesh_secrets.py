@@ -23,7 +23,7 @@ from pathlib import Path
 _MESH_DIR = Path(__file__).resolve().parent
 if str(_MESH_DIR) not in sys.path:
     sys.path.insert(0, str(_MESH_DIR))
-from dotenv_merge import harmonize_dotenv_keys
+from dotenv_merge import harmonize_dotenv_keys, read_dotenv_key
 from mesh_logging import get_mesh_logger, harden_local_file
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -63,6 +63,10 @@ def _read_existing_secret() -> str:
     for store_path in _sibling_secret_stores():
         store = _load_json(store_path)
         secret = (store.get("GOSSIP_SHARED_SECRET") or "").strip()
+        if secret:
+            return secret
+    for path in _repo_env_paths():
+        secret = read_dotenv_key(path, "GOSSIP_SHARED_SECRET")
         if secret:
             return secret
     return ""
@@ -105,8 +109,13 @@ def ensure_gossip_secret(*, force: bool = False) -> str:
         secret = secrets.token_urlsafe(32)
         _persist_secret_store(secret, previous=previous if force and previous else "")
     else:
+        store_has_secret = False
         for store_path in _sibling_secret_stores():
+            if (_load_json(store_path).get("GOSSIP_SHARED_SECRET") or "").strip():
+                store_has_secret = True
             harden_local_file(store_path)
+        if not store_has_secret:
+            _persist_secret_store(secret)
 
     for path in _repo_env_paths():
         if path.parent.exists() or path == ROOT / ".env.local":
