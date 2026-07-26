@@ -1,0 +1,57 @@
+{
+  "id": "60eba525a7b2",
+  "key": "manual_60eba5",
+  "name": "manual_60eba5",
+  "claim": "Cross-repo mesh secrets harmonize via sibling path env vars: PT ensure_local_mesh_secrets uses ORAMA_SYSTEM_PATH; orama uses PERPETUA_TOOLS_PATH \u2014 either repo can bootstrap both .env.local files.",
+  "conditions": [
+    "bootstrap",
+    "both",
+    "cross-repo",
+    "either",
+    "ensure_local_mesh_secrets",
+    "env",
+    "files",
+    "harmonize",
+    "local",
+    "mesh",
+    "orama",
+    "orama_system_path",
+    "path",
+    "perpetua_tools_path",
+    "repo",
+    "secrets",
+    "sibling",
+    "uses",
+    "vars",
+    "via"
+  ],
+  "evidence_ids": [
+    "2026-07-26T19:35:26.023596+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-26T19:35:26.023596+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-26T19:35:26.023596+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-26T19:35:26.088560+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Shared fleet contract from orama #223 and PT #287 ensure_local_mesh_secrets.py.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-26T19:35:26.023596+00:00"
+      ],
+      "lessons_sha": "ba48a980ac45"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-26T19:35:26.088551+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Shared fleet contract from orama #223 and PT #287 ensure_local_mesh_secrets.py."
+}
