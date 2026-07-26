@@ -14,6 +14,16 @@ from scripts.git.check_local_runtime_overlay import (
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def _init_git_repo(repo: Path) -> None:
+    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"],
+        cwd=repo,
+        check=True,
+    )
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=repo, check=True)
+
+
 def test_devices_empty_lan_ip_ok() -> None:
     text = '    lan_ip: ""              # placeholder\n'
     assert not _violations_in_text("config/devices.yml", text)
@@ -49,7 +59,7 @@ def test_staged_gate_blocks_private_ip(tmp_path: Path) -> None:
     (repo / "config" / "devices.yml").write_text(
         '    lan_ip: "192.168.1.10"\n', encoding="utf-8"
     )
-    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True)
+    _init_git_repo(repo)
     subprocess.run(["git", "add", "config/devices.yml"], cwd=repo, check=True)
     errors = check_staged_overlay(repo)
     assert errors
@@ -61,7 +71,7 @@ def test_unstaged_private_ip_not_checked(tmp_path: Path) -> None:
     (repo / "config").mkdir()
     devices = repo / "config" / "devices.yml"
     devices.write_text('    lan_ip: ""\n', encoding="utf-8")
-    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True)
+    _init_git_repo(repo)
     subprocess.run(["git", "add", "config/devices.yml"], cwd=repo, check=True)
     subprocess.run(
         ["git", "commit", "-m", "seed", "--no-verify"],
