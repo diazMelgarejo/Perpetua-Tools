@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     Invoke-MeshLocalCache.ps1 — Windows companion to install.sh / install.ps1 mesh hooks.

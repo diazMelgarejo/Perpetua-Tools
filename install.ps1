@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     install.ps1 — Windows companion to install.sh (Layer-2 middleware bootstrap)

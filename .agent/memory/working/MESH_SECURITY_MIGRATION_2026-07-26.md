@@ -21,6 +21,8 @@ Cross-repo mesh hardening adds **integrative** local-secret harmonization (`GOSS
 
 ## Phase ladder (v2 launch — orama #222)
 
+**Execution order:** A → C → B → D (not alphabetical).
+
 | Phase | Name | Scope |
 |-------|------|-------|
 | **A** | Prep | Local caches, secrets, install hooks (this work) |
@@ -44,6 +46,7 @@ Phase D is **deferred to v2 launch**; Phases A–C ship first.
 - [x] `.env.local.example` — Ollama vs LM Studio mutual exclusivity documented
 - [x] Tests: `test_lan_topology_archive.py`, `test_mesh_secrets.py`, `test_dotenv_merge.py`
 - [x] CodeRabbit fixes: 5080 endpoint classification (immediate role-key context), duplicate dotenv key handling (update **last** declaration), fixture tests
+- [x] **#288-class fix (ported):** adopt `.env.local` gossip secret without silent rotation — same `read_dotenv_key` + bootstrap JSON pattern as PT #288
 
 ### orama-system #224 (`cursor/p5-p6-mesh-hardening-f559`)
 
@@ -60,7 +63,7 @@ Phase D is **deferred to v2 launch**; Phases A–C ship first.
 - [x] Cross-links from v2 README and Hermes staging docs
 - [x] IP expunge + security hardening (merge **after** prep/runtime PRs)
 
-### Perpetua-Tools #287 (`cursor/gossip-lan-mandate-f559`)
+### Perpetua-Tools #287 + #288 (`cursor/gossip-lan-mandate-f559`)
 
 - [x] `orchestrator/mesh_auth.py` — `require_gossip_auth` when `PT_BIND_LAN=1`
 - [x] `orchestrator/fastapi_app.py` — gossip routes use shared auth
@@ -69,7 +72,8 @@ Phase D is **deferred to v2 launch**; Phases A–C ship first.
 - [x] **`install.ps1`** — Windows companion mirroring `install.sh` (submodule, MCPB via bash, mesh hook)
 - [x] **`scripts/mesh/Invoke-MeshLocalCache.ps1`** — PT variant (secrets only; no `lan_topology_archive`)
 - [x] `.env.local.example`, `.gitignore` for `.local/`
-- [x] Tests: `test_mesh_auth.py`, `test_mesh_secrets.py` (7 passed)
+- [x] Tests: `test_mesh_auth.py`, `test_mesh_secrets.py` (9 passed after #288)
+- [x] **#288 fix:** adopt `.env.local` gossip secret without silent rotation (`read_dotenv_key`, bootstrap JSON, no duplicate append)
 
 ---
 
@@ -101,6 +105,26 @@ Phase D is **deferred to v2 launch**; Phases A–C ship first.
 - Duplicate keys: update the **last** declaration; comment earlier duplicates.
 - Rotation (`--force`): supersede old values as commented lines — **additive, never delete** operator history.
 - Applies to both repos' `scripts/mesh/dotenv_merge.py`.
+- **#288 lesson:** when secret exists only in `.env.local` (no JSON store), **adopt** it via `read_dotenv_key` before generating — otherwise harmonize appends a second declaration and dotenv last-wins silently rotates fleet auth (403 storm).
+
+### v1 transition vs v2 authority model (deferred strict compliance)
+
+**v1.x (now — lax, standalone installs):** Both repos install independently. When co-installed, they **share secrets** via sibling path env vars (`ORAMA_SYSTEM_PATH` / `PERPETUA_TOOLS_PATH`) and harmonize `.env.local` bidirectionally. This is intentional transition behavior.
+
+**v2 target (strict — new repos):** `perpetua-core` is the **single runtime and state authority**; `oramasys` remains **stateless** and imports shared types from `perpetua-core`, never the reverse. Mesh secrets, topology, and durable state live in a centralized mesh module under `perpetua-core`. Do **not** enforce this boundary strictly in v1.x PRs — document and defer.
+
+### CodeRabbit review #287 — deferred hardening (v1 acceptable, v2 cleanup)
+
+Reference: [PR #287 review](https://github.com/diazMelgarejo/Perpetua-Tools/pull/287#pullrequestreview-4782549522). Accepted for v1 transition; revisit in v2:
+
+| Item | Guidance |
+|------|----------|
+| Atomic JSON write (`tmp` + replace) | Deferred — v1 tolerates rare partial writes; v2 mesh module uses atomic persist |
+| Defensive `_load_json` (corrupt → `{}`) | Deferred — bootstrap should not abort on bad JSON in v1; v2 centralizes validation |
+| `GOSSIP_SHARED_SECRET__PREVIOUS_*` retention | v1 only — historical secrets accumulate in JSON/dotenv comments during rotation; v2 repos drop this pattern |
+| Windows ACL hardening in `harden_local_file` | Deferred — chmod-only on Unix; v2 adds ACL path |
+| LanBind: require non-empty secret after `load-local.ps1` | Deferred — current `.env.local` existence bypass is lax v1; tighten at v2 cutover |
+| UTF-8 BOM on PS1 installers | **Done** — `install.ps1` + `Invoke-MeshLocalCache.ps1` saved UTF-8 with BOM for PS 5.1 glyph decoding |
 
 ### Windows / Mac / Linux parity
 
@@ -139,7 +163,7 @@ python3 scripts/mesh/ensure_local_mesh_secrets.py
 # Windows
 cd $env:PERPETUA_TOOLS_PATH
 powershell -ExecutionPolicy Bypass -File .\install.ps1
-python .\.venv\Scripts\python.exe scripts\mesh\ensure_local_mesh_secrets.py
+.\.venv\Scripts\python.exe scripts\mesh\ensure_local_mesh_secrets.py
 ```
 
 ```powershell
