@@ -81,12 +81,16 @@ def _init_gossip_db() -> None:
 
 
 def _require_gossip_auth(request: Request) -> None:
-    """Raise HTTPException(403) if GOSSIP_SHARED_SECRET is configured and the
-    request's X-Gossip-Secret header does not match (constant-time compare).
-    """
+    """Require GOSSIP_SHARED_SECRET when LAN-bound; validate header when set."""
     secret = os.getenv("GOSSIP_SHARED_SECRET", "").strip()
+    lan_bind = os.getenv("PT_BIND_LAN", "").strip().lower() in ("1", "true", "yes")
+    if lan_bind and not secret:
+        raise HTTPException(
+            status_code=503,
+            detail="GOSSIP_SHARED_SECRET required when PT_BIND_LAN=1 — run ensure_local_mesh_secrets.py",
+        )
     if not secret:
-        return  # No auth required when secret is not configured
+        return
     header = request.headers.get("x-gossip-secret", "")
     if not hmac.compare_digest(header, secret):
         raise HTTPException(status_code=403, detail="Invalid gossip secret")
