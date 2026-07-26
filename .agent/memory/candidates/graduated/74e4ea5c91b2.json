@@ -1,0 +1,76 @@
+{
+  "id": "74e4ea5c91b2",
+  "key": "manual_74e4ea",
+  "name": "manual_74e4ea",
+  "claim": "Raft EDITED-03 personas map to OpenClaw ids: Cole=cole-agent, Hermes=hermes-agent, Penn alias on coder, Arthur=mac-researcher, Sage=gemini-coder, Nova=kimi-agent, Rex=grok-agent; persona YAML at ALPHACLAW_INSTALL_DIR/.openclaw/workspace/docs/oramasys/personas/ — use AskUserQuestion on binding conflicts, never guess",
+  "conditions": [
+    "alias",
+    "alphaclaw_install_dir",
+    "arthur",
+    "askuserquestion",
+    "binding",
+    "coder",
+    "cole",
+    "cole-agent",
+    "conflicts",
+    "docs",
+    "edited-03",
+    "gemini-coder",
+    "grok-agent",
+    "guess",
+    "hermes",
+    "hermes-agent",
+    "ids",
+    "kimi-agent",
+    "mac-researcher",
+    "map",
+    "never",
+    "nova",
+    "openclaw",
+    "oramasys",
+    "penn",
+    "persona",
+    "personas",
+    "raft",
+    "rex",
+    "sage",
+    "use",
+    "workspace",
+    "yaml"
+  ],
+  "evidence_ids": [
+    "2026-07-26T01:00:16.310448+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-26T01:00:16.310448+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-26T01:00:16.310448+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-26T01:00:16.427977+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "AFRP gate 2026-07-26. Penn on coder not codex-agent; Hermes not June; Cole enriches Atlas main home plus separate relay workspace.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-26T01:00:16.310448+00:00"
+      ],
+      "lessons_sha": "9b63b68efc31"
+    },
+    {
+      "ts": "2026-07-26T01:50:36+00:00",
+      "action": "corrected",
+      "reviewer": "CodeRabbit remediation",
+      "notes": "Normalized the persona hub path to the canonical ALPHACLAW_INSTALL_DIR/.openclaw/workspace/docs/oramasys/ anchor; original evidence timestamp retained."
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-26T01:00:16.427970+00:00",
+  "reviewer": "learn.py",
+  "rationale": "AFRP gate 2026-07-26. Penn on coder not codex-agent; Hermes not June; Cole enriches Atlas main home plus separate relay workspace. Canonical persona root: ALPHACLAW_INSTALL_DIR/.openclaw/workspace/docs/oramasys/personas/."
+}
