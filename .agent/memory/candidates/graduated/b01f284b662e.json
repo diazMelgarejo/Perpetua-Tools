@@ -1,0 +1,60 @@
+{
+  "id": "b01f284b662e",
+  "key": "manual_b01f28",
+  "name": "manual_b01f28",
+  "claim": "On cloud agent VMs, rsync and pytest may be absent \u2014 rely on pre-commit hooks that do run (repo_hygiene) and full CI on push; document honest test-plan checkboxes instead of claiming local pytest green without the toolchain.",
+  "conditions": [
+    "absent",
+    "agent",
+    "checkboxes",
+    "claiming",
+    "cloud",
+    "document",
+    "full",
+    "green",
+    "honest",
+    "hooks",
+    "instead",
+    "local",
+    "pre-commit",
+    "push",
+    "pytest",
+    "rely",
+    "repo_hygiene",
+    "rsync",
+    "run",
+    "test-plan",
+    "toolchain",
+    "vms",
+    "without"
+  ],
+  "evidence_ids": [
+    "2026-07-27T23:42:44.464147+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-27T23:42:44.464147+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-27T23:42:44.464147+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-27T23:42:44.530155+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR #222 cloud session: install-skills.sh failed without rsync; pytest unavailable.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-27T23:42:44.464147+00:00"
+      ],
+      "lessons_sha": "d57ec0f73c26"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-27T23:42:44.530146+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR #222 cloud session: install-skills.sh failed without rsync; pytest unavailable."
+}

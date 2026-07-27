@@ -1,0 +1,60 @@
+{
+  "id": "9de94e84f50c",
+  "key": "manual_9de94e",
+  "name": "manual_9de94e",
+  "claim": "Cross-host Hermes portal runbooks must never show Authorization Bearer tokens over plaintext HTTP \u2014 require TLS reverse proxy, SSH tunnel, or scoped short-lived token for Mac-pull-from-Win portal flows.",
+  "conditions": [
+    "authorization",
+    "bearer",
+    "cross-host",
+    "flows",
+    "hermes",
+    "http",
+    "mac-pull-from-win",
+    "never",
+    "over",
+    "plaintext",
+    "portal",
+    "proxy",
+    "require",
+    "reverse",
+    "runbooks",
+    "scoped",
+    "short-lived",
+    "show",
+    "ssh",
+    "tls",
+    "token",
+    "tokens",
+    "tunnel"
+  ],
+  "evidence_ids": [
+    "2026-07-27T23:42:44.228037+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-27T23:42:44.228037+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-27T23:42:44.228037+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-27T23:42:44.293912+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit 4792277312 on win-2026-07-27-mac-pull-from-win-portal.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-27T23:42:44.228037+00:00"
+      ],
+      "lessons_sha": "cffa10bd810b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-27T23:42:44.293903+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit 4792277312 on win-2026-07-27-mac-pull-from-win-portal.md."
+}

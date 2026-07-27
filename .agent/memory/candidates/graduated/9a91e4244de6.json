@@ -1,0 +1,65 @@
+{
+  "id": "9a91e4244de6",
+  "key": "manual_9a91e4",
+  "name": "manual_9a91e4",
+  "claim": "Sideline doctrine branches must be cherry-picked onto the active PR branch before push \u2014 when docs work lands on cursor/cidf-* while review fixes target cursor/hermes-staging-*, consolidate with cherry-pick, push once, then git branch -D the sideline (git -d may refuse because cherry-pick SHA differs from original).",
+  "conditions": [
+    "active",
+    "because",
+    "before",
+    "branch",
+    "branches",
+    "cherry-pick",
+    "cherry-picked",
+    "cidf-",
+    "consolidate",
+    "cursor",
+    "differs",
+    "docs",
+    "doctrine",
+    "fixes",
+    "git",
+    "hermes-staging-",
+    "lands",
+    "once",
+    "onto",
+    "original",
+    "push",
+    "refuse",
+    "review",
+    "sha",
+    "sideline",
+    "target",
+    "while",
+    "work"
+  ],
+  "evidence_ids": [
+    "2026-07-27T23:42:43.723514+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-27T23:42:43.723514+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-27T23:42:43.723514+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-27T23:42:43.811344+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR #222 session: cursor/cidf-integrative-editing-f559 merged into cursor/hermes-staging-security-hardening-f559 as 2bb88d95 then deleted.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-27T23:42:43.723514+00:00"
+      ],
+      "lessons_sha": "784255d153ce"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-27T23:42:43.811333+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR #222 session: cursor/cidf-integrative-editing-f559 merged into cursor/hermes-staging-security-hardening-f559 as 2bb88d95 then deleted."
+}
