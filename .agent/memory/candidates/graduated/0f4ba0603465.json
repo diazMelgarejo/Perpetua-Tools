@@ -1,0 +1,58 @@
+{
+  "id": "0f4ba0603465",
+  "key": "manual_0f4ba0",
+  "name": "manual_0f4ba0",
+  "claim": "Agent-security aguara remediation on a Hermes or mesh security PR is CI plumbing \u2014 document it in an append-only PR Follow-up section explicitly labeled side quest so reviewers do not confuse branch purpose with scan hygiene.",
+  "conditions": [
+    "agent-security",
+    "aguara",
+    "append-only",
+    "branch",
+    "confuse",
+    "document",
+    "explicitly",
+    "follow-up",
+    "hermes",
+    "hygiene",
+    "labeled",
+    "mesh",
+    "plumbing",
+    "purpose",
+    "quest",
+    "remediation",
+    "reviewers",
+    "scan",
+    "section",
+    "security",
+    "side"
+  ],
+  "evidence_ids": [
+    "2026-07-27T23:42:44.578853+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-27T23:42:44.578853+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-27T23:42:44.578853+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-27T23:42:44.644261+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR #222: Hermes Phase B purpose preserved; aguara/Ramparts work in labeled follow-up block.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-27T23:42:44.578853+00:00"
+      ],
+      "lessons_sha": "2d864db37032"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-27T23:42:44.644251+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR #222: Hermes Phase B purpose preserved; aguara/Ramparts work in labeled follow-up block."
+}
