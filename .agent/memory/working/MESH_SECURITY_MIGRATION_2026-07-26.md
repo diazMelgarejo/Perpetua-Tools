@@ -1,7 +1,8 @@
 # Mesh security migration — milestones and lessons (2026-07-26)
 
 > **PR:** Perpetua-Tools [#287](https://github.com/diazMelgarejo/Perpetua-Tools/pull/287) (`cursor/gossip-lan-mandate-f559`)
-> **Sibling orama PRs:** [#223](https://github.com/diazMelgarejo/orama-system/pull/223) (prep), [#224](https://github.com/diazMelgarejo/orama-system/pull/224) (P5/P6 runtime), [#222](https://github.com/diazMelgarejo/orama-system/pull/222) (v2 security ladder — merge **last**)
+> **Sibling orama PRs:** [#223](https://github.com/diazMelgarejo/orama-system/pull/223) (prep), [#224](https://github.com/diazMelgarejo/orama-system/pull/224) (P5/P6 runtime), [#222](https://github.com/diazMelgarejo/orama-system/pull/222) (v2 security ladder — merge **last**)  
+> **Session memory:** `.agent/memory/working/PR222_HERMES_STAGING_SESSION_2026-07-27.md` (integrative PR body, CodeRabbit 4792277312, CIDF doctrine)
 
 ## Executive summary
 

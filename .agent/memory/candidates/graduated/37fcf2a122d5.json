@@ -1,0 +1,64 @@
+{
+  "id": "37fcf2a122d5",
+  "key": "manual_37fcf2",
+  "name": "manual_37fcf2",
+  "claim": "Skill MCP and installer docs must use mktemp plus chmod 700 for download directories, pin npx packages as pkg@VERSION after review (never bare @latest), and prefer local openclaw mcp serve over npx when the binary is installed.",
+  "conditions": [
+    "after",
+    "bare",
+    "binary",
+    "chmod",
+    "directories",
+    "docs",
+    "download",
+    "installed",
+    "installer",
+    "latest",
+    "local",
+    "mcp",
+    "mktemp",
+    "never",
+    "npx",
+    "openclaw",
+    "over",
+    "packages",
+    "pin",
+    "pkg",
+    "plus",
+    "prefer",
+    "review",
+    "serve",
+    "skill",
+    "use",
+    "version"
+  ],
+  "evidence_ids": [
+    "2026-07-27T23:42:44.099611+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-27T23:42:44.099611+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-27T23:42:44.099611+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-27T23:42:44.177412+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit 4792277312 across cursor-agent, cline-openclaw-agent, mcp-orchestration references.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-27T23:42:44.099611+00:00"
+      ],
+      "lessons_sha": "82b31f9b5be7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-27T23:42:44.177401+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit 4792277312 across cursor-agent, cline-openclaw-agent, mcp-orchestration references."
+}
