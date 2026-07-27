@@ -1,0 +1,59 @@
+{
+  "id": "2a3d7583fc40",
+  "key": "manual_2a3d75",
+  "name": "manual_2a3d75",
+  "claim": "When mocking time for async event loops like GossipBus, advance the mock time into the future instead of setting historical creation times for events. Events capture real wall-clock time internally at emission.",
+  "conditions": [
+    "advance",
+    "async",
+    "capture",
+    "creation",
+    "emission",
+    "event",
+    "events",
+    "future",
+    "gossipbus",
+    "historical",
+    "instead",
+    "internally",
+    "into",
+    "like",
+    "loops",
+    "mock",
+    "mocking",
+    "real",
+    "setting",
+    "time",
+    "times",
+    "wall-clock"
+  ],
+  "evidence_ids": [
+    "2026-07-27T04:48:15.633463+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-27T04:48:15.633463+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-27T04:48:15.633463+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-27T04:48:15.737519+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "In test_cleanup_stale_claims_releases_dead_agent_queue_claim, mocking past timestamps failed because bus.emit used real system time at insertion. Pushing the mock time to +LIVENESS_STALLED_SEC reliably triggered the DEAD threshold.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-27T04:48:15.633463+00:00"
+      ],
+      "lessons_sha": "09d289d39e91"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-27T04:48:15.737514+00:00",
+  "reviewer": "learn.py",
+  "rationale": "In test_cleanup_stale_claims_releases_dead_agent_queue_claim, mocking past timestamps failed because bus.emit used real system time at insertion. Pushing the mock time to +LIVENESS_STALLED_SEC reliably triggered the DEAD threshold."
+}
