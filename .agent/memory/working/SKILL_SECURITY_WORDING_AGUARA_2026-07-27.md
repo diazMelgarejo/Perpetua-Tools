@@ -27,6 +27,20 @@ Skill markdown is loaded by other agents. **Strongly worded imperative commands*
 We word skills so humans keep **review-before-run**, and aguara can **baseline
 legacy noise** while **new** attack-shaped text still fails CI.
 
+## Teaching paradox (resolved)
+
+You **can** teach the negative rule. You **cannot** embed literal bad commands
+in production `SKILL.md` without the same scanner + naive-agent risks.
+
+| Layer | Where | What |
+|-------|-------|------|
+| Doctrine | `skill-security-wording-reference-card.md` | Safe patterns, rule index |
+| Curriculum | `skillify/examples/bad/security-wording-anti-patterns.md` | Literal bad→good; `<!-- aguara-ignore-next-line -->` per bad line |
+| Production | `SKILL.md` | Good patterns only; 0 gating in CI |
+
+Euphemizing bad patterns failed pedagogy. Quarantined curriculum with inline
+ignore is the intended pattern (labeled vaccine samples, not scanner weakening).
+
 ## Rules hit in PR #222 remediation (examples)
 
 | Rule | Issue | Safer wording |
