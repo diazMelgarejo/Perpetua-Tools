@@ -1,5 +1,12 @@
 # Phase 0 Specifications
 
+> **This is STM / swarm security Phase 0** — PeerObservation, StateTransitionManager,
+> threat T1–T7, mesh *evidence*. **Not** coordination **Phase 0F** (CLI freeze).
+> Disambiguation:
+> [`docs/coordination/PHASE-0-TERMINOLOGY-DISAMBIGUATION.md`](../coordination/PHASE-0-TERMINOLOGY-DISAMBIGUATION.md)
+> · Coordination hub:
+> [`docs/coordination/README.md`](../coordination/README.md)
+
 This folder is the Phase 0 knowledge graph for the Perpetua-Tools swarm and
 StateTransitionManager work. It is not one plan repeated many times. It is a
 layered record of how the system moved from P2P security research, to TDD
@@ -8,6 +15,9 @@ security and coordination handoff.
 
 Read this page first, then use the LLM-wiki pages under [`wiki/`](wiki/) for
 file nodes, concept nodes, and explicit edges.
+
+**Penultimate pre-v2 checklist (every plan disposition):**
+[`PHASE-0-MASTER-PLAN-2026-07-27.md`](PHASE-0-MASTER-PLAN-2026-07-27.md)
 
 ## Root-Cause Reading
 

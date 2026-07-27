@@ -1,5 +1,9 @@
 # Pending & Partially-Implemented Work — Perpetua-Tools
 
+> **SUPERSEDED 2026-07-27** by
+> [`docs/phase-0-specifications/PHASE-0-MASTER-PLAN-2026-07-27.md`](../phase-0-specifications/PHASE-0-MASTER-PLAN-2026-07-27.md).
+> Kept for history; branch/PR refs below are stale (e.g. #276/#278 merged, mesh #287 merged).
+
 **Purpose:** a single place to find every unfinished or partially-landed
 plan across recent sessions, so the next agent (human or AI) doesn't have
 to reconstruct status from commit archaeology. Cross-linked with
