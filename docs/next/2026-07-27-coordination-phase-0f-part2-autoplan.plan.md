@@ -101,7 +101,7 @@ rg -n 'Phase 0F|STM Phase 0' docs/coordination docs/phase-0-specifications/READM
 - [x] `docs/coordination/` hub + disambiguation file exist
 - [x] `phase-0-specifications/README` + wiki banner point to disambiguation
 - [x] Review doc revived with 2026-07-27 status
-- [ ] `liveness.py` extracted; tests green
+- [x] `liveness.py` extracted; tests green
 - [x] No “nonexistent Phase 0F” in PT `docs/`
 - [x] Plan on `docs/next/` and pushed
 
