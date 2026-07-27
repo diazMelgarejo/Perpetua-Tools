@@ -3,6 +3,7 @@
 These tests are Phase 0F for the coordination-module consolidation plan: they
 freeze the live parser and dispatch surface before logic moves into
 orchestrator/coordination/* modules.
+See docs/coordination/README.md for canonical documentation.
 """
 from __future__ import annotations
 
