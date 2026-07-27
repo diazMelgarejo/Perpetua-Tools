@@ -18,6 +18,9 @@ terminology:
 **Coordination Phase 0F autoplan:**
 [`2026-07-27-coordination-phase-0f-part2-autoplan.plan.md`](2026-07-27-coordination-phase-0f-part2-autoplan.plan.md)
 
+**Mesh security PR #222 (orama):**
+[`2026-07-27-mesh-security-pr222-orama-pointer.md`](2026-07-27-mesh-security-pr222-orama-pointer.md)
+
 **v1→v2 closure entry points** (start here for "what's the overall status
 of open work across both repos"):
 - `../../../orama-system/docs/plans/2026-07-22-cross-repo-out-of-scope-closure.md`
@@ -40,6 +43,7 @@ of open work across both repos"):
 
 | Doc | Topic | Self-reported / re-verified status (2026-07-22) |
 |---|---|---|
+| `2026-07-27-mesh-security-pr222-orama-pointer.md` | Pre–PR #222 mesh backup + trusted-install pointer | **Operator** — Phase A on all LAN nodes before orama #222 merge |
 | `2026-07-27-coordination-phase-0f-part2-autoplan.plan.md` | Coordination Phase 0F + Part 2 (`liveness.py`) | **Autoplan intake** — run `/autoplan` here; hub [`../coordination/README.md`](../coordination/README.md) |
 | `2026-07-17-coordination-module-consolidation-plan.md` | Coordination module consolidation | Parts 1/1b/1c/1d landed; mother plan — see coordination hub |
 | `2026-07-17-phase-board-fragmentation-analysis.md` | Investigation of a phase-board bug | Fixed by Codex (`9642ae24`) — doc records the investigation so the debugging path isn't re-walked |
