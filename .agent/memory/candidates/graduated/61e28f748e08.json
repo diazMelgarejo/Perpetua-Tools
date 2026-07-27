@@ -1,0 +1,74 @@
+{
+  "id": "61e28f748e08",
+  "key": "manual_61e28f",
+  "name": "manual_61e28f",
+  "claim": "Koan \u2014 skill-security wording: To teach what must not be run, do not write it where it will be run. The forbidden command belongs in the quarantined curriculum (skillify/examples/bad/ with aguara-ignore-next-line per bad line), not on the operator cheat sheet (SKILL.md). Euphemism teaches nothing; literal bad examples behind explicit scanner ignore teach everything \u2014 without weakening CI or handing naive agents a remote-control script.",
+  "conditions": [
+    "agents",
+    "aguara-ignore-next-line",
+    "bad",
+    "behind",
+    "belongs",
+    "cheat",
+    "command",
+    "curriculum",
+    "euphemism",
+    "everything",
+    "examples",
+    "explicit",
+    "forbidden",
+    "handing",
+    "ignore",
+    "koan",
+    "line",
+    "literal",
+    "naive",
+    "nothing",
+    "operator",
+    "per",
+    "quarantined",
+    "remote-control",
+    "run",
+    "scanner",
+    "script",
+    "sheet",
+    "skill",
+    "skill-security",
+    "skillify",
+    "teach",
+    "teaches",
+    "weakening",
+    "without",
+    "wording",
+    "write"
+  ],
+  "evidence_ids": [
+    "2026-07-27T22:32:47.508050+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-27T22:32:47.508050+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-27T22:32:47.508050+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-27T22:32:47.583348+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "User-requested koan distilling the PR #222 meta-lesson: scanners and naive agents both treat skill markdown as executable; two-layer doctrine + quarantined curriculum resolves the paradox that you cannot teach the negative rule in production skill files.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-27T22:32:47.508050+00:00"
+      ],
+      "lessons_sha": "1dd239d7d6e0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-27T22:32:47.583337+00:00",
+  "reviewer": "learn.py",
+  "rationale": "User-requested koan distilling the PR #222 meta-lesson: scanners and naive agents both treat skill markdown as executable; two-layer doctrine + quarantined curriculum resolves the paradox that you cannot teach the negative rule in production skill files."
+}
