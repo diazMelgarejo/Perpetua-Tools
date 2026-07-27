@@ -9,6 +9,12 @@ Last updated: 2026-06-28
 Runtime security alignment for MAESTRO/OWASP v2 is recorded in
 [`docs/adr/ADR-003-maestro-owasp-v2-security-foundation.md`](docs/adr/ADR-003-maestro-owasp-v2-security-foundation.md).
 
+Phase 0 swarm and STM security context is indexed in
+[`docs/phase-0-specifications/README.md`](docs/phase-0-specifications/README.md).
+Use that graph for PeerObservation, confidence scoring, heartbeat/liveness,
+replay/dedup, witness quorum, and threat-model premise history before extending
+mesh or coordination security claims.
+
 ## Reporting
 
 Do not open public issues for vulnerabilities. Report privately to the maintainer

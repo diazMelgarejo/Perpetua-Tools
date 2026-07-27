@@ -19,6 +19,10 @@ of open work across both repos"):
 - `../2026-05-31-tri-repo-alignment-completion-plan.md` — **re-verified**
   2026-07-22 (commit `4bf12868`): item #1 confirmed resolved, stale
   contradiction fixed, items #2/#3/#8 explicitly deferred to v2.
+- `../phase-0-specifications/README.md` — Phase 0 STM/swarm knowledge graph
+  and LLM-wiki index. Use this when a `docs/next` item depends on
+  PeerObservation, confidence scoring, heartbeat/liveness, replay/dedup,
+  witness quorum, threat-model premise checks, or PR #203/#205 review history.
 
 ## Contents
 
@@ -32,6 +36,10 @@ of open work across both repos"):
 | `2026-07-24-alphaclaw-tls-proxy-scaffolding.md` | AlphaClaw TLS proxy — v1 wiring status | v1 complete, PR #276 open; re-verified 2026-07-24 (pytest green) |
 | `2026-07-25-pending-work-tracker.md` | Cross-repo pending-work tracker | See file — tracks PT #276 / orama #197 follow-ups |
 | `2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md` | Windows ACL enforcement for the AlphaClaw TLS cert/key store | PLAN — not implemented; deprecated `SetFileSecurity` call in the source draft fixed to `SetNamedSecurityInfo` before filing, re-verified 2026-07-24 (EXA + Firecrawl against Microsoft/pywin32 docs) |
+
+Related Phase 0 ontology: [`../phase-0-specifications/README.md`](../phase-0-specifications/README.md)
+links the older STM, swarm-security, liveness, and review documents to the
+forward-looking work tracked here.
 
 Everything above except the coordination-module-consolidation-plan (which
 this session's P3 trace directly touched, hence the full re-verify) is
