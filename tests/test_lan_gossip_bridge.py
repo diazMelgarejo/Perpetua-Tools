@@ -281,6 +281,8 @@ class _FakeBus:
 
 def test_gossip_emit_endpoint(monkeypatch, tmp_path):
     """POST /gossip/emit persists an event through the local GossipBus."""
+    monkeypatch.delenv("GOSSIP_SHARED_SECRET", raising=False)
+    monkeypatch.delenv("PT_BIND_LAN", raising=False)
     fake = _FakeBus()
     monkeypatch.setattr(fastapi_app, "_gossip_bus", fake)
     client = TestClient(fastapi_app.app)
@@ -305,6 +307,8 @@ def test_gossip_emit_endpoint(monkeypatch, tmp_path):
 
 def test_gossip_tail_endpoint(monkeypatch, tmp_path):
     """GET /gossip/tail returns local events and configured peers."""
+    monkeypatch.delenv("GOSSIP_SHARED_SECRET", raising=False)
+    monkeypatch.delenv("PT_BIND_LAN", raising=False)
     fake = _FakeBus()
     fake.events.append({"uuid": "fake-uuid", "event_type": "heartbeat", "payload": {"task_id": "t1"}})
     monkeypatch.setattr(fastapi_app, "_gossip_bus", fake)
