@@ -41,6 +41,18 @@ in production `SKILL.md` without the same scanner + naive-agent risks.
 Euphemizing bad patterns failed pedagogy. Quarantined curriculum with inline
 ignore is the intended pattern (labeled vaccine samples, not scanner weakening).
 
+## Koan
+
+> To teach what must not be run, do not write it where it will be run.  
+> The forbidden command belongs in the quarantined curriculum
+> (`skillify/examples/bad/`, `aguara-ignore-next-line` per bad line),  
+> not on the operator cheat sheet (`SKILL.md`).  
+> Euphemism teaches nothing; literal bad examples behind explicit scanner
+> ignore teach everything — without weakening CI or handing naive agents a
+> remote-control script.
+
+Graduated: `lesson_*` via `learn.py` — recall: `python .agent/tools/recall.py "skill security koan"`
+
 ## Rules hit in PR #222 remediation (examples)
 
 | Rule | Issue | Safer wording |
