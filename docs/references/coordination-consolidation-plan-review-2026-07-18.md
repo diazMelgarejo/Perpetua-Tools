@@ -1,9 +1,17 @@
 # Coordination Consolidation Plan Review
 
-Date: 2026-07-18
+> **Canonical in-repo copy** — supersedes duplicate copies stored outside this
+> repository (off-repo handoff notes). Do not treat external reference folders as
+> authoritative.
+>
+> **Terminology:** STM **Phase 0** (swarm security) ≠ coordination **Phase 0F** (CLI freeze). See [`../coordination/PHASE-0-TERMINOLOGY-DISAMBIGUATION.md`](../coordination/PHASE-0-TERMINOLOGY-DISAMBIGUATION.md).
+>
+> **2026-07-27 status:** Parts 1/1b/1c/1d **landed** (`28c425f9` / #263). Coordination **Phase 0F** partially **landed** as `tests/test_agent_coordination_cli_contract.py` + `build_parser()` freeze. Part 2 **in progress** (`orchestrator/coordination/*` extracted; **`liveness.py` still in `cli.py`**). Hub: [`../coordination/README.md`](../coordination/README.md). Autoplan: [`../next/2026-07-27-coordination-phase-0f-part2-autoplan.plan.md`](../next/2026-07-27-coordination-phase-0f-part2-autoplan.plan.md).
+
+Date: 2026-07-18 (review) · status refreshed 2026-07-27
 Reviewer: Codex primary orchestrator
 Reviewed revision: local commit `e98efe48`
-Disposition: architecture approved in direction; executable details require correction before implementation
+Disposition: architecture approved in direction; Parts 1–1d implemented; Part 2 + 0F completion remain
 
 ## What improved
 

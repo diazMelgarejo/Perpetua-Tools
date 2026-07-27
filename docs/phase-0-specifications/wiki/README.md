@@ -2,6 +2,8 @@
 
 This wiki turns `docs/phase-0-specifications/` into a graph an agent can query
 without rereading every plan. The root page is [`../README.md`](../README.md);
+**disposition checklist:** [`../PHASE-0-MASTER-PLAN-2026-07-27.md`](../PHASE-0-MASTER-PLAN-2026-07-27.md);
+**Phase 0 vs 0F:** [`../../coordination/PHASE-0-TERMINOLOGY-DISAMBIGUATION.md`](../../coordination/PHASE-0-TERMINOLOGY-DISAMBIGUATION.md);
 this folder holds the node and edge analysis.
 
 ## Node Types
