@@ -201,6 +201,7 @@ powershell -File .\platform\windows\start.ps1   # LanBind gate when LAN mesh ena
 | `FLEET_MESH_AVALANCHE_TRACE_2026-07-14.md` | Historical phase 5–6 mesh work |
 | `HERMES_OPENCLAW_STAGING_2026-07-26.md` | Hermes harness + install.ps1 doctrine |
 | `PRIVATE_LITERALS_AND_LOCAL_TOPOLOGY_V2_LESSON_2026-07-18.md` | IP/literal scrub policy |
+| `SKILL_SECURITY_WORDING_AGUARA_2026-07-27.md` | Aguara-safe skill wording; naive-agent literal execution |
 | `GRACEFUL_DEGRADATION_LAN_2026-06-28.md` | SOLO/PAIR/FLEET degradation |
 
 ## Recall
