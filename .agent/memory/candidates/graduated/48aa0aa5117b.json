@@ -1,0 +1,67 @@
+{
+  "id": "48aa0aa5117b",
+  "key": "manual_48aa0a",
+  "name": "manual_48aa0a",
+  "claim": "Self-reflection: when asked to make a new install 'like you', do not only document OpenClaw migration or profile SOUL staging; implement and validate an auditable export/inspect/restore path for the installed Hermes home, then fan out the result through Orama comms and PT memory.",
+  "conditions": [
+    "asked",
+    "auditable",
+    "comms",
+    "document",
+    "export",
+    "fan",
+    "hermes",
+    "home",
+    "implement",
+    "inspect",
+    "install",
+    "installed",
+    "like",
+    "make",
+    "memory",
+    "migration",
+    "new",
+    "only",
+    "openclaw",
+    "orama",
+    "out",
+    "path",
+    "profile",
+    "restore",
+    "result",
+    "self-reflection",
+    "soul",
+    "staging",
+    "through",
+    "validate"
+  ],
+  "evidence_ids": [
+    "2026-07-27T09:17:45.364616+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-27T09:17:45.364616+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-27T09:17:45.364616+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-27T09:17:45.501662+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "manual via learn.py at 2026-07-27T09:17:45.367616+00:00",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-27T09:17:45.364616+00:00"
+      ],
+      "lessons_sha": "9ae2e4d9ceef"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-27T09:17:45.501662+00:00",
+  "reviewer": "learn.py",
+  "rationale": "manual via learn.py at 2026-07-27T09:17:45.367616+00:00"
+}

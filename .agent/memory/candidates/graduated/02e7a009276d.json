@@ -1,0 +1,64 @@
+{
+  "id": "02e7a009276d",
+  "key": "manual_02e7a0",
+  "name": "manual_02e7a0",
+  "claim": "Hermes portable brain accuracy review: hermes-portable-brain-map.md was directionally correct but incomplete until it listed auth.json/auth, cron, kanban, scripts, state.db, sessions, backups, and separated Orama-managed persona staging from full current-Hermes archive/restore.",
+  "conditions": [
+    "accuracy",
+    "archive",
+    "auth",
+    "backups",
+    "brain",
+    "correct",
+    "cron",
+    "current-hermes",
+    "directionally",
+    "full",
+    "hermes",
+    "hermes-portable-brain-map",
+    "incomplete",
+    "json",
+    "kanban",
+    "listed",
+    "orama-managed",
+    "persona",
+    "portable",
+    "restore",
+    "review",
+    "scripts",
+    "separated",
+    "sessions",
+    "staging",
+    "state",
+    "until"
+  ],
+  "evidence_ids": [
+    "2026-07-27T09:17:44.893959+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-27T09:17:44.893959+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-27T09:17:44.893959+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-27T09:17:45.029618+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "manual via learn.py at 2026-07-27T09:17:44.896956+00:00",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-27T09:17:44.893959+00:00"
+      ],
+      "lessons_sha": "778b06251758"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-27T09:17:45.029618+00:00",
+  "reviewer": "learn.py",
+  "rationale": "manual via learn.py at 2026-07-27T09:17:44.896956+00:00"
+}
