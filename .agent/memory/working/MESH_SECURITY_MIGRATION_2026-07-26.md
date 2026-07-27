@@ -74,6 +74,15 @@ Phase D is **deferred to v2 launch**; Phases A–C ship first.
 - [x] `.env.local.example`, `.gitignore` for `.local/`
 - [x] Tests: `test_mesh_auth.py`, `test_mesh_secrets.py` (9 passed after #288)
 - [x] **#288 fix:** adopt `.env.local` gossip secret without silent rotation (`read_dotenv_key`, bootstrap JSON, no duplicate append)
+- [x] **Merged to `main`** @ `8b38f8a` (2026-07-26)
+
+### orama-system #224 follow-up (CodeRabbit review `4782743245`)
+
+- [x] `install-hermes-harness.ps1` — check `$LASTEXITCODE` after nested `powershell.exe` mesh prep (non-zero exit does not trigger `$ErrorActionPreference = 'Stop'`)
+- [x] `discovery_trust.py` — `_block_untrusted_peer` uses `get_mesh_logger` warning (not `print`); blank `win_peers` IPs excluded
+- [x] `verify_trusted_install.py` — exact branch ref match in `reanchor_scan.sh` output (no substring false positives)
+- [x] Tests: swarm fingerprint/HMAC negatives, discovery handshake TTL expiry, `mesh_gate` blank env/dotenv secrets
+- [x] Finality report: `docs/next/fleet-mesh/2026-07-26-pr224-mesh-security-finality-report.md`
 
 ---
 
@@ -132,11 +141,20 @@ Reference: [PR #287 review](https://github.com/diazMelgarejo/Perpetua-Tools/pull
 - PT: `install.ps1` at repo root; orama: `platform/windows/install.ps1` + `start.ps1` (`LanBind` mode).
 - PowerShell **5.1** target: avoid `??`; use explicit `if` / `.Trim()` guards.
 - MCPB build on Windows still delegates to bash (`install-claude-desktop-llm.sh`); `HERMES_GIT_BASH_PATH` or Git for Windows `bash.exe`.
+- **Nested `powershell.exe` calls:** `$ErrorActionPreference = 'Stop'` does **not** propagate child exit codes — always check `$LASTEXITCODE` after `& powershell.exe -File ...` before reporting harness sync success (`install-hermes-harness.ps1`).
 
 ### LAN bind fail-closed
 
 - PT: `PT_BIND_LAN=1` without `GOSSIP_SHARED_SECRET` → HTTP **503** on gossip emit/tail (not silent localhost bypass).
 - orama: `start.sh` / `start.ps1` `LanBind` mode exits if secret and `.env.local` both absent.
+- `mesh_gate.gossip_secret_configured`: whitespace-only env or empty/quoted-empty `.env.local` values count as **not configured** (fail closed).
+
+### Discovery trust and swarm approval (P5/P6)
+
+- Untrusted peer notices go through `get_mesh_logger` (`.local/mesh.log`), not stdout `print`.
+- Discovery handshake pending entries expire after `HANDSHAKE_TTL_SEC` (600s); expired nonces reject verify.
+- Swarm strict mode: `verify_launch` rejects preview drift (fingerprint mismatch) and invalid HMAC tokens independently.
+- `win_peers` entries with blank/missing IPs are excluded from persist, not passed through.
 
 ### Topology and private literals (v2 carry-forward)
 
@@ -198,3 +216,4 @@ python .agent/tools/recall.py "Invoke-MeshLocalCache install.ps1 windows parity"
 - [ ] PT `start.ps1` LanBind hook (when PT gains LAN start script parity with orama)
 - [ ] Phase B IP expunge (orama #222) after fleet backup verified
 - [ ] Phase D strict cutover at v2 launch
+- [ ] Merge orama **#224** + verify mesh after operator backup (PT #287 already on `main`)

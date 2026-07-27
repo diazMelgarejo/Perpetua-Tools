@@ -1,0 +1,52 @@
+{
+  "id": "9b33a85e1528",
+  "key": "manual_9b33a8",
+  "name": "manual_9b33a8",
+  "claim": "Nested powershell.exe -File calls do not trigger parent ErrorActionPreference Stop; check LASTEXITCODE before continuing harness sync",
+  "conditions": [
+    "before",
+    "calls",
+    "check",
+    "continuing",
+    "erroractionpreference",
+    "exe",
+    "file",
+    "harness",
+    "lastexitcode",
+    "nested",
+    "parent",
+    "powershell",
+    "stop",
+    "sync",
+    "trigger"
+  ],
+  "evidence_ids": [
+    "2026-07-26T22:53:27.502286+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-26T22:53:27.502286+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-26T22:53:27.502286+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-26T22:53:27.572411+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "install-hermes-harness.ps1 could report success after mesh prep failed",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-26T22:53:27.502286+00:00"
+      ],
+      "lessons_sha": "650846263d6b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-26T22:53:27.572402+00:00",
+  "reviewer": "learn.py",
+  "rationale": "install-hermes-harness.ps1 could report success after mesh prep failed"
+}
