@@ -1,0 +1,48 @@
+{
+  "id": "a5929c09e743",
+  "key": "manual_a5929c",
+  "name": "manual_a5929c",
+  "claim": "Swarm verify_launch rejects preview drift and invalid approval_token independently via fingerprint and HMAC",
+  "conditions": [
+    "approval_token",
+    "drift",
+    "fingerprint",
+    "hmac",
+    "independently",
+    "invalid",
+    "preview",
+    "rejects",
+    "swarm",
+    "verify_launch",
+    "via"
+  ],
+  "evidence_ids": [
+    "2026-07-26T22:53:27.838864+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-26T22:53:27.838864+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-26T22:53:27.838864+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-26T22:53:27.903707+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "P5 strict mode must not accept tampered previews or tokens",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-26T22:53:27.838864+00:00"
+      ],
+      "lessons_sha": "7e4ee7e978c2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-26T22:53:27.903695+00:00",
+  "reviewer": "learn.py",
+  "rationale": "P5 strict mode must not accept tampered previews or tokens"
+}
