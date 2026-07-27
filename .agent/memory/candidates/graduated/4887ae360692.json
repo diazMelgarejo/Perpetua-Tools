@@ -1,0 +1,47 @@
+{
+  "id": "4887ae360692",
+  "key": "manual_4887ae",
+  "name": "manual_4887ae",
+  "claim": "mesh_gate gossip_secret_configured must treat whitespace-only env and empty quoted dotenv values as unconfigured",
+  "conditions": [
+    "dotenv",
+    "empty",
+    "env",
+    "gossip_secret_configured",
+    "mesh_gate",
+    "quoted",
+    "treat",
+    "unconfigured",
+    "values",
+    "whitespace-only"
+  ],
+  "evidence_ids": [
+    "2026-07-26T22:53:27.618896+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-26T22:53:27.618896+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-26T22:53:27.618896+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-26T22:53:27.685051+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "LAN bind gates must fail closed when GOSSIP_SHARED_SECRET is blank",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-26T22:53:27.618896+00:00"
+      ],
+      "lessons_sha": "aac6b5f66109"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-26T22:53:27.685041+00:00",
+  "reviewer": "learn.py",
+  "rationale": "LAN bind gates must fail closed when GOSSIP_SHARED_SECRET is blank"
+}
