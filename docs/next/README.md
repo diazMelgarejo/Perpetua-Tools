@@ -6,6 +6,18 @@ plan file. Not all have been re-verified against current `main` — statuses
 below are each doc's own self-reported status as of 2026-07-22, not a fresh
 audit, unless marked "re-verified."
 
+**Penultimate master plan (2026-07-27):**
+[`../phase-0-specifications/PHASE-0-MASTER-PLAN-2026-07-27.md`](../phase-0-specifications/PHASE-0-MASTER-PLAN-2026-07-27.md)
+(STM/swarm security — **not** coordination Phase 0F).
+
+**Coordination Phase 0F hub:**
+[`../coordination/README.md`](../coordination/README.md) ·
+terminology:
+[`../coordination/PHASE-0-TERMINOLOGY-DISAMBIGUATION.md`](../coordination/PHASE-0-TERMINOLOGY-DISAMBIGUATION.md)
+
+**Coordination Phase 0F autoplan:**
+[`2026-07-27-coordination-phase-0f-part2-autoplan.plan.md`](2026-07-27-coordination-phase-0f-part2-autoplan.plan.md)
+
 **v1→v2 closure entry points** (start here for "what's the overall status
 of open work across both repos"):
 - `../../../orama-system/docs/plans/2026-07-22-cross-repo-out-of-scope-closure.md`
@@ -28,7 +40,8 @@ of open work across both repos"):
 
 | Doc | Topic | Self-reported / re-verified status (2026-07-22) |
 |---|---|---|
-| `2026-07-17-coordination-module-consolidation-plan.md` | Coordination module consolidation | **Re-verified**: Parts 1/1b/1c/1d confirmed landed (`28c425f9`); Part 2 deferred to v2 (its own gate, "Phase 0F," doesn't exist anywhere in the repo); Part 3 already explicitly deferred by its own text |
+| `2026-07-27-coordination-phase-0f-part2-autoplan.plan.md` | Coordination Phase 0F + Part 2 (`liveness.py`) | **Autoplan intake** — run `/autoplan` here; hub [`../coordination/README.md`](../coordination/README.md) |
+| `2026-07-17-coordination-module-consolidation-plan.md` | Coordination module consolidation | Parts 1/1b/1c/1d landed; mother plan — see coordination hub |
 | `2026-07-17-phase-board-fragmentation-analysis.md` | Investigation of a phase-board bug | Fixed by Codex (`9642ae24`) — doc records the investigation so the debugging path isn't re-walked |
 | `2026-07-17-tool-use-limits-session-reflection.md` | Session retrospective | Honest retrospective — not a plan, no action items to close |
 | `2026-07-17-frugal-pr-review-triage-pattern.md` | PR review triage pattern | Extracted from live use on PR #256, not hypothetical — reference pattern, not a pending task |
@@ -37,9 +50,10 @@ of open work across both repos"):
 | `2026-07-25-pending-work-tracker.md` | Cross-repo pending-work tracker | See file — tracks PT #276 / orama #197 follow-ups |
 | `2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md` | Windows ACL enforcement for the AlphaClaw TLS cert/key store | PLAN — not implemented; deprecated `SetFileSecurity` call in the source draft fixed to `SetNamedSecurityInfo` before filing, re-verified 2026-07-24 (EXA + Firecrawl against Microsoft/pywin32 docs) |
 
-Related Phase 0 ontology: [`../phase-0-specifications/README.md`](../phase-0-specifications/README.md)
-links the older STM, swarm-security, liveness, and review documents to the
-forward-looking work tracked here.
+Related Phase 0 ontology (STM/swarm — **not** coordination Phase 0F):
+[`../phase-0-specifications/README.md`](../phase-0-specifications/README.md).
+Coordination Phase 0F:
+[`../coordination/README.md`](../coordination/README.md).
 
 Everything above except the coordination-module-consolidation-plan (which
 this session's P3 trace directly touched, hence the full re-verify) is
