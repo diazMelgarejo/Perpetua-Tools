@@ -23,6 +23,7 @@ This wiki organizes hard-won lessons by topic. Each page contains root cause, ex
 | 10 | [Line Endings & Encoding](10-line-endings-and-encoding.md) | `.gitattributes` + `.editorconfig` + `git add --renormalize .`; LF in repo, UTF-8 no BOM; kills phantom CRLF checkout diffs |
 | 11 | [agentic-stack `.agent/` Blend](11-agentic-stack-agent-blend.md) | AlphaClaw reverse-merge precedent mapped to file-level 3-way merges; conflict-resolution playbook from the v0.9.0→v0.18.0 cycle |
 | 12 | [Literal `~/` alphaclaw Install Dir](12-literal-tilde-alphaclaw-install-dir.md) | Tilde in `ALPHACLAW_INSTALL_DIR` + missing `expanduser()` → junk `~/` tree; fixed via `utils/env_paths.py` |
+| 13 | [Coordination Phase 0F](13-coordination-phase-0f-cli-contract.md) | CLI contract freeze and terminology disambiguation vs STM Phase 0 |
 
 ---
 

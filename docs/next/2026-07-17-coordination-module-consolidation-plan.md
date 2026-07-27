@@ -8,9 +8,7 @@ Repository: `diazMelgarejo/Perpetua-Tools`
 > squash-merged via `28c425f9 fix(coord): implement coordination-module
 > consolidation Parts 1-1d + PR #260 review fixes (#263)`. Part 2 remains
 > **deferred to v2 oramasys** (post-migration): its gate — "Phase 0F's live
-> re-verification" — doesn't correspond to any `Phase 0F` document or
-> artifact anywhere in this repo, so the block is genuinely ambiguous, not
-> just unstarted. Part 3 stays explicitly deferred per its own text below.
+> re-verification" — is now documented in [`../coordination/`](../coordination/). Part 3 stays explicitly deferred per its own text below.
 > Full ledger + reasoning:
 > `orama-system/docs/plans/2026-07-22-cross-repo-out-of-scope-closure.md`
 > (item #7) and `orama-system/references/tiered-model-implementation-

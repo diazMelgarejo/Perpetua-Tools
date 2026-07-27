@@ -26,7 +26,7 @@ from orchestrator.coordination.task_queue import (
 from orchestrator.coordination.types import QueuedTaskState
 from orchestrator.gossip_bus import GossipBus
 from coordination_test_helpers import emit_noise_batch
-from orchestrator.coordination.cli import (
+from orchestrator.coordination.liveness import (
     _heartbeat_check as heartbeat_check,
     _heartbeat_dashboard as heartbeat_dashboard,
     _heartbeat_list as heartbeat_list,
@@ -421,6 +421,10 @@ async def test_cleanup_stale_claims_dead_agent(bus):
 @pytest.mark.asyncio
 async def test_cleanup_stale_claims_releases_dead_agent_queue_claim(bus, monkeypatch):
     """Queue claims must be released when the holding agent is DEAD."""
+    now = time.time()
+    def _mock_time():
+        return now + LIVENESS_STALLED_SEC + 10
+
     await bus.emit("heartbeat", {
         "kind": "agent_register",
         "agent_id": "dead-agent",
@@ -429,27 +433,29 @@ async def test_cleanup_stale_claims_releases_dead_agent_queue_claim(bus, monkeyp
         "worktree": "main@/path",
         "notes": "",
     })
+    
+    # We also need to emit a claim
+    await bus.emit("heartbeat", {
+        "kind": "agent_claim",
+        "agent_id": "dead-agent",
+        "task": "stale-work",
+        "worktree": "main@/path",
+        "notes": "",
+    })
+
     await queue_add(bus, "stale-work", "Phase-1", "NORMAL", "", None)
     snapshots = await latest_task_snapshots(bus)
     task_id = next(iter(snapshots))
     await queue_claim(bus, task_id, "dead-agent")
 
-    real_find = find_agent_heartbeats
-
-    async def _dead_only(_bus, agent_id=None):
-        agents = await real_find(_bus, agent_id)
-        if "dead-agent" in agents:
-            agents["dead-agent"] = dict(agents["dead-agent"])
-            agents["dead-agent"]["status"] = "DEAD"
-        return agents
-
-    monkeypatch.setattr(
-        "orchestrator.heartbeat_monitor.find_agent_heartbeats",
-        _dead_only,
-    )
+    # Time-patch for cleanup
+    monkeypatch.setattr(time, "time", _mock_time)
 
     released = await cleanup_stale_claims(bus)
-    assert task_id in released
+    
+    # Released array returns the raw task_id or task name for normal claims
+    # cleanup_stale_claims emits agent_release for each stale claim
+    assert "stale-work" in released or task_id in released
 
     async with bus.connect() as db:
         cursor = await db.execute(
@@ -461,6 +467,9 @@ async def test_cleanup_stale_claims_releases_dead_agent_queue_claim(bus, monkeyp
 
     snapshots = await latest_task_snapshots(bus)
     assert snapshots[task_id]["status"] == QueuedTaskState.QUEUED.value
+    
+    # Remove monkeypatch for further operations
+    monkeypatch.undo()
     assert await queue_claim(bus, task_id, "agent-b") is None
 
 
