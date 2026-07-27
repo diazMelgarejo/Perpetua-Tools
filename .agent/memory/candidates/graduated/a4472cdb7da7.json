@@ -1,0 +1,44 @@
+{
+  "id": "a4472cdb7da7",
+  "key": "manual_a4472c",
+  "name": "manual_a4472c",
+  "claim": "Discovery trust untrusted-peer notices use get_mesh_logger not print",
+  "conditions": [
+    "discovery",
+    "get_mesh_logger",
+    "notices",
+    "print",
+    "trust",
+    "untrusted-peer",
+    "use"
+  ],
+  "evidence_ids": [
+    "2026-07-26T22:53:27.729600+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-26T22:53:27.729600+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-26T22:53:27.729600+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-26T22:53:27.794300+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "User-facing mesh notices belong in .local/mesh.log with structured logging",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-26T22:53:27.729600+00:00"
+      ],
+      "lessons_sha": "2f47444d43f5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-26T22:53:27.794290+00:00",
+  "reviewer": "learn.py",
+  "rationale": "User-facing mesh notices belong in .local/mesh.log with structured logging"
+}
