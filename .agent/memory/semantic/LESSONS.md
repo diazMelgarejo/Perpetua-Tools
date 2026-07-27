@@ -442,6 +442,7 @@
 - Cross-repo mesh secrets harmonize via sibling path env vars: PT ensure_local_mesh_secrets uses ORAMA_SYSTEM_PATH; orama uses PERPETUA_TOOLS_PATH — either repo can bootstrap both .env.local files.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_60eba525a7b2 -->
 - orama lan_topology_archive 5080 endpoint classification requires immediate role-key context so win-rtx5080 LM Studio is not misclassified as a generic Windows node.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_35bd8eebb657 -->
 - Mesh secret and topology tests must use synthetic fixture values only — never real GOSSIP_SHARED_SECRET or fleet LAN IPs in tracked test code.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_a10f8defdabf -->
+- When mocking time for async event loops like GossipBus, advance the mock time into the future instead of setting historical creation times for events. Events capture real wall-clock time internally at emission.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_2a3d7583fc40 -->
 
 ### 2026-06
 
