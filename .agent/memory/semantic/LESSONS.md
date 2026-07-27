@@ -451,6 +451,7 @@
 - Portable-brain restores must dry-run first, inspect manifest.json, exclude secrets by default, require --include-secrets for .env/auth/auth.json, and refuse overwrites unless --overwrite is explicit; private generated archives must stay outside git-tracked repos.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_ec9f7ace68dd -->
 - Hermes portable brain accuracy review: hermes-portable-brain-map.md was directionally correct but incomplete until it listed auth.json/auth, cron, kanban, scripts, state.db, sessions, backups, and separated Orama-managed persona staging from full current-Hermes archive/restore.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_02e7a009276d -->
 - Self-reflection: when asked to make a new install 'like you', do not only document OpenClaw migration or profile SOUL staging; implement and validate an auditable export/inspect/restore path for the installed Hermes home, then fan out the result through Orama comms and PT memory.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_48aa0aa5117b -->
+- Skill docs must use aguara-safe wording: describe MCP registration and env setup in prose, not imperative claude-mcp-add / source-.env / append-zshrc commands — naive agents may execute skill markdown literally (unintentional prompt injection), and non-baselineable aguara rules (EXTDL_006, CRED_021, SUPPLY_005, EXTDL_005) gate CI.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_0f75262a1392 -->
 
 ### 2026-06
 

@@ -1,0 +1,69 @@
+{
+  "id": "0f75262a1392",
+  "key": "manual_0f7526",
+  "name": "manual_0f7526",
+  "claim": "Skill docs must use aguara-safe wording: describe MCP registration and env setup in prose, not imperative claude-mcp-add / source-.env / append-zshrc commands \u2014 naive agents may execute skill markdown literally (unintentional prompt injection), and non-baselineable aguara rules (EXTDL_006, CRED_021, SUPPLY_005, EXTDL_005) gate CI.",
+  "conditions": [
+    "agents",
+    "aguara",
+    "aguara-safe",
+    "append-zshrc",
+    "claude-mcp-add",
+    "commands",
+    "cred_021",
+    "describe",
+    "docs",
+    "env",
+    "execute",
+    "extdl_005",
+    "extdl_006",
+    "gate",
+    "imperative",
+    "injection",
+    "literally",
+    "markdown",
+    "mcp",
+    "naive",
+    "non-baselineable",
+    "prompt",
+    "prose",
+    "registration",
+    "rules",
+    "setup",
+    "skill",
+    "source-",
+    "supply_005",
+    "unintentional",
+    "use",
+    "wording"
+  ],
+  "evidence_ids": [
+    "2026-07-27T22:13:50.495931+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-27T22:13:50.495931+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-27T22:13:50.495931+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-27T22:13:50.568664+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama PR #222 agent-security CI: fixing one gating aguara rule exposed the next until skill wording was changed. Canonical card: orama-system bin/orama-system/skills/skillify/references/skill-security-wording-reference-card.md. Validate with aguara scan --ci --baseline config/agent-security/aguara-skills.baseline.json --disable-rule TOXIC_CROSS_002.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-27T22:13:50.495931+00:00"
+      ],
+      "lessons_sha": "ec9a6f61a0bd"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-27T22:13:50.568653+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama PR #222 agent-security CI: fixing one gating aguara rule exposed the next until skill wording was changed. Canonical card: orama-system bin/orama-system/skills/skillify/references/skill-security-wording-reference-card.md. Validate with aguara scan --ci --baseline config/agent-security/aguara-skills.baseline.json --disable-rule TOXIC_CROSS_002."
+}
