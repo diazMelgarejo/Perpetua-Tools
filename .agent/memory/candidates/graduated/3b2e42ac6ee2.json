@@ -1,0 +1,78 @@
+{
+  "id": "3b2e42ac6ee2",
+  "key": "manual_3b2e42",
+  "name": "manual_3b2e42",
+  "claim": "Hermes portable brain has two distinct paths: orama-system bin/agents staging installs clean per-role SOUL distillates via install_hermes_profiles.py, while hermes_portable_brain.py exports/restores the actual current Hermes home with SOUL, memories, skills, profiles, config, cron, kanban, scripts, and optional sessions/secrets. Do not treat staged persona templates as a full live-Hermes backup.",
+  "conditions": [
+    "actual",
+    "agents",
+    "backup",
+    "bin",
+    "brain",
+    "clean",
+    "config",
+    "cron",
+    "current",
+    "distillates",
+    "distinct",
+    "exports",
+    "full",
+    "hermes",
+    "hermes_portable_brain",
+    "home",
+    "install_hermes_profiles",
+    "installs",
+    "kanban",
+    "live-hermes",
+    "memories",
+    "optional",
+    "orama-system",
+    "paths",
+    "per-role",
+    "persona",
+    "portable",
+    "profiles",
+    "restores",
+    "scripts",
+    "secrets",
+    "sessions",
+    "skills",
+    "soul",
+    "staged",
+    "staging",
+    "templates",
+    "treat",
+    "two",
+    "via",
+    "while"
+  ],
+  "evidence_ids": [
+    "2026-07-27T09:17:43.783115+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-27T09:17:43.783115+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-27T09:17:43.783115+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-27T09:17:43.954508+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "manual via learn.py at 2026-07-27T09:17:43.786119+00:00",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-27T09:17:43.783115+00:00"
+      ],
+      "lessons_sha": "b1a90fb3738d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-27T09:17:43.954508+00:00",
+  "reviewer": "learn.py",
+  "rationale": "manual via learn.py at 2026-07-27T09:17:43.786119+00:00"
+}

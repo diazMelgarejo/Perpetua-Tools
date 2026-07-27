@@ -1,0 +1,63 @@
+{
+  "id": "ec9f7ace68dd",
+  "key": "manual_ec9f7a",
+  "name": "manual_ec9f7a",
+  "claim": "Portable-brain restores must dry-run first, inspect manifest.json, exclude secrets by default, require --include-secrets for .env/auth/auth.json, and refuse overwrites unless --overwrite is explicit; private generated archives must stay outside git-tracked repos.",
+  "conditions": [
+    "archives",
+    "auth",
+    "default",
+    "dry-run",
+    "env",
+    "exclude",
+    "explicit",
+    "first",
+    "generated",
+    "git-tracked",
+    "include-secrets",
+    "inspect",
+    "json",
+    "manifest",
+    "outside",
+    "overwrite",
+    "overwrites",
+    "portable-brain",
+    "private",
+    "refuse",
+    "repos",
+    "require",
+    "restores",
+    "secrets",
+    "stay",
+    "unless"
+  ],
+  "evidence_ids": [
+    "2026-07-27T09:17:44.392531+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-27T09:17:44.392531+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-27T09:17:44.392531+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-27T09:17:44.537180+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "manual via learn.py at 2026-07-27T09:17:44.395531+00:00",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-27T09:17:44.392531+00:00"
+      ],
+      "lessons_sha": "03712deeb7ac"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-27T09:17:44.537180+00:00",
+  "reviewer": "learn.py",
+  "rationale": "manual via learn.py at 2026-07-27T09:17:44.395531+00:00"
+}
