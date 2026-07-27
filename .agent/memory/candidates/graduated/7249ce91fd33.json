@@ -1,0 +1,55 @@
+{
+  "id": "7249ce91fd33",
+  "key": "manual_7249ce",
+  "name": "manual_7249ce",
+  "claim": "GLM52 and OpenRouter setup scripts must wire shell profiles only when GLM52_PERSIST_SHELL_PROFILE=1 or OPENROUTER_PERSIST_SHELL_PROFILE=1 is set \u2014 no sudo on operator openclaw home and no silent append to .zshrc.",
+  "conditions": [
+    "append",
+    "glm52",
+    "glm52_persist_shell_profile",
+    "home",
+    "only",
+    "openclaw",
+    "openrouter",
+    "openrouter_persist_shell_profile",
+    "operator",
+    "profiles",
+    "scripts",
+    "set",
+    "setup",
+    "shell",
+    "silent",
+    "sudo",
+    "wire",
+    "zshrc"
+  ],
+  "evidence_ids": [
+    "2026-07-27T23:42:44.342948+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-27T23:42:44.342948+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-27T23:42:44.342948+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-27T23:42:44.415858+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit 4792277312 glm52-fallback SKILL and setup-openrouter.sh alignment.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-27T23:42:44.342948+00:00"
+      ],
+      "lessons_sha": "eefcac8d0af7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-27T23:42:44.415847+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit 4792277312 glm52-fallback SKILL and setup-openrouter.sh alignment."
+}
