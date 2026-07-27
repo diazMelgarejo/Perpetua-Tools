@@ -1,0 +1,70 @@
+{
+  "id": "18ab3b438ae6",
+  "key": "manual_18ab3b",
+  "name": "manual_18ab3b",
+  "claim": "Skill security teaching uses a two-layer model: production SKILL.md uses safe wording only; literal bad examples live in skillify/examples/bad/security-wording-anti-patterns.md with aguara-ignore-next-line quarantine per bad line \u2014 you can teach the negative rule without weakening CI or tempting naive agents to execute attack-shaped prose in operator-facing files.",
+  "conditions": [
+    "agents",
+    "aguara-ignore-next-line",
+    "attack-shaped",
+    "bad",
+    "examples",
+    "execute",
+    "files",
+    "line",
+    "literal",
+    "live",
+    "model",
+    "naive",
+    "negative",
+    "only",
+    "operator-facing",
+    "per",
+    "production",
+    "prose",
+    "quarantine",
+    "rule",
+    "safe",
+    "security",
+    "security-wording-anti-patterns",
+    "skill",
+    "skillify",
+    "teach",
+    "teaching",
+    "tempting",
+    "two-layer",
+    "uses",
+    "weakening",
+    "without",
+    "wording"
+  ],
+  "evidence_ids": [
+    "2026-07-27T22:31:46.582298+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-27T22:31:46.582298+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-27T22:31:46.582298+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-27T22:31:46.660878+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Meta-lesson from PR #222: euphemizing bad patterns in the reference card failed pedagogy; aguara inline-ignore on quarantined curriculum resolves the paradox (like labeled vaccine samples).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-27T22:31:46.582298+00:00"
+      ],
+      "lessons_sha": "9a5ca1fa3d40"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-27T22:31:46.660867+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Meta-lesson from PR #222: euphemizing bad patterns in the reference card failed pedagogy; aguara inline-ignore on quarantined curriculum resolves the paradox (like labeled vaccine samples)."
+}
