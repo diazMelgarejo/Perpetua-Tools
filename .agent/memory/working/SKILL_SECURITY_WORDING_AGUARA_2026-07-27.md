@@ -98,6 +98,7 @@ python .agent/tools/recall.py "EXTDL_006 CRED_021 skill security"
 
 | Doc | Topic |
 |-----|-------|
+| `PR222_HERMES_STAGING_SESSION_2026-07-27.md` | Full PR #222 session arc + CodeRabbit 4792277312 |
 | `MESH_SECURITY_MIGRATION_2026-07-26.md` | Mesh / gossip / LAN security ladder |
 | `PRIVATE_LITERALS_AND_LOCAL_TOPOLOGY_V2_LESSON_2026-07-18.md` | IP literal scrub |
 | orama `skill-architecture-guide.md` § LINT-016 | Repo lint pointer |

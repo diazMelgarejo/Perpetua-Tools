@@ -1,0 +1,62 @@
+{
+  "id": "9581e059df66",
+  "key": "manual_9581e0",
+  "name": "manual_9581e0",
+  "claim": "hermes-spawn status must use session-allowlisted PID files under a mode-700 runtime directory with lock on stop \u2014 never probe liveness via AIAgent.chat or unbounded process scans; HARNESS_ROOT must resolve safely from env.",
+  "conditions": [
+    "aiagent",
+    "chat",
+    "directory",
+    "env",
+    "files",
+    "harness_root",
+    "hermes-spawn",
+    "liveness",
+    "lock",
+    "mode-700",
+    "never",
+    "pid",
+    "probe",
+    "process",
+    "resolve",
+    "runtime",
+    "safely",
+    "scans",
+    "session-allowlisted",
+    "status",
+    "stop",
+    "unbounded",
+    "under",
+    "use",
+    "via"
+  ],
+  "evidence_ids": [
+    "2026-07-27T23:42:43.981896+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-27T23:42:43.981896+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-27T23:42:43.981896+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-27T23:42:44.048309+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit 4792277312 outside-diff on skills/hermes-harness/hermes-spawn/SKILL.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-27T23:42:43.981896+00:00"
+      ],
+      "lessons_sha": "5a92d30f0368"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-27T23:42:44.048300+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit 4792277312 outside-diff on skills/hermes-harness/hermes-spawn/SKILL.md."
+}
