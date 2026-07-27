@@ -1,0 +1,62 @@
+{
+  "id": "83c53b4aabf1",
+  "key": "manual_83c53b",
+  "name": "manual_83c53b",
+  "claim": "Integrative editing doctrine for PR descriptions, memory, and plans belongs in CIDF with a good-bad examples reference table and a corpus amputation anti-pattern row in FRAMEWORK.md \u2014 the remedy for clobber must not repeat the disease via orphan companion files.",
+  "conditions": [
+    "amputation",
+    "anti-pattern",
+    "belongs",
+    "cidf",
+    "clobber",
+    "companion",
+    "corpus",
+    "descriptions",
+    "disease",
+    "doctrine",
+    "editing",
+    "examples",
+    "files",
+    "framework",
+    "good-bad",
+    "integrative",
+    "memory",
+    "orphan",
+    "plans",
+    "reference",
+    "remedy",
+    "repeat",
+    "row",
+    "table",
+    "via"
+  ],
+  "evidence_ids": [
+    "2026-07-27T23:42:44.693048+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-27T23:42:44.693048+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-27T23:42:44.693048+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-27T23:42:44.764404+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama PR #222: cidf/SKILL.md + references/integrative-editing-examples.md; cross-ref PT lesson_3b13ab0a45d4.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-27T23:42:44.693048+00:00"
+      ],
+      "lessons_sha": "2e01e3b90c82"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-27T23:42:44.764395+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama PR #222: cidf/SKILL.md + references/integrative-editing-examples.md; cross-ref PT lesson_3b13ab0a45d4."
+}

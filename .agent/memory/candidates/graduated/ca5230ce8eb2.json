@@ -1,0 +1,69 @@
+{
+  "id": "ca5230ce8eb2",
+  "key": "manual_ca5230",
+  "name": "manual_ca5230",
+  "claim": "repo_hygiene _read_tracked_file_text in index mode must fail closed: return (text, error) tuples, never fall back to worktree for staged blobs, and surface decode failures as scan errors \u2014 silent empty reads let LINT-013 LAN topology violations slip through pre-commit.",
+  "conditions": [
+    "back",
+    "blobs",
+    "closed",
+    "decode",
+    "empty",
+    "error",
+    "errors",
+    "fail",
+    "failures",
+    "fall",
+    "index",
+    "lan",
+    "let",
+    "lint-013",
+    "mode",
+    "never",
+    "pre-commit",
+    "read_tracked_file_text",
+    "reads",
+    "repo_hygiene",
+    "return",
+    "scan",
+    "silent",
+    "slip",
+    "staged",
+    "surface",
+    "text",
+    "through",
+    "topology",
+    "tuples",
+    "violations",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-07-27T23:42:43.861413+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-27T23:42:43.861413+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-27T23:42:43.861413+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-27T23:42:43.928785+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit 4792277312 on orama PR #222; test_repo_hygiene.py index fail-closed case added.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-27T23:42:43.861413+00:00"
+      ],
+      "lessons_sha": "17a8de854afc"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-27T23:42:43.928776+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit 4792277312 on orama PR #222; test_repo_hygiene.py index fail-closed case added."
+}
