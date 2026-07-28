@@ -128,3 +128,10 @@ tree(origin/merged) == tree(backup/pre-reanchor-merged-20260728-015854)
   they are the audit and rollback evidence.
 - The rename from `wesm/agentsview` to `kenn-io/agentsview` changes the remote
   URL only. It does not change the `agentsview` mirror role.
+
+## Related follow-up (2026-07-28)
+
+- `.agent/memory/working/PERISCOPE_ECC_INTEGRATIVE_REPLAY_2026-07-28.md` —
+  path-scoped replay when an open PR's integration base already landed overlapping
+  content (PR #12 ECC fusion after PR #10); complements dual-pedigree reanchor with
+  the same "replay proven paths, not whole branch" discipline.
