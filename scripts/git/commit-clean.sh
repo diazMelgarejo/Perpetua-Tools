@@ -6,7 +6,10 @@ usage() {
   cat <<'EOF'
 Usage: scripts/git/commit-clean.sh -m "message" [--amend]
 
-Stages must already reflect the desired tree (git add …).
+Before running, stage every path that belongs in this commit:
+  git add <paths>   # or git add -A when the whole tree is intentional
+
+Unstaged edits are preserved, but they are NOT included in the commit.
 Uses git commit-tree so Cursor commit-msg hooks never run.
 
 Environment overrides: GIT_AUTHOR_NAME, GIT_AUTHOR_EMAIL
@@ -120,5 +123,4 @@ else
   git update-ref HEAD "$new_sha"
 fi
 
-git reset --hard "$new_sha" >/dev/null
 echo "$new_sha"
