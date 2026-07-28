@@ -46,4 +46,6 @@ Agent PRs in sibling repos **must not target `main`** when an integration line e
 - **AlphaClaw** → base `feature/MacOS-post-install` ([tree](https://github.com/diazMelgarejo/AlphaClaw/tree/feature/MacOS-post-install))
 - **periscope** → base `merged` ([tree](https://github.com/diazMelgarejo/periscope/tree/merged))
 
-Working memory: `.agent/memory/working/WORKSPACE_PR_BASE_BRANCHES_2026-07-28.md`
+Working memory: `.agent/memory/working/WORKSPACE_PR_BASE_BRANCHES_2026-07-28.md`  
+Rename catalogue: `.agent/memory/working/PERISCOPE_AGENTSVIEW_RENAME_CATALOGUE_2026-07-28.md`  
+Periscope guide: `periscope/docs/guides/agentsview-to-periscope-rename-catalogue.md`
