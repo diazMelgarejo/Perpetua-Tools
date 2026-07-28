@@ -32,12 +32,7 @@ _LOG = logging.getLogger(__name__)
 def emitter_enabled() -> bool:
     """Return whether optional Periscope observation emission is enabled."""
 
-    return os.getenv(EMITTER_ENABLED_ENV, "").strip().lower() in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
+    return os.getenv(EMITTER_ENABLED_ENV, "").strip() == "1"
 
 
 def job_session_max_age_days() -> int:
