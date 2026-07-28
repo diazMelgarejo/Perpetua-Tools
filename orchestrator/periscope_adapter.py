@@ -12,12 +12,16 @@ import logging
 import os
 import re
 import tempfile
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 
 EMITTER_ENABLED_ENV = "PERISCOPE_EMITTER_ENABLED"
+JOB_SESSION_MAX_AGE_DAYS_ENV = "PERISCOPE_JOB_SESSION_MAX_AGE_DAYS"
+DEFAULT_JOB_SESSION_MAX_AGE_DAYS = 33
+SECONDS_PER_DAY = 86400
 AGENT_PT_SUPERVISOR = "pt-supervisor"
 AGENT_ALPHACLAW_ROUTING = "alphaclaw-routing"
 ROUTING_SESSION_ID = "routing-latest"
@@ -34,6 +38,60 @@ def emitter_enabled() -> bool:
         "yes",
         "on",
     }
+
+
+def job_session_max_age_days() -> int:
+    """Return retention window for per-job supervisor session JSONL files."""
+
+    raw = os.getenv(JOB_SESSION_MAX_AGE_DAYS_ENV, "").strip()
+    if not raw:
+        return DEFAULT_JOB_SESSION_MAX_AGE_DAYS
+    try:
+        days = int(raw)
+    except ValueError:
+        return DEFAULT_JOB_SESSION_MAX_AGE_DAYS
+    return max(1, days)
+
+
+def prune_stale_job_sessions(
+    state_dir: Path | str,
+    *,
+    agent_id: str = AGENT_PT_SUPERVISOR,
+    max_age_days: int | None = None,
+    now: float | None = None,
+) -> int:
+    """Delete per-job session JSONL older than the retention window.
+
+    Routing observations reuse a fixed session id and are not pruned here.
+    Returns the number of files removed.
+    """
+
+    if not emitter_enabled():
+        return 0
+
+    safe_agent = _validate_component("agent_id", agent_id)
+    session_dir = periscope_agents_dir(state_dir) / safe_agent / "sessions"
+    if not session_dir.is_dir():
+        return 0
+
+    age_days = max_age_days if max_age_days is not None else job_session_max_age_days()
+    cutoff = (now if now is not None else time.time()) - age_days * SECONDS_PER_DAY
+    removed = 0
+    for path in session_dir.glob("*.jsonl"):
+        try:
+            if path.stat().st_mtime < cutoff:
+                path.unlink()
+                removed += 1
+        except OSError as exc:
+            _LOG.debug("prune_stale_job_sessions: skip %s — %s", path.name, exc)
+    if removed:
+        _LOG.debug(
+            "prune_stale_job_sessions: removed %d file(s) older than %d days under %s",
+            removed,
+            age_days,
+            session_dir,
+        )
+    return removed
 
 
 def periscope_agents_dir(state_dir: Path | str) -> Path:
@@ -277,7 +335,7 @@ def maybe_emit_job_observation(
     ended = ended_at or _utc_now_iso()
     started = started_at or ended
     try:
-        emit_openclaw_session(
+        emitted = emit_openclaw_session(
             state_dir=state_dir,
             agent_id=AGENT_PT_SUPERVISOR,
             session_id=job_id,
@@ -287,5 +345,7 @@ def maybe_emit_job_observation(
             ended_at=ended,
             model=model,
         )
+        if emitted is not None:
+            prune_stale_job_sessions(state_dir)
     except Exception as exc:  # pragma: no cover - defensive guardrail
         _LOG.debug("periscope job observation skipped: %s", exc)
