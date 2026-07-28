@@ -20,7 +20,10 @@ When pushing agent work from the cloud VM workspace, **never target `main`** for
 |----|------|------|
 | [AlphaClaw #17](https://github.com/diazMelgarejo/AlphaClaw/pull/17) | `cursor/attribution-guard-sync-f559` | `feature/MacOS-post-install` |
 | [periscope #7](https://github.com/diazMelgarejo/periscope/pull/7) | `cursor/attribution-guard-sync-f559` | `merged` |
-| [periscope #12](https://github.com/diazMelgarejo/periscope/pull/12) | `ecc-tools/periscope-1785200140258` | `merged` (ECC integrative fusion — path-scoped replay) |
+| [periscope #12](https://github.com/diazMelgarejo/periscope/pull/12) | `ecc-tools/periscope-1785200140258` | `merged` (ECC integrative fusion — path-scoped replay @ `9e465d9c`) |
+| [periscope #16](https://github.com/diazMelgarejo/periscope/pull/16) | `ecc-tools/periscope-1785246953340` | `merged` (ECC additive replay @ `0544ccf4`; replaced regressive `f7fdef69`) |
+| [periscope #15](https://github.com/diazMelgarejo/periscope/pull/15) | `merged-local-rebased-on-origin` | `merged` (layer-2 docs + frontend @ `e5affe8c`; not yet on `merged`) |
+| [Perpetua-Tools #295](https://github.com/diazMelgarejo/Perpetua-Tools/pull/295) | `cursor/periscope-l4-adapter-f559` | `main` (L4 `periscope_adapter` @ `fdc42b0f` + supervisor wiring) |
 
 ## Agent workflow
 
@@ -48,7 +51,18 @@ git push -u origin cursor/<task>-f559
 - `.agent/memory/working/PERISCOPE_DUAL_PEDIGREE_REANCHOR_2026-07-28.md` — audited periscope `main` / `agentsview` / `merged` model, mirror sources, expunge-rewrite evidence, and reproducible dual-pedigree recovery
 - `.agent/memory/working/PERISCOPE_AGENTSVIEW_RENAME_CATALOGUE_2026-07-28.md` — indexed agentsview→periscope rename map for upstream merges (96 files / 514 matches on merged @ 6cf2f38f)
 - `.agent/memory/working/PERISCOPE_ECC_INTEGRATIVE_REPLAY_2026-07-28.md` — path-scoped PR replay for ECC fusion (PR #12 after PR #10); orama `path-scoped-pr-replay-reference-card.md`
+- `.agent/memory/working/PERISCOPE_L4_IMPLEMENTATION_2026-07-28.md` — L4 adapter wiring, security doc removal, lineage epic
+- `.agent/memory/working/PERISCOPE_MERGED_LOCAL_INTEGRATIVE_SYNTHESIS_2026-07-28.md` — salvaged local `merged` (20 commits), layer-1 tree-twin reanchor (`merged-local-reanchored`), layer-2 integrative synthesis on `origin/merged` (`merged-local-rebased-on-origin`); tips for agents
+- `.agent/memory/working/PERISCOPE_PR16_INTEGRATIVE_HARMONIZATION_2026-07-28.md` — PR #16 ECC additive path-scoped replay (second application after PR #12); regressive wholesale bundle rejected
+
+## Published recovery branches (periscope, 2026-07-28)
+
+| Branch | Integration role |
+|--------|------------------|
+| `origin/merged` | Canonical integration line (`44593b77`) |
+| `origin/merged-local-reanchored` | Layer 1 — salvaged alternate history grafted onto twin `852b8e38` |
+| `origin/merged-local-rebased-on-origin` | Layer 2 — harmonized delta on current `merged` (L4 docs + frontend strictness); candidate for PR to `merged` |
+
+Do not confuse layer 1 (history artifact) with layer 2 (forward integration). See synthesis memory card above.
 
 ## PR body edits
-
-READ → backup → write before any PR description update (see orama-system CIDF `integrative-editing-examples` §1).

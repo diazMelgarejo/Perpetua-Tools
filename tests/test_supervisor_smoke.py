@@ -1411,3 +1411,162 @@ async def test_run_worker_result_safely_under_cap_is_preserved(tmp_path):
     saved = json.loads(result_path.read_text(encoding="utf-8"))
     assert saved.get("status") != "truncated", "Under-cap result must not be truncated"
     assert saved.get("output") == small_string
+
+
+# ── Periscope optional L4 wiring (_maybe_emit_periscope_job) ─────────────────
+
+
+def test_maybe_emit_periscope_job_noop_when_emitter_disabled(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    from unittest.mock import patch
+
+    monkeypatch.delenv("PERISCOPE_EMITTER_ENABLED", raising=False)
+    sup = _make_sup(tmp_path)
+    spec = _echo_spec("plan")
+
+    with patch("orchestrator.periscope_adapter.maybe_emit_job_observation") as mock_emit:
+        sup._maybe_emit_periscope_job(spec, assistant_text="done")
+        mock_emit.assert_not_called()
+
+
+def test_maybe_emit_periscope_job_reads_running_timestamp_and_metadata(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "1")
+    sup = _make_sup(tmp_path)
+    spec = JobSpec(
+        job_id="job-abc",
+        intent="echo",
+        prompt="inspect the build",
+        backend_hint="echo",
+        metadata={"model": "codex"},
+    )
+    sup._jobs_file.write_text(
+        json.dumps(
+            {
+                "ts": "2026-07-28T05:00:00+00:00",
+                "job_id": "job-abc",
+                "status": JobStatus.RUNNING.value,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    captured: list[dict] = []
+    monkeypatch.setattr(
+        "orchestrator.periscope_adapter.maybe_emit_job_observation",
+        lambda **kwargs: captured.append(kwargs),
+    )
+
+    sup._maybe_emit_periscope_job(spec, assistant_text='{"status":"ok"}')
+
+    assert len(captured) == 1
+    assert captured[0]["state_dir"] == tmp_path
+    assert captured[0]["job_id"] == "job-abc"
+    assert captured[0]["user_text"] == "inspect the build"
+    assert captured[0]["assistant_text"] == '{"status":"ok"}'
+    assert captured[0]["started_at"] == "2026-07-28T05:00:00+00:00"
+    assert captured[0]["model"] == "codex"
+
+
+@pytest.mark.asyncio
+async def test_run_worker_periscope_success_truncates_assistant_text_at_4000(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "1")
+    sup = _make_sup(tmp_path)
+    spec = _echo_spec("big result")
+    captured: list[dict] = []
+    monkeypatch.setattr(
+        "orchestrator.periscope_adapter.maybe_emit_job_observation",
+        lambda **kwargs: captured.append(kwargs),
+    )
+
+    async def _big_dispatch(s):
+        return {"output": "x" * 5000, "backend": "echo"}
+
+    sup._dispatch = _big_dispatch
+    job_id = await sup.submit_job(spec)
+    await _await_job(sup, job_id)
+
+    assert len(captured[0]["assistant_text"]) == 4000
+
+
+@pytest.mark.asyncio
+async def test_run_worker_periscope_generic_error_truncates_assistant_text_at_2000(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "1")
+    sup = _make_sup(tmp_path)
+    spec = _echo_spec("error job")
+    captured: list[dict] = []
+    monkeypatch.setattr(
+        "orchestrator.periscope_adapter.maybe_emit_job_observation",
+        lambda **kwargs: captured.append(kwargs),
+    )
+
+    async def _boom(s):
+        raise RuntimeError("e" * 3000)
+
+    sup._dispatch = _boom
+    job_id = await sup.submit_job(spec)
+    await _await_job(sup, job_id)
+
+    assert len(captured[0]["assistant_text"]) == 2000
+
+
+@pytest.mark.asyncio
+async def test_run_worker_periscope_hardware_error_truncates_assistant_text_at_2000(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    from utils.hardware_policy import HardwareAffinityError
+
+    monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "1")
+    sup = _make_sup(tmp_path)
+    spec = _echo_spec("policy job")
+    captured: list[dict] = []
+    monkeypatch.setattr(
+        "orchestrator.periscope_adapter.maybe_emit_job_observation",
+        lambda **kwargs: captured.append(kwargs),
+    )
+
+    async def _policy_fail(s):
+        raise HardwareAffinityError("p" * 3000)
+
+    sup._dispatch = _policy_fail
+    job_id = await sup.submit_job(spec)
+    await _await_job(sup, job_id)
+
+    assert len(captured[0]["assistant_text"]) == 2000
+
+
+@pytest.mark.asyncio
+async def test_run_worker_periscope_cancelled_emits_cancelled_literal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """_run_worker CancelledError branch emits assistant_text='cancelled'."""
+
+    monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "1")
+    sup = _make_sup(tmp_path)
+    spec = _echo_spec("cancel me")
+    captured: list[dict] = []
+    monkeypatch.setattr(
+        "orchestrator.periscope_adapter.maybe_emit_job_observation",
+        lambda **kwargs: captured.append(kwargs),
+    )
+
+    async def _slow(s):
+        await asyncio.sleep(60)
+        return {"output": "never"}
+
+    sup._dispatch = _slow
+    job_id = await sup.submit_job(spec)
+    await asyncio.sleep(0.05)
+
+    cancelled = await sup.cancel(job_id)
+    assert cancelled is True
+    await asyncio.sleep(0.1)
+
+    assert len(captured) == 1
+    assert captured[0]["assistant_text"] == "cancelled"
