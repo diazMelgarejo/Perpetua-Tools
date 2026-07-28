@@ -513,7 +513,13 @@ class OrchestrationSupervisor:
 
         log = logging.getLogger(__name__)
         try:
-            from orchestrator.periscope_adapter import maybe_emit_job_observation
+            from orchestrator.periscope_adapter import (
+                emitter_enabled,
+                maybe_emit_job_observation,
+            )
+
+            if not emitter_enabled():
+                return
 
             started_at = None
             for evt in reversed(_load_events(self._jobs_file)):

@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from pathlib import Path
 
@@ -10,6 +11,8 @@ from orchestrator.periscope_adapter import (
     build_routing_event_payload,
     emit_openclaw_session,
     emit_routing_state,
+    maybe_emit_job_observation,
+    maybe_emit_routing_observation,
     periscope_agents_dir,
     summarize_routing_state,
 )
@@ -239,3 +242,64 @@ def test_routing_emission_is_disabled_by_default(
 
     assert result is None
     assert not (tmp_path / "periscope").exists()
+
+
+def test_maybe_emit_job_observation_never_raises_and_logs_debug(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
+    monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "1")
+    caplog.set_level(logging.DEBUG, logger="orchestrator.periscope_adapter")
+
+    def boom(**_kwargs: object) -> None:
+        raise RuntimeError("simulated job emit failure")
+
+    monkeypatch.setattr(
+        "orchestrator.periscope_adapter.emit_openclaw_session",
+        boom,
+    )
+
+    maybe_emit_job_observation(
+        state_dir=tmp_path,
+        job_id="job-1",
+        user_text="plan",
+        assistant_text="done",
+        started_at="2026-07-28T05:00:00+00:00",
+    )
+
+    assert any(
+        record.levelname == "DEBUG"
+        and "periscope job observation skipped: simulated job emit failure"
+        in record.getMessage()
+        for record in caplog.records
+    )
+
+
+def test_maybe_emit_routing_observation_never_raises_and_logs_debug(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
+    monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "1")
+    caplog.set_level(logging.DEBUG, logger="orchestrator.periscope_adapter")
+
+    def boom(**_kwargs: object) -> None:
+        raise RuntimeError("simulated routing emit failure")
+
+    monkeypatch.setattr(
+        "orchestrator.periscope_adapter.emit_routing_state",
+        boom,
+    )
+
+    maybe_emit_routing_observation(
+        tmp_path,
+        {"coder_backend": "mac-degraded", "distributed": False},
+    )
+
+    assert any(
+        record.levelname == "DEBUG"
+        and "periscope routing observation skipped: simulated routing emit failure"
+        in record.getMessage()
+        for record in caplog.records
+    )
