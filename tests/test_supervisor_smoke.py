@@ -1541,10 +1541,11 @@ async def test_run_worker_periscope_hardware_error_truncates_assistant_text_at_2
     assert len(captured[0]["assistant_text"]) == 2000
 
 
-def test_maybe_emit_periscope_job_cancelled_literal_wiring(
+@pytest.mark.asyncio
+async def test_run_worker_periscope_cancelled_emits_cancelled_literal(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    """Mirror _run_worker CancelledError branch (assistant_text='cancelled')."""
+    """_run_worker CancelledError branch emits assistant_text='cancelled'."""
 
     monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "1")
     sup = _make_sup(tmp_path)
@@ -1555,6 +1556,17 @@ def test_maybe_emit_periscope_job_cancelled_literal_wiring(
         lambda **kwargs: captured.append(kwargs),
     )
 
-    sup._maybe_emit_periscope_job(spec, assistant_text="cancelled")
+    async def _slow(s):
+        await asyncio.sleep(60)
+        return {"output": "never"}
 
+    sup._dispatch = _slow
+    job_id = await sup.submit_job(spec)
+    await asyncio.sleep(0.05)
+
+    cancelled = await sup.cancel(job_id)
+    assert cancelled is True
+    await asyncio.sleep(0.1)
+
+    assert len(captured) == 1
     assert captured[0]["assistant_text"] == "cancelled"

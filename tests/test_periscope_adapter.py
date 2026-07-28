@@ -48,6 +48,28 @@ def test_emitter_is_disabled_by_default(tmp_path: Path, monkeypatch: pytest.Monk
     assert not (tmp_path / "periscope").exists()
 
 
+@pytest.mark.parametrize("enabled_value", ["true", "yes", "on", "TRUE"])
+def test_emitter_rejects_non_exact_opt_in_values(
+    enabled_value: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", enabled_value)
+
+    result = emit_openclaw_session(
+        state_dir=tmp_path,
+        agent_id="pt-supervisor",
+        session_id="job-1",
+        user_text="plan",
+        assistant_text="done",
+        started_at="2026-07-28T05:00:00+00:00",
+        ended_at="2026-07-28T05:01:00+00:00",
+    )
+
+    assert result is None
+    assert not (tmp_path / "periscope").exists()
+
+
 def test_emits_existing_openclaw_session_shape(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
@@ -107,7 +129,7 @@ def test_agents_dir_is_owned_by_pt_state(tmp_path: Path):
 def test_emission_is_idempotent_for_same_session(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "true")
+    monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "1")
     kwargs = {
         "state_dir": tmp_path,
         "agent_id": "pt-supervisor",
