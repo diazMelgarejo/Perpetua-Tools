@@ -24,7 +24,8 @@ have ping-ponged `main`/`merged`/branch history without delivering the intended
 ## Technique — path-scoped replay on fresh integration base
 
 1. **Preserve synthesis outside the branch being rewritten**  
-   Fusion content lived in a separate worktree (`/tmp/periscope-ecc-fusion-review`).
+   Fusion content lived in a separate disposable worktree (for example
+   `$TMPDIR/periscope-ecc-fusion-review`).
    Do not extract harmonized blobs from the PR branch you are about to force-push.
 
 2. **Reset PR branch to fresh `origin/merged`**
