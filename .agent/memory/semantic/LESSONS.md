@@ -465,6 +465,8 @@
 - Agent-security aguara remediation on a Hermes or mesh security PR is CI plumbing — document it in an append-only PR Follow-up section explicitly labeled side quest so reviewers do not confuse branch purpose with scan hygiene.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_0f4ba0603465 -->
 - Integrative editing doctrine for PR descriptions, memory, and plans belongs in CIDF with a good-bad examples reference table and a corpus amputation anti-pattern row in FRAMEWORK.md — the remedy for clobber must not repeat the disease via orphan companion files.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_83c53b4aabf1 -->
 - AlphaClaw and periscope agent PRs must never target main — branch from and open PRs against AlphaClaw feature/MacOS-post-install and periscope merged respectively  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7d4513a1c0be -->
+- For periscope, main and agentsview are upstream mirrors while merged is the only agent integration base; a rewrite recovery must preserve both mirror parents and the proven merged tree.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_fdb82283644f -->
+- After an expunge rewrite, prove branch content with tree twins, preserve remote tags and lease SHAs, simulate in a disposable worktree, and force-push only after graph and tree predicates pass.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_19b69065cb5e -->
 
 ### 2026-06
 

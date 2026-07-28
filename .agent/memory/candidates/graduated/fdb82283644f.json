@@ -1,0 +1,45 @@
+{
+  "id": "fdb82283644f",
+  "key": "manual_fdb822",
+  "name": "manual_fdb822",
+  "claim": "For periscope, main and agentsview are upstream mirrors while merged is the only agent integration base; a rewrite recovery must preserve both mirror parents and the proven merged tree.",
+  "conditions": [
+    "agentsview",
+    "ancestry",
+    "expunge",
+    "main",
+    "merged",
+    "mirrors",
+    "periscope",
+    "reanchor"
+  ],
+  "evidence_ids": [
+    "2026-07-28T02:10:00.796284+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-28T02:10:00.796284+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-28T02:10:00.796284+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-28T02:10:00.867738+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Verified during the 2026-07-28 post-expunge repair: main was tree-identical to latentsignal-org/periscope, agentsview was synced to kenn-io/agentsview, and merged required a dual-pedigree anchor rather than a single-lineage rebase.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-28T02:10:00.796284+00:00"
+      ],
+      "lessons_sha": "5eb14e10b5ba"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-28T02:10:00.867727+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Verified during the 2026-07-28 post-expunge repair: main was tree-identical to latentsignal-org/periscope, agentsview was synced to kenn-io/agentsview, and merged required a dual-pedigree anchor rather than a single-lineage rebase."
+}

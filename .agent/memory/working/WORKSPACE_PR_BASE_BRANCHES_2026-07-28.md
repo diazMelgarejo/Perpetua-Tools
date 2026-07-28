@@ -44,6 +44,7 @@ git push -u origin cursor/<task>-f559
 - `lesson_881de77084d5` — AlphaClaw reverse-merge flow (`feature/MacOS-post-install` never merges into `main` directly)
 - `lesson_292b1558dde2` — D3 AlphaClaw `feature/MacOS-post-install` locked decision
 - `.agent/references/branch-local-review-remediation.md` — review belongs to the branch that received it
+- `.agent/memory/working/PERISCOPE_DUAL_PEDIGREE_REANCHOR_2026-07-28.md` — audited periscope `main` / `agentsview` / `merged` model, mirror sources, expunge-rewrite evidence, and reproducible dual-pedigree recovery
 
 ## PR body edits
 
