@@ -428,10 +428,15 @@ class OrchestrationSupervisor:
                 "artifact": str(job_dir / "result.json"),
             })
             await self._record_to_gossip("result", spec)
+            self._maybe_emit_periscope_job(
+                spec,
+                assistant_text=serialized[:4000],
+            )
 
         except asyncio.CancelledError:
             # Write CANCELLED checkpoint BEFORE propagating cancellation
             self._append_event(spec.job_id, {"status": JobStatus.CANCELLED})
+            self._maybe_emit_periscope_job(spec, assistant_text="cancelled")
             raise
 
         except HardwareAffinityError as exc:
@@ -442,6 +447,7 @@ class OrchestrationSupervisor:
                 "policy": True,
             })
             await self._record_to_gossip("error", spec, {"detail": str(exc), "policy": True})
+            self._maybe_emit_periscope_job(spec, assistant_text=str(exc)[:2000])
 
         except Exception as exc:
             self._append_event(spec.job_id, {
@@ -449,6 +455,7 @@ class OrchestrationSupervisor:
                 "error": str(exc),
             })
             await self._record_to_gossip("error", spec, {"detail": str(exc)})
+            self._maybe_emit_periscope_job(spec, assistant_text=str(exc)[:2000])
 
         finally:
             self._active.pop(spec.job_id, None)
@@ -498,6 +505,33 @@ class OrchestrationSupervisor:
                 self._gossip_warned = True
             else:
                 log.debug("_record_to_gossip: skipped — %s", exc)
+
+    def _maybe_emit_periscope_job(self, spec: JobSpec, *, assistant_text: str) -> None:
+        """Emit optional Periscope observation for a terminal supervisor job."""
+
+        import logging
+
+        log = logging.getLogger(__name__)
+        try:
+            from orchestrator.periscope_adapter import maybe_emit_job_observation
+
+            started_at = None
+            for evt in reversed(_load_events(self._jobs_file)):
+                if evt.get("job_id") != spec.job_id:
+                    continue
+                if evt.get("status") == JobStatus.RUNNING.value:
+                    started_at = evt.get("ts")
+                    break
+            maybe_emit_job_observation(
+                state_dir=self._state_dir,
+                job_id=spec.job_id,
+                user_text=spec.prompt or spec.intent or "",
+                assistant_text=assistant_text,
+                started_at=started_at,
+                model=str((spec.metadata or {}).get("model") or ""),
+            )
+        except Exception as exc:  # pragma: no cover
+            log.debug("_maybe_emit_periscope_job: skipped — %s", exc)
 
     async def _inject_memory_context(self, spec: JobSpec) -> JobSpec:
         """
