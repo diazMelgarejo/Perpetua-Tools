@@ -30,7 +30,7 @@
 | `origin/merged-local-reanchored` | `bec3eeb9` | **Layer 1** — salvaged pre-reset local tip; tree-twin graft onto `852b8e38` |
 | `origin/merged-local-rebased-on-origin` | `e5affe8c` | **Layer 2** — integrative synthesis on current `origin/merged` + L4 docs + frontend fixes |
 
-Canonical clone (v2 workspace): `oramasys/tools/periscope` — branch `merged` tracks `origin/merged`.
+Canonical clone (v2 workspace): `$OPENCLAW_ROOT/periscope` (or `$REPO_ROOT` when set) — branch `merged` tracks `origin/merged`.
 
 **Safety tags (local):** `backup/merged-local-salvage-*`, `backup/merged-local-reanchored-*`
 
@@ -46,7 +46,7 @@ Canonical clone (v2 workspace): `oramasys/tools/periscope` — branch `merged` t
 ### Salvage before reset
 
 ```bash
-cd tools/periscope   # oramasys workspace
+cd "${OPENCLAW_ROOT:-$REPO_ROOT}/periscope"
 PRE_TIP=$(git rev-parse merged@{1})   # reflog before reset
 git branch merged-local "$PRE_TIP"
 git tag backup/merged-local-salvage-$(date +%Y%m%d-%H%M%S) merged-local
@@ -156,8 +156,8 @@ layer 2 fixed stale minimap + context TS — do not assume docs-only branches sk
 ### Periscope repo policy
 
 11. Agent PR **base = `merged`**, never `main` (`main` = latentsignal mirror only).
-12. Canonical v2 clone path: `oramasys/tools/periscope` branch `merged`.
-13. After meaningful periscope changes: `go test -tags fts5 ./...` + `frontend/npm run check` + `npm test`.
+12. Canonical v2 clone path: `$OPENCLAW_ROOT/periscope` (branch `merged`).
+13. After meaningful periscope changes: `go test -tags fts5 ./...` + `npm --prefix frontend run check` + `npm test`.
 
 ### Worktree hygiene
 
