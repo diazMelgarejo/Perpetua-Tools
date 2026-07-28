@@ -48,6 +48,7 @@ git push -u origin cursor/<task>-f559
 - `.agent/memory/working/PERISCOPE_DUAL_PEDIGREE_REANCHOR_2026-07-28.md` — audited periscope `main` / `agentsview` / `merged` model, mirror sources, expunge-rewrite evidence, and reproducible dual-pedigree recovery
 - `.agent/memory/working/PERISCOPE_AGENTSVIEW_RENAME_CATALOGUE_2026-07-28.md` — indexed agentsview→periscope rename map for upstream merges (96 files / 514 matches on merged @ 6cf2f38f)
 - `.agent/memory/working/PERISCOPE_ECC_INTEGRATIVE_REPLAY_2026-07-28.md` — path-scoped PR replay for ECC fusion (PR #12 after PR #10); orama `path-scoped-pr-replay-reference-card.md`
+- `.agent/memory/working/PERISCOPE_L4_IMPLEMENTATION_2026-07-28.md` — L4 adapter wiring, security doc removal, lineage epic
 
 ## PR body edits
 
