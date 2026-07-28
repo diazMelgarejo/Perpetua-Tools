@@ -1031,6 +1031,17 @@ def save_routing_state(state: dict) -> None:
     STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(STATE_FILE, "w") as f:
         json.dump(state, f, indent=2)
+    try:
+        from orchestrator.periscope_adapter import (
+            maybe_emit_routing_observation,
+            resolve_observation_state_dir,
+        )
+
+        maybe_emit_routing_observation(resolve_observation_state_dir(), state)
+    except Exception as exc:  # observation must never break routing persistence
+        logging.getLogger(__name__).debug(
+            "periscope routing observation skipped: %s", exc
+        )
 
 
 def load_routing_state() -> dict | None:

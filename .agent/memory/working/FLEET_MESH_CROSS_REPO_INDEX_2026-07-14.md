@@ -44,8 +44,10 @@ The Orama connector pass added canonical indexes without moving legacy source fi
 Agent PRs in sibling repos **must not target `main`** when an integration line exists:
 
 - **AlphaClaw** → base `feature/MacOS-post-install` ([tree](https://github.com/diazMelgarejo/AlphaClaw/tree/feature/MacOS-post-install))
-- **periscope** → base `merged` ([tree](https://github.com/diazMelgarejo/periscope/tree/merged))
+- **periscope** → base `merged` ([tree](https://github.com/diazMelgarejo/periscope/tree/merged))  
+  Recovery branches (2026-07-28): `merged-local-reanchored`, `merged-local-rebased-on-origin`
 
 Working memory: `.agent/memory/working/WORKSPACE_PR_BASE_BRANCHES_2026-07-28.md`  
 Rename catalogue: `.agent/memory/working/PERISCOPE_AGENTSVIEW_RENAME_CATALOGUE_2026-07-28.md`  
+Synthesis record: `.agent/memory/working/PERISCOPE_MERGED_LOCAL_INTEGRATIVE_SYNTHESIS_2026-07-28.md`  
 Periscope guide: `periscope/docs/guides/agentsview-to-periscope-rename-catalogue.md`
