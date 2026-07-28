@@ -467,6 +467,7 @@
 - AlphaClaw and periscope agent PRs must never target main — branch from and open PRs against AlphaClaw feature/MacOS-post-install and periscope merged respectively  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7d4513a1c0be -->
 - For periscope, main and agentsview are upstream mirrors while merged is the only agent integration base; a rewrite recovery must preserve both mirror parents and the proven merged tree.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_fdb82283644f -->
 - After an expunge rewrite, prove branch content with tree twins, preserve remote tags and lease SHAs, simulate in a disposable worktree, and force-push only after graph and tree predicates pass.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_19b69065cb5e -->
+- When merging kenn-io agentsview into periscope merged, use the agentsview-to-periscope rename catalogue: keep mirror branch names and test fixtures, rename product binaries CI sidecars and branding, and migrate localStorage with legacy reads.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_81a22c49c332 -->
 
 ### 2026-06
 

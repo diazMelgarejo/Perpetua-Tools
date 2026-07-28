@@ -45,6 +45,7 @@ git push -u origin cursor/<task>-f559
 - `lesson_292b1558dde2` — D3 AlphaClaw `feature/MacOS-post-install` locked decision
 - `.agent/references/branch-local-review-remediation.md` — review belongs to the branch that received it
 - `.agent/memory/working/PERISCOPE_DUAL_PEDIGREE_REANCHOR_2026-07-28.md` — audited periscope `main` / `agentsview` / `merged` model, mirror sources, expunge-rewrite evidence, and reproducible dual-pedigree recovery
+- `.agent/memory/working/PERISCOPE_AGENTSVIEW_RENAME_CATALOGUE_2026-07-28.md` — indexed agentsview→periscope rename map for upstream merges (96 files / 514 matches on merged @ 6cf2f38f)
 
 ## PR body edits
 
