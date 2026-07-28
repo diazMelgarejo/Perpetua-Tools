@@ -18,7 +18,7 @@
   "cluster_size": 1,
   "canonical_salience": 8.0,
   "staged_at": "2026-07-28T04:10:14.507832+00:00",
-  "status": "accepted",
+  "status": "provisional",
   "decisions": [
     {
       "ts": "2026-07-28T04:10:14.507832+00:00",
@@ -30,7 +30,7 @@
       "action": "graduated",
       "reviewer": "learn.py",
       "notes": "2026-07-28 audit found 96 files and 514 agentsview literals on merged; desktop CI failed because prepare-sidecar emitted periscope-* while desktop-artifacts.yml still expected agentsview-*.",
-      "provisional": false,
+      "provisional": true,
       "evidence_snapshot": [
         "2026-07-28T04:10:14.507832+00:00"
       ],

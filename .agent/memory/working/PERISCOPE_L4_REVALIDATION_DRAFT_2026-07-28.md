@@ -80,8 +80,23 @@ out of `~/.openclaw/agents` and requires no new Periscope parser or route.
 
 The adapter must receive `self._state_dir` from `OrchestrationSupervisor`;
 `$PT_STATE_DIR` is not a universal read authority across PT modules. Periscope
-config requires resolved absolute paths, replaces default directories, and is
-ignored when the single-valued `OPENCLAW_DIR` environment override is set.
+config requires resolved absolute paths and replaces default directories when
+`openclaw_dirs` is in effect.
+
+**`OPENCLAW_DIR` override:** when set, Periscope ignores `openclaw_dirs` and
+watches only that single root. PT observations would be invisible if the adapter
+kept writing under `$PT_STATE_DIR/periscope/...` while Periscope followed
+`OPENCLAW_DIR` elsewhere. Integration modes:
+
+| Mode | PT adapter output root | Periscope watch root |
+| --- | --- | --- |
+| Default (recommended) | `<supervisor state_dir>/periscope/agents/` | `openclaw_dirs` lists both OpenClaw sessions **and** that PT path (absolute; `OPENCLAW_DIR` unset) |
+| Override | `<OPENCLAW_DIR>/periscope/agents/` (relocate under the effective root) | `OPENCLAW_DIR` only |
+
+Do not run with `OPENCLAW_DIR` pointing at OpenClaw sessions while PT emits to a
+disjoint supervisor state path — that silently drops PT observations. Adapter
+tests must cover both default `openclaw_dirs` and `OPENCLAW_DIR` relocation.
+
 Reserve `pt-supervisor` and `alphaclaw-routing` agent IDs to avoid
 `openclaw:<agent>:<session>` key collisions across roots.
 

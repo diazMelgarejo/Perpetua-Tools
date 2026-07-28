@@ -46,12 +46,27 @@ update `desktop-artifacts.yml` and shell smoke tests in the same pass.
 - `lesson_fdb82283644f` — three-branch mirror model
 - orama `docs/reference/periscope-cursor-repo-rules.md`
 
-## Regenerate index
+## Discover matches (filename scan only)
 
 ```bash
-rg -l 'agentsview|AgentsView|AGENTSVIEW' /path/to/periscope \
+rg -l 'agentsview|AgentsView|AGENTSVIEW' "$PERISCOPE_REPO" \
   --glob '!**/node_modules/**' --glob '!**/Cargo.lock'
 ```
 
-Re-categorize with the decision tree in the periscope guide; update JSON
-`generated_at` and `base_ref` when `merged` moves.
+Use this to find files that may need re-categorization after an upstream sync.
+It does **not** write `agentsview-rename-index.json`.
+
+## Regenerate machine index
+
+No checked-in generator exists yet. After discovery, update
+`periscope/docs/guides/agentsview-rename-index.json` manually (or via a one-off
+script) with:
+
+- `generated_at` — ISO-8601 UTC timestamp of the audit
+- `base_ref` — current `merged` tip (for example `git -C "$PERISCOPE_REPO" rev-parse merged`)
+- `file_count` / `match_count` — totals from the `rg` scan
+- `entries[]` — per-file rows with `path`, `category` (`keep` | `rename` | `compat` | `migrate`), and `match_count`
+
+Re-categorize each path with the decision tree in
+`periscope/docs/guides/agentsview-to-periscope-rename-catalogue.md` before
+committing the JSON.

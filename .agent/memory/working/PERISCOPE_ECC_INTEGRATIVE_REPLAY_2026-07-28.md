@@ -43,7 +43,40 @@ have ping-ponged `main`/`merged`/branch history without delivering the intended
    .claude/homunculus/instincts/inherited/periscope-instincts.yaml
    ```
 
+   Copy harmonized blobs from the preservation worktree onto the fresh branch:
+
+   ```bash
+   FUSION="$TMPDIR/periscope-ecc-fusion-review"
+   for rel in \
+     .agents/skills/periscope/SKILL.md \
+     .claude/skills/periscope/SKILL.md \
+     .claude/homunculus/instincts/inherited/periscope-instincts.yaml
+   do
+     install -D "$FUSION/$rel" "./$rel"
+   done
+   ```
+
+   Verify the intended paths are present before staging:
+
+   ```bash
+   git diff --stat -- \
+     .agents/skills/periscope/SKILL.md \
+     .claude/skills/periscope/SKILL.md \
+     .claude/homunculus/instincts/inherited/periscope-instincts.yaml
+   git status --short -- \
+     .agents/skills/periscope/SKILL.md \
+     .claude/skills/periscope/SKILL.md \
+     .claude/homunculus/instincts/inherited/periscope-instincts.yaml
+   ```
+
 4. **Stage before `commit-clean.sh`** — it does not `git add`; empty commits are silent failures.
+
+   ```bash
+   git add \
+     .agents/skills/periscope/SKILL.md \
+     .claude/skills/periscope/SKILL.md \
+     .claude/homunculus/instincts/inherited/periscope-instincts.yaml
+   ```
 
 5. **Exclude timestamp churn** — omit `.claude/ecc-tools.json` and `.claude/identity.json`
    unless intentionally harmonized.
