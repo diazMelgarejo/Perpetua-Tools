@@ -38,3 +38,12 @@ Operator-local retrofit (not yet promoted to orama git):
 ## Git-mv note
 
 The Orama connector pass added canonical indexes without moving legacy source files because the available connector path could not perform a true local `git mv` over the current tree. A future local checkout should physically move the indexed documents with `git mv` if the project wants path relocation in addition to canonical indexing.
+
+## Integration branch policy (2026-07-28)
+
+Agent PRs in sibling repos **must not target `main`** when an integration line exists:
+
+- **AlphaClaw** → base `feature/MacOS-post-install` ([tree](https://github.com/diazMelgarejo/AlphaClaw/tree/feature/MacOS-post-install))
+- **periscope** → base `merged` ([tree](https://github.com/diazMelgarejo/periscope/tree/merged))
+
+Working memory: `.agent/memory/working/WORKSPACE_PR_BASE_BRANCHES_2026-07-28.md`
