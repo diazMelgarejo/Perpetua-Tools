@@ -22,7 +22,7 @@
     "cluster_size": 1,
     "canonical_salience": 8.0,
     "staged_at": "2026-07-28T05:12:11.869273+00:00",
-    "status": "accepted",
+    "status": "provisional",
     "decisions": [
         {
             "ts": "2026-07-28T05:12:11.869273+00:00",
@@ -34,7 +34,7 @@
             "action": "graduated",
             "reviewer": "learn.py",
             "notes": "periscope PR #12 ECC fusion 2026-07-28: PR #10 already on merged; PR #12 had two pre-#10 commits; path-scoped replay to 9e465d9c produced MERGEABLE/CLEAN.",
-            "provisional": false,
+            "provisional": true,
             "evidence_snapshot": [
                 "2026-07-28T05:12:11.869273+00:00"
             ],
