@@ -174,3 +174,68 @@ def test_rejects_unsafe_path_components(
             started_at="2026-07-28T05:00:00+00:00",
             ended_at="2026-07-28T05:01:00+00:00",
         )
+
+
+def test_routing_event_payload_materializes_planned_shape():
+    state = {
+        "manager_backend": "mac-lmstudio",
+        "coder_backend": "windows-lmstudio",
+        "coder_endpoint": "http://192.168.1.10:1234",
+        "distributed": True,
+        "scenario_name": "distributed-lmstudio",
+    }
+    payload = build_routing_event_payload(
+        state, ts="2026-07-28T06:00:00+00:00"
+    )
+    assert payload["event"] == "route"
+    assert payload["chosen_backend"] == "windows-lmstudio"
+    assert payload["distributed"] is True
+    assert payload["scenario_name"] == "distributed-lmstudio"
+
+
+def test_emit_routing_state_writes_alphaclaw_routing_session(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "1")
+    state = {
+        "manager_backend": "mac-lmstudio",
+        "coder_backend": "windows-lmstudio",
+        "coder_model": "codex",
+        "distributed": True,
+    }
+
+    result = emit_routing_state(
+        state_dir=tmp_path,
+        routing_state=state,
+        observed_at="2026-07-28T06:00:00+00:00",
+    )
+
+    assert result == (
+        tmp_path
+        / "periscope"
+        / "agents"
+        / AGENT_ALPHACLAW_ROUTING
+        / "sessions"
+        / f"{ROUTING_SESSION_ID}.jsonl"
+    )
+    entries = _lines(result)
+    user_payload = json.loads(entries[1]["message"]["content"][0]["text"])
+    assert user_payload["event"] == "route"
+    assert user_payload["chosen_backend"] == "windows-lmstudio"
+    assert entries[2]["message"]["content"][0]["text"] == summarize_routing_state(
+        state
+    )
+
+
+def test_routing_emission_is_disabled_by_default(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.delenv("PERISCOPE_EMITTER_ENABLED", raising=False)
+
+    result = emit_routing_state(
+        state_dir=tmp_path,
+        routing_state={"coder_backend": "mac-degraded", "distributed": False},
+    )
+
+    assert result is None
+    assert not (tmp_path / "periscope").exists()
