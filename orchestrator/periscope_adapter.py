@@ -42,6 +42,14 @@ def periscope_agents_dir(state_dir: Path | str) -> Path:
     return Path(state_dir) / "periscope" / "agents"
 
 
+def resolve_observation_state_dir() -> Path:
+    """Return the canonical PT state directory for observation emission."""
+
+    from orchestrator.gossip_bus import resolve_default_state_dir
+
+    return resolve_default_state_dir()
+
+
 def _validate_component(label: str, value: str) -> str:
     normalized = str(value or "").strip()
     if not _SAFE_COMPONENT.fullmatch(normalized):

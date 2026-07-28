@@ -276,6 +276,44 @@ def test_maybe_emit_job_observation_never_raises_and_logs_debug(
     )
 
 
+def test_save_routing_state_emits_to_canonical_state_dir(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    worktree = tmp_path / "worktree"
+    worktree.mkdir()
+    canonical = tmp_path / "canonical-state"
+    monkeypatch.chdir(worktree)
+    monkeypatch.setenv("PT_STATE_DIR", str(canonical))
+    monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "1")
+
+    observed_dirs: list[Path] = []
+
+    def capture_emit(
+        state_dir: Path | str,
+        routing_state: dict,
+        *,
+        observed_at: str | None = None,
+    ) -> None:
+        observed_dirs.append(Path(state_dir))
+
+    monkeypatch.setattr(
+        "orchestrator.periscope_adapter.resolve_observation_state_dir",
+        lambda: canonical,
+    )
+    monkeypatch.setattr(
+        "orchestrator.periscope_adapter.maybe_emit_routing_observation",
+        capture_emit,
+    )
+
+    from perpetua_tools.agent_launcher import save_routing_state
+
+    save_routing_state({"coder_backend": "mac-degraded", "distributed": False})
+
+    assert observed_dirs == [canonical]
+    assert (worktree / ".state" / "routing.json").exists()
+
+
 def test_maybe_emit_routing_observation_never_raises_and_logs_debug(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

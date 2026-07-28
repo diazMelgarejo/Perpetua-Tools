@@ -48,8 +48,9 @@ Periscope consumes via existing `openclaw_dirs` + OpenClaw parser. Reserve agent
 
 - Adapter hooks are best-effort (`maybe_emit_*`); failures never break routing
   persistence or job execution.
-- `save_routing_state` receives routing dict; adapter uses `STATE_FILE.parent` as
-  `state_dir` (same resolved tree as supervisor `self._state_dir` in production).
+- `save_routing_state` still writes `routing.json` to cwd-relative `.state/` (pre-existing
+  pattern); Periscope observations use `resolve_default_state_dir()` so routing and
+  supervisor job emissions land in the same canonical tree as `self._state_dir`.
 
 ## Related
 
