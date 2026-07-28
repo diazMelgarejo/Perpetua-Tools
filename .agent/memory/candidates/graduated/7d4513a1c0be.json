@@ -1,0 +1,51 @@
+{
+  "id": "7d4513a1c0be",
+  "key": "manual_7d4513",
+  "name": "manual_7d4513",
+  "claim": "AlphaClaw and periscope agent PRs must never target main \u2014 branch from and open PRs against AlphaClaw feature/MacOS-post-install and periscope merged respectively",
+  "conditions": [
+    "against",
+    "agent",
+    "alphaclaw",
+    "branch",
+    "feature",
+    "macos-post-install",
+    "main",
+    "merged",
+    "never",
+    "open",
+    "periscope",
+    "prs",
+    "respectively",
+    "target"
+  ],
+  "evidence_ids": [
+    "2026-07-28T00:55:20.395944+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-28T00:55:20.395944+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-28T00:55:20.395944+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-28T00:55:20.465957+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "User directive 2026-07-28; main is upstream-only on AlphaClaw; periscope uses merged as integration line",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-28T00:55:20.395944+00:00"
+      ],
+      "lessons_sha": "b1939a1b3727"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-28T00:55:20.465948+00:00",
+  "reviewer": "learn.py",
+  "rationale": "User directive 2026-07-28; main is upstream-only on AlphaClaw; periscope uses merged as integration line"
+}
