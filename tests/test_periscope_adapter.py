@@ -1,19 +1,24 @@
 import json
 import logging
 import os
+import time
 from pathlib import Path
 
 import pytest
 
 from orchestrator.periscope_adapter import (
     AGENT_ALPHACLAW_ROUTING,
+    AGENT_PT_SUPERVISOR,
+    DEFAULT_JOB_SESSION_MAX_AGE_DAYS,
     ROUTING_SESSION_ID,
     build_routing_event_payload,
     emit_openclaw_session,
     emit_routing_state,
+    job_session_max_age_days,
     maybe_emit_job_observation,
     maybe_emit_routing_observation,
     periscope_agents_dir,
+    prune_stale_job_sessions,
     summarize_routing_state,
 )
 
@@ -341,3 +346,80 @@ def test_maybe_emit_routing_observation_never_raises_and_logs_debug(
         in record.getMessage()
         for record in caplog.records
     )
+
+
+def test_job_session_max_age_days_defaults_to_33(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.delenv("PERISCOPE_JOB_SESSION_MAX_AGE_DAYS", raising=False)
+    assert job_session_max_age_days() == DEFAULT_JOB_SESSION_MAX_AGE_DAYS
+
+
+def test_prune_stale_job_sessions_removes_old_files_only(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "1")
+    session_dir = (
+        tmp_path / "periscope" / "agents" / AGENT_PT_SUPERVISOR / "sessions"
+    )
+    session_dir.mkdir(parents=True)
+    stale = session_dir / "old-job.jsonl"
+    fresh = session_dir / "new-job.jsonl"
+    stale.write_text("stale\n", encoding="utf-8")
+    fresh.write_text("fresh\n", encoding="utf-8")
+
+    now = time.time()
+    stale_age = now - (DEFAULT_JOB_SESSION_MAX_AGE_DAYS + 1) * 86400
+    os.utime(stale, (stale_age, stale_age))
+    os.utime(fresh, (now, now))
+
+    removed = prune_stale_job_sessions(tmp_path, now=now)
+
+    assert removed == 1
+    assert not stale.exists()
+    assert fresh.exists()
+
+
+def test_prune_skips_when_emitter_disabled(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.delenv("PERISCOPE_EMITTER_ENABLED", raising=False)
+    session_dir = (
+        tmp_path / "periscope" / "agents" / AGENT_PT_SUPERVISOR / "sessions"
+    )
+    session_dir.mkdir(parents=True)
+    stale = session_dir / "old-job.jsonl"
+    stale.write_text("stale\n", encoding="utf-8")
+    old = time.time() - 100 * 86400
+    os.utime(stale, (old, old))
+
+    assert prune_stale_job_sessions(tmp_path, now=time.time()) == 0
+    assert stale.exists()
+
+
+def test_maybe_emit_job_observation_prunes_after_emit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "1")
+    session_dir = (
+        tmp_path / "periscope" / "agents" / AGENT_PT_SUPERVISOR / "sessions"
+    )
+    session_dir.mkdir(parents=True)
+    stale = session_dir / "legacy-job.jsonl"
+    stale.write_text("stale\n", encoding="utf-8")
+    now = time.time()
+    os.utime(stale, (now - 40 * 86400, now - 40 * 86400))
+
+    maybe_emit_job_observation(
+        state_dir=tmp_path,
+        job_id="job-new",
+        user_text="plan",
+        assistant_text="done",
+        started_at="2026-07-28T05:00:00+00:00",
+    )
+
+    assert not stale.exists()
+    assert (session_dir / "job-new.jsonl").exists()

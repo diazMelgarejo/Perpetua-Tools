@@ -135,3 +135,8 @@ tree(origin/merged) == tree(backup/pre-reanchor-merged-20260728-015854)
   path-scoped replay when an open PR's integration base already landed overlapping
   content (PR #12 ECC fusion after PR #10); complements dual-pedigree reanchor with
   the same "replay proven paths, not whole branch" discipline.
+- `.agent/memory/working/PERISCOPE_MERGED_LOCAL_INTEGRATIVE_SYNTHESIS_2026-07-28.md` —
+  when a Mac-local `merged` diverges before `reset --hard`: salvage via reflog,
+  layer-1 first-parent cherry-pick onto twin `852b8e38`, layer-2 integrative synthesis
+  on repaired `origin/merged` (not blind rebase). Branches:
+  `merged-local-reanchored`, `merged-local-rebased-on-origin`.
