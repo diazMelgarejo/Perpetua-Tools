@@ -1,0 +1,48 @@
+{
+    "id": "c4e8f12a9b3d",
+    "key": "manual_c4e8f1",
+    "name": "manual_c4e8f1",
+    "claim": "When an open periscope PR conflicts because merged already landed overlapping content, reset to fresh origin/merged and replay only the harmonized path-scoped delta as one commit; git add before commit-clean.sh; never merge the stale branch wholesale.",
+    "conditions": [
+        "commit-clean",
+        "conflicting",
+        "ecc",
+        "force-with-lease",
+        "harmonized",
+        "integrative",
+        "merged",
+        "path-scoped",
+        "periscope",
+        "replay",
+        "synthesize"
+    ],
+    "evidence_ids": [
+        "2026-07-28T05:12:11.869273+00:00"
+    ],
+    "cluster_size": 1,
+    "canonical_salience": 8.0,
+    "staged_at": "2026-07-28T05:12:11.869273+00:00",
+    "status": "provisional",
+    "decisions": [
+        {
+            "ts": "2026-07-28T05:12:11.869273+00:00",
+            "action": "staged",
+            "reviewer": "learn"
+        },
+        {
+            "ts": "2026-07-28T05:12:11.869273+00:00",
+            "action": "graduated",
+            "reviewer": "learn.py",
+            "notes": "periscope PR #12 ECC fusion 2026-07-28: PR #10 already on merged; PR #12 had two pre-#10 commits; path-scoped replay to 9e465d9c produced MERGEABLE/CLEAN.",
+            "provisional": true,
+            "evidence_snapshot": [
+                "2026-07-28T05:12:11.869273+00:00"
+            ],
+            "lessons_sha": "pending"
+        }
+    ],
+    "rejection_count": 0,
+    "accepted_at": "2026-07-28T05:12:11.869273+00:00",
+    "reviewer": "learn.py",
+    "rationale": "periscope PR #12 ECC fusion 2026-07-28: PR #10 already on merged; PR #12 had two pre-#10 commits; path-scoped replay to 9e465d9c produced MERGEABLE/CLEAN."
+}

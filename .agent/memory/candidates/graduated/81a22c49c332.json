@@ -1,0 +1,44 @@
+{
+  "id": "81a22c49c332",
+  "key": "manual_81a22c",
+  "name": "manual_81a22c",
+  "claim": "When merging kenn-io agentsview into periscope merged, use the agentsview-to-periscope rename catalogue: keep mirror branch names and test fixtures, rename product binaries CI sidecars and branding, and migrate localStorage with legacy reads.",
+  "conditions": [
+    "agentsview",
+    "catalogue",
+    "merge",
+    "merged",
+    "periscope",
+    "rename",
+    "upstream"
+  ],
+  "evidence_ids": [
+    "2026-07-28T04:10:14.507832+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-28T04:10:14.507832+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-07-28T04:10:14.507832+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-28T04:10:14.609539+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-28 audit found 96 files and 514 agentsview literals on merged; desktop CI failed because prepare-sidecar emitted periscope-* while desktop-artifacts.yml still expected agentsview-*.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-07-28T04:10:14.507832+00:00"
+      ],
+      "lessons_sha": "2f4ea99310e4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-28T04:10:14.609528+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-28 audit found 96 files and 514 agentsview literals on merged; desktop CI failed because prepare-sidecar emitted periscope-* while desktop-artifacts.yml still expected agentsview-*."
+}
