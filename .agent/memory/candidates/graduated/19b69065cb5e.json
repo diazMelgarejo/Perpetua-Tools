@@ -1,0 +1,46 @@
+{
+  "id": "19b69065cb5e",
+  "key": "manual_19b690",
+  "name": "manual_19b690",
+  "claim": "After an expunge rewrite, prove branch content with tree twins, preserve remote tags and lease SHAs, simulate in a disposable worktree, and force-push only after graph and tree predicates pass.",
+  "conditions": [
+    "backup",
+    "expunge",
+    "force-with-lease",
+    "git",
+    "history",
+    "reanchor",
+    "rewrite",
+    "tree-twin",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-07-28T02:10:00.913852+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-28T02:10:00.913852+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-28T02:10:00.913852+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-28T02:10:00.981491+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The direct periscope merged rebase conflicted because it contained two upstream pedigrees; an ours-merge anchor plus exact tree replay preserved the old merged tree while restoring both current mirror parents.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-28T02:10:00.913852+00:00"
+      ],
+      "lessons_sha": "9ea407033ff4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-28T02:10:00.981481+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The direct periscope merged rebase conflicted because it contained two upstream pedigrees; an ours-merge anchor plus exact tree replay preserved the old merged tree while restoring both current mirror parents."
+}
