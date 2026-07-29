@@ -6,7 +6,7 @@ target="${1:?target repo path required}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source_root="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-if [[ ! -d "$target/.git" ]]; then
+if [[ "$(git -C "$target" rev-parse --is-inside-work-tree 2>/dev/null)" != "true" ]]; then
   echo "skip: not a git repo: $target" >&2
   exit 0
 fi
@@ -19,6 +19,8 @@ for rel in \
   hooks/commit-msg.strip-coauthor \
   disable-cursor-commit-attribution.sh \
   commit-clean.sh \
+  verify-staged-for-commit.sh \
+  commit_clean_test.sh \
   apply-attribution-guard-all-repos.sh \
   sync-attribution-guard-scripts.sh \
   sync-banned-patterns-to-repo.sh \
