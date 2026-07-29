@@ -163,6 +163,7 @@ Synthetic pass experiments archived on `cursor/agentsview-plus-periscope-synthet
 | Matryoshka layers | `periscope/docs/ARCHITECTURE.md` |
 | Integrative merge doctrine | orama `integrative-merge.md` |
 | Path-scoped PR replay card | orama `path-scoped-pr-replay-reference-card.md` |
+| PR #26 docs / git / FM8 session | [PERISCOPE_PR26_DOCS_GIT_AFRP_SESSION_2026-07-29.md](./PERISCOPE_PR26_DOCS_GIT_AFRP_SESSION_2026-07-29.md) |
 
 ---
 
