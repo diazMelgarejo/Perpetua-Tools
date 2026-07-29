@@ -1,0 +1,67 @@
+{
+  "id": "d8ef5aaa6bf8",
+  "key": "manual_d8ef5a",
+  "name": "manual_d8ef5a",
+  "claim": "When synthesizing periscope merged with purified upstream replay, prefer a two-parent git merge that preserves original SHAs from both lines; set the result tree via read-tree from purified then overlay PERISCOPE_OWNED paths from merged \u2014 never stack synthetic path-scoped replay commits on the integration branch.",
+  "conditions": [
+    "both",
+    "branch",
+    "commits",
+    "git",
+    "integration",
+    "lines",
+    "merge",
+    "merged",
+    "never",
+    "original",
+    "overlay",
+    "path-scoped",
+    "paths",
+    "periscope",
+    "periscope_owned",
+    "prefer",
+    "preserves",
+    "purified",
+    "read-tree",
+    "replay",
+    "result",
+    "set",
+    "shas",
+    "stack",
+    "synthesizing",
+    "synthetic",
+    "tree",
+    "two-parent",
+    "upstream",
+    "via"
+  ],
+  "evidence_ids": [
+    "2026-07-29T07:35:35.228643+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-29T07:35:35.228643+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-29T07:35:35.228643+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-29T07:35:35.309853+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-29 agentsview+periscope: synthetic synthesis(passN) commits violated never-synthesize-SHAs policy; history-preserving merge 32d3c281 parents 12d23c2e+ff8cd5b3 builds clean with Layer 2/3 overlay only.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-29T07:35:35.228643+00:00"
+      ],
+      "lessons_sha": "9550107ab061"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-29T07:35:35.309844+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-29 agentsview+periscope: synthetic synthesis(passN) commits violated never-synthesize-SHAs policy; history-preserving merge 32d3c281 parents 12d23c2e+ff8cd5b3 builds clean with Layer 2/3 overlay only."
+}
