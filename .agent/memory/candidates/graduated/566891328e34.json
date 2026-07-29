@@ -1,0 +1,71 @@
+{
+  "id": "566891328e34",
+  "key": "manual_566891",
+  "name": "manual_566891",
+  "claim": "When synthesizing periscope merged with purified upstream replay, use path-scoped integrative passes ordered by matryoshka layer (upstream parser/sync/postgres first, PR26 features second, fork identity third, frontend synthesize fourth, docs/ECC union fifth); never monolithic merge of 700+ conflicts.",
+  "conditions": [
+    "conflicts",
+    "docs",
+    "ecc",
+    "features",
+    "fifth",
+    "first",
+    "fork",
+    "fourth",
+    "frontend",
+    "identity",
+    "integrative",
+    "layer",
+    "matryoshka",
+    "merge",
+    "merged",
+    "monolithic",
+    "never",
+    "ordered",
+    "parser",
+    "passes",
+    "path-scoped",
+    "periscope",
+    "postgres",
+    "pr26",
+    "purified",
+    "replay",
+    "second",
+    "sync",
+    "synthesize",
+    "synthesizing",
+    "third",
+    "union",
+    "upstream",
+    "use"
+  ],
+  "evidence_ids": [
+    "2026-07-29T07:12:03.712767+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-29T07:12:03.712767+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-29T07:12:03.712767+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-29T07:12:03.784541+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Experiment A/B 2026-07-29: 735 symmetric conflicts; ARCHITECTURE.md and sync-upstream.sh encode ownership; PR #25 ECC path-scoped replay precedent",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-29T07:12:03.712767+00:00"
+      ],
+      "lessons_sha": "f12ba91ffa6d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-29T07:12:03.784529+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Experiment A/B 2026-07-29: 735 symmetric conflicts; ARCHITECTURE.md and sync-upstream.sh encode ownership; PR #25 ECC path-scoped replay precedent"
+}
