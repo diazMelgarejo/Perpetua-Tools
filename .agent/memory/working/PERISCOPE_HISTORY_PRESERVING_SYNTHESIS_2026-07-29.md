@@ -12,6 +12,8 @@
 > minimize synthetic commits, reuse real historical SHA, conflict resolution in favor
 > of implementation plans.
 
+> **Everyday rule still applies elsewhere:** Five-pass matryoshka planning (simulate → classify → plan) remains the normal doctrine for AutoResearch mutations and usual daily code dev. The two-parent merge + `read-tree` overlay below is an **extraordinary exemption** for dual-pedigree public-repo history — never routine practice.
+
 ### What changed
 
 | Approach | Verdict |
@@ -42,8 +44,8 @@ All 76 commits on `merged` and 25 commits on `purified` remain reachable with **
 
 ### Lessons graduated
 
-- `lesson_566891328e34` — path-scoped matryoshka passes (still valid for *conflict classification*)
-- `lesson_d8ef5aaa6bf8` — **prefer two-parent merge + read-tree overlay; never synthetic replay on integration branch**
+- `lesson_566891328e34` — five-pass matryoshka planning (simulate, classify, plan); "never monolithic" = no bulk manual conflict resolution in one session — **everyday rule**
+- `lesson_d8ef5aaa6bf8` — **unusual exemption only:** two-parent merge + read-tree overlay when dual-pedigree SHA preservation is mandatory; never synthetic replay on integration branch
 
 ---
 
@@ -87,7 +89,15 @@ git checkout HEAD -- internal/summarize internal/llm \
   scripts/install.sh scripts/install.ps1 scripts/install_test.sh scripts/release.sh \
   scripts/sync-upstream.sh scripts/desktop-dev.ps1 scripts/dev-backend-build.sh scripts/e2e-server.sh \
   jetbrains-plugin README.md CLAUDE.md AGENTS.md .claude .agents .codex
-git add -A && git commit   # single merge commit; both parent SHAs retained
+git status --porcelain   # require no unrelated changes
+git add -- internal/summarize internal/llm \
+  frontend/src/lib/components/context \
+  scripts/install.sh scripts/install.ps1 scripts/install_test.sh scripts/release.sh \
+  scripts/sync-upstream.sh scripts/desktop-dev.ps1 scripts/dev-backend-build.sh scripts/e2e-server.sh \
+  jetbrains-plugin README.md CLAUDE.md AGENTS.md .claude .agents .codex
+bash scripts/git/verify-staged-for-commit.sh
+bash scripts/git/commit-clean.sh -m "merge: synthesize purified+PR26 onto merged (history-preserving)"
+# commit-clean auto-detects MERGE_HEAD and retains all merge parents (no trailing git commit)
 CGO_ENABLED=1 go build -tags fts5 ./cmd/periscope
 ```
 
