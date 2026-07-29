@@ -221,63 +221,6 @@ else
   pass "non-merge commit retains single parent"
 fi
 
-git -C "$merge_tmp" checkout -q -b mode-cleanup "$main_sha"
-git -C "$merge_tmp" checkout -q -b feature2 "$feature_sha"
-git -C "$merge_tmp" checkout -q mode-cleanup
-git -C "$merge_tmp" merge --no-commit --no-ff feature2 >/dev/null 2>&1 || true
-printf 'mode cleanup\n' >"$merge_tmp/README.md"
-printf 'merge msg\n' >"$merge_tmp/.git/MERGE_MSG"
-git -C "$merge_tmp" add README.md
-run_in_repo "$merge_tmp" bash "$SCRIPT_DIR/commit-clean.sh" -m "merge: verify mode cleanup" >/dev/null
-for artifact in MERGE_HEAD MERGE_MODE MERGE_MSG; do
-  if [[ -f "$merge_tmp/.git/$artifact" ]]; then
-    fail "$artifact must be cleared after commit-clean merge finalization"
-  else
-    pass "$artifact cleared after merge commit"
-  fi
-done
-
-git -C "$merge_tmp" checkout -q -b amend-target "$main_sha"
-printf 'amend me\n' >"$merge_tmp/README.md"
-git -C "$merge_tmp" add README.md
-run_in_repo "$merge_tmp" bash "$SCRIPT_DIR/commit-clean.sh" -m "first" >/dev/null
-printf '%s\n' "$feature_sha" >"$merge_tmp/.git/MERGE_HEAD"
-printf 'amended\n' >"$merge_tmp/README.md"
-git -C "$merge_tmp" add README.md
-amend_sha="$(run_in_repo "$merge_tmp" bash "$SCRIPT_DIR/commit-clean.sh" --amend -m "amended")"
-amend_parent_count="$(git -C "$merge_tmp" show -s --format=%P "$amend_sha" | wc -w | tr -d ' ')"
-if [[ "$amend_parent_count" -ne 1 ]]; then
-  fail "--amend must ignore MERGE_HEAD and keep a single parent (got ${amend_parent_count})"
-else
-  pass "--amend ignores MERGE_HEAD during merge state"
-fi
-
-git -C "$merge_tmp" checkout -q -b preserve-unstaged "$main_sha"
-git -C "$merge_tmp" merge --no-commit --no-ff feature2 >/dev/null 2>&1 || true
-printf 'staged merge\n' >"$merge_tmp/README.md"
-printf 'leave unstaged\n' >"$merge_tmp/UNSTAGED.txt"
-git -C "$merge_tmp" add README.md
-run_in_repo "$merge_tmp" bash "$SCRIPT_DIR/commit-clean.sh" -m "merge: preserve unstaged" >/dev/null
-if [[ ! -f "$merge_tmp/UNSTAGED.txt" ]]; then
-  fail "unstaged file must survive commit-clean merge commit"
-elif git -C "$merge_tmp" ls-files --error-unmatch UNSTAGED.txt >/dev/null 2>&1; then
-  fail "commit-clean must not stage unstaged files during merge commit"
-else
-  pass "unstaged untracked file preserved across merge commit-clean"
-fi
-if [[ "$(cat "$merge_tmp/UNSTAGED.txt")" != "leave unstaged" ]]; then
-  fail "unstaged file contents must remain intact"
-else
-  pass "unstaged file contents intact"
-fi
-
-single_parent_count="$(git -C "$tmp" show -s --format=%P "$sha" | wc -w | tr -d ' ')"
-if [[ "$single_parent_count" -ne 1 ]]; then
-  fail "non-merge commit must have exactly one parent (got ${single_parent_count})"
-else
-  pass "non-merge commit retains single parent"
-fi
-
 octopus_tmp="$(mktemp -d)"
 git -C "$octopus_tmp" init -q
 git -C "$octopus_tmp" config user.name "Test User"
