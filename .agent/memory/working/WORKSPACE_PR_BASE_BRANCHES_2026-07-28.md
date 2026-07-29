@@ -1,6 +1,6 @@
 # Workspace PR base branches (integration lines)
 
-**Updated:** 2026-07-28  
+**Updated:** 2026-07-29  
 **Status:** active policy — agents must not open PRs against `main` for these repos
 
 ## Rule
@@ -14,16 +14,22 @@ When pushing agent work from the cloud VM workspace, **never target `main`** for
 | [orama-system](https://github.com/diazMelgarejo/orama-system) | `main` (exception) | primary integration | `cursor/*-f559` |
 | [Perpetua-Tools](https://github.com/diazMelgarejo/Perpetua-Tools) | `main` (exception) | primary integration | `cursor/*-f559` |
 
-## Open PRs (2026-07-28)
+## Open PRs (2026-07-29)
 
 | PR | Head | Base |
 |----|------|------|
 | [AlphaClaw #17](https://github.com/diazMelgarejo/AlphaClaw/pull/17) | `cursor/attribution-guard-sync-f559` | `feature/MacOS-post-install` |
 | [periscope #7](https://github.com/diazMelgarejo/periscope/pull/7) | `cursor/attribution-guard-sync-f559` | `merged` |
 | [periscope #12](https://github.com/diazMelgarejo/periscope/pull/12) | `ecc-tools/periscope-1785200140258` | `merged` (ECC integrative fusion — path-scoped replay @ `9e465d9c`) |
-| [periscope #16](https://github.com/diazMelgarejo/periscope/pull/16) | `ecc-tools/periscope-1785246953340` | `merged` (ECC additive replay @ `0544ccf4`; replaced regressive `f7fdef69`) |
-| [periscope #15](https://github.com/diazMelgarejo/periscope/pull/15) | `merged-local-rebased-on-origin` | `merged` (layer-2 docs + frontend @ `e5affe8c`; not yet on `merged`) |
-| [Perpetua-Tools #295](https://github.com/diazMelgarejo/Perpetua-Tools/pull/295) | `cursor/periscope-l4-adapter-f559` | `main` (L4 `periscope_adapter` @ `fdc42b0f` + supervisor wiring) |
+| [periscope #16](https://github.com/diazMelgarejo/periscope/pull/16) | `ecc-tools/periscope-1785246953340` | `merged` (ECC additive replay @ `0544ccf4`) |
+| [periscope #15](https://github.com/diazMelgarejo/periscope/pull/15) | `merged-local-rebased-on-origin` | `merged` (layer-2 @ `e5affe8c`) |
+| [periscope #26](https://github.com/diazMelgarejo/periscope/pull/26) | `cursor/periscope-pr23-duckdb-f559` | purified line (upstream #23 stack + docs/git CI fixes) |
+| [periscope #29](https://github.com/diazMelgarejo/periscope/pull/29) | `cursor/agentsview-plus-periscope-f559` | `merged` (history-preserving synthesis — Experiment A) |
+| [orama-system #238](https://github.com/diazMelgarejo/orama-system/pull/238) | `cursor/agentsview-purified-lessons-f559` | `main` (AFRP FM8 + commit-clean guards @ `abe2f685`) |
+| [Perpetua-Tools #295](https://github.com/diazMelgarejo/Perpetua-Tools/pull/295) | `cursor/periscope-l4-adapter-f559` | `main` (merged) |
+| [Perpetua-Tools #296](https://github.com/diazMelgarejo/Perpetua-Tools/pull/296) | `cursor/periscope-l4-adapter-f559` | `main` (memory + synthesis curriculum; continues #295) |
+
+## Open PRs (2026-07-28) — archived snapshot
 
 ## Agent workflow
 
@@ -54,6 +60,7 @@ git push -u origin cursor/<task>-f559
 - `.agent/memory/working/PERISCOPE_L4_IMPLEMENTATION_2026-07-28.md` — L4 adapter wiring, security doc removal, lineage epic
 - `.agent/memory/working/PERISCOPE_MERGED_LOCAL_INTEGRATIVE_SYNTHESIS_2026-07-28.md` — salvaged local `merged` (20 commits), layer-1 tree-twin reanchor (`merged-local-reanchored`), layer-2 integrative synthesis on `origin/merged` (`merged-local-rebased-on-origin`); tips for agents
 - `.agent/memory/working/PERISCOPE_PR16_INTEGRATIVE_HARMONIZATION_2026-07-28.md` — PR #16 ECC additive path-scoped replay (second application after PR #12); regressive wholesale bundle rejected
+- `.agent/memory/working/PERISCOPE_PR26_DOCS_GIT_AFRP_SESSION_2026-07-29.md` — PR #26 docs CI, git guard harness, AFRP FM8, spec vs implementation truth
 
 ## Published recovery branches (periscope, 2026-07-28)
 
