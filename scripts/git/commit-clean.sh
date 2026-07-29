@@ -4,15 +4,26 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: scripts/git/commit-clean.sh -m "message" [--amend]
+Usage: scripts/git/commit-clean.sh -m "message" [--amend] [--allow-empty] [--dry-run]
 
-Before running, stage every path that belongs in this commit:
-  git add <paths>   # or git add -A when the whole tree is intentional
+MANDATORY sequence (agents — never skip or reorder):
+  1. git add <paths>              # this script NEVER stages for you
+  2. bash scripts/git/verify-staged-for-commit.sh
+  3. bash scripts/git/commit-clean.sh -m "type(scope): summary"
 
-Unstaged edits are preserved, but they are NOT included in the commit.
+Unstaged edits are preserved but are NOT included in the commit.
 Uses git commit-tree so Cursor commit-msg hooks never run.
 
-Environment overrides: GIT_AUTHOR_NAME, GIT_AUTHOR_EMAIL
+During an in-progress merge (MERGE_HEAD present), parent lineage is preserved
+automatically: HEAD is the first parent and every SHA listed in MERGE_HEAD is
+added as an additional parent (two-parent merges and N-way octopus merges).
+
+Options:
+  --amend         Replace HEAD (parent becomes HEAD^)
+  --allow-empty   Allow intentional empty commits (rare)
+  --dry-run       Verify and print summary; do not update the branch
+
+Environment overrides: GIT_AUTHOR_NAME, GIT_AUTHOR_EMAIL, COMMIT_CLEAN_ALLOW_EMPTY=1
 EOF
 }
 
@@ -27,6 +38,8 @@ source "$SCRIPT_DIR/banned_attribution_lib.sh"
 
 message=""
 amend=0
+allow_empty="${COMMIT_CLEAN_ALLOW_EMPTY:-0}"
+dry_run=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -m)
@@ -35,6 +48,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --amend)
       amend=1
+      shift
+      ;;
+    --allow-empty)
+      allow_empty=1
+      shift
+      ;;
+    --dry-run)
+      dry_run=1
       shift
       ;;
     -h|--help)
@@ -84,29 +105,57 @@ case "$author_email_lc" in
     ;;
 esac
 
-if git diff-index --quiet HEAD -- 2>/dev/null && [[ "$amend" -eq 0 ]]; then
-  if git diff-index --quiet --cached HEAD -- 2>/dev/null; then
-    echo "error: nothing staged to commit" >&2
-    exit 1
-  fi
-fi
+verify_args=()
+[[ "$allow_empty" -eq 1 ]] && verify_args+=(--allow-empty)
+[[ "$amend" -eq 1 ]] && verify_args+=(--amend)
+bash "$SCRIPT_DIR/verify-staged-for-commit.sh" "${verify_args[@]}"
 
 tree="$(git write-tree)"
-if [[ "$amend" -eq 1 ]]; then
-  parent="$(git rev-parse HEAD^)"
-else
-  if git rev-parse HEAD >/dev/null 2>&1; then
-    parent="$(git rev-parse HEAD)"
-  else
-    parent=""
-  fi
+
+merge_head_path="$(git rev-parse --git-path MERGE_HEAD)"
+in_merge=0
+if [[ "$amend" -eq 0 && -f "$merge_head_path" ]]; then
+  in_merge=1
 fi
 
-if [[ -n "$parent" ]]; then
+parents=()
+if [[ "$amend" -eq 1 ]]; then
+  parents+=("$(git rev-parse HEAD^)")
+elif git rev-parse HEAD >/dev/null 2>&1; then
+  parents+=("$(git rev-parse HEAD)")
+fi
+
+if [[ "$in_merge" -eq 1 ]]; then
+  while IFS= read -r merge_parent || [[ -n "$merge_parent" ]]; do
+    merge_parent="${merge_parent%%#*}"
+    merge_parent="${merge_parent//[[:space:]]/}"
+    [[ -n "$merge_parent" ]] || continue
+    parents+=("$merge_parent")
+  done <"$merge_head_path"
+fi
+
+if [[ "$dry_run" -eq 1 ]]; then
+  echo "commit-clean: dry-run — would create commit on tree ${tree}" >&2
+  if ((${#parents[@]} > 0)); then
+    echo "commit-clean: dry-run — parents ${parents[*]}" >&2
+  fi
+  if [[ "$in_merge" -eq 1 ]]; then
+    echo "commit-clean: dry-run — merge in progress; MERGE_HEAD parents retained" >&2
+  fi
+  printf '%s\n' "$message"
+  exit 0
+fi
+
+commit_tree_args=("$tree")
+for parent_sha in "${parents[@]}"; do
+  commit_tree_args+=(-p "$parent_sha")
+done
+
+if ((${#commit_tree_args[@]} > 1)); then
   new_sha="$(
     printf '%s\n' "$message" |
       GIT_AUTHOR_NAME="$author_name" GIT_AUTHOR_EMAIL="$author_email" \
-      git commit-tree "$tree" -p "$parent" -F -
+      git commit-tree "${commit_tree_args[@]}" -F -
   )"
 else
   new_sha="$(
@@ -121,6 +170,13 @@ if [[ -n "$branch" ]]; then
   git update-ref "refs/heads/${branch}" "$new_sha"
 else
   git update-ref HEAD "$new_sha"
+fi
+
+if [[ "$in_merge" -eq 1 ]]; then
+  rm -f \
+    "$merge_head_path" \
+    "$(git rev-parse --git-path MERGE_MODE)" \
+    "$(git rev-parse --git-path MERGE_MSG)"
 fi
 
 echo "$new_sha"
