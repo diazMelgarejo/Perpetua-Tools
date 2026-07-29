@@ -37,6 +37,16 @@ for rel in \
   install -m 0755 "$SCRIPT_DIR/$rel" "$target/scripts/git/$rel"
 done
 
+# Cursor Cloud agent helpers (orama canonical — synced to PT + AlphaClaw, not periscope).
+mkdir -p "$target/scripts/cursor" "$target/.cursor/commands"
+for cursor_rel in append-pr-body.sh; do
+  [[ -f "$source_root/scripts/cursor/$cursor_rel" ]] || continue
+  install -m 0755 "$source_root/scripts/cursor/$cursor_rel" "$target/scripts/cursor/$cursor_rel"
+done
+if [[ -f "$source_root/.cursor/commands/pr.md" ]]; then
+  install -m 0644 "$source_root/.cursor/commands/pr.md" "$target/.cursor/commands/pr.md"
+fi
+
 # daily-attribution-guard.sh is now a normal synced file (canonical full impl in the
 # copy list above) — self-contained, byte-identical in every repo, derives its own
 # REPO_ROOT. No thin wrapper: a wrapper hardcodes a path and, on its own target, would
