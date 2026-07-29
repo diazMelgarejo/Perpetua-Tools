@@ -151,7 +151,7 @@ for parent_sha in "${parents[@]}"; do
   commit_tree_args+=(-p "$parent_sha")
 done
 
-if ((${#commit_tree_args[@]} > 1)); then
+if ((${#parents[@]} > 0)); then
   new_sha="$(
     printf '%s\n' "$message" |
       GIT_AUTHOR_NAME="$author_name" GIT_AUTHOR_EMAIL="$author_email" \
