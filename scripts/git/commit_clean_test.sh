@@ -24,7 +24,7 @@ run_in_repo() {
 }
 
 tmp="$(mktemp -d)"
-trap 'rm -rf "$tmp"' EXIT
+trap 'rm -rf -- "$tmp" "${merge_tmp:-}" "${octopus_tmp:-}"' EXIT
 
 git -C "$tmp" init -q
 git -C "$tmp" config user.name "Test User"
