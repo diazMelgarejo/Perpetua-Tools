@@ -1,0 +1,57 @@
+{
+  "id": "c31d8c306b55",
+  "key": "manual_c31d8c",
+  "name": "manual_c31d8c",
+  "claim": "Never replay upstream commits under synthetic SHAs when kenn-io/agentsview or origin/agentsview already has the originals \u2014 cherry-pick only fork-unique commits onto the real upstream tip (periscope PR #20 over PR #17, 2026-07-29).",
+  "conditions": [
+    "agentsview",
+    "already",
+    "cherry-pick",
+    "commits",
+    "fork-unique",
+    "kenn-io",
+    "never",
+    "only",
+    "onto",
+    "origin",
+    "originals",
+    "over",
+    "periscope",
+    "real",
+    "replay",
+    "shas",
+    "synthetic",
+    "tip",
+    "under",
+    "upstream"
+  ],
+  "evidence_ids": [
+    "2026-07-29T00:05:08.736202+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-29T00:05:08.736202+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-29T00:05:08.736202+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-29T00:05:08.821908+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR #17 replayed 769 upstream commits from ancient merge-base producing 2169-file PR graph; purified PR #20 used 9 cherry-picks on kenn #1283 with byte-identical tree.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-29T00:05:08.736202+00:00"
+      ],
+      "lessons_sha": "02db57743eb3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-29T00:05:08.821899+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR #17 replayed 769 upstream commits from ancient merge-base producing 2169-file PR graph; purified PR #20 used 9 cherry-picks on kenn #1283 with byte-identical tree."
+}
