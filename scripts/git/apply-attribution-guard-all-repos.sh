@@ -53,11 +53,13 @@ done
 if [[ -x "$SYNC" ]]; then
   for r in "${unique[@]}"; do
     [[ "$r" == "$PT_ROOT" ]] && continue
+    [[ "$(basename "$r")" == "periscope" ]] && continue
     bash "$SYNC" "$r" 2>/dev/null || true
   done
 fi
 
 for r in "${unique[@]}"; do
+  [[ "$(basename "$r")" == "periscope" ]] && continue
   bash "$DISABLE" "$r"
   if [[ -x "$INSTALL" && -x "$r/scripts/git/ensure_hooks_installed.sh" ]]; then
     bash "$INSTALL" "$r" || echo "warn: install-local-hooks failed: $r" >&2
