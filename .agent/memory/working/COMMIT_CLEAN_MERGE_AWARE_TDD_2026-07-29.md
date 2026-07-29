@@ -44,7 +44,7 @@ bash scripts/git/commit-clean.sh -m "merge: ..."
 3. **CodeRabbit round 1 (#4812744637):** Trap hygiene (`${var:+"$var"}`), clear fabricated `MERGE_HEAD` between scenarios, `require_merge` helper, parent check on `parents[]`.
 4. **Stale sync hazards observed:**
    - Dirty sibling checkouts (AlphaClaw on `deps-npm`, periscope on `ecc-bundle`) blocked `git checkout` — **use disposable worktrees** for cross-repo sync, not in-place checkout.
-   - `REPO_ROOT=/agent/repos/AlphaClaw` in cloud env breaks `ensure_hooks_installed.sh` in other repos — **`unset REPO_ROOT` before push**.
+   - `REPO_ROOT` env set to a sibling repo checkout breaks `ensure_hooks_installed.sh` in other repos — **`unset REPO_ROOT` before push**.
    - Running `sync-attribution-guard-scripts.sh` on wrong branch still copies bytes but leaves git index confused — always sync inside the target PR branch worktree.
 5. **AlphaClaw PR #20:** Path-scoped ECC replay onto `feature/MacOS-post-install` — integration base already had richer June ECC; harmonized delta empty; force-pushed base SHA (`04d4fc03`), GitHub auto-closed PR.
 6. **CodeRabbit round 2 (PT #298, #4812918328):** `require_merge` return value must gate each scenario block — prevents misleading secondary failures when `MERGE_HEAD` was never created.
@@ -57,8 +57,9 @@ unset REPO_ROOT
 bash scripts/git/commit_clean_test.sh
 # 2. commit on cursor/commit-clean-merge-aware-f559
 # 3. For each sibling repo:
-WT=/tmp/<repo>-cc-sync && git -C <repo> worktree add -B cursor/commit-clean-merge-aware-f559 "$WT" origin/cursor/commit-clean-merge-aware-f559
-bash orama-system/scripts/git/sync-attribution-guard-scripts.sh "$WT"
+WT="$(mktemp -d pr-sync.XXXXXX)"
+git -C <repo> worktree add -B cursor/commit-clean-merge-aware-f559 "$WT" origin/cursor/commit-clean-merge-aware-f559
+bash scripts/git/sync-attribution-guard-scripts.sh "$WT"
 # commit + push from $WT; git worktree remove "$WT"
 ```
 
