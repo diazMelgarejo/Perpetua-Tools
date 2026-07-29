@@ -34,7 +34,7 @@
 
 ## Five-pass planning doctrine (everyday rule — matryoshka-ordered)
 
-> **Exception banner (2026-07-29):** To preserve commit history in **both** pedigrees of a public fork, we made an **extraordinary exemption** for merge *execution* (see [History preservation](#history-preservation-2026-07-29-correction) below). In **AutoResearch mutations** and **usual daily code dev**, the general rule in this section still applies — do not conflate the exemption with everyday practice.
+> **Exception banner (2026-07-29):** To preserve commit history in **both** pedigrees of a public fork, we made an **extraordinary exemption** for merge *execution* (see [History preservation (2026-07-29 correction) - extraordinary exemption](#history-preservation-2026-07-29-correction---extraordinary-exemption) below). In **AutoResearch mutations** and **usual daily code dev**, the general rule in this section still applies — do not conflate the exemption with everyday practice.
 
 Method: [integrative-merge.md](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/oramasys-method/references/integrative-merge.md) — **synthesize, never amputate**.
 
@@ -150,7 +150,7 @@ PR #26 merged **onto purified** (`cursor/agentsview-purified-onto-kenn-f559`), n
 
 735 symmetric conflicts means **both sides changed the same files** for valid reasons (purified upstream modernization + Periscope fork features). High count is expected, not a signal to pick one side. It signals **decompose by layer** using ARCHITECTURE.md ownership and sync-upstream.sh patterns.
 
-### History preservation (2026-07-29 correction) — extraordinary exemption
+### History preservation (2026-07-29 correction) - extraordinary exemption
 
 > **Scope:** This merge-execution procedure is an **unusual exception** made once to preserve real commit history in **both** public-repo pedigrees (`merged` fork line + `kenn-io/agentsview` purified line). Path-scoped five-pass **planning** is still the doctrine we would normally choose for execution — but that path would erase reachable upstream SHAs on the integration graph. **Do not** treat this exemption as the default for AutoResearch mutations or usual daily code dev.
 
@@ -161,7 +161,7 @@ PR #26 merged **onto purified** (`cursor/agentsview-purified-onto-kenn-f559`), n
 1. `git merge purified --no-commit --no-ff` (retain both parent SHAs)
 2. `git read-tree --reset -u purified^{tree}` (upstream-modernized base tree)
 3. Overlay `PERISCOPE_OWNED` paths from `merged` (Layer 2+3) — path-scoped, not whole-tree `-X ours/theirs`
-4. Require clean worktree; stage only intended overlay paths; run `verify-staged-for-commit` and `commit-clean` before the single merge commit
+4. Require clean worktree; stage only intended overlay paths; run `verify-staged-for-commit` then `commit-clean` (auto-detects `MERGE_HEAD` parents for a single merge commit)
 
 Synthetic pass experiments archived on `cursor/agentsview-plus-periscope-synthetic-pass-f559` only. See `PERISCOPE_HISTORY_PRESERVING_SYNTHESIS_2026-07-29.md` and `lesson_d8ef5aaa6bf8`.
 

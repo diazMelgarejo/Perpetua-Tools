@@ -97,7 +97,7 @@ git add -- internal/summarize internal/llm \
   jetbrains-plugin README.md CLAUDE.md AGENTS.md .claude .agents .codex
 bash scripts/git/verify-staged-for-commit.sh
 bash scripts/git/commit-clean.sh -m "merge: synthesize purified+PR26 onto merged (history-preserving)"
-git commit   # single merge commit; both parent SHAs retained
+# commit-clean auto-detects MERGE_HEAD and retains all merge parents (no trailing git commit)
 CGO_ENABLED=1 go build -tags fts5 ./cmd/periscope
 ```
 
