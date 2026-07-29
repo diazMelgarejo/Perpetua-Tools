@@ -2,6 +2,9 @@
 
 - Self-reflection 2026-07-23: Hermes learned that probing existing tool wiring before installing LM Studio shims, sourcing partner CLI paths in start.ps1, and respecting repo pre-push Phase 0 doctrine prevents rework and keeps windows/mac/lan comms valid.  <!-- status=accepted confidence=0.9 evidence=2 id=lesson_retro_20260723 -->
 
+- In periscope docs CI fixes, grep for stale spec filenames and non-repo-relative markdown hrefs; run commit_clean_test against copied guard scripts not SCRIPT_DIR sources.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_6de0be10f0a5 -->
+- For synthetic SHA replay diagnosis, cherry against origin/agentsview not upstream-kenn/main; verify tip trees with test and two git rev-parse substitutions.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_6c6e83d025a5 -->
+
 ### 2026-06
 
 ## Auto-promoted entries will be appended below
