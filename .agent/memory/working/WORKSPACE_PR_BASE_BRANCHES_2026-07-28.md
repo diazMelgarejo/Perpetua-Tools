@@ -66,3 +66,13 @@ git push -u origin cursor/<task>-f559
 Do not confuse layer 1 (history artifact) with layer 2 (forward integration). See synthesis memory card above.
 
 ## PR body edits
+
+**Append-only rule** (`lesson_3b13ab0a45d4`): never replace the original Summary with a follow-up delta.
+
+```bash
+# Backup → append → write full merged body
+bash scripts/cursor/append-pr-body.sh diazMelgarejo/Perpetua-Tools 298 \
+  --title "Follow-up: …" --file follow-up.md
+```
+
+`ManagePullRequest update_pr` and `gh pr edit` replace the **entire** body — pass the reconstructed original + all follow-ups, not just the new paragraph. Preserve CodeRabbit auto-generated sections below the agent zone.
