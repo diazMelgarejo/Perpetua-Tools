@@ -32,9 +32,19 @@
 
 ---
 
-## Five-pass integrative plan (matryoshka-ordered)
+## Five-pass planning doctrine (everyday rule — matryoshka-ordered)
 
-Method: [integrative-merge.md](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/oramasys-method/references/integrative-merge.md) — **synthesize, never amputate**. Each pass scopes paths to one ownership layer; simulate (`git merge --no-commit --no-ff` → enumerate `U` → `git merge --abort`) before touching files.
+> **Exception banner (2026-07-29):** To preserve commit history in **both** pedigrees of a public fork, we made an **extraordinary exemption** for merge *execution* (see [History preservation](#history-preservation-2026-07-29-correction) below). In **AutoResearch mutations** and **usual daily code dev**, the general rule in this section still applies — do not conflate the exemption with everyday practice.
+
+Method: [integrative-merge.md](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/oramasys-method/references/integrative-merge.md) — **synthesize, never amputate**.
+
+**What the five passes are for (planning only):**
+
+1. **Simulation** — `git merge --no-commit --no-ff` → enumerate `U` → `git merge --abort` before touching files
+2. **Ownership classification** — map each conflicted path to matryoshka layer via `docs/ARCHITECTURE.md` and `scripts/sync-upstream.sh`
+3. **Resolution planning** — decide per-path integrative mode (take upstream, union, preserve fork identity) before any integration-branch commit
+
+Each pass scopes paths to one ownership layer. **Do not** land per-pass integration-branch commits — passes inform a single harmonized outcome (path-scoped delta replay or disposable worktree), not a stack of `synthesis(passN)` SHAs.
 
 ### Pass 1 — Layer 1 upstream (parser / sync / postgres)
 
@@ -52,7 +62,7 @@ Method: [integrative-merge.md](https://github.com/diazMelgarejo/orama-system/blo
 - [ ] Apply ARCHITECTURE.md Layer 1 table — take upstream for parser/sync/postgres
 - [ ] Union struct fields where Periscope added `ModelContextWindowTokens` / `HasModelContextWindowTokens`
 - [ ] `go test -tags fts5 ./internal/parser/... ./internal/sync/... ./internal/postgres/...`
-- [ ] Commit pass 1 with path scope noted in message
+- [ ] Record Pass-1 ownership decisions in plan notes (no integration-branch commit)
 
 ### Pass 2 — PR #26 features (DuckDB + artifact + Omnigent)
 
@@ -64,7 +74,7 @@ Method: [integrative-merge.md](https://github.com/diazMelgarejo/orama-system/blo
 - [ ] Do not replay full PR #26 branch if base diverged — path-scoped delta only
 - [ ] Run targeted tests for new agent/parser surfaces
 - [ ] Verify no Layer 1 regressions from Pass 1
-- [ ] Commit pass 2
+- [ ] Record Pass-2 ownership decisions in plan notes (no integration-branch commit)
 
 ### Pass 3 — Fork identity (Layer 3)
 
@@ -81,7 +91,7 @@ Method: [integrative-merge.md](https://github.com/diazMelgarejo/orama-system/blo
 - [ ] Keep `periscope` binary and module identity — never revert to `agentsview` in Layer 3 paths
 - [ ] Preserve sync-upstream.sh known-patterns table
 - [ ] `make build` produces `periscope` binary
-- [ ] Commit pass 3
+- [ ] Record Pass-3 ownership decisions in plan notes (no integration-branch commit)
 
 ### Pass 4 — Frontend synthesize (Layer 2 UI + upstream SPA)
 
@@ -98,7 +108,7 @@ Method: [integrative-merge.md](https://github.com/diazMelgarejo/orama-system/blo
 - [ ] `types/index.ts`: export both `./context.js` and upstream exports
 - [ ] `vite.config.ts`: keep `applyDevProxyHeaders` / `getDevProxyTarget`
 - [ ] `make frontend && make test-short`
-- [ ] Commit pass 4
+- [ ] Record Pass-4 ownership decisions in plan notes (no integration-branch commit)
 
 ### Pass 5 — Docs / ECC / skills union
 
@@ -114,8 +124,8 @@ Method: [integrative-merge.md](https://github.com/diazMelgarejo/orama-system/blo
 - [ ] Union instinct IDs — additive, with `## Related` cross-links where triggers differ
 - [ ] Update `docs/ARCHITECTURE.md` conflict table if new patterns discovered
 - [ ] Full verification: `go test -tags fts5 ./...`, `make frontend`, `make build`
-- [ ] `git diff --name-only --diff-filter=U` empty before push
-- [ ] Commit pass 5; open/update PR #29
+- [ ] `git diff --name-only --diff-filter=U` empty in disposable worktree before push
+- [ ] Land **one** harmonized commit (or follow extraordinary exemption below) — never stack `synthesis(passN)` on the integration branch
 
 ---
 
@@ -125,30 +135,33 @@ Method: [integrative-merge.md](https://github.com/diazMelgarejo/orama-system/blo
 
 PR #26 merged **onto purified** (`cursor/agentsview-purified-onto-kenn-f559`), not onto `merged`. That is correct for upstream replay hygiene (see purified integration doc). Synthesis onto `merged` is a **separate** integrative step — do not assume PR #26 merge implies `merged` is current; replay path-scoped deltas from PR #26 tip after rebasing mental model onto `origin/merged`.
 
-### Path-scoped vs monolithic merge
+### Path-scoped vs monolithic merge (everyday rule)
 
 | Approach | Result |
 |----------|--------|
-| Monolithic `git merge` purified+PR26 → `merged` | 735 symmetric conflicts — unusable for review |
-| 5-pass path-scoped integrative merge | Conflicts partitioned by matryoshka ownership; each pass testable |
-| PR #25 / ECC replay precedent | Reset to fresh `origin/merged`; replay harmonized paths only |
+| Monolithic manual resolution of 700+ conflicts in one session | Unreviewable — **prohibited** in AutoResearch and daily dev |
+| 5-pass planning (simulate → classify → plan per layer) | Conflicts partitioned by matryoshka ownership; each layer testable in a disposable worktree |
+| Single harmonized path-scoped delta commit onto fresh `origin/merged` | Normal execution path (PR #25 / ECC replay precedent) |
+| Two-parent merge + `read-tree` overlay (2026-07-29 only) | **Extraordinary exemption** — see below; not everyday practice |
 
-**Never** resolve 700+ conflicts in one session without path scoping. **Never** force-merge a stale synthesis branch wholesale.
+**Never** resolve 700+ conflicts in one session without path scoping. **Never** force-merge a stale synthesis branch wholesale. "Never monolithic" means **no bulk manual conflict resolution in one session** — it does **not** prohibit a single final merge commit when that commit is the agreed harmonized outcome.
 
 ### Symmetric conflict count
 
 735 symmetric conflicts means **both sides changed the same files** for valid reasons (purified upstream modernization + Periscope fork features). High count is expected, not a signal to pick one side. It signals **decompose by layer** using ARCHITECTURE.md ownership and sync-upstream.sh patterns.
 
-### History preservation (2026-07-29 correction)
+### History preservation (2026-07-29 correction) — extraordinary exemption
+
+> **Scope:** This merge-execution procedure is an **unusual exception** made once to preserve real commit history in **both** public-repo pedigrees (`merged` fork line + `kenn-io/agentsview` purified line). Path-scoped five-pass **planning** is still the doctrine we would normally choose for execution — but that path would erase reachable upstream SHAs on the integration graph. **Do not** treat this exemption as the default for AutoResearch mutations or usual daily code dev.
 
 **Do not** land synthetic `synthesis(passN)` commits on the integration branch — that replays trees under new SHAs and violates the never-synthesize-SHAs policy (see purified integration doc).
 
-**Do** use a two-parent merge (`32d3c281` on PR #29):
+**Unusual procedure adopted for PR #29** — single two-parent merge (`32d3c281`):
 
-1. `git merge purified --no-commit`
-2. `git read-tree --reset -u purified^{tree}` (upstream-modernized base)
-3. Overlay `PERISCOPE_OWNED` paths from `merged` (Layer 2+3)
-4. Single merge commit preserves all original SHAs from both parents
+1. `git merge purified --no-commit --no-ff` (retain both parent SHAs)
+2. `git read-tree --reset -u purified^{tree}` (upstream-modernized base tree)
+3. Overlay `PERISCOPE_OWNED` paths from `merged` (Layer 2+3) — path-scoped, not whole-tree `-X ours/theirs`
+4. Require clean worktree; stage only intended overlay paths; run `verify-staged-for-commit` and `commit-clean` before the single merge commit
 
 Synthetic pass experiments archived on `cursor/agentsview-plus-periscope-synthetic-pass-f559` only. See `PERISCOPE_HISTORY_PRESERVING_SYNTHESIS_2026-07-29.md` and `lesson_d8ef5aaa6bf8`.
 
