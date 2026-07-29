@@ -108,7 +108,11 @@ esac
 verify_args=()
 [[ "$allow_empty" -eq 1 ]] && verify_args+=(--allow-empty)
 [[ "$amend" -eq 1 ]] && verify_args+=(--amend)
-bash "$SCRIPT_DIR/verify-staged-for-commit.sh" "${verify_args[@]}"
+if [[ ${#verify_args[@]} -gt 0 ]]; then
+  bash "$SCRIPT_DIR/verify-staged-for-commit.sh" "${verify_args[@]}"
+else
+  bash "$SCRIPT_DIR/verify-staged-for-commit.sh"
+fi
 
 tree="$(git write-tree)"
 
@@ -151,7 +155,7 @@ for parent_sha in "${parents[@]}"; do
   commit_tree_args+=(-p "$parent_sha")
 done
 
-if ((${#parents[@]} > 0)); then
+if ((${#commit_tree_args[@]} > 1)); then
   new_sha="$(
     printf '%s\n' "$message" |
       GIT_AUTHOR_NAME="$author_name" GIT_AUTHOR_EMAIL="$author_email" \
