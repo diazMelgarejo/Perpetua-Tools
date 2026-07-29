@@ -477,6 +477,8 @@
 - When synthesizing periscope merged with purified upstream replay, prefer a two-parent git merge that preserves original SHAs from both lines; set the result tree via read-tree from purified then overlay PERISCOPE_OWNED paths from merged — never stack synthetic path-scoped replay commits on the integration branch.  <!-- status=legacy confidence=0.7 evidence=0 id=lesson_legacy_0dbaaae562d5 -->
 - For scripts/git changes (commit-clean, verify-staged, commit_clean_test), follow canonical TDD: extend commit_clean_test.sh first until it fails, implement minimal fix, run bash scripts/git/commit_clean_test.sh and verify-git-guards.sh, edit orama-system canonical copy, then sync-attribution-guard-scripts.sh to sibling repos.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_5ff4cc223365 -->
 - commit_clean_test.sh must clear fabricated MERGE_HEAD/MERGE_MODE/MERGE_MSG between scenarios and assert merge --no-commit succeeds (never swallow with || true); EXIT trap uses conditional expansions to avoid rm -rf empty args.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7e8de218a1de -->
+- commit_clean_test.sh require_merge call sites must wrap scenario assertions in if require_merge ...; then blocks so setup failures short-circuit before commit-clean assertions without MERGE_HEAD.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7864dac78f91 -->
+- When syncing scripts/git across workspace repos, use disposable worktrees on the target PR branch (cursor/commit-clean-merge-aware-f559), not in-place checkout on dirty branches; unset REPO_ROOT before git push (cloud env sets it to AlphaClaw and breaks ensure_hooks_installed in sibling repos).  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_ff215d613431 -->
 
 ### 2026-06
 
