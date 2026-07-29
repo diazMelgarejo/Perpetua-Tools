@@ -1,0 +1,55 @@
+{
+  "id": "6de0be10f0a5",
+  "key": "manual_6de0be",
+  "name": "manual_6de0be",
+  "claim": "In periscope docs CI fixes, grep for stale spec filenames and non-repo-relative markdown hrefs; run commit_clean_test against copied guard scripts not SCRIPT_DIR sources.",
+  "conditions": [
+    "against",
+    "commit_clean_test",
+    "copied",
+    "docs",
+    "filenames",
+    "fixes",
+    "grep",
+    "guard",
+    "hrefs",
+    "markdown",
+    "non-repo-relative",
+    "periscope",
+    "run",
+    "script_dir",
+    "scripts",
+    "sources",
+    "spec",
+    "stale"
+  ],
+  "evidence_ids": [
+    "2026-07-29T09:13:59.308031+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-29T09:13:59.308031+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-29T09:13:59.308031+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-29T09:13:59.646056+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "periscope PR26 docs CI: context-session-visualizer-spec renamed to periscope-spec.md; developer-absolute markdown hrefs break Zensical; commit_clean_test must invoke copied scripts under temp repo scripts/git",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-29T09:13:59.308031+00:00"
+      ],
+      "lessons_sha": "95432fe09ab1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-29T09:13:59.646045+00:00",
+  "reviewer": "learn.py",
+  "rationale": "periscope PR26 docs CI: context-session-visualizer-spec renamed to periscope-spec.md; developer-absolute markdown hrefs break Zensical; commit_clean_test must invoke copied scripts under temp repo scripts/git"
+}
