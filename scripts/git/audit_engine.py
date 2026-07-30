@@ -525,20 +525,25 @@ def run_attribution_audit(
 ) -> int:
     repo_root = repo_root.resolve()
     os.chdir(repo_root)
-    lines: list[str] = []
-    for ref in ("HEAD", "main", "origin/main"):
-        lines.append(
-            _audit_ref(
-                repo_root,
-                ref,
-                history_count,
-                policy_path,
-                private_literal_values_fn,
-            )
-        )
-    sys.stdout.write("".join(lines))
-
     range_spec = audit_range or os.getenv("GIT_AUDIT_RANGE", "")
+    include_context = (
+        not range_spec
+        or os.getenv("GIT_AUDIT_INCLUDE_CONTEXT_REFS", "0") == "1"
+    )
+    lines: list[str] = []
+    if include_context:
+        for ref in ("HEAD", "main", "origin/main"):
+            lines.append(
+                _audit_ref(
+                    repo_root,
+                    ref,
+                    history_count,
+                    policy_path,
+                    private_literal_values_fn,
+                )
+            )
+        sys.stdout.write("".join(lines))
+
     if not range_spec:
         return 0
 
