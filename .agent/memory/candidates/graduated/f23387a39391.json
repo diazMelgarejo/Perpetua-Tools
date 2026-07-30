@@ -1,0 +1,45 @@
+{
+  "id": "f23387a39391",
+  "key": "manual_f23387",
+  "name": "manual_f23387",
+  "claim": "The git merge/push/PR discipline (never trust marker-grep alone, check MERGE_HEAD before push, verify diff before writing a PR body) is now mechanically enforced, not just a personal habit: orama-system's canonical .githooks/pre-push runs scripts/git/check_no_pending_merge.sh (checks MERGE_HEAD, CHERRY_PICK_HEAD, REVERT_HEAD), synced to downstream repos via sync-attribution-guard-scripts.sh. The remaining two steps -- context-check (which tree/worktree/branch you're actually in) and verify-diff-before-PR -- are not git-hookable (context is agent state, not a git operation; PR-opening is a gh action, not native git) and stay a standing personal discipline.",
+  "conditions": [
+    "check_no_pending_merge",
+    "enforced",
+    "git",
+    "hook",
+    "merge",
+    "orama-system",
+    "pre-push",
+    "push"
+  ],
+  "evidence_ids": [
+    "2026-07-30T13:09:28.526106+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-30T13:09:28.526106+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-30T13:09:28.526106+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-30T13:09:28.664495+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-30 follow-up to the periscope PR#39 incident (empty-merge PR opened without ever running git commit). User asked to enshrine the fix as an actual pre-push guard, not just a lesson to remember by hand -- implemented in orama-system (canonical), documented in docs/wiki/08-git-hygiene-and-branching.md \u00a7 'Merge -> Push -> PR discipline', and synced out. Closes the loop opened by the two earlier lessons on diff-filter=U and MERGE_HEAD checking.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-30T13:09:28.526106+00:00"
+      ],
+      "lessons_sha": "4b2fbd8e190d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-30T13:09:28.664486+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-30 follow-up to the periscope PR#39 incident (empty-merge PR opened without ever running git commit). User asked to enshrine the fix as an actual pre-push guard, not just a lesson to remember by hand -- implemented in orama-system (canonical), documented in docs/wiki/08-git-hygiene-and-branching.md \u00a7 'Merge -> Push -> PR discipline', and synced out. Closes the loop opened by the two earlier lessons on diff-filter=U and MERGE_HEAD checking."
+}
