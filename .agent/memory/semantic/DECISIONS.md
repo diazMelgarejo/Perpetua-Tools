@@ -3,13 +3,22 @@
 > Record architectural or workflow choices that would be costly to re-debate.
 > Use this template for each entry:
 
-## YYYY-MM-DD: Decision title
-**Decision:** _what was chosen_
-**Rationale:** _why, in one or two sentences_
-**Alternatives considered:** _what else was on the table and why rejected_
-**Status:** active | revisited | superseded
+## 2026-07-29: Periscope modernization — PR #20 over PR #17; never synthetic SHA replay
 
-## 2026-01-01: Four-layer memory separation
+**Decision:** Close periscope PR #17 without merge. Preserve `cursor/agentsview-modernization-3way-f559` as a permanent bad-example branch. Integrate via PR #20 (`cursor/agentsview-purified-onto-kenn-f559`): original `kenn-io/agentsview` SHAs + 9 Periscope-unique cherry-picks, byte-identical tree to PR #17 tip.
+
+**Rationale:** PR #17 had correct product tree but replayed ~769 upstream commits under synthetic SHAs from ancient merge-base, producing an unreadable 2,169-file / 769-commit PR graph. Purified integration inherits real upstream ancestry and exposes only the fork delta (816 files / 9 commits). Never synthesize SHAs except security expunge (keys, identities, workspaces, paths, doxxing).
+
+**Alternatives considered:** Merge PR #17 as-is (rejected — wrong ancestry, unreviewable graph); delete bad branch after close (rejected — preserve as anti-pattern curriculum).
+
+**Status:** active
+
+**Links:**
+- periscope doc: `docs/2026-07-28-AgentsView+Periscope-Fresh.md` addendum on `merged`
+- PT memory: `.agent/memory/working/PERISCOPE_MODERNIZATION_PURIFIED_INTEGRATION_2026-07-29.md`
+- orama AFRP: `bin/orama-system/afrp/failure-modes.md` §8
+- orama CIDF: `bin/orama-system/cidf/references/integrative-editing-examples.md` §10
+
 **Decision:** Split memory into working / episodic / semantic / personal rather than one flat folder.
 **Rationale:** Each layer has different retention and retrieval needs. Flat memory breaks at ~6 weeks.
 **Alternatives considered:** Flat directory (fails at scale), vector store (over-engineered for single user).
