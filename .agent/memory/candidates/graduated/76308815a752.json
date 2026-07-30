@@ -1,0 +1,45 @@
+{
+  "id": "76308815a752",
+  "key": "manual_763088",
+  "name": "manual_763088",
+  "claim": "commit_clean_test.sh fails with verify_args[@]: unbound variable on macOS stock bash 3.2 when neither --allow-empty nor --amend is set. Fix in commit-clean.sh: guard empty verify_args before expanding the array under set -u; regression-tested by commit_clean_test.sh.",
+  "conditions": [
+    "bash-3.2",
+    "commit_clean_test",
+    "empty-array",
+    "known-bug",
+    "macOS",
+    "set-u",
+    "unbound-variable",
+    "verify_args"
+  ],
+  "evidence_ids": [
+    "2026-07-30T14:13:25.299281+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-30T14:13:25.299281+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-30T14:13:25.299281+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-30T14:13:25.412308+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Found 2026-07-30 while verifying scripts/git/commit_clean_test.sh after PT PR #300 fixes -- test failed locally with this exact unbound-variable error even though Cursor's own automated review of the same PR reported 'all passed' for the identical test file, confirming this is a bash-version-dependent flake (stock macOS bash 3.2 vs whatever newer bash Cursor's review environment used), not a regression from PR #300's changes. Not yet fixed -- filed as a known issue for whoever picks it up next.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-30T14:13:25.299281+00:00"
+      ],
+      "lessons_sha": "b995a8b5abb7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-30T14:13:25.412295+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Found 2026-07-30 while verifying scripts/git/commit_clean_test.sh after PT PR #300 fixes -- test failed locally with this exact unbound-variable error even though Cursor's own automated review of the same PR reported 'all passed' for the identical test file, confirming this is a bash-version-dependent flake (stock macOS bash 3.2 vs whatever newer bash Cursor's review environment used), not a regression from PR #300's changes. Not yet fixed -- filed as a known issue for whoever picks it up next."
+}
