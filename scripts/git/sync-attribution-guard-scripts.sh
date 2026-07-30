@@ -2,16 +2,15 @@
 # Copy attribution-guard scripts from orama-system into a sibling repo checkout.
 set -euo pipefail
 
-target="${1:?target repo path required}"
+target_input="${1:?target repo path required}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source_root="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-if [[ ! -d "$target/.git" ]]; then
-  echo "skip: not a git repo: $target" >&2
+if ! target="$(git -C "$target_input" rev-parse --show-toplevel 2>/dev/null)"; then
+  echo "skip: not a git repo: $target_input" >&2
   exit 0
 fi
 
-target="$(cd "$target" && pwd)"
 mkdir -p "$target/scripts/git/hooks"
 
 for rel in \
@@ -19,6 +18,8 @@ for rel in \
   hooks/commit-msg.strip-coauthor \
   disable-cursor-commit-attribution.sh \
   commit-clean.sh \
+  verify-staged-for-commit.sh \
+  commit_clean_test.sh \
   apply-attribution-guard-all-repos.sh \
   sync-attribution-guard-scripts.sh \
   sync-banned-patterns-to-repo.sh \
@@ -35,6 +36,16 @@ for rel in \
   [[ -f "$SCRIPT_DIR/$rel" ]] || continue
   install -m 0755 "$SCRIPT_DIR/$rel" "$target/scripts/git/$rel"
 done
+
+# Cursor Cloud agent helpers (orama canonical — synced to PT + AlphaClaw, not periscope).
+mkdir -p "$target/scripts/cursor" "$target/.cursor/commands"
+for cursor_rel in append-pr-body.sh; do
+  [[ -f "$source_root/scripts/cursor/$cursor_rel" ]] || continue
+  install -m 0755 "$source_root/scripts/cursor/$cursor_rel" "$target/scripts/cursor/$cursor_rel"
+done
+if [[ -f "$source_root/.cursor/commands/pr.md" ]]; then
+  install -m 0644 "$source_root/.cursor/commands/pr.md" "$target/.cursor/commands/pr.md"
+fi
 
 # daily-attribution-guard.sh is now a normal synced file (canonical full impl in the
 # copy list above) — self-contained, byte-identical in every repo, derives its own
