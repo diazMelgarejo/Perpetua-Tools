@@ -28,6 +28,7 @@ CANONICAL_GUARDS=(
   audit_attribution.sh
   check_commit_message.sh
   check_identity.sh
+  check_no_pending_merge.sh
   daily-attribution-guard.sh
   neutralize-cursor-coauthor-hook.sh
   expunge-all-workspace-repos.sh
