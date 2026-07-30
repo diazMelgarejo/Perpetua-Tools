@@ -2,9 +2,6 @@
 
 - Self-reflection 2026-07-23: Hermes learned that probing existing tool wiring before installing LM Studio shims, sourcing partner CLI paths in start.ps1, and respecting repo pre-push Phase 0 doctrine prevents rework and keeps windows/mac/lan comms valid.  <!-- status=accepted confidence=0.9 evidence=2 id=lesson_retro_20260723 -->
 
-- In periscope docs CI fixes, grep for stale spec filenames and non-repo-relative markdown hrefs; run commit_clean_test against copied guard scripts not SCRIPT_DIR sources.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_6de0be10f0a5 -->
-- For synthetic SHA replay diagnosis, cherry against origin/agentsview not upstream-kenn/main; verify tip trees with test and two git rev-parse substitutions.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_6c6e83d025a5 -->
-
 ### 2026-06
 
 ## Auto-promoted entries will be appended below
@@ -478,6 +475,8 @@
 - Unusual exemption (2026-07-29 dual-pedigree public repo only): when preserving commit history in both pedigrees is mandatory, use a two-parent git merge that retains original SHAs from both lines; set the result tree via read-tree from purified then overlay PERISCOPE_OWNED paths from merged — never stack synthetic path-scoped replay commits on the integration branch. This does not replace the everyday five-pass planning doctrine for AutoResearch mutations and usual daily code dev.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_d8ef5aaa6bf8 -->
 - When synthesizing periscope merged with purified upstream replay, use path-scoped integrative passes ordered by matryoshka layer (upstream parser/sync/postgres first, PR26 features second, fork identity third, frontend synthesize fourth, docs/ECC union fifth); never monolithic merge of 700+ conflicts.  <!-- status=legacy confidence=0.7 evidence=0 id=lesson_legacy_1e7f487b1d7f -->
 - When synthesizing periscope merged with purified upstream replay, prefer a two-parent git merge that preserves original SHAs from both lines; set the result tree via read-tree from purified then overlay PERISCOPE_OWNED paths from merged — never stack synthetic path-scoped replay commits on the integration branch.  <!-- status=legacy confidence=0.7 evidence=0 id=lesson_legacy_0dbaaae562d5 -->
+- In periscope docs CI fixes, grep for stale spec filenames and non-repo-relative markdown hrefs; run commit_clean_test against copied guard scripts not SCRIPT_DIR sources.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_6de0be10f0a5 -->
+- For synthetic SHA replay diagnosis, cherry against origin/agentsview not upstream-kenn/main; verify tip trees with test and two git rev-parse substitutions.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_6c6e83d025a5 -->
 - For scripts/git changes (commit-clean, verify-staged, commit_clean_test), follow canonical TDD: extend commit_clean_test.sh first until it fails, implement minimal fix, run bash scripts/git/commit_clean_test.sh and verify-git-guards.sh, edit orama-system canonical copy, then sync-attribution-guard-scripts.sh to sibling repos.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_5ff4cc223365 -->
 - commit_clean_test.sh must clear fabricated MERGE_HEAD/MERGE_MODE/MERGE_MSG between scenarios and assert merge --no-commit succeeds (never swallow with || true); EXIT trap uses conditional expansions to avoid rm -rf empty args.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7e8de218a1de -->
 - commit_clean_test.sh require_merge call sites must wrap scenario assertions in if require_merge ...; then blocks so setup failures short-circuit before commit-clean assertions without MERGE_HEAD.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7864dac78f91 -->
