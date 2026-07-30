@@ -2,12 +2,12 @@
 # Copy attribution-guard scripts from orama-system into a sibling repo checkout.
 set -euo pipefail
 
-target="${1:?target repo path required}"
+target_input="${1:?target repo path required}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source_root="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-if ! target="$(git -C "$target" rev-parse --show-toplevel 2>/dev/null)"; then
-  echo "skip: not a git repo: $target" >&2
+if ! target="$(git -C "$target_input" rev-parse --show-toplevel 2>/dev/null)"; then
+  echo "skip: not a git repo: $target_input" >&2
   exit 0
 fi
 
