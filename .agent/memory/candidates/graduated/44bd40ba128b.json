@@ -1,0 +1,61 @@
+{
+  "id": "44bd40ba128b",
+  "key": "manual_44bd40",
+  "name": "manual_44bd40",
+  "claim": "After a Perpetua-Tools guard-script PR merges to main, check whether orama canonical advanced again (e.g. atomic sync after append-pr-body hardening) and push a focused follow-up commit to main \u2014 do not bundle unrelated local guard drift.",
+  "conditions": [
+    "advanced",
+    "after",
+    "again",
+    "append-pr-body",
+    "atomic",
+    "bundle",
+    "canonical",
+    "check",
+    "commit",
+    "drift",
+    "focused",
+    "follow-up",
+    "guard",
+    "guard-script",
+    "hardening",
+    "local",
+    "main",
+    "merges",
+    "orama",
+    "perpetua-tools",
+    "push",
+    "sync",
+    "unrelated",
+    "whether"
+  ],
+  "evidence_ids": [
+    "2026-07-30T03:20:01.395174+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-30T03:20:01.395174+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-30T03:20:01.395174+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-30T03:20:01.464028+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT #298 merged 0732b9c without 8948ccc4 atomic sync; local diff audit 2026-07-30.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-30T03:20:01.395174+00:00"
+      ],
+      "lessons_sha": "f4a5325c0a2d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-30T03:20:01.464015+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT #298 merged 0732b9c without 8948ccc4 atomic sync; local diff audit 2026-07-30."
+}

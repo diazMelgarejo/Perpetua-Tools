@@ -48,9 +48,6 @@ WELL_KNOWN_COAUTHOR_DOMAIN_SUFFIXES=(
   kimi.ai
 )
 
-# Well-known name markers — these are substrings matched against the lowercased
-# Co-authored-by line. The repo owner's names are included so their commits
-# pass the guard regardless of which email format is used.
 WELL_KNOWN_COAUTHOR_NAME_MARKERS=(
   codex
   claude
@@ -81,8 +78,6 @@ WELL_KNOWN_COAUTHOR_NAME_MARKERS=(
   hermes
   nousresearch
   kimi
-  diazmelgarejo
-  diaz.melgarejo
 )
 
 email_domain_ok() {
@@ -91,7 +86,7 @@ email_domain_ok() {
   [[ -z "$domain" ]] && return 1
   local suffix
   for suffix in "${WELL_KNOWN_COAUTHOR_DOMAIN_SUFFIXES[@]}"; do
-    if [[ "$domain" == "$suffix" || "$domain" == *".""$suffix" ]]; then
+    if [[ "$domain" == "$suffix" || "$domain" == *."$suffix" ]]; then
       return 0
     fi
   done
