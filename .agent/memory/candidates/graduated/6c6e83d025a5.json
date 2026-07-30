@@ -1,0 +1,55 @@
+{
+  "id": "6c6e83d025a5",
+  "key": "manual_6c6e83",
+  "name": "manual_6c6e83",
+  "claim": "For synthetic SHA replay diagnosis, cherry against origin/agentsview not upstream-kenn/main; verify tip trees with test and two git rev-parse substitutions.",
+  "conditions": [
+    "against",
+    "agentsview",
+    "cherry",
+    "diagnosis",
+    "git",
+    "main",
+    "origin",
+    "replay",
+    "rev-parse",
+    "sha",
+    "substitutions",
+    "synthetic",
+    "test",
+    "tip",
+    "trees",
+    "two",
+    "upstream-kenn",
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-07-29T09:14:16.482794+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-29T09:14:16.482794+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-29T09:14:16.482794+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-29T09:14:16.629048+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama AFRP FM8: upstream-kenn/main is not a fork ref; use origin/agentsview after fetch; tree verify needs shell test not git rev-parse with ==",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-29T09:14:16.482794+00:00"
+      ],
+      "lessons_sha": "0825b64ebe27"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-29T09:14:16.629030+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama AFRP FM8: upstream-kenn/main is not a fork ref; use origin/agentsview after fetch; tree verify needs shell test not git rev-parse with =="
+}
