@@ -1,0 +1,41 @@
+{
+  "id": "60e2cab969d0",
+  "key": "manual_60e2ca",
+  "name": "manual_60e2ca",
+  "claim": "Never abandon a task midway when switching strategy -- finish or explicitly checkpoint ALL pending sub-tasks first, save every in-process file, and never delete pending work; preserve and build on it unless a human operator's explicit override says to abandon it. Never discard without HITL (human-in-the-loop) confirmation. Carve-out: this does not block immediate quarantine or sanitization of credentials, PII, .env/.env.local files, or other unsafe artifacts discovered mid-task -- retain only sanitized evidence of those, and preserve everything else unless explicitly overridden.",
+  "conditions": [
+    "HITL-required",
+    "checkpoint-not-discard",
+    "never-abandon-midtask",
+    "strategy-switch"
+  ],
+  "evidence_ids": [
+    "2026-07-30T06:36:06.790248+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-30T06:36:06.790248+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-30T06:36:06.790248+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-30T06:36:06.892278+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Same incident: when the user redirected from a commit-by-commit cherry-pick to a synthesized-single-commit approach, the instinct was to tear down the in-progress worktree/branch entirely rather than checkpoint it and continue building on the resolved portions (already-reconciled files like AGENTS.md and App.svelte). The correct behavior, confirmed by the user, was to resume from exactly where the work left off, not restart from scratch -- switching strategy is not the same as abandoning work, and neither should happen without the human explicitly saying so.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-30T06:36:06.790248+00:00"
+      ],
+      "lessons_sha": "eeea8ac3cc95"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-30T06:36:06.892267+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Same incident: when the user redirected from a commit-by-commit cherry-pick to a synthesized-single-commit approach, the instinct was to tear down the in-progress worktree/branch entirely rather than checkpoint it and continue building on the resolved portions (already-reconciled files like AGENTS.md and App.svelte). The correct behavior, confirmed by the user, was to resume from exactly where the work left off, not restart from scratch -- switching strategy is not the same as abandoning work, and neither should happen without the human explicitly saying so."
+}

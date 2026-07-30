@@ -1,0 +1,44 @@
+{
+  "id": "deb085daf874",
+  "key": "manual_deb085",
+  "name": "manual_deb085",
+  "claim": "When verifying a git merge/cherry-pick has zero remaining conflicts, never rely on grep for '<<<<<<<' text markers alone -- rename/delete, add/add, and delete/modify conflicts leave no textual markers, only unresolved index stages. Use 'git diff --name-only --diff-filter=U' (empty output = truly resolved) as the authoritative check, or grep all seven conflict porcelain codes (UU AA DD AU UA DU UD), not just three.",
+  "conditions": [
+    "conflict",
+    "diff-filter",
+    "git",
+    "merge",
+    "resolved",
+    "unmerged",
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-07-30T12:51:20.937702+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-30T12:51:20.937702+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-30T12:51:20.937702+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-30T12:51:21.068328+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Caught 2026-07-30 during periscope PR#35 dual-lineage merge: verified '0 conflict markers' via grep '^<<<<<<<' across the whole repo and declared the merge fully resolved (build/test verified, PR opened). Attempting the actual merge commit failed -- 3 files (cmd/periscope/pricing_schedule.go and its 2 test files) were still unmerged with AU status (added-by-us, deleted-by-them via rename tracking), invisible to marker-grep since delete/modify and add/add conflicts never get inline <<<<<<< text. Only git's own diff-filter=U (or the full 6-code porcelain check) catches every conflict type.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-30T12:51:20.937702+00:00"
+      ],
+      "lessons_sha": "77a114ff207c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-30T12:51:21.068315+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Caught 2026-07-30 during periscope PR#35 dual-lineage merge: verified '0 conflict markers' via grep '^<<<<<<<' across the whole repo and declared the merge fully resolved (build/test verified, PR opened). Attempting the actual merge commit failed -- 3 files (cmd/periscope/pricing_schedule.go and its 2 test files) were still unmerged with AU status (added-by-us, deleted-by-them via rename tracking), invisible to marker-grep since delete/modify and add/add conflicts never get inline <<<<<<< text. Only git's own diff-filter=U (or the full 6-code porcelain check) catches every conflict type."
+}

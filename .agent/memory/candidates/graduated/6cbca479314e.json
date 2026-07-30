@@ -1,0 +1,41 @@
+{
+  "id": "6cbca479314e",
+  "key": "manual_6cbca4",
+  "name": "manual_6cbca4",
+  "claim": "Never throw away in-progress work when switching approach or discovering a concurrent agent did the same task in parallel -- save it, compare against the other result first, and archive (never delete) unless a human operator explicitly overrides with a manual delete. Carve-out: this does not block immediate quarantine or sanitization of credentials, PII, .env/.env.local files, or other unsafe artifacts discovered mid-task -- retain only sanitized evidence of those, and preserve everything else unless explicitly overridden.",
+  "conditions": [
+    "HITL-override",
+    "archive-not-delete",
+    "concurrent-agent-work",
+    "never-delete"
+  ],
+  "evidence_ids": [
+    "2026-07-30T06:36:06.370309+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-30T06:36:06.370309+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-30T06:36:06.370309+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-30T06:36:06.558989+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Mid-task on periscope PR #35 conflict resolution, I attempted to switch strategy and started tearing down a partially-resolved worktree (a hard branch reset plus a forced branch deletion) before the user could compare it against a concurrent Cursor session's parallel attempt on the same problem. A safety hook blocked the destructive commands, which the user then confirmed was the right outcome: the work should be resumed, not discarded. The careful conflict resolution (e.g. catching a dead ActivityMinimap import reference that would have shipped a broken build) is exactly the kind of work that's expensive to redo and valuable to compare against another agent's independent attempt.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-30T06:36:06.370309+00:00"
+      ],
+      "lessons_sha": "c40c63711233"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-30T06:36:06.558977+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Mid-task on periscope PR #35 conflict resolution, I attempted to switch strategy and started tearing down a partially-resolved worktree (a hard branch reset plus a forced branch deletion) before the user could compare it against a concurrent Cursor session's parallel attempt on the same problem. A safety hook blocked the destructive commands, which the user then confirmed was the right outcome: the work should be resumed, not discarded. The careful conflict resolution (e.g. catching a dead ActivityMinimap import reference that would have shipped a broken build) is exactly the kind of work that's expensive to redo and valuable to compare against another agent's independent attempt."
+}
