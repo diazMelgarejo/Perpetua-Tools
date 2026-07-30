@@ -19,7 +19,15 @@ atomic_install_file() {
 
   dest_dir="$(dirname "$dest")"
   mkdir -p "$dest_dir"
+  if [[ -d "$dest" ]]; then
+    echo "error: destination is a directory: $dest" >&2
+    return 1
+  fi
   tmp="$(mktemp "${dest_dir}/.$(basename "$dest").sync.XXXXXX")"
+  if [[ -z "$tmp" || ! -f "$tmp" ]]; then
+    echo "error: failed staging temp file for $dest" >&2
+    return 1
+  fi
   if ! install -m "$mode" "$src" "$tmp"; then
     rm -f "$tmp"
     echo "error: failed staging $src -> $dest" >&2
@@ -68,12 +76,16 @@ atomic_append_snippet() {
 
   dest_dir="$(dirname "$dest")"
   mkdir -p "$dest_dir"
+  if [[ ! -f "$snippet" ]]; then
+    echo "error: snippet missing: $snippet" >&2
+    return 1
+  fi
   tmp="$(mktemp)"
-  cat "$dest" >"$tmp"
-  {
-    echo
-    cat "$snippet"
-  } >>"$tmp"
+  if ! { cat "$dest"; echo; cat "$snippet"; } >"$tmp"; then
+    rm -f "$tmp"
+    echo "error: failed building append for $dest" >&2
+    return 1
+  fi
   stage="$(mktemp "${dest_dir}/.$(basename "$dest").sync.XXXXXX")"
   if ! install -m "$mode" "$tmp" "$stage"; then
     rm -f "$tmp" "$stage"
@@ -110,6 +122,11 @@ for rel in \
   scan-tracked-banned-tokens.sh; do
   [[ -f "$SCRIPT_DIR/$rel" ]] || continue
   atomic_install_file "$SCRIPT_DIR/$rel" "$target/scripts/git/$rel" 0755
+done
+
+for rel in audit_engine.py identity-policy.json identity-policy.schema.json; do
+  [[ -f "$SCRIPT_DIR/$rel" ]] || continue
+  atomic_install_file "$SCRIPT_DIR/$rel" "$target/scripts/git/$rel" 0644
 done
 
 # Cursor Cloud agent helpers (orama canonical — synced to PT + AlphaClaw, not periscope).

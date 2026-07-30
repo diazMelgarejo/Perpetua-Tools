@@ -24,7 +24,7 @@ That is destructive for all collaborators. **Do not cause another rewrite.**
 | Run `bash scripts/git/daily-attribution-guard.sh` at session start | "Document" forbidden emails in repo docs so you remember |
 
 ```bash
-git add <paths>
+git add -- path/to/file
 bash scripts/git/verify-staged-for-commit.sh   # must print OK + non-empty stat
 bash scripts/git/commit-clean.sh -m "type(scope): summary"
 git show --stat --oneline HEAD                 # confirm file delta before push
