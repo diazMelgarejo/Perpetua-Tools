@@ -1,0 +1,45 @@
+{
+  "id": "ff57050abfe6",
+  "key": "manual_ff5705",
+  "name": "manual_ff5705",
+  "claim": "Before any git push or PR-open action on a branch, check for an in-progress uncommitted merge first: 'git rev-parse -q --verify MERGE_HEAD'. If that ref exists, STOP -- a --no-commit merge was never finalized with 'git commit', so the branch tip is still the PRE-merge commit and pushing it silently ships nothing. Also sanity-check 'git diff base...head --stat' matches the scale of what a PR body is about to claim before writing that body from memory or notes.",
+  "conditions": [
+    "MERGE_HEAD",
+    "PR",
+    "commit",
+    "empty-diff",
+    "git",
+    "merge",
+    "no-commit",
+    "push"
+  ],
+  "evidence_ids": [
+    "2026-07-30T12:53:29.779657+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-30T12:53:29.779657+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-30T12:53:29.779657+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-30T12:53:29.910919+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-07-30 periscope PR#35 reconciliation: ran 'git merge origin/merged --no-commit --no-ff', resolved all conflicts over an extended multi-threaded session (interleaved with unrelated PyPI/Tauri/desktop-CI work), but never returned to run the final 'git commit'. Pushed the branch and opened a PR describing extensive changes -- git silently pushed the PRE-merge commit (no error, since you can't push an uncommitted index), and the PR body was written from memory of the resolution work rather than from the actual diff, so it claimed content that wasn't really in the pushed branch. Same root failure as the diff-filter=U lesson: trusting a prior conclusion instead of re-verifying git's ground truth at the moment of the consequential external action.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-30T12:53:29.779657+00:00"
+      ],
+      "lessons_sha": "3eef425c5e1b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-30T12:53:29.910907+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-07-30 periscope PR#35 reconciliation: ran 'git merge origin/merged --no-commit --no-ff', resolved all conflicts over an extended multi-threaded session (interleaved with unrelated PyPI/Tauri/desktop-CI work), but never returned to run the final 'git commit'. Pushed the branch and opened a PR describing extensive changes -- git silently pushed the PRE-merge commit (no error, since you can't push an uncommitted index), and the PR body was written from memory of the resolution work rather than from the actual diff, so it claimed content that wasn't really in the pushed branch. Same root failure as the diff-filter=U lesson: trusting a prior conclusion instead of re-verifying git's ground truth at the moment of the consequential external action."
+}
