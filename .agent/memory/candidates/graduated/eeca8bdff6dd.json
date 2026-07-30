@@ -1,0 +1,55 @@
+{
+  "id": "eeca8bdff6dd",
+  "key": "manual_eeca8b",
+  "name": "manual_eeca8b",
+  "claim": "Synthesize commit SHAs only for security expunge \u2014 leaked keys, identities, workspaces, paths, doxxing \u2014 never for upstream replay convenience or cosmetic PR graphs.",
+  "conditions": [
+    "commit",
+    "convenience",
+    "cosmetic",
+    "doxxing",
+    "expunge",
+    "graphs",
+    "identities",
+    "keys",
+    "leaked",
+    "never",
+    "only",
+    "paths",
+    "replay",
+    "security",
+    "shas",
+    "synthesize",
+    "upstream",
+    "workspaces"
+  ],
+  "evidence_ids": [
+    "2026-07-29T00:05:08.737646+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-29T00:05:08.737646+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-29T00:05:08.737646+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-29T00:05:08.813012+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Policy codified when closing periscope PR #17; bad branch preserved as anti-pattern; curriculum in orama AFRP FM8 and CIDF section 10.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-29T00:05:08.737646+00:00"
+      ],
+      "lessons_sha": "02db57743eb3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-29T00:05:08.813001+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Policy codified when closing periscope PR #17; bad branch preserved as anti-pattern; curriculum in orama AFRP FM8 and CIDF section 10."
+}
