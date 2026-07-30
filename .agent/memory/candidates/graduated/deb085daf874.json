@@ -2,7 +2,7 @@
   "id": "deb085daf874",
   "key": "manual_deb085",
   "name": "manual_deb085",
-  "claim": "When verifying a git merge/cherry-pick has zero remaining conflicts, never rely on grep for '<<<<<<<' text markers alone -- rename/delete, add/add, and delete/modify conflicts leave no textual markers, only unresolved index stages. Use 'git diff --name-only --diff-filter=U' (empty output = truly resolved) as the authoritative check, or grep all six conflict porcelain codes (UU AA DD AU UA DU UD), not just three.",
+  "claim": "When verifying a git merge/cherry-pick has zero remaining conflicts, never rely on grep for '<<<<<<<' text markers alone -- rename/delete, add/add, and delete/modify conflicts leave no textual markers, only unresolved index stages. Use 'git diff --name-only --diff-filter=U' (empty output = truly resolved) as the authoritative check, or grep all seven conflict porcelain codes (UU AA DD AU UA DU UD), not just three.",
   "conditions": [
     "conflict",
     "diff-filter",

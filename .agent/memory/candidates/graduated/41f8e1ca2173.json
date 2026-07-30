@@ -1,0 +1,63 @@
+{
+  "id": "41f8e1ca2173",
+  "key": "manual_41f8e1",
+  "name": "manual_41f8e1",
+  "claim": "Before git push after merge cherry-pick or revert work, run scripts/git/check_no_pending_merge.sh; PT pre-push blocks MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD MERGE_MSG SQUASH_MSG and in-progress rebase; orama KB exit codes 1-4 map to GIT_PUSH_E_PENDING symbols.",
+  "conditions": [
+    "after",
+    "before",
+    "blocks",
+    "check_no_pending_merge",
+    "cherry-pick",
+    "cherry_pick_head",
+    "codes",
+    "exit",
+    "git",
+    "git_push_e_pending",
+    "in-progress",
+    "map",
+    "merge",
+    "merge_head",
+    "merge_msg",
+    "orama",
+    "pre-push",
+    "push",
+    "rebase",
+    "revert",
+    "revert_head",
+    "run",
+    "scripts",
+    "squash_msg",
+    "symbols",
+    "work"
+  ],
+  "evidence_ids": [
+    "2026-07-30T21:55:33.405967+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-30T21:55:33.405967+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-30T21:55:33.405967+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-30T21:55:33.489194+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit PR300 review 4819817374 remediation plus orama f8afb2b3 KB exit stack; sync-attribution-guard-scripts now copies check_no_pending_merge.sh from orama canonical",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-30T21:55:33.405967+00:00"
+      ],
+      "lessons_sha": "8c25745045cd"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-30T21:55:33.489184+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit PR300 review 4819817374 remediation plus orama f8afb2b3 KB exit stack; sync-attribution-guard-scripts now copies check_no_pending_merge.sh from orama canonical"
+}

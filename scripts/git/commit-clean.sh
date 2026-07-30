@@ -108,7 +108,11 @@ esac
 verify_args=()
 [[ "$allow_empty" -eq 1 ]] && verify_args+=(--allow-empty)
 [[ "$amend" -eq 1 ]] && verify_args+=(--amend)
-bash "$SCRIPT_DIR/verify-staged-for-commit.sh" "${verify_args[@]}"
+if [[ ${#verify_args[@]} -gt 0 ]]; then
+  bash "$SCRIPT_DIR/verify-staged-for-commit.sh" "${verify_args[@]}"
+else
+  bash "$SCRIPT_DIR/verify-staged-for-commit.sh"
+fi
 
 tree="$(git write-tree)"
 

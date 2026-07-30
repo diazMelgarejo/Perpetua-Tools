@@ -2,7 +2,7 @@
   "id": "f23387a39391",
   "key": "manual_f23387",
   "name": "manual_f23387",
-  "claim": "The git merge/push/PR discipline (never trust marker-grep alone, check MERGE_HEAD before push, verify diff before writing a PR body) is now mechanically enforced, not just a personal habit: orama-system's canonical .githooks/pre-push runs scripts/git/check_no_pending_merge.sh (checks MERGE_HEAD, CHERRY_PICK_HEAD, REVERT_HEAD), synced to downstream repos via sync-attribution-guard-scripts.sh. The remaining two steps -- context-check (which tree/worktree/branch you're actually in) and verify-diff-before-PR -- are not git-hookable (context is agent state, not a git operation; PR-opening is a gh action, not native git) and stay a standing personal discipline.",
+  "claim": "The git merge/push/PR discipline (never trust marker-grep alone, check pending-operation state before push, verify diff before writing a PR body) is now mechanically enforced in PT: .githooks/pre-push runs scripts/git/check_no_pending_merge.sh, which blocks on MERGE_HEAD, CHERRY_PICK_HEAD, REVERT_HEAD, MERGE_MSG, SQUASH_MSG, and in-progress rebase (rebase-merge/rebase-apply). The script is in the sync-attribution-guard-scripts.sh copy list when syncing from orama-system canonical; each repo still wires its own .githooks/pre-push hook locally. Context-check and verify-diff-before-PR are not git-hookable and stay standing personal discipline.",
   "conditions": [
     "check_no_pending_merge",
     "enforced",
