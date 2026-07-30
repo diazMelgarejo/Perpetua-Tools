@@ -2,7 +2,7 @@
   "id": "6cbca479314e",
   "key": "manual_6cbca4",
   "name": "manual_6cbca4",
-  "claim": "Never throw away in-progress work when switching approach or discovering a concurrent agent did the same task in parallel -- save it, compare against the other result first, and archive (never delete) unless a human operator explicitly overrides with a manual delete",
+  "claim": "Never throw away in-progress work when switching approach or discovering a concurrent agent did the same task in parallel -- save it, compare against the other result first, and archive (never delete) unless a human operator explicitly overrides with a manual delete. Carve-out: this does not block immediate quarantine or sanitization of credentials, PII, .env/.env.local files, or other unsafe artifacts discovered mid-task -- retain only sanitized evidence of those, and preserve everything else unless explicitly overridden.",
   "conditions": [
     "HITL-override",
     "archive-not-delete",

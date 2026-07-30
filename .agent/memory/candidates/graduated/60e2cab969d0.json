@@ -2,7 +2,7 @@
   "id": "60e2cab969d0",
   "key": "manual_60e2ca",
   "name": "manual_60e2ca",
-  "claim": "Never abandon a task midway when switching strategy -- finish or explicitly checkpoint ALL pending sub-tasks first, save every in-process file, and never delete pending work; preserve and build on it unless a human operator's explicit override says to abandon it. Never discard without HITL (human-in-the-loop) confirmation",
+  "claim": "Never abandon a task midway when switching strategy -- finish or explicitly checkpoint ALL pending sub-tasks first, save every in-process file, and never delete pending work; preserve and build on it unless a human operator's explicit override says to abandon it. Never discard without HITL (human-in-the-loop) confirmation. Carve-out: this does not block immediate quarantine or sanitization of credentials, PII, .env/.env.local files, or other unsafe artifacts discovered mid-task -- retain only sanitized evidence of those, and preserve everything else unless explicitly overridden.",
   "conditions": [
     "HITL-required",
     "checkpoint-not-discard",
