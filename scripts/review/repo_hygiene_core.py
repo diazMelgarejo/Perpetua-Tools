@@ -28,6 +28,12 @@ FORBIDDEN_TOKENS = (
 )
 IDENTITY_DOC_EXCEPTIONS: set[str] = {
     ".mailmap",
+    # Identity-allowlist artifacts: operator-approved identities belong here by design.
+    "scripts/git/audit_attribution.sh",
+    "scripts/git/audit_engine.py",
+    "scripts/git/check_identity.sh",
+    "scripts/git/identity-policy.json",
+    "scripts/git/identity-policy.schema.json",
 }
 # Personal-path leak protection (OpSec) — block any tracked file from containing
 # an absolute path under /Users/<anything>/ or /home/<anything>/. Developer
