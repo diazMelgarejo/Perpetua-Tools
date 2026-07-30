@@ -19,9 +19,16 @@ That is destructive for all collaborators. **Do not cause another rewrite.**
 | Do | Do not |
 |----|--------|
 | Read `.cursor/private/agent-lesson-git-attribution.md` before any git write | Copy forbidden tokens into tracked files, commits, PRs, or LESSONS |
-| Commit with `bash scripts/git/commit-clean.sh -m "..."` after `git add` | Raw `git commit` in Cursor cloud |
+| `git add` → `verify-staged-for-commit.sh` → `commit-clean.sh` (in that order) | Run `commit-clean.sh` without staging or verify |
 | Push with `bash scripts/git/publish-clean-branch.sh <branch> main origin` | Raw `git push` without audit |
 | Run `bash scripts/git/daily-attribution-guard.sh` at session start | "Document" forbidden emails in repo docs so you remember |
+
+```bash
+git add <paths>
+bash scripts/git/verify-staged-for-commit.sh   # must print OK + non-empty stat
+bash scripts/git/commit-clean.sh -m "type(scope): summary"
+git show --stat --oneline HEAD                 # confirm file delta before push
+```
 
 ## Session checklist (every day)
 

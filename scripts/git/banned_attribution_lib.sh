@@ -20,12 +20,21 @@ banned_patterns_file() {
   printf '%s' "$private"
 }
 
+# banned_patterns_ready reports whether a valid banned-attribution patterns file exists and is non-empty.
+# banned_patterns_ready accepts an optional root directory argument used to resolve the patterns file; it exits with status 0 if the resolved file exists and has size > 0, non-zero otherwise.
 banned_patterns_ready() {
   local f
   f="$(banned_patterns_file "${1:-}")"
   [[ -f "$f" && -s "$f" ]]
 }
 
+# list_banned_pattern_tokens streams banned-attribution pattern tokens (one per line) from the repository or user patterns file.
+# It resolves the patterns file (optional `root` argument), reads it line-by-line, removes inline comments (`#`) and all whitespace, skips empty tokens, and writes each remaining token to stdout on its own line.
+# Usage: while read -r token; do ...; done < <(list_banned_pattern_tokens "$root")
+# Parameters:
+#   root (optional) — repository root directory to use when resolving the patterns file; if omitted, the script determines the root automatically.
+# Exit:
+#   Returns non-zero if the resolved patterns file does not exist or cannot be read.
 list_banned_pattern_tokens() {
   local f token
   f="$(banned_patterns_file "${1:-}")"
@@ -34,12 +43,14 @@ list_banned_pattern_tokens() {
   fi
   while IFS= read -r token || [[ -n "$token" ]]; do
     token="${token%%#*}"
-    token="$(printf '%s' "$token" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+    token="$(printf '%s' "$token" | tr -d '[:space:]')"
     [[ -n "$token" ]] || continue
     printf '%s\n' "$token"
   done <"$f"
 }
 
+# first_banned_pattern_token outputs the first non-empty, non-comment banned-attribution pattern token from the resolved patterns file (takes an optional root directory argument).
+# It prints the token to stdout and returns success; if no file or no token is found it returns a non-zero status.
 first_banned_pattern_token() {
   local f token
   f="$(banned_patterns_file "${1:-}")"
@@ -48,7 +59,7 @@ first_banned_pattern_token() {
   fi
   while IFS= read -r token || [[ -n "$token" ]]; do
     token="${token%%#*}"
-    token="$(printf '%s' "$token" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+    token="$(printf '%s' "$token" | tr -d '[:space:]')"
     [[ -n "$token" ]] || continue
     printf '%s' "$token"
     return 0
@@ -56,6 +67,7 @@ first_banned_pattern_token() {
   return 1
 }
 
+# line_matches_banned_pattern checks whether a lowercased line contains any banned-attribution pattern token; tokens are lowercased before matching and are read from the resolved patterns file.
 line_matches_banned_pattern() {
   local line_lc="$1"
   local root="${2:-}"
@@ -105,9 +117,8 @@ list_private_literal_values() {
     case "$raw" in
       *=*)
         key="${raw%%=*}"
-        key="$(printf '%s' "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-        value="${raw#*=}"
-        value="$(printf '%s' "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+        value="${raw#"$key="}"
+        value="$(printf '%s' "$value" | tr -d '[:space:]')"
         [[ -n "$value" ]] || continue
         [[ -z "$selector" || "$key" == "$selector" ]] || continue
         printf '%s\n' "$value"
@@ -143,41 +154,34 @@ line_matches_private_forbidden_literal() {
   return 1
 }
 
-authorized_private_identity_hashes_file() {
-  local root="${1:-}"
-  if [[ -z "$root" ]]; then
-    root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+# banned_attribution_hit returns 0 when author/committer/body metadata matches a banned pattern.
+banned_attribution_hit() {
+  local ae_lc="$1" an_lc="$2" ce_lc="$3" cn_lc="$4" body_lc="$5"
+  local root="${6:-}"
+  if ! banned_patterns_ready "$root"; then
+    return 1
   fi
-  printf '%s/.github/authorized-private-identities.sha256' "$root"
-}
-
-sha256_text() {
-  if command -v sha256sum >/dev/null 2>&1; then
-    sha256sum | awk '{print $1}'
-    return
-  fi
-  if command -v shasum >/dev/null 2>&1; then
-    shasum -a 256 | awk '{print $1}'
-    return
-  fi
-  return 127
-}
-
-identity_fingerprint() {
-  local name_lc="$1" email_lc="$2"
-  printf '%s <%s>' "$name_lc" "$email_lc" | sha256_text
-}
-
-private_identity_fingerprint_ok() {
-  local name_lc="$1" email_lc="$2" root="${3:-}" file digest expected
-  file="$(authorized_private_identity_hashes_file "$root")"
-  [[ -f "$file" ]] || return 1
-  digest="$(identity_fingerprint "$name_lc" "$email_lc")" || return 1
-  while IFS= read -r expected || [[ -n "$expected" ]]; do
-    expected="${expected%%#*}"
-    expected="$(printf '%s' "$expected" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-    [[ -n "$expected" ]] || continue
-    [[ "$digest" == "$expected" ]] && return 0
-  done <"$file"
+  line_matches_banned_pattern "$ae_lc" "$root" && return 0
+  line_matches_private_forbidden_literal "$ae_lc" "$root" && return 0
+  line_matches_banned_pattern "$an_lc" "$root" && return 0
+  line_matches_private_forbidden_literal "$an_lc" "$root" && return 0
+  line_matches_banned_pattern "$ce_lc" "$root" && return 0
+  line_matches_private_forbidden_literal "$ce_lc" "$root" && return 0
+  line_matches_banned_pattern "$cn_lc" "$root" && return 0
+  line_matches_private_forbidden_literal "$cn_lc" "$root" && return 0
+  local line line_lc
+  while IFS= read -r line; do
+    line_lc="$(printf '%s' "$line" | tr '[:upper:]' '[:lower:]')"
+    case "$line_lc" in
+      co-authored-by:*)
+        if line_matches_banned_pattern "$line_lc" "$root"; then
+          return 0
+        fi
+        if line_matches_private_forbidden_literal "$line_lc" "$root"; then
+          return 0
+        fi
+        ;;
+    esac
+  done <<< "$body_lc"
   return 1
 }
