@@ -1,0 +1,57 @@
+{
+  "id": "622f5fa85352",
+  "key": "manual_622f5f",
+  "name": "manual_622f5f",
+  "claim": "sync-attribution-guard-scripts.sh must copy files via atomic_install_file (mktemp staging + install + mv) for every target path so interruption cannot leave partial syncs; preserve target_input in skip messages.",
+  "conditions": [
+    "atomic_install_file",
+    "cannot",
+    "copy",
+    "every",
+    "files",
+    "install",
+    "interruption",
+    "leave",
+    "messages",
+    "mktemp",
+    "partial",
+    "path",
+    "preserve",
+    "skip",
+    "staging",
+    "sync-attribution-guard-scripts",
+    "syncs",
+    "target",
+    "target_input",
+    "via"
+  ],
+  "evidence_ids": [
+    "2026-07-30T03:20:01.277141+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-30T03:20:01.277141+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-30T03:20:01.277141+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-30T03:20:01.346396+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama PR #239 CodeRabbit review 4814845056; immutable update pattern for guard propagation.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-30T03:20:01.277141+00:00"
+      ],
+      "lessons_sha": "748a8975d902"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-30T03:20:01.346387+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama PR #239 CodeRabbit review 4814845056; immutable update pattern for guard propagation."
+}
