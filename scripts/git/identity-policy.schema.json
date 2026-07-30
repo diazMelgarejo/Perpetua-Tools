@@ -1,0 +1,47 @@
+{
+  "$id": "identity-policy.schema.json",
+  "type": "object",
+  "required": ["version", "human_identities", "agent_identities", "repo_bot_identities"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {"type": "string"},
+    "version": {"type": "integer", "const": 1},
+    "description": {"type": "string"},
+    "human_identities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "email"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "email": {"type": "string", "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"},
+          "aliases": {
+            "type": "array",
+            "items": {"type": "string", "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"}
+          },
+          "note": {"type": "string"}
+        }
+      }
+    },
+    "agent_identities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["email", "allowed_names"],
+        "additionalProperties": false,
+        "properties": {
+          "email": {"type": "string", "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"},
+          "allowed_names": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "repo_bot_identities": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {"type": "string", "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"}
+      }
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "$schema": "identity-policy.schema.json",
+  "version": 1,
+  "description": "Canonical public Git author/committer identity policy. Single source of truth for repo_hygiene.py, check_identity.sh, and audit_attribution.sh -- see docs/plans/2026-07-24-unified-identity-audit-integrated-plan.md.",
+  "human_identities": [
+    {
+      "name": "cyre",
+      "email": "diazmelgarejo@gmail.com",
+      "aliases": ["lawrence.melgarejo@gmail.com"],
+      "note": "Explicitly approved Gmail aliases for the same operator"
+    },
+    {
+      "name": "cyre",
+      "email": "lawrence@cyre.me"
+    },
+    {
+      "name": "cyre",
+      "email": "lawrence@bettermind.ph"
+    }
+  ],
+  "agent_identities": [
+    {"email": "codex@openai.com", "allowed_names": ["Codex"]},
+    {"email": "claude@anthropic.com", "allowed_names": ["Claude"]},
+    {"email": "noreply@anthropic.com", "allowed_names": []},
+    {"email": "cursoragent@cursor.com", "allowed_names": ["Cursor Agent"]},
+    {"email": "kimi-agent@kimi.ai", "allowed_names": ["Kimi Agent"]},
+    {"email": "cloud-kimi-agent@kimi.ai", "allowed_names": ["Cloud Kimi Agent"]},
+    {"email": "noreply@coderabbit.ai", "allowed_names": ["CodeRabbit"]}
+  ],
+  "repo_bot_identities": {
+    "orama-system": [
+      "cursor[bot]@users.noreply.github.com"
+    ],
+    "Perpetua-Tools": [
+      "dependabot[bot]@users.noreply.github.com",
+      "coderabbitai[bot]@users.noreply.github.com"
+    ]
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "id": "07171bc24c52",
+  "key": "manual_07171b",
+  "name": "manual_07171b",
+  "claim": "append-pr-body.sh must reject --file and --message together, block reserved PR body delimiters in input, abort when the body has duplicate structural markers, re-fetch gh pr view body before gh pr edit to prevent TOCTOU overwrites, resolve backups via git-common-dir with mktemp, and normalize Follow-up: titles without duplicating the prefix.",
+  "conditions": [
+    "abort",
+    "append-pr-body",
+    "backups",
+    "before",
+    "block",
+    "body",
+    "delimiters",
+    "duplicate",
+    "duplicating",
+    "edit",
+    "file",
+    "follow-up",
+    "git-common-dir",
+    "input",
+    "markers",
+    "message",
+    "mktemp",
+    "normalize",
+    "overwrites",
+    "prefix",
+    "prevent",
+    "re-fetch",
+    "reject",
+    "reserved",
+    "resolve",
+    "structural",
+    "titles",
+    "toctou",
+    "together",
+    "via",
+    "view",
+    "without"
+  ],
+  "evidence_ids": [
+    "2026-07-30T03:20:01.154887+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-30T03:20:01.154887+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-30T03:20:01.154887+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-30T03:20:01.224945+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama PR #239 CodeRabbit review 4813279644; PT #298 append-only stack 2026-07-30.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-30T03:20:01.154887+00:00"
+      ],
+      "lessons_sha": "607579acfc7d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-30T03:20:01.224935+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama PR #239 CodeRabbit review 4813279644; PT #298 append-only stack 2026-07-30."
+}
