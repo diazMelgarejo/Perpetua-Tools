@@ -58,4 +58,8 @@ PR #298 merged to `main` at `0732b9c` with append-pr-body hardening (`06d6ad4`) 
 
 - `lesson_07171bc24c52` — append-pr-body TOCTOU/delimiter/title rules
 - `lesson_622f5fa85352` — atomic_install in sync-attribution-guard-scripts
-- `lesson_44bd40ba128b` — post-merge main follow-up when orama canonical advances after PR merge
+- `lesson_44bd40ba128b` — post-merge follow-up via dated branch + PR (not default direct push to main)
+
+## PT #299 CodeRabbit nitpick (4815085328)
+
+Lesson `44bd40ba128b` corrected: use `yyyy-mm-dd-NNN-brief-summary` branch + normal PR path; Phase 0 blocks direct `main` push.

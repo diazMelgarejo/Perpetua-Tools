@@ -32,6 +32,62 @@ atomic_install_file() {
   fi
 }
 
+atomic_write_file() {
+  local dest="$1"
+  local mode="$2"
+  shift 2
+  local dest_dir stage tmp
+
+  dest_dir="$(dirname "$dest")"
+  mkdir -p "$dest_dir"
+  tmp="$(mktemp)"
+  if ! "$@" >"$tmp"; then
+    rm -f "$tmp"
+    echo "error: failed building $dest" >&2
+    return 1
+  fi
+  stage="$(mktemp "${dest_dir}/.$(basename "$dest").sync.XXXXXX")"
+  if ! install -m "$mode" "$tmp" "$stage"; then
+    rm -f "$tmp" "$stage"
+    echo "error: failed staging $dest" >&2
+    return 1
+  fi
+  rm -f "$tmp"
+  if ! mv -f "$stage" "$dest"; then
+    rm -f "$stage"
+    echo "error: failed writing $dest" >&2
+    return 1
+  fi
+}
+
+atomic_append_snippet() {
+  local dest="$1"
+  local mode="$2"
+  local snippet="$3"
+  local dest_dir stage tmp
+
+  dest_dir="$(dirname "$dest")"
+  mkdir -p "$dest_dir"
+  tmp="$(mktemp)"
+  cat "$dest" >"$tmp"
+  {
+    echo
+    cat "$snippet"
+  } >>"$tmp"
+  stage="$(mktemp "${dest_dir}/.$(basename "$dest").sync.XXXXXX")"
+  if ! install -m "$mode" "$tmp" "$stage"; then
+    rm -f "$tmp" "$stage"
+    echo "error: failed staging append for $dest" >&2
+    return 1
+  fi
+  rm -f "$tmp"
+  if ! mv -f "$stage" "$dest"; then
+    rm -f "$stage"
+    echo "error: failed appending to $dest" >&2
+    return 1
+  fi
+}
+
 for rel in \
   cursor-hooks-id.sh \
   hooks/commit-msg.strip-coauthor \
@@ -89,16 +145,10 @@ echo "synced guard scripts → $target"
 
 snippet="$source_root/scripts/git/snippets/AGENTS-cursor-cloud-git.md"
 if [[ -f "$snippet" ]]; then
-  if [[ ! -f "$target/AGENTS.md" ]]; then
-    {
-      echo "# Agent instructions"
-      echo
-      cat "$snippet"
-    } >"$target/AGENTS.md"
-  elif ! grep -q 'apply-attribution-guard-all-repos' "$target/AGENTS.md" 2>/dev/null; then
-    {
-      echo
-      cat "$snippet"
-    } >>"$target/AGENTS.md"
+  agents_md="$target/AGENTS.md"
+  if [[ ! -f "$agents_md" ]]; then
+    atomic_write_file "$agents_md" 0644 sh -c 'printf "%s\n\n" "# Agent instructions"; cat "$1"' _ "$snippet"
+  elif ! grep -q 'apply-attribution-guard-all-repos' "$agents_md" 2>/dev/null; then
+    atomic_append_snippet "$agents_md" 0644 "$snippet"
   fi
 fi
