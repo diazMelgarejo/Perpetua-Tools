@@ -7,7 +7,7 @@ cd "$ROOT"
 
 # Guard: never push while a --no-commit merge/cherry-pick/revert is still
 # uncommitted (see scripts/git/check_no_pending_merge.sh).
-"$ROOT/scripts/git/check_no_pending_merge.sh" "$ROOT" || exit 1
+"$ROOT/scripts/git/check_no_pending_merge.sh" "$ROOT" || exit $?
 
 "$ROOT/scripts/git/ensure_hooks_installed.sh"
 
