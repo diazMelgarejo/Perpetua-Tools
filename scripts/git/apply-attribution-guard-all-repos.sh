@@ -51,11 +51,19 @@ for r in "${raw_candidates[@]}"; do
 done
 
 if [[ -x "$SYNC" ]]; then
+  sync_failures=0
   for r in "${unique[@]}"; do
     [[ "$r" == "$PT_ROOT" ]] && continue
     [[ "$(basename "$r")" == "periscope" ]] && continue
-    bash "$SYNC" "$r" 2>/dev/null || true
+    if ! bash "$SYNC" "$r"; then
+      echo "error: sync failed: $r" >&2
+      sync_failures=$((sync_failures + 1))
+    fi
   done
+  if ((sync_failures > 0)); then
+    echo "error: attribution guard sync failed for $sync_failures repo(s)" >&2
+    exit 1
+  fi
 fi
 
 for r in "${unique[@]}"; do

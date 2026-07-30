@@ -28,6 +28,12 @@ FORBIDDEN_TOKENS = (
 )
 IDENTITY_DOC_EXCEPTIONS: set[str] = {
     ".mailmap",
+    # Identity-allowlist artifacts: operator-approved identities belong here by design.
+    "scripts/git/audit_attribution.sh",
+    "scripts/git/audit_engine.py",
+    "scripts/git/check_identity.sh",
+    "scripts/git/identity-policy.json",
+    "scripts/git/identity-policy.schema.json",
 }
 # Personal-path leak protection (OpSec) — block any tracked file from containing
 # an absolute path under /Users/<anything>/ or /home/<anything>/. Developer
@@ -437,6 +443,8 @@ def scan_private_verboten_literals(root: Path, files: list[str]) -> list[str]:
     # anywhere in any other file) still block.
     errors: list[str] = []
     for rel in files:
+        if rel in IDENTITY_DOC_EXCEPTIONS:
+            continue
         path = root / rel
         if not path.is_file() or is_binary(path):
             continue

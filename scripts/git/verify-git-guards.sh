@@ -120,6 +120,17 @@ if [[ -x scripts/git/scan-tracked-banned-tokens.sh ]]; then
   fi
 fi
 
+if [[ -x "$REPO_ROOT/scripts/git/commit_clean_test.sh" ]]; then
+  if out="$(bash "$REPO_ROOT/scripts/git/commit_clean_test.sh" 2>&1)"; then
+    ok "commit-clean empty-commit guards"
+  else
+    printf '%s\n' "$out" >&2
+    fail "commit_clean_test.sh failed (run scripts/git/commit_clean_test.sh)"
+  fi
+else
+  fail "commit_clean_test.sh missing or not executable"
+fi
+
 if [[ "$errors" -gt 0 ]]; then
   echo "verify-git-guards: $errors failure(s)" >&2
   exit 1
