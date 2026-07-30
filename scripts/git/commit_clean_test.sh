@@ -24,7 +24,22 @@ run_in_repo() {
 }
 
 tmp="$(mktemp -d)"
-trap 'rm -rf -- "$tmp" "${merge_tmp:-}" "${octopus_tmp:-}"' EXIT
+trap 'rm -rf -- "$tmp" ${merge_tmp:+"$merge_tmp"} ${octopus_tmp:+"$octopus_tmp"}' EXIT
+
+require_merge() {
+  local repo="$1"
+  local onto="$2"
+  local branch="$3"
+  git -C "$repo" checkout -q "$onto"
+  if ! git -C "$repo" merge --no-commit --no-ff "$branch" >/dev/null 2>&1; then
+    fail "merge --no-commit --no-ff ${branch} must succeed on ${onto}"
+    return 1
+  fi
+  if [[ ! -f "$repo/.git/MERGE_HEAD" ]]; then
+    fail "merge must create MERGE_HEAD for ${branch} onto ${onto}"
+    return 1
+  fi
+}
 
 git -C "$tmp" init -q
 git -C "$tmp" config user.name "Test User"
@@ -98,7 +113,7 @@ git -C "$merge_tmp" commit -q -m "feature change"
 feature_sha="$(git -C "$merge_tmp" rev-parse HEAD)"
 
 git -C "$merge_tmp" checkout -q main
-git -C "$merge_tmp" merge --no-commit --no-ff feature >/dev/null 2>&1 || true
+if require_merge "$merge_tmp" main feature; then
 printf 'merged\n' >"$merge_tmp/README.md"
 git -C "$merge_tmp" add README.md
 
@@ -140,11 +155,12 @@ if [[ -f "$merge_tmp/.git/MERGE_HEAD" ]]; then
 else
   pass "MERGE_HEAD cleared after merge commit"
 fi
+fi
 
 git -C "$merge_tmp" checkout -q -b mode-cleanup "$main_sha"
 git -C "$merge_tmp" checkout -q -b feature2 "$feature_sha"
 git -C "$merge_tmp" checkout -q mode-cleanup
-git -C "$merge_tmp" merge --no-commit --no-ff feature2 >/dev/null 2>&1 || true
+if require_merge "$merge_tmp" mode-cleanup feature2; then
 printf 'mode cleanup\n' >"$merge_tmp/README.md"
 printf 'merge msg\n' >"$merge_tmp/.git/MERGE_MSG"
 git -C "$merge_tmp" add README.md
@@ -156,6 +172,7 @@ for artifact in MERGE_HEAD MERGE_MODE MERGE_MSG; do
     pass "$artifact cleared after merge commit"
   fi
 done
+fi
 
 git -C "$merge_tmp" checkout -q -b amend-target "$main_sha"
 printf 'amend me\n' >"$merge_tmp/README.md"
@@ -172,8 +189,13 @@ else
   pass "--amend ignores MERGE_HEAD during merge state"
 fi
 
+rm -f \
+  "$merge_tmp/.git/MERGE_HEAD" \
+  "$merge_tmp/.git/MERGE_MODE" \
+  "$merge_tmp/.git/MERGE_MSG"
+
 git -C "$merge_tmp" checkout -q -b preserve-unstaged "$main_sha"
-git -C "$merge_tmp" merge --no-commit --no-ff feature2 >/dev/null 2>&1 || true
+if require_merge "$merge_tmp" preserve-unstaged feature2; then
 printf 'staged merge\n' >"$merge_tmp/README.md"
 printf 'leave unstaged\n' >"$merge_tmp/UNSTAGED.txt"
 git -C "$merge_tmp" add README.md
@@ -189,6 +211,7 @@ if [[ "$(cat "$merge_tmp/UNSTAGED.txt")" != "leave unstaged" ]]; then
   fail "unstaged file contents must remain intact"
 else
   pass "unstaged file contents intact"
+fi
 fi
 
 single_parent_count="$(git -C "$tmp" show -s --format=%P "$sha" | wc -w | tr -d ' ')"
