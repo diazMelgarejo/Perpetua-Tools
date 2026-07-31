@@ -28,8 +28,7 @@ required_local_files:
   - packages/endpoint-policy/pyproject.toml
   - packages/endpoint-policy/LICENSE
   - packages/endpoint-policy/NOTICE
-  - .github/workflows/security-invariant-enforcer.yml
-  - .github/workflows/invariant-monitor-bot.yml
+  - .github/workflows/security-invariants.yml
   - AGENTS.md
 
 required_tests:
@@ -50,7 +49,7 @@ peer_repos:
     status: canonical-provider
     expected_contract: endpoint-transport-policy
     contract_path: config/endpoint-policy-contract.yml
-    workflow_path: .github/workflows/security-invariant-enforcer.yml
+    workflow_path: .github/workflows/security-invariants.yml
     checker_path: scripts/security/check_endpoint_policy_core.py
     rule: Owns current endpoint_policy_core implementation and local CI enforcement.
 
@@ -72,11 +71,7 @@ existing_skill_references:
     reason: Redirect to canonical security policy for security PR stacking rules.
 
 workflow_requirements:
-  - workflow: .github/workflows/security-invariant-enforcer.yml
-    must_run:
-      - python scripts/security/check_endpoint_policy_core.py
-      - pytest tests/test_endpoint_policy_core.py
-  - workflow: .github/workflows/invariant-monitor-bot.yml
+  - workflow: .github/workflows/security-invariants.yml
     must_run:
       - python scripts/security/check_endpoint_policy_core.py
       - pytest tests/test_endpoint_policy_core.py
