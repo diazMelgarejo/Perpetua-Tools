@@ -1,0 +1,72 @@
+{
+  "id": "155d61c7dda3",
+  "key": "manual_155d61",
+  "name": "manual_155d61",
+  "claim": "When a CI failure and a code-review finding both point at the same file, check whether they're the same underlying bug before fixing them separately. Run the actual failing CI command locally (matching CI's own invocation, not an approximation) to confirm the fix closes it, rather than assuming a review fix and a CI fix are two different tasks.",
+  "conditions": [
+    "actual",
+    "approximation",
+    "assuming",
+    "before",
+    "both",
+    "bug",
+    "check",
+    "closes",
+    "code-review",
+    "command",
+    "confirm",
+    "different",
+    "failing",
+    "failure",
+    "file",
+    "finding",
+    "fix",
+    "fixing",
+    "invocation",
+    "locally",
+    "matching",
+    "own",
+    "point",
+    "rather",
+    "review",
+    "run",
+    "same",
+    "separately",
+    "tasks",
+    "than",
+    "them",
+    "they",
+    "two",
+    "underlying",
+    "whether"
+  ],
+  "evidence_ids": [
+    "2026-07-31T08:12:05.069504+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-31T08:12:05.069504+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-31T08:12:05.069504+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-31T08:12:14.489390+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Directly demonstrated this session -- a CI failure and a review finding turned out to be the same bug, closed by one fix, confirmed by running CI's own command.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-31T08:12:05.069504+00:00"
+      ],
+      "lessons_sha": "7a18898e3f5f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-31T08:12:14.489374+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Directly demonstrated this session -- a CI failure and a review finding turned out to be the same bug, closed by one fix, confirmed by running CI's own command."
+}
