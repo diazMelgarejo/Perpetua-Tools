@@ -1,0 +1,42 @@
+name: Markdown Lint
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  lint:
+    name: Markdownlint-cli2
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Ratchet, not a blanket retrofit: as of this workflow's introduction,
+      # 96 pre-existing .md files (1646 MD013 violations) fail this rule.
+      # Linting the whole tree on every PR would put an unrelated red status
+      # check on nearly every future doc-touching PR until someone does a
+      # separate, dedicated cleanup pass -- exactly the "overly rigid
+      # formatting demands" this setup is meant to avoid. Scope to files the
+      # PR/push actually changed; pre-existing files come into compliance
+      # naturally as they're touched, new files are held to the rule from
+      # day one.
+      - name: Get changed markdown files
+        id: changed-md
+        uses: tj-actions/changed-files@v45
+        with:
+          files: |
+            **/*.md
+          files_ignore: |
+            CHANGELOG.md
+            vendor/**
+
+      - name: Run markdownlint-cli2 on changed files
+        if: steps.changed-md.outputs.any_changed == 'true'
+        uses: davidanson/markdownlint-cli2-action@v19
+        with:
+          globs: ${{ steps.changed-md.outputs.all_changed_files }}
