@@ -1,0 +1,42 @@
+{
+  "id": "405373a130f9",
+  "key": "manual_405373",
+  "name": "manual_405373",
+  "claim": "Before cherry-pick --continue (or after resolving a merge conflict), require BOTH: (1) `git diff --name-only --diff-filter=U` (or `git ls-files -u`) returns no paths -- the authoritative index-level check, since rename/delete and add/add conflicts leave no textual markers -- and (2) a supplemental scan of staged file content for conflict markers, since the index can be clean while a marker was accidentally staged as literal content. If markers shipped anyway, rewrite history with a clean cherry-pick; do not patch in a follow-up commit.",
+  "conditions": [
+    "cherry-pick",
+    "conflict",
+    "git",
+    "marker",
+    "vitest"
+  ],
+  "evidence_ids": [
+    "2026-07-31T06:25:44.900789+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-31T06:25:44.900789+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-31T06:25:44.900789+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-31T06:25:44.982120+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "garrytan cherry-pick left <<<<<<< HEAD in vitest.config.js at 72a090d; user caught; history rewritten to f2d9abf.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-31T06:25:44.900789+00:00"
+      ],
+      "lessons_sha": "c940f6cc93b4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-31T06:25:44.982110+00:00",
+  "reviewer": "learn.py",
+  "rationale": "garrytan cherry-pick left <<<<<<< HEAD in vitest.config.js at 72a090d; user caught; history rewritten to f2d9abf."
+}
