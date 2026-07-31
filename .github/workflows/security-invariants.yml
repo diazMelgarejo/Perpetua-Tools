@@ -1,4 +1,10 @@
-name: OramaSys Security Invariant Enforcer
+name: OramaSys Security Invariants
+
+# Merged 2026-07-31 from security-invariant-enforcer.yml +
+# invariant-monitor-bot.yml -- the two were running ~95% the same
+# checkout/setup/tests twice on every push and PR. Union of both test
+# lists (nothing either one checked is now unchecked); the PR-comment
+# step from the monitor bot is kept, not dropped.
 
 on:
   pull_request:
@@ -8,6 +14,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   security-invariants:
@@ -50,3 +57,25 @@ jobs:
             exit 1
           fi
           echo "Invariant checks passed"
+
+      - name: Comment on PR if failure
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: [
+                '## OramaSys Security Invariants Alert',
+                '',
+                'Transport, endpoint-policy, or FastAPI health invariants failed. See the workflow log.',
+                '',
+                '- scripts/security/check_endpoint_policy_core.py',
+                '- tests/test_endpoint_policy_core.py',
+                '- tests/test_scheme_preservation.py',
+                '- tests/test_model_endpoint_url.py',
+                '- tests/test_fastapi_health.py',
+              ].join('\n'),
+            })
