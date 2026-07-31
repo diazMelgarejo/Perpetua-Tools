@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ "**" ]
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   lint:
     name: Markdownlint-cli2
@@ -15,6 +19,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       # Ratchet, not a blanket retrofit: as of this workflow's introduction,
       # 96 pre-existing .md files (1646 MD013 violations) fail this rule.
@@ -37,7 +42,7 @@ jobs:
       # from DavidAnson/markdownlint-cli2-action's own repo.
       - name: Get changed markdown files
         id: changed-md
-        uses: tj-actions/changed-files@v45
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6 -- pinned to commit, not a tag: v1-v45.x were the tags retroactively hijacked in CVE-2025-30066 (a threat actor compromised the repo and re-pointed those exact tags to a secrets-exfiltrating commit). Verified against the actual tag list (`git ls-remote --tags`) before pinning, not copied from a third-party source.
         with:
           files: |
             **/*.md
