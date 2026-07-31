@@ -19,14 +19,12 @@ REQUIRED_FILES = [
     "tests/test_hardware_routing.py",
     "scripts/security/check_endpoint_policy_core.py",
     CONTRACT_PATH,
-    ".github/workflows/security-invariant-enforcer.yml",
-    ".github/workflows/invariant-monitor-bot.yml",
+    ".github/workflows/security-invariants.yml",
     "AGENTS.md",
 ]
 
 WORKFLOWS = [
-    ".github/workflows/security-invariant-enforcer.yml",
-    ".github/workflows/invariant-monitor-bot.yml",
+    ".github/workflows/security-invariants.yml",
 ]
 
 
