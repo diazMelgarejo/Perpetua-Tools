@@ -107,8 +107,21 @@ live in `ci.yml`). `docs-sync`'s own separate job meant a second full
 checkout + Python + pyyaml setup for two lightweight script calls that
 `git-hygiene`'s own checkout could just as easily run as two more steps.
 **Merged** (this session): `docs-sync`'s two checks became two
-additional steps at the end of `git-hygiene`, same conditions, same
-failure behavior, one fewer job/runner/checkout per push and PR.
+additional steps at the end of `git-hygiene`.
+
+**Correction (caught by review, not by this doc's own first pass):**
+folding the steps in without further care would have silently coupled
+them to `git-hygiene`'s success — GitHub Actions skips later steps in a
+job by default once an earlier one fails, so a repo-hygiene or
+banned-token failure would have silently skipped the docs/config sync
+checks entirely, contradicting the "same failure behavior" claim this
+doc originally made. Each of the 3 folded-in steps now carries
+`if: ${{ !cancelled() }}`, restoring genuine independent execution
+(they run and can fail on their own regardless of earlier step outcomes
+in the same job) while still respecting an actual manual cancellation.
+With that fix, "same conditions, same failure behavior, one fewer
+job/runner/checkout" is verified true, not assumed.
+
 `lint-and-test` (the actual pytest matrix, `needs: [git-hygiene]`)
 stays a separate job — it's genuinely the slow, resource-heavy one, and
 serializing it after `git-hygiene` was already correct; folding it in
@@ -132,3 +145,23 @@ Two files removed (`security-invariant-enforcer.yml`,
 `invariant-monitor-bot.yml` → 1 file), one job removed (`docs-sync`
 folded into `git-hygiene`), zero coverage lost, zero trigger-scope
 changes to anything that was correctly scoped before.
+
+**Also caught, this PR's own CI (landed as a separate, concurrent
+commit, `c8f0c53`):** `scripts/security/check_endpoint_policy_core.py`
+and `config/endpoint-policy-contract.yml` both hardcoded the 2 old
+workflow filenames as required/must-run files — a structural self-check
+verifying CI enforcement hasn't quietly been removed. Deleting those 2
+files as part of this consolidation correctly tripped that check from
+both places. Updated to `security-invariants.yml`; also granted
+`issues: write` (the permission `github.rest.issues.createComment()`
+needs) since the PR-comment step had started failing with a live 403 --
+an unrelated permissions-hardening pass earlier this session had
+narrowed this workflow's permissions to `contents: read` only, without
+accounting for the comment step already present in the file it was
+hardening.
+
+**Also fixed (same session, this branch):** the alert's summary line
+only mentioned transport and endpoint-policy invariants even though the
+test list below it already included `test_fastapi_health.py` --
+broadened to mention all three categories, test list and structure
+otherwise unchanged.

@@ -70,7 +70,7 @@ jobs:
               body: [
                 '## OramaSys Security Invariants Alert',
                 '',
-                'Transport or endpoint-policy invariants failed. See the workflow log.',
+                'Transport, endpoint-policy, or FastAPI health invariants failed. See the workflow log.',
                 '',
                 '- scripts/security/check_endpoint_policy_core.py',
                 '- tests/test_endpoint_policy_core.py',
