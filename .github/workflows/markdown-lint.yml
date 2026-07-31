@@ -25,6 +25,16 @@ jobs:
       # PR/push actually changed; pre-existing files come into compliance
       # naturally as they're touched, new files are held to the rule from
       # day one.
+      #
+      # separator: "," is required on BOTH steps below, not optional
+      # styling -- tj-actions/changed-files defaults all_changed_files to
+      # SPACE-separated, while markdownlint-cli2-action defaults its globs
+      # input to NEWLINE-separated. Left at their defaults, a PR touching
+      # 2+ .md files produces a single space-joined string that
+      # markdownlint-cli2-action can't parse as multiple globs -- it
+      # silently lints 0 files and the job reports success without ever
+      # having checked anything. Matching the upstream changed.yml example
+      # from DavidAnson/markdownlint-cli2-action's own repo.
       - name: Get changed markdown files
         id: changed-md
         uses: tj-actions/changed-files@v45
@@ -34,9 +44,11 @@ jobs:
           files_ignore: |
             CHANGELOG.md
             vendor/**
+          separator: ","
 
       - name: Run markdownlint-cli2 on changed files
         if: steps.changed-md.outputs.any_changed == 'true'
         uses: davidanson/markdownlint-cli2-action@v19
         with:
           globs: ${{ steps.changed-md.outputs.all_changed_files }}
+          separator: ","
