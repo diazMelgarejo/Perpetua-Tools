@@ -1,0 +1,44 @@
+{
+  "id": "338ca253a647",
+  "key": "manual_338ca2",
+  "name": "manual_338ca2",
+  "claim": "AlphaClaw cron install tests must pass explicit platform linux or darwin \u2014 never assert /etc/cron.d/ writes without platform linux; darwin uses managed scheduler by design.",
+  "conditions": [
+    "alphaclaw",
+    "ci",
+    "cron",
+    "darwin",
+    "linux",
+    "platform",
+    "test"
+  ],
+  "evidence_ids": [
+    "2026-07-31T06:25:44.899482+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-31T06:25:44.899482+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-31T06:25:44.899482+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-31T06:25:44.973303+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "macOS CI 778/779 failure after PR #22 merge: onboarding-cron.test.js from upstream assumed linux-only /etc/cron.d/ path. system-cron.test.js already had correct pattern.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-31T06:25:44.899482+00:00"
+      ],
+      "lessons_sha": "c940f6cc93b4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-31T06:25:44.973294+00:00",
+  "reviewer": "learn.py",
+  "rationale": "macOS CI 778/779 failure after PR #22 merge: onboarding-cron.test.js from upstream assumed linux-only /etc/cron.d/ path. system-cron.test.js already had correct pattern."
+}
