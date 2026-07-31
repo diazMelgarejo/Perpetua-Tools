@@ -2,7 +2,7 @@
   "id": "405373a130f9",
   "key": "manual_405373",
   "name": "manual_405373",
-  "claim": "Before cherry-pick --continue inspect staged files for conflict markers; if markers shipped rewrite history with clean cherry-pick do not patch in follow-up commit.",
+  "claim": "Before cherry-pick --continue (or after resolving a merge conflict), require BOTH: (1) `git diff --name-only --diff-filter=U` (or `git ls-files -u`) returns no paths -- the authoritative index-level check, since rename/delete and add/add conflicts leave no textual markers -- and (2) a supplemental scan of staged file content for conflict markers, since the index can be clean while a marker was accidentally staged as literal content. If markers shipped anyway, rewrite history with a clean cherry-pick; do not patch in a follow-up commit.",
   "conditions": [
     "cherry-pick",
     "conflict",

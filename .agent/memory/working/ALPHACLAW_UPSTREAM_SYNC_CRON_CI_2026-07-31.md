@@ -35,7 +35,7 @@ One long session covered: (1) reverse-engineering the Apex desktop DMG distribut
 **Branch:** `cursor/chrysb-upstream-sync-f559` → `feature/MacOS-post-install`  
 **Final merge tip:** `6c108ad`
 
-```
+```text
 merge(upstream): sync chrysb/main into feature/MacOS-post-install (#22)
 587b627 chore(release): bump @diazmelgarejo/alphaclaw to 0.9.33.9
 f2d9abf feat(watchdog): cherry-pick garrytan safe-mode + openclaw 2026.7.1-2 pin
@@ -89,6 +89,7 @@ e8b19b0 merge(upstream): sync chrysb/main into feature/MacOS-post-install
 **Branch:** `cursor/cron-platform-tests-f559` from `origin/feature/MacOS-post-install`
 
 **Changes:**
+
 | File | Role |
 |------|------|
 | `tests/server/fixtures/cron-memory-fs.js` | Shared `createCronMemoryFs` + `seedCronOpenclawDir` |
@@ -102,7 +103,7 @@ e8b19b0 merge(upstream): sync chrysb/main into feature/MacOS-post-install
 
 **Result:** 786/786 pass on Node 22.22.3 (was 779 before new cases).
 
-**Docs:** `docs/wiki/04-cron-scheduler.md` § CI failure + test layout; `docs/Lessons.MD` session 2026-07-31.
+**Docs:** `docs/wiki/04-cron-scheduler.md` § CI failure + test layout; `docs/LESSONS.md` session 2026-07-31.
 
 ---
 
@@ -110,10 +111,10 @@ e8b19b0 merge(upstream): sync chrysb/main into feature/MacOS-post-install
 
 | Action | Detail |
 |--------|--------|
-| Worktrees removed | `/tmp/alphaclaw-cherry-sim-f559`, `/tmp/alphaclaw-upstream-sync-f559` |
+| Worktrees removed | 2 temporary AlphaClaw session worktrees (cherry-pick sim, upstream sync) |
 | Branches deleted | `cursor/garrytan-safe-mode-f559`, `cursor/deps-npm-onto-feature-f559`, `cursor/attribution-guard-sync-f559` |
 | Remote removed | `garrytan` |
-| Scratch dirs | 604 `/tmp/alphaclaw-*` removed |
+| Scratch dirs | 604 temporary AlphaClaw scratch directories removed |
 | Kept | `cursor/commit-clean-merge-aware-f559` (9 unique unmerged commits), local `main` (ECC bundle history) |
 
 ---
@@ -139,7 +140,7 @@ ECC = agent harness scaffolding (`.codex/`, `.claude/ecc-tools.json`, skills) �
 
 2. **Platform blindness is a test smell:** Any test touching `installHourlyGitSyncCron`, `applySystemCronConfig`, or `/etc/cron.d/` without explicit `platform` will flake or fail on `macos-latest`. Copy the `system-cron.test.js` pattern, not ad-hoc `os.platform()` assumptions.
 
-3. **Cherry-pick verification gate:** Treat conflict resolution as a blocking review step — `rg '<<<<<<|>>>>>>|======='` on staged files before continue.
+3. **Cherry-pick verification gate:** Treat conflict resolution as a blocking review step. Require BOTH `git diff --name-only --diff-filter=U` (or `git ls-files -u`) returning no paths -- the authoritative index-level check, since rename/delete and add/add conflicts leave no textual markers -- and a supplemental `rg '<<<<<<|>>>>>>|======='` scan of staged file content before continuing, since the index can be clean while a marker was accidentally staged as literal content.
 
 4. **Product topology:** Three distinct surfaces — npm harness (AlphaClaw server), Apex Electron desktop (private nexus repo), OpenClaw gateway (pinned dep). Documentation and investigation scope must name which surface.
 

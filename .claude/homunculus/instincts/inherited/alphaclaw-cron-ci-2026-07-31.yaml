@@ -9,19 +9,19 @@ domain: testing
 source: inherited
 imported_from: "ALPHACLAW_UPSTREAM_SYNC_CRON_CI_2026-07-31.md"
 source_repo: https://github.com/diazMelgarejo/AlphaClaw
----
-
-# AlphaClaw Cron Tests Require Explicit Platform
-
-## Action
-
-Always pass explicit `platform: "linux"` or `platform: "darwin"` to `installHourlyGitSyncCron`, `applySystemCronConfig`, and related helpers. Never assert `/etc/cron.d/openclaw-hourly-sync` file existence without `platform: "linux"`. Split cases with `it.each` aligned to `system-cron.test.js`.
-
-## Evidence
-
-- macOS CI failed 778/779 after upstream merge PR #22: onboarding-cron.test.js expected `/etc/cron.d/` write on darwin
-- darwin correctly uses in-process managed scheduler; `/etc/cron.d/` is root-only (EACCES)
-- Fix: layered platform-aware tests + shared `cron-memory-fs.js` fixture (786/786 pass)
+title: "AlphaClaw Cron Tests Require Explicit Platform"
+action: >-
+  Always pass explicit platform: "linux" or platform: "darwin" to
+  installHourlyGitSyncCron, applySystemCronConfig, and related helpers.
+  Never assert /etc/cron.d/openclaw-hourly-sync file existence without
+  platform: "linux". Split cases with it.each aligned to
+  system-cron.test.js.
+evidence: >-
+  macOS CI failed 778/779 after upstream merge PR #22:
+  onboarding-cron.test.js expected /etc/cron.d/ write on darwin. darwin
+  correctly uses in-process managed scheduler; /etc/cron.d/ is root-only
+  (EACCES). Fix: layered platform-aware tests + shared cron-memory-fs.js
+  fixture (786/786 pass).
 
 ---
 id: alphaclaw-cherry-pick-conflict-marker-gate
@@ -31,39 +31,39 @@ domain: git
 source: inherited
 imported_from: "ALPHACLAW_UPSTREAM_SYNC_CRON_CI_2026-07-31.md"
 source_repo: https://github.com/diazMelgarejo/AlphaClaw
----
-
-# Cherry-Pick Conflict Marker Gate
-
-## Action
-
-Before `cherry-pick --continue`, inspect every staged file for conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`). If markers shipped, rewrite history (reset + clean cherry-pick) rather than patching in a follow-up commit.
-
-## Evidence
-
-- garrytan cherry-pick left markers in vitest.config.js at commit 72a090d
-- User caught; history rewritten to f2d9abf + 587b627 before PR #22 merge
+title: "Cherry-Pick Conflict Marker Gate"
+action: >-
+  Before cherry-pick --continue, require BOTH git diff --name-only
+  --diff-filter=U (or git ls-files -u) returning no paths -- the
+  authoritative index-level check, since rename/delete and add/add
+  conflicts leave no textual markers -- and a supplemental scan of every
+  staged file for conflict markers (<<<<<<<, =======, >>>>>>>), since the
+  index can be clean while a marker was accidentally staged as literal
+  content. If markers shipped, rewrite history (reset + clean
+  cherry-pick) rather than patching in a follow-up commit.
+evidence: >-
+  garrytan cherry-pick left markers in vitest.config.js at commit
+  72a090d. User caught; history rewritten to f2d9abf + 587b627 before PR
+  #22 merge.
 
 ---
 id: alphaclaw-apex-dmg-not-npm-harness
-trigger: "when investigating AlphaClaw desktop downloads or updates.alphaclaw.md URLs"
+trigger: "when investigating AlphaClaw desktop downloads or update URLs"
 confidence: 0.88
 domain: architecture
 source: inherited
 imported_from: "ALPHACLAW_UPSTREAM_SYNC_CRON_CI_2026-07-31.md"
 source_repo: https://github.com/diazMelgarejo/AlphaClaw
----
-
-# Apex DMG Is Not the npm AlphaClaw Harness
-
-## Action
-
-Treat `updates.alphaclaw.md/desktop/prod/alphaclaw-mac-latest.dmg` as AlphaClaw Apex (Electron, private alphaclaw-nexus repo, electron-builder, Cloudflare CDN). Do not assume it is built from public chrysb/alphaclaw CI or the fork integration branch.
-
-## Evidence
-
-- Live artifact v0.1.7 arm64; commercial backend foundry.alphaclaw.workers.dev
-- Separate from @diazmelgarejo/alphaclaw npm server harness on feature/MacOS-post-install
+title: "Apex DMG Is Not the npm AlphaClaw Harness"
+action: >-
+  Treat updates.alphaclaw.md/desktop/prod/alphaclaw-mac-latest.dmg as
+  AlphaClaw Apex (Electron, private alphaclaw-nexus repo,
+  electron-builder, Cloudflare CDN). Do not assume it is built from
+  public chrysb/alphaclaw CI or the fork integration branch.
+evidence: >-
+  Live artifact v0.1.7 arm64; commercial backend
+  foundry.alphaclaw.workers.dev. Separate from @diazmelgarejo/alphaclaw
+  npm server harness on feature/MacOS-post-install.
 
 ---
 id: alphaclaw-pr-after-merge-new-branch
@@ -73,15 +73,11 @@ domain: git
 source: inherited
 imported_from: "ALPHACLAW_UPSTREAM_SYNC_CRON_CI_2026-07-31.md"
 source_repo: https://github.com/diazMelgarejo/AlphaClaw
----
-
-# Post-Merge Fixes Need New PR From Integration Tip
-
-## Action
-
-Branch from `origin/feature/MacOS-post-install` (not main), cherry-pick or implement fix, open new PR. Do not amend or reopen the merged PR (#22 pattern).
-
-## Evidence
-
-- Cron test fix (b8b1d6e) landed after PR #22 merge
-- New branch cursor/cron-platform-tests-f559 from integration tip
+title: "Post-Merge Fixes Need New PR From Integration Tip"
+action: >-
+  Branch from origin/feature/MacOS-post-install (not main), cherry-pick
+  or implement fix, open new PR. Do not amend or reopen the merged PR
+  (#22 pattern).
+evidence: >-
+  Cron test fix (b8b1d6e) landed after PR #22 merge. New branch
+  cursor/cron-platform-tests-f559 from integration tip.
