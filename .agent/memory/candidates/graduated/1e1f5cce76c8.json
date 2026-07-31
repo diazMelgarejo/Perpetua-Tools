@@ -1,0 +1,43 @@
+{
+  "id": "1e1f5cce76c8",
+  "key": "manual_1e1f5c",
+  "name": "manual_1e1f5c",
+  "claim": "AlphaClaw Apex DMG at updates.alphaclaw.md is Electron desktop from private alphaclaw-nexus not the npm server harness \u2014 do not conflate with chrysb/alphaclaw CI or fork integration branch.",
+  "conditions": [
+    "alphaclaw",
+    "apex",
+    "desktop",
+    "dmg",
+    "electron",
+    "nexus"
+  ],
+  "evidence_ids": [
+    "2026-07-31T06:25:44.892454+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-31T06:25:44.892454+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-31T06:25:44.892454+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-31T06:25:44.965186+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "DMG investigation 2026-07-31: CDN alias v0.1.7 arm64 electron-builder separate from @diazmelgarejo/alphaclaw npm package.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-31T06:25:44.892454+00:00"
+      ],
+      "lessons_sha": "c940f6cc93b4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-31T06:25:44.965176+00:00",
+  "reviewer": "learn.py",
+  "rationale": "DMG investigation 2026-07-31: CDN alias v0.1.7 arm64 electron-builder separate from @diazmelgarejo/alphaclaw npm package."
+}
