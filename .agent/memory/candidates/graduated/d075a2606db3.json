@@ -1,0 +1,80 @@
+{
+  "id": "d075a2606db3",
+  "key": "manual_d075a2",
+  "name": "manual_d075a2",
+  "claim": "When the same corrected claim exists in multiple tracked copies (a raw lessons.jsonl entry, its rendered LESSONS.md bullet, a graduated candidate JSON, and any working-doc prose restating it), fix the claim once at the source and propagate identically to every copy in the same commit, rather than editing each copy's wording independently. Verify the source-of-truth file (lessons.jsonl) with a real JSON/line-count check and regenerate the rendered file from it rather than hand-patching the rendered markdown.",
+  "conditions": [
+    "any",
+    "bullet",
+    "candidate",
+    "check",
+    "claim",
+    "commit",
+    "copies",
+    "copy",
+    "corrected",
+    "each",
+    "editing",
+    "entry",
+    "every",
+    "exists",
+    "file",
+    "fix",
+    "graduated",
+    "hand-patching",
+    "identically",
+    "independently",
+    "json",
+    "jsonl",
+    "lessons",
+    "line-count",
+    "markdown",
+    "multiple",
+    "once",
+    "propagate",
+    "prose",
+    "rather",
+    "raw",
+    "real",
+    "regenerate",
+    "rendered",
+    "restating",
+    "same",
+    "source",
+    "source-of-truth",
+    "than",
+    "tracked",
+    "verify",
+    "wording",
+    "working-doc"
+  ],
+  "evidence_ids": [
+    "2026-07-31T08:12:05.153324+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-07-31T08:12:05.153324+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-07-31T08:12:05.153324+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-07-31T08:12:14.642286+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "The root-cause-clustering approach applied to a real 4-copy lesson-drift case this session, with the source-then-regenerate discipline that avoided a 5th manual edit.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-07-31T08:12:05.153324+00:00"
+      ],
+      "lessons_sha": "4965463969ed"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-07-31T08:12:14.642270+00:00",
+  "reviewer": "host-agent",
+  "rationale": "The root-cause-clustering approach applied to a real 4-copy lesson-drift case this session, with the source-then-regenerate discipline that avoided a 5th manual edit."
+}
