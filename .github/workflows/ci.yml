@@ -123,6 +123,38 @@ jobs:
           RANGE="origin/$BASE_REF..$HEAD_SHA"
           GIT_AUDIT_RANGE="$RANGE" GIT_AUDIT_STRICT=1 bash scripts/git/audit_attribution.sh
 
+      # docs-sync folded in 2026-07-31: same trigger as the rest of this
+      # job already (both live in ci.yml), so a second full
+      # checkout+Python+pyyaml setup for two lightweight script calls was
+      # a redundant runner/checkout, not a real isolation boundary.
+      #
+      # if: ${{ !cancelled() }} on all 3 steps below is load-bearing, not
+      # decorative: without it, a step failure earlier in THIS job (e.g.
+      # repo hygiene, banned-token scan) would skip these by GitHub
+      # Actions' own default step behavior, silently coupling docs/config
+      # sync to git-hygiene's success -- exactly the independent-execution
+      # property docs-sync had as its own separate job before this fold.
+      # !cancelled() (not always()) deliberately still skips these on a
+      # genuine manual cancellation, which always() would not.
+      - name: Install pyyaml (for docs/config sync checks below)
+        if: ${{ !cancelled() }}
+        run: pip install pyyaml
+
+      - name: Validate hardware/SKILL.md matches config/models.yml
+        if: ${{ !cancelled() }}
+        run: python scripts/check_docs_sync.py --quiet
+
+      - name: Reject stale model as default_primary_model
+        if: ${{ !cancelled() }}
+        run: |
+          # Only fail if qwen3.5-35b-a3b-q4 is set as the PRIMARY model.
+          # It may still appear as a legacy fallback entry — that is intentional.
+          if grep "default_primary_model:.*qwen3.5-35b-a3b-q4" hardware/SKILL.md; then
+            echo "FAIL: stale model 'qwen3.5-35b-a3b-q4' is set as default_primary_model — update to canonical LM Studio model"
+            exit 1
+          fi
+          echo "OK: default_primary_model is not a stale reference"
+
   lint-and-test:
     needs: [git-hygiene]
     runs-on: ubuntu-latest
@@ -184,29 +216,3 @@ jobs:
           assert 'code_analysis' in cfg['routes'], 'code_analysis route missing'
           print('routing.yml OK -- all required routes present')
           "
-
-  docs-sync:
-    name: Docs/Config Sync Gate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install pyyaml
-        run: pip install pyyaml
-
-      - name: Validate hardware/SKILL.md matches config/models.yml
-        run: python scripts/check_docs_sync.py --quiet
-
-      - name: Reject stale model as default_primary_model
-        run: |
-          # Only fail if qwen3.5-35b-a3b-q4 is set as the PRIMARY model.
-          # It may still appear as a legacy fallback entry — that is intentional.
-          if grep "default_primary_model:.*qwen3.5-35b-a3b-q4" hardware/SKILL.md; then
-            echo "FAIL: stale model 'qwen3.5-35b-a3b-q4' is set as default_primary_model — update to canonical LM Studio model"
-            exit 1
-          fi
-          echo "OK: default_primary_model is not a stale reference"
