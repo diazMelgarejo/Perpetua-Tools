@@ -102,5 +102,10 @@
   "rejection_count": 0,
   "accepted_at": "2026-07-31T11:06:50.064628+00:00",
   "reviewer": "host-agent",
-  "rationale": "The specific append-only violation this session, caught by external review of the doctrine doc that had just codified it as an example."
+  "rationale": "The specific append-only violation this session, caught by external review of the doctrine doc that had just codified it as an example.",
+  "related_lesson_ids": [
+    "lesson_405373a130f9",
+    "lesson_legacy_276d1f34052f",
+    "lesson_legacy_2d0595195747"
+  ]
 }
