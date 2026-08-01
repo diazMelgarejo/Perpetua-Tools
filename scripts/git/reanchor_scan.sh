@@ -12,8 +12,9 @@
 #   regardless of sha/author/message.
 #
 #   This is the trap behind the orama PR#70 "600 behind" incident AND the PT
-#   re-scan repeat (2026-06-05). Canonical method: git-reanchor SKILL.md §5.
-#   https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/git-reanchor/SKILL.md
+#   re-scan repeat (2026-06-05). Canonical method: git-history-surgery
+#   references/reanchor-after-rewrite.md (tree-twin scan — not ahead/behind).
+#   https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/git-history-surgery/references/reanchor-after-rewrite.md
 #
 # Usage: reanchor_scan.sh <repo_path> [main_ref] [scope]
 #   main_ref : reference for the rewritten history   (default: origin/main)
@@ -29,7 +30,18 @@ TREES="$(mktemp -t main_trees.XXXXXX)"
 trap 'rm -f "$TREES"' EXIT
 echo "=========================================================="
 echo "REPO: $REPO   (reference = $MAINREF, scope = $SCOPE)"
-timeout 90 git fetch --prune origin >/dev/null 2>&1 || echo "  (fetch warn — offline?)"
+_TIMEOUT_BIN=$(command -v gtimeout 2>/dev/null || command -v timeout 2>/dev/null || echo "")
+if [ -n "$_TIMEOUT_BIN" ]; then
+  if ! "$_TIMEOUT_BIN" 90 git fetch --prune origin >/dev/null 2>&1; then
+    echo "  FAIL: git fetch --prune origin failed (offline or timeout) — scan aborted"
+    exit 3
+  fi
+else
+  if ! git fetch --prune origin >/dev/null 2>&1; then
+    echo "  FAIL: git fetch --prune origin failed (offline) — scan aborted"
+    exit 3
+  fi
+fi
 MAIN=$(git rev-parse "$MAINREF") || { echo "  no $MAINREF"; exit 0; }
 ROOT=$(git rev-list --max-parents=0 "$MAIN" | tail -1)
 git log "$MAIN" --format='%H %T' > "$TREES"
@@ -57,10 +69,9 @@ for ref in $refs; do
     if [ -n "$m" ]; then C="$c"; DT="$m"; break; fi
     above=$((above+1))
   done < <(git rev-list --first-parent "$tip")
-  mb=$(git merge-base "$tip" "$MAIN" 2>/dev/null)
   if [ -z "$DT" ]; then
-    if [ "$mb" = "$ROOT" ]; then echo "  $ref  ORPHAN (no tree-twin, mb==root) -> investigate";
-    else echo "  $ref  NO-TWIN but shares mb=${mb:0:9} (likely fine)"; fi
+    echo "  $ref  NO-TWIN (no tree match in $MAINREF) -> investigate"
+    echo "        (verify with: git cherry -v $MAINREF $tip)"
   elif [ "$C" = "$tip" ]; then
     echo "  $ref  MERGED/in-main (tip twin ${DT:0:9}; work already in main)"
   else

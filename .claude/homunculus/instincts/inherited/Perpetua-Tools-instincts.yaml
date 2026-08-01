@@ -202,3 +202,23 @@ Follow the feature-development-with-documentation workflow:
 - Frequency: ~2x per month
 - Files: orchestrator/*.py, orchestrator/*_test.py, SKILL.md
 
+---
+id: Perpetua-Tools-pr-body-append-only
+trigger: "when updating an existing PR description in Perpetua-Tools"
+confidence: 0.97
+domain: workflow
+source: session-curation
+imported_from: "guard-sync-pr314-2026-08-01.yaml"
+source_repo: https://github.com/diazMelgarejo/Perpetua-Tools
+---
+
+# Perpetua Tools PR Body Append-Only
+
+## Action
+
+Use `scripts/cursor/append-pr-body.sh` — never delta-only `ManagePullRequest update_pr`. Run `scripts/git/remind-pr-body-append-only.sh` before `publish-clean-branch.sh`.
+
+## Evidence
+
+- PT #314 clobber 2026-08-01; lesson_a8f3c2e91d04
+- See `.claude/homunculus/instincts/inherited/guard-sync-pr314-2026-08-01.yaml`
