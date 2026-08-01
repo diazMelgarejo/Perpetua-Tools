@@ -29,7 +29,10 @@ banned_patterns_ready() {
 }
 
 _trim_edges() {
-  printf '%s' "$1" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+  local s="$1"
+  s="${s#"${s%%[![:space:]]*}"}"
+  s="${s%"${s##*[![:space:]]}"}"
+  printf '%s' "$s"
 }
 
 # list_banned_pattern_tokens streams banned-attribution pattern tokens (one per line) from the repository or user patterns file.
@@ -116,7 +119,7 @@ list_private_literal_values() {
   [[ -f "$f" ]] || return 1
   while IFS= read -r raw || [[ -n "$raw" ]]; do
     raw="${raw%%#*}"
-    raw="$(printf '%s' "$raw" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+    raw="$(_trim_edges "$raw")"
     [[ -n "$raw" ]] || continue
     case "$raw" in
       *=*)
