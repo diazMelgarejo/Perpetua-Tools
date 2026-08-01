@@ -14,8 +14,11 @@ if ! target="$(git -C "$target_input" rev-parse --show-toplevel 2>/dev/null)"; t
 fi
 
 # Fail-closed: scan workspace siblings before any overwrite (GUARD_SYNC_E_DIVERGENCE).
-if [[ "${GUARD_SYNC_SKIP_DIVERGENCE_CHECK:-0}" != "1" ]] \
-  && [[ -x "$SCRIPT_DIR/check-guard-sync-divergence.sh" ]]; then
+if [[ "${GUARD_SYNC_SKIP_DIVERGENCE_CHECK:-0}" != "1" ]]; then
+  if [[ ! -x "$SCRIPT_DIR/check-guard-sync-divergence.sh" ]]; then
+    echo "error: check-guard-sync-divergence.sh missing or not executable" >&2
+    exit 1
+  fi
   WORKSPACE_ROOT="${WORKSPACE_ROOT:-$(cd "$source_root/.." && pwd)}" \
     bash "$SCRIPT_DIR/check-guard-sync-divergence.sh" --workspace || exit 1
 fi
