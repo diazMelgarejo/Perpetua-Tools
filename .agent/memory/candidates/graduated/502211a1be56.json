@@ -2,7 +2,7 @@
   "id": "502211a1be56",
   "key": "manual_502211",
   "name": "manual_502211",
-  "claim": "Handwaving a known error always costs more later than fixing it now. When a check surfaces something that looks minor, tangential, or \"not what I'm here to fix,\" the instinct to note it and move on is usually wrong -- the cost doesn't disappear, it just relocates to whoever hits it next (often the same agent, in a later, more expensive context). Treat every surfaced finding as either fixed now or explicitly, visibly deferred with a stated reason -- never silently absorbed into \"I'll get to it.\"",
+  "claim": "Handwaving a known error usually costs more later than fixing it now. When a check surfaces something that looks minor, tangential, or \"not what I'm here to fix,\" the instinct to note it and move on is usually wrong -- the cost doesn't disappear, it just relocates to whoever hits it next (often the same agent, in a later, more expensive context). Treat every surfaced finding as either fixed now or explicitly, visibly deferred with a stated reason -- never silently absorbed into \"I'll get to it.\"",
   "conditions": [
     "absorbed",
     "agent",
