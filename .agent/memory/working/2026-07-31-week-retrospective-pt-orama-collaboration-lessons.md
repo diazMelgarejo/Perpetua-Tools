@@ -182,6 +182,14 @@ surface-level diff looking clean.
 
 ## Part 4 — The `mv`-into-existing-directory trap: a bug nearly dismissed as a bad test
 
+> Source: [orama PR #251](https://github.com/diazMelgarejo/orama-system/pull/251),
+> review
+> [4830042706](https://github.com/diazMelgarejo/orama-system/pull/251#pullrequestreview-4830042706)
+>
+> [`sync-attribution-guard-scripts.sh`](https://github.com/diazMelgarejo/orama-system/blob/main/scripts/git/sync-attribution-guard-scripts.sh)
+>
+> [`test_sync_attribution_guard_scripts.py`](https://github.com/diazMelgarejo/orama-system/blob/main/tests/test_sync_attribution_guard_scripts.py)
+
 ### The near-miss
 
 While writing a regression test for a different, already-fixed bug
@@ -239,6 +247,12 @@ past.
 
 ## Part 5 — `git am` vs `git rebase`: two different operations sharing one directory, misreported as one
 
+> Source: same review as Part 4
+>
+> [`check_no_pending_merge.sh`](https://github.com/diazMelgarejo/orama-system/blob/main/scripts/git/check_no_pending_merge.sh)
+>
+> [`test_check_no_pending_merge.py`](https://github.com/diazMelgarejo/orama-system/blob/main/tests/test_check_no_pending_merge.py)
+
 `.git/rebase-apply/` is used internally by *both* a real rebase and a
 `git am` patch-apply session. `check_no_pending_merge.sh` reported both
 as `REBASE`, which sends an operator stuck mid-`am` toward `git rebase
@@ -256,6 +270,8 @@ exercises the actual git mechanics, not a description of them.
 ---
 
 ## Part 6 — Append-only historical records: the rule was written, then immediately violated by its own author
+
+> Source: [orama PR #250](https://github.com/diazMelgarejo/orama-system/pull/250) · [`post-review-micro-remediation.md`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/references/post-review-micro-remediation.md)
 
 ### The violation (Part 6)
 
@@ -278,7 +294,8 @@ problem.
 
 ### How it was caught (Part 6)
 
-Not self-caught. An external review (CodeRabbit, on orama PR #250) found
+Not self-caught. An external review (CodeRabbit, on
+[orama PR #250](https://github.com/diazMelgarejo/orama-system/pull/250)) found
 it — specifically, found that a *doctrine document actively being
 written this same session* to codify good remediation practice had used
 this exact incident as its own worked example, without noticing the
@@ -303,6 +320,18 @@ contradiction inside it easy to skim past.
 ---
 
 ## Part 7 — This session's own doctrine work got the hierarchy backwards, then had to be corrected by direct instruction
+
+> Source: [orama PR #255](https://github.com/diazMelgarejo/orama-system/pull/255) ·
+>
+> [`post-review-micro-remediation.md`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/references/post-review-micro-remediation.md)
+>
+> [`multi-agent-collaboration-protocol.md`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/references/multi-agent-collaboration-protocol.md)
+>
+> The new [`worktree-semantic-merge-reference-card.md`](https://github.com/diazMelgarejo/orama-system/pull/255/files)
+> this part describes only exists on PR #255's branch as of this writing —
+> its `blob/main/...` link won't resolve until #255 merges separately from
+> this document. Linked to the PR's file diff instead so it's real and
+> clickable now.
 
 ### What happened
 
@@ -437,14 +466,84 @@ efficient work from work that merely looks efficient until someone checks.
 
 ---
 
-## Evidence index (commits and PRs referenced above, for direct verification)
+## Evidence index (real, verified links — clickable on `main` after this PR merges)
 
-- PT: `#306`–`#316` (this session's PR sequence), `cursor/guard-sync-parity-74e2`
-- orama-system: `#250`, `#251`, `#253`, `#255`
-- The `mv`-into-directory fix: `scripts/git/sync-attribution-guard-scripts.sh`,
-  `atomic_append_snippet`, orama PR #251, review 4830042706
-- The append-only violation and correction: `lesson_405373a130f9`,
-  `lesson_legacy_276d1f34052f`, `lesson_legacy_2d0595195747`,
-  `lesson_e773f6f957c2`
-- CVE-2025-30066 pin: `.github/workflows/markdown-lint.yml`,
-  `.github/workflows/security-invariants.yml` (both repos)
+Every link below was checked directly against the live repos while writing
+this section (via `gh pr view`/`gh api`, not assumed from memory) — including
+one correction that changed what this section originally claimed.
+
+### PT pull requests (this session's sequence)
+
+- [#306](https://github.com/diazMelgarejo/Perpetua-Tools/pull/306) — merged —
+  AlphaClaw upstream sync, Apex DMG, macOS cron CI
+- [#307](https://github.com/diazMelgarejo/Perpetua-Tools/pull/307) — merged —
+  2 lessons from #306's remediation
+- [#308](https://github.com/diazMelgarejo/Perpetua-Tools/pull/308) — merged —
+  MD013 enforcement on changed markdown files
+- [#309](https://github.com/diazMelgarejo/Perpetua-Tools/pull/309) — merged —
+  reflect on orama PR #250 review, handwaving cost
+- [#310](https://github.com/diazMelgarejo/Perpetua-Tools/pull/310) — merged —
+  CI workflow consolidation (Part 3 above)
+- [#311](https://github.com/diazMelgarejo/Perpetua-Tools/pull/311) — merged —
+  PR #309 review remediation
+- [#312](https://github.com/diazMelgarejo/Perpetua-Tools/pull/312) — merged —
+  AlphaClaw macOS cron CI gap, root cause + known fix location
+- [#313](https://github.com/diazMelgarejo/Perpetua-Tools/pull/313) — merged —
+  orama PR #250 review reflection
+- [#314](https://github.com/diazMelgarejo/Perpetua-Tools/pull/314) —
+  **closed, not merged** — `cursor/guard-sync-parity-74e2`. Verified by ancestry
+  (`git merge-base --is-ancestor` returns false) and by content
+  (`tests/test_guard_sync_manifest.py` does not exist on `main`;
+  `.cursor/commands/pr.md`'s publisher-routing fix is absent). **This is a
+  real, currently-open gap, not a documentation inaccuracy corrected in
+  passing** — orama's sibling PR
+  ([#251](https://github.com/diazMelgarejo/orama-system/pull/251)) for the
+  same review remediation *did* merge, so PT and orama are, as of this
+  writing, out of sync on exactly the review this document's Part 5
+  describes fixing. Discovered while verifying links for this section, not
+  before.
+- [#315](https://github.com/diazMelgarejo/Perpetua-Tools/pull/315) — merged —
+  PR body anti-clobber enforcement
+- [#316](https://github.com/diazMelgarejo/Perpetua-Tools/pull/316) — merged —
+  markdownlint fix for #315's docs
+- [#317](https://github.com/diazMelgarejo/Perpetua-Tools/pull/317) — this document's own PR
+
+### orama-system pull requests
+
+- [#250](https://github.com/diazMelgarejo/orama-system/pull/250) — merged —
+  the append-only-violation doctrine fix (Part 6)
+- [#251](https://github.com/diazMelgarejo/orama-system/pull/251) — merged —
+  the `mv`-into-directory trap fix + AM/REBASE distinction (Parts 4–5);
+  review [4830042706](https://github.com/diazMelgarejo/orama-system/pull/251#pullrequestreview-4830042706)
+- [#253](https://github.com/diazMelgarejo/orama-system/pull/253) — merged —
+  markdownlint automation fix, absorbed into #251
+- [#255](https://github.com/diazMelgarejo/orama-system/pull/255) — open —
+  Phase 6 cross-repo sync doctrine + worktree merge card (Part 7)
+
+### Files (linked on `main` — resolves once this PR merges)
+
+- [`sync-attribution-guard-scripts.sh`](https://github.com/diazMelgarejo/orama-system/blob/main/scripts/git/sync-attribution-guard-scripts.sh)
+  (orama canonical) — the `atomic_append_snippet` fix, Part 4
+- [`check_no_pending_merge.sh`](https://github.com/diazMelgarejo/orama-system/blob/main/scripts/git/check_no_pending_merge.sh)
+  (orama canonical) — the AM/REBASE fix, Part 5
+- [`test_sync_attribution_guard_scripts.py`](https://github.com/diazMelgarejo/orama-system/blob/main/tests/test_sync_attribution_guard_scripts.py)
+  — the empirically-reproduced regression test from Part 4
+- [`security-invariants.yml`](https://github.com/diazMelgarejo/Perpetua-Tools/blob/main/.github/workflows/security-invariants.yml)
+  (PT, from #310's consolidation) and
+  [`markdown-lint.yml`](https://github.com/diazMelgarejo/orama-system/blob/main/.github/workflows/markdown-lint.yml)
+  (orama) — the CVE-2025-30066 pin, Part 2
+- [`post-review-micro-remediation.md`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/references/post-review-micro-remediation.md)
+  — the doctrine document itself, Part 6 and Phase 6
+- [`AGENTS.md`](https://github.com/diazMelgarejo/orama-system/blob/main/AGENTS.md)
+  (orama) and
+  [`AGENTS.md`](https://github.com/diazMelgarejo/Perpetua-Tools/blob/main/AGENTS.md)
+  (PT) — the documented sync policy from Part 1
+
+### Lessons (this repo's `.agent/memory/semantic/lessons.jsonl`, on `main`)
+
+The append-only violation and correction (Part 6): `lesson_405373a130f9`,
+`lesson_legacy_276d1f34052f`, `lesson_legacy_2d0595195747`,
+`lesson_e773f6f957c2` — searchable by ID in
+[`lessons.jsonl`](https://github.com/diazMelgarejo/Perpetua-Tools/blob/main/.agent/memory/semantic/lessons.jsonl)
+(not deep-linked to a line number; the file is append-only and the exact
+line shifts as new entries are added).
