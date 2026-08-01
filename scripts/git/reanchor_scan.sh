@@ -32,9 +32,15 @@ echo "=========================================================="
 echo "REPO: $REPO   (reference = $MAINREF, scope = $SCOPE)"
 _TIMEOUT_BIN=$(command -v gtimeout 2>/dev/null || command -v timeout 2>/dev/null || echo "")
 if [ -n "$_TIMEOUT_BIN" ]; then
-  "$_TIMEOUT_BIN" 90 git fetch --prune origin >/dev/null 2>&1 || echo "  (fetch warn — offline?)"
+  if ! "$_TIMEOUT_BIN" 90 git fetch --prune origin >/dev/null 2>&1; then
+    echo "  FAIL: git fetch --prune origin failed (offline or timeout) — scan aborted"
+    exit 3
+  fi
 else
-  git fetch --prune origin >/dev/null 2>&1 || echo "  (fetch warn — offline?)"
+  if ! git fetch --prune origin >/dev/null 2>&1; then
+    echo "  FAIL: git fetch --prune origin failed (offline) — scan aborted"
+    exit 3
+  fi
 fi
 MAIN=$(git rev-parse "$MAINREF") || { echo "  no $MAINREF"; exit 0; }
 ROOT=$(git rev-list --max-parents=0 "$MAIN" | tail -1)
@@ -63,10 +69,9 @@ for ref in $refs; do
     if [ -n "$m" ]; then C="$c"; DT="$m"; break; fi
     above=$((above+1))
   done < <(git rev-list --first-parent "$tip")
-  mb=$(git merge-base "$tip" "$MAIN" 2>/dev/null)
   if [ -z "$DT" ]; then
-    if [ "$mb" = "$ROOT" ]; then echo "  $ref  ORPHAN (no tree-twin, mb==root) -> investigate";
-    else echo "  $ref  NO-TWIN but shares mb=${mb:0:9} (likely fine)"; fi
+    echo "  $ref  NO-TWIN (no tree match in $MAINREF) -> investigate"
+    echo "        (verify with: git cherry -v $MAINREF $tip)"
   elif [ "$C" = "$tip" ]; then
     echo "  $ref  MERGED/in-main (tip twin ${DT:0:9}; work already in main)"
   else
