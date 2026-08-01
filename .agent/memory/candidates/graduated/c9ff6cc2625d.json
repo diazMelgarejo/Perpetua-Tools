@@ -1,0 +1,41 @@
+{
+  "id": "c9ff6cc2625d",
+  "key": "manual_c9ff6c",
+  "name": "manual_c9ff6c",
+  "claim": "Cloud turn-end update PR must mean post_comment not update_pr body \u2014 treating description field as a scratch pad erases Summary template sections and CodeRabbit tails",
+  "conditions": [
+    "PR-summary",
+    "cloud-agent",
+    "turn-end",
+    "update_pr"
+  ],
+  "evidence_ids": [
+    "2026-08-01T15:24:25.675068+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-01T15:24:25.675068+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-01T15:24:25.675068+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-01T15:24:25.785664+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Recurring clobber pattern across PT#154 #222 #298 #314 #319; lessons and rules failed until runtime hooks; documented in PR_BODY_COMMENT_ONLY_FRUSTRATION_CHAIN_2026-08-01.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-01T15:24:25.675068+00:00"
+      ],
+      "lessons_sha": "493ec01358bb"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-01T15:24:25.785654+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Recurring clobber pattern across PT#154 #222 #298 #314 #319; lessons and rules failed until runtime hooks; documented in PR_BODY_COMMENT_ONLY_FRUSTRATION_CHAIN_2026-08-01.md"
+}

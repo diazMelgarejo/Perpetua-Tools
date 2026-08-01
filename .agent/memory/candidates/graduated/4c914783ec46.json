@@ -1,0 +1,40 @@
+{
+  "id": "4c914783ec46",
+  "key": "manual_4c9147",
+  "name": "manual_4c9147",
+  "claim": "When a human explicitly authorizes a PR body edit, set CURSOR_PR_BODY_HUMAN_OVERRIDE_ACK=1 then follow append-only Layers 1-6 (READ backup MERGE full body via append-pr-body.sh); delta-only writes remain forbidden",
+  "conditions": [
+    "CURSOR_PR_BODY_HUMAN_OVERRIDE_ACK",
+    "append-only",
+    "human-override"
+  ],
+  "evidence_ids": [
+    "2026-08-01T15:24:25.426517+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-01T15:24:25.426517+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-01T15:24:25.426517+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-01T15:24:25.499256+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "User: if prohibition overruled existing PR rules still apply; separates Layer 0 default from human-authorized integrative restore",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-01T15:24:25.426517+00:00"
+      ],
+      "lessons_sha": "6d4d4539c98b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-01T15:24:25.499245+00:00",
+  "reviewer": "learn.py",
+  "rationale": "User: if prohibition overruled existing PR rules still apply; separates Layer 0 default from human-authorized integrative restore"
+}
