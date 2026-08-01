@@ -1,0 +1,42 @@
+{
+  "id": "2d53056e593c",
+  "key": "manual_2d5305",
+  "name": "manual_2d5305",
+  "claim": "Several tooling and API gotchas recur across a working session even after being individually caught once, because a single encounter doesn't automatically generalize into a standing rule: the PR-list API's merged field being unreliable (must check the single-PR endpoint); squash-merged branches never showing as git ancestors (verify by content/ID presence, not ancestry); a stale local checkout after an earlier push in the same session diverging silently; and diff-scoped CI lint checking a whole touched file, not just the changed hunk. Each of these needs to be treated as a standing checklist item to consult before the relevant operation, not a one-off lesson learned and then re-derived from scratch the next time it's encountered.",
+  "conditions": [
+    "pr-list-merged-field",
+    "squash-merge-ancestry",
+    "diff-scoped-lint",
+    "stale-checkout",
+    "recurring-gotcha"
+  ],
+  "evidence_ids": [
+    "2026-08-01T06:53:43.671436+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-01T06:53:43.671436+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-01T06:53:43.671436+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-01T06:53:50.650448+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Several gotchas recurred even after individual capture -- worth the meta-lesson that a checklist consulted before the operation, not recall alone, is what actually prevents repetition.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-01T06:53:43.671436+00:00"
+      ],
+      "lessons_sha": "4bce83c74754"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-01T06:53:50.650434+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Several gotchas recurred even after individual capture -- worth the meta-lesson that a checklist consulted before the operation, not recall alone, is what actually prevents repetition."
+}

@@ -23,6 +23,11 @@ if hasattr(sys.stdout, "reconfigure"):
 
 BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
+HARNESS_HOOKS = os.path.join(BASE, "harness", "hooks")
+if HARNESS_HOOKS not in sys.path:
+    sys.path.insert(0, HARNESS_HOOKS)
+from _episodic_io import is_legacy_episodic_row  # noqa: E402
+
 EPISODIC = os.path.join(BASE, "memory/episodic/AGENT_LEARNINGS.jsonl")
 CANDIDATES = os.path.join(BASE, "memory/candidates")
 LESSONS_JSONL = os.path.join(BASE, "memory/semantic/lessons.jsonl")
@@ -123,9 +128,12 @@ def _load_episodic():
         if not line:
             continue
         try:
-            out.append(json.loads(line))
+            entry = json.loads(line)
         except json.JSONDecodeError:
             continue
+        if is_legacy_episodic_row(entry):
+            continue
+        out.append(entry)
     return out
 
 
