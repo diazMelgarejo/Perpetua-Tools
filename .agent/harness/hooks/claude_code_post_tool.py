@@ -42,9 +42,7 @@ from hooks.post_execution import log_execution   # noqa: E402
 from hooks.on_failure import on_failure          # noqa: E402
 
 
-# ---------------------------------------------------------------------------
-# Importance scoring
-# ---------------------------------------------------------------------------
+HARNESS_SKILL_NAME = "harness-post-tool"
 
 # ---------------------------------------------------------------------------
 # Importance patterns — universal core + user-configurable extras
@@ -598,7 +596,7 @@ def main() -> None:
     pscore = _pain_score(importance, success)
     if success:
         log_execution(
-            skill_name="claude-code",
+            skill_name=HARNESS_SKILL_NAME,
             action=action,
             result=detail,
             success=True,
@@ -609,7 +607,7 @@ def main() -> None:
         )
     else:
         on_failure(
-            skill_name="claude-code",
+            skill_name=HARNESS_SKILL_NAME,
             action=action,
             error=reflection,
             context=detail,
