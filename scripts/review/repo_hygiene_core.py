@@ -34,6 +34,8 @@ IDENTITY_DOC_EXCEPTIONS: set[str] = {
     "scripts/git/check_identity.sh",
     "scripts/git/identity-policy.json",
     "scripts/git/identity-policy.schema.json",
+    # Identity-policy unit tests reference approved policy emails by design.
+    "tests/test_audit_engine.py",
 }
 # Personal-path leak protection (OpSec) — block any tracked file from containing
 # an absolute path under /Users/<anything>/ or /home/<anything>/. Developer
