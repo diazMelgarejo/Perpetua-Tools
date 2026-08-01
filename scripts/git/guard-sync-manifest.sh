@@ -9,7 +9,6 @@
 #   - verify-guard-parity.sh (completeness + parity checks)
 #
 # Edit HERE only — never duplicate these lists in downstream repos.
-set -euo pipefail
 
 # Executable guard tooling (mode 0755 when synced).
 GUARD_SYNC_EXECUTABLES=(
