@@ -29,7 +29,12 @@ TREES="$(mktemp -t main_trees.XXXXXX)"
 trap 'rm -f "$TREES"' EXIT
 echo "=========================================================="
 echo "REPO: $REPO   (reference = $MAINREF, scope = $SCOPE)"
-timeout 90 git fetch --prune origin >/dev/null 2>&1 || echo "  (fetch warn — offline?)"
+_TIMEOUT_BIN=$(command -v gtimeout 2>/dev/null || command -v timeout 2>/dev/null || echo "")
+if [ -n "$_TIMEOUT_BIN" ]; then
+  "$_TIMEOUT_BIN" 90 git fetch --prune origin >/dev/null 2>&1 || echo "  (fetch warn — offline?)"
+else
+  git fetch --prune origin >/dev/null 2>&1 || echo "  (fetch warn — offline?)"
+fi
 MAIN=$(git rev-parse "$MAINREF") || { echo "  no $MAINREF"; exit 0; }
 ROOT=$(git rev-list --max-parents=0 "$MAIN" | tail -1)
 git log "$MAIN" --format='%H %T' > "$TREES"
