@@ -5,6 +5,8 @@ set -euo pipefail
 target_input="${1:?target repo path required}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source_root="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# shellcheck source=guard-sync-manifest.sh
+source "$SCRIPT_DIR/guard-sync-manifest.sh"
 
 if ! target="$(git -C "$target_input" rev-parse --show-toplevel 2>/dev/null)"; then
   echo "skip: not a git repo: $target_input" >&2
@@ -80,10 +82,52 @@ atomic_append_snippet() {
     echo "error: snippet missing: $snippet" >&2
     return 1
   fi
+  # dest must be either nonexistent or a regular file -- nothing else.
+  # atomic_install_file() above already guards this exact case
+  # (`[[ -d "$dest" ]]`); this function was simply missing the same
+  # safety invariant its sibling in this file already established.
+  # Broader here (-e && !-f, not just -d) to also catch device nodes,
+  # FIFOs, and other non-regular-file types, not directories alone.
+  #
+  # Without this guard, `[[ -f "$dest" ]]` (checked below, decides
+  # whether to preserve existing content) and the unconditional `mv -f
+  # "$stage" "$dest"` at the end of this function (decides whether the
+  # write succeeds) silently check two DIFFERENT things: -f is false
+  # for a directory, so the function proceeds as if dest doesn't exist
+  # yet -- but `mv` onto an *existing directory* doesn't fail or replace
+  # it, it moves the source INTO that directory instead (POSIX mv
+  # semantics, not a bug in mv). The net effect, traced end to end: the
+  # function returns 0 (success), dest's real pre-existing content is
+  # completely untouched, and a stray file with the staging temp-name
+  # (e.g. .AGENTS.md.sync.XXXXXX) is silently dumped inside the
+  # directory -- with nothing in the exit code or output to signal any
+  # of this happened. Verified empirically, not assumed, before writing
+  # this guard.
+  if [[ -e "$dest" && ! -f "$dest" ]]; then
+    echo "error: $dest exists but is not a regular file (refusing to touch it)" >&2
+    return 1
+  fi
   tmp="$(mktemp)"
-  if ! { cat "$dest"; echo; cat "$snippet"; } >"$tmp"; then
+  # Explicit per-command checks, not the brace group's own exit status --
+  # `{ cat "$dest"; echo; cat "$snippet"; } >"$tmp"` only reports the exit
+  # code of the LAST command in the group (cat "$snippet"), so a failing
+  # `cat "$dest"` (e.g. dest unreadable, or a permissions issue) would go
+  # undetected as long as the snippet cat still succeeds afterward --
+  # silently producing a truncated $tmp missing dest's original content,
+  # reported as success.
+  if [[ -f "$dest" ]]; then
+    if ! cat "$dest" >"$tmp"; then
+      rm -f "$tmp"
+      echo "error: failed reading $dest" >&2
+      return 1
+    fi
+  else
+    : >"$tmp"
+  fi
+  echo >>"$tmp"
+  if ! cat "$snippet" >>"$tmp"; then
     rm -f "$tmp"
-    echo "error: failed building append for $dest" >&2
+    echo "error: failed reading $snippet" >&2
     return 1
   fi
   stage="$(mktemp "${dest_dir}/.$(basename "$dest").sync.XXXXXX")"
@@ -100,32 +144,12 @@ atomic_append_snippet() {
   fi
 }
 
-for rel in \
-  cursor-hooks-id.sh \
-  hooks/commit-msg.strip-coauthor \
-  disable-cursor-commit-attribution.sh \
-  commit-clean.sh \
-  verify-staged-for-commit.sh \
-  commit_clean_test.sh \
-  apply-attribution-guard-all-repos.sh \
-  sync-attribution-guard-scripts.sh \
-  sync-banned-patterns-to-repo.sh \
-  banned_attribution_lib.sh \
-  audit_attribution.sh \
-  check_commit_message.sh \
-  check_identity.sh \
-  check_no_pending_merge.sh \
-  daily-attribution-guard.sh \
-  neutralize-cursor-coauthor-hook.sh \
-  expunge-all-workspace-repos.sh \
-  verify-git-guards.sh \
-  verify-guard-parity.sh \
-  scan-tracked-banned-tokens.sh; do
+for rel in "${GUARD_SYNC_EXECUTABLES[@]}"; do
   [[ -f "$SCRIPT_DIR/$rel" ]] || continue
   atomic_install_file "$SCRIPT_DIR/$rel" "$target/scripts/git/$rel" 0755
 done
 
-for rel in audit_engine.py identity-policy.json identity-policy.schema.json; do
+for rel in "${GUARD_SYNC_DATA_FILES[@]}"; do
   [[ -f "$SCRIPT_DIR/$rel" ]] || continue
   atomic_install_file "$SCRIPT_DIR/$rel" "$target/scripts/git/$rel" 0644
 done
