@@ -13,6 +13,13 @@ if ! target="$(git -C "$target_input" rev-parse --show-toplevel 2>/dev/null)"; t
   exit 0
 fi
 
+# Fail-closed: scan workspace siblings before any overwrite (GUARD_SYNC_E_DIVERGENCE).
+if [[ "${GUARD_SYNC_SKIP_DIVERGENCE_CHECK:-0}" != "1" ]] \
+  && [[ -x "$SCRIPT_DIR/check-guard-sync-divergence.sh" ]]; then
+  WORKSPACE_ROOT="${WORKSPACE_ROOT:-$(cd "$source_root/.." && pwd)}" \
+    bash "$SCRIPT_DIR/check-guard-sync-divergence.sh" --workspace || exit 1
+fi
+
 # Abort if canonical or target has uncommitted changes to any path we would overwrite.
 # Prevents sync from silently dropping local harmonization work.
 guard_sync_dirty_paths() {
