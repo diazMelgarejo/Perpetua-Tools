@@ -92,6 +92,9 @@ while read -r h; do
 done < <(git rev-list "$range")
 
 echo "OK: ${range} passes attribution scan — force-pushing ${branch} → ${remote}"
+if [[ -x scripts/git/remind-pr-body-append-only.sh ]]; then
+  bash scripts/git/remind-pr-body-append-only.sh "$branch" "$remote"
+fi
 git push --force-with-lease "$remote" "${branch}:${branch}"
 
 echo "OK: published $(git rev-parse --short "$branch") to ${remote}/${branch}"

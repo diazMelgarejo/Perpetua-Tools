@@ -183,7 +183,7 @@ fi
 # exec itself (infinite recursion). Single source of truth, zero fragmentation.
 
 # Repo-local agent rules (Cursor Cloud) — no forbidden tokens in these files.
-for rule in no-commit-attribution.mdc never-undo-attribution-expunge.mdc banned-attribution-local.mdc zero-banned-attribution-everywhere.mdc; do
+for rule in no-commit-attribution.mdc never-undo-attribution-expunge.mdc append-only-pr-body.mdc banned-attribution-local.mdc zero-banned-attribution-everywhere.mdc; do
   [[ -f "$source_root/.cursor/rules/$rule" ]] || continue
   atomic_install_file \
     "$source_root/.cursor/rules/$rule" \
