@@ -295,7 +295,7 @@ def test_check_no_pending_merge_blocks_rebase_marker(tmp_path: Path) -> None:
     subprocess.run(["git", "commit", "-m", "side"], check=True, cwd=repo)
     subprocess.run(["git", "checkout", "main"], check=True, cwd=repo)
     rebase = subprocess.run(
-        ["git", "rebase", "side"],
+        ["git", "rebase", "--merge", "side"],
         cwd=repo,
         capture_output=True,
         text=True,
