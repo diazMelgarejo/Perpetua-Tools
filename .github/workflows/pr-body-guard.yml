@@ -1,0 +1,33 @@
+# Layer 6 — CI gate: open PR bodies must retain ## Summary (anti-clobber).
+# Complements remind-pr-body-append-only.sh (local) and append-only-pr-body.mdc (alwaysApply).
+name: PR body anti-clobber guard
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  verify-summary-present:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify PR body retains Summary
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            bash scripts/git/verify-pr-body-not-clobbered.sh \
+              "${{ github.repository }}" \
+              "${{ github.event.pull_request.number }}"
+          else
+            bash scripts/git/verify-pr-body-not-clobbered.sh \
+              "${{ github.repository }}"
+          fi

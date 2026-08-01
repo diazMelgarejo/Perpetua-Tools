@@ -1,6 +1,7 @@
 # PR body anti-clobber enforcement plan
 
-**Status:** active (2026-08-01)  
+**Status:** enforced (2026-08-01) — Layers 1–6 active  
+**Canonical reference:** `orama-system/bin/orama-system/references/pr-body-anti-clobber-incident-ledger.md`
 **Trigger:** PT #314 clobbered again despite `lesson_3b13ab0a45d4`, `lesson_4a38f0e95fcf`, `lesson_6fff093ccb00`, and `append-pr-body.sh` already existing.
 
 ## Incident ledger (documented)
@@ -46,6 +47,7 @@ bash scripts/git/remind-pr-body-append-only.sh
 - Prints open PR number + mandatory workflow if `gh pr list --head` matches.
 - Exits 0 (reminder only) — does not block push by default.
 - Set `PR_BODY_GUARD_STRICT=1` to **exit 1** unless `PR_BODY_UPDATE_ACK=1` after using `append-pr-body.sh`.
+- **Default in `publish-clean-branch.sh`:** strict mode on (override with `PR_BODY_UPDATE_ACK=1`).
 
 ### Layer 3 — Inside audited publisher (new)
 
@@ -64,10 +66,10 @@ At end of every turn with code changes on a PR branch:
 2. Did I use `update_pr`? If yes → verify body still contains original `## Summary` (not delta-only).
 3. If clobbered → recover before reporting done (see `lesson_6fff093ccb00`).
 
-### Layer 6 — Optional CI (future)
+### Layer 6 — CI gate (active)
 
-- `scripts/git/verify-pr-body-not-clobbered.sh <owner/repo> <pr>` — fail if body lacks `## Summary` and only has a single remediation block.
-- Run in daily-attribution-guard or a lightweight PR comment bot.
+- `scripts/git/verify-pr-body-not-clobbered.sh <owner/repo> [pr]` — fail if body lacks `## Summary`
+- Workflow: `.github/workflows/pr-body-guard.yml` (on PR edit + daily schedule)
 
 ## Agent recall anchors
 
