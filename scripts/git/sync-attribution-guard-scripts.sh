@@ -13,6 +13,50 @@ if ! target="$(git -C "$target_input" rev-parse --show-toplevel 2>/dev/null)"; t
   exit 0
 fi
 
+# Abort if canonical or target has uncommitted changes to any path we would overwrite.
+# Prevents sync from silently dropping local harmonization work.
+guard_sync_dirty_paths() {
+  local root="$1"
+  local label="$2"
+  local rel dest
+  local -a paths=()
+
+  for rel in "${GUARD_SYNC_EXECUTABLES[@]}" "${GUARD_SYNC_DATA_FILES[@]}"; do
+    paths+=("scripts/git/$rel")
+  done
+  for rel in append-pr-body.sh; do
+    paths+=("scripts/cursor/$rel")
+  done
+  for rel in pr.md; do
+    paths+=(".cursor/commands/$rel")
+  done
+  for rel in no-commit-attribution.mdc never-undo-attribution-expunge.mdc append-only-pr-body.mdc \
+    banned-attribution-local.mdc zero-banned-attribution-everywhere.mdc; do
+    paths+=(".cursor/rules/$rel")
+  done
+
+  local dirty=""
+  for rel in "${paths[@]}"; do
+    dest="$root/$rel"
+    [[ -e "$dest" || -f "$source_root/$rel" || -f "$SCRIPT_DIR/${rel#scripts/git/}" ]] || continue
+    if git -C "$root" status --porcelain -- "$rel" 2>/dev/null | grep -q .; then
+      dirty+=$'\n'"  $rel"
+    fi
+  done
+  if [[ -n "$dirty" ]]; then
+    echo "error: $label has uncommitted changes to guard-sync paths — harmonize first, then sync:" >&2
+    printf '%s\n' "$dirty" >&2
+    echo "  Do NOT run sync-attribution-guard-scripts.sh until these are committed or intentionally discarded." >&2
+    return 1
+  fi
+  return 0
+}
+
+guard_sync_dirty_paths "$source_root" "canonical repo ($source_root)" || exit 1
+if [[ "$(cd "$source_root" && pwd)" != "$(cd "$target" && pwd)" ]]; then
+  guard_sync_dirty_paths "$target" "target repo ($target)" || exit 1
+fi
+
 atomic_install_file() {
   local src="$1"
   local dest="$2"
