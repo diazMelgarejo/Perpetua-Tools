@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/DavidAnson/markdownlint-cli2/main/schema/markdownlint-cli2-config-schema.json",
+  "config": {
+    "default": true,
+    "MD013": {
+      "line_length": 100,
+      "heading_line_length": 120,
+      "code_blocks": false,
+      "tables": false,
+      "strict": false,
+      "stern": false
+    }
+  },
+  "ignores": [
+    "**/SKILL.md"
+  ]
+}
