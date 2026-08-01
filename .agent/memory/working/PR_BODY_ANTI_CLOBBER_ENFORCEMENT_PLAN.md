@@ -82,4 +82,24 @@ When about to update a PR, proactively load:
 
 - Zero delta-only `update_pr` body writes on open PRs with existing Summary.
 - Every PR body update has a matching `.git/pr-body-backups/*` file in session artifacts or commit notes.
-- User stops catching clobber incidents manually.
+
+## ECC homunculus derivation (automated pipeline)
+
+Session instincts materialize lessons into homunculus triggers agents recall under pressure.
+
+| Step | Action | Artifact |
+|------|--------|----------|
+| 1 | Close incident → append lesson | `lessons.jsonl` + episodic row |
+| 2 | Write working doc with PR refs + evidence | `.agent/memory/working/*.md` |
+| 3 | Curate 2–4 instincts (not bulk auto-dump) | `.claude/homunculus/instincts/inherited/guard-sync-pr314-2026-08-01.yaml` |
+| 4 | Import locally | `/instinct-import <yaml> --dry-run` then `--force` |
+| 5 | Verify | `/instinct-status` |
+| 6 | Post-merge sync | `/ecc-sync` in each repo |
+
+**PT stack (PR #314):** `guard-sync-pr314-2026-08-01.yaml` — downstream sync, append-only PR body, remind-before-publish.
+
+**Orama stack (PR #251):** `guard-sync-pr251-2026-08-01.yaml` — canonical-only edits, tree-twin reanchor, append-only PR body.
+
+**Checklist script (orama canonical):** `bash ../orama-system/scripts/derive-pr-stack-instincts.sh --check`
+
+User stops catching clobber incidents manually.
