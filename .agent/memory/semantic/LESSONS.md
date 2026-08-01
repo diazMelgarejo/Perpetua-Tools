@@ -17,6 +17,9 @@
 - When a human explicitly authorizes a PR body edit, set CURSOR_PR_BODY_HUMAN_OVERRIDE_ACK=1 then follow append-only Layers 1-6 (READ backup MERGE full body via append-pr-body.sh); delta-only writes remain forbidden  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_4c914783ec46 -->
 - Guard-sync waves use one open PR per repo (PT then orama then AlphaClaw); run check-guard-sync-divergence.sh --workspace before sync-attribution-guard-scripts.sh; never open parallel one-file guard PRs  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_e8ae3f3b9fa6 -->
 - Cloud turn-end update PR must mean post_comment not update_pr body — treating description field as a scratch pad erases Summary template sections and CodeRabbit tails  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_c9ff6cc2625d -->
+- When markdownlint-cli2 v0.17.2 lints explicit file globs in CI, root .markdownlint.json filter overrides do not apply to catalog SKILL.md files outside the skills tree — add a per-directory .markdownlint-cli2.jsonc (e.g. line_length 500 for bin/orama-system/) and delete conflicting .markdownlint.json.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_64e972d330c2 -->
+- Guard-sync divergence checks must discover workspace siblings via git -C path rev-parse --show-toplevel (not test -d path/.git), reject surplus CLI arguments with exit 2, fail-closed when check-guard-sync-divergence.sh is missing, and scan the full outgoing pre-push commit range for scripts/git/ touches.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_82c94865243e -->
+- PR body Layer 0: Cursor agents comment only (post_comment or gh pr comment). Body writes require an operator TTY grant via grant-pr-body-human-override.sh; only append-pr-body.sh is allowed after grant — never update_pr body=, gh pr edit, gh api body mutations, or agent-forgeable env exports.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_8c5f6349aa87 -->
 
 ### 2026-07
 

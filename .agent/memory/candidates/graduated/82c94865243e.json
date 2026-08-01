@@ -1,0 +1,42 @@
+{
+  "id": "82c94865243e",
+  "key": "manual_82c948",
+  "name": "manual_82c948",
+  "claim": "Guard-sync divergence checks must discover workspace siblings via git -C path rev-parse --show-toplevel (not test -d path/.git), reject surplus CLI arguments with exit 2, fail-closed when check-guard-sync-divergence.sh is missing, and scan the full outgoing pre-push commit range for scripts/git/ touches.",
+  "conditions": [
+    "divergence",
+    "fail-closed",
+    "guard-sync",
+    "pre-push",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-08-01T16:22:59.581970+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-01T16:22:59.581970+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-01T16:22:59.581970+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-01T16:22:59.659940+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit reviews 4835024659 and 4835288649 on orama #255 \u2014 commits dd8bcba3 and 458a5ab9; linked worktree siblings were invisible to .git directory checks.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-01T16:22:59.581970+00:00"
+      ],
+      "lessons_sha": "ddf7e73da8d4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-01T16:22:59.659928+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit reviews 4835024659 and 4835288649 on orama #255 \u2014 commits dd8bcba3 and 458a5ab9; linked worktree siblings were invisible to .git directory checks."
+}

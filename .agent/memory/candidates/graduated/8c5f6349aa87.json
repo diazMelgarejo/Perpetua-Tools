@@ -1,0 +1,43 @@
+{
+  "id": "8c5f6349aa87",
+  "key": "manual_8c5f63",
+  "name": "manual_8c5f63",
+  "claim": "PR body Layer 0: Cursor agents comment only (post_comment or gh pr comment). Body writes require an operator TTY grant via grant-pr-body-human-override.sh; only append-pr-body.sh is allowed after grant \u2014 never update_pr body=, gh pr edit, gh api body mutations, or agent-forgeable env exports.",
+  "conditions": [
+    "Layer0",
+    "TTY",
+    "append-only",
+    "grant",
+    "operator",
+    "pr-body"
+  ],
+  "evidence_ids": [
+    "2026-08-01T16:22:59.706278+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-01T16:22:59.706278+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-01T16:22:59.706278+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-01T16:22:59.775197+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit 4835288649 commit 88783688 closed the override bypass chain after agents clobbered PT #319 description with delta-only update_pr.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-01T16:22:59.706278+00:00"
+      ],
+      "lessons_sha": "b37edefc9917"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-01T16:22:59.775187+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit 4835288649 commit 88783688 closed the override bypass chain after agents clobbered PT #319 description with delta-only update_pr."
+}

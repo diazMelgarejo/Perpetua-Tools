@@ -10,23 +10,36 @@ input="$(cat)"
 decision="ALLOW"
 deny_msg=""
 
-while IFS= read -r line; do
-  case "$line" in
-    BACKUP\|*)
-      repo="${line#BACKUP|}"
-      pr="${repo##*|}"
-      repo="${repo%|*}"
-      pr_body_backup_if_needed "$repo" "$pr" "shell-preflight"
-      ;;
-    DENY\|*)
-      decision="DENY"
-      deny_msg="${line#DENY|}"
-      ;;
-    DENY)
-      decision="DENY"
-      ;;
-  esac
-done < <(python3 "$SCRIPT_DIR/pr-body-guard-core.py" shell <<<"$input")
+guard_output=""
+guard_status=0
+guard_output="$(python3 "$SCRIPT_DIR/pr-body-guard-core.py" shell <<<"$input" 2>&1)" || guard_status=$?
+
+if [[ "$guard_status" -ne 0 ]]; then
+  decision="DENY"
+  deny_msg="PR body guard internal error (fail-closed)."
+else
+  while IFS= read -r line; do
+    case "$line" in
+      BACKUP\|*)
+        repo="${line#BACKUP|}"
+        pr="${repo##*|}"
+        repo="${repo%|*}"
+        if ! pr_body_backup_if_needed "$repo" "$pr" "shell-preflight"; then
+          decision="DENY"
+          deny_msg="PR body backup failed (fail-closed)."
+          break
+        fi
+        ;;
+      DENY\|*)
+        decision="DENY"
+        deny_msg="${line#DENY|}"
+        ;;
+      DENY)
+        decision="DENY"
+        ;;
+    esac
+  done <<<"$guard_output"
+fi
 
 if [[ "$decision" == "DENY" ]]; then
   deny_msg="${deny_msg:-Layer 0: comment only — never auto-change PR body.}"

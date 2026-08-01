@@ -123,6 +123,13 @@ if ! command -v gh >/dev/null 2>&1; then
   exit 1
 fi
 
+grant_file="${HOME}/.cursor/pr-body-human-override-ack"
+if [[ ! -f "$grant_file" ]] || ! grep -q '^operator-grant-v1$' "$grant_file"; then
+  echo "error: operator grant required — run scripts/cursor/grant-pr-body-human-override.sh" >&2
+  echo "  (interactive operator terminal only; agents cannot self-grant)" >&2
+  exit 1
+fi
+
 append_block=""
 if [[ -n "$append_file" ]]; then
   append_block="$(cat "$append_file")"
