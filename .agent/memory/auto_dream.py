@@ -35,7 +35,7 @@ AGENT_ROOT = os.path.dirname(ROOT)
 HARNESS_HOOKS = os.path.join(AGENT_ROOT, "harness", "hooks")
 if HARNESS_HOOKS not in sys.path:
     sys.path.insert(0, HARNESS_HOOKS)
-from _episodic_io import episodic_lock  # noqa: E402
+from _episodic_io import episodic_lock, is_legacy_episodic_row  # noqa: E402
 from path_hygiene import sanitize_json_strings  # noqa: E402
 
 EPISODIC = os.path.join(ROOT, "episodic/AGENT_LEARNINGS.jsonl")
@@ -63,9 +63,12 @@ def _load_entries_locked(_fd):
                 if not line:
                     continue
                 try:
-                    entries.append(json.loads(line))
+                    entry = json.loads(line)
                 except json.JSONDecodeError:
                     continue
+                if is_legacy_episodic_row(entry):
+                    continue
+                entries.append(entry)
     except FileNotFoundError:
         pass
     return entries

@@ -72,6 +72,22 @@ def episodic_lock(path: str, *, exclusive: bool = True) -> Iterator[None]:
     )
 
 
+def is_legacy_episodic_row(entry: dict) -> bool:
+    """True for pre-canonical rows that used date/summary instead of timestamp/action.
+
+    Replay and dream clustering must skip these — they lack evidence_ids and the
+    fields downstream loaders expect. Canonical re-encodes live as normal rows.
+    """
+    if not isinstance(entry, dict):
+        return False
+    return (
+        "date" in entry
+        and "summary" in entry
+        and "timestamp" not in entry
+        and "action" not in entry
+    )
+
+
 def append_jsonl(path: str, entry: dict) -> dict:
     """Append one UTF-8 JSON line while excluding concurrent rewrites/appends."""
     payload = (json.dumps(entry) + "\n").encode("utf-8")
