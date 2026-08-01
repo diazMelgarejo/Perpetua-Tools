@@ -88,7 +88,7 @@ Reference these in the PR body if they exist.
 ## Phase 3 — PUSH
 
 ```bash
-git push -u origin HEAD
+bash scripts/git/publish-clean-branch.sh "$(git branch --show-current)" <base> origin
 ```
 
 If push fails due to divergence:
@@ -99,7 +99,8 @@ git rebase origin/<base>
 bash scripts/git/publish-clean-branch.sh "$(git branch --show-current)" <base> origin
 ```
 
-Use the audited publisher after rebase — never raw `git push --force` or `--force-with-lease`.
+Use the audited publisher for every push path — never raw `git push`, `git push --force`,
+or `--force-with-lease`.
 
 If rebase conflicts occur, stop and inform the user.
 
