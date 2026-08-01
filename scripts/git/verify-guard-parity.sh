@@ -1,18 +1,15 @@
 #!/usr/bin/env bash
 # verify-guard-parity.sh — enforce the zero-fragmentation invariant (docs/v2/27).
 #
-# Two checks, both fail-closed (non-zero exit on violation):
-#   1. COMPLETENESS — every canonical guard script is listed in the sync tool's
-#      copy loop. Catches the 2026-06-05 bug where check_commit_message.sh and
-#      check_identity.sh silently drifted because the sync omitted them.
-#   2. PARITY (optional, when target repos are given or WORKSPACE_ROOT is set) —
-#      each downstream repo's guard copies are byte-identical to orama's canonical.
+# Checks (fail-closed):
+#   1. MANIFEST — every GUARD_PARITY_REQUIRED path exists on disk in canonical repo.
+#   2. SYNC BINDING — sync-attribution-guard-scripts.sh sources guard-sync-manifest.sh.
+#   3. PARITY (optional) — downstream copies byte-identical to orama canonical.
 #
-# Canonical source is THIS repo (orama-system). Run in CI (orama: completeness
-# always; parity when siblings are checked out) and from daily-attribution-guard.
+# Canonical source is THIS repo (orama-system). Run in CI and daily-attribution-guard.
 #
 # Usage:
-#   verify-guard-parity.sh                      # completeness only (single-repo CI)
+#   verify-guard-parity.sh                      # manifest + sync binding (single-repo CI)
 #   verify-guard-parity.sh <repo> [<repo>...]   # + parity against each target
 #   WORKSPACE_ROOT=/agent/repos verify-guard-parity.sh --workspace
 set -u
@@ -20,39 +17,28 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CANON="$SCRIPT_DIR"
 SYNC="$SCRIPT_DIR/sync-attribution-guard-scripts.sh"
+# shellcheck source=guard-sync-manifest.sh
+source "$SCRIPT_DIR/guard-sync-manifest.sh"
 rc=0
 
-# The canonical guard set every repo must carry byte-identical.
-CANONICAL_GUARDS=(
-  banned_attribution_lib.sh
-  audit_attribution.sh
-  check_commit_message.sh
-  check_identity.sh
-  check_no_pending_merge.sh
-  daily-attribution-guard.sh
-  neutralize-cursor-coauthor-hook.sh
-  expunge-all-workspace-repos.sh
-  verify-git-guards.sh
-  reanchor_scan.sh
-)
+echo "== MANIFEST: canonical guard files exist =="
+for rel in "${GUARD_PARITY_REQUIRED[@]}"; do
+  if [[ -f "$CANON/$rel" ]]; then
+    echo "  OK  $rel"
+  else
+    echo "  FAIL $rel missing from canonical scripts/git/"; rc=1
+  fi
+done
 
-echo "== COMPLETENESS: every canonical guard is in the sync copy list =="
+echo "== SYNC BINDING: sync tool uses guard-sync-manifest.sh =="
 if [[ ! -f "$SYNC" ]]; then
   echo "  ERR: sync tool not found at $SYNC"; rc=1
+elif grep -q 'source.*guard-sync-manifest\.sh' "$SYNC"; then
+  echo "  OK  sync-attribution-guard-scripts.sh sources manifest"
 else
-  for g in "${CANONICAL_GUARDS[@]}"; do
-    # reanchor_scan.sh is a guard but not distributed by the attribution sync;
-    # skip it from the sync-list assertion (it ships via the repo checkout).
-    [[ "$g" == "reanchor_scan.sh" ]] && continue
-    if grep -qE "^\s*$g\b|/$g\b" "$SYNC"; then
-      echo "  OK  $g in sync list"
-    else
-      echo "  FAIL $g MISSING from sync copy list (would drift silently)"; rc=1
-    fi
-  done
+  echo "  FAIL sync tool does not source guard-sync-manifest.sh (lists would drift)"; rc=1
 fi
 
-# Parity: compare each target repo's copies to canonical.
 targets=()
 if [[ "${1:-}" == "--workspace" ]]; then
   for d in "${WORKSPACE_ROOT:-/agent/repos}"/*; do [[ -d "$d/.git" ]] && targets+=("$d"); done
@@ -63,17 +49,21 @@ fi
 if [[ ${#targets[@]} -gt 0 ]]; then
   echo "== PARITY: downstream guard copies byte-identical to canonical =="
   for repo in "${targets[@]}"; do
-    [[ "$(cd "$repo" 2>/dev/null && pwd)" == "$(cd "$CANON/../.." && pwd)" ]] && continue  # skip self
-    for g in "${CANONICAL_GUARDS[@]}"; do
-      src="$CANON/$g"; dst="$repo/scripts/git/$g"
+    canon_root="$(cd "$CANON/../.." && pwd)"
+    repo_root="$(cd "$repo" 2>/dev/null && pwd)" || continue
+    [[ "$repo_root" == "$canon_root" ]] && continue
+    for rel in "${GUARD_PARITY_REQUIRED[@]}"; do
+      src="$CANON/$rel"
+      dst="$repo/scripts/git/$rel"
       [[ -f "$src" ]] || continue
       if [[ ! -f "$dst" ]]; then
-        echo "  WARN $(basename "$repo")/$g absent"; continue
+        echo "  FAIL $(basename "$repo")/$rel absent — run: bash scripts/git/sync-attribution-guard-scripts.sh $repo"; rc=1
+        continue
       fi
       if cmp -s "$src" "$dst"; then
-        echo "  OK   $(basename "$repo")/$g"
+        echo "  OK   $(basename "$repo")/$rel"
       else
-        echo "  FAIL $(basename "$repo")/$g DRIFTED — re-sync: bash scripts/git/sync-attribution-guard-scripts.sh $repo"; rc=1
+        echo "  FAIL $(basename "$repo")/$rel DRIFTED — re-sync: bash scripts/git/sync-attribution-guard-scripts.sh $repo"; rc=1
       fi
     done
   done
