@@ -1,60 +1,32 @@
 ---
-description: Append-only PR body updates — never clobber existing PR descriptions (READ → backup → merge → write)
+description: Append-only PR body updates when human override authorizes a body edit (Layers 1–6)
 alwaysApply: true
 ---
 
-# Append-only PR body workflow
+# Append-only PR body workflow (Layers 1–6 — after human override only)
 
-`ManagePullRequest update_pr`, `gh pr edit`, and GitHub's API **replace the entire PR body** when `body` is set. Passing only the latest follow-up paragraph deletes the original Summary and any CodeRabbit release notes.
+**Layer 0 applies first:** `.cursor/rules/pr-body-comment-only.mdc` — Cursor agents
+**comment only** by default. This file governs body writes **only** when the human
+set `CURSOR_PR_BODY_HUMAN_OVERRIDE_ACK=1` in the current session.
 
-**NEVER** use `ManagePullRequest update_pr` with delta-only `body=`. Use `append-pr-body.sh` instead.
+`ManagePullRequest update_pr`, `gh pr edit`, and GitHub's API **replace the entire PR body**
+when `body` is set. Passing only the latest follow-up paragraph deletes the original Summary.
 
 **Canonical skill:** `bin/orama-system/skills/cursor-pr-body/SKILL.md`  
 **Incident ledger:** `bin/orama-system/references/pr-body-anti-clobber-incident-ledger.md`  
-**Canonical script:** `scripts/cursor/append-pr-body.sh`  
-**Curriculum:** `bin/orama-system/cidf/references/integrative-editing-examples.md` §1
+**Canonical script:** `scripts/cursor/append-pr-body.sh`
 
-## Non-negotiable workflow
+## Non-negotiable workflow (human-authorized body edit only)
 
 | Step | Action |
-|------|--------|
+| ---- | ------ |
 | 1. **READ** | `gh pr view <N> --repo <owner/repo> --json body --jq .body` |
 | 2. **BACKUP** | Save to `.git/pr-body-backups/<repo-slug>-pr<N>-<UTC-timestamp>.md` |
-| 3. **MERGE** | Keep original `## Summary` and scope at top; append `## Follow-up: …` blocks chronologically; preserve CodeRabbit auto-generated sections and Cursor metadata below unchanged |
-| 4. **WRITE** | Full merged body only — never delta-only |
+| 3. **MERGE** | Keep original `## Summary`; append `## Follow-up:` chronologically |
+| 4. **WRITE** | `append-pr-body.sh` or `gh pr edit --body-file` with **full** merged body |
 
-## Preferred write path
+## Forbidden (even with human override)
 
-```bash
-bash scripts/cursor/append-pr-body.sh <owner/repo> <pr-number> \
-  --title "Follow-up: <short title>" \
-  --file follow-up.md
-```
-
-Or: edit the backup copy integratively, then `gh pr edit <N> --repo <owner/repo> --body-file merged-body.md`.
-
-## Tool-specific constraints
-
-| Tool | Rule |
-|------|------|
-| `append-pr-body.sh` | Inserts before `<!-- CURSOR_AGENT_PR_BODY_END -->` or CodeRabbit marker; aborts if body changed since read |
-| `ManagePullRequest update_pr` | **Avoid.** Agent-managed PRs only; if unavoidable, pass **full** integrative merged body — never delta-only. Prefer `append-pr-body.sh` |
-| `gh pr edit` | Requires token with `updatePullRequest` scope; same full-body rule applies |
-
-## Forbidden
-
-- `update_pr` / `gh pr edit` with `body=` containing only the latest paragraph or CI delta
-- Rewriting or deleting the original Summary to match a side quest (aguara, harmonization, etc.)
+- Delta-only `body=` containing only the latest paragraph or CI delta
 - Skipping backup because "it's a small follow-up"
-- Hand-editing CodeRabbit `<!-- release notes by coderabbit.ai -->` blocks unless explicitly fixing a factual error
-
-## When to append
-
-- Stack harmonization / rebase notes after resolving conflicts
-- CodeRabbit or human review fixes applied in a follow-up commit
-- CI failure root cause + verification command output
-- Post-merge integration status across a PR chain (#244 → #245 → …)
-
-## Insertion order
-
-New `## Follow-up:` blocks go **below** the original agent summary and **above** CodeRabbit auto-generated release notes (when present). Chronological order — never reorder prior follow-ups.
+- Reordering or deleting prior follow-ups

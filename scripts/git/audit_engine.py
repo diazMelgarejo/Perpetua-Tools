@@ -232,11 +232,13 @@ def is_approved_identity(
     root: Path,
     repo_name: str = "",
     policy_path: Optional[Path] = None,
+    policy: Optional[dict] = None,
     private_literal_values_fn: Optional[Callable[[Path, str], list[str]]] = None,
     profile: str = "strict",
 ) -> ClassificationResult:
     """Classify (name, email) against the unified policy (fail-closed on policy errors)."""
-    policy = load_policy(policy_path)
+    if policy is None:
+        policy = load_policy(policy_path)
     name_lc, email_lc = name.strip().casefold(), email.strip().casefold()
     literals_fn = private_literal_values_fn or private_literal_values
 
@@ -392,6 +394,77 @@ def _run_git(repo_root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
+@dataclass(frozen=True)
+class _CommitMetadata:
+    body: str
+    author_email: str
+    author_name: str
+    committer_email: str
+    committer_name: str
+    oneline: str = ""
+
+
+def _read_commit_metadata(
+    repo_root: Path,
+    commit_hash: str,
+    *,
+    with_oneline: bool = False,
+) -> _CommitMetadata:
+    """Read author/committer/body (and optional oneline) in one git invocation."""
+    if with_oneline:
+        fmt = "%ae%x00%an%x00%ce%x00%cn%x00%B%x00%h %s"
+        max_parts = 5
+    else:
+        fmt = "%ae%x00%an%x00%ce%x00%cn%x00%B"
+        max_parts = 4
+    proc = _run_git(repo_root, "log", "-1", f"--format={fmt}", commit_hash)
+    raw = proc.stdout or ""
+    parts = raw.split("\x00", max_parts)
+    if len(parts) < 5:
+        return _CommitMetadata("", "", "", "", "")
+    body = parts[4]
+    oneline = parts[5] if with_oneline and len(parts) > 5 else ""
+    return _CommitMetadata(
+        body=body,
+        author_email=parts[0].strip(),
+        author_name=parts[1].strip(),
+        committer_email=parts[2].strip(),
+        committer_name=parts[3].strip(),
+        oneline=oneline.strip(),
+    )
+
+
+def _inspect_commit(
+    repo_root: Path,
+    commit_hash: str,
+    *,
+    policy: dict,
+    policy_path: Optional[Path],
+    private_literal_values_fn: Optional[Callable[[Path, str], list[str]]],
+    with_oneline: bool = False,
+) -> tuple[bool, bool, bool, _CommitMetadata]:
+    """Return (banned_hit, bad_author, bad_coauthor, metadata) for one commit."""
+    meta = _read_commit_metadata(repo_root, commit_hash, with_oneline=with_oneline)
+    ae_lc = meta.author_email.casefold()
+    an_lc = meta.author_name.casefold()
+    ce_lc = meta.committer_email.casefold()
+    cn_lc = meta.committer_name.casefold()
+    body_lc = meta.body.casefold()
+    banned_hit = _bash_banned_attribution_hit(repo_root, ae_lc, an_lc, ce_lc, cn_lc, body_lc)
+    author = is_approved_identity(
+        meta.author_name,
+        meta.author_email,
+        root=repo_root,
+        repo_name=repo_root.name,
+        policy_path=policy_path,
+        policy=policy,
+        private_literal_values_fn=private_literal_values_fn,
+        profile="audit_relaxed",
+    )
+    bad_co = not _coauthor_policy_ok(repo_root, meta.body)
+    return banned_hit, not author.approved, bad_co, meta
+
+
 def _bash_banned_attribution_hit(
     repo_root: Path,
     ae_lc: str,
@@ -440,7 +513,9 @@ def _bash_banned_attribution_hit(
 def _coauthor_policy_ok(repo_root: Path, body: str) -> bool:
     hook = repo_root / "scripts/git/check_commit_message.sh"
     if not hook.is_file() or not os.access(hook, os.X_OK):
-        return True
+        raise AttributionCheckError(
+            f"check_commit_message.sh missing or not executable: {hook}"
+        )
     with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as tmp:
         tmp.write(body)
         tmp_path = tmp.name
@@ -484,28 +559,18 @@ def _audit_ref(
         if not commit_hash:
             continue
         count += 1
-        body = (_run_git(repo_root, "log", "-1", "--format=%B", commit_hash).stdout or "")
-        ae = (_run_git(repo_root, "log", "-1", "--format=%ae", commit_hash).stdout or "").strip()
-        an = (_run_git(repo_root, "log", "-1", "--format=%an", commit_hash).stdout or "").strip()
-        ae_lc, an_lc = ae.casefold(), an.casefold()
-        ce = (_run_git(repo_root, "log", "-1", "--format=%ce", commit_hash).stdout or "").strip()
-        cn = (_run_git(repo_root, "log", "-1", "--format=%cn", commit_hash).stdout or "").strip()
-        ce_lc, cn_lc = ce.casefold(), cn.casefold()
-        body_lc = body.casefold()
-        if _bash_banned_attribution_hit(repo_root, ae_lc, an_lc, ce_lc, cn_lc, body_lc):
-            banned += 1
-        author = is_approved_identity(
-            an,
-            ae,
-            root=repo_root,
-            repo_name=repo_root.name,
+        banned_hit, author_bad, co_bad, _meta = _inspect_commit(
+            repo_root,
+            commit_hash,
+            policy=policy,
             policy_path=policy_path,
             private_literal_values_fn=private_literal_values_fn,
-            profile="audit_relaxed",
         )
-        if not author.approved:
+        if banned_hit:
+            banned += 1
+        if author_bad:
             bad_author += 1
-        if not _coauthor_policy_ok(repo_root, body):
+        if co_bad:
             bad_co += 1
     clean = "yes" if banned == 0 and bad_author == 0 and bad_co == 0 else "no"
     return (
@@ -524,7 +589,6 @@ def run_attribution_audit(
     private_literal_values_fn: Optional[Callable[[Path, str], list[str]]] = None,
 ) -> int:
     repo_root = repo_root.resolve()
-    os.chdir(repo_root)
     range_spec = audit_range or os.getenv("GIT_AUDIT_RANGE", "")
     include_context = (
         not range_spec
@@ -548,39 +612,33 @@ def run_attribution_audit(
         return 0
 
     range_banned = range_bad_author = range_bad_co = range_count = 0
+    range_policy = load_policy(policy_path)
     rev_proc = _run_git(repo_root, "rev-list", range_spec)
     for commit_hash in (rev_proc.stdout or "").splitlines():
         commit_hash = commit_hash.strip()
         if not commit_hash:
             continue
         range_count += 1
-        body = (_run_git(repo_root, "log", "-1", "--format=%B", commit_hash).stdout or "")
-        ae = (_run_git(repo_root, "log", "-1", "--format=%ae", commit_hash).stdout or "").strip()
-        an = (_run_git(repo_root, "log", "-1", "--format=%an", commit_hash).stdout or "").strip()
-        ae_lc, an_lc = ae.casefold(), an.casefold()
-        ce = (_run_git(repo_root, "log", "-1", "--format=%ce", commit_hash).stdout or "").strip()
-        cn = (_run_git(repo_root, "log", "-1", "--format=%cn", commit_hash).stdout or "").strip()
-        ce_lc, cn_lc = ce.casefold(), cn.casefold()
-        body_lc = body.casefold()
-        oneline = (_run_git(repo_root, "log", "-1", "--oneline", commit_hash).stdout or "").strip()
-        if _bash_banned_attribution_hit(repo_root, ae_lc, an_lc, ce_lc, cn_lc, body_lc):
-            range_banned += 1
-            print(f"banned_attribution: {commit_hash} {oneline}", file=sys.stderr)
-        author = is_approved_identity(
-            an,
-            ae,
-            root=repo_root,
-            repo_name=repo_root.name,
+        banned_hit, author_bad, co_bad, meta = _inspect_commit(
+            repo_root,
+            commit_hash,
+            policy=range_policy,
             policy_path=policy_path,
             private_literal_values_fn=private_literal_values_fn,
-            profile="audit_relaxed",
+            with_oneline=True,
         )
-        if not author.approved:
+        if banned_hit:
+            range_banned += 1
+            print(f"banned_attribution: {commit_hash} {meta.oneline}", file=sys.stderr)
+        if author_bad:
             range_bad_author += 1
-            print(f"bad_author: {commit_hash} {an} <{ae}>", file=sys.stderr)
-        if not _coauthor_policy_ok(repo_root, body):
+            print(
+                f"bad_author: {commit_hash} {meta.author_name} <{meta.author_email}>",
+                file=sys.stderr,
+            )
+        if co_bad:
             range_bad_co += 1
-            print(f"bad_coauthor: {commit_hash} {oneline}", file=sys.stderr)
+            print(f"bad_coauthor: {commit_hash} {meta.oneline}", file=sys.stderr)
 
     range_clean = "yes" if range_banned == 0 and range_bad_author == 0 and range_bad_co == 0 else "no"
     sys.stdout.write(
