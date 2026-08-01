@@ -27,7 +27,7 @@ repo_slug="$(printf '%s\n' "$pr_url" | sed -E 's#^https://github.com/([^/]+/[^/]
 backup_slug="${repo_slug//\//-}"
 
 cat <<EOF
-PR-BODY-GUARD: open PR #${pr_number} for branch ${branch}
+PR-BODY-GUARD (Layer 0): open PR #${pr_number} for branch ${branch}
   ${pr_title}
   ${pr_url}
 
