@@ -32,6 +32,7 @@ GUARD_SYNC_EXECUTABLES=(
   expunge-all-workspace-repos.sh
   verify-git-guards.sh
   verify-guard-parity.sh
+  check-guard-sync-divergence.sh
   scan-tracked-banned-tokens.sh
   remind-pr-body-append-only.sh
   publish-clean-branch.sh
