@@ -5,16 +5,14 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-if [[ -n "${1:-}" && -d "${1}/.git" ]]; then
-  REPO_ROOT="$(cd "$1" && pwd)"
+if [[ -n "${1:-}" ]]; then
+  if ! REPO_ROOT="$(git -C "$1" rev-parse --show-toplevel 2>/dev/null)"; then
+    echo "ERROR: not a git repository: $1" >&2
+    exit 1
+  fi
 fi
 
 cd "$REPO_ROOT"
-
-if ! git rev-parse --git-dir >/dev/null 2>&1; then
-  echo "ERROR: not a git repository: $REPO_ROOT" >&2
-  exit 1
-fi
 
 hooks_dir="$REPO_ROOT/.githooks"
 mkdir -p "$hooks_dir" "$REPO_ROOT/scripts/git/hooks"
