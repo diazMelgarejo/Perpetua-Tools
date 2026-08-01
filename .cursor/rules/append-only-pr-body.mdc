@@ -1,0 +1,57 @@
+---
+description: Append-only PR body updates — never clobber existing PR descriptions (READ → backup → merge → write)
+alwaysApply: true
+---
+
+# Append-only PR body workflow
+
+`ManagePullRequest update_pr`, `gh pr edit`, and GitHub's API **replace the entire PR body** when `body` is set. Passing only the latest follow-up paragraph deletes the original Summary and any CodeRabbit release notes.
+
+**Canonical skill:** `bin/orama-system/skills/cursor-pr-body/SKILL.md`  
+**Canonical script:** `scripts/cursor/append-pr-body.sh`  
+**Curriculum:** `bin/orama-system/cidf/references/integrative-editing-examples.md` §1
+
+## Non-negotiable workflow
+
+| Step | Action |
+|------|--------|
+| 1. **READ** | `gh pr view <N> --repo <owner/repo> --json body --jq .body` |
+| 2. **BACKUP** | Save to `.git/pr-body-backups/<repo-slug>-pr<N>-<UTC-timestamp>.md` |
+| 3. **MERGE** | Keep original `## Summary` and scope at top; append `## Follow-up: …` blocks chronologically; preserve CodeRabbit auto-generated sections and Cursor metadata below unchanged |
+| 4. **WRITE** | Full merged body only — never delta-only |
+
+## Preferred write path
+
+```bash
+bash scripts/cursor/append-pr-body.sh <owner/repo> <pr-number> \
+  --title "Follow-up: <short title>" \
+  --file follow-up.md
+```
+
+Or: edit the backup copy integratively, then `gh pr edit <N> --repo <owner/repo> --body-file merged-body.md`.
+
+## Tool-specific constraints
+
+| Tool | Rule |
+|------|------|
+| `append-pr-body.sh` | Inserts before `<!-- CURSOR_AGENT_PR_BODY_END -->` or CodeRabbit marker; aborts if body changed since read |
+| `ManagePullRequest update_pr` | **Agent-managed PRs only.** Pass raw markdown — no `CURSOR_AGENT_PR_BODY_*` delimiters, no Open-in-Web / Open-in-Cursor footer HTML (tool wraps/rejects these). If update fails with "not agent-managed", use `gh pr edit` or leave merged body in `.git/pr-body-backups/*-merged-pending.md` for the operator |
+| `gh pr edit` | Requires token with `updatePullRequest` scope; same full-body rule applies |
+
+## Forbidden
+
+- `update_pr` / `gh pr edit` with `body=` containing only the latest paragraph or CI delta
+- Rewriting or deleting the original Summary to match a side quest (aguara, harmonization, etc.)
+- Skipping backup because "it's a small follow-up"
+- Hand-editing CodeRabbit `<!-- release notes by coderabbit.ai -->` blocks unless explicitly fixing a factual error
+
+## When to append
+
+- Stack harmonization / rebase notes after resolving conflicts
+- CodeRabbit or human review fixes applied in a follow-up commit
+- CI failure root cause + verification command output
+- Post-merge integration status across a PR chain (#244 → #245 → …)
+
+## Insertion order
+
+New `## Follow-up:` blocks go **below** the original agent summary and **above** CodeRabbit auto-generated release notes (when present). Chronological order — never reorder prior follow-ups.
