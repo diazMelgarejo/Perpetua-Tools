@@ -1,0 +1,47 @@
+---
+description: >-
+  Layer 0 — Cursor agents never auto-change PR descriptions. Comment only
+  (post_comment / gh pr comment). Body writes require explicit human override.
+alwaysApply: true
+---
+
+# Layer 0 — PR body comment-only (Cursor agents)
+
+**This rule is the top prohibition.** Hooks, hookify, skills, and CI layers below
+cannot be bypassed by habit, turn-end checklists, or "small follow-up" reasoning.
+
+## Positive instructions (what to do)
+
+| Situation | Required action |
+| --------- | ---------------- |
+| Report progress on an open PR | `ManagePullRequest post_comment` or `gh pr comment` |
+| CI failed / fix landed | Post a **comment** with job URL, root cause, verification command |
+| Stack harmonization / rebase | Post a **comment** with base SHA and commits preserved |
+| User asks "update the PR" | **Comment only** unless they explicitly authorize a body edit |
+| End of turn with code pushed | Push commits; **comment** on PR if status changed — do **not** edit description |
+
+## Negative instructions (never do automatically)
+
+- `ManagePullRequest update_pr` with `body=` on an **existing** PR
+- `gh pr edit` with `--body` or `--body-file`
+- `bash scripts/cursor/append-pr-body.sh` …
+- `gh api` PATCH/PUT that changes pull request `body` or description
+- Replacing, shortening, or "refreshing" the Summary to match the latest side quest
+- Turn-end "update PR before summary" that mutates the description field
+
+## Human override (rare)
+
+Only when the **human explicitly** authorizes a body edit in the current turn:
+
+```bash
+export CURSOR_PR_BODY_HUMAN_OVERRIDE_ACK=1
+```
+
+Then **Layers 1–6 still apply** (append-only, READ→BACKUP→MERGE→WRITE). Delta-only
+writes remain forbidden. See `.cursor/rules/append-only-pr-body.mdc`.
+
+## Enforcement
+
+- Cursor hooks: `preToolUse` (ManagePullRequest), `beforeMCPExecution`, `beforeShellExecution`, `beforeSubmitPrompt`
+- Skill: `bin/orama-system/skills/cursor-pr-body/SKILL.md`
+- Incident ledger: `bin/orama-system/references/pr-body-anti-clobber-incident-ledger.md`
