@@ -1,0 +1,43 @@
+{
+  "id": "200af7108094",
+  "key": "manual_200af7",
+  "name": "manual_200af7",
+  "claim": "Before running sync-attribution-guard-scripts.sh, run check-guard-sync-divergence.sh --workspace; abort when any sibling guard file differs from orama HEAD and the sibling blob is absent from orama history \u2014 that means the sibling is ahead and blind sync would clobber improvements. Promote sibling to orama on the single open PR per repo, then sync downstream.",
+  "conditions": [
+    "HITL",
+    "anti-clobber",
+    "check-guard-sync-divergence",
+    "divergence",
+    "guard-sync",
+    "sibling-ahead"
+  ],
+  "evidence_ids": [
+    "2026-08-01T14:59:26.823617+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-01T14:59:26.823617+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-01T14:59:26.823617+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-01T14:59:26.903400+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-08-01: materialized guard-sync-divergence-guard skill + checker after PT canonical wave nearly clobbered by orama\u2192PT sync.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-01T14:59:26.823617+00:00"
+      ],
+      "lessons_sha": "bee53b3683a7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-01T14:59:26.903389+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-08-01: materialized guard-sync-divergence-guard skill + checker after PT canonical wave nearly clobbered by orama\u2192PT sync."
+}
