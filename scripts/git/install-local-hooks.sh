@@ -30,6 +30,8 @@ done
 
 chmod +x "$REPO_ROOT/scripts/git/check_identity.sh" 2>/dev/null || true
 chmod +x "$REPO_ROOT/scripts/git/check_commit_message.sh" 2>/dev/null || true
+chmod +x "$REPO_ROOT/scripts/git/check_tdd_commit.sh" 2>/dev/null || true
+chmod +x "$REPO_ROOT/scripts/git/check_no_pending_merge.sh" 2>/dev/null || true
 chmod +x "$REPO_ROOT/scripts/git/ensure_hooks_installed.sh" 2>/dev/null || true
 chmod +x "$REPO_ROOT/scripts/git/verify-git-guards.sh" 2>/dev/null || true
 chmod +x "$REPO_ROOT/scripts/git/hooks/commit-msg.strip-coauthor" 2>/dev/null || true
