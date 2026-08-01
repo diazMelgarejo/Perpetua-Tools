@@ -33,7 +33,7 @@ done
 echo "== SYNC BINDING: sync tool uses guard-sync-manifest.sh =="
 if [[ ! -f "$SYNC" ]]; then
   echo "  ERR: sync tool not found at $SYNC"; rc=1
-elif grep -q 'source.*guard-sync-manifest\.sh' "$SYNC"; then
+elif grep -Eq '^[[:space:]]*(source|\.)[[:space:]]+.*guard-sync-manifest\.sh' "$SYNC"; then
   echo "  OK  sync-attribution-guard-scripts.sh sources manifest"
 else
   echo "  FAIL sync tool does not source guard-sync-manifest.sh (lists would drift)"; rc=1
@@ -50,7 +50,10 @@ if [[ ${#targets[@]} -gt 0 ]]; then
   echo "== PARITY: downstream guard copies byte-identical to canonical =="
   for repo in "${targets[@]}"; do
     canon_root="$(cd "$CANON/../.." && pwd)"
-    repo_root="$(cd "$repo" 2>/dev/null && pwd)" || continue
+    if ! repo_root="$(cd "$repo" 2>/dev/null && pwd)"; then
+      echo "  FAIL cannot access target repository: $repo"; rc=1
+      continue
+    fi
     [[ "$repo_root" == "$canon_root" ]] && continue
     for rel in "${GUARD_PARITY_REQUIRED[@]}"; do
       src="$CANON/$rel"

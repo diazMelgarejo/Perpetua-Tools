@@ -12,8 +12,9 @@
 #   regardless of sha/author/message.
 #
 #   This is the trap behind the orama PR#70 "600 behind" incident AND the PT
-#   re-scan repeat (2026-06-05). Canonical method: git-reanchor SKILL.md §5.
-#   https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/git-reanchor/SKILL.md
+#   re-scan repeat (2026-06-05). Canonical method: git-history-surgery
+#   references/reanchor-after-rewrite.md (tree-twin scan — not ahead/behind).
+#   https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/git-history-surgery/references/reanchor-after-rewrite.md
 #
 # Usage: reanchor_scan.sh <repo_path> [main_ref] [scope]
 #   main_ref : reference for the rewritten history   (default: origin/main)

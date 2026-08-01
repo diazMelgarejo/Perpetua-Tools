@@ -8,6 +8,7 @@ argument-hint: "[base-branch] (default: main)"
 **Input**: `$ARGUMENTS` — optional, may contain a base branch name and/or flags (e.g., `--draft`).
 
 **Parse `$ARGUMENTS`**:
+
 - Extract any recognized flags (`--draft`)
 - Treat remaining non-flag text as the base branch name
 - Default base branch to `main` if none specified
@@ -25,11 +26,11 @@ git log origin/<base>..HEAD --oneline
 ```
 
 | Check | Condition | Action if Failed |
-|---|---|---|
+| --- | --- | --- |
 | Not on base branch | Current branch ≠ base | Stop: "Switch to a feature branch first." |
 | Clean working directory | No uncommitted changes | Warn: "You have uncommitted changes. Commit or stash first." |
 | Has commits ahead | `git log origin/<base>..HEAD` not empty | Stop: "No commits ahead of `<base>`. Nothing to PR." |
-| No existing PR | `gh pr list --head <branch> --json number` is empty | Stop: "PR already exists: #<number>. Use `gh pr view <number> --web` to open it." |
+| No existing PR | `gh pr list --head <branch> --json number` is empty | Stop: "PR already exists: PR-N. Use `gh pr view N --web` to open it." |
 
 If all checks pass, proceed.
 
@@ -55,6 +56,7 @@ git log origin/<base>..HEAD --format="%h %s" --reverse
 ```
 
 Analyze commits to determine:
+
 - **PR title**: Use conventional commit format with type prefix — `feat: ...`, `fix: ...`, etc.
   - If multiple types, use the dominant one
   - If single commit, use its message as-is
@@ -72,6 +74,7 @@ Categorize changed files: source, tests, docs, config, migrations.
 ### Planning Artifacts
 
 Check for related artifacts produced by `/plan-prd`, `/plan`, or the legacy PRP workflow:
+
 - `.claude/prds/` — PRDs this PR implements a milestone of
 - `.claude/plans/` — Plans executed by this PR
 - `.claude/PRPs/prds/` — legacy PRP PRDs
@@ -89,6 +92,7 @@ git push -u origin HEAD
 ```
 
 If push fails due to divergence:
+
 ```bash
 git fetch origin
 git rebase origin/<base>
@@ -103,7 +107,9 @@ If rebase conflicts occur, stop and inform the user.
 
 ### With Template
 
-If a PR template was found in Phase 2, fill in each section using the commit and file analysis. Preserve all template sections — leave sections as "N/A" if not applicable rather than removing them.
+If a PR template was found in Phase 2, fill in each section using the commit and
+file analysis. Preserve all template sections — leave sections as "N/A" if not
+applicable rather than removing them.
 
 ### Without Template
 
@@ -143,20 +149,27 @@ gh pr create \
 
 ### Update an existing PR body (append-only — NEVER clobber)
 
-> **Canonical:** `.cursor/rules/append-only-pr-body.mdc` · `bin/orama-system/skills/cursor-pr-body/SKILL.md` · `scripts/cursor/append-pr-body.sh`
+> **Canonical:** `.cursor/rules/append-only-pr-body.mdc` ·
+> `bin/orama-system/skills/cursor-pr-body/SKILL.md` ·
+> `scripts/cursor/append-pr-body.sh`
 
-`ManagePullRequest` `update_pr` and `gh pr edit` **replace the entire body field**. Passing only the latest follow-up deletes the original Summary.
+`ManagePullRequest` `update_pr` and `gh pr edit` **replace the entire body
+field**. Passing only the latest follow-up deletes the original Summary.
 
 **Mandatory workflow:**
 
 1. **READ** — `gh pr view <N> --json body --jq .body`
 2. **BACKUP** — save to `.git/pr-body-backups/<repo>-pr<N>-<timestamp>.md`
-3. **MERGE** — keep original `## Summary` and scope at top; add new `## Follow-up: …` sections below (chronological); preserve everything from CodeRabbit auto-generated comments downward unchanged
-4. **WRITE** — `bash scripts/cursor/append-pr-body.sh <owner/repo> <N> --title "…" --file follow-up.md` or `gh pr edit <N> --body-file merged-body.md`
+3. **MERGE** — keep original `## Summary` and scope at top; add new
+   `## Follow-up: …` sections below (chronological); preserve everything from
+   CodeRabbit auto-generated comments downward unchanged
+4. **WRITE** — `bash scripts/cursor/append-pr-body.sh <owner/repo> <N> --title "…"
+   --file follow-up.md` or `gh pr edit <N> --body-file merged-body.md`
 
 **Never** call `update_pr` with `body=` containing only the delta. The write itself must be integrative.
 
-See `bin/orama-system/cidf/references/integrative-editing-examples.md` §1 and Perpetua-Tools `lesson_3b13ab0a45d4`.
+See `bin/orama-system/cidf/references/integrative-editing-examples.md` §1 and
+Perpetua-Tools `lesson_3b13ab0a45d4`.
 
 ---
 
@@ -173,8 +186,8 @@ gh pr checks --json name,status,conclusion 2>/dev/null || true
 
 Report to user:
 
-```
-PR #<number>: <title>
+```text
+PR #N: <title>
 URL: <url>
 Branch: <head> → <base>
 Changes: +<additions> -<deletions> across <changedFiles> files
@@ -196,6 +209,8 @@ Next steps:
 
 - **No `gh` CLI**: Stop with: "GitHub CLI (`gh`) is required. Install: <https://cli.github.com/>"
 - **Not authenticated**: Stop with: "Run `gh auth login` first."
-- **Force push needed**: If remote has diverged and rebase was done, use `git push --force-with-lease` (never `--force`).
-- **Multiple PR templates**: If `.github/PULL_REQUEST_TEMPLATE/` has multiple files, list them and ask user to choose.
+- **Force push needed**: If remote has diverged and rebase was done, use
+  `git push --force-with-lease` (never `--force`).
+- **Multiple PR templates**: If `.github/PULL_REQUEST_TEMPLATE/` has multiple
+  files, list them and ask user to choose.
 - **Large PR (>20 files)**: Warn about PR size. Suggest splitting if changes are logically separable.
