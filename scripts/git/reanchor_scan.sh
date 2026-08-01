@@ -37,10 +37,14 @@ if [ -n "$_TIMEOUT_BIN" ]; then
     exit 3
   fi
 else
-  if ! git fetch --prune origin >/dev/null 2>&1; then
-    echo "  FAIL: git fetch --prune origin failed (offline) — scan aborted"
-    exit 3
-  fi
+  # No gtimeout (macOS Homebrew coreutils) or timeout (Linux) available --
+  # an unbounded `git fetch` here can hang indefinitely on a network stall,
+  # with no deadline to recover from. Abort rather than risk that, same
+  # failure message and exit code as the bounded-timeout failure path
+  # above, so callers see one consistent "scan aborted" contract either
+  # way.
+  echo "  FAIL: no gtimeout/timeout binary available — refusing an unbounded git fetch — scan aborted"
+  exit 3
 fi
 MAIN=$(git rev-parse "$MAINREF") || { echo "  no $MAINREF"; exit 0; }
 ROOT=$(git rev-list --max-parents=0 "$MAIN" | tail -1)
