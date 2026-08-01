@@ -54,6 +54,10 @@ atomic_write_file() {
 
   dest_dir="$(dirname "$dest")"
   mkdir -p "$dest_dir"
+  if [[ -L "$dest" || ( -e "$dest" && ! -f "$dest" ) ]]; then
+    echo "error: $dest is not a safe regular-file destination (refusing to touch it)" >&2
+    return 1
+  fi
   tmp="$(mktemp)"
   if ! "$@" >"$tmp"; then
     rm -f "$tmp"
