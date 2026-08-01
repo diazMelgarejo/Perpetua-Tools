@@ -1,0 +1,41 @@
+{
+  "id": "e8ae3f3b9fa6",
+  "key": "manual_e8ae3f",
+  "name": "manual_e8ae3f",
+  "claim": "Guard-sync waves use one open PR per repo (PT then orama then AlphaClaw); run check-guard-sync-divergence.sh --workspace before sync-attribution-guard-scripts.sh; never open parallel one-file guard PRs",
+  "conditions": [
+    "check-guard-sync",
+    "divergence",
+    "guard-sync",
+    "one-PR-per-repo"
+  ],
+  "evidence_ids": [
+    "2026-08-01T15:24:25.558868+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-01T15:24:25.558868+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-01T15:24:25.558868+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-01T15:24:25.627905+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-08-01 guard epic: #314 merged but nitpicks open, #315 false supersede trap, #319/#255/#26 consolidated wave, divergence guard prevents blind orama-to-PT clobber",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-01T15:24:25.558868+00:00"
+      ],
+      "lessons_sha": "87e554b296f7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-01T15:24:25.627895+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-08-01 guard epic: #314 merged but nitpicks open, #315 false supersede trap, #319/#255/#26 consolidated wave, divergence guard prevents blind orama-to-PT clobber"
+}
