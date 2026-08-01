@@ -21,6 +21,7 @@ def test_verify_guard_parity_fails_on_inaccessible_target() -> None:
         cwd=ROOT,
         capture_output=True,
         text=True,
+        encoding="utf-8",
     )
     assert result.returncode != 0
     assert "cannot access target repository" in result.stdout + result.stderr
