@@ -7,10 +7,13 @@ alwaysApply: true
 
 ## The loop you must break
 
-Every time an agent adds **forbidden** `Co-authored-by` trailers (listed in `.cursor/private/banned-attribution-patterns`, never on GitHub), the owner must:
+Every time an agent adds **forbidden** `Co-authored-by` trailers (listed in
+`.cursor/private/banned-attribution-patterns`, never on GitHub), the owner must:
 
 1. Rewrite history (`bash scripts/git/expunge-all-workspace-repos.sh` or per-repo expunge)
-2. Force-push **`main` and every branch** again
+2. Republish **`main` and every branch** with the audited publisher
+   (`bash scripts/git/publish-clean-branch.sh <branch> main origin`) — never raw
+   `git push --force` or `--force-with-lease`
 
 That is destructive for all collaborators. **Do not cause another rewrite.**
 
@@ -24,7 +27,7 @@ That is destructive for all collaborators. **Do not cause another rewrite.**
 | Run `bash scripts/git/daily-attribution-guard.sh` at session start | "Document" forbidden emails in repo docs so you remember |
 
 ```bash
-git add -- path/to/file
+git add <paths>
 bash scripts/git/verify-staged-for-commit.sh   # must print OK + non-empty stat
 bash scripts/git/commit-clean.sh -m "type(scope): summary"
 git show --stat --oneline HEAD                 # confirm file delta before push
