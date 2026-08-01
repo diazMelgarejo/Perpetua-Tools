@@ -59,8 +59,17 @@ fi
 
 # An interactive or non-interactive rebase left uncommitted is the same
 # risk class: rebase-merge/rebase-apply present means the branch tip is
-# still pre-rebase.
-if [[ -d "$(git rev-parse --git-path rebase-merge)" ]] || [[ -d "$(git rev-parse --git-path rebase-apply)" ]]; then
+# still pre-rebase. `git am` also uses rebase-apply/ internally (it's an
+# am-based patch-apply session, not a rebase) -- distinguish via the
+# `applying` marker file, which only exists during `git am`, never during
+# an actual rebase (which uses `rebasing` instead). Reporting an am
+# session as "REBASE" would point the operator at `git rebase --continue`/
+# `--abort`, neither of which is the right recovery command here.
+if [[ -d "$(git rev-parse --git-path rebase-merge)" ]]; then
+  pending+=("REBASE")
+elif [[ -f "$(git rev-parse --git-path rebase-apply/applying)" ]]; then
+  pending+=("AM")
+elif [[ -d "$(git rev-parse --git-path rebase-apply)" ]]; then
   pending+=("REBASE")
 fi
 
@@ -117,6 +126,9 @@ for head in "${pending[@]}"; do
       ;;
     REBASE)
       echo "  REBASE: an in-progress rebase is unfinished — run 'git rebase --continue' or 'git rebase --abort'." >&2
+      ;;
+    AM)
+      echo "  AM: an in-progress 'git am' patch-apply session is unfinished — run 'git am --continue' or 'git am --abort'." >&2
       ;;
   esac
 done
