@@ -1,8 +1,10 @@
 # PR body frustration chain — comment-only doctrine (2026-08-01)
 
 > **Status:** active Layer 0 prohibition on Cursor agents  
-> **Open PR:** [#319](https://github.com/diazMelgarejo/Perpetua-Tools/pull/319) (`cursor/guard-audit-hardening-f559`)  
-> **Canonical ledger:** `orama-system/bin/orama-system/references/pr-body-anti-clobber-incident-ledger.md`
+> **Open PR:** [#319](https://github.com/diazMelgarejo/Perpetua-Tools/pull/319)  
+> (`cursor/guard-audit-hardening-f559`)  
+> **Canonical ledger:**  
+> `orama-system/bin/orama-system/references/pr-body-anti-clobber-incident-ledger.md`
 
 ## User intent (spirit of the plan)
 

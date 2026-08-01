@@ -7,7 +7,7 @@ Three-repo attribution-guard stack is aligned on hardened `audit_engine.py` and
 fragmentation).
 
 | Repo | PR | Branch | Role |
-|------|-----|--------|------|
+| ---- | -- | ------ | ---- |
 | Perpetua-Tools | [#319](https://github.com/diazMelgarejo/Perpetua-Tools/pull/319) | `cursor/guard-audit-hardening-f559` | **Canonical source** for this wave |
 | AlphaClaw | [#26](https://github.com/diazMelgarejo/AlphaClaw/pull/26) | `cursor/sync-attribution-guards-6421` | Downstream mirror |
 | orama-system | [#255](https://github.com/diazMelgarejo/orama-system/pull/255) | `2026-07-31-010-remediation-doctrine-phase6-sync` | Downstream mirror + doctrine |
@@ -29,7 +29,7 @@ fragmentation).
 
 ## Canonical sync procedure (reuse PRs, one wave)
 
-```
+```text
 A. Fix PT on open PR #319 (rebase main → fix CI + CodeRabbit → push)
 B. Copy GUARD_SYNC manifest files PT → AlphaClaw PR #26 → push
 C. Copy GUARD_SYNC manifest files PT → orama PR #255 → push
