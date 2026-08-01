@@ -88,7 +88,7 @@ Reference these in the PR body if they exist.
 ## Phase 3 — PUSH
 
 ```bash
-bash scripts/git/publish-clean-branch.sh "$(git branch --show-current)" <base> origin
+bash scripts/git/publish-clean-branch.sh "$(git branch --show-current)" main origin
 ```
 
 If push fails due to divergence:
