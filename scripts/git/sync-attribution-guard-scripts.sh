@@ -21,6 +21,10 @@ atomic_install_file() {
 
   dest_dir="$(dirname "$dest")"
   mkdir -p "$dest_dir"
+  if [[ -L "$dest" || ( -e "$dest" && ! -f "$dest" ) ]]; then
+    echo "error: $dest is not a safe regular-file destination (refusing to touch it)" >&2
+    return 1
+  fi
   if [[ -d "$dest" ]]; then
     echo "error: destination is a directory: $dest" >&2
     return 1
@@ -103,7 +107,7 @@ atomic_append_snippet() {
   # directory -- with nothing in the exit code or output to signal any
   # of this happened. Verified empirically, not assumed, before writing
   # this guard.
-  if [[ -e "$dest" && ! -f "$dest" ]]; then
+  if [[ -L "$dest" || ( -e "$dest" && ! -f "$dest" ) ]]; then
     echo "error: $dest exists but is not a regular file (refusing to touch it)" >&2
     return 1
   fi

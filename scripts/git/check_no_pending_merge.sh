@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Block push while a --no-commit merge/cherry-pick/revert is still uncommitted.
 #
-# Exit codes (KB-indexed — see orama
+# Exit codes (KB-indexed — see
 # bin/orama-system/skills/git-history-surgery/references/pending-operation-push-guard-reference-card.md):
 #   0 = GIT_PUSH_OK
 #   1 = GIT_PUSH_E_PENDING_MERGE_CLEAN    (MERGE_HEAD clean, or marker-only pending)
@@ -135,6 +135,6 @@ done
 
 echo "  The branch tip you're about to push is still the PRE-operation commit." >&2
 echo "  Finalize or abort the operation above, then push again." >&2
-echo "  KB: orama-system/bin/orama-system/skills/git-history-surgery/references/pending-operation-push-guard-reference-card.md" >&2
+echo "  KB: bin/orama-system/skills/git-history-surgery/references/pending-operation-push-guard-reference-card.md" >&2
 
 exit "$exit_code"
