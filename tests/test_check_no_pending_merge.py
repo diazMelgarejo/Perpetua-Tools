@@ -39,6 +39,7 @@ def _run_check(repo: Path) -> subprocess.CompletedProcess[str]:
         cwd=ROOT,
         capture_output=True,
         text=True,
+        encoding="utf-8",
     )
 
 
@@ -76,6 +77,7 @@ def test_check_no_pending_merge_blocks_conflicted_merge_head(tmp_path: Path) -> 
         cwd=repo,
         capture_output=True,
         text=True,
+        encoding="utf-8",
     )
     assert merge.returncode != 0, "expected a conflicted merge to leave MERGE_HEAD set"
 
@@ -108,6 +110,7 @@ def test_check_no_pending_merge_blocks_resolved_no_commit_merge(tmp_path: Path) 
         cwd=repo,
         capture_output=True,
         text=True,
+        encoding="utf-8",
     )
     assert merge.returncode == 0, "non-overlapping merge should succeed without conflicts"
 
@@ -140,6 +143,7 @@ def test_merge_head_with_unmerged_files(tmp_path: Path) -> None:
         cwd=repo,
         capture_output=True,
         text=True,
+        encoding="utf-8",
     )
 
     result = _run_check(repo)
@@ -168,6 +172,7 @@ def test_check_no_pending_merge_blocks_pending_cherry_pick(tmp_path: Path) -> No
         cwd=repo,
         capture_output=True,
         text=True,
+        encoding="utf-8",
     )
     assert cherry.returncode != 0, "conflicted cherry-pick should leave CHERRY_PICK_HEAD set"
 
@@ -196,7 +201,11 @@ def test_check_no_pending_merge_blocks_pending_am_session(tmp_path: Path) -> Non
     patch_dir = tmp_path / "patches"
     subprocess.run(
         ["git", "format-patch", "-1", "-o", str(patch_dir)],
-        check=True, cwd=repo,
+        check=True,
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
     )
     subprocess.run(["git", "reset", "--hard", "HEAD~1"], check=True, cwd=repo)
 
@@ -208,7 +217,7 @@ def test_check_no_pending_merge_blocks_pending_am_session(tmp_path: Path) -> Non
     patch_file = next(patch_dir.glob("*.patch"))
     am_result = subprocess.run(
         ["git", "am", str(patch_file)],
-        cwd=repo, capture_output=True, text=True,
+        cwd=repo, capture_output=True, text=True, encoding="utf-8",
     )
     assert am_result.returncode != 0, "conflicting am should leave rebase-apply/applying set"
     assert (repo / ".git" / "rebase-apply" / "applying").is_file()
@@ -221,7 +230,7 @@ def test_check_no_pending_merge_blocks_pending_am_session(tmp_path: Path) -> Non
     assert "am --continue" in result.stderr
     assert "am --abort" in result.stderr
 
-    subprocess.run(["git", "am", "--abort"], cwd=repo, capture_output=True)
+    subprocess.run(["git", "am", "--abort"], cwd=repo, capture_output=True, text=True, encoding="utf-8")
 
 
 def test_check_no_pending_merge_blocks_merge_msg_marker(tmp_path: Path) -> None:
@@ -242,6 +251,7 @@ def test_check_no_pending_merge_blocks_merge_msg_marker(tmp_path: Path) -> None:
         cwd=repo,
         capture_output=True,
         text=True,
+        encoding="utf-8",
     )
     assert cherry.returncode == 0
     merge_msg = repo / ".git" / "MERGE_MSG"
@@ -267,6 +277,7 @@ def test_check_no_pending_merge_blocks_squash_msg_marker(tmp_path: Path) -> None
         ["git", "rev-parse", "--git-path", "SQUASH_MSG"],
         cwd=repo,
         text=True,
+        encoding="utf-8",
     ).strip()
     squash_msg = (repo / squash_rel).resolve()
     squash_msg.write_text("Squashed commit of the following:\n", encoding="utf-8")
@@ -299,6 +310,7 @@ def test_check_no_pending_merge_blocks_rebase_marker(tmp_path: Path) -> None:
         cwd=repo,
         capture_output=True,
         text=True,
+        encoding="utf-8",
     )
     assert rebase.returncode != 0
     assert (repo / ".git" / "rebase-merge").is_dir()
@@ -309,7 +321,7 @@ def test_check_no_pending_merge_blocks_rebase_marker(tmp_path: Path) -> None:
     assert "REBASE" in result.stderr
     assert "rebase --continue" in result.stderr
 
-    subprocess.run(["git", "rebase", "--abort"], cwd=repo, capture_output=True)
+    subprocess.run(["git", "rebase", "--abort"], cwd=repo, capture_output=True, text=True, encoding="utf-8")
 
 
 def test_check_no_pending_merge_blocks_pending_revert(tmp_path: Path) -> None:
