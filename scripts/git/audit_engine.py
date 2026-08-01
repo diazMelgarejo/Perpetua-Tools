@@ -420,7 +420,7 @@ def _read_commit_metadata(
     proc = _run_git(repo_root, "log", "-1", f"--format={fmt}", commit_hash)
     raw = proc.stdout or ""
     parts = raw.split("\x00", max_parts)
-    if len(parts) < max_parts:
+    if len(parts) < 5:
         return _CommitMetadata("", "", "", "", "")
     body = parts[4]
     oneline = parts[5] if with_oneline and len(parts) > 5 else ""
@@ -559,7 +559,7 @@ def _audit_ref(
         if not commit_hash:
             continue
         count += 1
-        banned_hit, author_bad, co_bad, meta = _inspect_commit(
+        banned_hit, author_bad, co_bad, _meta = _inspect_commit(
             repo_root,
             commit_hash,
             policy=policy,
