@@ -5,7 +5,7 @@ Companion to `GUARD_SYNC_EPIC_SAGA_COMPLETION_2026-08-01.md` (on this branch).
 ## What shipped
 
 | Layer | Artifact |
-|-------|----------|
+| ----- | -------- |
 | Checker | `scripts/git/check-guard-sync-divergence.sh` |
 | Sync gate | `sync-attribution-guard-scripts.sh` calls `--workspace` first |
 | Pre-push | `.githooks/pre-push` when `scripts/git/` changes |
@@ -16,7 +16,7 @@ Companion to `GUARD_SYNC_EPIC_SAGA_COMPLETION_2026-08-01.md` (on this branch).
 ## One PR per repo (do not fragment)
 
 | Repo | PR | Branch |
-|------|-----|--------|
+| ---- | -- | ------ |
 | PT | #319 | `cursor/guard-audit-hardening-f559` |
 | orama | #255 | `2026-07-31-010-remediation-doctrine-phase6-sync` |
 | AlphaClaw | #26 | `cursor/sync-attribution-guards-6421` |
