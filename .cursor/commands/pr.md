@@ -88,11 +88,7 @@ Reference these in the PR body if they exist.
 ## Phase 3 — PUSH
 
 ```bash
-<<<<<<< HEAD
 bash scripts/git/publish-clean-branch.sh "$(git branch --show-current)" <base> origin
-=======
-bash scripts/git/publish-clean-branch.sh "$(git branch --show-current)" main origin
->>>>>>> 63b224e (fix: PR #314 review 4833655319 -- extract real pattern instead of hardcoded copy, route initial push through publisher)
 ```
 
 If push fails due to divergence:

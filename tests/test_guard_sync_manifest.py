@@ -44,6 +44,7 @@ def _run_sync_binding_check(sync_script: Path) -> subprocess.CompletedProcess[st
         ["grep", "-Eq", _SYNC_BINDING_PATTERN, str(sync_script)],
         capture_output=True,
         text=True,
+        encoding="utf-8",
     )
 
 
@@ -59,6 +60,7 @@ def _bash_array(name: str) -> list[str]:
         cwd=ROOT,
         capture_output=True,
         text=True,
+        encoding="utf-8",
         check=True,
     )
     return [line for line in result.stdout.splitlines() if line]
@@ -116,5 +118,6 @@ def test_verify_guard_parity_passes_in_canonical_repo() -> None:
         cwd=ROOT,
         capture_output=True,
         text=True,
+        encoding="utf-8",
     )
     assert result.returncode == 0, result.stdout + result.stderr
