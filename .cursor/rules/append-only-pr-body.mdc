@@ -7,7 +7,10 @@ alwaysApply: true
 
 `ManagePullRequest update_pr`, `gh pr edit`, and GitHub's API **replace the entire PR body** when `body` is set. Passing only the latest follow-up paragraph deletes the original Summary and any CodeRabbit release notes.
 
+**NEVER** use `ManagePullRequest update_pr` with delta-only `body=`. Use `append-pr-body.sh` instead.
+
 **Canonical skill:** `bin/orama-system/skills/cursor-pr-body/SKILL.md`  
+**Incident ledger:** `bin/orama-system/references/pr-body-anti-clobber-incident-ledger.md`  
 **Canonical script:** `scripts/cursor/append-pr-body.sh`  
 **Curriculum:** `bin/orama-system/cidf/references/integrative-editing-examples.md` §1
 
@@ -35,7 +38,7 @@ Or: edit the backup copy integratively, then `gh pr edit <N> --repo <owner/repo>
 | Tool | Rule |
 |------|------|
 | `append-pr-body.sh` | Inserts before `<!-- CURSOR_AGENT_PR_BODY_END -->` or CodeRabbit marker; aborts if body changed since read |
-| `ManagePullRequest update_pr` | **Agent-managed PRs only.** Pass raw markdown — no `CURSOR_AGENT_PR_BODY_*` delimiters, no Open-in-Web / Open-in-Cursor footer HTML (tool wraps/rejects these). If update fails with "not agent-managed", use `gh pr edit` or leave merged body in `.git/pr-body-backups/*-merged-pending.md` for the operator |
+| `ManagePullRequest update_pr` | **Avoid.** Agent-managed PRs only; if unavoidable, pass **full** integrative merged body — never delta-only. Prefer `append-pr-body.sh` |
 | `gh pr edit` | Requires token with `updatePullRequest` scope; same full-body rule applies |
 
 ## Forbidden

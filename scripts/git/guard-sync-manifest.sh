@@ -33,6 +33,9 @@ GUARD_SYNC_EXECUTABLES=(
   verify-git-guards.sh
   verify-guard-parity.sh
   scan-tracked-banned-tokens.sh
+  remind-pr-body-append-only.sh
+  publish-clean-branch.sh
+  verify-pr-body-not-clobbered.sh
 )
 
 # Non-executable policy/data files (mode 0644 when synced).
