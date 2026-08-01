@@ -1,0 +1,43 @@
+{
+  "id": "696cf70a34bd",
+  "key": "manual_696cf7",
+  "name": "manual_696cf7",
+  "claim": "Layer 0 for Cursor agents: never automatically change an existing PR description \u2014 use ManagePullRequest post_comment or gh pr comment only; hooks block update_pr with body=, gh pr edit, and append-pr-body.sh",
+  "conditions": [
+    "Layer-0",
+    "PR",
+    "body",
+    "comment-only",
+    "post_comment",
+    "update_pr"
+  ],
+  "evidence_ids": [
+    "2026-08-01T15:24:25.303312+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-01T15:24:25.303312+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-01T15:24:25.303312+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-01T15:24:25.381145+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT#319 delta-only update_pr clobbered integrative Summary 2026-08-01; user mandated comment-only as top prohibition; pr-body-guard-core.py + beforeSubmitPrompt/preToolUse/beforeShell hooks on orama#255",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-01T15:24:25.303312+00:00"
+      ],
+      "lessons_sha": "b378d03c64f6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-01T15:24:25.381132+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT#319 delta-only update_pr clobbered integrative Summary 2026-08-01; user mandated comment-only as top prohibition; pr-body-guard-core.py + beforeSubmitPrompt/preToolUse/beforeShell hooks on orama#255"
+}
