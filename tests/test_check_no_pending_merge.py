@@ -230,7 +230,7 @@ def test_check_no_pending_merge_blocks_pending_am_session(tmp_path: Path) -> Non
     assert "am --continue" in result.stderr
     assert "am --abort" in result.stderr
 
-    subprocess.run(["git", "am", "--abort"], cwd=repo, capture_output=True, text=True, encoding="utf-8")
+    subprocess.run(["git", "am", "--abort"], cwd=repo, capture_output=True, text=True, encoding="utf-8", check=True)
 
 
 def test_check_no_pending_merge_blocks_merge_msg_marker(tmp_path: Path) -> None:
@@ -321,7 +321,7 @@ def test_check_no_pending_merge_blocks_rebase_marker(tmp_path: Path) -> None:
     assert "REBASE" in result.stderr
     assert "rebase --continue" in result.stderr
 
-    subprocess.run(["git", "rebase", "--abort"], cwd=repo, capture_output=True, text=True, encoding="utf-8")
+    subprocess.run(["git", "rebase", "--abort"], cwd=repo, capture_output=True, text=True, encoding="utf-8", check=True)
 
 
 def test_check_no_pending_merge_blocks_pending_revert(tmp_path: Path) -> None:
