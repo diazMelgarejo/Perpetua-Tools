@@ -92,6 +92,12 @@ while read -r h; do
 done < <(git rev-list "$range")
 
 echo "OK: ${range} passes attribution scan — force-pushing ${branch} → ${remote}"
+if [[ -x scripts/git/remind-pr-body-append-only.sh ]]; then
+  # Strict by default in audited publisher — override with PR_BODY_UPDATE_ACK=1
+  # after append-pr-body.sh when PR body was intentionally updated this session.
+  PR_BODY_GUARD_STRICT="${PR_BODY_GUARD_STRICT:-1}" \
+    bash scripts/git/remind-pr-body-append-only.sh "$branch"
+fi
 git push --force-with-lease "$remote" "${branch}:${branch}"
 
 echo "OK: published $(git rev-parse --short "$branch") to ${remote}/${branch}"

@@ -89,11 +89,14 @@ git push -u origin HEAD
 ```
 
 If push fails due to divergence:
+
 ```bash
 git fetch origin
 git rebase origin/<base>
-git push -u origin HEAD
+bash scripts/git/publish-clean-branch.sh "$(git branch --show-current)" <base> origin
 ```
+
+Use the audited publisher after rebase — never raw `git push --force` or `--force-with-lease`.
 
 If rebase conflicts occur, stop and inform the user.
 
@@ -143,6 +146,8 @@ gh pr create \
 
 ### Update an existing PR body (append-only — NEVER clobber)
 
+> **Canonical:** `.cursor/rules/append-only-pr-body.mdc` · `bin/orama-system/skills/cursor-pr-body/SKILL.md` · `scripts/cursor/append-pr-body.sh`
+
 `ManagePullRequest` `update_pr` and `gh pr edit` **replace the entire body field**. Passing only the latest follow-up deletes the original Summary.
 
 **Mandatory workflow:**
@@ -150,7 +155,7 @@ gh pr create \
 1. **READ** — `gh pr view <N> --json body --jq .body`
 2. **BACKUP** — save to `.git/pr-body-backups/<repo>-pr<N>-<timestamp>.md`
 3. **MERGE** — keep original `## Summary` and scope at top; add new `## Follow-up: …` sections below (chronological); preserve everything from CodeRabbit auto-generated comments downward unchanged
-4. **WRITE** — `gh pr edit <N> --body-file merged-body.md` or `bash scripts/cursor/append-pr-body.sh <owner/repo> <N> --title "…" --file follow-up.md`
+4. **WRITE** — `bash scripts/cursor/append-pr-body.sh <owner/repo> <N> --title "…" --file follow-up.md` or `gh pr edit <N> --body-file merged-body.md`
 
 **Never** call `update_pr` with `body=` containing only the delta. The write itself must be integrative.
 
@@ -194,6 +199,9 @@ Next steps:
 
 - **No `gh` CLI**: Stop with: "GitHub CLI (`gh`) is required. Install: <https://cli.github.com/>"
 - **Not authenticated**: Stop with: "Run `gh auth login` first."
-- **Force push needed**: If remote has diverged and rebase was done, use `git push --force-with-lease` (never `--force`).
+- **Force push needed**: After rebasing a diverged branch, use
+  `bash scripts/git/publish-clean-branch.sh <branch> <base> origin` — never raw
+  `git push --force` or `--force-with-lease`. The publisher runs attribution
+  guards before publishing.
 - **Multiple PR templates**: If `.github/PULL_REQUEST_TEMPLATE/` has multiple files, list them and ask user to choose.
 - **Large PR (>20 files)**: Warn about PR size. Suggest splitting if changes are logically separable.

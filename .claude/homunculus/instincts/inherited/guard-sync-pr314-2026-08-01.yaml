@@ -1,0 +1,71 @@
+# Instincts derived from Perpetua-Tools PR #314 guard-sync downstream stack (2026-08-01)
+# Derivation: lesson_a8f3c2e91d04, PR_BODY_ANTI_CLOBBER_ENFORCEMENT_PLAN.md
+# Import: /instinct-import .claude/homunculus/instincts/inherited/guard-sync-pr314-2026-08-01.yaml
+# Post-merge: /ecc-sync (Perpetua-Tools-instincts.yaml bundle)
+
+---
+id: pt-guard-sync-from-orama-never-hand-edit
+trigger: "when editing scripts/git guard files in Perpetua-Tools"
+confidence: 0.95
+domain: git
+source: session-curation
+imported_from: "PR #314 cursor/guard-sync-parity-74e2"
+source_repo: https://github.com/diazMelgarejo/Perpetua-Tools
+related_lessons:
+  - lesson_e390f2de6366
+  - lesson_950d450b3d5b
+title: "PT Guard Scripts Are Downstream Mirrors — Sync From Orama"
+action: >-
+  Never hand-edit Perpetua-Tools scripts/git guard copies. Change orama
+  canonical first, then bash ../orama-system/scripts/git/sync-attribution-guard-scripts.sh .
+  Verify with bash scripts/git/verify-guard-parity.sh ../orama-system .
+  Files outside the manifest (e.g. install-local-hooks.sh, reanchor_scan.sh
+  doc links) may differ intentionally — check manifest before assuming drift.
+evidence: >-
+  PR #314: inverted sync direction when PT-only fixes never propagated to
+  orama. Stack re-synced from canonical after manifest introduction (orama #251).
+
+---
+id: pt-pr-body-read-backup-merge-write
+trigger: "when updating Perpetua-Tools PR #314 or any open PR body after new commits"
+confidence: 0.97
+domain: workflow
+source: session-curation
+imported_from: "PR_BODY_ANTI_CLOBBER_ENFORCEMENT_PLAN.md"
+source_repo: https://github.com/diazMelgarejo/Perpetua-Tools
+related_lessons:
+  - lesson_3b13ab0a45d4
+  - lesson_4a38f0e95fcf
+  - lesson_6fff093ccb00
+  - lesson_a8f3c2e91d04
+title: "PR Body READ → BACKUP → MERGE → WRITE"
+action: >-
+  Use scripts/cursor/append-pr-body.sh for every PR body update. Workflow:
+  gh pr view --json body; save backup; add ## Follow-up below Summary;
+  write full merged body. ManagePullRequest update_pr replaces the entire
+  field — if you use it, pass the complete integrative body, never
+  delta-only. Rule: .cursor/rules/append-only-pr-body.mdc (alwaysApply).
+evidence: >-
+  PT #314 clobbered 2026-08-01: original guard-sync Summary erased by
+  delta-only update_pr for CodeRabbit 4833493387. Restored with Summary +
+  three Follow-up sections + CodeRabbit tail preserved.
+
+---
+id: pt-pr-body-remind-before-publish
+trigger: "before git push or publish-clean-branch on a branch with an open PR"
+confidence: 0.92
+domain: git
+source: session-curation
+imported_from: "scripts/git/remind-pr-body-append-only.sh"
+source_repo: https://github.com/diazMelgarejo/Perpetua-Tools
+related_lessons:
+  - lesson_a8f3c2e91d04
+title: "Remind PR Body Guard Before Publish"
+action: >-
+  After commit, before push: bash scripts/git/remind-pr-body-append-only.sh.
+  publish-clean-branch.sh calls this automatically before force-push.
+  Optional strict gate: PR_BODY_GUARD_STRICT=1 requires PR_BODY_UPDATE_ACK=1
+  after a proper append-pr-body.sh run.
+evidence: >-
+  Mechanical enforcement added because lessons alone failed to prevent
+  repeat clobber on PT #314 (4th documented incident, ~5x silent estimate).
