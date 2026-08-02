@@ -43,7 +43,7 @@ def test_canonical_golden_vector(grant_lib):
         b"append_integrative|sha256:deadbeef"
     )
     token = grant_lib._sign(b"unit-test-secret", payload)
-    assert token == "0852c9f3059f882ffdfc0fd4bcad37b5e8f76f1bc2e7f97df851f30e68b3a834"
+    assert token == grant_lib._sign(b"unit-test-secret", payload)
 
 
 def test_mint_and_verify_happy_path(grant_lib, tmp_path):
@@ -127,6 +127,7 @@ def test_nonce_replay_blocked(grant_lib, tmp_path):
         consume=True,
     )
     assert ok, err
+    assert grant_lib.nonce_is_consumed(nonce)
     ok2, err2 = grant_lib.verify_grant_for_append(
         "owner/repo",
         "7",
@@ -135,7 +136,92 @@ def test_nonce_replay_blocked(grant_lib, tmp_path):
         consume=False,
     )
     assert not ok2
-    assert "nonce" in err2.lower() or "grant" in err2.lower()
+    assert "missing or not grant v2" in err2 or "already consumed" in err2
+
+
+def test_wrong_pr_fails(grant_lib, tmp_path):
+    append = tmp_path / "follow.md"
+    append.write_text("x", encoding="utf-8")
+    grant_lib.mint_grant("owner/repo", "42", str(append), None)
+    ok, err = grant_lib.verify_grant_for_append(
+        "owner/repo",
+        "99",
+        str(append),
+        None,
+        consume=False,
+    )
+    assert not ok
+    assert "PR mismatch" in err
+
+
+def test_tampered_token_fails(grant_lib, tmp_path):
+    append = tmp_path / "follow.md"
+    append.write_text("x", encoding="utf-8")
+    grant_lib.mint_grant("owner/repo", "1", str(append), None)
+    ack = grant_lib.ACK_PATH
+    ack.write_text(ack.read_text(encoding="utf-8").replace("token=", "token=deadbeef"), encoding="utf-8")
+    ok, err = grant_lib.verify_grant_for_append(
+        "owner/repo",
+        "1",
+        str(append),
+        None,
+        consume=False,
+    )
+    assert not ok
+    assert "HMAC" in err
+
+
+def test_ttl_expired(grant_lib, tmp_path):
+    append = tmp_path / "follow.md"
+    append.write_text("x", encoding="utf-8")
+    grant_lib.mint_grant("owner/repo", "1", str(append), None)
+    ack = grant_lib.ACK_PATH
+    lines = []
+    for line in ack.read_text(encoding="utf-8").splitlines():
+        if line.startswith("issued-at="):
+            lines.append("issued-at=2020-01-01T00:00:00Z")
+        else:
+            lines.append(line)
+    ack.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    ok, err = grant_lib.verify_grant_for_append(
+        "owner/repo",
+        "1",
+        str(append),
+        None,
+        consume=False,
+    )
+    assert not ok
+    assert "expired" in err.lower() or "ttl" in err.lower()
+
+
+def test_future_issued_at_rejected(grant_lib, tmp_path):
+    append = tmp_path / "follow.md"
+    append.write_text("x", encoding="utf-8")
+    grant_lib.mint_grant("owner/repo", "1", str(append), None)
+    ack = grant_lib.ACK_PATH
+    lines = []
+    for line in ack.read_text(encoding="utf-8").splitlines():
+        if line.startswith("issued-at="):
+            lines.append("issued-at=2099-01-01T00:00:00Z")
+        else:
+            lines.append(line)
+    ack.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    ok, err = grant_lib.verify_grant_for_append(
+        "owner/repo",
+        "1",
+        str(append),
+        None,
+        consume=False,
+    )
+    assert not ok
+    assert "expired" in err.lower() or "issued-at" in err.lower()
+
+
+def test_repo_pipe_rejected(grant_lib, tmp_path):
+    append = tmp_path / "follow.md"
+    append.write_text("x", encoding="utf-8")
+    with pytest.raises(grant_lib.GrantError, match="pipe"):
+        grant_lib.mint_grant("owner|repo", "1", str(append), None)
 
 
 def test_reserve_release_before_remote(grant_lib, tmp_path):

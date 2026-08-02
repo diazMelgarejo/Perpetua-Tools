@@ -255,7 +255,9 @@ fi
 
 consume_cmd=(python3 "$GRANT_LIB" consume "${grant_append_args[@]}")
 if ! "${consume_cmd[@]}"; then
-  echo "error: grant consume failed after PR body update — treat as security incident" >&2
+  echo "error: grant consume failed AFTER the PR body update. The remote write already landed." >&2
+  echo "  cause: the nonce ledger could not be updated, so the grant may still be replayable." >&2
+  echo "  fix: delete ~/.cursor/pr-body-human-override-ack now, then review .git/pr-body-backups." >&2
   exit 1
 fi
 

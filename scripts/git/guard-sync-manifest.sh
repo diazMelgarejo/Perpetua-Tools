@@ -37,6 +37,7 @@ GUARD_SYNC_EXECUTABLES=(
   remind-pr-body-append-only.sh
   publish-clean-branch.sh
   verify-pr-body-not-clobbered.sh
+  scrub_dsstore.sh
 )
 
 # Non-executable policy/data files (mode 0644 when synced).

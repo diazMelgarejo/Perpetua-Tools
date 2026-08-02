@@ -16,7 +16,8 @@ grant stack synced from orama via `sync-attribution-guard-scripts.sh` after each
 
 ## Saga doc (read this first)
 
-`PR_BODY_GRANT_HMAC_MVP_SAGA_2026-08-02.md` — timeline, research, decisions D1–D17, replay state machine, operator workflow, tips.
+`PR_BODY_GRANT_HMAC_MVP_SAGA_2026-08-02.md` — timeline, research, decisions D1–D17,
+replay state machine, operator workflow, tips.
 
 ## Canonical artifacts
 
@@ -37,14 +38,15 @@ bash scripts/cursor/grant-pr-body-human-override.sh owner/repo N --file follow-u
 bash scripts/cursor/append-pr-body.sh owner/repo N --file follow-up.md
 ```
 
-Grant lifecycle: **mint → reserve → gh edit → mark-applied → consume**. Re-run append reconciles if follow-up already on remote (crash recovery).
+Grant lifecycle: **mint → reserve → gh edit → mark-applied → consume**.
+Re-run append reconciles if follow-up already on remote (crash recovery).
 
 ## Verification (last run 2026-08-02)
 
 ```bash
 python3 -m pytest tests/test_pr_body_grant_lib.py tests/test_append_pr_body_grant_flow.py \
   tests/test_pr_body_guard_core.py tests/test_check_guard_sync_divergence.py -q
-# Result: 21 passed (orama + PT after sync)
+# Result: 26 passed (orama + PT after sync)
 ```
 
 ## Next

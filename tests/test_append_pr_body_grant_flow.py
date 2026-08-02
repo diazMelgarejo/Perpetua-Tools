@@ -29,7 +29,7 @@ def _run(cmd: list[str], env: dict[str, str] | None = None) -> subprocess.Comple
 
 
 @pytest.fixture()
-def fake_gh(tmp_path: Path) -> Path:
+def fake_gh(tmp_path: Path) -> tuple[Path, Path]:
     body_file = tmp_path / "pr-body.txt"
     body_file.write_text("summary\n<!-- CURSOR_AGENT_PR_BODY_END -->\n", encoding="utf-8")
     gh = tmp_path / "gh"
@@ -41,7 +41,17 @@ if [[ "$1" == pr && "$2" == view ]]; then
   exit 0
 fi
 if [[ "$1" == pr && "$2" == edit ]]; then
-  cat "$7" > '{body_file}'
+  shift 2
+  body_path=""
+  while [[ $# -gt 0 ]]; do
+    if [[ "$1" == --body-file ]]; then
+      body_path="$2"
+      break
+    fi
+    shift
+  done
+  [[ -n "$body_path" ]] || {{ echo "fake gh: no --body-file" >&2; exit 1; }}
+  cat "$body_path" > '{body_file}'
   exit 0
 fi
 echo "unexpected gh: $@" >&2
@@ -50,15 +60,16 @@ exit 1
         encoding="utf-8",
     )
     gh.chmod(0o755)
-    return gh
+    return gh, body_file
 
 
-def test_append_pr_body_consumes_grant(fake_gh: Path, tmp_path: Path):
+def test_append_pr_body_consumes_grant(fake_gh: tuple[Path, Path], tmp_path: Path):
+    gh_bin, body_file = fake_gh
     append = tmp_path / "note.md"
     append.write_text("operator note", encoding="utf-8")
     env = {
         "PR_BODY_GRANT_HMAC_SECRET": "append-flow-secret",
-        "GH_BIN": str(fake_gh),
+        "GH_BIN": str(gh_bin),
         "HOME": str(tmp_path),
     }
     mint = _run(
@@ -95,6 +106,10 @@ def test_append_pr_body_consumes_grant(fake_gh: Path, tmp_path: Path):
     )
     assert proc.returncode == 0, proc.stdout + proc.stderr
     assert "updated:" in proc.stdout
+
+    remote_body = body_file.read_text(encoding="utf-8")
+    assert "## Follow-up: test" in remote_body
+    assert "operator note" in remote_body
 
     consume_check = _run(
         [

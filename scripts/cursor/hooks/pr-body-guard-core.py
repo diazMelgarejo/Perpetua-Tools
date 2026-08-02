@@ -164,7 +164,7 @@ def _shell_decision_lines(command_line: str) -> list[str]:
         backup_lines.extend(backups)
 
     if backup_lines:
-        return backup_lines + ["ALLOW"]
+        return [*backup_lines, "ALLOW"]
     return ["ALLOW"]
 
 

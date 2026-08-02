@@ -32,6 +32,7 @@ import re
 import secrets
 import subprocess
 import sys
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -174,12 +175,24 @@ def _read_fallback_secret_file() -> str | None:
         return None
 
 
-def _write_fallback_secret_file(secret: str) -> None:
-    FALLBACK_SECRET_PATH.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(str(FALLBACK_SECRET_PATH), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+def _validate_repo_slug(repo: str) -> None:
+    if "|" in repo or not repo.strip():
+        raise GrantError("grant repo must not contain pipe characters")
+
+
+def _write_private_file(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.unlink(missing_ok=True)
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    fd = os.open(str(path), flags, 0o600)
     with os.fdopen(fd, "w", encoding="utf-8") as handle:
-        handle.write(secret)
-        handle.write("\n")
+        handle.write(content)
+
+
+def _write_fallback_secret_file(secret: str) -> None:
+    _write_private_file(FALLBACK_SECRET_PATH, secret + "\n")
 
 
 def resolve_hmac_secret(allow_generate: bool = False) -> bytes:
@@ -251,24 +264,29 @@ def _grant_ttl_ok(issued_raw: str) -> bool:
     return 0 <= age <= GRANT_TTL_SECONDS
 
 
-def _lock_nonce_state() -> tuple[Any, dict[str, Any]]:
+@contextmanager
+def _locked_nonce_state():
     NONCE_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
     handle = open(NONCE_STATE_PATH, "a+", encoding="utf-8")
-    fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
-    handle.seek(0)
-    raw = handle.read()
-    if raw.strip():
-        try:
-            state = json.loads(raw)
-        except json.JSONDecodeError:
+    try:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        handle.seek(0)
+        raw = handle.read()
+        if raw.strip():
+            try:
+                state = json.loads(raw)
+            except json.JSONDecodeError:
+                state = {"nonces": {}}
+        else:
             state = {"nonces": {}}
-    else:
-        state = {"nonces": {}}
-    if "nonces" not in state or not isinstance(state["nonces"], dict):
-        state["nonces"] = {}
-    if "reservations" not in state or not isinstance(state.get("reservations"), dict):
-        state["reservations"] = {}
-    return handle, state
+        if "nonces" not in state or not isinstance(state["nonces"], dict):
+            state["nonces"] = {}
+        if "reservations" not in state or not isinstance(state.get("reservations"), dict):
+            state["reservations"] = {}
+        yield handle, state
+    finally:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        handle.close()
 
 
 def _write_nonce_state(handle: Any, state: dict[str, Any]) -> None:
@@ -318,8 +336,7 @@ def _reservation_blocks_verify(
     pr_number: str,
     content_digest: str,
 ) -> tuple[bool, str]:
-    handle, state = _lock_nonce_state()
-    try:
+    with _locked_nonce_state() as (_handle, state):
         _prune_nonce_state(state)
         entry = state.get("reservations", {}).get(nonce)
         if not entry:
@@ -327,9 +344,6 @@ def _reservation_blocks_verify(
         if _reservation_matches(entry, repo, pr_number, content_digest):
             return True, ""
         return False, "grant nonce reserved for a different append operation"
-    finally:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-        handle.close()
 
 
 def reserve_nonce_atomic(
@@ -339,8 +353,7 @@ def reserve_nonce_atomic(
     content_digest: str,
 ) -> tuple[bool, str]:
     """Reserve nonce before remote mutation. Idempotent for the same binding."""
-    handle, state = _lock_nonce_state()
-    try:
+    with _locked_nonce_state() as (handle, state):
         _prune_nonce_state(state)
         if nonce in state["nonces"]:
             return False, "grant nonce already consumed (replay blocked)"
@@ -359,15 +372,11 @@ def reserve_nonce_atomic(
         }
         _write_nonce_state(handle, state)
         return True, ""
-    finally:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-        handle.close()
 
 
 def mark_remote_applied_atomic(nonce: str) -> tuple[bool, str]:
     """Mark remote PR body mutation successful; required before consume."""
-    handle, state = _lock_nonce_state()
-    try:
+    with _locked_nonce_state() as (handle, state):
         _prune_nonce_state(state)
         reservations = state["reservations"]
         entry = reservations.get(nonce)
@@ -376,39 +385,27 @@ def mark_remote_applied_atomic(nonce: str) -> tuple[bool, str]:
         entry["remote_applied"] = True
         _write_nonce_state(handle, state)
         return True, ""
-    finally:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-        handle.close()
 
 
 def release_nonce_reservation_atomic(nonce: str) -> None:
     """Drop an in-flight reservation when remote mutation did not succeed."""
-    handle, state = _lock_nonce_state()
-    try:
+    with _locked_nonce_state() as (handle, state):
         _prune_nonce_state(state)
         entry = state.get("reservations", {}).get(nonce)
         if entry and not entry.get("remote_applied"):
             del state["reservations"][nonce]
             _write_nonce_state(handle, state)
-    finally:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-        handle.close()
 
 
 def nonce_is_consumed(nonce: str) -> bool:
-    handle, state = _lock_nonce_state()
-    try:
+    with _locked_nonce_state() as (_handle, state):
         _prune_nonce_state(state)
         return nonce in state["nonces"]
-    finally:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-        handle.close()
 
 
 def consume_nonce_atomic(nonce: str, require_remote_applied: bool = True) -> bool:
     """Mark nonce consumed once after remote success. Returns False if invalid."""
-    handle, state = _lock_nonce_state()
-    try:
+    with _locked_nonce_state() as (handle, state):
         _prune_nonce_state(state)
         if nonce in state["nonces"]:
             return False
@@ -421,9 +418,6 @@ def consume_nonce_atomic(nonce: str, require_remote_applied: bool = True) -> boo
             del state["reservations"][nonce]
         _write_nonce_state(handle, state)
         return True
-    finally:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-        handle.close()
 
 
 def verify_grant_fields(
@@ -434,8 +428,13 @@ def verify_grant_fields(
     action: str = DEFAULT_ACTION,
     check_nonce_consumed: bool = True,
 ) -> tuple[bool, str]:
+    try:
+        _validate_repo_slug(repo)
+    except GrantError as exc:
+        return False, str(exc)
+
     if fields.get("marker") != GRANT_MARKER:
-        if "operator-grant-v1" in str(fields):
+        if fields.get("marker") == "operator-grant-v1":
             return False, (
                 "operator-grant-v1 is no longer accepted; re-run grant with matching "
                 "--file or --message in an operator terminal"
@@ -602,13 +601,9 @@ def release_grant_for_append(
     if not nonce:
         return False, "grant missing grant-nonce"
     entry = None
-    handle, state = _lock_nonce_state()
-    try:
+    with _locked_nonce_state() as (_handle, state):
         _prune_nonce_state(state)
         entry = state.get("reservations", {}).get(nonce)
-    finally:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-        handle.close()
     if entry and not _reservation_matches(entry, repo, str(pr_number), digest):
         return False, "grant nonce reserved for a different append operation"
     release_nonce_reservation_atomic(nonce)
@@ -685,6 +680,7 @@ def mint_grant(
     message: str | None,
     cwd: Path | None = None,
 ) -> Path:
+    _validate_repo_slug(repo)
     digest = content_digest_for_append(file_path, message, cwd=cwd)
     secret = resolve_hmac_secret(allow_generate=True)
     issued_at = _now_utc().isoformat().replace("+00:00", "Z")
@@ -710,9 +706,7 @@ def mint_grant(
         f"grant-nonce={nonce}\n"
         f"token={token}\n"
     )
-    fd = os.open(str(ACK_PATH), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-    with os.fdopen(fd, "w", encoding="utf-8") as handle:
-        handle.write(body)
+    _write_private_file(ACK_PATH, body)
     return ACK_PATH
 
 
@@ -908,8 +902,11 @@ def main(argv: list[str] | None = None) -> int:
     reconcile_p.set_defaults(func=_cmd_reconcile)
 
     args = parser.parse_args(argv)
-    if args.command != "reconcile" and not args.file and not args.message:
-        parser.error("provide --file or --message")
+    if args.command != "reconcile":
+        if not args.file and not args.message:
+            parser.error("provide --file or --message")
+        if args.file and args.message:
+            parser.error("provide --file or --message, not both")
     return args.func(args)
 
 

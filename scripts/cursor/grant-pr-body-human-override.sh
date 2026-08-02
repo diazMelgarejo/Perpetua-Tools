@@ -16,6 +16,11 @@ if [[ -n "${CURSOR_AGENT:-}" ]] || [[ -n "${CI:-}" ]]; then
   exit 1
 fi
 
+if [[ $# -lt 2 && "${1:-}" != "-h" && "${1:-}" != "--help" ]]; then
+  echo "error: usage: grant-pr-body-human-override.sh <owner/repo> <pr-number> --file|--message" >&2
+  exit 1
+fi
+
 repo_slug="${1:-}"
 pr_number="${2:-}"
 shift 2 || true

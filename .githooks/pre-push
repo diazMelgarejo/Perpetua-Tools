@@ -11,7 +11,9 @@ trap 'rm -f "$push_refs"' EXIT
 cat >"$push_refs"
 
 # Guard: scrub macOS .DS_Store from .git/ internals (see scrub_dsstore.sh).
-bash "$ROOT/scripts/git/scrub_dsstore.sh" || true
+if [[ -x "$ROOT/scripts/git/scrub_dsstore.sh" ]]; then
+  bash "$ROOT/scripts/git/scrub_dsstore.sh" || true
+fi
 
 # Guard: never push while a --no-commit merge/cherry-pick/revert is still
 # uncommitted (see check_no_pending_merge.sh for the incident this prevents).
@@ -25,8 +27,9 @@ range_for_ref() {
   local local_oid="$1"
   local remote_oid="$2"
   if [[ "$remote_oid" == "$zero" ]]; then
-    if git rev-parse --verify "$upstream_ref" >/dev/null 2>&1; then
-      echo "$(git rev-parse "$upstream_ref")..${local_oid}"
+    local upstream_oid
+    if upstream_oid="$(git rev-parse --verify "$upstream_ref" 2>/dev/null)"; then
+      printf '%s..%s\n' "$upstream_oid" "$local_oid"
     else
       echo "${local_oid}"
     fi
