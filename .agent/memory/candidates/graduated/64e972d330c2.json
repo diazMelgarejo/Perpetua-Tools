@@ -1,0 +1,43 @@
+{
+  "id": "64e972d330c2",
+  "key": "manual_64e972",
+  "name": "manual_64e972",
+  "claim": "When markdownlint-cli2 v0.17.2 lints explicit file globs in CI, root .markdownlint.json filter overrides do not apply to catalog SKILL.md files outside the skills tree \u2014 add a per-directory .markdownlint-cli2.jsonc (e.g. line_length 500 for bin/orama-system/) and delete conflicting .markdownlint.json.",
+  "conditions": [
+    "CI",
+    "MD013",
+    "SKILL.md",
+    "cli2",
+    "filter",
+    "markdownlint"
+  ],
+  "evidence_ids": [
+    "2026-08-01T16:22:59.457445+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-01T16:22:59.457445+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-01T16:22:59.457445+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-01T16:22:59.533279+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama PR #255 CI runs 30704939323 and 30706305712 failed MD013 on bin/orama-system/SKILL.md until per-directory cli2 config landed in commits d6d3763a and 861f78ca.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-01T16:22:59.457445+00:00"
+      ],
+      "lessons_sha": "e0a0dcd77a83"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-01T16:22:59.533269+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama PR #255 CI runs 30704939323 and 30706305712 failed MD013 on bin/orama-system/SKILL.md until per-directory cli2 config landed in commits d6d3763a and 861f78ca."
+}

@@ -6,8 +6,8 @@ alwaysApply: true
 # Append-only PR body workflow (Layers 1–6 — after human override only)
 
 **Layer 0 applies first:** `.cursor/rules/pr-body-comment-only.mdc` — Cursor agents
-**comment only** by default. This file governs body writes **only** when the human
-set `CURSOR_PR_BODY_HUMAN_OVERRIDE_ACK=1` in the current session.
+**comment only** by default. This file governs body writes **only** after the operator
+runs `scripts/cursor/grant-pr-body-human-override.sh` (interactive; not agent-runnable).
 
 `ManagePullRequest update_pr`, `gh pr edit`, and GitHub's API **replace the entire PR body**
 when `body` is set. Passing only the latest follow-up paragraph deletes the original Summary.

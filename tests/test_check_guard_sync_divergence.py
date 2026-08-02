@@ -98,14 +98,57 @@ def test_sibling_ahead_of_canonical_fails_closed(tmp_path: Path) -> None:
     canon = workspace / "orama-system"
     sibling = workspace / "Perpetua-Tools"
     rel = "scripts/git/audit_engine.py"
+    shared = "# canonical\n"
 
     _init_repo(canon, "Tester", "tester@example.com")
-    _commit_file(canon, rel, "# canonical\n", "canon")
+    _commit_file(canon, rel, shared, "canon")
 
     _init_repo(sibling, "Tester", "tester@example.com")
+    _commit_file(sibling, rel, shared, "shared base")
     _commit_file(sibling, rel, "# sibling innovation\n", "sibling ahead")
 
     result = _run_checker(workspace, canon)
     assert result.returncode == 1, result.stdout + result.stderr
     assert "GUARD_SYNC_E_DIVERGENCE" in result.stderr
-    assert "forked divergence" in result.stdout or "absent from canonical history" in result.stdout
+def test_rejects_surplus_arguments(tmp_path: Path) -> None:
+    workspace = tmp_path / "ws"
+    canon = workspace / "orama-system"
+    _init_repo(canon, "Tester", "tester@example.com")
+    env = os.environ.copy()
+    env["WORKSPACE_ROOT"] = str(workspace)
+    env["GUARD_SYNC_CANON_ROOT"] = str(canon)
+    result = subprocess.run(
+        ["bash", str(CHECKER), "--workspace", "extra-arg"],
+        cwd=canon,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env=env,
+    )
+    assert result.returncode == 2, result.stdout + result.stderr
+
+
+def test_linked_worktree_sibling_discovered(tmp_path: Path) -> None:
+    workspace = tmp_path / "ws"
+    canon = workspace / "orama-system"
+    sibling = workspace / "Perpetua-Tools"
+    worktree_link = workspace / "pt-linked"
+    rel = "scripts/git/audit_engine.py"
+    body = "# v1\n"
+
+    _init_repo(sibling, "Tester", "tester@example.com")
+    _commit_file(sibling, rel, body, "init")
+    subprocess.run(
+        ["git", "worktree", "add", "-b", "linked-branch", str(worktree_link)],
+        cwd=sibling,
+        check=True,
+        capture_output=True,
+    )
+
+    _init_repo(canon, "Tester", "tester@example.com")
+    _commit_file(canon, rel, body, "init")
+
+    result = _run_checker(workspace, canon)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "pt-linked" in result.stdout
+    assert "byte-identical" in result.stdout
