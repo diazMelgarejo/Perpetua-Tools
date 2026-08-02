@@ -150,5 +150,5 @@ def test_linked_worktree_sibling_discovered(tmp_path: Path) -> None:
 
     result = _run_checker(workspace, canon)
     assert result.returncode == 0, result.stdout + result.stderr
-    assert "pt-linked" in result.stdout or "Perpetua-Tools" in result.stdout
+    assert "pt-linked" in result.stdout
     assert "byte-identical" in result.stdout

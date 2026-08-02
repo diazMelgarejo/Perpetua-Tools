@@ -4,21 +4,20 @@
 Layer 0 (default): Cursor agents NEVER mutate an existing PR description.
                   Use ManagePullRequest post_comment or gh pr comment only.
 
-Human override: operator runs grant-pr-body-human-override.sh (interactive TTY).
-                  Hooks then allow only append-pr-body.sh — never direct body writes.
+Human override: operator mints operator-grant-v2 (HMAC + digest binding).
+                  Hooks then allow only append-pr-body.sh with matching grant.
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-GRANT_MARKER = "operator-grant-v1"
-GRANT_TTL_SECONDS = 8 * 3600
-ACK_PATH = Path.home() / ".cursor" / "pr-body-human-override-ack"
+SCRIPT_DIR = Path(__file__).resolve().parent
+GRANT_LIB_PATH = SCRIPT_DIR.parent / "pr-body-grant-lib.py"
 
 DENY_LAYER0_AGENT = (
     "LAYER-0 BLOCK: Cursor agents must NOT change PR descriptions automatically. "
@@ -39,43 +38,16 @@ DENY_OVERRIDE_SCOPE = (
 )
 
 
-def _parse_grant_timestamp(raw: str) -> datetime | None:
-    try:
-        return datetime.fromisoformat(raw.replace("Z", "+00:00"))
-    except ValueError:
-        return None
+def _load_grant_lib():
+    spec = importlib.util.spec_from_file_location("pr_body_grant_lib", GRANT_LIB_PATH)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load grant lib at {GRANT_LIB_PATH}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
-def _human_override_active() -> bool:
-    if not ACK_PATH.is_file():
-        return False
-    try:
-        text = ACK_PATH.read_text(encoding="utf-8")
-    except OSError:
-        return False
-    if GRANT_MARKER not in text:
-        return False
-    match = re.search(r"^issued-at=([^\s]+)", text, re.MULTILINE)
-    if not match:
-        return False
-    issued = _parse_grant_timestamp(match.group(1))
-    if issued is None:
-        return False
-    if issued.tzinfo is None:
-        issued = issued.replace(tzinfo=timezone.utc)
-    age = (datetime.now(timezone.utc) - issued.astimezone(timezone.utc)).total_seconds()
-    return 0 <= age <= GRANT_TTL_SECONDS
-
-
-def _normalize_github_repo_slug(remote: str) -> str:
-    repo = re.sub(
-        r"^(?:https?://github\.com/|git@github\.com:|ssh://git@github\.com/)",
-        "",
-        remote.strip(),
-    )
-    if repo.endswith(".git"):
-        repo = repo[:-4]
-    return repo.strip("/")
+_grant_lib = _load_grant_lib()
 
 
 def _parse_input(raw: str) -> dict[str, Any]:
@@ -123,25 +95,44 @@ def _manage_pr_decision(data: dict[str, Any]) -> tuple[str, str | None]:
 
 
 def _shell_segments(command_line: str) -> list[str]:
-    segments = [part.strip() for part in re.split(r"\s*(?:&&|;|\|\|)\s*", command_line) if part.strip()]
+    segments = [
+        part.strip()
+        for part in re.split(r"\s*(?:&&|;|\|\||\n)\s*", command_line)
+        if part.strip()
+    ]
     return segments or [command_line.strip()]
 
 
-def _segment_denies_pr_body_write(segment: str) -> tuple[str, str | None]:
+def _segment_inspect(segment: str) -> tuple[str, str | None, list[str]]:
     seg = segment.strip()
     if not seg:
-        return "ALLOW", None
+        return "ALLOW", None, []
 
     if re.search(r"\bgh\s+pr\s+comment\b", seg):
-        return "ALLOW", None
+        return "ALLOW", None, []
 
     if "append-pr-body.sh" in seg:
-        if not _human_override_active():
-            return "DENY", DENY_LAYER0_AGENT
-        return "ALLOW", None
+        parsed = _grant_lib.parse_append_segment(seg)
+        if parsed is None:
+            return "DENY", (
+                "append-pr-body.sh requires --file or --message in the same command"
+            ), []
+        repo, pr, file_path, message = parsed
+        ok, err = _grant_lib.verify_grant_for_append(
+            repo,
+            pr,
+            file_path,
+            message,
+            consume=False,
+        )
+        if not ok:
+            return "DENY", err or DENY_LAYER0_AGENT, []
+        return "ALLOW", None, [f"BACKUP|{repo}|{pr}"]
 
-    if re.search(r"\bgh\s+pr\s+edit\b", seg) and re.search(r"(?:--body\b|-b\b|--body-file\b)", seg):
-        return "DENY", DENY_APPEND_ONLY
+    if re.search(r"\bgh\s+pr\s+edit\b", seg) and re.search(
+        r"(?:--body\b|-b\b|--body-file\b)", seg
+    ):
+        return "DENY", DENY_APPEND_ONLY, []
 
     if re.search(r"\bgh\s+api\b", seg):
         lowered = seg.lower()
@@ -150,26 +141,31 @@ def _segment_denies_pr_body_write(segment: str) -> tuple[str, str | None]:
             for token in ("pulls", "updatepullrequest", "pullrequestid", "pullrequest")
         )
         if is_pr_mutation and ("body" in lowered or "description" in lowered):
-            return "DENY", DENY_APPEND_ONLY
+            return "DENY", DENY_APPEND_ONLY, []
 
     if re.search(r"\bManagePullRequest\b", seg, re.IGNORECASE) and re.search(
         r"\bupdate_pr\b", seg, re.IGNORECASE
     ) and re.search(r"\bbody\b", seg, re.IGNORECASE):
-        return "DENY", DENY_OVERRIDE_SCOPE
+        return "DENY", DENY_OVERRIDE_SCOPE, []
 
-    return "ALLOW", None
+    return "ALLOW", None, []
 
 
-def _shell_decision(command_line: str) -> tuple[str, str | None]:
+def _shell_decision_lines(command_line: str) -> list[str]:
     cmd = command_line.strip()
     if not cmd:
-        return "ALLOW", None
+        return ["ALLOW"]
 
+    backup_lines: list[str] = []
     for segment in _shell_segments(cmd):
-        decision, msg = _segment_denies_pr_body_write(segment)
+        decision, msg, backups = _segment_inspect(segment)
         if decision == "DENY":
-            return decision, msg
-    return "ALLOW", None
+            return [f"DENY|{msg}" if msg else "DENY"]
+        backup_lines.extend(backups)
+
+    if backup_lines:
+        return backup_lines + ["ALLOW"]
+    return ["ALLOW"]
 
 
 def main() -> None:
@@ -178,9 +174,8 @@ def main() -> None:
     data = _parse_input(raw)
 
     if mode == "shell":
-        command_line = str(data.get("command") or data.get("cmd") or "")
-        decision, msg = _shell_decision(command_line)
-        print(decision if not msg else f"{decision}|{msg}")
+        for line in _shell_decision_lines(str(data.get("command") or data.get("cmd") or "")):
+            print(line)
         return
 
     decision, msg = _manage_pr_decision(data)

@@ -48,3 +48,49 @@ pr_body_backup_if_needed() {
   printf '%s\n' "$body" >"$path"
   printf 'PR-BODY-BACKUP: %s (%s)\n' "$path" "$reason" >&2
 }
+
+# Run pr-body-guard-core and optional hook backup preflight.
+# Sets PR_BODY_GUARD_DECISION (ALLOW|DENY) and PR_BODY_GUARD_DENY_MSG.
+pr_body_run_guard() {
+  local hook_dir="$1"
+  local mode="$2"
+  local backup_reason="$3"
+  local input="$4"
+
+  PR_BODY_GUARD_DECISION="ALLOW"
+  PR_BODY_GUARD_DENY_MSG=""
+
+  local guard_output=""
+  local guard_status=0
+  guard_output="$(python3 "$hook_dir/pr-body-guard-core.py" "$mode" <<<"$input" 2>&1)" || guard_status=$?
+
+  if [[ "$guard_status" -ne 0 ]]; then
+    PR_BODY_GUARD_DECISION="DENY"
+    PR_BODY_GUARD_DENY_MSG="PR body guard internal error (fail-closed)."
+    return 0
+  fi
+
+  while IFS= read -r line; do
+    case "$line" in
+      BACKUP\|*)
+        local repo="${line#BACKUP|}"
+        local pr="${repo##*|}"
+        repo="${repo%|*}"
+        if ! pr_body_backup_if_needed "$repo" "$pr" "$backup_reason"; then
+          PR_BODY_GUARD_DECISION="DENY"
+          PR_BODY_GUARD_DENY_MSG="PR body backup failed (fail-closed)."
+          break
+        fi
+        ;;
+      DENY\|*)
+        PR_BODY_GUARD_DECISION="DENY"
+        PR_BODY_GUARD_DENY_MSG="${line#DENY|}"
+        ;;
+      DENY)
+        PR_BODY_GUARD_DECISION="DENY"
+        ;;
+      ALLOW)
+        ;;
+    esac
+  done <<<"$guard_output"
+}

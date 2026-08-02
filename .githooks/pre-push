@@ -21,6 +21,20 @@ bash "$ROOT/scripts/git/scrub_dsstore.sh" || true
 
 upstream_ref="${GIT_PUSH_UPSTREAM:-origin/main}"
 
+range_for_ref() {
+  local local_oid="$1"
+  local remote_oid="$2"
+  if [[ "$remote_oid" == "$zero" ]]; then
+    if git rev-parse --verify "$upstream_ref" >/dev/null 2>&1; then
+      echo "$(git rev-parse "$upstream_ref")..${local_oid}"
+    else
+      echo "${local_oid}"
+    fi
+  else
+    echo "${remote_oid}..${local_oid}"
+  fi
+}
+
 # Guard-sync anti-clobber: block push when siblings carry guard mutations absent
 # from canonical history (see check-guard-sync-divergence.sh).
 guard_touch=0
@@ -28,15 +42,7 @@ while read -r local_ref local_oid remote_ref remote_oid; do
   [[ "$local_ref" =~ refs/heads/ ]] || continue
   [[ "$local_oid" == "$zero" ]] && continue
 
-  if [[ "$remote_oid" == "$zero" ]]; then
-    if git rev-parse --verify "$upstream_ref" >/dev/null 2>&1; then
-      guard_range="$(git rev-parse "$upstream_ref")..${local_oid}"
-    else
-      guard_range="${local_oid}"
-    fi
-  else
-    guard_range="${remote_oid}..${local_oid}"
-  fi
+  guard_range="$(range_for_ref "$local_oid" "$remote_oid")"
 
   if ! git rev-list "$guard_range" >/dev/null 2>&1; then
     continue
@@ -59,7 +65,7 @@ if [[ "$guard_touch" == "1" ]] && [[ "${GUARD_SYNC_SKIP_DIVERGENCE_CHECK:-0}" !=
   WORKSPACE_ROOT="${WORKSPACE_ROOT:-$(cd "$ROOT/.." && pwd)}" \
     bash "$ROOT/scripts/git/check-guard-sync-divergence.sh" --workspace || {
     echo "pre-push: blocked — guard-sync divergence (promote siblings upstream first)" >&2
-    echo "  See: scripts/git/check-guard-sync-divergence.sh and .agent/memory/working/GUARD_SYNC_DIVERGENCE_GUARD_2026-08-01.md" >&2
+    echo "  See: bin/orama-system/skills/guard-sync-divergence-guard/SKILL.md" >&2
     exit 1
   }
 fi
@@ -91,15 +97,7 @@ while read -r local_ref local_oid remote_ref remote_oid; do
     exit 1
   fi
 
-  if [[ "$remote_oid" == "$zero" ]]; then
-    if git rev-parse --verify "$upstream_ref" >/dev/null 2>&1; then
-      range="$(git rev-parse "$upstream_ref")..${local_oid}"
-    else
-      range="${local_oid}"
-    fi
-  else
-    range="${remote_oid}..${local_oid}"
-  fi
+  range="$(range_for_ref "$local_oid" "$remote_oid")"
 
   if ! git rev-list "$range" >/dev/null 2>&1; then
     continue

@@ -217,11 +217,26 @@ for rel in "${GUARD_SYNC_DATA_FILES[@]}"; do
 done
 
 # Cursor Cloud agent helpers (orama canonical — synced to PT + AlphaClaw, not periscope).
-for cursor_rel in append-pr-body.sh; do
+for cursor_rel in \
+  append-pr-body.sh \
+  grant-pr-body-human-override.sh \
+  pr-body-grant-lib.py; do
   [[ -f "$source_root/scripts/cursor/$cursor_rel" ]] || continue
   atomic_install_file \
     "$source_root/scripts/cursor/$cursor_rel" \
     "$target/scripts/cursor/$cursor_rel" \
+    0755
+done
+
+for cursor_hook_rel in \
+  hooks/pr-body-guard-core.py \
+  hooks/pr-body-backup-lib.sh \
+  hooks/before-shell-pr-body-guard.sh \
+  hooks/before-mcp-pr-body-guard.sh; do
+  [[ -f "$source_root/scripts/cursor/$cursor_hook_rel" ]] || continue
+  atomic_install_file \
+    "$source_root/scripts/cursor/$cursor_hook_rel" \
+    "$target/scripts/cursor/$cursor_hook_rel" \
     0755
 done
 if [[ -f "$source_root/.cursor/commands/pr.md" ]]; then

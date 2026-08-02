@@ -123,14 +123,20 @@ if ! command -v gh >/dev/null 2>&1; then
   exit 1
 fi
 
-grant_file="${HOME}/.cursor/pr-body-human-override-ack"
-if [[ ! -f "$grant_file" ]] || ! grep -q '^operator-grant-v1$' "$grant_file"; then
-  echo "error: operator grant required — run scripts/cursor/grant-pr-body-human-override.sh" >&2
-  echo "  (interactive operator terminal only; agents cannot self-grant)" >&2
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+GRANT_LIB="$SCRIPT_DIR/pr-body-grant-lib.py"
+
+verify_cmd=(python3 "$GRANT_LIB" verify --repo "$repo_slug" --pr "$pr_number")
+if [[ -n "$append_file" ]]; then
+  verify_cmd+=(--file "$append_file")
+else
+  verify_cmd+=(--message "$append_message")
+fi
+if ! "${verify_cmd[@]}"; then
+  echo "hint: operator runs grant-pr-body-human-override.sh with the same --file|--message" >&2
   exit 1
 fi
 
-append_block=""
 if [[ -n "$append_file" ]]; then
   append_block="$(cat "$append_file")"
 else
@@ -201,5 +207,16 @@ out="$(mktemp)"
 trap 'rm -f "$out"' EXIT
 printf '%s\n' "$merged" >"$out"
 gh pr edit "$pr_number" --repo "$repo_slug" --body-file "$out"
+
+consume_cmd=(python3 "$GRANT_LIB" consume --repo "$repo_slug" --pr "$pr_number")
+if [[ -n "$append_file" ]]; then
+  consume_cmd+=(--file "$append_file")
+else
+  consume_cmd+=(--message "$append_message")
+fi
+if ! "${consume_cmd[@]}"; then
+  echo "error: grant consume failed after PR body update — treat as security incident" >&2
+  exit 1
+fi
 
 echo "updated: https://github.com/${repo_slug}/pull/${pr_number}"
