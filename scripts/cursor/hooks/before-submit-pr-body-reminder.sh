@@ -28,8 +28,9 @@ print(json.dumps({
         "LAYER-0 PR BODY RULE (Cursor agents): NEVER automatically change an existing "
         "PR description. Use post_comment / gh pr comment ONLY. "
         "ManagePullRequest update_pr with body=, gh pr edit, and append-pr-body.sh are "
-        "BLOCKED by hooks unless the human set CURSOR_PR_BODY_HUMAN_OVERRIDE_ACK=1 — "
-        "then append-only rules still apply (no delta-only writes)."
+        "BLOCKED by hooks unless the operator issued a grant via "
+        "grant-pr-body-human-override.sh — then only append-pr-body.sh is allowed "
+        "(no delta-only writes, no direct gh pr edit / gh api)."
     ),
 }))
 PY

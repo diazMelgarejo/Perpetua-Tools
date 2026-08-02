@@ -2,41 +2,38 @@
 set -euo pipefail
 ROOT="$(git rev-parse --show-toplevel)"
 
-"$ROOT/scripts/git/ensure_hooks_installed.sh"
-
-# Local-runtime overlay: block committing discovery-written LAN IPs in config YAML.
-export PYTHONUTF8=1
-export PYTHONIOENCODING=utf-8
-for py in \
-  "$ROOT/.venv/Scripts/python.exe" \
-  "$ROOT/.venv/bin/python" \
-  python3 \
-  python; do
-  if command -v "$py" >/dev/null 2>&1 && "$py" -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 9) else 1)" >/dev/null 2>&1; then
-  if "$py" "$ROOT/scripts/git/check_local_runtime_overlay.py" "$ROOT"; then
-    :
-  else
-    exit 1
-  fi
-  break
-  fi
-done
-
-# Full hygiene gate — same checks as CI (identity, forbidden tokens, paths, etc.).
-export PYTHONUTF8=1
-export PYTHONIOENCODING=utf-8
-if [[ -f "$ROOT/scripts/review/repo_hygiene.py" ]]; then
-    for py in \
-    "$ROOT/.venv/Scripts/python.exe" \
-    "$ROOT/.venv/bin/python" \
-    python3 \
-    python; do
-    if command -v "$py" >/dev/null 2>&1 && "$py" -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 9) else 1)" >/dev/null 2>&1; then
-      exec "$py" "$ROOT/scripts/review/repo_hygiene.py" "$ROOT"
-    fi
-  done
-  echo "[pre-commit] repo_hygiene.py requires Python >= 3.9; none found on PATH" >&2
-  exit 1
+# Guard: scrub macOS .DS_Store from .git/ internals before hygiene runs.
+# .gitignore cannot cover .git/; Finder drops .DS_Store here and it trips
+# repo_hygiene's "metadata inside git refs" gate. Best-effort, non-blocking.
+if [[ -x "$ROOT/scripts/git/scrub_dsstore.sh" ]]; then
+  bash "$ROOT/scripts/git/scrub_dsstore.sh" || true
 fi
 
+# Fast-fail: private LAN IPs in tracked config (3080/5080 endpoints → env vars).
+if [ -f "$ROOT/scripts/hooks/no_committed_lan_topology.py" ]; then
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "ERROR: python3 required for LAN topology pre-commit gate" >&2
+    exit 1
+  fi
+  python3 "$ROOT/scripts/hooks/no_committed_lan_topology.py" || exit 1
+fi
+
+# Canonical hygiene gate — the SAME check CI runs (scripts/review/repo_hygiene.py):
+# commit identity, forbidden tokens, workstation/personal paths, secrets, bidi
+# controls, markdown-link hygiene, etc. Running it here catches a leak BEFORE it
+# enters history, so the expunge-git scrub is a last resort, not the routine
+# (#1802 follow-up). repo_hygiene.py subsumes check_identity (kept in sync), so
+# this preserves the prior identity gate and adds the rest.
+if [ -f "$ROOT/scripts/review/repo_hygiene.py" ]; then
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "error: scripts/review/repo_hygiene.py exists but python3 is not available" >&2
+    echo "error: refusing to silently fall back to the narrower identity-only check" >&2
+    echo "error: install python3, or run 'git commit --no-verify' if you understand the risk" >&2
+    exit 1
+  fi
+  exec python3 "$ROOT/scripts/review/repo_hygiene.py" "$ROOT"
+fi
+
+# Fallback for clones that predate the hygiene script (script itself
+# missing, not merely python3 missing): identity check only.
 exec "$ROOT/scripts/git/check_identity.sh"

@@ -4,32 +4,50 @@
 Layer 0 (default): Cursor agents NEVER mutate an existing PR description.
                   Use ManagePullRequest post_comment or gh pr comment only.
 
-Human override: set CURSOR_PR_BODY_HUMAN_OVERRIDE_ACK=1, then append-only rules
-(Layers 1–6) apply — still no delta-only writes.
+Human override: operator mints operator-grant-v2 (HMAC + digest binding).
+                  Hooks then allow only append-pr-body.sh with matching grant.
 """
 from __future__ import annotations
 
+import importlib.util
 import json
-import os
 import re
 import sys
+from pathlib import Path
 from typing import Any
 
-HUMAN_OVERRIDE = os.environ.get("CURSOR_PR_BODY_HUMAN_OVERRIDE_ACK") == "1"
+SCRIPT_DIR = Path(__file__).resolve().parent
+GRANT_LIB_PATH = SCRIPT_DIR.parent / "pr-body-grant-lib.py"
 
 DENY_LAYER0_AGENT = (
     "LAYER-0 BLOCK: Cursor agents must NOT change PR descriptions automatically. "
     "Use ManagePullRequest post_comment or `gh pr comment` only. "
-    "Never ManagePullRequest update_pr with body=, gh pr edit, or append-pr-body.sh "
-    "unless the human explicitly set CURSOR_PR_BODY_HUMAN_OVERRIDE_ACK=1 — then "
-    "follow append-only rules in bin/orama-system/skills/cursor-pr-body/SKILL.md."
+    "Authorized body edits require an operator grant and "
+    "scripts/cursor/append-pr-body.sh only."
 )
 
 DENY_APPEND_ONLY = (
-    "APPEND-ONLY BLOCK: PR body writes require READ→BACKUP→MERGE→WRITE. "
-    "Use scripts/cursor/append-pr-body.sh with a full integrative merged body, "
-    "never delta-only update_pr body=."
+    "APPEND-ONLY BLOCK: PR body writes require READ→BACKUP→MERGE→WRITE via "
+    "scripts/cursor/append-pr-body.sh with a full integrative merged body, "
+    "never ManagePullRequest update_pr, gh pr edit, or gh api body mutations."
 )
+
+DENY_OVERRIDE_SCOPE = (
+    "OVERRIDE SCOPE: operator grant permits append-pr-body.sh only — "
+    "not ManagePullRequest update_pr, gh pr edit, or gh api body writes."
+)
+
+
+def _load_grant_lib():
+    spec = importlib.util.spec_from_file_location("pr_body_grant_lib", GRANT_LIB_PATH)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load grant lib at {GRANT_LIB_PATH}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_grant_lib = _load_grant_lib()
 
 
 def _parse_input(raw: str) -> dict[str, Any]:
@@ -63,84 +81,91 @@ def _manage_pr_decision(data: dict[str, Any]) -> tuple[str, str | None]:
 
     ti = _tool_input(data)
     action = str(ti.get("action") or "")
-    body = ti.get("body")
 
     if action == "post_comment":
         return "ALLOW", None
 
-    if action == "update_pr" and body:
-        if not HUMAN_OVERRIDE:
-            return "DENY", DENY_LAYER0_AGENT
-        return "ALLOW", None
+    if action == "update_pr" and "body" in ti:
+        return "DENY", DENY_OVERRIDE_SCOPE
 
-    if action == "create_pr" and body and ti.get("draft") is not False:
-        # Initial PR creation may include body; existing-PR updates are the pain point.
+    if action == "create_pr" and ti.get("body") and ti.get("draft") is not False:
         return "ALLOW", None
 
     return "ALLOW", None
 
 
-def _shell_decision(command_line: str) -> tuple[str, str | None]:
+def _shell_segments(command_line: str) -> list[str]:
+    segments = [
+        part.strip()
+        for part in re.split(r"\s*(?:&&|;|\|\||\n)\s*", command_line)
+        if part.strip()
+    ]
+    return segments or [command_line.strip()]
+
+
+def _segment_inspect(segment: str) -> tuple[str, str | None, list[str]]:
+    seg = segment.strip()
+    if not seg:
+        return "ALLOW", None, []
+
+    if re.search(r"\bgh\s+pr\s+comment\b", seg):
+        return "ALLOW", None, []
+
+    if "append-pr-body.sh" in seg:
+        parsed = _grant_lib.parse_append_segment(seg)
+        if parsed is None:
+            return "DENY", (
+                "append-pr-body.sh requires --file or --message in the same command"
+            ), []
+        repo, pr, file_path, message = parsed
+        ok, err = _grant_lib.verify_grant_for_append(
+            repo,
+            pr,
+            file_path,
+            message,
+            consume=False,
+        )
+        if not ok:
+            return "DENY", err or DENY_LAYER0_AGENT, []
+        return "ALLOW", None, [f"BACKUP|{repo}|{pr}"]
+
+    if re.search(r"\bgh\s+pr\s+edit\b", seg) and re.search(
+        r"(?:--body\b|-b\b|--body-file\b)", seg
+    ):
+        return "DENY", DENY_APPEND_ONLY, []
+
+    if re.search(r"\bgh\s+api\b", seg):
+        lowered = seg.lower()
+        is_pr_mutation = any(
+            token in lowered
+            for token in ("pulls", "updatepullrequest", "pullrequestid", "pullrequest")
+        )
+        if is_pr_mutation and ("body" in lowered or "description" in lowered):
+            return "DENY", DENY_APPEND_ONLY, []
+
+    if re.search(r"\bManagePullRequest\b", seg, re.IGNORECASE) and re.search(
+        r"\bupdate_pr\b", seg, re.IGNORECASE
+    ) and re.search(r"\bbody\b", seg, re.IGNORECASE):
+        return "DENY", DENY_OVERRIDE_SCOPE, []
+
+    return "ALLOW", None, []
+
+
+def _shell_decision_lines(command_line: str) -> list[str]:
     cmd = command_line.strip()
     if not cmd:
-        return "ALLOW", None
+        return ["ALLOW"]
 
-    # Comments always OK.
-    if re.search(r"\bgh\s+pr\s+comment\b", cmd):
-        return "ALLOW", None
+    backup_lines: list[str] = []
+    for segment in _shell_segments(cmd):
+        decision, msg, backups = _segment_inspect(segment)
+        if decision == "DENY":
+            return [f"DENY|{msg}" if msg else "DENY"]
+        backup_lines.extend(backups)
 
-    if "append-pr-body.sh" in cmd:
-        if not HUMAN_OVERRIDE:
-            return "DENY", DENY_LAYER0_AGENT
-        return "ALLOW", None
-
-    if re.search(r"\bgh\s+pr\s+edit\b", cmd):
-        if re.search(r"--body\b", cmd) and "--body-file" not in cmd:
-            return "DENY", DENY_APPEND_ONLY
-        if "--body-file" in cmd and not HUMAN_OVERRIDE:
-            return "DENY", DENY_LAYER0_AGENT
-        if "--body-file" in cmd:
-            return "ALLOW", None
-        return "ALLOW", None
-
-    if re.search(r"\bgh\s+api\b", cmd) and "pulls" in cmd:
-        lowered = cmd.lower()
-        if "body" in lowered or "description" in lowered:
-            if not HUMAN_OVERRIDE:
-                return "DENY", DENY_LAYER0_AGENT
-            return "ALLOW", None
-
-    return "ALLOW", None
-
-
-def backup_target(data: dict[str, Any]) -> tuple[str, str] | None:
-    ti = _tool_input(data)
-    remote = str(ti.get("remote_url") or ti.get("remoteUrl") or "")
-    pr_number = ti.get("pr_number") or ti.get("prNumber")
-    if remote and pr_number and str(pr_number).isdigit():
-        repo = remote.replace("https://github.com/", "").replace("http://github.com/", "").strip("/")
-        if repo:
-            return repo, str(pr_number)
-    return None
-
-
-def shell_backup_target(command_line: str) -> tuple[str, str] | None:
-    cmd = command_line
-    repo = ""
-    pr = ""
-    m = re.search(r"--repo[[:space:]]+([^\s]+)", cmd)
-    if m:
-        repo = m.group(1)
-    m = re.search(r"gh[[:space:]]+pr[[:space:]]+view[[:space:]]+([0-9]+)", cmd)
-    if m:
-        pr = m.group(1)
-    if not repo:
-        m = re.search(r"github\.com/([^/]+/[^/\s]+)", cmd)
-        if m:
-            repo = m.group(1)
-    if repo and pr:
-        return repo, pr
-    return None
+    if backup_lines:
+        return [*backup_lines, "ALLOW"]
+    return ["ALLOW"]
 
 
 def main() -> None:
@@ -149,18 +174,9 @@ def main() -> None:
     data = _parse_input(raw)
 
     if mode == "shell":
-        command_line = str(data.get("command") or data.get("cmd") or "")
-        decision, msg = _shell_decision(command_line)
-        if decision == "ALLOW" and re.search(r"\bgh\s+pr\s+view\b", command_line) and "body" in command_line:
-            target = shell_backup_target(command_line)
-            if target:
-                print(f"BACKUP|{target[0]}|{target[1]}")
-        print(decision if not msg else f"{decision}|{msg}")
+        for line in _shell_decision_lines(str(data.get("command") or data.get("cmd") or "")):
+            print(line)
         return
-
-    target = backup_target(data)
-    if target:
-        print(f"BACKUP|{target[0]}|{target[1]}")
 
     decision, msg = _manage_pr_decision(data)
     print(decision if not msg else f"{decision}|{msg}")
