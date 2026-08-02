@@ -98,8 +98,10 @@ _collect_targets() {
   if [[ "${1:-}" == "--workspace" ]]; then
     local d
     for d in "$WORKSPACE_ROOT"/*; do
-      [[ -d "$d/.git" ]] || continue
-      TARGETS+=("$d")
+      [[ -d "$d" ]] || continue
+      local top
+      top="$(git -C "$d" rev-parse --show-toplevel 2>/dev/null)" || continue
+      TARGETS+=("$top")
     done
     return 0
   fi
@@ -115,7 +117,7 @@ _collect_targets() {
   _usage
 }
 
-[[ $# -ge 1 ]] || _usage
+[[ $# -eq 1 ]] || _usage
 _collect_targets "$@"
 
 echo "== GUARD SYNC DIVERGENCE (canonical=$(basename "$CANON_ROOT")) =="

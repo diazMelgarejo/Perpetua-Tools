@@ -7,26 +7,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/pr-body-backup-lib.sh"
 
 input="$(cat)"
-decision="ALLOW"
-deny_msg=""
-
-while IFS= read -r line; do
-  case "$line" in
-    BACKUP\|*)
-      repo="${line#BACKUP|}"
-      pr="${repo##*|}"
-      repo="${repo%|*}"
-      pr_body_backup_if_needed "$repo" "$pr" "mcp-preflight"
-      ;;
-    DENY\|*)
-      decision="DENY"
-      deny_msg="${line#DENY|}"
-      ;;
-    DENY)
-      decision="DENY"
-      ;;
-  esac
-done < <(python3 "$SCRIPT_DIR/pr-body-guard-core.py" manage_pr <<<"$input")
+pr_body_run_guard "$SCRIPT_DIR" manage_pr mcp-preflight "$input"
+decision="$PR_BODY_GUARD_DECISION"
+deny_msg="$PR_BODY_GUARD_DENY_MSG"
 
 if [[ "$decision" == "DENY" ]]; then
   deny_msg="${deny_msg:-Layer 0: comment only — never auto-change PR body.}"

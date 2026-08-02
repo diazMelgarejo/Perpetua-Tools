@@ -1,0 +1,60 @@
+{
+  "id": "446162929cb3",
+  "key": "manual_446162",
+  "name": "manual_446162",
+  "claim": "Same-user Keychain HMAC for PR-body grants is escalation control not cryptographic human identity \u2014 agent shells with PTY can read the secret or ack file; MVP raises effort; WebAuthn deferred to security-sentinel v2.1.",
+  "conditions": [
+    "ack",
+    "agent",
+    "control",
+    "cryptographic",
+    "deferred",
+    "effort",
+    "escalation",
+    "file",
+    "grants",
+    "hmac",
+    "human",
+    "identity",
+    "keychain",
+    "mvp",
+    "pr-body",
+    "pty",
+    "raises",
+    "read",
+    "same-user",
+    "secret",
+    "security-sentinel",
+    "shells",
+    "webauthn"
+  ],
+  "evidence_ids": [
+    "2026-08-02T04:07:28.049022+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-02T04:07:28.049022+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-02T04:07:28.049022+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-02T04:07:28.177266+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Remediation F3 F4; honest security doctrine per research and autoplan CEO review.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-02T04:07:28.049022+00:00"
+      ],
+      "lessons_sha": "c0a5b0b7048b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-02T04:07:28.177254+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Remediation F3 F4; honest security doctrine per research and autoplan CEO review."
+}
