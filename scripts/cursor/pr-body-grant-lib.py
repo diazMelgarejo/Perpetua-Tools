@@ -2,7 +2,23 @@
 """HMAC-bound operator grant for append-pr-body.sh (grant v2).
 
 Same-user Keychain HMAC is escalation control, not cryptographic human identity.
+A process running as the operator user (including agent shells with PTY) can read the
+Keychain item or ack file; MVP raises effort, not proves human presence.
 WebAuthn / MCP approval is deferred to security-sentinel v2.1.
+
+Canonical HMAC payload (UTF-8 bytes, fixed field order, pipe-delimited, no trailing newline):
+
+    grant-v2|{repo}|{pr_number}|{nonce}|{issued_at}|{action}|{content_digest}
+
+--file digest: sha256 of raw file bytes. --message digest: sha256 of exact UTF-8 string
+(no NFC/NFKC normalization, no newline trimming).
+
+Replay state machine (nonce ledger in NONCE_STATE_PATH):
+
+    minted -> reserved (append starts) -> remote_applied (gh edit OK) -> consumed
+
+Crash after remote_applied: re-run append with same grant; reserve idempotent, reconcile
+to consume without duplicate edit when body already contains the follow-up block.
 """
 from __future__ import annotations
 
@@ -46,6 +62,21 @@ def _parse_timestamp(raw: str) -> datetime | None:
         return None
 
 
+def canonical_payload_bytes(
+    repo: str,
+    pr_number: str,
+    nonce: str,
+    issued_at: str,
+    action: str,
+    content_digest: str,
+) -> bytes:
+    """Fixed-order UTF-8 payload bytes used for HMAC mint and verify."""
+    payload = (
+        f"grant-v2|{repo}|{pr_number}|{nonce}|{issued_at}|{action}|{content_digest}"
+    )
+    return payload.encode("utf-8")
+
+
 def _canonical_payload(
     repo: str,
     pr_number: str,
@@ -54,10 +85,9 @@ def _canonical_payload(
     action: str,
     content_digest: str,
 ) -> bytes:
-    payload = (
-        f"grant-v2|{repo}|{pr_number}|{nonce}|{issued_at}|{action}|{content_digest}"
+    return canonical_payload_bytes(
+        repo, pr_number, nonce, issued_at, action, content_digest
     )
-    return payload.encode("utf-8")
 
 
 def content_digest_for_append(
@@ -236,6 +266,8 @@ def _lock_nonce_state() -> tuple[Any, dict[str, Any]]:
         state = {"nonces": {}}
     if "nonces" not in state or not isinstance(state["nonces"], dict):
         state["nonces"] = {}
+    if "reservations" not in state or not isinstance(state.get("reservations"), dict):
+        state["reservations"] = {}
     return handle, state
 
 
@@ -249,6 +281,7 @@ def _write_nonce_state(handle: Any, state: dict[str, Any]) -> None:
 
 def _prune_nonce_state(state: dict[str, Any]) -> None:
     nonces = state.get("nonces", {})
+    reservations = state.get("reservations", {})
     cutoff = _now_utc().timestamp() - GRANT_TTL_SECONDS
     for nonce, ts in list(nonces.items()):
         parsed = _parse_timestamp(str(ts))
@@ -257,7 +290,109 @@ def _prune_nonce_state(state: dict[str, Any]) -> None:
             continue
         if parsed.timestamp() < cutoff:
             del nonces[nonce]
+    for nonce, entry in list(reservations.items()):
+        at_raw = entry.get("at", "") if isinstance(entry, dict) else ""
+        parsed = _parse_timestamp(str(at_raw))
+        if parsed is None or parsed.timestamp() < cutoff:
+            del reservations[nonce]
     state["nonces"] = nonces
+    state["reservations"] = reservations
+
+
+def _reservation_matches(
+    entry: dict[str, Any],
+    repo: str,
+    pr_number: str,
+    content_digest: str,
+) -> bool:
+    return (
+        entry.get("repo", "") == repo
+        and entry.get("pr", "") == str(pr_number)
+        and entry.get("digest", "") == content_digest
+    )
+
+
+def _reservation_blocks_verify(
+    nonce: str,
+    repo: str,
+    pr_number: str,
+    content_digest: str,
+) -> tuple[bool, str]:
+    handle, state = _lock_nonce_state()
+    try:
+        _prune_nonce_state(state)
+        entry = state.get("reservations", {}).get(nonce)
+        if not entry:
+            return True, ""
+        if _reservation_matches(entry, repo, pr_number, content_digest):
+            return True, ""
+        return False, "grant nonce reserved for a different append operation"
+    finally:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        handle.close()
+
+
+def reserve_nonce_atomic(
+    nonce: str,
+    repo: str,
+    pr_number: str,
+    content_digest: str,
+) -> tuple[bool, str]:
+    """Reserve nonce before remote mutation. Idempotent for the same binding."""
+    handle, state = _lock_nonce_state()
+    try:
+        _prune_nonce_state(state)
+        if nonce in state["nonces"]:
+            return False, "grant nonce already consumed (replay blocked)"
+        reservations = state["reservations"]
+        existing = reservations.get(nonce)
+        if existing:
+            if _reservation_matches(existing, repo, pr_number, content_digest):
+                return True, ""
+            return False, "grant nonce reserved for a different append operation"
+        reservations[nonce] = {
+            "at": _now_utc().isoformat().replace("+00:00", "Z"),
+            "repo": repo,
+            "pr": str(pr_number),
+            "digest": content_digest,
+            "remote_applied": False,
+        }
+        _write_nonce_state(handle, state)
+        return True, ""
+    finally:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        handle.close()
+
+
+def mark_remote_applied_atomic(nonce: str) -> tuple[bool, str]:
+    """Mark remote PR body mutation successful; required before consume."""
+    handle, state = _lock_nonce_state()
+    try:
+        _prune_nonce_state(state)
+        reservations = state["reservations"]
+        entry = reservations.get(nonce)
+        if not entry:
+            return False, "grant nonce not reserved"
+        entry["remote_applied"] = True
+        _write_nonce_state(handle, state)
+        return True, ""
+    finally:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        handle.close()
+
+
+def release_nonce_reservation_atomic(nonce: str) -> None:
+    """Drop an in-flight reservation when remote mutation did not succeed."""
+    handle, state = _lock_nonce_state()
+    try:
+        _prune_nonce_state(state)
+        entry = state.get("reservations", {}).get(nonce)
+        if entry and not entry.get("remote_applied"):
+            del state["reservations"][nonce]
+            _write_nonce_state(handle, state)
+    finally:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        handle.close()
 
 
 def nonce_is_consumed(nonce: str) -> bool:
@@ -270,14 +405,20 @@ def nonce_is_consumed(nonce: str) -> bool:
         handle.close()
 
 
-def consume_nonce_atomic(nonce: str) -> bool:
-    """Mark nonce consumed once. Returns False if already consumed."""
+def consume_nonce_atomic(nonce: str, require_remote_applied: bool = True) -> bool:
+    """Mark nonce consumed once after remote success. Returns False if invalid."""
     handle, state = _lock_nonce_state()
     try:
         _prune_nonce_state(state)
         if nonce in state["nonces"]:
             return False
+        entry = state.get("reservations", {}).get(nonce)
+        if require_remote_applied:
+            if not entry or not entry.get("remote_applied"):
+                return False
         state["nonces"][nonce] = _now_utc().isoformat().replace("+00:00", "Z")
+        if nonce in state.get("reservations", {}):
+            del state["reservations"][nonce]
         _write_nonce_state(handle, state)
         return True
     finally:
@@ -327,6 +468,10 @@ def verify_grant_fields(
 
     if check_nonce_consumed and nonce_is_consumed(nonce):
         return False, "grant nonce already consumed (replay blocked)"
+
+    ok_res, res_err = _reservation_blocks_verify(nonce, repo, pr_number, content_digest)
+    if not ok_res:
+        return False, res_err
 
     token = fields.get("token", "")
     if not token:
@@ -379,14 +524,158 @@ def verify_grant_for_append(
 
     if consume:
         nonce = fields.get("grant-nonce", "")
-        if not consume_nonce_atomic(nonce):
-            return False, "grant nonce already consumed (replay blocked)"
+        if not consume_nonce_atomic(nonce, require_remote_applied=True):
+            return False, (
+                "grant consume blocked: remote mutation not marked successful "
+                "(replay or crash state — re-run append-pr-body.sh)"
+            )
         try:
             ACK_PATH.unlink(missing_ok=True)
         except OSError as exc:
             return False, f"failed to remove consumed grant file: {exc}"
 
     return True, ""
+
+
+def reserve_grant_for_append(
+    repo: str,
+    pr_number: str,
+    file_path: str | None,
+    message: str | None,
+    cwd: Path | None = None,
+) -> tuple[bool, str]:
+    try:
+        digest = content_digest_for_append(file_path, message, cwd=cwd)
+    except GrantError as exc:
+        return False, str(exc)
+    fields = read_ack_fields()
+    ok, err = verify_grant_fields(
+        fields,
+        repo,
+        str(pr_number),
+        digest,
+        action=DEFAULT_ACTION,
+        check_nonce_consumed=True,
+    )
+    if not ok:
+        return False, err
+    nonce = fields.get("grant-nonce", "")
+    return reserve_nonce_atomic(nonce, repo, str(pr_number), digest)
+
+
+def mark_remote_applied_for_append(
+    repo: str,
+    pr_number: str,
+    file_path: str | None,
+    message: str | None,
+    cwd: Path | None = None,
+) -> tuple[bool, str]:
+    try:
+        digest = content_digest_for_append(file_path, message, cwd=cwd)
+    except GrantError as exc:
+        return False, str(exc)
+    fields = read_ack_fields()
+    nonce = fields.get("grant-nonce", "")
+    if not nonce:
+        return False, "grant missing grant-nonce"
+    entry_ok, entry_err = _reservation_blocks_verify(
+        nonce, repo, str(pr_number), digest
+    )
+    if not entry_ok:
+        return False, entry_err
+    return mark_remote_applied_atomic(nonce)
+
+
+def release_grant_for_append(
+    repo: str,
+    pr_number: str,
+    file_path: str | None,
+    message: str | None,
+    cwd: Path | None = None,
+) -> tuple[bool, str]:
+    try:
+        digest = content_digest_for_append(file_path, message, cwd=cwd)
+    except GrantError as exc:
+        return False, str(exc)
+    fields = read_ack_fields()
+    nonce = fields.get("grant-nonce", "")
+    if not nonce:
+        return False, "grant missing grant-nonce"
+    entry = None
+    handle, state = _lock_nonce_state()
+    try:
+        _prune_nonce_state(state)
+        entry = state.get("reservations", {}).get(nonce)
+    finally:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        handle.close()
+    if entry and not _reservation_matches(entry, repo, str(pr_number), digest):
+        return False, "grant nonce reserved for a different append operation"
+    release_nonce_reservation_atomic(nonce)
+    return True, ""
+
+
+def follow_up_already_present(remote_body: str, append_block: str, title: str) -> bool:
+    """Crash reconciliation: remote body already contains this follow-up block."""
+    needle = f"## {title}\n\n{append_block}"
+    return needle in remote_body
+
+
+def reconcile_pending_consume(
+    repo: str,
+    pr_number: str,
+    file_path: str | None,
+    message: str | None,
+    remote_body: str,
+    title: str,
+    cwd: Path | None = None,
+) -> tuple[bool, str]:
+    """Consume grant when remote already has the follow-up (post-crash recovery)."""
+    try:
+        digest = content_digest_for_append(file_path, message, cwd=cwd)
+    except GrantError as exc:
+        return False, str(exc)
+    if message is not None:
+        append_block = message
+    elif file_path:
+        try:
+            path = Path(file_path)
+            if not path.is_absolute():
+                base = cwd or Path.cwd()
+                path = base / path
+            append_block = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            return False, f"cannot read append file for reconcile: {exc}"
+    else:
+        return False, "provide --file or --message for reconcile"
+    if not follow_up_already_present(remote_body, append_block, title):
+        return False, "remote body missing expected follow-up block"
+    fields = read_ack_fields()
+    ok, err = verify_grant_fields(
+        fields,
+        repo,
+        str(pr_number),
+        digest,
+        action=DEFAULT_ACTION,
+        check_nonce_consumed=True,
+    )
+    if not ok:
+        return False, err
+    nonce = fields.get("grant-nonce", "")
+    reserve_ok, reserve_err = reserve_nonce_atomic(nonce, repo, str(pr_number), digest)
+    if not reserve_ok:
+        return False, reserve_err
+    mark_ok, mark_err = mark_remote_applied_atomic(nonce)
+    if not mark_ok:
+        return False, mark_err
+    return verify_grant_for_append(
+        repo,
+        pr_number,
+        file_path,
+        message,
+        consume=True,
+        cwd=cwd,
+    )
 
 
 def mint_grant(
@@ -502,6 +791,82 @@ def _cmd_consume(args: argparse.Namespace) -> int:
     return 1
 
 
+def _cmd_reserve(args: argparse.Namespace) -> int:
+    ok, err = reserve_grant_for_append(
+        args.repo,
+        args.pr,
+        args.file,
+        args.message,
+    )
+    if ok:
+        print("OK: grant reserved")
+        return 0
+    print(f"error: {err}", file=sys.stderr)
+    return 1
+
+
+def _cmd_release(args: argparse.Namespace) -> int:
+    ok, err = release_grant_for_append(
+        args.repo,
+        args.pr,
+        args.file,
+        args.message,
+    )
+    if ok:
+        print("OK: grant reservation released")
+        return 0
+    print(f"error: {err}", file=sys.stderr)
+    return 1
+
+
+def _cmd_mark_applied(args: argparse.Namespace) -> int:
+    ok, err = mark_remote_applied_for_append(
+        args.repo,
+        args.pr,
+        args.file,
+        args.message,
+    )
+    if ok:
+        print("OK: remote mutation marked applied")
+        return 0
+    print(f"error: {err}", file=sys.stderr)
+    return 1
+
+
+def _cmd_reconcile(args: argparse.Namespace) -> int:
+    try:
+        remote_body = Path(args.remote_body_file).read_text(encoding="utf-8")
+    except OSError as exc:
+        print(f"error: cannot read remote body file: {exc}", file=sys.stderr)
+        return 1
+    if args.message is not None:
+        append_block = args.message
+    elif args.file:
+        try:
+            append_block = Path(args.file).read_text(encoding="utf-8")
+        except OSError as exc:
+            print(f"error: cannot read append file: {exc}", file=sys.stderr)
+            return 1
+    else:
+        print("error: provide --file or --message", file=sys.stderr)
+        return 1
+    if not follow_up_already_present(remote_body, append_block, args.title):
+        return 2
+    ok, err = reconcile_pending_consume(
+        args.repo,
+        args.pr,
+        args.file,
+        args.message,
+        remote_body,
+        args.title,
+    )
+    if ok:
+        print("OK: grant reconciled and consumed")
+        return 0
+    print(f"error: {err}", file=sys.stderr)
+    return 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="PR-body operator grant v2")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -524,8 +889,26 @@ def main(argv: list[str] | None = None) -> int:
     add_append_args(consume_p)
     consume_p.set_defaults(func=_cmd_consume)
 
+    reserve_p = sub.add_parser("reserve")
+    add_append_args(reserve_p)
+    reserve_p.set_defaults(func=_cmd_reserve)
+
+    release_p = sub.add_parser("release")
+    add_append_args(release_p)
+    release_p.set_defaults(func=_cmd_release)
+
+    mark_p = sub.add_parser("mark-applied")
+    add_append_args(mark_p)
+    mark_p.set_defaults(func=_cmd_mark_applied)
+
+    reconcile_p = sub.add_parser("reconcile")
+    add_append_args(reconcile_p)
+    reconcile_p.add_argument("--title", required=True)
+    reconcile_p.add_argument("--remote-body-file", required=True)
+    reconcile_p.set_defaults(func=_cmd_reconcile)
+
     args = parser.parse_args(argv)
-    if not args.file and not args.message:
+    if args.command != "reconcile" and not args.file and not args.message:
         parser.error("provide --file or --message")
     return args.func(args)
 

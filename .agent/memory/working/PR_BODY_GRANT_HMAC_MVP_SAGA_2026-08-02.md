@@ -29,7 +29,7 @@ stay in v2.1 **security-sentinel** orbit (do not half-implement passkeys in shel
 | 2026-08-02 | EXA + Firecrawl deep research on TTY/HITL gap | Proved v1 is forgeable; Vallum HMAC + GoodRoom passkey patterns |
 | 2026-08-02 | `/autoplan` on remediation plan (local, no git ops) | Refined: digest binding, nonce replay, append independent verify, BACKUP wire-up |
 | 2026-08-02 | can-4.md (CodeRabbit on PT #320) | DRY hooks, restore BACKUP emission, tighten worktree test, `range_for_ref` in pre-push |
-| 2026-08-02 | Implementation on `2026-08-02-pr-body-grant-hmac-mvp` | Single worktree consolidation (`/tmp/orama-grant-mvp` → commit → sync to PT) |
+| 2026-08-02 | Implementation on `2026-08-02-pr-body-grant-hmac-mvp` | Single worktree consolidation (grant-mvp worktree → commit → sync to PT) |
 
 ## Research that preceded code (read before changing grants)
 
@@ -134,8 +134,8 @@ python3 scripts/cursor/hooks/pr-body-guard-core.py manage_pr <<< \
 4. **Sync direction:** orama canonical for `scripts/cursor/*` grant stack. Commit orama first;
    then `sync-attribution-guard-scripts.sh` to PT. Never blind orama→PT on dirty worktrees.
 
-5. **Worktree consolidation:** Multiple agents used `/tmp/orama-grant-mvp`, `/tmp/orama-pr255`,
-   `/tmp/pt-pr320`. Before commit: one clean worktree on the PR branch, `git status` clean,
+5. **Worktree consolidation:** Multiple agents used dedicated grant-mvp, pr255, and
+   pt-pr320 worktrees. Before commit: one clean worktree on the PR branch, `git status` clean,
    single push. Stash/pop caused plan doc conflicts — resolve before commit.
 
 6. **autoplan artifacts** live in `~/.gstack/projects/orama-system/` (test plans, restore points).
