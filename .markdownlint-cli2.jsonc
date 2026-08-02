@@ -1,5 +1,4 @@
 {
-  "$schema": "https://raw.githubusercontent.com/DavidAnson/markdownlint-cli2/main/schema/markdownlint-cli2-config-schema.json",
   "config": {
     "default": true,
     "MD013": {
@@ -11,27 +10,9 @@
       "stern": false
     }
   },
-  "overrides": [
-    {
-      "filter": [
-        "SKILL.md",
-        "**/SKILL.md",
-        "**/skills/**"
-      ],
-      "config": {
-        "MD013": false
-      },
-      "combine": "merge"
-    },
-    {
-      "filter": [
-        "**/DECISIONS.md",
-        "**/LESSONS.md"
-      ],
-      "config": {
-        "MD013": false
-      },
-      "combine": "merge"
-    }
+  "ignores": [
+    "**/DECISIONS.md",
+    "**/LESSONS.md",
+    "**/SKILL.md"
   ]
 }
