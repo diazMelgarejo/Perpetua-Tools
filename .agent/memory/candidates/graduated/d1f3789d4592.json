@@ -2,7 +2,7 @@
   "id": "d1f3789d4592",
   "key": "manual_d1f378",
   "name": "manual_d1f378",
-  "claim": "Human-authorized PR body edits require operator-grant-v2 HMAC ack from grant-pr-body-human-override.sh matching append bytes \u2014 not CURSOR_PR_BODY_HUMAN_OVERRIDE_ACK env exports or operator-grant-v1 plaintext ack.",
+  "claim": "Operator-gated PR body edits require operator-grant-v2 HMAC ack from grant-pr-body-human-override.sh matching append bytes -- not CURSOR_PR_BODY_HUMAN_OVERRIDE_ACK env exports or operator-grant-v1 plaintext ack. The HMAC grant authorizes the append-pr-body.sh capability itself; it does not prove human identity or presence -- the underlying grant script's TTY-presence check is not a reliable human-vs-agent signal.",
   "conditions": [
     "ack",
     "append",

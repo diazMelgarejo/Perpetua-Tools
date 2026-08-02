@@ -3,10 +3,13 @@
 > **Status:** remediation complete on paired branches (orama #260, PT #320)  
 > **orama-system:** branch `2026-08-02-pr-body-grant-hmac-mvp` tip `739e2fe5` (PR #260)  
 > **Perpetua-Tools:** branch `cursor/coderabbit-review-wave-sync-f559` tip `4ca359bb` (PR #320)  
-> **Trigger chain:** CodeRabbit `4835288649` on orama #255 → `/autoplan` DONE_WITH_CONCERNS → can-4.md nitpicks on PT #320  
+> **Trigger chain:** CodeRabbit `4835288649` on orama #255 →
+> `/autoplan` DONE_WITH_CONCERNS → can-4.md nitpicks on PT #320  
 > **Canonical plan:** `orama-system/docs/plans/2026-08-02-pr-body-grant-security-remediation.md`  
-> **Research:** `orama-system/bin/orama-system/references/pr-body-human-grant-security-gap-research.md`  
-> **v2.1 deferral:** `orama-system/docs/v2/51-security-sentinel-orbit-passkey-mcp.md`
+> **Research:**
+> `orama-system/bin/orama-system/references/pr-body-human-grant-security-gap-research.md`  
+> **v2.1 deferral:**
+`orama-system/docs/v2/51-security-sentinel-orbit-passkey-mcp.md`
 
 ## Executive outcome
 
@@ -59,12 +62,14 @@ Agent session
   → pr_body_backup_if_needed() (READ snapshot before risky command)
 
 Operator or agent (with valid grant)
-  → append-pr-body.sh: verify → reconcile? → reserve → READ→backup→merge
-  → gh pr edit → mark-applied → consume grant
+  → append-pr-body.sh (owns reserve, its internal gh pr edit, mark-applied, and consume):
+     verify → reconcile? → reserve → READ→backup→merge
+     → gh pr edit (internal to append-pr-body.sh) → mark-applied → consume grant
   → (crash recovery) reconcile consumes when follow-up already on remote
 ```
 
-**v2.1 (not in this PR):** `security-sentinel` satellite verifies Ed25519 JWKS proofs; hooks become clients.
+**v2.1 (not in this PR):** `security-sentinel` satellite verifies Ed25519 JWKS
+proofs; hooks become clients.
 
 ## Decision log (binding for this wave)
 
@@ -178,12 +183,14 @@ drift. PT PR #320 is the integration surface; orama is canonical for scripts.
 ## Weld verification (2026-08-02)
 
 **Batch F (MVP):**
+
 - orama branch: 7 commits on post-#255 `main`; no history reset.
 - PT branch: ancestor of `cursor/coderabbit-review-wave-sync-f559` preserved.
 - Grant stack byte-identical orama ↔ PT after sync.
 - Tests: 17 passed orama; 13 passed PT (pre-remediation).
 
 **Batch G (remediation F1–F7):**
+
 - orama tip `739e2fe5`; PT tip `4ca359bb` on PR #320 branch.
 - Replay state machine, golden vector, `GH_BIN` append test, plan doc alignment.
 - CI fix: saga worktree path literals removed for `repo_hygiene`.

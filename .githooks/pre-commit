@@ -24,9 +24,16 @@ fi
 # enters history, so the expunge-git scrub is a last resort, not the routine
 # (#1802 follow-up). repo_hygiene.py subsumes check_identity (kept in sync), so
 # this preserves the prior identity gate and adds the rest.
-if [ -f "$ROOT/scripts/review/repo_hygiene.py" ] && command -v python3 >/dev/null 2>&1; then
+if [ -f "$ROOT/scripts/review/repo_hygiene.py" ]; then
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "error: scripts/review/repo_hygiene.py exists but python3 is not available" >&2
+    echo "error: refusing to silently fall back to the narrower identity-only check" >&2
+    echo "error: install python3, or run 'git commit --no-verify' if you understand the risk" >&2
+    exit 1
+  fi
   exec python3 "$ROOT/scripts/review/repo_hygiene.py" "$ROOT"
 fi
 
-# Fallback for clones that predate the hygiene script: identity check only.
+# Fallback for clones that predate the hygiene script (script itself
+# missing, not merely python3 missing): identity check only.
 exec "$ROOT/scripts/git/check_identity.sh"

@@ -38,7 +38,7 @@ bash scripts/cursor/grant-pr-body-human-override.sh owner/repo N --file follow-u
 bash scripts/cursor/append-pr-body.sh owner/repo N --file follow-up.md
 ```
 
-Grant lifecycle: **mint → reserve → gh edit → mark-applied → consume**.
+Grant lifecycle: **mint → reserve → append-pr-body.sh (internal gh edit) → mark-applied → consume**.
 Re-run append reconciles if follow-up already on remote (crash recovery).
 
 ## Verification (last run 2026-08-02)
@@ -46,8 +46,12 @@ Re-run append reconciles if follow-up already on remote (crash recovery).
 ```bash
 python3 -m pytest tests/test_pr_body_grant_lib.py tests/test_append_pr_body_grant_flow.py \
   tests/test_pr_body_guard_core.py tests/test_check_guard_sync_divergence.py -q
-# Result: 26 passed (orama + PT after sync)
 ```
+
+Run separately in each repo, not combined into one aggregate figure --
+26 passed in orama-system, 26 passed in Perpetua-Tools (same count in
+each since the two repos are synced copies of these test files, not a
+coincidence worth reading as one combined 26).
 
 ## Next
 

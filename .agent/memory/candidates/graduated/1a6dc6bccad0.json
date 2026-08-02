@@ -40,7 +40,7 @@
       "ts": "2026-08-02T04:07:29.049005+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
-      "notes": "PT #320 Actions failed on saga /tmp worktree names; use neutral worktree labels in memory.",
+      "notes": "PT #320 CI failed when saga notes embedded a scratch-path literal instead of a neutral worktree label; use neutral worktree labels in memory.",
       "provisional": false,
       "evidence_snapshot": [
         "2026-08-02T04:07:28.914652+00:00"
@@ -51,5 +51,5 @@
   "rejection_count": 0,
   "accepted_at": "2026-08-02T04:07:29.048986+00:00",
   "reviewer": "learn.py",
-  "rationale": "PT #320 Actions failed on saga /tmp worktree names; use neutral worktree labels in memory."
+  "rationale": "PT #320 CI failed when saga notes embedded a scratch-path literal instead of a neutral worktree label; use neutral worktree labels in memory."
 }

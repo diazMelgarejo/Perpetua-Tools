@@ -5,7 +5,7 @@
 
 ## 2026-08-02: PR-body grant v2 remediation — replay state machine + honest MVP boundary
 
-**Decision:** Close remediation review F1–F7 on paired branches orama #260 / PT #320. HMAC grant uses fixed-order UTF-8 canonical payload bytes; append flow is `reserve` → `gh pr edit` → `mark-applied` → `consume` with `reconcile` for crash recovery. Same-user Keychain HMAC is **escalation control**, not proof of human presence. Human override is `operator-grant-v2` ack file, not `CURSOR_PR_BODY_HUMAN_OVERRIDE_ACK` env exports.
+**Decision:** Close remediation review F1–F7 on paired branches orama #260 / PT #320. HMAC grant uses fixed-order UTF-8 canonical payload bytes; append flow is `reserve` → `append-pr-body.sh` (the guarded wrapper, performs the remote `gh pr edit` internally) → `mark-applied` → `consume` with `reconcile` for crash recovery. Same-user Keychain HMAC is **escalation control**, not proof of human presence. Human override is `operator-grant-v2` ack file, not `CURSOR_PR_BODY_HUMAN_OVERRIDE_ACK` env exports.
 
 **Rationale:** v1 plaintext ack and env override were forgeable; consume-before-remote left replay window; plan and memory had to stop claiming “signed human capability.” PT CI failed on ephemeral path literals in saga chronicle — tracked `.agent` memory follows same hygiene as workstation paths.
 
@@ -14,6 +14,7 @@
 **Status:** active (pending merge of #260 and #320)
 
 **Links:**
+
 - Saga: `.agent/memory/working/PR_BODY_GRANT_HMAC_MVP_SAGA_2026-08-02.md`
 - Decisions JSONL: `.agent/memory/working/PR_BODY_GRANT_HMAC_DECISIONS_2026-08-02.jsonl`
 - Plan: orama `docs/plans/2026-08-02-pr-body-grant-security-remediation.md`
@@ -30,6 +31,7 @@
 **Status:** active
 
 **Links:**
+
 - periscope doc: `docs/2026-07-28-AgentsView+Periscope-Fresh.md` addendum on `merged`
 - PT memory: `.agent/memory/working/PERISCOPE_MODERNIZATION_PURIFIED_INTEGRATION_2026-07-29.md`
 - orama AFRP: `bin/orama-system/afrp/failure-modes.md` §8
@@ -51,10 +53,11 @@
 **Status:** active
 
 **Links:**
-- Repo: https://github.com/oramasys/perpetua-core
-- Spec: https://github.com/diazMelgarejo/orama-system/blob/main/docs/superpowers/specs/2026-05-17-salvage-translation-design.md
+
+- Repo: <https://github.com/oramasys/perpetua-core>
+- Spec: <https://github.com/diazMelgarejo/orama-system/blob/main/docs/superpowers/specs/2026-05-17-salvage-translation-design.md>
 - Plan: `orama-system/docs/superpowers/plans/2026-05-17-salvage-translation-v1-discovery.md`
-- PROGRESS.md: https://github.com/oramasys/perpetua-core/blob/feat/salvage-plugins-rc1/PROGRESS.md
+- PROGRESS.md: <https://github.com/oramasys/perpetua-core/blob/feat/salvage-plugins-rc1/PROGRESS.md>
 
 ## 2026-06-22: v2 repos adopt PyPA src-layout; why oramasys v2 is necessary now
 
@@ -80,6 +83,7 @@ makes it costlier and contradicts the "from the beginning" intent).
 **Status:** active
 
 **Links:**
+
 - Full narrative (intent, the AI interpretation gap, and how it was closed): [`docs/2026-06-22-oramasys-v2-intent-and-interpretation-gap.md`](../../../docs/2026-06-22-oramasys-v2-intent-and-interpretation-gap.md)
 - Lessons (rendered): `.agent/memory/semantic/LESSONS.md` ids `2e154f1b55ab`, `d892d844cf60`, `0afc8c5f2778`, `a7374ba4b00d`
 - Standards: orama `bin/orama-system/afrp/SKILL.md` (Intent-Verification trigger 3), `.../cidf/SKILL.md` (Target Verification), orama `docs/LESSONS.md` §2026-06-22
@@ -103,8 +107,10 @@ read raw text. Add a custom Markdown plugin — rejected as over-engineering for
 
 **Decision:** When merging nested branches produced by independent agents against a
 moving main, the mandatory protocol is:
+
 1. `git merge --no-commit --no-ff` both merges in sequence to enumerate ALL conflicts
    before touching any file.
+
 2. Present every conflict to the human with both sides shown — never guess resolution.
 3. Wait for explicit human direction (combine/take-ours/take-theirs/build-union).
 4. Resolve all conflicts in a single pass using the directed strategy.
@@ -211,6 +217,7 @@ No manual edits to versioned surfaces. Historical docs are excluded intentionall
 ## 2026-06-24: Knowledge depth must match the consumption point
 
 **Decision:** When promoting a protocol into skills, the content depth at each location must match how that location is consumed:
+
 - Reference doc (loaded on demand) → full detail, code snippets, all edge cases
 - SKILL.md section (loaded when doing related work) → quick summary + link to reference
 - Step in a checklist (always visible) → 3-5 line trigger + link
@@ -352,6 +359,7 @@ there is no `.\windows\` folder at repo root.
 **Rationale:** PT #154 incident — full pre-v2 security hardening summary was overwritten with CodeRabbit-only notes, erasing purpose, tier table, hardware policy, integrative merges, and E2E gates. Same additive rule as `LESSONS.md` and oramasys-method `integrative-merge.md`.
 
 **Status:** active — lessons `lesson_3b13ab0a45d4`, `lesson_257a631cbfd3`; episodic gold nuggets `PR154-summary-append-only-gold-nugget`, `PR158-synthesize-mode-gold-nugget`
+
 ## 2026-06-27: Branch triage uses tree-twin scan, not merge-base counts
 
 **Decision:** After any suspected `main` rewrite, classify local branches with
@@ -375,12 +383,14 @@ skills: orama `git-history-surgery` → `reanchor-after-rewrite.md`, PT `scripts
 ---
 
 ## 2026-06-27: TDD commit-msg hook + Playwright defer
+
 **Decision:** Enforce web/src TDD pairing via scripts/git/check_tdd_commit.sh on commit-msg (not pre-commit); defer Playwright E2E until Vitest RC-1 gate merges to orama main.
 **Rationale:** Pre-commit lacks commit message for tdd-skip escape hatch. E2E is out of RC-1 minimum; Vitest 16-test gate must land first.
 **Alternatives considered:** Pre-commit only (rejected — no tdd-skip); Playwright in same PR (rejected — scope).
 **Status:** active
 
 ## 2026-07-13: Post-Review Micro-Remediation Pattern promoted to shared doctrine
+
 **Decision:** For post-review remediation on any open PR, follow the 6-phase Post-Review
 Micro-Remediation Pattern: Freeze (PR branch only) → Root-cause clustering (fix the
 abstraction, not each comment) → Branch discipline (cohesive commits, append not replace
@@ -397,7 +407,9 @@ reconciliation vs. a single auditable ancestry reset).
 code-review, git-history-surgery, gstack, skillify, hermes-harness, mcp-orchestration).
 
 ---
+
 ## 2026-07-13: Git author identity is not a reliable human-vs-agent signal
+
 **Decision:** When investigating "who did this" in git history, do not treat a familiar
 git author identity (e.g. `cyre <owner Gmail identity>`) as proof of human
 authorship. Autonomous agents (AutoResearcher via `orchestrator/autoresearch_bridge.py`,
@@ -414,6 +426,7 @@ user: it was created by a rogue AutoResearcher agent run, not a human.
 activity logs (e.g. AutoResearcher's own state/heartbeat records) alongside git log.
 
 ---
+
 ## 2026-07-26: OpenClaw MERGE-10 fleet retrofit — retrofit live workspaces, not parallel fleet hub
 
 **Decision:** Materialize Oramasys/Raft multi-agent design by **retrofitting** existing OpenClaw
@@ -434,6 +447,7 @@ Antigravity — Vera universal, Sage optional analyzer).
 **Status:** active — executed in operator local OpenClaw state 2026-07-26; orama/PT git promotion pending.
 
 **Links:**
+
 - PT playbook: `.agent/references/openclaw-oramasys-fleet-retrofit-playbook.md`
 - Session: `.agent/memory/working/OPENCLAW_MERGE10_FLEET_RETROFIT_2026-07-26.md`
 - Plan: `OpenClaw/references/raft-openclaw-MERGE-PLAN-10.md` (sibling workspace, not in PT repo)

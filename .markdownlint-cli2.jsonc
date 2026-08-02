@@ -22,6 +22,16 @@
         "MD013": false
       },
       "combine": "merge"
+    },
+    {
+      "filter": [
+        "**/DECISIONS.md",
+        "**/LESSONS.md"
+      ],
+      "config": {
+        "MD013": false
+      },
+      "combine": "merge"
     }
   ]
 }

@@ -255,3 +255,27 @@ def test_parse_append_segment(grant_lib):
     )
     assert parsed == ("diaz/repo", "9", "out.md", None)
 
+
+def test_mint_grant_rejects_newline_in_pr_number(grant_lib, tmp_path):
+    """The specific gap this fixes: pr_number had zero validation before
+    reaching the canonical payload, unlike repo (which was already
+    checked, though only for pipe characters, not newlines either)."""
+    append = tmp_path / "follow.md"
+    append.write_text("x", encoding="utf-8")
+    with pytest.raises(grant_lib.GrantError):
+        grant_lib.mint_grant("owner/repo", "5\ninjected", str(append), None)
+
+
+def test_mint_grant_rejects_newline_in_repo(grant_lib, tmp_path):
+    append = tmp_path / "follow.md"
+    append.write_text("x", encoding="utf-8")
+    with pytest.raises(grant_lib.GrantError):
+        grant_lib.mint_grant("owner/repo\ninjected", "5", str(append), None)
+
+
+def test_verify_grant_fields_rejects_newline_in_pr_number(grant_lib):
+    ok, err = grant_lib.verify_grant_fields(
+        {"issued-at": "2026-01-01T00:00:00Z"}, "owner/repo", "5\ninjected", "digest"
+    )
+    assert not ok
+    assert "newline" in err.lower() or "pipe" in err.lower()
