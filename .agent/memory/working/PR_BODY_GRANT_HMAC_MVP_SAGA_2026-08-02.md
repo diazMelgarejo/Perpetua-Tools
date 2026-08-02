@@ -41,7 +41,8 @@ stay in v2.1 **security-sentinel** orbit (do not half-implement passkeys in shel
 | `/autoplan` eng review | HMAC must bind **content digest**; nonces need atomic consume; append must verify independently |
 
 **Rerun research:** `workflow: firecrawl-deep-research`, topic: PR-body operator grant HMAC,
-depth: thorough. Primary file: research doc above.
+depth: thorough. Primary file: research doc above. Raw EXA JSON exports:
+`.agent/references/pr-body-grant-research-raw-2026-08-02/` (welded from `orama-pr255` worktree).
 
 ## Architecture (MVP vs v2.1)
 
@@ -155,6 +156,14 @@ did not spell out. Treat DONE_WITH_CONCERNS as a implementation checklist, not a
 
 Pairing orama + PT on the **same branch name** (`2026-08-02-pr-body-grant-hmac-mvp`) reduced
 drift. PT PR #320 is the integration surface; orama is canonical for scripts.
+
+## Weld verification (2026-08-02)
+
+- orama branch: 6 commits on post-#255 `main`; no history reset.
+- PT branch: **ancestor** of `origin/cursor/coderabbit-review-wave-sync-f559` preserved; +2 commits (sync + memory).
+- Grant stack: **12 files byte-identical** orama ↔ PT (grant lib, hooks, sync script, pre-push, tests).
+- Tests: 17 passed orama; 13 passed PT (grant + guard + worktree).
+- Plan doc: autoplan body retained; header/status updated to implemented; commit map added.
 
 ## Related memory on this branch
 
