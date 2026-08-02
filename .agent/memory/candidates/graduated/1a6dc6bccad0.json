@@ -1,0 +1,55 @@
+{
+  "id": "1a6dc6bccad0",
+  "key": "manual_1a6dc6",
+  "name": "manual_1a6dc6",
+  "claim": "Tracked .agent memory and working chronicles must not embed ephemeral scratch path literals \u2014 repo_hygiene flags them like workstation home paths and blocks PT CI.",
+  "conditions": [
+    "agent",
+    "blocks",
+    "chronicles",
+    "embed",
+    "ephemeral",
+    "flags",
+    "home",
+    "like",
+    "literals",
+    "memory",
+    "path",
+    "paths",
+    "repo_hygiene",
+    "scratch",
+    "them",
+    "tracked",
+    "working",
+    "workstation"
+  ],
+  "evidence_ids": [
+    "2026-08-02T04:07:28.914652+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-02T04:07:28.914652+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-02T04:07:28.914652+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-02T04:07:29.049005+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT #320 Actions failed on saga /tmp worktree names; use neutral worktree labels in memory.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-02T04:07:28.914652+00:00"
+      ],
+      "lessons_sha": "2d792c79eb15"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-02T04:07:29.048986+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT #320 Actions failed on saga /tmp worktree names; use neutral worktree labels in memory."
+}

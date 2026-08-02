@@ -1,0 +1,61 @@
+{
+  "id": "720dedfdd2c8",
+  "key": "manual_720ded",
+  "name": "manual_720ded",
+  "claim": "operator-grant-v2 HMAC canonical payload is fixed-order UTF-8 bytes grant-v2|repo|pr|nonce|issued_at|action|content_digest with no trailing newline; mint and verify must use identical bytes; golden vector test locks regression.",
+  "conditions": [
+    "action",
+    "bytes",
+    "canonical",
+    "content_digest",
+    "fixed-order",
+    "golden",
+    "grant-v2",
+    "hmac",
+    "identical",
+    "issued_at",
+    "locks",
+    "mint",
+    "newline",
+    "nonce",
+    "operator-grant-v2",
+    "payload",
+    "regression",
+    "repo",
+    "test",
+    "trailing",
+    "use",
+    "utf-8",
+    "vector",
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-08-02T04:07:27.549926+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-02T04:07:27.549926+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-02T04:07:27.549926+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-02T04:07:27.694086+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Remediation F1; prevents silent canonicalization drift between mint and verify.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-02T04:07:27.549926+00:00"
+      ],
+      "lessons_sha": "0d29d707962f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-02T04:07:27.694075+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Remediation F1; prevents silent canonicalization drift between mint and verify."
+}

@@ -3,6 +3,22 @@
 > Record architectural or workflow choices that would be costly to re-debate.
 > Use this template for each entry:
 
+## 2026-08-02: PR-body grant v2 remediation — replay state machine + honest MVP boundary
+
+**Decision:** Close remediation review F1–F7 on paired branches orama #260 / PT #320. HMAC grant uses fixed-order UTF-8 canonical payload bytes; append flow is `reserve` → `gh pr edit` → `mark-applied` → `consume` with `reconcile` for crash recovery. Same-user Keychain HMAC is **escalation control**, not proof of human presence. Human override is `operator-grant-v2` ack file, not `CURSOR_PR_BODY_HUMAN_OVERRIDE_ACK` env exports.
+
+**Rationale:** v1 plaintext ack and env override were forgeable; consume-before-remote left replay window; plan and memory had to stop claiming “signed human capability.” PT CI failed on ephemeral path literals in saga chronicle — tracked `.agent` memory follows same hygiene as workstation paths.
+
+**Alternatives considered:** Consume nonce before remote edit (rejected — replay risk); WebAuthn in orama scripts (rejected — v2.1 sentinel orbit).
+
+**Status:** active (pending merge of #260 and #320)
+
+**Links:**
+- Saga: `.agent/memory/working/PR_BODY_GRANT_HMAC_MVP_SAGA_2026-08-02.md`
+- Decisions JSONL: `.agent/memory/working/PR_BODY_GRANT_HMAC_DECISIONS_2026-08-02.jsonl`
+- Plan: orama `docs/plans/2026-08-02-pr-body-grant-security-remediation.md`
+- CodeRabbit wave: `.agent/memory/working/CODERABBIT_REVIEW_WAVE_4835024659_4835288649_2026-08-01.md` (Batch G)
+
 ## 2026-07-29: Periscope modernization — PR #20 over PR #17; never synthetic SHA replay
 
 **Decision:** Close periscope PR #17 without merge. Preserve `cursor/agentsview-modernization-3way-f559` as a permanent bad-example branch. Integrate via PR #20 (`cursor/agentsview-purified-onto-kenn-f559`): original `kenn-io/agentsview` SHAs + 9 Periscope-unique cherry-picks, byte-identical tree to PR #17 tip.

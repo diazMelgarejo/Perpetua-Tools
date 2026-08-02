@@ -1,8 +1,8 @@
 # PR-body grant HMAC MVP — saga chronicle (2026-08-02)
 
-> **Status:** implemented on paired branches (orama canonical, PT mirror)  
-> **orama-system:** branch `2026-08-02-pr-body-grant-hmac-mvp` (post-#255 `main`, commit after `525961d6`)  
-> **Perpetua-Tools:** branch `2026-08-02-pr-body-grant-hmac-mvp` (tracks PR #320 wave)  
+> **Status:** remediation complete on paired branches (orama #260, PT #320)  
+> **orama-system:** branch `2026-08-02-pr-body-grant-hmac-mvp` tip `739e2fe5` (PR #260)  
+> **Perpetua-Tools:** branch `cursor/coderabbit-review-wave-sync-f559` tip `4ca359bb` (PR #320)  
 > **Trigger chain:** CodeRabbit `4835288649` on orama #255 → `/autoplan` DONE_WITH_CONCERNS → can-4.md nitpicks on PT #320  
 > **Canonical plan:** `orama-system/docs/plans/2026-08-02-pr-body-grant-security-remediation.md`  
 > **Research:** `orama-system/bin/orama-system/references/pr-body-human-grant-security-gap-research.md`  
@@ -30,6 +30,7 @@ stay in v2.1 **security-sentinel** orbit (do not half-implement passkeys in shel
 | 2026-08-02 | `/autoplan` on remediation plan (local, no git ops) | Refined: digest binding, nonce replay, append independent verify, BACKUP wire-up |
 | 2026-08-02 | can-4.md (CodeRabbit on PT #320) | DRY hooks, restore BACKUP emission, tighten worktree test, `range_for_ref` in pre-push |
 | 2026-08-02 | Implementation on `2026-08-02-pr-body-grant-hmac-mvp` | Single worktree consolidation (grant-mvp worktree → commit → sync to PT) |
+| 2026-08-02 | Remediation review F1–F7 + can-5 CI hygiene | Replay state machine, golden vector, GH_BIN test, saga path scrub |
 
 ## Research that preceded code (read before changing grants)
 
@@ -58,7 +59,9 @@ Agent session
   → pr_body_backup_if_needed() (READ snapshot before risky command)
 
 Operator or agent (with valid grant)
-  → append-pr-body.sh: verify grant again → READ→backup→merge→WRITE → consume grant
+  → append-pr-body.sh: verify → reconcile? → reserve → READ→backup→merge
+  → gh pr edit → mark-applied → consume grant
+  → (crash recovery) reconcile consumes when follow-up already on remote
 ```
 
 **v2.1 (not in this PR):** `security-sentinel` satellite verifies Ed25519 JWKS proofs; hooks become clients.
@@ -77,20 +80,28 @@ Operator or agent (with valid grant)
 | D8 | Strict TTY: `! -t 0 \|\| ! -t 1` + deny `CURSOR_AGENT` / `CI` | Defense in depth (not sufficient alone) | TTY-only gate |
 | D9 | Fresh branch from post-#255 `main`, not old PR tip | #255 already merged | Continue on `2026-07-31-010-*` |
 | D10 | orama canonical → `sync-attribution-guard-scripts.sh` → PT | Two-repo invariant | Hand-edit PT only |
+| D11 | Fixed-order UTF-8 canonical payload + golden vector test | Mint/verify byte identity | Ad-hoc per-field signing |
+| D12 | `reserve` → `mark-applied` → `consume` replay state machine | Consume only after remote success | Consume before gh edit |
+| D13 | `reconcile` when follow-up already on remote body | Crash after successful gh edit | Manual nonce cleanup |
+| D14 | Same-user Keychain = escalation control, not human identity | Honest MVP security claim | “Cryptographic human proof” |
+| D15 | Say HMAC-authenticated capability, not signed capability | Terminology accuracy | Overclaim identity |
+| D16 | `GH_BIN` seam + `test_append_pr_body_grant_flow.py` | Hermetic append integration test | Live gh in unit tests |
+| D17 | No ephemeral scratch paths in tracked `.agent` memory | CI `repo_hygiene` gate on PT #320 | Raw worktree paths in saga |
 
 ## Files touched (canonical orama paths)
 
 | Path | Role |
 | ---- | ---- |
-| `scripts/cursor/pr-body-grant-lib.py` | Mint, verify, consume; HMAC, nonce store, digest |
+| `scripts/cursor/pr-body-grant-lib.py` | Mint, verify, reserve, mark-applied, consume, reconcile; HMAC, nonce ledger |
 | `scripts/cursor/grant-pr-body-human-override.sh` | Operator mint CLI wrapper |
-| `scripts/cursor/append-pr-body.sh` | Independent verify + consume after `gh pr edit` |
+| `scripts/cursor/append-pr-body.sh` | Verify, reserve, gh edit, mark-applied, consume; `GH_BIN` seam |
 | `scripts/cursor/hooks/pr-body-guard-core.py` | Segment scan, grant verify, BACKUP emission |
 | `scripts/cursor/hooks/pr-body-backup-lib.sh` | `pr_body_run_guard`, `pr_body_backup_if_needed` |
 | `scripts/cursor/hooks/before-*-pr-body-guard.sh` | Thin wrappers calling `pr_body_run_guard` |
 | `scripts/git/sync-attribution-guard-scripts.sh` | Sync full cursor grant/hook bundle to PT |
 | `.githooks/pre-push` | Shared `range_for_ref()` for guard-sync + attribution |
-| `tests/test_pr_body_grant_lib.py` | HMAC, digest mismatch, v1 reject, replay |
+| `tests/test_pr_body_grant_lib.py` | HMAC, digest mismatch, v1 reject, replay, golden vector, reserve/release |
+| `tests/test_append_pr_body_grant_flow.py` | Hermetic append via fake `GH_BIN` |
 | `tests/test_pr_body_guard_core.py` | Newline bypass + BACKUP with valid grant |
 | `tests/test_check_guard_sync_divergence.py` | Assert `pt-linked` only (worktree path) |
 
@@ -111,8 +122,9 @@ Grant and append must use the **same** `--file` or `--message` (digest binding).
 
 ```bash
 # orama or PT after sync
-python3 -m pytest tests/test_pr_body_grant_lib.py tests/test_pr_body_guard_core.py -q
-python3 -m pytest tests/test_check_guard_sync_divergence.py::test_linked_worktree_sibling_discovered -q
+python3 -m pytest tests/test_pr_body_grant_lib.py tests/test_append_pr_body_grant_flow.py \
+  tests/test_pr_body_guard_core.py tests/test_check_guard_sync_divergence.py -q
+# 21 passed (2026-08-02)
 
 # Smoke: deny update_pr body
 python3 scripts/cursor/hooks/pr-body-guard-core.py manage_pr <<< \
@@ -144,6 +156,12 @@ python3 scripts/cursor/hooks/pr-body-guard-core.py manage_pr <<< \
 7. **v2.1 scope creep guard:** Any WebAuthn, MCP `verify`, or JWKS in orama scripts is wrong repo.
    Extend `docs/v2/51-security-sentinel-orbit-passkey-mcp.md` instead.
 
+8. **Replay state machine:** Never consume nonce before `gh pr edit` succeeds. Use `release` on
+   failure paths after `reserve`. Re-run append reconciles if follow-up block is already on remote.
+
+9. **Memory path hygiene:** Tracked `.agent` chronicles must not embed ephemeral scratch path
+   literals — PT CI `repo_hygiene.py` flags them like workstation home paths.
+
 ## Reflections (agent notes)
 
 The frustrating part of this saga was not the crypto. It was **orphaned hook paths**: security
@@ -159,22 +177,29 @@ drift. PT PR #320 is the integration surface; orama is canonical for scripts.
 
 ## Weld verification (2026-08-02)
 
-- orama branch: 6 commits on post-#255 `main`; no history reset.
-- PT branch: **ancestor** of `origin/cursor/coderabbit-review-wave-sync-f559` preserved; +2 commits (sync + memory).
-- Grant stack: **12 files byte-identical** orama ↔ PT (grant lib, hooks, sync script, pre-push, tests).
-- Tests: 17 passed orama; 13 passed PT (grant + guard + worktree).
-- Plan doc: autoplan body retained; header/status updated to implemented; commit map added.
+**Batch F (MVP):**
+- orama branch: 7 commits on post-#255 `main`; no history reset.
+- PT branch: ancestor of `cursor/coderabbit-review-wave-sync-f559` preserved.
+- Grant stack byte-identical orama ↔ PT after sync.
+- Tests: 17 passed orama; 13 passed PT (pre-remediation).
+
+**Batch G (remediation F1–F7):**
+- orama tip `739e2fe5`; PT tip `4ca359bb` on PR #320 branch.
+- Replay state machine, golden vector, `GH_BIN` append test, plan doc alignment.
+- CI fix: saga worktree path literals removed for `repo_hygiene`.
+- Tests: **21 passed** orama and PT (grant + append flow + guard + worktree).
 
 ## Related memory on this branch
 
-- `CODERABBIT_REVIEW_WAVE_4835024659_4835288649_2026-08-01.md` (Batch F added)
+- `CODERABBIT_REVIEW_WAVE_4835024659_4835288649_2026-08-01.md` (Batches F + G)
 - `PR_BODY_COMMENT_ONLY_FRUSTRATION_CHAIN_2026-08-01.md` (Layer 0 context)
 - `GUARD_SYNC_EPIC_SAGA_COMPLETION_2026-08-01.md` (prior wave)
 - `WORKSPACE.md` (current focus)
 
 ## Open follow-ups (not blocking MVP)
 
-- [ ] Open orama PR from `2026-08-02-pr-body-grant-hmac-mvp`; update PT #320 body with orama tip SHA
-- [ ] Doctrine pass: hookify + `.cursor/rules` still mention v1 / env override in some places — grep `operator-grant-v1`
-- [ ] `check_tdd_commit.sh` unbound `staged[@]` on empty index under `set -u` (macOS bash) — unrelated but blocked one commit attempt
+- [x] Open orama PR #260; push remediation to paired branches
+- [ ] Merge orama #260 → `main`, then PT #320 → `main`
+- [ ] Doctrine pass: hookify + `.cursor/rules` still mention v1 / env override — grep `operator-grant-v1`
+- [ ] `check_tdd_commit.sh` unbound `staged[@]` on empty index under `set -u` (macOS bash)
 - [ ] security-sentinel repo + perpetua-core plugin slot (v2.1)

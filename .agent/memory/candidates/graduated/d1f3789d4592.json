@@ -1,0 +1,53 @@
+{
+  "id": "d1f3789d4592",
+  "key": "manual_d1f378",
+  "name": "manual_d1f378",
+  "claim": "Human-authorized PR body edits require operator-grant-v2 HMAC ack from grant-pr-body-human-override.sh matching append bytes \u2014 not CURSOR_PR_BODY_HUMAN_OVERRIDE_ACK env exports or operator-grant-v1 plaintext ack.",
+  "conditions": [
+    "ack",
+    "append",
+    "body",
+    "bytes",
+    "cursor_pr_body_human_override_ack",
+    "edits",
+    "env",
+    "exports",
+    "grant-pr-body-human-override",
+    "hmac",
+    "human-authorized",
+    "matching",
+    "operator-grant-v1",
+    "operator-grant-v2",
+    "plaintext",
+    "require"
+  ],
+  "evidence_ids": [
+    "2026-08-02T04:07:28.486548+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-02T04:07:28.486548+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-02T04:07:28.486548+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-02T04:07:28.611464+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Supersedes env override lesson; v1 and env paths closed on orama #255 and grant v2 remediation.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-02T04:07:28.486548+00:00"
+      ],
+      "lessons_sha": "7cab2604b3de"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-02T04:07:28.611439+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Supersedes env override lesson; v1 and env paths closed on orama #255 and grant v2 remediation."
+}

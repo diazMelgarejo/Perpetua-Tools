@@ -1,0 +1,68 @@
+{
+  "id": "cd51f7e6bf6c",
+  "key": "manual_cd51f7",
+  "name": "manual_cd51f7",
+  "claim": "PR-body operator grant v2 replay state machine: append-pr-body.sh must reserve nonce before gh pr edit, mark-applied only after remote success, consume last; release reservation on edit failure; reconcile CLI consumes when follow-up block already on remote (crash recovery). Never consume before gh pr edit succeeds.",
+  "conditions": [
+    "after",
+    "already",
+    "append-pr-body",
+    "before",
+    "block",
+    "cli",
+    "consume",
+    "consumes",
+    "crash",
+    "edit",
+    "failure",
+    "follow-up",
+    "grant",
+    "last",
+    "machine",
+    "mark-applied",
+    "never",
+    "nonce",
+    "only",
+    "operator",
+    "pr-body",
+    "reconcile",
+    "recovery",
+    "release",
+    "remote",
+    "replay",
+    "reservation",
+    "reserve",
+    "state",
+    "succeeds",
+    "success"
+  ],
+  "evidence_ids": [
+    "2026-08-02T04:07:27.047829+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-02T04:07:27.047829+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-02T04:07:27.047829+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-02T04:07:27.202666+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Remediation F2 on orama #260 PT #320; closes replay window and crash-after-edit gap.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-02T04:07:27.047829+00:00"
+      ],
+      "lessons_sha": "d481593ae533"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-02T04:07:27.202651+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Remediation F2 on orama #260 PT #320; closes replay window and crash-after-edit gap."
+}
