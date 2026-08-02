@@ -1,0 +1,9 @@
+{"ts":"2026-08-02T00:00:00Z","id":"D1","decision":"operator-grant-v2 only; reject v1 fail-closed","phase":"security","source":"research+autoplan","rationale":"v1 plaintext ack forgeable without grant script"}
+{"ts":"2026-08-02T00:00:00Z","id":"D2","decision":"HMAC binds repo, pr, action, content-digest, nonce, issued-at","phase":"eng","source":"autoplan","rationale":"Prevents grant reuse for different append payload"}
+{"ts":"2026-08-02T00:00:00Z","id":"D3","decision":"Single-use grant via atomic nonce file + ack deletion on consume","phase":"eng","source":"autoplan","rationale":"Replay of copied ack within TTL"}
+{"ts":"2026-08-02T00:00:00Z","id":"D4","decision":"append-pr-body.sh independently verifies grant via pr-body-grant-lib.py","phase":"eng","source":"autoplan","rationale":"Hook parsing alone insufficient for authorized write path"}
+{"ts":"2026-08-02T00:00:00Z","id":"D5","decision":"Restore BACKUP| emission from guard-core on valid append segment","phase":"eng","source":"user+can-4","rationale":"Hook backup handlers were dead; legitimate preflight still needed"}
+{"ts":"2026-08-02T00:00:00Z","id":"D6","decision":"pr_body_run_guard() in pr-body-backup-lib.sh","phase":"dx","source":"can-4","rationale":"DRY identical shell/MCP guard blocks"}
+{"ts":"2026-08-02T00:00:00Z","id":"D7","decision":"Keychain openclaw.pr_body_grant.hmac + ~/.openclaw/secrets fallback","phase":"eng","source":"plan+mesh patterns","rationale":"Cross-platform secret provider without logging values"}
+{"ts":"2026-08-02T00:00:00Z","id":"D8","decision":"Defer WebAuthn/MCP to v2.1 security-sentinel orbit","phase":"ceo","source":"oramasys-method","rationale":"Do not half-implement passkeys in orama scripts"}
+{"ts":"2026-08-02T00:00:00Z","id":"D9","decision":"Branch from post-255 main; pair PT #320 on same branch name","phase":"process","source":"user","rationale":"#255 merged; avoid stale PR tip drift"}

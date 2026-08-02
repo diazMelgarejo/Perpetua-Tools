@@ -1,33 +1,40 @@
 # WORKSPACE — current task state
 
-**Updated:** 2026-07-28  
-**Active session:** cross-repo attribution guards + PR base branch policy
+**Updated:** 2026-08-02  
+**Active session:** PR-body grant HMAC MVP (post-#255) + PT #320 pairing
 
 ## Current focus
 
-- AlphaClaw [#17](https://github.com/diazMelgarejo/AlphaClaw/pull/17) → `feature/MacOS-post-install`
-- periscope [#7](https://github.com/diazMelgarejo/periscope/pull/7) → `merged`
-- orama-system [#222](https://github.com/diazMelgarejo/orama-system/pull/222) → `main` (Phase B Hermes)
+| Repo | PR | Branch | Role |
+| ---- | -- | ------ | ---- |
+| orama-system | (open next) | `2026-08-02-pr-body-grant-hmac-mvp` | **Canonical** grant v2 + hooks |
+| Perpetua-Tools | [#320](https://github.com/diazMelgarejo/Perpetua-Tools/pull/320) | `2026-08-02-pr-body-grant-hmac-mvp` | Mirror via sync script |
+| orama-system | [#255](https://github.com/diazMelgarejo/orama-system/pull/255) | merged → `main` | Baseline at `525961d6` |
 
-## PR base branch policy (never main for fork integration repos)
+## Saga doc (read this first)
 
-See `.agent/memory/working/WORKSPACE_PR_BASE_BRANCHES_2026-07-28.md`
+`PR_BODY_GRANT_HMAC_MVP_SAGA_2026-08-02.md` — timeline, research, decisions, operator workflow, tips.
 
-## Canonical session docs
+## Canonical artifacts
 
-| Doc | Path |
-|-----|------|
-| Session highlights | `memory/working/OPENCLAW_MERGE10_FLEET_RETROFIT_2026-07-26.md` |
-| Pipeline proof | `memory/working/2026-07-26-merge10-memory-pipeline-proof.md` |
-| Playbook | `references/openclaw-oramasys-fleet-retrofit-playbook.md` |
-| Decision | `memory/semantic/DECISIONS.md` § 2026-07-26 MERGE-10 |
+| What | Path |
+| ---- | ---- |
+| Implementation plan | orama `docs/plans/2026-08-02-pr-body-grant-security-remediation.md` |
+| Security research | orama `bin/orama-system/references/pr-body-human-grant-security-gap-research.md` |
+| v2.1 deferral | orama `docs/v2/51-security-sentinel-orbit-passkey-mcp.md` |
+| Decision JSONL | `.agent/memory/working/PR_BODY_GRANT_HMAC_DECISIONS_2026-08-02.jsonl` |
+| CodeRabbit wave report | `CODERABBIT_REVIEW_WAVE_4835024659_4835288649_2026-08-01.md` |
 
-## Git
+## Operator quick path
 
-- Branch: `docs/agent-merge10-fleet-retrofit-lessons` (pushed; PR pending — main push blocked by Phase 0 hook)
+```bash
+# Operator terminal only
+bash scripts/cursor/grant-pr-body-human-override.sh owner/repo N --file follow-up.md
+bash scripts/cursor/append-pr-body.sh owner/repo N --file follow-up.md
+```
 
 ## Next
 
-- Merge PR to land lessons on `main`
-- Operator: M3 dry-run in OpenClaw hub `DRY-RUN.md`
-- After dry-run: promote to orama-system per playbook § PLAN-08
+- Push paired branches; open orama PR; refresh PT #320 description with orama commit SHA
+- Grep repo for stale `operator-grant-v1` / `CURSOR_PR_BODY_HUMAN_OVERRIDE_ACK` doctrine
+- v2.1: security-sentinel satellite (no passkey code in orama scripts)
