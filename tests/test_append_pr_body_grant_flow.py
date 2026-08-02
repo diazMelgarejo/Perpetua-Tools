@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 APPEND_SH = ROOT / "scripts/cursor/append-pr-body.sh"
 GRANT_LIB = ROOT / "scripts/cursor/pr-body-grant-lib.py"
 
-pytestmark = pytest.mark.unit
+pytestmark = pytest.mark.integration
 
 
 def _run(cmd: list[str], env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:

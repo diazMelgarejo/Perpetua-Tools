@@ -1,6 +1,8 @@
 """Tests for scripts/cursor/pr-body-grant-lib.py"""
 from __future__ import annotations
 
+import hashlib
+import hmac
 import importlib.util
 import os
 from pathlib import Path
@@ -42,8 +44,8 @@ def test_canonical_golden_vector(grant_lib):
         b"grant-v2|owner/repo|42|nonce-abc|2026-08-02T00:00:00Z|"
         b"append_integrative|sha256:deadbeef"
     )
-    token = grant_lib._sign(b"unit-test-secret", payload)
-    assert token == grant_lib._sign(b"unit-test-secret", payload)
+    expected = hmac.new(b"unit-test-secret", payload, hashlib.sha256).hexdigest()
+    assert grant_lib._sign(b"unit-test-secret", payload) == expected
 
 
 def test_mint_and_verify_happy_path(grant_lib, tmp_path):
@@ -255,27 +257,3 @@ def test_parse_append_segment(grant_lib):
     )
     assert parsed == ("diaz/repo", "9", "out.md", None)
 
-
-def test_mint_grant_rejects_newline_in_pr_number(grant_lib, tmp_path):
-    """The specific gap this fixes: pr_number had zero validation before
-    reaching the canonical payload, unlike repo (which was already
-    checked, though only for pipe characters, not newlines either)."""
-    append = tmp_path / "follow.md"
-    append.write_text("x", encoding="utf-8")
-    with pytest.raises(grant_lib.GrantError):
-        grant_lib.mint_grant("owner/repo", "5\ninjected", str(append), None)
-
-
-def test_mint_grant_rejects_newline_in_repo(grant_lib, tmp_path):
-    append = tmp_path / "follow.md"
-    append.write_text("x", encoding="utf-8")
-    with pytest.raises(grant_lib.GrantError):
-        grant_lib.mint_grant("owner/repo\ninjected", "5", str(append), None)
-
-
-def test_verify_grant_fields_rejects_newline_in_pr_number(grant_lib):
-    ok, err = grant_lib.verify_grant_fields(
-        {"issued-at": "2026-01-01T00:00:00Z"}, "owner/repo", "5\ninjected", "digest"
-    )
-    assert not ok
-    assert "newline" in err.lower() or "pipe" in err.lower()

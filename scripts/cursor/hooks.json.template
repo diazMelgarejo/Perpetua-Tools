@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "SESSION_START_HOOK_PLACEHOLDER",
+        "timeout": 120
+      }
+    ],
+    "beforeSubmitPrompt": [
+      {
+        "command": "BEFORE_SUBMIT_PR_BODY_REMINDER_PLACEHOLDER",
+        "timeout": 15
+      }
+    ],
+    "beforeMCPExecution": [
+      {
+        "command": "BEFORE_MCP_PR_BODY_GUARD_PLACEHOLDER",
+        "timeout": 30,
+        "failClosed": true
+      }
+    ],
+    "preToolUse": [
+      {
+        "command": "BEFORE_MCP_PR_BODY_GUARD_PLACEHOLDER",
+        "matcher": "ManagePullRequest",
+        "timeout": 30,
+        "failClosed": true
+      }
+    ],
+    "beforeShellExecution": [
+      {
+        "command": "BEFORE_SHELL_PR_BODY_GUARD_PLACEHOLDER",
+        "timeout": 30,
+        "failClosed": true
+      }
+    ]
+  }
+}
