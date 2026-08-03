@@ -3,6 +3,30 @@
 > Record architectural or workflow choices that would be costly to re-debate.
 > Use this template for each entry:
 
+## 2026-08-03: PR-body grant can-6 follow-up — scrub_dsstore sync + v2.1+ deferral doctrine
+
+**Decision:** Batch H on paired branches orama #260 / PT #320. Add `scrub_dsstore.sh` to
+guard-sync manifest; guard githooks with `-x`; land can-6 grant hardening and tests without
+expanding MVP scope. All plan findings **not implemented in MVP v2** (ENG-6 per-PR lock,
+ENG-4 fail-closed providers, DX-5 extended crash recovery, WebAuthn/MCP, full doctrine sweep)
+are **v2.1+ or later** — security-sentinel orbit, not merge blockers for MVP.
+
+**Rationale:** PT pre-push warned on missing scrub script while hook always invoked it.
+CodeRabbit can-6 caught secure-write and test gaps. Reviewers must not treat deferred items as
+open MVP bugs.
+
+**Alternatives considered:** Implement ENG-6 lock in MVP (rejected — reconcile covers common
+case); fail-closed secret provider in shell (rejected — v2.1 provider interface).
+
+**Status:** active (pending merge of #260 and #320)
+
+**Links:**
+
+- Follow-up: `.agent/memory/working/PR_BODY_GRANT_CAN6_SCRUB_FOLLOWUP_2026-08-03.md`
+- Saga: `.agent/memory/working/PR_BODY_GRANT_HMAC_MVP_SAGA_2026-08-02.md` (Batch H)
+- Plan deferrals: orama `docs/plans/2026-08-02-pr-body-grant-security-remediation.md`
+- v2.1 orbit: orama `docs/v2/51-security-sentinel-orbit-passkey-mcp.md`
+
 ## 2026-08-02: PR-body grant v2 remediation — replay state machine + honest MVP boundary
 
 **Decision:** Close remediation review F1–F7 on paired branches orama #260 / PT #320. HMAC grant uses fixed-order UTF-8 canonical payload bytes; append flow is `reserve` → `append-pr-body.sh` (the guarded wrapper, performs the remote `gh pr edit` internally) → `mark-applied` → `consume` with `reconcile` for crash recovery. Same-user Keychain HMAC is **escalation control**, not proof of human presence. Human override is `operator-grant-v2` ack file, not `CURSOR_PR_BODY_HUMAN_OVERRIDE_ACK` env exports.

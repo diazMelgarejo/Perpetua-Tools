@@ -1,15 +1,15 @@
 # PR-body grant HMAC MVP — saga chronicle (2026-08-02)
 
-> **Status:** remediation complete on paired branches (orama #260, PT #320)  
-> **orama-system:** branch `2026-08-02-pr-body-grant-hmac-mvp` tip `739e2fe5` (PR #260)  
-> **Perpetua-Tools:** branch `cursor/coderabbit-review-wave-sync-f559` tip `4ca359bb` (PR #320)  
+> **Status:** can-6 + scrub follow-up shipped (orama #260, PT #320)  
+> **orama-system:** branch `2026-08-02-pr-body-grant-hmac-mvp` tip `4756d66f` (PR #260)  
+> **Perpetua-Tools:** branch `cursor/coderabbit-review-wave-sync-f559` tip `091e2fa4` (PR #320)  
 > **Trigger chain:** CodeRabbit `4835288649` on orama #255 →
 > `/autoplan` DONE_WITH_CONCERNS → can-4.md nitpicks on PT #320  
 > **Canonical plan:** `orama-system/docs/plans/2026-08-02-pr-body-grant-security-remediation.md`  
 > **Research:**
 > `orama-system/bin/orama-system/references/pr-body-human-grant-security-gap-research.md`  
 > **v2.1 deferral:**
-`orama-system/docs/v2/51-security-sentinel-orbit-passkey-mcp.md`
+> `orama-system/docs/v2/51-security-sentinel-orbit-passkey-mcp.md`
 
 ## Executive outcome
 
@@ -34,6 +34,7 @@ stay in v2.1 **security-sentinel** orbit (do not half-implement passkeys in shel
 | 2026-08-02 | can-4.md (CodeRabbit on PT #320) | DRY hooks, restore BACKUP emission, tighten worktree test, `range_for_ref` in pre-push |
 | 2026-08-02 | Implementation on `2026-08-02-pr-body-grant-hmac-mvp` | Single worktree consolidation (grant-mvp worktree → commit → sync to PT) |
 | 2026-08-02 | Remediation review F1–F7 + can-5 CI hygiene | Replay state machine, golden vector, GH_BIN test, saga path scrub |
+| 2026-08-03 | can-6.md + scrub_dsstore warning | Manifest sync, grant hardening, expanded tests, v2.1+ deferral doctrine |
 
 ## Research that preceded code (read before changing grants)
 
@@ -196,8 +197,17 @@ drift. PT PR #320 is the integration surface; orama is canonical for scripts.
 - CI fix: saga worktree path literals removed for `repo_hygiene`.
 - Tests: **21 passed** orama and PT (grant + append flow + guard + worktree).
 
+**Batch H (can-6 + scrub_dsstore, 2026-08-03):**
+
+- orama tip `4756d66f`; PT tip `091e2fa4` on PR #320 branch.
+- `scrub_dsstore.sh` in guard-sync manifest; githooks `-x` guard; upstream capture in
+  `range_for_ref`.
+- Grant lib: nonce lock context manager, secure ack write, can-6 test expansion (26 total).
+- Plan + memory: deferred ENG-6/ENG-4/DX-5 explicitly **v2.1+ or later**, not MVP gaps.
+
 ## Related memory on this branch
 
+- `PR_BODY_GRANT_CAN6_SCRUB_FOLLOWUP_2026-08-03.md` (Batch H detail)
 - `CODERABBIT_REVIEW_WAVE_4835024659_4835288649_2026-08-01.md` (Batches F + G)
 - `PR_BODY_COMMENT_ONLY_FRUSTRATION_CHAIN_2026-08-01.md` (Layer 0 context)
 - `GUARD_SYNC_EPIC_SAGA_COMPLETION_2026-08-01.md` (prior wave)
