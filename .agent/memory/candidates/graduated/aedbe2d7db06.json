@@ -1,0 +1,42 @@
+{
+  "id": "aedbe2d7db06",
+  "key": "manual_aedbe2",
+  "name": "manual_aedbe2",
+  "claim": "Never judge a config value 'stale' or 'correct' relative to an upstream/grandmother repo from memory or from your own fork's history alone \u2014 fetch the live upstream file (raw.githubusercontent.com or equivalent) directly before asserting what it currently contains",
+  "conditions": [
+    "grandmother repo",
+    "live fetch",
+    "module path",
+    "stale config",
+    "upstream verification"
+  ],
+  "evidence_ids": [
+    "2026-08-03T11:18:26.266747+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-03T11:18:26.266747+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-03T11:18:26.266747+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-03T11:18:26.406801+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Mid-investigation, I initially concluded periscope's .golangci.nilaway.yml include-pkgs value (go.kenn.io/agentsview) was 'stale' relative to a supposedly-renamed module path (github.com/latentsignal-org/periscope), and 'fixed' it to match. That fix was backwards: the module rename itself was the unauthorized change (see lesson_0c339d39a80c). Only after directly curling kenn-io/agentsview's live go.mod and latentsignal-org/periscope's live go.mod (both still go.kenn.io/agentsview and github.com/wesm/agentsview respectively -- neither ever adopted the invented path) did the true state become clear. Git blame/log --follow on the actual rename commit, plus live upstream fetches, are the only reliable ground truth -- not assumptions built on a prior (also-wrong) conclusion from earlier in the same session.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-03T11:18:26.266747+00:00"
+      ],
+      "lessons_sha": "0738a19b692b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-03T11:18:26.406791+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Mid-investigation, I initially concluded periscope's .golangci.nilaway.yml include-pkgs value (go.kenn.io/agentsview) was 'stale' relative to a supposedly-renamed module path (github.com/latentsignal-org/periscope), and 'fixed' it to match. That fix was backwards: the module rename itself was the unauthorized change (see lesson_0c339d39a80c). Only after directly curling kenn-io/agentsview's live go.mod and latentsignal-org/periscope's live go.mod (both still go.kenn.io/agentsview and github.com/wesm/agentsview respectively -- neither ever adopted the invented path) did the true state become clear. Git blame/log --follow on the actual rename commit, plus live upstream fetches, are the only reliable ground truth -- not assumptions built on a prior (also-wrong) conclusion from earlier in the same session."
+}
