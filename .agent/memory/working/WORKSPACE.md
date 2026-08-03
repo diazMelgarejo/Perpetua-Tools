@@ -8,7 +8,7 @@
 | Repo | PR | Branch | Tip SHA | Role |
 | ---- | -- | ------ | ------- | ---- |
 | orama-system | [#260](https://github.com/diazMelgarejo/orama-system/pull/260) | `2026-08-02-pr-body-grant-hmac-mvp` | `e3e58637` | **Canonical** grant v2 + can-6 |
-| Perpetua-Tools | [#320](https://github.com/diazMelgarejo/Perpetua-Tools/pull/320) | `cursor/coderabbit-review-wave-sync-f559` | `b13fbb78` | Mirror + `.agent` memory |
+| Perpetua-Tools | [#320](https://github.com/diazMelgarejo/Perpetua-Tools/pull/320) | `cursor/coderabbit-review-wave-sync-f559` | `599e28cb` | Mirror + `.agent` memory |
 | orama-system | [#255](https://github.com/diazMelgarejo/orama-system/pull/255) | merged → `main` | `525961d6` | Baseline |
 
 PT #320 head is `cursor/coderabbit-review-wave-sync-f559` (GitHub cannot retarget open PR head);
