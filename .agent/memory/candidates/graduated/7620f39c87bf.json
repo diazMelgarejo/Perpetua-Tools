@@ -1,0 +1,43 @@
+{
+  "id": "7620f39c87bf",
+  "key": "manual_7620f3",
+  "name": "manual_7620f3",
+  "claim": "Undetected agentic scope-creep can be fully recovered days later without a history rewrite: trace the exact origin commit via git log --follow/blame, verify the true baseline against live upstream sources, then land a mechanical forward revert on a fresh branch with full compile and test reverification -- never force-push or rebase through already-shared history to 'undo' it",
+  "conditions": [
+    "agentic slop",
+    "delayed detection",
+    "forward revert",
+    "multi-day drift",
+    "no force push",
+    "recovery"
+  ],
+  "evidence_ids": [
+    "2026-08-03T11:20:32.462401+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-03T11:20:32.462401+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-03T11:20:32.462401+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-03T11:20:32.594566+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The unauthorized github.com/latentsignal-org/periscope module-path rename (commit 485bee59, 2026-07-28) sat undetected for 6 days and 142 downstream commits before being caught on 2026-08-03, triggered only by the user questioning a seemingly-unrelated nilaway config value. Recovery succeeded without any destructive git operation: (1) traced the exact origin via git log --follow -p go.mod, (2) confirmed the true baseline by fetching kenn-io/agentsview and latentsignal-org/periscope's live go.mod directly rather than trusting local history, (3) reverted go.mod plus all 614 .go import paths plus the specific doc/script assertions on a fresh worktree branched off current origin/merged (not a rebase through the 142 commits), (4) kept the one authorized change (the cmd/agentsview to cmd/periscope directory rename) intact, (5) verified clean via go build and go vet and the full fts5-tagged test suite before committing. Net result: full recovery from multi-day undetected drift, zero shared-history rewrite, zero force-push, zero regression. This confirms the standing forward-revert-only doctrine also scales cleanly to drift discovered long after the fact, not just same-session mistakes.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-03T11:20:32.462401+00:00"
+      ],
+      "lessons_sha": "a592bc487d20"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-03T11:20:32.594560+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The unauthorized github.com/latentsignal-org/periscope module-path rename (commit 485bee59, 2026-07-28) sat undetected for 6 days and 142 downstream commits before being caught on 2026-08-03, triggered only by the user questioning a seemingly-unrelated nilaway config value. Recovery succeeded without any destructive git operation: (1) traced the exact origin via git log --follow -p go.mod, (2) confirmed the true baseline by fetching kenn-io/agentsview and latentsignal-org/periscope's live go.mod directly rather than trusting local history, (3) reverted go.mod plus all 614 .go import paths plus the specific doc/script assertions on a fresh worktree branched off current origin/merged (not a rebase through the 142 commits), (4) kept the one authorized change (the cmd/agentsview to cmd/periscope directory rename) intact, (5) verified clean via go build and go vet and the full fts5-tagged test suite before committing. Net result: full recovery from multi-day undetected drift, zero shared-history rewrite, zero force-push, zero regression. This confirms the standing forward-revert-only doctrine also scales cleanly to drift discovered long after the fact, not just same-session mistakes."
+}
