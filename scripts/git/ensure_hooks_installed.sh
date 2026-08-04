@@ -3,10 +3,16 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 if [[ -n "${REPO_ROOT:-}" ]] && [[ -d "$REPO_ROOT" ]]; then
   REPO_ROOT="$(cd "$REPO_ROOT" && pwd)"
+  # Prefer the script's checkout when REPO_ROOT points at a nested/junk clone
+  # (literal ~/ OPENCLAW_HOME) that lacks mandatory hooks.
+  if [[ ! -x "$REPO_ROOT/.githooks/pre-commit" && -x "$SCRIPT_REPO_ROOT/.githooks/pre-commit" ]]; then
+    REPO_ROOT="$SCRIPT_REPO_ROOT"
+  fi
 else
-  REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+  REPO_ROOT="$SCRIPT_REPO_ROOT"
 fi
 
 cd "$REPO_ROOT"
