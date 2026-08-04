@@ -330,19 +330,18 @@ def _run_ensure_hooks(repo_root: Path) -> subprocess.CompletedProcess[str]:
 
 
 def _snapshot_repo_hooks_state(repo_root: Path) -> dict:
-    """Capture local core.hooksPath and hook files before mutating the checkout."""
+    """Capture .githooks files and core.hooksPath before mutating the checkout."""
     proc = subprocess.run(
         ["git", "-C", str(repo_root), "config", "--local", "--get", "core.hooksPath"],
         capture_output=True,
         text=True,
     )
     hooks_path = proc.stdout.strip() if proc.returncode == 0 else None
-    hooks_dir = repo_root / (hooks_path if hooks_path else ".githooks")
+    hooks_dir = repo_root / ".githooks"
     snapshot = {
         "hooks_path": hooks_path,
         "hooks_path_was_set": proc.returncode == 0,
         "hooks_dir_existed": hooks_dir.is_dir(),
-        "hooks_dir": hooks_dir,
         "hooks": {},
     }
     for hook in ("pre-commit", "commit-msg", "pre-push"):
@@ -358,8 +357,8 @@ def _snapshot_repo_hooks_state(repo_root: Path) -> dict:
 
 
 def _restore_repo_hooks_state(repo_root: Path, snapshot: dict) -> None:
-    """Restore hook files and core.hooksPath after tests that call _ensure_repo_hooks_configured."""
-    hooks_dir = snapshot["hooks_dir"]
+    """Restore .githooks and core.hooksPath after tests that call _ensure_repo_hooks_configured."""
+    hooks_dir = repo_root / ".githooks"
     for hook in ("pre-commit", "commit-msg", "pre-push"):
         hook_path = hooks_dir / hook
         prev = snapshot["hooks"].get(hook)

@@ -62,8 +62,9 @@ guard_sync_dirty_paths() {
   return 0
 }
 
-# GUARD_SYNC_ON_DIRTY=skip — cloud install/start: warn and skip overwrite (exit 0)
-# instead of failing the whole VM boot when agent worktrees are mid-PR dirty.
+# GUARD_SYNC_ON_DIRTY=skip — cloud install/start: warn and skip overwrite (exit
+# GUARD_SYNC_EXIT_DIRTY_SKIP) instead of failing the whole VM boot when agent
+# worktrees are mid-PR dirty.
 _guard_sync_abort_if_dirty() {
   local root="$1"
   local label="$2"
@@ -72,7 +73,7 @@ _guard_sync_abort_if_dirty() {
   fi
   if [[ "${GUARD_SYNC_ON_DIRTY:-fail}" == "skip" ]]; then
     echo "warn: skipping sync for $label (GUARD_SYNC_ON_DIRTY=skip; dirty guard-sync paths preserved)" >&2
-    exit 0
+    exit "${GUARD_SYNC_EXIT_DIRTY_SKIP:-2}"
   fi
   exit 1
 }
