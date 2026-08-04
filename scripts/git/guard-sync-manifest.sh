@@ -51,3 +51,6 @@ GUARD_PARITY_REQUIRED=(
   "${GUARD_SYNC_EXECUTABLES[@]}"
   "${GUARD_SYNC_DATA_FILES[@]}"
 )
+
+# Dirty guard-sync paths with GUARD_SYNC_ON_DIRTY=skip — not success, not a hard failure.
+GUARD_SYNC_EXIT_DIRTY_SKIP=2
