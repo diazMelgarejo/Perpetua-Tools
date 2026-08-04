@@ -50,6 +50,28 @@ for r in "${raw_candidates[@]}"; do
   unique+=("$resolved")
 done
 
+# Drop nested checkouts (e.g. <repo>/~/openclaw-v1/AlphaClaw) so a bad
+# literal-tilde OPENCLAW_HOME cannot fan out sync into junk trees.
+filtered=()
+for r in "${unique[@]}"; do
+  nested=0
+  for other in "${unique[@]}"; do
+    [[ "$r" == "$other" ]] && continue
+    case "$r" in
+      "$other"/*)
+        nested=1
+        break
+        ;;
+    esac
+  done
+  if ((nested)); then
+    echo "warn: skipping nested git checkout inside workspace sibling: $r" >&2
+    continue
+  fi
+  filtered+=("$r")
+done
+unique=("${filtered[@]}")
+
 if [[ -x "$SYNC" ]]; then
   sync_failures=0
   for r in "${unique[@]}"; do
@@ -62,7 +84,12 @@ if [[ -x "$SYNC" ]]; then
   done
   if ((sync_failures > 0)); then
     echo "error: attribution guard sync failed for $sync_failures repo(s)" >&2
-    exit 1
+    # Cloud boot: prefer a working agent over a hard install/start failure.
+    if [[ "${GUARD_SYNC_ON_DIRTY:-fail}" == "skip" || "${CURSOR_AGENT:-}" == "1" ]]; then
+      echo "warn: continuing despite sync failures (cloud soft mode)" >&2
+    else
+      exit 1
+    fi
   fi
 fi
 
