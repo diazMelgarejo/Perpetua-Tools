@@ -558,6 +558,38 @@ def test_ensure_hooks_installed_fails_when_hook_not_executable(tmp_path):
     assert "non-executable" in proc.stderr
 
 
+def test_ensure_hooks_installed_remaps_only_nested_repo_root(tmp_path):
+    """Nested REPO_ROOT under the script checkout remaps; sibling roots do not."""
+    import shutil
+
+    # Sibling (not nested under ROOT): keep its own failure mode.
+    sibling = tmp_path / "sibling"
+    _make_fake_git_repo(sibling, hooks_path=".githooks")
+    hooks_dir = sibling / ".githooks"
+    hooks_dir.mkdir()
+    for hook in ("pre-commit", "commit-msg", "pre-push"):
+        h = hooks_dir / hook
+        h.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+        h.chmod(0o644)
+    proc = _run_ensure_hooks(sibling)
+    assert proc.returncode != 0
+    assert "non-executable" in proc.stderr
+
+    # Nested under this repo checkout (must be a real dir; pwd resolves symlinks).
+    nested = ROOT / ".pytest_cache" / "ensure-hooks-nested"
+    if nested.exists():
+        shutil.rmtree(nested)
+    nested.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        _make_fake_git_repo(nested, hooks_path=".githooks")
+        # No .githooks files — would fail if not remapped to SCRIPT_REPO_ROOT.
+        proc = _run_ensure_hooks(nested)
+        assert proc.returncode == 0, proc.stderr
+    finally:
+        if nested.exists():
+            shutil.rmtree(nested)
+
+
 def test_ensure_banned_patterns_succeeds_when_patterns_present():
     """_ensure_banned_patterns must not raise when patterns file exists."""
     _ensure_banned_patterns()
