@@ -257,3 +257,29 @@ def test_parse_append_segment(grant_lib):
     )
     assert parsed == ("diaz/repo", "9", "out.md", None)
 
+
+def test_parse_append_segment_quoted_multiword_message(grant_lib):
+    """Regression: a shell-quoted multi-word --message value must not be
+    truncated at the first whitespace. Naive str.split() would previously
+    return only 'hello' from '--message "hello world foo"'."""
+    parsed = grant_lib.parse_append_segment(
+        'bash scripts/cursor/append-pr-body.sh diaz/repo 9 --message "hello world foo"'
+    )
+    assert parsed == ("diaz/repo", "9", None, "hello world foo")
+
+
+def test_parse_append_segment_single_quoted_message(grant_lib):
+    parsed = grant_lib.parse_append_segment(
+        "bash scripts/cursor/append-pr-body.sh diaz/repo 9 --message 'single quoted msg'"
+    )
+    assert parsed == ("diaz/repo", "9", None, "single quoted msg")
+
+
+def test_parse_append_segment_malformed_quote_fails_closed(grant_lib):
+    """An unclosed quote must fail closed (return None), not crash and not
+    silently misparse."""
+    parsed = grant_lib.parse_append_segment(
+        'bash scripts/cursor/append-pr-body.sh diaz/repo 9 --message "unclosed'
+    )
+    assert parsed is None
+

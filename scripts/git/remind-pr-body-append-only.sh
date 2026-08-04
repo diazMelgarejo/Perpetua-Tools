@@ -20,20 +20,34 @@ if [[ -z "$pr_number" ]]; then
   exit 0
 fi
 
+# owner/repo slug for the explicit --repo flag and the backup path shown
+# below -- derived from pr_url (already captured above) rather than an
+# extra gh call. pr_url is always https://github.com/<owner>/<repo>/pull/<n>.
+repo_slug="$(printf '%s\n' "$pr_url" | sed -E 's#^https://github.com/([^/]+/[^/]+)/pull/.*#\1#')"
+backup_slug="${repo_slug//\//-}"
+
 cat <<EOF
-PR-BODY-GUARD (Layer 0): open PR #${pr_number} for branch ${branch}
+PR-BODY-GUARD: open PR #${pr_number} for branch ${branch}
   ${pr_title}
   ${pr_url}
 
-LAYER 0 — COMMENT ONLY. Cursor agents must NOT change the PR description.
+LAYER 0 — default for Cursor agents: ManagePullRequest post_comment OR gh pr comment only.
 
-  DO:    ManagePullRequest post_comment  OR  gh pr comment
-  NEVER: update_pr with body=, gh pr edit, append-pr-body.sh (hooks block these)
+Human override for description edits (operator runs grant-pr-body-human-override.sh first):
 
-Human override only (operator runs grant-pr-body-human-override.sh, then append-pr-body):
-  bash scripts/cursor/append-pr-body.sh <owner/repo> ${pr_number} --title "..." --file follow-up.md
+Correct path — the only path (append-pr-body.sh invokes update_pr internally, after read-backup-merge):
+  1. READ   gh pr view ${pr_number} --repo ${repo_slug} --json body --jq .body
+  2. BACKUP .git/pr-body-backups/${backup_slug}-pr${pr_number}-<UTC timestamp>.md
+  3. MERGE  keep original ## Summary; append ## Follow-up chronologically
+  4. WRITE  bash scripts/cursor/append-pr-body.sh ${repo_slug} ${pr_number} --title "..." --file follow-up.md
+     then: PR_BODY_UPDATE_ACK=1 before publish-clean-branch (strict mode)
 
-Rules: .cursor/rules/pr-body-comment-only.mdc
+NEVER call ManagePullRequest update_pr, gh pr edit, or gh api directly for PR-body
+writes — not as a primary path, not as a fallback, not even with a full body.
+append-pr-body.sh is the only path; the hook guard denies the others regardless.
+
+Lessons: lesson_3b13ab0a45d4 lesson_4a38f0e95fcf lesson_6fff093ccb00 lesson_a8f3c2e91d04
+Rules: .cursor/rules/append-only-pr-body.mdc
 Skill:  bin/orama-system/skills/cursor-pr-body/SKILL.md
 EOF
 
