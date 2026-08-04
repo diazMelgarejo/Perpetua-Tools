@@ -34,7 +34,14 @@ guard_sync_dirty_paths() {
   for rel in "${GUARD_SYNC_EXECUTABLES[@]}" "${GUARD_SYNC_DATA_FILES[@]}"; do
     paths+=("scripts/git/$rel")
   done
-  for rel in append-pr-body.sh; do
+  for rel in \
+    append-pr-body.sh \
+    grant-pr-body-human-override.sh \
+    pr-body-grant-lib.py \
+    hooks/pr-body-guard-core.py \
+    hooks/pr-body-backup-lib.sh \
+    hooks/before-shell-pr-body-guard.sh \
+    hooks/before-mcp-pr-body-guard.sh; do
     paths+=("scripts/cursor/$rel")
   done
   for rel in pr.md; do
