@@ -329,6 +329,75 @@ def _run_ensure_hooks(repo_root: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
+def _snapshot_repo_hooks_state(repo_root: Path) -> dict:
+    """Capture local core.hooksPath and hook files before mutating the checkout."""
+    proc = subprocess.run(
+        ["git", "-C", str(repo_root), "config", "--local", "--get", "core.hooksPath"],
+        capture_output=True,
+        text=True,
+    )
+    hooks_path = proc.stdout.strip() if proc.returncode == 0 else None
+    hooks_dir = repo_root / (hooks_path if hooks_path else ".githooks")
+    snapshot = {
+        "hooks_path": hooks_path,
+        "hooks_path_was_set": proc.returncode == 0,
+        "hooks_dir_existed": hooks_dir.is_dir(),
+        "hooks_dir": hooks_dir,
+        "hooks": {},
+    }
+    for hook in ("pre-commit", "commit-msg", "pre-push"):
+        hook_path = hooks_dir / hook
+        if hook_path.exists():
+            snapshot["hooks"][hook] = {
+                "content": hook_path.read_bytes(),
+                "mode": hook_path.stat().st_mode,
+            }
+        else:
+            snapshot["hooks"][hook] = None
+    return snapshot
+
+
+def _restore_repo_hooks_state(repo_root: Path, snapshot: dict) -> None:
+    """Restore hook files and core.hooksPath after tests that call _ensure_repo_hooks_configured."""
+    hooks_dir = snapshot["hooks_dir"]
+    for hook in ("pre-commit", "commit-msg", "pre-push"):
+        hook_path = hooks_dir / hook
+        prev = snapshot["hooks"].get(hook)
+        if prev is None:
+            if hook_path.exists():
+                hook_path.unlink()
+        else:
+            hooks_dir.mkdir(parents=True, exist_ok=True)
+            hook_path.write_bytes(prev["content"])
+            hook_path.chmod(prev["mode"])
+
+    if not snapshot["hooks_dir_existed"] and hooks_dir.is_dir():
+        try:
+            hooks_dir.rmdir()
+        except OSError:
+            pass
+
+    if snapshot["hooks_path_was_set"]:
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repo_root),
+                "config",
+                "--local",
+                "core.hooksPath",
+                snapshot["hooks_path"],
+            ],
+            check=True,
+            capture_output=True,
+        )
+    else:
+        subprocess.run(
+            ["git", "-C", str(repo_root), "config", "--local", "--unset", "core.hooksPath"],
+            capture_output=True,
+        )
+
+
 def _ensure_repo_hooks_configured(repo_root: Path) -> None:
     """CI checkouts may ship .githooks/ without local core.hooksPath configured."""
     hooks_dir = repo_root / ".githooks"
@@ -415,14 +484,16 @@ def test_ensure_hooks_installed_remaps_only_nested_repo_root(tmp_path):
     if nested.exists():
         shutil.rmtree(nested)
     nested.parent.mkdir(parents=True, exist_ok=True)
-    _ensure_repo_hooks_configured(ROOT)
+    hooks_snapshot = _snapshot_repo_hooks_state(ROOT)
     try:
+        _ensure_repo_hooks_configured(ROOT)
         _make_fake_git_repo(nested, hooks_path=".githooks")
         proc = _run_ensure_hooks(nested)
         assert proc.returncode == 0, proc.stderr
     finally:
         if nested.exists():
             shutil.rmtree(nested)
+        _restore_repo_hooks_state(ROOT, hooks_snapshot)
 
 
 def test_ensure_banned_patterns_succeeds_when_patterns_present():
