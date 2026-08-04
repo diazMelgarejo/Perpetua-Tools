@@ -84,8 +84,8 @@ if [[ -x "$SYNC" ]]; then
   done
   if ((sync_failures > 0)); then
     echo "error: attribution guard sync failed for $sync_failures repo(s)" >&2
-    # Cloud boot: prefer a working agent over a hard install/start failure.
-    if [[ "${GUARD_SYNC_ON_DIRTY:-fail}" == "skip" || "${CURSOR_AGENT:-}" == "1" ]]; then
+    # Cloud boot (explicit GUARD_SYNC_ON_DIRTY=skip): prefer a working agent over hard failure.
+    if [[ "${GUARD_SYNC_ON_DIRTY:-fail}" == "skip" ]]; then
       echo "warn: continuing despite sync failures (cloud soft mode)" >&2
     else
       exit 1

@@ -79,7 +79,7 @@ elif [[ -f "${ORAMA_SYSTEM_PATH}/scripts/cursor/lib-normalize-cloud-paths.sh" ]]
   source "${ORAMA_SYSTEM_PATH}/scripts/cursor/lib-normalize-cloud-paths.sh"
   normalize_cloud_openclaw_paths
 fi
-if [[ "${CURSOR_AGENT:-}" == "1" || -d /agent/repos ]]; then
+if [[ "${CURSOR_AGENT:-}" == "1" ]]; then
   export GUARD_SYNC_ON_DIRTY="${GUARD_SYNC_ON_DIRTY:-skip}"
 fi
 
