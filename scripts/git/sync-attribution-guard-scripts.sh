@@ -62,9 +62,24 @@ guard_sync_dirty_paths() {
   return 0
 }
 
-guard_sync_dirty_paths "$source_root" "canonical repo ($source_root)" || exit 1
+# GUARD_SYNC_ON_DIRTY=skip — cloud install/start: warn and skip overwrite (exit 0)
+# instead of failing the whole VM boot when agent worktrees are mid-PR dirty.
+_guard_sync_abort_if_dirty() {
+  local root="$1"
+  local label="$2"
+  if guard_sync_dirty_paths "$root" "$label"; then
+    return 0
+  fi
+  if [[ "${GUARD_SYNC_ON_DIRTY:-fail}" == "skip" ]]; then
+    echo "warn: skipping sync for $label (GUARD_SYNC_ON_DIRTY=skip; dirty guard-sync paths preserved)" >&2
+    exit 0
+  fi
+  exit 1
+}
+
+_guard_sync_abort_if_dirty "$source_root" "canonical repo ($source_root)"
 if [[ "$(cd "$source_root" && pwd)" != "$(cd "$target" && pwd)" ]]; then
-  guard_sync_dirty_paths "$target" "target repo ($target)" || exit 1
+  _guard_sync_abort_if_dirty "$target" "target repo ($target)"
 fi
 
 atomic_install_file() {
