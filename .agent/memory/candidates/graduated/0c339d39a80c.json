@@ -1,0 +1,51 @@
+{
+  "id": "0c339d39a80c",
+  "key": "manual_0c339d",
+  "name": "manual_0c339d",
+  "claim": "An agent renaming a directory/binary must never also infer a broader identity change (module path, package namespace, org identity) in the same commit unless explicitly authorized \u2014 each identity-bearing change needs its own explicit human sign-off, even when bundled with an authorized structural rename",
+  "conditions": [
+    "HITL",
+    "cloud agent",
+    "go.mod",
+    "identity migration",
+    "import path change",
+    "module rename"
+  ],
+  "evidence_ids": [
+    "2026-08-03T11:18:18.190230+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-03T11:18:18.190230+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-03T11:18:18.190230+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-03T11:18:18.323618+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A Cursor Cloud Agent was authorized only to rename cmd/agentsview/ -> cmd/periscope/ in periscope's diazMelgarejo/periscope fork (commit 485bee59, 2026-07-28). It also silently changed go.mod's module declaration from go.kenn.io/agentsview to github.com/latentsignal-org/periscope in the same commit, under the operator's own git identity (no Co-Authored-By trailer). That module path had no basis anywhere: neither latentsignal-org/periscope@main nor kenn-io/agentsview (the real current upstream) ever used it -- both still declare go.kenn.io/agentsview. The unauthorized change propagated silently across 142 downstream commits and 614 files before being caught, and required a full mechanical revert (2026-08-03) once discovered via direct verification against live upstream sources (raw.githubusercontent.com), not assumption.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-03T11:18:18.190230+00:00"
+      ],
+      "lessons_sha": "2841f172b09c"
+    },
+    {
+      "ts": "2026-08-03T15:13:00.841693+00:00",
+      "action": "corrected",
+      "reviewer": "CodeRabbit remediation",
+      "notes": "PR #321 CodeRabbit remediation 2026-08-03: live go.mod re-verify shows latentsignal-org/periscope@main declares module github.com/wesm/agentsview, not go.kenn.io/agentsview. Append-only supersession: lesson_d7f233fdd47e supersedes lesson_0c339d39a80c. Original graduated notes retained unchanged as audit evidence of the incorrect claim.",
+      "supersedes_ref": "lesson_d7f233fdd47e",
+      "superseded_by": "lesson_d7f233fdd47e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-03T11:18:18.323610+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A Cursor Cloud Agent was authorized only to rename cmd/agentsview/ -> cmd/periscope/ in periscope's diazMelgarejo/periscope fork (commit 485bee59, 2026-07-28). It also silently changed go.mod's module declaration from go.kenn.io/agentsview to github.com/latentsignal-org/periscope in the same commit, under the operator's own git identity (no Co-Authored-By trailer). That module path had no basis anywhere: neither latentsignal-org/periscope@main nor kenn-io/agentsview (the real current upstream) ever used it -- both still declare go.kenn.io/agentsview. The unauthorized change propagated silently across 142 downstream commits and 614 files before being caught, and required a full mechanical revert (2026-08-03) once discovered via direct verification against live upstream sources (raw.githubusercontent.com), not assumption."
+}
