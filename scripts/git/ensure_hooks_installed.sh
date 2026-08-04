@@ -6,11 +6,17 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 if [[ -n "${REPO_ROOT:-}" ]] && [[ -d "$REPO_ROOT" ]]; then
   REPO_ROOT="$(cd "$REPO_ROOT" && pwd)"
-  # Prefer the script's checkout when REPO_ROOT points at a nested/junk clone
-  # (literal ~/ OPENCLAW_HOME) that lacks mandatory hooks.
-  if [[ ! -x "$REPO_ROOT/.githooks/pre-commit" && -x "$SCRIPT_REPO_ROOT/.githooks/pre-commit" ]]; then
-    REPO_ROOT="$SCRIPT_REPO_ROOT"
-  fi
+  # Only remap when REPO_ROOT is nested under this script's checkout
+  # (literal ~/ OPENCLAW_HOME junk clones). Do NOT remap arbitrary
+  # alternate roots — tests and intentional REPO_ROOT overrides must keep
+  # their own hook failures (e.g. non-executable hooks).
+  case "$REPO_ROOT" in
+    "$SCRIPT_REPO_ROOT"/*)
+      if [[ ! -x "$REPO_ROOT/.githooks/pre-commit" && -x "$SCRIPT_REPO_ROOT/.githooks/pre-commit" ]]; then
+        REPO_ROOT="$SCRIPT_REPO_ROOT"
+      fi
+      ;;
+  esac
 else
   REPO_ROOT="$SCRIPT_REPO_ROOT"
 fi
