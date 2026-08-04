@@ -570,6 +570,14 @@ def _restore_repo_hooks_state(repo_root: Path, snapshot: dict) -> None:
             ["git", "-C", str(repo_root), "config", "--local", "--unset", "core.hooksPath"],
             capture_output=True,
         )
+        still_set = subprocess.run(
+            ["git", "-C", str(repo_root), "config", "--local", "core.hooksPath"],
+            capture_output=True,
+        )
+        assert still_set.returncode != 0, (
+            "core.hooksPath cleanup failed -- checkout is still configured with .githooks "
+            f"(value: {still_set.stdout.decode(errors='replace').strip()!r})"
+        )
 
 
 def _ensure_repo_hooks_configured(repo_root: Path) -> None:

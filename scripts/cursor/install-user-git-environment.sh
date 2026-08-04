@@ -85,9 +85,14 @@ fi
 
 if [[ -x "${REPO_ROOT}/scripts/git/apply-attribution-guard-all-repos.sh" ]]; then
   log "apply repo guards (Perpetua-Tools + siblings)"
-  bash "${REPO_ROOT}/scripts/git/apply-attribution-guard-all-repos.sh" || {
-    echo "warn: apply-attribution-guard-all-repos failed (continuing)" >&2
-  }
+  if ! bash "${REPO_ROOT}/scripts/git/apply-attribution-guard-all-repos.sh"; then
+    if [[ "${CURSOR_AGENT:-}" == "1" ]]; then
+      echo "warn: apply-attribution-guard-all-repos failed (continuing — Cursor Cloud)" >&2
+    else
+      echo "error: apply-attribution-guard-all-repos failed" >&2
+      exit 1
+    fi
+  fi
 fi
 
 ORAMA="${ORAMA_SYSTEM_PATH:-$REPO_ROOT/../orama-system}"
