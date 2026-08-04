@@ -329,6 +329,22 @@ def _run_ensure_hooks(repo_root: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
+def _ensure_repo_hooks_configured(repo_root: Path) -> None:
+    """CI checkouts may ship .githooks/ without local core.hooksPath configured."""
+    hooks_dir = repo_root / ".githooks"
+    hooks_dir.mkdir(exist_ok=True)
+    for hook in ("pre-commit", "commit-msg", "pre-push"):
+        dest = hooks_dir / hook
+        if not dest.exists():
+            dest.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+        dest.chmod(0o755)
+    subprocess.run(
+        ["git", "-C", str(repo_root), "config", "--local", "core.hooksPath", ".githooks"],
+        check=True,
+        capture_output=True,
+    )
+
+
 def test_ensure_hooks_installed_fails_when_hookspath_wrong(tmp_path):
     _make_fake_git_repo(tmp_path, hooks_path=".git/hooks")
     proc = _run_ensure_hooks(tmp_path)
@@ -399,6 +415,7 @@ def test_ensure_hooks_installed_remaps_only_nested_repo_root(tmp_path):
     if nested.exists():
         shutil.rmtree(nested)
     nested.parent.mkdir(parents=True, exist_ok=True)
+    _ensure_repo_hooks_configured(ROOT)
     try:
         _make_fake_git_repo(nested, hooks_path=".githooks")
         proc = _run_ensure_hooks(nested)
