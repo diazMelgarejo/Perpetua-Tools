@@ -70,10 +70,29 @@ export PERPETUA_TOOLS_PATH="${PERPETUA_TOOLS_PATH:-$REPO_ROOT}"
 export OPENCLAW_HOME="${OPENCLAW_HOME:-$HOME/openclaw-v1}"
 export ORAMA_SYSTEM_PATH="${ORAMA_SYSTEM_PATH:-$OPENCLAW_HOME/orama-system}"
 export ALPHACLAW_INSTALL_DIR="${ALPHACLAW_INSTALL_DIR:-$OPENCLAW_HOME/AlphaClaw}"
+if [[ -f "${REPO_ROOT}/scripts/cursor/lib-normalize-cloud-paths.sh" ]]; then
+  # shellcheck source=lib-normalize-cloud-paths.sh
+  source "${REPO_ROOT}/scripts/cursor/lib-normalize-cloud-paths.sh"
+  normalize_cloud_openclaw_paths
+elif [[ -f "${ORAMA_SYSTEM_PATH}/scripts/cursor/lib-normalize-cloud-paths.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "${ORAMA_SYSTEM_PATH}/scripts/cursor/lib-normalize-cloud-paths.sh"
+  normalize_cloud_openclaw_paths
+fi
+if [[ "${CURSOR_AGENT:-}" == "1" ]]; then
+  export GUARD_SYNC_ON_DIRTY="${GUARD_SYNC_ON_DIRTY:-skip}"
+fi
 
 if [[ -x "${REPO_ROOT}/scripts/git/apply-attribution-guard-all-repos.sh" ]]; then
   log "apply repo guards (Perpetua-Tools + siblings)"
-  bash "${REPO_ROOT}/scripts/git/apply-attribution-guard-all-repos.sh"
+  if ! bash "${REPO_ROOT}/scripts/git/apply-attribution-guard-all-repos.sh"; then
+    if [[ "${CURSOR_AGENT:-}" == "1" ]]; then
+      echo "warn: apply-attribution-guard-all-repos failed (continuing — Cursor Cloud)" >&2
+    else
+      echo "error: apply-attribution-guard-all-repos failed" >&2
+      exit 1
+    fi
+  fi
 fi
 
 ORAMA="${ORAMA_SYSTEM_PATH:-$REPO_ROOT/../orama-system}"

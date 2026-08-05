@@ -11,6 +11,19 @@
       "stern": false
     }
   },
+  // "**/SKILL.md" is broader than ideal (exempts ALL rules, not just
+  // MD013). A narrower MD013-only override was tested directly against
+  // markdownlint-cli2 v0.17.2 (the exact CI-pinned version) across all
+  // 92 SKILL.md files in this repo and surfaced 418 pre-existing
+  // violations across 87 files -- fence-blank-line and fence-language
+  // rules (MD031/MD040), not just line-length, and not introduced by
+  // whatever PR happens to touch this config next. Adopting the
+  // narrower config now would either fail CI on unrelated pre-existing
+  // content or require a separate cleanup pass first. Kept the working
+  // blanket ignore for now. Same investigation, same finding shape, as
+  // orama-system's own .markdownlint-cli2.jsonc -- see that file for
+  // the sibling repo's numbers (1032 violations / 205 files) and the
+  // ready-to-adopt narrower config once cleanup happens there.
   "ignores": [
     "**/SKILL.md",
     "**/LESSONS.md",

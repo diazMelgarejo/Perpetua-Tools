@@ -4,6 +4,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# shellcheck source=guard-sync-manifest.sh
+source "$SCRIPT_DIR/guard-sync-manifest.sh"
 DISABLE="$SCRIPT_DIR/disable-cursor-commit-attribution.sh"
 INSTALL="$SCRIPT_DIR/install-local-hooks.sh"
 SYNC="$SCRIPT_DIR/sync-attribution-guard-scripts.sh"
@@ -50,19 +52,54 @@ for r in "${raw_candidates[@]}"; do
   unique+=("$resolved")
 done
 
+# Drop nested checkouts (e.g. <repo>/~/openclaw-v1/AlphaClaw) so a bad
+# literal-tilde OPENCLAW_HOME cannot fan out sync into junk trees.
+filtered=()
+for r in "${unique[@]}"; do
+  nested=0
+  for other in "${unique[@]}"; do
+    [[ "$r" == "$other" ]] && continue
+    case "$r" in
+      "$other"/*)
+        nested=1
+        break
+        ;;
+    esac
+  done
+  if ((nested)); then
+    echo "warn: skipping nested git checkout inside workspace sibling: $r" >&2
+    continue
+  fi
+  filtered+=("$r")
+done
+unique=("${filtered[@]}")
+
 if [[ -x "$SYNC" ]]; then
   sync_failures=0
+  dirty_skips=0
   for r in "${unique[@]}"; do
     [[ "$r" == "$PT_ROOT" ]] && continue
     [[ "$(basename "$r")" == "periscope" ]] && continue
-    if ! bash "$SYNC" "$r"; then
-      echo "error: sync failed: $r" >&2
-      sync_failures=$((sync_failures + 1))
+    set +e
+    bash "$SYNC" "$r"
+    rc=$?
+    set -e
+    if [[ "$rc" -eq 0 ]]; then
+      continue
     fi
+    if [[ "$rc" -eq "${GUARD_SYNC_EXIT_DIRTY_SKIP:-2}" && "${GUARD_SYNC_ON_DIRTY:-fail}" == "skip" ]]; then
+      dirty_skips=$((dirty_skips + 1))
+      continue
+    fi
+    echo "error: sync failed: $r (exit $rc)" >&2
+    sync_failures=$((sync_failures + 1))
   done
   if ((sync_failures > 0)); then
     echo "error: attribution guard sync failed for $sync_failures repo(s)" >&2
     exit 1
+  fi
+  if ((dirty_skips > 0)); then
+    echo "warn: skipped sync for $dirty_skips repo(s) with dirty guard-sync paths (GUARD_SYNC_ON_DIRTY=skip)" >&2
   fi
 fi
 
