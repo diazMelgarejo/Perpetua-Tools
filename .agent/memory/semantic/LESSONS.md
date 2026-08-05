@@ -47,6 +47,9 @@
 - Scheduled coord_pulse on Windows does not load .env.local — ORAMA_SYSTEM_PATH and PERPETUA_TOOLS_PATH must be User-level env vars or explicit exports  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_5139fb44b427 -->
 - Do not run sync-gbrain code stage while gbrain autopilot is active — orchestrator refuses destructive source ops; disable autopilot LaunchAgent first when lock or stale index  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_c70ab2e5a60e -->
 - OpenClaw to Hermes graft must run Wave 0 taxonomy and lane tags before Wave 1 JSON envelope — SKIP recursive-spawn-protocol into hermes-delegate until rename  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_c9fb1689c1aa -->
+- Activating a provider config in a tool's own settings store (e.g. Cline's providers.json) does not make the CLI use it at runtime -- check for a separate top-level provider-selection flag/default before assuming a config write took effect  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_49e8701ba9e9 -->
+- A vendor-doc's exact sample curl/Python for a third-party OpenAI-compatible API is not guaranteed correct -- an optional-looking parameter (an OpenAI-Project header, or the SDK's project= kwarg) can silently break auth (401) even though the underlying key is valid; test with and without each optional param before trusting the documented sample verbatim  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_3c85823ef46f -->
+- When extracting or inspecting a secret from a config file via a shell one-liner, never use a bare grep/cat on the raw file -- pipe through a redaction step or use a script that only reports length/presence, even when the extraction command's PRIMARY purpose looks safe (e.g. checking a var name exists)  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_0c78b132c55b -->
 
 ### 2026-07
 
