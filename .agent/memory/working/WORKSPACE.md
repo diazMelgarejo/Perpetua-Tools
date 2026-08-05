@@ -1,14 +1,16 @@
 # WORKSPACE — current task state
 
-**Updated:** 2026-08-04 (Hermes graft + dispatch taxonomy + gbrain index refresh)  
-**Active branch:** `2026-08-03-001-periscope-fts5-tag-lesson`
+**Updated:** 2026-08-06 (Hermes graft envelope reconciliation landed local — T-ENG-1 + Wave 1–2)  
+**Claimed by:** Relay Cursor Agent — Hermes envelope reconciliation working-memory handoff (Codex `e0e9ea24` AGENT_LEARNINGS left alone; devices/models/ecc-tools stay uncommitted)  
+**Active branch (PT):** `2026-08-05-001-mcp-consolidation-from-alphaclaw`
 
 ## Current focus
 
 | Area | Branch / PR | Role |
 | ---- | ----------- | ---- |
-| **PT (this repo)** | `2026-08-03-001-periscope-fts5-tag-lesson` | periscope FTS5 tag lesson + memory batch |
-| **orama graft audit** | `cursor/hermes-openclaw-graft-audit-f559` | Hermes/OpenClaw graft + dispatch taxonomy |
+| **Hermes envelope reconciliation (orama)** | `2026-08-05-002-hermes-graft-plan-reference-fix` (`e90cb16d`…`e17aad66`) | **DONE local, push deferred.** T-ENG-1 canonical envelope + Wave 1–2 (`--json`, `hermes-status`); 38/38 tests; SoT `hermes-universal-invocation-protocol.md`; Appendix C deferred v2.1++. Board: coord-036 inbox `mac-2026-08-06-hermes-envelope-reconciliation.md` |
+| **PT (this repo)** | `2026-08-05-001-mcp-consolidation-from-alphaclaw` | MCP consolidation from AlphaClaw + memory batch |
+| **orama graft audit** | `cursor/hermes-openclaw-graft-audit-f559` | Hermes/OpenClaw graft + dispatch taxonomy (superseded by envelope reconciliation branch above) |
 | **Grant HMAC (landed)** | orama #260 + PT #320 merged to `main` | Follow-up on `post-grant-followup-*` branches |
 
 ## Read this first
@@ -63,7 +65,8 @@ Env must be User-level for scheduled tasks — `.env.local` not loaded by coord_
 
 ## Next
 
-- [ ] Commit orama graft branch (taxonomy + plan Phase 1.5)
+- [ ] Push orama `2026-08-05-002-hermes-graft-plan-reference-fix` + open/update PR (operator gate — 4 local commits, 38/38 tests)
+- [ ] Wave 1 follow-ups: `hermes-orama` buffered `--json`; Windows PowerShell adapter coverage or explicit exclusion; Win Hermes partner canary self-experiment
+- [ ] Appendix C build (task API, fleet mgr, verifier, scheduler, recursive, HITL) — v2.1++ / oramasys migration
 - [ ] Wave 0 SKILL lane tags (orama canonical → PT thin sync)
-- [ ] periscope FTS5 tag lesson (branch purpose)
 - [ ] Re-enable gbrain autopilot after embedding/timeout fix
