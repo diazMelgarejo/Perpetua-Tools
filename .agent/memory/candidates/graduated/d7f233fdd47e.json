@@ -1,0 +1,46 @@
+{
+  "id": "d7f233fdd47e",
+  "key": "manual_d7f233",
+  "name": "manual_d7f233",
+  "claim": "An agent renaming a directory/binary must never also infer a broader identity change (module path, package namespace, org identity) in the same commit unless explicitly authorized \u2014 each identity-bearing change needs its own explicit human sign-off, even when bundled with an authorized structural rename. When citing live go.mod values after such an incident, verify each repository independently: GitHub repo lineage (wesm/agentsview redirects to kenn-io/agentsview) does not imply a fork already adopted the parent vanity module path.",
+  "conditions": [
+    "HITL",
+    "cloud agent",
+    "fork lag",
+    "go.mod",
+    "identity migration",
+    "import path change",
+    "live go.mod",
+    "module rename",
+    "vanity module path"
+  ],
+  "evidence_ids": [
+    "2026-08-03T15:12:43.479133+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-03T15:12:43.479133+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-03T15:12:43.479133+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-03T15:13:00.814673+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Correction for lesson_0c339d39a80c (PR #321 / CodeRabbit + owner clarification 2026-08-03). Live re-verify at remediation time: kenn-io/agentsview declares module go.kenn.io/agentsview; latentsignal-org/periscope@main still declares module github.com/wesm/agentsview; github.com/wesm/agentsview HTTP-redirects to kenn-io/agentsview (same repo lineage after the wesm\u2192kenn-io rename). Upstream vanity migration is commit 6ef281c74db5 (\"Use go.kenn.io vanity module path\"); the latentsignal fork never received that go.mod change. The original 0c339d39a80c notes incorrectly stated that latentsignal-org/periscope@main also declares go.kenn.io/agentsview \u2014 aedbe2d7db06 was correct that the fork still has github.com/wesm/agentsview. HITL claim stands; only the live-path evidence needed this append-only supersession. Unauthorized invented path github.com/latentsignal-org/periscope remains absent from both live trees.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-03T15:12:43.479133+00:00"
+      ],
+      "lessons_sha": "04fa29e0f8c7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-03T15:13:00.814664+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Correction for lesson_0c339d39a80c (PR #321 / CodeRabbit + owner clarification 2026-08-03). Live re-verify at remediation time: kenn-io/agentsview declares module go.kenn.io/agentsview; latentsignal-org/periscope@main still declares module github.com/wesm/agentsview; github.com/wesm/agentsview HTTP-redirects to kenn-io/agentsview (same repo lineage after the wesm\u2192kenn-io rename). Upstream vanity migration is commit 6ef281c74db5 (\"Use go.kenn.io vanity module path\"); the latentsignal fork never received that go.mod change. The original 0c339d39a80c notes incorrectly stated that latentsignal-org/periscope@main also declares go.kenn.io/agentsview \u2014 aedbe2d7db06 was correct that the fork still has github.com/wesm/agentsview. HITL claim stands; only the live-path evidence needed this append-only supersession. Unauthorized invented path github.com/latentsignal-org/periscope remains absent from both live trees."
+}
