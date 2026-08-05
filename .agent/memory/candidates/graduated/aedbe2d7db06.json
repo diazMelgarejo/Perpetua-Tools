@@ -33,6 +33,12 @@
         "2026-08-03T11:18:26.266747+00:00"
       ],
       "lessons_sha": "0738a19b692b"
+    },
+    {
+      "ts": "2026-08-03T15:13:00.841693+00:00",
+      "action": "corrected",
+      "reviewer": "CodeRabbit remediation",
+      "notes": "PR #321 CodeRabbit remediation 2026-08-03: re-confirmed correct. kenn-io/agentsview live go.mod = go.kenn.io/agentsview; latentsignal-org/periscope live go.mod = github.com/wesm/agentsview. Owner clarification: github.com/wesm/agentsview redirects to kenn-io/agentsview (same GitHub repo lineage after wesm->kenn-io rename); vanity module path migration is upstream commit 6ef281c74db5 -- the fork has not adopted it. Repo lineage does not imply identical go.mod strings. Sibling incorrect record 0c339d39a80c superseded by lesson_d7f233fdd47e. Existing fields not rewritten."
     }
   ],
   "rejection_count": 0,

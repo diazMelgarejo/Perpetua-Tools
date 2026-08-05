@@ -34,6 +34,14 @@
         "2026-08-03T11:18:18.190230+00:00"
       ],
       "lessons_sha": "2841f172b09c"
+    },
+    {
+      "ts": "2026-08-03T15:13:00.841693+00:00",
+      "action": "corrected",
+      "reviewer": "CodeRabbit remediation",
+      "notes": "PR #321 CodeRabbit remediation 2026-08-03: live go.mod re-verify shows latentsignal-org/periscope@main declares module github.com/wesm/agentsview, not go.kenn.io/agentsview. Append-only supersession: lesson_d7f233fdd47e supersedes lesson_0c339d39a80c. Original graduated notes retained unchanged as audit evidence of the incorrect claim.",
+      "supersedes_ref": "lesson_d7f233fdd47e",
+      "superseded_by": "lesson_d7f233fdd47e"
     }
   ],
   "rejection_count": 0,
