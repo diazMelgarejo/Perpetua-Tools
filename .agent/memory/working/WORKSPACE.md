@@ -1,60 +1,69 @@
 # WORKSPACE — current task state
 
-**Updated:** 2026-08-02 (remediation batch G)  
-**Active session:** PR-body grant HMAC MVP remediation — paired orama #260 + PT #320
+**Updated:** 2026-08-04 (Hermes graft + dispatch taxonomy + gbrain index refresh)  
+**Active branch:** `2026-08-03-001-periscope-fts5-tag-lesson`
 
 ## Current focus
 
-| Repo | PR | Branch | Tip SHA | Role |
-| ---- | -- | ------ | ------- | ---- |
-| orama-system | [#260](https://github.com/diazMelgarejo/orama-system/pull/260) | `2026-08-02-pr-body-grant-hmac-mvp` | `739e2fe5` | **Canonical** grant v2 + remediation |
-| Perpetua-Tools | [#320](https://github.com/diazMelgarejo/Perpetua-Tools/pull/320) | `cursor/coderabbit-review-wave-sync-f559` | `4ca359bb` | Mirror + `.agent` memory |
-| orama-system | [#255](https://github.com/diazMelgarejo/orama-system/pull/255) | merged → `main` | `525961d6` | Baseline |
+| Area | Branch / PR | Role |
+| ---- | ----------- | ---- |
+| **PT (this repo)** | `2026-08-03-001-periscope-fts5-tag-lesson` | periscope FTS5 tag lesson + memory batch |
+| **orama graft audit** | `cursor/hermes-openclaw-graft-audit-f559` | Hermes/OpenClaw graft + dispatch taxonomy |
+| **Grant HMAC (landed)** | orama #260 + PT #320 merged to `main` | Follow-up on `post-grant-followup-*` branches |
 
-PT #320 head is `cursor/coderabbit-review-wave-sync-f559` (GitHub cannot retarget open PR head);
-grant stack synced from orama via `sync-attribution-guard-scripts.sh` after each canonical commit.
+## Read this first
 
-## Saga doc (read this first)
+| Priority | Doc |
+| -------- | --- |
+| 1 | `HERMES_GRAFT_DISPATCH_CORRECTIONS_REPORT_2026-08-04.md` — full corrections report + synthesis |
+| 2 | orama `hermes-dispatch-taxonomy.md` — L-H1 / L-PT / L-Fleet canonical |
+| 3 | orama `docs/plans/2026-08-03-hermes-openclaw-graft-audit-plan.md` — Phase 1.5 + Wave 0 |
 
-`PR_BODY_GRANT_HMAC_MVP_SAGA_2026-08-02.md` — timeline, research, decisions D1–D17,
-replay state machine, operator workflow, tips.
+## Hermes dispatch doctrine (2026-08-04)
 
-## Canonical artifacts
+Three lanes — **never conflate in prose:**
 
-| What | Path |
-| ---- | ---- |
-| Implementation plan | orama `docs/plans/2026-08-02-pr-body-grant-security-remediation.md` |
-| Security research | orama `bin/orama-system/references/pr-body-human-grant-security-gap-research.md` |
-| v2.1 deferral | orama `docs/v2/51-security-sentinel-orbit-passkey-mcp.md` |
-| Decision JSONL | `.agent/memory/working/PR_BODY_GRANT_HMAC_DECISIONS_2026-08-02.jsonl` |
-| CodeRabbit wave report | `CODERABBIT_REVIEW_WAVE_4835024659_4835288649_2026-08-01.md` (Batches F + G) |
-| Remediation review source | OpenClaw `references/pr-body-grant-remediation-review-findings-2026-08-02.md` |
+| Lane | What runs | orama examples |
+| ---- | --------- | -------------- |
+| **L-H1** | Native `delegate_task` child AIAgents | Interactive Hermes session |
+| **L-PT** | PT `spawn_hermes_agent()` / `hermes_harness.py` | `hermes-orama`, `hermes-delegate`, `hermes_spawn.sh` |
+| **L-Fleet** | `coord_pulse` → `cursor-agent` | Win coder/autoresearcher queues |
 
-## Operator quick path
+`hermes-delegate` is **L-PT**, NOT `delegate_task`. `REGISTRY.yml` is profile **staging**, not runtime subagent tree.
 
-```bash
-# Operator terminal only (TTY + not CURSOR_AGENT/CI)
-bash scripts/cursor/grant-pr-body-human-override.sh owner/repo N --file follow-up.md
-bash scripts/cursor/append-pr-body.sh owner/repo N --file follow-up.md
+## gbrain index (2026-08-04)
+
+| Repo | Pages (approx) | Notes |
+| ---- | ---------------- | ----- |
+| Perpetua-Tools | 3191 | `gstack-code-078b0b90-f6179f` |
+| orama-system | 905 | post-autopilot-stop sync |
+| AlphaClaw | 516 | re-synced |
+| periscope | 151+ | `oramasys/tools/periscope` refresh |
+
+Autopilot disabled until timeout/embedding issues fixed. Re-enable LaunchAgent when stable.
+
+## Saga docs (background)
+
+| Topic | Path |
+| ----- | ---- |
+| Grant HMAC MVP | `PR_BODY_GRANT_HMAC_MVP_SAGA_2026-08-02.md` |
+| PR222 Hermes staging | `PR222_HERMES_STAGING_SESSION_2026-07-27.md` |
+| Guard sync epic | `GUARD_SYNC_EPIC_SAGA_COMPLETION_2026-08-01.md` |
+
+## Operator quick path (Hermes Win)
+
+```powershell
+$env:ORAMA_SYSTEM_PATH = "<orama-system>"
+$env:PERPETUA_TOOLS_PATH = "<Perpetua-Tools>"
+.\scripts\install_coord_pulse.ps1 -Status
+.\bin\orama-system\skills\hermes-harness\scripts\coord_pulse.ps1 -DryRun
 ```
 
-Grant lifecycle: **mint → reserve → append-pr-body.sh (internal gh edit) → mark-applied → consume**.
-Re-run append reconciles if follow-up already on remote (crash recovery).
-
-## Verification (last run 2026-08-02)
-
-```bash
-python3 -m pytest tests/test_pr_body_grant_lib.py tests/test_append_pr_body_grant_flow.py \
-  tests/test_pr_body_guard_core.py tests/test_check_guard_sync_divergence.py -q
-```
-
-Run separately in each repo, not combined into one aggregate figure --
-26 passed in orama-system, 26 passed in Perpetua-Tools (same count in
-each since the two repos are synced copies of these test files, not a
-coincidence worth reading as one combined 26).
+Env must be User-level for scheduled tasks — `.env.local` not loaded by coord_pulse.
 
 ## Next
 
-- Merge orama #260 → `main`, then PT #320 → `main`
-- Doctrine pass: grep `operator-grant-v1`, `CURSOR_PR_BODY_HUMAN_OVERRIDE_ACK` in hookify/rules
-- v2.1: security-sentinel satellite (no passkey code in orama scripts)
+- [ ] Commit orama graft branch (taxonomy + plan Phase 1.5)
+- [ ] Wave 0 SKILL lane tags (orama canonical → PT thin sync)
+- [ ] periscope FTS5 tag lesson (branch purpose)
+- [ ] Re-enable gbrain autopilot after embedding/timeout fix
