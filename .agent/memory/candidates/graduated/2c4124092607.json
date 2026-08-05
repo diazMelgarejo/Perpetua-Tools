@@ -1,0 +1,41 @@
+{
+  "id": "2c4124092607",
+  "key": "manual_2c4124",
+  "name": "manual_2c4124",
+  "claim": "The EXA daemon-wrapper pattern (singleton daemon + Unix-socket bridge to avoid N duplicate npx child processes) only applies to locally-spawned stdio MCP servers -- it does not transfer to type:http MCP servers like Firecrawl/GitHub Copilot, since Claude Code connects to those directly via HTTP with no local backend process to daemonize.",
+  "conditions": [
+    "EXA pattern",
+    "MCP consolidation",
+    "daemon wrapper",
+    "http transport"
+  ],
+  "evidence_ids": [
+    "2026-08-05T20:11:00.864787+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-05T20:11:00.864787+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-05T20:11:00.864787+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-05T20:11:00.980002+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Learned during MCP consolidation work this session (OpenClaw/.mcp.json -> global ~/.claude.json): initially assumed the EXA pattern should be emulated for Firecrawl+GitHub per the user's explicit request, but on inspection Firecrawl and GitHub Copilot are both type:http in the config, meaning the 'N duplicate local processes' problem the EXA pattern solves doesn't exist for them. The applicable part of EXA's pattern that DOES transfer is the secret-resolution architecture (bearer_token_env_var -> ~/.openclaw/secrets/<name> 0600 -> .env.<name> loader), which was already implemented separately.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-05T20:11:00.864787+00:00"
+      ],
+      "lessons_sha": "c2b0a4be1fc4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-05T20:11:00.979993+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Learned during MCP consolidation work this session (OpenClaw/.mcp.json -> global ~/.claude.json): initially assumed the EXA pattern should be emulated for Firecrawl+GitHub per the user's explicit request, but on inspection Firecrawl and GitHub Copilot are both type:http in the config, meaning the 'N duplicate local processes' problem the EXA pattern solves doesn't exist for them. The applicable part of EXA's pattern that DOES transfer is the secret-resolution architecture (bearer_token_env_var -> ~/.openclaw/secrets/<name> 0600 -> .env.<name> loader), which was already implemented separately."
+}
