@@ -34,7 +34,14 @@ guard_sync_dirty_paths() {
   for rel in "${GUARD_SYNC_EXECUTABLES[@]}" "${GUARD_SYNC_DATA_FILES[@]}"; do
     paths+=("scripts/git/$rel")
   done
-  for rel in append-pr-body.sh; do
+  for rel in \
+    append-pr-body.sh \
+    grant-pr-body-human-override.sh \
+    pr-body-grant-lib.py \
+    hooks/pr-body-guard-core.py \
+    hooks/pr-body-backup-lib.sh \
+    hooks/before-shell-pr-body-guard.sh \
+    hooks/before-mcp-pr-body-guard.sh; do
     paths+=("scripts/cursor/$rel")
   done
   for rel in pr.md; do
@@ -62,9 +69,25 @@ guard_sync_dirty_paths() {
   return 0
 }
 
-guard_sync_dirty_paths "$source_root" "canonical repo ($source_root)" || exit 1
+# GUARD_SYNC_ON_DIRTY=skip — cloud install/start: warn and skip overwrite (exit
+# GUARD_SYNC_EXIT_DIRTY_SKIP) instead of failing the whole VM boot when agent
+# worktrees are mid-PR dirty.
+_guard_sync_abort_if_dirty() {
+  local root="$1"
+  local label="$2"
+  if guard_sync_dirty_paths "$root" "$label"; then
+    return 0
+  fi
+  if [[ "${GUARD_SYNC_ON_DIRTY:-fail}" == "skip" ]]; then
+    echo "warn: skipping sync for $label (GUARD_SYNC_ON_DIRTY=skip; dirty guard-sync paths preserved)" >&2
+    exit "${GUARD_SYNC_EXIT_DIRTY_SKIP:-2}"
+  fi
+  exit 1
+}
+
+_guard_sync_abort_if_dirty "$source_root" "canonical repo ($source_root)"
 if [[ "$(cd "$source_root" && pwd)" != "$(cd "$target" && pwd)" ]]; then
-  guard_sync_dirty_paths "$target" "target repo ($target)" || exit 1
+  _guard_sync_abort_if_dirty "$target" "target repo ($target)"
 fi
 
 atomic_install_file() {
