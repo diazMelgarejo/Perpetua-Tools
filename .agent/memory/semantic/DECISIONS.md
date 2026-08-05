@@ -470,7 +470,9 @@ without rename would cement the error.
 **Alternatives considered:** Single "Hermes subagent" umbrella (rejected — three incompatible
 runtimes); renaming only docs without REGISTRY fields (rejected — needs machine-checkable tags).
 
-**Status:** active — canonical `hermes-dispatch-taxonomy.md` on graft branch; Wave 0 before graft Wave 1.
+**Status:** done (pending review) — Wave 0 taxonomy/lane tags complete on orama graft branches;
+Wave 1–2 envelope reconciliation also complete (pending review/merge). Chronology invariant:
+Wave 0 precedes Wave 1. Not merged/released.
 
 **Links:**
 
@@ -490,7 +492,9 @@ runtimes); renaming only docs without REGISTRY fields (rejected — needs machin
 **Rationale:** Protocol harmonization without lane clarity repeats the subagent misconstrual
 in a more formal JSON schema.
 
-**Status:** active — pending graft branch merge.
+**Status:** done (pending review) — Wave 0 taxonomy/lane tags complete; Wave 1–2 JSON envelope +
+`hermes-status` complete on orama `2026-08-05-002-hermes-graft-plan-reference-fix` (local
+commits, tests green). Operator review/merge gate open — not merged/released.
 
 ---
 
