@@ -1,0 +1,53 @@
+{
+  "id": "23b2a4dce4a8",
+  "key": "manual_23b2a4",
+  "name": "manual_23b2a4",
+  "claim": "Windows coord_pulse dispatches cursor-agent via win_job_queue \u2014 not Hermes delegate_task; subagent/win-* git branches are L-Fleet file-inbox coordination fiction",
+  "conditions": [
+    "branches",
+    "coord_pulse",
+    "coordination",
+    "cursor-agent",
+    "delegate_task",
+    "dispatches",
+    "fiction",
+    "file-inbox",
+    "git",
+    "hermes",
+    "l-fleet",
+    "subagent",
+    "via",
+    "win-",
+    "win_job_queue",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-08-04T02:15:24.268985+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-04T02:15:24.268985+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-04T02:15:24.268985+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-04T02:15:24.391429+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord_pulse.ps1 lines 111-136; win-self-improve-cycle-007",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-04T02:15:24.268985+00:00"
+      ],
+      "lessons_sha": "92fb28c6e698"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-04T02:15:24.391414+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord_pulse.ps1 lines 111-136; win-self-improve-cycle-007"
+}

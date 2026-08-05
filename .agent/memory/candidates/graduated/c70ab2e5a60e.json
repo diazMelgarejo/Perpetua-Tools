@@ -1,0 +1,56 @@
+{
+  "id": "c70ab2e5a60e",
+  "key": "manual_c70ab2",
+  "name": "manual_c70ab2",
+  "claim": "Do not run sync-gbrain code stage while gbrain autopilot is active \u2014 orchestrator refuses destructive source ops; disable autopilot LaunchAgent first when lock or stale index",
+  "conditions": [
+    "active",
+    "autopilot",
+    "code",
+    "destructive",
+    "disable",
+    "first",
+    "gbrain",
+    "index",
+    "launchagent",
+    "lock",
+    "ops",
+    "orchestrator",
+    "refuses",
+    "run",
+    "source",
+    "stage",
+    "stale",
+    "sync-gbrain",
+    "while"
+  ],
+  "evidence_ids": [
+    "2026-08-04T02:15:25.687301+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-04T02:15:25.687301+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-04T02:15:25.687301+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-04T02:15:25.810089+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "gbrain #1734; 2026-08-04 repair session",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-04T02:15:25.687301+00:00"
+      ],
+      "lessons_sha": "e0ce3f9eec5f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-04T02:15:25.810078+00:00",
+  "reviewer": "learn.py",
+  "rationale": "gbrain #1734; 2026-08-04 repair session"
+}

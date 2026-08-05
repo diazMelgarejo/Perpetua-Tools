@@ -454,3 +454,55 @@ Antigravity — Vera universal, Sage optional analyzer).
 - Live hub: `${ALPHACLAW_INSTALL_DIR}/.openclaw/workspace/docs/oramasys/CROSSREF.md`
 
 ---
+
+## 2026-08-04: Hermes dispatch — three lanes (L-H1 / L-PT / L-Fleet)
+
+**Decision:** Document and tag all hermes-harness skills and `bin/agents/` staging rows with
+exactly one dispatch lane. **L-H1** = native Nous `delegate_task` children (in-session only).
+**L-PT** = PT `spawn_hermes_agent()` / `hermes_harness.py` direct `AIAgent` scripts.
+**L-Fleet** = `coord_pulse` → `win_job_queue` → `cursor-agent` (Win/Mac fleet fiction).
+
+**Rationale:** EXA/FireCrawl + fleet results + `coord_pulse.ps1` prove Win operators run
+L-Fleet, not L-H1. orama `hermes-delegate` and universal-envelope prose falsely implied
+native Hermes subagent parity. Grafting OpenClaw recursive-spawn into `hermes-delegate`
+without rename would cement the error.
+
+**Alternatives considered:** Single "Hermes subagent" umbrella (rejected — three incompatible
+runtimes); renaming only docs without REGISTRY fields (rejected — needs machine-checkable tags).
+
+**Status:** active — canonical `hermes-dispatch-taxonomy.md` on graft branch; Wave 0 before graft Wave 1.
+
+**Links:**
+
+- PT report: `.agent/memory/working/HERMES_GRAFT_DISPATCH_CORRECTIONS_REPORT_2026-08-04.md`
+- orama taxonomy: `bin/orama-system/skills/hermes-harness/references/hermes-dispatch-taxonomy.md`
+- Graft plan Phase 1.5: `docs/plans/2026-08-03-hermes-openclaw-graft-audit-plan.md`
+
+---
+
+## 2026-08-04: OpenClaw→Hermes graft Wave 0 before JSON envelope (Wave 1)
+
+**Decision:** Graft execution order: **Wave 0** (taxonomy + lane tags + SKIP recursive-spawn →
+`hermes-delegate`) then **Wave 1** (JSON envelope on shell entrypoints). Optional
+`hermes-native-delegate` command card documents L-H1 only — no PT wrapper pretending to be
+`delegate_task`.
+
+**Rationale:** Protocol harmonization without lane clarity repeats the subagent misconstrual
+in a more formal JSON schema.
+
+**Status:** active — pending graft branch merge.
+
+---
+
+## 2026-08-04: gbrain autopilot vs `/sync-gbrain` code stage
+
+**Decision:** Keep gbrain autopilot disabled until timeout/embedding/PT-pull failures are
+repaired. Manual `/sync-gbrain` for code refresh when autopilot off. Stale lock quarantine,
+not delete; LaunchAgent plist preserved.
+
+**Rationale:** Autopilot held global lock while failing on oversized inputs; code stage refused
+destructive ops (#1734). PATH must include `~/.bun/bin` for `gstack-gbrain-detect`.
+
+**Status:** active — operator re-enables autopilot after root fixes.
+
+---
