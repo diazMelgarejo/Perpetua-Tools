@@ -1,0 +1,42 @@
+{
+  "id": "3c85823ef46f",
+  "key": "manual_3c8582",
+  "name": "manual_3c8582",
+  "claim": "A vendor-doc's exact sample curl/Python for a third-party OpenAI-compatible API is not guaranteed correct -- an optional-looking parameter (an OpenAI-Project header, or the SDK's project= kwarg) can silently break auth (401) even though the underlying key is valid; test with and without each optional param before trusting the documented sample verbatim",
+  "conditions": [
+    "auth 401",
+    "openai-compatible",
+    "optional header breaks auth",
+    "vendor sample code",
+    "wandb"
+  ],
+  "evidence_ids": [
+    "2026-08-05T04:53:18.475609+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-05T04:53:18.475609+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-05T04:53:18.475609+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-05T04:53:18.600820+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "wanDB.ai's own reference sample (curl + Python openai SDK) included an OpenAI-Project header / project= kwarg alongside the API key. Running it exactly as documented produced 401 invalid_api_key. Confirmed independently via three paths -- raw curl, the official openai Python SDK, and a separate /v1/models GET with no project param at all -- that the key itself is valid and omitting the project header/kwarg entirely returns real completions. The project field is very likely for Weave/W&B tracing scope, not request auth, but including it in the auth-bearing request breaks auth outright on this account. Never assume a vendor's own quickstart sample is bug-free; isolate each header/param independently when a documented example fails.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-05T04:53:18.475609+00:00"
+      ],
+      "lessons_sha": "582356719be9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-05T04:53:18.600810+00:00",
+  "reviewer": "learn.py",
+  "rationale": "wanDB.ai's own reference sample (curl + Python openai SDK) included an OpenAI-Project header / project= kwarg alongside the API key. Running it exactly as documented produced 401 invalid_api_key. Confirmed independently via three paths -- raw curl, the official openai Python SDK, and a separate /v1/models GET with no project param at all -- that the key itself is valid and omitting the project header/kwarg entirely returns real completions. The project field is very likely for Weave/W&B tracing scope, not request auth, but including it in the auth-bearing request breaks auth outright on this account. Never assume a vendor's own quickstart sample is bug-free; isolate each header/param independently when a documented example fails."
+}
