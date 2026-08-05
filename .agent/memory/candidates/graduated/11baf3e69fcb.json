@@ -1,0 +1,41 @@
+{
+  "id": "11baf3e69fcb",
+  "key": "manual_11baf3",
+  "name": "manual_11baf3",
+  "claim": "When a concurrent agent commits directly to the same working directory/branch mid-review, verify by reading actual diffs and running the actual test suite before crediting or trusting any of its claimed fixes -- never trust a commit message's claimed test count.",
+  "conditions": [
+    "commit message",
+    "concurrent agent",
+    "git log",
+    "verify before crediting"
+  ],
+  "evidence_ids": [
+    "2026-08-05T20:10:59.849236+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-05T20:10:59.849236+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-05T20:10:59.849236+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-05T20:11:00.018462+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Discovered live during a /autoplan Eng-phase review on orama-system's hermes-openclaw-graft-audit-plan.md (2026-08-06): a 'Relay Cursor Agent' committed 5 commits directly to the exact branch/working-directory in use, implementing fixes matching the review's own in-progress task IDs (T-ENG-1 etc). Verified by reading diffs + running pytest (38/38 passed, matching the claimed count) before crediting any of it as done -- this is the productive counterpart to the 'concurrent agent collisions' risk already in memory, but the discipline (verify, don't trust) is identical either way.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-05T20:10:59.849236+00:00"
+      ],
+      "lessons_sha": "8091b027ab97"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-05T20:11:00.018451+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Discovered live during a /autoplan Eng-phase review on orama-system's hermes-openclaw-graft-audit-plan.md (2026-08-06): a 'Relay Cursor Agent' committed 5 commits directly to the exact branch/working-directory in use, implementing fixes matching the review's own in-progress task IDs (T-ENG-1 etc). Verified by reading diffs + running pytest (38/38 passed, matching the claimed count) before crediting any of it as done -- this is the productive counterpart to the 'concurrent agent collisions' risk already in memory, but the discipline (verify, don't trust) is identical either way."
+}
