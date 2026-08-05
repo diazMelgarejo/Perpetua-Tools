@@ -1,7 +1,7 @@
 # WORKSPACE — current task state
 
-**Updated:** 2026-08-06 (Hermes graft envelope reconciliation landed local — T-ENG-1 + Wave 1–2)  
-**Claimed by:** Relay Cursor Agent — Hermes envelope reconciliation working-memory handoff (Codex `e0e9ea24` AGENT_LEARNINGS left alone; devices/models/ecc-tools stay uncommitted)  
+**Updated:** 2026-08-06 (PT episodic consolidation + weekly memory reflect)  
+**Claimed by:** Cursor consolidation agent — cherry-picked unique episodic tips from `2026-08-03-001-periscope-fts5-tag-lesson` onto this branch; weekly reflect + dream; devices/models/ecc-tools stay uncommitted  
 **Active branch (PT):** `2026-08-05-001-mcp-consolidation-from-alphaclaw`
 
 ## Current focus

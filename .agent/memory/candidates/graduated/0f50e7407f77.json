@@ -1,0 +1,72 @@
+{
+  "id": "0f50e7407f77",
+  "key": "manual_0f50e7",
+  "name": "manual_0f50e7",
+  "claim": "Cherry-picking append-only JSONL memory (AGENT_LEARNINGS.jsonl) onto a divergent tip: resolve EOF conflicts by union/dedup on source.run_id, append only unique rows using the original line bytes, and never json.dumps-rewrite the whole file (Unicode escape churn creates huge false diffs).",
+  "conditions": [
+    "agent_learnings",
+    "append",
+    "append-only",
+    "bytes",
+    "cherry-picking",
+    "churn",
+    "conflicts",
+    "creates",
+    "dedup",
+    "diffs",
+    "divergent",
+    "dumps-rewrite",
+    "eof",
+    "escape",
+    "false",
+    "file",
+    "huge",
+    "json",
+    "jsonl",
+    "line",
+    "memory",
+    "never",
+    "only",
+    "onto",
+    "original",
+    "resolve",
+    "rows",
+    "run_id",
+    "source",
+    "tip",
+    "unicode",
+    "union",
+    "unique",
+    "using",
+    "whole"
+  ],
+  "evidence_ids": [
+    "2026-08-05T21:07:19.372565+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-05T21:07:19.372565+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-05T21:07:19.372565+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-05T21:07:19.471855+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "First consolidation attempt re-serialized 157 unchanged lines via json.dumps; corrected to byte-preserving one-line appends for pid-51220 and pid-52468.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-05T21:07:19.372565+00:00"
+      ],
+      "lessons_sha": "3b4cb8eb2045"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-05T21:07:19.471844+00:00",
+  "reviewer": "learn.py",
+  "rationale": "First consolidation attempt re-serialized 157 unchanged lines via json.dumps; corrected to byte-preserving one-line appends for pid-51220 and pid-52468."
+}
