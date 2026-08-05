@@ -1,0 +1,42 @@
+{
+  "id": "fb76280fc2cd",
+  "key": "manual_fb7628",
+  "name": "manual_fb7628",
+  "claim": "Independent dual-voice AI review (Codex + a separate Claude subagent, no shared context) that converges on the identical bug by reading the same code independently is the strongest verification signal available -- weight it above either voice's severity rating alone.",
+  "conditions": [
+    "autoplan",
+    "codex",
+    "cross-model",
+    "dual voice",
+    "independent review"
+  ],
+  "evidence_ids": [
+    "2026-08-05T20:11:00.389060+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-05T20:11:00.389060+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-05T20:11:00.389060+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-05T20:11:00.504585+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "In the same /autoplan session, both an internal Claude subagent and an external Codex CLI call independently found the exact same two bugs (hermes-delegate's as_completed()/timeout misuse causing a silent-forever deadlock, and hermes_spawn.sh's cleared-before-echo empty-PID bug) with zero shared context between them, across 2 separate review phases. A third independent voice (DX-phase subagent) found the same deadlock bug a third time. Cross-model replication, not stated severity, is the strongest confidence signal a multi-voice review can produce.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-05T20:11:00.389060+00:00"
+      ],
+      "lessons_sha": "0255860b5a63"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-05T20:11:00.504575+00:00",
+  "reviewer": "learn.py",
+  "rationale": "In the same /autoplan session, both an internal Claude subagent and an external Codex CLI call independently found the exact same two bugs (hermes-delegate's as_completed()/timeout misuse causing a silent-forever deadlock, and hermes_spawn.sh's cleared-before-echo empty-PID bug) with zero shared context between them, across 2 separate review phases. A third independent voice (DX-phase subagent) found the same deadlock bug a third time. Cross-model replication, not stated severity, is the strongest confidence signal a multi-voice review can produce."
+}
