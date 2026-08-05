@@ -16,6 +16,13 @@
       "env": {
         "ALPHACLAW_MCP_PROFILE": "readonly"
       }
+    },
+    "xcode": {
+      "command": "xcrun",
+      "args": [
+        "mcpbridge"
+      ],
+      "type": "stdio"
     }
   }
 }
