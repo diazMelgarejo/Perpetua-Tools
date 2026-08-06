@@ -29,7 +29,8 @@ Three lanes — **never conflate in prose:**
 | **L-PT** | PT `spawn_hermes_agent()` / `hermes_harness.py` | `hermes-orama`, `hermes-delegate`, `hermes_spawn.sh` |
 | **L-Fleet** | `coord_pulse` → `cursor-agent` | Win coder/autoresearcher queues |
 
-`hermes-delegate` is **L-PT**, NOT `delegate_task`. `REGISTRY.yml` is profile **staging**, not runtime subagent tree.
+`hermes-delegate` is **L-PT**, NOT `delegate_task`.
+`REGISTRY.yml` is profile **staging**, not a runtime subagent tree.
 
 ## gbrain index (2026-08-04)
 
