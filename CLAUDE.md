@@ -33,7 +33,7 @@ Full cross-repo instructions → [`../../CLAUDE-instru.md`](../../CLAUDE-instru.
 | Win coder pool (`$WIN_CODER_ENDPOINTS`, always-utilized before Mac-local) | [`../orama-system/bin/orama-system/skills/openclaw-skills/references/universal-skill-protocol.md`](../orama-system/bin/orama-system/skills/openclaw-skills/references/universal-skill-protocol.md) § Windows Coder Policy |
 
 **Quick invariants:**
-- `orchestrator` only — never `coordinator` in public APIs, schemas, config, or headings
+- `orchestrator` only — never `coordinator` as its synonym/replacement in public APIs, schemas, config, or headings (control-plane scope). A distinct, documented agent persona named "Coordinator" — e.g. orama's `relay-cursor` — is not banned; see [orama Unified Plan § 1.1 scope note](../orama-system/docs/2026-05-14--UNIFIED-ABSORPTION-PLAN.md#-1--governing-principles-non-negotiable)
 - PT is **runtime/state authority**: job queue, hardware affinity, model routing, GPU safety, LAN routing, durable artifacts
 - orama is stateless (planning/methodology only); imports shared types from PT, never the reverse
 - `@field_validator` (Pydantic V2) — never deprecated `@validator`
