@@ -1,0 +1,42 @@
+{
+  "id": "9940e1aa6fc4",
+  "key": "manual_9940e1",
+  "name": "manual_9940e1",
+  "claim": "Append-only historical records must never be rewritten in place, even to fix a real error -- including via checkout --theirs or any other whole-file overwrite during conflict resolution. The correct fix: restore the original record exactly, then append a new entry whose supersedes field names the original lesson id, carrying only the corrected claim text. checkout --theirs looks like a clean conflict resolution but is exactly the in-place-mutation this doctrine bans when applied to an append-only record file, not a regular source file.",
+  "conditions": [
+    "append-only",
+    "checkout theirs",
+    "conflict resolution",
+    "self-correction",
+    "supersede"
+  ],
+  "evidence_ids": [
+    "2026-08-06T02:39:03.547882+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-06T02:39:03.547882+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-06T02:39:03.547882+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-06T02:39:03.980512+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Self-caught via CodeRabbit review on PT PR #332 (pullrequestreview-4870396843): while reanchoring a stale branch's fix to lesson_e773f6f957c2 (itself the lesson documenting the append-only-record rule), resolved a merge conflict on the candidate JSON with 'git checkout --theirs', which overwrote the original record's claim/rationale fields in place with the commit's corrected wording -- a direct violation of the exact rule that record states, committed while fixing that record. lessons.jsonl's own entry for the same lesson id survived untouched only because the separate union-merge script deduped by id with 'first occurrence wins' and happened to keep main's original first; the standalone candidates/graduated/*.json file had no such protection since it was resolved by hand. Restored the original file exactly and superseded properly instead.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-06T02:39:03.547882+00:00"
+      ],
+      "lessons_sha": "2ac02ca86474"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-06T02:39:03.980498+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Self-caught via CodeRabbit review on PT PR #332 (pullrequestreview-4870396843): while reanchoring a stale branch's fix to lesson_e773f6f957c2 (itself the lesson documenting the append-only-record rule), resolved a merge conflict on the candidate JSON with 'git checkout --theirs', which overwrote the original record's claim/rationale fields in place with the commit's corrected wording -- a direct violation of the exact rule that record states, committed while fixing that record. lessons.jsonl's own entry for the same lesson id survived untouched only because the separate union-merge script deduped by id with 'first occurrence wins' and happened to keep main's original first; the standalone candidates/graduated/*.json file had no such protection since it was resolved by hand. Restored the original file exactly and superseded properly instead."
+}
