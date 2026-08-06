@@ -1,6 +1,17 @@
 [submodule "vendor/agentic-stack"]
 	path = vendor/agentic-stack
-	url = https://github.com/codejunkie99/agentic-stack
+	# TEMPORARY (2026-08-07): points at the diazMelgarejo fork, not upstream,
+	# because the pinned commit stacks 3 PT-authored fixes not yet merged
+	# upstream (codejunkie99/agentic-stack PRs #60, #61, #62 -- all open,
+	# mergeable, tests passing) plus a 4th fix found and applied in this same
+	# pass (harness_manager/upgrade.py loop-skill path bug, not yet
+	# contributed upstream). Revert this url to
+	# https://github.com/codejunkie99/agentic-stack once all 4 land upstream,
+	# then re-pin to upstream master's tip via
+	# scripts/git/agentic-stack-submodule-sync.sh upgrade. See
+	# .agent/.agentic-stack-blend-state.json last_blend.note for the full
+	# provenance chain.
+	url = https://github.com/diazMelgarejo/agentic-stack.git
 	ignore = dirty
 
 [submodule "vendor/ecc-tools"]

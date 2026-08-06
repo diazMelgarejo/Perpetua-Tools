@@ -6,7 +6,7 @@ at `vendor/agentic-stack`, parallel to `vendor/ecc-tools`.
 ## Roles
 
 | Path | Role |
-|------|------|
+| ---- | ---- |
 | `vendor/agentic-stack/` | Upstream git submodule — installer, harness adapters, release tags |
 | `.agent/` (repo root) | **Live PT brain** — episodic/semantic memory, skills, protocols (customized) |
 | `orama-system` `start.sh` | Symlinks `lib/shared/agentic_stack` → `$PT_DIR/vendor/agentic-stack` when PT is present |
@@ -57,6 +57,21 @@ As of formalization (2026-06-26): `48fdc37` on upstream `master` (pre-v0.18.0 ta
 Pin verified current 2026-07-16: `00eda65c` matches upstream `master`
 exactly (`ahead_by: 0, behind_by: 0`). Any drift is in the blended `.agent/`
 overlay, not the submodule pin.
+
+**2026-08-07 — pinned ahead of upstream, `.gitmodules` url temporarily
+points at the `diazMelgarejo` fork, not `codejunkie99/agentic-stack`.**
+New pin `17f1bf65` = upstream `master` (`4f50262`) + 3 PT-authored fixes
+open as upstream PRs [#60](https://github.com/codejunkie99/agentic-stack/pull/60)
+(recall supersession), [#61](https://github.com/codejunkie99/agentic-stack/pull/61)
+(UTF-8), [#62](https://github.com/codejunkie99/agentic-stack/pull/62)
+(context manager) + a 4th fix (`harness_manager/upgrade.py` loop-skill
+copy path bug, found during this blend, not yet opened upstream). All 3
+open PRs verified `MERGEABLE` with passing tests before pinning to them.
+**Revert path once all 4 land upstream:** point `.gitmodules` back at
+`https://github.com/codejunkie99/agentic-stack`, then
+`scripts/git/agentic-stack-submodule-sync.sh upgrade` to re-pin to
+upstream `master`'s new tip. Full provenance:
+`.agent/.agentic-stack-blend-state.json` → `last_blend.note`.
 
 ## Patch-overlay catalog
 
