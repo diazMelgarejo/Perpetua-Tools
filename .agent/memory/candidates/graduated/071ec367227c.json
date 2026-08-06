@@ -49,5 +49,8 @@
   "rejection_count": 0,
   "accepted_at": "2026-08-06T02:40:39.505292+00:00",
   "reviewer": "host-agent",
-  "rationale": "Corrected wording + related_lesson_ids cross-references from PR #309 review 4828352899, applied properly this time (new superseding record, original left untouched) instead of the earlier in-place checkout --theirs mutation caught by CodeRabbit on PT PR #332."
+  "rationale": "Corrected wording + related_lesson_ids cross-references from PR #309 review 4828352899, applied properly this time (new superseding record, original left untouched) instead of the earlier in-place checkout --theirs mutation caught by CodeRabbit on PT PR #332.",
+  "related_lesson_ids": [
+    "lesson_e773f6f957c2"
+  ]
 }
