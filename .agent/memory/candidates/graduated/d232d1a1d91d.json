@@ -1,0 +1,41 @@
+{
+  "id": "d232d1a1d91d",
+  "key": "manual_d232d1",
+  "name": "manual_d232d1",
+  "claim": "A plan/audit document's own 'Done' status table is not proof the work is actually done for every row -- verify each claimed-complete item against the real filesystem/content individually, the same rigor as verifying an external upstream claim, just scoped internally to this repo's own docs.",
+  "conditions": [
+    "done status table",
+    "internal audit",
+    "plan doc verification",
+    "stale claim"
+  ],
+  "evidence_ids": [
+    "2026-08-05T06:49:50.911647+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-05T06:49:50.911647+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-05T06:49:50.911647+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-05T06:49:51.044736+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama's 2026-08-03-hermes-openclaw-graft-audit-plan.md Wave 0 table marked 8 items 'Done' (taxonomy doc, REGISTRY.yml dispatch_lane field, SKILL.md lane tags, a $OPENCLAW_ROOT scrub across references/results/*.md, etc). Checked all 8 individually against the actual filesystem/grep content rather than trusting the table: 7 were genuinely true, but the $OPENCLAW_ROOT scrub claim was false for one specific file (fleet-2026-07-27-rtx3080-hermes-brain-merge.md still had two literal path references). A 7/8 pass rate on an internal 'Done' table is exactly the kind of partial-truth a status table can hide -- each row needs independent verification, not a spot check of a couple.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-05T06:49:50.911647+00:00"
+      ],
+      "lessons_sha": "d75132927e5b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-05T06:49:51.044725+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama's 2026-08-03-hermes-openclaw-graft-audit-plan.md Wave 0 table marked 8 items 'Done' (taxonomy doc, REGISTRY.yml dispatch_lane field, SKILL.md lane tags, a $OPENCLAW_ROOT scrub across references/results/*.md, etc). Checked all 8 individually against the actual filesystem/grep content rather than trusting the table: 7 were genuinely true, but the $OPENCLAW_ROOT scrub claim was false for one specific file (fleet-2026-07-27-rtx3080-hermes-brain-merge.md still had two literal path references). A 7/8 pass rate on an internal 'Done' table is exactly the kind of partial-truth a status table can hide -- each row needs independent verification, not a spot check of a couple."
+}

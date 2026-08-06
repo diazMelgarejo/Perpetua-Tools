@@ -1,0 +1,42 @@
+{
+  "id": "322a2fba2337",
+  "key": "manual_322a2f",
+  "name": "manual_322a2f",
+  "claim": "For any tool that hot-swaps between named configs carrying live credentials (API keys, provider profiles), never write directly into the live config file inline -- always run through: (1) a checked-in *.tmpl with ${VAR} placeholders holding zero real secrets, (2) a resolver that fills placeholders from a canonical secrets/<name> (0600) + .env.<name> loader pair, (3) an idempotent snapshot of the outgoing state into a rotating, capped backup history stored OUTSIDE the git repo (since a snapshot holds a real resolved secret), before the atomic write. This is now the established convention on this machine for every provider secret set up this session (Firecrawl, GitHub Copilot, Cline's Google/wanDB/BigModel profiles) -- follow it for any new one rather than inventing a new scheme.",
+  "conditions": [
+    "credential storage",
+    "provider config",
+    "secrets management",
+    "session backup",
+    "uniform pattern"
+  ],
+  "evidence_ids": [
+    "2026-08-05T06:50:03.282073+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-05T06:50:03.282073+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-05T06:50:03.282073+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-05T06:50:03.615084+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Built this pattern incrementally across one long session while parametrizing Firecrawl/GitHub-Copilot/Cline secrets that had been sitting as plaintext in ~/.claude.json and Cline's own providers.json. Also discovered orama-system's glm52-fallback/setup-glm52.sh had already independently arrived at the same secrets/<name>+.env.<name> shape -- confirms convergent validity, not just my own preference. Worth capturing centrally so the NEXT secret (any provider, any tool) gets set up consistently on the first attempt instead of drifting into a fourth slightly-different scheme.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-05T06:50:03.282073+00:00"
+      ],
+      "lessons_sha": "31b82a93f608"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-05T06:50:03.615065+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Built this pattern incrementally across one long session while parametrizing Firecrawl/GitHub-Copilot/Cline secrets that had been sitting as plaintext in ~/.claude.json and Cline's own providers.json. Also discovered orama-system's glm52-fallback/setup-glm52.sh had already independently arrived at the same secrets/<name>+.env.<name> shape -- confirms convergent validity, not just my own preference. Worth capturing centrally so the NEXT secret (any provider, any tool) gets set up consistently on the first attempt instead of drifting into a fourth slightly-different scheme."
+}

@@ -1,0 +1,48 @@
+{
+  "id": "1fda0fc21d52",
+  "key": "manual_1fda0f",
+  "name": "manual_1fda0f",
+  "claim": "hermes-delegate and hermes_harness.py are L-PT parallel AIAgent threads \u2014 NOT Nous delegate_task and NOT Hermes-native subagent children",
+  "conditions": [
+    "aiagent",
+    "children",
+    "delegate_task",
+    "hermes-delegate",
+    "hermes-native",
+    "hermes_harness",
+    "l-pt",
+    "nous",
+    "parallel",
+    "subagent",
+    "threads"
+  ],
+  "evidence_ids": [
+    "2026-08-04T02:15:23.789153+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-04T02:15:23.789153+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-04T02:15:23.789153+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-04T02:15:23.909533+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Perpetua-Tools/src/hermes_harness.py uses AIAgent.chat directly; delegate_tool blocklist never applied",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-04T02:15:23.789153+00:00"
+      ],
+      "lessons_sha": "5fe640f738e2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-04T02:15:23.909522+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Perpetua-Tools/src/hermes_harness.py uses AIAgent.chat directly; delegate_tool blocklist never applied"
+}
