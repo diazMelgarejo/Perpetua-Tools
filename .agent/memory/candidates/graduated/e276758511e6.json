@@ -1,0 +1,45 @@
+{
+  "id": "e276758511e6",
+  "key": "manual_e27675",
+  "name": "manual_e27675",
+  "claim": "git branch -f <name> <sha> refuses to move the currently checked-out branch (exits non-zero; the ref is unchanged). Use git update-ref refs/heads/<name> <sha> to move only the ref while staying on the branch; then synchronize index and working tree afterward (for example git restore --staged --worktree .) so staged/worktree state does not still reflect the undone cherry-pick.",
+  "conditions": [
+    "checked-out branch",
+    "cherry-pick loop",
+    "git branch -f",
+    "git update-ref",
+    "rollback"
+  ],
+  "evidence_ids": [
+    "2026-08-06T03:27:13.940362+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-06T03:27:13.940362+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-06T03:27:13.940362+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-06T03:27:20.923459+00:00",
+      "action": "graduated",
+      "reviewer": "cursor-agent",
+      "notes": "CodeRabbit PR #332 review 4870664281: git branch -f rejects moving the checked-out branch (exit 128, ref unchanged); git update-ref moves only the ref and index/worktree need explicit restore after rollback.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-06T03:27:13.940362+00:00"
+      ],
+      "lessons_sha": "21fe3e1ad715"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-06T03:27:20.923448+00:00",
+  "reviewer": "cursor-agent",
+  "rationale": "CodeRabbit PR #332 review 4870664281: git branch -f rejects moving the checked-out branch (exit 128, ref unchanged); git update-ref moves only the ref and index/worktree need explicit restore after rollback.",
+  "related_lesson_ids": [
+    "lesson_2546180f3d5b"
+  ]
+}
