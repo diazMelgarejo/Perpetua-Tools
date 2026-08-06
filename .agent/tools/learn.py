@@ -17,6 +17,13 @@ that's intentional (different birth paths, different context).
 If graduation fails (e.g., exact-duplicate heuristic reject), the staged
 candidate file is removed so `show.py` / `REVIEW_QUEUE.md` don't show
 orphaned dead-ends.
+
+`conditions` tagging style is intentionally mixed across the corpus: pass
+`--conditions` with short, hand-curated multi-word phrases when you know the
+right trigger vocabulary; omit it to fall back to auto-tokenized single
+words from the claim text (see `word_set()` below). Both forms are valid
+`conditions` entries -- this is not drift to normalize, it reflects which
+authoring path produced the entry.
 """
 import argparse, datetime, json, os, subprocess, sys, tempfile
 
