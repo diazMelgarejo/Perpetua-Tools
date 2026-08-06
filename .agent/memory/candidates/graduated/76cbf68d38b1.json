@@ -1,0 +1,79 @@
+{
+  "id": "76cbf68d38b1",
+  "key": "manual_76cbf6",
+  "name": "manual_76cbf6",
+  "claim": "A 'walk this directory and copy or record everything' tool (e.g. a blend-promote script's find $DIR -type f) must explicitly exclude build and bytecode-cache artifacts like __pycache__ compiled files -- .gitignore protects git commits but not tool-level file-walk bookkeeping that reads the raw filesystem directly, so a stray verification command's side-effect files can get silently copied and catalogued as if they were real content.",
+  "conditions": [
+    "artifacts",
+    "blend-promote",
+    "bookkeeping",
+    "build",
+    "bytecode-cache",
+    "catalogued",
+    "command",
+    "commits",
+    "compiled",
+    "content",
+    "copied",
+    "copy",
+    "dir",
+    "directly",
+    "directory",
+    "everything",
+    "exclude",
+    "explicitly",
+    "file-walk",
+    "files",
+    "filesystem",
+    "find",
+    "get",
+    "git",
+    "gitignore",
+    "like",
+    "protects",
+    "pycache__",
+    "raw",
+    "reads",
+    "real",
+    "record",
+    "script",
+    "side-effect",
+    "silently",
+    "stray",
+    "they",
+    "tool",
+    "tool-level",
+    "type",
+    "verification",
+    "walk"
+  ],
+  "evidence_ids": [
+    "2026-08-06T23:52:09.465123+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-06T23:52:09.465123+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-06T23:52:09.465123+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-06T23:52:09.593002+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "cmd_promote in agentic-stack-agent-blend.sh picked up 2 compiled-bytecode files created as a side effect of an earlier manual py_compile verification run against the preview dir, copying and cataloguing them as legitimate blended content; fixed via a -not -path exclusion for the cache directory.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-06T23:52:09.465123+00:00"
+      ],
+      "lessons_sha": "44bda9dff1ef"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-06T23:52:09.592989+00:00",
+  "reviewer": "learn.py",
+  "rationale": "cmd_promote in agentic-stack-agent-blend.sh picked up 2 compiled-bytecode files created as a side effect of an earlier manual py_compile verification run against the preview dir, copying and cataloguing them as legitimate blended content; fixed via a -not -path exclusion for the cache directory."
+}

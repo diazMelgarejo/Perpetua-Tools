@@ -1,0 +1,66 @@
+{
+  "id": "70713965dc1b",
+  "key": "manual_707139",
+  "name": "manual_707139",
+  "claim": "A merge or blend tool's own 'clean, no conflict' label for a file is not proof nothing was silently dropped -- independently diff base-commit..target-commit for every file the tool marks clean, not just the ones it flags as conflicts, to positively confirm upstream made zero changes there.",
+  "conditions": [
+    "base-commit",
+    "blend",
+    "changes",
+    "clean",
+    "confirm",
+    "conflict",
+    "conflicts",
+    "diff",
+    "dropped",
+    "every",
+    "file",
+    "flags",
+    "independently",
+    "just",
+    "label",
+    "made",
+    "marks",
+    "merge",
+    "nothing",
+    "ones",
+    "own",
+    "positively",
+    "proof",
+    "silently",
+    "target-commit",
+    "there",
+    "tool",
+    "upstream",
+    "zero"
+  ],
+  "evidence_ids": [
+    "2026-08-06T23:51:59.472492+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-06T23:51:59.472492+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-06T23:51:59.472492+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-06T23:51:59.595450+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Verified all 13 non-conflicting files in an agentic-stack vendor blend this way; generalizes this session's established verify-claims-not-labels discipline (previously applied to git branch state and agent self-reports) to merge-tool output specifically.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-06T23:51:59.472492+00:00"
+      ],
+      "lessons_sha": "1b0fbd3cddd3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-06T23:51:59.595436+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Verified all 13 non-conflicting files in an agentic-stack vendor blend this way; generalizes this session's established verify-claims-not-labels discipline (previously applied to git branch state and agent self-reports) to merge-tool output specifically."
+}
