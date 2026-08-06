@@ -16,11 +16,14 @@ Full cross-repo instructions → [`../../CLAUDE-instru.md`](../../CLAUDE-instru.
 
 ## § 0 — Architectural Contracts
 
-**Source of truth:** [`../orama-system/docs/2026-05-14--UNIFIED-ABSORPTION-PLAN.md`](../orama-system/docs/2026-05-14--UNIFIED-ABSORPTION-PLAN.md) §§ 0–2.
-**Lockstep:** PT and orama-system CLAUDE.md §0 must stay aligned — any structural change commits to both repos.
+**Source of truth:**
+[`../orama-system/docs/2026-05-14--UNIFIED-ABSORPTION-PLAN.md`](../orama-system/docs/2026-05-14--UNIFIED-ABSORPTION-PLAN.md)
+§§ 0–2.
+**Lockstep:** PT and orama-system CLAUDE.md §0 must stay aligned — any structural change
+commits to both repos.
 
 | Topic | Where |
-|-------|-------|
+| ----- | ----- |
 | Banned terminology (coordinator → orchestrator, etc.) | [Unified Plan § 1](../orama-system/docs/2026-05-14--UNIFIED-ABSORPTION-PLAN.md) |
 | 8 governing principles | [Unified Plan § 1](../orama-system/docs/2026-05-14--UNIFIED-ABSORPTION-PLAN.md) |
 | **Hard requirements** (Mac: Ollama + qwen3.5:9b-nvfp4 + bge-m3; Win: LM Studio) | [Unified Plan § 2](../orama-system/docs/2026-05-14--UNIFIED-ABSORPTION-PLAN.md) · [`../../CLAUDE-instru.md § 6`](../../CLAUDE-instru.md) |
@@ -33,12 +36,18 @@ Full cross-repo instructions → [`../../CLAUDE-instru.md`](../../CLAUDE-instru.
 | Win coder pool (`$WIN_CODER_ENDPOINTS`, always-utilized before Mac-local) | [`../orama-system/bin/orama-system/skills/openclaw-skills/references/universal-skill-protocol.md`](../orama-system/bin/orama-system/skills/openclaw-skills/references/universal-skill-protocol.md) § Windows Coder Policy |
 
 **Quick invariants:**
-- `orchestrator` only — never `coordinator` in public APIs, schemas, config, or headings
-- PT is **runtime/state authority**: job queue, hardware affinity, model routing, GPU safety, LAN routing, durable artifacts
+
+- `orchestrator` only — never `coordinator` as its synonym/replacement in public APIs,
+  schemas, config, or headings (control-plane scope). A distinct, documented agent persona
+  named "Coordinator" — e.g. orama's `relay-cursor` — is not banned; see
+  [orama Unified Plan § 1.1 scope note](../orama-system/docs/2026-05-14--UNIFIED-ABSORPTION-PLAN.md#-1--governing-principles-non-negotiable)
+- PT is **runtime/state authority**: job queue, hardware affinity, model routing, GPU
+  safety, LAN routing, durable artifacts
 - orama is stateless (planning/methodology only); imports shared types from PT, never the reverse
 - `@field_validator` (Pydantic V2) — never deprecated `@validator`
 - AlphaClaw: CLI + HTTP only — never `require()` or internal imports
-- **Mac hard requirements:** Ollama (`localhost:11434`) with `qwen3.5:9b-nvfp4` + `bge-m3` — probe on startup; fail closed if absent
+- **Mac hard requirements:** Ollama (`localhost:11434`) with `qwen3.5:9b-nvfp4` + `bge-m3`
+  — probe on startup; fail closed if absent
 - **Win hard requirement:** LM Studio at `$LM_STUDIO_WIN_ENDPOINTS` — fail loudly if unreachable
 - **Optional:** LM Studio Mac (secondary fallback only), cloud APIs, all other local models
 
@@ -68,7 +77,7 @@ git add -A && git commit -m "chore(ecc): post-merge instinct import sync" && git
 ## § 3 — Session Resources
 
 | Resource | Purpose |
-|----------|---------|
+| -------- | ------- |
 | [`SKILL.md`](SKILL.md) | Model selection rules + agent behavioral rules |
 | [`docs/LESSONS.md`](docs/LESSONS.md) | Chronological session log |
 | [`docs/wiki/README.md`](docs/wiki/README.md) | Wiki index |
@@ -82,14 +91,15 @@ git add -A && git commit -m "chore(ecc): post-merge instinct import sync" && git
 ## § 4 — AutoResearcher
 
 Plugin: `uditgoenka/autoresearch`. Per-session: `/autoresearch`.
-Read + write `docs/LESSONS.md` around experiments. GPU guard: check `GPU: BUSY` in `swarm_state.md` before dispatch.
+Read + write `docs/LESSONS.md` around experiments. GPU guard: check `GPU: BUSY`
+in `swarm_state.md` before dispatch.
 Full spec: [`docs/wiki/07-multi-agent-collab.md`](docs/wiki/07-multi-agent-collab.md)
 
 ---
 
 ## § 5 — Three-Repo Architecture
 
-```
+```text
 AlphaClaw (L1 — infra, CLI+HTTP only) → Perpetua-Tools (L2 — THIS REPO) → orama-system (L3 — orchestration)
 ```
 
@@ -98,10 +108,12 @@ AlphaClaw (L1 — infra, CLI+HTTP only) → Perpetua-Tools (L2 — THIS REPO) �
 **orama drives PT via:** `orchestrator/orama_bridge.py`.
 
 MCP server registration (canonical — TypeScript, 14 tools, v0.9.16.9):
+
 ```bash
 cd packages/alphaclaw-mcp && npm run build && cd ../..
 claude mcp add --transport stdio alphaclaw -- node packages/alphaclaw-mcp/build/index.js
 ```
+
 > Gate 0 JS server (`packages/alphaclaw-adapter/src/mcp/server.js`) has been absorbed and deleted.
 > `packages/alphaclaw-mcp` is now the single entry point for ALL AlphaClaw MCP functions.
 
@@ -112,24 +124,62 @@ As-built: [`../orama-system/docs/v2/`](../orama-system/docs/v2/)
 
 ## § 6 — Git Hygiene
 
-- Commit identity: `cyre <Lawrence@cyre.me>`, `cyre <diazMelgarejo@gmail.com>`, or `Codex <codex@openai.com>` — `bash scripts/git/check_identity.sh`
-- **Private banned-identity list (gitignored, not on GitHub):** `.cursor/private/agent-lesson-git-attribution.md` — sync via `bash scripts/cursor/install-user-git-environment.sh`; never copy tokens into tracked docs.
-- **Every session:** `bash scripts/git/daily-attribution-guard.sh` (all workspace repos). Re-adding forbidden `Co-authored-by` forces another `main` + all-branch rewrite — use `commit-clean.sh` and `publish-clean-branch.sh` only.
-- Official stack policy (co-author allowlist + hooks): [`../orama-system/docs/wiki/08-git-hygiene-and-branching.md`](../orama-system/docs/wiki/08-git-hygiene-and-branching.md#official-commit-identity-policy-2026-05-25); install: `bash scripts/git/install-local-hooks.sh`
+- Commit identity: `cyre <Lawrence@cyre.me>`, `cyre <diazMelgarejo@gmail.com>`, or
+  `Codex <codex@openai.com>` — `bash scripts/git/check_identity.sh`
+- **Private banned-identity list (gitignored, not on GitHub):**
+  `.cursor/private/agent-lesson-git-attribution.md` — sync via
+  `bash scripts/cursor/install-user-git-environment.sh`; never copy tokens into tracked docs.
+- **Every session:** `bash scripts/git/daily-attribution-guard.sh` (all workspace repos).
+  Re-adding forbidden `Co-authored-by` forces another `main` + all-branch rewrite — use
+  `commit-clean.sh` and `publish-clean-branch.sh` only.
+- Official stack policy (co-author allowlist + hooks):
+  [`../orama-system/docs/wiki/08-git-hygiene-and-branching.md`](../orama-system/docs/wiki/08-git-hygiene-and-branching.md#official-commit-identity-policy-2026-05-25);
+  install: `bash scripts/git/install-local-hooks.sh`
 - Dated branches: `yyyy-mm-dd-NNN-brief-summary`
-- Lockstep commits: changes to shared schema fields, exception classes, or policy keys commit to **both repos in the same session**
+- Lockstep commits: changes to shared schema fields, exception classes, or policy keys commit
+  to **both repos in the same session**
 - Never commit `.env`, `.env.local`
-- **Local runtime overlay (`config/devices.yml`, `config/models.yml`):** discovery may write operator LAN IPs into the working tree as a safe last-known cache — **never `git checkout`/`git restore` to discard**; **never commit** those values. Stash before pull if needed; on restore use `git -c core.hooksPath=/dev/null stash pop` then `bash scripts/git/install-local-hooks.sh` ([stash-hooks safeguard](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/git-history-surgery/references/stash-hooks-safeguard-reference-card.md)). Policy: [`config/LOCAL-RUNTIME-OVERLAY.md`](config/LOCAL-RUNTIME-OVERLAY.md); gate: `scripts/git/check_local_runtime_overlay.py`; orama skill cards: [`local-runtime-overlay`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/using-git-worktrees/references/local-runtime-overlay-reference-card.md), [`CLAYGO integrity diff`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/using-git-worktrees/references/fresh-main-integrity-diff-claygo.md)
-- **No workstation paths in tracked files** (docs included): use `$OPENCLAW_ROOT`/`~`/`$REPO_ROOT`, never literal `/Users/<name>/…` or the `…/claude/OpenClaw` tree. CI enforces via `scripts/review/repo_hygiene.py` (same checker as orama) — run it before committing docs with shell commands. Rule: [`../orama-system/docs/wiki/08-git-hygiene-and-branching.md`](../orama-system/docs/wiki/08-git-hygiene-and-branching.md#portable-paths-in-tracked-files-no-workstation-leaks)
-- **No mojibake:** Windows PowerShell/Python can default to cp1252. Before scripts that read/write tracked text, force UTF-8 (`[Console]::InputEncoding`, `[Console]::OutputEncoding`, `$OutputEncoding`, and Python `encoding="utf-8"`). `scripts/review/repo_hygiene.py` enforces LINT-007 using the orama-system escape-only detector pattern.
-- **History was rewritten — judging branches:** NEVER use ahead/behind, `rev-list --count`, or `merge-base` to decide if a branch is orphaned/divergent (meaningless across a rewrite). Run `scripts/git/reanchor_scan.sh . origin/main heads`. Protocol: [`AGENTS.md` § History-rewrite](AGENTS.md) · method [git-reanchor SKILL.md](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/git-reanchor/SKILL.md) · branch salvage map [LESSONS § 2026-06-05](docs/LESSONS.md).
-- **Attribution guards: single source of truth (ZERO fragmentation).** The canonical copies of `audit_attribution.sh`, `banned_attribution_lib.sh`, `check_commit_message.sh`, `check_identity.sh`, `daily-attribution-guard.sh` live in [orama `scripts/git/`](https://github.com/diazMelgarejo/orama-system/tree/main/scripts/git) and are **byte-identical here**. NEVER hand-edit a guard in this repo — a stale fork once made PT's strict pre-push flag valid mainstream-AI co-authors that orama allows. Edit orama's copy, then `bash ../orama-system/scripts/git/sync-attribution-guard-scripts.sh .`. `daily-attribution-guard.sh` is self-contained (no wrapper). Org-wide plan: [`../orama-system/docs/v2/`](../orama-system/docs/v2/).
+- **Local runtime overlay (`config/devices.yml`, `config/models.yml`):** discovery may write
+  operator LAN IPs into the working tree as a safe last-known cache — **never `git checkout`/`git
+  restore` to discard**; **never commit** those values. Stash before pull if needed; on restore
+  use `git -c core.hooksPath=/dev/null stash pop` then
+  `bash scripts/git/install-local-hooks.sh`
+  ([stash-hooks safeguard](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/git-history-surgery/references/stash-hooks-safeguard-reference-card.md)).
+  Policy: [`config/LOCAL-RUNTIME-OVERLAY.md`](config/LOCAL-RUNTIME-OVERLAY.md); gate:
+  `scripts/git/check_local_runtime_overlay.py`; orama skill cards:
+  [`local-runtime-overlay`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/using-git-worktrees/references/local-runtime-overlay-reference-card.md),
+  [`CLAYGO integrity diff`](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/using-git-worktrees/references/fresh-main-integrity-diff-claygo.md)
+- **No workstation paths in tracked files** (docs included): use `$OPENCLAW_ROOT`/`~`/`$REPO_ROOT`,
+  never literal `/Users/<name>/…` or the `…/claude/OpenClaw` tree. CI enforces via
+  `scripts/review/repo_hygiene.py` (same checker as orama) — run it before committing docs with
+  shell commands. Rule:
+  [`../orama-system/docs/wiki/08-git-hygiene-and-branching.md`](../orama-system/docs/wiki/08-git-hygiene-and-branching.md#portable-paths-in-tracked-files-no-workstation-leaks)
+- **No mojibake:** Windows PowerShell/Python can default to cp1252. Before scripts that read/write
+  tracked text, force UTF-8 (`[Console]::InputEncoding`, `[Console]::OutputEncoding`,
+  `$OutputEncoding`, and Python `encoding="utf-8"`). `scripts/review/repo_hygiene.py` enforces
+  LINT-007 using the orama-system escape-only detector pattern.
+- **History was rewritten — judging branches:** NEVER use ahead/behind, `rev-list --count`, or
+  `merge-base` to decide if a branch is orphaned/divergent (meaningless across a rewrite). Run
+  `scripts/git/reanchor_scan.sh . origin/main heads`. Protocol:
+  [`AGENTS.md` § History-rewrite](AGENTS.md) · method
+  [git-reanchor SKILL.md](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/git-reanchor/SKILL.md)
+  · branch salvage map [LESSONS § 2026-06-05](docs/LESSONS.md).
+- **Attribution guards: single source of truth (ZERO fragmentation).** The canonical copies of
+  `audit_attribution.sh`, `banned_attribution_lib.sh`, `check_commit_message.sh`,
+  `check_identity.sh`, `daily-attribution-guard.sh` live in
+  [orama `scripts/git/`](https://github.com/diazMelgarejo/orama-system/tree/main/scripts/git) and
+  are **byte-identical here**. NEVER hand-edit a guard in this repo — a stale fork once made PT's
+  strict pre-push flag valid mainstream-AI co-authors that orama allows. Edit orama's copy, then
+  `bash ../orama-system/scripts/git/sync-attribution-guard-scripts.sh .`.
+  `daily-attribution-guard.sh` is self-contained (no wrapper). Org-wide plan:
+  [`../orama-system/docs/v2/`](../orama-system/docs/v2/).
 
 ---
 
 ## § 7 — gstack
 
 gstack v1.37.0.0 at `~/.claude/skills/gstack`.
+
 - ALWAYS use `/browse` for web — NEVER `mcp__claude-in-chrome__*` directly
 - `/plan-eng-review` before any Gate 0→1 transition; `/ship` before `npm publish`
 
@@ -158,11 +208,14 @@ symbols; on a non-code-aware pack `--dream` completes but the graph stays empty
 and reports a WARN. `code-def`/`code-refs` need the same extraction.
 
 Two indexed corpora available via the `gbrain` CLI:
-- This worktree's code (auto-pinned via `.gbrain-source` → `gstack-code-078b0b90-f6179f`; supersedes `gstack-code-ools-27e2b79c-df8a28` (stale @2026-06-05, reindexed 2026-06-17).
+
+- This worktree's code (auto-pinned via `.gbrain-source` → `gstack-code-078b0b90-f6179f`;
+  supersedes `gstack-code-ools-27e2b79c-df8a28` (stale @2026-06-05, reindexed 2026-06-17).
 - `~/.gstack/` curated memory (registered as `gstack-brain-lawrencecyremelgarejo` source via
   the existing federation pipeline).
 
 Prefer gbrain when:
+
 - "Where is X handled?" / semantic intent, no exact string yet:
     `gbrain search "<terms>"` or `gbrain query "<question>"`
 - "Where is symbol Y defined?" / symbol-based code questions:
@@ -197,6 +250,7 @@ Bootstrapping, port offsets, GPU coordination, and CRG policy are defined in the
 → Real-time skill: `~/.claude/skills/using-git-worktrees/SKILL.md`
 
 **Quick start:**
+
 ```bash
 orama-system/scripts/worktree-bootstrap.sh <repo-path> <branch> <slug> [gbrain-source]
 ```
@@ -234,7 +288,7 @@ Full method + results: `docs/2026-06-17-dependabot-vulnerability-triage.md`.
 ### Minimum dependency fix versions (decided 2026-06-17)
 
 | Package | Was | Fixed to | File | Status |
-|---|---|---|---|---|
+| ------- | --- | -------- | ---- | ------ |
 | `starlette` | 1.0.1 | **1.3.1** | `uv.lock` (transitive via `fastapi>=0.46.0`, no ceiling conflict) | Fixed |
 | `aiohttp` | 3.14.0 | **3.14.1** | `uv.lock` (direct, `requirements.txt` floor already `>=3.14.0`) | Fixed |
 | `hono` | 4.12.23 | **4.12.25** | `packages/local-agents/package.json` + lock (was transitive via `@modelcontextprotocol/sdk`, now pinned direct) | Fixed |
