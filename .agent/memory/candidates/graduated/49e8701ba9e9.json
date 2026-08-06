@@ -1,0 +1,42 @@
+{
+  "id": "49e8701ba9e9",
+  "key": "manual_49e870",
+  "name": "manual_49e870",
+  "claim": "Activating a provider config in a tool's own settings store (e.g. Cline's providers.json) does not make the CLI use it at runtime -- check for a separate top-level provider-selection flag/default before assuming a config write took effect",
+  "conditions": [
+    "cline",
+    "provider config",
+    "runtime default",
+    "silent misroute",
+    "verify config takes effect"
+  ],
+  "evidence_ids": [
+    "2026-08-05T04:53:06.424628+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-05T04:53:06.424628+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-05T04:53:06.424628+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-05T04:53:06.559094+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Wrote a corrected wandb-deepseek-v4-flash profile into Cline's providers.json openai-compatible slot, updated lastUsedProvider, then ran a bare 'cline' invocation expecting it to route there. It silently used a completely different provider (openrouter/z-ai/glm-5.2) instead -- lastUsedProvider is bookkeeping, not a runtime default. Cline's real top-level -P/--provider flag defaults to its own hosted 'cline' provider regardless of what's configured elsewhere. Even passing -P openai-compatible alone wasn't enough: it then used a stale cached model from a previously-active profile. Both -P and -m had to be passed explicitly on every invocation before the write actually took effect end-to-end. Verified via -v's run_start line reporting the actual providerId/modelId used, not by trusting the config file alone.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-05T04:53:06.424628+00:00"
+      ],
+      "lessons_sha": "edc9a0666182"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-05T04:53:06.559083+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Wrote a corrected wandb-deepseek-v4-flash profile into Cline's providers.json openai-compatible slot, updated lastUsedProvider, then ran a bare 'cline' invocation expecting it to route there. It silently used a completely different provider (openrouter/z-ai/glm-5.2) instead -- lastUsedProvider is bookkeeping, not a runtime default. Cline's real top-level -P/--provider flag defaults to its own hosted 'cline' provider regardless of what's configured elsewhere. Even passing -P openai-compatible alone wasn't enough: it then used a stale cached model from a previously-active profile. Both -P and -m had to be passed explicitly on every invocation before the write actually took effect end-to-end. Verified via -v's run_start line reporting the actual providerId/modelId used, not by trusting the config file alone."
+}

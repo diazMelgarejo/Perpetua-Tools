@@ -1,0 +1,58 @@
+{
+  "id": "2ecbe4c7eaa6",
+  "key": "manual_2ecbe4",
+  "name": "manual_2ecbe4",
+  "claim": "Hermes dispatch has three lanes: L-H1 native delegate_task children, L-PT PT spawn_hermes_agent scripts, L-Fleet coord_pulse cursor-agent jobs \u2014 never conflate in skill prose or REGISTRY staging",
+  "conditions": [
+    "children",
+    "conflate",
+    "coord_pulse",
+    "cursor-agent",
+    "delegate_task",
+    "dispatch",
+    "hermes",
+    "jobs",
+    "l-fleet",
+    "l-h1",
+    "l-pt",
+    "lanes",
+    "native",
+    "never",
+    "prose",
+    "registry",
+    "scripts",
+    "skill",
+    "spawn_hermes_agent",
+    "staging",
+    "three"
+  ],
+  "evidence_ids": [
+    "2026-08-04T02:15:23.139019+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-04T02:15:23.139019+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-04T02:15:23.139019+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-04T02:15:23.425237+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "EXA/FireCrawl Nous docs + coord_pulse.ps1 + fleet results; graft audit 2026-08-04",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-04T02:15:23.139019+00:00"
+      ],
+      "lessons_sha": "0e79cac0b91d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-04T02:15:23.425228+00:00",
+  "reviewer": "learn.py",
+  "rationale": "EXA/FireCrawl Nous docs + coord_pulse.ps1 + fleet results; graft audit 2026-08-04"
+}

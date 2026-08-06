@@ -1,0 +1,41 @@
+{
+  "id": "0c78b132c55b",
+  "key": "manual_0c78b1",
+  "name": "manual_0c78b1",
+  "claim": "When extracting or inspecting a secret from a config file via a shell one-liner, never use a bare grep/cat on the raw file -- pipe through a redaction step or use a script that only reports length/presence, even when the extraction command's PRIMARY purpose looks safe (e.g. checking a var name exists)",
+  "conditions": [
+    "grep secrets",
+    "redaction bug",
+    "secret leak",
+    "transcript exposure"
+  ],
+  "evidence_ids": [
+    "2026-08-05T04:53:31.560843+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-05T04:53:31.560843+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-05T04:53:31.560843+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-05T04:53:31.695324+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Leaked a live secret into a conversation transcript twice in one session: once via a Python redaction helper that only checked top-level dict keys for 'key'/'token'/'secret' and missed a nested apiKey field, and again via a plain 'grep -n' on a .env.local file that printed full KEY=value lines including two real credentials. Both times the intent was innocuous (checking config shape / whether a var was set), but the mechanical command chosen printed the raw value anyway. The fix going forward: always use length-only checks (${#VAR} chars) or a script that explicitly strips values before printing, never a bare grep/cat/json.dumps on a file known or suspected to contain secrets -- regardless of how confident the redaction logic looks, because shallow (non-recursive) checks miss nested fields and grep has no concept of redaction at all.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-05T04:53:31.560843+00:00"
+      ],
+      "lessons_sha": "36f8000323a9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-05T04:53:31.695316+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Leaked a live secret into a conversation transcript twice in one session: once via a Python redaction helper that only checked top-level dict keys for 'key'/'token'/'secret' and missed a nested apiKey field, and again via a plain 'grep -n' on a .env.local file that printed full KEY=value lines including two real credentials. Both times the intent was innocuous (checking config shape / whether a var was set), but the mechanical command chosen printed the raw value anyway. The fix going forward: always use length-only checks (${#VAR} chars) or a script that explicitly strips values before printing, never a bare grep/cat/json.dumps on a file known or suspected to contain secrets -- regardless of how confident the redaction logic looks, because shallow (non-recursive) checks miss nested fields and grep has no concept of redaction at all."
+}

@@ -1,0 +1,79 @@
+{
+  "id": "aca46de3a5aa",
+  "key": "manual_aca46d",
+  "name": "manual_aca46d",
+  "claim": "Cherry-picking append-only JSONL memory (AGENT_LEARNINGS.jsonl) onto a divergent tip: resolve EOF conflicts by union/dedup on top-level id or nested source.run_id (first occurrence wins per key), append only unique rows using the original line bytes, and never json.dumps-rewrite the whole file (Unicode escape churn creates huge false diffs).",
+  "conditions": [
+    "agent_learnings",
+    "append",
+    "append-only",
+    "bytes",
+    "cherry-picking",
+    "churn",
+    "conflicts",
+    "creates",
+    "dedup",
+    "diffs",
+    "divergent",
+    "dumps-rewrite",
+    "eof",
+    "escape",
+    "false",
+    "file",
+    "first",
+    "huge",
+    "json",
+    "jsonl",
+    "key",
+    "line",
+    "memory",
+    "nested",
+    "never",
+    "occurrence",
+    "only",
+    "onto",
+    "original",
+    "per",
+    "resolve",
+    "rows",
+    "run_id",
+    "source",
+    "tip",
+    "top-level",
+    "unicode",
+    "union",
+    "unique",
+    "using",
+    "whole",
+    "wins"
+  ],
+  "evidence_ids": [
+    "2026-08-05T23:39:25.246112+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-05T23:39:25.246112+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-05T23:39:25.246112+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-05T23:39:30.321121+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR #326 security review: AGENTS.md merge invariant dedupes episodic rows by top-level id or source.run_id with first occurrence winning \u2014 not run_id alone. Supersedes lesson_0f50e7407f77 which over-narrowed the key.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-05T23:39:25.246112+00:00"
+      ],
+      "lessons_sha": "1d7eb9a24206"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-05T23:39:30.321105+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR #326 security review: AGENTS.md merge invariant dedupes episodic rows by top-level id or source.run_id with first occurrence winning \u2014 not run_id alone. Supersedes lesson_0f50e7407f77 which over-narrowed the key."
+}
