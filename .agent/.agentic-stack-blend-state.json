@@ -1,14 +1,17 @@
 {
   "schema_version": 1,
-  "base_sha": "00eda65cd2030ffc62b9c01b8360dd2d1719eaef",
+  "base_sha": "17f1bf6578597b0c2c7b6c7e63c340eb86d8e6ac",
   "base_version": "v0.9.0",
   "note": "base is PT .agent/'s original scaffold version (see .agent/install.json). vendor/agentic-stack's pinned gitlink has not advanced past this SHA (confirmed on origin/main post-PR#208); the 'v0.18.0' label refers to a version marker inside the submodule content at this same commit, not a later pin.",
   "last_blend": {
-    "at": "2026-07-16T22:30:00Z",
-    "target_sha": "00eda65cd2030ffc62b9c01b8360dd2d1719eaef",
+    "at": "2026-08-06T22:42:30Z",
+    "target_sha": "17f1bf6578597b0c2c7b6c7e63c340eb86d8e6ac",
+    "note": "Target includes 3 PT-authored fixes not yet merged upstream (PT's own agentic-stack PR #60 recall supersession, #61 UTF-8 fixes, #62 context-manager fix -- see .gitmodules note) plus a 4th bug PT found and fixed directly in this blend pass (harness_manager/upgrade.py's loop-skill copy doubled the skills/ path segment; fixed + regression test, not yet contributed upstream). 2 real 3-way conflicts (tools/learn.py, tools/recall.py) were resolved by hand before promotion, not auto-merged: learn.py kept PT's fail-closed/atomic-publish/locked-append logic over upstream's simpler fail-open version (a strict superset, not a replacement); recall.py adopted upstream's new shared superseded_by_map() helper in place of PT's own earlier duplicate local fix for the same bug. The 2 tools/__pycache__/*.pyc entries `promote` recorded in an earlier run of this same session were bytecode-cache side effects of a manual py_compile verification against the preview dir, not real content -- removed from disk and from this catalog; also hardened cmd_promote to exclude __pycache__ going forward.",
     "applied_clean": [
       "tools/show.py",
+      "tools/test_learn_episodic_mirror.py",
       "tools/recall.py",
+      "tools/data_layer_export.py",
       "tools/learn.py",
       "tools/skill_loader.py",
       "tools/graduate.py",
@@ -16,27 +19,28 @@
       "memory/decay.py",
       "memory/promote.py",
       "memory/memory_search.py",
-      "memory/archive.py",
       "memory/review_state.py",
       "memory/auto_dream.py",
+      "runtime/.gitignore",
+      "harness/llm.py",
       "harness/hooks/on_failure.py",
+      "harness/hooks/_episodic_io.py",
       "harness/hooks/post_execution.py",
+      "harness/hooks/claude_code_post_tool.py",
       "harness/salience.py",
+      "loops/ci-sweeper.json",
+      "loops/pr-babysitter.json",
+      "loops/harnesses.json",
+      "loops/daily-triage.json",
+      "loops/budget.json",
+      "loops/constraints.json",
+      "skills/loop-constraints/SKILL.md",
+      "skills/loop-verifier/SKILL.md",
+      "skills/loop-guard/SKILL.md",
+      "skills/loop-triage/SKILL.md",
       "skills/_index.md"
     ],
-    "conflicts": [],
-    "new_patches_since_prior": [
-      {
-        "file": "tools/learn.py",
-        "patch": "_append_episodic_mirror() + call site in stage()",
-        "intent": "Manual-stage path now mirrors the staging event into AGENT_LEARNINGS.jsonl so a candidate's evidence_ids[0] resolves to a real episodic record, matching the auto-derived path. Fixes a referential-integrity gap found via CodeRabbit on PT PR #246.",
-        "portable_upstream": true,
-        "depends_on_pt_only_code": false,
-        "landed": "PT main 702f08f (fix 95f047f, validated 61dee0d)",
-        "upstream_status": "candidate for contribution \u2014 see .agent/memory/working/2026-07-16-agentic-stack-upstream-contribution-plan.md (pilot PR #1)"
-      }
-    ],
-    "note": "Recorded 2026-07-16. vendor/agentic-stack pin is unchanged and confirmed current: git compare 00eda65c...upstream/master is ahead_by:0 behind_by:0 (identical). No submodule bump needed; this is a PT-side catalog update only, per the union-merge doctrine (never commit blended output into vendor/agentic-stack). The new episodic-mirror patch on tools/learn.py is the freshest local delta and the pilot for upstream contribution. Prior blend event (2026-07-12 reconciliation) preserved under blend_history."
+    "conflicts": []
   },
   "blend_history": [
     {
