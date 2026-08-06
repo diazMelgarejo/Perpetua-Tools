@@ -72,10 +72,23 @@ def _load_structured():
             order.append(lid)
         latest[lid] = row
 
+    # Mirror render_lessons: only accepted supersessions retire the old row.
+    # Without this, recall surfaces contradictory guidance (e.g. both the
+    # superseded git branch -f lesson and its replacement).
+    superseded_ids = set()
+    for lesson in latest.values():
+        if lesson.get("status") != "accepted":
+            continue
+        sup = lesson.get("supersedes")
+        if sup:
+            superseded_ids.add(sup)
+
     out = []
     for lid in order:
         lesson = latest[lid]
         if lesson.get("status") != "accepted":
+            continue
+        if lid in superseded_ids:
             continue
         lesson.setdefault("_source", "lessons.jsonl")
         out.append(lesson)
