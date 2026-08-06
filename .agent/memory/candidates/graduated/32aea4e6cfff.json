@@ -1,0 +1,82 @@
+{
+  "id": "32aea4e6cfff",
+  "key": "manual_32aea4",
+  "name": "manual_32aea4",
+  "claim": "git restore --staged --worktree . discards ALL unrelated staged and unstaged changes in the working tree, not just the undone cherry-pick's files -- it is a destructive broad-reset disguised as cleanup. Before running it, require a clean git status --short (verifying nothing unrelated is dirty), or scope the restore to only the specific paths the undone commit touched (git restore --staged --worktree -- <path>...). The git update-ref refs/heads/<name> <sha> guidance itself remains correct and unaffected.",
+  "conditions": [
+    "all",
+    "before",
+    "broad-reset",
+    "changes",
+    "cherry-pick",
+    "clean",
+    "cleanup",
+    "commit",
+    "correct",
+    "destructive",
+    "dirty",
+    "discards",
+    "disguised",
+    "files",
+    "git",
+    "guidance",
+    "heads",
+    "itself",
+    "just",
+    "name",
+    "nothing",
+    "only",
+    "path",
+    "paths",
+    "refs",
+    "remains",
+    "require",
+    "restore",
+    "running",
+    "scope",
+    "sha",
+    "short",
+    "specific",
+    "staged",
+    "status",
+    "touched",
+    "tree",
+    "unaffected",
+    "undone",
+    "unrelated",
+    "unstaged",
+    "update-ref",
+    "verifying",
+    "working",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-08-06T05:49:11.536287+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-06T05:49:11.536287+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-06T05:49:11.536287+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-06T05:49:19.672389+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "CodeRabbit PR #334 review 4871403999: the git restore --staged --worktree . guidance in lesson_e276758511e6 is unsafe as written -- it discards unrelated tracked changes repo-wide, not just the undone cherry-pick. Corrected via proper supersession (original left untouched, per lesson_9940e1aa6fc4's own doctrine) rather than editing the graduated record or the episodic log entry in place.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-06T05:49:11.536287+00:00"
+      ],
+      "lessons_sha": "031242ac55e5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-06T05:49:19.672379+00:00",
+  "reviewer": "host-agent",
+  "rationale": "CodeRabbit PR #334 review 4871403999: the git restore --staged --worktree . guidance in lesson_e276758511e6 is unsafe as written -- it discards unrelated tracked changes repo-wide, not just the undone cherry-pick. Corrected via proper supersession (original left untouched, per lesson_9940e1aa6fc4's own doctrine) rather than editing the graduated record or the episodic log entry in place."
+}
