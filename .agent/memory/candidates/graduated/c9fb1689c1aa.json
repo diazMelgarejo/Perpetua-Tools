@@ -1,0 +1,54 @@
+{
+  "id": "c9fb1689c1aa",
+  "key": "manual_c9fb16",
+  "name": "manual_c9fb16",
+  "claim": "OpenClaw to Hermes graft must run Wave 0 taxonomy and lane tags before Wave 1 JSON envelope \u2014 SKIP recursive-spawn-protocol into hermes-delegate until rename",
+  "conditions": [
+    "before",
+    "envelope",
+    "graft",
+    "hermes",
+    "hermes-delegate",
+    "into",
+    "json",
+    "lane",
+    "openclaw",
+    "recursive-spawn-protocol",
+    "rename",
+    "run",
+    "skip",
+    "tags",
+    "taxonomy",
+    "until",
+    "wave"
+  ],
+  "evidence_ids": [
+    "2026-08-04T02:15:26.172873+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-04T02:15:26.172873+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-04T02:15:26.172873+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-04T02:15:26.293378+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "graft audit plan Phase 1.5 reorder 2026-08-04",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-04T02:15:26.172873+00:00"
+      ],
+      "lessons_sha": "e911beec059e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-04T02:15:26.293366+00:00",
+  "reviewer": "learn.py",
+  "rationale": "graft audit plan Phase 1.5 reorder 2026-08-04"
+}

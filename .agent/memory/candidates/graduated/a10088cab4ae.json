@@ -1,0 +1,42 @@
+{
+  "id": "a10088cab4ae",
+  "key": "manual_a10088",
+  "name": "manual_a10088",
+  "claim": "GNU coreutils flock(1) (the standalone command) is not present on macOS/BSD by default -- confirmed missing even on a fully-set-up dev machine, not just a fresh install. Never gate a bash script's mutual-exclusion on the flock command; use Python's fcntl.flock() instead (a real POSIX syscall wrapper available in Python's stdlib on Darwin) if the script already shells out to python3, or the portable mkdir-is-atomic lock idiom if it's pure bash.",
+  "conditions": [
+    "bash locking",
+    "concurrency",
+    "flock",
+    "macos",
+    "portability"
+  ],
+  "evidence_ids": [
+    "2026-08-05T06:49:30.048576+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-05T06:49:30.048576+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-05T06:49:30.048576+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-05T06:49:30.220947+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Wrote 'exec 9>lockfile; flock 9' in a new bash+python provider-swap script, following the pattern I assumed was portable. Confirmed via 'command -v flock' that it's simply absent on this macOS machine -- would have failed for every user of the script, not just an edge case. This exact gotcha was already documented elsewhere in this same codebase (exa-mcp-wrapper.sh's own comments) but I didn't check for it before writing new locking code, so I nearly reintroduced a bug the codebase had already solved once.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-05T06:49:30.048576+00:00"
+      ],
+      "lessons_sha": "a651fc3301f0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-05T06:49:30.220936+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Wrote 'exec 9>lockfile; flock 9' in a new bash+python provider-swap script, following the pattern I assumed was portable. Confirmed via 'command -v flock' that it's simply absent on this macOS machine -- would have failed for every user of the script, not just an edge case. This exact gotcha was already documented elsewhere in this same codebase (exa-mcp-wrapper.sh's own comments) but I didn't check for it before writing new locking code, so I nearly reintroduced a bug the codebase had already solved once."
+}

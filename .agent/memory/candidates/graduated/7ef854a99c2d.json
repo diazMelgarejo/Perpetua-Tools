@@ -1,0 +1,42 @@
+{
+  "id": "7ef854a99c2d",
+  "key": "manual_7ef854",
+  "name": "manual_7ef854",
+  "claim": "Second-precision timestamps used as unique filenames (e.g. for rotating backup/version history) will silently collide under any workload faster than 1 call per second -- including two successive calls from the same automated script or an agent iterating quickly. Always use microsecond (or finer) precision, a monotonic counter, or a uuid suffix for filename-based versioning, never bare %Y%m%dT%H%M%SZ.",
+  "conditions": [
+    "backup rotation",
+    "filename uniqueness",
+    "rapid succession",
+    "test caught bug",
+    "timestamp collision"
+  ],
+  "evidence_ids": [
+    "2026-08-05T06:49:40.082405+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-05T06:49:40.082405+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-05T06:49:40.082405+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-05T06:49:40.217120+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A rotating backup-history feature (10-slot cap, one snapshot per config transition) used strftime('%Y%m%dT%H%M%SZ') for backup filenames. A pytest test that switched between 3 profiles in rapid succession caught the second-precision collision immediately: the second and third backup writes silently os.replace'd over the first, losing history entirely, discovered only because the test asserted exact backup contents rather than just count. Fixed by switching to '%Y%m%dT%H%M%S.%fZ'. This validates writing a real behavioral test (not just manual spot-checks) even for logic that already 'worked' in a slower, hand-run trial -- the bug only appeared under realistic rapid-fire conditions.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-05T06:49:40.082405+00:00"
+      ],
+      "lessons_sha": "c62e5a3f3dcf"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-05T06:49:40.217110+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A rotating backup-history feature (10-slot cap, one snapshot per config transition) used strftime('%Y%m%dT%H%M%SZ') for backup filenames. A pytest test that switched between 3 profiles in rapid succession caught the second-precision collision immediately: the second and third backup writes silently os.replace'd over the first, losing history entirely, discovered only because the test asserted exact backup contents rather than just count. Fixed by switching to '%Y%m%dT%H%M%S.%fZ'. This validates writing a real behavioral test (not just manual spot-checks) even for logic that already 'worked' in a slower, hand-run trial -- the bug only appeared under realistic rapid-fire conditions."
+}
