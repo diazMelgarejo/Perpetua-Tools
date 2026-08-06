@@ -1,0 +1,71 @@
+{
+  "id": "1103c662e580",
+  "key": "manual_1103c6",
+  "name": "manual_1103c6",
+  "claim": "When a local episodic/memory branch reports ahead-of-origin by a small N, identify the exact commits, check reachability from main and the active consolidation branch, and compare patch-id/content before assuming unmerged feature work \u2014 local closeout memory often sits only on a stale tip after related PRs already merged.",
+  "conditions": [
+    "active",
+    "after",
+    "ahead-of-origin",
+    "already",
+    "assuming",
+    "before",
+    "branch",
+    "check",
+    "closeout",
+    "commits",
+    "compare",
+    "consolidation",
+    "content",
+    "episodic",
+    "exact",
+    "feature",
+    "identify",
+    "local",
+    "main",
+    "memory",
+    "merged",
+    "often",
+    "only",
+    "patch-id",
+    "prs",
+    "reachability",
+    "related",
+    "reports",
+    "sits",
+    "small",
+    "stale",
+    "tip",
+    "unmerged",
+    "work"
+  ],
+  "evidence_ids": [
+    "2026-08-05T21:07:18.974584+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-05T21:07:18.974584+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-05T21:07:18.974584+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-05T21:07:19.083554+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Verified on 2026-08-03-001-periscope-fts5-tag-lesson: two ahead commits were .agent episodic-only, not in main or consolidation; rehabilitating required content union onto the active branch rather than a history-rewrite narrative.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-05T21:07:18.974584+00:00"
+      ],
+      "lessons_sha": "163e2a97170c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-05T21:07:19.083544+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Verified on 2026-08-03-001-periscope-fts5-tag-lesson: two ahead commits were .agent episodic-only, not in main or consolidation; rehabilitating required content union onto the active branch rather than a history-rewrite narrative."
+}
