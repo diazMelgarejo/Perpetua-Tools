@@ -226,6 +226,17 @@ def lesson_stats():
     out = {"count": 0, "provisional": 0, "accepted": [],
            "from_md_fallback": False}
     if os.path.exists(LESSONS_JSONL):
+        # lessons.jsonl is append-only: retract_lesson.py appends a new row
+        # with the SAME id and status="retracted" rather than editing the
+        # original in place, and supersession appends a new id whose
+        # "supersedes" field points at the old one. A naive per-line count
+        # of status=="accepted" therefore double-counts both cases -- the
+        # original row keeps status="accepted" forever. Take the latest row
+        # per id (file order == chronological) as that id's current status,
+        # then exclude ids an accepted supersession points at, mirroring
+        # render_lessons.py's _build_auto_section.
+        latest_by_id = {}
+        order = []
         for line in open(LESSONS_JSONL):
             line = line.strip()
             if not line:
@@ -234,10 +245,24 @@ def lesson_stats():
                 l = json.loads(line)
             except json.JSONDecodeError:
                 continue
+            lid = l.get("id")
+            if lid not in latest_by_id:
+                order.append(lid)
+            latest_by_id[lid] = l
+
+        superseded_ids = set()
+        for l in latest_by_id.values():
+            if l.get("status") == "accepted":
+                sup = l.get("supersedes")
+                if sup:
+                    superseded_ids.add(sup)
+
+        for lid in order:
+            l = latest_by_id[lid]
             out["count"] += 1
             if l.get("status") == "provisional":
                 out["provisional"] += 1
-            elif l.get("status") == "accepted":
+            elif l.get("status") == "accepted" and lid not in superseded_ids:
                 out["accepted"].append(l)
     elif os.path.exists(LESSONS_MD):
         out["from_md_fallback"] = True
