@@ -1,7 +1,8 @@
 # WORKSPACE — current task state
 
 **Updated:** 2026-08-06 (PR #326 review fixes — JSONL dedupe key + Hermes wave status)  
-**Claimed by:** Cursor agent — PR #326 security-review remediation; devices/models/ecc-tools stay uncommitted  
+**Claimed by:** Cursor agent — PR #326 security-review remediation.
+Devices/models/ecc-tools stay uncommitted.  
 **Active branch (PT):** `2026-08-05-001-mcp-consolidation-from-alphaclaw` → [PR #326](https://github.com/diazMelgarejo/Perpetua-Tools/pull/326)
 
 ## Current focus
@@ -31,7 +32,8 @@ Three lanes — **never conflate in prose:**
 | **L-PT** | PT `spawn_hermes_agent()` / `hermes_harness.py` | `hermes-orama`, `hermes-delegate`, `hermes_spawn.sh` |
 | **L-Fleet** | `coord_pulse` → `cursor-agent` | Win coder/autoresearcher queues |
 
-`hermes-delegate` is **L-PT**, NOT `delegate_task`. `REGISTRY.yml` is profile **staging**, not runtime subagent tree.
+`hermes-delegate` is **L-PT**, NOT `delegate_task`.
+`REGISTRY.yml` is profile **staging**, not a runtime subagent tree.
 
 ## gbrain index (2026-08-04)
 
@@ -65,9 +67,15 @@ Env must be User-level for scheduled tasks — `.env.local` not loaded by coord_
 
 ## Next
 
-- [ ] Operator review/merge orama Hermes graft branches (Wave 0 taxonomy + Wave 1–2 envelope — both **done, pending review**, not released)
-- [ ] Push orama `2026-08-05-002-hermes-graft-plan-reference-fix` + open/update PR when operator authorizes (4 local commits, 38/38 tests)
-- [ ] Wave 1 follow-ups (post-review): `hermes-orama` buffered `--json`; Windows PowerShell adapter coverage or explicit exclusion; Win Hermes partner canary self-experiment
-- [ ] Appendix C build (task API, fleet mgr, verifier, scheduler, recursive, HITL) — v2.1++ / oramasys migration
-- [ ] PT thin sync of Wave 0 SKILL lane tags after orama graft PR review (Wave 0 core work done on orama side)
+- [ ] Operator review/merge orama Hermes graft branches (Wave 0 taxonomy +
+      Wave 1–2 envelope — both **done, pending review**, not released)
+- [ ] Push orama `2026-08-05-002-hermes-graft-plan-reference-fix` + open/update
+      PR when operator authorizes (4 local commits, 38/38 tests)
+- [ ] Wave 1 follow-ups (post-review): `hermes-orama` buffered `--json`;
+      Windows PowerShell adapter coverage or explicit exclusion; Win Hermes
+      partner canary self-experiment
+- [ ] Appendix C build (task API, fleet mgr, verifier, scheduler, recursive,
+      HITL) — v2.1++ / oramasys migration
+- [ ] PT thin sync of Wave 0 SKILL lane tags after orama graft PR review
+      (Wave 0 core work done on orama side)
 - [ ] Re-enable gbrain autopilot after embedding/timeout fix
