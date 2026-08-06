@@ -1,0 +1,53 @@
+{
+  "id": "071ec367227c",
+  "key": "manual_071ec3",
+  "name": "manual_071ec3",
+  "claim": "Append-only historical records (lessons, audits, vulnerability memory, review ledgers, and any file whose value depends on an intact record of what was actually claimed and when) must never be rewritten in place, even to fix a real error in the original entry. A direct edit destroys the original claim with no queryable trace within the data itself of what it used to say -- exactly the auditability the record exists to provide. The correct fix: append a new entry that supersedes the original (a supersedes/superseded_by back-reference), never mutate the original's fields. This applies to the record itself, not to copies rendered or cached from it -- a machine-generated markdown file regenerated from a corrected append-only source is fine to regenerate in place, and non-historical documents (working docs, prose restating a claim) can be edited directly.",
+  "conditions": [
+    "actually",
+    "any",
+    "append",
+    "append-only",
+    "back-reference",
+    "correct",
+    "corrected",
+    "cross-reference",
+    "historical",
+    "mutate",
+    "never",
+    "record",
+    "records",
+    "review",
+    "superseded_by",
+    "supersedes"
+  ],
+  "evidence_ids": [
+    "2026-08-06T02:40:24.941800+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-06T02:40:24.941800+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-06T02:40:24.941800+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-06T02:40:39.505302+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Corrected wording + related_lesson_ids cross-references from PR #309 review 4828352899, applied properly this time (new superseding record, original left untouched) instead of the earlier in-place checkout --theirs mutation caught by CodeRabbit on PT PR #332.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-06T02:40:24.941800+00:00"
+      ],
+      "lessons_sha": "b5f145700aa5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-06T02:40:39.505292+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Corrected wording + related_lesson_ids cross-references from PR #309 review 4828352899, applied properly this time (new superseding record, original left untouched) instead of the earlier in-place checkout --theirs mutation caught by CodeRabbit on PT PR #332."
+}
