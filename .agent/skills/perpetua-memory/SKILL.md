@@ -174,8 +174,11 @@ When cherry-picking candidates in a loop to test apply cleanliness:
 - `git branch -f <name> <sha>` **refuses** to move the currently checked-out branch
   (exit 128, ref unchanged) — `lesson_e276758511e6`
 - Use `git update-ref refs/heads/<name> <sha>` to move the ref
-- Then sync index/worktree: `git restore --staged --worktree .` so the undone cherry-pick
-  does not leave stale staged files
+- Then sync index/worktree — but scope it: `git restore --staged --worktree .`
+  discards **all** unrelated staged/unstaged changes, not just the undone
+  cherry-pick. Require a clean `git status --short` first, or scope the
+  restore to only the affected paths (`git restore --staged --worktree --
+  <path>...`) — `lesson_32aea4e6cfff`
 
 ---
 
@@ -194,8 +197,9 @@ print('jsonl ok')
 # Re-render semantic markdown if lessons.jsonl changed
 python3 .agent/memory/render_lessons.py
 
-# Repo hygiene (path leaks, etc.)
-python3 scripts/review/repo_hygiene.py --scope .agent/memory || true
+# Repo hygiene (path leaks, etc.) -- no --scope flag exists; the script
+# always checks from repo root. Failures must propagate, not be swallowed.
+python3 scripts/review/repo_hygiene.py
 ```
 
 ---
