@@ -53,6 +53,13 @@
         "2026-08-06T23:51:51.081886+00:00"
       ],
       "lessons_sha": "67686eb9c164"
+    },
+    {
+      "ts": "2026-08-07T07:57:16.813776+00:00",
+      "action": "corrected",
+      "reviewer": "inline-comment-resolution",
+      "notes": "PR #338 CodeRabbit remediation: original claim omitted the non-dominating fallback. Append-only supersession lesson_2f377d3a025a supersedes lesson_005f2a16600d. Original claim retained unchanged as audit evidence.",
+      "supersedes_ref": "lesson_2f377d3a025a"
     }
   ],
   "rejection_count": 0,

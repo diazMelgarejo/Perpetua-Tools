@@ -249,14 +249,17 @@ git show :3:.agent/memory/semantic/lessons.jsonl > "$theirs"  # their side
   mistake as an in-place lesson edit (`lesson_9940e1aa6fc4`)
 - Re-render `LESSONS.md` and run the JSONL validity check above before staging
 
-**Judgment, not a blanket rule, decides which side wins** — `lesson_005f2a16600d`.
+**Judgment, not a blanket rule, decides which side wins** — `lesson_2f377d3a025a`
+(supersedes `lesson_005f2a16600d`).
 Do not default to "always keep ours" (loses genuinely-better upstream/branch
 content) or "always keep theirs" (silently drops PT-local hardening). Read
 both sides' actual rows and pick per-conflict by which is the strict
-superset. This applies even inside this skill's own "dedupe by id, keep
-main's row" default (§ Branch consolidation step 6) — that default is a
-starting point for the common case, not a substitute for reading colliding
-rows when they disagree on more than just formatting.
+superset. **When neither side is a strict superset**, combine compatible
+changes and stop for human review on any remaining conflict — do not discard
+valid unique content from either side. This applies even inside this skill's
+own "dedupe by id, keep main's row" default (§ Branch consolidation step 6)
+— that default is a starting point for the common case, not a substitute for
+reading colliding rows when they disagree on more than just formatting.
 
 **If a merge/patch tool (not a native `git merge` 3-way) produced the
 conflict markers or preview**, also check for **duplicate-insertion
