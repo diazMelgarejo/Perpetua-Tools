@@ -44,13 +44,16 @@ rules:
 
   - id: pt-no-hardcoded-secret-env
     patterns:
-      - pattern: |
-          $VAR = "..."
+      - pattern: $VAR = $VALUE
+      - metavariable-pattern:
+          metavariable: $VALUE
+          patterns:
+            - pattern: "\"...\""
       - metavariable-regex:
           metavariable: $VAR
           regex: "(?i)(api_key|secret|password|token|auth_key|private_key)"
       - metavariable-regex:
-          metavariable: "..."
+          metavariable: $VALUE
           regex: ".{8,}"
     message: >
       Possible hardcoded credential in $VAR. Store secrets in environment
@@ -161,9 +164,12 @@ rules:
 
   - id: pt-bash-unquoted-var
     patterns:
-      - pattern: $ENV_VAR
-      - pattern: "rm -rf $VAR"
-      - pattern: "rm -rf ${VAR}"
+      - pattern-either:
+          - pattern: $ENV_VAR
+          - pattern: "rm -rf $VAR"
+          - pattern: "rm -rf ${VAR}"
+      - pattern-not: "\"$VAR\""
+      - pattern-not: "\"${VAR}\""
     message: >
       Unquoted shell variable in destructive command. Quote all variables
       to prevent word-splitting on attacker-controlled values.
