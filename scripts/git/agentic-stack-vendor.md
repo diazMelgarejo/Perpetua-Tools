@@ -6,7 +6,7 @@ at `vendor/agentic-stack`, parallel to `vendor/ecc-tools`.
 ## Roles
 
 | Path | Role |
-|------|------|
+| ---- | ---- |
 | `vendor/agentic-stack/` | Upstream git submodule — installer, harness adapters, release tags |
 | `.agent/` (repo root) | **Live PT brain** — episodic/semantic memory, skills, protocols (customized) |
 | `orama-system` `start.sh` | Symlinks `lib/shared/agentic_stack` → `$PT_DIR/vendor/agentic-stack` when PT is present |
@@ -58,12 +58,34 @@ Pin verified current 2026-07-16: `00eda65c` matches upstream `master`
 exactly (`ahead_by: 0, behind_by: 0`). Any drift is in the blended `.agent/`
 overlay, not the submodule pin.
 
+**2026-08-07 (superseded same day) — pinned ahead of upstream** via a
+temporary `diazMelgarejo` fork url, stacking 3 PT-authored fixes plus a 4th
+found during the blend, pending upstream merge. All 4 landed upstream the
+same day as [#60](https://github.com/codejunkie99/agentic-stack/pull/60),
+[#61](https://github.com/codejunkie99/agentic-stack/pull/61),
+[#62](https://github.com/codejunkie99/agentic-stack/pull/62),
+[#63](https://github.com/codejunkie99/agentic-stack/pull/63) and shipped in
+v0.19.1.
+
+**2026-08-07 — reverted to real upstream, re-pinned to `master` tip.**
+`.gitmodules` url is back to `https://github.com/codejunkie99/agentic-stack`
+(after the fork-repoint, ran `git submodule sync -- vendor/agentic-stack` so
+the already-initialized local checkout's `.git/config` picked up the
+reverted url before re-pinning — an existing checkout keeps its old URL
+until synced, even after `.gitmodules` changes). New pin `9424c58e` = upstream
+`master` HEAD. Diffed old pin (`17f1bf65`) against new pin for `.agent/` and
+`harness_manager/loops/` directly (`git diff --stat`, zero output) to
+positively confirm the 4 landed fixes are the only functional delta and
+nothing else needs re-blending — the same verify-the-diff-directly
+discipline as `lesson_70713965dc1b` in `.agent/memory`. Full provenance:
+`.agent/.agentic-stack-blend-state.json` → `last_blend.note`.
+
 ## Patch-overlay catalog
 
 The blended local patches carried on top of the vendored skeleton are
 catalogued in [`.agent/.agentic-stack-blend-state.json`](../../.agent/.agentic-stack-blend-state.json)
-(`last_blend.applied_clean` + `new_patches_since_prior`, with prior events
-under `blend_history`). Consult that catalog — not a fresh `git diff` — to
+(`last_blend.applied_clean`, with prior events under `blend_history`).
+Consult that catalog — not a fresh `git diff` — to
 see which files carry local intent and whether each patch is portable
 upstream. Contribution-back planning for these patches lives in
 [`.agent/memory/working/2026-07-16-agentic-stack-upstream-contribution-plan.md`](../../.agent/memory/working/2026-07-16-agentic-stack-upstream-contribution-plan.md).

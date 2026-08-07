@@ -1,0 +1,75 @@
+{
+  "id": "15aa463fd07c",
+  "key": "manual_15aa46",
+  "name": "manual_15aa46",
+  "claim": "When a stacked-PR-family branch's earlier commits have already landed upstream via a different merge (e.g. a sibling PR's squash-merge), git rebase origin/master auto-detects patch-content equivalence and drops the now-redundant commits, printing 'dropping <sha> ... -- patch contents already upstream'; treat that message as confirmation of successful recovery, not an error, and use rebase as the recovery mechanic instead of manual cherry-pick surgery.",
+  "conditions": [
+    "already",
+    "auto-detects",
+    "branch",
+    "cherry-pick",
+    "commits",
+    "confirmation",
+    "contents",
+    "different",
+    "dropping",
+    "drops",
+    "earlier",
+    "equivalence",
+    "error",
+    "git",
+    "instead",
+    "landed",
+    "manual",
+    "master",
+    "mechanic",
+    "merge",
+    "message",
+    "now-redundant",
+    "origin",
+    "patch",
+    "patch-content",
+    "printing",
+    "rebase",
+    "recovery",
+    "sha",
+    "sibling",
+    "squash-merge",
+    "stacked-pr-family",
+    "successful",
+    "surgery",
+    "treat",
+    "upstream",
+    "use",
+    "via"
+  ],
+  "evidence_ids": [
+    "2026-08-06T23:51:40.894217+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-06T23:51:40.894217+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-06T23:51:40.894217+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-06T23:51:41.067961+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Confirmed recovering 3 stacked agentic-stack upstream PR branches after sibling PR #60 (recall-supersession-filter) had independently merged; rebase cleanly dropped the now-redundant commit and left only the genuinely new content from #61/#62 to resolve.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-06T23:51:40.894217+00:00"
+      ],
+      "lessons_sha": "4e2831788d36"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-06T23:51:41.067948+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Confirmed recovering 3 stacked agentic-stack upstream PR branches after sibling PR #60 (recall-supersession-filter) had independently merged; rebase cleanly dropped the now-redundant commit and left only the genuinely new content from #61/#62 to resolve."
+}

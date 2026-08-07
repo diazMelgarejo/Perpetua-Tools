@@ -221,7 +221,11 @@ cmd_promote() {
     echo "  promoted: .agent/$rel"
     promoted+=("$rel")
     n=$((n + 1))
-  done < <(find "$PREVIEW_DIR" -type f -print0)
+  # Excludes __pycache__ -- bytecode cache is never real .agent/ content;
+  # a stray manual `py_compile`/import against a preview file leaves a
+  # .pyc sibling that a blind file-walk would otherwise promote and record
+  # in the blend catalog as if it were blended source.
+  done < <(find "$PREVIEW_DIR" -type f -not -path '*/__pycache__/*' -print0)
 
   echo "promote: $n file(s) copied into .agent/"
 
