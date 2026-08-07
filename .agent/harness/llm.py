@@ -146,9 +146,7 @@ def _call_wandb(system, user, *, temperature, max_tokens, model):
     r = c.chat.completions.create(
         model=model,
         temperature=temperature,
-        # Declared floor is openai>=1.30.0 (max_tokens); keep lockstep with that
-        # contract. MiniMax OpenAI wire below still uses max_completion_tokens.
-        max_tokens=max_tokens,
+        max_completion_tokens=max_tokens,
         messages=[{"role": "system", "content": system},
                   {"role": "user", "content": user}],
     )
@@ -208,8 +206,7 @@ def call_model(system, user, *, temperature=0.3, max_tokens=4096, model=None):
         r = c.chat.completions.create(
             model=model or os.getenv("AGENT_MODEL", "gpt-4o"),
             temperature=temperature,
-            # Declared floor is openai>=1.30.0 (max_tokens).
-            max_tokens=max_tokens,
+            max_completion_tokens=max_tokens,
             messages=[{"role": "system", "content": system},
                       {"role": "user", "content": user}],
         )
