@@ -97,7 +97,7 @@ for how this team approaches git surgery in general: before reaching for a
 manual, error-prone recovery procedure (cherry-pick, manual diff-and-reapply,
 `git reanchor_scan.sh`-style forensics), try the simpler mechanical
 operation first and read its output carefully — `git rebase` printing
-"dropping <sha> ... patch contents already upstream" is git *telling you*
+"dropping `<sha>` ... patch contents already upstream" is git *telling you*
 the recovery already happened, not a problem to route around.
 
 ## Why this matters beyond this specific branch

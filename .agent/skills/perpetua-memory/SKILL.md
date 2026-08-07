@@ -1,6 +1,6 @@
 ---
 name: perpetua-memory
-version: 2026-08-06.3
+version: 2026-08-07.4
 triggers:
   - "stage lesson"
   - "graduate lesson"
@@ -249,6 +249,24 @@ git show :3:.agent/memory/semantic/lessons.jsonl > "$theirs"  # their side
   mistake as an in-place lesson edit (`lesson_9940e1aa6fc4`)
 - Re-render `LESSONS.md` and run the JSONL validity check above before staging
 
+**Judgment, not a blanket rule, decides which side wins** — `lesson_005f2a16600d`.
+Do not default to "always keep ours" (loses genuinely-better upstream/branch
+content) or "always keep theirs" (silently drops PT-local hardening). Read
+both sides' actual rows and pick per-conflict by which is the strict
+superset. This applies even inside this skill's own "dedupe by id, keep
+main's row" default (§ Branch consolidation step 6) — that default is a
+starting point for the common case, not a substitute for reading colliding
+rows when they disagree on more than just formatting.
+
+**If a merge/patch tool (not a native `git merge` 3-way) produced the
+conflict markers or preview**, also check for **duplicate-insertion
+artifacts** (`lesson_05c055046864`): tools like `git merge-file -p` can
+literally duplicate an identical addition when both sides independently
+inserted the same content at different anchor lines relative to the base.
+Scan the preview for back-to-back identical blocks before promoting it —
+this has bitten a `.agent/tools/*.py` blend before and is easy to miss in a
+large diff.
+
 ### PR-body gate for mega-cleanup / memory PRs
 
 CI's `verify-pr-body-not-clobbered.sh` fails any open PR whose body lacks a
@@ -279,6 +297,8 @@ replaces the whole field and erases the original Summary/CodeRabbit tail.
 | Trust cherry `+` alone | Branch looks unique, content on main via squash | `git diff main...branch` per path |
 | Stale episodic on branch | `-1000 lines` vs main in working file diff | DELETE branch; content absorbed elsewhere |
 | Concurrent-agent PR sprawl | Cursor Automation opens #335 stacked on #334, then a second run opens #336 for the *same* fix against `main` directly | Merge the stacked PR into the branch it targets, close the duplicate against `main` — don't merge both |
+| Trust a "clean, no conflict" label alone | A blend/merge tool marks a memory file clean but upstream/branch content was silently dropped anyway | Diff base..target directly for every clean-labeled file too, not just flagged conflicts (`lesson_70713965dc1b`) |
+| File-walk tool catalogues bytecode/build noise | `find $DIR -type f` over a preview/blend dir picks up `__pycache__/*.pyc` left by an earlier verification command and records it as real content | Exclude build/bytecode-cache paths explicitly in any file-walk over `.agent/**` (`lesson_76cbf68d38b1`) |
 
 ### Concurrent-agent collisions on memory PRs
 
@@ -308,3 +328,9 @@ retracting any lesson id:
 - `memory-manager` — reflection cadence, distillation, search
 - `git-history-surgery` — fresh-main CLAYGO, `reanchor_scan.sh`, path-scoped replay
 - orama `using-git-worktrees` — ephemeral baseline worktrees
+- orama `git-history-surgery` §  rebase-recovery reference card — the
+  patch-equivalence recovery mechanic (`lesson_15aa463fd07c`) generalizes
+  the tree-twin doctrine used here for branch consolidation
+- `.agent/memory/working/2026-08-07-vendor-blend-and-upstream-contribution-retrospective.md`
+  — reflective synthesis on why per-conflict judgment, verify-clean-labels,
+  and durable exit-path documentation compound across sessions
