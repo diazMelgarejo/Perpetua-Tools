@@ -1,0 +1,73 @@
+{
+  "id": "fcf6fe38c82e",
+  "key": "manual_fcf6fe",
+  "name": "manual_fcf6fe",
+  "claim": "A GitHub PR's --base must name a branch that exists on the base/target repo, never a fork-only branch -- gh pr create --base <fork-only-branch> against an upstream repo fails with 'Base ref must be a branch' or 'No commits between'; for a family of PRs meant to stack across a fork boundary, base every PR on the upstream default branch (e.g. master) and communicate the dependency in prose (PR body or comments), not via GitHub's native base-branch stacking.",
+  "conditions": [
+    "across",
+    "against",
+    "base",
+    "base-branch",
+    "between",
+    "body",
+    "boundary",
+    "branch",
+    "comments",
+    "commits",
+    "communicate",
+    "create",
+    "default",
+    "dependency",
+    "every",
+    "exists",
+    "fails",
+    "family",
+    "fork",
+    "fork-only",
+    "fork-only-branch",
+    "github",
+    "master",
+    "meant",
+    "name",
+    "native",
+    "never",
+    "prose",
+    "prs",
+    "ref",
+    "repo",
+    "stack",
+    "stacking",
+    "target",
+    "upstream",
+    "via"
+  ],
+  "evidence_ids": [
+    "2026-08-06T23:52:09.997469+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-06T23:52:09.997469+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-06T23:52:09.997469+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-06T23:52:10.123304+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Hit opening two dependent PRs for agentic-stack against its upstream repo: attempting --base on a branch that only existed on the contributor's fork failed outright; fixed by using --base master for both and stating the dependency explicitly in each PR's body.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-06T23:52:09.997469+00:00"
+      ],
+      "lessons_sha": "44b66fb07389"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-06T23:52:10.123293+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Hit opening two dependent PRs for agentic-stack against its upstream repo: attempting --base on a branch that only existed on the contributor's fork failed outright; fixed by using --base master for both and stating the dependency explicitly in each PR's body."
+}

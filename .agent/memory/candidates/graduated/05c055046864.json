@@ -1,0 +1,81 @@
+{
+  "id": "05c055046864",
+  "key": "manual_05c055",
+  "name": "manual_05c055",
+  "claim": "git merge-file -p ours base theirs can literally duplicate an identical textual addition when both 'ours' and 'theirs' independently added the exact same content at slightly different anchor points relative to 'base' -- inspect merge-tool preview output for back-to-back duplicate blocks before promoting or applying it; re-running an apply step that rebuilds the preview directory from scratch wipes any manual de-duplication, so it must be redone if the target sha changes.",
+  "conditions": [
+    "added",
+    "addition",
+    "anchor",
+    "any",
+    "apply",
+    "applying",
+    "back-to-back",
+    "base",
+    "before",
+    "blocks",
+    "both",
+    "changes",
+    "content",
+    "de-duplication",
+    "different",
+    "directory",
+    "duplicate",
+    "exact",
+    "git",
+    "identical",
+    "independently",
+    "inspect",
+    "literally",
+    "manual",
+    "merge-file",
+    "merge-tool",
+    "ours",
+    "output",
+    "points",
+    "preview",
+    "promoting",
+    "re-running",
+    "rebuilds",
+    "redone",
+    "relative",
+    "same",
+    "scratch",
+    "sha",
+    "slightly",
+    "step",
+    "target",
+    "textual",
+    "theirs",
+    "wipes"
+  ],
+  "evidence_ids": [
+    "2026-08-06T23:51:51.609871+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-06T23:51:51.609871+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-06T23:51:51.609871+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-06T23:51:51.728490+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Caught in learn.py's 3-way-merge preview during an agentic-stack vendor blend: a UTF-8 sys.stdout.reconfigure block appeared twice, identical, back-to-back, because PT's 'ours' and upstream's 'theirs' had each independently added the same fix at different anchor lines.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-06T23:51:51.609871+00:00"
+      ],
+      "lessons_sha": "3b0e1589be92"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-06T23:51:51.728477+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Caught in learn.py's 3-way-merge preview during an agentic-stack vendor blend: a UTF-8 sys.stdout.reconfigure block appeared twice, identical, back-to-back, because PT's 'ours' and upstream's 'theirs' had each independently added the same fix at different anchor lines."
+}

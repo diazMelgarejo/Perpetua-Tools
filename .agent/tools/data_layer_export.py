@@ -24,6 +24,21 @@ from typing import Any
 VALID_WINDOWS = {"7d", "30d", "90d", "all"}
 VALID_BUCKETS = {"hour", "day", "week", "month"}
 
+# Finite value sets the loop supervisor (vendor/agentic-stack harness_manager/loops/
+# runner.py) actually writes to runtime/loops/events.jsonl. normalize_loop_event must
+# redact anything outside these sets rather than copy arbitrary loop-event content
+# into the exported dashboard/analytics surface.
+VALID_LOOP_EVENTS = {
+    "created", "awaiting_approval", "worktree_created", "paused",
+    "interrupted", "maker_finished", "verifier_finished", "checker_finished",
+    "completed", "cancelled",
+}
+VALID_LOOP_STATUSES = {
+    "created", "awaiting_approval", "paused", "exhausted", "interrupted",
+    "completed", "cancelled", "audit_failed", "failed", "rejected",
+}
+VALID_LOOP_DECISIONS = {"APPROVE", "ESCALATE", "MALFORMED"}
+
 
 def _e(*codes: int) -> str:
     return f"\x1b[{';'.join(map(str, codes))}m"
@@ -391,6 +406,37 @@ def normalize_agent_event(entry: dict[str, Any], idx: int, args: argparse.Namesp
     }
     base["category"] = resolve_category(base, rules)
     return base
+
+
+def _allowed_or_unknown(value: Any, allowed: set[str]) -> str:
+    text = str(value) if value is not None else ""
+    return text if text in allowed else "unknown"
+
+
+def normalize_loop_event(entry: dict[str, Any]) -> dict[str, Any]:
+    """Map the privacy-whitelisted loop event shape into data-layer fields.
+
+    entry's `event`/`status`/`decision` values come from a supervisor-controlled
+    finite set (VALID_LOOP_EVENTS/STATUSES/DECISIONS); anything else is redacted
+    to "unknown" rather than copied through, so a compromised or malformed
+    events.jsonl row can't smuggle arbitrary text into the exported surface.
+    """
+    status_or_decision = entry.get("status") or entry.get("decision")
+    return {
+        "timestamp": entry.get("timestamp") or now_iso(),
+        "skill": "agentic-loop",
+        "action": _allowed_or_unknown(entry.get("event"), VALID_LOOP_EVENTS),
+        "workflow": str(entry.get("loop") or "loop"),
+        "result": (
+            _allowed_or_unknown(status_or_decision, VALID_LOOP_STATUSES | VALID_LOOP_DECISIONS)
+            if status_or_decision is not None
+            else "observed"
+        ),
+        "harness": "agentic-loop",
+        "source": {"run_id": entry.get("run_id")},
+        "privacy_level": "local_only",
+        "pii_level": "unknown",
+    }
 
 
 def normalize_cron_run(entry: dict[str, Any], idx: int, args: argparse.Namespace, rules: dict[str, Any]) -> dict[str, Any]:
@@ -1043,6 +1089,8 @@ def export(args: argparse.Namespace) -> Path:
     category_rules = load_category_rules(category_config)
     episodic, episodic_quality = read_jsonl(episodic_path)
     extras, extras_quality = read_jsonl(extra_events_path)
+    loop_raw, loop_quality = read_jsonl(agent_root / "runtime" / "loops" / "events.jsonl")
+    extras.extend(normalize_loop_event(item) for item in loop_raw)
     cron_raw, cron_quality = read_jsonl(cron_path)
 
     raw_agent = [r for r in episodic + extras if inside_window(r, cutoff)]
@@ -1057,6 +1105,7 @@ def export(args: argparse.Namespace) -> Path:
     quality = {
         "episodic": episodic_quality,
         "extra_events": extras_quality,
+        "loop_events": loop_quality,
         "cron_runs": cron_quality,
         "category_rules": category_quality,
         "note": "Local-only export. Review categories, token/cost estimates, and PII status before sharing.",

@@ -1,0 +1,82 @@
+{
+  "id": "0f66a36ee1cc",
+  "key": "manual_0f66a3",
+  "name": "manual_0f66a3",
+  "claim": "When temporarily repointing a git submodule's .gitmodules url at your own fork to consume not-yet-merged upstream PRs, document the temporary state and exact revert path in at least 3 places -- an inline comment in .gitmodules itself, the vendor-tracking doc's current-pin section, and any blend-state or catalog file's note field -- and validate end-to-end via a real fresh-clone plus git submodule update --init, not just the url change alone.",
+  "conditions": [
+    "alone",
+    "any",
+    "blend-state",
+    "catalog",
+    "change",
+    "comment",
+    "consume",
+    "current-pin",
+    "doc",
+    "document",
+    "end-to-end",
+    "exact",
+    "field",
+    "file",
+    "fork",
+    "fresh-clone",
+    "git",
+    "gitmodules",
+    "init",
+    "inline",
+    "itself",
+    "just",
+    "least",
+    "not-yet-merged",
+    "note",
+    "own",
+    "path",
+    "places",
+    "plus",
+    "prs",
+    "real",
+    "repointing",
+    "revert",
+    "section",
+    "state",
+    "submodule",
+    "temporarily",
+    "temporary",
+    "update",
+    "upstream",
+    "url",
+    "validate",
+    "vendor-tracking",
+    "via",
+    "your"
+  ],
+  "evidence_ids": [
+    "2026-08-06T23:51:59.986699+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-06T23:51:59.986699+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-06T23:51:59.986699+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-06T23:52:00.107772+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Used to pin PT's vendor/agentic-stack to a fork commit (upstream master plus 3 own PRs plus a found-in-blend 4th fix) pending upstream merge; the 3-place documentation ensures the temporary state is never silently forgotten, and the fork url is reverted once all PRs land.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-06T23:51:59.986699+00:00"
+      ],
+      "lessons_sha": "6866f4b1ef6a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-06T23:52:00.107760+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Used to pin PT's vendor/agentic-stack to a fork commit (upstream master plus 3 own PRs plus a found-in-blend 4th fix) pending upstream merge; the 3-place documentation ensures the temporary state is never silently forgotten, and the fork url is reverted once all PRs land."
+}
