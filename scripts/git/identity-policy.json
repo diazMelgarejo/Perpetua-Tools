@@ -29,7 +29,8 @@
   ],
   "repo_bot_identities": {
     "orama-system": [
-      "cursor[bot]@users.noreply.github.com"
+      "cursor[bot]@users.noreply.github.com",
+      "coderabbitai[bot]@users.noreply.github.com"
     ],
     "Perpetua-Tools": [
       "dependabot[bot]@users.noreply.github.com",
