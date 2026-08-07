@@ -77,6 +77,16 @@
             "command": "[[ -f pyproject.toml ]] && python -m pytest tests/ -x -q --tb=short 2>&1 | tail -12 || true"
           }
         ]
+      },
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .agent/harness/hooks/claude_code_post_tool.py 2>/dev/null || true",
+            "async": true
+          }
+        ]
       }
     ]
   }
