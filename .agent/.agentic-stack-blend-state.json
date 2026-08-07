@@ -40,7 +40,27 @@
       "skills/loop-triage/SKILL.md",
       "skills/_index.md"
     ],
-    "conflicts": []
+    "conflicts": [],
+    "new_patches_since_prior": [
+      {
+        "file": "harness/llm.py",
+        "patch": "wandb provider branch: WANDB_BASE_URL/WANDB_DEFAULT_MODEL constants, _maybe_init_wandb_weave_tracing(), _call_wandb(), plus the wandb cases in llm_available() and call_model()",
+        "intent": "PT-local exclusive overlay adding a wanDB.ai/DeepSeek-V4-Flash provider route (OpenAI-compatible), mirroring the existing MiniMax pattern's structure. Auth via DEEPSEEK_V4_FLASH_WANDB. Optional Weave tracing gates on DEEPSEEK_V4_FLASH_WANDB_PROJECT being set (on/off switch); the project value is never sent as an OpenAI-Project header or SDK project= kwarg on the completion call itself -- confirmed 2026-08-05 in bin/orama-system/skills/cline-wandb/SKILL.md that doing so causes a 401 on an otherwise-valid key. Weave init is idempotent per-process and degrades silently if the optional weave package isn't installed.",
+        "portable_upstream": false,
+        "depends_on_pt_only_code": false,
+        "landed": "Verified live 2026-08-07 against api.inference.wandb.ai: provider works end-to-end without the project var set. With the project var set, weave.init() correctly parses the entity/project string from the secret but the W&B backend itself rejects auto-creating the project under that org ('you may not create the generic project ... directly under your org, please try using your team entity') -- an account/project-provisioning issue on W&B's side, not a bug in this implementation.",
+        "upstream_status": "PT-local only, not a contribution candidate -- tied to PT's own wanDB/weave account and the cline-wandb skill's secrets layout, not general-purpose"
+      },
+      {
+        "file": "harness/llm.py",
+        "patch": "claude_cli provider branch: _call_claude_cli(), plus the claude_cli case in llm_available() and call_model()",
+        "intent": "PT-local exclusive overlay routing through the locally-authenticated `claude` CLI (subprocess, --print --output-format json) instead of the anthropic SDK. The anthropic SDK's Anthropic() client only accepts api_key/auth_token/credentials and has no path to Claude Pro/Max subscription-based session auth; the CLI, running as this same authenticated connection, does. No max_tokens equivalent exists on this path (claude --help has no output-length flag), so the caller's max_tokens is silently unused here, unlike every other provider in this file.",
+        "portable_upstream": false,
+        "depends_on_pt_only_code": false,
+        "landed": "Verified live 2026-08-07: successful round-trip through the authenticated claude CLI, and a real error-path check (bad model name) confirmed the RuntimeError propagation surfaces the CLI's actual stderr rather than failing silently.",
+        "upstream_status": "PT-local only, not a contribution candidate -- depends on a locally-authenticated claude CLI session, not a portable credential"
+      }
+    ]
   },
   "blend_history": [
     {
