@@ -78,10 +78,15 @@ def _call_claude_cli(system, user, *, model, timeout_sec=None):
     claude_bin = shutil.which("claude")
     if not claude_bin:
         raise RuntimeError("claude CLI not found on PATH")
+    # Isolated text-only path: --bare skips hooks/skills/MCP/CLAUDE.md auto-load;
+    # --tools "" denies every tool so untrusted user text cannot trigger workspace
+    # actions. This helper is a chat-completion stand-in, not an agent session.
     cmd = [
         claude_bin, "-p", user,
         "--system-prompt", system,
         "--output-format", "json",
+        "--bare",
+        "--tools", "",
     ]
     if model:
         cmd += ["--model", model]
@@ -121,9 +126,14 @@ def _maybe_init_wandb_weave_tracing():
         weave.init(project)
     except ImportError:
         pass
+    except Exception:
+        # Optional tracing must never block the completion request. A failed
+        # init is recorded by leaving weave uninitialized for this attempt;
+        # the finally-guard still flips so we do not retry every call.
+        pass
     finally:
-        # Set even on ImportError: nothing will succeed on a later call
-        # inside this same process either, so don't retry every call.
+        # Set even on ImportError / init failure: nothing will succeed on a
+        # later call inside this same process either, so don't retry every call.
         _WANDB_WEAVE_INITIALIZED = True
 
 
@@ -136,7 +146,9 @@ def _call_wandb(system, user, *, temperature, max_tokens, model):
     r = c.chat.completions.create(
         model=model,
         temperature=temperature,
-        max_completion_tokens=max_tokens,
+        # Declared floor is openai>=1.30.0 (max_tokens); keep lockstep with that
+        # contract. MiniMax OpenAI wire below still uses max_completion_tokens.
+        max_tokens=max_tokens,
         messages=[{"role": "system", "content": system},
                   {"role": "user", "content": user}],
     )
@@ -196,7 +208,8 @@ def call_model(system, user, *, temperature=0.3, max_tokens=4096, model=None):
         r = c.chat.completions.create(
             model=model or os.getenv("AGENT_MODEL", "gpt-4o"),
             temperature=temperature,
-            max_completion_tokens=max_tokens,
+            # Declared floor is openai>=1.30.0 (max_tokens).
+            max_tokens=max_tokens,
             messages=[{"role": "system", "content": system},
                       {"role": "user", "content": user}],
         )
