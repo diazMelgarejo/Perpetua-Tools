@@ -17,6 +17,7 @@ import sys
 import tempfile
 import types
 import unittest
+from unittest import mock
 from pathlib import Path
 
 
@@ -26,10 +27,12 @@ def _load_learn(base_dir):
     Sibling modules (text.word_set, cluster.pattern_id) are stubbed so the
     test needs no part of the harness beyond learn.py itself.
     """
+    previous_modules = {}
     for name, attrs in [
         ("text", {"word_set": lambda *a, **k: set()}),
         ("cluster", {"pattern_id": lambda claim, cond: "testcid" + str(abs(hash((claim, tuple(cond)))))[:6]}),
     ]:
+        previous_modules[name] = sys.modules.pop(name, None)
         m = types.ModuleType(name)
         for k, v in attrs.items():
             setattr(m, k, v)
@@ -38,7 +41,14 @@ def _load_learn(base_dir):
     module_path = Path(__file__).with_name("learn.py")
     spec = importlib.util.spec_from_file_location("learn_under_test", module_path)
     mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
+    try:
+        spec.loader.exec_module(mod)
+    finally:
+        for name, previous in previous_modules.items():
+            if previous is None:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = previous
     mod.BASE = base_dir
     mod.CANDIDATES = os.path.join(base_dir, "memory", "candidates")
     os.makedirs(mod.CANDIDATES, exist_ok=True)
@@ -68,17 +78,18 @@ class EpisodicMirrorTest(unittest.TestCase):
     def test_evidence_id_resolves_to_the_mirror(self):
         mod = _load_learn(self.tmp)
         cid, path = mod.stage("Serialize timestamps in UTC", ["timestamps", "utc"])
-        candidate = json.loads(Path(path).read_text())
+        candidate = json.loads(Path(path).read_text(encoding="utf-8"))
         evidence_ts = candidate["evidence_ids"][0]
         matching = [e for e in _episodic(self.tmp) if e["timestamp"] == evidence_ts]
         self.assertEqual(len(matching), 1)
         self.assertEqual(matching[0]["evidence_ids"], [evidence_ts])
 
-    def test_append_mirror_fails_open_on_write_error(self):
+    def test_stage_does_not_publish_candidate_when_mirror_write_fails(self):
         mod = _load_learn(self.tmp)
-        mod.BASE = os.path.join(self.tmp, "does-not-exist")
-        # Must not raise even though the target directory is missing.
-        mod._append_episodic_mirror("deadbeef", "claim", "2026-01-01T00:00:00+00:00")
+        with mock.patch.object(mod, 'append_jsonl', side_effect=OSError('disk full')):
+            with self.assertRaises(OSError):
+                mod.stage('Serialize timestamps in UTC', ['timestamps', 'utc'])
+        self.assertEqual(list(Path(mod.CANDIDATES).glob('*.json')), [])
 
 
 if __name__ == "__main__":
