@@ -74,16 +74,46 @@ applied to itself.
 
 ### 3. An unasked but load-bearing third question: is this actually mergeable?
 
-The PR's real base branch is not `main` — checked via `gh pr view`, which
-also reports the PR as `CONFLICTING`. Confirmed the specific cause with
-`git merge-tree` against the actual base: a **second, parallel skill
-mirror** exists at a different path from the one reviewed above (a
-`.agents/`-rooted copy, distinct from the `.claude/`-rooted one that
-received the OSSF-1 treatment). That second mirror never got the same
-refactor and has independently drifted from the PR's real base on the
-same set of files (the ECC manifest, an identity file, a harmonization
-report doc). Pushing the reviewed branch's current local head as-is would
-land a PR with real conflicts to resolve, not a clean fast-forward.
+The PR's real base branch is not `main`. Evidence, pinned to exact SHAs so a
+later PR state or a stale checkout doesn't get confused with this
+observation:
+
+- **PR:** `diazMelgarejo/AlphaClaw#30` — `state: CLOSED`, `mergeable:
+  CONFLICTING` at the time of this check
+  (`gh pr view 30 -R diazMelgarejo/AlphaClaw --json
+  number,baseRefName,baseRefOid,headRefOid,mergeable,state`).
+- **Base:** `2026-08-05-001-mcp-consolidation-to-pt` @
+  `2182d5dc83344d79f7d704342403f6853ac067c7`
+- **Head:** `faf894f264898e4c1bee5df9595b76d60b7aa099`
+- **Confirmed with:** `git merge-tree <base-sha> <head-sha>` against those two
+  exact SHAs (not branch refs, which drift under further pushes).
+
+Real conflicting paths (5, `git merge-tree` output, all inside AlphaClaw's
+local checkout — not `$ORAMA_SYSTEM_PATH` or any PT/orama path):
+
+| Path | What it is |
+| --- | --- |
+| `.agents/skills/AlphaClaw/SKILL.md` | the `.agents/`-rooted mirror |
+| `.claude/skills/AlphaClaw/SKILL.md` | the `.claude/`-rooted mirror (the one that received the OSSF-1 treatment) |
+| `.claude/ecc-tools.json` | the ECC manifest |
+| `.claude/identity.json` | the identity file |
+| `.claude/homunculus/instincts/inherited/AlphaClaw-instincts.yaml` | the instinct-inheritance/harmonization file |
+
+A **second, parallel skill mirror** exists at a different path from the one
+reviewed above (the `.agents/`-rooted copy, distinct from the `.claude/`-
+rooted one that received the OSSF-1 treatment). That second mirror never got
+the same refactor and has independently drifted from the PR's real base on
+the 5 paths above. Pushing the reviewed branch's current local head as-is
+would land a PR with these 5 real conflicts to resolve, not a clean
+fast-forward.
+
+**Caveat for future readers:** this table is a snapshot at the SHAs above,
+taken 2026-08-08. PR #30 is already `CLOSED` — if it's reopened, rebased, or
+superseded, or the local AlphaClaw checkout has since moved, re-run the
+`gh pr view` + `git merge-tree` commands against the current tips before
+trusting this table over a fresh check, per this session's own "ALWAYS
+verify, NEVER trust" doctrine (see `docs/LESSONS.md` § 2026-08-08 in
+orama-system).
 
 ## Why this matters for the mirror-drift pattern named elsewhere
 
