@@ -20,6 +20,24 @@ fi
 _ORAMA_MARKER="bin/orama-system/SKILL.md"
 _RESOLVED_ORAMA_ROOT_CACHE=""
 
+# discard_stale_orama_env_overrides
+# Cursor environment.json often seeds ORAMA_SYSTEM_PATH (and friends) with a
+# placeholder such as $OPENCLAW_HOME/orama-system that does not exist on cloud
+# VMs. Those values are not deliberate operator overrides — leaving them set
+# makes resolve_orama_root fail-closed and skip the sibling crawl even when
+# orama-system is present (e.g. /agent/repos/orama-system). Bootstrap callers
+# should invoke this before resolve_orama_root.
+discard_stale_orama_env_overrides() {
+  local var v
+  for var in ORAMA_SYSTEM_PATH ORAMA_SYSTEM_ROOT ORAMA_ROOT; do
+    v="${!var:-}"
+    [[ -n "$v" ]] || continue
+    if ! sibling_repo_is_git_root "$v" "$_ORAMA_MARKER"; then
+      unset "$var"
+    fi
+  done
+}
+
 # resolve_orama_root resolves and prints the orama-system repository root.
 # Memoizes into _RESOLVED_ORAMA_ROOT_CACHE so repeated calls in the same shell
 # do not re-crawl.

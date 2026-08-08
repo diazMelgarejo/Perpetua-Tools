@@ -68,7 +68,10 @@ log "sessionStart hook → ${HOOK_DIR}/session-apply-git-guards.sh"
 
 export PERPETUA_TOOLS_PATH="${PERPETUA_TOOLS_PATH:-$REPO_ROOT}"
 export OPENCLAW_HOME="${OPENCLAW_HOME:-$HOME/openclaw-v1}"
-ORAMA_SYSTEM_PATH="$(source "$REPO_ROOT/scripts/resolve_orama_root.sh" >/dev/null 2>&1 && resolve_orama_root 2>/dev/null || true)"
+# shellcheck source=/dev/null
+source "$REPO_ROOT/scripts/resolve_orama_root.sh" >/dev/null 2>&1 || true
+discard_stale_orama_env_overrides 2>/dev/null || true
+ORAMA_SYSTEM_PATH="$(resolve_orama_root 2>/dev/null || true)"
 export ORAMA_SYSTEM_PATH
 export ALPHACLAW_INSTALL_DIR="${ALPHACLAW_INSTALL_DIR:-$OPENCLAW_HOME/AlphaClaw}"
 if [[ -f "${REPO_ROOT}/scripts/cursor/lib-normalize-cloud-paths.sh" ]]; then
