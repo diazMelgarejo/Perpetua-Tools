@@ -128,9 +128,17 @@ def _validate_policy_data(data: dict) -> None:
             raise IdentityPolicyError("agent_identities entry missing required 'email' field")
         _track(entry["email"], entry["email"])
 
+    # Bot emails are checked against seen_emails (human/agent identities) to
+    # catch a real collision, but NOT tracked into it: the same bot (e.g.
+    # coderabbitai[bot]) legitimately reviews and commits across multiple
+    # repos in this stack, so the same bot email is expected to recur under
+    # different repo_name keys. Only a collision with a human/agent
+    # identity, or a duplicate *within* one repo's own bot list, is an error.
+    seen_bots_by_repo: dict[str, set[str]] = {}
     for repo_name, bots in data["repo_bot_identities"].items():
         if not isinstance(bots, list):
             raise IdentityPolicyError(f"repo_bot_identities[{repo_name!r}] must be a list")
+        seen_repo_bots = seen_bots_by_repo.setdefault(repo_name, set())
         for bot in bots:
             if not isinstance(bot, str) or not bot:
                 raise IdentityPolicyError(
@@ -141,7 +149,16 @@ def _validate_policy_data(data: dict) -> None:
                 raise IdentityPolicyError(
                     f"universal bot wildcard patterns are not allowed: {bot!r} (repo {repo_name})"
                 )
-            _track(bot, bot)
+            bot_key = bot.casefold()
+            if bot_key in seen_emails:
+                raise IdentityPolicyError(
+                    f"bot identity collides with a human/agent identity email: {bot!r}"
+                )
+            if bot_key in seen_repo_bots:
+                raise IdentityPolicyError(
+                    f"duplicate bot identity within repo_bot_identities[{repo_name!r}]: {bot!r}"
+                )
+            seen_repo_bots.add(bot_key)
 
     if "vendor_domains" in data:
         raise IdentityPolicyError("vendor_domains approval list is not permitted in identity policy")

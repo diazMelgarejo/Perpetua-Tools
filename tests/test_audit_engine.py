@@ -287,6 +287,42 @@ def test_wildcard_bot_in_policy_rejected(tmp_path):
         audit_engine.load_policy(bad)
 
 
+def test_same_bot_approved_across_multiple_repos(tmp_path):
+    """The same bot (e.g. coderabbitai[bot]) legitimately reviews/commits
+    across every repo in this stack -- the real policy file already lists
+    it under both orama-system and Perpetua-Tools. That must load cleanly.
+    """
+    ok = tmp_path / "ok.json"
+    ok.write_text(json.dumps({
+        "version": 1,
+        "human_identities": [],
+        "agent_identities": [],
+        "repo_bot_identities": {
+            "repo-a": ["samebot[bot]@users.noreply.github.com"],
+            "repo-b": ["samebot[bot]@users.noreply.github.com"],
+        },
+    }))
+    policy = audit_engine.load_policy(ok)
+    assert policy["repo_bot_identities"]["repo-a"] == policy["repo_bot_identities"]["repo-b"]
+
+
+def test_duplicate_bot_within_same_repo_rejected(tmp_path):
+    bad = tmp_path / "bad.json"
+    bad.write_text(json.dumps({
+        "version": 1,
+        "human_identities": [],
+        "agent_identities": [],
+        "repo_bot_identities": {
+            "repo-a": [
+                "samebot[bot]@users.noreply.github.com",
+                "SameBot[bot]@Users.NoReply.GitHub.com",
+            ],
+        },
+    }))
+    with pytest.raises(audit_engine.IdentityPolicyError):
+        audit_engine.load_policy(bad)
+
+
 def test_check_configured_identity_passes_non_cursor(tmp_path, monkeypatch):
     monkeypatch.delenv("CURSOR_AGENT", raising=False)
     monkeypatch.delenv("CURSOR_TRACE_ID", raising=False)
