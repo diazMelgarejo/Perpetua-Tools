@@ -34,6 +34,9 @@ guard_sync_dirty_paths() {
   for rel in "${GUARD_SYNC_EXECUTABLES[@]}" "${GUARD_SYNC_DATA_FILES[@]}"; do
     paths+=("scripts/git/$rel")
   done
+  for rel in "${GUARD_SYNC_GITHOOKS[@]}"; do
+    paths+=(".githooks/$rel")
+  done
   for rel in \
     append-pr-body.sh \
     grant-pr-body-human-override.sh \
@@ -238,6 +241,16 @@ for rel in "${GUARD_SYNC_DATA_FILES[@]}"; do
   [[ -f "$SCRIPT_DIR/$rel" ]] || continue
   atomic_install_file "$SCRIPT_DIR/$rel" "$target/scripts/git/$rel" 0644
 done
+
+# Only sync .githooks/ entrypoints into repos that have already opted into
+# core.hooksPath=.githooks -- never force a new hooks system onto a repo
+# that hasn't adopted one (e.g. a repo with no .githooks/ dir at all yet).
+if [[ -d "$target/.githooks" ]]; then
+  for rel in "${GUARD_SYNC_GITHOOKS[@]}"; do
+    [[ -f "$SCRIPT_DIR/../../.githooks/$rel" ]] || continue
+    atomic_install_file "$SCRIPT_DIR/../../.githooks/$rel" "$target/.githooks/$rel" 0755
+  done
+fi
 
 # Cursor Cloud agent helpers (orama canonical — synced to PT + AlphaClaw, not periscope).
 for cursor_rel in \
