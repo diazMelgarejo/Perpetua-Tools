@@ -9,7 +9,11 @@ printf '>>> [cloud-bootstrap] Perpetua-Tools %s\n' "$(git rev-parse --short HEAD
 
 export PERPETUA_TOOLS_PATH="${PERPETUA_TOOLS_PATH:-$REPO_ROOT}"
 export REPO_ROOT="$REPO_ROOT"
-export ORAMA_SYSTEM_PATH="${ORAMA_SYSTEM_PATH:-$REPO_ROOT/../orama-system}"
+# shellcheck source=/dev/null
+source "$REPO_ROOT/scripts/resolve_orama_root.sh" >/dev/null 2>&1 || true
+discard_stale_orama_env_overrides 2>/dev/null || true
+ORAMA_SYSTEM_PATH="$(resolve_orama_root 2>/dev/null || true)"
+export ORAMA_SYSTEM_PATH
 
 if [[ -x scripts/cursor/ci-bootstrap-private-attribution.sh ]]; then
   bash scripts/cursor/ci-bootstrap-private-attribution.sh

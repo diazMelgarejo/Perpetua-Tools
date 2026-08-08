@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# guard-sync-manifest.sh — single source of truth for attribution-guard distribution.
+# guard-sync-manifest.sh — single source of truth for canonical scripts/git/
+# tooling distribution (attribution guards, plus shared cross-repo git
+# utilities like resolve_sibling_git_repo.sh that have no reason to fork).
 #
 # orama-system scripts/git/ is CANONICAL. Perpetua-Tools (and AlphaClaw) carry
 # byte-identical downstream mirrors via sync-attribution-guard-scripts.sh.
@@ -12,6 +14,12 @@
 
 # Executable guard tooling (mode 0755 when synced).
 GUARD_SYNC_EXECUTABLES=(
+  resolve_sibling_git_repo.sh
+  check_commit_message_claims.sh
+  check_commit_message_claims.py
+  find_stranded_work.sh
+  ensure_hooks_installed.sh
+  check_tdd_commit.sh
   cursor-hooks-id.sh
   hooks/commit-msg.strip-coauthor
   disable-cursor-commit-attribution.sh
@@ -45,6 +53,16 @@ GUARD_SYNC_DATA_FILES=(
   audit_engine.py
   identity-policy.json
   identity-policy.schema.json
+)
+
+# .githooks/ entrypoints (mode 0755 when synced). These call into the
+# GUARD_SYNC_EXECUTABLES above, guarded by [[ -x ... ]] existence checks so
+# the SAME content works whether or not a given optional script exists in a
+# repo (e.g. check_tdd_commit.sh no-ops outside web/src/). Only synced to
+# repos that already opted into core.hooksPath=.githooks -- see
+# sync-attribution-guard-scripts.sh's handling.
+GUARD_SYNC_GITHOOKS=(
+  commit-msg
 )
 
 # Every synced path must be byte-identical in downstream repos when parity runs.

@@ -1,0 +1,44 @@
+{
+  "id": "adda4d2b02c3",
+  "key": "manual_adda4d",
+  "name": "manual_adda4d",
+  "claim": "Never trust a cherry -v + commit-message match as proof a merge/reanchor preserved content \u2014 always diff the local tip against the actual merged headRefOid before declaring it safe",
+  "conditions": [
+    "PR merged",
+    "cherry-pick",
+    "content loss",
+    "headRefOid",
+    "merge conflict resolution",
+    "reanchor",
+    "tree twin"
+  ],
+  "evidence_ids": [
+    "2026-08-08T05:05:24.012828+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-08T05:05:24.012828+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-08T05:05:24.012828+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-08T05:05:24.528038+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR #283 (orama-system, 2026-08-08): a prior cherry-reanchor conflict resolution produced a different final commit than the reviewed branch tip. cherry -v + message cross-check reported everything resolved (message-match proves a same-titled commit exists upstream, not that its content survived), but the actual merged head silently dropped ~660 lines (OSSF-1 pre-commit gate script + wiring, a 439-line reference card, and pilot content in 3 skills). Caught only by diffing the archived branch's real tip against gh pr view's headRefOid, not an assumed one. Fixed by restoring the dropped content on a fresh origin/main branch (PR #291) and codifying a new safe-behind/needs-reanchor gate in git-history-surgery doctrine.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-08T05:05:24.012828+00:00"
+      ],
+      "lessons_sha": "b298b3f075d5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-08T05:05:24.527997+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR #283 (orama-system, 2026-08-08): a prior cherry-reanchor conflict resolution produced a different final commit than the reviewed branch tip. cherry -v + message cross-check reported everything resolved (message-match proves a same-titled commit exists upstream, not that its content survived), but the actual merged head silently dropped ~660 lines (OSSF-1 pre-commit gate script + wiring, a 439-line reference card, and pilot content in 3 skills). Caught only by diffing the archived branch's real tip against gh pr view's headRefOid, not an assumed one. Fixed by restoring the dropped content on a fresh origin/main branch (PR #291) and codifying a new safe-behind/needs-reanchor gate in git-history-surgery doctrine."
+}

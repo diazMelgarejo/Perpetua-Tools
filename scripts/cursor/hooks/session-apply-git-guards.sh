@@ -21,6 +21,20 @@ find_orama_root() {
   return 1
 }
 
+resolve_orama_from_pt_root() {
+  local root resolved
+  while IFS= read -r root; do
+    [[ -n "$root" ]] || continue
+    [[ -f "$root/scripts/resolve_orama_root.sh" ]] || continue
+    resolved="$(cd "$root" && source scripts/resolve_orama_root.sh >/dev/null 2>&1 && resolve_orama_root 2>/dev/null || true)"
+    if [[ -n "$resolved" && -x "$resolved/scripts/git/apply-attribution-guard-all-repos.sh" ]]; then
+      printf '%s\n' "$resolved"
+      return 0
+    fi
+  done
+  return 1
+}
+
 mapfile -t workspace_roots < <(
   ORAMA_SYSTEM_PATH="${ORAMA_SYSTEM_PATH:-}" \
   REPO_ROOT="${REPO_ROOT:-}" \
@@ -56,8 +70,14 @@ print("\n".join(out))
 
 orama="$({
   for r in "${workspace_roots[@]}"; do printf '%s\n' "$r"; done
+} | resolve_orama_from_pt_root || true)"
+
+if [[ -z "$orama" ]]; then
+  orama="$({
+  for r in "${workspace_roots[@]}"; do printf '%s\n' "$r"; done
   printf '%s\n' "${ORAMA_SYSTEM_PATH:-}" "${REPO_ROOT:-}" "/workspace"
-} | find_orama_root || true)"
+  } | find_orama_root || true)"
+fi
 
 if [[ -n "$orama" ]]; then
   export ORAMA_SYSTEM_PATH="$orama"

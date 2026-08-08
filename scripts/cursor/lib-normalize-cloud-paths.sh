@@ -60,6 +60,7 @@ _default_sibling_path() {
   local repo_root="${2:-}"
   local openclaw_home="$3"
   local repo_base=""
+  local resolved=""
 
   if [[ -n "$repo_root" ]]; then
     repo_base="$(basename "$repo_root")"
@@ -69,8 +70,11 @@ _default_sibling_path() {
     ORAMA_SYSTEM_PATH)
       if [[ "$repo_base" == "orama-system" ]]; then
         printf '%s\n' "$repo_root"
+      elif [[ -n "$repo_root" && -f "$repo_root/scripts/resolve_orama_root.sh" ]]; then
+        resolved="$(source "$repo_root/scripts/resolve_orama_root.sh" >/dev/null 2>&1 && resolve_orama_root 2>/dev/null || true)"
+        printf '%s\n' "$resolved"
       else
-        printf '%s\n' "$openclaw_home/orama-system"
+        printf '%s\n' ""
       fi
       ;;
     PERPETUA_TOOLS_PATH)
