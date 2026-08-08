@@ -68,7 +68,8 @@ log "sessionStart hook → ${HOOK_DIR}/session-apply-git-guards.sh"
 
 export PERPETUA_TOOLS_PATH="${PERPETUA_TOOLS_PATH:-$REPO_ROOT}"
 export OPENCLAW_HOME="${OPENCLAW_HOME:-$HOME/openclaw-v1}"
-export ORAMA_SYSTEM_PATH="${ORAMA_SYSTEM_PATH:-$OPENCLAW_HOME/orama-system}"
+ORAMA_SYSTEM_PATH="$(source "$REPO_ROOT/scripts/resolve_orama_root.sh" >/dev/null 2>&1 && resolve_orama_root 2>/dev/null || true)"
+export ORAMA_SYSTEM_PATH
 export ALPHACLAW_INSTALL_DIR="${ALPHACLAW_INSTALL_DIR:-$OPENCLAW_HOME/AlphaClaw}"
 if [[ -f "${REPO_ROOT}/scripts/cursor/lib-normalize-cloud-paths.sh" ]]; then
   # shellcheck source=lib-normalize-cloud-paths.sh
@@ -95,7 +96,7 @@ if [[ -x "${REPO_ROOT}/scripts/git/apply-attribution-guard-all-repos.sh" ]]; the
   fi
 fi
 
-ORAMA="${ORAMA_SYSTEM_PATH:-$REPO_ROOT/../orama-system}"
+ORAMA="$(source "$REPO_ROOT/scripts/resolve_orama_root.sh" >/dev/null 2>&1 && resolve_orama_root 2>/dev/null || true)"
 if [[ -x "${ORAMA}/scripts/cursor/write-openclaw-private-attribution.sh" ]]; then
   log "write user-level private attribution via orama-system"
   bash "${ORAMA}/scripts/cursor/write-openclaw-private-attribution.sh"

@@ -8,6 +8,7 @@
 set -euo pipefail
 PT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PT_PARENT="$(dirname "$PT_ROOT")"
+ORAMA_RESOLVER="$PT_ROOT/scripts/resolve_orama_root.sh"
 
 if [[ -n "${ORAMA_ROOT:-}" ]]; then
   orama_root_abs="$(cd "$ORAMA_ROOT" 2>/dev/null && pwd)" || orama_root_abs=""
@@ -18,8 +19,7 @@ if [[ -n "${ORAMA_ROOT:-}" ]]; then
 fi
 
 for cand in "${ORAMA_ROOT:-}" \
-            "$PT_ROOT/../orama-system" \
-            "$PT_ROOT/../../orama-system"; do
+            "$(source "$ORAMA_RESOLVER" >/dev/null 2>&1 && resolve_orama_root 2>/dev/null || true)"; do
   [[ -n "$cand" ]] || continue
   cand_abs="$(cd "$cand" 2>/dev/null && pwd)" || continue
 

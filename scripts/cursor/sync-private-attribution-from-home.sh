@@ -12,7 +12,7 @@ HOME_GUIDE="${OPENCLAW}/banned-attribution-local.md"
 HOME_LESSON="${OPENCLAW}/private-lessons/perpetua-tools-git-attribution.md"
 
 if [[ ! -f "$HOME_PATTERNS" ]]; then
-  ORAMA="${ORAMA_SYSTEM_PATH:-/agent/repos/orama-system}"
+  ORAMA="$(source "$REPO_ROOT/scripts/resolve_orama_root.sh" >/dev/null 2>&1 && resolve_orama_root 2>/dev/null || true)"
   if [[ -x "${ORAMA}/scripts/cursor/write-openclaw-private-attribution.sh" ]]; then
     bash "${ORAMA}/scripts/cursor/write-openclaw-private-attribution.sh"
   else

@@ -1,13 +1,32 @@
 #!/usr/bin/env bash
+# Canonical in orama-system -- synced byte-identical to Perpetua-Tools (and
+# any other repo already on core.hooksPath=.githooks) via
+# sync-attribution-guard-scripts.sh. NEVER hand-edit a downstream copy.
+#
+# Each step below existence-checks its script before calling it, so this one
+# file works correctly across repos that don't have every optional script
+# (e.g. check_tdd_commit.sh only fires on staged web/src/*.tsx changes and
+# no-ops everywhere else, but a repo without a web/src/ tree at all can skip
+# it entirely without losing anything).
 set -euo pipefail
 ROOT="$(git rev-parse --show-toplevel)"
 MSG="${1:?commit message file required}"
 
-"$ROOT/scripts/git/ensure_hooks_installed.sh"
+if [[ -x "$ROOT/scripts/git/ensure_hooks_installed.sh" ]]; then
+  "$ROOT/scripts/git/ensure_hooks_installed.sh"
+fi
 
 # Strip Cursor-injected trailers before policy validation.
 if [[ -x "$ROOT/scripts/git/hooks/commit-msg.strip-coauthor" ]]; then
   "$ROOT/scripts/git/hooks/commit-msg.strip-coauthor" "$MSG"
 fi
 
-exec "$ROOT/scripts/git/check_commit_message.sh" "$MSG"
+"$ROOT/scripts/git/check_commit_message.sh" "$MSG"
+
+if [[ -x "$ROOT/scripts/git/check_commit_message_claims.sh" ]]; then
+  "$ROOT/scripts/git/check_commit_message_claims.sh" "$MSG"
+fi
+
+if [[ -x "$ROOT/scripts/git/check_tdd_commit.sh" ]]; then
+  exec "$ROOT/scripts/git/check_tdd_commit.sh" "$MSG"
+fi
