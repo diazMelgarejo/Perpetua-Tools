@@ -31,7 +31,7 @@
     "gitignore",
     "like",
     "protects",
-    "__pycache__",
+    "pycache__",
     "raw",
     "reads",
     "real",
