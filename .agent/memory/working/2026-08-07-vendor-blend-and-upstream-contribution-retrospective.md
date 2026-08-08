@@ -1,7 +1,8 @@
 # RETROSPECTIVE — vendor blend, stacked-PR recovery, and upstream contribution arc
 
 Date: 2026-08-07
-Branch: `bump-agentic-stack-vendor-pin` (historical / live PT PR #338 head name; kept as-is to preserve the open PR ref rather than renaming to `yyyy-mm-dd-NNN-brief-summary`)
+Branch: `bump-agentic-stack-vendor-pin` (historical / live PT PR #338 head name; kept as-is to
+preserve the open PR ref rather than renaming to `yyyy-mm-dd-NNN-brief-summary`)
 Scope: reflective synthesis requested alongside 7 new lessons graduated in
 the same commit range — `lesson_15aa463fd07c`, `lesson_005f2a16600d`,
 `lesson_05c055046864`, `lesson_70713965dc1b`, `lesson_0f66a36ee1cc`,
