@@ -34,7 +34,12 @@ dependencies = [
     # transitive dep and blocked python-dotenv >=1.2.2 (CVE-2026-28684).
     # perplexityai removed 2026-05-29: zero imports; Perplexity is called via
     # the openai-compatible SDK (OPENAI_BASE_URL override) in perplexity_client.py.
-    "openai>=1.30.0",
+    # >=1.83.0: .agent/harness/llm.py's MiniMax/wanDB/OpenAI provider branches
+    # pass max_completion_tokens to chat.completions.create() -- absent from
+    # this SDK's signature before 1.83.0 (verified directly: openai==1.30.0's
+    # create() has zero max_completion_tokens occurrences, raises TypeError
+    # on an unexpected kwarg). Matches the version actually locked in uv.lock.
+    "openai>=1.83.0",
     # FastAPI web framework
     "fastapi>=0.109.0",
     "uvicorn[standard]>=0.27.0",
