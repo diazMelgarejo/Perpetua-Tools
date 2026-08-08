@@ -43,8 +43,14 @@ discard_stale_orama_env_overrides() {
 # do not re-crawl.
 resolve_orama_root() {
   if [[ -n "${_RESOLVED_ORAMA_ROOT_CACHE:-}" ]]; then
-    echo "$_RESOLVED_ORAMA_ROOT_CACHE"
-    return 0
+    if sibling_repo_is_git_root "$_RESOLVED_ORAMA_ROOT_CACHE" "$_ORAMA_MARKER"; then
+      echo "$_RESOLVED_ORAMA_ROOT_CACHE"
+      return 0
+    fi
+    # Cached path no longer resolves (moved, removed, or an override was
+    # reconfigured after the first call in this shell) -- invalidate rather
+    # than trust a stale value silently.
+    _RESOLVED_ORAMA_ROOT_CACHE=""
   fi
 
   local override_rc=0 path parent mother orama_root
@@ -55,9 +61,12 @@ resolve_orama_root() {
     echo "$_RESOLVED_ORAMA_ROOT_CACHE"
     return 0
   elif ((override_rc == 2)); then
-    # An explicit override was configured but none resolved to a valid,
-    # non-symlinked orama-system git root. Fail closed rather than silently
-    # crawling to a different checkout.
+    # An explicit override was configured (ORAMA_SYSTEM_PATH / _ROOT / ROOT)
+    # but none resolved to a valid, non-symlinked orama-system git root. Fail
+    # closed rather than silently crawling to a different checkout -- trace
+    # exactly what each candidate var held so this is debuggable instead of
+    # a bare non-zero exit.
+    echo "resolve_orama_root: ORAMA_SYSTEM_PATH/ORAMA_SYSTEM_ROOT/ORAMA_ROOT is set but did not resolve to a valid orama-system checkout (missing ${_ORAMA_MARKER} or not a git root) -- ORAMA_SYSTEM_PATH=${ORAMA_SYSTEM_PATH:-<unset>} ORAMA_SYSTEM_ROOT=${ORAMA_SYSTEM_ROOT:-<unset>} ORAMA_ROOT=${ORAMA_ROOT:-<unset>}" >&2
     return 1
   fi
 

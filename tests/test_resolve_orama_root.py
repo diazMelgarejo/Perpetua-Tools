@@ -99,6 +99,7 @@ def test_stale_env_placeholder_allows_crawl_after_discard(tmp_path: Path) -> Non
         cwd=pt,
         env=stale_env,
         text=True,
+        encoding="utf-8",
         capture_output=True,
         check=False,
     )
