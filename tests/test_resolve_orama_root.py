@@ -78,6 +78,35 @@ def test_mother_dir_crawl_finds_orama_system(tmp_path: Path) -> None:
     assert result.stdout.strip() == str(orama)
 
 
+def test_stale_env_placeholder_allows_crawl_after_discard(tmp_path: Path) -> None:
+    root = tmp_path / "home" / "workspace"
+    pt = _make_pt_repo(root / "Perpetua-Tools")
+    orama = _make_orama_repo(root / "orama-system")
+    invalid = tmp_path / "openclaw-v1" / "orama-system"
+    invalid.parent.mkdir(parents=True)
+
+    stale_env = os.environ.copy()
+    for key in ("ORAMA_SYSTEM_PATH", "ORAMA_SYSTEM_ROOT", "ORAMA_ROOT"):
+        stale_env.pop(key, None)
+    stale_env["ORAMA_SYSTEM_PATH"] = str(invalid)
+    script = (
+        "source scripts/resolve_orama_root.sh && "
+        "discard_stale_orama_env_overrides && "
+        "resolve_orama_root"
+    )
+    result = subprocess.run(
+        ["bash", "-c", script],
+        cwd=pt,
+        env=stale_env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == str(orama)
+
+
 def test_no_orama_system_found_returns_failure(tmp_path: Path) -> None:
     pt = _make_pt_repo(tmp_path / "perplexity-api" / "Perpetua-Tools")
 
