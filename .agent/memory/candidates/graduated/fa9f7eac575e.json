@@ -1,0 +1,42 @@
+{
+  "id": "fa9f7eac575e",
+  "key": "manual_fa9f7e",
+  "name": "manual_fa9f7e",
+  "claim": "Before any cross-repo guard-sync operation (or when a user asks 'is the other side actually behind, or does it have unique improvements?'), run the divergence checker proactively even when confident nothing has diverged -- treat empirical verification as the mandatory first step, not a defensive measure reserved for when drift is already suspected.",
+  "conditions": [
+    "check-before-clobber",
+    "cross-repo-sync",
+    "divergence-check",
+    "guard-sync",
+    "verify-first"
+  ],
+  "evidence_ids": [
+    "2026-08-09T06:07:41.319078+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-09T06:07:41.319078+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-09T06:07:41.319078+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-09T06:07:41.453875+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-08-09: asked whether PT's guard-sync-manifest-tracked scripts might have independent improvements not yet in orama canonical, before syncing/overwriting. Ran check-guard-sync-divergence.sh against the real repos (not scratch clones) and confirmed PASS -- PT had zero unique content, pure lag. The check cost seconds and closed the door on an entire class of accidental-clobber risk; the discipline of running it BEFORE forming a confident answer, not just when something already looks wrong, is the actual lesson -- confidence from reasoning about repo history is not a substitute for the empirical check the tooling already provides for free.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-09T06:07:41.319078+00:00"
+      ],
+      "lessons_sha": "2cdd1e6e88cd"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-09T06:07:41.453865+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-08-09: asked whether PT's guard-sync-manifest-tracked scripts might have independent improvements not yet in orama canonical, before syncing/overwriting. Ran check-guard-sync-divergence.sh against the real repos (not scratch clones) and confirmed PASS -- PT had zero unique content, pure lag. The check cost seconds and closed the door on an entire class of accidental-clobber risk; the discipline of running it BEFORE forming a confident answer, not just when something already looks wrong, is the actual lesson -- confidence from reasoning about repo history is not a substitute for the empirical check the tooling already provides for free."
+}
