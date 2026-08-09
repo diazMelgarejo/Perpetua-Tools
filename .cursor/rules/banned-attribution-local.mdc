@@ -14,6 +14,6 @@ Before `git commit` or `git push` (normal work — not during active history sur
 
 **Active rewrite/expunge:** hooks off for `filter-repo`, `filter-branch`, and
 post-rewrite force-push; restore with `bash scripts/git/install-local-hooks.sh`
-after. See `bin/orama-system/skills/git-history-surgery/references/history-surgery-hooks-safeguard-reference-card.md`.
+after. See `$OPENCLAW_ROOT/bin/orama-system/skills/git-history-surgery/references/history-surgery-hooks-safeguard-reference-card.md`.
 
 Public policy (no token examples): `../orama-system/docs/wiki/08-git-hygiene-and-branching.md`
