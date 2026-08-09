@@ -35,6 +35,20 @@ orchestrator (≤200 lines) plus its four reference cards, section by
 section, then confirmed every suspected drop with a repo-wide `grep`
 across the new files (not just a visual scan).
 
+**Exact revisions compared** (repo: `diazMelgarejo/AlphaClaw`, branch
+`2026-08-05-001-mcp-consolidation-to-pt` at the time of this audit):
+
+- **Source (pre-OSSF-1):** `5712c102` — "feat(ecc): integrative union
+  v0+v1.1+v3 + manifest CI guard" — `.claude/skills/AlphaClaw/SKILL.md` at
+  376 lines.
+- **Target (post-OSSF-1):** `faf894f264898e4c1bee5df9595b76d60b7aa099` —
+  "feat(ecc): apply OSSF-1 format to AlphaClaw SKILL orchestrator" —
+  `.claude/skills/AlphaClaw/SKILL.md` reduced to 161 lines, plus 4 new
+  reference cards: `.claude/skills/AlphaClaw/references/{architecture-
+  and-stack,code-style-commits-testing,synthesis-lineage,workflows}.md`.
+- Reproduce with: `git diff 5712c102 faf894f264898e4c1bee5df9595b76d60b7aa099
+  -- .claude/skills/AlphaClaw/` in the AlphaClaw checkout.
+
 **Genuinely dropped, confirmed absent:**
 
 - The `isMacOS()` code example under Platform-Specific Support.
