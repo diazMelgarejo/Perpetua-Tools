@@ -2,7 +2,8 @@
 
 Date: 2026-08-09
 Branch: `fix/mapfile-to-while-read` (orama-system, worked in a disposable local clone)
-Final state: all PR #298 CI checks green (test, test 3.11/3.12/3.13, git-hygiene, lint, build, aguara scanner, CodeQL, gitleaks).
+Final state: all PR #298 CI checks green (test, test 3.11/3.12/3.13, git-hygiene,
+lint, build, aguara scanner, CodeQL, gitleaks).
 
 ## Symptom
 
@@ -10,7 +11,7 @@ Final state: all PR #298 CI checks green (test, test 3.11/3.12/3.13, git-hygiene
 and `::test_internal_bootstrap_files_still_fail_on_other_banned_values` failed
 **only** on GitHub Actions `ubuntu-latest`, with:
 
-```
+```text
 AssertionError: rc=0 stdout='OK: no banned tokens in tracked files\n' stderr=''
 ```
 
@@ -39,7 +40,7 @@ object so the next CI failure would surface it directly instead of requiring
 another guess-and-push round trip. Pushed, read the actual CI log's captured
 trace. It showed:
 
-```
+```text
 ++ rg -F -i -n -- forbidden_attribution scripts/cursor/seed-banned-attribution-patterns.sh
 ++ true
 ```
@@ -53,7 +54,7 @@ targeted diagnostic: call `rg` directly (no `2>/dev/null` suppression) plus
 That round's CI log gave the real answer directly, via Python's own
 `subprocess.run(["rg", ...])` raising (not the shell-suppressed version):
 
-```
+```text
 FileNotFoundError: [Errno 2] No such file or directory: 'rg'
 ```
 
@@ -130,7 +131,7 @@ so the literal substring never appears verbatim in tracked source.
 Verified: full local simulation of the exact CI bootstrap+scan sequence
 against a clean isolated `$HOME` exits 0 genuinely (not silently); all 4
 tests in the target file pass with real ripgrep in `PATH`; every job on PR
-#298 (`test`, `test (3.11/3.12/3.13)`, `git-hygiene`, `lint`, `build`,
+\#298 (`test`, `test (3.11/3.12/3.13)`, `git-hygiene`, `lint`, `build`,
 `aguara` scanner, `CodeQL`, `gitleaks`) passed for real on the actual CI run
 that included these commits.
 
