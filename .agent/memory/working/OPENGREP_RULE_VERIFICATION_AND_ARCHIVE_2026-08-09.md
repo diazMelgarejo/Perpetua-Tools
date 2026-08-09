@@ -74,7 +74,7 @@ picking back up with a cleaner test setup).
 
 **Follow-up research corroboration:** a semgrep blog post about promoting
 Kotlin from experimental to GA
-(https://semgrep.dev/blog/2023/kotlin-ga/#the-program-analysis-perspective)
+<https://semgrep.dev/blog/2023/kotlin-ga/#the-program-analysis-perspective>
 explains that `"$X"` is fundamentally *ambiguous* between two
 interpretations — (a) a literal double-quoted string node containing an
 interpolated metavariable, or (b) the documented literal-metavariable
