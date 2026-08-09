@@ -177,8 +177,14 @@ def _read_fallback_secret_file() -> str | None:
 
 
 def _validate_repo_slug(repo: str) -> None:
-    if "|" in repo or not repo.strip():
-        raise GrantError("grant repo must not contain pipe characters")
+    if "|" in repo or "\n" in repo or "\r" in repo or not repo.strip():
+        raise GrantError("grant repo must not contain pipe or newline characters")
+
+
+def _validate_pr_number(pr_number: str) -> None:
+    text = str(pr_number)
+    if "|" in text or "\n" in text or "\r" in text or not text.strip():
+        raise GrantError("grant pr_number must not contain pipe or newline characters")
 
 
 def _write_private_file(path: Path, content: str) -> None:
@@ -431,6 +437,7 @@ def verify_grant_fields(
 ) -> tuple[bool, str]:
     try:
         _validate_repo_slug(repo)
+        _validate_pr_number(pr_number)
     except GrantError as exc:
         return False, str(exc)
 
@@ -682,6 +689,7 @@ def mint_grant(
     cwd: Path | None = None,
 ) -> Path:
     _validate_repo_slug(repo)
+    _validate_pr_number(pr_number)
     digest = content_digest_for_append(file_path, message, cwd=cwd)
     secret = resolve_hmac_secret(allow_generate=True)
     issued_at = _now_utc().isoformat().replace("+00:00", "Z")
