@@ -34,15 +34,109 @@ import json, os, re, sys
 #   UP 3      = .agent/
 HERE = os.path.dirname(os.path.abspath(__file__))
 AGENT_ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
+REPO_ROOT = os.path.abspath(os.path.join(AGENT_ROOT, ".."))
 
 sys.path.insert(0, os.path.join(AGENT_ROOT, "harness"))
 sys.path.insert(0, os.path.join(AGENT_ROOT, "tools"))
+sys.path.insert(0, os.path.join(AGENT_ROOT, "memory"))
 
 from hooks.post_execution import log_execution   # noqa: E402
 from hooks.on_failure import on_failure          # noqa: E402
+from path_hygiene import sanitize_tracked_path_leaks  # noqa: E402
 
 
 HARNESS_SKILL_NAME = "harness-post-tool"
+
+
+def _is_subpath(path: str, root: str) -> bool:
+    try:
+        return os.path.commonpath([path, root]) == root
+    except ValueError:
+        return False
+
+
+def _join_anchor(anchor: str, relpath: str) -> str:
+    if relpath in ("", "."):
+        return anchor
+    return anchor + "/" + relpath.replace(os.sep, "/")
+
+
+def _normalize_path_value(value) -> str:
+    """Return a portable path label for persisted hook metadata."""
+    if not isinstance(value, str) or not value:
+        return "?"
+
+    if value.startswith("$REPO_ROOT"):
+        return value
+    if value.startswith("$OPENCLAW_ROOT"):
+        return value
+    if value == "$HOME":
+        return "~"
+    if value.startswith("$HOME/"):
+        return "~/" + value[len("$HOME/"):]
+
+    expanded = os.path.expanduser(value)
+    if os.path.isabs(expanded):
+        abs_path = os.path.abspath(expanded)
+        openclaw_root = os.environ.get("OPENCLAW_ROOT")
+        if openclaw_root:
+            openclaw_abs = os.path.abspath(os.path.expanduser(openclaw_root))
+            if _is_subpath(abs_path, openclaw_abs):
+                return _join_anchor(
+                    "$OPENCLAW_ROOT",
+                    os.path.relpath(abs_path, openclaw_abs),
+                )
+        if _is_subpath(abs_path, REPO_ROOT):
+            return _join_anchor("$REPO_ROOT", os.path.relpath(abs_path, REPO_ROOT))
+        home = os.path.expanduser("~")
+        if home and _is_subpath(abs_path, home):
+            return _join_anchor("~", os.path.relpath(abs_path, home))
+
+    return sanitize_tracked_path_leaks(value)
+
+
+def _tool_metadata(tool_name: str, tool_input: dict) -> dict:
+    """Persist only normalized operation metadata, never raw content payloads."""
+    if not isinstance(tool_input, dict):
+        return {}
+
+    meta: dict[str, object] = {}
+    for key in ("file_path", "path", "new_path"):
+        value = tool_input.get(key)
+        if isinstance(value, str) and value:
+            meta[key] = _normalize_path_value(value)
+
+    cwd = tool_input.get("cwd")
+    if isinstance(cwd, str) and cwd:
+        meta["cwd"] = _normalize_path_value(cwd)
+
+    if tool_name == "Write":
+        content = tool_input.get("content")
+        if isinstance(content, str):
+            meta["content_lines"] = content.count("\n") + (1 if content else 0)
+            meta["content_chars"] = len(content)
+    elif tool_name in ("Edit", "MultiEdit"):
+        for key in ("old_string", "new_string"):
+            value = tool_input.get(key)
+            if isinstance(value, str):
+                meta[f"{key}_chars"] = len(value)
+        edits = tool_input.get("edits")
+        if isinstance(edits, list):
+            meta["edit_count"] = len(edits)
+            meta["edit_chars"] = [
+                {
+                    "old_string_chars": len(edit.get("old_string", "")),
+                    "new_string_chars": len(edit.get("new_string", "")),
+                }
+                for edit in edits
+                if isinstance(edit, dict)
+            ]
+    elif tool_name == "Read":
+        for key in ("offset", "limit"):
+            if key in tool_input:
+                meta[key] = tool_input[key]
+
+    return meta
 
 # ---------------------------------------------------------------------------
 # Importance patterns — universal core + user-configurable extras
@@ -384,15 +478,15 @@ def _action_label(tool_name: str, tool_input: dict) -> str:
                 or tool_input.get("path")
                 or tool_input.get("new_path")
                 or "?")
-        return f"edit: {path}"
+        return f"edit: {_normalize_path_value(path)}"
 
     if tool_name == "Write":
         path = tool_input.get("file_path") or tool_input.get("path") or "?"
-        return f"write: {path}"
+        return f"write: {_normalize_path_value(path)}"
 
     if tool_name == "Read":
         path = tool_input.get("file_path") or tool_input.get("path") or "?"
-        return f"read: {path}"
+        return f"read: {_normalize_path_value(path)}"
 
     if tool_name == "TodoWrite":
         todos = tool_input.get("todos", [])
@@ -460,13 +554,17 @@ def _reflection(tool_name: str, tool_input: dict,
 
     # --- Edit ---
     elif tool_name in ("Edit", "MultiEdit"):
-        path = tool_input.get("file_path") or tool_input.get("path") or "?"
-        old = (tool_input.get("old_string") or "")[:50]
-        new = (tool_input.get("new_string") or "")[:50]
-        if old and new:
+        path = _normalize_path_value(
+            tool_input.get("file_path") or tool_input.get("path") or "?"
+        )
+        meta = _tool_metadata(tool_name, tool_input)
+        edit_count = meta.get("edit_count")
+        if edit_count:
+            parts.append(f"Edited {path}: {edit_count} replacements")
+        elif "old_string_chars" in meta and "new_string_chars" in meta:
             parts.append(
-                f"Edited {path}: replaced {repr(old[:30])} "
-                f"with {repr(new[:30])}"
+                f"Edited {path}: "
+                f"{meta['old_string_chars']} chars -> {meta['new_string_chars']} chars"
             )
         else:
             parts.append(f"Edited {path}")
@@ -475,7 +573,9 @@ def _reflection(tool_name: str, tool_input: dict,
 
     # --- Write ---
     elif tool_name == "Write":
-        path = tool_input.get("file_path") or tool_input.get("path") or "?"
+        path = _normalize_path_value(
+            tool_input.get("file_path") or tool_input.get("path") or "?"
+        )
         content = tool_input.get("content") or ""
         lines = content.count("\n") + 1 if content else 0
         parts.append(f"Wrote {path} ({lines} lines)")
@@ -521,17 +621,25 @@ def _detail(tool_name: str, tool_input: dict,
     by log_execution anyway.
     """
     output = _extract_output(tool_response)
-    inp_str = json.dumps(tool_input, separators=(",", ":"))[:300]
+    metadata = _tool_metadata(tool_name, tool_input)
 
     if tool_name == "Bash":
         cmd = tool_input.get("command", "")[:120]
+        cwd = tool_input.get("cwd")
+        cwd_part = (
+            f" | cwd={_normalize_path_value(cwd)!r}"
+            if isinstance(cwd, str) and cwd
+            else ""
+        )
         if not success:
             err = _extract_error(tool_response)
-            return f"cmd={cmd!r} | exit≠0 | err={err[:200]}"
+            return f"cmd={cmd!r}{cwd_part} | exit!=0 | err={err[:200]}"
         out_snip = output[:200] if output else ""
-        return f"cmd={cmd!r}" + (f" | out={out_snip}" if out_snip else "")
+        return f"cmd={cmd!r}{cwd_part}" + (f" | out={out_snip}" if out_snip else "")
 
-    return inp_str + (f" | {output[:150]}" if output else "")
+    if metadata:
+        return json.dumps(metadata, separators=(",", ":"))
+    return f"tool={tool_name}" + (f" | out={output[:150]}" if output else "")
 
 
 # ---------------------------------------------------------------------------
