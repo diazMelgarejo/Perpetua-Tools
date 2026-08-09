@@ -18,9 +18,9 @@ every local AlphaClaw branch. Every branch — including the one under
 active discussion — reports `NEEDS-REANCHOR` against the *same* rewritten
 `origin/main` root commit. Read correctly, that is the consistent answer:
 every branch measures divergence against one shared rewritten baseline,
-so the rewrite is universal, not partial or inconsistent. `NEEDS-
-REANCHOR` alone is expected staleness for any long-lived branch that
-hasn't rebased recently — per the tree-twin doctrine, it requires a
+not proof that each branch itself already contains the rewritten history.
+`NEEDS-REANCHOR` alone is expected staleness for any long-lived branch
+that hasn't rebased recently — per the tree-twin doctrine, it requires a
 `git cherry -v` pass per branch before treating the flagged commit count
 as real lost work, not an automatic alarm.
 
