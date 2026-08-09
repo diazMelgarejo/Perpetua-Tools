@@ -1,0 +1,17 @@
+schema_version: 1
+limits:
+  max_pipeline_stages: 3
+  max_total_tokens: 4256
+  max_total_cost_usd: 0.05
+recipes:
+  classify_then_generate:
+    description: "Bounded two-stage paid pipeline"
+    stages:
+      - name: classify
+        model_class: fast
+        max_tokens: 256
+        input: original
+      - name: generate
+        model_class: strong
+        max_tokens: 4000
+        input_from: classify
