@@ -161,6 +161,65 @@ line_matches_private_forbidden_literal() {
   return 1
 }
 
+# expunge_fallback_name / expunge_fallback_email — neutral operator identity for
+# history rewrites when author/committer metadata matches a banned pattern.
+expunge_fallback_name() {
+  printf '%s' "cyre"
+}
+
+expunge_fallback_email() {
+  printf '%s' "diazmelgarejo@gmail.com"
+}
+
+# identity_field_should_scrub returns 0 when a single author/committer field
+# (already lowercased) matches a banned pattern or private forbidden literal.
+identity_field_should_scrub() {
+  local field_lc="$1" root="${2:-}"
+  line_matches_banned_pattern "$field_lc" "$root" && return 0
+  line_matches_private_forbidden_literal "$field_lc" "$root" && return 0
+  return 1
+}
+
+# coauthor_line_should_drop returns 0 when a Co-authored-by trailer must be
+# removed entirely: banned identity, forbidden literal, or broken post-scrub remnant
+# (e.g. an empty local-part before @gmail.com).
+coauthor_line_should_drop() {
+  local line_lc="$1" root="${2:-}"
+  case "$line_lc" in
+    co-authored-by:*) ;;
+    *) return 1 ;;
+  esac
+  if banned_patterns_ready "$root"; then
+    line_matches_banned_pattern "$line_lc" "$root" && return 0
+  fi
+  line_matches_private_forbidden_literal "$line_lc" "$root" && return 0
+  if [[ "$line_lc" =~ co-authored-by:[[:space:]]*\<@ ]]; then
+    return 0
+  fi
+  if [[ "$line_lc" =~ co-authored-by:.*\<@gmail\.com\>[[:space:]]*$ ]]; then
+    return 0
+  fi
+  return 1
+}
+
+# metadata_contains_scrub_target returns 0 when any author/committer/body surface
+# on a commit still carries a banned pattern or private forbidden literal.
+metadata_contains_scrub_target() {
+  local ae_lc="$1" an_lc="$2" ce_lc="$3" cn_lc="$4" body_lc="$5" root="${6:-}"
+  identity_field_should_scrub "$ae_lc" "$root" && return 0
+  identity_field_should_scrub "$an_lc" "$root" && return 0
+  identity_field_should_scrub "$ce_lc" "$root" && return 0
+  identity_field_should_scrub "$cn_lc" "$root" && return 0
+  local line line_lc
+  while IFS= read -r line; do
+    line_lc="$(printf '%s' "$line" | tr '[:upper:]' '[:lower:]')"
+    coauthor_line_should_drop "$line_lc" "$root" && return 0
+    line_matches_banned_pattern "$line_lc" "$root" && return 0
+    line_matches_private_forbidden_literal "$line_lc" "$root" && return 0
+  done <<< "$body_lc"
+  return 1
+}
+
 # banned_attribution_hit returns 0 when author/committer/body metadata matches a banned pattern.
 banned_attribution_hit() {
   local ae_lc="$1" an_lc="$2" ce_lc="$3" cn_lc="$4" body_lc="$5"

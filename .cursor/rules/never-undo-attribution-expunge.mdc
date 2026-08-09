@@ -11,9 +11,11 @@ Every time an agent adds **forbidden** `Co-authored-by` trailers (listed in
 `.cursor/private/banned-attribution-patterns`, never on GitHub), the owner must:
 
 1. Rewrite history (`bash scripts/git/expunge-all-workspace-repos.sh` or per-repo expunge)
-2. Republish **`main` and every branch** with the audited publisher
-   (`bash scripts/git/publish-clean-branch.sh <branch> main origin`) — never raw
-   `git push --force` or `--force-with-lease`
+2. Republish **`main` and every branch** — during the active rewrite window use
+   hooks-off push (`bash scripts/git/history-surgery-git.sh push --force …` or
+   `git -c core.hooksPath=/dev/null push --force …`); after surgery restore hooks
+   with `bash scripts/git/install-local-hooks.sh`. For audited non-rewrite publishes
+   use `bash scripts/git/publish-clean-branch.sh <branch> main origin`.
 
 That is destructive for all collaborators. **Do not cause another rewrite.**
 
@@ -23,7 +25,8 @@ That is destructive for all collaborators. **Do not cause another rewrite.**
 |----|--------|
 | Read `.cursor/private/agent-lesson-git-attribution.md` before any git write | Copy forbidden tokens into tracked files, commits, PRs, or LESSONS |
 | `git add` → `verify-staged-for-commit.sh` → `commit-clean.sh` (in that order) | Run `commit-clean.sh` without staging or verify |
-| Push with `bash scripts/git/publish-clean-branch.sh <branch> main origin` | Raw `git push` without audit |
+| Push with `bash scripts/git/publish-clean-branch.sh <branch> main origin` (normal work) | Raw `git push` without audit |
+| During active expunge: `history-surgery-git.sh` / `-c core.hooksPath=/dev/null` push, then `install-local-hooks.sh` | Leave hooks off after surgery; bare `git push --no-verify` |
 | Run `bash scripts/git/daily-attribution-guard.sh` at session start | "Document" forbidden emails in repo docs so you remember |
 
 ```bash

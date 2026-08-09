@@ -44,6 +44,7 @@ GUARD_SYNC_EXECUTABLES=(
   scan-tracked-banned-tokens.sh
   remind-pr-body-append-only.sh
   publish-clean-branch.sh
+  history-surgery-git.sh
   verify-pr-body-not-clobbered.sh
   scrub_dsstore.sh
 )

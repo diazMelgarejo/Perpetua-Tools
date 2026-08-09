@@ -5,11 +5,15 @@ alwaysApply: true
 
 # Private attribution (never publish tokens)
 
-Before `git commit` or `git push`:
+Before `git commit` or `git push` (normal work — not during active history surgery):
 
 1. Read **`.cursor/private/agent-lesson-git-attribution.md`** (gitignored — not on GitHub).
 2. Read **`.cursor/private/banned-attribution-patterns`** for the live token list.
 3. If missing: `bash scripts/cursor/install-user-git-environment.sh` (pulls from orama + sync).
 4. **Never** copy banned tokens into tracked files, commit messages, PR text, or LESSONS.
+
+**Active rewrite/expunge:** hooks off for `filter-repo`, `filter-branch`, and
+post-rewrite force-push; restore with `bash scripts/git/install-local-hooks.sh`
+after. See `bin/orama-system/skills/git-history-surgery/references/history-surgery-hooks-safeguard-reference-card.md`.
 
 Public policy (no token examples): `../orama-system/docs/wiki/08-git-hygiene-and-branching.md`
