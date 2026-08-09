@@ -164,12 +164,9 @@ rules:
 
   - id: pt-bash-unquoted-var
     patterns:
-      - pattern-either:
-          - pattern: $ENV_VAR
-          - pattern: "rm -rf $VAR"
-          - pattern: "rm -rf ${VAR}"
-      - pattern-not: "\"$VAR\""
-      - pattern-not: "\"${VAR}\""
+      - pattern: rm -rf ${$VAR}
+      - pattern-not-inside: |
+          "...${$VAR}..."
     message: >
       Unquoted shell variable in destructive command. Quote all variables
       to prevent word-splitting on attacker-controlled values.
