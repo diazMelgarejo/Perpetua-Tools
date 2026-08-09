@@ -27,11 +27,14 @@ repo_slug="$(printf '%s\n' "$pr_url" | sed -E 's#^https://github.com/([^/]+/[^/]
 backup_slug="${repo_slug//\//-}"
 
 cat <<EOF
-PR-BODY-GUARD: open PR #${pr_number} for branch ${branch}
+PR-BODY-GUARD (Layer 0): open PR #${pr_number} for branch ${branch}
   ${pr_title}
   ${pr_url}
 
-LAYER 0 — default for Cursor agents: ManagePullRequest post_comment OR gh pr comment only.
+LAYER 0 — COMMENT ONLY. Cursor agents must NOT change the PR description.
+
+  DO:    ManagePullRequest post_comment  OR  gh pr comment
+  NEVER: update_pr with body=, gh pr edit, append-pr-body.sh without operator grant
 
 Human override for description edits (operator runs grant-pr-body-human-override.sh first):
 
