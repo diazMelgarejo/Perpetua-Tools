@@ -72,6 +72,23 @@ this was tested partially but not landed due to shell/YAML regex-escaping
 issues in the test harness itself, not a further tool limitation — worth
 picking back up with a cleaner test setup).
 
+**Follow-up research corroboration:** a semgrep blog post about promoting
+Kotlin from experimental to GA
+(https://semgrep.dev/blog/2023/kotlin-ga/#the-program-analysis-perspective)
+explains that `"$X"` is fundamentally *ambiguous* between two
+interpretations — (a) a literal double-quoted string node containing an
+interpolated metavariable, or (b) the documented literal-metavariable
+syntax (match any string literal, bind its content to `$X`) — and semgrep
+resolved this per-language as each one matured toward GA, ultimately
+picking interpretation (b) for `"$X"` and requiring `"${X}"` for (a).
+Bash has never reached GA (still marked experimental in semgrep's own
+2021 blog post). The empirical finding here — `"$X"` silently matching
+nothing against real bash string assignments — is consistent with Bash
+never having received that same per-language disambiguation treatment.
+This isn't proof of the exact mechanism, but it's strong, independent
+corroboration that the gap is a known class of semgrep language-maturity
+issue, not a one-off fluke in this specific rule.
+
 ## What happened to the branch
 
 `bump-agentic-stack-vendor-pin` was not merged (nothing left to land — its
