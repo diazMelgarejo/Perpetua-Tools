@@ -1,0 +1,43 @@
+{
+  "id": "189690ff2855",
+  "key": "manual_189690",
+  "name": "manual_189690",
+  "claim": "After fixing a process-substitution exit-status blind spot (a producer wrapped in '< <(...)' whose failure a while-read loop can't see), check every remaining stage of that same data flow for the identical gap -- a partial fix that only materializes the FIRST producer to a file can still leave a SECOND filter stage (awk, a second python3 call) wrapped in its own swallowing process substitution.",
+  "conditions": [
+    "awk",
+    "bash",
+    "exit-status",
+    "git-cherry",
+    "process-substitution",
+    "producer-failure"
+  ],
+  "evidence_ids": [
+    "2026-08-09T05:19:30.000075+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-09T05:19:30.000075+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-09T05:19:30.000075+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-09T05:19:30.124380+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama PR #298: fixed 'git cherry | awk' silently treating a failed enumeration as zero unique commits by writing git cherry's output to a temp file first -- but the awk filtering step right after was still '< <(awk ... \"$file\")', the identical bug one level down. CodeRabbit's follow-up review caught it. Fixed properly by eliminating the awk subprocess entirely (parse the already-materialized file with bash parameter expansion), which also removes the second subprocess's own failure surface.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-09T05:19:30.000075+00:00"
+      ],
+      "lessons_sha": "0f48bf636b3c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-09T05:19:30.124369+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama PR #298: fixed 'git cherry | awk' silently treating a failed enumeration as zero unique commits by writing git cherry's output to a temp file first -- but the awk filtering step right after was still '< <(awk ... \"$file\")', the identical bug one level down. CodeRabbit's follow-up review caught it. Fixed properly by eliminating the awk subprocess entirely (parse the already-materialized file with bash parameter expansion), which also removes the second subprocess's own failure surface."
+}

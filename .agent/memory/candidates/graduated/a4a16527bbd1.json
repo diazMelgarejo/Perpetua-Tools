@@ -1,0 +1,43 @@
+{
+  "id": "a4a16527bbd1",
+  "key": "manual_a4a165",
+  "name": "manual_a4a165",
+  "claim": "When cherry-reanchoring a stale branch onto a rewritten/advanced main and hitting an add/add or content conflict, don't resolve by reflexively picking a side -- check whether origin/main's CURRENT full file already contains the branch's content (possibly refined, redacted, or relocated), whether the same lesson/memory IDs already exist on main with equal-or-better text, and for gitlink/submodule conflicts, which SHA is actually ahead. A resolution of 'take origin/main entirely, cherry-pick becomes empty' is a common, CORRECT outcome for old branches, not a failed reconciliation.",
+  "conditions": [
+    "cherry-pick",
+    "conflict-resolution",
+    "git-reanchor",
+    "patch-id",
+    "stale-branch",
+    "superseded"
+  ],
+  "evidence_ids": [
+    "2026-08-09T05:19:44.758709+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-09T05:19:44.758709+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-09T05:19:44.758709+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-09T05:19:44.903764+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-08-09 PT branch reanchor operation: 4 branches (periscope-l4-adapter-f559, reanchor/fix6-ci-gemini-env, reanchor/pr309-review-followup, post-grant-followup-pt), 19 total commits across them, ALL resolved to zero net-unique content after verification -- confirmed via patch-id comparison against main's lessons.jsonl/LESSONS.md/AGENT_LEARNINGS.jsonl (same lesson IDs already present, sometimes with an explicit later refinement), and via checking a submodule gitlink conflict where the branch's pin was older than main's current pin -- applying it would have been a regression, not a reconciliation.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-09T05:19:44.758709+00:00"
+      ],
+      "lessons_sha": "7c798299bc66"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-09T05:19:44.903750+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-08-09 PT branch reanchor operation: 4 branches (periscope-l4-adapter-f559, reanchor/fix6-ci-gemini-env, reanchor/pr309-review-followup, post-grant-followup-pt), 19 total commits across them, ALL resolved to zero net-unique content after verification -- confirmed via patch-id comparison against main's lessons.jsonl/LESSONS.md/AGENT_LEARNINGS.jsonl (same lesson IDs already present, sometimes with an explicit later refinement), and via checking a submodule gitlink conflict where the branch's pin was older than main's current pin -- applying it would have been a regression, not a reconciliation."
+}

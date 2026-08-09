@@ -1,0 +1,43 @@
+{
+  "id": "1888719f8a52",
+  "key": "manual_188871",
+  "name": "manual_188871",
+  "claim": "During branch reanchor or merge conflict resolution, if one side has a real literal (LAN IP, workstation path, personal email used as an infra detail) and the other side has a placeholder or redacted form of the same value, always keep the redacted side regardless of which side is otherwise 'newer' or 'more detailed' -- a security redaction must never be silently reverted by a content merge.",
+  "conditions": [
+    "anti-doxxing",
+    "lan-ip",
+    "merge-conflict",
+    "portable-memory",
+    "redaction",
+    "security"
+  ],
+  "evidence_ids": [
+    "2026-08-09T05:19:45.287561+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-09T05:19:45.287561+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-09T05:19:45.287561+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-09T05:19:45.407337+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-08-09 PT branch reanchor: a stale branch's copy of alphaclaw-session/SKILL.md had a real LAN IP hardcoded in 6+ places; origin/main had already redacted every one of them to placeholder tokens. Confirmed by diffing conflict hunks directly rather than assuming version-number recency implied content correctness -- version number alone would have pointed the same direction here, but that's not the generalizable signal; the redaction status is.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-09T05:19:45.287561+00:00"
+      ],
+      "lessons_sha": "39ed94b4031e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-09T05:19:45.407325+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-08-09 PT branch reanchor: a stale branch's copy of alphaclaw-session/SKILL.md had a real LAN IP hardcoded in 6+ places; origin/main had already redacted every one of them to placeholder tokens. Confirmed by diffing conflict hunks directly rather than assuming version-number recency implied content correctness -- version number alone would have pointed the same direction here, but that's not the generalizable signal; the redaction status is."
+}

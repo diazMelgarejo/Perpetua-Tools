@@ -1,0 +1,42 @@
+{
+  "id": "774d6e8ca9a9",
+  "key": "manual_774d6e",
+  "name": "manual_774d6e",
+  "claim": "When a git-worktree cleanup path falls back to plain recursive delete because the proper removal command failed, that fallback does not clear git's internal worktree admin registration -- only the dedicated prune command does; omitting it leaves stale worktree/detached-HEAD metadata that accumulates across every failed removal.",
+  "conditions": [
+    "cleanup",
+    "disposable-clone",
+    "git-worktree",
+    "prune",
+    "stale-metadata"
+  ],
+  "evidence_ids": [
+    "2026-08-09T05:19:30.489982+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-09T05:19:30.489982+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-09T05:19:30.489982+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-09T05:19:30.616863+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit review 4890542470 on orama PR #298 reproduced this empirically (a disposable-repo probe showing the recursive-delete fallback on the worktree dir leaves the admin record registered until an explicit prune runs). Fixed cherry-reanchor-branches.sh's cleanup function to prune after the remove/delete fallback, and consolidated 3 duplicate inline cleanup call sites in the same script to reuse the one fixed function instead of re-implementing the same (buggy) sequence.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-09T05:19:30.489982+00:00"
+      ],
+      "lessons_sha": "8a7dd13108e6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-09T05:19:30.616854+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit review 4890542470 on orama PR #298 reproduced this empirically (a disposable-repo probe showing the recursive-delete fallback on the worktree dir leaves the admin record registered until an explicit prune runs). Fixed cherry-reanchor-branches.sh's cleanup function to prune after the remove/delete fallback, and consolidated 3 duplicate inline cleanup call sites in the same script to reuse the one fixed function instead of re-implementing the same (buggy) sequence."
+}
