@@ -1,0 +1,42 @@
+{
+  "id": "8aa89cff9199",
+  "key": "manual_8aa89c",
+  "name": "manual_8aa89c",
+  "claim": "Reconciliation decisions (which side of a conflict, divergence, or finding is correct) should be made from what's actually verified to be there, not from which side looks more current by a fast heuristic (recency, version number, 'the other side is usually just behind'). The heuristic and the verified answer usually agree, which is exactly what makes skipping verification feel safe -- the cases where they diverge are silent regressions with no error message anywhere to catch them later.",
+  "conditions": [
+    "capstone",
+    "conflict-resolution",
+    "meta-lesson",
+    "session-arc",
+    "verify-before-reconcile"
+  ],
+  "evidence_ids": [
+    "2026-08-09T06:09:21.243905+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-09T06:09:21.243905+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-09T06:09:21.243905+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-09T06:09:21.380856+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Capstone lesson from the 2026-08-09 CodeRabbit-remediation + branch-reanchor arc (see CODERABBIT_REMEDIATION_AND_REANCHOR_ARC_2026-08-09.md for the full narrative): this exact pattern recurred independently across 5 different domains in one session -- stale-branch-vs-main content (patch-id verified), security redaction vs a stale real LAN IP (redaction always wins regardless of recency), a CodeRabbit style-rule transfer across languages (researched bash idiom rather than assumed), a submodule gitlink pointer (verified direction, branch's pin turned out OLDER not newer), and a cross-repo guard-sync divergence question (ran the checker instead of trusting confident reasoning). Only the submodule case would have actually regressed if resolved by heuristic alone -- the other four happened to agree with 'take the newer-looking side,' which is precisely why the discipline of checking anyway, every time, is the actual lesson, not the individual outcomes.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-09T06:09:21.243905+00:00"
+      ],
+      "lessons_sha": "df7104eb8605"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-09T06:09:21.380846+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Capstone lesson from the 2026-08-09 CodeRabbit-remediation + branch-reanchor arc (see CODERABBIT_REMEDIATION_AND_REANCHOR_ARC_2026-08-09.md for the full narrative): this exact pattern recurred independently across 5 different domains in one session -- stale-branch-vs-main content (patch-id verified), security redaction vs a stale real LAN IP (redaction always wins regardless of recency), a CodeRabbit style-rule transfer across languages (researched bash idiom rather than assumed), a submodule gitlink pointer (verified direction, branch's pin turned out OLDER not newer), and a cross-repo guard-sync divergence question (ran the checker instead of trusting confident reasoning). Only the submodule case would have actually regressed if resolved by heuristic alone -- the other four happened to agree with 'take the newer-looking side,' which is precisely why the discipline of checking anyway, every time, is the actual lesson, not the individual outcomes."
+}
