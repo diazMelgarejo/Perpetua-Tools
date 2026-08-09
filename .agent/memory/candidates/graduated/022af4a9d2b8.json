@@ -27,7 +27,7 @@
       "ts": "2026-08-09T05:19:29.610068+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
-      "notes": "orama PR #298 review 4890542470 flagged bash 'arr+=(...)' loop appends as violating the immutability guideline. Researched via Greg's Wiki BashFAQ/005: arr+=() is the documented, canonical, O(1)-amortized append idiom since Bash 3.1 -- not a full-array-copy the way JS 'arr = [...arr, x]' is. Applying the JS/OOP-oriented rule literally would have made the code less idiomatic with no real benefit. Skipped with a researched reply rather than blind-applying or blind-ignoring.",
+      "notes": "orama PR #298 review 4890542470 flagged bash 'arr+=(...)' loop appends as violating the immutability guideline. Researched via Greg's Wiki BashFAQ/005: arr+=() is the documented, canonical append idiom since Bash 3.1 -- not a full-array-copy the way JS 'arr = [...arr, x]' is. Applying the JS/OOP-oriented rule literally would have made the code less idiomatic with no real benefit. Skipped with a researched reply rather than blind-applying or blind-ignoring.",
       "provisional": false,
       "evidence_snapshot": [
         "2026-08-09T05:19:29.125732+00:00"
@@ -38,5 +38,5 @@
   "rejection_count": 0,
   "accepted_at": "2026-08-09T05:19:29.610057+00:00",
   "reviewer": "learn.py",
-  "rationale": "orama PR #298 review 4890542470 flagged bash 'arr+=(...)' loop appends as violating the immutability guideline. Researched via Greg's Wiki BashFAQ/005: arr+=() is the documented, canonical, O(1)-amortized append idiom since Bash 3.1 -- not a full-array-copy the way JS 'arr = [...arr, x]' is. Applying the JS/OOP-oriented rule literally would have made the code less idiomatic with no real benefit. Skipped with a researched reply rather than blind-applying or blind-ignoring."
+  "rationale": "orama PR #298 review 4890542470 flagged bash 'arr+=(...)' loop appends as violating the immutability guideline. Researched via Greg's Wiki BashFAQ/005: arr+=() is the documented, canonical append idiom since Bash 3.1 -- not a full-array-copy the way JS 'arr = [...arr, x]' is. Applying the JS/OOP-oriented rule literally would have made the code less idiomatic with no real benefit. Skipped with a researched reply rather than blind-applying or blind-ignoring."
 }
