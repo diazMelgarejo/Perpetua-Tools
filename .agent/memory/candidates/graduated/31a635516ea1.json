@@ -1,0 +1,43 @@
+{
+  "id": "31a635516ea1",
+  "key": "manual_31a635",
+  "name": "manual_31a635",
+  "claim": "When two independent branches/sessions both attempt to fix the same underlying rule/bug and produce textually different diffs, don't assume they conflict or that one supersedes the other -- install the actual tool (semgrep, in this case) and empirically test both against real positive/negative samples before judging. Two genuinely different-looking fixes can both be correct (same bug, convergent solutions), which is a stronger signal than either fix alone.",
+  "conditions": [
+    "branch-audit",
+    "convergent-solutions",
+    "empirical-testing",
+    "opengrep",
+    "semgrep",
+    "verify-before-reconcile"
+  ],
+  "evidence_ids": [
+    "2026-08-09T09:52:21.384925+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-09T09:52:21.384925+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-09T09:52:21.384925+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-09T09:52:21.605623+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-08-09: bump-agentic-stack-vendor-pin's simplified pt-bash-unquoted-var rule (dropped the pattern-not exclusions) and the already-pushed fix/opengrep-rules-and-guard-sync-dedup's rule (the brace-metavariable plus pattern-not-inside form, the canonical shape from semgrep's own blog post on writing this exact rule type) were assumed to be competing/redundant. Installed semgrep 1.172.0 via uv tool install semgrep and ran both against a 4-line bash sample (2 quoted, 2 unquoted rm -rf VAR usages) -- both rules flagged exactly the 2 unquoted lines and correctly ignored the 2 quoted lines. Confirmed via research that the pushed fix matches semgrep own documented canonical pattern for this rule type verbatim.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-09T09:52:21.384925+00:00"
+      ],
+      "lessons_sha": "53ab3cb4dfbe"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-09T09:52:21.605613+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-08-09: bump-agentic-stack-vendor-pin's simplified pt-bash-unquoted-var rule (dropped the pattern-not exclusions) and the already-pushed fix/opengrep-rules-and-guard-sync-dedup's rule (the brace-metavariable plus pattern-not-inside form, the canonical shape from semgrep's own blog post on writing this exact rule type) were assumed to be competing/redundant. Installed semgrep 1.172.0 via uv tool install semgrep and ran both against a 4-line bash sample (2 quoted, 2 unquoted rm -rf VAR usages) -- both rules flagged exactly the 2 unquoted lines and correctly ignored the 2 quoted lines. Confirmed via research that the pushed fix matches semgrep own documented canonical pattern for this rule type verbatim."
+}
