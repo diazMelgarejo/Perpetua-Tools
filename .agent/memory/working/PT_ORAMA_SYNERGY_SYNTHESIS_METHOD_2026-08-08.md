@@ -3,9 +3,11 @@
 **Date:** 2026-08-07 → 2026-08-08
 **Parent essay:** `SESSION_BIRDSEYE_TRUST_INFRASTRUCTURE_2026-08-08.md`
 **Artifact:** the actual plan lives in orama-system at
-`../../../../../orama-system/docs/plans/2026-08-07-pt-orama-minimal-
-synergy-plan.md` — this essay is about *how* it got made, so the method
-survives independently of that one document.
+`$ORAMA_SYSTEM_PATH/docs/plans/2026-08-07-pt-orama-minimal-synergy-plan.md`
+(resolve with `scripts/resolve_orama_root.sh` if the env var isn't set —
+see that script for the full discovery fallback chain) — this essay is
+about *how* it got made, so the method survives independently of that one
+document.
 
 ## The shape of the method (reusable beyond this one plan)
 

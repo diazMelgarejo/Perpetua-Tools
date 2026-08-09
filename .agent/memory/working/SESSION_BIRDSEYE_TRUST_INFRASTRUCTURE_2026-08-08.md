@@ -121,7 +121,8 @@ crawl. That is the throughline connecting five otherwise-separate arcs.
 - `../../../docs/LESSONS.md` — PT's chronological lesson log; several of
   today's nuggets are restatements of entries already there, not new
   discoveries. This essay exists to connect them, not replace them.
-- `../../../../../orama-system/docs/plans/2026-08-07-pt-orama-minimal-
-  synergy-plan.md` — the actual synergy plan artifact (thread 4's output).
+- `$ORAMA_SYSTEM_PATH/docs/plans/2026-08-07-pt-orama-minimal-synergy-plan.md`
+  — the actual synergy plan artifact (thread 4's output); resolve with
+  `scripts/resolve_orama_root.sh` if the env var isn't set.
 - `ALPHACLAW_UPSTREAM_SYNC_CRON_CI_2026-07-31.md` — prior-session AlphaClaw
   branch-model context this session's audit (thread 5) depended on.
