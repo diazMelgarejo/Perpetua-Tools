@@ -639,7 +639,10 @@ def _detail(tool_name: str, tool_input: dict,
 
     if metadata:
         return json.dumps(metadata, separators=(",", ":"))
-    return f"tool={tool_name}" + (f" | out={output[:150]}" if output else "")
+    return json.dumps(
+        {"tool": tool_name, "output_chars": len(output)},
+        separators=(",", ":"),
+    )
 
 
 # ---------------------------------------------------------------------------
