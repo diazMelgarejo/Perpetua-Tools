@@ -1,0 +1,43 @@
+{
+  "id": "c15cb89de6d4",
+  "key": "manual_c15cb8",
+  "name": "manual_c15cb8",
+  "claim": "check-guard-sync-divergence.sh's WORKSPACE_ROOT defaults to the parent directory of the canonical repo root -- when the canonical repo being pushed from is itself a disposable/scratch clone sitting directly under /tmp (a common pattern for isolating risky git-history-surgery operations), this default silently expands the scan to every unrelated scratch clone under /tmp, producing false-positive GUARD_SYNC_E_DIVERGENCE blocks on totally unrelated pushes. Fix: run the push from a workspace directory that has no other sibling git repos (move/clone the canonical repo into its own isolated parent dir), or verify the flagged 'siblings' are genuinely unrelated scratch work before treating the block as blocking.",
+  "conditions": [
+    "disposable-clone",
+    "false-positive",
+    "guard-sync",
+    "push-blocked",
+    "tmp-scoping",
+    "workspace-root"
+  ],
+  "evidence_ids": [
+    "2026-08-09T06:07:41.833734+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-09T06:07:41.833734+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-09T06:07:41.833734+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-09T06:07:41.958439+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Hit this twice in one session (2026-08-09): an orama-mapfile-fix push and a separate PT opengrep-reanchor push both got blocked by guard-sync-divergence, both times because /tmp itself was the scanned WORKSPACE_ROOT and picked up other same-session disposable clones (pt-reanchor-agy, pt-reanchor-codex, periscope-work2, etc.) as false 'siblings ahead of canonical.' Both times resolved by moving the canonical worktree into its own isolated parent directory (e.g. <local-tmp-file>/<repo>) before pushing, which shrinks WORKSPACE_ROOT to contain nothing else.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-09T06:07:41.833734+00:00"
+      ],
+      "lessons_sha": "1d572c2b4fa2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-09T06:07:41.958429+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Hit this twice in one session (2026-08-09): an orama-mapfile-fix push and a separate PT opengrep-reanchor push both got blocked by guard-sync-divergence, both times because /tmp itself was the scanned WORKSPACE_ROOT and picked up other same-session disposable clones (pt-reanchor-agy, pt-reanchor-codex, periscope-work2, etc.) as false 'siblings ahead of canonical.' Both times resolved by moving the canonical worktree into its own isolated parent directory (e.g. <local-tmp-file>/<repo>) before pushing, which shrinks WORKSPACE_ROOT to contain nothing else."
+}

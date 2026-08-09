@@ -1,0 +1,42 @@
+{
+  "id": "022af4a9d2b8",
+  "key": "manual_022af4",
+  "name": "manual_022af4",
+  "claim": "When a CodeRabbit finding cites a language-agnostic coding-style guideline (e.g. '**/*: always create new objects, use immutable update patterns'), verify the pattern has a real non-degrading equivalent in the target language before applying it, rather than mechanically transferring it.",
+  "conditions": [
+    "bash",
+    "coderabbit",
+    "coding-style",
+    "immutability",
+    "language-idiom"
+  ],
+  "evidence_ids": [
+    "2026-08-09T05:19:29.125732+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-09T05:19:29.125732+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-09T05:19:29.125732+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-09T05:19:29.610068+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama PR #298 review 4890542470 flagged bash 'arr+=(...)' loop appends as violating the immutability guideline. Researched via Greg's Wiki BashFAQ/005: arr+=() is the documented, canonical append idiom since Bash 3.1 -- not a full-array-copy the way JS 'arr = [...arr, x]' is. Applying the JS/OOP-oriented rule literally would have made the code less idiomatic with no real benefit. Skipped with a researched reply rather than blind-applying or blind-ignoring.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-09T05:19:29.125732+00:00"
+      ],
+      "lessons_sha": "b9bb48a43382"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-09T05:19:29.610057+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama PR #298 review 4890542470 flagged bash 'arr+=(...)' loop appends as violating the immutability guideline. Researched via Greg's Wiki BashFAQ/005: arr+=() is the documented, canonical append idiom since Bash 3.1 -- not a full-array-copy the way JS 'arr = [...arr, x]' is. Applying the JS/OOP-oriented rule literally would have made the code less idiomatic with no real benefit. Skipped with a researched reply rather than blind-applying or blind-ignoring."
+}

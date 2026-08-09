@@ -1,0 +1,43 @@
+{
+  "id": "e8d8ee140589",
+  "key": "manual_e8d8ee",
+  "name": "manual_e8d8ee",
+  "claim": "semgrep Bash language support (marked experimental by semgrep's own blog) does not reliably expose quoted strings as a distinct string-literal AST node -- a bare metavariable captures a quoted value INCLUDING its surrounding quotes as part of a generic expression match, while the literal-metavariable quoted syntax (meant to match string literals and strip the quotes) silently matches nothing at all against real bash string assignments. Before trusting any bash-language semgrep or opengrep rule that uses that literal-metavariable quoted syntax or a nested metavariable-pattern block without an explicit generic-language override, test it empirically against real sample code -- a rule that looks syntactically correct can be a silent no-op.",
+  "conditions": [
+    "bash-parsing",
+    "experimental-language-support",
+    "opengrep",
+    "security-rule",
+    "semgrep",
+    "silent-no-op"
+  ],
+  "evidence_ids": [
+    "2026-08-09T09:52:29.649427+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-09T09:52:29.649427+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-09T09:52:29.649427+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-09T09:52:29.861591+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-08-09: verified via semgrep 1.172.0 that .opengrep.yml's pt-no-hardcoded-secret-env rule (both current origin/main's version and bump-agentic-stack-vendor-pin's proposed fix) fails to match a genuine hardcoded secret assignment -- neither is a false-negative on a corner case, both are a total no-op on the textbook positive example the rule exists to catch. Root cause narrowed to Bash's experimental semgrep support not distinguishing string-literal nodes from generic expression nodes; corroborated by semgrep's own blog post explicitly stating Bash support in Semgrep is still experimental with many known bugs, and a semgrep GitHub issue (#4117) about metavariable-pattern not capturing full Bash expression content. This is a genuinely open bug in the security-tooling rule, not something fixed by either branch -- needs dedicated follow-up, not a rushed patch.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-09T09:52:29.649427+00:00"
+      ],
+      "lessons_sha": "327810a44281"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-09T09:52:29.861583+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-08-09: verified via semgrep 1.172.0 that .opengrep.yml's pt-no-hardcoded-secret-env rule (both current origin/main's version and bump-agentic-stack-vendor-pin's proposed fix) fails to match a genuine hardcoded secret assignment -- neither is a false-negative on a corner case, both are a total no-op on the textbook positive example the rule exists to catch. Root cause narrowed to Bash's experimental semgrep support not distinguishing string-literal nodes from generic expression nodes; corroborated by semgrep's own blog post explicitly stating Bash support in Semgrep is still experimental with many known bugs, and a semgrep GitHub issue (#4117) about metavariable-pattern not capturing full Bash expression content. This is a genuinely open bug in the security-tooling rule, not something fixed by either branch -- needs dedicated follow-up, not a rushed patch."
+}

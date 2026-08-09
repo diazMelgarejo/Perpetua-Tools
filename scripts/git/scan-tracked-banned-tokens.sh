@@ -13,11 +13,29 @@ if ! banned_patterns_ready "$REPO_ROOT"; then
   bash "$REPO_ROOT/scripts/cursor/sync-private-attribution-from-home.sh"
 fi
 
+# Local-only seed/bootstrap scripts may reference runtime registries; never scan them.
+SCAN_TRACKED_ALLOWLIST=(
+  scripts/cursor/write-openclaw-private-attribution.sh
+  scripts/cursor/ci-bootstrap-private-attribution.sh
+  scripts/cursor/seed-banned-attribution-patterns.sh
+)
+
+_is_allowlisted() {
+  local rel="$1" allowed
+  for allowed in "${SCAN_TRACKED_ALLOWLIST[@]}"; do
+    [[ "$rel" == "$allowed" ]] && return 0
+  done
+  return 1
+}
+
 errors=0
 while IFS= read -r token; do
   [[ -n "$token" ]] || continue
   while IFS= read -r rel; do
     [[ -f "$rel" ]] || continue
+    if _is_allowlisted "$rel"; then
+      continue
+    fi
     if rg -F -i -q "$token" "$rel" 2>/dev/null; then
       echo "ERROR: banned token in tracked file: $rel" >&2
       errors=$((errors + 1))

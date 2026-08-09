@@ -60,6 +60,7 @@ else:
             proc = await asyncio.create_subprocess_exec(
                 codex_bin, "--full-auto", task,
                 stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT,
+                stdin=asyncio.subprocess.DEVNULL,  # prevent stdin inheritance hang when backgrounded
                 cwd=str(_PT_ROOT),
             )
             stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=300)

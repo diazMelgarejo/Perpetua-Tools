@@ -1,0 +1,43 @@
+{
+  "id": "442afa34388a",
+  "key": "manual_442afa",
+  "name": "manual_442afa",
+  "claim": "The same clustering-before-shipping discipline recurs at five zoom levels and should be applied consistently at all of them: (1) one coherent fix per file, (2) group fixes into commits by theme not touch-order, (3) batch all logical commits locally before a single push, (4) stay on one open branch/PR rather than fragmenting across new ones unless none exists yet, (5) at repo-architecture scale, decide per-function whether it earns its own top-level repo or stays a docs/v2/ subsection of a shared repo -- the same 'does this deserve its own container' judgment, just at a bigger radius.",
+  "conditions": [
+    "batching",
+    "commit-discipline",
+    "concentric-circles",
+    "doctrine",
+    "git-workflow",
+    "repo-architecture"
+  ],
+  "evidence_ids": [
+    "2026-08-09T05:19:59.386700+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-09T05:19:59.386700+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-09T05:19:59.386700+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-09T05:19:59.541089+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "User-articulated 'concentric circles of nested batching' during the orama PR #298 CodeRabbit remediation, 2026-08-09: fix-per-file -> logical commits -> batched push -> single-PR discipline -> (forward-looking) repo-per-function vs orbiting-satellite-in-docs/v2 for the v2 oramasys/* split. Levels 1-4 were applied live in the same session (5 logical commits across 2 CodeRabbit rounds, each pushed once); level 5 is architecture-scale and deliberately deferred, not executed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-09T05:19:59.386700+00:00"
+      ],
+      "lessons_sha": "7018659018d4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-09T05:19:59.541079+00:00",
+  "reviewer": "learn.py",
+  "rationale": "User-articulated 'concentric circles of nested batching' during the orama PR #298 CodeRabbit remediation, 2026-08-09: fix-per-file -> logical commits -> batched push -> single-PR discipline -> (forward-looking) repo-per-function vs orbiting-satellite-in-docs/v2 for the v2 oramasys/* split. Levels 1-4 were applied live in the same session (5 logical commits across 2 CodeRabbit rounds, each pushed once); level 5 is architecture-scale and deliberately deferred, not executed."
+}
