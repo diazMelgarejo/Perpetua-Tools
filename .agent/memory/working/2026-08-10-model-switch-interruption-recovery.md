@@ -52,12 +52,9 @@ than attributed to the earlier retry.
 
 Official sources consulted during recovery:
 
-- Additional automated safety checks for some biological/cybersecurity requests:
-  https://help.openai.com/en/articles/20001326
-- GPT-5.6 in ChatGPT, including reasoning/speed options and automatic reasoning:
-  https://help.openai.com/en/articles/20001354
-- OpenAI Usage Policies:
-  https://openai.com/policies/usage-policies/
+- [Additional automated safety checks for some requests](https://help.openai.com/en/articles/20001326)
+- [GPT-5.6 in ChatGPT, including reasoning and speed options](https://help.openai.com/en/articles/20001354)
+- [OpenAI Usage Policies](https://openai.com/policies/usage-policies/)
 
 The first help article says some requests can take longer while automated safety
 checks run, and that seeing such a notice does not itself mean a policy violation.
