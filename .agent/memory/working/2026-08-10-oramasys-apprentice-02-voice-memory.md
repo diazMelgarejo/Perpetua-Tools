@@ -1,18 +1,20 @@
 # oramasys Apprentice-02 — Voice & Memory Record
 
+<!-- markdownlint-disable MD013 -->
+
 **Identity:** oramasys Apprentice-02
 **Reviewer/Integrator:** The Senior Systems Architect
 **Stack:** orama-system PR #301 + PR #302, paired with Perpetua-Tools PR #348
 **Recorded:** 2026-08-10, as a verbatim first-person memory record per direct instruction
 **Disposition:** Not selected as the final merged base. Reviewed, judged, and contributions promoted into the Senior's final integration (orama-system PR #303/#305, PT PR #350). Branches and PRs preserved, not deleted or closed.
 
-This is Apprentice-02's own work, reproduced verbatim from the actual PR bodies and commit history — not paraphrased or summarized by the Senior or by any later reviewer.
+This preserves Apprentice-02's original PR-body text and commit history. Embedded heading labels carry a provenance prefix only so this composite record remains unambiguous; no substantive body text was reworded.
 
 ---
 
 ## orama-system PR #301 — "feat(mcp): harden first-run ai-cli-mcp readiness"
 
-> ## Summary
+> ## PR #301 Summary
 >
 > Hardens the existing canonical MCP installer instead of duplicating installation logic in `start.sh`.
 >
@@ -25,17 +27,17 @@ This is Apprentice-02's own work, reproduced verbatim from the actual PR bodies 
 > - delegates first-run readiness from the bootstrap path already invoked by `start.sh`
 > - adds deterministic fake-PATH tests with no npm network/auth/billing
 >
-> ## Design decision
+> ## PR #301 Design decision
 >
 > The hardened plan suggested adding more installer mechanics directly to the launcher. I kept the stronger safety/readiness contract but preserved the existing ORAMASYS/CIDF ownership rule: **one canonical implementation, launcher delegates**. `start.sh` already calls `scripts/bootstrap-environment.sh`, so the bootstrap invokes the canonical installer rather than copying npm/Claude commands into the launcher.
 >
 > The current launcher intentionally treats cross-cutting bootstrap as fail-soft (`|| true`). This PR preserves that resilience contract: a failed MCP bootstrap is explicit and the external worker lane is unavailable, while base local services can still start. A later hard-gate can call the same installer without changing ownership.
 >
-> ## Safety
+> ## PR #301 Safety
 >
 > No provider login, browser flow, terms acceptance, or permission bypass is executed automatically. Provider presence is not treated as authentication.
 >
-> ## Scope
+> ## PR #301 Scope
 >
 > PR 1 of a stacked pair. PR 2 will target this branch and contain only P0-P2 mastery convergence. **P3 is untouched.**
 
@@ -47,15 +49,15 @@ This is Apprentice-02's own work, reproduced verbatim from the actual PR bodies 
 
 ## orama-system PR #302 — "docs(mastery): converge P0-P2 runtime ownership and safety"
 
-> ## Summary
+> ## PR #302 Summary
 >
-> ## Stack
+> ## PR #302 Stack
 >
 > **PR 2 of 2. Base: `feat/mcp-first-run-readiness` (PR #301), not `main`.**
 >
 > Review this PR as the delta on top of PR #301. It is intentionally dependent on PR #301 merging first; after #301 merges, this PR can be retargeted to `main` without changing its own commits.
 >
-> ## Verified before editing
+> ## PR #302 Verified before editing
 >
 > - P0 is already canonicalized: `.claude/skills/agent-methodology/SKILL.md` is a thin wrapper.
 > - M1 Spec Contract, M2 Amplifier Objective Tree, M4 six-part output discipline, and the M3/M6 pointer network are already present in the mother skill.
@@ -63,7 +65,7 @@ This is Apprentice-02's own work, reproduced verbatim from the actual PR bodies 
 >
 > Therefore this PR does **not** rewrite the mother skill or duplicate mastery prose. It applies the hardened plan only where current runtime semantics were genuinely incomplete.
 >
-> ## Changes
+> ## PR #302 Changes
 >
 > - completes M3 with an explicit human-authority boundary for chain research, persistent/always-on agents, swarms, paid execution, credentials, commits/deploys, and external communications
 > - makes advisory/research output distinct from privileged or irreversible action
@@ -71,11 +73,11 @@ This is Apprentice-02's own work, reproduced verbatim from the actual PR bodies 
 > - adds deterministic structural tests for P0-P2 ownership and semantic markers
 > - adds a guard that the explicitly excluded P3 scaffold surfaces are not materialized
 >
-> ## ORAMASYS/CIDF rationale
+> ## PR #302 ORAMASYS/CIDF rationale
 >
 > This is the smallest verified change that closes the actual gap. Existing canonical text remains in place; pointers stay pointers; CI checks ownership/markers rather than attempting LLM-based semantic judgment.
 >
-> ## Explicit exclusion
+> ## PR #302 Explicit exclusion
 >
 > **P3 is untouched.** No v2 flat scaffold, new §5c skills, v2 `core/`, or mastery workflow is created.
 
@@ -91,7 +93,7 @@ This is Apprentice-02's own work, reproduced verbatim from the actual PR bodies 
 
 ## Perpetua-Tools PR #348 — "feat(p4): add governed default-off Tier-5 pipelines"
 
-> ## Summary
+> ## PT PR #348 Summary
 >
 > Closes the missing P4 execution surface without replacing the existing frugality router/gate.
 >
@@ -106,15 +108,15 @@ This is Apprentice-02's own work, reproduced verbatim from the actual PR bodies 
 > - returns redacted bounded stage accounting rather than logging prompts/provider blobs
 > - adds no-egress, approval, ordering, and budget tests
 >
-> ## Architecture
+> ## PT PR #348 Architecture
 >
 > The existing `orchestrator/frugality_router.py` and `orchestrator/gate.py` remain the policy chokepoint. This runner deliberately cannot choose a route: it rejects anything other than an already-approved `ResolvedRoute(tier=5, backend='openrouter')`.
 >
-> ## Safety/defaults
+> ## PT PR #348 Safety/defaults
 >
 > Paid execution is disabled by default. Offline/privacy policy wins over flag/key. Missing/expired/mismatched approval fails before egress. No fallback provider is selected by the runner.
 >
-> ## Scope
+> ## PT PR #348 Scope
 >
 > This is the Perpetua-Tools P4 companion to orama-system PRs #301/#302. It does not touch or redefine ORAMASYS methodology and does not introduce any P3/v2 scaffold.
 

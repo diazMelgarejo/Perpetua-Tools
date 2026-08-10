@@ -1,24 +1,26 @@
 # oramasys Apprentice-01 — Voice & Memory Record
 
+<!-- markdownlint-disable MD013 -->
+
 **Identity:** oramasys Apprentice-01
 **Reviewer/Integrator:** The Senior Systems Architect
 **Stack:** orama-system PR #299 + PR #300, paired with Perpetua-Tools PR #347
 **Recorded:** 2026-08-10, as a verbatim first-person memory record per direct instruction
 **Disposition:** Not selected as the final merged base. Reviewed, judged, and contributions promoted into the Senior's final integration (orama-system PR #303/#305, PT PR #350). Branches and PRs preserved, not deleted or closed.
 
-This is Apprentice-01's own work, reproduced verbatim from the actual PR bodies and commit history — not paraphrased or summarized by the Senior or by any later reviewer.
+This preserves Apprentice-01's original PR-body text and commit history. Embedded heading labels carry a provenance prefix only so this composite record remains unambiguous; no substantive body text was reworded.
 
 ---
 
 ## orama-system PR #299 — "feat(mcp): harden first-run ai-cli-mcp readiness"
 
-> ## Summary
+> ## PR #299 Summary
 >
-> ## Purpose
+> ## PR #299 Purpose
 >
 > Make first-run MCP readiness deterministic and fail-closed without turning `start.sh` into a second installer.
 >
-> ## Design
+> ## PR #299 Design
 >
 > - Pins reviewed upstream `ai-cli-mcp` release `2.22.0` instead of `@latest` for unattended setup.
 > - Separates **core readiness** (package + canonical Claude MCP registration + `ai-cli doctor/models`) from provider auth readiness.
@@ -28,17 +30,17 @@ This is Apprentice-01's own work, reproduced verbatim from the actual PR bodies 
 > - Adds a dedicated `ORAMA_SKIP_MCP_BOOTSTRAP=1` bypass for CI/headless/pre-provisioned environments.
 > - Pins Cursor's ai-cli-mcp registration to the same reviewed version.
 >
-> ## Verification
+> ## PR #299 Verification
 >
 > - New focused pytest coverage exercises pinned/noninteractive readiness with fake command PATHs; no network, provider auth, or billing is used in CI.
 > - Shell syntax for the new installer and composition wrapper was checked locally.
 > - Upstream latest release was verified as `v2.22.0` before pinning.
 >
-> ## Scope
+> ## PR #299 Scope
 >
 > This PR is intentionally only first-run MCP readiness. It does not touch mastery P0-P2 or v2/P3 scaffolding.
 >
-> ## Stack
+> ## PR #299 Stack
 >
 > PR2 will be created from this PR's tip and will target `feat/v1-mcp-readiness`, so mastery convergence can be reviewed independently while remaining explicitly dependent on this PR merging first.
 
@@ -53,17 +55,17 @@ This is Apprentice-01's own work, reproduced verbatim from the actual PR bodies 
 
 ## orama-system PR #300 — "feat(mastery): converge ORAMASYS v1 P0-P2 runtime ownership"
 
-> ## Summary
+> ## PR #300 Summary
 >
-> ## Purpose
+> ## PR #300 Purpose
 >
 > Complete the **v1** mastery convergence pass through P0-P2 without duplicating the human mastery document or touching P3/v2 scaffolding.
 >
-> ## What verification found
+> ## PR #300 What verification found
 >
 > The mother skill already materializes M1, M2, M3 pointer, M4 output discipline, M6 reference, and the unified mastery reference. CIDF's current target-verification/integrative-editing doctrine is also stronger than the historical plan. Rewriting those sections would create churn and duplication, so this PR preserves them.
 >
-> ## Actual delta
+> ## PR #300 Actual delta
 >
 > - Hardens the canonical M3 reference with an explicit human-approval boundary between advisory reasoning and consequential external actions.
 > - Adds deterministic structural tests for P0-P2 ownership:
@@ -74,11 +76,11 @@ This is Apprentice-01's own work, reproduced verbatim from the actual PR bodies 
 >   - `oramasys-method` and CIDF extend the spine rather than replacing it;
 >   - the human `ORAMASYS-MASTERY-v3.md` remains the unified reference.
 >
-> ## Explicit exclusion
+> ## PR #300 Explicit exclusion
 >
 > **P3 is untouched.** No flat v2 scaffold, v2-only skills, `core/` migration, or new v2 repository topology is introduced.
 >
-> ## Stack dependency
+> ## PR #300 Stack dependency
 >
 > This is **PR2 in a stacked pair**.
 >
@@ -97,15 +99,15 @@ This is Apprentice-01's own work, reproduced verbatim from the actual PR bodies 
 
 ## Perpetua-Tools PR #347 — "feat(pipelines): close governed Tier-5 frugality execution"
 
-> ## Summary
+> ## PT PR #347 Summary
 >
 > Adds the missing **governed Tier-5 execution layer** behind Perpetua-Tools' existing canonical frugality gate. Paid pipeline execution remains explicit, feature-flagged off by default, purpose-bound to a live human approval record, budget-capped, and unavailable under offline/privacy policy.
 >
-> ## Purpose
+> ## PT PR #347 Purpose
 >
 > Complete the missing P4 execution layer without replacing the existing frugality router or weakening its policy boundaries.
 >
-> ## First-principles design
+> ## PT PR #347 First-principles design
 >
 > Current `orchestrator/frugality_router.py` + `orchestrator/gate.py` already own Tier 0-6 policy, offline/privacy ceilings, and real dispatch filtering. This PR therefore does **not** create another router.
 >
@@ -117,7 +119,7 @@ This is Apprentice-01's own work, reproduced verbatim from the actual PR bodies 
 > - `.env.local.example` — PT-only `OPENROUTER_API_KEY` plus `PIPELINE_TIERED_ENABLED=0` default.
 > - focused tests covering disabled/offline/privacy behavior, approval expiry/scope, deterministic stage inputs/order, cost caps, strict config, and metadata-only traces.
 >
-> ## Safety / frugality invariants
+> ## PT PR #347 Safety / frugality invariants
 >
 > - `PIPELINE_TIERED_ENABLED=0` by default, even if an OpenRouter key exists.
 > - Tier 5 remains blocked by `ORAMASYS_OFFLINE=1` and normal privacy ceilings through the existing canonical gate.
@@ -127,7 +129,7 @@ This is Apprentice-01's own work, reproduced verbatim from the actual PR bodies 
 > - OpenRouter usage and cost accounting are mandatory; missing authoritative metering fails closed.
 > - Retries are bounded and remain on the same reviewed stage/model; there is no hidden provider/model fallback.
 >
-> ## Model configuration
+> ## PT PR #347 Model configuration
 >
 > The initial explicit OpenRouter slugs were verified against current OpenRouter catalog entries before use:
 >
@@ -136,7 +138,7 @@ This is Apprentice-01's own work, reproduced verbatim from the actual PR bodies 
 >
 > They are explicit reviewed slugs, not floating aliases.
 >
-> ## Scope
+> ## PT PR #347 Scope
 >
 > This is the Perpetua-Tools P4 closure corresponding to the ORAMASYS v1 mastery alignment work. It does not alter orama-system P3/v2 scaffolding or repository topology.
 
