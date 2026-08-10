@@ -33,4 +33,4 @@ checks and may offer a retry with a faster model. Selecting the faster option
 retries the same request using a different faster model. Agents must therefore
 re-ground repository state instead of assuming uninterrupted execution state.
 
-Reference: https://help.openai.com/en/articles/20001326
+Reference: <https://help.openai.com/en/articles/20001326>

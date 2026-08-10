@@ -41,6 +41,6 @@
 ## OpenAI references
 
 - Additional automated safety checks and faster-model retry behavior:
-  https://help.openai.com/en/articles/20001326
+  <https://help.openai.com/en/articles/20001326>
 - ChatGPT model and retry behavior:
-  https://help.openai.com/en/articles/11909943-gpt-53-and-52-in-chatgpt
+  <https://help.openai.com/en/articles/11909943-gpt-53-and-52-in-chatgpt>

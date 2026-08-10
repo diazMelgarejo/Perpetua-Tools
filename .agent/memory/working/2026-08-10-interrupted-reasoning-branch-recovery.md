@@ -14,9 +14,9 @@ edits diverging from the intended architecture, and stopped the retry.
 Official OpenAI context:
 
 - Additional safety checks:
-  https://help.openai.com/en/articles/20001326
+  <https://help.openai.com/en/articles/20001326>
 - ChatGPT model and retry overview:
-  https://help.openai.com/en/articles/11909943-gpt-53-and-52-in-chatgpt
+  <https://help.openai.com/en/articles/11909943-gpt-53-and-52-in-chatgpt>
 
 The OpenAI help article says these checks are automated, may take extra time,
 and may offer a faster-model retry. Selecting that option retries the same
