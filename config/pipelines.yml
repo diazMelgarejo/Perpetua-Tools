@@ -1,0 +1,23 @@
+version: 1
+provider: openrouter
+
+# Tier-5 paid execution is opt-in. Model IDs come from runtime environment so
+# this tracked config does not fossilize provider-specific model names.
+models:
+  fast:
+    env: PIPELINE_FAST_MODEL
+  strong:
+    env: PIPELINE_STRONG_MODEL
+
+limits:
+  max_total_tokens: 8192
+
+recipes:
+  classify_then_generate:
+    - name: classify
+      model: fast
+      max_tokens: 256
+    - name: generate
+      model: strong
+      max_tokens: 4000
+      input_from: classify
