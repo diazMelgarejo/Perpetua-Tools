@@ -88,10 +88,15 @@ class TieredPipelineRunner:
         repo_root = Path(__file__).resolve().parent.parent
         self.config_path = Path(config_path) if config_path else repo_root / "config/pipelines.yml"
         self.models_path = Path(models_path) if models_path else repo_root / "config/models.yml"
+        configured_trace_path = os.getenv("PT_PIPELINE_TRACE_PATH", "").strip()
         self.trace_path = (
             Path(trace_path)
             if trace_path is not None
-            else Path(os.getenv("PT_PIPELINE_TRACE_PATH", str(repo_root / ".state/frugality_pipeline.jsonl")))
+            else (
+                Path(configured_trace_path)
+                if configured_trace_path
+                else repo_root / ".state/frugality_pipeline.jsonl"
+            )
         )
         self._models, self._recipes = self._load_and_validate()
 
