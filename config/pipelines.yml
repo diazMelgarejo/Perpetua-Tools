@@ -1,0 +1,26 @@
+version: 1
+
+# Tier-5 pipeline execution is opt-in. The runner also consults the canonical
+# frugality gate before dispatch, so offline/privacy policy remains authoritative.
+models:
+  fast: glm-5.2
+  strong: claude-4-5-thinking
+
+recipes:
+  classify_then_generate:
+    max_total_tokens: 4256
+    stages:
+      - name: classify
+        model: fast
+        max_tokens: 256
+        instruction: >-
+          Classify the request and return only the compact task class, key
+          constraints, and the minimum routing context needed by the generator.
+      - name: generate
+        model: strong
+        max_tokens: 4000
+        input_from: classify
+        instruction: >-
+          Produce the final answer for the original request. Use the classifier
+          output as routing/context evidence, but preserve the original request
+          as the primary source of truth.
