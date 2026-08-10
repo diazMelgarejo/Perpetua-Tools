@@ -1,4 +1,4 @@
-# Gold Nuggets — model-switch interruption and recovery
+# Gold Nuggets - model-switch interruption and recovery
 
 **Date:** 2026-08-10  
 **Format:** compact working lessons journal; bullets are intentionally concise.
@@ -13,18 +13,18 @@
   blame story.
 - A UI delay/safety-check notice is a latency/safeguard signal, **not proof of a
   policy violation or exact internal cause**.
-  Official context: https://help.openai.com/en/articles/20001326
+  Official context: [Additional automated safety checks](https://help.openai.com/en/articles/20001326)
 - Reasoning/speed/model choices can differ for complex ChatGPT work. Operationally,
   verify state after a retry rather than assuming inherited intent.
-  Official context: https://help.openai.com/en/articles/20001354
+  Official context: [ChatGPT model and reasoning options](https://help.openai.com/en/articles/20001354)
 - Usage-policy safeguards surround the system, but repo recovery should be driven
   by observable Git state, not speculation about moderation internals.
-  Policy: https://openai.com/policies/usage-policies/
+  Policy: [OpenAI Usage Policies](https://openai.com/policies/usage-policies/)
 - **Never probe a write API by making placeholder writes.** Discover schemas and use
   read-only calls first.
 - When branch history is noisy but files are good, **salvage blobs onto a trusted
   base** instead of throwing away valuable work.
-- “Revert everything” and “trust everything” are both lazy recovery strategies.
+- "Revert everything" and "trust everything" are both lazy recovery strategies.
   Integrative recovery classifies each artifact.
 - Stacked PR correctness is structural: `PR2 parent == PR1 tip` and
   `PR2 base == PR1 branch`.
