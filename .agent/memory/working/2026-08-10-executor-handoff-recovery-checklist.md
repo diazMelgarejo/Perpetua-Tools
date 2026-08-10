@@ -48,9 +48,9 @@ Avoid blanket branch deletion when useful verified work exists.
 These references explain surrounding product and safety behavior but do not define
 Git transaction semantics:
 
-- https://help.openai.com/en/articles/20001326
-- https://help.openai.com/en/articles/20001354
-- https://openai.com/policies/usage-policies/
+- [Additional automated safety checks](https://help.openai.com/en/articles/20001326)
+- [ChatGPT model and reasoning options](https://help.openai.com/en/articles/20001354)
+- [OpenAI Usage Policies](https://openai.com/policies/usage-policies/)
 
 Engineering invariant: **after an executor retry or handoff, external-state
 continuity is unproven until revalidated.**
