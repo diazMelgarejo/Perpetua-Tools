@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import httpx
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -38,9 +38,22 @@ from orchestrator.control_plane import (
 from orchestrator.cost_guard import CostGuard
 from orchestrator.ecc_tools_sync import get_sync_status, sync_ecc_tools
 from orchestrator.model_registry import ModelRegistry
+from orchestrator.model_transport import (
+    ProviderConfigError,
+    ProviderTransportError,
+    ProviderTransportRegistry,
+)
 from orchestrator.orama_bridge import (
     call_oramasys_mcp_or_bridge,
     parse_oramasys_timeout,
+)
+from orchestrator.tiered_pipeline import (
+    PipelineConfigError,
+    PipelineDisabledError,
+    PipelineExecutionError,
+    PipelinePolicyError,
+    TieredPipelineRunner,
+    tiered_pipeline_enabled,
 )
 from orchestrator.gossip_bus import GossipBus
 from orchestrator.lan_gossip_bridge import _load_peers as _load_gossip_peers
@@ -173,10 +186,29 @@ class OrchestrateRequest(BaseModel):
     force: bool = False
 
 
+class TieredPipelineRequest(BaseModel):
+    """Explicit request body for an authenticated, paid pipeline execution."""
+
+    prompt: str = Field(min_length=1, max_length=32768)
+    privacy_critical: bool = False
+    override_confirmed: bool = False
+    override_reason: Optional[str] = None
+
+
 class ConflictResponse(BaseModel):
     conflict: bool
     message: str
     existing_agents: List[Dict[str, Any]]
+
+
+def get_tiered_pipeline_runner() -> TieredPipelineRunner:
+    """Construct the policy-only runner; no provider credentials are read here."""
+    return TieredPipelineRunner()
+
+
+def get_provider_transport() -> ProviderTransportRegistry:
+    """Construct the PT-owned native transport at the execution boundary."""
+    return ProviderTransportRegistry()
 
 
 def _runtime_summary() -> dict[str, Any]:
@@ -696,6 +728,60 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
             response["oramasys_bridge"] = bridge_error
             response["ultrathink_bridge"] = bridge_error
     return response
+
+
+@app.post("/pipelines/{recipe_name}/run", tags=["pipelines"])
+async def run_tiered_pipeline(
+    recipe_name: str,
+    request: TieredPipelineRequest,
+    runner: TieredPipelineRunner = Depends(get_tiered_pipeline_runner),
+    transport: ProviderTransportRegistry = Depends(get_provider_transport),
+) -> Dict[str, Any]:
+    """Run one configured Tier-5 recipe through guarded native transport.
+
+    Authentication is applied by ``ControlPlaneAuthMiddleware`` before this
+    handler.  The body never selects a provider, model, price, or endpoint;
+    those are immutable configuration and the canonical frugality gate owns
+    cloud eligibility.
+    """
+    try:
+        recipe = runner.recipe(recipe_name)
+    except PipelineConfigError as exc:
+        raise HTTPException(status_code=404, detail="Unknown pipeline recipe") from exc
+
+    if not tiered_pipeline_enabled():
+        raise HTTPException(status_code=409, detail="Tier-5 pipelines are disabled")
+
+    if not cost_guard.can_spend(recipe.cost_reservation_usd):
+        raise HTTPException(status_code=402, detail="Daily budget cannot reserve this pipeline run")
+
+    try:
+        result = await runner.run(
+            recipe_name,
+            request.prompt,
+            dispatch=transport.dispatch,
+            privacy_critical=request.privacy_critical,
+            override_confirmed=request.override_confirmed,
+            override_reason=request.override_reason,
+        )
+    except PipelineDisabledError as exc:
+        raise HTTPException(status_code=409, detail="Tier-5 pipelines are disabled") from exc
+    except PipelinePolicyError as exc:
+        raise HTTPException(status_code=403, detail="Pipeline execution denied by policy") from exc
+    except ProviderTransportError as exc:
+        status = 503 if exc.retryable else 502
+        raise HTTPException(status_code=status, detail="Configured provider could not complete the pipeline") from exc
+    except (ProviderConfigError, PipelineExecutionError, PipelineConfigError) as exc:
+        raise HTTPException(status_code=503, detail="Pipeline transport is not ready") from exc
+
+    cost_guard.record_spend(recipe.cost_reservation_usd)
+    return {
+        "status": "completed",
+        "recipe": result.recipe,
+        "output": result.output,
+        "requested_tokens": result.requested_tokens,
+        "cost_reservation_usd": recipe.cost_reservation_usd,
+    }
 
 
 @app.post("/autoresearch/sync", tags=["autoresearch"])

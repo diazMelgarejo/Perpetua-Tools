@@ -751,7 +751,7 @@ def _build_routing_state(
             print("[agent_launcher] ☁  all local backends offline — routing coder to Perplexity API")
         elif _anthropic_key:
             coder_endpoint = "https://api.anthropic.com"
-            coder_model    = os.getenv("CLOUD_CODER_MODEL", "claude-4-5-thinking")
+            coder_model    = os.getenv("CLOUD_CODER_MODEL", "claude-sonnet-5")
             coder_backend  = "anthropic"
             coder_platform = "cloud"
             print("[agent_launcher] ☁  all local backends offline — routing coder to Anthropic API")

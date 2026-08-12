@@ -402,7 +402,7 @@ cd ../Perpetua-Tools && git pull --ff-only origin main
 |------|-------------|
 | T1-A | `_PT_STATE_SCHEMA` + `_validate_pt_state()` — RFC-1918 endpoint allowlist in `alphaclaw_bootstrap.py` |
 | T1-B/C | URL canonicalization + `scripts/audit_policy_enforcement.py` pre-commit |
-| T2-B | `scripts/check_model_ids.py` positive allowlist (`config/models.yml`, `.env.example`) |
+| T2-B | `scripts/check_model_ids.py` configuration-derived model provenance validation (`config/models.yml`, `.env.example`) |
 | T3-B | 6 parametrized malformed `Co-authored-by` fuzz tests |
 
 ### orama-system (Linux ✅)

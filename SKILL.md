@@ -108,11 +108,11 @@ Task Received
 
 ## Cloud Routing Rules (< $5/month budget)
 
-### Priority 1 — Orchestration (Claude Sonnet 4.5 Thinking via Perplexity)
+### Priority 1 — Orchestration (Direct Anthropic Claude Sonnet 5)
 ```python
 CLOUD_ORCHESTRATION = {
-    "provider": "perplexity",
-    "model": "anthropic/claude-sonnet-4.5-thinking",
+    "provider": "anthropic",
+    "model": "claude-sonnet-5",
     "trigger_conditions": [
         "strategic_decision == True",
         "reasoning_steps > 200",
@@ -125,11 +125,11 @@ CLOUD_ORCHESTRATION = {
 }
 ```
 
-### Priority 2 — Finance & Real-Time Research (Grok 4.1 Thinking via Perplexity)
+### Priority 2 — Finance & Real-Time Research (Perplexity Sonar Reasoning Pro)
 ```python
 CLOUD_RESEARCH = {
     "provider": "perplexity",
-    "model": "xai/grok-4.1-thinking",
+    "model": "sonar-reasoning-pro",
     "trigger_conditions": [
         "requires_recent_info == True",
         "is_finance_realtime == True",

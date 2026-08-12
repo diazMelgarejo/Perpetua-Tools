@@ -35,6 +35,7 @@ models:
   # Endpoint: https://open.bigmodel.cn/api/paas/v4/chat/completions
   # Key: ${OPENCLAW_MODELS_PROVIDERS_BIGMODEL_APIKEY} (gitignored .env.local)
   - name: "glm-5.2"
+    api_model: "glm-5.2"
     backend: bigmodel
     device: cloud
     host: "https://open.bigmodel.cn"
@@ -51,6 +52,11 @@ models:
     reasoning: cloud-thinking
     description: "GLM-5.2 cloud (BigModel/Zhipu) — thinking-enabled, 131k context"
     tier: "primary"
+    provenance:
+      kind: provider-api
+      source_model_id: "glm-5.2"
+      source_url: "https://docs.bigmodel.cn/api-reference/%E6%A8%A1%E5%9E%8B-api/%E5%AF%B9%E8%AF%9D%E8%A1%A5%E5%85%A8"
+      verified_on: "2026-08-11"
     # frugality_tier=5 (paid): direct cloud API, billed per token, requires
     # OPENCLAW_MODELS_PROVIDERS_BIGMODEL_APIKEY.
     frugality_tier: 5
@@ -150,6 +156,7 @@ models:
 
  # ── ONLINE: Perplexity sonar-reasoning-pro ───────────────────────────────
   - name: sonar-reasoning-pro
+    api_model: sonar-reasoning-pro
     backend: perplexity
     device: cloud
     host: "https://api.perplexity.ai"
@@ -162,34 +169,46 @@ models:
     # frugality_tier=5 (paid): Perplexity cloud API, billed per token,
     # requires PERPLEXITY_API_KEY.
     frugality_tier: 5
+    provenance:
+      kind: provider-api
+      source_model_id: sonar-reasoning-pro
+      source_url: "https://docs.perplexity.ai/docs/sonar/models/sonar-reasoning-pro"
+      verified_on: "2026-08-11"
 
-  # ── ONLINE: Claude 4.5 Thinking ──────────────────────────────────────────
-  # `name` is the internal routing key (matched by agent_launcher + hardware
-  # routing tests; do NOT rename). `api_model` is the real Anthropic model ID
-  # sent to the API — `<family>-<major>-<minor>`, no `-thinking` suffix (that is
-  # a request param, not part of the ID). Without api_model, the bare name would
-  # 404 if dispatched directly. See docs/LESSONS.md 2026-06-06.
-  - name: claude-4-5-thinking
-    api_model: claude-sonnet-4-5
+  # ── ONLINE: Claude Sonnet 5, medium effort ────────────────────────────────
+  # Anthropic's canonical API model ID is dateless `claude-sonnet-5`. Medium
+  # effort is provider-native request configuration, not part of the model ID.
+  - name: claude-sonnet-5
+    api_model: claude-sonnet-5
     backend: anthropic
     device: cloud
     host: "https://api.anthropic.com"
     port: 443
-    context_window: 200000
+    context_window: 1000000
+    max_tokens: 128000
     roles: [strategy, architecture, top-level]
     priority: 50
     online: true
-    reasoning: high-depth
+    reasoning: medium-depth
+    provider_options:
+      output_config:
+        effort: medium
     # frugality_tier=5 (paid): Anthropic cloud API, billed per token.
     frugality_tier: 5
+    provenance:
+      kind: provider-api
+      source_model_id: claude-sonnet-5
+      source_url: "https://platform.claude.com/docs/en/about-claude/models/model-ids-and-versions"
+      verified_on: "2026-08-11"
 
-  # ── ONLINE: Grok 4.1 Thinking ────────────────────────────────────────────
-  - name: grok-4-1-thinking
+  # ── ONLINE: Grok 4.5 ─────────────────────────────────────────────────────
+  - name: grok-4.5
+    api_model: grok-4.5
     backend: xai
     device: cloud
     host: "https://api.x.ai"
     port: 443
-    context_window: 131072
+    context_window: 1000000
     roles: [finance, realtime, market, top-level]
     priority: 60
     online: true
@@ -199,6 +218,11 @@ models:
     # names tier 6 -> "grok" as the last-resort backend, so this model
     # classification matches the router's own convention.
     frugality_tier: 6
+    provenance:
+      kind: provider-api
+      source_model_id: grok-4.5
+      source_url: "https://docs.x.ai/developers/grok-4-5"
+      verified_on: "2026-08-11"
 
 
   # ── AUTORESEARCH: foot-soldier agents (uditgoenka/autoresearch swarm) ───────────
