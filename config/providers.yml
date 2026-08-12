@@ -1,0 +1,29 @@
+version: 1
+
+# Provider protocol and egress allowlist for PT-owned paid execution. Keys
+# remain local-only environment variables; this file intentionally stores names,
+# not credentials. The model registry retains model IDs and hosts.
+providers:
+  bigmodel:
+    credential_env: OPENCLAW_MODELS_PROVIDERS_BIGMODEL_APIKEY
+    allowed_hosts: [open.bigmodel.cn]
+    documentation_hosts: [docs.bigmodel.cn]
+    default_api_path: /api/paas/v4/chat/completions
+    timeout_seconds: 60
+    max_attempts: 2
+  anthropic:
+    credential_env: ANTHROPIC_API_KEY
+    allowed_hosts: [api.anthropic.com]
+    documentation_hosts: [platform.claude.com]
+    default_api_path: /v1/messages
+    api_version: "2023-06-01"
+    timeout_seconds: 60
+    max_attempts: 2
+
+# Catalog-only providers have no native Tier-5 adapter yet, but their official
+# documentation authority is still declared for model-ID provenance checks.
+model_provenance:
+  perplexity:
+    documentation_hosts: [docs.perplexity.ai]
+  xai:
+    documentation_hosts: [docs.x.ai]

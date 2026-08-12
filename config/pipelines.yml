@@ -1,0 +1,31 @@
+version: 1
+
+# Tier-5 execution is opt-in. Model aliases are validated against the canonical
+# registry; the composition root owns provider selection and transport.
+models:
+  # These names are validated against config/models.yml at runner startup.
+  fast: glm-5.2
+  strong: claude-sonnet-5
+
+recipes:
+  classify_then_generate:
+    max_total_tokens: 8192
+    # Reserved before paid dispatch; the API records this conservative local
+    # budget amount only after all configured stages succeed.
+    cost_reservation_usd: 0.25
+    # A conservative UTF-8-byte upper bound is checked before every paid call.
+    max_input_tokens: 8192
+    stages:
+      - name: classify
+        model: fast
+        max_tokens: 256
+        instruction: >-
+          Classify the request and return compact routing context for the
+          generator.
+      - name: generate
+        model: strong
+        max_tokens: 4000
+        input_from: classify
+        instruction: >-
+          Produce the final answer using the original request as the primary
+          source and the classification as supplemental context.

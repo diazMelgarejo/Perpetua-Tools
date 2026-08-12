@@ -268,7 +268,7 @@ async def log_perplexity_usage(tokens_used: int):
         logger.warning(f"Usage logging failed (Redis error): {e}")
 
 
-async def call_perplexity(prompt: str, model: str = "claude-sonnet-4-6"):
+async def call_perplexity(prompt: str, model: str = "sonar-reasoning-pro"):
     """Call the Perplexity AI chat completions endpoint with budget and key guards.
 
     Returns the assistant message text on success, or None when the API key is
@@ -458,8 +458,8 @@ async def orchestrate(req: OrchestrationRequest, request: Request):
             else:
                 routing_log.append(f"Frugality gate denied Ollama ({ollama_model}): {denied_reason}")
     elif req.is_finance_realtime:
-        routing_log.append("Routing to Perplexity Grok 4.1 for real-time finance/events")
-        result = await call_perplexity(req.task_description, model="grok-beta")
+        routing_log.append("Routing to Perplexity Sonar Reasoning Pro for real-time finance/events")
+        result = await call_perplexity(req.task_description, model="sonar-reasoning-pro")
         if not result:
             routing_log.append("Cloud failed, falling back to local Qwen3.5-35B research")
             result = await call_ollama(req.task_description, "qwen3.5:35b-a3b-q4_K_M", OLLAMA_WINDOWS_ENDPOINT)

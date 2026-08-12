@@ -53,6 +53,7 @@ of open work across both repos"):
 | `2026-07-24-alphaclaw-tls-proxy-scaffolding.md` | AlphaClaw TLS proxy — v1 wiring status | v1 complete, PR #276 open; re-verified 2026-07-24 (pytest green) |
 | `2026-07-25-pending-work-tracker.md` | Cross-repo pending-work tracker | See file — tracks PT #276 / orama #197 follow-ups |
 | `2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md` | Windows ACL enforcement for the AlphaClaw TLS cert/key store | PLAN — not implemented; deprecated `SetFileSecurity` call in the source draft fixed to `SetNamedSecurityInfo` before filing, re-verified 2026-07-24 (EXA + Firecrawl against Microsoft/pywin32 docs) |
+| `2026-08-11-model-registry-provenance.md` | Provider model-ID evidence and update gate | Implemented on the Tier-5 transport branch; source record replaces a duplicate static allowlist |
 
 Related Phase 0 ontology (STM/swarm — **not** coordination Phase 0F):
 [`../phase-0-specifications/README.md`](../phase-0-specifications/README.md).

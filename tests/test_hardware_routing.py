@@ -81,7 +81,7 @@ def test_deep_reasoning_routing_by_hardware_profile(registry):
 
     glm_idx = names.index("glm-5.1:cloud")
     general_cloud = [i for i, m in enumerate(chain)
-                     if m.online and m.name not in ("glm-5.1:cloud", "claude-4-5-thinking")]
+                     if m.online and m.name not in ("glm-5.1:cloud", "claude-sonnet-5")]
     assert all(glm_idx < ci for ci in general_cloud), \
         "glm-5.1:cloud should appear before general cloud fallbacks"
 

@@ -202,7 +202,7 @@ if coder_backend == "mac-degraded":   # all local coder paths failed
         coder_platform = "cloud"
     elif anthropic_key:
         coder_endpoint = "https://api.anthropic.com"
-        coder_model    = os.getenv("CLOUD_CODER_MODEL", "claude-4-5-thinking")
+        coder_model    = os.getenv("CLOUD_CODER_MODEL", "claude-sonnet-5")
         coder_backend  = "anthropic"
         coder_platform = "cloud"
 ```
@@ -221,7 +221,7 @@ When cloud fallback activates, the routing state dict contains:
   "coder_backend":  "perplexity" | "anthropic",
   "coder_platform": "cloud",
   "coder_endpoint": "https://...",
-  "coder_model":    "sonar-reasoning-pro" | "claude-4-5-thinking",
+  "coder_model":    "sonar-reasoning-pro" | "claude-sonnet-5",
   "scenario_name":  "CLOUD_ONLY",
 }
 ```
