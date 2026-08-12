@@ -177,19 +177,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # Core test deps + runtime deps needed by orchestrator.py at import time
-          pip install pytest pytest-asyncio pytest-cov pyyaml
-          pip install fastapi aiohttp redis httpx python-dotenv loguru pydantic
-          # fix(ci): slowapi must be present before orchestrator.py can be imported
-          pip install slowapi
-          # fix(ci): respx is used by tests/discovery/ for mocking httpx calls
-          pip install respx
-          # fix(ci): hypothesis is used by tests/test_state_transition_manager.py
-          # for property-based tests (declared in pyproject.toml's dev extra, but
-          # this step installs an explicit list rather than `pip install -e .[dev]`,
-          # so it needs to be listed here too or CI diverges from pyproject.toml).
-          pip install hypothesis
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install -e ".[dev]"
 
       - name: Lint with flake8 (warnings only)
         run: |

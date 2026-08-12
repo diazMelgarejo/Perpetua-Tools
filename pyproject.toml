@@ -46,7 +46,6 @@ dependencies = [
     "websockets>=12.0",
     # Async and networking
     "aiohttp>=3.14.3",
-    "asyncio>=3.4.3",
     "httpx>=0.26.0",
     "jsonschema>=4.0.0",
     # Database and caching
@@ -133,6 +132,10 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 pythonpath = ["src", "."]
 addopts = "-v --tb=short"
+markers = [
+    "unit: isolated unit-level regression coverage",
+    "integration: tests that exercise multiple components or a service boundary",
+]
 
 [tool.mypy]
 python_version = "3.11"

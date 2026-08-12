@@ -19,11 +19,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from orchestrator.control_plane_auth import (
-    control_plane_auth_failure,
     ensure_control_plane_token,
-    pt_path_requires_auth,
     redact_runtime_payload,
 )
+from orchestrator.control_plane_asgi import ControlPlaneAuthMiddleware
 
 from orchestrator import autoresearch_bridge
 from orchestrator import __version__ as _ORCHESTRATOR_VERSION
@@ -138,6 +137,10 @@ app = FastAPI(
     lifespan=_lifespan,
 )
 
+# ``add_middleware`` inserts at the outside of the current stack.  Register
+# auth first so CORS remains outermost and rejected browser requests retain
+# the policy headers needed by a legitimate frontend.
+app.add_middleware(ControlPlaneAuthMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -148,15 +151,6 @@ app.add_middleware(
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
 )
-
-
-@app.middleware("http")
-async def _control_plane_auth_middleware(request: Request, call_next):
-    if pt_path_requires_auth(request.url.path, request.method):
-        failure = control_plane_auth_failure(request)
-        if failure is not None:
-            return failure
-    return await call_next(request)
 
 
 tracker = AgentTracker()

@@ -155,6 +155,8 @@ info "Phase 5 — Python venv + deps"
 
 $VenvDir   = Join-Path $RepoRoot ".venv"
 $ReqFile   = Join-Path $RepoRoot "requirements.txt"
+$ProjectFile = Join-Path $RepoRoot "pyproject.toml"
+$LockFile = Join-Path $RepoRoot "uv.lock"
 $StampFile = Join-Path $RepoRoot ".requirements.stamp"
 $VenvFresh = $false
 
@@ -168,7 +170,10 @@ if (-not (Test-Path $VenvDir)) {
 
 if (Test-Path $VenvDir) {
     $PipExe  = Join-Path $VenvDir "Scripts\pip.exe"
-    $ReqHash = (Get-FileHash $ReqFile -Algorithm SHA256).Hash
+    $DependencyFiles = @($ReqFile, $ProjectFile, $LockFile) | Where-Object { Test-Path $_ }
+    $ReqHash = ($DependencyFiles | ForEach-Object {
+        (Get-FileHash $_ -Algorithm SHA256).Hash
+    }) -join ":"
     $StampHash = if (Test-Path $StampFile) {
         (Get-Content $StampFile | Where-Object { $_ -match "^python_req=" }) -replace "python_req=",""
     } else { "" }
@@ -179,7 +184,7 @@ if (Test-Path $VenvDir) {
             & $PipExe install -q -r $ReqFile 2>&1 | Out-File -Append (Join-Path $LogDir "install.log")
             "python_req=$ReqHash`nts=$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssZ')`nversion=1" | Set-Content $StampFile
             ok "Python deps installed"
-        } else { warn "requirements.txt changed — run without -CheckOnly" }
+        } else { warn "dependency contract changed — run without -CheckOnly" }
     } else { ok "Python deps up-to-date" }
 }
 
