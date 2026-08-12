@@ -46,7 +46,6 @@ dependencies = [
     "websockets>=12.0",
     # Async and networking
     "aiohttp>=3.14.3",
-    "asyncio>=3.4.3",
     "httpx>=0.26.0",
     "jsonschema>=4.0.0",
     # Database and caching

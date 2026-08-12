@@ -2,18 +2,104 @@
 """Control-plane auth regression tests for Perpetua-Tools."""
 from __future__ import annotations
 
+import asyncio
 import collections
 
 import pytest
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
 from fastapi.testclient import TestClient
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from orchestrator.control_plane_auth import (
     auth_enforced,
     control_plane_auth_failure,
     redact_runtime_payload,
 )
+from orchestrator.control_plane_asgi import ControlPlaneAuthMiddleware
 import orchestrator.fastapi_app as _fapp
 from orchestrator.fastapi_app import app
+
+
+def test_control_plane_auth_uses_pure_asgi_with_cors_outermost(monkeypatch):
+    """Auth rejects protected routes without a buffered streaming wrapper."""
+    monkeypatch.setenv("ORAMA_INSECURE_DEV", "0")
+    monkeypatch.setenv("ORAMA_CONTROL_PLANE_TOKEN", "pt-test-token")
+
+    middleware = [entry.cls for entry in app.user_middleware]
+    assert ControlPlaneAuthMiddleware in middleware
+    assert BaseHTTPMiddleware not in middleware
+    assert middleware.index(ControlPlaneAuthMiddleware) > 0
+
+    with TestClient(app, raise_server_exceptions=False) as client:
+        denied = client.get(
+            "/agents",
+            headers={"Origin": "http://localhost:3000"},
+        )
+        preflight = client.options(
+            "/agents",
+            headers={
+                "Origin": "http://localhost:3000",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+
+    assert denied.status_code == 401
+    assert denied.headers["access-control-allow-origin"] == "http://localhost:3000"
+    assert preflight.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_control_plane_auth_allows_streaming_response_cancellation(monkeypatch):
+    """A protected stream must emit without a BaseHTTPMiddleware bridge."""
+    monkeypatch.setenv("ORAMA_INSECURE_DEV", "0")
+    monkeypatch.setenv("ORAMA_CONTROL_PLANE_TOKEN", "pt-test-token")
+    stream_app = FastAPI()
+    stream_app.add_middleware(ControlPlaneAuthMiddleware)
+
+    @stream_app.get("/agents/stream")
+    async def stream_agents():
+        async def events():
+            yield b"data: ready\\n\\n"
+            await asyncio.Event().wait()
+
+        return StreamingResponse(events(), media_type="text/event-stream")
+
+    messages: list[dict] = []
+    first_body_sent = asyncio.Event()
+    request_sent = False
+
+    async def receive() -> dict:
+        nonlocal request_sent
+        if not request_sent:
+            request_sent = True
+            return {"type": "http.request", "body": b"", "more_body": False}
+        await first_body_sent.wait()
+        return {"type": "http.disconnect"}
+
+    async def send(message: dict) -> None:
+        messages.append(message)
+        if message["type"] == "http.response.body" and message.get("body"):
+            first_body_sent.set()
+
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0", "spec_version": "2.0"},
+        "http_version": "1.1",
+        "method": "GET",
+        "scheme": "http",
+        "path": "/agents/stream",
+        "raw_path": b"/agents/stream",
+        "query_string": b"",
+        "headers": [(b"authorization", b"Bearer pt-test-token")],
+        "client": ("testclient", 50000),
+        "server": ("testserver", 80),
+    }
+
+    await asyncio.wait_for(stream_app(scope, receive, send), timeout=1)
+
+    assert any(message["type"] == "http.response.start" for message in messages)
+    assert any(message.get("body") == b"data: ready\\n\\n" for message in messages)
 
 
 def test_user_input_next_requires_token_when_enforced(monkeypatch):

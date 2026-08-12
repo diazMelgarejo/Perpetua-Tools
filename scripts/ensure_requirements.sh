@@ -47,9 +47,34 @@ _OS="$(uname -s 2>/dev/null || echo Unknown)"
 _ARCH="$(uname -m 2>/dev/null || echo unknown)"
 _IS_DOCKER=0; [ -f "/.dockerenv" ] && _IS_DOCKER=1
 
+_hash_text() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 | awk '{print $1}'
+  else
+    echo "none"
+  fi
+}
+
+_hash_file() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$1" | awk '{print $1}'
+  else
+    echo "none"
+  fi
+}
+
 _req_hash() {
-  local req="${SCRIPT_DIR}/requirements.txt"
-  [ -f "$req" ] && sha256sum "$req" 2>/dev/null | cut -d' ' -f1 || echo "none"
+  local name file manifest=""
+  for name in requirements.txt pyproject.toml uv.lock; do
+    file="${SCRIPT_DIR}/${name}"
+    [ -f "$file" ] || continue
+    manifest="${manifest}${name}:$(_hash_file "$file")\n"
+  done
+  [ -n "$manifest" ] && printf '%b' "$manifest" | _hash_text || echo "none"
 }
 _stamp_current() { cat "$STAMP_FILE" 2>/dev/null | grep "^python_req=" | cut -d= -f2 || echo ""; }
 _stamp_write() {
@@ -101,14 +126,14 @@ if [ -d "${SCRIPT_DIR}/.venv" ]; then
   EXPECTED_HASH="$(_req_hash)"
   if [ "$MODE_FORCE" -eq 1 ] || [ "$VENV_FRESH" -eq 1 ] || [ "$CURRENT_HASH" != "$EXPECTED_HASH" ]; then
     if [ "$MODE_CHECK" -eq 0 ]; then
-      _info "Installing Python deps (requirements changed)..."
+      _info "Installing Python deps (dependency contract changed)..."
       "${SCRIPT_DIR}/.venv/bin/pip" install -q -r "${SCRIPT_DIR}/requirements.txt" \
         >>"${LOG_DIR}/install.log" 2>&1 && {
         _stamp_write
         _ok "Python deps installed (stamp updated)"
       } || _warn "pip install failed — see ${LOG_DIR}/install.log"
     else
-      _warn "requirements.txt hash mismatch — run without --check to update"
+      _warn "dependency contract hash mismatch — run without --check to update"
     fi
   else
     _ok "Python deps up-to-date (stamp matches)"
