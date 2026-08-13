@@ -1,7 +1,7 @@
 # Tier-5 ASGI Provider Transport Review Handoff
 
-**Branch:** `feat/tier5-asgi-harmonized-20260811`  
-**Code commits:** `248f7e4a`, `0473fe25`  
+**Branch:** `feat/tier5-asgi-harmonized-20260811`
+**Code commits:** `248f7e4a`, `0473fe25`
 **Publication:** local only; no push or pull request.
 
 ## Review Request
