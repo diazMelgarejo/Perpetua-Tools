@@ -33,6 +33,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from utils.hardware_policy import HardwareAffinityError, check_affinity
+from utils.model_endpoint_url import ModelEndpointPolicyError, validate_model_endpoint_url
 from orchestrator.backend_resolver import resolve_backend_for_spec
 from orchestrator.startup_intelligence import (
     StartupScenario,
@@ -339,7 +340,14 @@ def resolve_local_or_remote(
                         "the %s machine — normalizing to localhost", env_var, override, role
                     )
                     return f"http://localhost:{_safe_port(parsed, port)}"
-            return override if "://" in override else f"http://{override}"
+            remote_url = override if "://" in override else f"http://{override}"
+            try:
+                return validate_model_endpoint_url(remote_url)
+            except ModelEndpointPolicyError as exc:
+                _launcher_logger.warning(
+                    "resolve_local_or_remote: %s=%s rejected by endpoint policy (%s) "
+                    "-- falling back to fallback_ip", env_var, override, exc
+                )
     if is_local:
         return f"http://localhost:{port}"
     ip = fallback_ip or "127.0.0.1"
