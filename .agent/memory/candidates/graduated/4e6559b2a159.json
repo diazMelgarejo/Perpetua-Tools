@@ -1,0 +1,45 @@
+{
+  "id": "4e6559b2a159",
+  "key": "manual_4e6559",
+  "name": "manual_4e6559",
+  "claim": "Treat ECC upstream advancement and local-overlay restoration as separate idempotent steps: verify the upstream SHA, accept a clean reviewed checkout, restore every approved patch path, and report success only after restoration.",
+  "conditions": [
+    "ecc",
+    "idempotency",
+    "overlay",
+    "restore",
+    "stale-assumption",
+    "submodule",
+    "sync",
+    "upgrade"
+  ],
+  "evidence_ids": [
+    "2026-08-14T05:07:58.142250+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T05:07:58.142250+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T05:07:58.142250+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T05:07:58.463665+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A current submodule HEAD does not prove local-only files or additive hunks are present. The 2026-08-14 regression verified clean and repeated upgrade behavior across both overlay modes.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T05:07:58.142250+00:00"
+      ],
+      "lessons_sha": "0a58575be40b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T05:07:58.463657+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A current submodule HEAD does not prove local-only files or additive hunks are present. The 2026-08-14 regression verified clean and repeated upgrade behavior across both overlay modes."
+}
