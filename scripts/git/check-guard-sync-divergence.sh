@@ -75,6 +75,16 @@ _file_hash() {
   git hash-object "$1"
 }
 
+_git_common_dir() {
+  local root="$1" common
+
+  common="$(git -C "$root" rev-parse --git-common-dir 2>/dev/null)" || return 1
+  if [[ "$common" != /* ]]; then
+    common="$root/$common"
+  fi
+  cd "$common" 2>/dev/null && pwd -P
+}
+
 # Return 0 when $want_hash appears as <prefix>/$rel at any commit in $repo.
 _blob_in_repo_history() {
   local repo="$1" rel="$2" want="$3" prefix="${4:-scripts/git}"
@@ -136,11 +146,23 @@ _repo_uses_githooks() {
 }
 
 _scan_sibling() {
-  local sibling_root="$1"
+  local sibling_root="$1" canon_common sibling_common
   local rel pair_rc=0
 
   [[ "$(cd "$sibling_root" && pwd)" == "$CANON_ROOT" ]] && return 0
   if ! git -C "$sibling_root" rev-parse --show-toplevel >/dev/null 2>&1; then
+    return 0
+  fi
+
+  # Linked worktrees of the canonical repository are alternate checkouts of
+  # the same guard authority, not downstream mirror targets. Sync never
+  # overwrites them, so a pre-merge worktree must not block syncing a real
+  # downstream repository. Independent repositories still take the strict
+  # per-file history check below.
+  canon_common="$(_git_common_dir "$CANON_ROOT")" || return 1
+  sibling_common="$(_git_common_dir "$sibling_root")" || return 1
+  if [[ "$sibling_common" == "$canon_common" ]]; then
+    echo "== DIVERGENCE: $(basename "$sibling_root") shares canonical git history; skipped =="
     return 0
   fi
 
