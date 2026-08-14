@@ -33,6 +33,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from utils.hardware_policy import HardwareAffinityError, check_affinity
+from utils.endpoint_policy_core import build_transport_url
 from utils.model_endpoint_url import ModelEndpointPolicyError, validate_model_endpoint_url
 from orchestrator.backend_resolver import resolve_backend_for_spec
 from orchestrator.startup_intelligence import (
@@ -350,8 +351,21 @@ def resolve_local_or_remote(
                 )
     if is_local:
         return f"http://localhost:{port}"
-    ip = fallback_ip or "127.0.0.1"
-    return f"http://{ip}:{port}"
+    fallback_url = build_transport_url(fallback_ip or "127.0.0.1", port)
+    if fallback_url:
+        try:
+            return validate_model_endpoint_url(fallback_url)
+        except ModelEndpointPolicyError as exc:
+            _launcher_logger.warning(
+                "resolve_local_or_remote: fallback_ip rejected by endpoint policy (%s) "
+                "-- using loopback fallback",
+                exc,
+            )
+    else:
+        _launcher_logger.warning(
+            "resolve_local_or_remote: fallback_ip is malformed -- using loopback fallback"
+        )
+    return f"http://127.0.0.1:{port}"
 
 # ---------------------------------------------------------------------------
 # Startup assertion — validate hardware policy on module load
