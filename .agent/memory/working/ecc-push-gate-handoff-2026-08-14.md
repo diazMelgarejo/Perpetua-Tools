@@ -41,34 +41,56 @@ was blocked locally by a false positive in the guard-sync divergence gate.
    silently skipped divergence validation. Fixed, tested, pushed as
    `f04515b3`.
 
-## Current state (end of this session)
+8. Manual human review approved PR #311; merged normally as `ce1d260d`.
+   Another agent (Codex) synced the mirrors into PT
+   (`61600dff`) and ran the focused guard suite (59 passed) — but that
+   surfaced two *more* real bugs, found and fixed entirely by that other
+   agent, not me:
+   - **Linked-worktree false positive** (orama PR #312): the divergence
+     scanner treated linked git worktrees of the canonical repo itself
+     (this session used several, for parallel PR work) as independent
+     downstream siblings, producing false-positive divergence failures.
+     Fixed via `git -C <root> rev-parse --git-common-dir` comparison —
+     two roots sharing a common dir are worktrees of one repo, not
+     siblings. Lesson `ecf446018e17`.
+   - **`GIT_DIR` leakage from the hook's own environment** (orama PR
+     #313): once actually invoked as a real pre-push hook (not just
+     tested standalone), `GIT_DIR` was already exported and silently
+     rebound every `git -C <sibling>` call back to the pushing repo,
+     letting a genuinely independent sibling be skipped. Fixed by
+     clearing every name from `git rev-parse --local-env-vars` before
+     the first cross-repo `git` call. Lesson `e6771ac33caa`.
+   Both synced into PT as `0f9472f6` and `ef80f9a5`.
+9. **The original blocked push succeeded.** PT's
+   `fix/ecc-overlay-idempotency-20260814` now has a remote tracking ref;
+   local `HEAD` (`ef80f9a5`) matches `origin/fix/ecc-overlay-idempotency-20260814`
+   exactly — confirmed directly, not just from the board. Independently
+   re-ran `check-guard-sync-divergence.sh --workspace` myself (with an
+   explicit `GUARD_SYNC_CANON_ROOT`, since several orama-system worktrees
+   exist on this machine right now and the resolver correctly refuses to
+   guess among them) and the local guard test suite: both pass clean,
+   no bypass used anywhere in the whole sequence.
 
-- **orama-system PR #311**: pushed, `f04515b3`, 13/13 tests green,
-  review item resolved. **Still under manual human review — not merged.**
-- **PT** (`fix/ecc-overlay-idempotency-20260814`): genuinely clean,
-  `HEAD f4d0761d`, matches origin. No guard-file changes here — correct,
-  per the ruling. Nothing to push yet.
+## Current state (end of this session) — RESOLVED
 
-## Next step (do not skip ahead)
-
-Per coordination record 1343: **"PT remains untouched; do not sync until
-this review item is resolved and PR 311 merges normally."** The review
-item is resolved (this session); the merge is not done. Once PR #311
-merges into orama-system `main`:
-
-1. Sync the generated mirrors onto `fix/ecc-overlay-idempotency-20260814`
-   via the canonical sync tooling (`sync-attribution-guard-scripts.sh` or
-   equivalent) — never hand-copy/hand-edit.
-2. Push that single PT branch — this was the actual, original blocked
-   push the whole analysis doc exists to unblock.
-3. Confirm the real push now succeeds without a bypass
-   (no `--no-verify`, no `GUARD_SYNC_SKIP_DIVERGENCE_CHECK=1`).
+- **orama-system**: PR #311 merged (`ce1d260d`), PR #312 and PR #313
+  (follow-up fixes) also landed.
+- **PT** (`fix/ecc-overlay-idempotency-20260814`): `HEAD ef80f9a5`,
+  matches `origin/fix/ecc-overlay-idempotency-20260814` exactly. Contains
+  the real ECC overlay-idempotency work (the original deliverable),
+  the full canonical guard-tooling mirror, and this session's memory
+  commits. **Pushed successfully with no bypass — the original problem
+  the analysis doc exists to solve is fixed end to end.**
 
 ## Related
 
+- Retrospective / reflections / recommendations: [`ecc-push-gate-retrospective-2026-08-14.md`](ecc-push-gate-retrospective-2026-08-14.md)
+- Domain knowledge (stable architecture): [`DOMAIN_KNOWLEDGE.md`](../semantic/DOMAIN_KNOWLEDGE.md) § Guard-sync architecture
 - Lessons: `20234c4410fd` (ownership boundary), `fb41758b35af` (test
-  isolation), `9c02865055b4` (vacuous assertions) — all in
+  isolation), `9c02865055b4` (vacuous assertions), `ecf446018e17`
+  (linked-worktree scope), `e6771ac33caa` (GIT_DIR leakage),
+  `f5a3139114c2` (coordination-board pattern) — all in
   `.agent/memory/semantic/LESSONS.md`.
-- Coordination board: GossipBus records 1339-1343 (query via
-  `orchestrator.coordination.paths.canonical_db_path()`), agent
-  `codex-primary-orchestrator`.
+- Coordination board: GossipBus records 1339-1353 (query via
+  `orchestrator.coordination.paths.canonical_db_path()`), agents
+  `codex-primary-orchestrator` and `codex-reviewer`.

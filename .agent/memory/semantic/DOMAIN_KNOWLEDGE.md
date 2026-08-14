@@ -9,6 +9,45 @@
 - Vendor quirks ("service X rate-limits at 60 rpm, not the documented 100")
 - Domain-specific terminology
 
+## Guard-sync architecture (verified 2026-08-14)
+
+Three files form the guard-sync interlock; understand all three together, not
+in isolation, before touching any of them:
+
+- **`scripts/git/guard-sync-manifest.sh`** — single source of truth for which
+  `scripts/git/*` and `.githooks/*` paths are canonical-managed
+  (`GUARD_PARITY_REQUIRED`, `GUARD_SYNC_GITHOOKS` arrays). orama-system owns
+  this file; PT's copy is a byte-identical mirror. **Never hand-edit the
+  downstream copy** — see lesson `20234c4410fd`.
+- **`.githooks/pre-push`** — decides whether a push needs the cross-worktree
+  divergence scan, via exact manifest-membership matching (not a directory-
+  wide pattern — that was the original bug, see lesson from the ECC
+  push-gate analysis 2026-08-14).
+- **`scripts/git/check-guard-sync-divergence.sh`** — the scan itself.
+  Resolves its own canonical root (explicit override → self-marker check →
+  auto-crawl for an orama-system sibling → actionable error, never
+  self-nominate), then compares each manifest path across every sibling
+  repo in the workspace, correctly skipping linked worktrees of the same
+  canonical repo (`git-common-dir` comparison, lesson `ecf446018e17`) and
+  clearing git's local-env-vars before cross-repo `git -C` calls to avoid
+  `GIT_DIR` leakage when invoked as a hook (lesson `e6771ac33caa`).
+
+**Multi-repo topology this system spans:** orama-system (canonical) →
+Perpetua-Tools + AlphaClaw (downstream mirrors) → any number of linked
+worktrees of any of those (parallel-agent scratch space, not sync targets).
+A worktree is not a sibling repo even though it looks like one on disk.
+
+**Verification command** (requires an unambiguous canonical root — set
+`GUARD_SYNC_CANON_ROOT` explicitly if multiple orama-system worktrees exist
+on the machine, which is common during active multi-agent sessions):
+```bash
+GUARD_SYNC_CANON_ROOT=<path-to-canonical-orama-system> \
+  WORKSPACE_ROOT=<parent-of-repos> \
+  bash scripts/git/check-guard-sync-divergence.sh --workspace
+```
+
+Full incident + fix history: `.agent/memory/working/ecc-push-gate-handoff-2026-08-14.md`.
+
 ## Cybersecurity / OpSec / SecOps - portable-memory invariants (verified 2026-07-18)
 
 Portable agent memory is a security boundary, not a diary. Tracked memory,
