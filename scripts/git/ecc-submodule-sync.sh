@@ -99,7 +99,9 @@ _make_candidate() {
     GIT_INDEX_FILE="$tmp_index" git -C "$SUB" add --intent-to-add -A || rc=$?
   fi
   if [ "$rc" -eq 0 ]; then
-    GIT_INDEX_FILE="$tmp_index" git -C "$SUB" diff --binary HEAD > "$CANDIDATE" || rc=$?
+    # A reviewed candidate is compared byte-for-byte with the tracked patch.
+    # Full blob IDs keep that serialization stable across core.abbrev settings.
+    GIT_INDEX_FILE="$tmp_index" git -C "$SUB" diff --binary --full-index HEAD > "$CANDIDATE" || rc=$?
   fi
   rm -f "$tmp_index"
   [ "$rc" -eq 0 ] || return "$rc"
@@ -263,12 +265,16 @@ _require_reviewed_overlay() {
   _make_candidate
   _validate_candidate "$CANDIDATE"
 
-  if [ -s "$CANDIDATE" ] && cmp -s "$CANDIDATE" "$PATCH"; then
+  # A clean checkout can legitimately be missing the local-only files that a
+  # reviewed patch restores. There is no unreviewed drift to reject in that
+  # state; update/upgrade must be allowed to continue to _restore.
+  if [ ! -s "$CANDIDATE" ]; then
     _cleanup_candidate
     CANDIDATE=""
     return 0
   fi
-  if [ ! -s "$CANDIDATE" ] && [ ! -e "$PATCH" ]; then
+
+  if cmp -s "$CANDIDATE" "$PATCH"; then
     _cleanup_candidate
     CANDIDATE=""
     return 0
@@ -288,6 +294,15 @@ _restore() {
   for ((i = 0; i < OVERLAY_COUNT; i++)); do
     path="${OVERLAY_PATHS[$i]}"
     mode="${OVERLAY_MODES[$i]}"
+
+    # A repeated update may find either a surviving local-only file or an
+    # additive hunk already present. Reverse-check first so both approved,
+    # already-applied forms remain idempotent.
+    if git -C "$SUB" apply --reverse --check --include="$path" "$PATCH" >/dev/null 2>&1; then
+      present=$((present + 1))
+      continue
+    fi
+
     out=$(git -C "$SUB" apply --whitespace=nowarn --include="$path" "$PATCH" 2>&1) && rc=0 || rc=$?
 
     if [ "$rc" -eq 0 ]; then
@@ -304,8 +319,13 @@ _restore() {
     die "restore: $path did not apply cleanly — resolve its reviewed overlay before continuing"
   done
 
-  [ "$applied" -gt 0 ] && echo "restore: $applied reviewed overlay path(s) re-applied"
-  [ "$present" -gt 0 ] && echo "restore: $present new-file overlay path(s) already present (survived checkout)"
+  if [ "$applied" -gt 0 ]; then
+    echo "restore: $applied reviewed overlay path(s) re-applied"
+  fi
+  if [ "$present" -gt 0 ]; then
+    echo "restore: $present reviewed overlay path(s) already applied"
+  fi
+  return 0
 }
 
 _do_checkout() {
@@ -361,12 +381,12 @@ case "${1:-help}" in
     cur_sha=$(git -C "$SUB" rev-parse HEAD)
 
     if [ "$new_sha" = "$cur_sha" ]; then
-      echo "upgrade: already at origin/main ($new_sha) — nothing to do"
-      exit 0
+      echo "upgrade: already at origin/main ($new_sha)"
+    else
+      echo "upgrade: $cur_sha -> $new_sha"
+      _do_checkout "$new_sha"
     fi
 
-    echo "upgrade: $cur_sha -> $new_sha"
-    _do_checkout "$new_sha"
     _restore
     echo "upgrade: done"
     echo "  next: git add vendor/ecc-tools && git commit"

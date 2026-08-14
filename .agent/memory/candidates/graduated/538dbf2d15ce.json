@@ -1,0 +1,44 @@
+{
+  "id": "538dbf2d15ce",
+  "key": "manual_538dbf",
+  "name": "manual_538dbf",
+  "claim": "When a reviewed patch is guarded by byte equality, generate it with full blob IDs so Git core.abbrev cannot turn identical overlay content into false unreviewed drift.",
+  "conditions": [
+    "core-abbrev",
+    "ecc",
+    "full-index",
+    "idempotency",
+    "patch",
+    "portability",
+    "review"
+  ],
+  "evidence_ids": [
+    "2026-08-14T05:10:07.741976+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T05:10:07.741976+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T05:10:07.741976+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T05:10:07.900727+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A live fresh checkout serialized the same five overlay paths with a different blob-ID width than another checkout. --full-index made the candidate portable and two consecutive upgrades succeeded.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T05:10:07.741976+00:00"
+      ],
+      "lessons_sha": "0c7293439069"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T05:10:07.900714+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A live fresh checkout serialized the same five overlay paths with a different blob-ID width than another checkout. --full-index made the candidate portable and two consecutive upgrades succeeded."
+}
