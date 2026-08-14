@@ -31,6 +31,20 @@ def test_resolve_local_or_remote_rejects_link_local_metadata_override(monkeypatc
     assert "169.254.169.254" not in result
 
 
+def test_resolve_local_or_remote_rejects_link_local_metadata_fallback(monkeypatch):
+    """A rejected override must not make an unsafe fallback reachable."""
+    monkeypatch.setattr(agent_launcher, "RUNNING_ON_MAC", True)
+    monkeypatch.setattr(agent_launcher, "RUNNING_ON_WINDOWS", False)
+    monkeypatch.setenv("TEST_REMOTE_ENDPOINT", "http://169.254.169.254:11434")
+    result = agent_launcher.resolve_local_or_remote(
+        "windows",
+        11434,
+        env_var="TEST_REMOTE_ENDPOINT",
+        fallback_ip="169.254.169.254",
+    )
+    assert result == "http://127.0.0.1:11434"
+
+
 def test_resolve_local_or_remote_still_accepts_lan_override(monkeypatch):
     """Confirm the fix isn't over-broad -- a genuine RFC1918 override must
     still pass through unchanged."""
