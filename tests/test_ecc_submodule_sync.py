@@ -11,7 +11,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts/git/ecc-submodule-sync.sh"
 
-pytestmark = pytest.mark.unit
+pytestmark = pytest.mark.integration
 
 
 def _run(
