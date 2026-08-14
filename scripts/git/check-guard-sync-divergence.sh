@@ -22,6 +22,14 @@ source "$SCRIPT_DIR/guard-sync-manifest.sh"
 # shellcheck source=resolve_sibling_git_repo.sh
 source "$SCRIPT_DIR/resolve_sibling_git_repo.sh"
 
+# Git hooks export repository-local GIT_* variables. This checker deliberately
+# runs git against other repositories, so retaining the hook's GIT_DIR can
+# rebind every `git -C <sibling>` call to the pushing checkout. Clear Git's
+# documented local environment set before resolving or comparing siblings.
+while IFS= read -r git_local_env; do
+  unset "$git_local_env"
+done < <(git rev-parse --local-env-vars)
+
 # Canonical-root resolution: never self-nominate as canonical just because
 # this script happens to be invoked from a given checkout (see ECC push-gate
 # analysis 2026-08-14 § Canonical-Root Mismatch — a downstream checkout
