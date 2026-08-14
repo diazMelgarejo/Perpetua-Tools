@@ -1,0 +1,53 @@
+{
+  "id": "b1324b9d0481",
+  "key": "manual_b1324b",
+  "name": "manual_b1324b",
+  "claim": "When an unsafe endpoint override falls back to environment-derived metadata, validate and reconstruct the fallback through the same endpoint-policy boundary before use.",
+  "conditions": [
+    "back",
+    "before",
+    "boundary",
+    "endpoint",
+    "endpoint-policy",
+    "environment-derived",
+    "fallback",
+    "falls",
+    "metadata",
+    "override",
+    "reconstruct",
+    "same",
+    "through",
+    "unsafe",
+    "use",
+    "validate"
+  ],
+  "evidence_ids": [
+    "2026-08-14T13:37:46.478837+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T13:37:46.478837+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T13:37:46.478837+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T13:37:46.608845+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The PR352 candidate identified a recovery-path bypass risk. The original memory commit was not replayed because it rewrote unrelated corpus state; this captures the bounded security rule through the canonical memory tool.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T13:37:46.478837+00:00"
+      ],
+      "lessons_sha": "ecc588692628"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T13:37:46.608838+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The PR352 candidate identified a recovery-path bypass risk. The original memory commit was not replayed because it rewrote unrelated corpus state; this captures the bounded security rule through the canonical memory tool."
+}
