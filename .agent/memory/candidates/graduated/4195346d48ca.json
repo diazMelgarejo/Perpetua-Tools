@@ -1,0 +1,43 @@
+{
+  "id": "4195346d48ca",
+  "key": "manual_419534",
+  "name": "manual_419534",
+  "claim": "When an unsafe endpoint override falls back to an environment-derived host, validate and reconstruct the fallback through the same endpoint-policy boundary; otherwise rejected metadata-service destinations can re-enter through the recovery path.",
+  "conditions": [
+    "SSRF",
+    "endpoint-policy",
+    "fallback",
+    "metadata",
+    "recovery",
+    "validation"
+  ],
+  "evidence_ids": [
+    "2026-08-14T02:22:53.971325+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T02:22:53.971325+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T02:22:53.971325+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T02:22:54.063016+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT PR #352 review found that resolve_local_or_remote validated the override but directly interpolated fallback_ip after rejection, allowing a cloud-metadata address to reach later HTTP consumers. A focused RED\u2192GREEN regression now requires safe loopback fallback.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T02:22:53.971325+00:00"
+      ],
+      "lessons_sha": "0f7666dd1f79"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T02:22:54.063006+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT PR #352 review found that resolve_local_or_remote validated the override but directly interpolated fallback_ip after rejection, allowing a cloud-metadata address to reach later HTTP consumers. A focused RED\u2192GREEN regression now requires safe loopback fallback."
+}
