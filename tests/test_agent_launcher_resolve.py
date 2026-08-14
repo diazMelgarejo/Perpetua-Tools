@@ -31,6 +31,19 @@ def test_resolve_local_or_remote_rejects_link_local_metadata_override(monkeypatc
     assert "169.254.169.254" not in result
 
 
+def test_resolve_local_or_remote_redacts_rejected_override(monkeypatch, caplog):
+    monkeypatch.setattr(agent_launcher, "RUNNING_ON_MAC", True)
+    monkeypatch.setattr(agent_launcher, "RUNNING_ON_WINDOWS", False)
+    monkeypatch.setenv("TEST_REMOTE_ENDPOINT", "http://user:secret@1.1.1.1:11434")
+
+    result = agent_launcher.resolve_local_or_remote(
+        "windows", 11434, env_var="TEST_REMOTE_ENDPOINT", fallback_ip="127.0.0.1"
+    )
+
+    assert result == "http://127.0.0.1:11434"
+    assert "secret" not in caplog.text
+
+
 def test_resolve_local_or_remote_rejects_link_local_metadata_fallback(monkeypatch):
     """A rejected override must not make an unsafe fallback reachable."""
     monkeypatch.setattr(agent_launcher, "RUNNING_ON_MAC", True)

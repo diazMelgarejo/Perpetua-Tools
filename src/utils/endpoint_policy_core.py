@@ -7,6 +7,7 @@ this module only preserves and reconstructs endpoint identity.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from ipaddress import IPv6Address, ip_address
 from typing import Optional
 from urllib.parse import urlparse
 
@@ -49,7 +50,14 @@ def parse_transport_identity(
     if normalized_scheme not in _ALLOWED_SCHEMES:
         return None
 
-    candidate = raw if "://" in raw else f"{normalized_scheme}://{raw}"
+    if "://" in raw:
+        candidate = raw
+    else:
+        try:
+            host = f"[{raw}]" if isinstance(ip_address(raw), IPv6Address) else raw
+        except ValueError:
+            host = raw
+        candidate = f"{normalized_scheme}://{host}"
     try:
         parsed = urlparse(candidate)
         scheme = (parsed.scheme or normalized_scheme).lower()

@@ -34,7 +34,11 @@ from urllib.parse import urlparse
 
 from utils.hardware_policy import HardwareAffinityError, check_affinity
 from utils.endpoint_policy_core import build_transport_url
-from utils.model_endpoint_url import ModelEndpointPolicyError, validate_model_endpoint_url
+from utils.model_endpoint_url import (
+    ModelEndpointPolicyError,
+    redact_endpoint_for_log,
+    validate_model_endpoint_url,
+)
 from orchestrator.backend_resolver import resolve_backend_for_spec
 from orchestrator.startup_intelligence import (
     StartupScenario,
@@ -338,7 +342,10 @@ def resolve_local_or_remote(
                 if parsed.hostname not in ("localhost", "127.0.0.1", "::1"):
                     _launcher_logger.warning(
                         "resolve_local_or_remote: %s=%s is non-loopback but we run ON "
-                        "the %s machine — normalizing to localhost", env_var, override, role
+                        "the %s machine — normalizing to localhost",
+                        env_var,
+                        redact_endpoint_for_log(override),
+                        role,
                     )
                     return f"http://localhost:{_safe_port(parsed, port)}"
             remote_url = override if "://" in override else f"http://{override}"
@@ -347,7 +354,10 @@ def resolve_local_or_remote(
             except ModelEndpointPolicyError as exc:
                 _launcher_logger.warning(
                     "resolve_local_or_remote: %s=%s rejected by endpoint policy (%s) "
-                    "-- falling back to fallback_ip", env_var, override, exc
+                    "-- falling back to fallback_ip",
+                    env_var,
+                    redact_endpoint_for_log(override),
+                    exc,
                 )
     if is_local:
         return f"http://localhost:{port}"

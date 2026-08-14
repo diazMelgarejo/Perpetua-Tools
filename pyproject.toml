@@ -133,6 +133,10 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 pythonpath = ["src", "."]
 addopts = "-v --tb=short"
+markers = [
+    "unit: isolated unit-level regression coverage",
+    "integration: tests that exercise multiple components or a service boundary",
+]
 
 [tool.mypy]
 python_version = "3.11"
