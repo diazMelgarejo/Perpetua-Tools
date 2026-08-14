@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Report local-only branches, unpushed commits, and dirty worktrees across the
 # current repo, sibling repos, and their linked worktrees. Read-only by design.
+#
+# Branch ahead counts below are a cheap local-upstream first pass for
+# unpushed work only. They are not authoritative for post-rewrite
+# merged/orphaned status; use scripts/git/reanchor_scan.sh for that.
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -85,6 +89,7 @@ print_branch_issues() {
       echo "  branch: ${branch}"
       echo "    issue: unpushed-${ahead}-commits"
       echo "    upstream: ${upstream}"
+      echo "    note: raw upstream ahead count; use scripts/git/reanchor_scan.sh for post-rewrite merge/orphan classification"
       echo "    commits:"
       git -C "$repo" log --format='      %h %s' --reverse "${upstream}..${branch}" 2>/dev/null
     fi

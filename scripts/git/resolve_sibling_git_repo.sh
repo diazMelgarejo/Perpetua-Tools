@@ -28,11 +28,16 @@ set -uo pipefail
 #   marker may be empty -- an empty marker only requires a non-symlinked
 #   `.git`, used by callers that want "any git repo", not one specific one.
 sibling_repo_is_git_root() {
-  local d="${1%/}" marker="$2"
+  local d="${1%/}" marker="$2" resolved top
   [[ -n "$d" && -d "$d" ]] || return 1
   [[ -L "$d" ]] && return 1
-  [[ -e "${d}/.git" ]] || return 1
-  [[ -z "$marker" || -f "${d}/${marker}" ]]
+  resolved="$(cd "$d" 2>/dev/null && pwd -P)" || return 1
+  [[ -e "${resolved}/.git" ]] || return 1
+  [[ -L "${resolved}/.git" ]] && return 1
+  top="$(git -C "$resolved" rev-parse --show-toplevel 2>/dev/null)" || return 1
+  top="$(cd "$top" 2>/dev/null && pwd -P)" || return 1
+  [[ "$top" == "$resolved" ]] || return 1
+  [[ -z "$marker" || -f "${resolved}/${marker}" ]]
 }
 
 _sibling_repo_candidates=()

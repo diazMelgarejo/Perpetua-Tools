@@ -12,10 +12,12 @@ Every time an agent adds **forbidden** `Co-authored-by` trailers (listed in
 
 1. Rewrite history (`bash scripts/git/expunge-all-workspace-repos.sh` or per-repo expunge)
 2. Republish **`main` and every branch** — during the active rewrite window use
-   hooks-off push (`bash scripts/git/history-surgery-git.sh push --force …` or
-   `git -c core.hooksPath=/dev/null push --force …`); after surgery restore hooks
-   with `bash scripts/git/install-local-hooks.sh`. For audited non-rewrite publishes
-   use `bash scripts/git/publish-clean-branch.sh <branch> main origin`.
+   hooks-off, lease-protected push after recording each expected remote object ID
+   (`EXPECTED_SHA="$(git rev-parse origin/<branch>)"` then
+   `bash scripts/git/history-surgery-git.sh push --force-with-lease="refs/heads/<branch>:${EXPECTED_SHA}" …`
+   or `git -c core.hooksPath=/dev/null push --force-with-lease="refs/heads/<branch>:${EXPECTED_SHA}" …`);
+   after surgery restore hooks with `bash scripts/git/install-local-hooks.sh`.
+   For audited non-rewrite publishes use `bash scripts/git/publish-clean-branch.sh <branch> main origin`.
 
 That is destructive for all collaborators. **Do not cause another rewrite.**
 
