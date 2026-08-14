@@ -1,10 +1,25 @@
 # Phase 0 Master Plan & Pre-v2 Checklist (2026-07-27)
 
+<!-- markdownlint-disable MD013 MD040 MD056 -->
+<!--
+  This is a preserved historical master record with legacy long evidence lines,
+  unlabeled diagrams, and tables whose source structure predates the Markdown
+  lint ratchet. The 2026-08-14 addendum is intentionally narrow; do not
+  reformat historical evidence as part of a disposition-only update.
+-->
+
 > **Canonical location:** Perpetua-Tools `docs/phase-0-specifications/` (STM/swarm security graph home).  
 > **Orama mirror pointer:** [`orama-system/docs/next/2026-07-27-phase-0-master-plan.md`](https://github.com/diazMelgarejo/orama-system/blob/main/docs/next/2026-07-27-phase-0-master-plan.md)  
 > **Supersedes for disposition:** both `docs/next/2026-07-25-pending-work-tracker.md` files (still linked for history).
 
 **Verified against `main`:** PT `4f1a9936` · orama `41b77300` · 2026-07-27.
+
+**Operational refresh (2026-08-14):**
+[`../next/2026-08-14-operational-work-disposition.md`](../next/2026-08-14-operational-work-disposition.md)
+records the current execution queue without rewriting the superseded trackers.
+It verifies PT/Orama identity Phase 3 parity, preserves Tier-5 publication as
+blocked on its recorded review gate, and separates operator evidence from
+future code work.
 
 ---
 
@@ -22,7 +37,7 @@ Phase 0 asked one question: *how do peer observations, liveness, replay protecti
 | **Mesh strict cutover (Phase D)** | **DEFERRED v2** | Fail-closed without local topology/secrets authority |
 | **STM P5/P6/P13 pipeline** | **DONE code, DORMANT prod** | `evaluate_observation()` has **zero production callers**; descope verdict 2026-07-12 |
 | **STM hygiene (T2/T3)** | **DONE** | Reorder-buffer bound, dedup key includes `sequence` |
-| **Identity audit** | **Phases 1–2 DONE**, **3–4 NOW** | PT sync + legacy list removal |
+| **Identity audit** | **Phases 1–3 DONE**, **4 NOW** | Shared policy/engine parity verified; audit before removing any remaining duplicate authority |
 | **Hermes/OpenClaw staging** | **Mac DONE**, **Win operator NOW** | Live RTX harness smoke pending |
 | **G7 portal hub** | **OPEN** (v1 optional) | Pre-v2 backlog closed; MVP not started |
 | **Peer-mesh TLS/auth (orama 49)** | **MINIMUM DONE**, rest **DEFERRED v2** | Bearer-not-on-plain-HTTP guard only |
@@ -100,8 +115,8 @@ Aligned with orama [`docs/v2/45-single-operator-lan-threat-model-descope.md`](ht
 | Mesh Phase B IP expunge (#222) | orama | **IN PROGRESS** | Draft PR; merge **after** backup + verify |
 | `docs/v2/50-mesh-security-migration-ladder.md` | orama | **IN PROGRESS** | Ships with #222 (not on `main` yet) |
 | Mesh Phase D strict cutover | both | **DEFERRED v2** | `perpetua-core` authority at v2 launch |
-| Identity audit Phase 3 (PT sync) | PT | **NOW** | Dedicated PR; orama engine on `main` (#220) |
-| Identity audit Phase 4 (remove lists) | both | **NOW** | After Phase 3 green |
+| Identity audit Phase 3 (PT parity) | PT | **DONE** | Policy, schema, and audit engine are byte-identical with Orama; no copy-only PR is needed |
+| Identity audit Phase 4 (audit/remove lists) | both | **NOW** | Prove every consumer delegates before removing a duplicate authority; see the operational disposition |
 | AlphaClaw TLS core (#276/#278) | PT | **DONE** | Opt-in `ALPHACLAW_TLS_ENABLED` |
 | TLS admin-pinned fingerprints | PT | **DEFERRED v2** | TOFU-only today |
 | TLS mTLS / auto-enable | PT | **DEFERRED v2** | Plan doc v1/v2 split |
@@ -240,7 +255,7 @@ This master plan **does not re-run** the 29-document companion audit — that re
 
 1. Security/safe defaults → mesh Phase C **DONE**; Phase B **IN PROGRESS**
 2. Portable memory (D47) → ongoing invariant
-3. v1 finish-now → identity Phase 3, mesh operator verify, Hermes Win smoke (**§4 NOW**)
+3. v1 finish-now → identity Phase 4 audit, mesh operator verify, Hermes Win smoke (**§4 NOW**)
 4. Kernel lean → **DEFERRED v2** (`perpetua-core`)
 5. v2 parity tests → **DEFERRED v2**
 
@@ -255,10 +270,12 @@ Run before merging **#222** or starting v2 repo bootstrap:
 3. **Install mesh hooks:** `install.sh` (Mac/Linux) / `install.ps1` (Win) on PT and orama.
 4. **Verify gossip:** emit/tail with `X-Gossip-Secret`; LM Studio probes green.
 5. **Hermes harness:** `install-hermes-harness.ps1` on Win — expect idempotent skip when synced.
-6. **Identity Phase 3 PR** (PT): sync `audit_engine` + policy from orama.
+6. **Identity Phase 4 audit:** verify all production consumers delegate to
+   the shared engine before removing any old list.
 7. **TLS regression:** fix stalled-client test if touching TLS surface.
 8. **Merge #222** only after steps 1–4 green.
-9. **Submodule:** reconcile `vendor/ecc-tools` pointer on PT.
+9. **Submodule:** reconcile `vendor/ecc-tools` pointer on PT in a separate
+   provenance-reviewed change.
 
 ---
 

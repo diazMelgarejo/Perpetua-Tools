@@ -1,6 +1,10 @@
 # Model Registry Provenance Gate
 
 Status: implemented with the Tier-5 transport composition work on this branch.
+Publication remains blocked until the independent review gate recorded in the
+[current operational disposition](2026-08-14-operational-work-disposition.md)
+is closed. This document records configuration provenance, not release
+approval.
 
 `config/models.yml` has two distinct identifiers:
 

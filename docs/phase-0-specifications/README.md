@@ -98,6 +98,8 @@ flowchart TD
 
 ## External Handoff Links
 
+- Current operational queue and gates:
+  [`../next/2026-08-14-operational-work-disposition.md`](../next/2026-08-14-operational-work-disposition.md)
 - Forward-looking PT work: [`../next/README.md`](../next/README.md)
 - PT security policy: [`../../SECURITY.md`](../../SECURITY.md)
 - Orama companion security policy:
