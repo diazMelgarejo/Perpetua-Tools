@@ -1,0 +1,44 @@
+{
+  "id": "c840e366a05d",
+  "key": "manual_c840e3",
+  "name": "manual_c840e3",
+  "claim": "A workflow agent killed by a session usage limit can leave real, uncommitted work in the tree: always run git status and salvage-commit before relaunching, because a naive retry silently destroys it.",
+  "conditions": [
+    "failure",
+    "recovery",
+    "retry",
+    "salvage",
+    "subagent",
+    "usage-limit",
+    "workflow"
+  ],
+  "evidence_ids": [
+    "2026-08-14T16:41:29.346112+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T16:41:29.346112+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T16:41:29.346112+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T16:41:29.471606+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "On 2026-08-14 a six-agent workflow reported all agents errored on a session usage limit with zero results and an empty journal, which reads as total failure. The working tree in fact held 235 lines of completed plan amendments covering three of six required corrections. Inspecting the diff first also mattered: it contained ten deleted lines that on review were legitimate in-place supersessions, each annotated as superseded rather than discarded. The partial work was committed before relaunching.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T16:41:29.346112+00:00"
+      ],
+      "lessons_sha": "307711c649f8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T16:41:29.471593+00:00",
+  "reviewer": "learn.py",
+  "rationale": "On 2026-08-14 a six-agent workflow reported all agents errored on a session usage limit with zero results and an empty journal, which reads as total failure. The working tree in fact held 235 lines of completed plan amendments covering three of six required corrections. Inspecting the diff first also mattered: it contained ten deleted lines that on review were legitimate in-place supersessions, each annotated as superseded rather than discarded. The partial work was committed before relaunching."
+}

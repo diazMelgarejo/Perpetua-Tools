@@ -1,0 +1,44 @@
+{
+  "id": "4fc2c15f4073",
+  "key": "manual_4fc2c1",
+  "name": "manual_4fc2c1",
+  "claim": "Posting a status note to the GossipBus board does not refresh agent liveness: only heartbeat pulse writes the agent_pulse rows the liveness roster reads, so an agent can be loudly visible on the board and simultaneously counted DEAD - pulse your own identity on a cadence tighter than the 30 minute threshold.",
+  "conditions": [
+    "agent-registration",
+    "board",
+    "coordination",
+    "gossipbus",
+    "heartbeat",
+    "liveness",
+    "pulse"
+  ],
+  "evidence_ids": [
+    "2026-08-14T16:40:58.275847+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T16:40:58.275847+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T16:40:58.275847+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T16:40:58.426086+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Confirmed independently by two agents on 2026-08-14. agent_coordination.py log writes kind=agent_note; only heartbeat pulse writes kind=agent_pulse. Database counts at the time were 832 agent_pulse against 266 agent_note. An agent posted a work claim via log, believed the work was claimed, and showed STALLED at seven minutes because it had never registered or pulsed. There is no board-heartbeat scheduler; the existing coord-pulse job handles peer and inbox work and emits no agent_coordination heartbeats, so every live session must pulse itself.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T16:40:58.275847+00:00"
+      ],
+      "lessons_sha": "b5b933772481"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T16:40:58.426073+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Confirmed independently by two agents on 2026-08-14. agent_coordination.py log writes kind=agent_note; only heartbeat pulse writes kind=agent_pulse. Database counts at the time were 832 agent_pulse against 266 agent_note. An agent posted a work claim via log, believed the work was claimed, and showed STALLED at seven minutes because it had never registered or pulsed. There is no board-heartbeat scheduler; the existing coord-pulse job handles peer and inbox work and emits no agent_coordination heartbeats, so every live session must pulse itself."
+}

@@ -1,0 +1,43 @@
+{
+  "id": "3630a43dbd40",
+  "key": "manual_3630a4",
+  "name": "manual_3630a4",
+  "claim": "Review depth is not review diversity: N voices inside one orchestration correlate far more than their independence suggests, so treat in-harness cross-model agreement as weak evidence and get at least one cold, out-of-harness reviewer before calling a plan reviewed.",
+  "conditions": [
+    "autoplan",
+    "consensus",
+    "cross-model",
+    "multi-agent",
+    "plan-review",
+    "review"
+  ],
+  "evidence_ids": [
+    "2026-08-14T16:40:19.138569+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T16:40:19.138569+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T16:40:19.138569+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T16:40:19.284435+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "On 2026-08-14 a gstack /autoplan run reviewed the Gemini skill-consolidation plan at full depth with two voices - an independent Claude pass and a real codex exec pass - across three phases, and reported high cross-model agreement as a confidence signal. An independent codex-reviewer session, running cold with its own framing, then found three more findings of equal or greater severity including a data-loss path. The agreement was partly an artifact of shared harness, shared framing, and a shared reading of the plan.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T16:40:19.138569+00:00"
+      ],
+      "lessons_sha": "ddf58c0c119c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T16:40:19.284423+00:00",
+  "reviewer": "learn.py",
+  "rationale": "On 2026-08-14 a gstack /autoplan run reviewed the Gemini skill-consolidation plan at full depth with two voices - an independent Claude pass and a real codex exec pass - across three phases, and reported high cross-model agreement as a confidence signal. An independent codex-reviewer session, running cold with its own framing, then found three more findings of equal or greater severity including a data-loss path. The agreement was partly an artifact of shared harness, shared framing, and a shared reading of the plan."
+}
