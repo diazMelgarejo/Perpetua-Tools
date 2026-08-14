@@ -1,7 +1,7 @@
 # vendor/ecc-tools — local-only additions
 
 The submodule gitlink is aligned to **canonical `c9de8f5b`** (origin/main of
-ecc-tools, verified 2026-08-14). Five reviewed local overlay paths are preserved here so they
+ecc-tools, verified 2026-08-14). Four reviewed local overlay paths are preserved here so they
 survive `git submodule update`. They are re-applied by
 [`ecc-submodule-sync.sh`](ecc-submodule-sync.sh) from
 [`ecc-local-additions.patch`](ecc-local-additions.patch). The companion
@@ -16,14 +16,28 @@ the patch is only the portable application artifact.
 | `.antigravity/ANTIGRAVITY.md` | `new-file` | 48 | "ECC for Gemini CLI" baseline workflow / review standards / security checks (Antigravity target). |
 | `.gemini/ANTIGRAVITY.md` | `new-file` | 48 | Same ECC-for-Gemini content, `.gemini/` location. |
 | `.env.example` | `additive` | 5 | Empty optional Gemini key placeholders added to the upstream template; no credential value is preserved. |
-| `.claude/hooks/.logs/hook-log.jsonl` | `new-file` | 1 | Explicitly retained local hook-evidence record. It is not a general logging policy. |
 
-These five paths are the **entire approved local overlay**. Their intent is
+These four paths are the **entire approved local overlay**. Their intent is
 declared in `ecc-local-overlay.tsv`, rather than embedded as a blind snapshot in
 the shell script. Everything else found uncommitted in the submodule worktree
 remains separately classified until it is reviewed and either promoted through
 an upstream-compatible change or discarded from the local checkout. The patch
 is add-only: it must not modify an upstream ECC file.
+
+### Runtime hook telemetry is not an overlay
+
+`.claude/hooks/.logs/hook-log.jsonl` is append-only runtime evidence written by
+the active hook implementation. It must not be captured in the reviewed patch:
+a fixed snapshot becomes stale immediately and blocks otherwise-safe ECC
+updates. The sync helper reports it separately, excludes it from overlay
+candidates, and offers an explicit local-only ignore command:
+
+```bash
+bash scripts/git/ecc-submodule-sync.sh ignore-runtime
+```
+
+This command writes only the submodule's local Git exclude file. It does not
+modify ECC source, the overlay registry, or the reviewed patch.
 
 ## Manual Review Gate
 
@@ -52,7 +66,7 @@ different Git abbreviation settings.
 ## 2026-08-14 Revalidation and advancement
 
 The current `origin/main` was fetched and verified at `c9de8f5b`. The reviewed
-candidate contains the same five paths and 109 added lines shown above; no new
+candidate contains the same four paths and 108 added lines shown above; no new
 overlay path or content delta was found. The patch was regenerated against that
 current base after review. The earlier `ed387446` anchor remains recorded in
 the manifest and the historical section below as provenance, not as the active
@@ -67,7 +81,7 @@ submodule SHA implies an already-restored worktree.
 ## 2026-07-15 Reclassification
 
 The older three-way analysis below remains historical evidence. A later audit
-confirmed the first three paths plus the two additional paths above as the
+confirmed the first three paths plus the additive environment-template entry as the
 explicitly preserved overlay. It also separated malformed Markdown fence edits,
 lockfile-only resolution drift, and a checkout at an older upstream commit from
 this overlay; none of those categories belongs in this patch.

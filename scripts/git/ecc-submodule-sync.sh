@@ -17,7 +17,8 @@
 #   ecc-submodule-sync.sh update    # checkout recorded gitlink -> restore
 #   ecc-submodule-sync.sh upgrade   # fetch -> checkout origin/main HEAD -> restore
 #   ecc-submodule-sync.sh restore   # re-apply the reviewed patch explicitly
-#   ecc-submodule-sync.sh status    # show recorded, checked-out, and cached upstream SHAs
+#   ecc-submodule-sync.sh status    # show SHAs and classify local source drift
+#   ecc-submodule-sync.sh ignore-runtime  # locally ignore generated hook telemetry
 #
 # Lessons encoded 2026-06-21:
 #   - restore: --3way fails for added files (no base in the index).  Plain apply
@@ -47,6 +48,7 @@ OVERLAY_COUNT=0
 OVERLAY_PATHS=("")
 OVERLAY_MODES=("")
 OVERLAY_INTENTS=("")
+TRANSIENT_PATHS=(".claude/hooks/.logs/hook-log.jsonl")
 
 die() { echo "ecc-submodule-sync: $*" >&2; exit 1; }
 [ -d "$SUB/.git" ] || [ -f "$SUB/.git" ] || die "submodule not initialized at vendor/ecc-tools"
@@ -89,7 +91,7 @@ _sha256() {
 
 _make_candidate() {
   CANDIDATE=$(mktemp "${PATCH}.candidate.XXXXXX")
-  local tmp_index rc=0
+  local tmp_index rc=0 transient
   tmp_index=$(mktemp "${PATCH}.index.XXXXXX")
 
   # Intent-to-add exposes untracked files in the diff. Use a temporary index so
@@ -101,7 +103,11 @@ _make_candidate() {
   if [ "$rc" -eq 0 ]; then
     # A reviewed candidate is compared byte-for-byte with the tracked patch.
     # Full blob IDs keep that serialization stable across core.abbrev settings.
-    GIT_INDEX_FILE="$tmp_index" git -C "$SUB" diff --binary --full-index HEAD > "$CANDIDATE" || rc=$?
+    local diff_args=(--binary --full-index HEAD -- .)
+    for transient in "${TRANSIENT_PATHS[@]}"; do
+      diff_args+=(":(exclude)$transient")
+    done
+    GIT_INDEX_FILE="$tmp_index" git -C "$SUB" diff "${diff_args[@]}" > "$CANDIDATE" || rc=$?
   fi
   rm -f "$tmp_index"
   [ "$rc" -eq 0 ] || return "$rc"
@@ -123,6 +129,39 @@ _is_approved_path() {
     [ "$path" = "${OVERLAY_PATHS[$i]}" ] && return 0
   done
   return 1
+}
+
+_is_transient_path() {
+  local path="$1" transient
+  for transient in "${TRANSIENT_PATHS[@]}"; do
+    [ "$path" = "$transient" ] && return 0
+  done
+  return 1
+}
+
+_print_transient_drift() {
+  local path records
+  for path in "${TRANSIENT_PATHS[@]}"; do
+    [ -f "$SUB/$path" ] || continue
+    records=$(wc -l < "$SUB/$path" | tr -d ' ')
+    printf '  transient-runtime-evidence: %s (%s record(s); excluded from overlay candidates)\n' "$path" "$records"
+  done
+}
+
+_ignore_transient_paths() {
+  local exclude path
+  exclude=$(git -C "$SUB" rev-parse --git-path info/exclude)
+  mkdir -p "$(dirname "$exclude")"
+  touch "$exclude"
+
+  for path in "${TRANSIENT_PATHS[@]}"; do
+    if ! grep -Fqx "$path" "$exclude"; then
+      printf '%s\n' "$path" >> "$exclude"
+      printf 'ignore-runtime: added local ignore for %s\n' "$path"
+    else
+      printf 'ignore-runtime: local ignore already present for %s\n' "$path"
+    fi
+  done
 }
 
 _overlay_intent() {
@@ -156,6 +195,7 @@ _validate_candidate() {
   while IFS=$'\t' read -r added removed path; do
     [ -n "$path" ] || continue
     n=$((n + 1))
+    _validate_markdown_fences "$path"
     _is_approved_path "$path" || die "save: drift at $path is not in the reviewed overlay registry; classify it before saving"
     intent=$(_overlay_intent "$path")
     [ -n "$intent" ] || die "save: overlay registry has no intent for $path"
@@ -170,6 +210,112 @@ _validate_candidate() {
   creates=$(grep -c '^new file mode ' "$candidate" 2>/dev/null || true)
   [ "$creates" -eq "$expected_creates" ] || die "save: overlay patch type does not match its reviewed mode"
   [ "$n" -le "$OVERLAY_COUNT" ] || die "save: candidate exceeds approved overlay path count"
+  _validate_patch_markdown_fences "$candidate"
+}
+
+_is_markdown_path() {
+  case "$1" in
+    *.md|*.mdx) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+_markdown_fence_state_file() {
+  local file="$1"
+  awk '
+    {
+      line = $0
+      sub(/^[[:space:]]*/, "", line)
+      marker = substr(line, 1, 1)
+      if (marker != "`" && marker != "~") next
+
+      length = 0
+      while (substr(line, length + 1, 1) == marker) length++
+      if (length < 3) next
+
+      if (open_length == 0) {
+        open_marker = marker
+        open_length = length
+        open_line = NR
+      } else if (marker == open_marker && length >= open_length) {
+        open_marker = ""
+        open_length = 0
+        open_line = 0
+      }
+    }
+    END {
+      if (open_length != 0) {
+        printf "%d", open_line
+        exit 1
+      }
+    }
+  ' "$file"
+}
+
+_markdown_fence_state() {
+  local path="$1"
+  _markdown_fence_state_file "$SUB/$path"
+}
+
+_validate_markdown_fences() {
+  local path="$1" open_line
+  _is_markdown_path "$path" || return 0
+  [ -f "$SUB/$path" ] || return 0
+
+  if ! open_line=$(_markdown_fence_state "$path"); then
+    die "save: unbalanced Markdown code fence in $path (opened at line $open_line)"
+  fi
+}
+
+_validate_patch_markdown_fences() {
+  local candidate="$1"
+  local path sandbox open_line
+
+  while IFS=$'\t' read -r _added _removed path; do
+    [ -n "$path" ] || continue
+    _is_markdown_path "$path" || continue
+    _is_approved_path "$path" || continue
+
+    sandbox=$(mktemp -d "${TMPDIR:-/tmp}/ecc-overlay-fence.XXXXXX")
+    if git -C "$SUB" cat-file -e "HEAD:$path" 2>/dev/null; then
+      mkdir -p "$sandbox/$(dirname "$path")"
+      git -C "$SUB" show "HEAD:$path" > "$sandbox/$path"
+    fi
+    git -C "$sandbox" init -q
+    if ! git -C "$sandbox" apply --include="$path" "$candidate"; then
+      rm -rf "$sandbox"
+      die "save: cannot validate Markdown overlay result for $path"
+    fi
+    if ! open_line=$(_markdown_fence_state_file "$sandbox/$path"); then
+      rm -rf "$sandbox"
+      die "save: reviewed overlay leaves an unbalanced Markdown code fence in $path (opened at line $open_line)"
+    fi
+    rm -rf "$sandbox"
+  done < <(git apply --numstat "$candidate")
+}
+
+_classify_candidate() {
+  local candidate="$1"
+  [ -s "$candidate" ] || { echo "  no local source drift"; return 0; }
+
+  local path added removed classification fence_state open_line
+  while IFS=$'\t' read -r added removed path; do
+    [ -n "$path" ] || continue
+
+    if _is_approved_path "$path"; then
+      classification="reviewed-overlay"
+    else
+      classification="unapproved-source-drift"
+    fi
+
+    fence_state=""
+    if _is_markdown_path "$path" && [ -f "$SUB/$path" ]; then
+      if ! open_line=$(_markdown_fence_state "$path"); then
+        fence_state="; unbalanced-fence-opened-at-line-$open_line"
+      fi
+    fi
+    printf '  %s: %s (+%s/-%s)%s\n' "$classification" "$path" "$added" "$removed" "$fence_state"
+  done < <(git apply --numstat "$candidate")
 }
 
 _validate_patch_mode() {
@@ -217,6 +363,7 @@ _print_candidate_assessment() {
 
 _review_candidate() {
   _make_candidate
+  _classify_candidate "$CANDIDATE"
   _validate_candidate "$CANDIDATE"
 
   local digest n
@@ -263,6 +410,7 @@ _approve_candidate() {
 
 _require_reviewed_overlay() {
   _make_candidate
+  _classify_candidate "$CANDIDATE"
   _validate_candidate "$CANDIDATE"
 
   # A clean checkout can legitimately be missing the local-only files that a
@@ -398,6 +546,17 @@ case "${1:-help}" in
     echo "canonical (cached): $(git -C "$SUB" rev-parse origin/main 2>/dev/null || echo '?')"
     echo "pending local additions:"
     git -C "$SUB" status --short 2>/dev/null | sed 's/^/  /' || echo "  (clean)"
+    echo "candidate classification:"
+    _make_candidate
+    _classify_candidate "$CANDIDATE"
+    _cleanup_candidate
+    CANDIDATE=""
+    echo "transient runtime evidence:"
+    _print_transient_drift
+    ;;
+
+  ignore-runtime)
+    _ignore_transient_paths
     ;;
 
   *)

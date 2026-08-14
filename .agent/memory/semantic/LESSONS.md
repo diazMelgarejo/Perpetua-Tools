@@ -95,6 +95,8 @@
 - When a bash script pipes an external tool through '2>/dev/null || true' inside a scan loop, a missing binary (not just a missing match) silently produces zero hits — always guard with 'command -v <tool>' before the loop, and never trust an environment-isolation fix as root cause until CI itself confirms it against a captured execution trace  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_90fcf80b1355 -->
 - Treat ECC upstream advancement and local-overlay restoration as separate idempotent steps: verify the upstream SHA, accept a clean reviewed checkout, restore every approved patch path, and report success only after restoration.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_4e6559b2a159 -->
 - When a reviewed patch is guarded by byte equality, generate it with full blob IDs so Git core.abbrev cannot turn identical overlay content into false unreviewed drift.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_538dbf2d15ce -->
+- Treat .claude/hooks/.logs/hook-log.jsonl as transient runtime telemetry, never as a reviewed ECC overlay: the autoresearch hook helper appends per-session records under its current working directory. Preserve hook behavior and tests as the durable artifact; keep generated evidence local or in a deliberate audit system, and exclude it from submodule overlay candidates.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_afda999fe3d9 -->
+- Use regular commits and merge commits for normal integration; reserve squash merges, history rewrites, and expunges for explicit human-approved privacy, security, or faulty-history remediation.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_f11f751d7446 -->
 
 ### 2026-07
 

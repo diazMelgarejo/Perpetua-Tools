@@ -65,13 +65,6 @@ index 0000000000000000000000000000000000000000..7b9b2d670faee557f955bf522936d6ac
 +- `skills/` for deep workflow guidance
 +- `commands/` for slash-command patterns worth adapting into prompts/macros
 +- `mcp-configs/` for shared connector baselines
-diff --git a/.claude/hooks/.logs/hook-log.jsonl b/.claude/hooks/.logs/hook-log.jsonl
-new file mode 100644
-index 0000000000000000000000000000000000000000..c656fba0a2eb2f6d1ec4ff7ca5db65f591b37142
---- /dev/null
-+++ b/.claude/hooks/.logs/hook-log.jsonl
-@@ -0,0 +1 @@
-+{"ts":"2026-06-13T04:01:04.792Z","hook":"privacy-block","action":"warn","tool":"Bash","pattern":"secret"}
 diff --git a/.env.example b/.env.example
 index 9195bd4da1e3c888d19f38824f8a524b57f8c330..8230eac45433c4c984d48428426089ee7111e1f1 100644
 --- a/.env.example

@@ -5,6 +5,5 @@
 # mode is new-file (local-only) or additive (additions only to an upstream-owned file)
 .agents/skills/frontend-design/agents/openai.yaml	new-file	Codex OpenAI agent surface for frontend-design
 .antigravity/ANTIGRAVITY.md	new-file	Gemini CLI workflow and security baseline
-.claude/hooks/.logs/hook-log.jsonl	new-file	Retained hook-evidence record
 .env.example	additive	Empty optional Gemini key placeholders in the upstream environment template
 .gemini/ANTIGRAVITY.md	new-file	Gemini CLI workflow and security baseline mirror
