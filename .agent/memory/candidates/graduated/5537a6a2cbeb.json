@@ -1,0 +1,43 @@
+{
+  "id": "5537a6a2cbeb",
+  "key": "manual_5537a6",
+  "name": "manual_5537a6",
+  "claim": "A fix needs its own review: closing a finding is a change like any other and can be wrong in exactly the way the original defect was, so re-review corrections rather than marking the finding closed on the strength of having written a fix.",
+  "conditions": [
+    "correction",
+    "finding",
+    "fix",
+    "remediation",
+    "review",
+    "verification"
+  ],
+  "evidence_ids": [
+    "2026-08-14T16:40:19.562245+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T16:40:19.562245+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T16:40:19.562245+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T16:40:19.695097+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "On 2026-08-14 an Eng review correctly found that a verification function was hardcoded to the outbound target roots and would report success regardless of whether the inbound reconciliation did anything. The fix folded in was verify_gemini(root, only). An independent reviewer showed at 98 of 100 confidence that this signature still could not prove recoverability - no archive root and no receipt location, so a verifier cannot identify which archive to validate and can accept a replacement without proving recovery material exists. The correction satisfied the letter of the finding and missed its purpose.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T16:40:19.562245+00:00"
+      ],
+      "lessons_sha": "333b83a2a8c2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T16:40:19.695083+00:00",
+  "reviewer": "learn.py",
+  "rationale": "On 2026-08-14 an Eng review correctly found that a verification function was hardcoded to the outbound target roots and would report success regardless of whether the inbound reconciliation did anything. The fix folded in was verify_gemini(root, only). An independent reviewer showed at 98 of 100 confidence that this signature still could not prove recoverability - no archive root and no receipt location, so a verifier cannot identify which archive to validate and can accept a replacement without proving recovery material exists. The correction satisfied the letter of the finding and missed its purpose."
+}

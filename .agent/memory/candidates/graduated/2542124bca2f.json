@@ -1,0 +1,44 @@
+{
+  "id": "2542124bca2f",
+  "key": "manual_254212",
+  "name": "manual_254212",
+  "claim": "Agent capabilities fail independently: a CLI can be unreliable for unattended headless tool use and still be a strong analysis and review voice, so scope a degraded agent to the role it can do rather than benching it entirely.",
+  "conditions": [
+    "agy",
+    "antigravity",
+    "capability",
+    "delegation",
+    "headless",
+    "model-selection",
+    "review"
+  ],
+  "evidence_ids": [
+    "2026-08-14T16:40:59.124306+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T16:40:59.124306+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T16:40:59.124306+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T16:40:59.243167+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Board records 1360 to 1364 on 2026-08-14 established that AntiGravity 1.1.13 is authenticated but auto-denies unexpected shell command requests in headless print mode, making it untrustworthy for unattended tool-using automation. The same day it produced a substantive plan review and caught a gap - no commit-stat preflight before mutating the branch - that neither the codex reviewer nor a full dual-voice autoplan pipeline had found. Proposed disposition is standing review voice on plan-level gates, invoked in plan mode against parent-supplied artifacts, never a headless implementation seat.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T16:40:59.124306+00:00"
+      ],
+      "lessons_sha": "065876be682f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T16:40:59.243152+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Board records 1360 to 1364 on 2026-08-14 established that AntiGravity 1.1.13 is authenticated but auto-denies unexpected shell command requests in headless print mode, making it untrustworthy for unattended tool-using automation. The same day it produced a substantive plan review and caught a gap - no commit-stat preflight before mutating the branch - that neither the codex reviewer nor a full dual-voice autoplan pipeline had found. Proposed disposition is standing review voice on plan-level gates, invoked in plan mode against parent-supplied artifacts, never a headless implementation seat."
+}

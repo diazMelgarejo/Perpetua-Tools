@@ -1,0 +1,44 @@
+{
+  "id": "5393b0709b12",
+  "key": "manual_5393b0",
+  "name": "manual_5393b0",
+  "claim": "Archive-first is not rollback-safe on its own: if the source is cleared after a successful archive and every activation path then fails, the backup exists while the live artifact is gone, so stage and validate the replacement before switching, prefer atomic rename, and otherwise restore the archived source before raising.",
+  "conditions": [
+    "archive",
+    "atomic",
+    "data-loss",
+    "filesystem",
+    "migration",
+    "reconcile",
+    "rollback"
+  ],
+  "evidence_ids": [
+    "2026-08-14T16:40:19.963654+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T16:40:19.963654+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T16:40:19.963654+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T16:40:20.088404+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Found on 2026-08-14 in the Gemini skill-consolidation plan by an independent reviewer. The planned sequence archived a skill directory, removed the source, then created a symlink with a generated-wrapper fallback. If symlink creation and wrapper creation both failed after the source was cleared, the live skill would be missing or partial. Narrowing the OSError catch - which a separate review had already required - changes which errors are reported but does not restore a directory that was already removed. This is the precise data-loss class the plan existed to prevent.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T16:40:19.963654+00:00"
+      ],
+      "lessons_sha": "51762e691f71"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T16:40:20.088389+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Found on 2026-08-14 in the Gemini skill-consolidation plan by an independent reviewer. The planned sequence archived a skill directory, removed the source, then created a symlink with a generated-wrapper fallback. If symlink creation and wrapper creation both failed after the source was cleared, the live skill would be missing or partial. Narrowing the OSError catch - which a separate review had already required - changes which errors are reported but does not restore a directory that was already removed. This is the precise data-loss class the plan existed to prevent."
+}
