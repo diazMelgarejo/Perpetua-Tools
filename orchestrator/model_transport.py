@@ -262,13 +262,13 @@ class ProviderTransportRegistry:
         return payload
 
     @staticmethod
-    def _openai_text(payload: Mapping[str, Any]) -> str:
+    def _openai_text(payload: Mapping[str, Any], backend: str) -> str:
         try:
             content = payload["choices"][0]["message"]["content"]
         except (KeyError, IndexError, TypeError) as exc:
-            raise ProviderTransportError("bigmodel") from exc
+            raise ProviderTransportError(backend) from exc
         if not isinstance(content, str) or not content.strip():
-            raise ProviderTransportError("bigmodel")
+            raise ProviderTransportError(backend)
         return content
 
     @staticmethod
@@ -306,7 +306,7 @@ class ProviderTransportRegistry:
                 headers={"Authorization": f"Bearer {credential}", "Content-Type": "application/json"},
                 payload=self._openai_payload(target, prompt, max_tokens),
             )
-            return self._openai_text(body)
+            return self._openai_text(body, target.backend)
         if target.backend == "anthropic":
             if not provider.api_version:
                 raise ProviderConfigError("Anthropic provider requires api_version")
@@ -321,4 +321,37 @@ class ProviderTransportRegistry:
                 payload=self._anthropic_payload(target, prompt, max_tokens),
             )
             return self._anthropic_text(body)
+        if target.backend == "openrouter":
+            # OpenRouter's chat/completions response shape matches OpenAI's
+            # (choices[0].message.content), verified against its own API
+            # reference. Referer/title headers are optional attribution
+            # OpenRouter uses for its public model-ranking page -- never
+            # required for the request to succeed, so they're only sent when
+            # explicitly configured, never fabricated.
+            headers = {"Authorization": f"Bearer {credential}", "Content-Type": "application/json"}
+            referer = os.getenv("OPENROUTER_HTTP_REFERER", "").strip()
+            title = os.getenv("OPENROUTER_APP_TITLE", "").strip()
+            if referer:
+                headers["HTTP-Referer"] = referer
+            if title:
+                headers["X-Title"] = title
+            body = await self._post(
+                provider,
+                endpoint=endpoint,
+                headers=headers,
+                payload=self._openai_payload(target, prompt, max_tokens),
+            )
+            return self._openai_text(body, target.backend)
+        if target.backend in ("mistral", "deepseek", "groq", "dashscope", "meta_llama"):
+            # All four are OpenAI-Chat-Completions-shaped: standard Bearer
+            # auth, choices[0].message.content response shape -- verified per
+            # backend against each provider's own API reference before adding
+            # its config/providers.yml entry.
+            body = await self._post(
+                provider,
+                endpoint=endpoint,
+                headers={"Authorization": f"Bearer {credential}", "Content-Type": "application/json"},
+                payload=self._openai_payload(target, prompt, max_tokens),
+            )
+            return self._openai_text(body, target.backend)
         raise ProviderConfigError(f"backend {target.backend!r} has no native adapter")

@@ -59,6 +59,22 @@ def transport_config(tmp_path):
       source_model_id: claude-sonnet-5
       source_url: https://platform.claude.com/docs/models
       verified_on: "2026-08-11"
+  - name: openrouter-paid
+    api_model: openai/gpt-5.6
+    backend: openrouter
+    device: cloud
+    host: https://openrouter.ai
+    port: 443
+    roles: [general]
+    priority: 3
+    online: true
+    reasoning: cloud
+    frugality_tier: 5
+    provenance:
+      kind: provider-api
+      source_model_id: openai/gpt-5.6
+      source_url: https://openrouter.ai/docs
+      verified_on: "2026-08-15"
 """,
         encoding="utf-8",
     )
@@ -79,6 +95,13 @@ providers:
     documentation_hosts: [platform.claude.com]
     default_api_path: /v1/messages
     api_version: 2023-06-01
+    timeout_seconds: 1
+    max_attempts: 1
+  openrouter:
+    credential_env: OPENROUTER_TEST_KEY
+    allowed_hosts: [openrouter.ai]
+    documentation_hosts: [openrouter.ai]
+    default_api_path: /api/v1/chat/completions
     timeout_seconds: 1
     max_attempts: 1
 """,
@@ -191,3 +214,80 @@ async def test_provider_failure_never_echoes_response_body(transport_config, mon
 
     assert "provider echoed" not in str(exc_info.value)
     assert "private prompt" not in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_openrouter_dispatch_uses_registry_target_and_openai_wire_shape(
+    transport_config, monkeypatch
+) -> None:
+    config_dir, providers = transport_config
+    monkeypatch.setenv("OPENROUTER_TEST_KEY", "test-key")
+    monkeypatch.delenv("OPENROUTER_HTTP_REFERER", raising=False)
+    monkeypatch.delenv("OPENROUTER_APP_TITLE", raising=False)
+    route = respx.post("https://openrouter.ai/api/v1/chat/completions").mock(
+        return_value=Response(
+            200,
+            json={"choices": [{"message": {"content": "final answer"}}]},
+        )
+    )
+
+    result = await ProviderTransportRegistry(
+        config_dir=config_dir, providers_path=providers
+    ).dispatch("openrouter-paid", "write this", 128, "generate")
+
+    assert result == "final answer"
+    request = route.calls[0].request
+    assert request.headers["authorization"] == "Bearer test-key"
+    assert "HTTP-Referer" not in request.headers
+    assert "X-Title" not in request.headers
+    assert json.loads(request.content) == {
+        "model": "openai/gpt-5.6",
+        "messages": [{"role": "user", "content": "write this"}],
+        "max_tokens": 128,
+        "stream": False,
+    }
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_openrouter_optional_referer_and_title_only_sent_when_configured(
+    transport_config, monkeypatch
+) -> None:
+    config_dir, providers = transport_config
+    monkeypatch.setenv("OPENROUTER_TEST_KEY", "test-key")
+    monkeypatch.setenv("OPENROUTER_HTTP_REFERER", "https://example.com")
+    monkeypatch.setenv("OPENROUTER_APP_TITLE", "Perpetua-Tools")
+    route = respx.post("https://openrouter.ai/api/v1/chat/completions").mock(
+        return_value=Response(200, json={"choices": [{"message": {"content": "ok"}}]})
+    )
+
+    await ProviderTransportRegistry(config_dir=config_dir, providers_path=providers).dispatch(
+        "openrouter-paid", "hi", 8, "stage"
+    )
+
+    request = route.calls[0].request
+    assert request.headers["HTTP-Referer"] == "https://example.com"
+    assert request.headers["X-Title"] == "Perpetua-Tools"
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_openrouter_failure_reports_openrouter_not_bigmodel(
+    transport_config, monkeypatch
+) -> None:
+    """Regression test: _openai_text used to hardcode "bigmodel" in its error,
+    so any other OpenAI-shape backend's failures were misreported."""
+    config_dir, providers = transport_config
+    monkeypatch.setenv("OPENROUTER_TEST_KEY", "test-key")
+    respx.post("https://openrouter.ai/api/v1/chat/completions").mock(
+        return_value=Response(200, json={"choices": []})  # malformed: no message content
+    )
+
+    with pytest.raises(ProviderTransportError) as exc_info:
+        await ProviderTransportRegistry(
+            config_dir=config_dir, providers_path=providers
+        ).dispatch("openrouter-paid", "hi", 8, "stage")
+
+    assert exc_info.value.provider == "openrouter"
+    assert "bigmodel" not in str(exc_info.value)
