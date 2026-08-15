@@ -19,8 +19,58 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=guard-sync-manifest.sh
 source "$SCRIPT_DIR/guard-sync-manifest.sh"
+# shellcheck source=resolve_sibling_git_repo.sh
+source "$SCRIPT_DIR/resolve_sibling_git_repo.sh"
 
-CANON_ROOT="${GUARD_SYNC_CANON_ROOT:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
+# Git hooks export repository-local GIT_* variables. This checker deliberately
+# runs git against other repositories, so retaining the hook's GIT_DIR can
+# rebind every `git -C <sibling>` call to the pushing checkout. Clear Git's
+# documented local environment set before resolving or comparing siblings.
+while IFS= read -r git_local_env; do
+  unset "$git_local_env"
+done < <(git rev-parse --local-env-vars)
+
+# Canonical-root resolution: never self-nominate as canonical just because
+# this script happens to be invoked from a given checkout (see ECC push-gate
+# analysis 2026-08-14 § Canonical-Root Mismatch — a downstream checkout
+# self-labeled canonical while also telling the operator to promote its own
+# changes to the real canonical, an internally inconsistent result).
+#
+#   1. GUARD_SYNC_CANON_ROOT explicitly set  -> honor it (existing contract).
+#   2. This checkout carries the orama-system marker itself -> it genuinely
+#      IS canonical; self-as-canonical is correct here, not a self-nomination.
+#   3. Otherwise (a downstream checkout, e.g. Perpetua-Tools or AlphaClaw)
+#      -> auto-resolve the real orama-system sibling via the same generic
+#      marker-based crawl this repo family already uses elsewhere (parent
+#      dir, then mother dir, depth 2 each — covers a repo nested one level
+#      deeper than expected, e.g. Perpetua-Tools under perplexity-api/).
+#      Self-contained here (no dependency on a downstream-repo-specific
+#      resolver script) so this file behaves correctly in every repo it
+#      gets synced into, not just Perpetua-Tools. If no unambiguous sibling
+#      is found, fail with an actionable configuration error — never fall
+#      back to self.
+_SELF_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+_ORAMA_MARKER="bin/orama-system/SKILL.md"
+
+if [[ -n "${GUARD_SYNC_CANON_ROOT:-}" ]]; then
+  CANON_ROOT="$GUARD_SYNC_CANON_ROOT"
+elif sibling_repo_is_git_root "$_SELF_ROOT" "$_ORAMA_MARKER"; then
+  CANON_ROOT="$_SELF_ROOT"
+else
+  _parent_dir="$(cd "$_SELF_ROOT/.." && pwd)"
+  _mother_dir="$(cd "$_SELF_ROOT/../.." && pwd)"
+  sibling_repo_reset_candidates
+  sibling_repo_crawl_collect "$_parent_dir" "$_ORAMA_MARKER" 2
+  if [[ "$_mother_dir" != "$_parent_dir" ]]; then
+    sibling_repo_crawl_collect "$_mother_dir" "$_ORAMA_MARKER" 2
+  fi
+  if ! CANON_ROOT="$(sibling_repo_finalize "orama-system")"; then
+    echo "check-guard-sync-divergence: this checkout ($_SELF_ROOT) is not the orama-system canonical repo, and no unambiguous orama-system sibling was found nearby." >&2
+    echo "  Set GUARD_SYNC_CANON_ROOT=<path-to-orama-system> explicitly and retry." >&2
+    exit 2
+  fi
+fi
+
 WORKSPACE_ROOT="${WORKSPACE_ROOT:-$(cd "$CANON_ROOT/.." && pwd)}"
 RC=0
 
@@ -31,6 +81,16 @@ _usage() {
 
 _file_hash() {
   git hash-object "$1"
+}
+
+_git_common_dir() {
+  local root="$1" common
+
+  common="$(git -C "$root" rev-parse --git-common-dir 2>/dev/null)" || return 1
+  if [[ "$common" != /* ]]; then
+    common="$root/$common"
+  fi
+  cd "$common" 2>/dev/null && pwd -P
 }
 
 # Return 0 when $want_hash appears as <prefix>/$rel at any commit in $repo.
@@ -77,8 +137,24 @@ _check_pair() {
   return 1
 }
 
+_repo_uses_githooks() {
+  local root="$1" hooks_path hooks_abs expected_abs
+  if [[ -f "$root/.githooks/.guard-sync-opt-in" ]]; then
+    return 0
+  fi
+  hooks_path="$(git -C "$root" config --path --get core.hooksPath 2>/dev/null || true)"
+  [[ -n "$hooks_path" ]] || return 1
+  if [[ "$hooks_path" == /* ]]; then
+    hooks_abs="$(cd "$hooks_path" 2>/dev/null && pwd -P)" || return 1
+  else
+    hooks_abs="$(cd "$root/$hooks_path" 2>/dev/null && pwd -P)" || return 1
+  fi
+  expected_abs="$(cd "$root/.githooks" 2>/dev/null && pwd -P)" || return 1
+  [[ "$hooks_abs" == "$expected_abs" ]]
+}
+
 _scan_sibling() {
-  local sibling_root="$1"
+  local sibling_root="$1" canon_common sibling_common
   local rel pair_rc=0
 
   [[ "$(cd "$sibling_root" && pwd)" == "$CANON_ROOT" ]] && return 0
@@ -86,11 +162,23 @@ _scan_sibling() {
     return 0
   fi
 
+  # Linked worktrees of the canonical repository are alternate checkouts of
+  # the same guard authority, not downstream mirror targets. Sync never
+  # overwrites them, so a pre-merge worktree must not block syncing a real
+  # downstream repository. Independent repositories still take the strict
+  # per-file history check below.
+  canon_common="$(_git_common_dir "$CANON_ROOT")" || return 1
+  sibling_common="$(_git_common_dir "$sibling_root")" || return 1
+  if [[ "$sibling_common" == "$canon_common" ]]; then
+    echo "== DIVERGENCE: $(basename "$sibling_root") shares canonical git history; skipped =="
+    return 0
+  fi
+
   echo "== DIVERGENCE: $(basename "$sibling_root") vs canonical =="
   for rel in "${GUARD_PARITY_REQUIRED[@]}"; do
     _check_pair "$sibling_root" "$rel" || pair_rc=1
   done
-  if [[ -d "$sibling_root/.githooks" ]]; then
+  if _repo_uses_githooks "$sibling_root"; then
     for rel in "${GUARD_SYNC_GITHOOKS[@]}"; do
       _check_pair "$sibling_root" "$rel" ".githooks" || pair_rc=1
     done
