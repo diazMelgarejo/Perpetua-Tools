@@ -1,0 +1,42 @@
+{
+  "id": "a503c26ab301",
+  "key": "manual_a503c2",
+  "name": "manual_a503c2",
+  "claim": "Discovering a wrong-branch shared-memory-file mistake is not proof it's a one-off: check other files sitting uncommitted in the same checkout for the same error before treating the fix as complete. In this instance, diagnosing why PR354_MEMORY_UNION_ANALYSIS_2026-08-15.md and lesson c06864656734 were written to a local main checkout instead of PR #354's branch surfaced a second, unrelated doc (TIER5_PIPELINE_AND_APPRENTICE_STACKS_2026-08-15.md, whose real subject is the Tier-5 branch) misplaced the same way in the same checkout at the same time. Two independent hits together upgrades the finding from 'one writer slipped' to 'no routing check exists before writing shared memory files' -- worth a systemic fix, not just two local corrections.",
+  "conditions": [
+    "memory-fragmentation",
+    "pr354-sequel",
+    "shared-append-only-files",
+    "systemic-vs-one-off",
+    "wrong-branch"
+  ],
+  "evidence_ids": [
+    "2026-08-15T00:30:00.000000+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-15T00:30:00.000000+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-15T00:30:00.000000+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-15T00:30:00.100000+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Direct sequel to lesson_b8a568596d30 (PT PR #354, repair/memory-lossless-20260815): that lesson named the general pattern from one instance; this one records that a second, independently-caused instance was found in the same audit pass, which is the stronger signal that actually justifies calling it systemic rather than anecdotal. See DOMAIN_KNOWLEDGE.md 'Cross-branch memory hygiene \u2014 gold nuggets' section on this same branch for the full write-up.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-15T00:30:00.000000+00:00"
+      ],
+      "lessons_sha": "4ccb7d551fba"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-15T00:30:00.100000+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Direct sequel to lesson_b8a568596d30 (PT PR #354, repair/memory-lossless-20260815): that lesson named the general pattern from one instance; this one records that a second, independently-caused instance was found in the same audit pass, which is the stronger signal that actually justifies calling it systemic rather than anecdotal. See DOMAIN_KNOWLEDGE.md 'Cross-branch memory hygiene \u2014 gold nuggets' section on this same branch for the full write-up."
+}
