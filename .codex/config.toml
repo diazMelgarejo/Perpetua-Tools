@@ -51,8 +51,11 @@ args = ["-y", "@upstash/context7-mcp@latest"]
 startup_timeout_sec = 30
 
 [mcp_servers.exa]
-command = "npx"
-args = ["-y", "mcp-remote", "https://mcp.exa.ai/mcp"]
+command = "bash"
+args = [
+  "-c",
+  'source ./scripts/resolve_orama_root.sh 2>/dev/null || source ../scripts/resolve_orama_root.sh 2>/dev/null; ORAMA="$(resolve_orama_root 2>/dev/null)"; if [ -n "$ORAMA" ] && [ -f "$ORAMA/scripts/exa/exa-mcp-wrapper.sh" ]; then exec "$ORAMA/scripts/exa/exa-mcp-wrapper.sh"; else exec "${ORAMA_SYSTEM_ROOT:-$HOME/code/OpenClaw/orama-system}/scripts/exa/exa-mcp-wrapper.sh"; fi'
+]
 startup_timeout_sec = 30
 
 [mcp_servers.memory]
