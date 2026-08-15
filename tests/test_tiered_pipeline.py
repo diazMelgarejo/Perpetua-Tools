@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -58,6 +59,27 @@ def _runner(files: tuple[Path, Path, Path]) -> tp.TieredPipelineRunner:
     )
 
 
+def _approval(**overrides: object) -> tp.PipelineApproval:
+    """A valid approval for the ``classify_then_generate`` fixture recipe.
+
+    Defaults satisfy every check in ``_validate_approval``; individual tests
+    override exactly the field(s) they want to violate.
+    """
+    fields: dict[str, object] = {
+        "trace_id": "trace-abc123",
+        "approved_by": "operator@example.com",
+        "purpose": "test run",
+        "recipe": "classify_then_generate",
+        "route_tier": tp.PIPELINE_TIER,
+        "max_tokens": 30,
+        "max_cost_usd": 0.25,
+        "expires_at": datetime.now(timezone.utc) + timedelta(hours=1),
+        "scope": ("openrouter",),
+    }
+    fields.update(overrides)
+    return tp.PipelineApproval(**fields)
+
+
 @pytest.mark.asyncio
 async def test_flag_defaults_off_and_never_dispatches(
     pipeline_files: tuple[Path, Path, Path], monkeypatch: pytest.MonkeyPatch
@@ -70,7 +92,9 @@ async def test_flag_defaults_off_and_never_dispatches(
         return "unexpected"
 
     with pytest.raises(tp.PipelineDisabledError):
-        await _runner(pipeline_files).run("classify_then_generate", "hello", dispatch=dispatch)
+        await _runner(pipeline_files).run(
+            "classify_then_generate", "hello", approval=_approval(), dispatch=dispatch
+        )
     assert calls == []
 
 
@@ -93,8 +117,9 @@ async def test_pipeline_runs_in_order_and_preserves_original_request(
         calls.append((model, prompt, max_tokens, stage))
         return "classification-result" if stage == "classify" else "final-result"
 
+    approval = _approval()
     result = await _runner(pipeline_files).run(
-        "classify_then_generate", "ORIGINAL-REQUEST", dispatch=dispatch
+        "classify_then_generate", "ORIGINAL-REQUEST", approval=approval, dispatch=dispatch
     )
 
     assert [row[3] for row in calls] == ["classify", "generate"]
@@ -113,8 +138,14 @@ async def test_pipeline_runs_in_order_and_preserves_original_request(
         "generate",
     ]
     assert {line["attributes"]["status"] for line in trace_lines} == {"completed"}
+    assert {line["attributes"]["pipeline.trace_id"] for line in trace_lines} == {
+        approval.trace_id
+    }
+    assert {line["attributes"]["pipeline.error_class"] for line in trace_lines} == {None}
     assert "ORIGINAL-REQUEST" not in trace_text
     assert "classification-result" not in trace_text
+    assert approval.approved_by not in trace_text
+    assert approval.purpose not in trace_text
 
 
 @pytest.mark.asyncio
@@ -137,6 +168,7 @@ async def test_gate_receives_explicit_override_contract(
         await _runner(pipeline_files).run(
             "classify_then_generate",
             "hello",
+            approval=_approval(),
             dispatch=dispatch,
             override_confirmed=True,
             override_reason="operator approved this request",
@@ -168,7 +200,9 @@ async def test_offline_policy_blocks_before_dispatch(
         return "no"
 
     with pytest.raises(tp.PipelinePolicyError, match="ORAMASYS_OFFLINE"):
-        await _runner(pipeline_files).run("classify_then_generate", "hello", dispatch=dispatch)
+        await _runner(pipeline_files).run(
+            "classify_then_generate", "hello", approval=_approval(), dispatch=dispatch
+        )
     assert called is False
 
 
@@ -185,12 +219,17 @@ async def test_privacy_critical_uses_existing_override_contract(
     runner = _runner(pipeline_files)
     with pytest.raises(tp.PipelinePolicyError, match="override_confirmed"):
         await runner.run(
-            "classify_then_generate", "hello", dispatch=dispatch, privacy_critical=True
+            "classify_then_generate",
+            "hello",
+            approval=_approval(),
+            dispatch=dispatch,
+            privacy_critical=True,
         )
 
     result = await runner.run(
         "classify_then_generate",
         "hello",
+        approval=_approval(),
         dispatch=dispatch,
         privacy_critical=True,
         override_confirmed=True,
@@ -283,7 +322,7 @@ async def test_input_budget_blocks_before_paid_dispatch(
             config_path=pipelines,
             models_path=models,
             trace_path=trace,
-        ).run("classify_then_generate", "six!!", dispatch=dispatch)
+        ).run("classify_then_generate", "six!!", approval=_approval(), dispatch=dispatch)
     assert called is False
 
 
@@ -309,7 +348,7 @@ async def test_prior_stage_output_cannot_expand_the_next_input(
             config_path=pipelines,
             models_path=models,
             trace_path=trace,
-        ).run("classify_then_generate", "ok", dispatch=dispatch)
+        ).run("classify_then_generate", "ok", approval=_approval(), dispatch=dispatch)
     assert calls == ["classify"]
 
 
@@ -324,4 +363,344 @@ async def test_empty_dispatch_output_is_rejected(
         return ""
 
     with pytest.raises(tp.PipelineExecutionError, match="empty/non-text"):
-        await _runner(pipeline_files).run("classify_then_generate", "hello", dispatch=dispatch)
+        await _runner(pipeline_files).run(
+            "classify_then_generate", "hello", approval=_approval(), dispatch=dispatch
+        )
+
+
+# ── Approval boundary ─────────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_missing_approval_blocks_before_gate_and_dispatch(
+    pipeline_files: tuple[Path, Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
+    gate_calls = []
+    monkeypatch.setattr(
+        tp, "gate_permits", lambda *a, **k: (gate_calls.append((a, k)), (True, None))[1]
+    )
+    dispatch_calls = []
+
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
+        dispatch_calls.append(stage)
+        return "unexpected"
+
+    with pytest.raises(tp.PipelineApprovalError, match="approval is required"):
+        await _runner(pipeline_files).run(
+            "classify_then_generate", "hello", approval=None, dispatch=dispatch
+        )
+    assert gate_calls == []
+    assert dispatch_calls == []
+
+
+@pytest.mark.asyncio
+async def test_expired_approval_blocks_before_dispatch(
+    pipeline_files: tuple[Path, Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
+    called = False
+
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
+        nonlocal called
+        called = True
+        return "unexpected"
+
+    expired = _approval(expires_at=datetime.now(timezone.utc) - timedelta(seconds=1))
+    with pytest.raises(tp.PipelineApprovalError, match="expired"):
+        await _runner(pipeline_files).run(
+            "classify_then_generate", "hello", approval=expired, dispatch=dispatch
+        )
+    assert called is False
+
+
+@pytest.mark.asyncio
+async def test_approval_recipe_mismatch_blocks_before_dispatch(
+    pipeline_files: tuple[Path, Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
+    called = False
+
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
+        nonlocal called
+        called = True
+        return "unexpected"
+
+    mismatched = _approval(recipe="some_other_recipe")
+    with pytest.raises(tp.PipelineApprovalError, match="does not match"):
+        await _runner(pipeline_files).run(
+            "classify_then_generate", "hello", approval=mismatched, dispatch=dispatch
+        )
+    assert called is False
+
+
+@pytest.mark.asyncio
+async def test_approval_route_tier_mismatch_blocks_before_dispatch(
+    pipeline_files: tuple[Path, Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
+
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
+        return "unexpected"
+
+    mismatched = _approval(route_tier=3)
+    with pytest.raises(tp.PipelineApprovalError, match="route tier"):
+        await _runner(pipeline_files).run(
+            "classify_then_generate", "hello", approval=mismatched, dispatch=dispatch
+        )
+
+
+@pytest.mark.asyncio
+async def test_approval_max_tokens_below_recipe_cap_blocks(
+    pipeline_files: tuple[Path, Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
+
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
+        return "unexpected"
+
+    underbudget = _approval(max_tokens=29)  # recipe ceiling is 30
+    with pytest.raises(tp.PipelineApprovalError, match="token budget"):
+        await _runner(pipeline_files).run(
+            "classify_then_generate", "hello", approval=underbudget, dispatch=dispatch
+        )
+
+
+@pytest.mark.asyncio
+async def test_approval_max_cost_below_recipe_reservation_blocks(
+    pipeline_files: tuple[Path, Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
+
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
+        return "unexpected"
+
+    underbudget = _approval(max_cost_usd=0.10)  # recipe reservation is 0.25
+    with pytest.raises(tp.PipelineApprovalError, match="cost budget"):
+        await _runner(pipeline_files).run(
+            "classify_then_generate", "hello", approval=underbudget, dispatch=dispatch
+        )
+
+
+@pytest.mark.asyncio
+async def test_approval_scope_must_be_non_empty(
+    pipeline_files: tuple[Path, Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
+
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
+        return "unexpected"
+
+    scopeless = _approval(scope=())
+    with pytest.raises(tp.PipelineApprovalError, match="scope"):
+        await _runner(pipeline_files).run(
+            "classify_then_generate", "hello", approval=scopeless, dispatch=dispatch
+        )
+
+
+@pytest.mark.asyncio
+async def test_approval_approved_by_and_purpose_must_be_non_blank(
+    pipeline_files: tuple[Path, Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
+
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
+        return "unexpected"
+
+    for blank_field in ("approved_by", "purpose"):
+        blank = _approval(**{blank_field: "   "})
+        with pytest.raises(tp.PipelineApprovalError, match="required"):
+            await _runner(pipeline_files).run(
+                "classify_then_generate", "hello", approval=blank, dispatch=dispatch
+            )
+
+
+@pytest.mark.asyncio
+async def test_revoked_trace_id_blocks_before_dispatch(
+    pipeline_files: tuple[Path, Path, Path], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
+    approval = _approval(trace_id="revoke-me")
+    revoked_file = tmp_path / "revoked.txt"
+    revoked_file.write_text("revoke-me\n", encoding="utf-8")
+    monkeypatch.setenv(tp.REVOKED_APPROVALS_ENV, str(revoked_file))
+    called = False
+
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
+        nonlocal called
+        called = True
+        return "unexpected"
+
+    with pytest.raises(tp.PipelineApprovalError, match="revoked"):
+        await _runner(pipeline_files).run(
+            "classify_then_generate", "hello", approval=approval, dispatch=dispatch
+        )
+    assert called is False
+
+
+def test_approval_expires_at_must_be_timezone_aware(
+    pipeline_files: tuple[Path, Path, Path]
+) -> None:
+    naive = _approval(expires_at=datetime.now() + timedelta(hours=1))  # noqa: DTZ005
+    runner = _runner(pipeline_files)
+    recipe = runner.recipe("classify_then_generate")
+    with pytest.raises(tp.PipelineApprovalError, match="timezone-aware"):
+        runner._validate_approval(naive, recipe_name="classify_then_generate", recipe=recipe)
+
+
+# ── Approval artifact round-trip ──────────────────────────────────────────────
+
+
+def test_approval_register_and_load_round_trip(tmp_path: Path) -> None:
+    approval_dir = tmp_path / "approvals"
+    approval = _approval(trace_id="round-trip-1")
+    path = tp.register_pipeline_approval(approval, approval_dir=approval_dir)
+    assert path.is_file()
+
+    loaded = tp.load_pipeline_approval("round-trip-1", approval_dir=approval_dir)
+    assert loaded.trace_id == approval.trace_id
+    assert loaded.approved_by == approval.approved_by
+    assert loaded.purpose == approval.purpose
+    assert loaded.recipe == approval.recipe
+    assert loaded.route_tier == approval.route_tier
+    assert loaded.max_tokens == approval.max_tokens
+    assert loaded.max_cost_usd == approval.max_cost_usd
+    assert loaded.expires_at == approval.expires_at
+    assert loaded.scope == approval.scope
+
+
+def test_load_missing_approval_raises(tmp_path: Path) -> None:
+    with pytest.raises(tp.PipelineApprovalError, match="no approval record"):
+        tp.load_pipeline_approval("never-registered", approval_dir=tmp_path / "approvals")
+
+
+def test_load_malformed_approval_raises(tmp_path: Path) -> None:
+    approval_dir = tmp_path / "approvals"
+    approval_dir.mkdir(parents=True)
+    (approval_dir / "bad.json").write_text("not json", encoding="utf-8")
+    with pytest.raises(tp.PipelineApprovalError, match="unreadable"):
+        tp.load_pipeline_approval("bad", approval_dir=approval_dir)
+
+
+# ── Telemetry ──────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_error_class_recorded_on_dispatch_failure(
+    pipeline_files: tuple[Path, Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
+    monkeypatch.setattr(tp, "gate_permits", lambda *args, **kwargs: (True, None))
+
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
+        raise RuntimeError("provider exploded")
+
+    approval = _approval()
+    with pytest.raises(RuntimeError):
+        await _runner(pipeline_files).run(
+            "classify_then_generate", "hello", approval=approval, dispatch=dispatch
+        )
+
+    trace_lines = [
+        json.loads(line) for line in pipeline_files[2].read_text(encoding="utf-8").splitlines()
+    ]
+    assert len(trace_lines) == 1
+    attrs = trace_lines[0]["attributes"]
+    assert attrs["status"] == "failed"
+    assert attrs["pipeline.error_class"] == "RuntimeError"
+    assert attrs["pipeline.trace_id"] == approval.trace_id
+    assert "provider exploded" not in pipeline_files[2].read_text(encoding="utf-8")
+
+
+# ── Config validation: unknown keys + stage cap ────────────────────────────────
+
+
+def test_unknown_top_level_key_rejected(pipeline_files: tuple[Path, Path, Path]) -> None:
+    pipelines, models, trace = pipeline_files
+    pipelines.write_text(
+        pipelines.read_text(encoding="utf-8") + "\nunexpected_top_level_key: true\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(tp.PipelineConfigError, match="unknown keys.*unexpected_top_level_key"):
+        tp.TieredPipelineRunner(config_path=pipelines, models_path=models, trace_path=trace)
+
+
+def test_unknown_recipe_level_key_rejected(pipeline_files: tuple[Path, Path, Path]) -> None:
+    pipelines, models, trace = pipeline_files
+    pipelines.write_text(
+        pipelines.read_text(encoding="utf-8").replace(
+            "cost_reservation_usd: 0.25", "cost_reservation_usd: 0.25\n    bogus_recipe_key: 1"
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(tp.PipelineConfigError, match="unknown keys.*bogus_recipe_key"):
+        tp.TieredPipelineRunner(config_path=pipelines, models_path=models, trace_path=trace)
+
+
+def test_unknown_stage_level_key_rejected(pipeline_files: tuple[Path, Path, Path]) -> None:
+    pipelines, models, trace = pipeline_files
+    pipelines.write_text(
+        pipelines.read_text(encoding="utf-8").replace(
+            "instruction: classify", "instruction: classify\n        bogus_stage_key: 1"
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(tp.PipelineConfigError, match="unknown keys.*bogus_stage_key"):
+        tp.TieredPipelineRunner(config_path=pipelines, models_path=models, trace_path=trace)
+
+
+def test_more_than_three_stages_rejected(pipeline_files: tuple[Path, Path, Path]) -> None:
+    pipelines, models, trace = pipeline_files
+    extra_stages = "\n".join(
+        "      - name: stage%d\n        model: fast\n        max_tokens: 1\n" % i
+        for i in range(2)
+    )
+    pipelines.write_text(
+        pipelines.read_text(encoding="utf-8").replace(
+            "        instruction: generate\n",
+            "        instruction: generate\n" + extra_stages,
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(tp.PipelineConfigError, match="exceeding the 3-stage limit"):
+        tp.TieredPipelineRunner(config_path=pipelines, models_path=models, trace_path=trace)
+
+
+def test_exactly_three_stages_is_accepted(pipeline_files: tuple[Path, Path, Path]) -> None:
+    pipelines, models, trace = pipeline_files
+    pipelines.write_text(
+        pipelines.read_text(encoding="utf-8")
+        .replace("max_total_tokens: 30", "max_total_tokens: 31")
+        .replace(
+            "        instruction: generate\n",
+            "        instruction: generate\n"
+            "      - name: extra\n"
+            "        model: fast\n"
+            "        max_tokens: 1\n"
+            "        input_from: generate\n",
+        ),
+        encoding="utf-8",
+    )
+    runner = tp.TieredPipelineRunner(config_path=pipelines, models_path=models, trace_path=trace)
+    assert len(runner.recipe("classify_then_generate").stages) == 3
+
+
+# ── Model resolution: env override, still registry-validated ──────────────────
+
+
+def test_pipeline_model_env_override_still_requires_frugality_tier_five(
+    pipeline_files: tuple[Path, Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pipelines, models, trace = pipeline_files
+    monkeypatch.setenv("PIPELINE_FAST_MODEL", "local-model")  # frugality_tier 1, not 5
+    with pytest.raises(tp.PipelineConfigError, match="must be frugality tier 5"):
+        tp.TieredPipelineRunner(config_path=pipelines, models_path=models, trace_path=trace)
+
+
+def test_pipeline_model_env_override_resolves_when_valid(
+    pipeline_files: tuple[Path, Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pipelines, models, trace = pipeline_files
+    monkeypatch.setenv("PIPELINE_FAST_MODEL", "paid-strong")  # a different, still-valid tier-5 model
+    runner = tp.TieredPipelineRunner(config_path=pipelines, models_path=models, trace_path=trace)
+    assert runner._models["fast"] == "paid-strong"
