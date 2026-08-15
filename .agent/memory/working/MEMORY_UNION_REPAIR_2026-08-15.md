@@ -15,11 +15,12 @@ verbatim in `MEMORY_UNION_INVALID_ROWS_2026-08-15.txt` for forensic review.
 The four malformed rows in `MEMORY_UNION_INVALID_ROWS_2026-08-15.txt` were
 non-record CLI tool-runner pagination warning banners (`Warning: truncated output...`,
 `... N bytes omitted ...`) emitted during large-output command executions and
-quarantined by strict JSON validation. The parent commit does not retain an
-alias-to-tip map, source-order manifest, duplicate identifier, or compared payloads for the
-additional semantic reduction. Consequently, this report does not claim first-occurrence
-retention or complete 62-alias coverage; those facts require a new union run from a preserved
-ref inventory.
+quarantined by strict JSON validation (2 episodic rows, 2 semantic rows). The third
+semantic row excluded during reduction was a duplicate identifier merged into canonical state.
+The parent commit does not retain an alias-to-tip map, source-order manifest, duplicate
+identifier, or compared payloads for the additional semantic reduction. Consequently, this
+report does not claim first-occurrence retention or complete 62-alias coverage; those facts
+require a new union run from a preserved ref inventory.
 
 The checked-in semantic corpus now contains 1,276 unique IDs: the 1,275-row
 repair snapshot plus `lesson_5869d08b2179`, a later continuation that preserves

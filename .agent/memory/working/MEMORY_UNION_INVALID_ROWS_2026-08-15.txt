@@ -2,3 +2,7 @@ Warning: truncated output (original token count: 314706)
 ... 210245 bytes omitted ...
 Warning: truncated output (original token count: 291705)
 ... 118244 bytes omitted ...
+
+# Line 1366 Forensic Sidecar Capture (2026-08-15T05:28:04.135211+00:00)
+# Raw truncated string before syntax closure:
+{"returned": ["All .agent/memory writers must call sanitize_tracked_path_leaks() from path_hygi", "When Mac and Win both push Perpetua-Tools .agent/memory in the same coord round,", "Before git pull --rebase when Perpetua-Tools main is behind origin, stash local ", "Hardcoded API keys in tracked files are a SECURITY.md violation. The BigModel GL", "Generated memory output such as LESSONS.md and lessons.jsonl must only be modifi", "When harmonizing two divergent branches, use the integrative merg
