@@ -9,6 +9,7 @@ import os
 import time
 from contextlib import asynccontextmanager
 from dataclasses import asdict
+from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -48,17 +49,27 @@ from orchestrator.orama_bridge import (
     parse_oramasys_timeout,
 )
 from orchestrator.tiered_pipeline import (
+    PipelineApproval,
+    PipelineApprovalError,
     PipelineConfigError,
     PipelineDisabledError,
     PipelineExecutionError,
     PipelinePolicyError,
     TieredPipelineRunner,
+    load_pipeline_approval,
+    register_pipeline_approval,
     tiered_pipeline_enabled,
 )
 from orchestrator.gossip_bus import GossipBus
 from orchestrator.lan_gossip_bridge import _load_peers as _load_gossip_peers
 
 _startup_log = logging.getLogger("orchestrator.fastapi_app")
+# trace_id becomes a filename component (see tiered_pipeline.py's
+# register_pipeline_approval/load_pipeline_approval). Restricting it to
+# alphanumeric plus hyphen/underscore rejects path separators and "." (so
+# "..") outright, before it ever reaches the filesystem layer -- the second,
+# independent containment check there is defense-in-depth, not the only gate.
+_TRACE_ID_PATTERN = r"^[a-zA-Z0-9_-]+$"
 _GLM_ORCHESTRATOR_MODEL = "glm-5.1:cloud"
 _AUTORESEARCH_TASK_TYPES = {"autoresearch", "autoresearch-coder", "ml-experiment"}
 _LOCAL_RUNTIME_BACKENDS = {"ollama", "lm-studio", "mlx"}
@@ -187,12 +198,41 @@ class OrchestrateRequest(BaseModel):
 
 
 class TieredPipelineRequest(BaseModel):
-    """Explicit request body for an authenticated, paid pipeline execution."""
+    """Explicit request body for an authenticated, paid pipeline execution.
+
+    Carries only a reference (``trace_id``) to a previously-registered
+    approval artifact, never inline approval fields. A single endpoint that
+    accepted either an artifact reference OR inline approval data would let a
+    caller pick whichever is easier to satisfy, silently downgrading the
+    approval boundary to its weakest supported form -- so this is the only
+    shape accepted.
+    """
 
     prompt: str = Field(min_length=1, max_length=32768)
+    trace_id: str = Field(min_length=8, max_length=128, pattern=_TRACE_ID_PATTERN)
     privacy_critical: bool = False
     override_confirmed: bool = False
     override_reason: Optional[str] = None
+
+
+class PipelineApprovalRequest(BaseModel):
+    """Registers one approval artifact -- a distinct, prior step from execution.
+
+    Deliberately the only place inline approval fields are accepted. Once
+    registered, execution (POST /pipelines/{recipe_name}/run) can only
+    reference the artifact by trace_id -- never re-supply or override its
+    fields inline.
+    """
+
+    trace_id: str = Field(min_length=8, max_length=128, pattern=_TRACE_ID_PATTERN)
+    approved_by: str = Field(min_length=1, max_length=256)
+    purpose: str = Field(min_length=1, max_length=1024)
+    recipe: str = Field(min_length=1, max_length=128)
+    route_tier: int
+    max_tokens: int = Field(gt=0)
+    max_cost_usd: float = Field(gt=0)
+    expires_at: str
+    scope: List[str] = Field(min_length=1)
 
 
 class ConflictResponse(BaseModel):
@@ -730,6 +770,47 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
     return response
 
 
+@app.post("/pipelines/approvals", tags=["pipelines"])
+async def register_tiered_pipeline_approval(
+    request: PipelineApprovalRequest,
+) -> Dict[str, Any]:
+    """Register one Tier-5 approval artifact, distinct from execution.
+
+    This endpoint is the ONLY code path that constructs a ``PipelineApproval``
+    from inline fields. It never executes a pipeline; execution
+    (``POST /pipelines/{recipe_name}/run``) can only reference the resulting
+    artifact by ``trace_id``, keeping "who approved this" a separate action
+    from "run it now" rather than a parameter of the same request.
+    """
+    try:
+        expires_at = datetime.fromisoformat(request.expires_at)
+        if expires_at.tzinfo is None:
+            raise ValueError("expires_at must include a UTC offset")
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422, detail="expires_at must be a timezone-aware ISO-8601 timestamp"
+        ) from exc
+
+    approval = PipelineApproval(
+        trace_id=request.trace_id,
+        approved_by=request.approved_by,
+        purpose=request.purpose,
+        recipe=request.recipe,
+        route_tier=request.route_tier,
+        max_tokens=request.max_tokens,
+        max_cost_usd=request.max_cost_usd,
+        expires_at=expires_at,
+        scope=tuple(request.scope),
+    )
+    try:
+        register_pipeline_approval(approval)
+    except PipelineApprovalError as exc:
+        raise HTTPException(status_code=422, detail="Unable to register approval") from exc
+    # Deliberately not returning the artifact's filesystem path -- an API
+    # response is not the place to expose internal server directory layout.
+    return {"status": "registered", "trace_id": approval.trace_id}
+
+
 @app.post("/pipelines/{recipe_name}/run", tags=["pipelines"])
 async def run_tiered_pipeline(
     recipe_name: str,
@@ -752,13 +833,37 @@ async def run_tiered_pipeline(
     if not tiered_pipeline_enabled():
         raise HTTPException(status_code=409, detail="Tier-5 pipelines are disabled")
 
+    # KNOWN, DELIBERATELY DEFERRED GAP: can_spend() here and record_spend()
+    # after the run (below) are not an atomic reservation -- concurrent
+    # requests can each observe remaining budget, each pass this check, and
+    # collectively overspend. A same-process asyncio.Lock or a two-method
+    # CostGuard.reserve()/rollback() sketch was considered and explicitly
+    # rejected as the fix: neither provides idempotency, crash recovery, or
+    # conservative settlement after an uncertain provider response, and
+    # would conflict with the durable SQLite ledger already planned to
+    # replace this whole check/record pattern (see
+    # docs/superpowers/plans/2026-08-14-tier5-durable-budget-ledger.md,
+    # steelmanned separately from this diff). Not patched here to avoid
+    # building throwaway code against a design that's already been
+    # superseded by a more rigorous one.
     if not cost_guard.can_spend(recipe.cost_reservation_usd):
         raise HTTPException(status_code=402, detail="Daily budget cannot reserve this pipeline run")
+
+    # A missing, unreadable, or malformed approval artifact and a genuinely
+    # absent approval are intentionally indistinguishable here -- both
+    # surface as the same PipelineApprovalError below.
+    try:
+        approval = load_pipeline_approval(request.trace_id)
+    except PipelineApprovalError as exc:
+        raise HTTPException(
+            status_code=403, detail="Pipeline approval invalid, expired, or revoked"
+        ) from exc
 
     try:
         result = await runner.run(
             recipe_name,
             request.prompt,
+            approval=approval,
             dispatch=transport.dispatch,
             privacy_critical=request.privacy_critical,
             override_confirmed=request.override_confirmed,
@@ -766,6 +871,10 @@ async def run_tiered_pipeline(
         )
     except PipelineDisabledError as exc:
         raise HTTPException(status_code=409, detail="Tier-5 pipelines are disabled") from exc
+    except PipelineApprovalError as exc:
+        raise HTTPException(
+            status_code=403, detail="Pipeline approval invalid, expired, or revoked"
+        ) from exc
     except PipelinePolicyError as exc:
         raise HTTPException(status_code=403, detail="Pipeline execution denied by policy") from exc
     except ProviderTransportError as exc:
