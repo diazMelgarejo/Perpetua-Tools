@@ -24,6 +24,7 @@ DEFAULT_CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
 DEFAULT_PROVIDERS = DEFAULT_CONFIG_DIR / "providers.yml"
 _RETRYABLE_STATUS_CODES = frozenset({408, 409, 425, 429, 500, 502, 503, 504})
 _ALLOWED_EFFORTS = frozenset({"low", "medium", "high", "xhigh", "max"})
+_OPENAI_SHAPE_BACKENDS = frozenset({"mistral", "deepseek", "groq", "dashscope", "meta_llama"})
 
 
 class ProviderConfigError(PipelineExecutionError):
@@ -342,7 +343,7 @@ class ProviderTransportRegistry:
                 payload=self._openai_payload(target, prompt, max_tokens),
             )
             return self._openai_text(body, target.backend)
-        if target.backend in ("mistral", "deepseek", "groq", "dashscope", "meta_llama"):
+        if target.backend in _OPENAI_SHAPE_BACKENDS:
             # All four are OpenAI-Chat-Completions-shaped: standard Bearer
             # auth, choices[0].message.content response shape -- verified per
             # backend against each provider's own API reference before adding

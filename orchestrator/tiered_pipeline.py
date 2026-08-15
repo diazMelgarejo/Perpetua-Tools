@@ -140,6 +140,23 @@ def _approval_dir() -> Path:
     return Path(configured) if configured else DEFAULT_APPROVAL_DIR
 
 
+def _approval_artifact_path(directory: Path, trace_id: str) -> Path:
+    """Resolve ``<directory>/<trace_id>.json``, rejecting any path escape.
+
+    ``trace_id`` reaches this module from an HTTP request body. The FastAPI
+    layer additionally restricts it to ``^[a-zA-Z0-9_-]+$`` (see
+    ``fastapi_app.py``), but this check does not rely on that -- any caller
+    of ``register_pipeline_approval``/``load_pipeline_approval`` with an
+    untrusted trace_id (e.g. ``../../etc/cron.d/evil``) is still contained,
+    defense-in-depth rather than a single point of failure.
+    """
+    resolved_directory = directory.resolve()
+    path = (resolved_directory / ("%s.json" % trace_id)).resolve()
+    if not path.is_relative_to(resolved_directory):
+        raise PipelineApprovalError("invalid trace_id %r escapes approval directory" % trace_id)
+    return path
+
+
 def register_pipeline_approval(
     approval: PipelineApproval, *, approval_dir: str | Path | None = None
 ) -> Path:
@@ -151,7 +168,7 @@ def register_pipeline_approval(
     """
     directory = Path(approval_dir) if approval_dir is not None else _approval_dir()
     directory.mkdir(parents=True, exist_ok=True)
-    path = directory / ("%s.json" % approval.trace_id)
+    path = _approval_artifact_path(directory, approval.trace_id)
     payload = {
         "trace_id": approval.trace_id,
         "approved_by": approval.approved_by,
@@ -178,7 +195,7 @@ def load_pipeline_approval(
     a corrupted handoff fail closed identically.
     """
     directory = Path(approval_dir) if approval_dir is not None else _approval_dir()
-    path = directory / ("%s.json" % trace_id)
+    path = _approval_artifact_path(directory, trace_id)
     if not path.is_file():
         raise PipelineApprovalError("no approval record found for trace_id %r" % trace_id)
     try:
@@ -241,17 +258,45 @@ class TieredPipelineRunner:
             if configured_trace_path
             else DEFAULT_TRACE
         )
+        self._models, self._recipes = self._load_and_validate()
+
+    @staticmethod
+    def _load_revoked_trace_ids() -> frozenset[str]:
+        """Read the revocation list fresh on every call, never cached.
+
+        Caching this at __init__ time would mean a long-lived process (a
+        uvicorn worker, a daemon) never observes a revocation appended to the
+        file after construction -- an operator revoking a compromised or
+        over-budget trace_id would have no effect until restart. The
+        FastAPI endpoint already constructs a fresh runner per request, so
+        this mainly matters for any other caller that reuses one instance,
+        but the class itself should not depend on that calling convention.
+        """
         revoked_path = os.getenv(REVOKED_APPROVALS_ENV, "").strip()
-        self._revoked_trace_ids: frozenset[str] = (
-            frozenset(
+        if not revoked_path:
+            return frozenset()
+        # Distinct from "not configured" above: once an operator has pointed
+        # at a path, that path must resolve to a readable file. Treating a
+        # misconfigured path (missing, or a directory) the same as "no
+        # revocation list configured" would silently degrade back to
+        # "nothing is revoked" -- exactly the fail-open failure mode this
+        # function exists to avoid.
+        if not Path(revoked_path).is_file():
+            raise PipelineApprovalError(
+                "revocation file %r is not a readable file" % revoked_path
+            )
+        try:
+            return frozenset(
                 line.strip()
                 for line in Path(revoked_path).read_text(encoding="utf-8").splitlines()
-                if line.strip()
+                if line.strip() and not line.startswith("#")
             )
-            if revoked_path and Path(revoked_path).is_file()
-            else frozenset()
-        )
-        self._models, self._recipes = self._load_and_validate()
+        except OSError as exc:
+            # Fail closed: an unreadable revocation file must block approval
+            # validation, not silently behave as "nothing is revoked".
+            raise PipelineApprovalError(
+                "revocation file %r is unreadable" % revoked_path
+            ) from exc
 
     def _load_and_validate(self) -> tuple[dict[str, str], dict[str, PipelineRecipe]]:
         if not self.config_path.is_file():
@@ -415,7 +460,7 @@ class TieredPipelineRunner:
     ) -> None:
         if approval is None:
             raise PipelineApprovalError("pipeline approval is required")
-        if approval.trace_id in self._revoked_trace_ids:
+        if approval.trace_id in self._load_revoked_trace_ids():
             raise PipelineApprovalError("approval trace_id %r has been revoked" % approval.trace_id)
         now = datetime.now(timezone.utc)
         if approval.expires_at.tzinfo is None:

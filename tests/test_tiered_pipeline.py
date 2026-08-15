@@ -538,6 +538,89 @@ async def test_revoked_trace_id_blocks_before_dispatch(
     assert called is False
 
 
+@pytest.mark.asyncio
+async def test_revocation_appended_after_construction_is_observed_without_restart(
+    pipeline_files: tuple[Path, Path, Path], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Regression test for the stale-cache finding: revoking a trace_id after
+    the runner is constructed must still block it -- the revocation list is
+    not allowed to be a frozen __init__-time snapshot."""
+    monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
+    approval = _approval(trace_id="revoke-me-later")
+    revoked_file = tmp_path / "revoked.txt"
+    revoked_file.write_text("", encoding="utf-8")  # empty at construction time
+    monkeypatch.setenv(tp.REVOKED_APPROVALS_ENV, str(revoked_file))
+
+    runner = _runner(pipeline_files)  # constructed while the file is empty
+
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
+        return "unexpected"
+
+    # Not yet revoked: should pass approval validation (fails later on the
+    # frugality gate instead, which is fine -- this only tests revocation).
+    monkeypatch.setattr(tp, "gate_permits", lambda *a, **k: (False, "stop here"))
+    with pytest.raises(tp.PipelinePolicyError, match="stop here"):
+        await runner.run(
+            "classify_then_generate", "hello", approval=approval, dispatch=dispatch
+        )
+
+    # Revoke it now, on the same already-constructed runner instance.
+    revoked_file.write_text("revoke-me-later\n", encoding="utf-8")
+    with pytest.raises(tp.PipelineApprovalError, match="revoked"):
+        await runner.run(
+            "classify_then_generate", "hello", approval=approval, dispatch=dispatch
+        )
+
+
+def test_unreadable_revocation_file_fails_closed(
+    pipeline_files: tuple[Path, Path, Path], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    revoked_dir = tmp_path / "revoked_is_a_directory"
+    revoked_dir.mkdir()
+    monkeypatch.setenv(tp.REVOKED_APPROVALS_ENV, str(revoked_dir))
+    with pytest.raises(tp.PipelineApprovalError, match="unreadable"):
+        tp.TieredPipelineRunner._load_revoked_trace_ids()
+
+
+# ── Path traversal containment ─────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "malicious_trace_id",
+    [
+        "../../etc/cron.d/evil",
+        "../escape",
+        "/etc/passwd",
+        "a/../../b",
+        # "..%2Fescape" and "..\\escape" are deliberately not exercised here:
+        # this function receives a raw Python string, not a URL-decoded path
+        # segment, so "%2F" never becomes "/", and a literal backslash is an
+        # inert filename character (not a separator) on POSIX. Both are
+        # still rejected outright by the Pydantic pattern
+        # ^[a-zA-Z0-9_-]+$ in fastapi_app.py before a request body ever
+        # reaches this function -- see
+        # test_register_approval_rejects_malicious_trace_id, which covers
+        # exactly these two payloads at that layer.
+    ],
+)
+def test_approval_artifact_path_rejects_traversal(
+    tmp_path: Path, malicious_trace_id: str
+) -> None:
+    directory = tmp_path / "approvals"
+    with pytest.raises(tp.PipelineApprovalError, match="escapes approval directory"):
+        tp._approval_artifact_path(directory, malicious_trace_id)
+    # Confirm nothing was written outside the intended directory either.
+    assert not any(tmp_path.glob("**/evil*"))
+    assert not any(tmp_path.glob("**/escape*"))
+
+
+def test_approval_artifact_path_accepts_normal_trace_id(tmp_path: Path) -> None:
+    directory = tmp_path / "approvals"
+    path = tp._approval_artifact_path(directory, "normal-trace-id-123")
+    assert path.is_relative_to(directory.resolve())
+    assert path.name == "normal-trace-id-123.json"
+
+
 def test_approval_expires_at_must_be_timezone_aware(
     pipeline_files: tuple[Path, Path, Path]
 ) -> None:
