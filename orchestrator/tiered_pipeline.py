@@ -7,6 +7,7 @@ permits execution, and delegates provider I/O to an injected dispatcher.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import time
 from dataclasses import dataclass
@@ -17,6 +18,8 @@ from typing import Awaitable, Callable, Mapping
 import yaml
 
 from orchestrator.gate import gate_permits, load_frugality_tier_by_name
+
+_log = logging.getLogger(__name__)
 
 PIPELINE_TIER = 5
 PIPELINE_FLAG = "PIPELINE_TIERED_ENABLED"
@@ -35,7 +38,22 @@ _ALLOWED_RECIPE_KEYS = frozenset(
 )
 _ALLOWED_STAGE_KEYS = frozenset({"name", "model", "max_tokens", "input_from", "instruction"})
 
-Dispatcher = Callable[[str, str, int, str], Awaitable[str]]
+@dataclass(frozen=True)
+class DispatchResult:
+    """Text plus whatever usage a provider reported for one dispatch call.
+
+    ``total_tokens``/``cost_usd`` are ``None`` when a provider doesn't report
+    usage at all, or reports a shape this code doesn't recognize -- this is
+    telemetry, not a gate, so a provider's silence on usage must never block
+    an otherwise-successful pipeline run.
+    """
+
+    text: str
+    total_tokens: int | None
+    cost_usd: float | None
+
+
+Dispatcher = Callable[[str, str, int, str], Awaitable[DispatchResult]]
 
 
 class PipelineError(RuntimeError):
@@ -123,6 +141,8 @@ class PipelineResult:
     output: str
     stage_outputs: Mapping[str, str]
     requested_tokens: int
+    total_tokens_used: int | None
+    total_cost_usd: float | None
 
 
 def tiered_pipeline_enabled() -> bool:
@@ -513,6 +533,8 @@ class TieredPipelineRunner:
         status: str,
         trace_id: str,
         error_class: str | None,
+        tokens_used: int | None = None,
+        cost_usd: float | None = None,
     ) -> None:
         payload = {
             "timestamp": time.time(),
@@ -524,6 +546,8 @@ class TieredPipelineRunner:
                 "pipeline.stage": stage.name,
                 "pipeline.model": stage.model,
                 "pipeline.max_tokens": stage.max_tokens,
+                "pipeline.tokens_used": tokens_used,
+                "pipeline.cost_usd": cost_usd,
                 "pipeline.error_class": error_class,
                 "elapsed_ms": elapsed_ms,
                 "status": status,
@@ -575,6 +599,8 @@ class TieredPipelineRunner:
 
         outputs: dict[str, str] = {}
         requested_tokens = 0
+        total_tokens_used: int | None = 0
+        total_cost_usd: float | None = 0.0
         for stage in recipe.stages:
             stage_prompt = self._stage_prompt(prompt, stage, outputs)
             if _input_token_upper_bound(stage_prompt) > recipe.max_input_tokens:
@@ -584,7 +610,7 @@ class TieredPipelineRunner:
                 )
             started = time.monotonic()
             try:
-                output = await dispatch(stage.model, stage_prompt, stage.max_tokens, stage.name)
+                result = await dispatch(stage.model, stage_prompt, stage.max_tokens, stage.name)
             except Exception as exc:
                 self._emit_trace(
                     recipe=recipe.name,
@@ -595,12 +621,25 @@ class TieredPipelineRunner:
                     error_class=type(exc).__name__,
                 )
                 raise
+            output = result.text
             if not isinstance(output, str) or not output.strip():
                 raise PipelineExecutionError(
                     "stage %r returned an empty/non-text result" % stage.name
                 )
             outputs[stage.name] = output
             requested_tokens += stage.max_tokens
+            # A partial sum would misrepresent the true total, so any stage
+            # missing usage data collapses the running total to None for the
+            # rest of the run -- this is telemetry, never a gate, so it never
+            # raises.
+            if result.total_tokens is None or total_tokens_used is None:
+                total_tokens_used = None
+            else:
+                total_tokens_used += result.total_tokens
+            if result.cost_usd is None or total_cost_usd is None:
+                total_cost_usd = None
+            else:
+                total_cost_usd += result.cost_usd
             self._emit_trace(
                 recipe=recipe.name,
                 stage=stage,
@@ -608,6 +647,16 @@ class TieredPipelineRunner:
                 status="completed",
                 trace_id=approval.trace_id,
                 error_class=None,
+                tokens_used=result.total_tokens,
+                cost_usd=result.cost_usd,
+            )
+
+        if total_cost_usd is not None and total_cost_usd > recipe.cost_reservation_usd:
+            _log.warning(
+                "tier5 pipeline %r actual cost $%.4f exceeded configured reservation $%.4f",
+                recipe.name,
+                total_cost_usd,
+                recipe.cost_reservation_usd,
             )
 
         return PipelineResult(
@@ -615,4 +664,6 @@ class TieredPipelineRunner:
             output=outputs[recipe.stages[-1].name],
             stage_outputs=dict(outputs),
             requested_tokens=requested_tokens,
+            total_tokens_used=total_tokens_used,
+            total_cost_usd=total_cost_usd,
         )

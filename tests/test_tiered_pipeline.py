@@ -87,9 +87,9 @@ async def test_flag_defaults_off_and_never_dispatches(
     monkeypatch.delenv(tp.PIPELINE_FLAG, raising=False)
     calls: list[str] = []
 
-    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
         calls.append(stage)
-        return "unexpected"
+        return tp.DispatchResult(text="unexpected", total_tokens=100, cost_usd=0.01)
 
     with pytest.raises(tp.PipelineDisabledError):
         await _runner(pipeline_files).run(
@@ -113,9 +113,9 @@ async def test_pipeline_runs_in_order_and_preserves_original_request(
     monkeypatch.delenv("ORAMASYS_OFFLINE", raising=False)
     calls: list[tuple[str, str, int, str]] = []
 
-    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
         calls.append((model, prompt, max_tokens, stage))
-        return "classification-result" if stage == "classify" else "final-result"
+        return tp.DispatchResult(text="classification-result" if stage == "classify" else "final-result", total_tokens=100, cost_usd=0.01)
 
     approval = _approval()
     result = await _runner(pipeline_files).run(
@@ -149,6 +149,87 @@ async def test_pipeline_runs_in_order_and_preserves_original_request(
 
 
 @pytest.mark.asyncio
+async def test_trace_records_real_usage_not_just_configured_ceiling(
+    pipeline_files: tuple[Path, Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
+    monkeypatch.delenv("ORAMASYS_OFFLINE", raising=False)
+
+    usage_by_stage = {
+        "classify": (7, 0.001),
+        "generate": (13, 0.002),
+    }
+
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
+        tokens, cost = usage_by_stage[stage]
+        return tp.DispatchResult(text=f"{stage}-result", total_tokens=tokens, cost_usd=cost)
+
+    approval = _approval()
+    result = await _runner(pipeline_files).run(
+        "classify_then_generate", "hello", approval=approval, dispatch=dispatch
+    )
+
+    assert result.total_tokens_used == 20
+    assert result.total_cost_usd == pytest.approx(0.003)
+
+    trace_lines = [
+        json.loads(line)
+        for line in pipeline_files[2].read_text(encoding="utf-8").splitlines()
+    ]
+    by_stage = {line["attributes"]["pipeline.stage"]: line["attributes"] for line in trace_lines}
+    assert by_stage["classify"]["pipeline.tokens_used"] == 7
+    assert by_stage["classify"]["pipeline.cost_usd"] == 0.001
+    assert by_stage["generate"]["pipeline.tokens_used"] == 13
+    assert by_stage["generate"]["pipeline.cost_usd"] == 0.002
+    # The configured ceiling is a distinct field from what was actually used.
+    assert by_stage["classify"]["pipeline.max_tokens"] != by_stage["classify"]["pipeline.tokens_used"]
+
+
+@pytest.mark.asyncio
+async def test_missing_usage_data_does_not_fail_the_run(
+    pipeline_files: tuple[Path, Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
+    monkeypatch.delenv("ORAMASYS_OFFLINE", raising=False)
+
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
+        return tp.DispatchResult(text=f"{stage}-result", total_tokens=None, cost_usd=None)
+
+    result = await _runner(pipeline_files).run(
+        "classify_then_generate", "hello", approval=_approval(), dispatch=dispatch
+    )
+
+    assert result.output == "generate-result"
+    assert result.total_tokens_used is None
+    assert result.total_cost_usd is None
+
+
+@pytest.mark.asyncio
+async def test_actual_cost_exceeding_reservation_logs_warning_not_error(
+    pipeline_files: tuple[Path, Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
+    monkeypatch.delenv("ORAMASYS_OFFLINE", raising=False)
+
+    # Recipe's cost_reservation_usd is 0.25 (see pipeline_files fixture); make
+    # actual cost exceed it without raising.
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
+        return tp.DispatchResult(text=f"{stage}-result", total_tokens=10, cost_usd=1.0)
+
+    with caplog.at_level("WARNING", logger="orchestrator.tiered_pipeline"):
+        result = await _runner(pipeline_files).run(
+            "classify_then_generate", "hello", approval=_approval(), dispatch=dispatch
+        )
+
+    assert result.total_cost_usd == pytest.approx(2.0)
+    assert any(
+        "exceeded configured reservation" in record.message for record in caplog.records
+    )
+
+
+@pytest.mark.asyncio
 async def test_gate_receives_explicit_override_contract(
     pipeline_files: tuple[Path, Path, Path], monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -161,8 +242,8 @@ async def test_gate_receives_explicit_override_contract(
 
     monkeypatch.setattr(tp, "gate_permits", deny)
 
-    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
-        return "unexpected"
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
+        return tp.DispatchResult(text="unexpected", total_tokens=100, cost_usd=0.01)
 
     with pytest.raises(tp.PipelinePolicyError, match="policy denied"):
         await _runner(pipeline_files).run(
@@ -194,10 +275,10 @@ async def test_offline_policy_blocks_before_dispatch(
     monkeypatch.setenv("ORAMASYS_OFFLINE", "1")
     called = False
 
-    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
         nonlocal called
         called = True
-        return "no"
+        return tp.DispatchResult(text="no", total_tokens=100, cost_usd=0.01)
 
     with pytest.raises(tp.PipelinePolicyError, match="ORAMASYS_OFFLINE"):
         await _runner(pipeline_files).run(
@@ -213,8 +294,8 @@ async def test_privacy_critical_uses_existing_override_contract(
     monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
     monkeypatch.delenv("ORAMASYS_OFFLINE", raising=False)
 
-    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
-        return stage
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
+        return tp.DispatchResult(text=stage, total_tokens=100, cost_usd=0.01)
 
     runner = _runner(pipeline_files)
     with pytest.raises(tp.PipelinePolicyError, match="override_confirmed"):
@@ -312,10 +393,10 @@ async def test_input_budget_blocks_before_paid_dispatch(
     )
     called = False
 
-    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
         nonlocal called
         called = True
-        return "unexpected"
+        return tp.DispatchResult(text="unexpected", total_tokens=100, cost_usd=0.01)
 
     with pytest.raises(tp.PipelinePolicyError, match="max_input_tokens"):
         await tp.TieredPipelineRunner(
@@ -339,9 +420,9 @@ async def test_prior_stage_output_cannot_expand_the_next_input(
     )
     calls = []
 
-    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
         calls.append(stage)
-        return "x" * 80
+        return tp.DispatchResult(text="x" * 80, total_tokens=100, cost_usd=0.01)
 
     with pytest.raises(tp.PipelinePolicyError, match="max_input_tokens"):
         await tp.TieredPipelineRunner(
@@ -359,8 +440,8 @@ async def test_empty_dispatch_output_is_rejected(
     monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
     monkeypatch.setattr(tp, "gate_permits", lambda *args, **kwargs: (True, None))
 
-    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
-        return ""
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
+        return tp.DispatchResult(text="", total_tokens=100, cost_usd=0.01)
 
     with pytest.raises(tp.PipelineExecutionError, match="empty/non-text"):
         await _runner(pipeline_files).run(
@@ -382,9 +463,9 @@ async def test_missing_approval_blocks_before_gate_and_dispatch(
     )
     dispatch_calls = []
 
-    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
         dispatch_calls.append(stage)
-        return "unexpected"
+        return tp.DispatchResult(text="unexpected", total_tokens=100, cost_usd=0.01)
 
     with pytest.raises(tp.PipelineApprovalError, match="approval is required"):
         await _runner(pipeline_files).run(
@@ -401,10 +482,10 @@ async def test_expired_approval_blocks_before_dispatch(
     monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
     called = False
 
-    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
         nonlocal called
         called = True
-        return "unexpected"
+        return tp.DispatchResult(text="unexpected", total_tokens=100, cost_usd=0.01)
 
     expired = _approval(expires_at=datetime.now(timezone.utc) - timedelta(seconds=1))
     with pytest.raises(tp.PipelineApprovalError, match="expired"):
@@ -421,10 +502,10 @@ async def test_approval_recipe_mismatch_blocks_before_dispatch(
     monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
     called = False
 
-    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
         nonlocal called
         called = True
-        return "unexpected"
+        return tp.DispatchResult(text="unexpected", total_tokens=100, cost_usd=0.01)
 
     mismatched = _approval(recipe="some_other_recipe")
     with pytest.raises(tp.PipelineApprovalError, match="does not match"):
@@ -440,8 +521,8 @@ async def test_approval_route_tier_mismatch_blocks_before_dispatch(
 ) -> None:
     monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
 
-    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
-        return "unexpected"
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
+        return tp.DispatchResult(text="unexpected", total_tokens=100, cost_usd=0.01)
 
     mismatched = _approval(route_tier=3)
     with pytest.raises(tp.PipelineApprovalError, match="route tier"):
@@ -456,8 +537,8 @@ async def test_approval_max_tokens_below_recipe_cap_blocks(
 ) -> None:
     monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
 
-    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
-        return "unexpected"
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
+        return tp.DispatchResult(text="unexpected", total_tokens=100, cost_usd=0.01)
 
     underbudget = _approval(max_tokens=29)  # recipe ceiling is 30
     with pytest.raises(tp.PipelineApprovalError, match="token budget"):
@@ -472,8 +553,8 @@ async def test_approval_max_cost_below_recipe_reservation_blocks(
 ) -> None:
     monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
 
-    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
-        return "unexpected"
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
+        return tp.DispatchResult(text="unexpected", total_tokens=100, cost_usd=0.01)
 
     underbudget = _approval(max_cost_usd=0.10)  # recipe reservation is 0.25
     with pytest.raises(tp.PipelineApprovalError, match="cost budget"):
@@ -488,8 +569,8 @@ async def test_approval_scope_must_be_non_empty(
 ) -> None:
     monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
 
-    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
-        return "unexpected"
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
+        return tp.DispatchResult(text="unexpected", total_tokens=100, cost_usd=0.01)
 
     scopeless = _approval(scope=())
     with pytest.raises(tp.PipelineApprovalError, match="scope"):
@@ -504,8 +585,8 @@ async def test_approval_approved_by_and_purpose_must_be_non_blank(
 ) -> None:
     monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
 
-    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
-        return "unexpected"
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
+        return tp.DispatchResult(text="unexpected", total_tokens=100, cost_usd=0.01)
 
     for blank_field in ("approved_by", "purpose"):
         blank = _approval(**{blank_field: "   "})
@@ -526,10 +607,10 @@ async def test_revoked_trace_id_blocks_before_dispatch(
     monkeypatch.setenv(tp.REVOKED_APPROVALS_ENV, str(revoked_file))
     called = False
 
-    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
         nonlocal called
         called = True
-        return "unexpected"
+        return tp.DispatchResult(text="unexpected", total_tokens=100, cost_usd=0.01)
 
     with pytest.raises(tp.PipelineApprovalError, match="revoked"):
         await _runner(pipeline_files).run(
@@ -553,8 +634,8 @@ async def test_revocation_appended_after_construction_is_observed_without_restar
 
     runner = _runner(pipeline_files)  # constructed while the file is empty
 
-    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
-        return "unexpected"
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
+        return tp.DispatchResult(text="unexpected", total_tokens=100, cost_usd=0.01)
 
     # Not yet revoked: should pass approval validation (fails later on the
     # frugality gate instead, which is fine -- this only tests revocation).
@@ -675,7 +756,7 @@ async def test_error_class_recorded_on_dispatch_failure(
     monkeypatch.setenv(tp.PIPELINE_FLAG, "1")
     monkeypatch.setattr(tp, "gate_permits", lambda *args, **kwargs: (True, None))
 
-    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> str:
+    async def dispatch(model: str, prompt: str, max_tokens: int, stage: str) -> tp.DispatchResult:
         raise RuntimeError("provider exploded")
 
     approval = _approval()

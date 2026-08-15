@@ -18,7 +18,7 @@ import httpx
 import yaml
 
 from orchestrator.model_registry import ModelRegistry, ModelTarget
-from orchestrator.tiered_pipeline import PIPELINE_TIER, PipelineExecutionError
+from orchestrator.tiered_pipeline import PIPELINE_TIER, DispatchResult, PipelineExecutionError
 
 DEFAULT_CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
 DEFAULT_PROVIDERS = DEFAULT_CONFIG_DIR / "providers.yml"
@@ -286,7 +286,30 @@ class ProviderTransportRegistry:
             raise ProviderTransportError("anthropic")
         return text
 
-    async def dispatch(self, model: str, prompt: str, max_tokens: int, stage: str) -> str:
+    @staticmethod
+    def _openai_usage(payload: Mapping[str, Any]) -> tuple[int | None, float | None]:
+        usage = payload.get("usage")
+        if not isinstance(usage, Mapping):
+            return None, None
+        tokens = usage.get("total_tokens")
+        cost = usage.get("cost")  # OpenRouter-specific; absent on bigmodel/most OpenAI-shape backends
+        return (
+            int(tokens) if isinstance(tokens, (int, float)) else None,
+            float(cost) if isinstance(cost, (int, float)) else None,
+        )
+
+    @staticmethod
+    def _anthropic_usage(payload: Mapping[str, Any]) -> tuple[int | None, float | None]:
+        usage = payload.get("usage")
+        if not isinstance(usage, Mapping):
+            return None, None
+        input_tokens = usage.get("input_tokens")
+        output_tokens = usage.get("output_tokens")
+        if not isinstance(input_tokens, (int, float)) or not isinstance(output_tokens, (int, float)):
+            return None, None
+        return int(input_tokens) + int(output_tokens), None  # Anthropic doesn't return cost directly
+
+    async def dispatch(self, model: str, prompt: str, max_tokens: int, stage: str) -> DispatchResult:
         """Dispatch one already-gated stage without exposing provider internals."""
         del stage  # Trace attribution remains the runner's responsibility.
         target = self._models.get(model)
@@ -307,7 +330,9 @@ class ProviderTransportRegistry:
                 headers={"Authorization": f"Bearer {credential}", "Content-Type": "application/json"},
                 payload=self._openai_payload(target, prompt, max_tokens),
             )
-            return self._openai_text(body, target.backend)
+            text = self._openai_text(body, target.backend)
+            tokens, cost = self._openai_usage(body)
+            return DispatchResult(text=text, total_tokens=tokens, cost_usd=cost)
         if target.backend == "anthropic":
             if not provider.api_version:
                 raise ProviderConfigError("Anthropic provider requires api_version")
@@ -321,7 +346,9 @@ class ProviderTransportRegistry:
                 },
                 payload=self._anthropic_payload(target, prompt, max_tokens),
             )
-            return self._anthropic_text(body)
+            text = self._anthropic_text(body)
+            tokens, cost = self._anthropic_usage(body)
+            return DispatchResult(text=text, total_tokens=tokens, cost_usd=cost)
         if target.backend == "openrouter":
             # OpenRouter's chat/completions response shape matches OpenAI's
             # (choices[0].message.content), verified against its own API
@@ -342,7 +369,9 @@ class ProviderTransportRegistry:
                 headers=headers,
                 payload=self._openai_payload(target, prompt, max_tokens),
             )
-            return self._openai_text(body, target.backend)
+            text = self._openai_text(body, target.backend)
+            tokens, cost = self._openai_usage(body)
+            return DispatchResult(text=text, total_tokens=tokens, cost_usd=cost)
         if target.backend in _OPENAI_SHAPE_BACKENDS:
             # All four are OpenAI-Chat-Completions-shaped: standard Bearer
             # auth, choices[0].message.content response shape -- verified per
@@ -354,5 +383,7 @@ class ProviderTransportRegistry:
                 headers={"Authorization": f"Bearer {credential}", "Content-Type": "application/json"},
                 payload=self._openai_payload(target, prompt, max_tokens),
             )
-            return self._openai_text(body, target.backend)
+            text = self._openai_text(body, target.backend)
+            tokens, cost = self._openai_usage(body)
+            return DispatchResult(text=text, total_tokens=tokens, cost_usd=cost)
         raise ProviderConfigError(f"backend {target.backend!r} has no native adapter")

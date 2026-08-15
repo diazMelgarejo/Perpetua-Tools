@@ -49,6 +49,8 @@ class _Runner:
             output="final answer",
             stage_outputs={"classify": "internal", "generate": "final answer"},
             requested_tokens=512,
+            total_tokens_used=480,
+            total_cost_usd=0.1,
         )
 
 

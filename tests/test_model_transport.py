@@ -120,7 +120,10 @@ async def test_bigmodel_dispatch_uses_registry_target_and_openai_wire_shape(
     route = respx.post("https://open.bigmodel.cn/api/paas/v4/chat/completions").mock(
         return_value=Response(
             200,
-            json={"choices": [{"message": {"content": "classification"}}]},
+            json={
+                "choices": [{"message": {"content": "classification"}}],
+                "usage": {"total_tokens": 42},
+            },
         )
     )
 
@@ -128,7 +131,9 @@ async def test_bigmodel_dispatch_uses_registry_target_and_openai_wire_shape(
         config_dir=config_dir, providers_path=providers
     ).dispatch("glm-paid", "classify this", 64, "classify")
 
-    assert result == "classification"
+    assert result.text == "classification"
+    assert result.total_tokens == 42
+    assert result.cost_usd is None  # bigmodel's OpenAI-shape usage has no cost field
     request = route.calls[0].request
     assert request.headers["authorization"] == "Bearer test-key"
     assert json.loads(request.content) == {
@@ -157,7 +162,7 @@ async def test_anthropic_dispatch_uses_native_messages_and_medium_effort(
         config_dir=config_dir, providers_path=providers
     ).dispatch("sonnet-paid", "write this", 256, "generate")
 
-    assert result == "final answer"
+    assert result.text == "final answer"
     request = route.calls[0].request
     assert request.headers["x-api-key"] == "test-key"
     assert request.headers["anthropic-version"] == "2023-06-01"
@@ -228,7 +233,10 @@ async def test_openrouter_dispatch_uses_registry_target_and_openai_wire_shape(
     route = respx.post("https://openrouter.ai/api/v1/chat/completions").mock(
         return_value=Response(
             200,
-            json={"choices": [{"message": {"content": "final answer"}}]},
+            json={
+                "choices": [{"message": {"content": "final answer"}}],
+                "usage": {"total_tokens": 55, "cost": 0.0123},
+            },
         )
     )
 
@@ -236,7 +244,9 @@ async def test_openrouter_dispatch_uses_registry_target_and_openai_wire_shape(
         config_dir=config_dir, providers_path=providers
     ).dispatch("openrouter-paid", "write this", 128, "generate")
 
-    assert result == "final answer"
+    assert result.text == "final answer"
+    assert result.total_tokens == 55
+    assert result.cost_usd == 0.0123
     request = route.calls[0].request
     assert request.headers["authorization"] == "Bearer test-key"
     assert "HTTP-Referer" not in request.headers
@@ -269,6 +279,55 @@ async def test_openrouter_optional_referer_and_title_only_sent_when_configured(
     request = route.calls[0].request
     assert request.headers["HTTP-Referer"] == "https://example.com"
     assert request.headers["X-Title"] == "Perpetua-Tools"
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_dispatch_result_has_none_usage_when_provider_omits_it(
+    transport_config, monkeypatch
+) -> None:
+    config_dir, providers = transport_config
+    monkeypatch.setenv("BIGMODEL_TEST_KEY", "test-key")
+    respx.post("https://open.bigmodel.cn/api/paas/v4/chat/completions").mock(
+        return_value=Response(
+            200,
+            json={"choices": [{"message": {"content": "classification"}}]},  # no "usage" key at all
+        )
+    )
+
+    result = await ProviderTransportRegistry(
+        config_dir=config_dir, providers_path=providers
+    ).dispatch("glm-paid", "classify this", 64, "classify")
+
+    assert result.text == "classification"
+    assert result.total_tokens is None
+    assert result.cost_usd is None
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_anthropic_usage_sums_input_and_output_tokens_no_cost(
+    transport_config, monkeypatch
+) -> None:
+    config_dir, providers = transport_config
+    monkeypatch.setenv("ANTHROPIC_TEST_KEY", "test-key")
+    respx.post("https://api.anthropic.com/v1/messages").mock(
+        return_value=Response(
+            200,
+            json={
+                "content": [{"type": "text", "text": "final answer"}],
+                "usage": {"input_tokens": 10, "output_tokens": 20},
+            },
+        )
+    )
+
+    result = await ProviderTransportRegistry(
+        config_dir=config_dir, providers_path=providers
+    ).dispatch("sonnet-paid", "write this", 256, "generate")
+
+    assert result.text == "final answer"
+    assert result.total_tokens == 30
+    assert result.cost_usd is None  # Anthropic doesn't return cost directly
 
 
 @pytest.mark.asyncio
