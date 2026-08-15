@@ -2,13 +2,12 @@
   "id": "f5a3139114c2",
   "key": "manual_f5a313",
   "name": "manual_f5a313",
-  "claim": "When multiple agent sessions work the same infrastructure-critical fix concurrently (guard scripts, pre-push hooks, canonical-repo tooling), a shared append-only coordination board (this repo's GossipBus, queried via orchestrator.coordination.paths.canonical_db_path()) is what prevented duplicate/conflicting work across at least 4 concurrent agents on this single fix. The pattern that worked: post status BEFORE and AFTER any consequential step (not just at the end), read the board fresh before deciding next action rather than trusting your own last-known state, and treat the latest timestamped ruling as authoritative even when it contradicts an earlier instruction in the same thread -- rulings evolve as agents verify things live.",
+  "claim": "When multiple sessions concurrently change infrastructure-critical hooks or guard scripts, use one append-only coordination board. Record status before and after consequential steps, reread the board before acting, and treat the latest timestamped ruling as authoritative when live verification changes an earlier understanding.",
   "conditions": [
-    "GossipBus",
-    "concurrent agents",
-    "coordination board query",
-    "multi-agent coordination",
-    "shared board"
+    "append-only coordination",
+    "concurrent sessions",
+    "guard scripts",
+    "shared status board"
   ],
   "evidence_ids": [
     "2026-08-14T13:56:05.275577+00:00"
@@ -27,7 +26,7 @@
       "ts": "2026-08-14T13:56:05.389003+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
-      "notes": "Across this single ECC push-gate fix: an initial ownership-boundary mistake (hand-editing PT's manifest-managed files) was caught and redirected via a live board ruling; a code-review finding from a human/Codex on my first PR 311 commit was only visible because I re-checked the board before assuming next steps; and two follow-up bugs (linked-worktree scope, GIT_DIR leakage) were found and fixed by another agent entirely without any of us discovering the same bug independently or clobbering each other's commits. Zero force-pushes, zero --no-verify bypasses, zero lost work across the whole multi-agent sequence.",
+      "notes": "The shared board redirected an ownership-boundary mistake, surfaced a review finding before follow-up work began, and let independent sessions fix separate defects without clobbering commits or bypassing verification.",
       "provisional": false,
       "evidence_snapshot": [
         "2026-08-14T13:56:05.275577+00:00"
@@ -38,5 +37,5 @@
   "rejection_count": 0,
   "accepted_at": "2026-08-14T13:56:05.388994+00:00",
   "reviewer": "learn.py",
-  "rationale": "Across this single ECC push-gate fix: an initial ownership-boundary mistake (hand-editing PT's manifest-managed files) was caught and redirected via a live board ruling; a code-review finding from a human/Codex on my first PR 311 commit was only visible because I re-checked the board before assuming next steps; and two follow-up bugs (linked-worktree scope, GIT_DIR leakage) were found and fixed by another agent entirely without any of us discovering the same bug independently or clobbering each other's commits. Zero force-pushes, zero --no-verify bypasses, zero lost work across the whole multi-agent sequence."
+  "rationale": "The shared board redirected an ownership-boundary mistake, surfaced a review finding before follow-up work began, and let independent sessions fix separate defects without clobbering commits or bypassing verification."
 }
