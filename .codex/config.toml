@@ -51,17 +51,8 @@ args = ["-y", "@upstash/context7-mcp@latest"]
 startup_timeout_sec = 30
 
 [mcp_servers.exa]
-# Self-contained bootstrap: no fixed offset from any single root var (this
-# repo's checkout can sit sibling to or one level removed from orama-system
-# depending on topology). Cache-first, then aunt/sibling walk from PWD,
-# then bounded find as last resort — see
-# orama-system/scripts/exa/resolve-orama-root.sh for the full resolver
-# (used once orama-system's own location is already known, e.g. from
-# inside orama-system itself); this inline copy exists because Codex's
-# config can't depend on a script living inside the very repo it's trying
-# to locate.
-command = "bash"
-args = ["-c", 'C="$HOME/.openclaw/state/orama-root.cache"; W="$(cat "$C" 2>/dev/null)"; [ -f "$W/scripts/exa/exa-mcp-wrapper.sh" ] || W=""; if [ -z "$W" ]; then for D in "$PWD/orama-system" "$PWD/../orama-system" "$PWD/../../orama-system"; do R="$(cd "$D" 2>/dev/null && pwd)"; if [ -n "$R" ] && [ -f "$R/scripts/exa/exa-mcp-wrapper.sh" ]; then W="$R"; break; fi; done; fi; if [ -z "$W" ]; then W="$(find "$HOME" -maxdepth 4 -type d -name orama-system 2>/dev/null | while read -r D; do [ -f "$D/scripts/exa/exa-mcp-wrapper.sh" ] && { echo "$D"; break; }; done)"; fi; [ -n "$W" ] || { echo "orama-system checkout not found" >&2; exit 1; }; exec "$W/scripts/exa/exa-mcp-wrapper.sh"']
+command = "npx"
+args = ["-y", "mcp-remote", "https://mcp.exa.ai/mcp"]
 startup_timeout_sec = 30
 
 [mcp_servers.memory]
