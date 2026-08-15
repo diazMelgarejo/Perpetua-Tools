@@ -155,6 +155,31 @@ jobs:
           fi
           echo "OK: default_primary_model is not a stale reference"
 
+  merge-claims-guard:
+    name: Merge-claim validation (post-push)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine commit range for this push/PR
+        id: range
+        run: |
+          zero="0000000000000000000000000000000000000000"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git fetch origin "${{ github.base_ref }}" --depth=1 >/dev/null 2>&1 || true
+            echo "range=origin/${{ github.base_ref }}..HEAD" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.event.before }}" == "$zero" || -z "${{ github.event.before }}" ]]; then
+            # New-branch-creation push: no prior SHA to diff against, only HEAD exists to check.
+            echo "range=HEAD~1..HEAD" >> "$GITHUB_OUTPUT"
+          else
+            echo "range=${{ github.event.before }}..${{ github.event.after }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verify merge claims against reanchor_scan.sh tree-twin scan
+        run: python3 scripts/git/verify_merge_claims.py "${{ steps.range.outputs.range }}"
+
   lint-and-test:
     needs: [git-hygiene]
     runs-on: ubuntu-latest

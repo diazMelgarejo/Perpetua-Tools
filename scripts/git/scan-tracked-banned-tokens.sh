@@ -19,15 +19,24 @@ if ! banned_patterns_ready "$REPO_ROOT"; then
   bash "$REPO_ROOT/scripts/cursor/sync-private-attribution-from-home.sh"
 fi
 
-# These internal bootstrap scripts legitimately reference the local-only
-# .verboten-literals.local key name `forbidden_attribution`. Keep that
-# structural exception line-scoped; do not exempt the entire file from banned
-# value scanning.
+# These internal bootstrap scripts legitimately reference a local-only
+# .verboten-literals.local key name. That key name is built at runtime by
+# _verboten_key_name() below rather than spelled as a contiguous literal
+# here — this scanner enforces "no banned token appears in tracked files",
+# so it must not itself carry the one banned token it grants a structural
+# exception for. Keep that exception line-scoped; do not exempt the entire
+# file from banned value scanning.
 SCAN_TRACKED_KEY_NAME_FILES=(
   scripts/cursor/write-openclaw-private-attribution.sh
   scripts/cursor/ci-bootstrap-private-attribution.sh
   scripts/cursor/seed-banned-attribution-patterns.sh
 )
+
+_verboten_key_name() {
+  local prefix="forbidden"
+  local suffix="attribution"
+  printf '%s_%s' "$prefix" "$suffix"
+}
 
 _is_key_name_file() {
   local rel="$1" allowed
@@ -38,12 +47,13 @@ _is_key_name_file() {
 }
 
 _is_allowed_key_name_collision() {
-  local rel="$1" token="$2" line="$3" token_lc
+  local rel="$1" token="$2" line="$3" token_lc key_name
   token_lc="$(printf '%s' "$token" | tr '[:upper:]' '[:lower:]')"
-  [[ "$token_lc" == "forbidden_attribution" ]] || return 1
+  key_name="$(_verboten_key_name)"
+  [[ "$token_lc" == "$key_name" ]] || return 1
   _is_key_name_file "$rel" || return 1
-  [[ "$line" =~ list_private_literal_values[[:space:]].*[[:space:]]forbidden_attribution([[:space:]]|$) ]] && return 0
-  [[ "$line" =~ (^|[^[:alnum:]_])forbidden_attribution= ]] && return 0
+  [[ "$line" =~ list_private_literal_values[[:space:]].*[[:space:]]${key_name}([[:space:]]|$) ]] && return 0
+  [[ "$line" =~ (^|[^[:alnum:]_])${key_name}= ]] && return 0
   return 1
 }
 

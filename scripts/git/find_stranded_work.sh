@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
-# Report local-only branches, unpushed commits, and dirty worktrees across the
-# current repo, sibling repos, and their linked worktrees. Read-only by design.
+# Report local-only branches, unpushed/unreanchored commits, and dirty
+# worktrees across the current repo, sibling repos, and their linked
+# worktrees. Read-only by design.
 #
-# Branch ahead counts below are a cheap local-upstream first pass for
-# unpushed work only. They are not authoritative for post-rewrite
-# merged/orphaned status; use scripts/git/reanchor_scan.sh for that.
+# Merged/orphaned classification uses scripts/git/reanchor_scan.sh's
+# tree-twin scan, not ahead/behind counts or merge-base — both are
+# meaningless once a repo's history has been rewritten (squash-rebundle,
+# filter-repo, expunge, force-push). See reanchor_scan.sh's own header.
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -75,25 +77,37 @@ worktree_label() {
 }
 
 print_branch_issues() {
-  local repo="$1" branch upstream ahead
+  local repo="$1" branch upstream reanchor_script status_line branch_status detail
+  reanchor_script="${SCRIPT_DIR}/reanchor_scan.sh"
+
   while IFS= read -r branch; do
     [[ -n "$branch" ]] || continue
     if ! upstream="$(git -C "$repo" rev-parse --abbrev-ref "${branch}@{u}" 2>/dev/null)"; then
       echo "  branch: ${branch}"
       echo "    issue: no-upstream"
-      continue
-    fi
-
-    ahead="$(git -C "$repo" rev-list --count "${upstream}..${branch}" 2>/dev/null)" || ahead=0
-    if [[ "$ahead" =~ ^[0-9]+$ ]] && ((ahead > 0)); then
-      echo "  branch: ${branch}"
-      echo "    issue: unpushed-${ahead}-commits"
-      echo "    upstream: ${upstream}"
-      echo "    note: raw upstream ahead count; use scripts/git/reanchor_scan.sh for post-rewrite merge/orphan classification"
-      echo "    commits:"
-      git -C "$repo" log --format='      %h %s' --reverse "${upstream}..${branch}" 2>/dev/null
     fi
   done < <(git -C "$repo" for-each-ref --format='%(refname:short)' refs/heads 2>/dev/null)
+
+  # Merged/orphaned classification: tree-twin scan against origin/main, not
+  # ahead/behind counts or merge-base — both are meaningless after a history
+  # rewrite (see reanchor_scan.sh's own header for why).
+  [[ -x "$reanchor_script" ]] || return 0
+  while IFS= read -r status_line; do
+    [[ "$status_line" =~ ^[[:space:]]+([^[:space:]]+)[[:space:]]+(NO-TWIN|NEEDS-REANCHOR)(.*)$ ]] || continue
+    branch="${BASH_REMATCH[1]}"
+    branch_status="${BASH_REMATCH[2]}"
+    detail="${BASH_REMATCH[3]# }"
+    echo "  branch: ${branch}"
+    case "$branch_status" in
+      NO-TWIN)
+        echo "    issue: no-tree-twin-in-main"
+        ;;
+      NEEDS-REANCHOR)
+        echo "    issue: needs-reanchor"
+        ;;
+    esac
+    echo "    detail: ${branch_status}${detail}"
+  done < <(bash "$reanchor_script" "$repo" origin/main heads 2>/dev/null)
 }
 
 print_worktree_issues() {

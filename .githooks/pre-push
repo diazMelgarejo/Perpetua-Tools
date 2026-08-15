@@ -112,7 +112,13 @@ while read -r local_ref local_oid remote_ref remote_oid; do
 
   while read -r sha; do
     [[ -z "$sha" ]] && continue
-    changed_paths="$(git diff-tree --no-commit-id --name-only -r "$sha" 2>/dev/null)" || continue
+    # -m: for merge commits, diff-tree emits nothing by default (it only
+    # shows paths for single-parent commits unless told otherwise). -m
+    # diffs a merge commit against EACH parent separately, so a
+    # manifest-managed path changed by a merge result still reaches
+    # _is_guard_managed_path below instead of silently skipping the
+    # divergence check on merge pushes.
+    changed_paths="$(git diff-tree --no-commit-id --name-only -r -m "$sha" 2>/dev/null)" || continue
     [[ -z "$changed_paths" ]] && continue
     while IFS= read -r changed_path; do
       [[ -z "$changed_path" ]] && continue
