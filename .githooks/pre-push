@@ -10,6 +10,43 @@ push_refs="$(mktemp)"
 trap 'rm -f "$push_refs"' EXIT
 cat >"$push_refs"
 
+# Guard-sync manifest: single source of truth for which scripts/git/ and
+# .githooks/ paths are actually manifest-managed guard tooling. Used below
+# to trigger the cross-worktree divergence scan on an EXACT membership
+# check instead of "lives anywhere under scripts/git/" — see ECC push-gate
+# analysis 2026-08-14 § Root Cause. A helper script that merely lives in
+# the same directory as the guards (e.g. ecc-submodule-sync.sh) must not
+# drag in a scan whose whole purpose is protecting the guard files
+# themselves.
+_GUARD_MANIFEST_LOADED=0
+if [[ -f "$ROOT/scripts/git/guard-sync-manifest.sh" ]]; then
+  # shellcheck source=scripts/git/guard-sync-manifest.sh
+  source "$ROOT/scripts/git/guard-sync-manifest.sh"
+  _GUARD_MANIFEST_LOADED=1
+fi
+
+_is_guard_managed_path() {
+  local path="$1" e
+  if [[ "$_GUARD_MANIFEST_LOADED" == "1" ]]; then
+    for e in "${GUARD_PARITY_REQUIRED[@]}"; do
+      [[ "$path" == "scripts/git/$e" ]] && return 0
+    done
+    for e in "${GUARD_SYNC_GITHOOKS[@]}"; do
+      [[ "$path" == ".githooks/$e" ]] && return 0
+    done
+    return 1
+  fi
+  # Manifest unavailable — fail closed to the old, broader directory-wide
+  # trigger rather than silently skipping the divergence check entirely.
+  # Must cover .githooks/ too, not just scripts/git/: the manifest governs
+  # both (GUARD_SYNC_GITHOOKS), so a degraded fallback that only matched
+  # scripts/git/ would let a manifest-managed githook change (e.g.
+  # .githooks/commit-msg) skip divergence validation exactly when the
+  # manifest is unavailable — fail-open in precisely the case meant to be
+  # the safety net (caught in review, PR 311).
+  [[ "$path" =~ ^(scripts/git/|\.githooks/) ]]
+}
+
 # Guard: scrub macOS .DS_Store from .git/ internals (see scrub_dsstore.sh).
 if [[ -x "$ROOT/scripts/git/scrub_dsstore.sh" ]]; then
   bash "$ROOT/scripts/git/scrub_dsstore.sh" || true
@@ -68,17 +105,29 @@ while read -r local_ref local_oid remote_ref remote_oid; do
 
   guard_range="$(range_for_ref "$local_oid" "$remote_oid")"
 
-  if ! git rev-list "$guard_range" >/dev/null 2>&1; then
+  guard_commits="$(git rev-list "$guard_range" 2>/dev/null)" || continue
+  if [[ -z "$guard_commits" ]]; then
     continue
   fi
 
   while read -r sha; do
     [[ -z "$sha" ]] && continue
-    if git diff-tree --no-commit-id --name-only -r "$sha" | grep -qE '^scripts/git/'; then
-      guard_touch=1
-      break 2
-    fi
-  done < <(git rev-list "$guard_range")
+    # -m: for merge commits, diff-tree emits nothing by default (it only
+    # shows paths for single-parent commits unless told otherwise). -m
+    # diffs a merge commit against EACH parent separately, so a
+    # manifest-managed path changed by a merge result still reaches
+    # _is_guard_managed_path below instead of silently skipping the
+    # divergence check on merge pushes.
+    changed_paths="$(git diff-tree --no-commit-id --name-only -r -m "$sha" 2>/dev/null)" || continue
+    [[ -z "$changed_paths" ]] && continue
+    while IFS= read -r changed_path; do
+      [[ -z "$changed_path" ]] && continue
+      if _is_guard_managed_path "$changed_path"; then
+        guard_touch=1
+        break 3
+      fi
+    done <<<"$changed_paths"
+  done <<<"$guard_commits"
 done <"$push_refs"
 
 if [[ "$guard_touch" == "1" ]] && [[ "${GUARD_SYNC_SKIP_DIVERGENCE_CHECK:-0}" != "1" ]]; then
@@ -123,12 +172,14 @@ while read -r local_ref local_oid remote_ref remote_oid; do
 
   range="$(range_for_ref "$local_oid" "$remote_oid")"
 
-  if ! git rev-list "$range" >/dev/null 2>&1; then
+  range_commits="$(git rev-list "$range" 2>/dev/null)" || continue
+  if [[ -z "$range_commits" ]]; then
     continue
   fi
 
   audit_range="$(audit_range_for_ref "$local_oid" "$remote_oid")" || exit $?
-  if ! git rev-list "$audit_range" >/dev/null 2>&1; then
+  audit_commits="$(git rev-list "$audit_range" 2>/dev/null)" || continue
+  if [[ -z "$audit_commits" ]]; then
     continue
   fi
 
