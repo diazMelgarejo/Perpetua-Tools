@@ -1,0 +1,42 @@
+{
+  "id": "56184c2ff86c",
+  "key": "manual_56184c",
+  "name": "manual_56184c",
+  "claim": "Reply to a GitHub PR review-comment thread via POST to pulls/{pr}/comments/{id}/replies with only a body field, not a fresh position-based comment",
+  "conditions": [
+    "gh-api",
+    "github",
+    "pull request",
+    "reply",
+    "review-comment"
+  ],
+  "evidence_ids": [
+    "2026-08-15T11:28:54.221081+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-15T11:28:54.221081+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-15T11:28:54.221081+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-15T11:28:54.340455+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Constructing a new comment with path/line/commit_id/side against an existing thread fails with HTTP 422 'no subschema in oneOf matched \u2014 in_reply_to wasn't supplied'. The replies sub-resource is the correct shape. Confirmed on PT PR #354 discussion_r3788626078 -> reply id 3789236033.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-15T11:28:54.221081+00:00"
+      ],
+      "lessons_sha": "b616f11a6ccd"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-15T11:28:54.340445+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Constructing a new comment with path/line/commit_id/side against an existing thread fails with HTTP 422 'no subschema in oneOf matched \u2014 in_reply_to wasn't supplied'. The replies sub-resource is the correct shape. Confirmed on PT PR #354 discussion_r3788626078 -> reply id 3789236033."
+}

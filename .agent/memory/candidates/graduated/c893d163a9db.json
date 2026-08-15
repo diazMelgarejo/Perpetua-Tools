@@ -1,0 +1,42 @@
+{
+  "id": "c893d163a9db",
+  "key": "manual_c893d1",
+  "name": "manual_c893d1",
+  "claim": "When a canonical whole-manifest sync tool (sync-attribution-guard-scripts.sh) pulls in unrelated out-of-scope changes alongside the intended fix, revert to a narrow single-file hand-copy and explicitly flag the out-of-scope findings rather than silently including or silently dropping them",
+  "conditions": [
+    "guard-sync",
+    "manifest-sync",
+    "narrow-fix",
+    "out-of-scope",
+    "scope-creep"
+  ],
+  "evidence_ids": [
+    "2026-08-15T11:28:54.577769+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-15T11:28:54.577769+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-15T11:28:54.577769+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-15T11:28:54.697652+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "On PT #355 (check_tdd_commit.sh bash 3.2 fix), the full manifest sync also touched pr-body-grant-lib.py (pre-existing reduced validation, not a regression) and surfaced a real banned-token finding in ci-bootstrap-private-attribution.sh that PT's stale scanner had been blind to. Neither was in scope for the one-file bug being fixed; both were named in the PR body as deferred follow-ups instead of silently swept in or silently discarded.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-15T11:28:54.577769+00:00"
+      ],
+      "lessons_sha": "6bb045e9eec0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-15T11:28:54.697640+00:00",
+  "reviewer": "learn.py",
+  "rationale": "On PT #355 (check_tdd_commit.sh bash 3.2 fix), the full manifest sync also touched pr-body-grant-lib.py (pre-existing reduced validation, not a regression) and surfaced a real banned-token finding in ci-bootstrap-private-attribution.sh that PT's stale scanner had been blind to. Neither was in scope for the one-file bug being fixed; both were named in the PR body as deferred follow-ups instead of silently swept in or silently discarded."
+}
