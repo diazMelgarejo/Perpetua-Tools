@@ -50,6 +50,7 @@ Autopilot disabled until timeout/embedding issues fixed. Re-enable LaunchAgent w
 
 | Topic | Path |
 | ----- | ---- |
+| PR354 Memory Union Analysis | `PR354_MEMORY_UNION_ANALYSIS_2026-08-15.md` |
 | Grant HMAC MVP | `PR_BODY_GRANT_HMAC_MVP_SAGA_2026-08-02.md` |
 | PR222 Hermes staging | `PR222_HERMES_STAGING_SESSION_2026-07-27.md` |
 | Guard sync epic | `GUARD_SYNC_EPIC_SAGA_COMPLETION_2026-08-01.md` |
