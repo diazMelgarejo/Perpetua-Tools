@@ -1,0 +1,43 @@
+{
+  "id": "20234c4410fd",
+  "key": "manual_20234c",
+  "name": "manual_20234c",
+  "claim": "Before hand-editing any scripts/git/ or .githooks/ file in Perpetua-Tools (or AlphaClaw) to satisfy a 'fix everything on branch X' instruction, check scripts/git/guard-sync-manifest.sh's GUARD_PARITY_REQUIRED and GUARD_SYNC_GITHOOKS arrays first. Files listed there are canonical-managed from orama-system \u2014 PT's copy must stay a byte-identical mirror. Implement the fix in orama-system on its own branch, merge normally, then sync the mirror down; never hand-edit the downstream copy even when an explicit user instruction says 'same branch,' since that instruction is about the deliverable's home branch, not a license to fork canonical infrastructure.",
+  "conditions": [
+    ".githooks",
+    "PT mirror",
+    "canonical ownership",
+    "guard-sync manifest",
+    "hand-edit downstream",
+    "scripts/git"
+  ],
+  "evidence_ids": [
+    "2026-08-14T11:30:57.614972+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T11:30:57.614972+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T11:30:57.614972+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T11:30:57.976925+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Hand-edited .githooks/pre-push and scripts/git/check-guard-sync-divergence.sh directly in PT's fix/ecc-overlay-idempotency-20260814 worktree before checking the manifest \u2014 both files turned out to be listed in GUARD_SYNC_EXECUTABLES/GUARD_SYNC_GITHOOKS. Caught via AskUserQuestion before committing; the real fix was redirected to orama-system PR 311 per a live multi-agent coordination-board ruling (GossipBus records 1339-1340, codex-primary-orchestrator). Reverted the PT hand-edits cleanly with git checkout --. ECC push-gate analysis 2026-08-14.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T11:30:57.614972+00:00"
+      ],
+      "lessons_sha": "20711865609c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T11:30:57.976917+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Hand-edited .githooks/pre-push and scripts/git/check-guard-sync-divergence.sh directly in PT's fix/ecc-overlay-idempotency-20260814 worktree before checking the manifest \u2014 both files turned out to be listed in GUARD_SYNC_EXECUTABLES/GUARD_SYNC_GITHOOKS. Caught via AskUserQuestion before committing; the real fix was redirected to orama-system PR 311 per a live multi-agent coordination-board ruling (GossipBus records 1339-1340, codex-primary-orchestrator). Reverted the PT hand-edits cleanly with git checkout --. ECC push-gate analysis 2026-08-14."
+}

@@ -1,0 +1,43 @@
+{
+  "id": "9c02865055b4",
+  "key": "manual_9c0286",
+  "name": "manual_9c0286",
+  "claim": "A negative/absence assertion in a subprocess-based bash-hook test (e.g. 'divergence message not in output') can pass vacuously if the process crashed early for an unrelated reason, before ever reaching the code path under test. Always pair it with a positive outcome assertion (exact returncode) so the test proves the intended code path was actually exercised, not just that one specific string never appeared.",
+  "conditions": [
+    "approved git identity",
+    "audit_attribution",
+    "negative assertion",
+    "returncode",
+    "subprocess test",
+    "vacuous test pass"
+  ],
+  "evidence_ids": [
+    "2026-08-14T11:31:16.401452+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T11:31:16.401452+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T11:31:16.401452+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T11:31:16.529059+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "test_helper_only_change_does_not_trigger_divergence_scan initially only asserted 'guard-sync divergence' not in output, and passed \u2014 but for the wrong reason twice in a row: first because the fixture repo was missing real scripts/git/ dependencies (check_no_pending_merge.sh, ensure_hooks_installed.sh) that pre-push calls unconditionally before the logic under test ever runs, then because the synthetic 'Tester <tester@example.com>' git identity isn't on this repo's approved-author allowlist, so audit_attribution.sh rejected the push for an unrelated reason. A PR 311 review comment (coordination record 1343) caught this by asking for returncode==0 too. Fixed by vendoring the real scripts/.githooks dependencies wholesale into the fixture and switching to the approved the approved cyre git identity (CLAUDE.md section Git Hygiene) identity (matching tests/test_audit_engine.py's convention).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T11:31:16.401452+00:00"
+      ],
+      "lessons_sha": "1ae933d4c83e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T11:31:16.529051+00:00",
+  "reviewer": "learn.py",
+  "rationale": "test_helper_only_change_does_not_trigger_divergence_scan initially only asserted 'guard-sync divergence' not in output, and passed \u2014 but for the wrong reason twice in a row: first because the fixture repo was missing real scripts/git/ dependencies (check_no_pending_merge.sh, ensure_hooks_installed.sh) that pre-push calls unconditionally before the logic under test ever runs, then because the synthetic 'Tester <tester@example.com>' git identity isn't on this repo's approved-author allowlist, so audit_attribution.sh rejected the push for an unrelated reason. A PR 311 review comment (coordination record 1343) caught this by asking for returncode==0 too. Fixed by vendoring the real scripts/.githooks dependencies wholesale into the fixture and switching to the approved the approved cyre git identity (CLAUDE.md section Git Hygiene) identity (matching tests/test_audit_engine.py's convention)."
+}
