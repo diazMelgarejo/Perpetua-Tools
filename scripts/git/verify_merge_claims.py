@@ -45,6 +45,10 @@ def merged_claims(messages: list[str]) -> set[str]:
 
 
 def current_branch(repo: str) -> str:
+    if os.environ.get("GITHUB_EVENT_NAME") == "pull_request":
+        head_ref = os.environ.get("GITHUB_HEAD_REF")
+        if head_ref:
+            return head_ref
     env_ref = os.environ.get("GITHUB_REF_NAME")
     if env_ref and os.environ.get("GITHUB_EVENT_NAME") != "pull_request":
         return env_ref
