@@ -19,14 +19,16 @@ done < <(git diff --cached --name-only --diff-filter=ACMRT 2>/dev/null || true)
 
 prod=()
 tests=()
-for f in "${staged[@]}"; do
-  [[ "$f" == web/src/* ]] || continue
-  case "$f" in
-    web/src/test/*) continue ;;
-    *.test.ts|*.test.tsx) tests+=("$f"); continue ;;
-    *.ts|*.tsx) prod+=("$f");;
-  esac
-done
+if ((${#staged[@]})); then
+  for f in "${staged[@]}"; do
+    [[ "$f" == web/src/* ]] || continue
+    case "$f" in
+      web/src/test/*) continue ;;
+      *.test.ts|*.test.tsx) tests+=("$f"); continue ;;
+      *.ts|*.tsx) prod+=("$f");;
+    esac
+  done
+fi
 
 if ((${#prod[@]} == 0)); then
   exit 0
