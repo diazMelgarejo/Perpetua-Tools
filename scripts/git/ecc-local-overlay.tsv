@@ -1,5 +1,6 @@
 # schema=1
-# upstream=ed387446052dfbc6b52de149406b70efa65edc59
+# upstream=c9de8f5b2b3a225bca9befa2b7700aa5e3a4d1b8
+# historical_upstream=ed387446052dfbc6b52de149406b70efa65edc59
 # path<TAB>mode<TAB>reviewed intent; edit this registry only as part of a deliberate overlay review
 # mode is new-file (local-only) or additive (additions only to an upstream-owned file)
 .agents/skills/frontend-design/agents/openai.yaml	new-file	Codex OpenAI agent surface for frontend-design

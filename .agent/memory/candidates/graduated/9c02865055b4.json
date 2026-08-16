@@ -1,0 +1,41 @@
+{
+  "id": "9c02865055b4",
+  "key": "manual_9c0286",
+  "name": "manual_9c0286",
+  "claim": "A negative assertion in a subprocess-based hook test can pass vacuously when the process exits early for an unrelated reason. Pair it with an exact successful return-code assertion so the test proves the intended code path ran.",
+  "conditions": [
+    "negative assertion",
+    "return code",
+    "subprocess test",
+    "vacuous pass"
+  ],
+  "evidence_ids": [
+    "2026-08-14T11:31:16.401452+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T11:31:16.401452+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T11:31:16.401452+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T11:31:16.529059+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A fixture first failed before the target path because dependencies were absent, then failed under an unapproved test identity. The test became meaningful only after supplying the real dependencies, using the approved Git identity documented in repository guidance, and asserting a zero return code.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T11:31:16.401452+00:00"
+      ],
+      "lessons_sha": "1ae933d4c83e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T11:31:16.529051+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A fixture first failed before the target path because dependencies were absent, then failed under an unapproved test identity. The test became meaningful only after supplying the real dependencies, using the approved Git identity documented in repository guidance, and asserting a zero return code."
+}

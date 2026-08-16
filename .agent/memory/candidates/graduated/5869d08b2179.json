@@ -1,0 +1,38 @@
+{
+  "id": "5869d08b2179",
+  "key": "manual_5869d0",
+  "name": "manual_5869d0",
+  "claim": "Locked D2\u2013D5 operational decisions remain active independently of the revised D1 versioning lesson: keep runtime-agent configuration distinct from methodology-agent configuration; retain the integration feature scope and supported platform/install coverage; retain documented authentication precedence and its non-interactive fallback; and retain documentation for both command-line and supervisor HTTP entrypoints. Do not reopen these decisions without an explicit human override.",
+  "conditions": [
+    "D2 D3 D4 D5 locked decisions operational continuity human override"
+  ],
+  "evidence_ids": [
+    "2026-08-15T05:30:36.778753+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-15T05:30:36.778753+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-15T05:30:36.778753+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-15T05:30:36.901345+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The revised D1 lesson supersedes an older compound decision. This standalone continuation preserves the unaffected D2\u2013D5 guidance without relying on partial supersession semantics.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-15T05:30:36.778753+00:00"
+      ],
+      "lessons_sha": "02a0bc814f16"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-15T05:30:36.901334+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The revised D1 lesson supersedes an older compound decision. This standalone continuation preserves the unaffected D2\u2013D5 guidance without relying on partial supersession semantics."
+}

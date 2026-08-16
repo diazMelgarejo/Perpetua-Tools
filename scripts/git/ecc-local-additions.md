@@ -1,14 +1,14 @@
 # vendor/ecc-tools — local-only additions
 
-The submodule gitlink is pinned to **canonical `ed387446`** (origin/main of ecc-tools,
-2026-07-15). Five reviewed local overlay paths are preserved here so they
+The submodule gitlink is aligned to **canonical `c9de8f5b`** (origin/main of
+ecc-tools, verified 2026-08-14). Five reviewed local overlay paths are preserved here so they
 survive `git submodule update`. They are re-applied by
 [`ecc-submodule-sync.sh`](ecc-submodule-sync.sh) from
 [`ecc-local-additions.patch`](ecc-local-additions.patch). The companion
 [`ecc-local-overlay.tsv`](ecc-local-overlay.tsv) is the reviewed intent registry;
 the patch is only the portable application artifact.
 
-## What is currently preserved (vs canonical ed387446)
+## What is currently preserved (vs canonical c9de8f5b)
 
 | File | Mode | Lines | What it is |
 |------|------|-------|-----------|
@@ -46,6 +46,23 @@ deletions, patch-type mismatches, and unreviewed submodule changes. `update`
 and `upgrade` restore the existing reviewed patch but never call `save`
 themselves. Restore applies each registered path independently, so an existing
 local-only file cannot mask a required `additive` overlay in a different file.
+Candidate patches use full blob IDs, so the review gate remains stable across
+different Git abbreviation settings.
+
+## 2026-08-14 Revalidation and advancement
+
+The current `origin/main` was fetched and verified at `c9de8f5b`. The reviewed
+candidate contains the same five paths and 109 added lines shown above; no new
+overlay path or content delta was found. The patch was regenerated against that
+current base after review. The earlier `ed387446` anchor remains recorded in
+the manifest and the historical section below as provenance, not as the active
+canonical target.
+
+The restore workflow is intentionally idempotent: a clean checkout with no
+local files is allowed through `upgrade`, even when it is already at
+`origin/main`, and the reviewed patch is restored before success is reported.
+This protects the local-only overlay from the stale assumption that a current
+submodule SHA implies an already-restored worktree.
 
 ## 2026-07-15 Reclassification
 

@@ -1,0 +1,41 @@
+{
+  "id": "f5a3139114c2",
+  "key": "manual_f5a313",
+  "name": "manual_f5a313",
+  "claim": "When multiple sessions concurrently change infrastructure-critical hooks or guard scripts, use one append-only coordination board. Record status before and after consequential steps, reread the board before acting, and treat the latest timestamped ruling as authoritative when live verification changes an earlier understanding.",
+  "conditions": [
+    "append-only coordination",
+    "concurrent sessions",
+    "guard scripts",
+    "shared status board"
+  ],
+  "evidence_ids": [
+    "2026-08-14T13:56:05.275577+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T13:56:05.275577+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T13:56:05.275577+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T13:56:05.389003+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The shared board redirected an ownership-boundary mistake, surfaced a review finding before follow-up work began, and let independent sessions fix separate defects without clobbering commits or bypassing verification.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T13:56:05.275577+00:00"
+      ],
+      "lessons_sha": "563618bfcaf5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T13:56:05.388994+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The shared board redirected an ownership-boundary mistake, surfaced a review finding before follow-up work began, and let independent sessions fix separate defects without clobbering commits or bypassing verification."
+}

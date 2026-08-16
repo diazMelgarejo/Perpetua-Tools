@@ -1,0 +1,41 @@
+{
+  "id": "fb41758b35af",
+  "key": "manual_fb4175",
+  "name": "manual_fb4175",
+  "claim": "When a shell script resolves its own location through its source path for self-referential logic, a test that only changes the subprocess working directory while invoking the real on-disk script does not exercise a different-checkout scenario. Copy the script and its sourced dependencies into the synthetic fixture, then invoke that copy.",
+  "conditions": [
+    "fixture isolation",
+    "script source path",
+    "self-referential script",
+    "synthetic checkout"
+  ],
+  "evidence_ids": [
+    "2026-08-14T11:31:06.492452+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T11:31:06.492452+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T11:31:06.492452+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T11:31:06.625577+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Changing only the working directory left self-resolution anchored to the real checkout and caused the test to inspect unrelated sibling directories. A copied script and dependencies correctly confined the test to the synthetic fixture.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T11:31:06.492452+00:00"
+      ],
+      "lessons_sha": "0fe63aa55315"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T11:31:06.625565+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Changing only the working directory left self-resolution anchored to the real checkout and caused the test to inspect unrelated sibling directories. A copied script and dependencies correctly confined the test to the synthetic fixture."
+}

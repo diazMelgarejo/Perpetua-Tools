@@ -1,0 +1,49 @@
+{
+  "id": "b33c666ef2e9",
+  "key": "manual_b33c66",
+  "name": "manual_b33c66",
+  "claim": "resolve_sibling_git_repo.sh's sibling_repo_is_git_root() treats any 0-byte regular file named .git as a valid sibling git root (uses [[ -e .../.git ]] existence-only, excluding only symlinks) \u2014 false-positives on uv's sdist cache marker files and blocks pushes with a bogus DIVERGENCE finding",
+  "conditions": [
+    "canonical-bug",
+    "false-positive",
+    "guard-sync-divergence",
+    "resolve_sibling_git_repo",
+    "uv-cache"
+  ],
+  "evidence_ids": [
+    "2026-08-15T11:28:54.856431+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-15T11:28:54.856431+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-08-15T11:28:54.856431+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-15T11:28:54.974575+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Confirmed 11 instances under /private<local-tmp-file>/sdists-v9/, each a 0-byte plain regular file, none a real git repo ([ -d .../.git ] false for all 11). Blocked push of PT PR #355 with 'DIVERGENCE: sdists-v9 vs canonical' until GUARD_SYNC_SKIP_DIVERGENCE_CHECK=1 was used for that one push, deliberately, after proof the flagged sibling wasn't real. This is a canonical (orama-system) bug in manifest-managed tooling \u2014 needs an upstream fix (e.g. require -d or valid gitdir: content), not a downstream hand-patch. Not yet fixed anywhere; flagging for future pickup.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-08-15T11:28:54.856431+00:00"
+      ],
+      "lessons_sha": "5e6b5b6fd0ed"
+    },
+    {
+      "ts": "2026-08-16T00:30:00.000000+00:00",
+      "action": "corrected",
+      "reviewer": "inline-comment-resolution",
+      "notes": "PR #354 CodeRabbit remediation (review 4945045084): this record's 'Not yet fixed anywhere; flagging for future pickup' note went stale. lesson_27828a75ba3e records the fix (git rev-parse --show-toplevel replacing the naive [[ -e .../.git ]] check) as verified on 2026-08-15T12:12:55Z -- but that verification was against a working branch, not origin/main: the underlying commit (61600dff, authored 2026-08-14T12:17:51Z) only became reachable from origin/main today, via PT PR #355's merge (26564557). Between 2026-08-15T12:12:55Z and 2026-08-16 (today), the fix was genuinely accurate-but-unmerged -- 'fixed' and 'fixed on main' were briefly different facts. Both are now true. Original claim and rationale retained unchanged as audit evidence.",
+      "supersedes_ref": "lesson_27828a75ba3e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-15T11:28:54.974565+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Confirmed 11 instances under /private<local-tmp-file>/sdists-v9/, each a 0-byte plain regular file, none a real git repo ([ -d .../.git ] false for all 11). Blocked push of PT PR #355 with 'DIVERGENCE: sdists-v9 vs canonical' until GUARD_SYNC_SKIP_DIVERGENCE_CHECK=1 was used for that one push, deliberately, after proof the flagged sibling wasn't real. This is a canonical (orama-system) bug in manifest-managed tooling \u2014 needs an upstream fix (e.g. require -d or valid gitdir: content), not a downstream hand-patch. Not yet fixed anywhere; flagging for future pickup."
+}

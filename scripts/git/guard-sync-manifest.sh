@@ -64,6 +64,7 @@ GUARD_SYNC_DATA_FILES=(
 # sync-attribution-guard-scripts.sh's handling.
 GUARD_SYNC_GITHOOKS=(
   commit-msg
+  pre-push
 )
 
 # Every synced path must be byte-identical in downstream repos when parity runs.

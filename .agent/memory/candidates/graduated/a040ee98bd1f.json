@@ -1,0 +1,42 @@
+{
+  "id": "a040ee98bd1f",
+  "key": "manual_a040ee",
+  "name": "manual_a040ee",
+  "claim": "Guard every bash for-loop over an array built with += with an if ((${#arr[@]})); then ... fi count check before iterating",
+  "conditions": [
+    "bash",
+    "empty array",
+    "for loop",
+    "macos",
+    "set -u"
+  ],
+  "evidence_ids": [
+    "2026-08-15T11:28:53.422367+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-15T11:28:53.422367+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-15T11:28:53.422367+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-15T11:28:53.774083+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "macOS default bash 3.2.57 aborts with 'unbound variable' under set -u when iterating a zero-element array, even in code paths meant to legitimately no-op on empty input. Hit 3x this session: mapfile, then check_tdd_commit.sh's staged array (PR #355) silently ate an amend command.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-15T11:28:53.422367+00:00"
+      ],
+      "lessons_sha": "74be234570d9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-15T11:28:53.774074+00:00",
+  "reviewer": "learn.py",
+  "rationale": "macOS default bash 3.2.57 aborts with 'unbound variable' under set -u when iterating a zero-element array, even in code paths meant to legitimately no-op on empty input. Hit 3x this session: mapfile, then check_tdd_commit.sh's staged array (PR #355) silently ate an amend command."
+}

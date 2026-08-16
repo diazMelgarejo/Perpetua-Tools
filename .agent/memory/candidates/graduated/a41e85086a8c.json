@@ -1,0 +1,45 @@
+{
+  "id": "a41e85086a8c",
+  "key": "manual_a41e85",
+  "name": "manual_a41e85",
+  "claim": "For shared-repository board jobs, invoke the supported coordination CLI from its owning repository, then verify the claimed source revision against the actual worktree before review; agents must self-register and emit heartbeat pulses, and a claim or log entry is not evidence of task completion.",
+  "conditions": [
+    "GossipBus",
+    "board",
+    "coordination",
+    "heartbeat",
+    "registration",
+    "source-revision",
+    "verification",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-08-14T22:58:25.959343+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T22:58:25.959343+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T22:58:25.959343+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T22:58:26.117222+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A Task 5 review initially targeted the wrong repository entrypoint and a board row retained an older source revision. The agent named in a completion report was absent from the canonical roster until registration was reconciled. Verification must combine board state, actual revision, and liveness.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T22:58:25.959343+00:00"
+      ],
+      "lessons_sha": "1d055621d016"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T22:58:26.117214+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A Task 5 review initially targeted the wrong repository entrypoint and a board row retained an older source revision. The agent named in a completion report was absent from the canonical roster until registration was reconciled. Verification must combine board state, actual revision, and liveness."
+}

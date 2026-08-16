@@ -1,0 +1,41 @@
+{
+  "id": "4a39a373b383",
+  "key": "manual_4a39a3",
+  "name": "manual_4a39a3",
+  "claim": "Use the tdd-skip: <reason> commit-message trailer, not --no-verify, when a commit genuinely has nothing for the TDD pairing gate to check",
+  "conditions": [
+    "check_tdd_commit",
+    "commit-trailer",
+    "no-verify",
+    "tdd-skip"
+  ],
+  "evidence_ids": [
+    "2026-08-15T11:28:53.938950+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-15T11:28:53.938950+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-15T11:28:53.938950+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-15T11:28:54.060261+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "check_tdd_commit.sh has a documented, narrow, honest opt-out (grep for tdd-skip: trailer -> exit 0) distinct from bypassing an actually-relevant check. Used to unblock a memory-only JSONL/Markdown amend on PT PR #354 that had zero web/src/* files staged.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-15T11:28:53.938950+00:00"
+      ],
+      "lessons_sha": "18cc062e1073"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-15T11:28:54.060251+00:00",
+  "reviewer": "learn.py",
+  "rationale": "check_tdd_commit.sh has a documented, narrow, honest opt-out (grep for tdd-skip: trailer -> exit 0) distinct from bypassing an actually-relevant check. Used to unblock a memory-only JSONL/Markdown amend on PT PR #354 that had zero web/src/* files staged."
+}

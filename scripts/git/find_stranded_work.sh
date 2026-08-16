@@ -1,11 +1,23 @@
 #!/usr/bin/env bash
-# Report local-only branches, unpushed commits, and dirty worktrees across the
-# current repo, sibling repos, and their linked worktrees. Read-only by design.
+# Report local-only branches, unpushed/unreanchored commits, and dirty
+# worktrees across the current repo, sibling repos, and their linked
+# worktrees. Read-only by design.
+#
+# Merged/orphaned classification uses scripts/git/reanchor_scan.sh's
+# tree-twin scan, not ahead/behind counts or merge-base — both are
+# meaningless once a repo's history has been rewritten (squash-rebundle,
+# filter-repo, expunge, force-push). See reanchor_scan.sh's own header.
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/git/resolve_sibling_git_repo.sh
 source "${SCRIPT_DIR}/resolve_sibling_git_repo.sh"
+
+# Set by print_branch_issues() when the tree-twin classification could not
+# run for some repo (missing/unreadable scanner, scanner failure, or
+# unresolved origin/main). main() uses this to fail closed: it must never
+# print "No stranded work found." when a classification actually errored.
+SCAN_HAD_ERRORS=0
 
 die() {
   echo "ERROR: $*" >&2
@@ -71,24 +83,68 @@ worktree_label() {
 }
 
 print_branch_issues() {
-  local repo="$1" branch upstream ahead
+  local repo="$1" branch upstream reanchor_script reanchor_output reanchor_rc status_line branch_status detail
+  reanchor_script="${SCRIPT_DIR}/reanchor_scan.sh"
+
   while IFS= read -r branch; do
     [[ -n "$branch" ]] || continue
     if ! upstream="$(git -C "$repo" rev-parse --abbrev-ref "${branch}@{u}" 2>/dev/null)"; then
       echo "  branch: ${branch}"
       echo "    issue: no-upstream"
-      continue
-    fi
-
-    ahead="$(git -C "$repo" rev-list --count "${upstream}..${branch}" 2>/dev/null)" || ahead=0
-    if [[ "$ahead" =~ ^[0-9]+$ ]] && ((ahead > 0)); then
-      echo "  branch: ${branch}"
-      echo "    issue: unpushed-${ahead}-commits"
-      echo "    upstream: ${upstream}"
-      echo "    commits:"
-      git -C "$repo" log --format='      %h %s' --reverse "${upstream}..${branch}" 2>/dev/null
     fi
   done < <(git -C "$repo" for-each-ref --format='%(refname:short)' refs/heads 2>/dev/null)
+
+  # Merged/orphaned classification: tree-twin scan against origin/main, not
+  # ahead/behind counts or merge-base — both are meaningless after a history
+  # rewrite (see reanchor_scan.sh's own header for why).
+  #
+  # Fail CLOSED here, not open: a missing/unreadable scanner, a scanner
+  # failure, or an unresolved origin/main must surface as a visible error
+  # for this repo, never silent "nothing to report" -- the latter is
+  # indistinguishable from "scan ran and found nothing", which would let
+  # main() print the falsely reassuring "No stranded work found." for a
+  # repo the scan never actually classified.
+  if [[ ! -r "$reanchor_script" || ! -x "$reanchor_script" ]]; then
+    echo "  ERROR: reanchor_scan.sh missing or not executable at ${reanchor_script} -- cannot classify merged/orphaned branches for ${repo}" >&2
+    SCAN_HAD_ERRORS=1
+    return 1
+  fi
+
+  # Capture output AND exit code directly (not via process substitution,
+  # which discards $? in the calling shell) so a scanner failure -- fetch
+  # timeout, bad repo path -- is never silently swallowed.
+  reanchor_output="$(bash "$reanchor_script" "$repo" origin/main heads 2>&1)"
+  reanchor_rc=$?
+  if ((reanchor_rc != 0)); then
+    echo "  ERROR: reanchor_scan.sh exited ${reanchor_rc} for ${repo} -- cannot classify merged/orphaned branches" >&2
+    SCAN_HAD_ERRORS=1
+    return 1
+  fi
+  # reanchor_scan.sh itself exits 0 even when origin/main doesn't resolve
+  # (it prints "  no origin/main" and continues) -- that 0 is not proof the
+  # scan actually ran, so check its output for that case explicitly.
+  if [[ "$reanchor_output" == *"no origin/main"* ]]; then
+    echo "  ERROR: reanchor_scan.sh could not resolve origin/main for ${repo} -- cannot classify merged/orphaned branches" >&2
+    SCAN_HAD_ERRORS=1
+    return 1
+  fi
+
+  while IFS= read -r status_line; do
+    [[ "$status_line" =~ ^[[:space:]]+([^[:space:]]+)[[:space:]]+(NO-TWIN|NEEDS-REANCHOR)(.*)$ ]] || continue
+    branch="${BASH_REMATCH[1]}"
+    branch_status="${BASH_REMATCH[2]}"
+    detail="${BASH_REMATCH[3]# }"
+    echo "  branch: ${branch}"
+    case "$branch_status" in
+      NO-TWIN)
+        echo "    issue: no-tree-twin-in-main"
+        ;;
+      NEEDS-REANCHOR)
+        echo "    issue: needs-reanchor"
+        ;;
+    esac
+    echo "    detail: ${branch_status}${detail}"
+  done <<<"$reanchor_output"
 }
 
 print_worktree_issues() {
@@ -108,11 +164,20 @@ print_worktree_issues() {
 }
 
 print_repo_report() {
-  local repo="$1" report
-  report="$(
+  # A $(...) command substitution forks a subshell, so calling
+  # print_branch_issues() through one would lose its SCAN_HAD_ERRORS=1
+  # mutation (subshell variable changes never propagate to the parent
+  # shell). A brace group with plain output redirection does NOT fork a
+  # subshell, so route both calls through a temp file instead to keep
+  # SCAN_HAD_ERRORS visible in main().
+  local repo="$1" report tmpfile
+  tmpfile="$(mktemp)" || { echo "  ERROR: mktemp failed" >&2; SCAN_HAD_ERRORS=1; return 1; }
+  {
     print_branch_issues "$repo"
     print_worktree_issues "$repo"
-  )"
+  } > "$tmpfile"
+  report="$(cat "$tmpfile")"
+  rm -f "$tmpfile"
   if [[ -n "$report" ]]; then
     echo "repo: ${repo}"
     printf '%s\n' "$report"
@@ -148,6 +213,11 @@ main() {
       any_found=1
     fi
   done
+
+  if ((SCAN_HAD_ERRORS != 0)); then
+    echo "ERROR: one or more repos could not be classified -- see errors above. Not printing a clean result." >&2
+    return 1
+  fi
 
   if ((any_found == 0)); then
     echo "No stranded work found."

@@ -1,0 +1,43 @@
+{
+  "id": "5061e28c03ab",
+  "key": "manual_5061e2",
+  "name": "manual_5061e2",
+  "claim": "A passing focused pytest selection is insufficient as a completion gate when duplicate test function names can shadow earlier cases; require unique test definitions and record whether the repository-wide required gate passed, failed on baseline debt, or was not run.",
+  "conditions": [
+    "duplicate-tests",
+    "focused-tests",
+    "pytest",
+    "shadowing",
+    "strict-gate",
+    "verification"
+  ],
+  "evidence_ids": [
+    "2026-08-14T22:58:26.384527+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T22:58:26.384527+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T22:58:26.384527+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T22:58:26.509364+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Task 5 had passing focused tests while three later duplicate test definitions silently replaced earlier coverage. The strict repository skill gate also remained non-green for unrelated baseline findings, so the task could not honestly be called fully validated.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T22:58:26.384527+00:00"
+      ],
+      "lessons_sha": "f0bf946280b0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T22:58:26.509357+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Task 5 had passing focused tests while three later duplicate test definitions silently replaced earlier coverage. The strict repository skill gate also remained non-green for unrelated baseline findings, so the task could not honestly be called fully validated."
+}

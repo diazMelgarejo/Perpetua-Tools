@@ -1,0 +1,44 @@
+{
+  "id": "59e4c409926a",
+  "key": "manual_59e4c4",
+  "name": "manual_59e4c4",
+  "claim": "When a Claude session budget is the binding constraint, route implementation to codex exec with workspace-write scoped to the worktree and keep Claude seats as thin supervisors that verify the diff and own the commit: the quota is independent and the sandbox scope doubles as a safety guardrail.",
+  "conditions": [
+    "budget",
+    "codex",
+    "delegation",
+    "model-selection",
+    "sandbox",
+    "usage-limit",
+    "workspace-write"
+  ],
+  "evidence_ids": [
+    "2026-08-14T16:41:29.741779+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T16:41:29.741779+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T16:41:29.741779+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T16:41:29.861149+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Adopted on 2026-08-14 after a six-agent Claude workflow died on a session usage limit having consumed roughly 290k subagent tokens for zero completed agents. codex exec supports read-only, workspace-write, and danger-full-access sandboxes; invoking it with workspace-write and -C pointed at a worktree means it structurally cannot reach a global root such as the user skills directory, so the budget fix and the blast-radius fix are the same decision. The supervising seat still gates: it verifies the diff and runs the commit, so codex writes but never lands work unreviewed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T16:41:29.741779+00:00"
+      ],
+      "lessons_sha": "91392feabe1e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T16:41:29.861139+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Adopted on 2026-08-14 after a six-agent Claude workflow died on a session usage limit having consumed roughly 290k subagent tokens for zero completed agents. codex exec supports read-only, workspace-write, and danger-full-access sandboxes; invoking it with workspace-write and -C pointed at a worktree means it structurally cannot reach a global root such as the user skills directory, so the budget fix and the blast-radius fix are the same decision. The supervising seat still gates: it verifies the diff and runs the commit, so codex writes but never lands work unreviewed."
+}

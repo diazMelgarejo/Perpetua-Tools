@@ -1,0 +1,37 @@
+{
+  "id": "27828a75ba3e",
+  "key": "manual_27828a",
+  "name": "manual_27828a",
+  "claim": "resolve_sibling_git_repo.sh's sibling_repo_is_git_root() now validates a sibling via git rev-parse --show-toplevel instead of a naive [[ -e .../.git ]] existence check",
+  "conditions": [
+    "fixed",
+    "git-rev-parse",
+    "guard-sync-divergence",
+    "resolve_sibling_git_repo"
+  ],
+  "evidence_ids": [
+    "2026-08-15T12:12:37.832072+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-15T12:12:37.832072+00:00",
+  "status": "rejected",
+  "decisions": [
+    {
+      "ts": "2026-08-15T12:12:37.832072+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-15T12:12:50.043514+00:00",
+      "action": "rejected",
+      "reviewer": "host-agent",
+      "notes": "rationale text had a garbled leftover parenthetical, re-staging clean",
+      "evidence_snapshot": [
+        "2026-08-15T12:12:37.832072+00:00"
+      ],
+      "lessons_sha": "e3fe4322435b"
+    }
+  ],
+  "rejection_count": 1
+}

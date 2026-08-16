@@ -46,13 +46,27 @@ force_push_repo() {
   if [[ -x "$SCRIPT_DIR/history-surgery-git.sh" ]]; then
     hs_git=("$SCRIPT_DIR/history-surgery-git.sh" -C "$repo")
   fi
-  local branch
+  local branch old_sha failed=0
   while IFS= read -r branch; do
     [[ -n "$branch" ]] || continue
-    "${hs_git[@]}" push --force-with-lease origin "${branch}:${branch}" 2>/dev/null \
-      || "${hs_git[@]}" push --force origin "${branch}:${branch}" 2>/dev/null \
-      || echo "warn: push failed ${branch} in $(basename "$repo")" >&2
+    old_sha=""
+    if git -C "$repo" show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+      old_sha="$(git -C "$repo" rev-parse "origin/$branch")"
+    fi
+    if [[ -n "$old_sha" ]]; then
+      "${hs_git[@]}" push --force-with-lease="refs/heads/${branch}:${old_sha}" \
+        origin "${branch}:${branch}" || {
+        echo "warn: lease push failed ${branch} in $(basename "$repo"); fetch/review and retry" >&2
+        failed=$((failed + 1))
+      }
+    else
+      "${hs_git[@]}" push -u origin "${branch}:${branch}" || {
+        echo "warn: push failed new branch ${branch} in $(basename "$repo")" >&2
+        failed=$((failed + 1))
+      }
+    fi
   done < <(git -C "$repo" for-each-ref refs/heads --format='%(refname:short)')
+  return $(( failed > 0 ? 1 : 0 ))
 }
 
 expunge_repo() {
@@ -60,6 +74,24 @@ expunge_repo() {
   local name
   name="$(basename "$repo")"
   [[ -d "${repo}/.git" ]] || return 0
+  local stashed=0 cleanup_hooks=0
+
+  cleanup_expunge_repo() {
+    local cleanup_failed=0
+    if [[ "$stashed" == "1" ]]; then
+      git -C "$repo" -c core.hooksPath=/dev/null stash pop >/dev/null 2>&1 || cleanup_failed=1
+      stashed=0
+      cleanup_hooks=1
+    fi
+    if [[ "$cleanup_hooks" == "1" && -x "$repo/scripts/git/install-local-hooks.sh" ]]; then
+      bash "$repo/scripts/git/install-local-hooks.sh" >/dev/null 2>&1 || cleanup_failed=1
+      cleanup_hooks=0
+    fi
+    unset HISTORY_SURGERY_ACTIVE
+    return "$cleanup_failed"
+  }
+
+  trap 'status=$?; trap - RETURN; cleanup_status=0; cleanup_expunge_repo || cleanup_status=$?; if [[ $status -ne 0 ]]; then return $status; fi; return $cleanup_status' RETURN
 
   echo ">>> [$name] fetch"
   git -C "$repo" fetch origin --prune 2>/dev/null || true
@@ -77,18 +109,12 @@ expunge_repo() {
   echo ">>> [$name] filter-branch (all refs)"
   if ! git -C "$repo" diff-index --quiet HEAD -- 2>/dev/null \
     || ! git -C "$repo" diff-index --quiet --cached HEAD -- 2>/dev/null; then
-    git -C "$repo" stash push -u -m "attribution-expunge-autostash" >/dev/null 2>&1 || true
-    stashed=1
-  else
-    stashed=0
-  fi
-  bash "$EXPUNGE" "$repo"
-  if [[ "${stashed:-0}" == "1" ]]; then
-    git -C "$repo" -c core.hooksPath=/dev/null stash pop >/dev/null 2>&1 || true
-    if [[ -x "$repo/scripts/git/install-local-hooks.sh" ]]; then
-      bash "$repo/scripts/git/install-local-hooks.sh" >/dev/null 2>&1 || true
+    if git -C "$repo" stash push -u -m "attribution-expunge-autostash" >/dev/null 2>&1; then
+      stashed=1
     fi
   fi
+  bash "$EXPUNGE" "$repo"
+  cleanup_expunge_repo
 
   after="$(scan_repo_hits "$repo")"
   echo ">>> [$name] banned metadata hits after expunge: $after"
@@ -100,10 +126,13 @@ expunge_repo() {
   if [[ "$PUSH_ALL" == "1" ]]; then
     echo ">>> [$name] force-push all local branches (hooks off — history surgery)"
     export HISTORY_SURGERY_ACTIVE=1
-    force_push_repo "$repo"
-    unset HISTORY_SURGERY_ACTIVE
-    if [[ -x "$repo/scripts/git/install-local-hooks.sh" ]]; then
-      bash "$repo/scripts/git/install-local-hooks.sh" >/dev/null 2>&1 || true
+    cleanup_hooks=1
+    local push_status=0
+    force_push_repo "$repo" || push_status=$?
+    cleanup_expunge_repo
+    if [[ "$push_status" -ne 0 ]]; then
+      echo "ERROR: [$name] force-push had failures" >&2
+      return 1
     fi
   fi
   echo ">>> [$name] OK"

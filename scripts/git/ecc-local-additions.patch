@@ -1,6 +1,6 @@
 diff --git a/.agents/skills/frontend-design/agents/openai.yaml b/.agents/skills/frontend-design/agents/openai.yaml
 new file mode 100644
-index 00000000..ee2ab457
+index 0000000000000000000000000000000000000000..ee2ab45717d16bf831068c4ee95aef452cf11a2d
 --- /dev/null
 +++ b/.agents/skills/frontend-design/agents/openai.yaml
 @@ -0,0 +1,7 @@
@@ -13,7 +13,7 @@ index 00000000..ee2ab457
 +  allow_implicit_invocation: true
 diff --git a/.antigravity/ANTIGRAVITY.md b/.antigravity/ANTIGRAVITY.md
 new file mode 100644
-index 00000000..7b9b2d67
+index 0000000000000000000000000000000000000000..7b9b2d670faee557f955bf522936d6ac9abce1c2
 --- /dev/null
 +++ b/.antigravity/ANTIGRAVITY.md
 @@ -0,0 +1,48 @@
@@ -67,13 +67,13 @@ index 00000000..7b9b2d67
 +- `mcp-configs/` for shared connector baselines
 diff --git a/.claude/hooks/.logs/hook-log.jsonl b/.claude/hooks/.logs/hook-log.jsonl
 new file mode 100644
-index 00000000..c656fba0
+index 0000000000000000000000000000000000000000..c656fba0a2eb2f6d1ec4ff7ca5db65f591b37142
 --- /dev/null
 +++ b/.claude/hooks/.logs/hook-log.jsonl
 @@ -0,0 +1 @@
 +{"ts":"2026-06-13T04:01:04.792Z","hook":"privacy-block","action":"warn","tool":"Bash","pattern":"secret"}
 diff --git a/.env.example b/.env.example
-index 9195bd4d..8230eac4 100644
+index 9195bd4da1e3c888d19f38824f8a524b57f8c330..8230eac45433c4c984d48428426089ee7111e1f1 100644
 --- a/.env.example
 +++ b/.env.example
 @@ -10,6 +10,11 @@
@@ -90,7 +90,7 @@ index 9195bd4d..8230eac4 100644
  GITHUB_TOKEN=
 diff --git a/.gemini/ANTIGRAVITY.md b/.gemini/ANTIGRAVITY.md
 new file mode 100644
-index 00000000..7b9b2d67
+index 0000000000000000000000000000000000000000..7b9b2d670faee557f955bf522936d6ac9abce1c2
 --- /dev/null
 +++ b/.gemini/ANTIGRAVITY.md
 @@ -0,0 +1,48 @@
