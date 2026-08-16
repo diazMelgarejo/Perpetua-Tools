@@ -1,0 +1,49 @@
+{
+  "id": "c06864656734",
+  "key": "manual_c06864",
+  "name": "manual_c06864",
+  "claim": "When consolidating append-only JSONL memory files across branches, never use naive bash tools like 'sort -u' or key-based JSON deduplication, which can mangle text or drop legacy schema entries. Instead, perform a strict, lossless string-level union against the untouched canonical base (e.g. origin/main) in an isolated staging area to ensure zero data loss.",
+  "conditions": [
+    "append-only",
+    "jsonl",
+    "lossless-merge",
+    "canonical-base",
+    "legacy-schema",
+    "data-loss"
+  ],
+  "evidence_ids": [
+    "2026-08-15T00:16:55.272880+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-15T00:16:55.272880+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-15T00:16:55.272880+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-15T00:16:55.434048+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A previous memory merge attempt used 'cat | sort -u' and a naive Python key-parser that accidentally deleted 600+ legacy episodic memory lines. Append-only logs require strictly additive, lossless merging methods.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-15T00:16:55.272880+00:00"
+      ],
+      "lessons_sha": "3008342df87b"
+    },
+    {
+      "ts": "2026-08-16T00:30:00.000000+00:00",
+      "action": "conditions-curated",
+      "reviewer": "inline-comment-resolution",
+      "notes": "PR #354 CodeRabbit nitpick (review 4945045084): conditions was a bag-of-words copy of the claim, including stopwords (across, against, which, zero) with no discriminative value for retrieval. Replaced with 6 discriminative tags per CodeRabbit's own suggestion. Original bag-of-words list: across, against, append-only, area, base, bash, branches, canonical, consolidating, data, deduplication, drop, ensure, entries, files, instead, isolated, json, jsonl, key-based, legacy, like, loss, lossless, main, mangle, memory, naive, never, origin, perform, schema, sort, staging, strict, string-level, text, tools, union, untouched, use, which, zero -- retained here as audit evidence, not restored to the live field."
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-15T00:16:55.434039+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A previous memory merge attempt used 'cat | sort -u' and a naive Python key-parser that accidentally deleted 600+ legacy episodic memory lines. Append-only logs require strictly additive, lossless merging methods."
+}

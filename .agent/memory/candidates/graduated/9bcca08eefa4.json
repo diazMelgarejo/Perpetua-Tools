@@ -1,0 +1,42 @@
+{
+  "id": "9bcca08eefa4",
+  "key": "manual_9bcca0",
+  "name": "manual_9bcca0",
+  "claim": "Supersedes only the adapter-specific portion of the older D1 versioning decision by explicit human override. An adapter package version must track the real upstream release lineage of its integration branch, use valid semantic versioning, and make a small lineage-based increment; do not jump to an unrelated round number. This package change does not alter the separate external integration branch.",
+  "conditions": [
+    "adapter package",
+    "explicit human override",
+    "release lineage",
+    "semantic versioning",
+    "versioning decision"
+  ],
+  "evidence_ids": [
+    "2026-08-13T18:07:01.502985+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-13T18:07:01.502985+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-13T18:07:01.502985+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-13T18:07:07.356102+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "An explicit human override corrected the adapter-specific D1 versioning decision while retaining the separate D2–D5 decisions in their own active lesson.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-13T18:07:01.502985+00:00"
+      ],
+      "lessons_sha": "32b161a51dfa"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-13T18:07:07.356079+00:00",
+  "reviewer": "host-agent",
+  "rationale": "An explicit human override corrected the adapter-specific D1 versioning decision while retaining the separate D2–D5 decisions in their own active lesson."
+}

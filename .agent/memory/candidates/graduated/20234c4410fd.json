@@ -1,0 +1,41 @@
+{
+  "id": "20234c4410fd",
+  "key": "manual_20234c",
+  "name": "manual_20234c",
+  "claim": "Before changing a repository's mirrored hook or guard file to satisfy a broad repair request, first inspect the synchronization manifest. Files designated as canonical-managed must be changed in their source repository, merged normally, and then synchronized to each mirror; a request for one branch does not authorize a downstream fork of shared infrastructure.",
+  "conditions": [
+    "canonical ownership",
+    "guard synchronization",
+    "mirrored hooks",
+    "shared infrastructure"
+  ],
+  "evidence_ids": [
+    "2026-08-14T11:30:57.614972+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T11:30:57.614972+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T11:30:57.614972+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T11:30:57.976925+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A downstream edit to manifest-managed hook and guard files was caught before commit by the current coordination ruling. The repair was redirected to the canonical source, and the downstream edit was reverted cleanly.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T11:30:57.614972+00:00"
+      ],
+      "lessons_sha": "20711865609c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T11:30:57.976917+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A downstream edit to manifest-managed hook and guard files was caught before commit. The repair belonged in the canonical source and the mirror was then synchronized, preserving a single source of truth."
+}

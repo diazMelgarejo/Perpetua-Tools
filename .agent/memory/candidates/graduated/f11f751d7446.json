@@ -1,0 +1,45 @@
+{
+  "id": "f11f751d7446",
+  "key": "manual_f11f75",
+  "name": "manual_f11f75",
+  "claim": "Use regular commits and merge commits for normal integration; reserve squash merges, history rewrites, and expunges for explicit human-approved privacy, security, or faulty-history remediation.",
+  "conditions": [
+    "git",
+    "integration",
+    "merge",
+    "privacy",
+    "remediation",
+    "rewrite",
+    "security",
+    "squash"
+  ],
+  "evidence_ids": [
+    "2026-08-14T09:45:43.970810+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T09:45:43.970810+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T09:45:43.970810+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T09:45:44.099734+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Preserves reviewable ancestry and makes normal integration traceable; exceptional history surgery is a deliberate remediation workflow, not a convenience default.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T09:45:43.970810+00:00"
+      ],
+      "lessons_sha": "0dd3c565f088"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T09:45:44.099722+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Preserves reviewable ancestry and makes normal integration traceable; exceptional history surgery is a deliberate remediation workflow, not a convenience default."
+}

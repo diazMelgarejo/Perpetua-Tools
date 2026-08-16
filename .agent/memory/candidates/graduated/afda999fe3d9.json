@@ -1,0 +1,46 @@
+{
+  "id": "afda999fe3d9",
+  "key": "manual_afda99",
+  "name": "manual_afda99",
+  "claim": "Treat .claude/hooks/.logs/hook-log.jsonl as transient runtime telemetry, never as a reviewed ECC overlay: the autoresearch hook helper appends per-session records under its current working directory. Preserve hook behavior and tests as the durable artifact; keep generated evidence local or in a deliberate audit system, and exclude it from submodule overlay candidates.",
+  "conditions": [
+    "audit",
+    "autoresearch",
+    "ecc",
+    "hook",
+    "overlay",
+    "privacy",
+    "runtime",
+    "submodule",
+    "telemetry"
+  ],
+  "evidence_ids": [
+    "2026-08-14T09:41:24.350798+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T09:41:24.350798+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T09:41:24.350798+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T09:41:24.555037+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Historical reconstruction: the original June 13 ECC overlay retained only three real configuration files. A privacy-warning telemetry record from that date was later promoted into the overlay during the July 15 reclassification because it looked like useful security evidence. August runtime records from rule-reminder, iteration-context, and privacy hooks proved the log is append-only operational output rather than configuration. A fixed one-record patch therefore becomes stale and blocks safe ECC updates.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T09:41:24.350798+00:00"
+      ],
+      "lessons_sha": "89379227521f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T09:41:24.555030+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Historical reconstruction: the original June 13 ECC overlay retained only three real configuration files. A privacy-warning telemetry record from that date was later promoted into the overlay during the July 15 reclassification because it looked like useful security evidence. August runtime records from rule-reminder, iteration-context, and privacy hooks proved the log is append-only operational output rather than configuration. A fixed one-record patch therefore becomes stale and blocks safe ECC updates."
+}

@@ -1,0 +1,41 @@
+{
+  "id": "e6771ac33caa",
+  "key": "manual_e6771a",
+  "name": "manual_e6771a",
+  "claim": "A script that runs git against another repository from a hook or hook call chain must clear Git's local-environment variables before the first cross-repository call. Ask Git for the variable list and unset each value; otherwise inherited context can silently redirect a target-repository command back to the invoking repository.",
+  "conditions": [
+    "cross-repository git",
+    "git hook environment",
+    "local environment variables",
+    "target isolation"
+  ],
+  "evidence_ids": [
+    "2026-08-14T13:55:50.465945+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T13:55:50.465945+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T13:55:50.465945+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T13:55:50.582020+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A scope fix passed isolated testing but failed under the real hook because inherited Git context redirected the target call. Clearing the variables discovered by Git's own introspection preserves isolation and avoids a brittle hand-maintained list.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T13:55:50.465945+00:00"
+      ],
+      "lessons_sha": "801cfa81e6a2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T13:55:50.582013+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A scope fix passed isolated testing but failed under the real hook because inherited Git context redirected the target call. Clearing the variables discovered by Git's own introspection preserves isolation and avoids a brittle hand-maintained list."
+}
