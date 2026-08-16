@@ -54,9 +54,9 @@ def ceil_per_million(tokens: int, rate_microusd: int) -> int:
     return (tokens * rate_microusd + 999_999) // 1_000_000
 ```
 
-4. Calculate worst case from recipe input bound plus each stage output bound. Keep a null
+1. Calculate worst case from recipe input bound plus each stage output bound. Keep a null
    config value null until reservation resolves `remaining - one USD`.
-5. Verify with:
+2. Verify with:
 
 ```bash
 python3 -m pytest -q tests/test_tiered_pipeline.py tests/test_tiered_pipeline_config.py
@@ -106,8 +106,8 @@ class ProviderDispatchResult:
     provider_request_id: str | None
 ```
 
-4. Preserve legacy `dispatch()` as a compatibility wrapper returning `.text`.
-5. Verify normalized usage, malformed usage, HTTP failure, timeout, and no-retry paths:
+1. Preserve legacy `dispatch()` as a compatibility wrapper returning `.text`.
+2. Verify normalized usage, malformed usage, HTTP failure, timeout, and no-retry paths:
 
 ```bash
 python3 -m pytest -q tests/test_model_transport.py
@@ -173,7 +173,7 @@ python3 scripts/review/repo_hygiene.py .
 git diff --check origin/main...HEAD
 ```
 
-4. Update the operational disposition with only verified results. Do not enable shared
+1. Update the operational disposition with only verified results. Do not enable shared
    paid execution until all checks pass and a separate review approves the ledger.
 
 ## Commit Order

@@ -23,7 +23,7 @@ closed if an eligible cloud target is not documented.
 ## Verified provider API IDs
 
 | PT routing key and wire ID | Provider evidence | Transport status |
-|---|---|---|
+| --- | --- | --- |
 | `glm-5.2` | [BigModel chat completions](https://docs.bigmodel.cn/api-reference/%E6%A8%A1%E5%9E%8B-api/%E5%AF%B9%E8%AF%9D%E8%A1%A5%E5%85%A8) documents `glm-5.2`, the bearer header, and the native endpoint. | Tier-5 native adapter |
 | `sonar-reasoning-pro` | [Perplexity Sonar Reasoning Pro](https://docs.perplexity.ai/docs/sonar/models/sonar-reasoning-pro) | Existing Perplexity path; not part of the new native Tier-5 recipe |
 | `claude-sonnet-5` with `output_config.effort=medium` | [Anthropic model IDs](https://platform.claude.com/docs/en/about-claude/models/model-ids-and-versions) establishes the current dateless ID scheme, including `claude-sonnet-5`. | Tier-5 native adapter |

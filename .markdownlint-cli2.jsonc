@@ -28,6 +28,7 @@
     "**/SKILL.md",
     "**/LESSONS.md",
     "**/DECISIONS.md",
+    "**/DOMAIN_KNOWLEDGE.md",
     // Same reasoning as LESSONS.md/DECISIONS.md above: agent-generated
     // working notes and forensic analysis docs under .agent/memory/working/
     // are not hand-curated prose meant to be manually line-wrapped at 100

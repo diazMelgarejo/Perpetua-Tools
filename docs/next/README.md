@@ -48,7 +48,7 @@ of open work across both repos"):
 ## Contents
 
 | Doc | Topic | Historical / current status |
-|---|---|---|
+| --- | --- | --- |
 | `2026-07-27-mesh-security-pr222-orama-pointer.md` | Pre–PR #222 mesh backup + trusted-install pointer | **Operator** — Phase A on all LAN nodes before orama #222 merge |
 | `2026-07-27-coordination-phase-0f-part2-autoplan.plan.md` | Coordination Phase 0F + Part 2 (`liveness.py`) | **Autoplan intake** — run `/autoplan` here; hub [`../coordination/README.md`](../coordination/README.md) |
 | `2026-07-17-coordination-module-consolidation-plan.md` | Coordination module consolidation | Parts 1/1b/1c/1d landed; mother plan — see coordination hub |

@@ -522,17 +522,4 @@ Coordination is **file inbox only** — agents never execute on the peer host ov
 | Ollama `:11434` | **Active / warm** | Primary Mac inference (`ollama-mac`) |
 | LM Studio `:1234` | **Passive only** | Catalog/probe OK; not primary coder path |
 
-## Cross-branch memory hygiene — gold nuggets (sticky notes)
-
-> Before writing to any shared append-only file (`.agent/memory/**`), check whether an
-> open PR already touches that same file for the same subject — route the content
-> there, not to whichever checkout happens to be open. Lesson: `lesson_b8a568596d30`
-> (PT PR #354, `repair/memory-lossless-20260815`).
-
-### Gold nuggets (2026-08-16 — PR354 saga sequel)
-
-1. **The PR354 memory-fragmentation pattern recurred within the same session that named it.** While diagnosing why `.agent/memory/working/PR354_MEMORY_UNION_ANALYSIS_2026-08-15.md` and a graduated lesson (`c06864656734`) had been written to a local `main` checkout instead of PR #354's own branch, a second file — `TIER5_PIPELINE_AND_APPRENTICE_STACKS_2026-08-15.md`, whose actual subject is the Tier-5 apprentice-lineage work on `rebase/tier5-asgi-harmonized-20260814` — was sitting in the exact same `main` checkout, misplaced the exact same way. Two independent instances of the identical error, discovered together, is stronger evidence this is a systemic gap (no routing check before writing shared memory files) rather than a one-off slip.
-2. **A wrong-branch memory file is not itself evidence of a wrong writer.** Both misplaced docs were legitimate, correct, useful content — the mistake was purely about *where* they landed, not *what* they said. Recovery is a mechanical move (copy to the correct branch, commit there, leave the source checkout's copy in place or remove it), not a rewrite.
-3. **Detection method that worked twice in one session:** ask "does an open PR already touch these same files for this same subject" before treating locally-uncommitted `.agent/memory/**` content as safe to commit wherever you happen to be. `gh pr view <n> --json files` against the actual open PR is the fast, cheap check — cheaper than discovering the split after the PR merges.
-
 Mac subagents (cursor-agent, mac-researcher) use Ollama for local runs. Win uses LM Studio `:1234` (27B).
