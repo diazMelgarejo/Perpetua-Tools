@@ -33,6 +33,13 @@
         "2026-08-15T11:28:54.856431+00:00"
       ],
       "lessons_sha": "5e6b5b6fd0ed"
+    },
+    {
+      "ts": "2026-08-16T00:30:00.000000+00:00",
+      "action": "corrected",
+      "reviewer": "inline-comment-resolution",
+      "notes": "PR #354 CodeRabbit remediation (review 4945045084): this record's 'Not yet fixed anywhere; flagging for future pickup' note went stale. lesson_27828a75ba3e records the fix (git rev-parse --show-toplevel replacing the naive [[ -e .../.git ]] check) as verified on 2026-08-15T12:12:55Z -- but that verification was against a working branch, not origin/main: the underlying commit (61600dff, authored 2026-08-14T12:17:51Z) only became reachable from origin/main today, via PT PR #355's merge (26564557). Between 2026-08-15T12:12:55Z and 2026-08-16 (today), the fix was genuinely accurate-but-unmerged -- 'fixed' and 'fixed on main' were briefly different facts. Both are now true. Original claim and rationale retained unchanged as audit evidence.",
+      "supersedes_ref": "lesson_27828a75ba3e"
     }
   ],
   "rejection_count": 0,
