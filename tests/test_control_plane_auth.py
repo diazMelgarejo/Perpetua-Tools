@@ -7,6 +7,7 @@ import collections
 
 import pytest
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.testclient import TestClient
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -29,6 +30,7 @@ def test_control_plane_auth_uses_pure_asgi_with_cors_outermost(monkeypatch):
     middleware = [entry.cls for entry in app.user_middleware]
     assert ControlPlaneAuthMiddleware in middleware
     assert BaseHTTPMiddleware not in middleware
+    assert middleware[0] is CORSMiddleware
     assert middleware.index(ControlPlaneAuthMiddleware) > 0
 
     with TestClient(app, raise_server_exceptions=False) as client:

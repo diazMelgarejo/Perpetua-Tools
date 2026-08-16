@@ -208,7 +208,7 @@ models:
     device: cloud
     host: "https://api.x.ai"
     port: 443
-    context_window: 1000000
+    context_window: 333000
     roles: [finance, realtime, market, top-level]
     priority: 60
     online: true

@@ -785,7 +785,7 @@ def test_unknown_top_level_key_rejected(pipeline_files: tuple[Path, Path, Path])
         pipelines.read_text(encoding="utf-8") + "\nunexpected_top_level_key: true\n",
         encoding="utf-8",
     )
-    with pytest.raises(tp.PipelineConfigError, match="unknown keys.*unexpected_top_level_key"):
+    with pytest.raises(tp.PipelineConfigError, match=r"unknown keys.*unexpected_top_level_key"):
         tp.TieredPipelineRunner(config_path=pipelines, models_path=models, trace_path=trace)
 
 
@@ -797,7 +797,7 @@ def test_unknown_recipe_level_key_rejected(pipeline_files: tuple[Path, Path, Pat
         ),
         encoding="utf-8",
     )
-    with pytest.raises(tp.PipelineConfigError, match="unknown keys.*bogus_recipe_key"):
+    with pytest.raises(tp.PipelineConfigError, match=r"unknown keys.*bogus_recipe_key"):
         tp.TieredPipelineRunner(config_path=pipelines, models_path=models, trace_path=trace)
 
 
@@ -809,7 +809,7 @@ def test_unknown_stage_level_key_rejected(pipeline_files: tuple[Path, Path, Path
         ),
         encoding="utf-8",
     )
-    with pytest.raises(tp.PipelineConfigError, match="unknown keys.*bogus_stage_key"):
+    with pytest.raises(tp.PipelineConfigError, match=r"unknown keys.*bogus_stage_key"):
         tp.TieredPipelineRunner(config_path=pipelines, models_path=models, trace_path=trace)
 
 

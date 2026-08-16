@@ -1,7 +1,9 @@
 from orchestrator.tiered_pipeline import TieredPipelineRunner
 
 
-def test_repository_pipeline_config_resolves_current_tier_five_models() -> None:
+def test_repository_pipeline_config_resolves_current_tier_five_models(monkeypatch) -> None:
+    monkeypatch.delenv("PIPELINE_FAST_MODEL", raising=False)
+    monkeypatch.delenv("PIPELINE_STRONG_MODEL", raising=False)
     runner = TieredPipelineRunner()
     recipe = runner.recipe("classify_then_generate")
 

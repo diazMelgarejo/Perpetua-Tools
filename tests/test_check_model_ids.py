@@ -84,6 +84,25 @@ def test_provenance_source_must_match_provider_documentation_host(monkeypatch, t
     assert "outside its provider documentation authority" in scan_models_yml()[-1]
 
 
+def test_provenance_rejects_missing_documentation_authority_and_missing_providers_yml(
+    monkeypatch, tmp_path
+) -> None:
+    _patch_files(
+        monkeypatch,
+        tmp_path,
+        _models(_cloud_model().replace("backend: anthropic", "backend: unknown_backend")),
+    )
+    assert "backend lacks documentation authority" in scan_models_yml()[-1]
+
+    # Test missing providers.yml
+    monkeypatch.setattr(
+        _mod,
+        "PROVIDERS_YML",
+        tmp_path / "non_existent_providers.yml",
+    )
+    assert any("missing required file" in err for err in scan_models_yml())
+
+
 def test_local_routing_alias_does_not_need_provider_provenance(monkeypatch, tmp_path) -> None:
     _patch_files(monkeypatch, tmp_path, _models("  - name: local-deployment\n    device: mac"))
     assert scan_models_yml() == []

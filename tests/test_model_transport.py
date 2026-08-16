@@ -175,16 +175,57 @@ async def test_anthropic_dispatch_uses_native_messages_and_medium_effort(
 
 
 @pytest.mark.asyncio
-async def test_transport_rejects_unknown_or_non_tier5_models(transport_config, monkeypatch) -> None:
-    config_dir, providers = transport_config
+async def test_transport_rejects_unknown_or_non_tier5_models(tmp_path, monkeypatch) -> None:
+    config_dir = tmp_path / "config_non_tier5"
+    config_dir.mkdir()
+    (config_dir / "devices.yml").write_text("devices: {}\n", encoding="utf-8")
+    (config_dir / "routing.yml").write_text("routes: {}\n", encoding="utf-8")
+    (config_dir / "models.yml").write_text(
+        """models:
+  - name: local-tier4
+    api_model: local-model
+    backend: bigmodel
+    device: mac-studio
+    host: https://open.bigmodel.cn
+    port: 443
+    roles: [general]
+    priority: 1
+    online: true
+    reasoning: local
+    frugality_tier: 4
+    provenance:
+      kind: provider-api
+      source_model_id: local-model
+      source_url: https://docs.bigmodel.cn/api-reference/models
+      verified_on: "2026-08-11"
+""",
+        encoding="utf-8",
+    )
+    providers = tmp_path / "providers.yml"
+    providers.write_text(
+        """providers:
+  bigmodel:
+    credential_env: BIGMODEL_TEST_KEY
+    allowed_hosts: [open.bigmodel.cn]
+    documentation_hosts: [docs.bigmodel.cn]
+    default_api_path: /api/paas/v4/chat/completions
+    timeout_seconds: 10
+    max_attempts: 1
+""",
+        encoding="utf-8",
+    )
     monkeypatch.setenv("BIGMODEL_TEST_KEY", "test-key")
     transport = ProviderTransportRegistry(config_dir=config_dir, providers_path=providers)
 
     with pytest.raises(ProviderConfigError, match="unknown model"):
         await transport.dispatch("missing", "prompt", 1, "stage")
 
+    with pytest.raises(ProviderConfigError, match="not an eligible Tier-5 cloud target"):
+        await transport.dispatch("local-tier4", "prompt", 1, "stage")
+
 
 def test_static_registry_load_does_not_trigger_active_tilting_discovery(tmp_path, monkeypatch) -> None:
+    monkeypatch.delenv("PT_DISABLE_LIVE_MODEL_PROBES", raising=False)
     config_dir = tmp_path / "config"
     config_dir.mkdir()
     (config_dir / "devices.yml").write_text(
@@ -201,6 +242,72 @@ def test_static_registry_load_does_not_trigger_active_tilting_discovery(tmp_path
         lambda: (_ for _ in ()).throw(AssertionError("discovery must not run")),
     )
     assert ModelRegistry(config_dir=str(config_dir)).list_models(probe=False)[0].host == "http://localhost"
+
+
+@pytest.mark.asyncio
+async def test_transport_rejects_unallowed_host_and_unverified_provenance(tmp_path, monkeypatch) -> None:
+    config_dir = tmp_path / "config_security"
+    config_dir.mkdir()
+    (config_dir / "devices.yml").write_text("devices: {}\n", encoding="utf-8")
+    (config_dir / "routing.yml").write_text("routes: {}\n", encoding="utf-8")
+    (config_dir / "models.yml").write_text(
+        """models:
+  - name: evil-host
+    api_model: glm-5.2
+    backend: bigmodel
+    device: cloud
+    host: https://evil.example.com
+    port: 443
+    roles: [general]
+    priority: 1
+    online: true
+    reasoning: cloud
+    frugality_tier: 5
+    provenance:
+      kind: provider-api
+      source_model_id: glm-5.2
+      source_url: https://docs.bigmodel.cn/api-reference/models
+      verified_on: "2026-08-11"
+  - name: mismatched-provenance
+    api_model: glm-5.2
+    backend: bigmodel
+    device: cloud
+    host: https://open.bigmodel.cn
+    port: 443
+    roles: [general]
+    priority: 2
+    online: true
+    reasoning: cloud
+    frugality_tier: 5
+    provenance:
+      kind: provider-api
+      source_model_id: glm-different-id
+      source_url: https://docs.bigmodel.cn/api-reference/models
+      verified_on: "2026-08-11"
+""",
+        encoding="utf-8",
+    )
+    providers = tmp_path / "providers_sec.yml"
+    providers.write_text(
+        """providers:
+  bigmodel:
+    credential_env: BIGMODEL_TEST_KEY
+    allowed_hosts: [open.bigmodel.cn]
+    documentation_hosts: [docs.bigmodel.cn]
+    default_api_path: /api/paas/v4/chat/completions
+    timeout_seconds: 10
+    max_attempts: 1
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("BIGMODEL_TEST_KEY", "test-key")
+    transport = ProviderTransportRegistry(config_dir=config_dir, providers_path=providers)
+
+    with pytest.raises(ProviderConfigError, match="not allowlisted"):
+        await transport.dispatch("evil-host", "prompt", 1, "stage")
+
+    with pytest.raises(ProviderConfigError, match="incomplete or mismatched provider provenance"):
+        await transport.dispatch("mismatched-provenance", "prompt", 1, "stage")
 
 
 @pytest.mark.asyncio

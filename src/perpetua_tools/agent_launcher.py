@@ -777,13 +777,13 @@ def _build_routing_state(
     if coder_backend == "mac-degraded" and (_perplexity_key or _anthropic_key):
         if _perplexity_key and not _perplexity_key.startswith("your_"):
             coder_endpoint = "https://api.perplexity.ai"
-            coder_model    = os.getenv("CLOUD_CODER_MODEL", "sonar-reasoning-pro")
+            coder_model    = os.getenv("PERPLEXITY_CODER_MODEL", os.getenv("CLOUD_CODER_MODEL", "sonar-reasoning-pro"))
             coder_backend  = "perplexity"
             coder_platform = "cloud"
             print("[agent_launcher] ☁  all local backends offline — routing coder to Perplexity API")
         elif _anthropic_key:
             coder_endpoint = "https://api.anthropic.com"
-            coder_model    = os.getenv("CLOUD_CODER_MODEL", "claude-sonnet-5")
+            coder_model    = os.getenv("ANTHROPIC_CODER_MODEL", os.getenv("CLOUD_CODER_MODEL", "claude-sonnet-5"))
             coder_backend  = "anthropic"
             coder_platform = "cloud"
             print("[agent_launcher] ☁  all local backends offline — routing coder to Anthropic API")

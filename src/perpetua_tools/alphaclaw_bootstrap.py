@@ -752,6 +752,7 @@ def build_openclaw_config(pt: dict | None = None) -> dict[str, object]:
         coder_model   = pt.get("coder_model",   WIN_MODEL)
         manager_model = pt.get("manager_model", MAC_MODEL)
         coder_backend = pt.get("coder_backend", "mac-degraded")
+        coder_endpoint = pt.get("coder_endpoint")
         mac_lms_ok    = bool(pt.get("mac_lmstudio_ok"))
         ollama_mac_url = (
             _heal_pt_endpoint_url(
@@ -774,13 +775,15 @@ def build_openclaw_config(pt: dict | None = None) -> dict[str, object]:
     else:
         mac_lms_url, win_lms_url = LMS_MAC, LMS_WIN
         coder_model, manager_model = WIN_MODEL, MAC_MODEL
-        coder_backend, mac_lms_ok = "unknown", False
+        coder_backend, coder_endpoint, mac_lms_ok = "unknown", None, False
         ollama_mac_url, ollama_win_url = OLLAMA_MAC, OLLAMA_WIN
 
     if coder_backend == "windows-lmstudio":
         coder_primary = f"lmstudio-win/{coder_model}"
     elif coder_backend == "windows-ollama":
         coder_primary = f"ollama-win/{coder_model}"
+    elif coder_backend in ("perplexity", "anthropic"):
+        coder_primary = f"{coder_backend}/{coder_model}"
     else:
         coder_primary = f"lmstudio-mac/{manager_model}"
 
@@ -790,6 +793,60 @@ def build_openclaw_config(pt: dict | None = None) -> dict[str, object]:
     )
 
     agents_root = str(Path.home() / ".openclaw" / "agents")
+    providers: dict[str, Any] = {
+        "lmstudio-mac": {
+            "baseUrl": _lms_base_url(mac_lms_url),
+            "apiKey": LMS_TOKEN,
+            "api": "openai-completions",
+            "models": [{"id": manager_model,
+                        "name": f"Mac LMS \u2014 {manager_model}",
+                        "contextWindow": 32768, "maxTokens": 8192,
+                        "cost": {"input": 0, "output": 0}}],
+        },
+        "lmstudio-win": {
+            "baseUrl": _lms_base_url(win_lms_url),
+            "apiKey": LMS_TOKEN,
+            "api": "openai-completions",
+            "models": [{"id": coder_model,
+                        "name": f"Win LMS \u2014 {coder_model}",
+                        "contextWindow": 32768, "maxTokens": 8192,
+                        "cost": {"input": 0, "output": 0}}],
+        },
+        "ollama-mac": {
+            "apiKey": "ollama-local",
+            "baseUrl": ollama_mac_url,
+            "api": "ollama",
+            "models": [],
+        },
+        "ollama-win": {
+            "apiKey": "ollama-remote",
+            "baseUrl": ollama_win_url,
+            "api": "ollama",
+            "models": [],
+        },
+    }
+
+    if coder_backend == "perplexity":
+        providers["perplexity"] = {
+            "baseUrl": coder_endpoint or "https://api.perplexity.ai",
+            "apiKey": os.getenv("PERPLEXITY_API_KEY", ""),
+            "api": "openai-completions",
+            "models": [{"id": coder_model,
+                        "name": f"Perplexity \u2014 {coder_model}",
+                        "contextWindow": 131072, "maxTokens": 8192,
+                        "cost": {"input": 0, "output": 0}}],
+        }
+    elif coder_backend == "anthropic":
+        providers["anthropic"] = {
+            "baseUrl": coder_endpoint or "https://api.anthropic.com",
+            "apiKey": os.getenv("ANTHROPIC_API_KEY", ""),
+            "api": "anthropic",
+            "models": [{"id": coder_model,
+                        "name": f"Anthropic \u2014 {coder_model}",
+                        "contextWindow": 200000, "maxTokens": 8192,
+                        "cost": {"input": 0, "output": 0}}],
+        }
+
     return {
         "gateway": {
             "mode": "local",
@@ -821,38 +878,7 @@ def build_openclaw_config(pt: dict | None = None) -> dict[str, object]:
             ],
         },
         "models": {
-            "providers": {
-                "lmstudio-mac": {
-                    "baseUrl": _lms_base_url(mac_lms_url),
-                    "apiKey": LMS_TOKEN,
-                    "api": "openai-completions",
-                    "models": [{"id": manager_model,
-                                "name": f"Mac LMS \u2014 {manager_model}",
-                                "contextWindow": 32768, "maxTokens": 8192,
-                                "cost": {"input": 0, "output": 0}}],
-                },
-                "lmstudio-win": {
-                    "baseUrl": _lms_base_url(win_lms_url),
-                    "apiKey": LMS_TOKEN,
-                    "api": "openai-completions",
-                    "models": [{"id": coder_model,
-                                "name": f"Win LMS \u2014 {coder_model}",
-                                "contextWindow": 32768, "maxTokens": 8192,
-                                "cost": {"input": 0, "output": 0}}],
-                },
-                "ollama-mac": {
-                    "apiKey": "ollama-local",
-                    "baseUrl": ollama_mac_url,
-                    "api": "ollama",
-                    "models": [],
-                },
-                "ollama-win": {
-                    "apiKey": "ollama-remote",
-                    "baseUrl": ollama_win_url,
-                    "api": "ollama",
-                    "models": [],
-                },
-            },
+            "providers": providers,
         },
     }
 

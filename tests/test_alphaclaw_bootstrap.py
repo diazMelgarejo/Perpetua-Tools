@@ -682,3 +682,41 @@ async def test_bootstrap_tries_bare_openclaw_before_npm_check(monkeypatch, tmp_p
     assert calls == ["openclaw"]
     assert "npm" not in calls
 
+
+def test_build_openclaw_config_wires_perplexity_cloud_coder(monkeypatch):
+    monkeypatch.setenv("PERPLEXITY_API_KEY", "pplx-test-key-12345")
+    pt = {
+        "coder_backend": "perplexity",
+        "coder_endpoint": "https://api.perplexity.ai",
+        "coder_model": "sonar-reasoning-pro",
+    }
+    config = alphaclaw_bootstrap.build_openclaw_config(pt)
+    providers = config["models"]["providers"]
+    assert "perplexity" in providers
+    assert providers["perplexity"]["baseUrl"] == "https://api.perplexity.ai"
+    assert providers["perplexity"]["apiKey"] == "pplx-test-key-12345"
+    assert providers["perplexity"]["models"][0]["id"] == "sonar-reasoning-pro"
+
+    # Verify coder agent primary model assignment
+    coder_agent = next(a for a in config["agents"]["list"] if a["id"] == "coder")
+    assert coder_agent["model"]["primary"] == "perplexity/sonar-reasoning-pro"
+
+
+def test_build_openclaw_config_wires_anthropic_cloud_coder(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-key-67890")
+    pt = {
+        "coder_backend": "anthropic",
+        "coder_endpoint": "https://api.anthropic.com",
+        "coder_model": "claude-sonnet-5",
+    }
+    config = alphaclaw_bootstrap.build_openclaw_config(pt)
+    providers = config["models"]["providers"]
+    assert "anthropic" in providers
+    assert providers["anthropic"]["baseUrl"] == "https://api.anthropic.com"
+    assert providers["anthropic"]["apiKey"] == "sk-ant-test-key-67890"
+    assert providers["anthropic"]["models"][0]["id"] == "claude-sonnet-5"
+
+    coder_agent = next(a for a in config["agents"]["list"] if a["id"] == "coder")
+    assert coder_agent["model"]["primary"] == "anthropic/claude-sonnet-5"
+
+

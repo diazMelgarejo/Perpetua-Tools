@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from orchestrator.control_plane_auth import (
     ensure_control_plane_token,
@@ -213,6 +213,13 @@ class TieredPipelineRequest(BaseModel):
     privacy_critical: bool = False
     override_confirmed: bool = False
     override_reason: Optional[str] = None
+
+    @field_validator("prompt")
+    @classmethod
+    def _validate_prompt(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("prompt cannot be empty or whitespace only")
+        return v
 
 
 class PipelineApprovalRequest(BaseModel):

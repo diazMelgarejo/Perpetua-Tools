@@ -69,6 +69,7 @@ class _Transport:
 
 @pytest.fixture
 def control_plane_client(monkeypatch):
+    _Runner.captured_run_kwargs.clear()
     monkeypatch.setenv("ORAMA_INSECURE_DEV", "0")
     monkeypatch.setenv("ORAMA_CONTROL_PLANE_TOKEN", "pt-test-token")
     monkeypatch.setenv("PIPELINE_TIERED_ENABLED", "1")
@@ -78,6 +79,7 @@ def control_plane_client(monkeypatch):
         with TestClient(app_module.app, raise_server_exceptions=False) as client:
             yield client
     finally:
+        _Runner.captured_run_kwargs.clear()
         app_module.app.dependency_overrides.clear()
 
 
@@ -169,6 +171,83 @@ def test_pipeline_run_maps_runner_approval_error_to_403(control_plane_client, mo
     )
     assert response.status_code == 403
     assert response.json()["detail"] == "Pipeline approval invalid, expired, or revoked"
+
+
+@pytest.mark.integration
+def test_pipeline_run_rejects_insufficient_budget_with_402(control_plane_client, monkeypatch) -> None:
+    monkeypatch.setattr(app_module.cost_guard, "can_spend", lambda amount: False)
+    approval = _valid_approval()
+    monkeypatch.setattr(app_module, "load_pipeline_approval", lambda trace_id: approval)
+
+    response = control_plane_client.post(
+        "/pipelines/classify_then_generate/run",
+        json={"prompt": "do the work", "trace_id": approval.trace_id},
+        headers={"Authorization": "Bearer pt-test-token"},
+    )
+    assert response.status_code == 402
+    assert "Daily budget cannot reserve" in response.json()["detail"]
+
+
+@pytest.mark.integration
+def test_pipeline_run_maps_transport_error_to_502_or_503(control_plane_client, monkeypatch) -> None:
+    monkeypatch.setattr(app_module.cost_guard, "can_spend", lambda amount: True)
+    approval = _valid_approval()
+    monkeypatch.setattr(app_module, "load_pipeline_approval", lambda trace_id: approval)
+
+    class _RunnerTransportError:
+        def recipe(self, name: str):
+            return type("Recipe", (), {"cost_reservation_usd": 0.25})()
+
+        async def run(self, *args, **kwargs):
+            raise app_module.ProviderTransportError("network down", retryable=False)
+
+    app_module.app.dependency_overrides[app_module.get_tiered_pipeline_runner] = _RunnerTransportError
+
+    response = control_plane_client.post(
+        "/pipelines/classify_then_generate/run",
+        json={"prompt": "do the work", "trace_id": approval.trace_id},
+        headers={"Authorization": "Bearer pt-test-token"},
+    )
+    assert response.status_code == 502
+
+    class _RunnerRetryableTransportError:
+        def recipe(self, name: str):
+            return type("Recipe", (), {"cost_reservation_usd": 0.25})()
+
+        async def run(self, *args, **kwargs):
+            raise app_module.ProviderTransportError("rate limit", retryable=True)
+
+    app_module.app.dependency_overrides[app_module.get_tiered_pipeline_runner] = _RunnerRetryableTransportError
+
+    response = control_plane_client.post(
+        "/pipelines/classify_then_generate/run",
+        json={"prompt": "do the work", "trace_id": approval.trace_id},
+        headers={"Authorization": "Bearer pt-test-token"},
+    )
+    assert response.status_code == 503
+
+
+@pytest.mark.integration
+def test_pipeline_run_maps_config_and_execution_errors_to_503(control_plane_client, monkeypatch) -> None:
+    monkeypatch.setattr(app_module.cost_guard, "can_spend", lambda amount: True)
+    approval = _valid_approval()
+    monkeypatch.setattr(app_module, "load_pipeline_approval", lambda trace_id: approval)
+
+    class _RunnerExecutionError:
+        def recipe(self, name: str):
+            return type("Recipe", (), {"cost_reservation_usd": 0.25})()
+
+        async def run(self, *args, **kwargs):
+            raise app_module.PipelineExecutionError("stage failed")
+
+    app_module.app.dependency_overrides[app_module.get_tiered_pipeline_runner] = _RunnerExecutionError
+
+    response = control_plane_client.post(
+        "/pipelines/classify_then_generate/run",
+        json={"prompt": "do the work", "trace_id": approval.trace_id},
+        headers={"Authorization": "Bearer pt-test-token"},
+    )
+    assert response.status_code == 503
 
 
 @pytest.mark.integration

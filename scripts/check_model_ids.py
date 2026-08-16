@@ -141,10 +141,15 @@ def _check_model_id(model_id: str, configured_ids: set[str], source: str, line_h
     return f"{source}: model ID {model_id!r} ({line_hint}) is absent from config/models.yml"
 
 
-def scan_env_example() -> list[str]:
-    configured_ids, errors = configured_model_ids()
+def scan_env_example(configured_ids: set[str] | None = None, base_errors: list[str] | None = None) -> list[str]:
+    if configured_ids is None or base_errors is None:
+        c_ids, c_errors = configured_model_ids()
+        configured_ids = configured_ids or c_ids
+        errors = list(base_errors if base_errors is not None else c_errors)
+    else:
+        errors = list(base_errors)
     if not ENV_EXAMPLE.is_file():
-        return errors + [f"missing required file: {_rel(ENV_EXAMPLE)}"]
+        return [*errors, f"missing required file: {_rel(ENV_EXAMPLE)}"]
     text = ENV_EXAMPLE.read_text(encoding="utf-8")
     for match in _ENV_MODEL_RE.finditer(text):
         key, value = match.groups()
@@ -155,8 +160,9 @@ def scan_env_example() -> list[str]:
 
 
 def main() -> int:
-    violations = scan_models_yml() + scan_env_example()
-    # scan_env_example includes model provenance errors so present each once.
+    configured_ids, errors = configured_model_ids()
+    violations = scan_env_example(configured_ids=configured_ids, base_errors=errors)
+    # Deduplicate while preserving order.
     violations = list(dict.fromkeys(violations))
     if violations:
         print("\n".join(violations), file=sys.stderr)
