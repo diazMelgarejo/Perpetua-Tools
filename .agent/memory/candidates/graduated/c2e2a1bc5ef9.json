@@ -1,0 +1,42 @@
+{
+  "id": "c2e2a1bc5ef9",
+  "key": "manual_c2e2a1",
+  "name": "manual_c2e2a1",
+  "claim": "The merge-claims-guard CI check's blanket continue-on-error (parked in PT PR #354, .github/workflows/ci.yml) is a deliberately deferred fix, not a resolved one. CodeRabbit correctly flagged that it tolerates any failure of verify_merge_claims.py, not just the known 'its'/'the' stopword false-positive -- a genuine invocation error or a real merge-claim violation would also pass silently. Do not narrow this fix opportunistically mid-session; it is scheduled for the next migration/cleanup pass, not an ad-hoc detour.",
+  "conditions": [
+    "continue-on-error",
+    "deferred-fix",
+    "merge-claims-guard",
+    "parked-not-resolved",
+    "v2-migration"
+  ],
+  "evidence_ids": [
+    "2026-08-16T01:47:19.363101+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-16T01:47:19.363101+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-16T01:47:19.363101+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-16T01:47:19.513698+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Explicit HITL scoping decision, 2026-08-16: user authorized the blanket park ('just disable it... park it as v2 fix') after the false-positive proved irreproducible locally against the exact CI checkout state (refs/pull/354/merge). CodeRabbit's follow-up finding (review 4945126748) about the fix's over-broad blast radius is valid and already known -- recording it here so a future session doesn't waste time rediscovering it, and doesn't 'fix' it without checking whether the migration pass has already landed a proper solution.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-16T01:47:19.363101+00:00"
+      ],
+      "lessons_sha": "f82d15303481"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-16T01:47:19.513686+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Explicit HITL scoping decision, 2026-08-16: user authorized the blanket park ('just disable it... park it as v2 fix') after the false-positive proved irreproducible locally against the exact CI checkout state (refs/pull/354/merge). CodeRabbit's follow-up finding (review 4945126748) about the fix's over-broad blast radius is valid and already known -- recording it here so a future session doesn't waste time rediscovering it, and doesn't 'fix' it without checking whether the migration pass has already landed a proper solution."
+}
