@@ -1,0 +1,55 @@
+{
+  "id": "d7842688fbb3",
+  "key": "manual_d78426",
+  "name": "manual_d78426",
+  "claim": "When endpoint-policy exceptions can retain raw addresses or URLs, logs and stderr must emit only redacted fields rather than exception text or raw endpoint values.",
+  "conditions": [
+    "addresses",
+    "emit",
+    "endpoint",
+    "endpoint-policy",
+    "exception",
+    "exceptions",
+    "fields",
+    "logs",
+    "only",
+    "rather",
+    "raw",
+    "redacted",
+    "retain",
+    "stderr",
+    "text",
+    "than",
+    "urls",
+    "values"
+  ],
+  "evidence_ids": [
+    "2026-08-14T13:37:46.874738+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T13:37:46.874738+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T13:37:46.874738+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T13:37:46.989307+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The PR352 review recorded endpoint and exception redaction as a security lesson. This captures the bounded rule independently of its branch-local security implementation.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T13:37:46.874738+00:00"
+      ],
+      "lessons_sha": "1d2515ad9868"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T13:37:46.989300+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The PR352 review recorded endpoint and exception redaction as a security lesson. This captures the bounded rule independently of its branch-local security implementation."
+}

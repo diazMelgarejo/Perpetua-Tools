@@ -12,7 +12,6 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { isDirectExecution as checkDirectExecution } from "./is-direct-execution.js";
-// @ts-ignore
 import adapter from "@diazmelgarejo/alphaclaw-adapter";
 // @ts-ignore
 import orchestrator from "../../local-agents/src/orchestrator.js";

@@ -1,12 +1,39 @@
 {
   "name": "@diazmelgarejo/alphaclaw-adapter",
-  "version": "0.9.9.9",
-  "description": "AlphaClaw HTTP+CLI adapter for Perpetua-Tools (MCP server → packages/alphaclaw-mcp)",
+  "version": "0.9.39",
+  "description": "AlphaClaw HTTP+CLI adapter for Perpetua-Tools (MCP server \u2192 packages/alphaclaw-mcp)",
   "main": "src/index.js",
-  "scripts": {
-    "test": "node --test tests/stop-server.test.cjs tests/watchdog-logs.test.cjs"
+  "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.mjs",
+      "require": "./src/index.js"
+    }
   },
-  "keywords": ["alphaclaw", "adapter"],
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test tests/stop-server.test.cjs tests/watchdog-logs.test.cjs",
+    "typecheck": "tsc -p typecheck/tsconfig.json"
+  },
+  "keywords": [
+    "alphaclaw",
+    "adapter"
+  ],
   "license": "MIT",
-  "engines": { "node": ">=22.14.0" }
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/diazMelgarejo/Perpetua-Tools",
+    "directory": "packages/alphaclaw-adapter"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22.14.0"
+  }
 }

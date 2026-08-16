@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -153,6 +153,43 @@ def test_read_discovery_win_url_rejects_malformed_endpoints_shape(tmp_path, monk
         }),
         encoding="utf-8",
     )
+    monkeypatch.setattr(lan_discovery, "_OPENCLAW_DISCOVERY", snapshot)
+
+    assert lan_discovery._read_discovery_win_url() is None
+
+
+def _write_win_discovery_snapshot(path, ip_value: str, port: int = 1234) -> None:
+    path.write_text(
+        json.dumps({
+            "watcher_heartbeat": datetime.now(timezone.utc).isoformat(),
+            "endpoints": {
+                "win": {"ip": ip_value, "port": port, "reachable": True},
+            },
+        }),
+        encoding="utf-8",
+    )
+
+
+def test_read_discovery_win_url_normalizes_scheme_contaminated_ip(tmp_path, monkeypatch):
+    """Regression: the "ip" field is written by a separate discovery
+    process; the read side validated port range and timestamp freshness
+    but never checked whether "ip" itself was already scheme-prefixed
+    before the final f"http://{ip}:{port}" construction. A contaminated
+    value (e.g. "http://192.168.1.5") would produce a double-scheme URL.
+    """
+    snapshot = tmp_path / "last_discovery.json"
+    _write_win_discovery_snapshot(snapshot, "http://192.168.1.5")
+    monkeypatch.setattr(lan_discovery, "_OPENCLAW_DISCOVERY", snapshot)
+
+    result = lan_discovery._read_discovery_win_url()
+
+    assert result == "http://192.168.1.5:1234"
+    assert "http://http://" not in (result or "")
+
+
+def test_read_discovery_win_url_rejects_malformed_ip(tmp_path, monkeypatch):
+    snapshot = tmp_path / "last_discovery.json"
+    _write_win_discovery_snapshot(snapshot, "http://user:pass@192.168.1.5")
     monkeypatch.setattr(lan_discovery, "_OPENCLAW_DISCOVERY", snapshot)
 
     assert lan_discovery._read_discovery_win_url() is None

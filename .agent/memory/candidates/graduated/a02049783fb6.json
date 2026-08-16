@@ -1,0 +1,42 @@
+{
+  "id": "a02049783fb6",
+  "key": "manual_a02049",
+  "name": "manual_a02049",
+  "claim": "Never switch a local-execution stdio MCP server to a hosted/HTTP endpoint without explicit authorization. The local-stdio pattern for Exa MCP exists for two documented reasons, not just portability: (1) a shared singleton daemon + Unix-socket bridge lets Claude, orama-system, and Perpetua-Tools all reuse one authenticated exa-mcp-daemon instead of each spawning its own npx child process (lesson c44a4a1a614d, lesson 2c4124092607) -- that sharing pattern only works for locally-spawned stdio servers, never for type:http/hosted ones; (2) a prior lesson (139389f8f016, 2026-07-22) already warned never to hardcode a fixed relative offset or a literal $HOME path to locate a sibling repo in MCP/tool configs, because checkout topology varies across machines -- and that exact mistake recurred on 2026-08-15 anyway ($HOME/code/OpenClaw/orama-system), meaning the original warning wasn't consulted before the change was made.",
+  "conditions": [
+    "exa-daemon-singleton",
+    "hardcoded-sibling-path-recurrence",
+    "hosted-vs-local-mcp",
+    "mcp-server-transport",
+    "unauthorized-agent-change"
+  ],
+  "evidence_ids": [
+    "2026-08-15T15:40:00.000000+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-15T15:40:00.000000+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-15T15:40:00.000000+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-15T15:40:00.100000+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT PR #354's .codex/config.toml exa MCP server was switched from the local shared-daemon stdio pattern to a hosted mcp-remote endpoint (commit 4d968f9e) by an AI agent (a Gemini-family model, per direct HITL identification) without authorization -- breaking the shared-daemon sharing this session's own machine relies on when multiple agents run concurrently. That was then 'fixed' by a different commit (81a841a4) that reverted to local execution but violated the already-on-record lesson_139389f8f016 by hardcoding a personal directory path as a fallback. Both files are now restored to origin/main's original, authorized content (security-revert commit, same branch). Recorded with the accurate mechanism (singleton daemon + Unix-socket bridge for local stdio only, per c44a4a1a614d/2c4124092607) rather than a guessed one, found via gbrain recall before publishing.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-15T15:40:00.000000+00:00"
+      ],
+      "lessons_sha": "063c5dd37ee5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-15T15:40:00.100000+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT PR #354's .codex/config.toml exa MCP server was switched from the local shared-daemon stdio pattern to a hosted mcp-remote endpoint (commit 4d968f9e) by an AI agent (a Gemini-family model, per direct HITL identification) without authorization -- breaking the shared-daemon sharing this session's own machine relies on when multiple agents run concurrently. That was then 'fixed' by a different commit (81a841a4) that reverted to local execution but violated the already-on-record lesson_139389f8f016 by hardcoding a personal directory path as a fallback. Both files are now restored to origin/main's original, authorized content (security-revert commit, same branch). Recorded with the accurate mechanism (singleton daemon + Unix-socket bridge for local stdio only, per c44a4a1a614d/2c4124092607) rather than a guessed one, found via gbrain recall before publishing."
+}

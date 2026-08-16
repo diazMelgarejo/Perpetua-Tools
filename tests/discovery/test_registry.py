@@ -39,3 +39,21 @@ async def test_register_by_ip_raises_when_offline():
     reg = BackendRegistry()
     with pytest.raises(BackendOfflineError):
         await reg.register_by_ip("127.0.1.1", 1234, BackendKind.LMSTUDIO)
+
+
+@pytest.mark.asyncio
+async def test_register_by_ip_rejects_link_local_metadata_target():
+    """Regression: register_by_ip() constructed and immediately probed
+    f"http://{ip}:{port}/v1" with zero SSRF host-classification -- a
+    caller (even if none exist in this codebase today) passing
+    169.254.169.254 would have this process probe cloud instance-metadata.
+    Must be rejected before any network call, not just failed offline --
+    verified by asserting respx recorded zero calls, not just that the
+    result was an error (a real connection failure in a sandboxed test
+    runner would also raise BackendOfflineError for the wrong reason)."""
+    with respx.mock:
+        route = respx.get(url__regex=r".*")
+        reg = BackendRegistry()
+        with pytest.raises(BackendOfflineError):
+            await reg.register_by_ip("169.254.169.254", 80, BackendKind.LMSTUDIO)
+        assert route.call_count == 0, "must reject before any network call"

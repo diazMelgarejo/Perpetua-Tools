@@ -102,6 +102,7 @@ SOUL_SRC: Path = (
 )
 
 from utils.env_paths import resolve_alphaclaw_install_dir
+from utils.model_endpoint_url import ModelEndpointPolicyError, validate_model_endpoint_url
 
 ALPHACLAW_INSTALL_DIR = resolve_alphaclaw_install_dir()
 
@@ -184,6 +185,15 @@ def _locality_resolve_endpoint(
     raw_first = _first_csv_endpoint(raw)
     url = raw_first or _first_csv_endpoint(default) or default
     canonical = _canonical_endpoint(url)
+    try:
+        canonical = validate_model_endpoint_url(canonical)
+    except ModelEndpointPolicyError as exc:
+        print(
+            f"[alphaclaw] WARNING: {env_var} resolved to a blocked endpoint policy "
+            f"target ({canonical!r}: {exc}) -- falling back to http://localhost:{port}",
+            file=sys.stderr,
+        )
+        return f"http://localhost:{port}"
     if not running_on_target:
         return canonical
     parsed = urlparse(canonical)

@@ -1,0 +1,43 @@
+{
+  "id": "b8a568596d30",
+  "key": "manual_b8a568",
+  "name": "manual_b8a568",
+  "claim": "AI-generated content for shared append-only files (memory logs, lesson stores, forensic docs) must land on the branch that logically owns it, not whichever checkout happens to be open when the content is produced -- generating it on main (or an unrelated worktree) while the real owning PR is still open creates provenance fragmentation: the content either gets silently lost if never pushed, or duplicates once someone does reconcile it. Before writing to a shared memory/log file, check whether an open PR already touches that same file for the same subject and route the content there instead.",
+  "conditions": [
+    "cursor-cloud-agent",
+    "memory-fragmentation",
+    "open-pr-ownership",
+    "provenance-drift",
+    "shared-append-only-files",
+    "wrong-branch"
+  ],
+  "evidence_ids": [
+    "2026-08-15T00:25:00.000000+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-15T00:25:00.000000+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-15T00:25:00.000000+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-15T00:25:00.200000+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT PR #354 (repair/memory-lossless-20260815) is specifically about fixing a memory-file merge mishap. While it was still open, a later agent session independently generated a graduated lesson about that exact incident (id c06864656734) plus a matching forensic analysis doc -- but wrote both to a local main checkout instead of PR #354's own branch, discovered only via a manual audit days later. This is the same general failure shape already on record from two prior, differently-flavored Cursor Cloud Agent incidents: an unauthorized module-path change silently riding along inside an authorized rename commit (lesson 0c339d39a80c, caught after propagating across 142 downstream commits), and Cursor's cloud co-author-injection hooks writing attribution nobody asked for (orama docs/wiki/12-cursor-cloud-commit-attribution.md). All three are the same root pattern: agent output lands somewhere other than where the human or the owning unit of work expects it, unnoticed until a later forensic pass. See PR354_MEMORY_UNION_ANALYSIS_2026-08-15.md for the specific incident this entry documents.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-15T00:25:00.000000+00:00"
+      ],
+      "lessons_sha": "b34e1a37ab0a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-15T00:25:00.200000+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT PR #354 (repair/memory-lossless-20260815) is specifically about fixing a memory-file merge mishap. While it was still open, a later agent session independently generated a graduated lesson about that exact incident (id c06864656734) plus a matching forensic analysis doc -- but wrote both to a local main checkout instead of PR #354's own branch, discovered only via a manual audit days later. This is the same general failure shape already on record from two prior, differently-flavored Cursor Cloud Agent incidents: an unauthorized module-path change silently riding along inside an authorized rename commit (lesson 0c339d39a80c, caught after propagating across 142 downstream commits), and Cursor's cloud co-author-injection hooks writing attribution nobody asked for (orama docs/wiki/12-cursor-cloud-commit-attribution.md). All three are the same root pattern: agent output lands somewhere other than where the human or the owning unit of work expects it, unnoticed until a later forensic pass. See PR354_MEMORY_UNION_ANALYSIS_2026-08-15.md for the specific incident this entry documents."
+}

@@ -1,0 +1,42 @@
+{
+  "id": "df682761347f",
+  "key": "manual_df6827",
+  "name": "manual_df6827",
+  "claim": "For web-based agents in an ephemeral command sandbox, the filesystem can disappear between turns while conversation context survives. Commit and push each independently verified unit promptly; after a reset, re-clone and re-verify tools, files, and tests from scratch while continuing on the same branch name. This recovery discipline differs from persistent local command-line sessions and does not relax test-first verification.",
+  "conditions": [
+    "ephemeral sandbox",
+    "filesystem reset",
+    "incremental commits",
+    "persistent local session",
+    "recovery verification"
+  ],
+  "evidence_ids": [
+    "2026-08-13T01:03:45.583935+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-13T01:03:45.583935+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-13T01:03:45.583935+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-13T01:03:50.251030+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "This recovery strategy was recorded for web-based agents in ephemeral sandboxes so they preserve verified work and do not mistake surviving conversation context for a surviving checkout.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-13T01:03:45.583935+00:00"
+      ],
+      "lessons_sha": "b4c37030195a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-13T01:03:50.251012+00:00",
+  "reviewer": "host-agent",
+  "rationale": "This recovery strategy was recorded for web-based agents in ephemeral sandboxes so they preserve verified work and do not mistake surviving conversation context for a surviving checkout."
+}

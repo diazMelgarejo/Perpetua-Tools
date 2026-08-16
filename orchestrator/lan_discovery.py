@@ -34,6 +34,8 @@ try:
 except ImportError:
     httpx = None
 
+from utils.endpoint_policy_core import parse_transport_identity
+
 # Common AI inference server ports
 DEFAULT_PORTS = [
     11434,  # Ollama
@@ -364,9 +366,14 @@ def _read_discovery_win_url(max_age_s: int = _DISCOVERY_MAX_AGE_S) -> Optional[s
     raw_ip = win.get("ip")
     if not isinstance(raw_ip, str) or not win.get("reachable", False):
         return None
-    ip = raw_ip.strip()
-    if not ip or ip in ("localhost", "127.0.0.1"):
+    ip_stripped = raw_ip.strip()
+    if not ip_stripped or ip_stripped in ("localhost", "127.0.0.1"):
         return None
+    identity = parse_transport_identity(ip_stripped)
+    if identity is None:
+        log.debug("invalid discovery snapshot win ip %r", raw_ip)
+        return None
+    ip = identity.hostname
     raw_port = win.get("port", 1234)
     try:
         port = int(raw_port)

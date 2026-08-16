@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from .backend import Backend, BackendKind, BackendHealth
 from .errors import BackendOfflineError
 from .probe import health_probe
+from utils.model_endpoint_url import ModelEndpointPolicyError, validate_model_endpoint_url
 
 # Seed list for autodetect. Pure data — extend without code changes elsewhere.
 # HARDWARE POLICY: Mac inference ALWAYS goes through ollama-local (localhost:11434).
@@ -43,8 +44,12 @@ class BackendRegistry:
     async def register_by_ip(
         self, ip: str, port: int, kind: BackendKind, *, name: str | None = None
     ) -> Backend:
-        url = f"http://{ip}:{port}/v1"
         name = name or f"{kind.value}-{ip}"
+        try:
+            base = validate_model_endpoint_url(f"http://{ip}:{port}")
+        except ModelEndpointPolicyError as exc:
+            raise BackendOfflineError(f"{name} @ http://{ip}:{port} rejected by endpoint policy: {exc}") from exc
+        url = f"{base}/v1"
         backend = await self._probe_and_record(name, url, kind)
         if backend is None or backend.health is not BackendHealth.ONLINE:
             raise BackendOfflineError(f"{name} @ {url} did not respond")

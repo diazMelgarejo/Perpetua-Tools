@@ -76,9 +76,9 @@ def _load_structured():
 
     # A lesson can stay status="accepted" on its own row even after being
     # superseded -- supersession creates a NEW id, it never edits the old
-    # row. Exclude ids an accepted supersession retires, mirroring
-    # render_lessons.py's rendering rule, so recall doesn't return both the
-    # stale and replacement guidance for the same topic.
+    # row. Exclude ids an accepted supersession retires so recall does not
+    # return both the stale and replacement guidance. LESSONS.md still
+    # renders both records as the append-only historical view.
     retired = superseded_by_map(latest.values())
 
     out = []

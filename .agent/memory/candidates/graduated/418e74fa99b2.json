@@ -1,0 +1,41 @@
+{
+  "id": "418e74fa99b2",
+  "key": "manual_418e74",
+  "name": "manual_418e74",
+  "claim": "GUARD_SYNC_SKIP_DIVERGENCE_CHECK=1 is a documented, purpose-built escape hatch for the guard-sync-divergence pre-push hook \u2014 use it scoped to one push, only after concretely proving the flagged sibling isn't a real git repo, never as a habitual bypass",
+  "conditions": [
+    "GUARD_SYNC_SKIP_DIVERGENCE_CHECK",
+    "escape-hatch",
+    "guard-sync",
+    "pre-push"
+  ],
+  "evidence_ids": [
+    "2026-08-15T11:28:55.136860+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-15T11:28:55.136860+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-15T11:28:55.136860+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-15T11:28:55.252472+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Distinct from --no-verify: this skips one specific, provably-false-positive check while leaving every other guard (attribution scan, banned-token scan) active. Used once on PT PR #355's push after confirming the flagged sdists-v9 sibling was a 0-byte non-git marker file, not skipped preemptively or by default.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-15T11:28:55.136860+00:00"
+      ],
+      "lessons_sha": "e3fe4322435b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-15T11:28:55.252463+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Distinct from --no-verify: this skips one specific, provably-false-positive check while leaving every other guard (attribution scan, banned-token scan) active. Used once on PT PR #355's push after confirming the flagged sdists-v9 sibling was a 0-byte non-git marker file, not skipped preemptively or by default."
+}
