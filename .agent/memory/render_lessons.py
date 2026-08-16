@@ -117,13 +117,16 @@ def load_lessons(semantic_dir):
     return out
 
 
-def _bullet_for(lesson):
+def _bullet_for(lesson, superseded_by):
     claim = lesson.get("claim", "")
     conf = lesson.get("confidence", "?")
     status = lesson.get("status", "accepted")
     ev = lesson.get("evidence_ids", [])
     lid = lesson.get("id", "?")
     ann = f"status={status} confidence={conf} evidence={len(ev)} id={lid}"
+    sup_by = superseded_by.get(lid)
+    if sup_by:
+        return f"- ~~{claim}~~  <!-- {ann} superseded_by={sup_by} -->"
     if status == "retracted":
         return f"- ~~[RETRACTED] {claim}~~  <!-- {ann} -->"
     if status == "provisional":
@@ -137,13 +140,12 @@ def superseded_by_map(lessons):
     Only accepted supersessions retire the old lesson. A provisional
     --supersedes would otherwise blank the active lesson before its
     replacement has itself been accepted, leaving no active guidance on
-    that topic at all -- operational callers that require active accepted
-    guidance would then surface nothing for that topic.
+    that topic at all -- callers that skip provisional/strikethrough
+    entries would then surface nothing for that topic.
 
-    Shared with recall.py and show.py so operational consumers agree on
-    which lessons are currently retired. LESSONS.md deliberately renders
-    both records unchanged: it is an auditable historical view, not an
-    active-guidance index.
+    Shared with recall.py so retrieval and rendering never disagree on
+    which lessons are currently retired -- see its docstring for the bug
+    this fixed (recall returning both the stale and replacement guidance).
     """
     superseded_by = {}
     for L in lessons:
@@ -156,6 +158,8 @@ def superseded_by_map(lessons):
 
 
 def _build_auto_section(lessons):
+    superseded_by = superseded_by_map(lessons)
+
     groups = defaultdict(list)
     for L in lessons:
         month = (L.get("accepted_at") or "")[:7] or "unknown"
@@ -166,7 +170,7 @@ def _build_auto_section(lessons):
         lines.append(f"### {month}")
         lines.append("")
         for L in groups[month]:
-            lines.append(_bullet_for(L))
+            lines.append(_bullet_for(L, superseded_by))
         lines.append("")
     return "\n".join(lines).rstrip() + "\n" if lines else ""
 

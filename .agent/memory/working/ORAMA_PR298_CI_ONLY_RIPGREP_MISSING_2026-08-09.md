@@ -100,8 +100,7 @@ doesn't hard-fail there) would have made that scan real for the first time
 and mass-failed CI on totally unrelated content.
 
 Fix: replaced `REDACTED` with a synthetic sentinel
-(runtime-concatenated, not spelled literally here for the same reason it
-isn't spelled literally in the scripts themselves) in both
+(`ci-placeholder-pattern-never-matches-real-content-7f3ae9c1`) in both
 `ci-bootstrap-private-attribution.sh` and its sibling
 `write-openclaw-private-attribution.sh`. First attempt wrote it as one
 literal `echo` argument — the scanner then flagged **the scripts' own

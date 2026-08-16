@@ -1,0 +1,71 @@
+{
+  "id": "5639c5f22ce9",
+  "key": "manual_5639c5",
+  "name": "manual_5639c5",
+  "claim": "When git push fails with authentication or invalid password errors on macOS due to a conflicting exported GITHUB_TOKEN environment variable, run: env -u GITHUB_TOKEN gh auth setup-git && env -u GITHUB_TOKEN git push --force-with-lease origin <branch>. Unsetting GITHUB_TOKEN forces git to use valid macOS Keychain / gh CLI credentials while --force-with-lease prevents overwriting unexpected remote commits.",
+  "conditions": [
+    "auth",
+    "authentication",
+    "branch",
+    "cli",
+    "commits",
+    "conflicting",
+    "credentials",
+    "due",
+    "env",
+    "environment",
+    "errors",
+    "exported",
+    "fails",
+    "force-with-lease",
+    "forces",
+    "git",
+    "github_token",
+    "invalid",
+    "keychain",
+    "macos",
+    "origin",
+    "overwriting",
+    "password",
+    "prevents",
+    "push",
+    "remote",
+    "run",
+    "setup-git",
+    "unexpected",
+    "unsetting",
+    "use",
+    "valid",
+    "variable",
+    "while"
+  ],
+  "evidence_ids": [
+    "2026-08-16T09:43:30.506943+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-16T09:43:30.506943+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-16T09:43:30.506943+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-16T09:43:30.687797+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Discovered during PR #354 and PR #315 force-pushes when exported GITHUB_TOKEN in environment broke git push with password authentication error.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-16T09:43:30.506943+00:00"
+      ],
+      "lessons_sha": "c525e02a4d19"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-16T09:43:30.687791+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Discovered during PR #354 and PR #315 force-pushes when exported GITHUB_TOKEN in environment broke git push with password authentication error."
+}

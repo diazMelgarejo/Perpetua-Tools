@@ -2,12 +2,13 @@
   "id": "ecf446018e17",
   "key": "manual_ecf446",
   "name": "manual_ecf446",
-  "claim": "When a script compares sibling repositories by directory, linked worktrees sharing one Git common directory are alternate checkouts of the same authority, not independent mirror targets. Resolve and compare their common-directory paths, then skip same-repository worktrees rather than reporting divergence.",
+  "claim": "When a script compares 'sibling repositories' by directory path, a linked git worktree of the SAME canonical repo is not a downstream mirror target \u2014 it's an alternate checkout of the identical guard authority. Distinguish them via 'git -C <root> rev-parse --git-common-dir' (resolved to an absolute path): if two roots share the same common dir, they're worktrees of one repo, not independent siblings, and should be skipped rather than scanned for divergence.",
   "conditions": [
     "divergence scan",
-    "git common directory",
+    "false positive",
+    "git-common-dir",
     "linked worktree",
-    "repository identity"
+    "sibling repo detection"
   ],
   "evidence_ids": [
     "2026-08-14T13:55:50.027169+00:00"
@@ -26,7 +27,7 @@
       "ts": "2026-08-14T13:55:50.193949+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
-      "notes": "A linked worktree was incorrectly scanned as an independent downstream repository, producing a false divergence result. Comparing Git common directories is more reliable than parsing worktree output or relying on path heuristics.",
+      "notes": "Found by another agent (Codex) reviewing PR 311's merged fix: linked orama-system worktrees (used throughout this same session for parallel PR work) were being scanned as if they were independent downstream repos, producing false-positive divergence failures against pre-merge worktree state. Fixed in orama-system PR 312, synced to PT as commit 0f9472f6. The git-common-dir comparison is the correct primitive -- 'git worktree list' parsing or path-prefix heuristics would be more fragile.",
       "provisional": false,
       "evidence_snapshot": [
         "2026-08-14T13:55:50.027169+00:00"
@@ -37,5 +38,5 @@
   "rejection_count": 0,
   "accepted_at": "2026-08-14T13:55:50.193941+00:00",
   "reviewer": "learn.py",
-  "rationale": "A linked worktree was incorrectly scanned as an independent downstream repository, producing a false divergence result. Comparing Git common directories is more reliable than parsing worktree output or relying on path heuristics."
+  "rationale": "Found by another agent (Codex) reviewing PR 311's merged fix: linked orama-system worktrees (used throughout this same session for parallel PR work) were being scanned as if they were independent downstream repos, producing false-positive divergence failures against pre-merge worktree state. Fixed in orama-system PR 312, synced to PT as commit 0f9472f6. The git-common-dir comparison is the correct primitive -- 'git worktree list' parsing or path-prefix heuristics would be more fragile."
 }
