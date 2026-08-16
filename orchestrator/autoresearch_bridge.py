@@ -76,6 +76,8 @@ from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
 
+from utils.model_endpoint_url import ModelEndpointPolicyError, validate_model_endpoint_url
+
 # -- configuration (resolved from environment, never hard-coded secrets) --------
 
 # GPU_BOX: SSH target for the Windows RTX 3080.
@@ -385,12 +387,20 @@ def _lm_studio_base_url() -> str:
     if llama:
         parsed = urlparse(llama if "://" in llama else f"http://{llama}")
         base = f"{parsed.scheme}://{parsed.netloc or parsed.path.split('/')[0]}"
-        return base.rstrip("/").removesuffix("/v1")
+        base = base.rstrip("/").removesuffix("/v1")
+        try:
+            return validate_model_endpoint_url(base)
+        except ModelEndpointPolicyError:
+            return "http://localhost:1234"
     raw = os.environ.get("LM_STUDIO_WIN_ENDPOINTS", "").strip()
     if raw:
         first = raw.split(",", 1)[0].strip()
         parsed = urlparse(first if "://" in first else f"http://{first}")
-        return f"{parsed.scheme}://{parsed.netloc or parsed.path}".rstrip("/")
+        base = f"{parsed.scheme}://{parsed.netloc or parsed.path}".rstrip("/")
+        try:
+            return validate_model_endpoint_url(base)
+        except ModelEndpointPolicyError:
+            return "http://localhost:1234"
     return "http://localhost:1234"
 
 

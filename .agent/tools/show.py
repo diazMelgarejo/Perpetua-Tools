@@ -233,8 +233,8 @@ def lesson_stats():
         # of status=="accepted" therefore double-counts both cases -- the
         # original row keeps status="accepted" forever. Take the latest row
         # per id (file order == chronological) as that id's current status,
-        # then exclude ids an accepted supersession points at, mirroring
-        # render_lessons.py's _build_auto_section.
+        # then exclude ids an accepted supersession points at. The rendered
+        # LESSONS.md intentionally keeps both historical records visible.
         latest_by_id = {}
         order = []
         for line in open(LESSONS_JSONL):

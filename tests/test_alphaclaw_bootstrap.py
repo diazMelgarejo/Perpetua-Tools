@@ -85,6 +85,33 @@ def test_locality_resolve_endpoint_preserves_lan_when_remote(monkeypatch):
     assert alphaclaw_bootstrap.OLLAMA_WIN == "http://127.0.9.2:11434"
 
 
+def test_locality_resolve_endpoint_rejects_link_local_metadata_target(monkeypatch):
+    """Regression: _locality_resolve_endpoint's env-var/default chain (also
+    reachable via MAC_IP/WIN_IP) had no SSRF host-classification at all --
+    only a loopback-vs-not locality check. An operator (or a compromised
+    startup script) setting OLLAMA_MAC_ENDPOINT=http://169.254.169.254:11434
+    would have this node construct and later probe that endpoint with zero
+    validation. Must fall back to the safe loopback default instead."""
+    _reload_bootstrap(
+        monkeypatch,
+        ORAMA_PLATFORM="win",  # not running on mac -> remote LAN branch, no locality heal
+        OLLAMA_MAC_ENDPOINT="http://169.254.169.254:11434",
+    )
+    assert "169.254.169.254" not in alphaclaw_bootstrap.OLLAMA_MAC
+    assert alphaclaw_bootstrap.OLLAMA_MAC == "http://localhost:11434"
+
+
+def test_locality_resolve_endpoint_still_accepts_lan_ip(monkeypatch):
+    """Confirm the fix isn't over-broad -- a genuine RFC1918 LAN IP must
+    still pass through unchanged."""
+    _reload_bootstrap(
+        monkeypatch,
+        ORAMA_PLATFORM="win",
+        OLLAMA_MAC_ENDPOINT="http://192.168.1.50:11434",
+    )
+    assert alphaclaw_bootstrap.OLLAMA_MAC == "http://192.168.1.50:11434"
+
+
 def test_build_openclaw_config_ollama_mac_uses_healed_localhost(monkeypatch):
     """openclaw.json ollama-mac baseUrl must use healed localhost, not stale LAN env."""
     _reload_bootstrap(

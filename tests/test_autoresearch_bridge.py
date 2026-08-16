@@ -399,3 +399,35 @@ class TestPreflight:
             result = bridge.preflight()
         assert result["plugin_ok"] is False
         assert "no claude CLI" in result["plugin_error"]
+
+
+def test_lm_studio_base_url_rejects_link_local_metadata_via_llama_server_env(monkeypatch):
+    """Regression: _lm_studio_base_url()'s LLAMA_SERVER_BASE_URL branch had
+    scheme-safety (avoids double-scheme construction) but no SSRF host
+    classification. probe_lm_studio_http() calls urlopen() on this result
+    with an Authorization: Bearer token attached -- an operator (or
+    compromised env) setting LLAMA_SERVER_BASE_URL=169.254.169.254 would
+    have this process probe cloud instance-metadata with the LM Studio
+    token leaked in the request header."""
+    monkeypatch.setenv("LLAMA_SERVER_BASE_URL", "http://169.254.169.254:8080")
+    monkeypatch.delenv("LM_STUDIO_WIN_ENDPOINTS", raising=False)
+    result = bridge._lm_studio_base_url()
+    assert "169.254.169.254" not in result
+    assert result == "http://localhost:1234"
+
+
+def test_lm_studio_base_url_rejects_public_target_via_win_endpoints_env(monkeypatch):
+    monkeypatch.delenv("LLAMA_SERVER_BASE_URL", raising=False)
+    monkeypatch.setenv("LM_STUDIO_WIN_ENDPOINTS", "http://8.8.8.8:1234")
+    result = bridge._lm_studio_base_url()
+    assert "8.8.8.8" not in result
+    assert result == "http://localhost:1234"
+
+
+def test_lm_studio_base_url_still_accepts_lan_ip(monkeypatch):
+    """Confirm the fix isn't over-broad -- a genuine RFC1918 target must
+    still pass through unchanged."""
+    monkeypatch.setenv("LLAMA_SERVER_BASE_URL", "http://192.168.1.99:8080")
+    monkeypatch.delenv("LM_STUDIO_WIN_ENDPOINTS", raising=False)
+    result = bridge._lm_studio_base_url()
+    assert result == "http://192.168.1.99:8080"
