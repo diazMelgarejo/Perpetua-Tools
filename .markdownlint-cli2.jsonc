@@ -27,6 +27,13 @@
   "ignores": [
     "**/SKILL.md",
     "**/LESSONS.md",
-    "**/DECISIONS.md"
+    "**/DECISIONS.md",
+    // Same reasoning as LESSONS.md/DECISIONS.md above: agent-generated
+    // working notes and forensic analysis docs under .agent/memory/working/
+    // are not hand-curated prose meant to be manually line-wrapped at 100
+    // chars. Added after PR #354 hit this on a newly-ported doc
+    // (PR354_MEMORY_UNION_ANALYSIS_2026-08-15.md) -- same class of content,
+    // same exemption rationale.
+    ".agent/memory/working/**"
   ]
 }
