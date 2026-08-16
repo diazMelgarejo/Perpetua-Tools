@@ -6,6 +6,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 HOME="${HOME:-/home/ubuntu}"
 OPENCLAW="${HOME}/.cursor/openclaw"
 PRIVATE="${REPO_ROOT}/.cursor/private"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 mkdir -p "$OPENCLAW/private-lessons" "$PRIVATE"
 chmod 700 "$OPENCLAW" "$PRIVATE" 2>/dev/null || true
@@ -16,28 +17,40 @@ if [[ -s "$PATTERNS_OPENCLAW" && -s "${PRIVATE}/banned-attribution-patterns" ]];
   exit 0
 fi
 
-# Never hardcode a real banned identity in this tracked script (it would
-# itself trip scan-tracked-banned-tokens.sh). Source it from a CI secret env
-# var first, falling back to an already-materialized local ignored file if
-# one exists from a prior bootstrap on this machine. If neither is
-# available (fresh checkout, no secret configured -- e.g. local dev or this
-# repo's own test suite), fall back to an obviously-synthetic placeholder
-# token so the bootstrap still succeeds and downstream guards still have a
-# non-empty patterns file to check against, without ever embedding a real
-# identity literal in tracked source.
-TOKEN="${PT_BANNED_ATTRIBUTION_TOKEN:-}"
-if [[ -z "$TOKEN" && -s "${PRIVATE}/banned-attribution-patterns" ]]; then
-  TOKEN="$(grep -v '^#' "${PRIVATE}/banned-attribution-patterns" | head -1)"
+if ! bash "$SCRIPT_DIR/seed-banned-attribution-patterns.sh" "$PATTERNS_OPENCLAW" 2>/dev/null; then
+  # No local-only registry available (expected in CI -- registries are
+  # workspace-local by design, never checked into the repo; see
+  # docs/v2/47-portable-memory-local-topology-invariant.md). Fall back to a
+  # placeholder so the mandatory hooks-active/attribution-guard steps below
+  # can still run; they don't depend on this file's literal contents.
+  #
+  # Deliberately not "fail closed" here (considered and rejected 2026-08-08,
+  # CodeRabbit review 4890233271): the identity/author enforcement that
+  # actually matters in CI (bad_author checks via identity-policy.json) does
+  # not read this file at all and is unaffected either way. The one
+  # consumer that does read it (scan-tracked-banned-tokens.sh's tracked-file
+  # content scan) can never be meaningful in CI regardless of this fallback
+  # -- the real registry is intentionally never present there by design, so
+  # failing closed would only hard-block every PR's CI without closing a
+  # real gap, reintroducing the exact incident this fallback fixed.
+  # Not the former placeholder value -- that was a real word common in
+  # real security docs/log messages and started matching genuine tracked
+  # content once scan-tracked-banned-tokens.sh could actually find ripgrep
+  # to run against it. Long, synthetic, and structurally unlike anything
+  # a real token or real prose would ever contain, so it can never
+  # collide with tracked content while still keeping the file non-empty
+  # (banned_patterns_ready() requires that). Assembled at runtime via
+  # concatenation, not written as one literal, so this script's own
+  # source never contains the substring the scanner would then flag.
+  _placeholder_token="ci-placeholder-pattern"
+  _placeholder_token+="-never-matches-real-content-7f3ae9c1"
+  {
+    echo "# Banned attribution tokens (one per line, case-insensitive substring match)"
+    echo "$_placeholder_token"
+  } >"$PATTERNS_OPENCLAW"
+  chmod 600 "$PATTERNS_OPENCLAW"
+  unset _placeholder_token
 fi
-if [[ -z "$TOKEN" ]]; then
-  TOKEN="unconfigured-banned-attribution-placeholder"
-fi
-
-{
-  echo "# Banned attribution tokens (one per line, case-insensitive substring match)"
-  printf '%s\n' "$TOKEN"
-} >"$PATTERNS_OPENCLAW"
-chmod 600 "$PATTERNS_OPENCLAW"
 install -m 0600 "$PATTERNS_OPENCLAW" "${PRIVATE}/banned-attribution-patterns"
 
 printf 'OK: CI bootstrap → %s and %s\n' "$PATTERNS_OPENCLAW" "${PRIVATE}/banned-attribution-patterns"

@@ -93,6 +93,22 @@ if [[ "$(cd "$source_root" && pwd)" != "$(cd "$target" && pwd)" ]]; then
   _guard_sync_abort_if_dirty "$target" "target repo ($target)"
 fi
 
+_repo_uses_githooks() {
+  local root="$1" hooks_path hooks_abs expected_abs
+  if [[ -f "$root/.githooks/.guard-sync-opt-in" ]]; then
+    return 0
+  fi
+  hooks_path="$(git -C "$root" config --path --get core.hooksPath 2>/dev/null || true)"
+  [[ -n "$hooks_path" ]] || return 1
+  if [[ "$hooks_path" == /* ]]; then
+    hooks_abs="$(cd "$hooks_path" 2>/dev/null && pwd -P)" || return 1
+  else
+    hooks_abs="$(cd "$root/$hooks_path" 2>/dev/null && pwd -P)" || return 1
+  fi
+  expected_abs="$(cd "$root/.githooks" 2>/dev/null && pwd -P)" || return 1
+  [[ "$hooks_abs" == "$expected_abs" ]]
+}
+
 atomic_install_file() {
   local src="$1"
   local dest="$2"
@@ -242,10 +258,10 @@ for rel in "${GUARD_SYNC_DATA_FILES[@]}"; do
   atomic_install_file "$SCRIPT_DIR/$rel" "$target/scripts/git/$rel" 0644
 done
 
-# Only sync .githooks/ entrypoints into repos that have already opted into
-# core.hooksPath=.githooks -- never force a new hooks system onto a repo
-# that hasn't adopted one (e.g. a repo with no .githooks/ dir at all yet).
-if [[ -d "$target/.githooks" ]]; then
+# Only sync .githooks/ entrypoints into repos whose effective hooks path
+# resolves to .githooks, or that carry the explicit guard-sync opt-in marker.
+# Directory presence alone is not opt-in.
+if _repo_uses_githooks "$target"; then
   for rel in "${GUARD_SYNC_GITHOOKS[@]}"; do
     [[ -f "$SCRIPT_DIR/../../.githooks/$rel" ]] || continue
     atomic_install_file "$SCRIPT_DIR/../../.githooks/$rel" "$target/.githooks/$rel" 0755

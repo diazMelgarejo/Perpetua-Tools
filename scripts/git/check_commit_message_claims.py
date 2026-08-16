@@ -130,14 +130,6 @@ def _ref_resolves(ref: str) -> bool:
     return _git_quiet(["rev-parse", "--verify", "--quiet", ref])
 
 
-def _ref_is_ancestor_of_head(ref: str) -> bool:
-    return _git_quiet(["merge-base", "--is-ancestor", ref, "HEAD"])
-
-
-def _head_is_merge_commit() -> bool:
-    return _git_quiet(["rev-parse", "--verify", "--quiet", "HEAD^2"])
-
-
 def _current_branch() -> str:
     proc = subprocess.run(
         ["git", "rev-parse", "--abbrev-ref", "HEAD"],
@@ -165,13 +157,11 @@ def verify_git_state_claims(claims: list[tuple[str, str]]) -> list[str]:
                     + ")"
                 )
         elif kind == "merged":
-            if not _ref_resolves(ref):
-                problems.append(f"merged into {ref!r}: ref does not resolve")
-            elif not _ref_is_ancestor_of_head(ref) and not _head_is_merge_commit():
-                problems.append(
-                    f"merged into {ref!r}: {ref!r} is not an ancestor of HEAD "
-                    "and HEAD is not a merge commit"
-                )
+            # A commit-msg/pre-commit hook cannot prove a future pushed/merged
+            # state, and ancestry checks are explicitly unreliable after the
+            # repo's history rewrites. Leave merge-state validation to
+            # post-push/CI flows that can classify refs with reanchor_scan.sh.
+            continue
         elif kind == "branch":
             current = _current_branch()
             if current != ref:

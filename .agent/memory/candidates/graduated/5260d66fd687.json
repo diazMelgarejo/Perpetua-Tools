@@ -1,0 +1,44 @@
+{
+  "id": "5260d66fd687",
+  "key": "manual_5260d6",
+  "name": "manual_5260d6",
+  "claim": "Never make a board write path auto-refresh liveness for whatever identity it is handed: agent_coordination.py log accepts an arbitrary agent_id, so auto-pulsing on log would let any session refresh any other identity and fake liveness - fix roster staleness on the read side instead, and never prune historical registrations.",
+  "conditions": [
+    "board",
+    "coordination",
+    "impersonation",
+    "liveness",
+    "pruning",
+    "roster",
+    "security"
+  ],
+  "evidence_ids": [
+    "2026-08-14T16:40:58.752398+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-14T16:40:58.752398+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-14T16:40:58.752398+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-14T16:40:58.868783+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Considered and rejected on 2026-08-14. Making log emit a pulse looks correct because posting a status note is evidence the poster is alive, but the subcommand takes the agent id as a plain argument, so the change would have created an impersonation hole and violated the fleet invariant that no session may pulse another agent identity. The adopted alternative changes no write path: render a liveness column on the agents roster and sort live-first, keeping every historical row reachable. Pruning was separately forbidden because historical registrations are evidence until their owner or an approved maintenance procedure closes them.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-14T16:40:58.752398+00:00"
+      ],
+      "lessons_sha": "5574358238c2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-14T16:40:58.868772+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Considered and rejected on 2026-08-14. Making log emit a pulse looks correct because posting a status note is evidence the poster is alive, but the subcommand takes the agent id as a plain argument, so the change would have created an impersonation hole and violated the fleet invariant that no session may pulse another agent identity. The adopted alternative changes no write path: render a liveness column on the agents roster and sort live-first, keeping every historical row reachable. Pruning was separately forbidden because historical registrations are evidence until their owner or an approved maintenance procedure closes them."
+}
