@@ -78,3 +78,22 @@ All review comments and outside-diff invariants on **PR #356** were addressed an
 - **`ecc-submodule-sync.sh restore`**: **OK** (4 re-applied, 1 already applied).
 - **`scan-tracked-banned-tokens.sh`**: **OK** (No banned patterns in tracked files).
 - **`check_model_ids.py`**: **OK** (All configured models match source provenance).
+
+---
+
+## 5. ECC Integration Architecture with Hermes
+
+In the latest Everything Claude Code (ECC v2.0.0) architecture, integration with Hermes Agent follows an **Operator Shell $\leftrightarrow$ Reusable Workflow Engine** separation:
+
+1. **Operator Shell vs. Workflow Engine**:
+   - **Hermes Agent**: Functions as the interactive operator shell and execution runtime (terminal interaction, task delegation, background loops, local workspace management).
+   - **ECC**: Provides the canonical library of specialized subagents (67 agents), domain workflows/skills (278 skills), and deterministic scripts.
+
+2. **Key Integration Mechanisms**:
+   - **Dedicated Target (`scripts/lib/install-targets/hermes-home.js`)**: Maps and installs ECC skills directly to `~/.hermes/skills/` and repository `.hermes/` roots.
+   - **`hermes-imports` Skill (`skills/hermes-imports/SKILL.md`)**: Sanitizes and exports local operator loops into reusable, sanitized ECC skills.
+   - **Multi-Lane Dispatch Taxonomy**:
+     - **L-H1 (Native Hermes)**: Interactive child AIAgents using native `delegate_task`.
+     - **L-PT (Perpetua-Tools Bridge)**: Programmatic dispatch via `hermes_harness.py` / `spawn_hermes_agent()` to execute skills in isolated workspaces.
+     - **L-Fleet (Distributed Fleet)**: Queue-driven asynchronous jobs dispatched via `coord_pulse`.
+
