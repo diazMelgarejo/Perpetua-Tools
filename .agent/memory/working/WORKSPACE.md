@@ -50,6 +50,7 @@ Autopilot disabled until timeout/embedding issues fixed. Re-enable LaunchAgent w
 
 | Topic | Path |
 | ----- | ---- |
+| ECC Overlay & Tier-5 Harmonization | `ECC_OVERLAY_HARMONIZATION_AND_TIER5_STATUS_2026-08-17.md` |
 | PR354 Memory Union Analysis | `PR354_MEMORY_UNION_ANALYSIS_2026-08-15.md` |
 | Tier-5 Apprentice Stacks | `TIER5_PIPELINE_AND_APPRENTICE_STACKS_2026-08-15.md` |
 | Grant HMAC MVP | `PR_BODY_GRANT_HMAC_MVP_SAGA_2026-08-02.md` |
