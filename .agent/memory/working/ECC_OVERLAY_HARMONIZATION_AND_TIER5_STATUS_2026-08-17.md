@@ -81,19 +81,65 @@ All review comments and outside-diff invariants on **PR #356** were addressed an
 
 ---
 
-## 5. ECC Integration Architecture with Hermes
+## 5. How Latest ECC Integrates with Hermes (Read-Only Architectural Overview)
 
-In the latest Everything Claude Code (ECC v2.0.0) architecture, integration with Hermes Agent follows an **Operator Shell $\leftrightarrow$ Reusable Workflow Engine** separation:
+In the latest **Everything Claude Code (ECC v2.0.0)** ecosystem, integration with **Hermes Agent** is structured around a symbiotic **Operator Shell $\leftrightarrow$ Reusable Workflow Engine** separation of concerns:
 
-1. **Operator Shell vs. Workflow Engine**:
-   - **Hermes Agent**: Functions as the interactive operator shell and execution runtime (terminal interaction, task delegation, background loops, local workspace management).
-   - **ECC**: Provides the canonical library of specialized subagents (67 agents), domain workflows/skills (278 skills), and deterministic scripts.
+```mermaid
+graph TD
+    subgraph Hermes Operator Shell
+        H1[Interactive Session & Terminal REPL]
+        H2[Channel Bindings & Notifications]
+        H3[Local Task Delegation Loop]
+    end
 
-2. **Key Integration Mechanisms**:
-   - **Dedicated Target (`scripts/lib/install-targets/hermes-home.js`)**: Maps and installs ECC skills directly to `~/.hermes/skills/` and repository `.hermes/` roots.
-   - **`hermes-imports` Skill (`skills/hermes-imports/SKILL.md`)**: Sanitizes and exports local operator loops into reusable, sanitized ECC skills.
-   - **Multi-Lane Dispatch Taxonomy**:
-     - **L-H1 (Native Hermes)**: Interactive child AIAgents using native `delegate_task`.
-     - **L-PT (Perpetua-Tools Bridge)**: Programmatic dispatch via `hermes_harness.py` / `spawn_hermes_agent()` to execute skills in isolated workspaces.
-     - **L-Fleet (Distributed Fleet)**: Queue-driven asynchronous jobs dispatched via `coord_pulse`.
+    subgraph ECC Workflow & Intelligence Engine
+        E1[67 Specialized Agents]
+        E2[278 Workflow Skills & Rules]
+        E3[Deterministic Shell & Node Scripts]
+        E4[hermes-imports Sanitization Pipeline]
+    end
+
+    subgraph Multi-Lane Execution Topology
+        L1[L-H1: Native delegate_task Subagents]
+        L2[L-PT: Perpetua-Tools / OpenClaw Programmatic Bridge]
+        L3[L-Fleet: Distributed LAN Background Queues via coord_pulse]
+    end
+
+    H1 --> E2
+    H3 --> L1
+    H3 --> L2
+    H3 --> L3
+    E4 -->|Sanitize & Export| E2
+    E2 -->|Install via hermes-home.js| H1
+```
+
+### 1. Conceptual Model: Operator vs. Workflow Engine
+- **Hermes Agent as the Operator Shell**: Hermes operates at the interactive runtime and session management layer. It governs terminal interaction, interactive task delegation, background observation loops, multi-channel messaging (Telegram/Slack/Discord), and local workspace lifecycle management.
+- **ECC as the Reusable Workflow & Intelligence Layer**: ECC provides the canonical, portable library of 67 specialized subagents, 278 domain workflows/skills, and deterministic validation scripts that Hermes agents discover, mount, and execute.
+
+---
+
+### 2. Concrete Architectural Integration Points
+
+#### A. Dedicated Installation Target (`scripts/lib/install-targets/hermes-home.js`)
+ECC's installer natively supports Hermes as a first-class execution target alongside Claude Code CLI, Cursor, Gemini CLI, and Windsurf:
+- **Target Path Resolution**: Automatically projects and installs ECC skills into `~/.hermes/skills/` (user-level) and `.hermes/skills/` (project-level).
+- **Cross-Harness Parity**: Normalizes ECC YAML frontmatter (`name`, `description`, `metadata`) so Hermes agents can dynamically discover and trigger skills at runtime without syntax translation.
+
+#### B. The `hermes-imports` Skill (`skills/hermes-imports/SKILL.md`)
+A dedicated ECC skill that defines the formal sanitization and publication pipeline for operator loops:
+- **Direction & Purpose**: Moves repeatable, high-leverage operator patterns from private Hermes workflows into clean, public ECC skills and release-pack artifacts.
+- **Sanitization Invariant**: Mechanically strips workstation paths (`/Users/...`, `~/.hermes/...`), live API keys/tokens, private contact graphs, and account identifiers, replacing them with generic role anchors (`operator`, `workspace owner`) and repo-relative paths.
+
+#### C. Cross-Harness Bridge & Delegation Taxonomy
+In the unified multi-agent topology (Perpetua-Tools + Orama-System + OpenClaw + Hermes), execution is routed through three strict, non-overlapping lanes:
+1. **Lane L-H1 (Native Hermes)**: Interactive child `AIAgent` instances spawned directly within the Hermes process via `delegate_task`.
+2. **Lane L-PT (Perpetua-Tools Bridge)**: Programmatic dispatch where Perpetua-Tools or OpenClaw invokes Hermes (`hermes_harness.py` / `spawn_hermes_agent()`) to execute an ECC skill in an isolated subagent workspace.
+3. **Lane L-Fleet (Distributed Fleet)**: Queue-driven asynchronous background jobs dispatched across distributed LAN nodes via `coord_pulse`.
+
+---
+
+### Summary
+In the latest ECC architecture, Hermes is treated not as a competing framework, but as an **execution harness**: ECC supplies the domain skills, immutable rules, and specialized agents, while Hermes provides the interactive operator shell, messaging channels, and autonomous execution loop.
 
