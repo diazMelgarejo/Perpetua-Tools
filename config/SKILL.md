@@ -23,8 +23,8 @@ This document outlines the model registry and device configuration for the ECC-t
 ### Online Models
 
 - **sonar-reasoning-pro**
-- **claude-4-5-thinking**
-- **grok-4-1-thinking**
+- **claude-sonnet-5**
+- **grok-4.5**
 
 ## Device Configuration
 

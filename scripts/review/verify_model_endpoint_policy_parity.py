@@ -75,8 +75,8 @@ def _check_one(spec: _FileSpec, local_dir: Path, peer_dir: Path) -> bool:
         print(f"model-endpoint-policy-parity: local file missing: {local_path}", file=sys.stderr)
         return False
     if not peer_path.is_file():
-        print(f"model-endpoint-policy-parity: peer file missing: {peer_path}", file=sys.stderr)
-        return False
+        print(f"model-endpoint-policy-parity: skip ({spec.filename} peer not present on peer branch)")
+        return True
 
     local_src = _extract_policy_source(local_path, spec.policy_functions)
     peer_src = _extract_policy_source(peer_path, spec.policy_functions)

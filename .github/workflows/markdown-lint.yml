@@ -50,6 +50,9 @@ jobs:
             CHANGELOG.md
             vendor/**
             .agent/memory/semantic/LESSONS.md
+            .agent/memory/semantic/DOMAIN_KNOWLEDGE.md
+            .agent/memory/semantic/DECISIONS.md
+            .agent/memory/working/!(WORKSPACE).md
           separator: ","
 
       - name: Run markdownlint-cli2 on changed files

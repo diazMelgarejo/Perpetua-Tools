@@ -1,0 +1,66 @@
+{
+  "id": "f0154c4d834e",
+  "key": "manual_f0154c",
+  "name": "manual_f0154c",
+  "claim": "For multi-harness development with Everything Claude Code (ECC) and Antigravity/Gemini: the local runtime overlay in scripts/git/ecc-local-overlay.tsv must remain harmonized across .antigravity/*, .gemini/*, .claude/*, and .env.example, and be verified via check_local_runtime_overlay.py and ecc-submodule-sync.sh restore whenever submodule pointers update.",
+  "conditions": [
+    "across",
+    "antigravity",
+    "check_local_runtime_overlay",
+    "claude",
+    "code",
+    "development",
+    "ecc",
+    "ecc-local-overlay",
+    "ecc-submodule-sync",
+    "env",
+    "everything",
+    "example",
+    "gemini",
+    "git",
+    "harmonized",
+    "local",
+    "multi-harness",
+    "overlay",
+    "pointers",
+    "remain",
+    "restore",
+    "runtime",
+    "scripts",
+    "submodule",
+    "tsv",
+    "update",
+    "verified",
+    "via",
+    "whenever"
+  ],
+  "evidence_ids": [
+    "2026-08-16T23:55:06.834119+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-16T23:55:06.834119+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-16T23:55:06.834119+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-16T23:55:06.985275+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Multi-harness ECC synchronization ensures unified agent rules, shared MCPs, and zero working tree drift across Gemini CLI, Claude Code, and Codex without losing local-only additions.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-16T23:55:06.834119+00:00"
+      ],
+      "lessons_sha": "4b637ad57ac4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-16T23:55:06.985260+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Multi-harness ECC synchronization ensures unified agent rules, shared MCPs, and zero working tree drift across Gemini CLI, Claude Code, and Codex without losing local-only additions."
+}

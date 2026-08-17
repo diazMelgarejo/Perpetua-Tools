@@ -25,7 +25,8 @@ dream cycle produced zero candidates. This version:
 Drop-in for the old command in settings.json:
     "command": "python3 .agent/harness/hooks/claude_code_post_tool.py"
 """
-import json, os, re, sys
+import json, os, re, shlex, sys
+from urllib.parse import urlsplit
 
 # Resolve .agent/ root from this file's location:
 #   __file__  = .agent/harness/hooks/claude_code_post_tool.py
@@ -346,6 +347,24 @@ def _extract_bash_command(tool_input: dict) -> str:
     return ""
 
 
+def _bash_command_name(tool_input: dict) -> str:
+    """Return only a safe executable label for persisted Bash metadata."""
+    command = _extract_bash_command(tool_input)
+    first = command.strip().splitlines()[0].split(";", 1)[0] if command else ""
+    try:
+        tokens = shlex.split(first)
+    except ValueError:
+        return "shell"
+
+    for token in tokens:
+        if "=" in token and not token.startswith("="):
+            continue
+        if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._+-]*", token):
+            return token
+        return "shell"
+    return "shell"
+
+
 def _is_success(tool_name: str, tool_input_or_resp, resp=None) -> bool:
     """Signature:
         _is_success(tool_name, tool_input, resp)   — preferred, 3-arg form
@@ -468,10 +487,7 @@ def _extract_error(resp: dict) -> str:
 def _action_label(tool_name: str, tool_input: dict) -> str:
     """First-word summary. Ends up in the `action` field of the episodic entry."""
     if tool_name == "Bash":
-        cmd = tool_input.get("command", "").strip()
-        # Take first logical line, strip shell boilerplate
-        first = re.sub(r"\s+", " ", cmd.split("\n")[0].split(";")[0])[:80]
-        return f"bash: {first}"
+        return f"bash: {_bash_command_name(tool_input)}"
 
     if tool_name in ("Edit", "MultiEdit"):
         path = (tool_input.get("file_path")
@@ -490,20 +506,21 @@ def _action_label(tool_name: str, tool_input: dict) -> str:
 
     if tool_name == "TodoWrite":
         todos = tool_input.get("todos", [])
-        pending = [t for t in todos if isinstance(t, dict)
-                   and t.get("status") == "in_progress"]
-        if pending:
-            desc = pending[0].get("content", "")[:60]
-            return f"todo-update: {desc}"
-        return "todo: updated task list"
+        count = len(todos) if isinstance(todos, list) else 0
+        return f"todo: updated task list ({count} items)"
 
     if tool_name == "Task":
-        desc = (tool_input.get("description") or "")[:60]
-        return f"task: {desc}"
+        return "task: delegated"
 
     if tool_name == "WebFetch":
-        url = (tool_input.get("url") or "")[:60]
-        return f"fetch: {url}"
+        raw_url = tool_input.get("url")
+        try:
+            parsed = urlsplit(raw_url) if isinstance(raw_url, str) else None
+        except ValueError:
+            parsed = None
+        if parsed and parsed.scheme and parsed.hostname:
+            return f"fetch: {parsed.scheme}://{parsed.hostname}"
+        return "fetch: invalid-url"
 
     return f"tool:{tool_name}"
 
@@ -527,30 +544,29 @@ def _reflection(tool_name: str, tool_input: dict,
       4. Keep under ~200 chars so detail field carries the rest.
     """
     parts = []
-    inp_str = json.dumps(tool_input)
 
     # --- Bash ---
     if tool_name == "Bash":
         cmd = tool_input.get("command", "").strip()
-        short_cmd = re.sub(r"\s+", " ", cmd.split("\n")[0])[:100]
+        command_name = _bash_command_name(tool_input)
 
         m = _HIGH.search(cmd)
         if m:
             domain = m.group(0).lower().replace(" ", "-")
             if success:
-                parts.append(f"High-stakes op completed ({domain}): {short_cmd}")
+                parts.append(f"High-stakes op completed ({domain}): {command_name}")
             else:
-                parts.append(f"High-stakes op FAILED ({domain}): {short_cmd}")
+                parts.append(f"High-stakes op FAILED ({domain}): {command_name}")
                 err = _extract_error(tool_response)
                 if err:
-                    parts.append(f"Error: {err[:120]}")
+                    parts.append(f"Error captured ({len(err)} chars)")
         elif not success:
-            parts.append(f"Command failed: {short_cmd}")
+            parts.append(f"Command failed: {command_name}")
             err = _extract_error(tool_response)
             if err:
-                parts.append(f"Error: {err[:120]}")
+                parts.append(f"Error captured ({len(err)} chars)")
         else:
-            parts.append(f"Ran: {short_cmd}")
+            parts.append(f"Ran Bash command: {command_name}")
 
     # --- Edit ---
     elif tool_name in ("Edit", "MultiEdit"):
@@ -585,27 +601,13 @@ def _reflection(tool_name: str, tool_input: dict,
     # --- TodoWrite ---
     elif tool_name == "TodoWrite":
         todos = tool_input.get("todos", [])
-        done = [t for t in todos if isinstance(t, dict)
-                and t.get("status") == "completed"]
-        in_prog = [t for t in todos if isinstance(t, dict)
-                   and t.get("status") == "in_progress"]
-        if done:
-            parts.append(
-                f"Completed todo: {done[-1].get('content','')[:60]}"
-            )
-        if in_prog:
-            parts.append(
-                f"Now working on: {in_prog[0].get('content','')[:60]}"
-            )
-        if not parts:
-            parts.append(f"Updated todo list ({len(todos)} items)")
+        count = len(todos) if isinstance(todos, list) else 0
+        parts.append(f"Updated todo list ({count} items)")
 
     # --- fallback ---
     else:
         status = "successfully" if success else "with failure"
         parts.append(f"Tool {tool_name} completed {status}")
-        if inp_str and len(inp_str) < 80:
-            parts.append(inp_str)
 
     return ". ".join(parts) if parts else f"Tool {tool_name} ran"
 
@@ -624,18 +626,21 @@ def _detail(tool_name: str, tool_input: dict,
     metadata = _tool_metadata(tool_name, tool_input)
 
     if tool_name == "Bash":
-        cmd = tool_input.get("command", "")[:120]
+        cmd = _extract_bash_command(tool_input)
         cwd = tool_input.get("cwd")
-        cwd_part = (
-            f" | cwd={_normalize_path_value(cwd)!r}"
-            if isinstance(cwd, str) and cwd
-            else ""
-        )
+        detail = {
+            "command": _bash_command_name(tool_input),
+            "command_chars": len(cmd),
+        }
+        if isinstance(cwd, str) and cwd:
+            detail["cwd"] = _normalize_path_value(cwd)
         if not success:
             err = _extract_error(tool_response)
-            return f"cmd={cmd!r}{cwd_part} | exit!=0 | err={err[:200]}"
-        out_snip = output[:200] if output else ""
-        return f"cmd={cmd!r}{cwd_part}" + (f" | out={out_snip}" if out_snip else "")
+            detail["exit"] = "nonzero"
+            detail["error_chars"] = len(err)
+        else:
+            detail["output_chars"] = len(output)
+        return json.dumps(detail, separators=(",", ":"))
 
     if metadata:
         return json.dumps(metadata, separators=(",", ":"))

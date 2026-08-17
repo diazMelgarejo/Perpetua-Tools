@@ -1,0 +1,92 @@
+version: 1
+
+# Provider protocol and egress allowlist for PT-owned paid execution. Keys
+# remain local-only environment variables; this file intentionally stores names,
+# not credentials. The model registry retains model IDs and hosts.
+providers:
+  bigmodel:
+    credential_env: OPENCLAW_MODELS_PROVIDERS_BIGMODEL_APIKEY
+    allowed_hosts: [open.bigmodel.cn]
+    documentation_hosts: [docs.bigmodel.cn]
+    default_api_path: /api/paas/v4/chat/completions
+    timeout_seconds: 60
+    max_attempts: 2
+  anthropic:
+    credential_env: ANTHROPIC_API_KEY
+    allowed_hosts: [api.anthropic.com]
+    documentation_hosts: [platform.claude.com]
+    default_api_path: /v1/messages
+    api_version: "2023-06-01"
+    timeout_seconds: 60
+    max_attempts: 2
+  # OpenAI-Chat-Completions-shaped providers below: standard `Authorization:
+  # Bearer` auth, choices[0].message.content response shape -- each verified
+  # against its own official API reference before being added here (not
+  # guessed). See orchestrator/model_transport.py's dispatch() OpenAI-shape
+  # branch.
+  openrouter:
+    credential_env: OPENROUTER_API_KEY
+    allowed_hosts: [openrouter.ai]
+    documentation_hosts: [openrouter.ai]
+    default_api_path: /api/v1/chat/completions
+    timeout_seconds: 60
+    max_attempts: 2
+  mistral:
+    credential_env: MISTRAL_API_KEY
+    allowed_hosts: [api.mistral.ai]
+    documentation_hosts: [docs.mistral.ai]
+    default_api_path: /v1/chat/completions
+    timeout_seconds: 60
+    max_attempts: 2
+  deepseek:
+    credential_env: DEEPSEEK_API_KEY
+    allowed_hosts: [api.deepseek.com]
+    documentation_hosts: [api-docs.deepseek.com]
+    default_api_path: /chat/completions
+    timeout_seconds: 60
+    max_attempts: 2
+  groq:
+    credential_env: GROQ_API_KEY
+    allowed_hosts: [api.groq.com]
+    documentation_hosts: [console.groq.com]
+    default_api_path: /openai/v1/chat/completions
+    timeout_seconds: 60
+    max_attempts: 2
+  dashscope:
+    credential_env: DASHSCOPE_API_KEY
+    # International OpenAI-compatible endpoint, per Alibaba Cloud Model
+    # Studio's own base-URL reference -- the China-region domains require a
+    # workspace-specific host and are intentionally not used here.
+    allowed_hosts: [dashscope-intl.aliyuncs.com]
+    documentation_hosts: [www.alibabacloud.com]
+    default_api_path: /compatible-mode/v1/chat/completions
+    timeout_seconds: 60
+    max_attempts: 2
+  meta_llama:
+    credential_env: MODEL_API_KEY
+    allowed_hosts: [api.meta.ai]
+    documentation_hosts: [llama.developer.meta.com]
+    default_api_path: /v1/chat/completions
+    timeout_seconds: 60
+    max_attempts: 2
+
+# Catalog-only providers have no native Tier-5 adapter yet, but their official
+# documentation authority is still declared for model-ID provenance checks.
+model_provenance:
+  perplexity:
+    documentation_hosts: [docs.perplexity.ai]
+  xai:
+    documentation_hosts: [docs.x.ai]
+  gemini:
+    documentation_hosts: [ai.google.dev]
+  cohere:
+    documentation_hosts: [docs.cohere.com]
+  # Bedrock and Azure OpenAI are catalog-only, not adapted: their primary
+  # auth models (AWS SigV4 / Bedrock API keys with region-scoped endpoints;
+  # Azure Entra ID / managed identity with per-resource subdomains) don't fit
+  # this file's single-credential_env-per-Bearer-token shape. Documented as a
+  # known limitation, not silently glossed over.
+  bedrock:
+    documentation_hosts: [docs.aws.amazon.com]
+  azure_openai:
+    documentation_hosts: [learn.microsoft.com]

@@ -183,8 +183,8 @@ that exceeds the profile's VRAM/RAM ceiling.
 | `critic` / `refiner` (Ollama path) | win-rtx3080 | qwen3-30b-critic | ≤10GB VRAM |
 | `standard` / `subagent` | mac-studio | Qwen3.5-9B-MLX-4bit | NEVER_WIN; 16GB+ unified |
 | `synthesis` | mac-studio | Qwen3.5-9B-MLX-4bit | NEVER_WIN; context≤4096 |
-| `strategy` / `architecture` | cloud or win | claude-4-5 or qwen3-30b | online or local |
-| `realtime` / `finance` | cloud | grok-4-1-thinking | online only |
+| `strategy` / `architecture` | cloud or win | claude-sonnet-5 or qwen3-30b | online or local |
+| `realtime` / `finance` | cloud | grok-4.5 | online only |
 | `autoresearch-critic` | win-rtx3080 | qwen3-30b-critic | ≤10GB VRAM |
 
 ---

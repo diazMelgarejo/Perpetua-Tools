@@ -2,12 +2,13 @@
   "id": "e6771ac33caa",
   "key": "manual_e6771a",
   "name": "manual_e6771a",
-  "claim": "A script that runs git against another repository from a hook or hook call chain must clear Git's local-environment variables before the first cross-repository call. Ask Git for the variable list and unset each value; otherwise inherited context can silently redirect a target-repository command back to the invoking repository.",
+  "claim": "A script that runs 'git -C <other-repo>' against multiple repositories, when itself invoked as a git hook (or from within a hook's call chain), must clear git's own local-environment variables first -- 'unset' every name from 'git rev-parse --local-env-vars' (GIT_DIR, GIT_WORK_TREE, GIT_INDEX_FILE, etc.) before the first cross-repo git call. Hooks export these for their OWN repo context; left set, they silently rebind every subsequent '-C <other-repo>' call back to the invoking repo instead of the target.",
   "conditions": [
-    "cross-repository git",
+    "GIT_DIR leakage",
+    "cross-repo git -C",
     "git hook environment",
-    "local environment variables",
-    "target isolation"
+    "hook context isolation",
+    "local-env-vars"
   ],
   "evidence_ids": [
     "2026-08-14T13:55:50.465945+00:00"
@@ -26,7 +27,7 @@
       "ts": "2026-08-14T13:55:50.582020+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
-      "notes": "A scope fix passed isolated testing but failed under the real hook because inherited Git context redirected the target call. Clearing the variables discovered by Git's own introspection preserves isolation and avoids a brittle hand-maintained list.",
+      "notes": "Found by another agent (Codex): the first linked-worktree scope fix (see lesson on git-common-dir) worked in isolated testing but failed when actually invoked as a real pre-push hook, because GIT_DIR was already exported in that process's environment and silently redirected every 'git -C <sibling>' call back to the pushing repo -- an independent sibling could then be skipped as if it were a match. Fixed in orama-system PR 313 (fix/guard-hook-git-env-20260814), synced to PT as commit ef80f9a5. Using git's own 'rev-parse --local-env-vars' introspection instead of hardcoding 'unset GIT_DIR' is the more robust form -- future-proof against git adding new local env vars.",
       "provisional": false,
       "evidence_snapshot": [
         "2026-08-14T13:55:50.465945+00:00"
@@ -37,5 +38,5 @@
   "rejection_count": 0,
   "accepted_at": "2026-08-14T13:55:50.582013+00:00",
   "reviewer": "learn.py",
-  "rationale": "A scope fix passed isolated testing but failed under the real hook because inherited Git context redirected the target call. Clearing the variables discovered by Git's own introspection preserves isolation and avoids a brittle hand-maintained list."
+  "rationale": "Found by another agent (Codex): the first linked-worktree scope fix (see lesson on git-common-dir) worked in isolated testing but failed when actually invoked as a real pre-push hook, because GIT_DIR was already exported in that process's environment and silently redirected every 'git -C <sibling>' call back to the pushing repo -- an independent sibling could then be skipped as if it were a match. Fixed in orama-system PR 313 (fix/guard-hook-git-env-20260814), synced to PT as commit ef80f9a5. Using git's own 'rev-parse --local-env-vars' introspection instead of hardcoding 'unset GIT_DIR' is the more robust form -- future-proof against git adding new local env vars."
 }

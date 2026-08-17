@@ -1,111 +1,173 @@
 #!/usr/bin/env python3
-"""Positive allowlist for model IDs in config/models.yml and .env.example (T2-B)."""
+"""Validate configured model IDs against their in-repository provenance.
+
+This deliberately does not maintain a second, hardcoded model catalogue.
+``config/models.yml`` is the source of truth: an externally dispatched cloud
+model must name its provider wire ID and preserve the official source that
+verified it.  Environment examples may select only a configured routing alias
+or wire ID.
+"""
 
 from __future__ import annotations
 
 import re
 import sys
 from pathlib import Path
+from typing import Any
+from urllib.parse import urlparse
+
+import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
+MODEL_YML = ROOT / "config" / "models.yml"
+PROVIDERS_YML = ROOT / "config" / "providers.yml"
+ENV_EXAMPLE = ROOT / ".env.example"
+_ENV_MODEL_RE = re.compile(r"^([A-Z][A-Z0-9_]*_MODEL)=([^\s#]+)", re.MULTILINE)
+_PROVENANCE_KINDS = frozenset({"provider-api", "catalog", "local-deployment"})
+
 
 def _rel(path: Path) -> str:
-    """Return path relative to ROOT if possible, else the bare filename."""
     try:
         return str(path.relative_to(ROOT))
     except ValueError:
         return path.name
 
 
-# Only known-good IDs may appear in scanned config files.
-# Add new IDs here when a model is adopted — never add partial strings.
-ALLOWED_MODEL_IDS = {
-    # Mac MLX / LM Studio
-    "qwen3.5-9b-mlx",
-    "qwen3.5-9b-mlx-4bit",
-    # Mac/Linux Ollama
-    "qwen3.5:9b-nvfp4",
-    "bge-m3",
-    # Windows GGUF / LM Studio
-    "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2",
-    "gemma-4-26b-a4b-it-q4_k_m",
-    "text-embedding-qwen3-embedding-8b-i1-gguf-q6-k",
-    # Shared Ollama
-    "qwen3.5:35b-a3b-q4_k_m",
-    "qwen3-30b-autoresearch-critic",
-    "glm-5.1:cloud",
-    # Cloud / online
-    "sonar-reasoning-pro",
-    "claude-4-5-thinking",
-    "claude-sonnet-4-5",
-    "grok-4-1-thinking",
-    # Remote / Nous / OpenRouter stack
-    "qwen/qwen3-coder:free",
-    "stepfun/step-3.7-flash:free",
-    "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
-    "openrouter/minimax/minimax-m2.5:free",
-    "openrouter/deepseek/deepseek-v4-flash:free",
-    "openrouter/openai/gpt-oss-120b:free",
-    "openrouter/z-ai/glm-4.5-air:free",
-    "openrouter/inclusionai/ling-2.6-flash:free",
-}
-
-_ALLOWED_LC = {m.lower() for m in ALLOWED_MODEL_IDS}
-
-MODEL_YML = ROOT / "config" / "models.yml"
-ENV_EXAMPLE = ROOT / ".env.example"
-
-_API_MODEL_RE = re.compile(r"^\s*api_model:\s*[\"']?([^\"'\n#]+)", re.MULTILINE)
-_ENV_MODEL_RE = re.compile(
-    r"^([A-Z][A-Z0-9_]*_MODEL)=([^\s#]+)",
-    re.MULTILINE,
-)
-
-
 def _normalize(model_id: str) -> str:
     return model_id.strip().strip('"').strip("'").lower()
 
 
-def _check_model_id(model_id: str, source: str, line_hint: str) -> str | None:
-    norm = _normalize(model_id)
-    if not norm or norm.startswith("${"):
-        return None
-    if norm in _ALLOWED_LC:
-        return None
-    return f"{source}: disallowed model ID {model_id!r} ({line_hint}) — add to ALLOWED_MODEL_IDS"
+def _read_models() -> tuple[list[dict[str, Any]], list[str]]:
+    if not MODEL_YML.is_file():
+        return [], [f"missing required file: {_rel(MODEL_YML)}"]
+    try:
+        raw = yaml.safe_load(MODEL_YML.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        return [], [f"invalid {_rel(MODEL_YML)}: {exc}"]
+    rows = raw.get("models") if isinstance(raw, dict) else None
+    if not isinstance(rows, list):
+        return [], [f"{_rel(MODEL_YML)}: models must be a list"]
+    return [row for row in rows if isinstance(row, dict)], []
+
+
+def _documentation_hosts() -> tuple[dict[str, set[str]], list[str]]:
+    if not PROVIDERS_YML.is_file():
+        return {}, [f"missing required file: {_rel(PROVIDERS_YML)}"]
+    try:
+        raw = yaml.safe_load(PROVIDERS_YML.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        return {}, [f"invalid {_rel(PROVIDERS_YML)}: {exc}"]
+    if not isinstance(raw, dict):
+        return {}, [f"{_rel(PROVIDERS_YML)}: root must be a mapping"]
+    rows = dict(raw.get("providers") or {})
+    rows.update(dict(raw.get("model_provenance") or {}))
+    hosts: dict[str, set[str]] = {}
+    errors: list[str] = []
+    for backend, row in rows.items():
+        documented = row.get("documentation_hosts") if isinstance(row, dict) else None
+        if not isinstance(documented, list) or not all(isinstance(host, str) and host for host in documented):
+            errors.append(f"{_rel(PROVIDERS_YML)}: {backend!r} requires documentation_hosts")
+            continue
+        hosts[str(backend)] = {host.lower() for host in documented}
+    return hosts, errors
+
+
+def _validate_provenance(
+    row: dict[str, Any], index: int, documentation_hosts: dict[str, set[str]]
+) -> list[str]:
+    name = row.get("name", f"row {index}")
+    api_model = row.get("api_model")
+    cloud = row.get("device") == "cloud"
+    if cloud and (not isinstance(api_model, str) or not api_model.strip()):
+        return [f"{_rel(MODEL_YML)}: cloud model {name!r} requires api_model"]
+    if not isinstance(api_model, str) or not api_model.strip():
+        return []
+
+    provenance = row.get("provenance")
+    if not isinstance(provenance, dict):
+        return [f"{_rel(MODEL_YML)}: api_model {api_model!r} requires provenance"]
+    kind = provenance.get("kind")
+    source_model_id = provenance.get("source_model_id")
+    source_url = provenance.get("source_url")
+    verified_on = provenance.get("verified_on")
+    parsed = urlparse(source_url) if isinstance(source_url, str) else None
+    errors: list[str] = []
+    if kind not in _PROVENANCE_KINDS:
+        errors.append(f"{_rel(MODEL_YML)}: model {name!r} has invalid provenance kind")
+    if source_model_id != api_model:
+        errors.append(f"{_rel(MODEL_YML)}: model {name!r} provenance source_model_id must equal api_model")
+    if parsed is None or parsed.scheme != "https" or not parsed.hostname:
+        errors.append(f"{_rel(MODEL_YML)}: model {name!r} provenance source_url must be HTTPS")
+    expected_hosts = documentation_hosts.get(str(row.get("backend")))
+    if not expected_hosts:
+        errors.append(f"{_rel(MODEL_YML)}: model {name!r} backend lacks documentation authority")
+    elif parsed is not None and parsed.hostname and parsed.hostname.lower() not in expected_hosts:
+        errors.append(
+            f"{_rel(MODEL_YML)}: model {name!r} source_url is outside its provider documentation authority"
+        )
+    if not isinstance(verified_on, str) or not verified_on.strip():
+        errors.append(f"{_rel(MODEL_YML)}: model {name!r} provenance requires verified_on")
+    if cloud and kind != "provider-api":
+        errors.append(f"{_rel(MODEL_YML)}: cloud model {name!r} must use provider-api provenance")
+    return errors
+
+
+def configured_model_ids() -> tuple[set[str], list[str]]:
+    """Return config-derived aliases/wire IDs after validating provenance."""
+    rows, errors = _read_models()
+    documentation_hosts, host_errors = _documentation_hosts()
+    errors.extend(host_errors)
+    ids: set[str] = set()
+    for index, row in enumerate(rows, start=1):
+        errors.extend(_validate_provenance(row, index, documentation_hosts))
+        for key in ("name", "api_model"):
+            value = row.get(key)
+            if isinstance(value, str) and value.strip():
+                ids.add(_normalize(value))
+    return ids, errors
 
 
 def scan_models_yml() -> list[str]:
-    if not MODEL_YML.is_file():
-        return [f"missing required file: {_rel(MODEL_YML)}"]
-    text = MODEL_YML.read_text(encoding="utf-8")
-    violations: list[str] = []
-    for match in _API_MODEL_RE.finditer(text):
-        err = _check_model_id(match.group(1), str(_rel(MODEL_YML)), "api_model:")
-        if err:
-            violations.append(err)
-    return violations
+    _, errors = configured_model_ids()
+    return errors
 
 
-def scan_env_example() -> list[str]:
+def _check_model_id(model_id: str, configured_ids: set[str], source: str, line_hint: str) -> str | None:
+    normalized = _normalize(model_id)
+    if not normalized or normalized.startswith("${"):
+        return None
+    if normalized in configured_ids:
+        return None
+    return f"{source}: model ID {model_id!r} ({line_hint}) is absent from config/models.yml"
+
+
+def scan_env_example(configured_ids: set[str] | None = None, base_errors: list[str] | None = None) -> list[str]:
+    if configured_ids is None or base_errors is None:
+        c_ids, c_errors = configured_model_ids()
+        configured_ids = configured_ids or c_ids
+        errors = list(base_errors if base_errors is not None else c_errors)
+    else:
+        errors = list(base_errors)
     if not ENV_EXAMPLE.is_file():
-        return [f"missing required file: {_rel(ENV_EXAMPLE)}"]
+        return [*errors, f"missing required file: {_rel(ENV_EXAMPLE)}"]
     text = ENV_EXAMPLE.read_text(encoding="utf-8")
-    violations: list[str] = []
     for match in _ENV_MODEL_RE.finditer(text):
         key, value = match.groups()
-        err = _check_model_id(value, str(_rel(ENV_EXAMPLE)), key)
-        if err:
-            violations.append(err)
-    return violations
+        error = _check_model_id(value, configured_ids, _rel(ENV_EXAMPLE), key)
+        if error:
+            errors.append(error)
+    return errors
 
 
 def main() -> int:
-    violations = scan_models_yml() + scan_env_example()
+    configured_ids, errors = configured_model_ids()
+    violations = scan_env_example(configured_ids=configured_ids, base_errors=errors)
+    # Deduplicate while preserving order.
+    violations = list(dict.fromkeys(violations))
     if violations:
         print("\n".join(violations), file=sys.stderr)
         return 1
-    print("OK: all model IDs in config/models.yml and .env.example are allowlisted")
+    print("OK: configured model IDs have source provenance and environment examples reference the registry")
     return 0
 
 

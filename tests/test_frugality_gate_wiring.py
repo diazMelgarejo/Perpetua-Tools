@@ -79,8 +79,8 @@ class TestRouteTaskOfflineNeverReturnsPaidRemote:
         for paid_or_remote in (
             "glm-5.2",
             "sonar-reasoning-pro",
-            "claude-4-5-thinking",
-            "grok-4-1-thinking",
+            "claude-sonnet-5",
+            "grok-4.5",
         ):
             assert paid_or_remote not in names, (
                 f"{paid_or_remote} must not survive ORAMASYS_OFFLINE=1"
@@ -92,7 +92,7 @@ class TestRouteTaskOfflineNeverReturnsPaidRemote:
         monkeypatch.setenv("ORAMASYS_OFFLINE", "1")
         chain = registry.route_task("strategy")
         names = {m.name for m in chain}
-        assert "claude-4-5-thinking" not in names
+        assert "claude-sonnet-5" not in names
         assert "glm-5.2" not in names
         assert "glm-5.1:cloud" not in names
 
@@ -102,7 +102,7 @@ class TestRouteTaskOfflineNeverReturnsPaidRemote:
         names = {m.name for m in chain}
         # Pure superset behavior: nothing dropped when no policy is active.
         assert "glm-5.2" in names
-        assert "claude-4-5-thinking" in names
+        assert "claude-sonnet-5" in names
 
     def test_route_task_signature_and_return_type_unchanged_for_existing_callers(
         self, registry

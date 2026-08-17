@@ -4,7 +4,7 @@ import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 import yaml
 
@@ -61,10 +61,19 @@ class ModelTarget:
     online: bool
     reasoning: str
     # Real provider model ID to send to the API. Defaults to `name`; set it in
-    # models.yml only when the routing key differs from the wire ID (e.g.
-    # name=claude-4-5-thinking -> api_model=claude-sonnet-4-5). Dispatchers
+    # models.yml only when the routing key differs from the wire ID. Dispatchers
     # should send `api_model`, never `name`.
     api_model: str = ""
+    # Optional provider-native endpoint suffix. Cloud adapters use the target's
+    # configured path rather than inventing a provider URL from a routing alias.
+    api_path: str = ""
+    # Model-scoped provider options. These are validated by the provider
+    # adapter; they are never forwarded as arbitrary request parameters.
+    provider_options: Mapping[str, Any] | None = None
+    # Evidence for a provider wire ID. Routing aliases can remain stable while
+    # a provider API model is upgraded, but cloud dispatch must retain the
+    # official source that verified the replacement.
+    provenance: Mapping[str, Any] | None = None
     # Optional frugality_router.py tier classification (0-6, see
     # orchestrator/frugality_router.py TIERS / fable5-tier-based-routing
     # skill). Additive-only field (2026-07-22): route_task() does not read
@@ -118,7 +127,7 @@ class ModelRegistry:
 
     # ── host resolution ────────────────────────────────────────────────────────
 
-    def _resolve_host(self, item: Dict[str, Any]) -> str:
+    def _resolve_host(self, item: Dict[str, Any], *, allow_live_discovery: bool = True) -> str:
         """Resolve the host URL for a model entry.
 
         For devices with identity_method=active_tilting (win-rtx3080), derives
@@ -137,7 +146,11 @@ class ModelRegistry:
         device_name = item.get("device", "")
         dev_info = self.device_info(device_name)
         live_disabled = os.getenv("PT_DISABLE_LIVE_MODEL_PROBES", "").strip().lower() in _DISABLE_LIVE_PROBES
-        if dev_info.get("identity_method") == "active_tilting" and not live_disabled:
+        if (
+            allow_live_discovery
+            and dev_info.get("identity_method") == "active_tilting"
+            and not live_disabled
+        ):
             from orchestrator.lan_discovery import detect_active_tilting_ip
 
             tilted = detect_active_tilting_ip()
@@ -151,10 +164,12 @@ class ModelRegistry:
 
     # ── model listing ─────────────────────────────────────────────────────────
 
-    def list_models(self) -> List[ModelTarget]:
+    def list_models(self, *, probe: bool = True) -> List[ModelTarget]:
         targets: List[ModelTarget] = []
         for item in self.models_cfg.get("models", []):
-            host = self._resolve_host(item)
+            # A caller that turns probes off is explicitly asking for static
+            # configuration only. Avoid LAN discovery as well as endpoint I/O.
+            host = self._resolve_host(item, allow_live_discovery=probe)
             port = int(item.get("port", 0))
             backend = item["backend"]
             # `online` is derived LIVE (endpoint reachable AND the model is served),
@@ -164,7 +179,7 @@ class ModelRegistry:
             # (short TTL) so this stays cheap. models.yml `online:` is the seed
             # fallback if the live probe layer is unavailable.
             base = host if _host_has_port(host) else (f"{host}:{port}" if port else host)
-            if os.getenv("PT_DISABLE_LIVE_MODEL_PROBES", "").strip().lower() in _DISABLE_LIVE_PROBES:
+            if not probe or os.getenv("PT_DISABLE_LIVE_MODEL_PROBES", "").strip().lower() in _DISABLE_LIVE_PROBES:
                 online = item.get("online", False)
             else:
                 try:
@@ -184,10 +199,17 @@ class ModelRegistry:
                     online=online,
                     reasoning=item.get("reasoning", "general"),
                     api_model=item.get("api_model", ""),
+                    api_path=item.get("api_path", ""),
+                    provider_options=item.get("provider_options"),
+                    provenance=item.get("provenance"),
                     frugality_tier=item.get("frugality_tier"),
                 )
             )
         return sorted(targets, key=lambda x: x.priority)
+
+    def get_model(self, name: str, *, probe: bool = True) -> ModelTarget | None:
+        """Return one configured target without making callers parse YAML."""
+        return next((target for target in self.list_models(probe=probe) if target.name == name), None)
 
     def select_for_role(
         self, role: str, preferred_device: Optional[str] = None

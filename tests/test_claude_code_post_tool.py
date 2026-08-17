@@ -64,6 +64,63 @@ def test_fallback_detail_persists_tool_and_output_size_not_output():
     assert "generated notes" not in detail
 
 
+def test_bash_detail_persists_safe_metadata_not_raw_command_or_output():
+    marker = "RAW_OUTPUT_MUST_NOT_PERSIST"
+    command = "git show --format=fuller --token=local-value"
+    detail = hook._detail(
+        "Bash",
+        {"command": command},
+        {"output": f"Author: {marker}"},
+        True,
+    )
+    payload = json.loads(detail)
+
+    assert payload == {
+        "command": "git",
+        "command_chars": len(command),
+        "output_chars": len(f"Author: {marker}"),
+    }
+    assert command not in detail
+    assert marker not in detail
+
+
+def test_bash_failure_reflection_and_detail_exclude_raw_error_text():
+    marker = "RAW_ERROR_MUST_NOT_PERSIST"
+    tool_input = {"command": "deploy --credential=local-value"}
+    response = {"error": marker, "exit_code": 1}
+
+    reflection = hook._reflection("Bash", tool_input, response, False)
+    detail = hook._detail("Bash", tool_input, response, False)
+
+    assert marker not in reflection
+    assert marker not in detail
+    assert "local-value" not in reflection
+    assert "local-value" not in detail
+    assert json.loads(detail)["error_chars"] == len(marker)
+
+
+def test_non_bash_action_labels_exclude_user_supplied_content():
+    secret = "SECRET_MUST_NOT_PERSIST"
+
+    assert hook._action_label(
+        "Task", {"description": f"Investigate {secret}"}
+    ) == "task: delegated"
+    assert hook._action_label(
+        "TodoWrite", {"todos": [{"content": secret, "status": "in_progress"}]}
+    ) == "todo: updated task list (1 items)"
+    assert hook._action_label(
+        "WebFetch", {"url": f"https://example.invalid/path?token={secret}"}
+    ) == "fetch: https://example.invalid"
+
+    reflection = hook._reflection(
+        "TodoWrite",
+        {"todos": [{"content": secret, "status": "in_progress"}]},
+        {},
+        True,
+    )
+    assert secret not in reflection
+
+
 def test_action_label_normalizes_repo_paths():
     path = Path(__file__).parent.parent / ".agent" / "memory" / "note.md"
 
