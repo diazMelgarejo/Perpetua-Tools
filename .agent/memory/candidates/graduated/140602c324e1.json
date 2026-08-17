@@ -1,0 +1,66 @@
+{
+  "id": "140602c324e1",
+  "key": "manual_140602",
+  "name": "manual_140602",
+  "claim": "When installing or running first-run bootstrapping across PT and orama, detect AntiGravity (~/.antigravity) and Gemini (~/.gemini) environments automatically. Harmonize the ECC runtime overlay (~/.antigravity/ANTIGRAVITY.md) and register cross-stack MCP endpoints without overwriting native configurations, adhering to the 'Synthesize, never amputate' CIDF doctrine.",
+  "conditions": [
+    "across",
+    "adhering",
+    "amputate",
+    "antigravity",
+    "automatically",
+    "bootstrapping",
+    "cidf",
+    "configurations",
+    "cross-stack",
+    "detect",
+    "doctrine",
+    "ecc",
+    "endpoints",
+    "environments",
+    "first-run",
+    "gemini",
+    "harmonize",
+    "installing",
+    "mcp",
+    "native",
+    "never",
+    "orama",
+    "overlay",
+    "overwriting",
+    "register",
+    "running",
+    "runtime",
+    "synthesize",
+    "without"
+  ],
+  "evidence_ids": [
+    "2026-08-17T09:01:56.451350+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-17T09:01:56.451350+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-17T09:01:56.451350+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-17T09:01:56.580820+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Prevents configuration destruction, guarantees cross-harness skill/MCP parity during first-run bootstrap, and links AntiGravity/Gemini directly to canonical repo assets without silent clobber.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-17T09:01:56.451350+00:00"
+      ],
+      "lessons_sha": "52d7a7182d30"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-17T09:01:56.580809+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Prevents configuration destruction, guarantees cross-harness skill/MCP parity during first-run bootstrap, and links AntiGravity/Gemini directly to canonical repo assets without silent clobber."
+}

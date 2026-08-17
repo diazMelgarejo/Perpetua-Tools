@@ -123,6 +123,20 @@ _ecc_status() {
   fi
 }
 _ecc_status
+
+_antigravity_gemini_status() {
+  local agy_dir="$HOME/.antigravity" gemini_dir="$HOME/.gemini"
+  if [[ -d "$agy_dir" || -d "$gemini_dir" ]]; then
+    echo "  AntiGravity / Gemini environment detected — ensuring harmonized overlay..."
+    if [[ -d "$agy_dir" && ! -f "$agy_dir/ANTIGRAVITY.md" ]]; then
+      if [[ -f "$REPO_ROOT/vendor/ecc-tools/.antigravity/ANTIGRAVITY.md" ]]; then
+        install -m 0644 "$REPO_ROOT/vendor/ecc-tools/.antigravity/ANTIGRAVITY.md" "$agy_dir/ANTIGRAVITY.md" 2>/dev/null || true
+        echo "    ✓ synthesized ~/.antigravity/ANTIGRAVITY.md overlay"
+      fi
+    fi
+  fi
+}
+_antigravity_gemini_status
 fi
 
 echo ""
