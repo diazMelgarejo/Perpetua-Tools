@@ -114,6 +114,17 @@ def test_environment_model_must_be_configured(monkeypatch, tmp_path) -> None:
     assert _check_model_id("missing-model", {"strategy"}, "x", "X_MODEL") is not None
 
 
+def test_environment_model_configured_alias_is_allowed(monkeypatch, tmp_path) -> None:
+    """Configured model name (alias) must be accepted in .env.example without errors."""
+    _patch_files(
+        monkeypatch,
+        tmp_path,
+        _models(_cloud_model(api_model="claude-sonnet-5")),
+        "CODER_MODEL=strategy\n",
+    )
+    assert scan_env_example() == []
+
+
 def test_environment_model_placeholder_is_allowed(monkeypatch, tmp_path) -> None:
     _patch_files(monkeypatch, tmp_path, _models(_cloud_model()), "CODER_MODEL=${CODER_MODEL_OVERRIDE}\n")
     assert scan_env_example() == []

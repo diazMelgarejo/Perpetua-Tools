@@ -69,6 +69,7 @@ class _Transport:
 
 @pytest.fixture
 def control_plane_client(monkeypatch):
+    previous_overrides = app_module.app.dependency_overrides.copy()
     _Runner.captured_run_kwargs.clear()
     monkeypatch.setenv("ORAMA_INSECURE_DEV", "0")
     monkeypatch.setenv("ORAMA_CONTROL_PLANE_TOKEN", "pt-test-token")
@@ -81,6 +82,7 @@ def control_plane_client(monkeypatch):
     finally:
         _Runner.captured_run_kwargs.clear()
         app_module.app.dependency_overrides.clear()
+        app_module.app.dependency_overrides.update(previous_overrides)
 
 
 @pytest.mark.integration

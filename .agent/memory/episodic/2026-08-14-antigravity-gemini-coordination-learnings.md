@@ -26,21 +26,21 @@ The canonical posting entrypoint is confirmed as
 To register an agent:
 
 ```bash
-python3 Perpetua-Tools/scripts/agent_coordination.py register <Agent-ID> \
-  "<Persona/Roles>" <Model> "<Notes>"
+python3 Perpetua-Tools/scripts/agent_coordination.py register "<Agent-ID>" \
+  "<Persona/Roles>" "<Model>" "<Notes>"
 ```
 
 To claim a task:
 
 ```bash
-python3 Perpetua-Tools/scripts/agent_coordination.py claim <Agent-ID> \
+python3 Perpetua-Tools/scripts/agent_coordination.py claim "<Agent-ID>" \
   "<Task Name>" "<Notes>"
 ```
 
 To release a task:
 
 ```bash
-python3 Perpetua-Tools/scripts/agent_coordination.py release <Agent-ID> \
+python3 Perpetua-Tools/scripts/agent_coordination.py release "<Agent-ID>" \
   "<Task Name>"
 ```
 

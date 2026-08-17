@@ -95,6 +95,9 @@ def test_proxy_binds_loopback_only(fake_upstream, tmp_path, monkeypatch):
         proxy.stop()
 
 
+@pytest.mark.skipif(
+    not _CRYPTOGRAPHY_AVAILABLE, reason="'cryptography' library not installed"
+)
 def test_proxy_bounds_stalled_client_connections(fake_upstream, tmp_path, monkeypatch):
     """Regression: a client that opens the TLS handshake and then sends
     headers/chunk data arbitrarily slowly (or not at all) must not hang

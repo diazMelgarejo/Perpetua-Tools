@@ -53,9 +53,8 @@ def test_render_keeps_superseded_and_replacement_records_visible(
 
     rendered = render_lessons.render_lessons_as_text(str(semantic))
 
-    assert old_claim in rendered
+    assert f"~~{old_claim}~~" in rendered
     assert replacement_claim in rendered
     assert f"id={old_id}" in rendered
     assert f"id={replacement_id}" in rendered
-    assert f"~~{old_claim}~~" not in rendered
-    assert "superseded_by=" not in rendered
+    assert f"superseded_by={replacement_id}" in rendered
