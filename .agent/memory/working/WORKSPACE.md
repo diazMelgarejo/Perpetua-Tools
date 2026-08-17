@@ -52,7 +52,10 @@ Autopilot disabled until timeout/embedding issues fixed. Re-enable LaunchAgent w
 | ----- | ---- |
 | ECC Overlay & Tier-5 Harmonization | `ECC_OVERLAY_HARMONIZATION_AND_TIER5_STATUS_2026-08-17.md` |
 | PR354 Memory Union Analysis | `PR354_MEMORY_UNION_ANALYSIS_2026-08-15.md` |
-| Tier-5 Apprentice Stacks | `TIER5_PIPELINE_AND_APPRENTICE_STACKS_2026-08-15.md` |
+| Tier-5 Apprentice Stacks & Lineage | `TIER5_PIPELINE_AND_APPRENTICE_STACKS_2026-08-15.md` |
+| Apprentice-01 Voice Memory | `2026-08-10-oramasys-apprentice-01-voice-memory.md` |
+| Apprentice-02 Voice Memory | `2026-08-10-oramasys-apprentice-02-voice-memory.md` |
+| Interrupted Reasoning Recovery | `2026-08-10-interrupted-reasoning-branch-recovery.md` |
 | Grant HMAC MVP | `PR_BODY_GRANT_HMAC_MVP_SAGA_2026-08-02.md` |
 | PR222 Hermes staging | `PR222_HERMES_STAGING_SESSION_2026-07-27.md` |
 | Guard sync epic | `GUARD_SYNC_EPIC_SAGA_COMPLETION_2026-08-01.md` |
