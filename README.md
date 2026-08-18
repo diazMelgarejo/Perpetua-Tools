@@ -1,7 +1,7 @@
-# This is the Legacy Perpetua-Tools v1.1.1.0
+# Perpetua-Tools (v1.1.1.0 — Rolling Release Milestone towards v2.0.0)
 
 > **Top-level idempotent multi-agent orchestrator for Mac + Windows**
-> * we are moving to a new 2.0 repo soon!
+> * Currently on a rolling release cadence. Target v2.0.0 migration destination under `oramasys/*` begins at v1.9.0 development milestones.
 
 ---
 
