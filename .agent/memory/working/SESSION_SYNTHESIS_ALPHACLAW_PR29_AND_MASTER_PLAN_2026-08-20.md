@@ -93,7 +93,39 @@ graph TD
 
 ---
 
-## 4. Track 3: Local Repository Commit Ledger
+## 4. Track 3: Multi-Repository Architecture & Commit Ledger
+
+```mermaid
+graph LR
+    subgraph orama-system [orama-system: fix/oramasys-standards-convergence-20260818]
+        O1[07860b8d: docs v2 CodeRabbit review #4982787720 remediated]
+        O2[5152288e: docs v2 SSRF defense-in-depth 3-layer plan]
+        O3[f9c4d46a: docs v2 53-maestro-swarm critique spec]
+        O4[b91a149a: feat security wrong-repo-build guard]
+        O5[e95dfc1a: feat safety human-initiation clause]
+        O6[2b8b1ec0: fix mcp symlink install-mcp-stack.sh]
+        O7[9163d367: fix docs PT companion cross-ref]
+    end
+
+    subgraph Perpetua-Tools [Perpetua-Tools: fix/pt-standards-convergence-20260818]
+        P1[537e04fc: docs memory update session synthesis & workspace]
+        P2[22125acf: docs memory episodic reflection & hook test]
+        P3[bb527f30: fix tier5 reserve worst-case exposure contract]
+        P4[cc0c2c93: fix tier5 centralize approval trace validation]
+        P5[538767e1: feat tier5 add atomic budget reservation ledger]
+        P6[c8fac600: fix hooks path normalization priority]
+        P7[1d8b0097: feat codex streamline exa mcp config]
+        P8[1a463d1f: chore submodule advance vendor/ecc-tools]
+        P9[6178b41a: feat security Layer-1 SSRF fetch policy]
+    end
+
+    subgraph AlphaClaw [AlphaClaw: 2026-08-05-001-mcp-consolidation-to-pt]
+        A1[70e0f9d8: feat cursor track attribution guard rules]
+        A2[b2062478: ci migrate GitHub Actions to pnpm]
+        A3[0af1b83a: feat restore full ECC bundle & instincts]
+        A4[c7e9f782: fix CodeRabbit auto-fixes]
+    end
+```
 
 | Repository | Branch | Commit | Scope / Action |
 | :--- | :--- | :--- | :--- |
