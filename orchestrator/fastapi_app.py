@@ -59,6 +59,7 @@ from orchestrator.tiered_pipeline import (
     load_pipeline_approval,
     register_pipeline_approval,
     tiered_pipeline_enabled,
+    TRACE_ID_PATTERN,
 )
 from orchestrator.gossip_bus import GossipBus
 from orchestrator.lan_gossip_bridge import _load_peers as _load_gossip_peers
@@ -69,7 +70,7 @@ _startup_log = logging.getLogger("orchestrator.fastapi_app")
 # alphanumeric plus hyphen/underscore rejects path separators and "." (so
 # "..") outright, before it ever reaches the filesystem layer -- the second,
 # independent containment check there is defense-in-depth, not the only gate.
-_TRACE_ID_PATTERN = r"^[a-zA-Z0-9_-]+$"
+_TRACE_ID_PATTERN = r"^%s$" % TRACE_ID_PATTERN
 _GLM_ORCHESTRATOR_MODEL = "glm-5.1:cloud"
 _AUTORESEARCH_TASK_TYPES = {"autoresearch", "autoresearch-coder", "ml-experiment"}
 _LOCAL_RUNTIME_BACKENDS = {"ollama", "lm-studio", "mlx"}

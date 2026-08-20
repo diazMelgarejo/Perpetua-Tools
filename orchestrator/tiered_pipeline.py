@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -27,6 +28,7 @@ TRACE_PATH_ENV = "PT_PIPELINE_TRACE_PATH"
 APPROVAL_DIR_ENV = "PT_PIPELINE_APPROVAL_DIR"
 REVOKED_APPROVALS_ENV = "PT_PIPELINE_REVOKED_APPROVALS"
 MAX_STAGES = 3
+TRACE_ID_PATTERN = r"[A-Za-z0-9_-]+"
 DEFAULT_CONFIG = Path(__file__).resolve().parent.parent / "config" / "pipelines.yml"
 DEFAULT_MODELS = Path(__file__).resolve().parent.parent / "config" / "models.yml"
 DEFAULT_TRACE = Path(__file__).resolve().parent.parent / ".state" / "frugality_pipeline.jsonl"
@@ -84,6 +86,21 @@ class PipelinePolicyError(PipelineError):
 
 class PipelineExecutionError(PipelineError):
     """Raised when an injected provider dispatcher cannot complete a stage."""
+
+
+def validate_trace_id(trace_id: str) -> str:
+    """Validate the trace identifier at every approval boundary.
+
+    The API applies the same rule through Pydantic, but direct callers must not
+    rely on the HTTP layer to protect the approval artifact path.
+    """
+    if (
+        not isinstance(trace_id, str)
+        or not 1 <= len(trace_id) <= 128
+        or re.fullmatch(TRACE_ID_PATTERN, trace_id) is None
+    ):
+        raise PipelineApprovalError("invalid trace_id")
+    return trace_id
 
 
 def _reject_unknown_keys(obj: Mapping[str, object], allowed: frozenset[str], where: str) -> None:
@@ -174,6 +191,7 @@ def _approval_artifact_path(directory: Path, trace_id: str) -> Path:
     path = (resolved_directory / ("%s.json" % trace_id)).resolve()
     if not path.is_relative_to(resolved_directory):
         raise PipelineApprovalError("invalid trace_id %r escapes approval directory" % trace_id)
+    validate_trace_id(trace_id)
     return path
 
 
