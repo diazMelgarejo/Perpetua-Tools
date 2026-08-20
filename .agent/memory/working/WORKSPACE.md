@@ -9,7 +9,9 @@
 
 | Area | Branch / PR | Role |
 | ---- | ----------- | ---- |
+| **Reference Guide 08** | `references/08-DOC53-CODERABBIT-REMEDIATION-AND-TIER5-HANDOFF-REPORT-2026-08-20.md` | **Done** — Doc 53 CodeRabbit remediation (7 findings resolved), unpushed review discipline, and Tier-5 handoff state. |
 | **Reference Guide 07** | `references/07-MULTI-AGENT-CONVERGENCE-AND-REMEDIATION-REFERENCE-2026-08-20.md` | **Done** — Complete cross-linked reference guide for git remediation doctrines, 199k token cliff, cheapest-tool-first ladder, and GossipBus topology. |
+| **Doc 53 CodeRabbit Remediation** | `fix/oramasys-standards-convergence-20260818` (orama) | **Done locally (07860b8d)** — Resolved all 7 CodeRabbit review findings on Doc 53 finance critique with deep research citations. |
 | **Session Synthesis (2026-08-20)** | `SESSION_SYNTHESIS_ALPHACLAW_PR29_AND_MASTER_PLAN_2026-08-20.md` | **Done** — Full AlphaClaw PR #29 restore & CodeRabbit CI fix pushed (`70e0f9d8`), master plan synthesized, doc 53 linked, post-tool hook path priority fixed (`c8fac600`). |
 | **Standards & Defect Convergence** | `fix/pt-standards-convergence-20260818` (PT), `fix/oramasys-standards-convergence-20260818` (orama) | **Done locally, pending review** — OS-D2..OS-D5 in orama (5152288e); PT-D1, PT-D3, hook fix, and Codex config in PT (1a463d1f). 127/127 targeted tests green, 22/22 SSRF tests green. |
 | **Unified Strategic Roadmap** | `UNIFIED_STANDARDS_SSRF_FRUGALITY_CONVERGENCE_2026-08-20.md` | **Consolidated** — 3-layer socket-pinning SSRF defense, Grok 4.6 199k cliff gate, Perplexity Gemini 3.7 Flash frugality engine, MAESTRO/Amplifier governance. |

@@ -101,12 +101,15 @@ graph TD
 | `AlphaClaw` | `2026-08-05-001-mcp-consolidation-to-pt` | `b2062478` | Migrated `.github/workflows/ci.yml` from npm to pnpm |
 | `AlphaClaw` | `2026-08-05-001-mcp-consolidation-to-pt` | `0af1b83a` | Restored full ECC bundle profile + instincts (+512 lines) |
 | `AlphaClaw` | `2026-08-05-001-mcp-consolidation-to-pt` | `c7e9f782` | Applied CodeRabbit auto-fixes (.gitignore, package.json pnpm pin) |
+| `orama-system` | `fix/oramasys-standards-convergence-20260818` | `07860b8d` | Addressed 7 CodeRabbit review findings on Doc 53 finance critique |
 | `orama-system` | `fix/oramasys-standards-convergence-20260818` | `5152288e` | Added SSRF defense-in-depth three-layer plan (PR-O1 + PR-O2) |
 | `orama-system` | `fix/oramasys-standards-convergence-20260818` | `f9c4d46a` | Added 53-maestro-swarm-v2-redesign-critique specification |
 | `orama-system` | `fix/oramasys-standards-convergence-20260818` | `b91a149a` | Installed wrong-repo-build pre-commit guard (OS-D3) |
 | `orama-system` | `fix/oramasys-standards-convergence-20260818` | `e95dfc1a` | Added human-initiation non-self-authorization clause (OS-D5) |
 | `orama-system` | `fix/oramasys-standards-convergence-20260818` | `2b8b1ec0` | Symlinked `install-mcp-stack.sh` to `scripts/` (OS-D4) |
 | `orama-system` | `fix/oramasys-standards-convergence-20260818` | `9163d367` | Corrected companion cross-ref to Perpetua-Tools (OS-D2) |
+| `Perpetua-Tools` | `fix/pt-standards-convergence-20260818` | `22125acf` | Updated session memory synthesis, workspace, and hook regression test |
+| `Perpetua-Tools` | `fix/pt-standards-convergence-20260818` | `bb527f30` | Merged reviewed ledger contract (reserve worst-case exposure) |
 | `Perpetua-Tools` | `fix/pt-standards-convergence-20260818` | `1a463d1f` | Advanced `vendor/ecc-tools` submodule to `d8409a4b` |
 | `Perpetua-Tools` | `fix/pt-standards-convergence-20260818` | `1d8b0097` | Streamlined Codex Exa MCP configuration & navigation guide |
 | `Perpetua-Tools` | `fix/pt-standards-convergence-20260818` | `c8fac600` | Fixed post-tool hook path normalization priority (7/7 tests) |
@@ -119,6 +122,7 @@ graph TD
 
 ## 5. Canonical Operational References
 
+- **Reference Guide 08:** `references/08-DOC53-CODERABBIT-REMEDIATION-AND-TIER5-HANDOFF-REPORT-2026-08-20.md` (Doc 53 CodeRabbit remediation, 7 findings resolved, Tier-5 unpushed handoff).
 - **Reference Guide 07:** `references/07-MULTI-AGENT-CONVERGENCE-AND-REMEDIATION-REFERENCE-2026-08-20.md` (Git remediation doctrines, token cliff, dispatch ladder, GossipBus topology).
 - **Master Action Plan:** `references/05-ORAMASYS-UNIFIED-ACTION-PLAN-2026-08-18.md`
 - **Strategic Synthesis Report:** `references/06-STRATEGIC-SYNTHESIS-REPORT-2026-08-20.md` (local-only, not tracked here).
