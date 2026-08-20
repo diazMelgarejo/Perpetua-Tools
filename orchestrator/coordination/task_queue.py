@@ -330,10 +330,24 @@ async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | Non
         return _error(f"{task_id} was abandoned. Cannot reclaim.")
 
     depends_on = task_state.get("depends_on", [])
+    # depends_on is authored with short task_name values (e.g.
+    # "PT-T5-CONTRACT-001"), but `snapshots` is keyed by the full
+    # auto-generated task_id ("tier5-ledger-PT-T5-CONTRACT-001-20bfe0fc",
+    # see queue_add). A direct snapshots.get(dependency) lookup can never
+    # match, which made every dependent task permanently unclaimable
+    # regardless of upstream completion. Resolve by task_id first, falling
+    # back to a task_name match across all snapshots.
+    by_task_name = {
+        state.get("task_name"): state
+        for state in snapshots.values()
+        if state.get("task_name")
+    }
     unmet = [
         dependency
         for dependency in depends_on
-        if snapshots.get(dependency, {}).get("status")
+        if (snapshots.get(dependency) or by_task_name.get(dependency, {})).get(
+            "status"
+        )
         != QueuedTaskState.COMPLETED.value
     ]
     if unmet:
