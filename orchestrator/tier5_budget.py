@@ -39,6 +39,7 @@ class Reservation:
     key_digest: str
     fingerprint: str
     state: str
+    policy_cap_microusd: int
     held_microusd: int
     settled_microusd: int
 
@@ -88,6 +89,7 @@ class Tier5BudgetLedger:
                     fingerprint TEXT NOT NULL,
                     utc_day TEXT NOT NULL,
                     state TEXT NOT NULL,
+                    policy_cap_microusd INTEGER NOT NULL,
                     held_microusd INTEGER NOT NULL,
                     settled_microusd INTEGER NOT NULL DEFAULT 0,
                     created_at REAL NOT NULL,
@@ -111,6 +113,7 @@ class Tier5BudgetLedger:
             key_digest=row["key_digest"],
             fingerprint=row["fingerprint"],
             state=row["state"],
+            policy_cap_microusd=row["policy_cap_microusd"],
             held_microusd=row["held_microusd"],
             settled_microusd=row["settled_microusd"],
         )
@@ -125,7 +128,20 @@ class Tier5BudgetLedger:
         explicit_cap_microusd: Optional[int] = None,
         now: datetime | None = None,
     ) -> Reservation:
-        """Reserve funds atomically, or return the existing identical run."""
+        """Reserve funds atomically, or return the existing identical run.
+
+        Reserves exactly ``worst_case_microusd`` -- the deterministic
+        worst-case exposure for this run -- never the full policy ceiling.
+        The ceiling (``explicit_cap_microusd``, or the default "remaining
+        minus one unit" rule) is the maximum this run is *allowed* to cost,
+        validated against ``worst_case_microusd`` and stored separately as
+        ``policy_cap_microusd`` for audit; it is never itself reserved.
+        This lets multiple small runs proceed concurrently the same day
+        instead of the first uncapped reservation locking out the rest of
+        the day's budget. If the caller cannot provide a real
+        ``worst_case_microusd``, this fails closed (ValueError) rather than
+        silently reserving the remaining balance as a stand-in.
+        """
         if not run_id.strip() or not idempotency_key.strip() or not fingerprint.strip():
             raise ValueError("run_id, idempotency_key, and fingerprint are required")
         if isinstance(worst_case_microusd, bool) or worst_case_microusd <= 0:
@@ -156,18 +172,22 @@ class Tier5BudgetLedger:
                     (day,),
                 ).fetchone()["used"]
                 remaining = self.daily_limit_microusd - int(used)
-                hold = (
-                    explicit_cap_microusd
-                    if explicit_cap_microusd is not None
-                    else remaining - MICROUSD_PER_USD
+                # Required default policy ceiling: remaining minus a one-unit
+                # safety buffer. This is the MAXIMUM this run may cost, not
+                # the amount reserved -- see the docstring above.
+                default_ceiling = remaining - MICROUSD_PER_USD
+                policy_cap = (
+                    explicit_cap_microusd if explicit_cap_microusd is not None else default_ceiling
                 )
-                if hold <= 0 or hold < worst_case_microusd:
+                if policy_cap <= 0 or worst_case_microusd > policy_cap:
                     raise BudgetInsufficientError("daily budget cannot cover the worst-case run")
+                hold = worst_case_microusd
                 db.execute(
                     "INSERT INTO tier5_budget_runs "
-                    "(run_id, key_digest, fingerprint, utc_day, state, held_microusd, "
-                    "settled_microusd, created_at, updated_at) VALUES (?, ?, ?, ?, 'RESERVED', ?, 0, ?, ?)",
-                    (run_id, key_digest, fingerprint, day, hold, timestamp, timestamp),
+                    "(run_id, key_digest, fingerprint, utc_day, state, policy_cap_microusd, "
+                    "held_microusd, settled_microusd, created_at, updated_at) "
+                    "VALUES (?, ?, ?, ?, 'RESERVED', ?, ?, 0, ?, ?)",
+                    (run_id, key_digest, fingerprint, day, policy_cap, hold, timestamp, timestamp),
                 )
                 row = db.execute(
                     "SELECT * FROM tier5_budget_runs WHERE run_id = ?", (run_id,)
@@ -232,6 +252,11 @@ class Tier5BudgetLedger:
             if db.execute(
                 "SELECT 1 FROM tier5_budget_stages WHERE run_id = ? LIMIT 1", (run_id,)
             ).fetchone():
+                # Raising here, inside the `with db:` block and before any
+                # db.commit(), relies on sqlite3's connection context manager:
+                # it rolls back the open transaction automatically on
+                # exception (commits only on clean exit). No explicit
+                # rollback call is needed or correct to add here.
                 raise BudgetError("cannot release a run after dispatch was marked")
             db.execute(
                 "UPDATE tier5_budget_runs SET state = 'RELEASED', held_microusd = 0, updated_at = ? WHERE run_id = ?",
