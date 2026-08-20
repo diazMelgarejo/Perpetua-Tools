@@ -79,6 +79,8 @@ def _normalize_path_value(value) -> str:
     expanded = os.path.expanduser(value)
     if os.path.isabs(expanded):
         abs_path = os.path.abspath(expanded)
+        if _is_subpath(abs_path, REPO_ROOT):
+            return _join_anchor("$REPO_ROOT", os.path.relpath(abs_path, REPO_ROOT))
         openclaw_root = os.environ.get("OPENCLAW_ROOT")
         if openclaw_root:
             openclaw_abs = os.path.abspath(os.path.expanduser(openclaw_root))
@@ -87,8 +89,6 @@ def _normalize_path_value(value) -> str:
                     "$OPENCLAW_ROOT",
                     os.path.relpath(abs_path, openclaw_abs),
                 )
-        if _is_subpath(abs_path, REPO_ROOT):
-            return _join_anchor("$REPO_ROOT", os.path.relpath(abs_path, REPO_ROOT))
         home = os.path.expanduser("~")
         if home and _is_subpath(abs_path, home):
             return _join_anchor("~", os.path.relpath(abs_path, home))
