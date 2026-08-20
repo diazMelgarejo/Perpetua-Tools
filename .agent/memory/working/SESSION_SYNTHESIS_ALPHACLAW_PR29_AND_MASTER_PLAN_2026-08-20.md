@@ -119,9 +119,9 @@ graph TD
 
 ## 5. Canonical Operational References
 
-- **Reference Guide 07:** `$OPENCLAW_ROOT/references/07-MULTI-AGENT-CONVERGENCE-AND-REMEDIATION-REFERENCE-2026-08-20.md` (Git remediation doctrines, token cliff, dispatch ladder, GossipBus topology). Local-only workspace reference, not tracked in this repo's git history.
-- **Master Action Plan:** `$OPENCLAW_ROOT/references/05-ORAMASYS-UNIFIED-ACTION-PLAN-2026-08-18.md` (local-only, not tracked here).
-- **Strategic Synthesis Report:** `$OPENCLAW_ROOT/references/06-STRATEGIC-SYNTHESIS-REPORT-2026-08-20.md` (local-only, not tracked here).
+- **Reference Guide 07:** `references/07-MULTI-AGENT-CONVERGENCE-AND-REMEDIATION-REFERENCE-2026-08-20.md` (Git remediation doctrines, token cliff, dispatch ladder, GossipBus topology).
+- **Master Action Plan:** `references/05-ORAMASYS-UNIFIED-ACTION-PLAN-2026-08-18.md`
+- **Strategic Synthesis Report:** `references/06-STRATEGIC-SYNTHESIS-REPORT-2026-08-20.md` (local-only, not tracked here).
 
 ---
 *Maintained in Perpetua-Tools `.agent/memory/working/` for persistent recall across all agent harnesses.*
