@@ -9,10 +9,10 @@
 
 | Area | Branch / PR | Role |
 | ---- | ----------- | ---- |
+| **Session Synthesis (2026-08-20)** | `SESSION_SYNTHESIS_ALPHACLAW_PR29_AND_MASTER_PLAN_2026-08-20.md` | **Done** — Full AlphaClaw PR #29 restore & CodeRabbit CI fix pushed (`b2062478`), master plan synthesized, doc 53 linked. |
 | **Standards & Defect Convergence** | `fix/pt-standards-convergence-20260818` (PT), `fix/oramasys-standards-convergence-20260818` (orama) | **Done locally, pending review** — OS-D2, OS-D4, OS-D5, OS-D3 in orama; PT-D1, PT-D3 in PT. All 73/73 and 65/65 tests green. |
 | **Unified Strategic Roadmap** | `UNIFIED_STANDARDS_SSRF_FRUGALITY_CONVERGENCE_2026-08-20.md` | **Consolidated** — 3-layer socket-pinning SSRF defense, Grok 4.6 199k cliff gate, Perplexity Gemini 3.7 Flash frugality engine, MAESTRO/Amplifier governance. |
-| **Hermes Wave 0 (taxonomy + lane tags)** | orama graft branches (`cursor/hermes-openclaw-graft-audit-f559`, `2026-08-05-002-hermes-graft-plan-reference-fix`) | **Done, pending review** — L-H1 / L-PT / L-Fleet taxonomy + lane tags; chronology **precedes** Wave 1 |
-| **Grant HMAC (landed)** | orama #260 + PT #320 merged to `main` | Follow-up on `post-grant-followup-*` branches |
+| **AlphaClaw PR #29 Alignment** | `2026-08-05-001-mcp-consolidation-to-pt` → PR #29 | **Done & Pushed** — Reverted 1caaa6ab narrowing (+512 lines instincts), migrated CI to pnpm, base updated to `clean/macos-26` (MERGEABLE). |
 
 ## Read this first
 
