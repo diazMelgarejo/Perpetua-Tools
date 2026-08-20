@@ -1,0 +1,38 @@
+{
+  "id": "5866bdb6f0b8",
+  "key": "manual_5866bd",
+  "name": "manual_5866bd",
+  "claim": "Repo-level correlate of the Agentic Security Controls doc (lesson_eda1f69613bd): the actual CI implementation of that policy, orama-system .github/workflows/agent-security.yml + scripts/ci/run_agent_security_scans.sh, has real runtime-efficiency and supply-chain gaps worth fixing before adding any new scanner. Found via live run inspection (run 32363347703, PR #321): the agent-surface job (aguara + agent-audit + skill-scanner + mcp-scanner + Ramparts, bundled sequentially in one job) took ~13m26s vs. gitleaks's own sibling job at 7s for the same trigger -- because aguara is installed via unpinned 'go install ...@latest' (a floating supply-chain dependency inside a supply-chain scanner, the exact anti-pattern section 8 of the controls doc warns against), there's no pip cache on setup-python, and agent-audit is git-cloned fresh every run instead of cached by its already-pinned ref. Full analysis and fix plan: orama-system/docs/v2/plans/2026-08-20-agent-security-ci-runtime-efficiency.md. Recommendation is runtime-shape only (pin aguara to a SHA, add pip cache, cache the agent-audit clone, split the bundle into parallel per-tool jobs mirroring gitleaks's own job shape) -- explicitly not a change to which findings block vs warn.",
+  "conditions": [
+    "agent security CI runtime efficiency aguara unpinned go install pip cache agent-audit clone gitleaks job split"
+  ],
+  "evidence_ids": [
+    "2026-08-20T11:41:43.430256+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-20T11:41:43.430256+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-20T11:41:43.430256+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-20T11:41:43.558736+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-08-20, operator asked to correlate the Agentic Security CI suite with 'runtime efficient scans' at the repo level, given two live job-run URLs from run 32363347703. This is the concrete follow-through: the org's own security-scanning CI has an unpinned dependency inside it, which is worth fixing with the same rigor applied everywhere else this session (SSRF validator, queue resolver bug) rather than treating 'we have a security CI suite' as sufficient on its own.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-20T11:41:43.430256+00:00"
+      ],
+      "lessons_sha": "ab6cdcfbb33d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-20T11:41:43.558719+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-08-20, operator asked to correlate the Agentic Security CI suite with 'runtime efficient scans' at the repo level, given two live job-run URLs from run 32363347703. This is the concrete follow-through: the org's own security-scanning CI has an unpinned dependency inside it, which is worth fixing with the same rigor applied everywhere else this session (SSRF validator, queue resolver bug) rather than treating 'we have a security CI suite' as sufficient on its own."
+}
