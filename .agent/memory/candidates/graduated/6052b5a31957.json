@@ -1,0 +1,38 @@
+{
+  "id": "6052b5a31957",
+  "key": "manual_6052b5",
+  "name": "manual_6052b5",
+  "claim": "Concrete follow-through on lesson_5866bdb6f0b8 (CI runtime findings): fixed agent-security.yml -- pinned aguara off '@latest', added pip/go/cargo caching, split the bundled job into 5 parallel jobs mirroring gitleaks's own shape (orama commits dece4955, def70889, PR #321). While shipping the pin, running the script end-to-end (not just syntax-checking it) caught a second real bug before it merged: the 'v1' git tag looked like a safe, obviously-current pin but actually resolves to aguara v0.6.0 (an old Go major-version-branch tag), which lacks the --baseline flag the skills scan depends on -- pinning to it would have broken CI outright. Repinned to the actual latest tag (v0.27.0) after verifying --baseline support directly. This is the connection to the earlier paranoia lessons (lesson_bacf8768f10f/e4b8a6287edd/030bbcadfec0): the verification instinct itself was exactly right here and caught something real -- the difference from the earlier failure is that this verification ran ONCE, silently, and its OUTPUT (not its process) is what got reported: 'the v1 tag is wrong, here's why, here's the fix' -- not a narrated play-by-play of checking. Running the corrected pin also surfaced a third, separate, genuinely unresolved finding: the existing skills baseline was generated against a floating '@latest' version and doesn't match the pinned version's ruleset (163 new gating findings) -- deliberately NOT resolved unilaterally (loosening severity or auto-approving a baseline regen would be exactly the false-HITL pattern lesson_eda1f69613bd's Portal-swarm example warns against), left for explicit human review instead.",
+  "conditions": [
+    "CI fix aguara pin verification success v0.27.0 baseline mismatch paranoia connection silent verification good example"
+  ],
+  "evidence_ids": [
+    "2026-08-20T11:53:24.727679+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-20T11:53:24.727679+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-20T11:53:24.727679+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-20T11:53:25.017351+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-08-20, operator asked to record today's CI fixes in memory and explicitly connect them to the earlier paranoia/verification-pacing lessons. This is the clean illustration the earlier lessons were missing: verification that runs once, catches a real bug, and reports only the finding -- not the checking process -- is the target behavior, and today's aguara pin is a concrete example of it working exactly as intended.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-20T11:53:24.727679+00:00"
+      ],
+      "lessons_sha": "7cd4729689dc"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-20T11:53:25.017343+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-08-20, operator asked to record today's CI fixes in memory and explicitly connect them to the earlier paranoia/verification-pacing lessons. This is the clean illustration the earlier lessons were missing: verification that runs once, catches a real bug, and reports only the finding -- not the checking process -- is the target behavior, and today's aguara pin is a concrete example of it working exactly as intended."
+}
