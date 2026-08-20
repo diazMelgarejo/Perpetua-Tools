@@ -97,16 +97,31 @@ graph TD
 
 | Repository | Branch | Commit | Scope / Action |
 | :--- | :--- | :--- | :--- |
+| `AlphaClaw` | `2026-08-05-001-mcp-consolidation-to-pt` | `70e0f9d8` | Tracked attribution & PR body guard rules (.cursor/rules/*.mdc) |
 | `AlphaClaw` | `2026-08-05-001-mcp-consolidation-to-pt` | `b2062478` | Migrated `.github/workflows/ci.yml` from npm to pnpm |
 | `AlphaClaw` | `2026-08-05-001-mcp-consolidation-to-pt` | `0af1b83a` | Restored full ECC bundle profile + instincts (+512 lines) |
 | `AlphaClaw` | `2026-08-05-001-mcp-consolidation-to-pt` | `c7e9f782` | Applied CodeRabbit auto-fixes (.gitignore, package.json pnpm pin) |
+| `orama-system` | `fix/oramasys-standards-convergence-20260818` | `5152288e` | Added SSRF defense-in-depth three-layer plan (PR-O1 + PR-O2) |
+| `orama-system` | `fix/oramasys-standards-convergence-20260818` | `f9c4d46a` | Added 53-maestro-swarm-v2-redesign-critique specification |
 | `orama-system` | `fix/oramasys-standards-convergence-20260818` | `b91a149a` | Installed wrong-repo-build pre-commit guard (OS-D3) |
 | `orama-system` | `fix/oramasys-standards-convergence-20260818` | `e95dfc1a` | Added human-initiation non-self-authorization clause (OS-D5) |
 | `orama-system` | `fix/oramasys-standards-convergence-20260818` | `2b8b1ec0` | Symlinked `install-mcp-stack.sh` to `scripts/` (OS-D4) |
 | `orama-system` | `fix/oramasys-standards-convergence-20260818` | `9163d367` | Corrected companion cross-ref to Perpetua-Tools (OS-D2) |
+| `Perpetua-Tools` | `fix/pt-standards-convergence-20260818` | `1a463d1f` | Advanced `vendor/ecc-tools` submodule to `d8409a4b` |
+| `Perpetua-Tools` | `fix/pt-standards-convergence-20260818` | `1d8b0097` | Streamlined Codex Exa MCP configuration & navigation guide |
+| `Perpetua-Tools` | `fix/pt-standards-convergence-20260818` | `c8fac600` | Fixed post-tool hook path normalization priority (7/7 tests) |
+| `Perpetua-Tools` | `fix/pt-standards-convergence-20260818` | `6178b41a` | Added Layer-1 SSRF fetch policy (22/22 unit & property tests) |
 | `Perpetua-Tools` | `fix/pt-standards-convergence-20260818` | `5ad9ea94` | Consolidated unified standards, SSRF defense, & frugality memory |
 | `Perpetua-Tools` | `fix/pt-standards-convergence-20260818` | `ac581130` | Clarified rolling-release roadmap towards v2.0.0 (PT-D3) |
 | `Perpetua-Tools` | `fix/pt-standards-convergence-20260818` | `f1558251` | Refactored hardware profiles to runtime probe guidance (PT-D1) |
+
+---
+
+## 5. Canonical Operational References
+
+- **Reference Guide 07:** `$OPENCLAW_ROOT/references/07-MULTI-AGENT-CONVERGENCE-AND-REMEDIATION-REFERENCE-2026-08-20.md` (Git remediation doctrines, token cliff, dispatch ladder, GossipBus topology). Local-only workspace reference, not tracked in this repo's git history.
+- **Master Action Plan:** `$OPENCLAW_ROOT/references/05-ORAMASYS-UNIFIED-ACTION-PLAN-2026-08-18.md` (local-only, not tracked here).
+- **Strategic Synthesis Report:** `$OPENCLAW_ROOT/references/06-STRATEGIC-SYNTHESIS-REPORT-2026-08-20.md` (local-only, not tracked here).
 
 ---
 *Maintained in Perpetua-Tools `.agent/memory/working/` for persistent recall across all agent harnesses.*

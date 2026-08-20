@@ -9,10 +9,11 @@
 
 | Area | Branch / PR | Role |
 | ---- | ----------- | ---- |
-| **Session Synthesis (2026-08-20)** | `SESSION_SYNTHESIS_ALPHACLAW_PR29_AND_MASTER_PLAN_2026-08-20.md` | **Done** — Full AlphaClaw PR #29 restore & CodeRabbit CI fix pushed (`b2062478`), master plan synthesized, doc 53 linked. |
-| **Standards & Defect Convergence** | `fix/pt-standards-convergence-20260818` (PT), `fix/oramasys-standards-convergence-20260818` (orama) | **Done locally, pending review** — OS-D2, OS-D4, OS-D5, OS-D3 in orama; PT-D1, PT-D3 in PT. All 73/73 and 65/65 tests green. |
+| **Reference Guide 07** | `references/07-MULTI-AGENT-CONVERGENCE-AND-REMEDIATION-REFERENCE-2026-08-20.md` | **Done** — Complete cross-linked reference guide for git remediation doctrines, 199k token cliff, cheapest-tool-first ladder, and GossipBus topology. |
+| **Session Synthesis (2026-08-20)** | `SESSION_SYNTHESIS_ALPHACLAW_PR29_AND_MASTER_PLAN_2026-08-20.md` | **Done** — Full AlphaClaw PR #29 restore & CodeRabbit CI fix pushed (`70e0f9d8`), master plan synthesized, doc 53 linked, post-tool hook path priority fixed (`c8fac600`). |
+| **Standards & Defect Convergence** | `fix/pt-standards-convergence-20260818` (PT), `fix/oramasys-standards-convergence-20260818` (orama) | **Done locally, pending review** — OS-D2..OS-D5 in orama (5152288e); PT-D1, PT-D3, hook fix, and Codex config in PT (1a463d1f). 127/127 targeted tests green, 22/22 SSRF tests green. |
 | **Unified Strategic Roadmap** | `UNIFIED_STANDARDS_SSRF_FRUGALITY_CONVERGENCE_2026-08-20.md` | **Consolidated** — 3-layer socket-pinning SSRF defense, Grok 4.6 199k cliff gate, Perplexity Gemini 3.7 Flash frugality engine, MAESTRO/Amplifier governance. |
-| **AlphaClaw PR #29 Alignment** | `2026-08-05-001-mcp-consolidation-to-pt` → PR #29 | **Done & Pushed** — Reverted 1caaa6ab narrowing (+512 lines instincts), migrated CI to pnpm, base updated to `clean/macos-26` (MERGEABLE). |
+| **AlphaClaw PR #29 Alignment** | `2026-08-05-001-mcp-consolidation-to-pt` → PR #29 | **Done & Pushed** — Reverted 1caaa6ab narrowing (+512 lines instincts), migrated CI to pnpm, tracked cursor attribution rules (`70e0f9d8`), base updated to `clean/macos-26` (MERGEABLE). |
 
 ## Read this first
 

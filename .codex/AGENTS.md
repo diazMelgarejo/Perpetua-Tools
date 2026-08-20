@@ -3,7 +3,8 @@
 This supplements the root `AGENTS.md` with Codex-specific guidance.
 
 For repo navigation, surface ownership, and PR diff packet guidance, read
-`docs/CODEX-NAVIGATION-GUIDE.md` after this supplement.
+`vendor/ecc-tools/docs/CODEX-NAVIGATION-GUIDE.md` after this supplement (vendored path --
+this guide is not promoted to a top-level `docs/` copy in this repo).
 
 ## Model Recommendations
 

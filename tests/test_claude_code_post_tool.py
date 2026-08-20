@@ -127,3 +127,19 @@ def test_action_label_normalizes_repo_paths():
     assert hook._action_label("Read", {"file_path": str(path)}) == (
         "read: $REPO_ROOT/.agent/memory/note.md"
     )
+
+
+def test_repo_root_wins_over_openclaw_root_when_nested(monkeypatch):
+    # Regression test for c8fac600: when REPO_ROOT is itself nested inside
+    # OPENCLAW_ROOT (a real deployment layout, where this repo lives under
+    # a parent workspace root), a path inside REPO_ROOT must normalize to
+    # $REPO_ROOT/..., not $OPENCLAW_ROOT/<repo-name>/... -- the more
+    # specific root wins.
+    parent_of_repo_root = Path(hook.REPO_ROOT).parent
+    monkeypatch.setenv("OPENCLAW_ROOT", str(parent_of_repo_root))
+
+    path = Path(hook.REPO_ROOT) / ".agent" / "memory" / "note.md"
+
+    assert hook._action_label("Read", {"file_path": str(path)}) == (
+        "read: $REPO_ROOT/.agent/memory/note.md"
+    )
