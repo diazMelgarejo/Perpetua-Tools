@@ -3,6 +3,25 @@
 > Record architectural or workflow choices that would be costly to re-debate.
 > Use this template for each entry:
 
+## 2026-08-21: SSRF Layer-2 pinned transport, 3-layer architecture & frugal Python path reuse
+
+**Decision:** Land Layer-2 connection-time IP pinning transport (`src/utils/ssrf_pinned_adapter.py`), unit tests (`tests/test_ssrf_pinned_adapter.py`), and endpoint hardening checklists (`docs/plans/2026-08-21-pt-endpoint-hardening-checklists.md`) on `Perpetua-Tools` branch `fix/pt-standards-convergence-20260818` (PR #359), with companion docs updated in `orama-system` on `fix/markdownlint-doc53-ci-20260820` (PR #321).
+Pre-flight string/IP-literal validation remains Layer 1 SSOT in `src/utils/ssrf_fetch_policy.py`. Layer 2 resolves DNS once, validates all A/AAAA records against Layer 1 policy, dials the pinned IP literal directly via custom connection pool, retains TLS SNI and Host header to original hostname, and mandates manual redirect re-validation (`ssrf_request`).
+Frugal Python path reuse strategy: zero external dependencies (`dssrf`, archived `safeurl-python` rejected); dual-try module path resolution (`src.utils.*` / `utils.*`) for robust cross-environment portability without host environment pollution.
+
+**Rationale:** Research in 2025-2026 CVEs (CVE-2026-27826, CVE-2026-27795) proves pre-flight string validation cannot prevent DNS-rebinding TOCTOU or 30x redirect bypasses without transport-level socket pinning and redirect isolation.
+
+**Alternatives considered:** Resolve DNS in pre-flight Layer 1 (rejected — reintroduces TOCTOU gap); adopt third-party denylist packages (rejected — CVE churn and supply chain bloat); combine outbound SSRF with LAN model discovery (rejected — opposite security polarities).
+
+**Status:** active
+
+**Links:**
+- Working memory: `.agent/memory/working/SESSION_SYNTHESIS_SSRF_LAYER2_AND_FRUGAL_PYTHON_REUSE_2026-08-21.md`
+- Adapter: `src/utils/ssrf_pinned_adapter.py`
+- Tests: `tests/test_ssrf_pinned_adapter.py`
+- Checklists: `docs/plans/2026-08-21-pt-endpoint-hardening-checklists.md`
+- Orama plan: `orama-system:docs/v2/plans/2026-08-20-ssrf-defense-in-depth.md`
+
 ## 2026-08-03: PR-body grant can-6 follow-up — scrub_dsstore sync + v2.1+ deferral doctrine
 
 **Decision:** Batch H on paired branches orama #260 / PT #320. Add `scrub_dsstore.sh` to
