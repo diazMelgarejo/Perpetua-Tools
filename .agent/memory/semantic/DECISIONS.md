@@ -70,6 +70,61 @@ stray branch's own wrap fix was strictly better for one paragraph).
 - Async bridge fix: `orchestrator/orama_bridge.py`
 - New lessons: `.agent/memory/semantic/lessons.jsonl` (ids `b65c806e748f`, `f6b92e2bd7f5`, `151e23263250`, `53c89f8a214d`, `99ff520076a7`)
 
+## 2026-08-21: PT PR #359 continued CodeRabbit autofix cycle — CI regressions, a wrong deferral, and 2 open follow-up-issue offers
+
+**Decision:** Continued the same PR #359 remediation round through several more automated CodeRabbit
+review cycles. Three distinct outcomes worth recording:
+
+1. **Real CI regressions, not stale notifications.** After the SSRF Layer-2 rewiring
+   (`orama_bridge.py`'s async fallback moved from a bare `httpx.AsyncClient` to
+   `asyncio.to_thread(ssrf_request, ...)`), `lint-and-test` went red with 7 failures across
+   `tests/test_orama_bridge.py`, `tests/test_orama_mcp_client.py`, and my own earlier
+   `tests/test_ssrf_pinned_adapter.py::test_hook_endpoint_policy` fix. Initially treated a CI-monitor
+   failure notification as referring to a stale/superseded run without checking the actual commit SHA
+   the run was against — it was current. Root causes: (a) two tests mocked `orama_bridge.httpx.post`,
+   which stopped existing once `import httpx` was removed; (b) five tests mocked `httpx.AsyncClient`,
+   which the async fallback stopped calling at all, so the mock silently stopped intercepting and the
+   fallback made a REAL SSRF-pinned request to the test's own `localhost` target, which the real
+   deny-by-default policy correctly rejected (`AddressDenied: blocked address: ::1`) — a
+   security-correct failure that read as an unrelated bug; (c) a dual-import class-identity bug in my
+   own test: `hook_endpoint_policy()` resolves `SSRFPolicyError` via `src.utils.ssrf_fetch_policy`
+   first in this CI environment, but the test imported the same-named class from `utils.ssrf_fetch_policy`
+   — two distinct class objects for the identical class body, so `pytest.raises` never matched. Fixed
+   by mirroring hook_endpoint_policy's own dual-try resolution order inside the test.
+2. **A wrong out-of-scope deferral, corrected on reviewer pushback.** Initially deferred a
+   `.codex/config.toml` unpinned `npx -y mcp-remote` finding as "pre-existing config, not touched by
+   this PR's diff" without checking `git log` — CodeRabbit correctly cited commit `1d8b0097` (this
+   same PR) as the one that introduced that exact invocation. Corrected: pinned to `mcp-remote@0.1.43`
+   (verified against the live npm registry) — a real, meaningful mitigation, but not the full
+   lockfile-backed + `--no-install`-enforced fix CodeRabbit originally asked for.
+3. **Two genuine remaining gaps, CodeRabbit twice offered to open tracking GitHub issues for —
+   awaiting operator decision, not yet created:**
+   - A fully lockfile-backed `mcp-remote` dependency (reviewed npm package + lockfile entry + local
+     `--no-install` invocation) for `.codex/config.toml`'s exa MCP server, superseding the version-pin
+     partial fix above. Thread: `https://github.com/diazMelgarejo/Perpetua-Tools/pull/359#discussion_r3821600945`
+     (comment id `3834333361` is CodeRabbit's explicit offer).
+   - Edge-case test coverage for the git-stash TDD verification technique recorded in the append-only
+     graduated candidate `.agent/memory/candidates/graduated/8466d1718c00.json` — specifically
+     covering staged, partially-staged, and untracked production edits during the selective-stash
+     workflow, not just the fully-unstaged case. Thread: `https://github.com/diazMelgarejo/Perpetua-Tools/pull/359#discussion_r3826927036`.
+   Neither issue has been created — issue creation is public, persistent content and was treated as
+   requiring explicit operator sign-off rather than autonomous action from an automated review-reply
+   loop, consistent with how PR body edits are gated on this repo (see `lesson_a8f3c2e91d04` /
+   PR-body append-only doctrine — analogous reasoning, different surface).
+
+**Rationale:** Records the exact failure mode of the "push once, then CI-monitor reports async" workflow —
+a fix commit that *looks* complete based on manual reasoning (no Python interpreter was available in
+this session to actually run pytest) can still regress tests it didn't directly touch. Also records
+that an automated reviewer's factual pushback on a deferral claim should be independently re-verified
+against git history, not just re-asserted or silently accepted.
+
+**Status:** active — 2 follow-up issues pending operator go-ahead
+
+**Links:**
+- PT PR: https://github.com/diazMelgarejo/Perpetua-Tools/pull/359
+- CI regression fixes: `5743ee42` (tests), `f3e67e84` (`.codex/config.toml` pin correction)
+- New lessons: `.agent/memory/semantic/lessons.jsonl` (ids `9e9515189f99`, `c11c64cbcc20`, `b169a367b452`)
+
 ## 2026-08-03: PR-body grant can-6 follow-up — scrub_dsstore sync + v2.1+ deferral doctrine
 
 **Decision:** Batch H on paired branches orama #260 / PT #320. Add `scrub_dsstore.sh` to
