@@ -1,0 +1,41 @@
+{
+  "id": "bf8b7266e33d",
+  "key": "manual_bf8b72",
+  "name": "manual_bf8b72",
+  "claim": "Order defense-in-depth checks so the documented/typed exception fires first -- a stdlib call downstream of an unvalidated string argument (Path.resolve(), int(), json.loads()) can raise its own untyped exception on adversarial input before your validator ever runs, even when the validator exists and is correct",
+  "conditions": [
+    "Path.resolve exception",
+    "defense in depth ordering",
+    "trace_id validation",
+    "validate before path resolution"
+  ],
+  "evidence_ids": [
+    "2026-08-21T03:29:12.154775+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-21T03:29:12.154775+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-08-21T03:29:12.154775+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-21T03:29:12.292668+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit review #4989313231 on PT PR #359: _approval_artifact_path() built and resolved a Path from an unvalidated trace_id BEFORE calling validate_trace_id(). A direct caller (bypassing the FastAPI Pydantic pattern) passing '\\x00' hit Path.resolve()'s ValueError('embedded null character in path') instead of the documented PipelineApprovalError -- the validator was correct and present, just placed after a stdlib call that has its own failure mode on the same unvalidated input. Fixed by moving validate_trace_id(trace_id) to the top of the function, before any path construction. Confirmed via retroactive TDD: existing traversal tests all changed their failure mode (from 'escapes approval directory' to 'invalid trace_id') because their payloads also fail the trace_id charset check first now -- moving a validator earlier can change which of several valid rejection reasons fires, not just whether rejection happens; update test assertions accordingly, don't just add a new test.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-08-21T03:29:12.154775+00:00"
+      ],
+      "lessons_sha": "a7a29c15e9d9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-21T03:29:12.292655+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit review #4989313231 on PT PR #359: _approval_artifact_path() built and resolved a Path from an unvalidated trace_id BEFORE calling validate_trace_id(). A direct caller (bypassing the FastAPI Pydantic pattern) passing '\\x00' hit Path.resolve()'s ValueError('embedded null character in path') instead of the documented PipelineApprovalError -- the validator was correct and present, just placed after a stdlib call that has its own failure mode on the same unvalidated input. Fixed by moving validate_trace_id(trace_id) to the top of the function, before any path construction. Confirmed via retroactive TDD: existing traversal tests all changed their failure mode (from 'escapes approval directory' to 'invalid trace_id') because their payloads also fail the trace_id charset check first now -- moving a validator earlier can change which of several valid rejection reasons fires, not just whether rejection happens; update test assertions accordingly, don't just add a new test."
+}

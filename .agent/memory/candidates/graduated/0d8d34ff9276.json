@@ -1,0 +1,41 @@
+{
+  "id": "0d8d34ff9276",
+  "key": "manual_0d8d34",
+  "name": "manual_0d8d34",
+  "claim": "OR IGNORE only suppresses uniqueness/PK conflicts, never foreign-key violations -- an INSERT with FK ON referencing an unknown parent row still raises sqlite3.IntegrityError even with OR IGNORE",
+  "conditions": [
+    "IntegrityError",
+    "OR IGNORE suppresses",
+    "foreign key",
+    "sqlite3 INSERT OR IGNORE"
+  ],
+  "evidence_ids": [
+    "2026-08-21T03:29:02.925661+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-21T03:29:02.925661+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-08-21T03:29:02.925661+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-21T03:29:03.057105+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit review #4989313231 on PT PR #359: mark_dispatch()'s INSERT OR IGNORE INTO tier5_budget_stages references tier5_budget_runs(run_id) with PRAGMA foreign_keys=ON. A caller passing an unknown run_id (no reservation row) hit a raw sqlite3.IntegrityError instead of the ledger's own BudgetError -- OR IGNORE reads as blanket error suppression but only covers the INSERT's own uniqueness constraints, not FK checks against other tables. Caught by TDD retroactive-RED: wrote test_mark_dispatch_on_unknown_run_id_raises_budget_error_not_integrity_error, confirmed it failed with sqlite3.IntegrityError pre-fix, then wrapped the INSERT in try/except sqlite3.IntegrityError translating to BudgetError.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-08-21T03:29:02.925661+00:00"
+      ],
+      "lessons_sha": "6c85790d3147"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-21T03:29:03.057093+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit review #4989313231 on PT PR #359: mark_dispatch()'s INSERT OR IGNORE INTO tier5_budget_stages references tier5_budget_runs(run_id) with PRAGMA foreign_keys=ON. A caller passing an unknown run_id (no reservation row) hit a raw sqlite3.IntegrityError instead of the ledger's own BudgetError -- OR IGNORE reads as blanket error suppression but only covers the INSERT's own uniqueness constraints, not FK checks against other tables. Caught by TDD retroactive-RED: wrote test_mark_dispatch_on_unknown_run_id_raises_budget_error_not_integrity_error, confirmed it failed with sqlite3.IntegrityError pre-fix, then wrapped the INSERT in try/except sqlite3.IntegrityError translating to BudgetError."
+}
