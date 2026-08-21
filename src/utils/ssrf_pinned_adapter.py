@@ -327,6 +327,21 @@ def ssrf_session(
     return session
 
 
+def _require_pinned_adapter(sess: requests.Session, url: str) -> None:
+    """Reject sessions that do not route ``url`` through the pinned adapter.
+
+    A caller-supplied ``requests.Session`` without ``SSRFPinnedHTTPAdapter``
+    mounted falls back to urllib3's default pool, which re-resolves DNS at
+    connect time and skips IP pinning, redirect control, and peer
+    validation -- ``check_url`` alone cannot compensate for that gap.
+    """
+    get_adapter = getattr(sess, "get_adapter", None)
+    if not callable(get_adapter):
+        raise SSRFPolicyError("session must expose get_adapter() to verify SSRF pinning")
+    if not isinstance(get_adapter(url), SSRFPinnedHTTPAdapter):
+        raise SSRFPolicyError(f"session adapter for {url!r} is not SSRFPinnedHTTPAdapter")
+
+
 def ssrf_request(
     method: str,
     url: str,
@@ -354,6 +369,7 @@ def ssrf_request(
     try:
         while True:
             check_url(current)
+            _require_pinned_adapter(sess, current)
             kwargs = dict(kwargs)
             kwargs["allow_redirects"] = False
             response = sess.request(method, current, **kwargs)

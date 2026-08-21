@@ -1,8 +1,8 @@
 <!-- markdownlint-disable MD013 -->
 # Perpetua-Tools endpoint hardening checklists
 
-Layer 1 = `src/utils/endpoint_policy_core.py` + `config/endpoint-policy-contract.yml`
-Layer 2 = `src/utils/ssrf_pinned_adapter.py` (this drop-in)
+Layer 1 = `src/utils/endpoint_policy_core.py` + `src/utils/ssrf_fetch_policy.py` + `config/endpoint-policy-contract.yml`
+Layer 2 = `src/utils/ssrf_pinned_adapter.py` (this drop-in; prefers `ssrf_fetch_policy` via `hook_endpoint_policy()`, falls back to `endpoint_policy_core`)
 Layer 3 = IMDS / egress (operator, not Python)
 
 Fail closed. No UI toggle. Env override only, reviewed.
@@ -48,7 +48,7 @@ Fail closed. No UI toggle. Env override only, reviewed.
   - [ ] Redirect to `169.254.169.254` → `AddressDenied` / `RedirectDenied`
   - [ ] Rebinding sim: check-time public, connect-time private → denied
   - [ ] Userinfo URL → `SSRFPolicyError`
-  - [ ] Allowlisted vendor host (`api.perplexity.ai`, `api.x.ai`) still works with pin+SNI
+  - [ ] Allowlisted vendor host (`api.perplexity.ai`, `api.x.ai`, `openrouter.ai`, `api.anthropic.com`) still works with pin+SNI
 
 ## PR-P3 — Wire every user-URL client
 
@@ -63,7 +63,7 @@ Mount the adapter or call `ssrf_request` in:
 - [ ] Any webhook / `fetch_url` / OpenClaw tool path that takes a string URL
 - [ ] Grep clean: no new raw `requests.get/post` or `httpx.get` on untrusted URLs
 - [ ] Audit log: host, resolved IPs, hop count, deny reason
-- [x] Fixed vendor allowlist (Perplexity, xAI, OpenRouter) documented in `endpoint-policy-contract.yml`
+- [x] Fixed vendor allowlist (Perplexity, xAI, OpenRouter, Anthropic) documented in `endpoint-policy-contract.yml`
 
 ## Operator / IMDS (docs only this pass)
 

@@ -5,7 +5,7 @@
 
 ## 2026-08-21: SSRF Layer-2 pinned transport, 3-layer architecture & frugal Python path reuse
 
-**Decision:** Land Layer-2 connection-time IP pinning transport (`src/utils/ssrf_pinned_adapter.py`), unit tests (`tests/test_ssrf_pinned_adapter.py`), and endpoint hardening checklists (`docs/plans/2026-08-21-pt-endpoint-hardening-checklists.md`) on `Perpetua-Tools` branch `fix/pt-standards-convergence-20260818` (PR #359), with companion docs updated in `orama-system` on `fix/markdownlint-doc53-ci-20260820` (PR #321).
+**Decision:** Land Layer-2 connection-time IP pinning transport (`src/utils/ssrf_pinned_adapter.py`), unit tests (`tests/test_ssrf_pinned_adapter.py`), and endpoint hardening checklists (`docs/plans/2026-08-21-pt-endpoint-hardening-checklists.md`) on `Perpetua-Tools` branch `fix/pt-standards-convergence-20260818` (PR #359), with companion docs updated in `orama-system` on `fix/oramasys-standards-convergence-20260818` (PR #321). (A stray `orama-system` branch, `fix/markdownlint-doc53-ci-20260820`, briefly carried two follow-up commits before being merged into the canonical branch and deleted 2026-08-21 — see the 2026-08-21 CodeRabbit remediation entry below.)
 Pre-flight string/IP-literal validation remains Layer 1 SSOT in `src/utils/ssrf_fetch_policy.py`. Layer 2 resolves DNS once, validates all A/AAAA records against Layer 1 policy, dials the pinned IP literal directly via custom connection pool, retains TLS SNI and Host header to original hostname, and mandates manual redirect re-validation (`ssrf_request`).
 Frugal Python path reuse strategy: zero external dependencies (`dssrf`, archived `safeurl-python` rejected); dual-try module path resolution (`src.utils.*` / `utils.*`) for robust cross-environment portability without host environment pollution.
 
@@ -21,6 +21,54 @@ Frugal Python path reuse strategy: zero external dependencies (`dssrf`, archived
 - Tests: `tests/test_ssrf_pinned_adapter.py`
 - Checklists: `docs/plans/2026-08-21-pt-endpoint-hardening-checklists.md`
 - Orama plan: `orama-system:docs/v2/plans/2026-08-20-ssrf-defense-in-depth.md`
+
+## 2026-08-21: PT PR #359 CodeRabbit remediation + orama PR #321 branch consolidation
+
+**Decision:** Fixed all 8 findings from CodeRabbit review #4993577985 on PT PR #359: the nitpick
+(`tests/test_ssrf_pinned_adapter.py` `test_hook_endpoint_policy` only tested loopback rejection,
+which both the Layer-1 checker and the Layer-2 fallback satisfy — added a `url_checker` assertion
+on Layer-1's fail-closed-on-unresolved-hostname behavior, which the fallback lacks), plus 7
+actionable comments: a Major-severity gap where `ssrf_request()` trusted any caller-supplied
+`requests.Session` without verifying `SSRFPinnedHTTPAdapter` was mounted (`src/utils/ssrf_pinned_adapter.py`,
+fixed with `_require_pinned_adapter()`); `orchestrator/connectivity.py` routing local Ollama/LM
+Studio/MLX health checks through the same deny-by-default `ssrf_request()` as cloud vendor checks
+(split into `_probe` / `_probe_local`); `orchestrator/orama_bridge.py`'s async HTTP fallback using a
+bare `httpx.AsyncClient` instead of the sync path's `ssrf_request` (fixed via `asyncio.to_thread`);
+two Ruff nitpicks in the test file (S104 suppression, RUF012 mutable class state); a stale repo-scope
+claim in the session synthesis working doc; and a Layer-1 checklist doc that under-named its own
+module list and vendor allowlist. Also consolidated orama-system PR #321: two parallel agent sessions
+had pushed follow-up commits to different branches (the canonical `fix/oramasys-standards-convergence-20260818`
+and a stray `fix/markdownlint-doc53-ci-20260820`) — merged via Mode-4-synthesize (per
+`oramasys-method`'s `integrative-merge.md`) since both sides had independently reflowed the same
+paragraph of `docs/v2/53-maestro-swarm-v2-redesign-critique.md` for MD013 compliance, and the stray
+branch's own line-wrap commit had left an orphaned one-word line that the other branch's wrap fixed
+cleanly; pushed the synthesized result to the canonical branch, then deleted the stray branch (its
+own PR #322 was already closed) both locally and on `origin`.
+
+**Rationale:** Standard PR-review remediation, done as a full batch rather than fixing only the
+originally-requested nitpick, since the review had already surfaced the remaining 7 findings and
+leaving them open would mean re-deriving the same context in a follow-up session. The branch
+consolidation followed the repo's own naming convention (`fix/pt-standards-convergence-20260818` in
+PT ⇄ `fix/oramasys-standards-convergence-20260818` in orama-system) rather than leaving two
+divergent branches carrying the same PR's follow-up work.
+
+**Alternatives considered:** Fix only the originally-requested nitpick and leave the other 6 review
+findings for a later session (rejected — the review had already surfaced them, and per
+`lesson_502211a1be56`'s handwaving-costs-more-later doctrine, deferring a known, already-surfaced
+finding just relocates the cost); pick one of the two orama-system branches wholesale instead of
+synthesizing (rejected — each branch had independently-valid content the other lacked, and the
+stray branch's own wrap fix was strictly better for one paragraph).
+
+**Status:** active
+
+**Links:**
+- PT PR: https://github.com/diazMelgarejo/Perpetua-Tools/pull/359
+- Review: https://github.com/diazMelgarejo/Perpetua-Tools/pull/359#pullrequestreview-4993577985
+- Orama PR: https://github.com/diazMelgarejo/orama-system/pull/321
+- Adapter fix: `src/utils/ssrf_pinned_adapter.py` (`_require_pinned_adapter`)
+- Connectivity split: `orchestrator/connectivity.py` (`_probe` / `_probe_local`)
+- Async bridge fix: `orchestrator/orama_bridge.py`
+- New lessons: `.agent/memory/semantic/lessons.jsonl` (ids `b65c806e748f`, `f6b92e2bd7f5`, `151e23263250`, `53c89f8a214d`, `99ff520076a7`)
 
 ## 2026-08-03: PR-body grant can-6 follow-up — scrub_dsstore sync + v2.1+ deferral doctrine
 

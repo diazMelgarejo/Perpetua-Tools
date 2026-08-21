@@ -2,7 +2,7 @@
 
 import sys
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
 
@@ -54,10 +54,10 @@ def test_orchestrate_calls_oramasys_bridge_with_mapped_depth(monkeypatch):
     mock_http_response.raise_for_status = MagicMock()
     mock_http_response.json.return_value = fake_json_response
 
-    mock_async_client_instance = AsyncMock()
-    mock_async_client_instance.post = AsyncMock(return_value=mock_http_response)
-    mock_async_client_instance.__aenter__ = AsyncMock(return_value=mock_async_client_instance)
-    mock_async_client_instance.__aexit__ = AsyncMock(return_value=False)
+    # call_oramasys_mcp_or_bridge's async HTTP fallback now delegates to
+    # ssrf_request (the Layer-2 pinned transport) via asyncio.to_thread,
+    # instead of a bare httpx.AsyncClient -- see orchestrator/orama_bridge.py.
+    mock_ssrf_request = MagicMock(return_value=mock_http_response)
 
     with (
         patch(
@@ -75,8 +75,7 @@ def test_orchestrate_calls_oramasys_bridge_with_mapped_depth(monkeypatch):
             "orchestrator.ecc_tools_sync.get_sync_status",
             return_value={"status": "ok"},
         ),
-        patch("orchestrator.orama_bridge.httpx.AsyncClient",
-              return_value=mock_async_client_instance),
+        patch("utils.ssrf_pinned_adapter.ssrf_request", mock_ssrf_request),
         # Ensure no MCP subprocess is attempted
         patch.dict("os.environ", {"ORAMASYS_MCP_SERVER_CMD": ""}),
     ):
@@ -97,7 +96,8 @@ def test_orchestrate_calls_oramasys_bridge_with_mapped_depth(monkeypatch):
     # Verify HTTP path was taken (MCP cmd is unset)
     assert body["oramasys_bridge"]["transport"] == "http"
     # Verify the payload sent to HTTP bridge has correct contract mapping
-    _, call_kwargs = mock_async_client_instance.post.call_args
+    mock_ssrf_request.assert_called_once()
+    _, call_kwargs = mock_ssrf_request.call_args
     assert call_kwargs["json"]["optimize_for"] == "reliability"
     assert call_kwargs["json"]["reasoning_depth"] == "ultra"
     assert body["oramasys_bridge"]["request"]["reasoning_depth"] == "ultra"

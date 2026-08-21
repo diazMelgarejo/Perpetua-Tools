@@ -20,7 +20,7 @@
 
 ## 1. Executive Summary
 
-During this session, we reviewed the deep research report `Defense-in-Depth SSRF Prevention in 2025-2026: Limits of Application-Layer Python Validators.md` and executed all proposed SSRF Layer-2 transport hardening changes across both `Perpetua-Tools` and `orama-system`.
+During this session, we reviewed the deep research report `Defense-in-Depth SSRF Prevention in 2025-2026: Limits of Application-Layer Python Validators.md` and implemented and tested the SSRF Layer-2 transport hardening entirely in `Perpetua-Tools` (see Deliverables Matrix, § 4); `orama-system` received a companion architecture spec/runbook doc only (`docs/v2/plans/2026-08-20-ssrf-defense-in-depth.md`), not implementation or tests.
 
 ```mermaid
 graph TD

@@ -9,6 +9,7 @@ import pytest
 from utils.ssrf_pinned_adapter import (
     AddressDenied,
     RedirectDenied,
+    SSRFPinnedHTTPAdapter,
     SSRFPolicyError,
     default_address_allowed,
     default_url_allowed,
@@ -27,7 +28,7 @@ from utils.ssrf_pinned_adapter import (
         "169.254.170.2",
         "100.64.0.1",
         "224.0.0.1",
-        "0.0.0.0",
+        "0.0.0.0",  # noqa: S104 -- deny-policy fixture, not a bind address
         "::1",
         "::ffff:169.254.169.254",
         "fd00:ec2::254",
@@ -64,11 +65,22 @@ def test_mixed_public_private_aaaa_fails() -> None:
 
 def test_ssrf_request_refuses_redirect_to_metadata() -> None:
     class _FakeResp:
-        status_code = 302
-        is_redirect = True
-        headers = {"Location": "http://169.254.169.254/latest/meta-data/"}
+        def __init__(self) -> None:
+            self.status_code = 302
+            self.is_redirect = True
+            self.headers = {"Location": "http://169.254.169.254/latest/meta-data/"}
 
     class _FakeSess:
+        def __init__(self) -> None:
+            # ssrf_request now refuses any session that doesn't route through
+            # SSRFPinnedHTTPAdapter (see _require_pinned_adapter); satisfy that
+            # check so this test still exercises redirect-Location denial,
+            # not just the pinning-session guard.
+            self._adapter = SSRFPinnedHTTPAdapter()
+
+        def get_adapter(self, url: str):
+            return self._adapter
+
         def request(self, *args, **kwargs):
             return _FakeResp()
 
@@ -85,6 +97,7 @@ def test_ssrf_request_refuses_redirect_to_metadata() -> None:
 
 
 def test_hook_endpoint_policy() -> None:
+    from utils.ssrf_fetch_policy import SSRFPolicyError as Layer1SSRFPolicyError
     from utils.ssrf_pinned_adapter import hook_endpoint_policy
 
     addr_checker, url_checker = hook_endpoint_policy()
@@ -95,4 +108,28 @@ def test_hook_endpoint_policy() -> None:
     # Denied address fails
     with pytest.raises((AddressDenied, Exception)):
         addr_checker("127.0.0.1")
+
+    # Distinguish the selected policy from the fallback: ssrf_fetch_policy's
+    # url_checker has no DNS capability, so it fail-closes on any bare
+    # hostname it cannot resolve (unless vendor-allowlisted) -- see
+    # utils.ssrf_fetch_policy._host_denied. The Layer-2 fallback
+    # (default_url_allowed) has no such check and would let this URL
+    # through, since it only validates scheme/userinfo/control-chars. If
+    # this raises Layer1SSRFPolicyError, hook_endpoint_policy() really did
+    # select the Layer-1 checker, not the fallback.
+    with pytest.raises(Layer1SSRFPolicyError):
+        url_checker("https://example.com/")
+
+
+def test_ssrf_request_rejects_session_without_pinned_adapter() -> None:
+    """A plain requests.Session bypasses DNS pinning/redirect control entirely --
+    ssrf_request must refuse it rather than silently trusting check_url alone."""
+    import requests
+
+    with pytest.raises(SSRFPolicyError):
+        ssrf_request(
+            "GET",
+            "https://example.com/out",
+            session=requests.Session(),
+        )
 
