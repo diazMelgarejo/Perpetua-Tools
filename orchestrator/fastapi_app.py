@@ -59,6 +59,8 @@ from orchestrator.tiered_pipeline import (
     load_pipeline_approval,
     register_pipeline_approval,
     tiered_pipeline_enabled,
+    TRACE_ID_MAX_LENGTH,
+    TRACE_ID_MIN_LENGTH,
     TRACE_ID_PATTERN,
 )
 from orchestrator.gossip_bus import GossipBus
@@ -210,7 +212,9 @@ class TieredPipelineRequest(BaseModel):
     """
 
     prompt: str = Field(min_length=1, max_length=32768)
-    trace_id: str = Field(min_length=8, max_length=128, pattern=_TRACE_ID_PATTERN)
+    trace_id: str = Field(
+        min_length=TRACE_ID_MIN_LENGTH, max_length=TRACE_ID_MAX_LENGTH, pattern=_TRACE_ID_PATTERN
+    )
     privacy_critical: bool = False
     override_confirmed: bool = False
     override_reason: Optional[str] = None
@@ -232,7 +236,9 @@ class PipelineApprovalRequest(BaseModel):
     fields inline.
     """
 
-    trace_id: str = Field(min_length=8, max_length=128, pattern=_TRACE_ID_PATTERN)
+    trace_id: str = Field(
+        min_length=TRACE_ID_MIN_LENGTH, max_length=TRACE_ID_MAX_LENGTH, pattern=_TRACE_ID_PATTERN
+    )
     approved_by: str = Field(min_length=1, max_length=256)
     purpose: str = Field(min_length=1, max_length=1024)
     recipe: str = Field(min_length=1, max_length=128)

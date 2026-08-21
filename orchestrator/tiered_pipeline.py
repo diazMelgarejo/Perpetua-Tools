@@ -29,6 +29,12 @@ APPROVAL_DIR_ENV = "PT_PIPELINE_APPROVAL_DIR"
 REVOKED_APPROVALS_ENV = "PT_PIPELINE_REVOKED_APPROVALS"
 MAX_STAGES = 3
 TRACE_ID_PATTERN = r"[A-Za-z0-9_-]+"
+# Single source of truth for both enforcement paths -- fastapi_app.py's
+# Pydantic Field(min_length=..., max_length=...) and validate_trace_id()
+# below must agree, or a direct caller bypassing the HTTP layer could use a
+# trace_id the API would reject (and vice versa).
+TRACE_ID_MIN_LENGTH = 8
+TRACE_ID_MAX_LENGTH = 128
 DEFAULT_CONFIG = Path(__file__).resolve().parent.parent / "config" / "pipelines.yml"
 DEFAULT_MODELS = Path(__file__).resolve().parent.parent / "config" / "models.yml"
 DEFAULT_TRACE = Path(__file__).resolve().parent.parent / ".state" / "frugality_pipeline.jsonl"
@@ -96,7 +102,7 @@ def validate_trace_id(trace_id: str) -> str:
     """
     if (
         not isinstance(trace_id, str)
-        or not 1 <= len(trace_id) <= 128
+        or not TRACE_ID_MIN_LENGTH <= len(trace_id) <= TRACE_ID_MAX_LENGTH
         or re.fullmatch(TRACE_ID_PATTERN, trace_id) is None
     ):
         raise PipelineApprovalError("invalid trace_id")
@@ -247,6 +253,18 @@ def load_pipeline_approval(
             "approval record for trace_id %r must be a JSON object" % trace_id
         )
     try:
+        # The artifact's own embedded trace_id must match the requested one --
+        # they're looked up by the requested trace_id via the filename, but the
+        # file's content is what actually becomes PipelineApproval.trace_id
+        # below. If those ever diverge (tampering, a copy-paste artifact bug),
+        # returning the file's value would silently authorize under the wrong
+        # identity.
+        embedded_trace_id = str(raw.get("trace_id", ""))
+        if embedded_trace_id != trace_id:
+            raise PipelineApprovalError(
+                "approval record for trace_id %r has a mismatched embedded "
+                "trace_id %r" % (trace_id, embedded_trace_id)
+            )
         expires_at = datetime.fromisoformat(str(raw["expires_at"]))
         if expires_at.tzinfo is None:
             raise PipelineApprovalError(
