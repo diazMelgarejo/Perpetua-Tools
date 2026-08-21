@@ -18,10 +18,12 @@ this guide is not promoted to a top-level `docs/` copy in this repo).
 ## Skills Discovery
 
 Skills are auto-loaded from `.agents/skills/`. Each skill contains:
+
 - `SKILL.md` — Detailed instructions and workflow
 - `agents/openai.yaml` — Codex interface metadata
 
 Available skills:
+
 - tdd-workflow — Test-driven development with 80%+ coverage
 - security-review — Comprehensive security checklist
 - coding-standards — Universal coding standards
@@ -48,27 +50,44 @@ Available skills:
 
 ## MCP Servers
 
-Treat the project-local `.codex/config.toml` as the default Codex baseline for ECC. The current ECC baseline enables GitHub, Context7, Exa, Memory, Playwright, and Sequential Thinking; add heavier extras in `~/.codex/config.toml` only when a task actually needs them.
+Treat the project-local `.codex/config.toml` as the default Codex baseline for ECC. The current
+ECC baseline enables GitHub, Context7, Exa, Memory, Playwright, and Sequential Thinking; add
+heavier extras in `~/.codex/config.toml` only when a task actually needs them.
 
-ECC's canonical Codex section name is `[mcp_servers.context7]`. The launcher package remains `@upstash/context7-mcp`; only the TOML section name is normalized for consistency with `codex mcp list` and the reference config.
+ECC's canonical Codex section name is `[mcp_servers.context7]`. The launcher package remains
+`@upstash/context7-mcp`; only the TOML section name is normalized for consistency with
+`codex mcp list` and the reference config.
 
 ### Automatic config.toml merging
 
-The sync script (`scripts/sync-ecc-to-codex.sh`) uses a Node-based TOML parser to safely merge ECC MCP servers into `~/.codex/config.toml`:
+The sync script (`scripts/sync-ecc-to-codex.sh`) uses a Node-based TOML parser to safely merge
+ECC MCP servers into `~/.codex/config.toml`:
 
-- **Add-only by default** — missing ECC servers are appended; existing servers are never modified or removed.
-- **7 managed servers** — Supabase, Playwright, Context7, Exa, GitHub, Memory, Sequential Thinking.
-- **Canonical naming** — ECC manages Context7 as `[mcp_servers.context7]`; legacy `[mcp_servers.context7-mcp]` entries are treated as aliases during updates.
-- **Package-manager aware** — uses the project's configured package manager (npm/pnpm/yarn/bun) instead of hardcoding `pnpm`.
-- **Drift warnings** — if an existing server's config differs from the ECC recommendation, the script logs a warning.
-- **`--update-mcp`** — explicitly replaces all ECC-managed servers with the latest recommended config (safely removes subtables like `[mcp_servers.supabase.env]`).
-- **User config is always preserved** — custom servers, args, env vars, and credentials outside ECC-managed sections are never touched.
+- **Add-only by default** — missing ECC servers are appended; existing servers are never
+  modified or removed.
+- **7 managed servers** — Supabase, Playwright, Context7, Exa, GitHub, Memory, Sequential
+  Thinking.
+- **Canonical naming** — ECC manages Context7 as `[mcp_servers.context7]`; legacy
+  `[mcp_servers.context7-mcp]` entries are treated as aliases during updates.
+- **Package-manager aware** — uses the project's configured package manager (npm/pnpm/yarn/bun)
+  instead of hardcoding `pnpm`.
+- **Drift warnings** — if an existing server's config differs from the ECC recommendation, the
+  script logs a warning.
+- **`--update-mcp`** — explicitly replaces all ECC-managed servers with the latest recommended
+  config (safely removes subtables like `[mcp_servers.supabase.env]`).
+- **User config is always preserved** — custom servers, args, env vars, and credentials outside
+  ECC-managed sections are never touched.
 
 ## External Action Boundaries
 
-Treat networked tools as read-only by default. Search, inspect, and draft freely within the user's requested scope, but require explicit user approval before posting, publishing, pushing, merging, opening paid jobs, dispatching remote agents, changing third-party resources, or modifying credentials.
+Treat networked tools as read-only by default. Search, inspect, and draft freely within the
+user's requested scope, but require explicit user approval before posting, publishing, pushing,
+merging, opening paid jobs, dispatching remote agents, changing third-party resources, or
+modifying credentials.
 
-When approval is ambiguous, produce a local plan or draft artifact instead of taking the external action. Preserve user config and private state unless the user specifically asks for a scoped change.
+When approval is ambiguous, produce a local plan or draft artifact instead of taking the external
+action. Preserve user config and private state unless the user specifically asks for a scoped
+change.
 
 ## Multi-Agent Support
 
@@ -80,6 +99,7 @@ Codex now supports multi-agent workflows behind the experimental `features.multi
 - Use `/agent` inside Codex CLI to inspect and steer child agents
 
 Sample role configs in this repo:
+
 - `.codex/agents/explorer.toml` — read-only evidence gathering
 - `.codex/agents/reviewer.toml` — correctness/security review
 - `.codex/agents/docs-researcher.toml` — API and release-note verification
@@ -99,6 +119,7 @@ Sample role configs in this repo:
 ## Security Without Hooks
 
 Since Codex lacks hooks, security enforcement is instruction-based:
+
 1. Always validate inputs at system boundaries
 2. Never hardcode secrets — use environment variables
 3. Run `npm audit` / `pip audit` before committing
