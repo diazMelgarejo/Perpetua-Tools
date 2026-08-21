@@ -1,0 +1,42 @@
+{
+  "id": "71502462c759",
+  "key": "manual_715024",
+  "name": "manual_715024",
+  "claim": "expunge-all-workspace-repos.sh's multi-repo, multi-branch force-push loop cannot be swapped for publish-clean-branch.sh one-for-one -- it is a genuine architectural mismatch, not a one-line fix",
+  "conditions": [
+    "CodeRabbit PR#29",
+    "attribution guard sync",
+    "expunge-all-workspace-repos",
+    "force-push audit",
+    "publish-clean-branch"
+  ],
+  "evidence_ids": [
+    "2026-08-21T03:12:38.771731+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-21T03:12:38.771731+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-08-21T03:12:38.771731+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-21T03:12:38.929928+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit review #4984716341 on AlphaClaw PR #29 (finding 4, Major) asked both .cursor/rules/never-undo-attribution-expunge.mdc and zero-banned-attribution-everywhere.mdc to require ALL publishing -- including scripts/git/expunge-all-workspace-repos.sh -- to route through scripts/git/publish-clean-branch.sh, with no raw force pushes. Investigated 2026-08-21: publish-clean-branch.sh is single-repo (cd's via $SCRIPT_DIR/../..) and single-branch (takes one branch arg, defaults to current), and its audit_attribution.sh range logic assumes a sensible base branch (${remote}/${base}..${branch}). expunge-all-workspace-repos.sh's force_push_repo() iterates every local branch across every repo under $WORKSPACE_ROOT after a full-history filter-branch rewrite -- main..main is an empty range, and arbitrary branches post-rewrite may have no clean ancestry against main. publish-clean-branch.sh DOES already have a HISTORY_SURGERY_PUSH=1 mode with the exact same force-with-lease + hooks-off + history-surgery-git.sh push semantics expunge uses, PLUS a stronger audit_attribution.sh + repo_hygiene.py + scan-tracked-banned-tokens.sh scan the expunge script's own before/after banned-metadata count check doesn't run. Confirmed the mismatch exists identically in orama-system's canonical copy (not just a PT/AlphaClaw drift), so the fix belongs there, not as a local hand-edit in any downstream repo.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-08-21T03:12:38.771731+00:00"
+      ],
+      "lessons_sha": "aba1da84a6fb"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-21T03:12:38.929919+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit review #4984716341 on AlphaClaw PR #29 (finding 4, Major) asked both .cursor/rules/never-undo-attribution-expunge.mdc and zero-banned-attribution-everywhere.mdc to require ALL publishing -- including scripts/git/expunge-all-workspace-repos.sh -- to route through scripts/git/publish-clean-branch.sh, with no raw force pushes. Investigated 2026-08-21: publish-clean-branch.sh is single-repo (cd's via $SCRIPT_DIR/../..) and single-branch (takes one branch arg, defaults to current), and its audit_attribution.sh range logic assumes a sensible base branch (${remote}/${base}..${branch}). expunge-all-workspace-repos.sh's force_push_repo() iterates every local branch across every repo under $WORKSPACE_ROOT after a full-history filter-branch rewrite -- main..main is an empty range, and arbitrary branches post-rewrite may have no clean ancestry against main. publish-clean-branch.sh DOES already have a HISTORY_SURGERY_PUSH=1 mode with the exact same force-with-lease + hooks-off + history-surgery-git.sh push semantics expunge uses, PLUS a stronger audit_attribution.sh + repo_hygiene.py + scan-tracked-banned-tokens.sh scan the expunge script's own before/after banned-metadata count check doesn't run. Confirmed the mismatch exists identically in orama-system's canonical copy (not just a PT/AlphaClaw drift), so the fix belongs there, not as a local hand-edit in any downstream repo."
+}
