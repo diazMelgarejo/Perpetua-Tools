@@ -193,11 +193,11 @@ def _approval_artifact_path(directory: Path, trace_id: str) -> Path:
     untrusted trace_id (e.g. ``../../etc/cron.d/evil``) is still contained,
     defense-in-depth rather than a single point of failure.
     """
+    validate_trace_id(trace_id)
     resolved_directory = directory.resolve()
     path = (resolved_directory / ("%s.json" % trace_id)).resolve()
     if not path.is_relative_to(resolved_directory):
         raise PipelineApprovalError("invalid trace_id %r escapes approval directory" % trace_id)
-    validate_trace_id(trace_id)
     return path
 
 

@@ -688,11 +688,25 @@ def test_approval_artifact_path_rejects_traversal(
     tmp_path: Path, malicious_trace_id: str
 ) -> None:
     directory = tmp_path / "approvals"
-    with pytest.raises(tp.PipelineApprovalError, match="escapes approval directory"):
+    # validate_trace_id() runs before path construction, so every payload
+    # here (all containing "/" or ".", outside TRACE_ID_PATTERN) is rejected
+    # as an invalid trace_id -- it never reaches the containment check below.
+    with pytest.raises(tp.PipelineApprovalError, match="invalid trace_id"):
         tp._approval_artifact_path(directory, malicious_trace_id)
     # Confirm nothing was written outside the intended directory either.
     assert not any(tmp_path.glob("**/evil*"))
     assert not any(tmp_path.glob("**/escape*"))
+
+
+def test_approval_artifact_path_rejects_nul_byte_before_path_resolution(
+    tmp_path: Path,
+) -> None:
+    """A raw caller (bypassing the FastAPI Pydantic pattern) can pass a NUL
+    byte; Path.resolve() raises ValueError on it, not PipelineApprovalError,
+    unless validate_trace_id() runs first."""
+    directory = tmp_path / "approvals"
+    with pytest.raises(tp.PipelineApprovalError, match="invalid trace_id"):
+        tp._approval_artifact_path(directory, "\x00")
 
 
 def test_approval_artifact_path_accepts_normal_trace_id(tmp_path: Path) -> None:

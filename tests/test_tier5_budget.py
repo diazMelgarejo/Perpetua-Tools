@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sqlite3
+from contextlib import contextmanager
 from datetime import datetime, timezone
 
 import pytest
@@ -8,6 +10,7 @@ from orchestrator.tier5_budget import (
     BudgetConflictError,
     BudgetError,
     BudgetInsufficientError,
+    BudgetUnavailableError,
     Tier5BudgetLedger,
 )
 
@@ -130,6 +133,20 @@ def test_explicit_cap_above_remaining_budget_is_capped_not_granted(tmp_path) -> 
             worst_case_microusd=600_000,
             explicit_cap_microusd=5_000_000,
         )
+    # The clamp also matters on the accepted branch: a run that fits inside
+    # `remaining` is still granted, but the recorded ceiling is clamped to
+    # `remaining`, not the caller's declared cap. A regression that removed
+    # the clamp while keeping the rejection above would still pass without
+    # this assertion.
+    accepted = ledger.reserve(
+        run_id="run-3",
+        idempotency_key="key-3",
+        fingerprint="fingerprint-3",
+        worst_case_microusd=400_000,
+        explicit_cap_microusd=5_000_000,
+    )
+    assert accepted.policy_cap_microusd == 500_000
+    assert accepted.held_microusd == 400_000
 
 
 @pytest.mark.unit
@@ -218,6 +235,50 @@ def test_mark_dispatch_is_idempotent_and_does_not_revert_terminal_states(tmp_pat
     ledger.mark_dispatch(run.run_id, "stage-2")
     still_settled = ledger.settle(run.run_id)  # idempotent re-fetch
     assert still_settled.state == "SETTLED"
+
+
+@pytest.mark.unit
+def test_mark_dispatch_on_unknown_run_id_raises_budget_error_not_integrity_error(
+    tmp_path,
+) -> None:
+    # tier5_budget_stages.run_id references tier5_budget_runs(run_id) with
+    # foreign keys ON; INSERT OR IGNORE only suppresses the stages table's
+    # own PK conflict, not that FK violation -- an unknown run_id must still
+    # surface as a BudgetError, not a raw sqlite3.IntegrityError.
+    ledger = _ledger(tmp_path)
+    with pytest.raises(BudgetError):
+        ledger.mark_dispatch("no-such-run", "stage-1")
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "method,kwargs",
+    [
+        ("settle", {"run_id": "run-1"}),
+        ("release_pre_dispatch", {"run_id": "run-1"}),
+        ("recover_expired", {"before": 0.0}),
+    ],
+)
+def test_lock_contention_is_translated_to_budget_unavailable_on_every_public_method(
+    tmp_path, monkeypatch, method, kwargs
+) -> None:
+    # reserve() and mark_dispatch() already translated a busy/locked
+    # sqlite3.OperationalError to BudgetUnavailableError; settle(),
+    # release_pre_dispatch(), and recover_expired() must too, since
+    # _transaction()'s IMMEDIATE lock can time out in any of them --
+    # settle() in particular is exposed after the provider spend already
+    # happened.
+    ledger = _ledger(tmp_path)
+
+    @contextmanager
+    def _always_locked(self):
+        raise sqlite3.OperationalError("database is locked")
+        yield  # pragma: no cover -- unreachable, satisfies generator shape
+
+    monkeypatch.setattr(Tier5BudgetLedger, "_transaction", _always_locked)
+
+    with pytest.raises(BudgetUnavailableError):
+        getattr(ledger, method)(**kwargs)
 
 
 @pytest.mark.unit

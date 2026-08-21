@@ -111,6 +111,34 @@ class Tier5BudgetLedger:
         finally:
             db.close()
 
+    @staticmethod
+    def _translate_operational_error(
+        exc: sqlite3.OperationalError,
+    ) -> "BudgetUnavailableError | None":
+        message = str(exc).lower()
+        if "locked" in message or "busy" in message:
+            return BudgetUnavailableError("budget ledger is temporarily unavailable")
+        return None
+
+    @contextmanager
+    def _guarded_transaction(self):
+        """``_transaction()``, but every lock-contention OperationalError
+        (not just reserve()'s and mark_dispatch()'s) surfaces as the ledger's
+        own BudgetUnavailableError instead of a raw sqlite3 exception --
+        settle() in particular can hit this after the provider spend already
+        happened, so its caller must see a ledger error, not an sqlite3 one.
+        """
+        try:
+            with self._transaction() as db:
+                yield db
+        except BudgetError:
+            raise
+        except sqlite3.OperationalError as exc:
+            translated = self._translate_operational_error(exc)
+            if translated is not None:
+                raise translated from exc
+            raise
+
     def _initialize(self) -> None:
         with self._transaction() as db:
             db.executescript(
@@ -185,56 +213,49 @@ class Tier5BudgetLedger:
         key_digest = _digest(idempotency_key)
         day = utc_day(now)
         timestamp = time.time()
-        try:
-            with self._transaction() as db:
-                existing = db.execute(
-                    "SELECT * FROM tier5_budget_runs WHERE key_digest = ?", (key_digest,)
-                ).fetchone()
-                if existing:
-                    if existing["fingerprint"] != fingerprint:
-                        raise BudgetConflictError("idempotency key conflicts with an existing run")
-                    return self._row(existing)
+        with self._guarded_transaction() as db:
+            existing = db.execute(
+                "SELECT * FROM tier5_budget_runs WHERE key_digest = ?", (key_digest,)
+            ).fetchone()
+            if existing:
+                if existing["fingerprint"] != fingerprint:
+                    raise BudgetConflictError("idempotency key conflicts with an existing run")
+                return self._row(existing)
 
-                used = db.execute(
-                    "SELECT COALESCE(SUM(held_microusd + settled_microusd), 0) AS used "
-                    "FROM tier5_budget_runs WHERE utc_day = ? AND state IN "
-                    "('RESERVED', 'DISPATCHED', 'SETTLED', 'CONSUMED_UNKNOWN')",
-                    (day,),
-                ).fetchone()["used"]
-                remaining = self.daily_limit_microusd - int(used)
-                # Required default policy ceiling: remaining minus a one-unit
-                # safety buffer. This is the MAXIMUM this run may cost, not
-                # the amount reserved -- see the docstring above.
-                default_ceiling = remaining - MICROUSD_PER_USD
-                policy_cap = (
-                    explicit_cap_microusd if explicit_cap_microusd is not None else default_ceiling
-                )
-                # An explicit cap is a caller-declared ceiling, not a grant --
-                # it must never exceed what's actually left in the daily
-                # budget, or a caller could reserve more than `remaining` by
-                # simply passing a large explicit_cap_microusd.
-                if policy_cap > remaining:
-                    policy_cap = remaining
-                if policy_cap <= 0 or worst_case_microusd > policy_cap:
-                    raise BudgetInsufficientError("daily budget cannot cover the worst-case run")
-                hold = worst_case_microusd
-                db.execute(
-                    "INSERT INTO tier5_budget_runs "
-                    "(run_id, key_digest, fingerprint, utc_day, state, policy_cap_microusd, "
-                    "held_microusd, settled_microusd, created_at, updated_at) "
-                    "VALUES (?, ?, ?, ?, 'RESERVED', ?, ?, 0, ?, ?)",
-                    (run_id, key_digest, fingerprint, day, policy_cap, hold, timestamp, timestamp),
-                )
-                row = db.execute(
-                    "SELECT * FROM tier5_budget_runs WHERE run_id = ?", (run_id,)
-                ).fetchone()
-                return self._row(row)
-        except BudgetError:
-            raise
-        except sqlite3.OperationalError as exc:
-            if "locked" in str(exc).lower() or "busy" in str(exc).lower():
-                raise BudgetUnavailableError("budget ledger is temporarily unavailable") from exc
-            raise
+            used = db.execute(
+                "SELECT COALESCE(SUM(held_microusd + settled_microusd), 0) AS used "
+                "FROM tier5_budget_runs WHERE utc_day = ? AND state IN "
+                "('RESERVED', 'DISPATCHED', 'SETTLED', 'CONSUMED_UNKNOWN')",
+                (day,),
+            ).fetchone()["used"]
+            remaining = self.daily_limit_microusd - int(used)
+            # Required default policy ceiling: remaining minus a one-unit
+            # safety buffer. This is the MAXIMUM this run may cost, not
+            # the amount reserved -- see the docstring above.
+            default_ceiling = remaining - MICROUSD_PER_USD
+            policy_cap = (
+                explicit_cap_microusd if explicit_cap_microusd is not None else default_ceiling
+            )
+            # An explicit cap is a caller-declared ceiling, not a grant --
+            # it must never exceed what's actually left in the daily
+            # budget, or a caller could reserve more than `remaining` by
+            # simply passing a large explicit_cap_microusd.
+            if policy_cap > remaining:
+                policy_cap = remaining
+            if policy_cap <= 0 or worst_case_microusd > policy_cap:
+                raise BudgetInsufficientError("daily budget cannot cover the worst-case run")
+            hold = worst_case_microusd
+            db.execute(
+                "INSERT INTO tier5_budget_runs "
+                "(run_id, key_digest, fingerprint, utc_day, state, policy_cap_microusd, "
+                "held_microusd, settled_microusd, created_at, updated_at) "
+                "VALUES (?, ?, ?, ?, 'RESERVED', ?, ?, 0, ?, ?)",
+                (run_id, key_digest, fingerprint, day, policy_cap, hold, timestamp, timestamp),
+            )
+            row = db.execute(
+                "SELECT * FROM tier5_budget_runs WHERE run_id = ?", (run_id,)
+            ).fetchone()
+            return self._row(row)
 
     def mark_dispatch(self, run_id: str, stage_name: str) -> None:
         """Commit the provider-dispatch marker before network I/O.
@@ -243,30 +264,31 @@ class Tier5BudgetLedger:
         no-op on the marker (INSERT OR IGNORE), not an IntegrityError. The
         state transition only fires from RESERVED, so a run already
         SETTLED/RELEASED/CONSUMED_UNKNOWN can never be pulled back to
-        DISPATCHED by a late or duplicate dispatch call.
+        DISPATCHED by a late or duplicate dispatch call. An unknown run_id
+        (no matching row in tier5_budget_runs) fails the stage marker's
+        foreign-key check -- OR IGNORE only suppresses uniqueness conflicts,
+        not FK violations -- so that's translated to a BudgetError too.
         """
-        try:
-            with self._transaction() as db:
+        with self._guarded_transaction() as db:
+            try:
                 db.execute(
                     "INSERT OR IGNORE INTO tier5_budget_stages "
                     "(run_id, stage_name, marker_at) VALUES (?, ?, ?)",
                     (run_id, stage_name, time.time()),
                 )
-                db.execute(
-                    "UPDATE tier5_budget_runs SET state = 'DISPATCHED', updated_at = ? "
-                    "WHERE run_id = ? AND state = 'RESERVED'",
-                    (time.time(), run_id),
-                )
-        except sqlite3.OperationalError as exc:
-            if "locked" in str(exc).lower() or "busy" in str(exc).lower():
-                raise BudgetUnavailableError("budget ledger is temporarily unavailable") from exc
-            raise
+            except sqlite3.IntegrityError as exc:
+                raise BudgetError("cannot mark dispatch for an unknown budget run") from exc
+            db.execute(
+                "UPDATE tier5_budget_runs SET state = 'DISPATCHED', updated_at = ? "
+                "WHERE run_id = ? AND state = 'RESERVED'",
+                (time.time(), run_id),
+            )
 
     def settle(
         self, run_id: str, *, verified_unused_microusd: int | None = None
     ) -> Reservation:
         """Settle conservatively; ambiguity consumes the complete hold."""
-        with self._transaction() as db:
+        with self._guarded_transaction() as db:
             row = db.execute(
                 "SELECT * FROM tier5_budget_runs WHERE run_id = ?", (run_id,)
             ).fetchone()
@@ -294,7 +316,7 @@ class Tier5BudgetLedger:
         is still RESERVED -- never a terminal state (SETTLED/CONSUMED_UNKNOWN)
         or already-RELEASED, which the state predicate on the UPDATE below
         enforces even under a race with settle()/mark_dispatch()."""
-        with self._transaction() as db:
+        with self._guarded_transaction() as db:
             existing = db.execute(
                 "SELECT * FROM tier5_budget_runs WHERE run_id = ?", (run_id,)
             ).fetchone()
@@ -326,7 +348,7 @@ class Tier5BudgetLedger:
 
     def recover_expired(self, *, before: float) -> tuple[int, int]:
         """Release unmarked stale holds; consume marked stale runs."""
-        with self._transaction() as db:
+        with self._guarded_transaction() as db:
             unmarked = db.execute(
                 "SELECT run_id FROM tier5_budget_runs WHERE state = 'RESERVED' AND updated_at < ? "
                 "AND NOT EXISTS (SELECT 1 FROM tier5_budget_stages s WHERE s.run_id = tier5_budget_runs.run_id)",
