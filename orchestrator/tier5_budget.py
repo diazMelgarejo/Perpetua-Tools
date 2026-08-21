@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import sqlite3
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -65,6 +66,12 @@ class Tier5BudgetLedger:
     ) -> None:
         if isinstance(daily_limit_microusd, bool) or daily_limit_microusd <= 0:
             raise ValueError("daily_limit_microusd must be a positive integer")
+        if (
+            isinstance(busy_timeout_ms, bool)
+            or not isinstance(busy_timeout_ms, int)
+            or busy_timeout_ms <= 0
+        ):
+            raise ValueError("busy_timeout_ms must be a positive integer")
         self.db_path = Path(db_path)
         self.daily_limit_microusd = daily_limit_microusd
         self.busy_timeout_ms = busy_timeout_ms
@@ -79,8 +86,33 @@ class Tier5BudgetLedger:
         db.execute("PRAGMA journal_mode = WAL")
         return db
 
+    @contextmanager
+    def _transaction(self):
+        """Open a connection, take an IMMEDIATE write lock, and always close it.
+
+        ``with sqlite3.Connection:`` only commits/rolls back on exit -- it
+        never closes the underlying connection, so every prior call site
+        that did ``with self._connect() as db:`` leaked a connection per
+        call. This combines both: transaction semantics via the inner
+        ``with db:``, guaranteed close via ``finally``.
+
+        ``BEGIN IMMEDIATE`` here (not deferred, Python's default) is load
+        -bearing: it takes the write lock before the first statement, not
+        before the first write, so every read this transaction does (e.g.
+        reserve()'s existing-key and used-sum checks) is already under the
+        same lock the eventual write commits under -- no window for a
+        second writer to interleave between a check and the write it gates.
+        """
+        db = self._connect()
+        try:
+            with db:
+                db.execute("BEGIN IMMEDIATE")
+                yield db
+        finally:
+            db.close()
+
     def _initialize(self) -> None:
-        with self._connect() as db:
+        with self._transaction() as db:
             db.executescript(
                 """
                 CREATE TABLE IF NOT EXISTS tier5_budget_runs (
@@ -154,15 +186,13 @@ class Tier5BudgetLedger:
         day = utc_day(now)
         timestamp = time.time()
         try:
-            with self._connect() as db:
-                db.execute("BEGIN IMMEDIATE")
+            with self._transaction() as db:
                 existing = db.execute(
                     "SELECT * FROM tier5_budget_runs WHERE key_digest = ?", (key_digest,)
                 ).fetchone()
                 if existing:
                     if existing["fingerprint"] != fingerprint:
                         raise BudgetConflictError("idempotency key conflicts with an existing run")
-                    db.commit()
                     return self._row(existing)
 
                 used = db.execute(
@@ -179,6 +209,12 @@ class Tier5BudgetLedger:
                 policy_cap = (
                     explicit_cap_microusd if explicit_cap_microusd is not None else default_ceiling
                 )
+                # An explicit cap is a caller-declared ceiling, not a grant --
+                # it must never exceed what's actually left in the daily
+                # budget, or a caller could reserve more than `remaining` by
+                # simply passing a large explicit_cap_microusd.
+                if policy_cap > remaining:
+                    policy_cap = remaining
                 if policy_cap <= 0 or worst_case_microusd > policy_cap:
                     raise BudgetInsufficientError("daily budget cannot cover the worst-case run")
                 hold = worst_case_microusd
@@ -192,7 +228,6 @@ class Tier5BudgetLedger:
                 row = db.execute(
                     "SELECT * FROM tier5_budget_runs WHERE run_id = ?", (run_id,)
                 ).fetchone()
-                db.commit()
                 return self._row(row)
         except BudgetError:
             raise
@@ -202,32 +237,42 @@ class Tier5BudgetLedger:
             raise
 
     def mark_dispatch(self, run_id: str, stage_name: str) -> None:
-        """Commit the provider-dispatch marker before network I/O."""
-        with self._connect() as db:
-            db.execute("BEGIN IMMEDIATE")
-            db.execute(
-                "INSERT INTO tier5_budget_stages (run_id, stage_name, marker_at) VALUES (?, ?, ?)",
-                (run_id, stage_name, time.time()),
-            )
-            db.execute(
-                "UPDATE tier5_budget_runs SET state = 'DISPATCHED', updated_at = ? WHERE run_id = ?",
-                (time.time(), run_id),
-            )
-            db.commit()
+        """Commit the provider-dispatch marker before network I/O.
+
+        Idempotent: a retried call with the same (run_id, stage_name) is a
+        no-op on the marker (INSERT OR IGNORE), not an IntegrityError. The
+        state transition only fires from RESERVED, so a run already
+        SETTLED/RELEASED/CONSUMED_UNKNOWN can never be pulled back to
+        DISPATCHED by a late or duplicate dispatch call.
+        """
+        try:
+            with self._transaction() as db:
+                db.execute(
+                    "INSERT OR IGNORE INTO tier5_budget_stages "
+                    "(run_id, stage_name, marker_at) VALUES (?, ?, ?)",
+                    (run_id, stage_name, time.time()),
+                )
+                db.execute(
+                    "UPDATE tier5_budget_runs SET state = 'DISPATCHED', updated_at = ? "
+                    "WHERE run_id = ? AND state = 'RESERVED'",
+                    (time.time(), run_id),
+                )
+        except sqlite3.OperationalError as exc:
+            if "locked" in str(exc).lower() or "busy" in str(exc).lower():
+                raise BudgetUnavailableError("budget ledger is temporarily unavailable") from exc
+            raise
 
     def settle(
         self, run_id: str, *, verified_unused_microusd: int | None = None
     ) -> Reservation:
         """Settle conservatively; ambiguity consumes the complete hold."""
-        with self._connect() as db:
-            db.execute("BEGIN IMMEDIATE")
+        with self._transaction() as db:
             row = db.execute(
                 "SELECT * FROM tier5_budget_runs WHERE run_id = ?", (run_id,)
             ).fetchone()
             if not row:
                 raise BudgetError("budget run not found")
             if row["state"] in {"SETTLED", "RELEASED", "CONSUMED_UNKNOWN"}:
-                db.commit()
                 return self._row(row)
             unused = verified_unused_microusd
             if unused is None or unused < 0 or unused > row["held_microusd"]:
@@ -242,38 +287,46 @@ class Tier5BudgetLedger:
             updated = db.execute(
                 "SELECT * FROM tier5_budget_runs WHERE run_id = ?", (run_id,)
             ).fetchone()
-            db.commit()
             return self._row(updated)
 
     def release_pre_dispatch(self, run_id: str) -> Reservation:
-        """Release only when no committed stage marker exists."""
-        with self._connect() as db:
-            db.execute("BEGIN IMMEDIATE")
+        """Release only when no committed stage marker exists and the run
+        is still RESERVED -- never a terminal state (SETTLED/CONSUMED_UNKNOWN)
+        or already-RELEASED, which the state predicate on the UPDATE below
+        enforces even under a race with settle()/mark_dispatch()."""
+        with self._transaction() as db:
+            existing = db.execute(
+                "SELECT * FROM tier5_budget_runs WHERE run_id = ?", (run_id,)
+            ).fetchone()
+            if not existing:
+                raise BudgetError("budget run not found")
             if db.execute(
                 "SELECT 1 FROM tier5_budget_stages WHERE run_id = ? LIMIT 1", (run_id,)
             ).fetchone():
                 # Raising here, inside the `with db:` block and before any
-                # db.commit(), relies on sqlite3's connection context manager:
-                # it rolls back the open transaction automatically on
+                # commit, relies on sqlite3's connection context manager: it
+                # rolls back the open transaction automatically on
                 # exception (commits only on clean exit). No explicit
                 # rollback call is needed or correct to add here.
                 raise BudgetError("cannot release a run after dispatch was marked")
-            db.execute(
-                "UPDATE tier5_budget_runs SET state = 'RELEASED', held_microusd = 0, updated_at = ? WHERE run_id = ?",
+            cursor = db.execute(
+                "UPDATE tier5_budget_runs SET state = 'RELEASED', held_microusd = 0, "
+                "updated_at = ? WHERE run_id = ? AND state = 'RESERVED'",
                 (time.time(), run_id),
             )
+            if cursor.rowcount == 0:
+                raise BudgetError(
+                    f"cannot release {run_id!r}: not in RESERVED state "
+                    f"(currently {existing['state']!r})"
+                )
             row = db.execute(
                 "SELECT * FROM tier5_budget_runs WHERE run_id = ?", (run_id,)
             ).fetchone()
-            db.commit()
-            if not row:
-                raise BudgetError("budget run not found")
             return self._row(row)
 
     def recover_expired(self, *, before: float) -> tuple[int, int]:
         """Release unmarked stale holds; consume marked stale runs."""
-        with self._connect() as db:
-            db.execute("BEGIN IMMEDIATE")
+        with self._transaction() as db:
             unmarked = db.execute(
                 "SELECT run_id FROM tier5_budget_runs WHERE state = 'RESERVED' AND updated_at < ? "
                 "AND NOT EXISTS (SELECT 1 FROM tier5_budget_stages s WHERE s.run_id = tier5_budget_runs.run_id)",
@@ -294,5 +347,4 @@ class Tier5BudgetLedger:
                     "UPDATE tier5_budget_runs SET state = 'CONSUMED_UNKNOWN', settled_microusd = held_microusd, held_microusd = 0, updated_at = ? WHERE run_id = ?",
                     (time.time(), row["run_id"]),
                 )
-            db.commit()
             return len(unmarked), len(marked)

@@ -12,6 +12,15 @@ from orchestrator.tier5_budget import (
 )
 
 
+@pytest.mark.unit
+@pytest.mark.parametrize("bad_timeout", [0, -1, True, 1.5, "2000"])
+def test_busy_timeout_ms_rejects_non_positive_or_non_integer(tmp_path, bad_timeout) -> None:
+    with pytest.raises(ValueError):
+        Tier5BudgetLedger(
+            tmp_path / "ledger.db", daily_limit_microusd=1_000_000, busy_timeout_ms=bad_timeout
+        )
+
+
 def _ledger(tmp_path):
     return Tier5BudgetLedger(tmp_path / "ledger.db", daily_limit_microusd=10_000_000)
 
@@ -97,6 +106,33 @@ def test_explicit_cap_holds_worst_case_not_the_cap(tmp_path) -> None:
 
 
 @pytest.mark.unit
+def test_explicit_cap_above_remaining_budget_is_capped_not_granted(tmp_path) -> None:
+    # An explicit cap is a caller-declared ceiling, not a grant -- it must
+    # never let a reservation exceed what's actually left in the daily
+    # budget, even if the caller passes an explicit_cap_microusd larger
+    # than remaining.
+    ledger = _ledger(tmp_path)
+    ledger.reserve(
+        run_id="run-1",
+        idempotency_key="key-1",
+        fingerprint="fingerprint-1",
+        worst_case_microusd=9_500_000,
+        explicit_cap_microusd=9_500_000,
+    )
+    # remaining is now 500_000; an explicit cap of 5_000_000 must not
+    # override that, and a worst_case exceeding the true remaining balance
+    # must still be rejected.
+    with pytest.raises(BudgetInsufficientError):
+        ledger.reserve(
+            run_id="run-2",
+            idempotency_key="key-2",
+            fingerprint="fingerprint-2",
+            worst_case_microusd=600_000,
+            explicit_cap_microusd=5_000_000,
+        )
+
+
+@pytest.mark.unit
 def test_two_small_uncapped_runs_proceed_without_oversubscription(tmp_path) -> None:
     # The bug this guards against: an uncapped reservation used to hold
     # nearly the entire remaining daily budget (remaining - $1), so a
@@ -156,6 +192,61 @@ def test_pre_dispatch_release_and_marked_settlement_are_conservative(tmp_path) -
     settled = ledger.settle(marked.run_id)
     assert settled.state == "SETTLED"
     assert settled.settled_microusd == marked.held_microusd
+
+
+@pytest.mark.unit
+def test_mark_dispatch_is_idempotent_and_does_not_revert_terminal_states(tmp_path) -> None:
+    ledger = _ledger(tmp_path)
+    run = ledger.reserve(
+        run_id="run-1",
+        idempotency_key="key-1",
+        fingerprint="fingerprint-1",
+        worst_case_microusd=1_000_000,
+        explicit_cap_microusd=1_000_000,
+    )
+    # A retried mark_dispatch with the same stage must not raise
+    # IntegrityError from the tier5_budget_stages primary key.
+    ledger.mark_dispatch(run.run_id, "stage-1")
+    ledger.mark_dispatch(run.run_id, "stage-1")
+
+    settled = ledger.settle(run.run_id)
+    assert settled.state == "SETTLED"
+
+    # A late/duplicate mark_dispatch after settlement must not pull the run
+    # back to DISPATCHED -- the state predicate on the UPDATE only matches
+    # RESERVED, so this is a silent no-op on the run's state.
+    ledger.mark_dispatch(run.run_id, "stage-2")
+    still_settled = ledger.settle(run.run_id)  # idempotent re-fetch
+    assert still_settled.state == "SETTLED"
+
+
+@pytest.mark.unit
+def test_settle_without_dispatch_marker_then_release_pre_dispatch_is_blocked(tmp_path) -> None:
+    # A run can be settled without ever calling mark_dispatch (e.g. a
+    # zero-cost/cancelled run recorded directly). Once SETTLED, the state
+    # guard on release_pre_dispatch's UPDATE (WHERE state = 'RESERVED')
+    # must reject it even though there's no stage marker to trip the
+    # marker-based guard -- otherwise settled spend could be zeroed back
+    # out of the daily total by a subsequent release call.
+    ledger = _ledger(tmp_path)
+    run = ledger.reserve(
+        run_id="run-1",
+        idempotency_key="key-1",
+        fingerprint="fingerprint-1",
+        worst_case_microusd=1_000_000,
+        explicit_cap_microusd=1_000_000,
+    )
+    settled = ledger.settle(run.run_id)
+    assert settled.state == "SETTLED"
+    assert settled.settled_microusd == 1_000_000
+
+    with pytest.raises(BudgetError):
+        ledger.release_pre_dispatch(run.run_id)
+
+    # Settled spend must still be counted -- release_pre_dispatch's failed
+    # attempt must not have zeroed held/settled amounts.
+    reread = ledger.settle(run.run_id)  # idempotent re-fetch, no-op on SETTLED
+    assert reread.settled_microusd == 1_000_000
 
 
 @pytest.mark.unit
