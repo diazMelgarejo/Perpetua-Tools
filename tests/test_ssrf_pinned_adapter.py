@@ -97,7 +97,21 @@ def test_ssrf_request_refuses_redirect_to_metadata() -> None:
 
 
 def test_hook_endpoint_policy() -> None:
-    from utils.ssrf_fetch_policy import SSRFPolicyError as Layer1SSRFPolicyError
+    # hook_endpoint_policy() itself tries `src.utils.ssrf_fetch_policy` before
+    # falling back to `utils.ssrf_fetch_policy` (see its dual-try resolution).
+    # Mirror that exact order here rather than picking one import path
+    # ourselves: `src.utils.ssrf_fetch_policy.SSRFPolicyError` and
+    # `utils.ssrf_fetch_policy.SSRFPolicyError` are the same class body but
+    # DIFFERENT class objects when both module paths are importable in the
+    # same interpreter (each import path creates its own module instance) --
+    # picking the "wrong" one here made `pytest.raises` fail to match the
+    # real exception even though the checker was correctly selected. Whatever
+    # hook_endpoint_policy() actually resolved to, this must resolve to the
+    # same object.
+    try:
+        from src.utils.ssrf_fetch_policy import SSRFPolicyError as Layer1SSRFPolicyError
+    except ImportError:
+        from utils.ssrf_fetch_policy import SSRFPolicyError as Layer1SSRFPolicyError
     from utils.ssrf_pinned_adapter import hook_endpoint_policy
 
     addr_checker, url_checker = hook_endpoint_policy()

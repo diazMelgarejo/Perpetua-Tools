@@ -76,12 +76,16 @@ class TestBuildPayload:
 
 
 class TestCallBridge:
-    @patch("orchestrator.orama_bridge.httpx.post")
-    def test_success_returns_response(self, mock_post):
+    # call_oramasys_bridge routes through utils.ssrf_pinned_adapter.ssrf_request
+    # (the Layer-2 pinned transport, PT PR #359), not a bare httpx.post -- it
+    # imports ssrf_request locally inside the function body, so the patch
+    # target is the function's own module, not orchestrator.orama_bridge.
+    @patch("utils.ssrf_pinned_adapter.ssrf_request")
+    def test_success_returns_response(self, mock_ssrf_request):
         mock_resp = MagicMock()
         mock_resp.json.return_value = {"result": "analysis complete", "status": "ok"}
         mock_resp.raise_for_status.return_value = None
-        mock_post.return_value = mock_resp
+        mock_ssrf_request.return_value = mock_resp
 
         result = call_oramasys_bridge(
             endpoint="http://localhost:8001",
@@ -91,11 +95,11 @@ class TestCallBridge:
         )
         assert "response" in result
         assert result["response"]["result"] == "analysis complete"
-        mock_post.assert_called_once()
+        mock_ssrf_request.assert_called_once()
 
-    @patch("orchestrator.orama_bridge.httpx.post")
-    def test_failure_raises_exception(self, mock_post):
-        mock_post.side_effect = Exception("Connection refused")
+    @patch("utils.ssrf_pinned_adapter.ssrf_request")
+    def test_failure_raises_exception(self, mock_ssrf_request):
+        mock_ssrf_request.side_effect = Exception("Connection refused")
 
         with pytest.raises(Exception, match="Connection refused"):
             call_oramasys_bridge(
