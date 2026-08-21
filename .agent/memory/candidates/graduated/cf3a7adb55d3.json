@@ -1,0 +1,38 @@
+{
+  "id": "cf3a7adb55d3",
+  "key": "manual_cf3a7a",
+  "name": "manual_cf3a7a",
+  "claim": "Python sqlite3's 'with connection:' context manager only commits or rolls back on exit -- it never closes the underlying connection. Every prior call site in tier5_budget.py that did 'with self._connect() as db:' leaked one connection per call, relying on GC finalization instead of an explicit close. Fix: a small contextmanager combining both -- 'db = self._connect(); try: with db: yield db; finally: db.close()' -- gives correct commit/rollback AND guaranteed close from one call site, replacing N near-duplicate connect/BEGIN/commit blocks.",
+  "conditions": [
+    "sqlite3 connection leak with-statement context manager close transaction commit rollback python stdlib gotcha"
+  ],
+  "evidence_ids": [
+    "2026-08-21T02:46:10.450907+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-21T02:46:10.450907+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-21T02:46:10.450907+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-21T02:46:10.604995+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-08-21, PT PR #359 CodeRabbit review #4983381866, fixed in commit 1d56a095. Caught during a batch review of a SQLite-backed ledger module -- five methods each opened a fresh connection with no matching close(). Worth a standing instinct: any 'with self._connect() as db:' pattern in this codebase is a leak unless paired with an explicit close, since sqlite3.Connection's context-manager protocol only covers the transaction, not the resource.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-21T02:46:10.450907+00:00"
+      ],
+      "lessons_sha": "a792094336cf"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-21T02:46:10.604983+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-08-21, PT PR #359 CodeRabbit review #4983381866, fixed in commit 1d56a095. Caught during a batch review of a SQLite-backed ledger module -- five methods each opened a fresh connection with no matching close(). Worth a standing instinct: any 'with self._connect() as db:' pattern in this codebase is a leak unless paired with an explicit close, since sqlite3.Connection's context-manager protocol only covers the transaction, not the resource."
+}

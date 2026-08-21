@@ -1,0 +1,38 @@
+{
+  "id": "3d9cc9f3ef55",
+  "key": "manual_3d9cc9",
+  "name": "manual_3d9cc9",
+  "claim": "When 'cleaning up' code that calls db.execute('BEGIN IMMEDIATE') as its own explicit statement, do not assume that behavior is redundant with 'with connection:' and remove it -- Python's sqlite3 module defaults to DEFERRED transactions (an implicit BEGIN before the first write, not before the first read), so removing an explicit BEGIN IMMEDIATE silently reopens a TOCTOU race window between a transaction's read-checks and its eventual write. Caught this mid-refactor (introduced the regression, then caught it before shipping) while consolidating five near-identical connect/BEGIN-IMMEDIATE/commit blocks into one shared contextmanager -- the correct fix was moving BEGIN IMMEDIATE INTO the shared helper (so every call site keeps it automatically), not dropping it.",
+  "conditions": [
+    "sqlite3 BEGIN IMMEDIATE deferred transaction TOCTOU race refactor regression atomic write lock python"
+  ],
+  "evidence_ids": [
+    "2026-08-21T02:46:19.371595+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-21T02:46:19.371595+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-21T02:46:19.371595+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-21T02:46:19.519260+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-08-21, PT tier5_budget.py refactor (commit 1d56a095). This is a real near-miss: I removed 'db.execute(\"BEGIN IMMEDIATE\")' from reserve() while extracting a _transaction() helper, reasoning it was covered by the outer 'with db:' -- it was not. The atomic one-winner semantics the whole ledger module depends on (existing-key check + used-sum check happening under the SAME write lock as the eventual INSERT) would have broken silently, with no test failure, since single-threaded test runs never exercise the race window.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-21T02:46:19.371595+00:00"
+      ],
+      "lessons_sha": "208a5cd6ecb9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-21T02:46:19.519250+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-08-21, PT tier5_budget.py refactor (commit 1d56a095). This is a real near-miss: I removed 'db.execute(\"BEGIN IMMEDIATE\")' from reserve() while extracting a _transaction() helper, reasoning it was covered by the outer 'with db:' -- it was not. The atomic one-winner semantics the whole ledger module depends on (existing-key check + used-sum check happening under the SAME write lock as the eventual INSERT) would have broken silently, with no test failure, since single-threaded test runs never exercise the race window."
+}
