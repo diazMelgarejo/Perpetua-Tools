@@ -194,7 +194,14 @@ def _approval_artifact_path(directory: Path, trace_id: str) -> Path:
     defense-in-depth rather than a single point of failure.
     """
     resolved_directory = directory.resolve()
-    path = (resolved_directory / ("%s.json" % trace_id)).resolve()
+    try:
+        path = (resolved_directory / ("%s.json" % trace_id)).resolve()
+    except (ValueError, OSError) as exc:
+        # A trace_id containing a null byte (or other value the OS/Path layer
+        # itself rejects) makes Path.resolve() raise before either check
+        # below runs. Translate that into the documented PipelineApprovalError
+        # instead of letting a raw ValueError/OSError escape to the caller.
+        raise PipelineApprovalError("invalid trace_id %r" % trace_id) from exc
     if not path.is_relative_to(resolved_directory):
         raise PipelineApprovalError("invalid trace_id %r escapes approval directory" % trace_id)
     validate_trace_id(trace_id)

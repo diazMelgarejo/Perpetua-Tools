@@ -6,7 +6,9 @@
 **Methodology:** `oramasys-method` (AFRP Type C | Level Expert | Mode 3)  
 **Branches:**
 - `Perpetua-Tools`: `fix/pt-standards-convergence-20260818` (PR #359)
-- `orama-system`: `fix/markdownlint-doc53-ci-20260820` (PR #321)  
+- `orama-system`: `fix/oramasys-standards-convergence-20260818` (PR #321) -- a stray sibling
+  branch, `fix/markdownlint-doc53-ci-20260820`, briefly carried two follow-up commits before
+  being merged into this canonical branch and deleted 2026-08-21  
 **Cross-References:**
 - Layer-1 Pre-Flight SSOT: `src/utils/ssrf_fetch_policy.py`
 - Layer-2 Pinning Adapter: `src/utils/ssrf_pinned_adapter.py`
@@ -116,4 +118,4 @@ return default_address_allowed, default_url_allowed
 | `Perpetua-Tools` | `fix/pt-standards-convergence-20260818` | `src/utils/ssrf_fetch_policy.py` | Layer-1 SSOT + Adapter Hooks |
 | `Perpetua-Tools` | `fix/pt-standards-convergence-20260818` | `tests/test_ssrf_pinned_adapter.py` | Unit Test Suite |
 | `Perpetua-Tools` | `fix/pt-standards-convergence-20260818` | `docs/plans/2026-08-21-pt-endpoint-hardening-checklists.md` | PR & Operator Checklists |
-| `orama-system` | `fix/markdownlint-doc53-ci-20260820` | `docs/v2/plans/2026-08-20-ssrf-defense-in-depth.md` | Architecture Spec & Runbook |
+| `orama-system` | `fix/oramasys-standards-convergence-20260818` | `docs/v2/plans/2026-08-20-ssrf-defense-in-depth.md` | Architecture Spec & Runbook |
