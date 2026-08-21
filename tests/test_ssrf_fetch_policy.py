@@ -110,6 +110,10 @@ def test_property_public_ipv4_never_false_denied_unless_reserved(raw: int) -> No
 
     addr = ipaddress.ip_address(raw)
     # Ground truth: an address must be denied iff it is NOT globally routable
-    # unicast (mirrors Python's own is_global, the same check the source
-    # SSRF report recommends as the baseline).
-    assert _is_denied_ip(addr) == (not addr.is_global)
+    # unicast, OR it is multicast. Python's ipaddress.is_global reports every
+    # multicast address (including the 224.0.0.0/4 network base itself) as
+    # globally routable -- confirmed directly: 224.0.0.0/224.0.0.1/
+    # 239.255.255.255/232.0.0.0 are all is_global=True in this stdlib version
+    # -- so is_global alone is not a correct oracle for this policy, which
+    # must always deny multicast regardless of that stdlib classification.
+    assert _is_denied_ip(addr) == (not addr.is_global or addr.is_multicast)
