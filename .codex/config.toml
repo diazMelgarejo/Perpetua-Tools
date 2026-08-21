@@ -51,8 +51,15 @@ args = ["-y", "@upstash/context7-mcp@latest"]
 startup_timeout_sec = 30
 
 [mcp_servers.exa]
+# Pinned to a specific reviewed version rather than an unbounded floating
+# resolve -- `npx -y mcp-remote` (no version) fetches whatever is currently
+# published under that name with no review gate. This still isn't the full
+# lockfile-backed, --no-install-enforced local executable a stricter
+# supply-chain posture would want (tracked as a follow-up); pinning the
+# version is the low-risk improvement achievable without adding a new npm
+# project + lockfile to this config directory.
 command = "npx"
-args = ["-y", "mcp-remote", "https://mcp.exa.ai/mcp"]
+args = ["-y", "mcp-remote@0.1.43", "https://mcp.exa.ai/mcp"]
 startup_timeout_sec = 30
 
 [mcp_servers.memory]
