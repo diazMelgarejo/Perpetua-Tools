@@ -67,9 +67,11 @@ def call_oramasys_bridge(
     task_type: str,
 ) -> Dict[str, Any]:
     """Synchronous HTTP bridge kept for direct callers."""
+    from utils.ssrf_pinned_adapter import ssrf_request
+    
     url = normalize_oramasys_endpoint(endpoint)
     payload = build_oramasys_http_payload(task, task_type)
-    response = httpx.post(url, json=payload, timeout=timeout)
+    response = ssrf_request("POST", url, json=payload, timeout=timeout)
     response.raise_for_status()
     return {
         "endpoint": url,

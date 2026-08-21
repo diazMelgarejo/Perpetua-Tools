@@ -7,8 +7,9 @@ import httpx
 
 
 def _probe(url: str, timeout: float = 2.5) -> Dict[str, Any]:
+    from utils.ssrf_pinned_adapter import ssrf_request
     try:
-        r = httpx.get(url, timeout=timeout)
+        r = ssrf_request("GET", url, timeout=timeout)
         return {"ok": r.status_code < 400, "status_code": r.status_code, "url": url}
     except Exception as exc:
         return {"ok": False, "status_code": None, "url": url, "error": str(exc)}

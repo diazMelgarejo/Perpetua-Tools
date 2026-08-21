@@ -29,6 +29,8 @@ _TRUTHY = frozenset({"1", "true", "yes", "on"})
 _VENDOR_HOSTNAME_ALLOWLIST = frozenset({
     "api.perplexity.ai",
     "api.x.ai",
+    "openrouter.ai",
+    "api.anthropic.com",
 })
 
 # AWS ECS task metadata; not covered by ipaddress.is_link_local (169.254.170.2
@@ -133,3 +135,19 @@ def validate_fetch_url(url: str, *, allow_private: bool | None = None) -> str:
         )
 
     return raw
+
+
+def assert_address_allowed(raw: str) -> None:
+    """Assert an IP address literal is allowed under SSRF policy."""
+    try:
+        addr = ipaddress.ip_address(raw)
+    except ValueError as exc:
+        raise SSRFPolicyError(f"unparseable IP address: {raw!r}") from exc
+    if _is_denied_ip(addr):
+        raise SSRFPolicyError(f"fetch target IP address {raw!r} is denied by SSRF policy")
+
+
+def assert_url_allowed(url: str) -> None:
+    """Assert a URL string complies with Layer-1 pre-flight SSRF policy."""
+    validate_fetch_url(url)
+
