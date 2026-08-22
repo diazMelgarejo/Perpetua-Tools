@@ -163,64 +163,45 @@ def _host_header(hostname: str, port: int, scheme: str) -> str:
 
 
 class _PinnedHTTPConnection(HTTPConnection):
+    """Split-identity: ``self.host`` (from pool construction) IS the
+    validated pin -- the PLACE. TLS/HTTP identity (the NAME, original
+    hostname) travels separately via ``server_hostname``/``assert_hostname``
+    (HTTPS only) and the ``Host`` header, set by the adapter before this
+    connection is ever opened. Connecting to ``self.host`` is therefore
+    already pinned; no manual ``socket.create_connection`` override needed.
+    The post-connect ``getpeername()`` re-check stays as defense-in-depth.
+    """
+
     def __init__(
         self,
         *args: Any,
-        pinned_ip: str | None = None,
         address_checker: Callable[[str], None] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
-        self._pinned_ip = pinned_ip
         self._address_checker = address_checker or default_address_allowed
 
     def _new_conn(self) -> socket.socket:
-        if not self._pinned_ip:
-            raise AddressDenied("connection missing pinned IP")
-        extra: dict[str, Any] = {}
-        if self.source_address:
-            extra["source_address"] = self.source_address
-        if self.socket_options:
-            extra["socket_options"] = self.socket_options
-        sock = socket.create_connection(
-            (self._pinned_ip, self.port),
-            self.timeout,
-            **extra,
-        )
+        sock = super()._new_conn()
         peer = sock.getpeername()[0]
         self._address_checker(peer)
         return sock
 
 
 class _PinnedHTTPSConnection(HTTPSConnection):
+    """See ``_PinnedHTTPConnection`` -- same split-identity contract."""
+
     def __init__(
         self,
         *args: Any,
-        pinned_ip: str | None = None,
-        sni_hostname: str | None = None,
         address_checker: Callable[[str], None] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
-        self._pinned_ip = pinned_ip
         self._address_checker = address_checker or default_address_allowed
-        if sni_hostname:
-            self.server_hostname = sni_hostname
-            self.assert_hostname = sni_hostname
 
     def _new_conn(self) -> socket.socket:
-        if not self._pinned_ip:
-            raise AddressDenied("connection missing pinned IP")
-        extra: dict[str, Any] = {}
-        if self.source_address:
-            extra["source_address"] = self.source_address
-        if self.socket_options:
-            extra["socket_options"] = self.socket_options
-        sock = socket.create_connection(
-            (self._pinned_ip, self.port),
-            self.timeout,
-            **extra,
-        )
+        sock = super()._new_conn()
         peer = sock.getpeername()[0]
         self._address_checker(peer)
         return sock
@@ -232,17 +213,14 @@ class _PinnedHTTPConnectionPool(HTTPConnectionPool):
     def __init__(
         self,
         *args: Any,
-        pinned_ip: str | None = None,
         address_checker: Callable[[str], None] | None = None,
         **kwargs: Any,
     ) -> None:
-        self.pinned_ip = pinned_ip
         self.address_checker = address_checker
         super().__init__(*args, **kwargs)
 
     def _new_conn(self) -> HTTPConnection:
         self.conn_kw = dict(self.conn_kw)
-        self.conn_kw["pinned_ip"] = self.pinned_ip
         self.conn_kw["address_checker"] = self.address_checker
         return super()._new_conn()
 
@@ -253,36 +231,26 @@ class _PinnedHTTPSConnectionPool(HTTPSConnectionPool):
     def __init__(
         self,
         *args: Any,
-        pinned_ip: str | None = None,
-        sni_hostname: str | None = None,
         address_checker: Callable[[str], None] | None = None,
         **kwargs: Any,
     ) -> None:
-        self.pinned_ip = pinned_ip
         self.address_checker = address_checker
-        if sni_hostname:
-            kwargs.setdefault("assert_hostname", sni_hostname)
-            kwargs.setdefault("server_hostname", sni_hostname)
         super().__init__(*args, **kwargs)
-        self.sni_hostname = sni_hostname
 
     def _new_conn(self) -> HTTPSConnection:
         self.conn_kw = dict(self.conn_kw)
-        self.conn_kw["pinned_ip"] = self.pinned_ip
-        self.conn_kw["sni_hostname"] = self.sni_hostname
         self.conn_kw["address_checker"] = self.address_checker
         return super()._new_conn()
 
 
-# Fields this module injects into connection_pool_kw that urllib3's PoolKey
-# namedtuple has no field for. Passing them straight into
-# urllib3.poolmanager._default_key_normalizer() raises
-# "PoolKey.__new__() got an unexpected keyword argument" -- reproducible
-# with zero mocking, on ANY real connection_from_host() call, confirmed to
-# predate this session's changes (present since the adapter's very first
-# commit). PoolKey already has fields for assert_hostname/server_hostname;
-# only these four are genuinely foreign to it.
-_NON_POOL_KEY_FIELDS = frozenset({"pinned_ip", "address_checker", "assert_same_host", "sni_hostname"})
+# Split-identity (host_params["host"] = pinned IP) means the pool key is now
+# a plain IP string -- urllib3's stock PoolKey already has fields for every
+# standard kwarg requests sends (server_hostname, assert_hostname, etc.).
+# `address_checker` and `assert_same_host` remain genuinely foreign to
+# PoolKey's fixed NamedTuple; excluding just these two (down from four,
+# pre-split-identity) avoids the same "unexpected keyword argument" crash
+# without needing a custom pool-key field for the pin itself anymore.
+_NON_POOL_KEY_FIELDS = frozenset({"address_checker", "assert_same_host"})
 
 
 def _pinned_pool_key_normalizer(request_context: dict[str, Any]) -> "PoolKey":
@@ -343,6 +311,43 @@ class SSRFPinnedHTTPAdapter(HTTPAdapter):
             **pool_kwargs,
         )
 
+    def build_connection_pool_key_attributes(
+        self, request: requests.PreparedRequest, verify: Any, cert: Any = None
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        """Split-identity pinning: PLACE (pool key + TCP target) is the
+        validated pin; NAME (TLS SNI/cert + HTTP Host) stays the original
+        hostname. Setting ``host_params["host"]`` to the pin (rather than
+        mutating ``self.poolmanager.connection_pool_kw``, the prior
+        approach) makes urllib3's own stock ``PoolKey`` -- keyed on
+        ``(scheme, host, port)`` -- naturally pin-aware: two different
+        validated IPs for the same hostname get two separate, isolated
+        connection pools automatically, with zero custom PoolKey fields.
+        This also closes the actual thread-safety bug the old approach
+        had (shared adapter-instance dict mutated by every concurrent
+        request) -- ``build_connection_pool_key_attributes()`` is
+        ``requests``' own per-call override seam (see
+        ``HTTPAdapter.get_connection_with_tls_context()``), so every
+        request gets its own freshly computed, request-local kwargs.
+        """
+        host_params, pool_kwargs = super().build_connection_pool_key_attributes(request, verify, cert=cert)
+        url = request.url or ""
+        self.url_checker(url)
+        parsed = urlparse(url)
+        hostname = parsed.hostname or ""
+        scheme = parsed.scheme
+        port = parsed.port or (443 if scheme == "https" else 80)
+        ips = validate_resolved(hostname, port, self.address_checker)
+        pinned = ips[0]
+        request.headers["Host"] = _host_header(hostname, port, scheme)
+
+        host_params["host"] = pinned
+        pool_kwargs["address_checker"] = self.address_checker
+        if scheme == "https":
+            pool_kwargs["assert_hostname"] = hostname
+            pool_kwargs["server_hostname"] = hostname
+
+        return host_params, pool_kwargs
+
     def send(
         self,
         request: requests.PreparedRequest,
@@ -354,46 +359,14 @@ class SSRFPinnedHTTPAdapter(HTTPAdapter):
     ) -> requests.Response:
         if proxies:
             raise SSRFPolicyError("proxies are not supported on the pinned adapter")
-        url = request.url or ""
-        self.url_checker(url)
-        parsed = urlparse(url)
-        hostname = parsed.hostname or ""
-        scheme = parsed.scheme
-        port = parsed.port or (443 if scheme == "https" else 80)
-        ips = validate_resolved(hostname, port, self.address_checker)
-        pinned = ips[0]
-        request.headers["Host"] = _host_header(hostname, port, scheme)
-
-        pool_kwargs: dict[str, Any] = {
-            "pinned_ip": pinned,
-            "address_checker": self.address_checker,
-            "assert_same_host": False,
-        }
-        if scheme == "https":
-            pool_kwargs["sni_hostname"] = hostname
-            pool_kwargs["assert_hostname"] = hostname
-            pool_kwargs["server_hostname"] = hostname
-
-        self.poolmanager.connection_pool_kw.update(pool_kwargs)
-        try:
-            return super().send(
-                request,
-                stream=stream,
-                timeout=timeout,
-                verify=verify,
-                cert=cert,
-                proxies=None,
-            )
-        finally:
-            for key in (
-                "pinned_ip",
-                "address_checker",
-                "sni_hostname",
-                "assert_hostname",
-                "server_hostname",
-                "assert_same_host",
-            ):
-                self.poolmanager.connection_pool_kw.pop(key, None)
+        return super().send(
+            request,
+            stream=stream,
+            timeout=timeout,
+            verify=verify,
+            cert=cert,
+            proxies=None,
+        )
 
 
 def ssrf_session(
