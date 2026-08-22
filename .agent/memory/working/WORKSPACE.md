@@ -9,6 +9,7 @@
 
 | Area | Branch / PR | Role |
 | ---- | ----------- | ---- |
+| **SSRF Layer-2 Docs Shipped** | `fix/oramasys-standards-convergence-20260818` (orama) | **Done (c841ed31)** — `T5-SSRF-orama-layer2-docs-provisional-to-shipped-7a767b81`. Marked Layer 2 as SHIPPED with Split-Identity pool isolation in Docs 32 & SSRF Plan. |
 | **Tier-5 Durable Budget Ledger** | `fix/pt-standards-convergence-20260818` (PT) | **Done (0fa78a01, 806690ef)** — `PT-T5-SETTLE-004` (Tier5ExecutionService & runner callbacks) and `PT-T5-API-005` (FastAPI endpoints & status route). 141/141 tests green. |
 | **Cross-Repo Tier-5 Parity** | `cross-repo-parity-ORAMA-T5-PARITY-006-8b31eee1` | **Done** — Parity verified against Doc 52 (`52-tier5-frugality-storage-consumer-mapping.md`) and Reference Guide 08. |
 | **Reference Guide 08** | `references/08-DOC53-CODERABBIT-REMEDIATION-AND-TIER5-HANDOFF-REPORT-2026-08-20.md` | **Done** — Doc 53 CodeRabbit remediation (7 findings resolved), unpushed review discipline, and Tier-5 handoff state. |
