@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import httpx
-from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 
@@ -65,6 +65,17 @@ from orchestrator.tiered_pipeline import (
 )
 from orchestrator.gossip_bus import GossipBus
 from orchestrator.lan_gossip_bridge import _load_peers as _load_gossip_peers
+from orchestrator.tier5_budget import (
+    BudgetConflictError,
+    BudgetInsufficientError,
+    BudgetUnavailableError,
+    Tier5BudgetLedger,
+)
+from orchestrator.tier5_execution import (
+    HMAC_KEY_ENV,
+    Tier5ConfigurationError,
+    Tier5ExecutionService,
+)
 
 _startup_log = logging.getLogger("orchestrator.fastapi_app")
 # trace_id becomes a filename component (see tiered_pipeline.py's
@@ -263,6 +274,33 @@ def get_tiered_pipeline_runner() -> TieredPipelineRunner:
 def get_provider_transport() -> ProviderTransportRegistry:
     """Construct the PT-owned native transport at the execution boundary."""
     return ProviderTransportRegistry()
+
+
+DEFAULT_TIER5_LEDGER_PATH = Path(__file__).resolve().parent.parent / ".state" / "tier5_budget.db"
+DEFAULT_TIER5_DAILY_LIMIT_MICROUSD = 10_000_000
+
+
+def get_tier5_budget_ledger() -> Tier5BudgetLedger:
+    ledger_path = os.getenv("PT_TIER5_LEDGER_PATH", str(DEFAULT_TIER5_LEDGER_PATH))
+    try:
+        raw_limit = os.getenv("PT_TIER5_DAILY_LIMIT_MICROUSD", str(DEFAULT_TIER5_DAILY_LIMIT_MICROUSD))
+        daily_limit = int(raw_limit)
+        if daily_limit <= 0:
+            raise ValueError("daily limit must be positive")
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="Invalid PT_TIER5_DAILY_LIMIT_MICROUSD configuration",
+        ) from exc
+    return Tier5BudgetLedger(ledger_path, daily_limit_microusd=daily_limit)
+
+
+def get_tier5_execution_service(
+    ledger: Tier5BudgetLedger = Depends(get_tier5_budget_ledger),
+    runner: TieredPipelineRunner = Depends(get_tiered_pipeline_runner),
+) -> Tier5ExecutionService:
+    hmac_key = os.getenv(HMAC_KEY_ENV, "pt-tier5-default-hmac-key-2026")
+    return Tier5ExecutionService(ledger=ledger, runner=runner, hmac_key=hmac_key)
 
 
 def _runtime_summary() -> dict[str, Any]:
@@ -829,16 +867,26 @@ async def register_tiered_pipeline_approval(
 async def run_tiered_pipeline(
     recipe_name: str,
     request: TieredPipelineRequest,
+    idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
     runner: TieredPipelineRunner = Depends(get_tiered_pipeline_runner),
     transport: ProviderTransportRegistry = Depends(get_provider_transport),
+    execution_service: Tier5ExecutionService = Depends(get_tier5_execution_service),
 ) -> Dict[str, Any]:
     """Run one configured Tier-5 recipe through guarded native transport.
 
     Authentication is applied by ``ControlPlaneAuthMiddleware`` before this
-    handler.  The body never selects a provider, model, price, or endpoint;
+    handler. The body never selects a provider, model, price, or endpoint;
     those are immutable configuration and the canonical frugality gate owns
     cloud eligibility.
     """
+    if not idempotency_key or not _UUID4_RE.match(idempotency_key.strip()):
+        raise HTTPException(
+            status_code=422,
+            detail="Idempotency-Key header is required and must be a valid canonical UUIDv4",
+        )
+    clean_idempotency_key = idempotency_key.strip()
+    run_id = f"run-{clean_idempotency_key}"
+
     try:
         recipe = runner.recipe(recipe_name)
     except PipelineConfigError as exc:
@@ -846,22 +894,6 @@ async def run_tiered_pipeline(
 
     if not tiered_pipeline_enabled():
         raise HTTPException(status_code=409, detail="Tier-5 pipelines are disabled")
-
-    # KNOWN, DELIBERATELY DEFERRED GAP: can_spend() here and record_spend()
-    # after the run (below) are not an atomic reservation -- concurrent
-    # requests can each observe remaining budget, each pass this check, and
-    # collectively overspend. A same-process asyncio.Lock or a two-method
-    # CostGuard.reserve()/rollback() sketch was considered and explicitly
-    # rejected as the fix: neither provides idempotency, crash recovery, or
-    # conservative settlement after an uncertain provider response, and
-    # would conflict with the durable SQLite ledger already planned to
-    # replace this whole check/record pattern (see
-    # docs/superpowers/plans/2026-08-14-tier5-durable-budget-ledger.md,
-    # steelmanned separately from this diff). Not patched here to avoid
-    # building throwaway code against a design that's already been
-    # superseded by a more rigorous one.
-    if not cost_guard.can_spend(recipe.cost_reservation_usd):
-        raise HTTPException(status_code=402, detail="Daily budget cannot reserve this pipeline run")
 
     # A missing, unreadable, or malformed approval artifact and a genuinely
     # absent approval are intentionally indistinguishable here -- both
@@ -874,15 +906,29 @@ async def run_tiered_pipeline(
         ) from exc
 
     try:
-        result = await runner.run(
-            recipe_name,
-            request.prompt,
+        result, reservation = await execution_service.execute(
+            run_id=run_id,
+            idempotency_key=clean_idempotency_key,
+            recipe_name=recipe_name,
+            prompt=request.prompt,
             approval=approval,
             dispatch=transport.dispatch,
             privacy_critical=request.privacy_critical,
             override_confirmed=request.override_confirmed,
             override_reason=request.override_reason,
         )
+    except BudgetConflictError as exc:
+        raise HTTPException(
+            status_code=409, detail="Idempotency key conflicts with an existing run"
+        ) from exc
+    except BudgetInsufficientError as exc:
+        raise HTTPException(
+            status_code=402, detail="Daily budget cannot cover this pipeline run"
+        ) from exc
+    except BudgetUnavailableError as exc:
+        raise HTTPException(
+            status_code=503, detail="Budget ledger is temporarily unavailable"
+        ) from exc
     except PipelineDisabledError as exc:
         raise HTTPException(status_code=409, detail="Tier-5 pipelines are disabled") from exc
     except PipelineApprovalError as exc:
@@ -893,17 +939,44 @@ async def run_tiered_pipeline(
         raise HTTPException(status_code=403, detail="Pipeline execution denied by policy") from exc
     except ProviderTransportError as exc:
         status = 503 if exc.retryable else 502
-        raise HTTPException(status_code=status, detail="Configured provider could not complete the pipeline") from exc
+        raise HTTPException(
+            status_code=status, detail="Configured provider could not complete the pipeline"
+        ) from exc
     except (ProviderConfigError, PipelineExecutionError, PipelineConfigError) as exc:
         raise HTTPException(status_code=503, detail="Pipeline transport is not ready") from exc
+    except Tier5ConfigurationError as exc:
+        raise HTTPException(status_code=500, detail="Tier-5 configuration error") from exc
 
-    cost_guard.record_spend(recipe.cost_reservation_usd)
     return {
-        "status": "completed",
-        "recipe": result.recipe,
+        "status": "completed" if reservation.state == "SETTLED" else reservation.state.lower(),
+        "run_id": reservation.run_id,
+        "recipe": result.recipe or recipe_name,
         "output": result.output,
         "requested_tokens": result.requested_tokens,
+        "held_microusd": reservation.held_microusd,
+        "settled_microusd": reservation.settled_microusd,
         "cost_reservation_usd": recipe.cost_reservation_usd,
+    }
+
+
+@app.get("/pipelines/runs/{run_id}", tags=["pipelines"])
+async def get_pipeline_run_status(
+    run_id: str,
+    ledger: Tier5BudgetLedger = Depends(get_tier5_budget_ledger),
+) -> Dict[str, Any]:
+    """Inspect the durable settlement status of a Tier-5 pipeline run.
+
+    Never exposes prompt bytes, completion output, or internal digests.
+    """
+    reservation = ledger.get_reservation(run_id)
+    if not reservation:
+        raise HTTPException(status_code=404, detail="Pipeline run not found")
+    return {
+        "run_id": reservation.run_id,
+        "state": reservation.state,
+        "policy_cap_microusd": reservation.policy_cap_microusd,
+        "held_microusd": reservation.held_microusd,
+        "settled_microusd": reservation.settled_microusd,
     }
 
 
