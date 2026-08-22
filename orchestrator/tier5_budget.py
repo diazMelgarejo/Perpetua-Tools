@@ -370,3 +370,29 @@ class Tier5BudgetLedger:
                     (time.time(), row["run_id"]),
                 )
             return len(unmarked), len(marked)
+
+    def get_reservation(self, run_id: str) -> Reservation | None:
+        """Fetch current reservation state for a run."""
+        with self._guarded_transaction() as db:
+            row = db.execute(
+                "SELECT * FROM tier5_budget_runs WHERE run_id = ?", (run_id,)
+            ).fetchone()
+            return self._row(row) if row else None
+
+    def is_stage_marked(self, run_id: str, stage_name: str) -> bool:
+        """Check if a specific stage has been marked for dispatch."""
+        with self._guarded_transaction() as db:
+            row = db.execute(
+                "SELECT 1 FROM tier5_budget_stages WHERE run_id = ? AND stage_name = ? LIMIT 1",
+                (run_id, stage_name),
+            ).fetchone()
+            return bool(row)
+
+    def has_stage_markers(self, run_id: str) -> bool:
+        """Check if any stage has been marked for dispatch."""
+        with self._guarded_transaction() as db:
+            row = db.execute(
+                "SELECT 1 FROM tier5_budget_stages WHERE run_id = ? LIMIT 1",
+                (run_id,),
+            ).fetchone()
+            return bool(row)
