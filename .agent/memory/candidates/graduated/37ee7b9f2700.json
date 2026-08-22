@@ -1,0 +1,43 @@
+{
+  "id": "37ee7b9f2700",
+  "key": "manual_37ee7b",
+  "name": "manual_37ee7b",
+  "claim": "Never thread urlopen()-only kwargs (e.g. assert_same_host) into pool_kwargs/conn_kw -- they silently propagate to Connection.__init__(**kwargs) and crash with TypeError, but only on a REAL connection attempt, never a mocked one",
+  "conditions": [
+    "assert_same_host",
+    "conn_kw",
+    "live-sanity-check",
+    "mocked-tests-hide-bugs",
+    "pool_kwargs",
+    "urllib3"
+  ],
+  "evidence_ids": [
+    "2026-08-22T21:27:09.833787+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-22T21:27:09.833787+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-22T21:27:09.833787+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-22T21:27:09.958765+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "assert_same_host is a urllib3 HTTPConnectionPool.urlopen() parameter, not a pool- or connection-constructor kwarg. It was carried in ssrf_pinned_adapter.py's pool_kwargs since the adapter's first commit, silently latent because every prior test mocked either ssrf_request itself or the pool-level urlopen -- never real connection construction. Only a live end-to-end sanity check (ssrf_request('GET','https://api.github.com/zen')) surfaced 'HTTPSConnection.__init__() got an unexpected keyword argument assert_same_host'. General lesson: when wiring extra kwargs through requests/urllib3's adapter->pool->connection chain, verify EVERY hop with at least one real (unmocked) network call before trusting a fully-mocked test suite is sufficient -- mocking at the wrong layer hides exactly this class of bug.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-22T21:27:09.833787+00:00"
+      ],
+      "lessons_sha": "8d55dc0680b2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-22T21:27:09.958750+00:00",
+  "reviewer": "learn.py",
+  "rationale": "assert_same_host is a urllib3 HTTPConnectionPool.urlopen() parameter, not a pool- or connection-constructor kwarg. It was carried in ssrf_pinned_adapter.py's pool_kwargs since the adapter's first commit, silently latent because every prior test mocked either ssrf_request itself or the pool-level urlopen -- never real connection construction. Only a live end-to-end sanity check (ssrf_request('GET','https://api.github.com/zen')) surfaced 'HTTPSConnection.__init__() got an unexpected keyword argument assert_same_host'. General lesson: when wiring extra kwargs through requests/urllib3's adapter->pool->connection chain, verify EVERY hop with at least one real (unmocked) network call before trusting a fully-mocked test suite is sufficient -- mocking at the wrong layer hides exactly this class of bug."
+}

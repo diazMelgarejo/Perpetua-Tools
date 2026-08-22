@@ -1,0 +1,46 @@
+{
+  "id": "b696555249a3",
+  "key": "manual_b69655",
+  "name": "manual_b69655",
+  "claim": "GitHub Dependabot alerts reflect the DEFAULT BRANCH only -- a dependency fix already landed and pushed on a feature branch does not clear the alert until that branch merges to main; don't report alerts 'resolved' based on feature-branch state",
+  "conditions": [
+    "alerts",
+    "default-branch",
+    "dependabot",
+    "feature-branch",
+    "gh-api",
+    "osv",
+    "pip-not-scanned",
+    "security_events",
+    "uv.lock"
+  ],
+  "evidence_ids": [
+    "2026-08-22T21:27:10.499691+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-22T21:27:10.499691+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-22T21:27:10.499691+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-22T21:27:10.623677+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT reported 8 open Dependabot alerts (2 high, 6 moderate) after pushing fix/pt-standards-convergence-20260818, even though the exact fix (commit 4ae1d1da, ip-address + @hono/node-server bumps) was already in that branch's own history and already pushed to origin. GitHub's alert scan is keyed to origin/main, which still had the vulnerable pinned versions. Also discovered: GitHub's dependency graph for this repo tracks npm/pnpm manifests but NOT uv.lock/pip -- an OSV.dev sweep found a real, separate High-severity pip vulnerability (click <8.3.3, GHSA-47fr-3ffg-hgmw) that never appeared in GitHub's 8-alert count at all. Neither gap is obvious from either data source alone -- cross-check GitHub's authoritative alert list (gh api repos/OWNER/REPO/dependabot/alerts, needs security_events scope or the keyring gh account, not a stale GITHUB_TOKEN env var) AND an OSV.dev sweep of every tracked manifest before declaring vulnerabilities resolved.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-22T21:27:10.499691+00:00"
+      ],
+      "lessons_sha": "d798710b6b4e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-22T21:27:10.623665+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT reported 8 open Dependabot alerts (2 high, 6 moderate) after pushing fix/pt-standards-convergence-20260818, even though the exact fix (commit 4ae1d1da, ip-address + @hono/node-server bumps) was already in that branch's own history and already pushed to origin. GitHub's alert scan is keyed to origin/main, which still had the vulnerable pinned versions. Also discovered: GitHub's dependency graph for this repo tracks npm/pnpm manifests but NOT uv.lock/pip -- an OSV.dev sweep found a real, separate High-severity pip vulnerability (click <8.3.3, GHSA-47fr-3ffg-hgmw) that never appeared in GitHub's 8-alert count at all. Neither gap is obvious from either data source alone -- cross-check GitHub's authoritative alert list (gh api repos/OWNER/REPO/dependabot/alerts, needs security_events scope or the keyring gh account, not a stale GITHUB_TOKEN env var) AND an OSV.dev sweep of every tracked manifest before declaring vulnerabilities resolved."
+}

@@ -1,0 +1,42 @@
+{
+  "id": "913adf2182d2",
+  "key": "manual_913adf",
+  "name": "manual_913adf",
+  "claim": "pnpm v9.7+ (including v11) ignores the 'pnpm' field in package.json entirely -- overrides/onlyBuiltDependencies must live in pnpm-workspace.yaml, or the pin silently has no effect",
+  "conditions": [
+    "js-yaml",
+    "overrides",
+    "package.json-pnpm-field-ignored",
+    "pnpm",
+    "pnpm-workspace.yaml"
+  ],
+  "evidence_ids": [
+    "2026-08-22T21:27:10.827287+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-22T21:27:10.827287+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-22T21:27:10.827287+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-22T21:27:10.951162+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama-system's web/pnpm-lock.yaml carried a stale js-yaml:^4.3.0 override (the vulnerable version itself -- only the major was pinned, not the patch). Editing package.json's pnpm.overrides field first (the pre-v9.7 location) produced an explicit runtime WARN ('The pnpm field in package.json is no longer read by pnpm... See https://pnpm.io/settings') and had zero effect on the lockfile. The real config was in web/pnpm-workspace.yaml's own overrides: block. General lesson: before editing any pnpm override/pin, grep for BOTH package.json's pnpm field AND a sibling pnpm-workspace.yaml -- assume the workspace file is canonical on any pnpm >=9.7 install, and always run pnpm install after editing to confirm via lockfile diff, not just trust the edit.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-22T21:27:10.827287+00:00"
+      ],
+      "lessons_sha": "85c834f95c1c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-22T21:27:10.951151+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama-system's web/pnpm-lock.yaml carried a stale js-yaml:^4.3.0 override (the vulnerable version itself -- only the major was pinned, not the patch). Editing package.json's pnpm.overrides field first (the pre-v9.7 location) produced an explicit runtime WARN ('The pnpm field in package.json is no longer read by pnpm... See https://pnpm.io/settings') and had zero effect on the lockfile. The real config was in web/pnpm-workspace.yaml's own overrides: block. General lesson: before editing any pnpm override/pin, grep for BOTH package.json's pnpm field AND a sibling pnpm-workspace.yaml -- assume the workspace file is canonical on any pnpm >=9.7 install, and always run pnpm install after editing to confirm via lockfile diff, not just trust the edit."
+}
