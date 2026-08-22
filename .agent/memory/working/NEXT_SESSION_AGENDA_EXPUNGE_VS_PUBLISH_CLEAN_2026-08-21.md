@@ -56,20 +56,22 @@ push mechanics are already unified in spirit — just not wired together.
   its own, but removes the mechanical duplication CodeRabbit is really flagging.
 - **B. Loop-call `publish-clean-branch.sh` per (repo, branch)** from inside
   `expunge-all-workspace-repos.sh`, accepting the slower, fully-audited runtime
-  as intentional for a rare emergency-remediation script. Needs a base-branch
-  fallback (skip range audit, or use `--root` diff, when `base` doesn't exist
-  or the range is empty) added to `publish-clean-branch.sh` first.
+  as intentional for a rare emergency-remediation script. Needs an explicit
+  history-surgery audit mode. Fail closed when the normal base range is
+  unavailable; never silently skip `audit_attribution.sh`. Use a defined
+  full-history/root audit before the force-push.
 - **C. Document the exception explicitly** instead of forcing uniformity — keep
   `expunge-all-workspace-repos.sh`'s own narrower audit (it already does a
   banned-metadata before/after count), and edit the two `.mdc` rule files to
   state "normal work: `publish-clean-branch.sh`; workspace-wide expunge: its
   own audited force-push, documented here as the one sanctioned exception."
 
-**Recommendation for whoever starts this:** lean B if the runtime cost is
-acceptable (this script only runs when a leak is actively being remediated,
-not routinely) — it actually delivers what CodeRabbit asked for (one audited
-contract) instead of codifying a second path. But it needs the base-branch
-fallback in `publish-clean-branch.sh` designed first, and it's a change to a
+**Recommendation for whoever starts this:** recommend B only after the
+explicit history-surgery audit mode is designed, tested, and approved (this
+script only runs when a leak is actively being remediated, not routinely) —
+it actually delivers what CodeRabbit asked for (one audited contract)
+instead of codifying a second path. But it needs the fail-closed audit mode
+in `publish-clean-branch.sh` designed first, and it's a change to a
 **destructive, multi-repo force-push script** — do the design pass and get
 explicit user sign-off before touching it, per this session's git-safety
 discipline.
