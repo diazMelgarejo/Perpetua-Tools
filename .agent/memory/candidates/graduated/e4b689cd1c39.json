@@ -1,0 +1,41 @@
+{
+  "id": "e4b689cd1c39",
+  "key": "manual_e4b689",
+  "name": "manual_e4b689",
+  "claim": "claude-sonnet-5-session is an approved value for the reviewer field in .agent/memory lesson/candidate records, alongside other model-designation session identifiers (e.g. claude-haiku-4-5-session, claude-opus-5-session, claude-fable-5-session/mythos-session) -- these are memory-schema attribution strings, NOT git commit author/committer identities, and must never be added to scripts/git/identity-policy.json (that file governs a completely different, email-keyed concern; noreply@anthropic.com already has allowed_names:[] there, meaning any commit-author name including these is already permitted for actual git commits)",
+  "conditions": [
+    "approved reviewer identity memory schema",
+    "claude-sonnet-5-session",
+    "identity-policy.json wrong file for this",
+    "memory schema vs git identity"
+  ],
+  "evidence_ids": [
+    "2026-08-22T09:36:55.457885+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-22T09:36:55.457885+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-08-22T09:36:55.457885+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-22T09:36:55.584229+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "User explicitly requested these be added as approved attribution identities after CodeRabbit review #4998833290 flagged claude-sonnet-5-session appearing as a 'reviewer' field value in lessons.jsonl entries (lines 1094-1101) as a Major finding, apparently expecting it to match some enforced allowlist. Investigated: scan-tracked-banned-tokens.sh currently reports 0 issues (this string isn't actually banned), and no code anywhere validates the 'reviewer' field against any schema or allowlist -- .agent/tools/learn.py, graduate.py, and render_lessons.py never check it. Confirmed identity-policy.json (git commit email/name pairs, synced from orama canonical) is the wrong file: 'reviewer' isn't a git author/committer field, it's memory-schema metadata, and this file already fully permits any author name for noreply@anthropic.com. This lesson IS the fix -- documenting the decision that these identifiers are sanctioned memory-schema values is what CodeRabbit's finding was actually asking for, not a code change to an unrelated file.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-08-22T09:36:55.457885+00:00"
+      ],
+      "lessons_sha": "8cbab7f126c2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-22T09:36:55.584217+00:00",
+  "reviewer": "learn.py",
+  "rationale": "User explicitly requested these be added as approved attribution identities after CodeRabbit review #4998833290 flagged claude-sonnet-5-session appearing as a 'reviewer' field value in lessons.jsonl entries (lines 1094-1101) as a Major finding, apparently expecting it to match some enforced allowlist. Investigated: scan-tracked-banned-tokens.sh currently reports 0 issues (this string isn't actually banned), and no code anywhere validates the 'reviewer' field against any schema or allowlist -- .agent/tools/learn.py, graduate.py, and render_lessons.py never check it. Confirmed identity-policy.json (git commit email/name pairs, synced from orama canonical) is the wrong file: 'reviewer' isn't a git author/committer field, it's memory-schema metadata, and this file already fully permits any author name for noreply@anthropic.com. This lesson IS the fix -- documenting the decision that these identifiers are sanctioned memory-schema values is what CodeRabbit's finding was actually asking for, not a code change to an unrelated file."
+}

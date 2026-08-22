@@ -48,9 +48,14 @@ Even with the version pinned, `npx -y mcp-remote@0.1.43 <url>` still:
    floating semver ranges — those are **not** pinned by pinning `mcp-remote` itself.
 3. Has no local, offline-runnable artifact — every launch is a live resolution event.
 
-npm *does* verify the fetched tarball against the registry's signed `dist.integrity` metadata
-over TLS automatically, so this is not an unguarded integrity hole — it is a
-**reproducibility / deterministic-resolution** gap, not an active tampering vector.
+npm *does* verify the fetched tarball's content hash against the registry-provided
+`dist.integrity` field (a subresource-integrity-style hash, not a package signature) over TLS
+automatically, so this is not an unguarded integrity hole for the exact tarball fetched — it is
+a **reproducibility / deterministic-resolution** gap, not an active tampering vector. Note this
+is distinct from *provenance/signature* validation (`npm audit signatures`, npm's Sigstore-based
+provenance attestations) — `dist.integrity` proves the tarball matches what the registry served,
+it does not prove who published it or that the registry itself wasn't compromised; that's a
+separate, unaddressed check.
 
 ```mermaid
 sequenceDiagram

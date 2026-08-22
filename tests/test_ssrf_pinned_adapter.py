@@ -64,36 +64,57 @@ def test_mixed_public_private_aaaa_fails() -> None:
 
 
 def test_ssrf_request_refuses_redirect_to_metadata() -> None:
-    class _FakeResp:
-        def __init__(self) -> None:
-            self.status_code = 302
-            self.is_redirect = True
-            self.headers = {"Location": "http://169.254.169.254/latest/meta-data/"}
+    """Regression test for a self-inflicted false-pass: with max_redirects=3
+    and a FakeSess whose request() always returns the same 302, the ORIGINAL
+    version of this test passed via RedirectDenied('redirect limit exceeded')
+    after 3 identical hops -- not because the metadata address itself was
+    ever rejected. That FakeSess never routed through
+    SSRFPinnedHTTPAdapter.send()'s real validate_resolved() call, so a
+    regression that let a metadata redirect Location through address
+    checking entirely would still have passed this test. Fixed by using the
+    real adapter with only socket.getaddrinfo and the parent
+    HTTPAdapter.send (the actual TCP/TLS step) mocked -- validate_resolved()
+    itself runs for real and must be what raises."""
+    import io
 
-    class _FakeSess:
-        def __init__(self) -> None:
-            # ssrf_request now refuses any session that doesn't route through
-            # SSRFPinnedHTTPAdapter (see _require_pinned_adapter); satisfy that
-            # check so this test still exercises redirect-Location denial,
-            # not just the pinning-session guard.
-            self._adapter = SSRFPinnedHTTPAdapter()
+    import urllib3
+    from urllib3.connectionpool import HTTPConnectionPool, HTTPSConnectionPool
 
-        def get_adapter(self, url: str):
-            return self._adapter
+    def fake_getaddrinfo(host, port, family=0, type=0, *a, **kw):
+        ip = {"example.com": "93.184.216.34", "169.254.169.254": "169.254.169.254"}[host]
+        return [(2, 1, 6, "", (ip, port))]
 
-        def request(self, *args, **kwargs):
-            return _FakeResp()
+    first_hop_seen = []
 
-        def close(self) -> None:
-            return None
+    def fake_urlopen(self, method, url, *args, **kwargs):
+        # Only reached if validate_resolved() already allowed this hop's
+        # destination -- the metadata hop must never get here. Patched at
+        # the connection-pool level (not HTTPAdapter.send) so the real
+        # build_response() still runs and populates a genuine
+        # requests.Response (.request, .url, etc.), which is what
+        # requests.Session.send()'s own redirect-precomputation needs.
+        first_hop_seen.append(url)
+        return urllib3.HTTPResponse(
+            body=io.BytesIO(b""),
+            status=302,
+            headers={"Location": "http://169.254.169.254/latest/meta-data/"},
+            preload_content=False,
+        )
 
-    with pytest.raises((AddressDenied, RedirectDenied, SSRFPolicyError)):
+    with (
+        patch("socket.getaddrinfo", side_effect=fake_getaddrinfo),
+        patch.object(HTTPConnectionPool, "urlopen", fake_urlopen),
+        patch.object(HTTPSConnectionPool, "urlopen", fake_urlopen),
+        pytest.raises(AddressDenied, match="169.254.169.254"),
+    ):
         ssrf_request(
             "GET",
             "https://example.com/out",
-            session=_FakeSess(),  # type: ignore[arg-type]
             allow_redirects=True,
         )
+    # The first hop (public example.com) was allowed through to the
+    # (mocked) transport; the metadata redirect target must never reach it.
+    assert first_hop_seen == ["/out"]
 
 
 def test_hook_endpoint_policy() -> None:
@@ -146,4 +167,50 @@ def test_ssrf_request_rejects_session_without_pinned_adapter() -> None:
             "https://example.com/out",
             session=requests.Session(),
         )
+
+
+@pytest.mark.parametrize(
+    "conn_cls_name",
+    ["_PinnedHTTPConnection", "_PinnedHTTPSConnection"],
+)
+def test_new_conn_uses_configured_address_checker_not_the_default(
+    conn_cls_name: str,
+) -> None:
+    """_new_conn()'s connect-time peer re-check must call the adapter's
+    configured address_checker, not a hardcoded default_address_allowed --
+    otherwise a caller-supplied stricter checker (e.g. Layer-1's
+    hook_endpoint_policy) only applies to the pre-connect DNS-resolve
+    validation and silently stops applying at the connection itself."""
+    import socket as socket_module
+    from unittest.mock import MagicMock
+
+    import utils.ssrf_pinned_adapter as adapter_mod
+
+    conn_cls = getattr(adapter_mod, conn_cls_name)
+
+    fake_sock = MagicMock()
+    fake_sock.getpeername.return_value = ("1.1.1.1", 443)  # a public, normally-OK address
+
+    calls: list[str] = []
+
+    def deny_everything(ip: str) -> None:
+        calls.append(ip)
+        raise adapter_mod.AddressDenied(f"denied by test checker: {ip}")
+
+    conn = conn_cls(
+        "example.com",
+        port=443,
+        pinned_ip="1.1.1.1",
+        address_checker=deny_everything,
+    )
+    with (
+        patch.object(socket_module, "create_connection", return_value=fake_sock),
+        pytest.raises(AddressDenied, match="denied by test checker"),
+    ):
+        conn._new_conn()
+    # Confirm the CONFIGURED checker actually ran (not silently skipped) --
+    # a regression that fell back to default_address_allowed would let
+    # "1.1.1.1" through with no exception at all, failing the raises above
+    # for a different reason than intended.
+    assert calls == ["1.1.1.1"]
 

@@ -1,0 +1,41 @@
+{
+  "id": "c8beaa402e84",
+  "key": "manual_c8beaa",
+  "name": "manual_c8beaa",
+  "claim": "Mutating a urllib3 PoolManager's connection_pool_kw with custom per-request keys (e.g. a pinned IP, a custom checker callable) that aren't among PoolKey's fixed NamedTuple fields crashes connection_from_host()/connection_from_context() with 'PoolKey.__new__() got an unexpected keyword argument' on literally any real network call -- the crash only manifests once code reaches a genuine connection-pool lookup, so a test suite that only exercises the pre-connect validation path (and never actually calls send() against real or realistically-mocked urllib3 internals) will pass indefinitely while the feature is completely non-functional for real traffic",
+  "conditions": [
+    "PoolKey unexpected keyword argument",
+    "key_fn_by_scheme extension point",
+    "test never reaches real connection pool",
+    "urllib3 PoolManager connection_pool_kw custom fields"
+  ],
+  "evidence_ids": [
+    "2026-08-22T09:36:39.515296+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-22T09:36:39.515296+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-08-22T09:36:39.515296+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-22T09:36:39.658967+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "src/utils/ssrf_pinned_adapter.py's SSRFPinnedHTTPAdapter.send() mutates self.poolmanager.connection_pool_kw with pinned_ip (and, after this session's own address_checker fix, also address_checker) before calling super().send(). This predates this session entirely -- reproduced with zero mocking directly against _PinnedPoolManager().connection_from_host(), confirmed present since the module's very first commit (1932b428, 'PR-P2 shipped'). Every test in tests/test_ssrf_pinned_adapter.py before this fix either stopped at validate_resolved() (pre-connect) or used a FakeSess that bypassed requests.Session.send() entirely -- none ever reached real connection-pool key construction, so a bug that made the entire documented-as-shipped Layer-2 SSRF transport crash on any real request went undetected. Discovered only while writing a MORE FAITHFUL regression test for an unrelated CodeRabbit nitpick ('this test doesn't actually prove metadata rejection'). Fixed via urllib3's own documented extension point: a custom key_fn_by_scheme normalizer (per _default_key_normalizer's own docstring: 'provide alternate callables to key_fn_by_scheme') that excludes the non-PoolKey fields from pool-KEY construction while still passing the full, unfiltered request_context to the pool's own __init__ via connection_from_pool_key.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-08-22T09:36:39.515296+00:00"
+      ],
+      "lessons_sha": "986bf527fe20"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-22T09:36:39.658954+00:00",
+  "reviewer": "learn.py",
+  "rationale": "src/utils/ssrf_pinned_adapter.py's SSRFPinnedHTTPAdapter.send() mutates self.poolmanager.connection_pool_kw with pinned_ip (and, after this session's own address_checker fix, also address_checker) before calling super().send(). This predates this session entirely -- reproduced with zero mocking directly against _PinnedPoolManager().connection_from_host(), confirmed present since the module's very first commit (1932b428, 'PR-P2 shipped'). Every test in tests/test_ssrf_pinned_adapter.py before this fix either stopped at validate_resolved() (pre-connect) or used a FakeSess that bypassed requests.Session.send() entirely -- none ever reached real connection-pool key construction, so a bug that made the entire documented-as-shipped Layer-2 SSRF transport crash on any real request went undetected. Discovered only while writing a MORE FAITHFUL regression test for an unrelated CodeRabbit nitpick ('this test doesn't actually prove metadata rejection'). Fixed via urllib3's own documented extension point: a custom key_fn_by_scheme normalizer (per _default_key_normalizer's own docstring: 'provide alternate callables to key_fn_by_scheme') that excludes the non-PoolKey fields from pool-KEY construction while still passing the full, unfiltered request_context to the pool's own __init__ via connection_from_pool_key."
+}

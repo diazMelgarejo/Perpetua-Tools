@@ -36,6 +36,19 @@ try:
 except ImportError:  # pragma: no cover
     from urllib3.util.ssl_ import create_urllib3_context  # type: ignore[attr-defined]
 
+# Layer-1's _is_denied_ip is the SSOT deny predicate (src/utils/ssrf_fetch_policy.py,
+# 22 tests incl. hypothesis property tests). Import it when available and prefer it;
+# _DENIED_NETWORKS below stays only as this module's standalone fallback for contexts
+# where Layer-1 isn't importable (e.g. this adapter dropped into a repo without it) --
+# mirrors this codebase's own dual-try import-resolution convention.
+try:
+    from src.utils.ssrf_fetch_policy import _is_denied_ip as _layer1_is_denied_ip
+except ImportError:
+    try:
+        from utils.ssrf_fetch_policy import _is_denied_ip as _layer1_is_denied_ip
+    except ImportError:
+        _layer1_is_denied_ip = None
+
 
 MAX_REDIRECTS_DEFAULT = 3
 ALLOWED_SCHEMES = frozenset({"http", "https"})
@@ -78,11 +91,22 @@ def _normalize_ip(raw: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address:
 
 
 def default_address_allowed(raw: str) -> None:
-    """Deny reserved, private, link-local, CGNAT, multicast, and IMDS ranges."""
+    """Deny reserved, private, link-local, CGNAT, multicast, and IMDS ranges.
+
+    Delegates to Layer-1's ``_is_denied_ip`` when importable (the SSOT deny
+    predicate, see the import block above); falls back to this module's own
+    ``_DENIED_NETWORKS`` + ``is_global`` check only when Layer-1 isn't
+    available, so the two lists can't silently drift out of sync in the
+    common case.
+    """
     try:
         addr = _normalize_ip(raw)
     except ValueError as exc:
         raise AddressDenied(f"unparseable address: {raw!r}") from exc
+    if _layer1_is_denied_ip is not None:
+        if _layer1_is_denied_ip(addr):
+            raise AddressDenied(f"blocked address: {addr}")
+        return
     if not addr.is_global or any(addr in net for net in _DENIED_NETWORKS):
         raise AddressDenied(f"blocked address: {addr}")
 
@@ -138,9 +162,16 @@ def _host_header(hostname: str, port: int, scheme: str) -> str:
 
 
 class _PinnedHTTPConnection(HTTPConnection):
-    def __init__(self, *args: Any, pinned_ip: str | None = None, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        *args: Any,
+        pinned_ip: str | None = None,
+        address_checker: Callable[[str], None] | None = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
         self._pinned_ip = pinned_ip
+        self._address_checker = address_checker or default_address_allowed
 
     def _new_conn(self) -> socket.socket:
         if not self._pinned_ip:
@@ -156,7 +187,7 @@ class _PinnedHTTPConnection(HTTPConnection):
             **extra,
         )
         peer = sock.getpeername()[0]
-        default_address_allowed(peer)
+        self._address_checker(peer)
         return sock
 
 
@@ -166,10 +197,12 @@ class _PinnedHTTPSConnection(HTTPSConnection):
         *args: Any,
         pinned_ip: str | None = None,
         sni_hostname: str | None = None,
+        address_checker: Callable[[str], None] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
         self._pinned_ip = pinned_ip
+        self._address_checker = address_checker or default_address_allowed
         if sni_hostname:
             self.server_hostname = sni_hostname
             self.assert_hostname = sni_hostname
@@ -188,20 +221,28 @@ class _PinnedHTTPSConnection(HTTPSConnection):
             **extra,
         )
         peer = sock.getpeername()[0]
-        default_address_allowed(peer)
+        self._address_checker(peer)
         return sock
 
 
 class _PinnedHTTPConnectionPool(HTTPConnectionPool):
     ConnectionCls = _PinnedHTTPConnection
 
-    def __init__(self, *args: Any, pinned_ip: str | None = None, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        *args: Any,
+        pinned_ip: str | None = None,
+        address_checker: Callable[[str], None] | None = None,
+        **kwargs: Any,
+    ) -> None:
         self.pinned_ip = pinned_ip
+        self.address_checker = address_checker
         super().__init__(*args, **kwargs)
 
     def _new_conn(self) -> HTTPConnection:
         self.conn_kw = dict(self.conn_kw)
         self.conn_kw["pinned_ip"] = self.pinned_ip
+        self.conn_kw["address_checker"] = self.address_checker
         return super()._new_conn()
 
 
@@ -213,9 +254,11 @@ class _PinnedHTTPSConnectionPool(HTTPSConnectionPool):
         *args: Any,
         pinned_ip: str | None = None,
         sni_hostname: str | None = None,
+        address_checker: Callable[[str], None] | None = None,
         **kwargs: Any,
     ) -> None:
         self.pinned_ip = pinned_ip
+        self.address_checker = address_checker
         if sni_hostname:
             kwargs.setdefault("assert_hostname", sni_hostname)
             kwargs.setdefault("server_hostname", sni_hostname)
@@ -226,7 +269,36 @@ class _PinnedHTTPSConnectionPool(HTTPSConnectionPool):
         self.conn_kw = dict(self.conn_kw)
         self.conn_kw["pinned_ip"] = self.pinned_ip
         self.conn_kw["sni_hostname"] = self.sni_hostname
+        self.conn_kw["address_checker"] = self.address_checker
         return super()._new_conn()
+
+
+# Fields this module injects into connection_pool_kw that urllib3's PoolKey
+# namedtuple has no field for. Passing them straight into
+# urllib3.poolmanager._default_key_normalizer() raises
+# "PoolKey.__new__() got an unexpected keyword argument" -- reproducible
+# with zero mocking, on ANY real connection_from_host() call, confirmed to
+# predate this session's changes (present since the adapter's very first
+# commit). PoolKey already has fields for assert_hostname/server_hostname;
+# only these four are genuinely foreign to it.
+_NON_POOL_KEY_FIELDS = frozenset({"pinned_ip", "address_checker", "assert_same_host", "sni_hostname"})
+
+
+def _pinned_pool_key_normalizer(request_context: dict[str, Any]) -> "PoolKey":
+    """Build a PoolKey, excluding fields PoolKey doesn't know about.
+
+    ``key_fn_by_scheme`` is urllib3's own documented extension point for
+    this exact situation (see ``_default_key_normalizer``'s docstring:
+    "provide alternate callables to key_fn_by_scheme"). The excluded
+    fields still reach the pool's own ``__init__`` normally -- this only
+    changes what's used to compute the connection-pool cache key, not what
+    the pool is constructed with (``connection_from_pool_key`` re-uses the
+    original, unfiltered ``request_context`` for that).
+    """
+    from urllib3.poolmanager import PoolKey, _default_key_normalizer
+
+    filtered = {k: v for k, v in request_context.items() if k not in _NON_POOL_KEY_FIELDS}
+    return _default_key_normalizer(PoolKey, filtered)
 
 
 class _PinnedPoolManager(PoolManager):
@@ -235,6 +307,10 @@ class _PinnedPoolManager(PoolManager):
         self.pool_classes_by_scheme = {
             "http": _PinnedHTTPConnectionPool,
             "https": _PinnedHTTPSConnectionPool,
+        }
+        self.key_fn_by_scheme = {
+            "http": _pinned_pool_key_normalizer,
+            "https": _pinned_pool_key_normalizer,
         }
 
 
@@ -289,6 +365,7 @@ class SSRFPinnedHTTPAdapter(HTTPAdapter):
 
         pool_kwargs: dict[str, Any] = {
             "pinned_ip": pinned,
+            "address_checker": self.address_checker,
             "assert_same_host": False,
         }
         if scheme == "https":
@@ -307,7 +384,14 @@ class SSRFPinnedHTTPAdapter(HTTPAdapter):
                 proxies=None,
             )
         finally:
-            for key in ("pinned_ip", "sni_hostname", "assert_hostname", "server_hostname", "assert_same_host"):
+            for key in (
+                "pinned_ip",
+                "address_checker",
+                "sni_hostname",
+                "assert_hostname",
+                "server_hostname",
+                "assert_same_host",
+            ):
                 self.poolmanager.connection_pool_kw.pop(key, None)
 
 
@@ -363,6 +447,19 @@ def ssrf_request(
         address_checker=address_checker,
         url_checker=url_checker,
     )
+    # ssrf_session()'s max_redirects=0 is for its own direct-usage contract
+    # ("redirects are refused", per its docstring) -- but that same setting
+    # makes requests.Session.send()'s internal precomputation of `r._next`
+    # (resolve_redirects(..., yield_requests=True)) raise TooManyRedirects
+    # on literally the first redirect response, regardless of the
+    # allow_redirects=False passed to every .request() call below, before
+    # this function's own hop loop and its per-hop check_url/
+    # validate_resolved re-validation ever runs. That precomputation is a
+    # single, local `next()` call (yields once, never sends) -- raising the
+    # ceiling here does not reopen any auto-follow risk; this loop still
+    # tracks and enforces its own hop count independently via `hops`/
+    # `max_redirects` below.
+    sess.max_redirects = max(max_redirects, 1)
     check_url = url_checker or default_url_allowed
     hops = 0
     current = url
@@ -382,12 +479,19 @@ def ssrf_request(
                 raise RedirectDenied("redirect without Location")
             nxt = urljoin(current, location)
             check_url(nxt)
-            method = "GET" if response.status_code in (301, 302, 303) else method
+            # RFC 9110 §15.4: 301/302/303 may convert the method to GET, and
+            # in that case the original body is meaningless and must be
+            # dropped. 307/308 explicitly preserve both the method and the
+            # request body on the redirected request -- do not strip data/
+            # json/files for those, or a legitimate POST-preserving redirect
+            # silently becomes a bodyless request.
+            if response.status_code in (301, 302, 303):
+                method = "GET"
+                kwargs.pop("data", None)
+                kwargs.pop("json", None)
+                kwargs.pop("files", None)
             current = nxt
             hops += 1
-            kwargs.pop("data", None)
-            kwargs.pop("json", None)
-            kwargs.pop("files", None)
     finally:
         if own_session:
             sess.close()
