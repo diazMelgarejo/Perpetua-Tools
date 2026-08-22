@@ -24,6 +24,7 @@ from collections.abc import Callable, Sequence
 from typing import Any
 from urllib.parse import urljoin, urlparse
 
+import httpx
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.connection import HTTPConnection, HTTPSConnection
@@ -530,5 +531,52 @@ def hook_endpoint_policy() -> tuple[Callable[[str], None], Callable[[str], None]
             return assert_address_allowed, assert_url_allowed
         except ImportError:
             pass
-            
+
     return default_address_allowed, default_url_allowed
+
+
+def build_pinned_httpx_client(
+    *,
+    address_checker: Callable[[str], None] | None = None,
+    is_async: bool = False,
+    **client_kwargs: Any,
+) -> httpx.Client | httpx.AsyncClient:
+    """Build an httpx.Client/AsyncClient hardened for SDKs that don't use ``requests``.
+
+    True IP pinning (resolve-once, connect-to-that-literal-IP) requires a
+    custom ``httpcore`` network backend -- out of scope here. This gives the
+    two properties the vendor-host exemption in
+    ``docs/v2/plans/2026-08-20-ssrf-defense-in-depth.md`` actually requires
+    for a fixed, code-reviewed host: (1) redirects are never auto-followed
+    (``follow_redirects=False``, explicit rather than relying on httpx's
+    own default matching), and (2) every resolved A/AAAA for the request's
+    host is checked against ``address_checker`` via a "request" event hook
+    immediately before httpx's own connection attempt -- closing the "this
+    fixed hostname now resolves somewhere it shouldn't" gap that a bare
+    ``httpx.Client()`` leaves fully open. TLS certificate verification stays
+    on (httpx's own ``verify=True`` default, not overridden here).
+
+    Only for use with fixed, hardcoded, code-reviewed hosts (vendor SDK
+    base URLs) -- never for a caller-supplied/arbitrary URL, which needs
+    real pinning (``ssrf_request``) or must be routed through a
+    caller-supplied-URL-safe path entirely.
+    """
+    checker = address_checker or default_address_allowed
+
+    def _validate_request_host(request: httpx.Request) -> None:
+        hostname = request.url.host
+        port = request.url.port or (443 if request.url.scheme == "https" else 80)
+        validate_resolved(hostname, port, checker)
+
+    async def _validate_request_host_async(request: httpx.Request) -> None:
+        _validate_request_host(request)
+
+    client_kwargs.setdefault("follow_redirects", False)
+    hooks = dict(client_kwargs.pop("event_hooks", None) or {})
+    request_hooks = list(hooks.get("request", []))
+    request_hooks.append(_validate_request_host_async if is_async else _validate_request_host)
+    hooks["request"] = request_hooks
+    client_kwargs["event_hooks"] = hooks
+
+    cls = httpx.AsyncClient if is_async else httpx.Client
+    return cls(**client_kwargs)

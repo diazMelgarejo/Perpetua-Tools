@@ -205,16 +205,37 @@ class TestHttpLocalPreflight:
             assert "ssh" not in cmd
 
     def test_probe_lm_studio_http_success(self):
+        # probe_lm_studio_http() opens through _NO_REDIRECT_OPENER (a custom
+        # urllib opener that refuses redirects, see _NoRedirectHandler), not
+        # the module-level urllib.request.urlopen -- patch the actual call
+        # site, not a stale target the code no longer reaches.
         payload = json.dumps({"data": [{"id": "m1"}, {"id": "m2"}]})
         mock_resp = MagicMock()
         mock_resp.status = 200
         mock_resp.read.return_value = payload.encode("utf-8")
         mock_resp.__enter__ = MagicMock(return_value=mock_resp)
         mock_resp.__exit__ = MagicMock(return_value=False)
-        with patch("urllib.request.urlopen", return_value=mock_resp):
+        with patch.object(bridge._NO_REDIRECT_OPENER, "open", return_value=mock_resp):
             result = bridge.probe_lm_studio_http()
         assert result.ok is True
         assert result.sha == "2"
+
+    def test_probe_lm_studio_http_refuses_redirect(self):
+        """Regression test for the redirect-based bypass this opener closes:
+        a compromised/MITM'd LM Studio instance redirecting the probe
+        elsewhere must be refused, not silently followed."""
+        import urllib.error
+
+        with patch.object(
+            bridge._NO_REDIRECT_OPENER,
+            "open",
+            side_effect=urllib.error.HTTPError(
+                "http://localhost:1234/v1/models", 302, "redirect refused", {}, None
+            ),
+        ):
+            result = bridge.probe_lm_studio_http()
+        assert result.ok is False
+        assert "302" in (result.error or "")
 
     def test_preflight_exposes_http_local_fields(self):
         with patch.object(bridge, "install_autoresearch_plugin", return_value=SyncResult(ok=True)), \

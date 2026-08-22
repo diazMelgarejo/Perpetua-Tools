@@ -1,0 +1,41 @@
+{
+  "id": "ad340c4ee7cb",
+  "key": "manual_ad340c",
+  "name": "manual_ad340c",
+  "claim": "Redirect-following is a SEPARATE control surface from URL/DNS validation, and every HTTP library/SDK encountered this session defaulted to following redirects silently: urllib.request (HTTPRedirectHandler installed by default), and the openai SDK's own httpx client (follow_redirects=True, NOT httpx.Client's own False default -- SDKs commonly override library defaults for convenience). Validating a request's INITIAL url/host is not a redirect defense -- a validated, trusted target can still redirect the SAME request anywhere, and the transport will follow it with zero re-validation unless redirect-following is explicitly disabled or intercepted. This pattern recurred four distinct times in one session, each independently discovered, each a real gap: (1) ssrf_pinned_adapter.py's OWN max_redirects=0 accidentally broke its own redirect-revalidation loop via requests.Session's internal precomputation quirk (over-correction: blocked its own legitimate redirect handling); (2) the adapter's redirect-denial test false-passed via hop-limit exhaustion, never actually proving a metadata redirect was rejected; (3) perplexity_client.py's openai-SDK-backed client silently auto-followed redirects from api.perplexity.ai with zero revalidation (under-correction: no redirect defense at all); (4) autoresearch_bridge.py's LM Studio probe validated the initial URL then silently auto-followed any redirect via urllib's default opener (same under-correction, different library). General rule for future wiring: for ANY new outbound HTTP client (new library, new SDK, new vendor integration), explicitly verify and set its redirect-following behavior -- do not assume url/DNS validation covers it, do not assume the library's own documented default matches what the SDK actually constructs, and write a test that PROVES a redirect to a denied target is refused (not a test that merely exercises a code path that happens to also deny it via a different mechanism, like a hop-count limit).",
+  "conditions": [
+    "SDK http client default differs from library default",
+    "recurring pattern across ssrf_pinned_adapter perplexity_client autoresearch_bridge",
+    "redirect-following separate from URL validation",
+    "verify redirect refused not just any denial"
+  ],
+  "evidence_ids": [
+    "2026-08-22T10:56:41.925397+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-22T10:56:41.925397+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-08-22T10:56:41.925397+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-22T10:56:42.062390+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Discovered while implementing PT-T5-API-005-adjacent Layer-2 wiring for PT-endpoint-hardening-checklists.md's PR-P3 (perplexity_client.py, autoresearch_bridge.py) on 2026-08-22. Each of the four instances was found independently across this session (two while fixing ssrf_pinned_adapter.py's own bugs earlier, two while wiring the two remaining PR-P3 clients just now) -- writing this as a single connected pattern rather than four separate atomic lessons because the underlying mechanism (assume-safe-because-validated, redirect defaults silently override that assumption) is the same root cause every time, and a future agent hitting instance #5 in a new file should recognize it from this pattern description, not have to independently rediscover the class of bug a fifth time.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-08-22T10:56:41.925397+00:00"
+      ],
+      "lessons_sha": "c40fe1fa199c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-22T10:56:42.062377+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Discovered while implementing PT-T5-API-005-adjacent Layer-2 wiring for PT-endpoint-hardening-checklists.md's PR-P3 (perplexity_client.py, autoresearch_bridge.py) on 2026-08-22. Each of the four instances was found independently across this session (two while fixing ssrf_pinned_adapter.py's own bugs earlier, two while wiring the two remaining PR-P3 clients just now) -- writing this as a single connected pattern rather than four separate atomic lessons because the underlying mechanism (assume-safe-because-validated, redirect defaults silently override that assumption) is the same root cause every time, and a future agent hitting instance #5 in a new file should recognize it from this pattern description, not have to independently rediscover the class of bug a fifth time."
+}

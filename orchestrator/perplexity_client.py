@@ -58,8 +58,16 @@ class PerplexityClient:
                 key = self._prompt_for_key() or ""
 
         self.api_key = key
-        self._sync  = OpenAI(api_key=key or "placeholder",      base_url=self.BASE_URL, timeout=timeout)
-        self._async = AsyncOpenAI(api_key=key or "placeholder",  base_url=self.BASE_URL, timeout=timeout)
+        from utils.ssrf_pinned_adapter import build_pinned_httpx_client
+
+        self._sync  = OpenAI(
+            api_key=key or "placeholder", base_url=self.BASE_URL, timeout=timeout,
+            http_client=build_pinned_httpx_client(),
+        )
+        self._async = AsyncOpenAI(
+            api_key=key or "placeholder", base_url=self.BASE_URL, timeout=timeout,
+            http_client=build_pinned_httpx_client(is_async=True),
+        )
 
     # ── singleton accessor ─────────────────────────────────────────────────────
 
@@ -87,7 +95,11 @@ class PerplexityClient:
             pass
         try:
             from openai import OpenAI
-            client = OpenAI(api_key=key, base_url=PerplexityClient.BASE_URL, timeout=8)
+            from utils.ssrf_pinned_adapter import build_pinned_httpx_client
+            client = OpenAI(
+                api_key=key, base_url=PerplexityClient.BASE_URL, timeout=8,
+                http_client=build_pinned_httpx_client(),
+            )
             r = client.chat.completions.create(
                 model="sonar",
                 messages=[{"role": "user", "content": "ping"}],
