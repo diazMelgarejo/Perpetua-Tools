@@ -3,6 +3,47 @@
 > Record architectural or workflow choices that would be costly to re-debate.
 > Use this template for each entry:
 
+## 2026-08-22: mcp-remote supply-chain pinning — status quo retained over 4 investigated alternatives
+
+**Decision:** Keep `.codex/config.toml`'s `[mcp_servers.exa]` entry at version-pin-only
+(`npx -y mcp-remote@0.1.43 https://mcp.exa.ai/mcp`). Do **not** add a scoped `.codex/package.json`
++ lockfile (Option A), vendor `mcp-remote` as a git submodule (Option 1), route it through an
+adapted Exa-daemon Unix-socket bridge (Option 2), or hand-roll a checksum-verification wrapper
+script (Option 3). Full investigation, comparison table, and mermaid diagrams:
+`.agent/memory/working/2026-08-22-mcp-remote-supply-chain-pinning-options-debate.md`.
+
+**Rationale:** Every alternative that actually pins `mcp-remote`'s transitive dependencies
+(`open`, `undici`, `express`, `strict-url-sanitise`) requires a manifest+lockfile living
+*somewhere* in the repo — there is no variant of deterministic dependency resolution without
+one. Option A was implemented, verified working end-to-end, then explicitly rejected by the
+operator on two grounds: (1) location — a second npm project inside `.codex/`, a config
+directory; (2) footprint — a new lockfile + `node_modules` tree in this repo at all. The three
+alternatives explored afterward each collapse into the same requirement or solve a different
+problem: submodule-vendoring needs a `pnpm`+`tsup` build toolchain just to reproduce what npm
+already publishes pre-built; the Exa-daemon pattern multiplexes processes but pins nothing (its
+own backend call is itself unpinned `npx -y exa-mcp-server`) and adds Windows `AF_UNIX`
+portability risk; a checksum wrapper only covers the top-level tarball, leaving the transitive
+tree unpinned while duplicating lockfile mechanics with less tooling support (no `npm audit`,
+no Dependabot). npm's built-in `dist.integrity` verification (TLS + signed sha512 per fetch)
+already protects the pinned top-level package — the residual gap is reproducibility, not an
+unguarded tampering vector.
+
+**Alternatives considered:** scoped `.codex/package.json` + lockfile with `--no-install`
+enforcement (rejected — location + footprint); git submodule vendoring matching
+`vendor/agentic-stack` convention (rejected — needs new `pnpm`+`tsup` toolchain for equal
+footprint); adapted Exa-daemon Unix-socket bridge (rejected — wrong problem, solves process
+sharing not pinning, and its own backend is also unpinned); hand-rolled integrity-checksum
+wrapper script (rejected — reinvents `package-lock.json`, worse, and still leaves transitive
+deps unpinned).
+
+**Status:** resting state, not a hard close. CodeRabbit offered (twice) to open a GitHub
+tracking issue for the full lockfile-backed fix on this PR's review thread — that issue has
+**not** been created yet; still awaiting explicit operator go-ahead. If revisited, read the
+full working doc first — each option was investigated concretely (upstream tags cloned, daemon
+source read in full, npm registry metadata fetched), not just discussed abstractly.
+
+---
+
 ## 2026-08-21: SSRF Layer-2 pinned transport, 3-layer architecture & frugal Python path reuse
 
 **Decision:** Land Layer-2 connection-time IP pinning transport (`src/utils/ssrf_pinned_adapter.py`), unit tests (`tests/test_ssrf_pinned_adapter.py`), and endpoint hardening checklists (`docs/plans/2026-08-21-pt-endpoint-hardening-checklists.md`) on `Perpetua-Tools` branch `fix/pt-standards-convergence-20260818` (PR #359), with companion docs updated in `orama-system` on `fix/oramasys-standards-convergence-20260818` (PR #321). (A stray `orama-system` branch, `fix/markdownlint-doc53-ci-20260820`, briefly carried two follow-up commits before being merged into the canonical branch and deleted 2026-08-21 — see the 2026-08-21 CodeRabbit remediation entry below.)
