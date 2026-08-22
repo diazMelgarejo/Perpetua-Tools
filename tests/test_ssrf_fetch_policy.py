@@ -21,6 +21,8 @@ pytestmark = pytest.mark.unit
     [
         "https://api.perplexity.ai/v1/search",
         "http://api.x.ai/v1/chat",
+        "https://openrouter.ai/api/v1/models",
+        "https://api.anthropic.com/v1/messages",
     ],
 )
 def test_allows_vendor_allowlisted_hosts(url: str) -> None:

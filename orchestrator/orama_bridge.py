@@ -6,8 +6,6 @@ import os
 import shlex
 from typing import Any, Dict, List, Optional
 
-import httpx
-
 log = logging.getLogger("orchestrator.orama_bridge")
 
 
@@ -67,9 +65,11 @@ def call_oramasys_bridge(
     task_type: str,
 ) -> Dict[str, Any]:
     """Synchronous HTTP bridge kept for direct callers."""
+    from utils.ssrf_pinned_adapter import ssrf_request
+    
     url = normalize_oramasys_endpoint(endpoint)
     payload = build_oramasys_http_payload(task, task_type)
-    response = httpx.post(url, json=payload, timeout=timeout)
+    response = ssrf_request("POST", url, json=payload, timeout=timeout)
     response.raise_for_status()
     return {
         "endpoint": url,
@@ -97,8 +97,12 @@ async def call_oramasys_mcp_or_bridge(
     """Try MCP transport first; fall back to async HTTP on any failure.
 
     MCP is attempted only when ORAMASYS_MCP_SERVER_CMD or the legacy
-    ULTRATHINK_MCP_SERVER_CMD is set as a deprecated alias. The HTTP path uses httpx.AsyncClient to
-    avoid blocking the FastAPI event loop.
+    ULTRATHINK_MCP_SERVER_CMD is set as a deprecated alias. The HTTP fallback
+    delegates to ``ssrf_request`` (the same Layer-2 pinned transport used by
+    ``call_oramasys_bridge``) via a worker thread, so it gets identical
+    endpoint validation, IP pinning, and redirect re-validation for both
+    ``ORAMA_ENDPOINT`` and any directly supplied endpoint, without blocking
+    the FastAPI event loop.
     """
     from orchestrator.orama_mcp_client import OramasysMCPClient
 
@@ -116,10 +120,13 @@ async def call_oramasys_mcp_or_bridge(
 
     url = normalize_oramasys_endpoint(endpoint)
     payload = build_oramasys_http_payload(task, task_type)
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        resp = await client.post(url, json=payload)
-        resp.raise_for_status()
-    return {"transport": "http", "endpoint": url, "request": payload, "response": resp.json()}
+    from utils.ssrf_pinned_adapter import ssrf_request
+
+    response = await asyncio.to_thread(
+        ssrf_request, "POST", url, json=payload, timeout=timeout
+    )
+    response.raise_for_status()
+    return {"transport": "http", "endpoint": url, "request": payload, "response": response.json()}
 
 
 # Backward-compatible aliases for one v1.x release.

@@ -195,7 +195,17 @@ def _approval_artifact_path(directory: Path, trace_id: str) -> Path:
     """
     validate_trace_id(trace_id)
     resolved_directory = directory.resolve()
-    path = (resolved_directory / ("%s.json" % trace_id)).resolve()
+    try:
+        path = (resolved_directory / ("%s.json" % trace_id)).resolve()
+    except (ValueError, OSError) as exc:
+        # Belt-and-suspenders: validate_trace_id() above already rejects a
+        # null byte (and everything else outside TRACE_ID_PATTERN) before
+        # this line runs, so this branch shouldn't fire for any trace_id
+        # that reaches here today. Kept in case TRACE_ID_PATTERN is ever
+        # loosened, or some other OS/Path-level rejection isn't covered by
+        # the regex -- translates that into the documented
+        # PipelineApprovalError instead of a raw ValueError/OSError.
+        raise PipelineApprovalError("invalid trace_id %r" % trace_id) from exc
     if not path.is_relative_to(resolved_directory):
         raise PipelineApprovalError("invalid trace_id %r escapes approval directory" % trace_id)
     return path

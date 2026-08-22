@@ -337,19 +337,38 @@ async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | Non
     # match, which made every dependent task permanently unclaimable
     # regardless of upstream completion. Resolve by task_id first, falling
     # back to a task_name match across all snapshots.
-    by_task_name = {
-        state.get("task_name"): state
-        for state in snapshots.values()
-        if state.get("task_name")
-    }
-    unmet = [
-        dependency
-        for dependency in depends_on
-        if (snapshots.get(dependency) or by_task_name.get(dependency, {})).get(
-            "status"
+    by_task_name: dict[str, list] = {}
+    for state in snapshots.values():
+        name = state.get("task_name")
+        if name:
+            by_task_name.setdefault(name, []).append(state)
+
+    # A task_name is authoring convenience, not a unique key -- multiple
+    # queued tasks can share one (retries, re-runs). Resolving an ambiguous
+    # name to "whichever snapshot happened to be last in dict order" could
+    # silently gate on the wrong task's completion status. Ambiguous names
+    # must be reported and require the full task_id instead of guessing.
+    ambiguous = []
+    unmet = []
+    for dependency in depends_on:
+        direct = snapshots.get(dependency)
+        if direct is not None:
+            if direct.get("status") != QueuedTaskState.COMPLETED.value:
+                unmet.append(dependency)
+            continue
+        matches = by_task_name.get(dependency)
+        if not matches:
+            unmet.append(dependency)
+        elif len(matches) > 1:
+            ambiguous.append(dependency)
+        elif matches[0].get("status") != QueuedTaskState.COMPLETED.value:
+            unmet.append(dependency)
+
+    if ambiguous:
+        return _error(
+            f"{task_id} dependency name(s) match more than one task, use the "
+            f"full task_id instead: {', '.join(ambiguous)}"
         )
-        != QueuedTaskState.COMPLETED.value
-    ]
     if unmet:
         return _error(f"{task_id} unmet dependencies: {', '.join(unmet)}")
 

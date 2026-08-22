@@ -67,8 +67,9 @@ survives the failed release attempt, not just that release raises.
 closed."
 **Rigor + a real near-miss:** while extracting the shared `_transaction()` helper to fix this,
 the explicit `db.execute("BEGIN IMMEDIATE")` was initially dropped as "redundant with `with
-db:`" — it is not (Python's sqlite3 defaults to *deferred* transactions; `with db:` never emits
-its own BEGIN). This would have silently reopened the exact TOCTOU race the ledger's atomicity
+db:`" — it is not, under this module's default `sqlite3.connect()` config (no explicit
+`isolation_level`/`autocommit` override): the module defaults to *deferred* transactions, and
+`with db:` never emits its own BEGIN. This would have silently reopened the exact TOCTOU race the ledger's atomicity
 depends on, with **no test failure**, because the existing test suite is single-threaded and
 never exercises the race window. Caught by re-reading the diff before committing, not by any
 test — this is the one place pure code review, not TDD, was the safety net. Fixed by moving
@@ -94,7 +95,7 @@ code was correct, the old test's fixture just predated the stricter shared const
 
 ### 8. The bonus bug: `ipaddress.is_global` reports multicast as globally routable
 **Source:** genuinely not in the review at all. Found by re-running the **full** local suite
-(`test_ssrf_fetch_policy.py` included) as a matter of course before committing the tier5 batch,
+(`test_ssrf_fetch_policy.py` included) as a matter of course before committing the Tier-5 batch,
 even though that file wasn't touched this session.
 **Luck, honestly:** a `hypothesis`-generated random 32-bit integer happened to land on
 `224.0.0.0` (the multicast network's own base address) in this run. It could just as easily
@@ -124,7 +125,9 @@ either the production code (which was already correct) or dismissing the failure
   (BEGIN IMMEDIATE regression), `lesson_a045e9f02292` (is_global multicast quirk),
   `lesson_516cedc1d6f1` (explicit-cap-vs-remaining pattern), `lesson_8466d1718c00`
   (git-stash TDD verification technique).
-- Fix commits: `1d56a095` (Batch A, ledger), pending (Batch B trace-ID, Batch C doc, Batch D
-  ssrf-policy test oracle).
+- Fix commits (pre-commit snapshot at time of writing; see git log for the final authoritative
+  set): `1d56a095` (Batch A, ledger), Batch B (trace-ID), Batch C (doc), and Batch D (ssrf-policy
+  test oracle) landed in later commits on `fix/pt-standards-convergence-20260818` the same
+  session -- not tracked back to individual SHAs here after the fact.
 - Canonical TDD discipline this session adopted going forward: `docs/TDD.md`
   (orama-system canonical, PT `docs/TDD.md` pointer).
