@@ -1,0 +1,41 @@
+{
+  "id": "28a68ccb0757",
+  "key": "manual_28a68c",
+  "name": "manual_28a68c",
+  "claim": "Hand-editing .agent/memory/episodic/AGENT_LEARNINGS.jsonl via a raw Python read-modify-write script, instead of going through the project's own episodic_lock() sidecar-lock mechanism (.agent/harness/hooks/_episodic_io.py), can have its changes silently lost -- a prior dedup pass (34 duplicate rows removed) never actually reached the pushed commit despite an explicit 0-remaining-duplicates verification immediately after running it; the duplicates were already back by the very next commit in git history. The exact concurrent writer was not conclusively identified (auto_dream.py's dream cycle is the only other process documented to rewrite this file via os.replace(), but no direct process/lock evidence was found), but the fix itself -- redoing the dedup while holding episodic_lock() for the full read-modify-write-replace cycle -- is the same protection the project's own code already documents as necessary and that the original dedup skipped",
+  "conditions": [
+    "AGENT_LEARNINGS.jsonl concurrent write race",
+    "dream cycle os.replace silent overwrite",
+    "hand-editing episodic JSONL bypasses lock",
+    "verify immediately after edit is not enough"
+  ],
+  "evidence_ids": [
+    "2026-08-22T10:08:02.914064+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-22T10:08:02.914064+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-08-22T10:08:02.914064+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-22T10:08:03.056104+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit review #4998833290 on PT PR #359 flagged (correctly, re-confirmed independently) that AGENT_LEARNINGS.jsonl still had all 5 duplicate record groups / 34 duplicate rows after a commit claiming to have deduped them. Traced via git show at each commit: duplicates were present starting at a39d82c7 (the concurrent-branch merge-harmonization commit) and every commit since -- meaning the dedup fix from earlier in the session was lost before or during that merge, most likely because it used an unlocked raw script instead of episodic_lock(), racing against auto_dream.py's documented os.replace()-based rewrite path (its own docstring: 'A sidecar lock is used instead of locking the data inode itself... because the dream cycle rewrites the JSONL file with os.replace'). Verified other memory files (lessons.jsonl: 0 duplicate ids; orama-system has no equivalent episodic/dream-cycle system at all) were not affected by the same class of issue.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-08-22T10:08:02.914064+00:00"
+      ],
+      "lessons_sha": "600bf5cc687d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-22T10:08:03.056096+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit review #4998833290 on PT PR #359 flagged (correctly, re-confirmed independently) that AGENT_LEARNINGS.jsonl still had all 5 duplicate record groups / 34 duplicate rows after a commit claiming to have deduped them. Traced via git show at each commit: duplicates were present starting at a39d82c7 (the concurrent-branch merge-harmonization commit) and every commit since -- meaning the dedup fix from earlier in the session was lost before or during that merge, most likely because it used an unlocked raw script instead of episodic_lock(), racing against auto_dream.py's documented os.replace()-based rewrite path (its own docstring: 'A sidecar lock is used instead of locking the data inode itself... because the dream cycle rewrites the JSONL file with os.replace'). Verified other memory files (lessons.jsonl: 0 duplicate ids; orama-system has no equivalent episodic/dream-cycle system at all) were not affected by the same class of issue."
+}
