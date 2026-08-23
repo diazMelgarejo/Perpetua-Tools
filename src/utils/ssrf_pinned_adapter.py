@@ -28,7 +28,7 @@ from urllib.parse import urljoin, urlparse
 import httpx
 import requests
 
-from src.utils.egress_telemetry import EgressEvent, classify_deny_reason, emit
+from utils.egress_telemetry import EgressEvent, classify_deny_reason, emit
 from requests.adapters import HTTPAdapter
 from urllib3.connection import HTTPConnection, HTTPSConnection
 from urllib3.connectionpool import HTTPConnectionPool, HTTPSConnectionPool
@@ -476,12 +476,14 @@ def ssrf_request(
                 return response
             if hops >= max_redirects:
                 exc = RedirectDenied(f"redirect limit {max_redirects} exceeded")
+                _current_parsed = urlparse(current)
                 emit(
                     EgressEvent(
                         endpoint_class="remote",
-                        host=urlparse(current).hostname or "",
-                        port=urlparse(current).port or 443,
-                        scheme=urlparse(current).scheme,
+                        host=_current_parsed.hostname or "",
+                        port=_current_parsed.port
+                        or (443 if _current_parsed.scheme == "https" else 80),
+                        scheme=_current_parsed.scheme,
                         redirect_count=hops,
                         deny_reason=classify_deny_reason(exc),
                     )

@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from src.utils.egress_telemetry import EgressEvent, _sink_path, classify_deny_reason, emit
+from utils.egress_telemetry import EgressEvent, _sink_path, classify_deny_reason, emit
 from src.utils.ssrf_pinned_adapter import AddressDenied, RedirectDenied
 from src.utils.ssrf_pinned_adapter import SSRFPolicyError as AdapterSSRFPolicyError
 
@@ -130,3 +130,41 @@ class TestSinkRotation:
         day2 = _sink_path(now=1735776000.0)  # 2025-01-02T00:00:00Z
         assert day1 != day2
         assert day1.name != day2.name
+
+
+class TestImportPathConsistency:
+    """Regression: this repo's convention (per every existing lazy import in
+    orama_bridge.py itself, connectivity.py, perplexity_client.py, and this
+    module's own docstring) is `from utils.<name>`, not `from src.utils.<name>`.
+    src/ has no __init__.py (a PEP 420 namespace package) while
+    src/utils/__init__.py exists, so pythonpath=["src","."] makes the two
+    prefixes resolve to two DISTINCT sys.modules entries with independent
+    module-level state -- including egress_telemetry's per-process _SALT.
+    If ssrf_pinned_adapter.py, orama_bridge.py, and this test file don't all
+    import egress_telemetry via the identical path, events emitted from one
+    call site can be hashed with a different salt than events emitted from
+    another, silently breaking "correlation works within a session"."""
+
+    def test_every_egress_telemetry_import_site_resolves_to_the_same_module(self) -> None:
+        # Reflect real production behavior: modules are imported once and
+        # cached in sys.modules; whichever import happens first "wins" and
+        # every subsequent import of the same dotted path reuses it. Import
+        # each real call site the same way this repo's actual code does
+        # (utils.<name>, per this module's own docstring and every existing
+        # lazy import elsewhere) and confirm they all share one egress_telemetry
+        # instance -- not a forced fresh reimport, which would create an
+        # artificial fourth instance nothing in production ever touches.
+        import utils.egress_telemetry as canonical
+        import utils.ssrf_pinned_adapter as adapter_mod
+        import orchestrator.orama_bridge as bridge_mod
+
+        assert adapter_mod.emit is canonical.emit, (
+            "ssrf_pinned_adapter.py's egress_telemetry import resolves to a "
+            "different module instance than utils.egress_telemetry "
+            "-- salts will diverge between call sites"
+        )
+        assert bridge_mod.emit is canonical.emit, (
+            "orama_bridge.py's egress_telemetry import resolves to a "
+            "different module instance than utils.egress_telemetry "
+            "-- salts will diverge between call sites"
+        )

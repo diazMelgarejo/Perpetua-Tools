@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from unittest.mock import patch
 
 import pytest
@@ -521,3 +522,61 @@ def test_concurrent_same_hostname_different_resolver_results_isolated_per_thread
         "each thread must pin to what IT resolved for the shared hostname, not the other's answer"
     )
 
+
+
+def test_redirect_limit_telemetry_reports_scheme_correct_default_port(
+    tmp_path, monkeypatch
+) -> None:
+    """Regression: the redirect-limit deny telemetry computed
+    `port=urlparse(current).port or 443`, which reports port 443 for a plain
+    http:// URL with no explicit port even though the actual sockets
+    connected to port 80. Every other emit site in the same file
+    (build_connection_pool_key_attributes) uses the scheme-aware default
+    `parsed.port or (443 if scheme == "https" else 80)`. Trigger a genuine
+    redirect-limit-exceeded via repeated 302s to a public http:// host (no
+    metadata/denied address involved, so this specifically exercises the
+    redirect-count path, not address validation) and assert the emitted
+    event's port matches the real connection, not a hardcoded https default.
+    """
+    import io
+
+    import urllib3
+    from urllib3.connectionpool import HTTPConnectionPool
+
+    monkeypatch.setenv("PERPETUA_TELEMETRY_DIR", str(tmp_path))
+
+    def fake_getaddrinfo(host, port, family=0, type=0, *a, **kw):
+        return [(2, 1, 6, "", ("93.184.216.34", port))]
+
+    def fake_urlopen(self, method, url, *args, **kwargs):
+        return urllib3.HTTPResponse(
+            body=io.BytesIO(b""),
+            status=302,
+            headers={"Location": "http://example.com/loop"},
+            preload_content=False,
+        )
+
+    with (
+        patch("socket.getaddrinfo", side_effect=fake_getaddrinfo),
+        patch.object(HTTPConnectionPool, "urlopen", fake_urlopen),
+        pytest.raises(RedirectDenied, match="redirect limit"),
+    ):
+        ssrf_request(
+            "GET",
+            "http://example.com/start",
+            allow_redirects=True,
+            max_redirects=2,
+        )
+
+    from src.utils.egress_telemetry import _sink_path
+
+    sink = _sink_path()
+    assert sink.exists(), f"no telemetry written to {sink}"
+    lines = [json.loads(l) for l in sink.read_text().splitlines() if l.strip()]
+    deny_events = [e for e in lines if e.get("deny_reason") == "redirect_limit"]
+    assert deny_events, f"no redirect_limit event found in {lines}"
+    assert deny_events[-1]["port"] == 80, (
+        f"expected port 80 for a plain http:// redirect loop, got "
+        f"{deny_events[-1]['port']} -- the redirect-limit deny site still "
+        f"hardcodes 'or 443' instead of the scheme-aware default"
+    )

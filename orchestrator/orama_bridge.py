@@ -8,7 +8,7 @@ import time
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
-from src.utils.egress_telemetry import EgressEvent, classify_deny_reason, emit
+from utils.egress_telemetry import EgressEvent, classify_deny_reason, emit
 
 log = logging.getLogger("orchestrator.orama_bridge")
 
