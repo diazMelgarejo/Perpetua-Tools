@@ -74,14 +74,8 @@ def _is_local_oramasys_endpoint(url: str) -> bool:
     return True
 
 
-def call_oramasys_bridge(
-    *,
-    endpoint: str,
-    timeout: float,
-    task: str,
-    task_type: str,
-) -> Dict[str, Any]:
-    """Synchronous HTTP bridge kept for direct callers.
+def _dispatch_oramasys_http(url: str, payload: Dict[str, Any], timeout: float) -> Any:
+    """The one HTTP-call implementation for both sync and async callers.
 
     orama runs on loopback/RFC1918 by default (``ORAMA_ENDPOINT`` typically
     ``http://localhost:8001``) -- ``ssrf_request``'s Layer-2 transport denies
@@ -92,19 +86,35 @@ def call_oramasys_bridge(
     direct request; only remote endpoints go through the deny-by-default
     pinned transport, where a private-range target would itself be the
     suspicious case worth denying.
-    """
-    url = normalize_oramasys_endpoint(endpoint)
-    payload = build_oramasys_http_payload(task, task_type)
 
+    Both ``call_oramasys_bridge()`` (sync) and ``call_oramasys_mcp_or_bridge()``
+    (async, via ``asyncio.to_thread``) call this SAME function -- a single
+    source of truth for the local/remote classification and dispatch, so the
+    two code paths cannot drift into different transports or different
+    policy decisions for the same URL. Returns the raw, not-yet-raised
+    response object; callers call ``response.raise_for_status()`` themselves.
+    """
     if _is_local_oramasys_endpoint(url):
         import httpx
 
-        response = httpx.post(url, json=payload, timeout=timeout)
-    else:
-        from utils.ssrf_pinned_adapter import ssrf_request
+        return httpx.post(url, json=payload, timeout=timeout)
 
-        response = ssrf_request("POST", url, json=payload, timeout=timeout)
+    from utils.ssrf_pinned_adapter import ssrf_request
 
+    return ssrf_request("POST", url, json=payload, timeout=timeout)
+
+
+def call_oramasys_bridge(
+    *,
+    endpoint: str,
+    timeout: float,
+    task: str,
+    task_type: str,
+) -> Dict[str, Any]:
+    """Synchronous HTTP bridge kept for direct callers."""
+    url = normalize_oramasys_endpoint(endpoint)
+    payload = build_oramasys_http_payload(task, task_type)
+    response = _dispatch_oramasys_http(url, payload, timeout)
     response.raise_for_status()
     return {
         "endpoint": url,
@@ -133,13 +143,13 @@ async def call_oramasys_mcp_or_bridge(
 
     MCP is attempted only when ORAMASYS_MCP_SERVER_CMD or the legacy
     ULTRATHINK_MCP_SERVER_CMD is set as a deprecated alias. The HTTP fallback
-    routes local endpoints (loopback/RFC1918 -- orama's typical deployment)
-    through a direct ``httpx.AsyncClient`` call, and only remote endpoints
-    through ``ssrf_request`` (the same Layer-2 pinned transport used by
-    ``call_oramasys_bridge``, via a worker thread so it doesn't block the
-    event loop). See ``call_oramasys_bridge``'s docstring for why: routing
-    the default local deployment through the deny-by-default pinned
-    transport would make it permanently unreachable.
+    wraps ``_dispatch_oramasys_http()`` -- the exact same function
+    ``call_oramasys_bridge()`` calls directly -- in a worker thread via
+    ``asyncio.to_thread`` so it doesn't block the event loop. This is
+    deliberately NOT a separate ``httpx.AsyncClient`` implementation: the
+    local/remote classification and both transports live in one place, so
+    the sync and async paths cannot drift into different decisions for the
+    same URL (GitHub issue #361).
     """
     from orchestrator.orama_mcp_client import OramasysMCPClient
 
@@ -157,18 +167,7 @@ async def call_oramasys_mcp_or_bridge(
 
     url = normalize_oramasys_endpoint(endpoint)
     payload = build_oramasys_http_payload(task, task_type)
-
-    if _is_local_oramasys_endpoint(url):
-        import httpx
-
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=payload, timeout=timeout)
-    else:
-        from utils.ssrf_pinned_adapter import ssrf_request
-
-        response = await asyncio.to_thread(
-            ssrf_request, "POST", url, json=payload, timeout=timeout
-        )
+    response = await asyncio.to_thread(_dispatch_oramasys_http, url, payload, timeout)
     response.raise_for_status()
     return {"transport": "http", "endpoint": url, "request": payload, "response": response.json()}
 

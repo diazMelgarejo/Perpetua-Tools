@@ -180,7 +180,7 @@ class TestCallBridgeAsyncLocal:
 
         with (
             patch("utils.ssrf_pinned_adapter.ssrf_request") as mock_ssrf_request,
-            patch("httpx.AsyncClient.post", new=MagicMock()) as mock_post,
+            patch("httpx.post", new=MagicMock()) as mock_post,
             patch.dict(os.environ, {}, clear=False),
         ):
             # patch.dict restores the original environment on exit, so
@@ -190,11 +190,7 @@ class TestCallBridgeAsyncLocal:
             os.environ.pop("ORAMASYS_MCP_SERVER_CMD", None)
             os.environ.pop("ULTRATHINK_MCP_SERVER_CMD", None)
             mock_ssrf_request.side_effect = AssertionError("must not use the deny-by-default transport")
-
-            async def fake_post(*args, **kwargs):
-                return mock_resp
-
-            mock_post.side_effect = fake_post
+            mock_post.return_value = mock_resp
 
             result = await call_oramasys_mcp_or_bridge(
                 endpoint="http://127.0.0.1:8001",
@@ -206,3 +202,27 @@ class TestCallBridgeAsyncLocal:
         mock_ssrf_request.assert_not_called()
         assert result["response"]["result"] == "ok"
 
+
+def test_sync_and_async_bridge_share_one_dispatch_implementation():
+    """GitHub issue #361: the async fallback must wrap the SAME sync helper
+    (asyncio.to_thread around it), not maintain a second, separately-written
+    HTTP-call implementation that could drift into a different local/remote
+    classification for the same URL. Verify both call_oramasys_bridge (sync)
+    and call_oramasys_mcp_or_bridge's HTTP fallback (async) actually invoke
+    the identical function object -- not just equivalent-looking code."""
+    import inspect
+
+    from orchestrator import orama_bridge
+
+    source = inspect.getsource(orama_bridge.call_oramasys_bridge)
+    assert "_dispatch_oramasys_http" in source
+
+    async_source = inspect.getsource(orama_bridge.call_oramasys_mcp_or_bridge)
+    assert "asyncio.to_thread(_dispatch_oramasys_http" in async_source
+    # The old bug: a second, independent local-endpoint branch inside the
+    # async function instantiating httpx.AsyncClient directly instead of
+    # reusing _dispatch_oramasys_http via to_thread. Check for actual
+    # instantiation ("AsyncClient(") rather than a bare substring match,
+    # since the function's own docstring legitimately mentions the class
+    # name while explaining why it's NOT used.
+    assert "AsyncClient(" not in async_source

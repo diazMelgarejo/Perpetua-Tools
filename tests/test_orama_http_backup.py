@@ -60,10 +60,7 @@ def test_orchestrate_calls_oramasys_bridge_with_mapped_depth(monkeypatch):
     # call, NOT ssrf_request (whose deny-by-default policy would otherwise
     # make orama's own default deployment unreachable -- see
     # orchestrator/orama_bridge.py's _is_local_oramasys_endpoint()).
-    async def fake_post(*args, **kwargs):
-        return mock_http_response
-
-    mock_post = MagicMock(side_effect=fake_post)
+    mock_post = MagicMock(return_value=mock_http_response)
 
     with (
         patch(
@@ -81,7 +78,7 @@ def test_orchestrate_calls_oramasys_bridge_with_mapped_depth(monkeypatch):
             "orchestrator.ecc_tools_sync.get_sync_status",
             return_value={"status": "ok"},
         ),
-        patch("httpx.AsyncClient.post", mock_post),
+        patch("httpx.post", mock_post),
         # Ensure no MCP subprocess is attempted
         patch.dict("os.environ", {"ORAMASYS_MCP_SERVER_CMD": ""}),
     ):
