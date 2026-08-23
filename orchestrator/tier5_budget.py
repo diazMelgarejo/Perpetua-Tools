@@ -139,6 +139,30 @@ class Tier5BudgetLedger:
                 raise translated from exc
             raise
 
+    @contextmanager
+    def _read_transaction(self):
+        """Read-only access: no BEGIN IMMEDIATE, so it never takes the writer
+        lock. get_reservation/is_stage_marked/has_stage_markers never write --
+        routing them through ``_guarded_transaction()`` made every status
+        read serialize behind any active writer, and let a busy writer make
+        a pure read raise BudgetUnavailableError. Still translates a genuine
+        SQLITE_BUSY (e.g. WAL checkpoint contention) the same way
+        ``_guarded_transaction()`` does, since ``busy_timeout`` applies to
+        any connection regardless of lock mode.
+        """
+        db = self._connect()
+        try:
+            yield db
+        except BudgetError:
+            raise
+        except sqlite3.OperationalError as exc:
+            translated = self._translate_operational_error(exc)
+            if translated is not None:
+                raise translated from exc
+            raise
+        finally:
+            db.close()
+
     def _initialize(self) -> None:
         with self._transaction() as db:
             db.executescript(
@@ -373,7 +397,7 @@ class Tier5BudgetLedger:
 
     def get_reservation(self, run_id: str) -> Reservation | None:
         """Fetch current reservation state for a run."""
-        with self._guarded_transaction() as db:
+        with self._read_transaction() as db:
             row = db.execute(
                 "SELECT * FROM tier5_budget_runs WHERE run_id = ?", (run_id,)
             ).fetchone()
@@ -381,7 +405,7 @@ class Tier5BudgetLedger:
 
     def is_stage_marked(self, run_id: str, stage_name: str) -> bool:
         """Check if a specific stage has been marked for dispatch."""
-        with self._guarded_transaction() as db:
+        with self._read_transaction() as db:
             row = db.execute(
                 "SELECT 1 FROM tier5_budget_stages WHERE run_id = ? AND stage_name = ? LIMIT 1",
                 (run_id, stage_name),
@@ -390,7 +414,7 @@ class Tier5BudgetLedger:
 
     def has_stage_markers(self, run_id: str) -> bool:
         """Check if any stage has been marked for dispatch."""
-        with self._guarded_transaction() as db:
+        with self._read_transaction() as db:
             row = db.execute(
                 "SELECT 1 FROM tier5_budget_stages WHERE run_id = ? LIMIT 1",
                 (run_id,),

@@ -208,6 +208,42 @@ async def test_dispatch_marker_committed_before_provider_io(
 
 
 @pytest.mark.asyncio
+async def test_post_marker_settle_failure_does_not_mask_original_exception(
+    tmp_path: Path, ledger: Tier5BudgetLedger, hmac_key: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """If ledger.settle() itself raises while handling a post-marker pipeline
+    failure (e.g. BudgetUnavailableError on lock contention), the ORIGINAL
+    pipeline exception must still propagate -- not the settlement error.
+    Previously the marker branch had no try/except around settle(), so a
+    settle failure replaced the real error, and orchestrator/fastapi_app.py's
+    caller would return a misleading 503 'budget ledger unavailable' instead
+    of surfacing the actual provider/policy failure."""
+    runner = _make_runner(tmp_path, cost_reservation_usd=0.05)
+    service = Tier5ExecutionService(ledger=ledger, runner=runner)
+    approval = _make_approval()
+    run_id = "run-settle-fails-001"
+
+    async def timeout_dispatch(model: str, prompt: str, max_tokens: int, stage_name: str) -> DispatchResult:
+        raise TimeoutError("provider timed out after dispatch marker")
+
+    monkeypatch.setattr(
+        ledger,
+        "settle",
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("ledger lock contention")),
+    )
+
+    with pytest.raises(TimeoutError, match="provider timed out"):
+        await service.execute(
+            run_id=run_id,
+            idempotency_key="550e8400-e29b-41d4-a716-446655440009",
+            recipe_name="deep_reasoning",
+            prompt="Settle-fails test prompt",
+            approval=approval,
+            dispatch=timeout_dispatch,
+        )
+
+
+@pytest.mark.asyncio
 async def test_post_marker_timeout_consumes_full_hold(
     tmp_path: Path, ledger: Tier5BudgetLedger, hmac_key: str
 ) -> None:
@@ -351,6 +387,7 @@ async def test_idempotency_replay_returns_existing_reservation(
         dispatch=dispatch_count,
     )
     assert call_count == 2  # 2 stages
+    assert result1.replay is False, "the real, first execution must not be flagged as a replay"
 
     # Second call with identical parameters
     result2, res2 = await service.execute(
@@ -365,6 +402,13 @@ async def test_idempotency_replay_returns_existing_reservation(
     assert call_count == 2
     assert res2.state == "SETTLED"
     assert res2.run_id == run_id
+    # A client polling this endpoint must be able to tell "this response is
+    # a replay of an already-settled run, its empty output is not a bug"
+    # from "the run genuinely produced no output" -- see
+    # orchestrator/fastapi_app.py's "replay" field in the /orchestrate
+    # response.
+    assert result2.replay is True
+    assert result2.output == ""
 
 
 @pytest.mark.asyncio

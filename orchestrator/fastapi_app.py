@@ -952,6 +952,7 @@ async def run_tiered_pipeline(
         "run_id": reservation.run_id,
         "recipe": result.recipe or recipe_name,
         "output": result.output,
+        "replay": result.replay,
         "requested_tokens": result.requested_tokens,
         "held_microusd": reservation.held_microusd,
         "settled_microusd": reservation.settled_microusd,

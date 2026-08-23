@@ -154,6 +154,7 @@ class Tier5ExecutionService:
                 requested_tokens=0,
                 total_tokens_used=None,
                 total_cost_usd=None,
+                replay=True,
             )
             return empty_result, reservation
 
@@ -176,19 +177,17 @@ class Tier5ExecutionService:
                 override_reason=override_reason,
             )
         except Exception:
-            if self.ledger.has_stage_markers(run_id):
-                # Ambiguous / post-marker failure consumes the complete held amount
-                self.ledger.settle(run_id, verified_unused_microusd=0)
-            else:
-                # Pre-dispatch failure: release held funds back to daily budget
-                try:
+            try:
+                if self.ledger.has_stage_markers(run_id):
+                    # Ambiguous / post-marker failure consumes the complete held amount
+                    self.ledger.settle(run_id, verified_unused_microusd=0)
+                else:
+                    # Pre-dispatch failure: release held funds back to daily budget
                     self.ledger.release_pre_dispatch(run_id)
-                except Exception as release_exc:
-                    _log.warning(
-                        "Failed to release pre-dispatch hold for %s: %s",
-                        run_id,
-                        release_exc,
-                    )
+            except Exception as ledger_exc:
+                _log.warning(
+                    "Failed to settle or release hold for %s: %s", run_id, ledger_exc
+                )
             raise
 
         # Successful run: calculate verified unused difference

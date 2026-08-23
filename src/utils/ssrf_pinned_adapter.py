@@ -433,6 +433,7 @@ def ssrf_request(
     # ceiling here does not reopen any auto-follow risk; this loop still
     # tracks and enforces its own hop count independently via `hops`/
     # `max_redirects` below.
+    previous_max_redirects = sess.max_redirects
     sess.max_redirects = max(max_redirects, 1)
     check_url = url_checker or default_url_allowed
     hops = 0
@@ -469,6 +470,8 @@ def ssrf_request(
     finally:
         if own_session:
             sess.close()
+        else:
+            sess.max_redirects = previous_max_redirects
 
 
 def hook_endpoint_policy() -> tuple[Callable[[str], None], Callable[[str], None]]:
@@ -544,7 +547,9 @@ def build_pinned_httpx_client(
     async def _validate_request_host_async(request: httpx.Request) -> None:
         _validate_request_host(request)
 
-    client_kwargs.setdefault("follow_redirects", False)
+    if client_kwargs.pop("follow_redirects", False):
+        raise SSRFPolicyError("pinned httpx clients must not follow redirects")
+    client_kwargs["follow_redirects"] = False
     hooks = dict(client_kwargs.pop("event_hooks", None) or {})
     request_hooks = list(hooks.get("request", []))
     request_hooks.append(_validate_request_host_async if is_async else _validate_request_host)

@@ -183,6 +183,12 @@ class TestCallBridgeAsyncLocal:
             patch("httpx.AsyncClient.post", new=MagicMock()) as mock_post,
             patch.dict(os.environ, {}, clear=False),
         ):
+            # patch.dict restores the original environment on exit, so
+            # removing these here (rather than an earlier empty update,
+            # which changed nothing) reliably forces the HTTP path
+            # regardless of what's set in the ambient environment.
+            os.environ.pop("ORAMASYS_MCP_SERVER_CMD", None)
+            os.environ.pop("ULTRATHINK_MCP_SERVER_CMD", None)
             mock_ssrf_request.side_effect = AssertionError("must not use the deny-by-default transport")
 
             async def fake_post(*args, **kwargs):

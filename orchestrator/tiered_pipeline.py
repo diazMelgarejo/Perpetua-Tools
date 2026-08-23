@@ -166,6 +166,7 @@ class PipelineResult:
     requested_tokens: int
     total_tokens_used: int | None
     total_cost_usd: float | None
+    replay: bool = False
 
 
 def tiered_pipeline_enabled() -> bool:

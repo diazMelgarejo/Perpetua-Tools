@@ -348,3 +348,50 @@ def test_reservation_rejects_worst_case_above_available_budget(tmp_path) -> None
             fingerprint="fingerprint-1",
             worst_case_microusd=2_000_000,
         )
+
+
+@pytest.mark.unit
+def test_read_only_reservation_lookup_does_not_block_behind_an_active_writer(tmp_path) -> None:
+    """get_reservation/is_stage_marked/has_stage_markers must not take the
+    writer lock (BEGIN IMMEDIATE) -- routing them through
+    _guarded_transaction() serialized every status read behind any active
+    writer and could raise BudgetUnavailableError on busy-timeout for a
+    call that never wrote anything. A read using _read_transaction() must
+    complete promptly even while a writer transaction is held open."""
+    import threading
+    import time
+
+    ledger = _ledger(tmp_path)
+    ledger.reserve(
+        run_id="run-1",
+        idempotency_key="key-1",
+        fingerprint="fingerprint-1",
+        worst_case_microusd=1_000_000,
+    )
+
+    writer_started = threading.Event()
+    release_writer = threading.Event()
+
+    def _hold_write_lock():
+        with ledger._transaction() as db:
+            db.execute("SELECT 1")
+            writer_started.set()
+            release_writer.wait(timeout=5)
+
+    writer_thread = threading.Thread(target=_hold_write_lock, daemon=True)
+    writer_thread.start()
+    assert writer_started.wait(timeout=2), "writer never acquired the lock"
+
+    try:
+        start = time.monotonic()
+        row = ledger.get_reservation("run-1")
+        elapsed = time.monotonic() - start
+    finally:
+        release_writer.set()
+        writer_thread.join(timeout=5)
+
+    assert row is not None
+    # Generous margin: a read blocked on the writer lock would take ~ the
+    # full busy_timeout_ms (default 5000ms) or raise BudgetUnavailableError
+    # entirely. A non-blocking read completes in well under 1 second.
+    assert elapsed < 1.0, f"read took {elapsed:.3f}s -- appears to have waited on the writer lock"

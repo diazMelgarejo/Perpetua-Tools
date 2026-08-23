@@ -96,16 +96,17 @@ class PerplexityClient:
         try:
             from openai import OpenAI
             from utils.ssrf_pinned_adapter import build_pinned_httpx_client
-            client = OpenAI(
-                api_key=key, base_url=PerplexityClient.BASE_URL, timeout=8,
-                http_client=build_pinned_httpx_client(),
-            )
-            r = client.chat.completions.create(
-                model="sonar",
-                messages=[{"role": "user", "content": "ping"}],
-                max_tokens=1,
-            )
-            return bool(r.choices)
+            with build_pinned_httpx_client() as http_client:
+                client = OpenAI(
+                    api_key=key, base_url=PerplexityClient.BASE_URL, timeout=8,
+                    http_client=http_client,
+                )
+                r = client.chat.completions.create(
+                    model="sonar",
+                    messages=[{"role": "user", "content": "ping"}],
+                    max_tokens=1,
+                )
+                return bool(r.choices)
         except Exception:
             return False
 

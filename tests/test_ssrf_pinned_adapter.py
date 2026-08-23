@@ -14,6 +14,7 @@ from utils.ssrf_pinned_adapter import (
     default_address_allowed,
     default_url_allowed,
     ssrf_request,
+    ssrf_session,
     validate_resolved,
 )
 
@@ -154,6 +155,40 @@ def test_hook_endpoint_policy() -> None:
     # select the Layer-1 checker, not the fallback.
     with pytest.raises(Layer1SSRFPolicyError):
         url_checker("https://example.com/")
+
+
+def test_ssrf_request_restores_caller_session_max_redirects() -> None:
+    """ssrf_request() temporarily raises a caller-supplied session's
+    max_redirects (to work around requests.Session.send()'s internal
+    precomputation -- see the comment above sess.max_redirects in
+    ssrf_request()). Without restoring it afterward, the setting the caller
+    originally chose (e.g. ssrf_session()'s own max_redirects=0 "redirects
+    are refused" contract) silently persists changed for every later call
+    on that same session."""
+    import io
+
+    import urllib3
+    from urllib3.connectionpool import HTTPConnectionPool, HTTPSConnectionPool
+
+    sess = ssrf_session()
+    original = sess.max_redirects
+    assert original == 0
+
+    def fake_getaddrinfo(host, port, family=0, type=0, *a, **kw):
+        return [(2, 1, 6, "", ("93.184.216.34", port))]
+
+    def fake_urlopen(self, method, url, *args, **kwargs):
+        return urllib3.HTTPResponse(body=io.BytesIO(b"ok"), status=200, preload_content=False)
+
+    with (
+        patch("socket.getaddrinfo", side_effect=fake_getaddrinfo),
+        patch.object(HTTPConnectionPool, "urlopen", fake_urlopen),
+        patch.object(HTTPSConnectionPool, "urlopen", fake_urlopen),
+    ):
+        ssrf_request("GET", "https://example.com/out", session=sess)
+
+    assert sess.max_redirects == original, "caller's own max_redirects setting must be restored"
+    sess.close()
 
 
 def test_ssrf_request_rejects_session_without_pinned_adapter() -> None:
@@ -405,4 +440,26 @@ def test_multithreaded_shared_session_does_not_crash_or_cross_contaminate() -> N
     assert sorted(got_hosts) == sorted(hostnames), "each thread's own hostname (NAME) must survive, unmixed"
     assert sorted(got_pins) == sorted(ip_by_host.values()), "each thread's own pin (PLACE) must survive, unmixed"
     assert adapter.poolmanager.connection_pool_kw == before, "no shared state accrued across threads"
+
+
+def test_build_pinned_httpx_client_rejects_explicit_follow_redirects_true() -> None:
+    """build_pinned_httpx_client() documents 'redirects are never auto-followed'
+    as one of its two guarantees. A prior setdefault() let a caller silently
+    override that with follow_redirects=True -- the request hook only
+    validates the INITIAL host, so an auto-followed redirect would reach an
+    unvalidated destination. Must fail loudly instead of silently degrading."""
+    from utils.ssrf_pinned_adapter import build_pinned_httpx_client
+
+    with pytest.raises(SSRFPolicyError, match="must not follow redirects"):
+        build_pinned_httpx_client(follow_redirects=True)
+
+
+def test_build_pinned_httpx_client_defaults_to_no_redirects() -> None:
+    from utils.ssrf_pinned_adapter import build_pinned_httpx_client
+
+    client = build_pinned_httpx_client()
+    try:
+        assert client.follow_redirects is False
+    finally:
+        client.close()
 
