@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 import time
 import uuid
 from pathlib import Path
@@ -40,6 +41,13 @@ class CostGuard:
 
     ALERT_RATIO = 0.80
 
+    # A reservation this old is treated as abandoned and self-heals on the
+    # next reserve() call -- defense-in-depth for a caller that never
+    # reaches commit()/rollback() at all (e.g. the process is killed, not
+    # just cancelled; a try/finally can't run if there's no interpreter left
+    # to run it in). Generous relative to any real request duration.
+    RESERVATION_TTL_SECONDS = 300.0
+
     def __init__(
         self, state_dir: str = ".state", budget_file: str = "budget.json"
     ) -> None:
@@ -49,7 +57,8 @@ class CostGuard:
         self._memory_state: Dict[str, float] = {**_DEFAULT_BUDGET, "last_reset": time.time()}
         self._persist_enabled = True
         self._lock = asyncio.Lock()
-        self._reserved: Dict[str, float] = {}
+        # reservation_id -> (amount, monotonic reserve() timestamp)
+        self._reserved: Dict[str, tuple[float, float]] = {}
 
     def _load(self) -> Dict[str, float]:
         if not self._persist_enabled:
@@ -118,10 +127,22 @@ class CostGuard:
         BudgetExceededError instead of returning bool, since the caller must
         distinguish "no reservation was made" from "one was made and must be
         rolled back."
+
+        Rejects negative or non-finite ``estimated_cost`` before touching any
+        state: a negative value would LOWER ``in_flight``, letting other
+        concurrent callers reserve past the real budget; NaN makes the
+        Line-125-style comparison always False (Python: any comparison with
+        NaN is False), so the reservation would always "succeed" and poison
+        ``daily_spend`` with NaN on commit. Zero IS valid and common --
+        ``OrchestrateRequest.estimated_cost`` defaults to ``0.0`` for calls
+        with no known cost estimate.
         """
+        if not math.isfinite(estimated_cost) or estimated_cost < 0:
+            raise ValueError(f"estimated_cost must be a non-negative finite number, got {estimated_cost!r}")
         async with self._lock:
+            self._sweep_expired_reservations_locked()
             p = self._maybe_reset(self._load())
-            in_flight = sum(self._reserved.values())
+            in_flight = sum(amount for amount, _ in self._reserved.values())
             if p["daily_spend"] + in_flight + estimated_cost > p["daily_budget"]:
                 raise BudgetExceededError(
                     f"reserving ${estimated_cost:.4f} would exceed daily budget "
@@ -129,20 +150,46 @@ class CostGuard:
                     f"budget=${p['daily_budget']:.4f})"
                 )
             reservation_id = uuid.uuid4().hex
-            self._reserved[reservation_id] = estimated_cost
+            self._reserved[reservation_id] = (estimated_cost, time.monotonic())
             return reservation_id
+
+    def _sweep_expired_reservations_locked(self) -> None:
+        """Drop reservations older than RESERVATION_TTL_SECONDS. Caller must
+        already hold self._lock.
+
+        This is the self-healing half of the leak fix: a caller that never
+        reaches commit()/rollback() at all (process killed outright, not
+        just the task cancelled -- a try/finally can't run without an
+        interpreter left to run it in) would otherwise hold a phantom
+        budget block forever. An expired reservation is dropped, not
+        charged -- conservative in the operator's favor: if the original
+        request really did complete, its real cost was either never
+        significant (the common estimated_cost=0.0 case) or the caller's
+        own commit()/rollback() already ran well within the TTL window.
+        """
+        now = time.monotonic()
+        expired = [
+            rid for rid, (_, reserved_at) in self._reserved.items()
+            if now - reserved_at > self.RESERVATION_TTL_SECONDS
+        ]
+        for rid in expired:
+            del self._reserved[rid]
 
     async def commit(self, reservation_id: str, actual_cost: float | None = None) -> Dict[str, float]:
         """Settle a reservation into ``daily_spend``.
 
         ``actual_cost`` overrides the original estimate when the real
         provider cost is known (e.g. from usage metadata) -- defaults to the
-        reserved estimate when the caller has no better number.
+        reserved estimate when the caller has no better number. Raises
+        UnknownReservationError both for a never-reserved id and for one the
+        TTL sweep already reclaimed (rare -- see RESERVATION_TTL_SECONDS);
+        callers that may race the sweep should catch it and treat it as a
+        no-op, not a hard failure.
         """
         async with self._lock:
             if reservation_id not in self._reserved:
                 raise UnknownReservationError(reservation_id)
-            estimated = self._reserved.pop(reservation_id)
+            estimated, _ = self._reserved.pop(reservation_id)
             amount = estimated if actual_cost is None else actual_cost
             p = self._maybe_reset(self._load())
             p["daily_spend"] = round(p["daily_spend"] + amount, 6)

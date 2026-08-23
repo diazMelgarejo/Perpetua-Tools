@@ -36,7 +36,7 @@ from orchestrator.control_plane import (
     load_runtime_payload,
     resolve_routing_state,
 )
-from orchestrator.cost_guard import BudgetExceededError, CostGuard
+from orchestrator.cost_guard import BudgetExceededError, CostGuard, UnknownReservationError
 from orchestrator.ecc_tools_sync import get_sync_status, sync_ecc_tools
 from orchestrator.model_registry import ModelRegistry
 from orchestrator.model_transport import (
@@ -712,21 +712,31 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
             "existing_agent": asdict(existing),
         }
 
-    snapshot = cost_guard.snapshot()
     try:
         reservation_id = await cost_guard.reserve(req.estimated_cost)
-    except BudgetExceededError:
+    except BudgetExceededError as exc:
+        # exc's own message already breaks down settled + in-flight + budget --
+        # a stale snapshot taken before reserve() would under-report
+        # "remaining" whenever OTHER in-flight reservations (not yet
+        # settled to disk) are what caused this rejection.
         raise HTTPException(
             status_code=402,
-            detail=f"Daily budget exceeded. Remaining: ${snapshot.get('remaining', 0):.4f}",
-        )
+            detail=f"Daily budget exceeded: {exc}",
+        ) from None
 
-    # Everything below either rolls back the reservation (any early return or
-    # exception) or commits it (only on reaching the success response) --
-    # reserve() already holds estimated_cost against the budget for every
-    # other concurrent caller during the awaits below (_resolve_candidates),
-    # closing the check-then-act race the old can_spend()/record_spend()
-    # split left open across that same await point.
+    # committed tracks whether we reached cost_guard.commit() below. The
+    # finally block rolls back whenever we didn't -- covering every early
+    # return, every raised exception, AND asyncio.CancelledError (a client
+    # disconnect during the awaits below cancels this task; CancelledError
+    # derives from BaseException, so a bare `except Exception` never saw it
+    # and the reservation leaked until process restart). asyncio.shield()
+    # protects the cleanup call itself from being cut short by a second,
+    # immediate cancellation racing the first. reserve() already holds
+    # estimated_cost against the budget for every other concurrent caller
+    # during the awaits below (_resolve_candidates), closing the
+    # check-then-act race the old can_spend()/record_spend() split left
+    # open across that same await point.
+    committed = False
     try:
         budget_warning = None
         if cost_guard.alert_approaching():
@@ -745,7 +755,6 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
 
         candidates, availability = await _resolve_candidates(route_candidates, req.task_type)
         if req.task_type in _AUTORESEARCH_TASK_TYPES and not candidates:
-            await cost_guard.rollback(reservation_id)
             return {
                 "status": "needs_user_action",
                 "message": (
@@ -775,10 +784,16 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
             },
             status="idle",
         )
-    except Exception:
-        await cost_guard.rollback(reservation_id)
-        raise
-    await cost_guard.commit(reservation_id, actual_cost=req.estimated_cost)
+        await cost_guard.commit(reservation_id, actual_cost=req.estimated_cost)
+        committed = True
+    finally:
+        if not committed:
+            try:
+                await asyncio.shield(cost_guard.rollback(reservation_id))
+            except UnknownReservationError:
+                # RESERVATION_TTL_SECONDS already reclaimed it -- benign,
+                # the phantom budget hold is already gone either way.
+                pass
 
     response: Dict[str, Any] = {
         "status": "created",

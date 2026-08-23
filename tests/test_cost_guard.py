@@ -6,6 +6,7 @@ Runs offline — no Ollama, no external API calls required.
 """
 from __future__ import annotations
 
+import asyncio
 import sys
 import time
 from pathlib import Path
@@ -205,6 +206,91 @@ class TestAtomicReserveCommitRollback:
         winners = [r for r in results if r is not None]
         assert len(winners) == 1
 
+    @pytest.mark.asyncio
+    async def test_reserve_rejects_negative_cost(self, guard: CostGuard) -> None:
+        """A negative estimated_cost would LOWER in_flight, letting other
+        concurrent callers reserve past the real budget -- CodeRabbit finding
+        on cost_guard.py:112-133."""
+        with pytest.raises(ValueError, match="non-negative"):
+            await guard.reserve(-5.0)
+        assert guard._reserved == {}
+
+    @pytest.mark.asyncio
+    async def test_reserve_rejects_nan_cost(self, guard: CostGuard) -> None:
+        """NaN makes the budget comparison always False (any comparison with
+        NaN is False in Python), so the reservation would always "succeed"
+        and poison daily_spend with NaN on commit."""
+        with pytest.raises(ValueError, match="non-negative"):
+            await guard.reserve(float("nan"))
+        assert guard._reserved == {}
+
+    @pytest.mark.asyncio
+    async def test_reserve_rejects_infinite_cost(self, guard: CostGuard) -> None:
+        with pytest.raises(ValueError, match="non-negative"):
+            await guard.reserve(float("inf"))
+        assert guard._reserved == {}
+
+    @pytest.mark.asyncio
+    async def test_reserve_accepts_zero_cost(self, guard: CostGuard) -> None:
+        """Zero is valid and common -- OrchestrateRequest.estimated_cost
+        defaults to 0.0. Must not be rejected by the non-negative check."""
+        reservation_id = await guard.reserve(0.0)
+        await guard.commit(reservation_id)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(0.0)
+
+
+class TestReservationTTLSelfHeal:
+    """Defense-in-depth for the CancelledError leak CodeRabbit found in
+    orchestrator/fastapi_app.py: a reservation whose caller never reaches
+    commit()/rollback() at all (process killed outright, not just the task
+    cancelled) would otherwise hold a phantom budget block forever. A TTL
+    sweep on the next reserve() call reclaims it."""
+
+    @pytest.mark.asyncio
+    async def test_expired_reservation_no_longer_counts_against_budget(
+        self, guard: CostGuard, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        guard.set_budget(10.0)
+        reservation_id = await guard.reserve(8.0)
+
+        # Simulate RESERVATION_TTL_SECONDS having elapsed without commit()/
+        # rollback() ever being called (the leak scenario).
+        amount, _ = guard._reserved[reservation_id]
+        guard._reserved[reservation_id] = (amount, guard._reserved[reservation_id][1] - 301.0)
+
+        # A second reserve() that would have failed against the phantom
+        # 8.0 in-flight hold now succeeds, because the sweep drops it first.
+        second_id = await guard.reserve(8.0)
+        assert reservation_id not in guard._reserved
+        await guard.commit(second_id)
+
+    @pytest.mark.asyncio
+    async def test_fresh_reservation_is_not_swept(self, guard: CostGuard) -> None:
+        """A reservation well within the TTL must survive a sweep triggered
+        by an unrelated concurrent reserve() call."""
+        guard.set_budget(10.0)
+        reservation_id = await guard.reserve(3.0)
+        await guard.reserve(1.0)  # triggers a sweep pass; must not touch reservation_id
+        assert reservation_id in guard._reserved
+        await guard.commit(reservation_id)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(3.0)
+
+    @pytest.mark.asyncio
+    async def test_commit_after_ttl_expiry_raises_unknown_reservation(
+        self, guard: CostGuard
+    ) -> None:
+        """The rare race a caller must tolerate: TTL sweep beats a very slow
+        commit() to the punch. Documented as benign in commit()'s docstring
+        -- orchestrator/fastapi_app.py's cleanup path catches this
+        specifically rather than crashing the response."""
+        reservation_id = await guard.reserve(1.0)
+        amount, _ = guard._reserved[reservation_id]
+        guard._reserved[reservation_id] = (amount, guard._reserved[reservation_id][1] - 301.0)
+        await guard.reserve(0.0)  # triggers the sweep
+
+        with pytest.raises(UnknownReservationError):
+            await guard.commit(reservation_id)
+
 
 class TestSetBudget:
     def test_set_budget_changes_limit(self, guard):
@@ -217,3 +303,48 @@ class TestSetBudget:
         g.set_budget(100.0)
         g2 = CostGuard(state_dir=str(tmp_path / ".state"))
         assert g2.snapshot()["daily_budget"] == pytest.approx(100.0)
+
+
+class TestOrchestrateEndpointCancellation:
+    """End-to-end regression for the CodeRabbit finding on
+    orchestrator/fastapi_app.py:778-781: `except Exception` does not catch
+    asyncio.CancelledError, so a client disconnect during
+    `await _resolve_candidates(...)` left the reservation permanently in
+    CostGuard._reserved. Calls the real orchestrate() coroutine (not the
+    HTTP layer) with a real asyncio.CancelledError raised mid-await, and
+    asserts the reservation is gone afterward."""
+
+    @pytest.mark.asyncio
+    async def test_cancellation_during_resolve_candidates_rolls_back_reservation(
+        self, tmp_path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from orchestrator import fastapi_app
+
+        fresh_guard = CostGuard(state_dir=str(tmp_path / ".state"))
+        monkeypatch.setattr(fastapi_app, "cost_guard", fresh_guard)
+        monkeypatch.setattr(
+            fastapi_app.tracker, "find_existing", lambda **kwargs: None
+        )
+        monkeypatch.setattr(
+            fastapi_app.registry,
+            "route_task",
+            lambda *args, **kwargs: [object()],  # non-empty: past the 404 check
+        )
+
+        async def cancelled_resolve(*args, **kwargs):
+            raise asyncio.CancelledError()
+
+        monkeypatch.setattr(fastapi_app, "_resolve_candidates", cancelled_resolve)
+
+        req = fastapi_app.OrchestrateRequest(
+            task="test task", task_type="deep_reasoning", estimated_cost=5.0
+        )
+
+        with pytest.raises(asyncio.CancelledError):
+            await fastapi_app.orchestrate(req)
+
+        # The reservation must not have leaked: it was either rolled back
+        # by the finally block, or never existed -- either way, nothing
+        # phantom-blocks a later request's budget.
+        assert fresh_guard._reserved == {}
+        assert fresh_guard.snapshot()["daily_spend"] == pytest.approx(0.0)
