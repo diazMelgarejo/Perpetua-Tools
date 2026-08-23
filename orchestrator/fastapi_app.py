@@ -36,7 +36,7 @@ from orchestrator.control_plane import (
     load_runtime_payload,
     resolve_routing_state,
 )
-from orchestrator.cost_guard import CostGuard
+from orchestrator.cost_guard import BudgetExceededError, CostGuard
 from orchestrator.ecc_tools_sync import get_sync_status, sync_ecc_tools
 from orchestrator.model_registry import ModelRegistry
 from orchestrator.model_transport import (
@@ -713,59 +713,72 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
         }
 
     snapshot = cost_guard.snapshot()
-    if not cost_guard.can_spend(req.estimated_cost):
+    try:
+        reservation_id = await cost_guard.reserve(req.estimated_cost)
+    except BudgetExceededError:
         raise HTTPException(
             status_code=402,
             detail=f"Daily budget exceeded. Remaining: ${snapshot.get('remaining', 0):.4f}",
         )
 
-    budget_warning = None
-    if cost_guard.alert_approaching():
-        budget_state = cost_guard.snapshot()
-        budget_warning = (
-            f"Budget at {budget_state['daily_spend']:.2f} / "
-            f"{budget_state['daily_budget']:.2f} (>=80%)"
+    # Everything below either rolls back the reservation (any early return or
+    # exception) or commits it (only on reaching the success response) --
+    # reserve() already holds estimated_cost against the budget for every
+    # other concurrent caller during the awaits below (_resolve_candidates),
+    # closing the check-then-act race the old can_spend()/record_spend()
+    # split left open across that same await point.
+    try:
+        budget_warning = None
+        if cost_guard.alert_approaching():
+            budget_state = cost_guard.snapshot()
+            budget_warning = (
+                f"Budget at {budget_state['daily_spend']:.2f} / "
+                f"{budget_state['daily_budget']:.2f} (>=80%)"
+            )
+
+        route_candidates = registry.route_task(req.task_type, preferred_device=req.preferred_device)
+        if not route_candidates:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No model candidates found for task_type='{req.task_type}'",
+            )
+
+        candidates, availability = await _resolve_candidates(route_candidates, req.task_type)
+        if req.task_type in _AUTORESEARCH_TASK_TYPES and not candidates:
+            await cost_guard.rollback(reservation_id)
+            return {
+                "status": "needs_user_action",
+                "message": (
+                    "No viable local coder backend is reachable for autoresearch. "
+                    "Start Windows LM Studio (Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2) "
+                    "or a reachable local LM Studio fallback, then retry."
+                ),
+                "runtime": _runtime_summary(),
+                "availability": availability,
+            }
+
+        selected = candidates[0]
+        route_cfg = registry.routing_cfg.get("routes", {}).get(req.task_type, {})
+
+        agent = tracker.register(
+            role=req.task_type,
+            model=selected.name,
+            backend=selected.backend,
+            host=selected.host,
+            port=selected.port,
+            task_hash=task_hash,
+            parent_agent_id=req.parent_agent_id,
+            metadata={
+                "reasoning": selected.reasoning,
+                "device": selected.device,
+                "online": selected.online,
+            },
+            status="idle",
         )
-
-    route_candidates = registry.route_task(req.task_type, preferred_device=req.preferred_device)
-    if not route_candidates:
-        raise HTTPException(
-            status_code=404,
-            detail=f"No model candidates found for task_type='{req.task_type}'",
-        )
-
-    candidates, availability = await _resolve_candidates(route_candidates, req.task_type)
-    if req.task_type in _AUTORESEARCH_TASK_TYPES and not candidates:
-        return {
-            "status": "needs_user_action",
-            "message": (
-                "No viable local coder backend is reachable for autoresearch. "
-                "Start Windows LM Studio (Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2) "
-                "or a reachable local LM Studio fallback, then retry."
-            ),
-            "runtime": _runtime_summary(),
-            "availability": availability,
-        }
-
-    selected = candidates[0]
-    route_cfg = registry.routing_cfg.get("routes", {}).get(req.task_type, {})
-
-    agent = tracker.register(
-        role=req.task_type,
-        model=selected.name,
-        backend=selected.backend,
-        host=selected.host,
-        port=selected.port,
-        task_hash=task_hash,
-        parent_agent_id=req.parent_agent_id,
-        metadata={
-            "reasoning": selected.reasoning,
-            "device": selected.device,
-            "online": selected.online,
-        },
-        status="idle",
-    )
-    cost_guard.record_spend(req.estimated_cost)
+    except Exception:
+        await cost_guard.rollback(reservation_id)
+        raise
+    await cost_guard.commit(reservation_id, actual_cost=req.estimated_cost)
 
     response: Dict[str, Any] = {
         "status": "created",

@@ -16,7 +16,7 @@ import pytest
 REPO_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from orchestrator.cost_guard import CostGuard
+from orchestrator.cost_guard import BudgetExceededError, CostGuard, UnknownReservationError
 
 
 @pytest.fixture
@@ -119,6 +119,91 @@ class TestSnapshot:
     def test_snapshot_alert_false_initially(self, guard):
         snap = guard.snapshot()
         assert snap["alert"] is False
+
+
+class TestAtomicReserveCommitRollback:
+    """Phase 2 Task 2.3 (05-ORAMASYS-UNIFIED-ACTION-PLAN-2026-08-18.md): the old
+    can_spend()/record_spend() split left a TOCTOU window across any await
+    between them (orchestrator/fastapi_app.py's /orchestrate awaits
+    _resolve_candidates() in between) -- two concurrent requests could both
+    pass can_spend() before either recorded spend, jointly overspending the
+    daily budget. reserve()/commit()/rollback() close that window."""
+
+    @pytest.mark.asyncio
+    async def test_reserve_commit_settles_spend(self, guard: CostGuard) -> None:
+        reservation_id = await guard.reserve(5.0)
+        await guard.commit(reservation_id)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(5.0)
+
+    @pytest.mark.asyncio
+    async def test_reserve_rollback_does_not_settle_spend(self, guard: CostGuard) -> None:
+        reservation_id = await guard.reserve(5.0)
+        await guard.rollback(reservation_id)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(0.0)
+
+    @pytest.mark.asyncio
+    async def test_reserve_counts_other_in_flight_reservations_not_just_settled_spend(
+        self, guard: CostGuard
+    ) -> None:
+        """The exact race this fixes: two concurrent reservations for a
+        20.0-budget guard against a combined cost that only overspends when
+        BOTH are honored -- the second reserve() must see the first's
+        in-flight hold and refuse, even though daily_spend on disk is still
+        0.0 (neither has committed yet)."""
+        guard.set_budget(20.0)
+        first_id = await guard.reserve(15.0)
+        with pytest.raises(BudgetExceededError):
+            await guard.reserve(15.0)
+        # First reservation is still valid and can complete normally.
+        await guard.commit(first_id)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(15.0)
+
+    @pytest.mark.asyncio
+    async def test_commit_unknown_reservation_raises(self, guard: CostGuard) -> None:
+        with pytest.raises(UnknownReservationError):
+            await guard.commit("not-a-real-reservation-id")
+
+    @pytest.mark.asyncio
+    async def test_rollback_unknown_reservation_raises(self, guard: CostGuard) -> None:
+        with pytest.raises(UnknownReservationError):
+            await guard.rollback("not-a-real-reservation-id")
+
+    @pytest.mark.asyncio
+    async def test_commit_is_single_use(self, guard: CostGuard) -> None:
+        """A reservation_id cannot be committed twice -- prevents double-spend
+        if a caller's cleanup path is ever invoked more than once."""
+        reservation_id = await guard.reserve(5.0)
+        await guard.commit(reservation_id)
+        with pytest.raises(UnknownReservationError):
+            await guard.commit(reservation_id)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(5.0)
+
+    @pytest.mark.asyncio
+    async def test_commit_actual_cost_overrides_estimate(self, guard: CostGuard) -> None:
+        reservation_id = await guard.reserve(10.0)
+        await guard.commit(reservation_id, actual_cost=3.5)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(3.5)
+
+    @pytest.mark.asyncio
+    async def test_concurrent_reserve_race_has_exactly_one_winner(self, guard: CostGuard) -> None:
+        """Real asyncio concurrency (not sequential calls): 5 tasks each try
+        to reserve() an amount that only 1 of them can fit under budget.
+        Exactly 1 must succeed -- proves the asyncio.Lock actually
+        serializes the check-then-reserve step under real concurrency, not
+        just when called one at a time."""
+        import asyncio
+
+        guard.set_budget(10.0)
+
+        async def try_reserve() -> str | None:
+            try:
+                return await guard.reserve(6.0)
+            except BudgetExceededError:
+                return None
+
+        results = await asyncio.gather(*(try_reserve() for _ in range(5)))
+        winners = [r for r in results if r is not None]
+        assert len(winners) == 1
 
 
 class TestSetBudget:
