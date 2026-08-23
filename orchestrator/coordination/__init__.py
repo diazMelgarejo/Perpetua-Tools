@@ -9,6 +9,8 @@ from __future__ import annotations
 from orchestrator.coordination.bias_detector import (
     BiasScore,
     CoordinationBiasDetector,
+    fetch_bias_detector_events,
+    feed_bias_detector_from_gossip,
 )
 from orchestrator.coordination.claims import (
     claim_task,
@@ -47,6 +49,8 @@ __all__ = [
     # Coordination bias detection
     "BiasScore",
     "CoordinationBiasDetector",
+    "fetch_bias_detector_events",
+    "feed_bias_detector_from_gossip",
     # Shared types
     "ClaimResult",
     "ClaimSequence",
