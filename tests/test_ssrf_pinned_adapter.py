@@ -490,9 +490,16 @@ def test_concurrent_same_hostname_different_resolver_results_isolated_per_thread
     # per-thread patch.
     adapter = SSRFPinnedHTTPAdapter()
     ip_by_thread_name = {"thread-a": "1.1.1.1", "thread-b": "8.8.8.8"}
+    # max_workers=2 alone doesn't guarantee the two resolver calls actually
+    # overlap -- the scheduler could run them fully serially and still
+    # return the right two IPs, silently failing to exercise any real
+    # concurrent-access race. A two-party barrier forces both threads to be
+    # inside fake_getaddrinfo at the same time before either returns.
+    resolution_barrier = threading.Barrier(2)
 
-    def fake_getaddrinfo(host, port, family=0, type=0, *a, **kw):
+    def fake_getaddrinfo(host, port, family=0, socket_type=0, *a, **kw):
         ip = ip_by_thread_name[threading.current_thread().name]
+        resolution_barrier.wait(timeout=5)
         return [(2, 1, 6, "", (ip, port))]
 
     def get_pinned_ip(name: str) -> str:
