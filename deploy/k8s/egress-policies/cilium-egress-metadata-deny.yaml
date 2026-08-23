@@ -1,0 +1,21 @@
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: "perpetua-agent-egress-deny-metadata"
+  namespace: "perpetua-tools"
+  labels:
+    app.kubernetes.io/name: "perpetua-tools"
+    app.kubernetes.io/part-of: "perpetua-tools"
+spec:
+  description: "Layer-3 CNI egress enforcement floor denying cloud metadata and link-local ranges"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: "perpetua-tools"
+  egressDeny:
+    - toCIDRSet:
+        # IPv4 Cloud Provider IMDS (AWS/GCP/Azure) & Link-Local
+        - cidr: "169.254.169.254/32"
+        - cidr: "169.254.0.0/16"
+        # IPv6 Cloud Provider IMDS & Link-Local
+        - cidr: "fd00:ec2::254/128"
+        - cidr: "fe80::/10"
