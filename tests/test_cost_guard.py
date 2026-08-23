@@ -305,58 +305,21 @@ class TestSetBudget:
         assert g2.snapshot()["daily_budget"] == pytest.approx(100.0)
 
 
-class TestOrchestrateEndpointCancellation:
-    """End-to-end regression for the CodeRabbit finding on
-    orchestrator/fastapi_app.py:778-781: `except Exception` does not catch
-    asyncio.CancelledError, so a client disconnect during
-    `await _resolve_candidates(...)` left the reservation permanently in
-    CostGuard._reserved. Calls the real orchestrate() coroutine (not the
-    HTTP layer) with a real asyncio.CancelledError raised mid-await, and
-    asserts the reservation is gone afterward."""
-
-    def test_cancellation_during_resolve_candidates_rolls_back_reservation(
-        self, tmp_path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """A synchronous test using TestClient (not a bare `await
-        orchestrate(req)` call) -- deliberately, not just for style. An
-        earlier version called orchestrate() directly as a coroutine
-        outside FastAPI's lifespan/event-loop management and was found to
-        leak state into OTHER test files' module-scoped TestClient
-        fixtures when run in the same pytest session (test_orama_integration
-        .py's routing tests started selecting the wrong backend after this
-        test ran first) -- a pre-existing async-lifecycle fragility this
-        test must not trip. TestClient manages its own event loop
-        synchronously per call, sidestepping that interaction entirely, and
-        matches how every other /orchestrate test in this codebase is
-        written."""
-        from fastapi.testclient import TestClient
-
-        from orchestrator import fastapi_app
-
-        fresh_guard = CostGuard(state_dir=str(tmp_path / ".state"))
-        monkeypatch.setattr(fastapi_app, "cost_guard", fresh_guard)
-        monkeypatch.setattr(
-            fastapi_app.tracker, "find_existing", lambda **kwargs: None
-        )
-        monkeypatch.setattr(
-            fastapi_app.registry,
-            "route_task",
-            lambda *args, **kwargs: [object()],  # non-empty: past the 404 check
-        )
-
-        async def cancelled_resolve(*args, **kwargs):
-            raise asyncio.CancelledError()
-
-        monkeypatch.setattr(fastapi_app, "_resolve_candidates", cancelled_resolve)
-
-        with TestClient(fastapi_app.app, raise_server_exceptions=False) as client:
-            client.post(
-                "/orchestrate",
-                json={"task": "test task", "task_type": "deep_reasoning", "estimated_cost": 5.0},
-            )
-
-        # The reservation must not have leaked: it was either rolled back
-        # by the finally block, or never existed -- either way, nothing
-        # phantom-blocks a later request's budget.
-        assert fresh_guard._reserved == {}
-        assert fresh_guard.snapshot()["daily_spend"] == pytest.approx(0.0)
+# NOTE on the orchestrator/fastapi_app.py:778-781 CancelledError fix
+# (CodeRabbit finding on PR #362): the fix itself -- except Exception ->
+# try/finally with a `committed` flag, so cleanup runs for ANY unwind
+# including asyncio.CancelledError -- was RED-GREEN verified interactively
+# via `git stash push --keep-index` against the pre-fix code: a reservation
+# genuinely leaked in CostGuard._reserved with the old code, and did not
+# leak with the fix. No permanent end-to-end regression test for it lives
+# in this file: every attempt (a bare `await orchestrate(req)` call, and a
+# TestClient(app) call with resolve_routing_state/sync_ecc_tools/registry
+# all mocked to match tests/test_orama_integration.py's own client
+# fixture) still corrupted that file's routing assertions when run in the
+# same pytest session -- entering fastapi_app.app's real module-level
+# singleton (registry/tracker/lifespan) from a second test file appears to
+# leave SOME state dirty beyond what was tried here. The TTL-sweep and
+# input-validation behavior around it are fully covered above
+# (TestReservationTTLSelfHeal, TestAtomicReserveCommitRollback); only the
+# CancelledError path itself lacks a permanent regression test. Flagged as
+# a known gap, not silently dropped.
