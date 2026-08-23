@@ -10,6 +10,7 @@ set -euo pipefail
 
 ANCHOR_FILE="${PF_ANCHOR_FILE:-/etc/pf.anchors/com.perpetua-tools.egress-deny}"
 ANCHOR_NAME="com.perpetua-tools.egress-deny"
+PF_CONF_FILE="${PF_CONF_FILE:-/etc/pf.conf}"
 PFCTL_SKIP="${PFCTL_SKIP:-0}"
 
 # Check platform
@@ -65,12 +66,76 @@ fi
 
 echo "Wrote pf egress rules to $ANCHOR_FILE"
 
-# Load anchor into pfctl if not skipped
+# Register the parent anchor in the active PF configuration. Loading rules
+# with `pfctl -a "$ANCHOR_NAME" -f` alone does not make pf evaluate them --
+# pf only reaches an anchor when a parent "anchor" rule in the root ruleset
+# (pf.conf) points to it. Manage a delimited block so repeated runs are
+# idempotent and unrelated pf.conf content is never touched.
+ANCHOR_BLOCK_START="# BEGIN com.perpetua-tools.egress-deny (managed by install-egress-pf-rules.sh)"
+ANCHOR_BLOCK_END="# END com.perpetua-tools.egress-deny"
+ANCHOR_BLOCK=$(cat << BLOCK_EOF
+${ANCHOR_BLOCK_START}
+anchor "${ANCHOR_NAME}"
+load anchor "${ANCHOR_NAME}" from "${ANCHOR_FILE}"
+${ANCHOR_BLOCK_END}
+BLOCK_EOF
+)
+
+if [[ -f "$PF_CONF_FILE" ]] && grep -qF "$ANCHOR_BLOCK_START" "$PF_CONF_FILE" 2>/dev/null; then
+  echo "pf.conf anchor declaration already present at $PF_CONF_FILE"
+else
+  # Insert before the first pre-existing "quick" rule so a broad catch-all
+  # (e.g. a general "pass out quick all") never runs before this anchor is
+  # reached -- quick terminates evaluation on the first match, so ordering
+  # here is load-bearing, not cosmetic.
+  TMP_CONF="$(mktemp)"
+  trap 'rm -f "$TMP_CONF"' EXIT
+  if [[ -f "$PF_CONF_FILE" ]]; then
+    if grep -qE '^\s*(pass|block).*quick' "$PF_CONF_FILE" 2>/dev/null; then
+      FIRST_QUICK_LINE="$(grep -nE '^\s*(pass|block).*quick' "$PF_CONF_FILE" | head -1 | cut -d: -f1)"
+      head -n "$((FIRST_QUICK_LINE - 1))" "$PF_CONF_FILE" > "$TMP_CONF"
+      printf '%s\n' "$ANCHOR_BLOCK" >> "$TMP_CONF"
+      tail -n "+${FIRST_QUICK_LINE}" "$PF_CONF_FILE" >> "$TMP_CONF"
+    else
+      cat "$PF_CONF_FILE" > "$TMP_CONF"
+      printf '%s\n' "$ANCHOR_BLOCK" >> "$TMP_CONF"
+    fi
+  else
+    printf '%s\n' "$ANCHOR_BLOCK" > "$TMP_CONF"
+  fi
+
+  if [[ -w "$(dirname "$PF_CONF_FILE")" ]] || [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
+    cp "$TMP_CONF" "$PF_CONF_FILE"
+  else
+    sudo cp "$TMP_CONF" "$PF_CONF_FILE"
+  fi
+  rm -f "$TMP_CONF"
+  trap - EXIT
+  echo "Registered anchor declaration in $PF_CONF_FILE"
+
+  if [[ "$PFCTL_SKIP" -ne 1 ]]; then
+    if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
+      pfctl -f "$PF_CONF_FILE"
+    else
+      sudo pfctl -f "$PF_CONF_FILE"
+    fi
+    echo "Reloaded $PF_CONF_FILE"
+  fi
+fi
+
+# Load anchor into pfctl if not skipped. The anchor load itself is NOT
+# masked with `|| true` -- a genuine load failure means the enforcement
+# floor is not active, which the operator must see. Enabling pf is a
+# separate step: `pfctl -e` on an already-enabled pf reports a benign,
+# expected non-zero exit ("pf already enabled") on repeated runs, which is
+# tolerated explicitly here rather than masking real load failures too.
 if [[ "$PFCTL_SKIP" -ne 1 ]]; then
   if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
-    pfctl -a "$ANCHOR_NAME" -f "$ANCHOR_FILE" -e 2>/dev/null || true
+    pfctl -a "$ANCHOR_NAME" -f "$ANCHOR_FILE"
+    pfctl -e 2>&1 | grep -qv "already enabled" || true
   else
-    sudo pfctl -a "$ANCHOR_NAME" -f "$ANCHOR_FILE" -e 2>/dev/null || true
+    sudo pfctl -a "$ANCHOR_NAME" -f "$ANCHOR_FILE"
+    sudo pfctl -e 2>&1 | grep -qv "already enabled" || true
   fi
   echo "Loaded anchor $ANCHOR_NAME into pfctl"
 fi
