@@ -20,12 +20,15 @@ from __future__ import annotations
 
 import ipaddress
 import socket
+import time
 from collections.abc import Callable, Sequence
 from typing import Any
 from urllib.parse import urljoin, urlparse
 
 import httpx
 import requests
+
+from src.utils.egress_telemetry import EgressEvent, classify_deny_reason, emit
 from requests.adapters import HTTPAdapter
 from urllib3.connection import HTTPConnection, HTTPSConnection
 from urllib3.connectionpool import HTTPConnectionPool, HTTPSConnectionPool
@@ -331,12 +334,26 @@ class SSRFPinnedHTTPAdapter(HTTPAdapter):
         """
         host_params, pool_kwargs = super().build_connection_pool_key_attributes(request, verify, cert=cert)
         url = request.url or ""
-        self.url_checker(url)
         parsed = urlparse(url)
         hostname = parsed.hostname or ""
         scheme = parsed.scheme
         port = parsed.port or (443 if scheme == "https" else 80)
-        ips = validate_resolved(hostname, port, self.address_checker)
+        started = time.monotonic()
+        try:
+            self.url_checker(url)
+            ips = validate_resolved(hostname, port, self.address_checker)
+        except Exception as exc:
+            emit(
+                EgressEvent(
+                    endpoint_class="remote",
+                    host=hostname,
+                    port=port,
+                    scheme=scheme,
+                    deny_reason=classify_deny_reason(exc),
+                    duration_ms=(time.monotonic() - started) * 1000,
+                )
+            )
+            raise
         pinned = ips[0]
         request.headers["Host"] = _host_header(hostname, port, scheme)
 
@@ -346,6 +363,16 @@ class SSRFPinnedHTTPAdapter(HTTPAdapter):
             pool_kwargs["assert_hostname"] = hostname
             pool_kwargs["server_hostname"] = hostname
 
+        emit(
+            EgressEvent(
+                endpoint_class="remote",
+                host=hostname,
+                resolved_ip=pinned,
+                port=port,
+                scheme=scheme,
+                duration_ms=(time.monotonic() - started) * 1000,
+            )
+        )
         return host_params, pool_kwargs
 
     def send(
@@ -448,7 +475,18 @@ def ssrf_request(
             if not allow_redirects or response.is_redirect is False:
                 return response
             if hops >= max_redirects:
-                raise RedirectDenied(f"redirect limit {max_redirects} exceeded")
+                exc = RedirectDenied(f"redirect limit {max_redirects} exceeded")
+                emit(
+                    EgressEvent(
+                        endpoint_class="remote",
+                        host=urlparse(current).hostname or "",
+                        port=urlparse(current).port or 443,
+                        scheme=urlparse(current).scheme,
+                        redirect_count=hops,
+                        deny_reason=classify_deny_reason(exc),
+                    )
+                )
+                raise exc
             location = response.headers.get("Location")
             if not location:
                 raise RedirectDenied("redirect without Location")
