@@ -49,7 +49,7 @@ class TestCallUltrathinkMcpOrBridge:
 
     @pytest.mark.anyio
     async def test_mcp_success_does_not_touch_http(self, monkeypatch):
-        """When MCP succeeds, the HTTP fallback (ssrf_request) must never be called."""
+        """When MCP succeeds, neither HTTP fallback path (local or remote) is touched."""
         monkeypatch.setenv("ORAMASYS_MCP_SERVER_CMD", "python fake_server.py")
 
         mock_client = MagicMock()
@@ -58,11 +58,16 @@ class TestCallUltrathinkMcpOrBridge:
         mock_client.__aexit__ = AsyncMock(return_value=False)
 
         mock_ssrf_request = MagicMock()
+        mock_post = MagicMock()
 
-        with patch(
-            "orchestrator.orama_mcp_client.OramasysMCPClient",
-            return_value=mock_client,
-        ), patch("utils.ssrf_pinned_adapter.ssrf_request", mock_ssrf_request):
+        with (
+            patch(
+                "orchestrator.orama_mcp_client.OramasysMCPClient",
+                return_value=mock_client,
+            ),
+            patch("utils.ssrf_pinned_adapter.ssrf_request", mock_ssrf_request),
+            patch("httpx.AsyncClient.post", mock_post),
+        ):
             from orchestrator.orama_bridge import call_oramasys_mcp_or_bridge
             result = await call_oramasys_mcp_or_bridge(
                 endpoint="http://localhost:8001",
@@ -74,6 +79,7 @@ class TestCallUltrathinkMcpOrBridge:
         assert result["transport"] == "mcp"
         assert result["result"] == _GOOD_MCP_RESULT
         mock_ssrf_request.assert_not_called()
+        mock_post.assert_not_called()
 
     @pytest.mark.anyio
     async def test_mcp_failure_falls_back_to_http_with_correct_payload(self, monkeypatch):
@@ -89,17 +95,21 @@ class TestCallUltrathinkMcpOrBridge:
         mock_http_response.json.return_value = _HTTP_MOCK_RESPONSE
         mock_http_response.raise_for_status = MagicMock()
 
-        # The HTTP fallback routes through utils.ssrf_pinned_adapter.ssrf_request
-        # (the Layer-2 pinned transport) via asyncio.to_thread, not a bare
-        # httpx.AsyncClient -- see orchestrator/orama_bridge.py. ssrf_request
-        # is synchronous, so the mock is a plain MagicMock (to_thread runs it
-        # in a worker thread and awaits the wrapped call, not the mock itself).
-        mock_ssrf_request = MagicMock(return_value=mock_http_response)
+        # endpoint below is http://localhost:8001 -- a loopback target. The
+        # HTTP fallback classifies loopback endpoints as local and routes
+        # them through a direct httpx.AsyncClient call, NOT ssrf_request
+        # (whose deny-by-default policy would otherwise make orama's own
+        # default deployment unreachable) -- see orchestrator/orama_bridge.py's
+        # _is_local_oramasys_endpoint().
+        async def fake_post(*args, **kwargs):
+            return mock_http_response
+
+        mock_post = MagicMock(side_effect=fake_post)
 
         with patch(
             "orchestrator.orama_mcp_client.OramasysMCPClient",
             return_value=mock_client,
-        ), patch("utils.ssrf_pinned_adapter.ssrf_request", mock_ssrf_request):
+        ), patch("httpx.AsyncClient.post", mock_post):
             from orchestrator.orama_bridge import (
                 build_oramasys_http_payload,
                 call_oramasys_mcp_or_bridge,
@@ -116,8 +126,8 @@ class TestCallUltrathinkMcpOrBridge:
 
         # Verify payload is the correct mapped value
         expected_payload = build_oramasys_http_payload("refactor this function", "code_analysis")
-        mock_ssrf_request.assert_called_once()
-        _, call_kwargs = mock_ssrf_request.call_args
+        mock_post.assert_called_once()
+        _, call_kwargs = mock_post.call_args
         assert call_kwargs["json"] == expected_payload
 
     @pytest.mark.anyio
@@ -135,12 +145,16 @@ class TestCallUltrathinkMcpOrBridge:
         mock_http_response = MagicMock()
         mock_http_response.json.return_value = _HTTP_MOCK_RESPONSE
         mock_http_response.raise_for_status = MagicMock()
-        mock_ssrf_request = MagicMock(return_value=mock_http_response)
+
+        async def fake_post(*args, **kwargs):
+            return mock_http_response
+
+        mock_post = MagicMock(side_effect=fake_post)
 
         with patch(
             "orchestrator.orama_mcp_client.OramasysMCPClient",
             return_value=mock_client,
-        ), patch("utils.ssrf_pinned_adapter.ssrf_request", mock_ssrf_request):
+        ), patch("httpx.AsyncClient.post", mock_post):
             from orchestrator.orama_bridge import call_oramasys_mcp_or_bridge
             result = await call_oramasys_mcp_or_bridge(
                 endpoint="http://localhost:8001",
@@ -150,7 +164,7 @@ class TestCallUltrathinkMcpOrBridge:
             )
 
         assert result["transport"] == "http"
-        mock_ssrf_request.assert_called_once()
+        mock_post.assert_called_once()
 
     @pytest.mark.anyio
     async def test_no_mcp_cmd_goes_straight_to_http(self, monkeypatch):
@@ -161,11 +175,15 @@ class TestCallUltrathinkMcpOrBridge:
         mock_http_response = MagicMock()
         mock_http_response.json.return_value = _HTTP_MOCK_RESPONSE
         mock_http_response.raise_for_status = MagicMock()
-        mock_ssrf_request = MagicMock(return_value=mock_http_response)
+
+        async def fake_post(*args, **kwargs):
+            return mock_http_response
+
+        mock_post = MagicMock(side_effect=fake_post)
 
         with patch(
             "orchestrator.orama_mcp_client.OramasysMCPClient"
-        ) as mock_mcp_cls, patch("utils.ssrf_pinned_adapter.ssrf_request", mock_ssrf_request):
+        ) as mock_mcp_cls, patch("httpx.AsyncClient.post", mock_post):
             from orchestrator.orama_bridge import call_oramasys_mcp_or_bridge
             result = await call_oramasys_mcp_or_bridge(
                 endpoint="http://localhost:8001",
@@ -195,12 +213,16 @@ class TestCallUltrathinkMcpOrBridge:
         mock_http_response = MagicMock()
         mock_http_response.json.return_value = _HTTP_MOCK_RESPONSE
         mock_http_response.raise_for_status = MagicMock()
-        mock_ssrf_request = MagicMock(return_value=mock_http_response)
+
+        async def fake_post(*args, **kwargs):
+            return mock_http_response
+
+        mock_post = MagicMock(side_effect=fake_post)
 
         with patch(
             "orchestrator.orama_mcp_client.OramasysMCPClient",
             _SlowClient,
-        ), patch("utils.ssrf_pinned_adapter.ssrf_request", mock_ssrf_request):
+        ), patch("httpx.AsyncClient.post", mock_post):
             from orchestrator.orama_bridge import call_oramasys_mcp_or_bridge
 
             result = await call_oramasys_mcp_or_bridge(
@@ -211,7 +233,7 @@ class TestCallUltrathinkMcpOrBridge:
             )
 
         assert result["transport"] == "http"
-        mock_ssrf_request.assert_called_once()
+        mock_post.assert_called_once()
 
 
 # OramasysMCPClient.call_solve unit tests ------------------------------------
