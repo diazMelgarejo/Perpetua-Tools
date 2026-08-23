@@ -4,7 +4,11 @@ import asyncio
 import logging
 import os
 import shlex
+import time
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
+
+from src.utils.egress_telemetry import EgressEvent, classify_deny_reason, emit
 
 log = logging.getLogger("orchestrator.orama_bridge")
 
@@ -94,14 +98,42 @@ def _dispatch_oramasys_http(url: str, payload: Dict[str, Any], timeout: float) -
     policy decisions for the same URL. Returns the raw, not-yet-raised
     response object; callers call ``response.raise_for_status()`` themselves.
     """
-    if _is_local_oramasys_endpoint(url):
-        import httpx
+    parsed = urlparse(url)
+    hostname = parsed.hostname or ""
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    is_local = _is_local_oramasys_endpoint(url)
+    started = time.monotonic()
+    try:
+        if is_local:
+            import httpx
 
-        return httpx.post(url, json=payload, timeout=timeout)
+            response = httpx.post(url, json=payload, timeout=timeout)
+        else:
+            from utils.ssrf_pinned_adapter import ssrf_request
 
-    from utils.ssrf_pinned_adapter import ssrf_request
-
-    return ssrf_request("POST", url, json=payload, timeout=timeout)
+            response = ssrf_request("POST", url, json=payload, timeout=timeout)
+    except Exception as exc:
+        emit(
+            EgressEvent(
+                endpoint_class="local" if is_local else "remote",
+                host=hostname,
+                port=port,
+                scheme=parsed.scheme,
+                deny_reason=classify_deny_reason(exc),
+                duration_ms=(time.monotonic() - started) * 1000,
+            )
+        )
+        raise
+    emit(
+        EgressEvent(
+            endpoint_class="local" if is_local else "remote",
+            host=hostname,
+            port=port,
+            scheme=parsed.scheme,
+            duration_ms=(time.monotonic() - started) * 1000,
+        )
+    )
+    return response
 
 
 def call_oramasys_bridge(
