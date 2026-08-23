@@ -7,6 +7,7 @@ Reference: orama-system docs/v2/54-tri-stack-observability-and-l3-egress-v2.md Â
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from typing import Any, Dict, List, Optional
@@ -33,7 +34,6 @@ class CoordinationBiasDetector:
         self,
         confidence: float,
         reasoning_text: str,
-        agent_outputs: Optional[List[str]] = None,
     ) -> None:
         """Record an agent decision with confidence and reasoning text."""
         self.history.append(
@@ -51,10 +51,14 @@ class CoordinationBiasDetector:
         texts = [d["text"] for d in self.history]
 
         n = len(confidences)
-        variance_sum = sum(
-            abs(confidences[i] - confidences[i - 1]) for i in range(1, n)
-        )
-        collapse_score = 1.0 - (variance_sum / (n - 1))
+        mean_conf = sum(confidences) / n
+        variance = sum((c - mean_conf) ** 2 for c in confidences) / n
+        stddev = variance ** 0.5
+        # Low dispersion around the mean means the group is converging on the
+        # same value -- collapse_score is high when stddev is near 0, low
+        # when confidences are spread out (including a bimodal split, which
+        # has HIGH stddev despite looking locally "smooth" step to step).
+        collapse_score = max(0.0, 1.0 - (stddev * 2))
         agreement_collapse = collapse_score > 0.85
 
         echo_loop = any(
@@ -79,48 +83,67 @@ class CoordinationBiasDetector:
         )
 
 
-_GOSSIP_EVENT_TYPES = ("dispatch", "status_update")
+_HEARTBEAT_KINDS = (
+    "task_complete",
+    "task_failed",
+    "task_abandoned",
+    "agent_killed",
+    "agent_note",
+)
 _POSITIVE_SIGNAL_WORDS = ("done", "complete", "completed", "green", "passed", "pushed", "verified", "merged")
 _NEGATIVE_SIGNAL_WORDS = ("blocked", "fail", "failed", "error", "collision", "conflict")
 
 
-def _estimate_confidence(event_type: str, message: str) -> float:
-    """Derive a confidence proxy from a GossipBus event, since dispatch/status_update
-    payloads carry no self-reported confidence score (unlike PeerObservation.compute_confidence()
-    in orchestrator/membership.py). A constant value here would make agreement_collapse's
-    variance-based check trivially always true (zero variance across every decision) --
-    that degenerate case is exactly what this heuristic exists to avoid.
+def _estimate_confidence(kind: str, message: str) -> float:
+    """Derive a confidence proxy from a GossipBus heartbeat event, since these
+    payloads carry no self-reported confidence score (unlike
+    PeerObservation.compute_confidence() in orchestrator/membership.py). A
+    constant value here would make agreement_collapse's variance-based check
+    trivially always true (zero variance across every decision) -- that
+    degenerate case is exactly what this heuristic exists to avoid.
 
-    dispatch: new work assigned, no outcome yet -- neutral-low.
-    status_update: keyword-scanned for a completion or a blocker/failure signal.
+    task_complete/agent_note: keyword-scanned for a completion or a
+    blocker/failure signal. task_failed/task_abandoned/agent_killed: an
+    explicit negative outcome already, regardless of message content.
     """
+    if kind in ("task_failed", "task_abandoned", "agent_killed"):
+        return 0.2
     lowered = message.lower()
-    if event_type == "status_update":
-        if any(word in lowered for word in _NEGATIVE_SIGNAL_WORDS):
-            return 0.2
-        if any(word in lowered for word in _POSITIVE_SIGNAL_WORDS):
-            return 0.95
-        return 0.6
-    if event_type == "dispatch":
-        return 0.5
+    words_lowered = set(re.findall(r"[a-z]+", lowered))
+    if words_lowered & set(_NEGATIVE_SIGNAL_WORDS):
+        return 0.2
+    if words_lowered & set(_POSITIVE_SIGNAL_WORDS):
+        return 0.95
     return 0.6
 
 
-async def fetch_bias_detector_events(bus: GossipBus) -> list[dict]:
-    """Fetch dispatch/status_update events via targeted SQL, not a bounded tail().
+async def fetch_bias_detector_events(bus: GossipBus, max_rows: int = 20) -> list[dict]:
+    """Fetch status-bearing heartbeat events via targeted SQL, not a bounded
+    tail(). Real emitters (heartbeat_monitor.py, coordination/task_queue.py,
+    coordination/claims.py, coordination/liveness.py) all use event_type
+    "heartbeat" with a "kind" payload field distinguishing agent_release,
+    task_complete, task_failed, etc. -- there is no "status_update"
+    event_type anywhere in production (confirmed against EventType's own
+    Literal in gossip_bus.py, which doesn't define one either).
 
-    Mirrors reorder_buffer.py's fetch_reorder_buffer_events(): unrelated heartbeat
-    traffic can push relevant events out of a size-bounded tail() window.
+    Mirrors reorder_buffer.py's fetch_reorder_buffer_events(): unrelated
+    heartbeat traffic (agent_pulse, agent_claim, buffer_drained, etc.) can
+    push relevant events out of a size-bounded tail() window, so this filters
+    at the SQL layer by kind, not just event_type, and applies LIMIT there
+    too rather than reading the whole table and discarding most of it in
+    Python.
     """
-    type_placeholders = ",".join("?" for _ in _GOSSIP_EVENT_TYPES)
+    kind_placeholders = ",".join("?" for _ in _HEARTBEAT_KINDS)
     query = (
         "SELECT id, event_uuid, ts, event_type, payload_json FROM gossip "
-        f"WHERE event_type IN ({type_placeholders}) "
-        "ORDER BY id ASC"
+        "WHERE event_type = 'heartbeat' "
+        f"AND json_extract(payload_json, '$.kind') IN ({kind_placeholders}) "
+        "ORDER BY id DESC LIMIT ?"
     )
     async with bus.connect() as db:
-        cursor = await db.execute(query, list(_GOSSIP_EVENT_TYPES))
+        cursor = await db.execute(query, [*_HEARTBEAT_KINDS, max_rows])
         rows = await cursor.fetchall()
+    rows.reverse()  # restore ascending id order after DESC+LIMIT
     return [
         {
             "row_id": row[0],
@@ -139,21 +162,22 @@ async def feed_bias_detector_from_gossip(
     *,
     agent_id: Optional[str] = None,
 ) -> BiasScore:
-    """Replay GossipBus dispatch/status_update events into ``detector`` and
+    """Replay GossipBus heartbeat/task-outcome events into ``detector`` and
     return the resulting BiasScore.
 
     ``agent_id``, when given, restricts replay to events whose payload
     ``agent_id`` field matches -- per-agent groupthink/echo-loop detection
     rather than a single mixed history across every agent on the board.
     """
-    events = await fetch_bias_detector_events(bus)
+    events = await fetch_bias_detector_events(bus, max_rows=detector.max_history)
     for ev in events:
         payload = ev["payload"]
         if agent_id is not None and payload.get("agent_id") != agent_id:
             continue
-        message = str(payload.get("message", ""))
+        kind = str(payload.get("kind", ""))
+        message = str(payload.get("message") or payload.get("reason") or payload.get("task") or "")
         if not message:
             continue
-        confidence = _estimate_confidence(ev["event_type"], message)
+        confidence = _estimate_confidence(kind, message)
         detector.add_decision(confidence, message)
     return detector.detect_bias()
