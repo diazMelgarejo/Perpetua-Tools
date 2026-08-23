@@ -74,6 +74,13 @@ if [[ -f "$MESH_DIR/ensure_local_mesh_secrets.py" ]]; then
 fi
 # Win parity: scripts/mesh/Invoke-MeshLocalCache.ps1 (install.ps1 -Mode Install)
 
+# Layer-3 macOS pf egress verification (non-blocking warning)
+if [[ "$(uname -s 2>/dev/null || echo Unknown)" == "Darwin" ]] && [[ -f "$SCRIPT_DIR/scripts/security/verify-egress-pf-rules.sh" ]]; then
+  if ! bash "$SCRIPT_DIR/scripts/security/verify-egress-pf-rules.sh" >/dev/null 2>&1; then
+    echo "  warn: Layer-3 macOS pf egress rules not active — run: sudo bash scripts/security/install-egress-pf-rules.sh" >&2
+  fi
+fi
+
 if [[ "$RUN_VENDOR_GUIDE" -eq 1 ]]; then
   guide_args=("${GUIDE_SKIP_ARGS[@]}")
   [[ "$NON_INTERACTIVE" -eq 1 ]] && guide_args+=(--non-interactive)
