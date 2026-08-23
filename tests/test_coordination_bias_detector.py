@@ -93,24 +93,32 @@ class TestCoordinationBiasDetector:
 
 
 class TestFeedBiasDetectorFromGossip:
-    """Wiring: replay GossipBus dispatch/status_update events into a detector."""
+    """Wiring: replay real GossipBus heartbeat/task-outcome events into a
+    detector. Uses event_type="heartbeat" with a "kind" payload field, since
+    that's what every real emitter in this codebase actually produces
+    (heartbeat_monitor.py, coordination/task_queue.py, coordination/claims.py,
+    coordination/liveness.py) -- "status_update" was never a real EventType
+    (confirmed against gossip_bus.py's own Literal) and no production code
+    anywhere emits it; these tests previously asserted that never-real shape.
+    """
 
     @pytest.mark.asyncio
-    async def test_fetch_only_returns_dispatch_and_status_update_events(self, make_bus) -> None:
+    async def test_fetch_only_returns_heartbeat_outcome_kinds(self, make_bus) -> None:
         bus = await make_bus()
-        await bus.emit("dispatch", {"agent_id": "a", "to": "b", "message": "do the thing"})
-        await bus.emit("heartbeat", {"agent_id": "a", "kind": "pulse"})
-        await bus.emit("status_update", {"agent_id": "a", "to": "b", "message": "done"})
+        await bus.emit("heartbeat", {"agent_id": "a", "kind": "task_complete", "message": "do the thing"})
+        await bus.emit("heartbeat", {"agent_id": "a", "kind": "agent_pulse"})
+        await bus.emit("heartbeat", {"agent_id": "a", "kind": "task_failed", "message": "boom"})
         events = await fetch_bias_detector_events(bus)
-        assert [e["event_type"] for e in events] == ["dispatch", "status_update"]
+        kinds = [e["payload"]["kind"] for e in events]
+        assert kinds == ["task_complete", "task_failed"]
 
     @pytest.mark.asyncio
     async def test_feed_ignores_unrelated_heartbeat_noise(self, make_bus) -> None:
         bus = await make_bus()
         for _ in range(50):
-            await bus.emit("heartbeat", {"agent_id": "noisy", "kind": "pulse"})
-        await bus.emit("dispatch", {"agent_id": "a", "to": "b", "message": "task one"})
-        await bus.emit("status_update", {"agent_id": "a", "to": "b", "message": "task one done"})
+            await bus.emit("heartbeat", {"agent_id": "noisy", "kind": "agent_pulse"})
+        await bus.emit("heartbeat", {"agent_id": "a", "kind": "task_complete", "message": "task one done"})
+        await bus.emit("heartbeat", {"agent_id": "a", "kind": "agent_note", "message": "task two note"})
         detector = CoordinationBiasDetector()
         await feed_bias_detector_from_gossip(bus, detector)
         assert len(detector.history) == 2
@@ -118,8 +126,8 @@ class TestFeedBiasDetectorFromGossip:
     @pytest.mark.asyncio
     async def test_feed_filters_by_agent_id(self, make_bus) -> None:
         bus = await make_bus()
-        await bus.emit("dispatch", {"agent_id": "agent-a", "to": "x", "message": "a's task"})
-        await bus.emit("dispatch", {"agent_id": "agent-b", "to": "x", "message": "b's task"})
+        await bus.emit("heartbeat", {"agent_id": "agent-a", "kind": "task_complete", "message": "a's task"})
+        await bus.emit("heartbeat", {"agent_id": "agent-b", "kind": "task_complete", "message": "b's task"})
         detector = CoordinationBiasDetector()
         await feed_bias_detector_from_gossip(bus, detector, agent_id="agent-a")
         assert len(detector.history) == 1
@@ -130,9 +138,9 @@ class TestFeedBiasDetectorFromGossip:
         """A constant confidence would make agreement_collapse trivially always
         true (zero variance). This is the regression guard for that degenerate case."""
         bus = await make_bus()
-        await bus.emit("dispatch", {"agent_id": "a", "to": "b", "message": "starting work"})
-        await bus.emit("status_update", {"agent_id": "a", "to": "b", "message": "all green, pushed"})
-        await bus.emit("status_update", {"agent_id": "a", "to": "b", "message": "BLOCKED: conflict"})
+        await bus.emit("heartbeat", {"agent_id": "a", "kind": "agent_note", "message": "starting work"})
+        await bus.emit("heartbeat", {"agent_id": "a", "kind": "agent_note", "message": "all green, pushed"})
+        await bus.emit("heartbeat", {"agent_id": "a", "kind": "task_failed", "message": "BLOCKED: conflict"})
         detector = CoordinationBiasDetector()
         await feed_bias_detector_from_gossip(bus, detector)
         confidences = {d["confidence"] for d in detector.history}
@@ -140,9 +148,14 @@ class TestFeedBiasDetectorFromGossip:
 
     @pytest.mark.asyncio
     async def test_feed_returns_bias_score(self, make_bus) -> None:
+        """Strengthened: the original version asserted only isinstance(score,
+        BiasScore), which passes even with zero events fed in (detect_bias()
+        on an empty history still returns a valid BiasScore(0.0, {}, False,
+        False)) -- it never actually proved real events were replayed."""
         bus = await make_bus()
         for i in range(5):
-            await bus.emit("status_update", {"agent_id": "a", "to": "b", "message": f"step {i} done"})
+            await bus.emit("heartbeat", {"agent_id": "a", "kind": "agent_note", "message": f"step {i} done"})
         detector = CoordinationBiasDetector()
         score = await feed_bias_detector_from_gossip(bus, detector)
         assert isinstance(score, BiasScore)
+        assert len(detector.history) == 5
