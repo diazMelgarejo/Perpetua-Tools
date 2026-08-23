@@ -1,0 +1,41 @@
+apiVersion: projectcalico.org/v3
+kind: GlobalNetworkPolicy
+metadata:
+  name: "perpetua-agent-egress-deny-metadata"
+  labels:
+    app.kubernetes.io/name: "perpetua-tools"
+    app.kubernetes.io/part-of: "perpetua-tools"
+spec:
+  # Lower values run first in Calico's default tier. Keep this before broad
+  # egress allow policies, whose Allow action terminates evaluation.
+  order: 10.0
+  selector: app.kubernetes.io/part-of == 'perpetua-tools'
+  types:
+    - Egress
+  egress:
+    # 1. Fail-closed explicit deny for cloud metadata and link-local ranges
+    - action: Deny
+      destination:
+        nets:
+          - 169.254.169.254/32
+          - 169.254.0.0/16
+          - fd00:ec2::254/128
+          - fe80::/10
+    # 2. Allow DNS resolution to kube-dns / CoreDNS
+    - action: Allow
+      protocol: UDP
+      destination:
+        ports:
+          - 53
+    - action: Allow
+      protocol: TCP
+      destination:
+        ports:
+          - 53
+    # 3. Allow legitimate outbound egress to external AI provider APIs (HTTPS :443)
+    - action: Allow
+      protocol: TCP
+      destination:
+        ports:
+          - 443
+          - 80
