@@ -17,6 +17,8 @@ invariants:
     rule: Endpoint reconstruction in model routing must delegate to utils.endpoint_policy_core.
   - id: backend-port-isolation
     rule: Ollama and LM Studio ports must not contaminate each other under active_tilting.
+  - id: allowlist
+    rule: Fixed vendor hostname allowlist includes api.perplexity.ai, api.x.ai, openrouter.ai, and api.anthropic.com.
 
 required_local_files:
   - src/utils/endpoint_policy_core.py

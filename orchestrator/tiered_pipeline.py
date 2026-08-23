@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -27,6 +28,13 @@ TRACE_PATH_ENV = "PT_PIPELINE_TRACE_PATH"
 APPROVAL_DIR_ENV = "PT_PIPELINE_APPROVAL_DIR"
 REVOKED_APPROVALS_ENV = "PT_PIPELINE_REVOKED_APPROVALS"
 MAX_STAGES = 3
+TRACE_ID_PATTERN = r"[A-Za-z0-9_-]+"
+# Single source of truth for both enforcement paths -- fastapi_app.py's
+# Pydantic Field(min_length=..., max_length=...) and validate_trace_id()
+# below must agree, or a direct caller bypassing the HTTP layer could use a
+# trace_id the API would reject (and vice versa).
+TRACE_ID_MIN_LENGTH = 8
+TRACE_ID_MAX_LENGTH = 128
 DEFAULT_CONFIG = Path(__file__).resolve().parent.parent / "config" / "pipelines.yml"
 DEFAULT_MODELS = Path(__file__).resolve().parent.parent / "config" / "models.yml"
 DEFAULT_TRACE = Path(__file__).resolve().parent.parent / ".state" / "frugality_pipeline.jsonl"
@@ -86,6 +94,21 @@ class PipelineExecutionError(PipelineError):
     """Raised when an injected provider dispatcher cannot complete a stage."""
 
 
+def validate_trace_id(trace_id: str) -> str:
+    """Validate the trace identifier at every approval boundary.
+
+    The API applies the same rule through Pydantic, but direct callers must not
+    rely on the HTTP layer to protect the approval artifact path.
+    """
+    if (
+        not isinstance(trace_id, str)
+        or not TRACE_ID_MIN_LENGTH <= len(trace_id) <= TRACE_ID_MAX_LENGTH
+        or re.fullmatch(TRACE_ID_PATTERN, trace_id) is None
+    ):
+        raise PipelineApprovalError("invalid trace_id")
+    return trace_id
+
+
 def _reject_unknown_keys(obj: Mapping[str, object], allowed: frozenset[str], where: str) -> None:
     unknown = sorted(set(obj) - allowed)
     if unknown:
@@ -143,6 +166,7 @@ class PipelineResult:
     requested_tokens: int
     total_tokens_used: int | None
     total_cost_usd: float | None
+    replay: bool = False
 
 
 def tiered_pipeline_enabled() -> bool:
@@ -170,8 +194,19 @@ def _approval_artifact_path(directory: Path, trace_id: str) -> Path:
     untrusted trace_id (e.g. ``../../etc/cron.d/evil``) is still contained,
     defense-in-depth rather than a single point of failure.
     """
+    validate_trace_id(trace_id)
     resolved_directory = directory.resolve()
-    path = (resolved_directory / ("%s.json" % trace_id)).resolve()
+    try:
+        path = (resolved_directory / ("%s.json" % trace_id)).resolve()
+    except (ValueError, OSError) as exc:
+        # Belt-and-suspenders: validate_trace_id() above already rejects a
+        # null byte (and everything else outside TRACE_ID_PATTERN) before
+        # this line runs, so this branch shouldn't fire for any trace_id
+        # that reaches here today. Kept in case TRACE_ID_PATTERN is ever
+        # loosened, or some other OS/Path-level rejection isn't covered by
+        # the regex -- translates that into the documented
+        # PipelineApprovalError instead of a raw ValueError/OSError.
+        raise PipelineApprovalError("invalid trace_id %r" % trace_id) from exc
     if not path.is_relative_to(resolved_directory):
         raise PipelineApprovalError("invalid trace_id %r escapes approval directory" % trace_id)
     return path
@@ -229,6 +264,18 @@ def load_pipeline_approval(
             "approval record for trace_id %r must be a JSON object" % trace_id
         )
     try:
+        # The artifact's own embedded trace_id must match the requested one --
+        # they're looked up by the requested trace_id via the filename, but the
+        # file's content is what actually becomes PipelineApproval.trace_id
+        # below. If those ever diverge (tampering, a copy-paste artifact bug),
+        # returning the file's value would silently authorize under the wrong
+        # identity.
+        embedded_trace_id = str(raw.get("trace_id", ""))
+        if embedded_trace_id != trace_id:
+            raise PipelineApprovalError(
+                "approval record for trace_id %r has a mismatched embedded "
+                "trace_id %r" % (trace_id, embedded_trace_id)
+            )
         expires_at = datetime.fromisoformat(str(raw["expires_at"]))
         if expires_at.tzinfo is None:
             raise PipelineApprovalError(

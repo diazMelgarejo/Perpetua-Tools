@@ -1,0 +1,44 @@
+{
+  "id": "cabdd002df07",
+  "key": "manual_cabdd0",
+  "name": "manual_cabdd0",
+  "claim": "A deny-by-default SSRF transport needs an explicit opposite-polarity local/LAN path for its own default deployment target, or that default target becomes permanently unreachable in production",
+  "conditions": [
+    "deny-by-default",
+    "local-vs-remote",
+    "loopback",
+    "opposite-polarity",
+    "orama_bridge",
+    "ssrf",
+    "validate_model_endpoint_url"
+  ],
+  "evidence_ids": [
+    "2026-08-22T21:27:10.162936+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-22T21:27:10.162936+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-22T21:27:10.162936+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-22T21:27:10.289304+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orchestrator/orama_bridge.py routed every call -- including the default ORAMA_ENDPOINT=http://localhost:8001 -- through ssrf_request, whose default policy denies loopback/RFC1918 by design. Every real call to orama's own default deployment would raise AddressDenied; existing tests never caught it because they mocked ssrf_request entirely, silently absorbing the loopback case (a false green). Fixed by classifying local (loopback/RFC1918) vs remote via validate_model_endpoint_url(url, allow_public=False) and routing local traffic through a direct httpx call, mirroring connectivity.py's proven _probe/_probe_local split. General pattern: whenever a Layer-2 SSRF adapter is the default transport for a service, check whether that service's OWN default endpoint falls inside the adapter's deny range -- if so it needs the opposite-polarity path, not a blanket allow-all. Landed as PT commit 92259e6f (2026-08-23), fixing CodeRabbit discussion_r3834992455 (PT PR #359 'Deferred #2').",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-22T21:27:10.162936+00:00"
+      ],
+      "lessons_sha": "dd1b7681f801"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-22T21:27:10.289293+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orchestrator/orama_bridge.py routed every call -- including the default ORAMA_ENDPOINT=http://localhost:8001 -- through ssrf_request, whose default policy denies loopback/RFC1918 by design. Every real call to orama's own default deployment would raise AddressDenied; existing tests never caught it because they mocked ssrf_request entirely, silently absorbing the loopback case (a false green). Fixed by classifying local (loopback/RFC1918) vs remote via validate_model_endpoint_url(url, allow_public=False) and routing local traffic through a direct httpx call, mirroring connectivity.py's proven _probe/_probe_local split. General pattern: whenever a Layer-2 SSRF adapter is the default transport for a service, check whether that service's OWN default endpoint falls inside the adapter's deny range -- if so it needs the opposite-polarity path, not a blanket allow-all. Landed as PT commit 92259e6f (2026-08-23), fixing CodeRabbit discussion_r3834992455 (PT PR #359 'Deferred #2')."
+}

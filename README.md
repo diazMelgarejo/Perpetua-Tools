@@ -1,7 +1,9 @@
-# This is the Legacy Perpetua-Tools v1.1.1.0
+# Perpetua-Tools (v1.1.1.0 — Rolling Release Milestone towards v2.0.0)
 
 > **Top-level idempotent multi-agent orchestrator for Mac + Windows**
-> * we are moving to a new 2.0 repo soon!
+>
+> - Currently on a rolling release cadence. Target v2.0.0 migration destination under `oramasys/*`
+>   begins at v1.9.0 development milestones.
 
 ---
 
@@ -9,35 +11,43 @@
 
 Four interoperable, independently configurable layers:
 
-| Repo | Role | Config |
-|------|------|--------|
-| **Perpetua-Tools** (this repo) | Top-level orchestrator, agent lifecycle, fallback routing, idempotency | `config/devices.yml`, `config/models.yml`, `config/routing.yml` |
-| **[orama-system](https://github.com/diazMelgarejo/orama-system)** | Reasoning methodology, 5-stage process, CIDF; routing methodology via `bin/skills/SKILL.md`; multi-agent registry is separately installable | `bin/skills/SKILL.md`, `bin/config/` |
-| **[ECC Tools](https://github.com/affaan-m/everything-claude-code)** | Subagent auto-selection default logic for up to 5 Stage4 parallel Masterful Executor Agents (especially coders) | `.claude/ecc-tools.json` |
-| **[uditgoenka/autoresearch](https://github.com/uditgoenka/autoresearch)** | Latest idempotent sync; research automation workflows and AI-driven research tools | Per autoresearch standard |
+| Repo                                                                      | Role                                                                                                                                        | Config                                                          |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| **Perpetua-Tools** (this repo)                                            | Top-level orchestrator, agent lifecycle, fallback routing, idempotency                                                                      | `config/devices.yml`, `config/models.yml`, `config/routing.yml` |
+| **[orama-system](https://github.com/diazMelgarejo/orama-system)**         | Reasoning methodology, 5-stage process, CIDF; routing methodology via `bin/skills/SKILL.md`; multi-agent registry is separately installable | `bin/skills/SKILL.md`, `bin/config/`                            |
+| **[ECC Tools](https://github.com/affaan-m/everything-claude-code)**       | Subagent auto-selection default logic for up to 5 Stage4 parallel Masterful Executor Agents (especially coders)                             | `.claude/ecc-tools.json`                                        |
+| **[uditgoenka/autoresearch](https://github.com/uditgoenka/autoresearch)** | Latest idempotent sync; research automation workflows and AI-driven research tools                                                          | Per autoresearch standard                                       |
 
 **Priority rule:**
 
-- Top-level agents on Mac + Windows: **this repo's `SKILL.md` → `ModelRegistry` → fallback chain** (top-level model selection runs first).
-- Subagents: **ECC-tools default logic** for ECC-style auto-selection (unless the top-level orchestrator overrides role assignment); supports up to 5 Stage4 parallel Masterful Executor Agents, especially coders.
-- **orama-system** supplies reasoning and routing methodology; keep it **independently configurable** from this orchestrator's device/model YAML.
+- Top-level agents on Mac + Windows: **this repo's `SKILL.md` → `ModelRegistry` → fallback chain**
+  (top-level model selection runs first).
+- Subagents: **ECC-tools default logic** for ECC-style auto-selection (unless the top-level
+  orchestrator overrides role assignment); supports up to 5 Stage4 parallel Masterful Executor
+  Agents, especially coders.
+- **orama-system** supplies reasoning and routing methodology; keep it **independently
+  configurable** from this orchestrator's device/model YAML.
 - **autoresearch** provides latest research automation workflows with idempotent sync.
 
 ---
 
 ## Key Properties
 
-- **Idempotent**: checks `.state/agents.json` before spawning; if a matching running top-level agent already exists for the same role and task, **ask the user** before creating another (or pass `force=true` on `POST /orchestrate` after explicit confirmation).
+- **Idempotent**: checks `.state/agents.json` before spawning; if a matching running top-level agent
+  already exists for the same role and task, **ask the user** before creating another (or pass
+  `force=true` on `POST /orchestrate` after explicit confirmation).
 - **Fallback logic**: local → online, device-preferred → shared → cloud.
-- **Per-device**: Mac (`glm-5.1:cloud` via local Ollama, with LM Studio verifier/orchestrator fallback), Windows (LM Studio primary, Ollama fallback), or both on one shared Ollama.
+- **Per-device**: Mac (`glm-5.1:cloud` via local Ollama, with LM Studio verifier/orchestrator
+  fallback), Windows (LM Studio primary, Ollama fallback), or both on one shared Ollama.
 - **Cost-guarded**: daily budget cap + 80% alert threshold.
-- **Interoperable**: all four layers compatible via shared config contracts; **Perpetua-Tools** remains the top-level orchestrator and instance manager.
+- **Interoperable**: all four layers compatible via shared config contracts; **Perpetua-Tools**
+  remains the top-level orchestrator and instance manager.
 
 ---
 
 ## Repository Structure
 
-```
+```text
 Perpetua-Tools/
 ├── SKILL.md                          ← Top-level model-selection skill
 ├── orchestrator/
@@ -113,23 +123,24 @@ client = PerplexityClient.get(
 - `validate=True` re-checks a stored key before reuse.
 - `interactive=False` keeps the client quiet in non-TTY automation.
 - `base_url` and `timeout` can be changed per environment or test harness.
-- Use `client.stream(...)` for streaming responses; `chat(..., stream=True)` remains a compatibility path.
+- Use `client.stream(...)` for streaming responses; `chat(..., stream=True)` remains a compatibility
+  path.
 
 ---
 
 ## Backend Modes
 
-| Mode | Mac | Windows | Config |
-|------|-----|---------|--------|
-| **Shared Ollama** | client | server (or vice versa) | `OLLAMA_HOST=http://<ip>:11434` |
-| **MLX on Mac only** | MLX server on :8081 | LM Studio on :1234 | default |
-| **Independent** | MLX or Ollama | Ollama or LM Studio | no shared host needed |
+| Mode                | Mac                 | Windows                | Config                          |
+| ------------------- | ------------------- | ---------------------- | ------------------------------- |
+| **Shared Ollama**   | client              | server (or vice versa) | `OLLAMA_HOST=http://<ip>:11434` |
+| **MLX on Mac only** | MLX server on :8081 | LM Studio on :1234     | default                         |
+| **Independent**     | MLX or Ollama       | Ollama or LM Studio    | no shared host needed           |
 
 ---
 
 ## Idempotency Flow
 
-```
+```text
 POST /orchestrate
       │
       ▼
@@ -159,19 +170,24 @@ POST /orchestrate
 
 ## Compatible Repos
 
-- **orama-system**: install per that repo; provides reasoning layer (`bin/skills/SKILL.md`) and optional multi-agent registry — **separately configurable** from this repo.
-- **ECC Tools** ([affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code)): subagents use ECC auto-selection by default for up to 5x Stage-4 parallel Masterful Executor Agents (especially coders); configured via `.claude/ecc-tools.json`.
-- **autoresearch** ([uditgoenka/autoresearch](https://github.com/uditgoenka/autoresearch)): latest idempotent sync for research automation workflows.
+- **orama-system**: install per that repo; provides reasoning layer (`bin/skills/SKILL.md`) and
+  optional multi-agent registry — **separately configurable** from this repo.
+- **ECC Tools**
+  ([affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code)): subagents
+  use ECC auto-selection by default for up to 5x Stage-4 parallel Masterful Executor Agents
+  (especially coders); configured via `.claude/ecc-tools.json`.
+- **autoresearch** ([uditgoenka/autoresearch](https://github.com/uditgoenka/autoresearch)): latest
+  idempotent sync for research automation workflows.
 - All configs live in `config/` — prefer YAML + env (e.g. `OLLAMA_HOST`) over hardcoded hosts.
 
 ---
 
 ## Version
 
-| Field | Value |
-|-------|-------|
-| Version | `1.1.1.0` |
-| Branch | `main` |
+| Field           | Value                                                                                                                    |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Version         | `1.1.1.0`                                                                                                                |
+| Branch          | `main`                                                                                                                   |
 | Compatible with | orama-system (reasoning layer; version per that repo), ECC Tools standard, uditgoenka/autoresearch (research automation) |
-| Python | `3.11+` |
-| Framework | FastAPI + httpx + PyYAML |
+| Python          | `3.11+`                                                                                                                  |
+| Framework       | FastAPI + httpx + PyYAML                                                                                                 |

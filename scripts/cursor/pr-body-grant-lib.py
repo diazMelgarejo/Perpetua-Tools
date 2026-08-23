@@ -92,22 +92,40 @@ def _canonical_payload(
     )
 
 
+MAX_APPEND_FILE_BYTES = 1024 * 1024  # 1 MB maximum for append payloads
+
+
 def content_digest_for_append(
     file_path: str | None,
     message: str | None,
     cwd: Path | None = None,
 ) -> str:
     if file_path:
+        if any(ch in file_path for ch in ("\x00", "\r", "\n")):
+            raise GrantError("file_path contains invalid control characters")
         path = Path(file_path)
         if not path.is_absolute():
             base = cwd or Path.cwd()
             path = base / path
         try:
+            if not path.is_file():
+                raise GrantError(f"append file does not exist or is not a regular file: {path}")
+            if path.is_symlink():
+                raise GrantError(f"append file must not be a symlink: {path}")
+            stat = path.stat()
+            if stat.st_size > MAX_APPEND_FILE_BYTES:
+                raise GrantError(
+                    f"append file exceeds size limit ({stat.st_size} > {MAX_APPEND_FILE_BYTES} bytes): {path}"
+                )
             data = path.read_bytes()
         except OSError as exc:
             raise GrantError(f"cannot read append file for digest: {path}: {exc}") from exc
     elif message is not None:
         data = message.encode("utf-8")
+        if len(data) > MAX_APPEND_FILE_BYTES:
+            raise GrantError(
+                f"append message exceeds size limit ({len(data)} > {MAX_APPEND_FILE_BYTES} bytes)"
+            )
     else:
         raise GrantError("provide --file or --message for content digest")
     return f"sha256:{hashlib.sha256(data).hexdigest()}"
@@ -176,15 +194,31 @@ def _read_fallback_secret_file() -> str | None:
         return None
 
 
+_REPO_SLUG_RE = re.compile(r"^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$")
+_PR_NUMBER_RE = re.compile(r"^[1-9][0-9]*$")
+_ACTION_RE = re.compile(r"^[a-zA-Z0-9_.-]{1,64}$")
+
+
 def _validate_repo_slug(repo: str) -> None:
-    if "|" in repo or "\n" in repo or "\r" in repo or not repo.strip():
-        raise GrantError("grant repo must not contain pipe or newline characters")
+    if not isinstance(repo, str) or not _REPO_SLUG_RE.match(repo.strip()):
+        raise GrantError(
+            "grant repo must not contain pipe or newline characters and must match 'owner/repo'"
+        )
 
 
-def _validate_pr_number(pr_number: str) -> None:
-    text = str(pr_number)
-    if "|" in text or "\n" in text or "\r" in text or not text.strip():
-        raise GrantError("grant pr_number must not contain pipe or newline characters")
+def _validate_pr_number(pr_number: str | int) -> None:
+    text = str(pr_number).strip()
+    if not _PR_NUMBER_RE.match(text):
+        raise GrantError(
+            "grant pr_number must not contain pipe or newline characters and must be a positive integer"
+        )
+
+
+def _validate_action(action: str) -> None:
+    if not isinstance(action, str) or not _ACTION_RE.match(action.strip()):
+        raise GrantError(
+            "grant action must not contain pipe or newline characters and must match alphanumeric slug"
+        )
 
 
 def _write_private_file(path: Path, content: str) -> None:
@@ -512,6 +546,15 @@ def verify_grant_for_append(
     consume: bool = False,
     cwd: Path | None = None,
 ) -> tuple[bool, str]:
+    # Reject malformed grant identity before touching an operator-supplied path.
+    # verify_grant_fields repeats these checks as defense in depth for callers
+    # that already have a digest.
+    try:
+        _validate_repo_slug(repo)
+        _validate_pr_number(pr_number)
+    except GrantError as exc:
+        return False, str(exc)
+
     try:
         digest = content_digest_for_append(file_path, message, cwd=cwd)
     except GrantError as exc:
@@ -552,6 +595,12 @@ def reserve_grant_for_append(
     cwd: Path | None = None,
 ) -> tuple[bool, str]:
     try:
+        _validate_repo_slug(repo)
+        _validate_pr_number(pr_number)
+    except GrantError as exc:
+        return False, str(exc)
+
+    try:
         digest = content_digest_for_append(file_path, message, cwd=cwd)
     except GrantError as exc:
         return False, str(exc)
@@ -578,6 +627,12 @@ def mark_remote_applied_for_append(
     cwd: Path | None = None,
 ) -> tuple[bool, str]:
     try:
+        _validate_repo_slug(repo)
+        _validate_pr_number(pr_number)
+    except GrantError as exc:
+        return False, str(exc)
+
+    try:
         digest = content_digest_for_append(file_path, message, cwd=cwd)
     except GrantError as exc:
         return False, str(exc)
@@ -600,6 +655,12 @@ def release_grant_for_append(
     message: str | None,
     cwd: Path | None = None,
 ) -> tuple[bool, str]:
+    try:
+        _validate_repo_slug(repo)
+        _validate_pr_number(pr_number)
+    except GrantError as exc:
+        return False, str(exc)
+
     try:
         digest = content_digest_for_append(file_path, message, cwd=cwd)
     except GrantError as exc:
@@ -634,6 +695,12 @@ def reconcile_pending_consume(
     cwd: Path | None = None,
 ) -> tuple[bool, str]:
     """Consume grant when remote already has the follow-up (post-crash recovery)."""
+    try:
+        _validate_repo_slug(repo)
+        _validate_pr_number(pr_number)
+    except GrantError as exc:
+        return False, str(exc)
+
     try:
         digest = content_digest_for_append(file_path, message, cwd=cwd)
     except GrantError as exc:

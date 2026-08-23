@@ -1,0 +1,38 @@
+{
+  "id": "8466d1718c00",
+  "key": "manual_8466d1",
+  "name": "manual_8466d1",
+  "claim": "To retroactively verify TDD's RED-then-GREEN discipline when a fix and its test were written together (not strictly test-first), use 'git stash push --keep-index -- <code files only, not test files>' to revert just the production code while keeping the new/changed tests in the working tree, run the tests to confirm they fail for the right reason, then 'git stash pop' to restore the fix and confirm green. This satisfies docs/TDD.md's Pre-Commit Checklist item 1 ('did the test actually fail before the fix and pass after? Re-run with the fix reverted if uncertain') without needing to have literally practiced strict red-green during authoring.",
+  "conditions": [
+    "TDD verification retroactive red green git stash keep-index selective revert pre-commit checklist"
+  ],
+  "evidence_ids": [
+    "2026-08-21T02:46:44.300951+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-21T02:46:44.300951+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-21T02:46:44.300951+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-21T02:46:44.438191+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-08-21, PT PR #359 batch fix session. Operator pointed to docs/TDD.md mid-session and asked to use it going forward; this techniques answers the honest gap of having written fix+test together rather than test-first, without falsely claiming strict TDD or silently skipping the verification the checklist actually requires.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-21T02:46:44.300951+00:00"
+      ],
+      "lessons_sha": "d1b3179a6f89"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-21T02:46:44.438183+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-08-21, PT PR #359 batch fix session. Operator pointed to docs/TDD.md mid-session and asked to use it going forward; this techniques answers the honest gap of having written fix+test together rather than test-first, without falsely claiming strict TDD or silently skipping the verification the checklist actually requires."
+}

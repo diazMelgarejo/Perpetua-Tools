@@ -1,0 +1,38 @@
+{
+  "id": "bacf8768f10f",
+  "key": "manual_bacf87",
+  "name": "manual_bacf87",
+  "claim": "When verifying a claim before acting on it, separate the act of verifying from the act of re-verifying the same already-confirmed thing. The failure mode isn't caution itself -- it's looping on identical checks (same question asked 3+ times, same source re-fetched) instead of verifying once, stating the finding plainly, and then acting with conviction on what was found. To the person waiting, that loop reads as a personality change or lost memory, even though nothing was actually forgotten -- it's a pacing failure, not a continuity failure. Concretely this session: I said a real file was 'fabricated' after a narrow search came back empty, when the honest claim was only 'I could not find it with the search I ran' -- an overreach in language, not in the underlying caution. The caution to verify doc-53 and the GossipBus identity was correct and later caught two genuinely real bugs (a queue dependency-resolver mismatch, a wrong-polarity module risk); the failure was in how many times I re-asked the same settled question and in overclaiming certainty about absence.",
+  "conditions": [
+    "verification pacing over-caution ping-pong trust memory continuity re-verify settled fact conviction fabricated overclaim"
+  ],
+  "evidence_ids": [
+    "2026-08-20T11:27:58.569907+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-20T11:27:58.569907+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-20T11:27:58.569907+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-20T11:27:58.707105+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-08-20, live multi-agent session (Perpetua-Tools + orama-system + AlphaClaw standards-convergence work, alongside codex-execution-bridge and agnes-antigravity-claude). The user explicitly said 'you are NOT the Claude I have known before... I thought you changed :( where is your memory?' after several rounds of me re-verifying the same GossipBus/doc-53 claims instead of just acting. That reaction was the clearest signal of the session: the ping-pong itself, not any single wrong answer, is what broke trust. Saving this because 'be careful before acting on unverified claims' and 'don't loop on settled facts' can look like contradictory instructions unless the difference between them is written down explicitly.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-20T11:27:58.569907+00:00"
+      ],
+      "lessons_sha": "8de80a7172c7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-20T11:27:58.707097+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-08-20, live multi-agent session (Perpetua-Tools + orama-system + AlphaClaw standards-convergence work, alongside codex-execution-bridge and agnes-antigravity-claude). The user explicitly said 'you are NOT the Claude I have known before... I thought you changed :( where is your memory?' after several rounds of me re-verifying the same GossipBus/doc-53 claims instead of just acting. That reaction was the clearest signal of the session: the ping-pong itself, not any single wrong answer, is what broke trust. Saving this because 'be careful before acting on unverified claims' and 'don't loop on settled facts' can look like contradictory instructions unless the difference between them is written down explicitly."
+}

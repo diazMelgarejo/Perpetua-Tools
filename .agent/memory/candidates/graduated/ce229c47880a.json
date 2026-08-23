@@ -1,0 +1,41 @@
+{
+  "id": "ce229c47880a",
+  "key": "manual_ce229c",
+  "name": "manual_ce229c",
+  "claim": "When extracting a shared error-translation contextmanager for a class's transaction boundary, audit EVERY public method that opens a transaction, not just the ones already known to hit the failure mode -- lock/busy contention can surface on any write path, not only the ones that historically triggered a bug report",
+  "conditions": [
+    "contextmanager audit all call sites",
+    "lock contention",
+    "shared error translation",
+    "tier5_budget"
+  ],
+  "evidence_ids": [
+    "2026-08-21T03:29:03.280804+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-21T03:29:03.280804+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-08-21T03:29:03.280804+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-21T03:29:03.408849+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit review #4989313231 on PT PR #359: only reserve() and mark_dispatch() translated a busy/locked sqlite3.OperationalError to BudgetUnavailableError; settle(), release_pre_dispatch(), and recover_expired() did not, even though _transaction()'s BEGIN IMMEDIATE means any of the five public methods can hit the same busy_timeout_ms expiry. settle() was the most exposed -- it runs after the provider spend already happened, so its caller seeing a raw sqlite3.OperationalError instead of a ledger error is a real availability/correctness gap, not cosmetic. Fixed by extracting _guarded_transaction() (wraps _transaction(), translates OperationalError, re-raises BudgetError unchanged) and switching every public method to it, not just the two that already had inline try/except. Caught by TDD retroactive-RED via monkeypatching _transaction to always raise, parametrized across the three previously-unguarded methods.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-08-21T03:29:03.280804+00:00"
+      ],
+      "lessons_sha": "a19cc8c06218"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-21T03:29:03.408836+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit review #4989313231 on PT PR #359: only reserve() and mark_dispatch() translated a busy/locked sqlite3.OperationalError to BudgetUnavailableError; settle(), release_pre_dispatch(), and recover_expired() did not, even though _transaction()'s BEGIN IMMEDIATE means any of the five public methods can hit the same busy_timeout_ms expiry. settle() was the most exposed -- it runs after the provider spend already happened, so its caller seeing a raw sqlite3.OperationalError instead of a ledger error is a real availability/correctness gap, not cosmetic. Fixed by extracting _guarded_transaction() (wraps _transaction(), translates OperationalError, re-raises BudgetError unchanged) and switching every public method to it, not just the two that already had inline try/except. Caught by TDD retroactive-RED via monkeypatching _transaction to always raise, parametrized across the three previously-unguarded methods."
+}

@@ -19,14 +19,14 @@
   "dependencies": {
     "@diazmelgarejo/alphaclaw-adapter": "file:../alphaclaw-adapter",
     "@hono/node-server": "2.0.12",
-    "@modelcontextprotocol/sdk": "^1.6.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "fast-uri": "3.1.5",
     "hono": "^4.13.0"
   },
   "devDependencies": {
-    "@types/node": "^22.14.0",
-    "tsx": "^4.19.2",
-    "typescript": "^5.8.2"
+    "@types/node": "^22.19.20",
+    "tsx": "^4.22.4",
+    "typescript": "^5.9.3"
   },
   "overrides": {
     "qs": ">=6.15.2"

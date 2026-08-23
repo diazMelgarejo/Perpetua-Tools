@@ -304,3 +304,61 @@ def test_verify_grant_fields_rejects_newline_in_pr_number(grant_lib):
     )
     assert not ok
     assert "newline" in err.lower() or "pipe" in err.lower()
+
+
+def test_validate_repo_slug_strict_schema(grant_lib):
+    for bad in ["repo_without_owner", "owner//repo", "owner/repo/sub", "../evil/repo", "owner/repo with spaces", ""]:
+        with pytest.raises(grant_lib.GrantError, match="repo"):
+            grant_lib._validate_repo_slug(bad)
+
+
+def test_validate_pr_number_strict_schema(grant_lib):
+    for bad in ["0", "-1", "42.5", "abc", "042", ""]:
+        with pytest.raises(grant_lib.GrantError, match="pr_number"):
+            grant_lib._validate_pr_number(bad)
+
+
+def test_content_digest_rejects_symlink(grant_lib, tmp_path):
+    target = tmp_path / "real.md"
+    target.write_text("content", encoding="utf-8")
+    sym = tmp_path / "sym.md"
+    try:
+        sym.symlink_to(target)
+    except OSError:
+        pytest.skip("symlinks not supported on filesystem")
+    with pytest.raises(grant_lib.GrantError, match="symlink"):
+        grant_lib.content_digest_for_append(str(sym), None)
+
+
+def test_content_digest_rejects_oversized_file(grant_lib, tmp_path, monkeypatch):
+    big = tmp_path / "big.md"
+    big.write_text("x" * 100, encoding="utf-8")
+    monkeypatch.setattr(grant_lib, "MAX_APPEND_FILE_BYTES", 50)
+    with pytest.raises(grant_lib.GrantError, match="size limit"):
+        grant_lib.content_digest_for_append(str(big), None)
+
+
+def test_content_digest_rejects_oversized_message(grant_lib, monkeypatch):
+    monkeypatch.setattr(grant_lib, "MAX_APPEND_FILE_BYTES", 10)
+    with pytest.raises(grant_lib.GrantError, match="size limit"):
+        grant_lib.content_digest_for_append(None, "this is too long")
+
+
+def test_append_operations_short_circuit_on_invalid_identity(grant_lib, tmp_path):
+    # Non-existent file path would raise if read, but invalid repo must fail-closed first
+    nonexistent = str(tmp_path / "does_not_exist.md")
+    
+    ok_v, err_v = grant_lib.verify_grant_for_append("bad_repo", "1", nonexistent, None)
+    assert not ok_v and "repo" in err_v
+
+    ok_r, err_r = grant_lib.reserve_grant_for_append("owner/repo", "-1", nonexistent, None)
+    assert not ok_r and "pr_number" in err_r
+
+    ok_m, err_m = grant_lib.mark_remote_applied_for_append("bad_repo", "1", nonexistent, None)
+    assert not ok_m and "repo" in err_m
+
+    ok_rel, err_rel = grant_lib.release_grant_for_append("owner/repo", "0", nonexistent, None)
+    assert not ok_rel and "pr_number" in err_rel
+
+    ok_rec, err_rec = grant_lib.reconcile_pending_consume("bad_repo", "1", nonexistent, None, "body", "title")
+    assert not ok_rec and "repo" in err_rec

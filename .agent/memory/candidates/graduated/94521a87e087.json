@@ -1,0 +1,38 @@
+{
+  "id": "94521a87e087",
+  "key": "manual_94521a",
+  "name": "manual_94521a",
+  "claim": "When two agents post conflicting claims to GossipBus (e.g. one says a file is committed, another says it's untracked), resolve by checking ground truth directly (git status/log in the actual worktree) rather than trusting either agent's timestamp as authoritative -- a later message can still be stale if the agent hasn't re-synced. Post the reconciled finding back to the board citing both message IDs so the correction is discoverable, not just acted on silently.",
+  "conditions": [
+    "gossipbus conflict multi-agent reconciliation ground-truth codex agnes stale heartbeat"
+  ],
+  "evidence_ids": [
+    "2026-08-20T11:08:11.104708+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-20T11:08:11.104708+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-20T11:08:11.104708+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-20T11:08:11.278826+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-08-20: codex-execution-bridge (#1765, 11:01:31) claimed docs/v2/53-maestro-swarm-v2-redesign-critique.md was 'untracked, held aside' while agnes-antigravity-claude (#1755, 10:58:27, earlier) had already committed it at f9c4d46a. The later message was wrong -- Codex's heartbeat loop hadn't re-read the repo since Agnes's commit landed. Verifying against actual git state (not trusting either agent's self-report, and not trusting recency as a tiebreaker) resolved it in one check. This complements the existing 'verify before replaying past agent work' lesson but extends it specifically to live multi-agent coordination via GossipBus, where message recency is not the same thing as ground-truth freshness.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-20T11:08:11.104708+00:00"
+      ],
+      "lessons_sha": "bbf156eb772e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-20T11:08:11.278817+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-08-20: codex-execution-bridge (#1765, 11:01:31) claimed docs/v2/53-maestro-swarm-v2-redesign-critique.md was 'untracked, held aside' while agnes-antigravity-claude (#1755, 10:58:27, earlier) had already committed it at f9c4d46a. The later message was wrong -- Codex's heartbeat loop hadn't re-read the repo since Agnes's commit landed. Verifying against actual git state (not trusting either agent's self-report, and not trusting recency as a tiebreaker) resolved it in one check. This complements the existing 'verify before replaying past agent work' lesson but extends it specifically to live multi-agent coordination via GossipBus, where message recency is not the same thing as ground-truth freshness."
+}

@@ -1,0 +1,38 @@
+{
+  "id": "a045e9f02292",
+  "key": "manual_a045e9",
+  "name": "manual_a045e9",
+  "claim": "Python's stdlib ipaddress.IPv4Address.is_global returns True for every multicast address, including the 224.0.0.0/4 network base address itself -- confirmed directly against 224.0.0.0, 224.0.0.1, 239.255.255.255, and 232.0.0.0, all is_global=True. Any SSRF-policy or IP-classification test that uses 'denied iff not is_global' as its ground-truth oracle is wrong for the entire multicast range, not just an edge case -- the correct oracle is 'not is_global OR is_multicast'. A hypothesis property test with this bug can pass for a long time before randomly sampling a multicast value in the specific code path that trips it, so 'it passed before' is not evidence the oracle was ever actually correct.",
+  "conditions": [
+    "ipaddress is_global multicast stdlib quirk hypothesis property test oracle SSRF false ground truth"
+  ],
+  "evidence_ids": [
+    "2026-08-21T02:46:28.731049+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-21T02:46:28.731049+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-21T02:46:28.731049+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-21T02:46:28.887878+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-08-21, PT tests/test_ssrf_fetch_policy.py, caught while re-running the full suite before a TDD-discipline batch commit (unrelated to the tier5 work in progress) -- a hypothesis-generated example (raw=3_758_096_384, i.e. 224.0.0.0) finally hit the gap. Fixed the test's oracle, not the underlying _is_denied_ip logic (which was already correctly denying multicast) -- the bug was purely in what the test asserted 'should' happen, not in the security-relevant code.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-21T02:46:28.731049+00:00"
+      ],
+      "lessons_sha": "16f0e602b80b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-21T02:46:28.887869+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-08-21, PT tests/test_ssrf_fetch_policy.py, caught while re-running the full suite before a TDD-discipline batch commit (unrelated to the tier5 work in progress) -- a hypothesis-generated example (raw=3_758_096_384, i.e. 224.0.0.0) finally hit the gap. Fixed the test's oracle, not the underlying _is_denied_ip logic (which was already correctly denying multicast) -- the bug was purely in what the test asserted 'should' happen, not in the security-relevant code."
+}

@@ -1,0 +1,40 @@
+{
+  "id": "fcfa587ac336",
+  "key": "manual_fcfa58",
+  "name": "manual_fcfa58",
+  "claim": "When a factory function's default is tuned for one calling contract (e.g. ssrf_session()'s max_redirects=0 for standalone 'refuse redirects entirely' usage) and the SAME factory is reused internally by a second function with a genuinely different contract (ssrf_request()'s own manual per-hop redirect loop, which needs the underlying requests.Session to NOT eagerly enforce a redirect ceiling), the second function must not assume the shared factory's defaults are compatible with its own needs -- requests.Session.send()'s internal precomputation of resp._next (via resolve_redirects(..., yield_requests=True)) raises TooManyRedirects on literally the first redirect when session.max_redirects=0, regardless of the per-call allow_redirects=False kwarg, silently making the caller's own manual redirect-handling loop unreachable for any real HTTP response",
+  "conditions": [
+    "TooManyRedirects on allow_redirects=False",
+    "requests Session max_redirects shared factory contract mismatch",
+    "resolve_redirects yield_requests precomputation"
+  ],
+  "evidence_ids": [
+    "2026-08-22T09:36:39.884519+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-22T09:36:39.884519+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-08-22T09:36:39.884519+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-22T09:36:40.009886+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "ssrf_request() in src/utils/ssrf_pinned_adapter.py creates its session via ssrf_session(), which sets session.max_redirects=0 for its own documented direct-usage contract ('redirects are refused'). But ssrf_request()'s own while-loop (per-hop check_url/validate_resolved re-validation, its own hops/max_redirects counter) needs requests' library-level redirect ceiling to NOT fire first -- confirmed by reading requests/sessions.py directly: resolve_redirects's while-loop checks 'if len(resp.history) >= self.max_redirects: raise TooManyRedirects' before ANY hop-specific logic runs, and this fires even in the yield_requests=True precomputation path used when allow_redirects=False, which itself never performs a live send (verified: it does a single next() call that yields once and stops, no network I/O) so raising the ceiling for this internal use doesn't reopen any auto-follow risk. Fixed by setting sess.max_redirects = max(max_redirects, 1) at the top of ssrf_request(), leaving ssrf_session()'s own standalone default (0) untouched for direct callers.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-08-22T09:36:39.884519+00:00"
+      ],
+      "lessons_sha": "8ee613247e1b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-22T09:36:40.009877+00:00",
+  "reviewer": "learn.py",
+  "rationale": "ssrf_request() in src/utils/ssrf_pinned_adapter.py creates its session via ssrf_session(), which sets session.max_redirects=0 for its own documented direct-usage contract ('redirects are refused'). But ssrf_request()'s own while-loop (per-hop check_url/validate_resolved re-validation, its own hops/max_redirects counter) needs requests' library-level redirect ceiling to NOT fire first -- confirmed by reading requests/sessions.py directly: resolve_redirects's while-loop checks 'if len(resp.history) >= self.max_redirects: raise TooManyRedirects' before ANY hop-specific logic runs, and this fires even in the yield_requests=True precomputation path used when allow_redirects=False, which itself never performs a live send (verified: it does a single next() call that yields once and stops, no network I/O) so raising the ceiling for this internal use doesn't reopen any auto-follow risk. Fixed by setting sess.max_redirects = max(max_redirects, 1) at the top of ssrf_request(), leaving ssrf_session()'s own standalone default (0) untouched for direct callers."
+}

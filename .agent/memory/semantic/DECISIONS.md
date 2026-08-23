@@ -3,6 +3,169 @@
 > Record architectural or workflow choices that would be costly to re-debate.
 > Use this template for each entry:
 
+## 2026-08-22: mcp-remote supply-chain pinning — status quo retained over 4 investigated alternatives
+
+**Decision:** Keep `.codex/config.toml`'s `[mcp_servers.exa]` entry at version-pin-only
+(`npx -y mcp-remote@0.1.43 https://mcp.exa.ai/mcp`). Do **not** add a scoped `.codex/package.json`
++ lockfile (Option A), vendor `mcp-remote` as a git submodule (Option 1), route it through an
+adapted Exa-daemon Unix-socket bridge (Option 2), or hand-roll a checksum-verification wrapper
+script (Option 3). Full investigation, comparison table, and mermaid diagrams:
+`.agent/memory/working/2026-08-22-mcp-remote-supply-chain-pinning-options-debate.md`.
+
+**Rationale:** Every alternative that actually pins `mcp-remote`'s transitive dependencies
+(`open`, `undici`, `express`, `strict-url-sanitise`) requires a manifest+lockfile living
+*somewhere* in the repo — there is no variant of deterministic dependency resolution without
+one. Option A was implemented, verified working end-to-end, then explicitly rejected by the
+operator on two grounds: (1) location — a second npm project inside `.codex/`, a config
+directory; (2) footprint — a new lockfile + `node_modules` tree in this repo at all. The three
+alternatives explored afterward each collapse into the same requirement or solve a different
+problem: submodule-vendoring needs a `pnpm`+`tsup` build toolchain just to reproduce what npm
+already publishes pre-built; the Exa-daemon pattern multiplexes processes but pins nothing (its
+own backend call is itself unpinned `npx -y exa-mcp-server`) and adds Windows `AF_UNIX`
+portability risk; a checksum wrapper only covers the top-level tarball, leaving the transitive
+tree unpinned while duplicating lockfile mechanics with less tooling support (no `npm audit`,
+no Dependabot). npm's built-in `dist.integrity` verification (TLS + signed sha512 per fetch)
+already protects the pinned top-level package — the residual gap is reproducibility, not an
+unguarded tampering vector.
+
+**Alternatives considered:** scoped `.codex/package.json` + lockfile with `--no-install`
+enforcement (rejected — location + footprint); git submodule vendoring matching
+`vendor/agentic-stack` convention (rejected — needs new `pnpm`+`tsup` toolchain for equal
+footprint); adapted Exa-daemon Unix-socket bridge (rejected — wrong problem, solves process
+sharing not pinning, and its own backend is also unpinned); hand-rolled integrity-checksum
+wrapper script (rejected — reinvents `package-lock.json`, worse, and still leaves transitive
+deps unpinned).
+
+**Status:** resting state, not a hard close. CodeRabbit offered (twice) to open a GitHub
+tracking issue for the full lockfile-backed fix on this PR's review thread — that issue has
+**not** been created yet; still awaiting explicit operator go-ahead. If revisited, read the
+full working doc first — each option was investigated concretely (upstream tags cloned, daemon
+source read in full, npm registry metadata fetched), not just discussed abstractly.
+
+---
+
+## 2026-08-21: SSRF Layer-2 pinned transport, 3-layer architecture & frugal Python path reuse
+
+**Decision:** Land Layer-2 connection-time IP pinning transport (`src/utils/ssrf_pinned_adapter.py`), unit tests (`tests/test_ssrf_pinned_adapter.py`), and endpoint hardening checklists (`docs/plans/2026-08-21-pt-endpoint-hardening-checklists.md`) on `Perpetua-Tools` branch `fix/pt-standards-convergence-20260818` (PR #359), with companion docs updated in `orama-system` on `fix/oramasys-standards-convergence-20260818` (PR #321). (A stray `orama-system` branch, `fix/markdownlint-doc53-ci-20260820`, briefly carried two follow-up commits before being merged into the canonical branch and deleted 2026-08-21 — see the 2026-08-21 CodeRabbit remediation entry below.)
+Pre-flight string/IP-literal validation remains Layer 1 SSOT in `src/utils/ssrf_fetch_policy.py`. Layer 2 resolves DNS once, validates all A/AAAA records against Layer 1 policy, dials the pinned IP literal directly via custom connection pool, retains TLS SNI and Host header to original hostname, and mandates manual redirect re-validation (`ssrf_request`).
+Frugal Python path reuse strategy: zero external dependencies (`dssrf`, archived `safeurl-python` rejected); dual-try module path resolution (`src.utils.*` / `utils.*`) for robust cross-environment portability without host environment pollution.
+
+**Rationale:** Research in 2025-2026 CVEs (CVE-2026-27826, CVE-2026-27795) proves pre-flight string validation cannot prevent DNS-rebinding TOCTOU or 30x redirect bypasses without transport-level socket pinning and redirect isolation.
+
+**Alternatives considered:** Resolve DNS in pre-flight Layer 1 (rejected — reintroduces TOCTOU gap); adopt third-party denylist packages (rejected — CVE churn and supply chain bloat); combine outbound SSRF with LAN model discovery (rejected — opposite security polarities).
+
+**Status:** active
+
+**Links:**
+- Working memory: `.agent/memory/working/SESSION_SYNTHESIS_SSRF_LAYER2_AND_FRUGAL_PYTHON_REUSE_2026-08-21.md`
+- Adapter: `src/utils/ssrf_pinned_adapter.py`
+- Tests: `tests/test_ssrf_pinned_adapter.py`
+- Checklists: `docs/plans/2026-08-21-pt-endpoint-hardening-checklists.md`
+- Orama plan: `orama-system:docs/v2/plans/2026-08-20-ssrf-defense-in-depth.md`
+
+## 2026-08-21: PT PR #359 CodeRabbit remediation + orama PR #321 branch consolidation
+
+**Decision:** Fixed all 8 findings from CodeRabbit review #4993577985 on PT PR #359: the nitpick
+(`tests/test_ssrf_pinned_adapter.py` `test_hook_endpoint_policy` only tested loopback rejection,
+which both the Layer-1 checker and the Layer-2 fallback satisfy — added a `url_checker` assertion
+on Layer-1's fail-closed-on-unresolved-hostname behavior, which the fallback lacks), plus 7
+actionable comments: a Major-severity gap where `ssrf_request()` trusted any caller-supplied
+`requests.Session` without verifying `SSRFPinnedHTTPAdapter` was mounted (`src/utils/ssrf_pinned_adapter.py`,
+fixed with `_require_pinned_adapter()`); `orchestrator/connectivity.py` routing local Ollama/LM
+Studio/MLX health checks through the same deny-by-default `ssrf_request()` as cloud vendor checks
+(split into `_probe` / `_probe_local`); `orchestrator/orama_bridge.py`'s async HTTP fallback using a
+bare `httpx.AsyncClient` instead of the sync path's `ssrf_request` (fixed via `asyncio.to_thread`);
+two Ruff nitpicks in the test file (S104 suppression, RUF012 mutable class state); a stale repo-scope
+claim in the session synthesis working doc; and a Layer-1 checklist doc that under-named its own
+module list and vendor allowlist. Also consolidated orama-system PR #321: two parallel agent sessions
+had pushed follow-up commits to different branches (the canonical `fix/oramasys-standards-convergence-20260818`
+and a stray `fix/markdownlint-doc53-ci-20260820`) — merged via Mode-4-synthesize (per
+`oramasys-method`'s `integrative-merge.md`) since both sides had independently reflowed the same
+paragraph of `docs/v2/53-maestro-swarm-v2-redesign-critique.md` for MD013 compliance, and the stray
+branch's own line-wrap commit had left an orphaned one-word line that the other branch's wrap fixed
+cleanly; pushed the synthesized result to the canonical branch, then deleted the stray branch (its
+own PR #322 was already closed) both locally and on `origin`.
+
+**Rationale:** Standard PR-review remediation, done as a full batch rather than fixing only the
+originally-requested nitpick, since the review had already surfaced the remaining 7 findings and
+leaving them open would mean re-deriving the same context in a follow-up session. The branch
+consolidation followed the repo's own naming convention (`fix/pt-standards-convergence-20260818` in
+PT ⇄ `fix/oramasys-standards-convergence-20260818` in orama-system) rather than leaving two
+divergent branches carrying the same PR's follow-up work.
+
+**Alternatives considered:** Fix only the originally-requested nitpick and leave the other 6 review
+findings for a later session (rejected — the review had already surfaced them, and per
+`lesson_502211a1be56`'s handwaving-costs-more-later doctrine, deferring a known, already-surfaced
+finding just relocates the cost); pick one of the two orama-system branches wholesale instead of
+synthesizing (rejected — each branch had independently-valid content the other lacked, and the
+stray branch's own wrap fix was strictly better for one paragraph).
+
+**Status:** active
+
+**Links:**
+- PT PR: https://github.com/diazMelgarejo/Perpetua-Tools/pull/359
+- Review: https://github.com/diazMelgarejo/Perpetua-Tools/pull/359#pullrequestreview-4993577985
+- Orama PR: https://github.com/diazMelgarejo/orama-system/pull/321
+- Adapter fix: `src/utils/ssrf_pinned_adapter.py` (`_require_pinned_adapter`)
+- Connectivity split: `orchestrator/connectivity.py` (`_probe` / `_probe_local`)
+- Async bridge fix: `orchestrator/orama_bridge.py`
+- New lessons: `.agent/memory/semantic/lessons.jsonl` (ids `b65c806e748f`, `f6b92e2bd7f5`, `151e23263250`, `53c89f8a214d`, `99ff520076a7`)
+
+## 2026-08-21: PT PR #359 continued CodeRabbit autofix cycle — CI regressions, a wrong deferral, and 2 open follow-up-issue offers
+
+**Decision:** Continued the same PR #359 remediation round through several more automated CodeRabbit
+review cycles. Three distinct outcomes worth recording:
+
+1. **Real CI regressions, not stale notifications.** After the SSRF Layer-2 rewiring
+   (`orama_bridge.py`'s async fallback moved from a bare `httpx.AsyncClient` to
+   `asyncio.to_thread(ssrf_request, ...)`), `lint-and-test` went red with 7 failures across
+   `tests/test_orama_bridge.py`, `tests/test_orama_mcp_client.py`, and my own earlier
+   `tests/test_ssrf_pinned_adapter.py::test_hook_endpoint_policy` fix. Initially treated a CI-monitor
+   failure notification as referring to a stale/superseded run without checking the actual commit SHA
+   the run was against — it was current. Root causes: (a) two tests mocked `orama_bridge.httpx.post`,
+   which stopped existing once `import httpx` was removed; (b) five tests mocked `httpx.AsyncClient`,
+   which the async fallback stopped calling at all, so the mock silently stopped intercepting and the
+   fallback made a REAL SSRF-pinned request to the test's own `localhost` target, which the real
+   deny-by-default policy correctly rejected (`AddressDenied: blocked address: ::1`) — a
+   security-correct failure that read as an unrelated bug; (c) a dual-import class-identity bug in my
+   own test: `hook_endpoint_policy()` resolves `SSRFPolicyError` via `src.utils.ssrf_fetch_policy`
+   first in this CI environment, but the test imported the same-named class from `utils.ssrf_fetch_policy`
+   — two distinct class objects for the identical class body, so `pytest.raises` never matched. Fixed
+   by mirroring hook_endpoint_policy's own dual-try resolution order inside the test.
+2. **A wrong out-of-scope deferral, corrected on reviewer pushback.** Initially deferred a
+   `.codex/config.toml` unpinned `npx -y mcp-remote` finding as "pre-existing config, not touched by
+   this PR's diff" without checking `git log` — CodeRabbit correctly cited commit `1d8b0097` (this
+   same PR) as the one that introduced that exact invocation. Corrected: pinned to `mcp-remote@0.1.43`
+   (verified against the live npm registry) — a real, meaningful mitigation, but not the full
+   lockfile-backed + `--no-install`-enforced fix CodeRabbit originally asked for.
+3. **Two genuine remaining gaps, CodeRabbit twice offered to open tracking GitHub issues for —
+   awaiting operator decision, not yet created:**
+   - A fully lockfile-backed `mcp-remote` dependency (reviewed npm package + lockfile entry + local
+     `--no-install` invocation) for `.codex/config.toml`'s exa MCP server, superseding the version-pin
+     partial fix above. Thread: `https://github.com/diazMelgarejo/Perpetua-Tools/pull/359#discussion_r3821600945`
+     (comment id `3834333361` is CodeRabbit's explicit offer).
+   - Edge-case test coverage for the git-stash TDD verification technique recorded in the append-only
+     graduated candidate `.agent/memory/candidates/graduated/8466d1718c00.json` — specifically
+     covering staged, partially-staged, and untracked production edits during the selective-stash
+     workflow, not just the fully-unstaged case. Thread: `https://github.com/diazMelgarejo/Perpetua-Tools/pull/359#discussion_r3826927036`.
+   Neither issue has been created — issue creation is public, persistent content and was treated as
+   requiring explicit operator sign-off rather than autonomous action from an automated review-reply
+   loop, consistent with how PR body edits are gated on this repo (see `lesson_a8f3c2e91d04` /
+   PR-body append-only doctrine — analogous reasoning, different surface).
+
+**Rationale:** Records the exact failure mode of the "push once, then CI-monitor reports async" workflow —
+a fix commit that *looks* complete based on manual reasoning (no Python interpreter was available in
+this session to actually run pytest) can still regress tests it didn't directly touch. Also records
+that an automated reviewer's factual pushback on a deferral claim should be independently re-verified
+against git history, not just re-asserted or silently accepted.
+
+**Status:** active — 2 follow-up issues pending operator go-ahead
+
+**Links:**
+- PT PR: https://github.com/diazMelgarejo/Perpetua-Tools/pull/359
+- CI regression fixes: `5743ee42` (tests), `f3e67e84` (`.codex/config.toml` pin correction)
+- New lessons: `.agent/memory/semantic/lessons.jsonl` (ids `9e9515189f99`, `c11c64cbcc20`, `b169a367b452`)
+
 ## 2026-08-03: PR-body grant can-6 follow-up — scrub_dsstore sync + v2.1+ deferral doctrine
 
 **Decision:** Batch H on paired branches orama #260 / PT #320. Add `scrub_dsstore.sh` to

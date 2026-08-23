@@ -1,0 +1,40 @@
+{
+  "id": "56dd36c65a59",
+  "key": "manual_56dd36",
+  "name": "manual_56dd36",
+  "claim": "A single review-fix brief covering two PRs across two repos can silently misattribute a finding's file to the wrong PR -- verify each finding's file path actually exists in the PR/repo it's filed under before starting work on it, don't assume the brief's grouping is correct",
+  "conditions": [
+    "cross-repo review brief misattribution",
+    "multi-PR fix brief",
+    "verify file exists before fixing"
+  ],
+  "evidence_ids": [
+    "2026-08-22T08:30:18.780570+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-22T08:30:18.780570+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-08-22T08:30:18.780570+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-22T08:30:18.905192+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The orama-321.md brief bundled findings from BOTH orama-system PR #321 (review #4983422918) and Perpetua-Tools PR #359 (review #4989313231) under what read as one continuous numbered list. Two items -- orchestrator/tiered_pipeline.py's trace_id-before-path-resolution finding, and .agent/memory/candidates/graduated/a045e9f02292.json's version-qualify finding -- were listed under the orama-321 heading but the files don't exist anywhere in orama-system's history; both actually belonged to the PT-359 review. Caught by grepping for the file in orama-system BEFORE starting to fix it there, not after. Fixing an orama-system-side finding for a file that only exists in PT would have either silently failed (file not found) or, worse, prompted creating a stray file in the wrong repo to 'satisfy' the finding.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-08-22T08:30:18.780570+00:00"
+      ],
+      "lessons_sha": "ebb69d7e5788"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-22T08:30:18.905182+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The orama-321.md brief bundled findings from BOTH orama-system PR #321 (review #4983422918) and Perpetua-Tools PR #359 (review #4989313231) under what read as one continuous numbered list. Two items -- orchestrator/tiered_pipeline.py's trace_id-before-path-resolution finding, and .agent/memory/candidates/graduated/a045e9f02292.json's version-qualify finding -- were listed under the orama-321 heading but the files don't exist anywhere in orama-system's history; both actually belonged to the PT-359 review. Caught by grepping for the file in orama-system BEFORE starting to fix it there, not after. Fixing an orama-system-side finding for a file that only exists in PT would have either silently failed (file not found) or, worse, prompted creating a stray file in the wrong repo to 'satisfy' the finding."
+}

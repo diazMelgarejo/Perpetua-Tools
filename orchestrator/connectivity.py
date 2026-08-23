@@ -7,6 +7,35 @@ import httpx
 
 
 def _probe(url: str, timeout: float = 2.5) -> Dict[str, Any]:
+    """Deny-by-default probe for arbitrary/remote URLs (cloud vendor APIs).
+
+    Routes through the Layer-2 pinned transport. Do not use this for local
+    model servers (Ollama/LM Studio/MLX) -- loopback/RFC1918 targets are
+    denied by design here; use ``_probe_local`` for those instead.
+    """
+    from utils.ssrf_pinned_adapter import ssrf_request
+    try:
+        r = ssrf_request("GET", url, timeout=timeout)
+        return {"ok": r.status_code < 400, "status_code": r.status_code, "url": url}
+    except Exception as exc:
+        return {"ok": False, "status_code": None, "url": url, "error": str(exc)}
+
+
+def _probe_local(url: str, timeout: float = 2.5) -> Dict[str, Any]:
+    """Allowlist probe for trusted local/LAN model servers (Ollama, LM Studio, MLX).
+
+    Opposite polarity from ``_probe``: these health checks legitimately
+    target loopback/RFC1918 hosts, which the deny-by-default SSRF transport
+    would reject. Validates the URL is loopback/RFC1918 via
+    ``model_endpoint_url`` (never weakens ``ssrf_request``'s own policy) then
+    issues a plain request -- no DNS-rebinding exposure since these are
+    fixed, code-reviewed local endpoints, not caller-supplied remote URLs.
+    """
+    from utils.model_endpoint_url import ModelEndpointPolicyError, validate_model_endpoint_url
+    try:
+        validate_model_endpoint_url(url)
+    except ModelEndpointPolicyError as exc:
+        return {"ok": False, "status_code": None, "url": url, "error": str(exc)}
     try:
         r = httpx.get(url, timeout=timeout)
         return {"ok": r.status_code < 400, "status_code": r.status_code, "url": url}
@@ -102,17 +131,17 @@ def endpoint_online(base: str, backend: str, model_id: str = "", ttl: float = _E
 
 def check_ollama(host: str = "http://localhost:11434") -> Dict[str, Any]:
     """Works for shared Ollama on Mac or Windows."""
-    return _probe(f"{host.rstrip('/')}/api/tags")
+    return _probe_local(f"{host.rstrip('/')}/api/tags")
 
 
 def check_lm_studio(host: str = "http://localhost:1234") -> Dict[str, Any]:
     """LM Studio OpenAI-compatible endpoint on Mac or Windows."""
-    return _probe(f"{host.rstrip('/')}/v1/models")
+    return _probe_local(f"{host.rstrip('/')}/v1/models")
 
 
 def check_mlx(host: str = "http://localhost:8081") -> Dict[str, Any]:
     """MLX server on Mac (mlx-lm serve)."""
-    return _probe(f"{host.rstrip('/')}/v1/models")
+    return _probe_local(f"{host.rstrip('/')}/v1/models")
 
 
 def check_perplexity() -> Dict[str, Any]:

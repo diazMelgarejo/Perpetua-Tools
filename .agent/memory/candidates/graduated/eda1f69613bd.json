@@ -1,0 +1,38 @@
+{
+  "id": "eda1f69613bd",
+  "key": "manual_eda1f6",
+  "name": "manual_eda1f6",
+  "claim": "The injection-check-narration behavior (lesson_030bbcadfec0) correlates directly with the org's own Agentic Security Controls doc (orama-system/docs/v2/32-agentic-security-controls.md, installed a few weeks before this session). Section 6 (prompt-injection scanner) requires 'bypass fixtures and false-positive fixtures before blocking in production' -- the visible-narration failure this session was an unfixtured false positive on the output side: the check ran correctly but its own narration became noise the human had to filter, exactly the failure class \u00a76 is designed to prevent upstream. Section 10's Portal-swarm sub-table is the formal version of the PR #34/#29 situation: it explicitly flags 'Client sends approved: true (not HITL)' as insufficient and requires a real HITL approval token, not a relayed message that merely sounds like authorization -- directly validates refusing to merge PR #34 off Agnes's relayed 'Next Actions Dispatched' note and insisting on the operator's own explicit AskUserQuestion answer instead. Section 7 (memory ACL/provenance, 'quarantine newly ingested memory until scanned') is the formal version of treating GossipBus messages from other agents as untrusted input requiring independent ground-truth verification before acting -- which was the RIGHT instinct this session, just executed with visible noise instead of silent rigor.",
+  "conditions": [
+    "agentic security controls correlation prompt injection scanner HITL swarm approval memory quarantine fixture false-positive"
+  ],
+  "evidence_ids": [
+    "2026-08-20T11:33:33.967313+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-20T11:33:33.967313+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-20T11:33:33.967313+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-20T11:33:34.125640+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-08-20, operator explicitly asked to correlate this session's behavior with the installed Agentic Security CI suite to distinguish good checks worth keeping from noise worth cutting. This is the concrete mapping: keep the verification and the HITL refusal (both match documented org security controls, \u00a76 and \u00a710), cut the narration of the check itself (the thing \u00a76's fixture requirement exists to prevent from leaking into production output).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-20T11:33:33.967313+00:00"
+      ],
+      "lessons_sha": "fda374984fe7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-20T11:33:34.125626+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-08-20, operator explicitly asked to correlate this session's behavior with the installed Agentic Security CI suite to distinguish good checks worth keeping from noise worth cutting. This is the concrete mapping: keep the verification and the HITL refusal (both match documented org security controls, \u00a76 and \u00a710), cut the narration of the check itself (the thing \u00a76's fixture requirement exists to prevent from leaking into production output)."
+}

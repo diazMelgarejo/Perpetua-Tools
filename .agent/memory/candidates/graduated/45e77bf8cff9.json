@@ -1,0 +1,40 @@
+{
+  "id": "45e77bf8cff9",
+  "key": "manual_45e77b",
+  "name": "manual_45e77b",
+  "claim": "Python's stdlib ipaddress.IPv4Address.is_global returning True for every multicast address (including the 224.0.0.0/4 network base itself) was confirmed on CPython 3.13.0 specifically -- this repo's declared floor is >=3.11, and CPython 3.13 changed other ipaddress edge-case classifications, so this exact claim is untested below 3.13 and should be re-verified if it becomes load-bearing on an older interpreter",
+  "conditions": [
+    "CPython 3.13 stdlib behavior",
+    "declared python floor vs confirmed version",
+    "ipaddress is_global multicast version-qualify"
+  ],
+  "evidence_ids": [
+    "2026-08-22T08:29:06.555697+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-22T08:29:06.555697+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-08-22T08:29:06.555697+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-22T08:29:06.847977+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Supersedes lesson_a045e9f02292 (CodeRabbit review #4989313231 on PT PR #359, finding on .agent/memory/candidates/graduated/a045e9f02292.json): the original claim stated the is_global/multicast behavior as universal without naming which Python version it was confirmed against, while pyproject.toml declares requires-python >=3.11 and mypy pins python_version=3.11 -- a 2-version gap between 'confirmed on' and 'declared floor'. Version-qualifying doesn't change the fix (the test oracle correctly uses 'not is_global or is_multicast' regardless of version), but an unqualified universal claim in memory is a liability if a future session runs on an older interpreter and assumes the same behavior without re-checking. Also updated the inline comment in tests/test_ssrf_fetch_policy.py to carry the same qualification.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-08-22T08:29:06.555697+00:00"
+      ],
+      "lessons_sha": "cf790bcac0af"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-22T08:29:06.847967+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Supersedes lesson_a045e9f02292 (CodeRabbit review #4989313231 on PT PR #359, finding on .agent/memory/candidates/graduated/a045e9f02292.json): the original claim stated the is_global/multicast behavior as universal without naming which Python version it was confirmed against, while pyproject.toml declares requires-python >=3.11 and mypy pins python_version=3.11 -- a 2-version gap between 'confirmed on' and 'declared floor'. Version-qualifying doesn't change the fix (the test oracle correctly uses 'not is_global or is_multicast' regardless of version), but an unqualified universal claim in memory is a liability if a future session runs on an older interpreter and assumes the same behavior without re-checking. Also updated the inline comment in tests/test_ssrf_fetch_policy.py to carry the same qualification."
+}

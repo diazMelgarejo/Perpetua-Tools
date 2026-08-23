@@ -47,6 +47,15 @@ dependencies = [
     # Async and networking
     "aiohttp>=3.14.3",
     "httpx>=0.26.0",
+    # src/utils/ssrf_pinned_adapter.py (Layer-2 SSRF pinning transport, PR #359)
+    # subclasses urllib3's HTTPConnectionPool/HTTPSConnectionPool via requests.adapters.HTTPAdapter.
+    # >=2.32.2: CVE-2024-35195 (Session.verify=False on one request silently disabled cert
+    # verification for all later requests to that host); 2.32.0/2.32.1 were yanked over
+    # regressions from that fix, 2.32.2 is the first stable release carrying it.
+    # >=2.33.0: GHSA-9hjg-9r4m-mvj7 / CVE-2024-47081 (.netrc credentials leak via a
+    # maliciously-crafted URL, fixed upstream in 2.32.4); confirmed via OSV.dev that
+    # 2.33.0 carries zero known advisories.
+    "requests>=2.33.0",
     "jsonschema>=4.0.0",
     # Database and caching
     "aiosqlite>=0.19",        # GossipBus async SQLite + FTS5 (RAG backport 2026-05-22)

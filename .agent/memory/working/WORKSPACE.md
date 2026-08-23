@@ -1,18 +1,24 @@
 # WORKSPACE — current task state
 
-**Updated:** 2026-08-06 (PR #326 review fixes — JSONL dedupe key + Hermes wave status)  
-**Claimed by:** Cursor agent — PR #326 security-review remediation.
-Devices/models/ecc-tools stay uncommitted.  
-**Active branch (PT):** `2026-08-05-001-mcp-consolidation-from-alphaclaw` → [PR #326](https://github.com/diazMelgarejo/Perpetua-Tools/pull/326)
+**Updated:** 2026-08-20 (Standards Convergence, SSRF Defense-in-Depth, Frugality Harmonization)  
+**Claimed by:** Agnes (`agnes-antigravity-claude`)  
+**Active branch (PT):** `fix/pt-standards-convergence-20260818`  
+**Active branch (orama):** `fix/oramasys-standards-convergence-20260818`  
 
 ## Current focus
 
 | Area | Branch / PR | Role |
 | ---- | ----------- | ---- |
-| **Hermes Wave 0 (taxonomy + lane tags)** | orama graft branches (`cursor/hermes-openclaw-graft-audit-f559`, `2026-08-05-002-hermes-graft-plan-reference-fix`) | **Done, pending review** — L-H1 / L-PT / L-Fleet taxonomy + lane tags; chronology **precedes** Wave 1 (not merged/released) |
-| **Hermes envelope reconciliation (orama)** | `2026-08-05-002-hermes-graft-plan-reference-fix` (`e90cb16d`…`e17aad66`) | **Done, pending review** — T-ENG-1 canonical envelope + Wave 1–2 (`--json`, `hermes-status`); 38/38 tests local; SoT `hermes-universal-invocation-protocol.md`; Appendix C deferred v2.1++. Push/PR gate deferred to operator |
-| **PT (this repo)** | `2026-08-05-001-mcp-consolidation-from-alphaclaw` → PR #326 | MCP consolidation from AlphaClaw + memory batch |
-| **Grant HMAC (landed)** | orama #260 + PT #320 merged to `main` | Follow-up on `post-grant-followup-*` branches |
+| **SSRF Layer-2 Docs Shipped** | `fix/oramasys-standards-convergence-20260818` (orama) | **Done (c841ed31)** — `T5-SSRF-orama-layer2-docs-provisional-to-shipped-7a767b81`. Marked Layer 2 as SHIPPED with Split-Identity pool isolation in Docs 32 & SSRF Plan. |
+| **Tier-5 Durable Budget Ledger** | `fix/pt-standards-convergence-20260818` (PT) | **Done (0fa78a01, 806690ef)** — `PT-T5-SETTLE-004` (Tier5ExecutionService & runner callbacks) and `PT-T5-API-005` (FastAPI endpoints & status route). 141/141 tests green. |
+| **Cross-Repo Tier-5 Parity** | `cross-repo-parity-ORAMA-T5-PARITY-006-8b31eee1` | **Done** — Parity verified against Doc 52 (`52-tier5-frugality-storage-consumer-mapping.md`) and Reference Guide 08. |
+| **Reference Guide 08** | `references/08-DOC53-CODERABBIT-REMEDIATION-AND-TIER5-HANDOFF-REPORT-2026-08-20.md` | **Done** — Doc 53 CodeRabbit remediation (7 findings resolved), unpushed review discipline, and Tier-5 handoff state. |
+| **Reference Guide 07** | `references/07-MULTI-AGENT-CONVERGENCE-AND-REMEDIATION-REFERENCE-2026-08-20.md` | **Done** — Complete cross-linked reference guide for git remediation doctrines, 199k token cliff, cheapest-tool-first ladder, and GossipBus topology. |
+| **Doc 53 CodeRabbit Remediation** | `fix/oramasys-standards-convergence-20260818` (orama) | **Done locally (07860b8d)** — Resolved all 7 CodeRabbit review findings on Doc 53 finance critique with deep research citations. |
+| **Session Synthesis (2026-08-20)** | `SESSION_SYNTHESIS_ALPHACLAW_PR29_AND_MASTER_PLAN_2026-08-20.md` | **Done** — Full AlphaClaw PR #29 restore & CodeRabbit CI fix pushed (`70e0f9d8`), master plan synthesized, doc 53 linked, post-tool hook path priority fixed (`c8fac600`). |
+| **Standards & Defect Convergence** | `fix/pt-standards-convergence-20260818` (PT), `fix/oramasys-standards-convergence-20260818` (orama) | **Done locally, pending review** — OS-D2..OS-D5 in orama (5152288e); PT-D1, PT-D3, hook fix, and Codex config in PT (1a463d1f). 141/141 targeted tests green, 24/24 SSRF tests green. |
+| **Unified Strategic Roadmap** | `UNIFIED_STANDARDS_SSRF_FRUGALITY_CONVERGENCE_2026-08-20.md` | **Consolidated** — 3-layer socket-pinning SSRF defense, Grok 4.6 199k cliff gate, Perplexity Gemini 3.7 Flash frugality engine, MAESTRO/Amplifier governance. |
+| **AlphaClaw PR #29 Alignment** | `2026-08-05-001-mcp-consolidation-to-pt` → PR #29 | **Done & Pushed** — Reverted 1caaa6ab narrowing (+512 lines instincts), migrated CI to pnpm, tracked cursor attribution rules (`70e0f9d8`), base updated to `clean/macos-26` (MERGEABLE). |
 
 ## Read this first
 

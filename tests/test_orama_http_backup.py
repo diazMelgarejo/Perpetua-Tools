@@ -2,7 +2,7 @@
 
 import sys
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
 
@@ -54,10 +54,16 @@ def test_orchestrate_calls_oramasys_bridge_with_mapped_depth(monkeypatch):
     mock_http_response.raise_for_status = MagicMock()
     mock_http_response.json.return_value = fake_json_response
 
-    mock_async_client_instance = AsyncMock()
-    mock_async_client_instance.post = AsyncMock(return_value=mock_http_response)
-    mock_async_client_instance.__aenter__ = AsyncMock(return_value=mock_async_client_instance)
-    mock_async_client_instance.__aexit__ = AsyncMock(return_value=False)
+    # ORAMA_ENDPOINT above is http://localhost:8001 -- a loopback target.
+    # call_oramasys_mcp_or_bridge's async HTTP fallback classifies loopback
+    # endpoints as local and routes them through a direct httpx.AsyncClient
+    # call, NOT ssrf_request (whose deny-by-default policy would otherwise
+    # make orama's own default deployment unreachable -- see
+    # orchestrator/orama_bridge.py's _is_local_oramasys_endpoint()).
+    async def fake_post(*args, **kwargs):
+        return mock_http_response
+
+    mock_post = MagicMock(side_effect=fake_post)
 
     with (
         patch(
@@ -75,8 +81,7 @@ def test_orchestrate_calls_oramasys_bridge_with_mapped_depth(monkeypatch):
             "orchestrator.ecc_tools_sync.get_sync_status",
             return_value={"status": "ok"},
         ),
-        patch("orchestrator.orama_bridge.httpx.AsyncClient",
-              return_value=mock_async_client_instance),
+        patch("httpx.AsyncClient.post", mock_post),
         # Ensure no MCP subprocess is attempted
         patch.dict("os.environ", {"ORAMASYS_MCP_SERVER_CMD": ""}),
     ):
@@ -97,7 +102,8 @@ def test_orchestrate_calls_oramasys_bridge_with_mapped_depth(monkeypatch):
     # Verify HTTP path was taken (MCP cmd is unset)
     assert body["oramasys_bridge"]["transport"] == "http"
     # Verify the payload sent to HTTP bridge has correct contract mapping
-    _, call_kwargs = mock_async_client_instance.post.call_args
+    mock_post.assert_called_once()
+    _, call_kwargs = mock_post.call_args
     assert call_kwargs["json"]["optimize_for"] == "reliability"
     assert call_kwargs["json"]["reasoning_depth"] == "ultra"
     assert body["oramasys_bridge"]["request"]["reasoning_depth"] == "ultra"

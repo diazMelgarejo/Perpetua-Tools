@@ -688,11 +688,25 @@ def test_approval_artifact_path_rejects_traversal(
     tmp_path: Path, malicious_trace_id: str
 ) -> None:
     directory = tmp_path / "approvals"
-    with pytest.raises(tp.PipelineApprovalError, match="escapes approval directory"):
+    # validate_trace_id() runs before path construction, so every payload
+    # here (all containing "/" or ".", outside TRACE_ID_PATTERN) is rejected
+    # as an invalid trace_id -- it never reaches the containment check below.
+    with pytest.raises(tp.PipelineApprovalError, match="invalid trace_id"):
         tp._approval_artifact_path(directory, malicious_trace_id)
     # Confirm nothing was written outside the intended directory either.
     assert not any(tmp_path.glob("**/evil*"))
     assert not any(tmp_path.glob("**/escape*"))
+
+
+def test_approval_artifact_path_rejects_nul_byte_before_path_resolution(
+    tmp_path: Path,
+) -> None:
+    """A raw caller (bypassing the FastAPI Pydantic pattern) can pass a NUL
+    byte; Path.resolve() raises ValueError on it, not PipelineApprovalError,
+    unless validate_trace_id() runs first."""
+    directory = tmp_path / "approvals"
+    with pytest.raises(tp.PipelineApprovalError, match="invalid trace_id"):
+        tp._approval_artifact_path(directory, "\x00")
 
 
 def test_approval_artifact_path_accepts_normal_trace_id(tmp_path: Path) -> None:
@@ -733,6 +747,23 @@ def test_approval_register_and_load_round_trip(tmp_path: Path) -> None:
     assert loaded.scope == approval.scope
 
 
+def test_load_approval_rejects_embedded_trace_id_mismatch(tmp_path: Path) -> None:
+    # Register under one trace_id, then hand-edit the artifact's own
+    # embedded trace_id field to a different value (simulating tampering
+    # or a copy-paste artifact-creation bug). The file is still found by
+    # its filename (the requested trace_id), but its content must not be
+    # trusted to silently override that identity.
+    approval_dir = tmp_path / "approvals"
+    approval = _approval(trace_id="requested-trace-1")
+    path = tp.register_pipeline_approval(approval, approval_dir=approval_dir)
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw["trace_id"] = "different-trace-2"
+    path.write_text(json.dumps(raw), encoding="utf-8")
+
+    with pytest.raises(tp.PipelineApprovalError, match="mismatched embedded"):
+        tp.load_pipeline_approval("requested-trace-1", approval_dir=approval_dir)
+
+
 def test_load_missing_approval_raises(tmp_path: Path) -> None:
     with pytest.raises(tp.PipelineApprovalError, match="no approval record"):
         tp.load_pipeline_approval("never-registered", approval_dir=tmp_path / "approvals")
@@ -741,9 +772,11 @@ def test_load_missing_approval_raises(tmp_path: Path) -> None:
 def test_load_malformed_approval_raises(tmp_path: Path) -> None:
     approval_dir = tmp_path / "approvals"
     approval_dir.mkdir(parents=True)
-    (approval_dir / "bad.json").write_text("not json", encoding="utf-8")
+    # Trace ID must satisfy TRACE_ID_MIN_LENGTH so this test exercises the
+    # malformed-JSON path, not the (separately tested) length validation.
+    (approval_dir / "bad-trace-id.json").write_text("not json", encoding="utf-8")
     with pytest.raises(tp.PipelineApprovalError, match="unreadable"):
-        tp.load_pipeline_approval("bad", approval_dir=approval_dir)
+        tp.load_pipeline_approval("bad-trace-id", approval_dir=approval_dir)
 
 
 # ── Telemetry ──────────────────────────────────────────────────────────────────

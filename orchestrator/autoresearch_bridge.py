@@ -73,7 +73,7 @@ import urllib.error
 import urllib.request
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import NoReturn, Optional
 from urllib.parse import urlparse
 
 from utils.model_endpoint_url import ModelEndpointPolicyError, validate_model_endpoint_url
@@ -404,6 +404,41 @@ def _lm_studio_base_url() -> str:
     return "http://localhost:1234"
 
 
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Refuse every redirect rather than silently following it.
+
+    ``validate_model_endpoint_url()`` in ``_lm_studio_base_url()`` only
+    validates the INITIAL url -- urllib's default opener auto-follows
+    301/302/303/307/308 with zero re-validation of the redirect target,
+    so a compromised/MITM'd local LM Studio instance could redirect this
+    probe anywhere (including a cloud metadata IP) and it would be
+    followed transparently. A health-check probe has no legitimate need
+    to follow a redirect at all, so refuse outright rather than
+    re-validating and hopping (this is a fixed, single-purpose probe, not
+    a general-purpose fetcher).
+    """
+
+    def redirect_request(
+        self,
+        req: urllib.request.Request,
+        fp: object,
+        code: int,
+        msg: str,
+        headers: object,
+        newurl: str,
+    ) -> NoReturn:
+        raise urllib.error.HTTPError(
+            req.full_url,
+            code,
+            f"redirect refused (probe does not follow redirects): {newurl}",
+            headers,
+            fp,
+        )
+
+
+_NO_REDIRECT_OPENER = urllib.request.build_opener(_NoRedirectHandler)
+
+
 def probe_lm_studio_http() -> SyncResult:
     """HTTP GET /v1/models: local GPU readiness without SSH."""
     base = _lm_studio_base_url()
@@ -415,7 +450,7 @@ def probe_lm_studio_http() -> SyncResult:
         headers["Authorization"] = f"Bearer {token}"
     req = urllib.request.Request(url, headers=headers, method="GET")
     try:
-        with urllib.request.urlopen(req, timeout=LM_STUDIO_PROBE_TIMEOUT) as resp:
+        with _NO_REDIRECT_OPENER.open(req, timeout=LM_STUDIO_PROBE_TIMEOUT) as resp:
             body = resp.read().decode("utf-8", errors="replace")
             if resp.status >= 400:
                 return SyncResult(ok=False, error=f"HTTP {resp.status} from {url}")

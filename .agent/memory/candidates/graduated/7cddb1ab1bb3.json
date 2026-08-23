@@ -1,0 +1,43 @@
+{
+  "id": "7cddb1ab1bb3",
+  "key": "manual_7cddb1",
+  "name": "manual_7cddb1",
+  "claim": "Full narrative + timeline for the 2026-08-23 SSRF split-identity landing and dependency-alert remediation session is at .agent/memory/working/2026-08-23-ssrf-split-identity-and-dependency-remediation-session.md",
+  "conditions": [
+    "2026-08-23",
+    "dependabot-remediation",
+    "package-lock-json-forensics",
+    "session-narrative",
+    "ssrf-split-identity",
+    "timeline"
+  ],
+  "evidence_ids": [
+    "2026-08-22T21:33:35.170282+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-22T21:33:35.170282+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-22T21:33:35.170282+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-22T21:33:35.311114+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "User asked to record 'the full story with timeline' after the web/package-lock.json forensics (accidental npm install resurrection -> Dependabot false-fix -> deletion). Pointer-only entry; the working-memory doc holds the actual narrative (6 phases, cross-linked to all 6 lessons graduated this session, both PR commit ranges, and the external Claude-Desktop-LLM PR).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-22T21:33:35.170282+00:00"
+      ],
+      "lessons_sha": "dda0dc024c09"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-22T21:33:35.311102+00:00",
+  "reviewer": "learn.py",
+  "rationale": "User asked to record 'the full story with timeline' after the web/package-lock.json forensics (accidental npm install resurrection -> Dependabot false-fix -> deletion). Pointer-only entry; the working-memory doc holds the actual narrative (6 phases, cross-linked to all 6 lessons graduated this session, both PR commit ranges, and the external Claude-Desktop-LLM PR)."
+}

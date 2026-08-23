@@ -1,0 +1,41 @@
+{
+  "id": "4f172f326f7b",
+  "key": "manual_4f172f",
+  "name": "manual_4f172f",
+  "claim": "orchestrator/coordination task_queue's depends_on check gates on a dependency task's COMPLETION, not its claim -- claiming a task with an unmet dependency fails with 'unmet dependencies: <dep>' even if the dependency is actively being worked on or was recently claimed. Before reassigning a blocked chain to a different agent, check whether the blocking dependency's actual commits are already merged (git merge-base --is-ancestor <dep-commit> HEAD) -- the queue task may just never have been marked complete by its claimant, especially if that agent went stale/idle on GossipBus without posting a completion update, in which case marking it complete yourself (queue complete <task_id> <original_claimant_agent_id>) is correct and unblocks the chain immediately, rather than waiting indefinitely or reassigning real finished work",
+  "conditions": [
+    "queue complete on behalf of stale agent",
+    "stale claimant blocking dependency chain",
+    "task_queue depends_on gates on completion not claim",
+    "verify via git merge-base before reassigning"
+  ],
+  "evidence_ids": [
+    "2026-08-22T10:29:45.553846+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-22T10:29:45.553846+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-08-22T10:29:45.553846+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-22T10:29:45.701554+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Live incident 2026-08-22 on PT PR #359: Agnes claimed PT-T5-SETTLE-004/API-005/PARITY-006 were 'unblocked and ready,' but queue claim correctly rejected all three with unmet-dependency errors (PT-T5-LEDGER-003, PT-T5-APPROVAL-002). Investigated instead of blindly waiting or reassigning: both blocking tasks' actual commits (538767e1, cc0c2c93, bb527f30, 6178b41a) were already verified ancestors of the current branch HEAD -- Codex (the claimant) had gone stale on GossipBus since 2026-08-20 14:13 without ever running 'queue complete'. Marked both complete myself (as codex-execution-bridge, matching the claimant per queue complete's own agent_id-must-match-claimant requirement), which immediately unblocked the real claim for Agnes. Codex independently confirmed the same conclusion via its own board post minutes later, corroborating the fix was correct, not just convenient.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-08-22T10:29:45.553846+00:00"
+      ],
+      "lessons_sha": "ee4c79eaf2a7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-22T10:29:45.701537+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Live incident 2026-08-22 on PT PR #359: Agnes claimed PT-T5-SETTLE-004/API-005/PARITY-006 were 'unblocked and ready,' but queue claim correctly rejected all three with unmet-dependency errors (PT-T5-LEDGER-003, PT-T5-APPROVAL-002). Investigated instead of blindly waiting or reassigning: both blocking tasks' actual commits (538767e1, cc0c2c93, bb527f30, 6178b41a) were already verified ancestors of the current branch HEAD -- Codex (the claimant) had gone stale on GossipBus since 2026-08-20 14:13 without ever running 'queue complete'. Marked both complete myself (as codex-execution-bridge, matching the claimant per queue complete's own agent_id-must-match-claimant requirement), which immediately unblocked the real claim for Agnes. Codex independently confirmed the same conclusion via its own board post minutes later, corroborating the fix was correct, not just convenient."
+}

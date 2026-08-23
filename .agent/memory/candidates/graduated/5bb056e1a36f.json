@@ -1,0 +1,43 @@
+{
+  "id": "5bb056e1a36f",
+  "key": "manual_5bb056",
+  "name": "manual_5bb056",
+  "claim": "A stray package-lock.json alongside a canonical pnpm-lock.yaml isn't just dead weight -- it actively misleads Dependabot into 'fixing' a file nothing reads, masking the real unpatched vulnerability",
+  "conditions": [
+    "dead-lockfile",
+    "dependabot-false-fix",
+    "multiple-lockfiles",
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    "stray-npm-install"
+  ],
+  "evidence_ids": [
+    "2026-08-22T21:30:57.888345+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-22T21:30:57.888345+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-22T21:30:57.888345+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-22T21:30:58.013005+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama-system/web/package-lock.json was correctly deleted 2026-06-12 during the npm-to-pnpm migration (commit 5f37488b, message: 'Drop package-lock.json in favor of pnpm-lock.yaml'), then accidentally resurrected 2026-07-13 by an unrelated commit whose message admits 'Also committing web/package-lock.json (untracked from a fresh npm install)' -- someone ran plain npm install in web/ on a machine without pnpm set up, and it rode along with an unrelated Windows-docs commit. Dependabot's npm_and_yarn bot then found this resurrected file and 'fixed' the js-yaml CVE in it (2026-08-08, commit bba9f06c) -- but the REAL lockfile, pnpm-lock.yaml, has js-yaml pinned via pnpm-workspace.yaml's overrides: block, which Dependabot's automated PR generator doesn't understand or edit. Net effect: a Dependabot PR that LOOKED like it fixed the CVE, merged clean, and the alert stayed open for 2 more weeks because the real file was untouched. General lesson: when a repo has multiple lockfiles for one package manager transition, an accidentally-resurrected dead one isn't harmless clutter -- delete it immediately on sight, don't just leave it; it will eventually eat a real security fix.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-22T21:30:57.888345+00:00"
+      ],
+      "lessons_sha": "5894bccd4b83"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-22T21:30:58.012993+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama-system/web/package-lock.json was correctly deleted 2026-06-12 during the npm-to-pnpm migration (commit 5f37488b, message: 'Drop package-lock.json in favor of pnpm-lock.yaml'), then accidentally resurrected 2026-07-13 by an unrelated commit whose message admits 'Also committing web/package-lock.json (untracked from a fresh npm install)' -- someone ran plain npm install in web/ on a machine without pnpm set up, and it rode along with an unrelated Windows-docs commit. Dependabot's npm_and_yarn bot then found this resurrected file and 'fixed' the js-yaml CVE in it (2026-08-08, commit bba9f06c) -- but the REAL lockfile, pnpm-lock.yaml, has js-yaml pinned via pnpm-workspace.yaml's overrides: block, which Dependabot's automated PR generator doesn't understand or edit. Net effect: a Dependabot PR that LOOKED like it fixed the CVE, merged clean, and the alert stayed open for 2 more weeks because the real file was untouched. General lesson: when a repo has multiple lockfiles for one package manager transition, an accidentally-resurrected dead one isn't harmless clutter -- delete it immediately on sight, don't just leave it; it will eventually eat a real security fix."
+}

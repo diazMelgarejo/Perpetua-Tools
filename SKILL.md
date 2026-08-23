@@ -74,21 +74,24 @@ orama's `hardware-affinity-gate` skill imports PT rules **one-way** — do not d
 
 Refer to [hardware/SKILL.md](hardware/SKILL.md) for role matrix and VRAM constraints.
 
-### Hardware Profiles (Summary)
-Refer to [hardware/SKILL.md](https://github.com/diazMelgarejo/Perpetua-Tools/blob/main/hardware/SKILL.md) for full specs.
+### Hardware Profiles — Model Guidance
+
+> ⚠️ **Never hardcode model names in production code** — query `/api/tags` (Ollama) or `/v1/models` (LM Studio) at runtime (see Skill 3 and `src/utils/hardware_policy.py`).
+>
+> The examples below are **known-good references from operational experience**, not defaults to hardcode. They serve as smoke-test baselines only.
 
 ### Profile A — mac-studio (16GB+ Unified Memory)
 - **Primary**: `glm-5.1:cloud` via local Ollama when the live probe succeeds
-- **Primary**: `Qwen3.5-9B-MLX-4bit` (LM Studio, Metal full offload, context 4096)
-- **Roles**: Thin Orchestrator via GLM, local verifier/orchestrator fallback via Mac LM Studio.
-- **VRAM**: N/A (Unified). LM Studio handles MLX weights natively.
+- **Local Fallback**: `Qwen3.5-9B-MLX-4bit` (LM Studio, Metal full offload, context 4096) or `qwen3.5:9b-nvfp4` via Ollama (`localhost:11434`)
+- **Roles**: Thin Orchestrator via GLM, local verifier/orchestrator fallback via Mac LM Studio/Ollama.
+- **VRAM**: N/A (Unified). LM Studio/Ollama handle Apple Silicon Metal natively.
 
 ### Profile B — win-rtx3080 (10GB VRAM)
-- **ALWAYS local LM Studio primary:** `Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2` (`gpu_offload=40`, context 16384)
-- **ALWAYS roles:** Coder, Checker, Refiner, Executor, Verifier, AutoResearch Coder
+- **Primary (LM Studio)**: `Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2` (`gpu_offload=40`, context 16384)
+- **Roles**: Coder, Checker, Refiner, Executor, Verifier, AutoResearch Coder
 - **NEVER Mac models:** `qwen3.5-9b-mlx`, `qwen3.5-9b-mlx-4bit`, `gemma-4-e4b-it`
 - **NEVER load MLX models on Windows** — MLX requires Apple Silicon Metal.
-- **Constraints:** `gpu_offload=40` layers max; validated fallbacks: `qwen3-coder:14b`, `gemma-4-26b-a4b-it`, then Ollama `qwen3.5:35b-a3b-q4_K_M` at `http://<YOUR_WINDOWS_IP>:11434`.
+- **Constraints:** `gpu_offload=40` layers max; probe `/api/tags` or `/v1/models` for available quant variants (`gemma-4-26b-a4b-it`, `qwen3.5:35b-a3b-q4_K_M`, or `qwen3-coder` family at `http://<YOUR_WINDOWS_IP>:11434`).
 
 ### Canonical Model Routing Decision Tree
 ```
@@ -248,14 +251,14 @@ lmstudio_win: http://<YOUR_WINDOWS_IP>:1234  # Qwen3.5-27B, gpu_offload=40, cont
 portal: http://<YOUR_MAC_IP>:8002            # LAN status (auto-refresh 10s)
 # Ollama lanes
 ollama_mac: http://<YOUR_MAC_IP>:11434       # glm-5.1:cloud local client
-ollama_win: http://<YOUR_WINDOWS_IP>:11434   # qwen3-coder:14b / critic / backup
+ollama_win: http://<YOUR_WINDOWS_IP>:11434   # qwen3-coder family / critic / backup (probe /api/tags)
 cloud_enabled: true
 critic_pass: true
 fallback_chain:
   - ollama_mac_glm         # thin orchestrator when glm-5.1:cloud probe succeeds
   - lmstudio_win           # primary heavy coder / autoresearch executor
   - lmstudio_mac           # orchestrator + validator fallback
-  - ollama_win             # qwen3-coder:14b, qwen3-30b critic, qwen3.5:35b backup
+  - ollama_win             # qwen3-coder family / critic / backup
   - ollama_mac
   - cloud_perplexity       # cost_guard checked first
 ```

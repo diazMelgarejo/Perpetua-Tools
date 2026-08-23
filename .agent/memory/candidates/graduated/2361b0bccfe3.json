@@ -1,0 +1,40 @@
+{
+  "id": "2361b0bccfe3",
+  "key": "manual_2361b0",
+  "name": "manual_2361b0",
+  "claim": "When a CI dispatcher script sets a failure flag (FAIL=1) instead of exiting directly inside a branch, that branch's own failure path needs its own regression test -- a test that only exercises a sibling branch (e.g. a different scanner's direct-exit path) does not prove the flag-setting branch actually propagates to the script's final exit code",
+  "conditions": [
+    "CI dispatcher FAIL flag branch coverage",
+    "scan_ramparts regression test",
+    "test only one branch of shared exit code"
+  ],
+  "evidence_ids": [
+    "2026-08-22T08:30:18.403057+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-22T08:30:18.403057+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-08-22T08:30:18.403057+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-22T08:30:18.561021+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit review #4983422918 on orama-system PR #321: scripts/ci/test_run_agent_security_scans.sh had one regression test for the aguara branch's failure propagation (a stub binary that exits 1 directly), but scan_ramparts()'s GITHUB_ACTIONS-set/tool-unavailable branch sets FAIL=1 and falls through rather than exiting immediately -- a regression that dropped that assignment could still pass the existing suite. Added a second assertion (GITHUB_ACTIONS=1, PATH restricted to /usr/bin:/bin so ramparts/cargo aren't found, expect exit 1) that specifically exercises the flag-setting branch. Confirmed the finding against current code first (grepped scan_ramparts()'s actual FAIL=1 site) before writing the test, per this session's verify-against-current-code discipline.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-08-22T08:30:18.403057+00:00"
+      ],
+      "lessons_sha": "61d7abb24d3d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-22T08:30:18.561008+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit review #4983422918 on orama-system PR #321: scripts/ci/test_run_agent_security_scans.sh had one regression test for the aguara branch's failure propagation (a stub binary that exits 1 directly), but scan_ramparts()'s GITHUB_ACTIONS-set/tool-unavailable branch sets FAIL=1 and falls through rather than exiting immediately -- a regression that dropped that assignment could still pass the existing suite. Added a second assertion (GITHUB_ACTIONS=1, PATH restricted to /usr/bin:/bin so ramparts/cargo aren't found, expect exit 1) that specifically exercises the flag-setting branch. Confirmed the finding against current code first (grepped scan_ramparts()'s actual FAIL=1 site) before writing the test, per this session's verify-against-current-code discipline."
+}

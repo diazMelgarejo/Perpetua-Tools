@@ -1,0 +1,38 @@
+{
+  "id": "e4b8a6287edd",
+  "key": "manual_e4b8a6",
+  "name": "manual_e4b8a6",
+  "claim": "Concrete playbook for the verification-pacing failure (see lesson_bacf8768f10f for diagnosis): (1) Verify a claim ONCE per distinct question -- if the same fact gets challenged again, re-check only if new evidence is offered, not just because the user re-asked; state 'already verified: <finding>, here's the evidence' instead of re-running the same search. (2) Use precise language for negative findings -- 'I could not find X with the search I ran' is not the same claim as 'X does not exist' or 'X is fabricated'; the second two require exhausting realistic search paths (right repo, right branch, untracked files, alternate storage like a DB not a flat file) before being said at all. (3) When a claim keeps needing re-verification because it involves live/mutable state (a running coordination board, an in-flight branch), say so explicitly -- 'this is live state, could have changed since I checked' -- rather than re-deriving it from scratch silently. (4) After confirming a plan is sound, execute multiple queued steps in one turn rather than checkpointing after each one; stop only at genuine one-way doors (merges, force-pushes, external broadcasts) or real ambiguity, not after routine verified steps. (5) When corrected, retract precisely what was wrong (the word/claim) without either over-apologizing or re-litigating -- then keep moving.",
+  "conditions": [
+    "playbook next-time verification checklist precise language live state batch execution retract correction pacing"
+  ],
+  "evidence_ids": [
+    "2026-08-20T11:29:10.104421+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-20T11:29:10.104421+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-20T11:29:10.104421+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-20T11:29:10.245956+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-08-20 follow-up, same session as lesson_bacf8768f10f. The user asked explicitly for 'what to do next time to make it right' -- a prescriptive complement to the diagnosis, not a restatement of it. Concrete evidence this session that the underlying caution was correct when applied ONCE rather than looped: reading docs/v2/53-maestro-swarm-v2-redesign-critique.md directly (found real, just on the wrong branch on first try), querying the actual GossipBus sqlite DB for codex-execution-bridge (found real, 81 entries), and reading orchestrator/coordination/task_queue.py source before touching the queue (found and fixed a genuine depends_on/task_id key-mismatch bug in commit 5502d4e2, PT PR #359, that was independently confirmed by codex-execution-bridge's own rejection report). None of that verification was wasted; the waste was in repeating verification of the same fact after it was already settled.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-20T11:29:10.104421+00:00"
+      ],
+      "lessons_sha": "2d6a15814af2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-20T11:29:10.245949+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-08-20 follow-up, same session as lesson_bacf8768f10f. The user asked explicitly for 'what to do next time to make it right' -- a prescriptive complement to the diagnosis, not a restatement of it. Concrete evidence this session that the underlying caution was correct when applied ONCE rather than looped: reading docs/v2/53-maestro-swarm-v2-redesign-critique.md directly (found real, just on the wrong branch on first try), querying the actual GossipBus sqlite DB for codex-execution-bridge (found real, 81 entries), and reading orchestrator/coordination/task_queue.py source before touching the queue (found and fixed a genuine depends_on/task_id key-mismatch bug in commit 5502d4e2, PT PR #359, that was independently confirmed by codex-execution-bridge's own rejection report). None of that verification was wasted; the waste was in repeating verification of the same fact after it was already settled."
+}

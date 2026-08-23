@@ -1,0 +1,40 @@
+{
+  "id": "52edd9b9715d",
+  "key": "manual_52edd9",
+  "name": "manual_52edd9",
+  "claim": "zsh reserves the bare name 'status' as a read-only special variable (an alias for $?, the last command's exit code) -- assigning to a shell variable literally named 'status' inside a script fails with 'read-only variable: status' and crashes the script (exit 1), even though it works fine in bash. Use a different variable name (e.g. qstatus, job_status) in any script that must run under zsh, which is this session's default shell",
+  "conditions": [
+    "Monitor poll loop crash",
+    "shell script exit 1 read-only variable",
+    "zsh read-only status variable"
+  ],
+  "evidence_ids": [
+    "2026-08-22T10:29:45.950565+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-22T10:29:45.950565+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-08-22T10:29:45.950565+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-22T10:29:46.079331+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A Monitor poll-loop script (watching a GossipBus task queue for completion) crashed on its first iteration with exactly this error -- caught immediately via the monitor's failure notification and the output-file traceback, fixed by renaming the variable, no functional logic changed. A one-line, easy-to-repeat mistake worth remembering given zsh is this session's default shell (per CLAUDE.md's Shell: zsh) and 'status' is an unusually tempting/common variable name to reach for in coordination-polling scripts specifically.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-08-22T10:29:45.950565+00:00"
+      ],
+      "lessons_sha": "fb3ef9c46c70"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-22T10:29:46.079320+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A Monitor poll-loop script (watching a GossipBus task queue for completion) crashed on its first iteration with exactly this error -- caught immediately via the monitor's failure notification and the output-file traceback, fixed by renaming the variable, no functional logic changed. A one-line, easy-to-repeat mistake worth remembering given zsh is this session's default shell (per CLAUDE.md's Shell: zsh) and 'status' is an unusually tempting/common variable name to reach for in coordination-polling scripts specifically."
+}

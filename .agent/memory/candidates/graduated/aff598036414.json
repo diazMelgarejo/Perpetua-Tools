@@ -1,0 +1,44 @@
+{
+  "id": "aff598036414",
+  "key": "manual_aff598",
+  "name": "manual_aff598",
+  "claim": "SSRF IP-pinning adapters must use the split-identity rule: pool key + TCP target = validated pin (PLACE), TLS SNI/cert + HTTP Host = original hostname (NAME) -- never mutate a shared adapter's connection_pool_kw per-request",
+  "conditions": [
+    "PoolKey",
+    "adapter",
+    "build_connection_pool_key_attributes",
+    "concurrency",
+    "connection_pool_kw",
+    "ip-pinning",
+    "ssrf"
+  ],
+  "evidence_ids": [
+    "2026-08-22T21:27:09.487760+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-22T21:27:09.487760+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-22T21:27:09.487760+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-22T21:27:09.623037+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT #359's original SSRFPinnedHTTPAdapter mutated self.poolmanager.connection_pool_kw per-request (update()/pop()), a real concurrency race: concurrent requests could clobber each other's pin, and stripping pinned_ip from the custom PoolKey normalizer (to avoid a PoolKey.__new__() crash) let two different validated IPs for the same hostname share one pool -- cross-contamination on reuse. Fix: override HTTPAdapter.build_connection_pool_key_attributes() and set host_params['host']=pinned_ip -- urllib3's stock PoolKey (keyed on scheme/host/port) becomes naturally pin-aware with zero custom fields. Converged independently across 3 sources (own research, Agnes's Reference Guide 09, Perplexity's review 09b) -- see references/09-SSRF-IP-PINNING-CONCURRENCY-AND-POOLMANAGER-CONVERGENCE-2026-08-22.md and 09b-Perplexity-review.md. Landed as PT commits 351bad1e + 5a6a4ae7 (2026-08-22/23).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-22T21:27:09.487760+00:00"
+      ],
+      "lessons_sha": "7a01a04665d1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-22T21:27:09.623028+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT #359's original SSRFPinnedHTTPAdapter mutated self.poolmanager.connection_pool_kw per-request (update()/pop()), a real concurrency race: concurrent requests could clobber each other's pin, and stripping pinned_ip from the custom PoolKey normalizer (to avoid a PoolKey.__new__() crash) let two different validated IPs for the same hostname share one pool -- cross-contamination on reuse. Fix: override HTTPAdapter.build_connection_pool_key_attributes() and set host_params['host']=pinned_ip -- urllib3's stock PoolKey (keyed on scheme/host/port) becomes naturally pin-aware with zero custom fields. Converged independently across 3 sources (own research, Agnes's Reference Guide 09, Perplexity's review 09b) -- see references/09-SSRF-IP-PINNING-CONCURRENCY-AND-POOLMANAGER-CONVERGENCE-2026-08-22.md and 09b-Perplexity-review.md. Landed as PT commits 351bad1e + 5a6a4ae7 (2026-08-22/23)."
+}
