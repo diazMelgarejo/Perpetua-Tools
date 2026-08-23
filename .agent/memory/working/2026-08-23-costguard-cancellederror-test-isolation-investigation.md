@@ -65,10 +65,12 @@ worked. A genuinely different strategy is needed:
   under test, wired to a throwaway `CostGuard`/registry/tracker — never
   import or touch `fastapi_app.app`/`fastapi_app.registry`/
   `fastapi_app.tracker` module-level objects.
-- **(b) Process isolation.** Run this one test in its own subprocess (or via
-  `pytest-xdist` with `--dist=loadscope` pinning it to its own worker) so
-  whatever it dirties never coexists in-process with
-  `test_orama_integration.py`.
+- **(b) Process isolation.** Run this one test in its own subprocess (e.g.
+  `subprocess.run([sys.executable, "-m", "pytest", ...])` from within the
+  test) so whatever it dirties never coexists in-process with
+  `test_orama_integration.py`. `pytest-xdist --dist=loadscope` does NOT
+  guarantee this: it groups tests by module/class onto a shared worker, not
+  one test per worker, so another group can still land in the same process.
 - **(c) Actually instrument the diff**, don't guess. Snapshot
   `sys.modules`, `fastapi_app.registry.__dict__`,
   `fastapi_app.tracker.__dict__`, `os.environ`, and any `.state/*.json`

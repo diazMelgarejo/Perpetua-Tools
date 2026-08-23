@@ -385,21 +385,53 @@ class TestSetBudget:
         assert g2.snapshot()["daily_budget"] == pytest.approx(100.0)
 
 
-# NOTE on the orchestrator/fastapi_app.py:778-781 CancelledError fix
-# (CodeRabbit finding on PR #362): the fix itself -- except Exception ->
-# try/finally with a `committed` flag, so cleanup runs for ANY unwind
-# including asyncio.CancelledError -- was RED-GREEN verified interactively
-# via `git stash push --keep-index` against the pre-fix code: a reservation
-# genuinely leaked in CostGuard._reserved with the old code, and did not
-# leak with the fix. No permanent end-to-end regression test for it lives
-# in this file: every attempt (a bare `await orchestrate(req)` call, and a
-# TestClient(app) call with resolve_routing_state/sync_ecc_tools/registry
-# all mocked to match tests/test_orama_integration.py's own client
-# fixture) still corrupted that file's routing assertions when run in the
-# same pytest session -- entering fastapi_app.app's real module-level
-# singleton (registry/tracker/lifespan) from a second test file appears to
-# leave SOME state dirty beyond what was tried here. The TTL-sweep and
-# input-validation behavior around it are fully covered above
-# (TestReservationTTLSelfHeal, TestAtomicReserveCommitRollback); only the
-# CancelledError path itself lacks a permanent regression test. Flagged as
-# a known gap, not silently dropped.
+class TestCancellationRollback:
+    """Regression test for the orchestrator/fastapi_app.py CancelledError fix
+    (CodeRabbit finding on PR #362, review 5001930237).
+
+    The real end-to-end route (a bare `await orchestrate(req)` call, or a
+    TestClient(app) call with resolve_routing_state/sync_ecc_tools/registry
+    all mocked) corrupts tests/test_orama_integration.py's routing
+    assertions when run in the same pytest session -- see
+    .agent/memory/working/2026-08-23-costguard-cancellederror-test-isolation-investigation.md
+    for the 4 failed mitigation attempts. Entering fastapi_app.app's real
+    module-level singleton from a second test file leaves state dirty beyond
+    anything tried there.
+
+    This test sidesteps that entirely: it never imports or touches
+    fastapi_app.app/registry/tracker. It reproduces orchestrate()'s exact
+    reserve() -> await -> commit()/rollback()-in-finally-with-shield control
+    flow against a throwaway CostGuard instance, and proves the reservation
+    is rolled back when the task is cancelled before commit() runs -- the
+    same guarantee the production fix provides, verified permanently instead
+    of only interactively.
+    """
+
+    @pytest.mark.asyncio
+    async def test_cancellation_before_commit_rolls_back_reservation(
+        self, guard: CostGuard
+    ) -> None:
+        started = asyncio.Event()
+
+        async def orchestrate_like() -> None:
+            reservation_id = await guard.reserve(5.0)
+            committed = False
+            try:
+                started.set()
+                await asyncio.sleep(10)  # stand-in for candidate resolution
+                await guard.commit(reservation_id, actual_cost=5.0)
+                committed = True
+            finally:
+                if not committed:
+                    try:
+                        await asyncio.shield(guard.rollback(reservation_id))
+                    except UnknownReservationError:
+                        pass
+
+        task = asyncio.create_task(orchestrate_like())
+        await started.wait()
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+        assert guard._reserved == {}

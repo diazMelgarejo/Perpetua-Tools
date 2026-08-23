@@ -215,10 +215,12 @@ class OrchestrateRequest(BaseModel):
     parent_agent_id: Optional[str] = None
     force: bool = False
     # Caller-supplied input token count for the 199k billing-cliff check
-    # (05-ORAMASYS-UNIFIED-ACTION-PLAN-2026-08-18.md Phase 4). When omitted,
-    # falls back to a chars/4 estimate of `task` -- callers with an exact
-    # tokenizer count should pass it explicitly for an accurate gate.
-    input_tokens: Optional[int] = None
+    # (05-ORAMASYS-UNIFIED-ACTION-PLAN-2026-08-18.md Phase 4). Advisory only
+    # -- the endpoint floors this against a server-side chars/4 estimate of
+    # `task`, so a caller cannot bypass the gate by under-reporting. `ge=0`
+    # rejects a negative value at the request boundary (422) instead of
+    # letting check_token_cliff()'s ValueError escape as an unhandled 500.
+    input_tokens: Optional[int] = Field(default=None, ge=0)
 
 
 class TieredPipelineRequest(BaseModel):
@@ -722,8 +724,15 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
             "existing_agent": asdict(existing),
         }
 
+    # req.input_tokens is advisory only -- flooring it against a server-side
+    # estimate of `task` (the same string actually sent downstream) means a
+    # caller cannot bypass the cliff gate by under-reporting (e.g. sending
+    # input_tokens=0 alongside a large task).
+    server_estimated_tokens = len(req.task) // 4
     effective_input_tokens = (
-        req.input_tokens if req.input_tokens is not None else len(req.task) // 4
+        max(req.input_tokens, server_estimated_tokens)
+        if req.input_tokens is not None
+        else server_estimated_tokens
     )
     try:
         token_cliff_warning = cost_guard.check_token_cliff(effective_input_tokens)
@@ -805,10 +814,13 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
         try:
             await cost_guard.commit(reservation_id, actual_cost=req.estimated_cost)
         except UnknownReservationError:
-            # RESERVATION_TTL_SECONDS or concurrent sweep already swept the reservation.
-            # The agent is already registered, so continue serving the created-agent
-            # response rather than raising an uncaught 500 error.
-            pass
+            # RESERVATION_TTL_SECONDS or a concurrent sweep already reclaimed
+            # the reservation before commit() could settle it. tracker.register()
+            # above already created the agent, so we still don't raise an
+            # uncaught 500 -- but the cost must not be silently dropped: fall
+            # back to the non-atomic record_spend() so a slow request doesn't
+            # both register an agent AND lose its billing entirely.
+            cost_guard.record_spend(req.estimated_cost)
         committed = True
     finally:
         if not committed:
