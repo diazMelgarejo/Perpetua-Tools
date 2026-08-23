@@ -6,6 +6,10 @@ multiple drifting script copies.
 """
 from __future__ import annotations
 
+from orchestrator.coordination.bias_detector import (
+    BiasScore,
+    CoordinationBiasDetector,
+)
 from orchestrator.coordination.claims import (
     claim_task,
     list_agents,
@@ -40,6 +44,9 @@ __all__ = [
     "main",
     "register_agent",
     "release_task",
+    # Coordination bias detection
+    "BiasScore",
+    "CoordinationBiasDetector",
     # Shared types
     "ClaimResult",
     "ClaimSequence",
