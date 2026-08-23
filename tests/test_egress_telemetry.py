@@ -168,3 +168,54 @@ class TestImportPathConsistency:
             "different module instance than utils.egress_telemetry "
             "-- salts will diverge between call sites"
         )
+
+
+class TestClassifyDenyReasonPrecision:
+    """Regression: classify_deny_reason mislabeled operator-facing telemetry.
+    No security/functional impact -- enforcement is intact -- but the
+    redacted deny_reason enum was wrong for anything outside the three
+    literal IMDS strings, and two branches did unguarded substring matching
+    that could misclassify unrelated network/TLS errors as SSRF denials."""
+
+    def test_link_local_outside_imds_literals_is_not_labeled_rfc1918(self) -> None:
+        # 169.254.1.1 is link-local (169.254.0.0/16) but not one of the three
+        # literal IMDS strings (169.254.169.254, fd00:ec2::254, 169.254.170.2)
+        # and not RFC1918 (10/8, 172.16/12, 192.168/16) at all.
+        exc = AddressDenied("blocked address: 169.254.1.1")
+        assert classify_deny_reason(exc) == "link_local"
+
+    def test_ipv6_link_local_is_not_labeled_rfc1918(self) -> None:
+        exc = AddressDenied("blocked address: fe80::1")
+        assert classify_deny_reason(exc) == "link_local"
+
+    def test_loopback_is_not_labeled_rfc1918(self) -> None:
+        exc = AddressDenied("blocked address: 127.0.0.1")
+        assert classify_deny_reason(exc) == "loopback"
+
+    def test_multicast_is_not_labeled_rfc1918(self) -> None:
+        exc = AddressDenied("blocked address: 224.0.0.1")
+        assert classify_deny_reason(exc) == "multicast"
+
+    def test_ipv6_ula_is_not_labeled_rfc1918(self) -> None:
+        exc = AddressDenied("blocked address: fc00::1")
+        assert classify_deny_reason(exc) == "ula"
+
+    def test_cgnat_is_not_labeled_rfc1918(self) -> None:
+        exc = AddressDenied("blocked address: 100.64.0.1")
+        assert classify_deny_reason(exc) == "cgnat"
+
+    def test_genuine_rfc1918_still_labeled_correctly(self) -> None:
+        assert classify_deny_reason(AddressDenied("blocked address: 10.0.0.1")) == "rfc1918_unapproved"
+        assert classify_deny_reason(AddressDenied("blocked address: 172.16.0.1")) == "rfc1918_unapproved"
+        assert classify_deny_reason(AddressDenied("blocked address: 192.168.0.1")) == "rfc1918_unapproved"
+
+    def test_unrelated_exception_mentioning_scheme_is_not_misclassified(self) -> None:
+        """A TLS error or URL-parser message that happens to contain the word
+        "scheme" must not be misclassified as an SSRF policy denial -- only
+        a genuine SSRFPolicyError should ever map to scheme_disallowed."""
+        exc = ValueError("unsupported certificate scheme in handshake")
+        assert classify_deny_reason(exc) == "other"
+
+    def test_unrelated_exception_mentioning_userinfo_is_not_misclassified(self) -> None:
+        exc = ValueError("URL parser rejected userinfo component")
+        assert classify_deny_reason(exc) == "other"

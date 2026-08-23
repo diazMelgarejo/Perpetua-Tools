@@ -14,7 +14,9 @@ within a session but stored hashes are not reversible.
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import json
+import re
 import secrets
 import time
 from dataclasses import asdict, dataclass, field
@@ -25,6 +27,11 @@ from typing import Literal
 DenyReason = Literal[
     "metadata_ip",
     "rfc1918_unapproved",
+    "link_local",
+    "loopback",
+    "multicast",
+    "ula",
+    "cgnat",
     "redirect_limit",
     "scheme_disallowed",
     "userinfo_present",
@@ -57,6 +64,7 @@ class EgressEvent:
     deny_reason: DenyReason | None = None
     provider_route: str | None = None
     duration_ms: float | None = None
+    validation_duration_ms: float | None = None
     ts: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
     def to_redacted_dict(self) -> dict:
@@ -72,6 +80,7 @@ class EgressEvent:
             "deny_reason": self.deny_reason,
             "provider_route": self.provider_route,
             "duration_ms": self.duration_ms,
+            "validation_duration_ms": self.validation_duration_ms,
         }
         return payload
 
@@ -105,6 +114,42 @@ def emit(event: EgressEvent) -> None:
         pass
 
 
+_ADDR_IN_MESSAGE = re.compile(r"blocked address:\s*(\S+)")
+
+
+def _classify_denied_address(message: str) -> DenyReason:
+    """Parse the actual denied IP out of an AddressDenied message and
+    classify it by real IP-family membership rather than a substring match
+    on message text, so link-local/loopback/multicast/ULA/CGNAT addresses
+    outside the three literal IMDS strings aren't all bucketed into the
+    RFC1918-specific label."""
+    match = _ADDR_IN_MESSAGE.search(message)
+    if not match:
+        return "rfc1918_unapproved"
+    try:
+        addr = ipaddress.ip_address(match.group(1))
+    except ValueError:
+        return "rfc1918_unapproved"
+    if addr.is_loopback:
+        return "loopback"
+    if addr.is_multicast:
+        return "multicast"
+    if isinstance(addr, ipaddress.IPv6Address) and addr.is_link_local:
+        return "link_local"
+    if isinstance(addr, ipaddress.IPv4Address) and addr.is_link_local:
+        return "link_local"
+    if isinstance(addr, ipaddress.IPv6Address) and (addr.is_private and not addr.is_link_local):
+        # fc00::/7 unique local addresses -- is_private is broader (also
+        # covers loopback/link-local, already handled above) but nothing
+        # left in this branch by elimination is anything but ULA.
+        return "ula"
+    if isinstance(addr, ipaddress.IPv4Address) and addr in ipaddress.ip_network("100.64.0.0/10"):
+        return "cgnat"
+    if addr.is_private:
+        return "rfc1918_unapproved"
+    return "rfc1918_unapproved"
+
+
 def classify_deny_reason(exc: BaseException) -> DenyReason:
     """Map a raised SSRF-policy exception to a closed deny_reason enum.
 
@@ -122,9 +167,10 @@ def classify_deny_reason(exc: BaseException) -> DenyReason:
     if "169.254.169.254" in message or "fd00:ec2::254" in message or "169.254.170.2" in message:
         return "metadata_ip"
     if name == "AddressDenied":
-        return "rfc1918_unapproved"
-    if "scheme" in message:
-        return "scheme_disallowed"
-    if "userinfo" in message:
-        return "userinfo_present"
+        return _classify_denied_address(message)
+    if name == "SSRFPolicyError":
+        if "scheme" in message:
+            return "scheme_disallowed"
+        if "userinfo" in message:
+            return "userinfo_present"
     return "other"

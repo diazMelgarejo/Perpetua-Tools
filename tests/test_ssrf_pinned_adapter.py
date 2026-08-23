@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from unittest.mock import patch
 
+import requests
+
 import pytest
 
 from utils.ssrf_pinned_adapter import (
@@ -579,4 +581,48 @@ def test_redirect_limit_telemetry_reports_scheme_correct_default_port(
         f"expected port 80 for a plain http:// redirect loop, got "
         f"{deny_events[-1]['port']} -- the redirect-limit deny site still "
         f"hardcodes 'or 443' instead of the scheme-aware default"
+    )
+
+
+def test_build_connection_pool_key_attributes_emits_validation_not_duration_ms(
+    tmp_path, monkeypatch
+) -> None:
+    """Regression: build_connection_pool_key_attributes()'s own emit sites
+    measured only pre-flight URL/DNS validation time but wrote it into the
+    same `duration_ms` field _dispatch_oramasys_http() uses for the full
+    round-trip -- two events per remote request with the same field name
+    meaning two different things, silently mixing distributions on any
+    dashboard. Must populate validation_duration_ms instead, leaving
+    duration_ms unset at this layer (only the full-round-trip caller sets it).
+    """
+    monkeypatch.setenv("PERPETUA_TELEMETRY_DIR", str(tmp_path))
+
+    def fake_getaddrinfo(host, port, family=0, type=0, *a, **kw):
+        return [(2, 1, 6, "", ("93.184.216.34", port))]
+
+    with patch("socket.getaddrinfo", side_effect=fake_getaddrinfo):
+        session = ssrf_session()
+        try:
+            adapter = session.get_adapter("https://example.com/")
+            request = requests.PreparedRequest()
+            request.prepare(method="GET", url="https://example.com/path")
+            adapter.build_connection_pool_key_attributes(request, True)
+        finally:
+            session.close()
+
+    from src.utils.egress_telemetry import _sink_path
+
+    sink = _sink_path()
+    assert sink.exists()
+    events = [json.loads(l) for l in sink.read_text().splitlines() if l.strip()]
+    assert events, "no event emitted"
+    last = events[-1]
+    assert last["validation_duration_ms"] is not None, (
+        "build_connection_pool_key_attributes should populate "
+        "validation_duration_ms (pre-flight timing), not the generic "
+        "duration_ms field the full-round-trip caller owns"
+    )
+    assert last["duration_ms"] is None, (
+        f"duration_ms should be unset at this layer -- it means "
+        f"full-round-trip elsewhere, got {last['duration_ms']}"
     )

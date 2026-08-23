@@ -350,7 +350,7 @@ class SSRFPinnedHTTPAdapter(HTTPAdapter):
                     port=port,
                     scheme=scheme,
                     deny_reason=classify_deny_reason(exc),
-                    duration_ms=(time.monotonic() - started) * 1000,
+                    validation_duration_ms=(time.monotonic() - started) * 1000,
                 )
             )
             raise
@@ -370,7 +370,7 @@ class SSRFPinnedHTTPAdapter(HTTPAdapter):
                 resolved_ip=pinned,
                 port=port,
                 scheme=scheme,
-                duration_ms=(time.monotonic() - started) * 1000,
+                validation_duration_ms=(time.monotonic() - started) * 1000,
             )
         )
         return host_params, pool_kwargs
