@@ -184,6 +184,10 @@ class TestPFEgressScripts:
         stub_dir.mkdir()
         (stub_dir / "pfctl").write_text("#!/bin/bash\nif [[ $1 == -e ]]; then echo enable failed >&2; exit 1; fi\nexit 0\n", encoding="utf-8")
         (stub_dir / "pfctl").chmod(0o755)
+        # CI is unprivileged, so the installer invokes sudo. Keep the test
+        # hermetic by forwarding its command to the same fake pfctl.
+        (stub_dir / "sudo").write_text("#!/bin/bash\nexec \"$@\"\n", encoding="utf-8")
+        (stub_dir / "sudo").chmod(0o755)
         env = {
             **darwin_uname_env,
             "PATH": f"{stub_dir}:{darwin_uname_env['PATH']}",
