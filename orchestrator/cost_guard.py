@@ -180,17 +180,24 @@ class CostGuard:
 
         ``actual_cost`` overrides the original estimate when the real
         provider cost is known (e.g. from usage metadata) -- defaults to the
-        reserved estimate when the caller has no better number. Raises
-        UnknownReservationError both for a never-reserved id and for one the
-        TTL sweep already reclaimed (rare -- see RESERVATION_TTL_SECONDS);
-        callers that may race the sweep should catch it and treat it as a
-        no-op, not a hard failure.
+        reserved estimate when the caller has no better number. Validates
+        that ``actual_cost`` (or fallback estimate) is a non-negative finite
+        number before deleting the reservation, leaving it intact for retry
+        if validation fails. Raises UnknownReservationError both for a
+        never-reserved id and for one the TTL sweep already reclaimed (rare
+        -- see RESERVATION_TTL_SECONDS); callers that may race the sweep
+        should catch it and treat it as a no-op, not a hard failure.
         """
         async with self._lock:
             if reservation_id not in self._reserved:
                 raise UnknownReservationError(reservation_id)
-            estimated, _ = self._reserved.pop(reservation_id)
+            estimated, _ = self._reserved[reservation_id]
             amount = estimated if actual_cost is None else actual_cost
+            if not math.isfinite(amount) or amount < 0:
+                raise ValueError(
+                    f"actual_cost must be a non-negative finite number, got {amount!r}"
+                )
+            del self._reserved[reservation_id]
             p = self._maybe_reset(self._load())
             p["daily_spend"] = round(p["daily_spend"] + amount, 6)
             self._save(p)

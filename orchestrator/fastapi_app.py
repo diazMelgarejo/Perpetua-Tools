@@ -784,7 +784,13 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
             },
             status="idle",
         )
-        await cost_guard.commit(reservation_id, actual_cost=req.estimated_cost)
+        try:
+            await cost_guard.commit(reservation_id, actual_cost=req.estimated_cost)
+        except UnknownReservationError:
+            # RESERVATION_TTL_SECONDS or concurrent sweep already swept the reservation.
+            # The agent is already registered, so continue serving the created-agent
+            # response rather than raising an uncaught 500 error.
+            pass
         committed = True
     finally:
         if not committed:

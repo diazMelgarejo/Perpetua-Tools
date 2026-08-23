@@ -238,6 +238,41 @@ class TestAtomicReserveCommitRollback:
         await guard.commit(reservation_id)
         assert guard.snapshot()["daily_spend"] == pytest.approx(0.0)
 
+    @pytest.mark.asyncio
+    async def test_commit_rejects_negative_actual_cost_and_preserves_reservation(self, guard: CostGuard) -> None:
+        """CodeRabbit finding on cost_guard.py: commit() must reject negative actual_cost
+        and keep reservation available for retry."""
+        reservation_id = await guard.reserve(5.0)
+        with pytest.raises(ValueError, match="non-negative"):
+            await guard.commit(reservation_id, actual_cost=-2.0)
+        # Reservation is still intact -- retry with valid cost succeeds
+        await guard.commit(reservation_id, actual_cost=3.0)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(3.0)
+
+    @pytest.mark.asyncio
+    async def test_commit_rejects_nan_actual_cost_and_preserves_reservation(self, guard: CostGuard) -> None:
+        reservation_id = await guard.reserve(5.0)
+        with pytest.raises(ValueError, match="non-negative"):
+            await guard.commit(reservation_id, actual_cost=float("nan"))
+        # Reservation is still intact -- retry succeeds
+        await guard.commit(reservation_id, actual_cost=4.0)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(4.0)
+
+    @pytest.mark.asyncio
+    async def test_commit_rejects_infinite_actual_cost_and_preserves_reservation(self, guard: CostGuard) -> None:
+        reservation_id = await guard.reserve(5.0)
+        with pytest.raises(ValueError, match="non-negative"):
+            await guard.commit(reservation_id, actual_cost=float("inf"))
+        # Rollback still works since reservation was preserved
+        await guard.rollback(reservation_id)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(0.0)
+
+    @pytest.mark.asyncio
+    async def test_commit_accepts_zero_actual_cost(self, guard: CostGuard) -> None:
+        reservation_id = await guard.reserve(5.0)
+        await guard.commit(reservation_id, actual_cost=0.0)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(0.0)
+
 
 class TestReservationTTLSelfHeal:
     """Defense-in-depth for the CancelledError leak CodeRabbit found in
