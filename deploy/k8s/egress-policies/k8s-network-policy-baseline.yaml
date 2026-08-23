@@ -1,0 +1,38 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: "perpetua-agent-egress-baseline"
+  namespace: "perpetua-tools"
+  labels:
+    app.kubernetes.io/name: "perpetua-tools"
+    app.kubernetes.io/part-of: "perpetua-tools"
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: "perpetua-tools"
+  policyTypes:
+    - Egress
+  egress:
+    # 1. Allow DNS resolution to cluster CoreDNS
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # 2. Allow public internet egress excluding metadata and unapproved RFC1918 subnets
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 169.254.0.0/16
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
