@@ -11,7 +11,7 @@
 set -euo pipefail
 
 ANCHOR_FILE="${PF_ANCHOR_FILE:-/etc/pf.anchors/com.perpetua-tools.egress-deny}"
-ANCHOR_NAME="com.perpetua-tools"
+ANCHOR_NAME="com.perpetua-tools.egress-deny"
 PFCTL_SKIP="${PFCTL_SKIP:-0}"
 
 # Non-macOS hosts pass verification cleanly
@@ -28,10 +28,10 @@ fi
 
 # 2. Check rule content integrity / drift
 REQUIRED_RULES=(
-  "block drop out quick on en0 to 169.254.0.0/16"
-  "block drop out quick on en0 to 169.254.169.254"
-  "block drop out quick on en0 to fd00:ec2::254"
-  "block drop out quick on en0 to fe80::/10"
+  "block drop out quick to 169.254.0.0/16"
+  "block drop out quick to 169.254.169.254"
+  "block drop out quick to fd00:ec2::254"
+  "block drop out quick to fe80::/10"
 )
 
 ANCHOR_CONTENT="$(cat "$ANCHOR_FILE")"

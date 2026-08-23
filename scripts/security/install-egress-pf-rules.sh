@@ -9,7 +9,7 @@
 set -euo pipefail
 
 ANCHOR_FILE="${PF_ANCHOR_FILE:-/etc/pf.anchors/com.perpetua-tools.egress-deny}"
-ANCHOR_NAME="com.perpetua-tools"
+ANCHOR_NAME="com.perpetua-tools.egress-deny"
 PFCTL_SKIP="${PFCTL_SKIP:-0}"
 
 # Check platform
@@ -22,11 +22,14 @@ fi
 EXPECTED_RULES=$(cat << 'RULE_EOF'
 # com.perpetua-tools.egress-deny
 # Layer 3 host-level egress enforcement floor
-# Blocks cloud metadata and link-local ranges regardless of source app
-block drop out quick on en0 to 169.254.0.0/16
-block drop out quick on en0 to 169.254.169.254
-block drop out quick on en0 to fd00:ec2::254
-block drop out quick on en0 to fe80::/10
+# Blocks cloud metadata and link-local ranges regardless of source app or
+# egress interface (Wi-Fi, Thunderbolt/USB-C Ethernet, VPN utun*, USB
+# tethering) -- `on <iface>` scopes a rule to that interface only, silently
+# bypassable via any other route.
+block drop out quick to 169.254.0.0/16
+block drop out quick to 169.254.169.254
+block drop out quick to fd00:ec2::254
+block drop out quick to fe80::/10
 RULE_EOF
 )
 
