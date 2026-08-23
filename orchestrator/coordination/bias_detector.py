@@ -29,6 +29,7 @@ class CoordinationBiasDetector:
     def __init__(self, max_history: int = 20) -> None:
         self.history: List[Dict[str, Any]] = []
         self.max_history = max_history
+        self._consumed_event_ids: set[int] = set()
 
     def add_decision(
         self,
@@ -117,7 +118,9 @@ def _estimate_confidence(kind: str, message: str) -> float:
     return 0.6
 
 
-async def fetch_bias_detector_events(bus: GossipBus, max_rows: int = 20) -> list[dict]:
+async def fetch_bias_detector_events(
+    bus: GossipBus, max_rows: int = 20, agent_id: Optional[str] = None
+) -> list[dict]:
     """Fetch status-bearing heartbeat events via targeted SQL, not a bounded
     tail(). Real emitters (heartbeat_monitor.py, coordination/task_queue.py,
     coordination/claims.py, coordination/liveness.py) all use event_type
@@ -138,10 +141,15 @@ async def fetch_bias_detector_events(bus: GossipBus, max_rows: int = 20) -> list
         "SELECT id, event_uuid, ts, event_type, payload_json FROM gossip "
         "WHERE event_type = 'heartbeat' "
         f"AND json_extract(payload_json, '$.kind') IN ({kind_placeholders}) "
-        "ORDER BY id DESC LIMIT ?"
     )
+    parameters: list[Any] = [*_HEARTBEAT_KINDS]
+    if agent_id is not None:
+        query += "AND json_extract(payload_json, '$.agent_id') = ? "
+        parameters.append(agent_id)
+    query += "ORDER BY id DESC LIMIT ?"
+    parameters.append(max_rows)
     async with bus.connect() as db:
-        cursor = await db.execute(query, [*_HEARTBEAT_KINDS, max_rows])
+        cursor = await db.execute(query, parameters)
         rows = await cursor.fetchall()
     rows.reverse()  # restore ascending id order after DESC+LIMIT
     return [
@@ -169,11 +177,14 @@ async def feed_bias_detector_from_gossip(
     ``agent_id`` field matches -- per-agent groupthink/echo-loop detection
     rather than a single mixed history across every agent on the board.
     """
-    events = await fetch_bias_detector_events(bus, max_rows=detector.max_history)
+    events = await fetch_bias_detector_events(
+        bus, max_rows=detector.max_history, agent_id=agent_id
+    )
     for ev in events:
-        payload = ev["payload"]
-        if agent_id is not None and payload.get("agent_id") != agent_id:
+        event_id = int(ev["row_id"])
+        if event_id in detector._consumed_event_ids:
             continue
+        payload = ev["payload"]
         kind = str(payload.get("kind", ""))
         # task_queue.py emits task_complete/task_failed/task_abandoned with
         # "notes", not "message" -- omitting notes silently drops the primary
@@ -190,4 +201,5 @@ async def feed_bias_detector_from_gossip(
             continue
         confidence = _estimate_confidence(kind, message)
         detector.add_decision(confidence, message)
+        detector._consumed_event_ids.add(event_id)
     return detector.detect_bias()

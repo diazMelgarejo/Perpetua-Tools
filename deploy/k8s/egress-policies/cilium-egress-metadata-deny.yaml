@@ -8,6 +8,9 @@ metadata:
     app.kubernetes.io/part-of: "perpetua-tools"
 spec:
   description: "Layer-3 CNI egress enforcement floor denying cloud metadata and link-local ranges"
+  # Preserve allow-by-default egress while applying the explicit deny list.
+  enableDefaultDeny:
+    egress: false
   endpointSelector:
     matchLabels:
       app.kubernetes.io/part-of: "perpetua-tools"

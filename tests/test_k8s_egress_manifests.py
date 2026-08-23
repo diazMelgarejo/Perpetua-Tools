@@ -24,6 +24,7 @@ class TestK8sEgressManifests:
         assert data["apiVersion"] == "cilium.io/v2"
         assert data["kind"] == "CiliumNetworkPolicy"
         assert data["metadata"]["name"] == "perpetua-agent-egress-deny-metadata"
+        assert data["spec"]["enableDefaultDeny"]["egress"] is False
 
         # Verify egressDeny contains all cloud metadata and link-local CIDRs
         egress_deny = data["spec"]["egressDeny"]
@@ -38,6 +39,9 @@ class TestK8sEgressManifests:
         data = yaml.safe_load(content)
         assert data["apiVersion"] == "projectcalico.org/v3"
         assert data["kind"] == "GlobalNetworkPolicy"
+        # Calico evaluates lower order values first. This deny policy must
+        # precede broad egress allows in the default tier.
+        assert data["spec"]["order"] == 10.0
 
         # Verify deny rule contains all metadata nets
         deny_rules = [r for r in data["spec"]["egress"] if r.get("action") == "Deny"]

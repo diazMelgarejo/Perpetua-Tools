@@ -134,6 +134,29 @@ class TestFeedBiasDetectorFromGossip:
         assert detector.history[0]["text"] == "a's task"
 
     @pytest.mark.asyncio
+    async def test_agent_filter_applies_before_history_limit(self, make_bus) -> None:
+        bus = await make_bus()
+        for i in range(4):
+            await bus.emit("heartbeat", {"agent_id": "noisy", "kind": "task_complete", "message": f"noise {i}"})
+        await bus.emit("heartbeat", {"agent_id": "agent-a", "kind": "task_complete", "message": "agent-a result"})
+        detector = CoordinationBiasDetector(max_history=2)
+
+        await feed_bias_detector_from_gossip(bus, detector, agent_id="agent-a")
+
+        assert [decision["text"] for decision in detector.history] == ["agent-a result"]
+
+    @pytest.mark.asyncio
+    async def test_feed_does_not_replay_events_on_consecutive_polls(self, make_bus) -> None:
+        bus = await make_bus()
+        await bus.emit("heartbeat", {"agent_id": "agent-a", "kind": "task_complete", "message": "one result"})
+        detector = CoordinationBiasDetector()
+
+        await feed_bias_detector_from_gossip(bus, detector, agent_id="agent-a")
+        await feed_bias_detector_from_gossip(bus, detector, agent_id="agent-a")
+
+        assert [decision["text"] for decision in detector.history] == ["one result"]
+
+    @pytest.mark.asyncio
     async def test_feed_derives_nonconstant_confidence_from_event_content(self, make_bus) -> None:
         """A constant confidence would make agreement_collapse trivially always
         true (zero variance). This is the regression guard for that degenerate case."""

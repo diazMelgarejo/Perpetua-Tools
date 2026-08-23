@@ -178,3 +178,18 @@ class TestPFEgressScripts:
         for rule in EXPECTED_RULES:
             assert rule in installer_src, f"installer missing rule: {rule}"
             assert rule in verifier_src, f"verifier missing rule: {rule}"
+
+    def test_installer_fails_when_pf_enablement_fails(self, darwin_uname_env, tmp_path) -> None:
+        stub_dir = tmp_path / "pfctl-stub"
+        stub_dir.mkdir()
+        (stub_dir / "pfctl").write_text("#!/bin/bash\nif [[ $1 == -e ]]; then echo enable failed >&2; exit 1; fi\nexit 0\n", encoding="utf-8")
+        (stub_dir / "pfctl").chmod(0o755)
+        env = {
+            **darwin_uname_env,
+            "PATH": f"{stub_dir}:{darwin_uname_env['PATH']}",
+            "PF_ANCHOR_FILE": str(tmp_path / "anchor"),
+            "PF_CONF_FILE": str(tmp_path / "pf.conf"),
+        }
+        result = subprocess.run(["bash", str(INSTALL_SCRIPT)], capture_output=True, text=True, env=env, check=False)
+        assert result.returncode != 0
+        assert "failed to enable pf" in result.stderr

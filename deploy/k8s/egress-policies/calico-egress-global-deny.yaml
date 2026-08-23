@@ -6,6 +6,9 @@ metadata:
     app.kubernetes.io/name: "perpetua-tools"
     app.kubernetes.io/part-of: "perpetua-tools"
 spec:
+  # Lower values run first in Calico's default tier. Keep this before broad
+  # egress allow policies, whose Allow action terminates evaluation.
+  order: 10.0
   selector: app.kubernetes.io/part-of == 'perpetua-tools'
   types:
     - Egress

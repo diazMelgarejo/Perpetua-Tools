@@ -130,12 +130,24 @@ fi
 # expected non-zero exit ("pf already enabled") on repeated runs, which is
 # tolerated explicitly here rather than masking real load failures too.
 if [[ "$PFCTL_SKIP" -ne 1 ]]; then
+  enable_pf() {
+    local output
+    if output="$("$@" -e 2>&1)"; then
+      return 0
+    fi
+    if grep -qi "already enabled" <<<"$output"; then
+      return 0
+    fi
+    echo "ERROR: failed to enable pf: $output" >&2
+    return 1
+  }
+
   if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
     pfctl -a "$ANCHOR_NAME" -f "$ANCHOR_FILE"
-    pfctl -e 2>&1 | grep -qv "already enabled" || true
+    enable_pf pfctl
   else
     sudo pfctl -a "$ANCHOR_NAME" -f "$ANCHOR_FILE"
-    sudo pfctl -e 2>&1 | grep -qv "already enabled" || true
+    enable_pf sudo pfctl
   fi
   echo "Loaded anchor $ANCHOR_NAME into pfctl"
 fi
