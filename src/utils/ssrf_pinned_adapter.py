@@ -353,6 +353,10 @@ class SSRFPinnedHTTPAdapter(HTTPAdapter):
                     validation_duration_ms=(time.monotonic() - started) * 1000,
                 )
             )
+            # Downstream dispatchers may catch and re-raise this same
+            # validation failure. Mark it after the adapter has emitted its
+            # authoritative deny event so they do not count it twice.
+            setattr(exc, "_egress_telemetry_emitted", True)
             raise
         pinned = ips[0]
         request.headers["Host"] = _host_header(hostname, port, scheme)

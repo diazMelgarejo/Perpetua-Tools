@@ -28,6 +28,27 @@ from orchestrator.orama_bridge import (
 )
 
 
+def test_bridge_does_not_duplicate_adapter_deny_telemetry():
+    """The pinned adapter owns telemetry for its own validation denial;
+    bridge-level exception handling must not emit that same failure again."""
+    import orchestrator.orama_bridge as bridge
+    from utils.ssrf_pinned_adapter import SSRFPolicyError
+
+    denied = SSRFPolicyError("scheme not allowed")
+    setattr(denied, "_egress_telemetry_emitted", True)
+
+    with (
+        patch("utils.ssrf_pinned_adapter.ssrf_request", side_effect=denied),
+        patch.object(bridge, "emit") as emit,
+        pytest.raises(SSRFPolicyError),
+    ):
+        bridge._dispatch_oramasys_http(
+            "https://orama.example.com/oramasys", {"task": "test"}, 1.0
+        )
+
+    emit.assert_not_called()
+
+
 class TestNormalizeEndpoint:
     def test_appends_ultrathink_path(self):
         assert normalize_oramasys_endpoint("http://localhost:8001") == "http://localhost:8001/oramasys"

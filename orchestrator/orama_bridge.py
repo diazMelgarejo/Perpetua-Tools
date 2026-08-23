@@ -113,16 +113,17 @@ def _dispatch_oramasys_http(url: str, payload: Dict[str, Any], timeout: float) -
 
             response = ssrf_request("POST", url, json=payload, timeout=timeout)
     except Exception as exc:
-        emit(
-            EgressEvent(
-                endpoint_class="local" if is_local else "remote",
-                host=hostname,
-                port=port,
-                scheme=parsed.scheme,
-                deny_reason=classify_deny_reason(exc),
-                duration_ms=(time.monotonic() - started) * 1000,
+        if not getattr(exc, "_egress_telemetry_emitted", False):
+            emit(
+                EgressEvent(
+                    endpoint_class="local" if is_local else "remote",
+                    host=hostname,
+                    port=port,
+                    scheme=parsed.scheme,
+                    deny_reason=classify_deny_reason(exc),
+                    duration_ms=(time.monotonic() - started) * 1000,
+                )
             )
-        )
         raise
     emit(
         EgressEvent(
