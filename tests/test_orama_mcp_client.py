@@ -66,7 +66,7 @@ class TestCallUltrathinkMcpOrBridge:
                 return_value=mock_client,
             ),
             patch("utils.ssrf_pinned_adapter.ssrf_request", mock_ssrf_request),
-            patch("httpx.AsyncClient.post", mock_post),
+            patch("httpx.post", mock_post),
         ):
             from orchestrator.orama_bridge import call_oramasys_mcp_or_bridge
             result = await call_oramasys_mcp_or_bridge(
@@ -101,15 +101,12 @@ class TestCallUltrathinkMcpOrBridge:
         # (whose deny-by-default policy would otherwise make orama's own
         # default deployment unreachable) -- see orchestrator/orama_bridge.py's
         # _is_local_oramasys_endpoint().
-        async def fake_post(*args, **kwargs):
-            return mock_http_response
-
-        mock_post = MagicMock(side_effect=fake_post)
+        mock_post = MagicMock(return_value=mock_http_response)
 
         with patch(
             "orchestrator.orama_mcp_client.OramasysMCPClient",
             return_value=mock_client,
-        ), patch("httpx.AsyncClient.post", mock_post):
+        ), patch("httpx.post", mock_post):
             from orchestrator.orama_bridge import (
                 build_oramasys_http_payload,
                 call_oramasys_mcp_or_bridge,
@@ -146,15 +143,12 @@ class TestCallUltrathinkMcpOrBridge:
         mock_http_response.json.return_value = _HTTP_MOCK_RESPONSE
         mock_http_response.raise_for_status = MagicMock()
 
-        async def fake_post(*args, **kwargs):
-            return mock_http_response
-
-        mock_post = MagicMock(side_effect=fake_post)
+        mock_post = MagicMock(return_value=mock_http_response)
 
         with patch(
             "orchestrator.orama_mcp_client.OramasysMCPClient",
             return_value=mock_client,
-        ), patch("httpx.AsyncClient.post", mock_post):
+        ), patch("httpx.post", mock_post):
             from orchestrator.orama_bridge import call_oramasys_mcp_or_bridge
             result = await call_oramasys_mcp_or_bridge(
                 endpoint="http://localhost:8001",
@@ -176,14 +170,11 @@ class TestCallUltrathinkMcpOrBridge:
         mock_http_response.json.return_value = _HTTP_MOCK_RESPONSE
         mock_http_response.raise_for_status = MagicMock()
 
-        async def fake_post(*args, **kwargs):
-            return mock_http_response
-
-        mock_post = MagicMock(side_effect=fake_post)
+        mock_post = MagicMock(return_value=mock_http_response)
 
         with patch(
             "orchestrator.orama_mcp_client.OramasysMCPClient"
-        ) as mock_mcp_cls, patch("httpx.AsyncClient.post", mock_post):
+        ) as mock_mcp_cls, patch("httpx.post", mock_post):
             from orchestrator.orama_bridge import call_oramasys_mcp_or_bridge
             result = await call_oramasys_mcp_or_bridge(
                 endpoint="http://localhost:8001",
@@ -214,15 +205,12 @@ class TestCallUltrathinkMcpOrBridge:
         mock_http_response.json.return_value = _HTTP_MOCK_RESPONSE
         mock_http_response.raise_for_status = MagicMock()
 
-        async def fake_post(*args, **kwargs):
-            return mock_http_response
-
-        mock_post = MagicMock(side_effect=fake_post)
+        mock_post = MagicMock(return_value=mock_http_response)
 
         with patch(
             "orchestrator.orama_mcp_client.OramasysMCPClient",
             _SlowClient,
-        ), patch("httpx.AsyncClient.post", mock_post):
+        ), patch("httpx.post", mock_post):
             from orchestrator.orama_bridge import call_oramasys_mcp_or_bridge
 
             result = await call_oramasys_mcp_or_bridge(

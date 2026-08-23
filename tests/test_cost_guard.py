@@ -6,6 +6,7 @@ Runs offline — no Ollama, no external API calls required.
 """
 from __future__ import annotations
 
+import asyncio
 import sys
 import time
 from pathlib import Path
@@ -16,7 +17,12 @@ import pytest
 REPO_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from orchestrator.cost_guard import CostGuard
+from orchestrator.cost_guard import (
+    BudgetExceededError,
+    CostGuard,
+    TokenCliffExceededError,
+    UnknownReservationError,
+)
 
 
 @pytest.fixture
@@ -121,6 +127,251 @@ class TestSnapshot:
         assert snap["alert"] is False
 
 
+class TestAtomicReserveCommitRollback:
+    """Phase 2 Task 2.3 (05-ORAMASYS-UNIFIED-ACTION-PLAN-2026-08-18.md): the old
+    can_spend()/record_spend() split left a TOCTOU window across any await
+    between them (orchestrator/fastapi_app.py's /orchestrate awaits
+    _resolve_candidates() in between) -- two concurrent requests could both
+    pass can_spend() before either recorded spend, jointly overspending the
+    daily budget. reserve()/commit()/rollback() close that window."""
+
+    @pytest.mark.asyncio
+    async def test_reserve_commit_settles_spend(self, guard: CostGuard) -> None:
+        reservation_id = await guard.reserve(5.0)
+        await guard.commit(reservation_id)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(5.0)
+
+    @pytest.mark.asyncio
+    async def test_reserve_rollback_does_not_settle_spend(self, guard: CostGuard) -> None:
+        reservation_id = await guard.reserve(5.0)
+        await guard.rollback(reservation_id)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(0.0)
+
+    @pytest.mark.asyncio
+    async def test_reserve_counts_other_in_flight_reservations_not_just_settled_spend(
+        self, guard: CostGuard
+    ) -> None:
+        """The exact race this fixes: two concurrent reservations for a
+        20.0-budget guard against a combined cost that only overspends when
+        BOTH are honored -- the second reserve() must see the first's
+        in-flight hold and refuse, even though daily_spend on disk is still
+        0.0 (neither has committed yet)."""
+        guard.set_budget(20.0)
+        first_id = await guard.reserve(15.0)
+        with pytest.raises(BudgetExceededError):
+            await guard.reserve(15.0)
+        # First reservation is still valid and can complete normally.
+        await guard.commit(first_id)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(15.0)
+
+    @pytest.mark.asyncio
+    async def test_commit_unknown_reservation_raises(self, guard: CostGuard) -> None:
+        with pytest.raises(UnknownReservationError):
+            await guard.commit("not-a-real-reservation-id")
+
+    @pytest.mark.asyncio
+    async def test_rollback_unknown_reservation_raises(self, guard: CostGuard) -> None:
+        with pytest.raises(UnknownReservationError):
+            await guard.rollback("not-a-real-reservation-id")
+
+    @pytest.mark.asyncio
+    async def test_commit_is_single_use(self, guard: CostGuard) -> None:
+        """A reservation_id cannot be committed twice -- prevents double-spend
+        if a caller's cleanup path is ever invoked more than once."""
+        reservation_id = await guard.reserve(5.0)
+        await guard.commit(reservation_id)
+        with pytest.raises(UnknownReservationError):
+            await guard.commit(reservation_id)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(5.0)
+
+    @pytest.mark.asyncio
+    async def test_commit_actual_cost_overrides_estimate(self, guard: CostGuard) -> None:
+        reservation_id = await guard.reserve(10.0)
+        await guard.commit(reservation_id, actual_cost=3.5)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(3.5)
+
+    @pytest.mark.asyncio
+    async def test_concurrent_reserve_race_has_exactly_one_winner(self, guard: CostGuard) -> None:
+        """Real asyncio concurrency (not sequential calls): 5 tasks each try
+        to reserve() an amount that only 1 of them can fit under budget.
+        Exactly 1 must succeed -- proves the asyncio.Lock actually
+        serializes the check-then-reserve step under real concurrency, not
+        just when called one at a time."""
+        import asyncio
+
+        guard.set_budget(10.0)
+
+        async def try_reserve() -> str | None:
+            try:
+                return await guard.reserve(6.0)
+            except BudgetExceededError:
+                return None
+
+        results = await asyncio.gather(*(try_reserve() for _ in range(5)))
+        winners = [r for r in results if r is not None]
+        assert len(winners) == 1
+
+    @pytest.mark.asyncio
+    async def test_reserve_rejects_negative_cost(self, guard: CostGuard) -> None:
+        """A negative estimated_cost would LOWER in_flight, letting other
+        concurrent callers reserve past the real budget -- CodeRabbit finding
+        on cost_guard.py:112-133."""
+        with pytest.raises(ValueError, match="non-negative"):
+            await guard.reserve(-5.0)
+        assert guard._reserved == {}
+
+    @pytest.mark.asyncio
+    async def test_reserve_rejects_nan_cost(self, guard: CostGuard) -> None:
+        """NaN makes the budget comparison always False (any comparison with
+        NaN is False in Python), so the reservation would always "succeed"
+        and poison daily_spend with NaN on commit."""
+        with pytest.raises(ValueError, match="non-negative"):
+            await guard.reserve(float("nan"))
+        assert guard._reserved == {}
+
+    @pytest.mark.asyncio
+    async def test_reserve_rejects_infinite_cost(self, guard: CostGuard) -> None:
+        with pytest.raises(ValueError, match="non-negative"):
+            await guard.reserve(float("inf"))
+        assert guard._reserved == {}
+
+    @pytest.mark.asyncio
+    async def test_reserve_accepts_zero_cost(self, guard: CostGuard) -> None:
+        """Zero is valid and common -- OrchestrateRequest.estimated_cost
+        defaults to 0.0. Must not be rejected by the non-negative check."""
+        reservation_id = await guard.reserve(0.0)
+        await guard.commit(reservation_id)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(0.0)
+
+    @pytest.mark.asyncio
+    async def test_commit_rejects_negative_actual_cost_and_preserves_reservation(self, guard: CostGuard) -> None:
+        """CodeRabbit finding on cost_guard.py: commit() must reject negative actual_cost
+        and keep reservation available for retry."""
+        reservation_id = await guard.reserve(5.0)
+        with pytest.raises(ValueError, match="non-negative"):
+            await guard.commit(reservation_id, actual_cost=-2.0)
+        # Reservation is still intact -- retry with valid cost succeeds
+        await guard.commit(reservation_id, actual_cost=3.0)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(3.0)
+
+    @pytest.mark.asyncio
+    async def test_commit_rejects_nan_actual_cost_and_preserves_reservation(self, guard: CostGuard) -> None:
+        reservation_id = await guard.reserve(5.0)
+        with pytest.raises(ValueError, match="non-negative"):
+            await guard.commit(reservation_id, actual_cost=float("nan"))
+        # Reservation is still intact -- retry succeeds
+        await guard.commit(reservation_id, actual_cost=4.0)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(4.0)
+
+    @pytest.mark.asyncio
+    async def test_commit_rejects_infinite_actual_cost_and_preserves_reservation(self, guard: CostGuard) -> None:
+        reservation_id = await guard.reserve(5.0)
+        with pytest.raises(ValueError, match="non-negative"):
+            await guard.commit(reservation_id, actual_cost=float("inf"))
+        # Rollback still works since reservation was preserved
+        await guard.rollback(reservation_id)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(0.0)
+
+    @pytest.mark.asyncio
+    async def test_commit_accepts_zero_actual_cost(self, guard: CostGuard) -> None:
+        reservation_id = await guard.reserve(5.0)
+        await guard.commit(reservation_id, actual_cost=0.0)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(0.0)
+
+
+class TestReservationTTLSelfHeal:
+    """Defense-in-depth for the CancelledError leak CodeRabbit found in
+    orchestrator/fastapi_app.py: a reservation whose caller never reaches
+    commit()/rollback() at all (process killed outright, not just the task
+    cancelled) would otherwise hold a phantom budget block forever. A TTL
+    sweep on the next reserve() call reclaims it."""
+
+    @pytest.mark.asyncio
+    async def test_expired_reservation_no_longer_counts_against_budget(
+        self, guard: CostGuard, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        guard.set_budget(10.0)
+        reservation_id = await guard.reserve(8.0)
+
+        # Simulate RESERVATION_TTL_SECONDS having elapsed without commit()/
+        # rollback() ever being called (the leak scenario).
+        amount, _ = guard._reserved[reservation_id]
+        guard._reserved[reservation_id] = (amount, guard._reserved[reservation_id][1] - 301.0)
+
+        # A second reserve() that would have failed against the phantom
+        # 8.0 in-flight hold now succeeds, because the sweep drops it first.
+        second_id = await guard.reserve(8.0)
+        assert reservation_id not in guard._reserved
+        await guard.commit(second_id)
+
+    @pytest.mark.asyncio
+    async def test_fresh_reservation_is_not_swept(self, guard: CostGuard) -> None:
+        """A reservation well within the TTL must survive a sweep triggered
+        by an unrelated concurrent reserve() call."""
+        guard.set_budget(10.0)
+        reservation_id = await guard.reserve(3.0)
+        await guard.reserve(1.0)  # triggers a sweep pass; must not touch reservation_id
+        assert reservation_id in guard._reserved
+        await guard.commit(reservation_id)
+        assert guard.snapshot()["daily_spend"] == pytest.approx(3.0)
+
+    @pytest.mark.asyncio
+    async def test_commit_after_ttl_expiry_raises_unknown_reservation(
+        self, guard: CostGuard
+    ) -> None:
+        """The rare race a caller must tolerate: TTL sweep beats a very slow
+        commit() to the punch. Documented as benign in commit()'s docstring
+        -- orchestrator/fastapi_app.py's cleanup path catches this
+        specifically rather than crashing the response."""
+        reservation_id = await guard.reserve(1.0)
+        amount, _ = guard._reserved[reservation_id]
+        guard._reserved[reservation_id] = (amount, guard._reserved[reservation_id][1] - 301.0)
+        await guard.reserve(0.0)  # triggers the sweep
+
+        with pytest.raises(UnknownReservationError):
+            await guard.commit(reservation_id)
+
+
+class TestTokenCliffGate:
+    """Phase 4 section 2 (05-ORAMASYS-UNIFIED-ACTION-PLAN-2026-08-18.md): The 199k
+    Token Hard Budget Cliff. xAI and Perplexity double billing across the entire
+    request if input reaches or exceeds 200,000 tokens. CostGuard.check_token_cliff()
+    enforces a pre-flight warning at 180,000 tokens and refuses calls at or above
+    199,000 tokens."""
+
+    def test_check_token_cliff_returns_none_below_warn_threshold(self, guard: CostGuard) -> None:
+        assert guard.check_token_cliff(100_000) is None
+        assert guard.check_token_cliff(0) is None
+        assert guard.check_token_cliff(179_999) is None
+
+    def test_check_token_cliff_returns_warning_string_at_warn_threshold(self, guard: CostGuard) -> None:
+        warn_at = guard.check_token_cliff(180_000)
+        assert warn_at is not None
+        assert "approaching the 199k billing cliff" in warn_at
+        assert "180000" in warn_at
+
+        warn_above = guard.check_token_cliff(190_000)
+        assert warn_above is not None
+        assert "approaching the 199k billing cliff" in warn_above
+        assert "190000" in warn_above
+
+    def test_check_token_cliff_raises_at_hard_threshold(self, guard: CostGuard) -> None:
+        with pytest.raises(TokenCliffExceededError, match="199000"):
+            guard.check_token_cliff(199_000)
+
+    def test_check_token_cliff_raises_above_hard_threshold(self, guard: CostGuard) -> None:
+        with pytest.raises(TokenCliffExceededError, match="250000"):
+            guard.check_token_cliff(250_000)
+
+    def test_check_token_cliff_rejects_negative_tokens(self, guard: CostGuard) -> None:
+        with pytest.raises(ValueError, match="non-negative"):
+            guard.check_token_cliff(-1)
+
+    def test_check_token_cliff_rejects_nan_tokens(self, guard: CostGuard) -> None:
+        with pytest.raises(ValueError, match="non-negative"):
+            guard.check_token_cliff(float("nan"))  # type: ignore[arg-type]
+
+
 class TestSetBudget:
     def test_set_budget_changes_limit(self, guard):
         guard.set_budget(50.0)
@@ -132,3 +383,55 @@ class TestSetBudget:
         g.set_budget(100.0)
         g2 = CostGuard(state_dir=str(tmp_path / ".state"))
         assert g2.snapshot()["daily_budget"] == pytest.approx(100.0)
+
+
+class TestCancellationRollback:
+    """Regression test for the orchestrator/fastapi_app.py CancelledError fix
+    (CodeRabbit finding on PR #362, review 5001930237).
+
+    The real end-to-end route (a bare `await orchestrate(req)` call, or a
+    TestClient(app) call with resolve_routing_state/sync_ecc_tools/registry
+    all mocked) corrupts tests/test_orama_integration.py's routing
+    assertions when run in the same pytest session -- see
+    .agent/memory/working/2026-08-23-costguard-cancellederror-test-isolation-investigation.md
+    for the 4 failed mitigation attempts. Entering fastapi_app.app's real
+    module-level singleton from a second test file leaves state dirty beyond
+    anything tried there.
+
+    This test sidesteps that entirely: it never imports or touches
+    fastapi_app.app/registry/tracker. It reproduces orchestrate()'s exact
+    reserve() -> await -> commit()/rollback()-in-finally-with-shield control
+    flow against a throwaway CostGuard instance, and proves the reservation
+    is rolled back when the task is cancelled before commit() runs -- the
+    same guarantee the production fix provides, verified permanently instead
+    of only interactively.
+    """
+
+    @pytest.mark.asyncio
+    async def test_cancellation_before_commit_rolls_back_reservation(
+        self, guard: CostGuard
+    ) -> None:
+        started = asyncio.Event()
+
+        async def orchestrate_like() -> None:
+            reservation_id = await guard.reserve(5.0)
+            committed = False
+            try:
+                started.set()
+                await asyncio.sleep(10)  # stand-in for candidate resolution
+                await guard.commit(reservation_id, actual_cost=5.0)
+                committed = True
+            finally:
+                if not committed:
+                    try:
+                        await asyncio.shield(guard.rollback(reservation_id))
+                    except UnknownReservationError:
+                        pass
+
+        task = asyncio.create_task(orchestrate_like())
+        await started.wait()
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+        assert guard._reserved == {}

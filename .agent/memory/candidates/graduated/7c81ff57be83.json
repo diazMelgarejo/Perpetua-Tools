@@ -1,0 +1,43 @@
+{
+  "id": "7c81ff57be83",
+  "key": "manual_7c81ff",
+  "name": "manual_7c81ff",
+  "claim": "A budget/rate guard whose check-then-act calls (can_spend/record_spend) straddle a real await point has a genuine TOCTOU race under concurrency -- fix with an atomic reserve()/commit()/rollback() pattern holding the reservation (counting other in-flight reservations, not just settled state) before the await, not just adding a lock around the two separate calls",
+  "conditions": [
+    "asyncio.Lock",
+    "budget-race",
+    "check-then-act",
+    "cost-guard",
+    "reserve-commit-rollback",
+    "toctou"
+  ],
+  "evidence_ids": [
+    "2026-08-23T05:08:33.456104+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-23T05:08:33.456104+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-23T05:08:33.456104+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-23T05:08:33.590870+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orchestrator/fastapi_app.py's /orchestrate endpoint called cost_guard.can_spend() then, after an await _resolve_candidates(...), cost_guard.record_spend() -- two concurrent requests could both pass can_spend() before either recorded spend, jointly overspending the daily budget. This is the same TOCTOU class Tier5BudgetLedger's reserve/settle pattern already solved for a different subsystem, but the fix hadn't been generalized to CostGuard. Added CostGuard.reserve()/commit()/rollback() with an asyncio.Lock and an in-flight _reserved dict checked alongside settled daily_spend -- reserve() must count OTHER pending reservations, not just what's already on disk, or two reserves can both pass concurrently. Verified with a real asyncio.gather() concurrency test (5 tasks, exactly 1 can fit under budget, exactly 1 must win) -- sequential calls alone don't prove a lock actually serializes under real concurrency.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-23T05:08:33.456104+00:00"
+      ],
+      "lessons_sha": "530502ff70f5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-23T05:08:33.590861+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orchestrator/fastapi_app.py's /orchestrate endpoint called cost_guard.can_spend() then, after an await _resolve_candidates(...), cost_guard.record_spend() -- two concurrent requests could both pass can_spend() before either recorded spend, jointly overspending the daily budget. This is the same TOCTOU class Tier5BudgetLedger's reserve/settle pattern already solved for a different subsystem, but the fix hadn't been generalized to CostGuard. Added CostGuard.reserve()/commit()/rollback() with an asyncio.Lock and an in-flight _reserved dict checked alongside settled daily_spend -- reserve() must count OTHER pending reservations, not just what's already on disk, or two reserves can both pass concurrently. Verified with a real asyncio.gather() concurrency test (5 tasks, exactly 1 can fit under budget, exactly 1 must win) -- sequential calls alone don't prove a lock actually serializes under real concurrency."
+}

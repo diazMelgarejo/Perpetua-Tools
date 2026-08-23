@@ -1,0 +1,42 @@
+{
+  "id": "9833885f89a1",
+  "key": "manual_983388",
+  "name": "manual_983388",
+  "claim": "An async fallback that duplicates a sync helper's logic in a separate implementation (e.g. its own httpx.AsyncClient instead of asyncio.to_thread wrapping the sync helper) is a real drift risk, not just a style nitpick -- the two paths can silently diverge on the exact same decision (e.g. SSRF local/remote classification) for the same input",
+  "conditions": [
+    "asyncio.to_thread",
+    "duplicate-implementation",
+    "orama_bridge",
+    "single-source-of-truth",
+    "sync-async-drift"
+  ],
+  "evidence_ids": [
+    "2026-08-23T05:08:33.086304+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-23T05:08:33.086304+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-23T05:08:33.086304+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-23T05:08:33.227527+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orchestrator/orama_bridge.py's async HTTP fallback had its own httpx.AsyncClient call for local endpoints, separate from the sync call_oramasys_bridge()'s httpx.post call -- both implementing the identical local/remote classification independently. GitHub issue #361 named this exact risk. Fixed by extracting one _dispatch_oramasys_http() function; sync calls it directly, async wraps it in asyncio.to_thread(). Verified via inspect.getsource() assertion that both code paths route through the same function object, not just equivalent-looking code. General rule: when a sync/async pair need identical branching logic, write it once and have async wrap the sync version via to_thread -- never hand-write the same decision twice.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-23T05:08:33.086304+00:00"
+      ],
+      "lessons_sha": "03e566d4ab68"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-23T05:08:33.227512+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orchestrator/orama_bridge.py's async HTTP fallback had its own httpx.AsyncClient call for local endpoints, separate from the sync call_oramasys_bridge()'s httpx.post call -- both implementing the identical local/remote classification independently. GitHub issue #361 named this exact risk. Fixed by extracting one _dispatch_oramasys_http() function; sync calls it directly, async wraps it in asyncio.to_thread(). Verified via inspect.getsource() assertion that both code paths route through the same function object, not just equivalent-looking code. General rule: when a sync/async pair need identical branching logic, write it once and have async wrap the sync version via to_thread -- never hand-write the same decision twice."
+}

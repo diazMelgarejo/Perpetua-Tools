@@ -463,3 +463,61 @@ def test_build_pinned_httpx_client_defaults_to_no_redirects() -> None:
     finally:
         client.close()
 
+
+def test_concurrent_same_hostname_different_resolver_results_isolated_per_thread() -> None:
+    """GitHub issue #360's exact required test: 'Two threads, one adapter/
+    session, SAME hostname, different resolver results; each socket uses
+    its own resolved IP.' This is stricter than
+    test_concurrent_two_pin_requests_get_isolated_pools (which uses two
+    DIFFERENT hostnames) -- here a single shared adapter resolves the SAME
+    hostname concurrently from two threads, each getting a different
+    (mocked) DNS answer, simulating a rebinding-timing race. Each thread's
+    own build_connection_pool_key_attributes() call must pin to what THAT
+    thread resolved, never the other thread's result."""
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+    from unittest.mock import patch
+
+    import requests
+
+    from utils.ssrf_pinned_adapter import SSRFPinnedHTTPAdapter
+
+    # One shared adapter/session -- issue #360's "one adapter/session" clause.
+    # socket.getaddrinfo is patched ONCE, outside the threads (unittest.mock
+    # patch enter/exit is not safe to race per-thread on the same target --
+    # see the multi-threaded-session test above for the concurrency bug that
+    # taught us this). Threads are distinguished by name instead of by a
+    # per-thread patch.
+    adapter = SSRFPinnedHTTPAdapter()
+    ip_by_thread_name = {"thread-a": "1.1.1.1", "thread-b": "8.8.8.8"}
+    # max_workers=2 alone doesn't guarantee the two resolver calls actually
+    # overlap -- the scheduler could run them fully serially and still
+    # return the right two IPs, silently failing to exercise any real
+    # concurrent-access race. A two-party barrier forces both threads to be
+    # inside fake_getaddrinfo at the same time before either returns.
+    resolution_barrier = threading.Barrier(2)
+
+    def fake_getaddrinfo(host, port, family=0, socket_type=0, *a, **kw):
+        ip = ip_by_thread_name[threading.current_thread().name]
+        resolution_barrier.wait(timeout=5)
+        return [(2, 1, 6, "", (ip, port))]
+
+    def get_pinned_ip(name: str) -> str:
+        threading.current_thread().name = name
+        req = requests.Request("GET", "https://shared-hostname.example.com/x").prepare()
+        host_params, _ = adapter.build_connection_pool_key_attributes(req, verify=True)
+        return host_params["host"]
+
+    with (
+        patch("socket.getaddrinfo", side_effect=fake_getaddrinfo),
+        ThreadPoolExecutor(max_workers=2) as pool_exec,
+    ):
+        # max_workers == number of tasks: each task gets its own dedicated
+        # worker thread, so setting .name once per task is race-free.
+        futures = [pool_exec.submit(get_pinned_ip, name) for name in ip_by_thread_name]
+        results = {f.result() for f in futures}
+
+    assert results == set(ip_by_thread_name.values()), (
+        "each thread must pin to what IT resolved for the shared hostname, not the other's answer"
+    )
+

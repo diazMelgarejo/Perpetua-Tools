@@ -284,21 +284,21 @@ def test_parse_append_segment_malformed_quote_fails_closed(grant_lib):
     assert parsed is None
 
 
-def test_mint_grant_rejects_newline_in_pr_number(grant_lib, tmp_path):
+def test_mint_grant_rejects_newline_in_pr_number(grant_lib, tmp_path) -> None:
     append = tmp_path / "follow.md"
     append.write_text("x", encoding="utf-8")
     with pytest.raises(grant_lib.GrantError):
         grant_lib.mint_grant("owner/repo", "5\ninjected", str(append), None)
 
 
-def test_mint_grant_rejects_newline_in_repo(grant_lib, tmp_path):
+def test_mint_grant_rejects_newline_in_repo(grant_lib, tmp_path) -> None:
     append = tmp_path / "follow.md"
     append.write_text("x", encoding="utf-8")
     with pytest.raises(grant_lib.GrantError):
         grant_lib.mint_grant("owner/repo\ninjected", "5", str(append), None)
 
 
-def test_verify_grant_fields_rejects_newline_in_pr_number(grant_lib):
+def test_verify_grant_fields_rejects_newline_in_pr_number(grant_lib) -> None:
     ok, err = grant_lib.verify_grant_fields(
         {"issued-at": "2026-01-01T00:00:00Z"}, "owner/repo", "5\ninjected", "digest"
     )
@@ -306,19 +306,19 @@ def test_verify_grant_fields_rejects_newline_in_pr_number(grant_lib):
     assert "newline" in err.lower() or "pipe" in err.lower()
 
 
-def test_validate_repo_slug_strict_schema(grant_lib):
+def test_validate_repo_slug_strict_schema(grant_lib) -> None:
     for bad in ["repo_without_owner", "owner//repo", "owner/repo/sub", "../evil/repo", "owner/repo with spaces", ""]:
         with pytest.raises(grant_lib.GrantError, match="repo"):
             grant_lib._validate_repo_slug(bad)
 
 
-def test_validate_pr_number_strict_schema(grant_lib):
+def test_validate_pr_number_strict_schema(grant_lib) -> None:
     for bad in ["0", "-1", "42.5", "abc", "042", ""]:
         with pytest.raises(grant_lib.GrantError, match="pr_number"):
             grant_lib._validate_pr_number(bad)
 
 
-def test_content_digest_rejects_symlink(grant_lib, tmp_path):
+def test_content_digest_rejects_symlink(grant_lib, tmp_path) -> None:
     target = tmp_path / "real.md"
     target.write_text("content", encoding="utf-8")
     sym = tmp_path / "sym.md"
@@ -330,7 +330,7 @@ def test_content_digest_rejects_symlink(grant_lib, tmp_path):
         grant_lib.content_digest_for_append(str(sym), None)
 
 
-def test_content_digest_rejects_oversized_file(grant_lib, tmp_path, monkeypatch):
+def test_content_digest_rejects_oversized_file(grant_lib, tmp_path, monkeypatch) -> None:
     big = tmp_path / "big.md"
     big.write_text("x" * 100, encoding="utf-8")
     monkeypatch.setattr(grant_lib, "MAX_APPEND_FILE_BYTES", 50)
@@ -338,13 +338,13 @@ def test_content_digest_rejects_oversized_file(grant_lib, tmp_path, monkeypatch)
         grant_lib.content_digest_for_append(str(big), None)
 
 
-def test_content_digest_rejects_oversized_message(grant_lib, monkeypatch):
+def test_content_digest_rejects_oversized_message(grant_lib, monkeypatch) -> None:
     monkeypatch.setattr(grant_lib, "MAX_APPEND_FILE_BYTES", 10)
     with pytest.raises(grant_lib.GrantError, match="size limit"):
         grant_lib.content_digest_for_append(None, "this is too long")
 
 
-def test_append_operations_short_circuit_on_invalid_identity(grant_lib, tmp_path):
+def test_append_operations_short_circuit_on_invalid_identity(grant_lib, tmp_path) -> None:
     # Non-existent file path would raise if read, but invalid repo must fail-closed first
     nonexistent = str(tmp_path / "does_not_exist.md")
     

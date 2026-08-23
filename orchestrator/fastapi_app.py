@@ -36,7 +36,12 @@ from orchestrator.control_plane import (
     load_runtime_payload,
     resolve_routing_state,
 )
-from orchestrator.cost_guard import CostGuard
+from orchestrator.cost_guard import (
+    BudgetExceededError,
+    CostGuard,
+    TokenCliffExceededError,
+    UnknownReservationError,
+)
 from orchestrator.ecc_tools_sync import get_sync_status, sync_ecc_tools
 from orchestrator.model_registry import ModelRegistry
 from orchestrator.model_transport import (
@@ -209,6 +214,13 @@ class OrchestrateRequest(BaseModel):
     estimated_cost: float = 0.0
     parent_agent_id: Optional[str] = None
     force: bool = False
+    # Caller-supplied input token count for the 199k billing-cliff check
+    # (05-ORAMASYS-UNIFIED-ACTION-PLAN-2026-08-18.md Phase 4). Advisory only
+    # -- the endpoint floors this against a server-side chars/4 estimate of
+    # `task`, so a caller cannot bypass the gate by under-reporting. `ge=0`
+    # rejects a negative value at the request boundary (422) instead of
+    # letting check_token_cliff()'s ValueError escape as an unhandled 500.
+    input_tokens: Optional[int] = Field(default=None, ge=0)
 
 
 class TieredPipelineRequest(BaseModel):
@@ -712,60 +724,112 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
             "existing_agent": asdict(existing),
         }
 
-    snapshot = cost_guard.snapshot()
-    if not cost_guard.can_spend(req.estimated_cost):
+    # req.input_tokens is advisory only -- flooring it against a server-side
+    # estimate of `task` (the same string actually sent downstream) means a
+    # caller cannot bypass the cliff gate by under-reporting (e.g. sending
+    # input_tokens=0 alongside a large task).
+    server_estimated_tokens = len(req.task) // 4
+    effective_input_tokens = (
+        max(req.input_tokens, server_estimated_tokens)
+        if req.input_tokens is not None
+        else server_estimated_tokens
+    )
+    try:
+        token_cliff_warning = cost_guard.check_token_cliff(effective_input_tokens)
+    except TokenCliffExceededError as exc:
+        raise HTTPException(status_code=413, detail=str(exc)) from None
+
+    try:
+        reservation_id = await cost_guard.reserve(req.estimated_cost)
+    except BudgetExceededError as exc:
+        # exc's own message already breaks down settled + in-flight + budget --
+        # a stale snapshot taken before reserve() would under-report
+        # "remaining" whenever OTHER in-flight reservations (not yet
+        # settled to disk) are what caused this rejection.
         raise HTTPException(
             status_code=402,
-            detail=f"Daily budget exceeded. Remaining: ${snapshot.get('remaining', 0):.4f}",
+            detail=f"Daily budget exceeded: {exc}",
+        ) from None
+
+    # committed tracks whether we reached cost_guard.commit() below. The
+    # finally block rolls back whenever we didn't -- covering every early
+    # return, every raised exception, AND asyncio.CancelledError (a client
+    # disconnect during the awaits below cancels this task; CancelledError
+    # derives from BaseException, so a bare `except Exception` never saw it
+    # and the reservation leaked until process restart). asyncio.shield()
+    # protects the cleanup call itself from being cut short by a second,
+    # immediate cancellation racing the first. reserve() already holds
+    # estimated_cost against the budget for every other concurrent caller
+    # during the awaits below (_resolve_candidates), closing the
+    # check-then-act race the old can_spend()/record_spend() split left
+    # open across that same await point.
+    committed = False
+    try:
+        budget_warning = None
+        if cost_guard.alert_approaching():
+            budget_state = cost_guard.snapshot()
+            budget_warning = (
+                f"Budget at {budget_state['daily_spend']:.2f} / "
+                f"{budget_state['daily_budget']:.2f} (>=80%)"
+            )
+
+        route_candidates = registry.route_task(req.task_type, preferred_device=req.preferred_device)
+        if not route_candidates:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No model candidates found for task_type='{req.task_type}'",
+            )
+
+        candidates, availability = await _resolve_candidates(route_candidates, req.task_type)
+        if req.task_type in _AUTORESEARCH_TASK_TYPES and not candidates:
+            return {
+                "status": "needs_user_action",
+                "message": (
+                    "No viable local coder backend is reachable for autoresearch. "
+                    "Start Windows LM Studio (Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2) "
+                    "or a reachable local LM Studio fallback, then retry."
+                ),
+                "runtime": _runtime_summary(),
+                "availability": availability,
+            }
+
+        selected = candidates[0]
+        route_cfg = registry.routing_cfg.get("routes", {}).get(req.task_type, {})
+
+        agent = tracker.register(
+            role=req.task_type,
+            model=selected.name,
+            backend=selected.backend,
+            host=selected.host,
+            port=selected.port,
+            task_hash=task_hash,
+            parent_agent_id=req.parent_agent_id,
+            metadata={
+                "reasoning": selected.reasoning,
+                "device": selected.device,
+                "online": selected.online,
+            },
+            status="idle",
         )
-
-    budget_warning = None
-    if cost_guard.alert_approaching():
-        budget_state = cost_guard.snapshot()
-        budget_warning = (
-            f"Budget at {budget_state['daily_spend']:.2f} / "
-            f"{budget_state['daily_budget']:.2f} (>=80%)"
-        )
-
-    route_candidates = registry.route_task(req.task_type, preferred_device=req.preferred_device)
-    if not route_candidates:
-        raise HTTPException(
-            status_code=404,
-            detail=f"No model candidates found for task_type='{req.task_type}'",
-        )
-
-    candidates, availability = await _resolve_candidates(route_candidates, req.task_type)
-    if req.task_type in _AUTORESEARCH_TASK_TYPES and not candidates:
-        return {
-            "status": "needs_user_action",
-            "message": (
-                "No viable local coder backend is reachable for autoresearch. "
-                "Start Windows LM Studio (Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2) "
-                "or a reachable local LM Studio fallback, then retry."
-            ),
-            "runtime": _runtime_summary(),
-            "availability": availability,
-        }
-
-    selected = candidates[0]
-    route_cfg = registry.routing_cfg.get("routes", {}).get(req.task_type, {})
-
-    agent = tracker.register(
-        role=req.task_type,
-        model=selected.name,
-        backend=selected.backend,
-        host=selected.host,
-        port=selected.port,
-        task_hash=task_hash,
-        parent_agent_id=req.parent_agent_id,
-        metadata={
-            "reasoning": selected.reasoning,
-            "device": selected.device,
-            "online": selected.online,
-        },
-        status="idle",
-    )
-    cost_guard.record_spend(req.estimated_cost)
+        try:
+            await cost_guard.commit(reservation_id, actual_cost=req.estimated_cost)
+        except UnknownReservationError:
+            # RESERVATION_TTL_SECONDS or a concurrent sweep already reclaimed
+            # the reservation before commit() could settle it. tracker.register()
+            # above already created the agent, so we still don't raise an
+            # uncaught 500 -- but the cost must not be silently dropped: fall
+            # back to the non-atomic record_spend() so a slow request doesn't
+            # both register an agent AND lose its billing entirely.
+            cost_guard.record_spend(req.estimated_cost)
+        committed = True
+    finally:
+        if not committed:
+            try:
+                await asyncio.shield(cost_guard.rollback(reservation_id))
+            except UnknownReservationError:
+                # RESERVATION_TTL_SECONDS already reclaimed it -- benign,
+                # the phantom budget hold is already gone either way.
+                pass
 
     response: Dict[str, Any] = {
         "status": "created",
@@ -795,6 +859,8 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
     }
     if budget_warning:
         response["budget_warning"] = budget_warning
+    if token_cliff_warning:
+        response["token_cliff_warning"] = token_cliff_warning
 
     if req.task_type in _ORAMASYS_TASK_TYPES and route_cfg.get("endpoint"):
         timeout = parse_oramasys_timeout(route_cfg.get("timeout"))

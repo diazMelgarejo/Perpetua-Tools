@@ -180,7 +180,7 @@ class TestCallBridgeAsyncLocal:
 
         with (
             patch("utils.ssrf_pinned_adapter.ssrf_request") as mock_ssrf_request,
-            patch("httpx.AsyncClient.post", new=MagicMock()) as mock_post,
+            patch("httpx.post", new=MagicMock()) as mock_post,
             patch.dict(os.environ, {}, clear=False),
         ):
             # patch.dict restores the original environment on exit, so
@@ -190,11 +190,7 @@ class TestCallBridgeAsyncLocal:
             os.environ.pop("ORAMASYS_MCP_SERVER_CMD", None)
             os.environ.pop("ULTRATHINK_MCP_SERVER_CMD", None)
             mock_ssrf_request.side_effect = AssertionError("must not use the deny-by-default transport")
-
-            async def fake_post(*args, **kwargs):
-                return mock_resp
-
-            mock_post.side_effect = fake_post
+            mock_post.return_value = mock_resp
 
             result = await call_oramasys_mcp_or_bridge(
                 endpoint="http://127.0.0.1:8001",
@@ -206,3 +202,75 @@ class TestCallBridgeAsyncLocal:
         mock_ssrf_request.assert_not_called()
         assert result["response"]["result"] == "ok"
 
+
+def test_sync_and_async_bridge_share_one_dispatch_implementation():
+    """GitHub issue #361: the async fallback must wrap the SAME sync helper
+    (asyncio.to_thread around it), not maintain a second, separately-written
+    HTTP-call implementation that could drift into a different local/remote
+    classification for the same URL.
+
+    Asserts this at RUNTIME, not via source-text inspection: source-text
+    checks (the previous version of this test) don't prove the two code
+    paths actually invoke the same function object -- a stale docstring, a
+    dead branch, or a second dispatcher elsewhere could satisfy a text
+    search while runtime behavior regresses. Patches
+    orama_bridge._dispatch_oramasys_http directly and calls both
+    call_oramasys_bridge() (sync) and call_oramasys_mcp_or_bridge()'s HTTP
+    fallback (async), asserting the SAME mock received the expected URL,
+    payload, and timeout for each -- proof they route through one shared
+    implementation, not equivalent-looking twins."""
+    from unittest.mock import MagicMock, patch
+
+    from orchestrator import orama_bridge
+
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = {"result": "ok"}
+    mock_resp.raise_for_status.return_value = None
+
+    with patch.object(
+        orama_bridge, "_dispatch_oramasys_http", return_value=mock_resp
+    ) as mock_dispatch:
+        sync_result = orama_bridge.call_oramasys_bridge(
+            endpoint="http://127.0.0.1:8001",
+            timeout=42.0,
+            task="sync task",
+            task_type="deep_reasoning",
+        )
+
+    assert sync_result["response"]["result"] == "ok"
+    mock_dispatch.assert_called_once_with(
+        "http://127.0.0.1:8001/oramasys",
+        orama_bridge.build_oramasys_http_payload("sync task", "deep_reasoning"),
+        42.0,
+    )
+
+
+@pytest.mark.asyncio
+async def test_async_bridge_calls_the_same_dispatch_helper_with_matching_args():
+    from unittest.mock import MagicMock, patch
+
+    from orchestrator import orama_bridge
+
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = {"result": "ok"}
+    mock_resp.raise_for_status.return_value = None
+
+    with (
+        patch.dict(os.environ, {}, clear=False),
+        patch.object(orama_bridge, "_dispatch_oramasys_http", return_value=mock_resp) as mock_dispatch,
+    ):
+        os.environ.pop("ORAMASYS_MCP_SERVER_CMD", None)
+        os.environ.pop("ULTRATHINK_MCP_SERVER_CMD", None)
+        async_result = await orama_bridge.call_oramasys_mcp_or_bridge(
+            endpoint="http://127.0.0.1:8001",
+            timeout=42.0,
+            task="async task",
+            task_type="deep_reasoning",
+        )
+
+    assert async_result["response"]["result"] == "ok"
+    mock_dispatch.assert_called_once_with(
+        "http://127.0.0.1:8001/oramasys",
+        orama_bridge.build_oramasys_http_payload("async task", "deep_reasoning"),
+        42.0,
+    )

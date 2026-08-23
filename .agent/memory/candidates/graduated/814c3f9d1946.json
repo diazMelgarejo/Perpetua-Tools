@@ -1,0 +1,42 @@
+{
+  "id": "814c3f9d1946",
+  "key": "manual_814c3f",
+  "name": "manual_814c3f",
+  "claim": "A sensitive doc committed into tracked git history that has NEVER been pushed to origin can be safely excised via git rebase --onto <before> <bad-commit> HEAD -- cheaper and cleaner than a force-push, since there is nothing on the remote to force over; always verify origin state directly (git merge-base --is-ancestor) both before assuming a leak and after another agent claims a push happened, never trust the claim alone",
+  "conditions": [
+    "force-push-alternative",
+    "git-history-excision",
+    "rebase-onto",
+    "sensitive-doc-leak",
+    "verify-dont-trust-agent-claims"
+  ],
+  "evidence_ids": [
+    "2026-08-23T05:08:33.816940+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-23T05:08:33.816940+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-23T05:08:33.816940+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-23T05:08:33.949466+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Agnes added a synthesis doc as a real tracked commit (1568964c) inside PT, then self-reverted it in a follow-up commit (311e89e3) -- but the sensitive content still lived in local git history, reachable via 1568964c, and would have been transmitted on the next push if left as an add-then-remove pair. Verified via git merge-base --is-ancestor that neither commit had reached origin yet, so a force-push wasn't needed or applicable -- git rebase --onto <merge-commit> 1568964c HEAD replayed everything after the bad commit onto the point before it, auto-dropping both the add and the now-empty revert. Confirmed clean via git branch --contains / git tag --contains (empty) and git cat-file -t (object still exists but is unreferenced -- fine, never transmitted, eventually GC'd). Independently re-verified origin's actual HEAD via git fetch + merge-base after Agnes later claimed she'd 'pushed clean, doc expunged' -- her claim happened to be accurate, but it was verified against real remote state, not trusted at face value.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-23T05:08:33.816940+00:00"
+      ],
+      "lessons_sha": "8df02b751ad0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-23T05:08:33.949459+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Agnes added a synthesis doc as a real tracked commit (1568964c) inside PT, then self-reverted it in a follow-up commit (311e89e3) -- but the sensitive content still lived in local git history, reachable via 1568964c, and would have been transmitted on the next push if left as an add-then-remove pair. Verified via git merge-base --is-ancestor that neither commit had reached origin yet, so a force-push wasn't needed or applicable -- git rebase --onto <merge-commit> 1568964c HEAD replayed everything after the bad commit onto the point before it, auto-dropping both the add and the now-empty revert. Confirmed clean via git branch --contains / git tag --contains (empty) and git cat-file -t (object still exists but is unreferenced -- fine, never transmitted, eventually GC'd). Independently re-verified origin's actual HEAD via git fetch + merge-base after Agnes later claimed she'd 'pushed clean, doc expunged' -- her claim happened to be accurate, but it was verified against real remote state, not trusted at face value."
+}
