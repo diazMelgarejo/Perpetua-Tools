@@ -25,6 +25,10 @@ class UnknownReservationError(Exception):
     was already committed/rolled back (each id is single-use)."""
 
 
+class TokenCliffExceededError(Exception):
+    """Raised by check_token_cliff() when input_tokens reaches or exceeds TOKEN_CLIFF_HARD_TOKENS."""
+
+
 class CostGuard:
     """
     File-persisted daily budget guard.
@@ -47,6 +51,11 @@ class CostGuard:
     # just cancelled; a try/finally can't run if there's no interpreter left
     # to run it in). Generous relative to any real request duration.
     RESERVATION_TTL_SECONDS = 300.0
+
+    # 05-ORAMASYS-UNIFIED-ACTION-PLAN-2026-08-18.md Phase 4: warn approaching the 200k 2x-billing cliff
+    TOKEN_CLIFF_WARN_TOKENS = 180_000
+    # 05-ORAMASYS-UNIFIED-ACTION-PLAN-2026-08-18.md Phase 4: refuse single calls at/above 199k to prevent 2x billing
+    TOKEN_CLIFF_HARD_TOKENS = 199_000
 
     def __init__(
         self, state_dir: str = ".state", budget_file: str = "budget.json"
@@ -117,6 +126,25 @@ class CostGuard:
         p = self._load()
         p["daily_budget"] = daily_budget
         self._save(p)
+
+    def check_token_cliff(self, input_tokens: int) -> str | None:
+        """Check if input_tokens approaches or exceeds the 199k billing cliff.
+
+        Rejects negative or non-finite values before checking thresholds.
+        Returns a warning string when >= TOKEN_CLIFF_WARN_TOKENS.
+        Raises TokenCliffExceededError when >= TOKEN_CLIFF_HARD_TOKENS.
+        Returns None when below the warning threshold.
+        """
+        if not math.isfinite(input_tokens) or input_tokens < 0:
+            raise ValueError(f"input_tokens must be a non-negative finite number, got {input_tokens!r}")
+        if input_tokens >= self.TOKEN_CLIFF_HARD_TOKENS:
+            raise TokenCliffExceededError(
+                f"Token count {input_tokens} reaches or exceeds the 199k billing cliff "
+                f"(hard threshold: {self.TOKEN_CLIFF_HARD_TOKENS}); request must be split or refused"
+            )
+        elif input_tokens >= self.TOKEN_CLIFF_WARN_TOKENS:
+            return f"Token count {input_tokens} is approaching the 199k billing cliff (warn threshold: {self.TOKEN_CLIFF_WARN_TOKENS})"
+        return None
 
     async def reserve(self, estimated_cost: float) -> str:
         """Atomically hold ``estimated_cost`` against the budget.

@@ -17,7 +17,12 @@ import pytest
 REPO_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from orchestrator.cost_guard import BudgetExceededError, CostGuard, UnknownReservationError
+from orchestrator.cost_guard import (
+    BudgetExceededError,
+    CostGuard,
+    TokenCliffExceededError,
+    UnknownReservationError,
+)
 
 
 @pytest.fixture
@@ -325,6 +330,46 @@ class TestReservationTTLSelfHeal:
 
         with pytest.raises(UnknownReservationError):
             await guard.commit(reservation_id)
+
+
+class TestTokenCliffGate:
+    """Phase 4 section 2 (05-ORAMASYS-UNIFIED-ACTION-PLAN-2026-08-18.md): The 199k
+    Token Hard Budget Cliff. xAI and Perplexity double billing across the entire
+    request if input reaches or exceeds 200,000 tokens. CostGuard.check_token_cliff()
+    enforces a pre-flight warning at 180,000 tokens and refuses calls at or above
+    199,000 tokens."""
+
+    def test_check_token_cliff_returns_none_below_warn_threshold(self, guard: CostGuard) -> None:
+        assert guard.check_token_cliff(100_000) is None
+        assert guard.check_token_cliff(0) is None
+        assert guard.check_token_cliff(179_999) is None
+
+    def test_check_token_cliff_returns_warning_string_at_warn_threshold(self, guard: CostGuard) -> None:
+        warn_at = guard.check_token_cliff(180_000)
+        assert warn_at is not None
+        assert "approaching the 199k billing cliff" in warn_at
+        assert "180000" in warn_at
+
+        warn_above = guard.check_token_cliff(190_000)
+        assert warn_above is not None
+        assert "approaching the 199k billing cliff" in warn_above
+        assert "190000" in warn_above
+
+    def test_check_token_cliff_raises_at_hard_threshold(self, guard: CostGuard) -> None:
+        with pytest.raises(TokenCliffExceededError, match="199000"):
+            guard.check_token_cliff(199_000)
+
+    def test_check_token_cliff_raises_above_hard_threshold(self, guard: CostGuard) -> None:
+        with pytest.raises(TokenCliffExceededError, match="250000"):
+            guard.check_token_cliff(250_000)
+
+    def test_check_token_cliff_rejects_negative_tokens(self, guard: CostGuard) -> None:
+        with pytest.raises(ValueError, match="non-negative"):
+            guard.check_token_cliff(-1)
+
+    def test_check_token_cliff_rejects_nan_tokens(self, guard: CostGuard) -> None:
+        with pytest.raises(ValueError, match="non-negative"):
+            guard.check_token_cliff(float("nan"))  # type: ignore[arg-type]
 
 
 class TestSetBudget:
