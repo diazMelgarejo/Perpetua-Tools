@@ -1,0 +1,42 @@
+{
+  "id": "7f1686709796",
+  "key": "manual_7f1686",
+  "name": "manual_7f1686",
+  "claim": "A GitHub issue's literally-worded 'Required tests' list can demand a stricter case than an existing test matrix already covers -- check exact wording (e.g. 'same hostname' vs 'different hostnames'), don't assume conceptual coverage is literal coverage",
+  "conditions": [
+    "github-issue",
+    "literal-wording",
+    "required-tests",
+    "same-hostname-vs-different-hostname",
+    "test-coverage-gap"
+  ],
+  "evidence_ids": [
+    "2026-08-23T05:08:32.751137+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-23T05:08:32.751137+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-23T05:08:32.751137+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-23T05:08:32.877454+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Issue #360 demanded 'Two threads, one adapter/session, SAME hostname, different resolver results' -- the existing test_concurrent_two_pin_requests_get_isolated_pools used two DIFFERENT hostnames, a meaningfully weaker case (no shared-hostname pool-key collision risk). The architecture already handled it correctly (29/29 green, no bug), but the literal test the issue asked for didn't exist until added. When closing an issue that specifies required tests verbatim, diff the exact wording against what exists rather than trusting 'we already have similar coverage.'",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-23T05:08:32.751137+00:00"
+      ],
+      "lessons_sha": "59196d4744ee"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-23T05:08:32.877442+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Issue #360 demanded 'Two threads, one adapter/session, SAME hostname, different resolver results' -- the existing test_concurrent_two_pin_requests_get_isolated_pools used two DIFFERENT hostnames, a meaningfully weaker case (no shared-hostname pool-key collision risk). The architecture already handled it correctly (29/29 green, no bug), but the literal test the issue asked for didn't exist until added. When closing an issue that specifies required tests verbatim, diff the exact wording against what exists rather than trusting 'we already have similar coverage.'"
+}

@@ -1,0 +1,42 @@
+{
+  "id": "17b561fd584f",
+  "key": "manual_17b561",
+  "name": "manual_17b561",
+  "claim": "In a shared local working tree with another live agent, that agent's own periodic/automatic commit sweep can capture and commit YOUR in-progress uncommitted edits under ITS commit message -- verify the actual committed diff is byte-identical to what you intended before assuming it's a collision to fix, rather than redoing the work",
+  "conditions": [
+    "auto-commit-sweep",
+    "multi-agent-collision",
+    "shared-working-tree",
+    "unexpected-commit",
+    "verify-before-redo"
+  ],
+  "evidence_ids": [
+    "2026-08-23T05:08:34.171008+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-23T05:08:34.171008+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-23T05:08:34.171008+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-23T05:08:34.309471+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Mid-edit on orchestrator/cost_guard.py (writing reserve/commit/rollback), a commit appeared (cf737081) under the shared 'cyre' git identity with a message I never wrote, at a moment I hadn't run git commit myself. git show confirmed the diff was byte-for-byte identical to my own Edit-tool changes still sitting on disk -- Agnes's own 'commit everything in logical batches' habit had swept up my uncommitted file. Verified via git status (clean, matching disk) and re-ran the full test suite against the committed content before treating it as done, rather than either blindly trusting it or re-doing the work from scratch. Lesson: in this kind of shared-tree multi-agent session, commit your own work promptly and in smaller increments to reduce the window another agent's sweep can grab it out of sequence -- and when you find an unexpected commit, diff it against your own intended changes before reacting, since 'unexpected' doesn't always mean 'wrong.'",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-23T05:08:34.171008+00:00"
+      ],
+      "lessons_sha": "45903786a957"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-23T05:08:34.309463+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Mid-edit on orchestrator/cost_guard.py (writing reserve/commit/rollback), a commit appeared (cf737081) under the shared 'cyre' git identity with a message I never wrote, at a moment I hadn't run git commit myself. git show confirmed the diff was byte-for-byte identical to my own Edit-tool changes still sitting on disk -- Agnes's own 'commit everything in logical batches' habit had swept up my uncommitted file. Verified via git status (clean, matching disk) and re-ran the full test suite against the committed content before treating it as done, rather than either blindly trusting it or re-doing the work from scratch. Lesson: in this kind of shared-tree multi-agent session, commit your own work promptly and in smaller increments to reduce the window another agent's sweep can grab it out of sequence -- and when you find an unexpected commit, diff it against your own intended changes before reacting, since 'unexpected' doesn't always mean 'wrong.'"
+}
