@@ -36,7 +36,12 @@ from orchestrator.control_plane import (
     load_runtime_payload,
     resolve_routing_state,
 )
-from orchestrator.cost_guard import BudgetExceededError, CostGuard, UnknownReservationError
+from orchestrator.cost_guard import (
+    BudgetExceededError,
+    CostGuard,
+    TokenCliffExceededError,
+    UnknownReservationError,
+)
 from orchestrator.ecc_tools_sync import get_sync_status, sync_ecc_tools
 from orchestrator.model_registry import ModelRegistry
 from orchestrator.model_transport import (
@@ -209,6 +214,11 @@ class OrchestrateRequest(BaseModel):
     estimated_cost: float = 0.0
     parent_agent_id: Optional[str] = None
     force: bool = False
+    # Caller-supplied input token count for the 199k billing-cliff check
+    # (05-ORAMASYS-UNIFIED-ACTION-PLAN-2026-08-18.md Phase 4). When omitted,
+    # falls back to a chars/4 estimate of `task` -- callers with an exact
+    # tokenizer count should pass it explicitly for an accurate gate.
+    input_tokens: Optional[int] = None
 
 
 class TieredPipelineRequest(BaseModel):
@@ -712,6 +722,14 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
             "existing_agent": asdict(existing),
         }
 
+    effective_input_tokens = (
+        req.input_tokens if req.input_tokens is not None else len(req.task) // 4
+    )
+    try:
+        token_cliff_warning = cost_guard.check_token_cliff(effective_input_tokens)
+    except TokenCliffExceededError as exc:
+        raise HTTPException(status_code=413, detail=str(exc)) from None
+
     try:
         reservation_id = await cost_guard.reserve(req.estimated_cost)
     except BudgetExceededError as exc:
@@ -829,6 +847,8 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
     }
     if budget_warning:
         response["budget_warning"] = budget_warning
+    if token_cliff_warning:
+        response["token_cliff_warning"] = token_cliff_warning
 
     if req.task_type in _ORAMASYS_TASK_TYPES and route_cfg.get("endpoint"):
         timeout = parse_oramasys_timeout(route_cfg.get("timeout"))
