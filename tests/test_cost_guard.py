@@ -314,10 +314,23 @@ class TestOrchestrateEndpointCancellation:
     HTTP layer) with a real asyncio.CancelledError raised mid-await, and
     asserts the reservation is gone afterward."""
 
-    @pytest.mark.asyncio
-    async def test_cancellation_during_resolve_candidates_rolls_back_reservation(
+    def test_cancellation_during_resolve_candidates_rolls_back_reservation(
         self, tmp_path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
+        """A synchronous test using TestClient (not a bare `await
+        orchestrate(req)` call) -- deliberately, not just for style. An
+        earlier version called orchestrate() directly as a coroutine
+        outside FastAPI's lifespan/event-loop management and was found to
+        leak state into OTHER test files' module-scoped TestClient
+        fixtures when run in the same pytest session (test_orama_integration
+        .py's routing tests started selecting the wrong backend after this
+        test ran first) -- a pre-existing async-lifecycle fragility this
+        test must not trip. TestClient manages its own event loop
+        synchronously per call, sidestepping that interaction entirely, and
+        matches how every other /orchestrate test in this codebase is
+        written."""
+        from fastapi.testclient import TestClient
+
         from orchestrator import fastapi_app
 
         fresh_guard = CostGuard(state_dir=str(tmp_path / ".state"))
@@ -336,12 +349,11 @@ class TestOrchestrateEndpointCancellation:
 
         monkeypatch.setattr(fastapi_app, "_resolve_candidates", cancelled_resolve)
 
-        req = fastapi_app.OrchestrateRequest(
-            task="test task", task_type="deep_reasoning", estimated_cost=5.0
-        )
-
-        with pytest.raises(asyncio.CancelledError):
-            await fastapi_app.orchestrate(req)
+        with TestClient(fastapi_app.app, raise_server_exceptions=False) as client:
+            client.post(
+                "/orchestrate",
+                json={"task": "test task", "task_type": "deep_reasoning", "estimated_cost": 5.0},
+            )
 
         # The reservation must not have leaked: it was either rolled back
         # by the finally block, or never existed -- either way, nothing
