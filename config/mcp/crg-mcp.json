@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "code-review-graph": {
+      "command": "uvx",
+      "args": ["code-review-graph", "serve"],
+      "env": {
+        "CRG_OPENAI_API_KEY": "ollama",
+        "CRG_OPENAI_BASE_URL": "http://localhost:11434/v1",
+        "CRG_OPENAI_MODEL": "bge-m3",
+        "CRG_OPENAI_DIMENSION": "1024",
+        "CRG_ACCEPT_CLOUD_EGRESS": "1"
+      }
+    }
+  }
+}
