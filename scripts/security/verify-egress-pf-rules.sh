@@ -41,7 +41,12 @@ REQUIRED_RULES=(
 # Extract only actual rule lines: strip comments and blank lines, so
 # comment-text differences (which don't affect enforcement) don't fail
 # verification, but any extra/reordered/unexpected RULE line does.
-mapfile -t ACTUAL_RULE_LINES < <(grep -vE '^\s*(#.*)?$' "$ANCHOR_FILE" 2>/dev/null || true)
+# Use a while-read loop (not mapfile) so this script runs on macOS's
+# default /bin/bash 3.2 as well as Homebrew bash 4+.
+ACTUAL_RULE_LINES=()
+while IFS= read -r line; do
+  ACTUAL_RULE_LINES+=("$line")
+done < <(grep -vE '^\s*(#.*)?$' "$ANCHOR_FILE" 2>/dev/null || true)
 
 if [[ "${#ACTUAL_RULE_LINES[@]}" -ne "${#REQUIRED_RULES[@]}" ]]; then
   echo "WARN: pf egress anchor has ${#ACTUAL_RULE_LINES[@]} rule line(s), expected exactly ${#REQUIRED_RULES[@]} -- possible drift or an inserted/removed rule" >&2

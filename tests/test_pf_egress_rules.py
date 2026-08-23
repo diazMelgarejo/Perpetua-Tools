@@ -158,6 +158,16 @@ class TestPFEgressScripts:
             for rule in EXPECTED_RULES:
                 assert rule in content, f"expected interface-unscoped rule missing: {rule}"
 
+    def test_verifier_does_not_require_bash4_mapfile(self) -> None:
+        """macOS ships /bin/bash 3.2; mapfile is bash 4+. install.sh invokes
+        the verifier with plain `bash` on Darwin, so the script must not use
+        bash-4-only builtins or verification always fails on the target host."""
+        verifier_src = VERIFY_SCRIPT.read_text(encoding="utf-8")
+        assert "mapfile -t" not in verifier_src, (
+            "verify-egress-pf-rules.sh uses bash-4 mapfile, which crashes on "
+            "macOS default /bin/bash 3.2"
+        )
+
     def test_verifier_required_rules_match_installer_expected_rules(self) -> None:
         """The verifier's REQUIRED_RULES must be the exact same rule set the
         installer writes -- otherwise the verifier can report success while

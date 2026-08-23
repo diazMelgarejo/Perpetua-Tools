@@ -175,8 +175,18 @@ async def feed_bias_detector_from_gossip(
         if agent_id is not None and payload.get("agent_id") != agent_id:
             continue
         kind = str(payload.get("kind", ""))
-        message = str(payload.get("message") or payload.get("reason") or payload.get("task") or "")
-        if not message:
+        # task_queue.py emits task_complete/task_failed/task_abandoned with
+        # "notes", not "message" -- omitting notes silently drops the primary
+        # production heartbeat shapes this feed path exists to observe.
+        message = str(
+            payload.get("message")
+            or payload.get("reason")
+            or payload.get("notes")
+            or payload.get("task")
+            or payload.get("task_id")
+            or ""
+        )
+        if not message and kind not in ("task_failed", "task_abandoned", "agent_killed"):
             continue
         confidence = _estimate_confidence(kind, message)
         detector.add_decision(confidence, message)

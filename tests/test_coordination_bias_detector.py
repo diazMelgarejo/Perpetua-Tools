@@ -147,6 +147,39 @@ class TestFeedBiasDetectorFromGossip:
         assert len(confidences) > 1
 
     @pytest.mark.asyncio
+    async def test_feed_reads_task_queue_notes_payload_shape(self, make_bus) -> None:
+        """Production task_queue.py emits task_complete/failed/abandoned with
+        a 'notes' field, not 'message'. Without notes in the extraction
+        chain, feed_bias_detector_from_gossip silently drops every real
+        queue outcome event."""
+        bus = await make_bus()
+        await bus.emit(
+            "heartbeat",
+            {
+                "agent_id": "worker-1",
+                "kind": "task_complete",
+                "task_id": "task-abc",
+                "status": "completed",
+                "notes": "pytest passed, pushed branch",
+            },
+        )
+        await bus.emit(
+            "heartbeat",
+            {
+                "agent_id": "worker-1",
+                "kind": "task_failed",
+                "task_id": "task-def",
+                "status": "queued",
+                "notes": "Retry 1/3: flaky test",
+            },
+        )
+        detector = CoordinationBiasDetector()
+        await feed_bias_detector_from_gossip(bus, detector, agent_id="worker-1")
+        assert len(detector.history) == 2
+        assert detector.history[0]["text"] == "pytest passed, pushed branch"
+        assert detector.history[1]["text"] == "Retry 1/3: flaky test"
+
+    @pytest.mark.asyncio
     async def test_feed_returns_bias_score(self, make_bus) -> None:
         """Strengthened: the original version asserted only isinstance(score,
         BiasScore), which passes even with zero events fed in (detect_bias()
