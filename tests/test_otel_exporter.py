@@ -371,6 +371,25 @@ def test_otlp_exporter_preserves_explicit_ca_bundle(
     assert session.trust_env is False
 
 
+def test_otlp_exporter_uses_curl_ca_bundle_as_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    exporter_module, _state, exporter_calls = _install_fake_otel(monkeypatch)
+    monkeypatch.delenv("REQUESTS_CA_BUNDLE", raising=False)
+    monkeypatch.setenv("CURL_CA_BUNDLE", "/private/curl-ca.pem")
+
+    assert (
+        exporter_module.configure_otel_exporter(
+            endpoint="https://collector.example/v1/traces"
+        )
+        is True
+    )
+
+    session = exporter_calls[0]["session"]
+    assert session.verify == "/private/curl-ca.pem"
+    assert session.trust_env is False
+
+
 def test_generic_otlp_endpoint_appends_trace_export_path(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
