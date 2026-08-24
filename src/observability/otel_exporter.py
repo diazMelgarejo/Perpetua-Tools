@@ -71,7 +71,10 @@ def configure_otel_exporter(
         target_endpoint = (
             endpoint
             if endpoint is not None
-            else os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "").strip()
+            else (
+                os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "").strip()
+                or os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "").strip()
+            )
         )
 
         if not target_endpoint and custom_span_processor is None:

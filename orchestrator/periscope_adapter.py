@@ -142,8 +142,10 @@ def _message_entry(
 
 def _validate_local_path(path: Path | str) -> Path:
     raw = str(path or "").strip()
-    if re.match(r"^[a-zA-Z][a-zA-Z0-9+-.]*://", raw):
-        raise ValueError(f"Remote destination URLs are forbidden for local Periscope trajectory sink: {raw}")
+    if re.match(r"^[a-zA-Z][a-zA-Z0-9+-.]*://", raw) or raw.startswith(r"\\") or raw.startswith("//"):
+        raise ValueError(
+            f"Remote destination URLs and Windows UNC paths are forbidden for local Periscope trajectory sink: {raw}"
+        )
     return Path(path).resolve()
 
 
@@ -171,9 +173,12 @@ def write_internal_trajectory(
     agents_dir = periscope_agents_dir(state_path).resolve()
     session_dir = (agents_dir / safe_agent / "sessions").resolve()
 
-    # Assert strict containment below periscope agents root
-    if not str(session_dir).startswith(str(agents_dir)):
-        raise ValueError(f"Destination path escape detected outside periscope root: {session_dir}")
+    # Assert strict containment below both state_path and periscope agents root
+    try:
+        session_dir.relative_to(state_path)
+        session_dir.relative_to(agents_dir)
+    except ValueError:
+        raise ValueError(f"Destination path escape detected outside configured state root: {session_dir}")
 
     for directory in (
         agents_dir.parent,
@@ -186,7 +191,10 @@ def write_internal_trajectory(
             directory.chmod(0o700)
 
     final_path = (session_dir / f"{safe_session}.jsonl").resolve()
-    if not str(final_path).startswith(str(session_dir)):
+    try:
+        final_path.relative_to(session_dir)
+        final_path.relative_to(state_path)
+    except ValueError:
         raise ValueError(f"Final trajectory escape detected: {final_path}")
 
     payload = "".join(

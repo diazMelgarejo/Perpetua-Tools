@@ -447,19 +447,22 @@ def test_maybe_emit_job_observation_prunes_after_emit(
     assert (session_dir / "job-new.jsonl").exists()
 
 
-def test_periscope_adapter_rejects_remote_url_destination(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "1")
-    with pytest.raises(ValueError) as exc:
-        emit_openclaw_session(
-            state_dir="https://periscope.remote.sink/v1",
-            agent_id="pt-supervisor",
-            session_id="job-1",
-            user_text="test",
-            assistant_text="test",
-            started_at="2026-08-24T12:00:00Z",
-            ended_at="2026-08-24T12:01:00Z",
-        )
-    assert "Remote destination URLs are forbidden" in str(exc.value)
+def test_periscope_adapter_rejects_remote_url_destination():
+    from orchestrator.periscope_adapter import _validate_local_path
+
+    with pytest.raises(ValueError, match="Remote destination URLs and Windows UNC paths are forbidden"):
+        _validate_local_path("http://remote-server:8080/trajectories")
+    with pytest.raises(ValueError, match="Remote destination URLs and Windows UNC paths are forbidden"):
+        _validate_local_path("s3://bucket/trajectories")
+
+
+def test_periscope_adapter_rejects_unc_path_destinations():
+    from orchestrator.periscope_adapter import _validate_local_path
+
+    with pytest.raises(ValueError, match="Remote destination URLs and Windows UNC paths are forbidden"):
+        _validate_local_path(r"\\server\share\trajectories")
+    with pytest.raises(ValueError, match="Remote destination URLs and Windows UNC paths are forbidden"):
+        _validate_local_path("//server/share/trajectories")
 
 
 def test_periscope_trajectory_strictly_contained_in_state_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

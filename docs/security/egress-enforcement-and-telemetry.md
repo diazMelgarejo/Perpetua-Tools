@@ -72,7 +72,7 @@ from src.observability.core import (
 | Sink / Exporter | Privacy Classification | Payload Scope |
 | :--- | :--- | :--- |
 | **Local Periscope Sink** (`orchestrator/periscope_adapter.py`) | `internal_only` | Writes rich local JSONL (`user_text`, `assistant_text`, `cwd`, `model`) for local desktop viewing. Never exported over network. |
-| **Remote OTLP Exporter** (`src/observability/otel_exporter.py`) | `redacted` | Projects to W3C Spans and Log EventRecords via official OpenTelemetry SDK. Prohibits prompts, raw hostnames, raw IPs, credentials, or absolute paths. |
+| **Remote OTLP Exporter** (`src/observability/otel_exporter.py`) | `redacted` | Projects to W3C Spans via official OpenTelemetry SDK. Prohibits prompts, raw hostnames, raw IPs, credentials, or absolute paths. |
 
 ---
 
