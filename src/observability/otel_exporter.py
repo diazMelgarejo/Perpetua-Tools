@@ -139,7 +139,13 @@ def configure_otel_exporter(
         if _IS_CONFIGURED:
             return True
 
-        target_endpoint = _resolve_otel_traces_endpoint(endpoint)
+        # An injected processor is a complete, test-owned transport seam. It
+        # must not accidentally consume production endpoint environment.
+        target_endpoint = (
+            ""
+            if custom_span_processor is not None
+            else _resolve_otel_traces_endpoint(endpoint)
+        )
 
         if not target_endpoint and custom_span_processor is None:
             return False

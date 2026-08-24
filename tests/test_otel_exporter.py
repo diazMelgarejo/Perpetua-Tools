@@ -416,3 +416,24 @@ def test_injected_provider_does_not_replace_the_global_provider(
     assert injected_provider.processors == [processor]
     assert state["provider"] is global_provider
     assert exporter_module._ACTIVE_PROVIDER is injected_provider
+
+
+def test_injected_processor_does_not_consume_endpoint_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    exporter_module, _state, _exporter_calls = _install_fake_otel(monkeypatch)
+    injected_provider = _FakeTracerProvider()
+    processor = object()
+    monkeypatch.setenv(
+        "OTEL_EXPORTER_OTLP_ENDPOINT",
+        "https://169.254.169.254",
+    )
+
+    assert (
+        exporter_module.configure_otel_exporter(
+            custom_span_processor=processor,
+            tracer_provider=injected_provider,
+        )
+        is True
+    )
+    assert injected_provider.processors == [processor]
