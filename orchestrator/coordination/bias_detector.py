@@ -21,6 +21,9 @@ class BiasScore:
     bias_types: Dict[str, float]
     agreement_collapse: bool
     echo_loop_detected: bool
+    distinct_agent_count: int = 0
+    evidence_window_size: int = 0
+    coordination_risk: str = "low"
 
 
 class CoordinationBiasDetector:
@@ -35,32 +38,49 @@ class CoordinationBiasDetector:
         self,
         confidence: float,
         reasoning_text: str,
+        agent_id: Optional[str] = None,
     ) -> None:
-        """Record an agent decision with confidence and reasoning text."""
+        """Record an agent decision with confidence, reasoning text, and agent identity."""
         self.history.append(
-            {"confidence": float(confidence), "text": str(reasoning_text)[:500]}
+            {
+                "confidence": float(confidence),
+                "text": str(reasoning_text)[:500],
+                "agent_id": agent_id,
+            }
         )
         if len(self.history) > self.max_history:
             self.history.pop(0)
 
     def detect_bias(self) -> BiasScore:
-        """Evaluate the rolling window for agreement collapse and echo loops."""
-        if len(self.history) < 4:
-            return BiasScore(0.0, {}, False, False)
+        """Evaluate the rolling window for agreement collapse and echo loops.
+
+        Requires minimum 3 distinct logical agents before issuing an agreement_collapse
+        advisory. Single-agent repetitions are flagged as echo loops, never groupthink.
+        """
+        n = len(self.history)
+        if n < 4:
+            return BiasScore(
+                total_bias_score=0.0,
+                bias_types={},
+                agreement_collapse=False,
+                echo_loop_detected=False,
+                distinct_agent_count=len({d["agent_id"] for d in self.history if d.get("agent_id")}),
+                evidence_window_size=n,
+                coordination_risk="insufficient_evidence",
+            )
 
         confidences = [d["confidence"] for d in self.history]
         texts = [d["text"] for d in self.history]
+        distinct_agents = {d["agent_id"] for d in self.history if d.get("agent_id")}
+        agent_count = len(distinct_agents)
 
-        n = len(confidences)
         mean_conf = sum(confidences) / n
         variance = sum((c - mean_conf) ** 2 for c in confidences) / n
         stddev = variance ** 0.5
-        # Low dispersion around the mean means the group is converging on the
-        # same value -- collapse_score is high when stddev is near 0, low
-        # when confidences are spread out (including a bimodal split, which
-        # has HIGH stddev despite looking locally "smooth" step to step).
+
         collapse_score = max(0.0, 1.0 - (stddev * 2))
-        agreement_collapse = collapse_score > 0.85
+        # Agreement collapse requires high consensus across at least 3 distinct agents
+        agreement_collapse = (collapse_score > 0.85) and (agent_count >= 3) and (mean_conf > 0.85)
 
         echo_loop = any(
             SequenceMatcher(None, texts[i], texts[i - 1]).ratio() > 0.92
@@ -70,17 +90,27 @@ class CoordinationBiasDetector:
         avg_conf = sum(confidences) / n
         bias_types = {
             "confirmation_bias": max(0.0, (avg_conf - 0.5) * 2),
-            "groupthink": max(0.0, collapse_score),
+            "groupthink": max(0.0, collapse_score) if agent_count >= 3 else 0.0,
             "hallucination_risk": max(0.0, 1.0 - avg_conf),
         }
 
         total_bias = min(1.0, sum(bias_types.values()) / 2)
+
+        if agreement_collapse or (echo_loop and total_bias > 0.7):
+            coordination_risk = "high"
+        elif total_bias > 0.4:
+            coordination_risk = "medium"
+        else:
+            coordination_risk = "low"
 
         return BiasScore(
             total_bias_score=round(total_bias, 3),
             bias_types={k: round(v, 3) for k, v in bias_types.items()},
             agreement_collapse=agreement_collapse,
             echo_loop_detected=echo_loop,
+            distinct_agent_count=agent_count,
+            evidence_window_size=n,
+            coordination_risk=coordination_risk,
         )
 
 
@@ -197,9 +227,13 @@ async def feed_bias_detector_from_gossip(
             or payload.get("task_id")
             or ""
         )
-        if not message and kind not in ("task_failed", "task_abandoned", "agent_killed"):
-            continue
+        ev_agent_id = str(
+            payload.get("agent_id")
+            or payload.get("assigned_agent")
+            or payload.get("source")
+            or ""
+        )
         confidence = _estimate_confidence(kind, message)
-        detector.add_decision(confidence, message)
+        detector.add_decision(confidence, message, agent_id=ev_agent_id or None)
         detector._consumed_event_ids.add(event_id)
     return detector.detect_bias()

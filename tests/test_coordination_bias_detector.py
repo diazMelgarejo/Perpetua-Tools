@@ -37,11 +37,19 @@ class TestCoordinationBiasDetector:
         detector.add_decision(0.9, "Reasoning step 2")
         detector.add_decision(0.9, "Reasoning step 3")
         score = detector.detect_bias()
-        assert score == BiasScore(0.0, {}, False, False)
+        assert score == BiasScore(
+            total_bias_score=0.0,
+            bias_types={},
+            agreement_collapse=False,
+            echo_loop_detected=False,
+            distinct_agent_count=0,
+            evidence_window_size=3,
+            coordination_risk="insufficient_evidence",
+        )
 
     def test_agreement_collapse_trigger_at_exact_threshold(self) -> None:
         detector = CoordinationBiasDetector()
-        # Identical confidence -> collapse_score = 1.0 > 0.85
+        # Identical high confidence across 5 distinct agents -> agreement_collapse = True
         diverse_texts = [
             "Alpha agent analyzed memory footprint and CPU utilization profiles.",
             "Beta worker examined PostgreSQL connection pool timeout configurations.",
@@ -49,12 +57,30 @@ class TestCoordinationBiasDetector:
             "Delta monitor checked WebSocket heartbeat intervals across worker nodes.",
             "Epsilon auditor reviewed TLS certificate expiration and cipher suites.",
         ]
-        for text in diverse_texts:
-            detector.add_decision(0.95, text)
+        for i, text in enumerate(diverse_texts):
+            detector.add_decision(0.95, text, agent_id=f"agent-{i}")
         score = detector.detect_bias()
         assert score.agreement_collapse is True
+        assert score.distinct_agent_count == 5
         assert score.bias_types["groupthink"] > 0.85
         assert score.echo_loop_detected is False
+        assert score.coordination_risk == "high"
+
+    def test_single_agent_high_consensus_does_not_trigger_groupthink(self) -> None:
+        detector = CoordinationBiasDetector()
+        # Identical high confidence from only 1 agent -> groupthink is 0.0, agreement_collapse = False
+        diverse_texts = [
+            "Alpha agent analyzed memory footprint and CPU utilization profiles.",
+            "Beta worker examined PostgreSQL connection pool timeout configurations.",
+            "Gamma orchestrator verified cryptographic hashes of the local dataset.",
+            "Delta monitor checked WebSocket heartbeat intervals across worker nodes.",
+        ]
+        for text in diverse_texts:
+            detector.add_decision(0.95, text, agent_id="agent-solo")
+        score = detector.detect_bias()
+        assert score.agreement_collapse is False
+        assert score.distinct_agent_count == 1
+        assert score.bias_types["groupthink"] == 0.0
 
     def test_echo_loop_detected_trigger_at_exact_threshold(self) -> None:
         detector = CoordinationBiasDetector()

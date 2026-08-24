@@ -86,6 +86,8 @@ async def queue_add(
         payload["source_ref"] = source_ref.strip()
     if expected_base_sha is not None:
         payload["expected_base_sha"] = expected_base_sha
+    # DUAL-WRITE SUNSET POLICY: Legacy heartbeat payload writes are deprecated and
+    # will be permanently retired upon Phase 4 docs-crystallization + one release cycle (ADR Doc 55).
     await bus.emit("heartbeat", payload)
     print(f"enqueued: {task_id} ({phase}, {priority_enum.name})")
 
