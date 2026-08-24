@@ -13,6 +13,7 @@ import os
 import re
 import tempfile
 import time
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -25,6 +26,7 @@ SECONDS_PER_DAY = 86400
 AGENT_PT_SUPERVISOR = "pt-supervisor"
 AGENT_ALPHACLAW_ROUTING = "alphaclaw-routing"
 ROUTING_SESSION_ID = "routing-latest"
+TRAJECTORY_PRIVACY_CLASSIFICATION = "internal_only"
 _SAFE_COMPONENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 _LOG = logging.getLogger(__name__)
 
@@ -149,6 +151,120 @@ def _validate_local_path(path: Path | str) -> Path:
     return Path(path).resolve()
 
 
+def _open_local_directory(parent_fd: int, component: str) -> int:
+    """Open one directory component without following a symlink."""
+
+    try:
+        os.mkdir(component, mode=0o700, dir_fd=parent_fd)
+    except FileExistsError:
+        pass
+
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    child_fd = os.open(component, flags, dir_fd=parent_fd)
+    os.fchmod(child_fd, 0o700)
+    return child_fd
+
+
+def _write_posix_local_trajectory(
+    state_path: Path,
+    *,
+    agent_id: str,
+    filename: str,
+    payload: str,
+) -> Path:
+    """Write beneath an opened root using descriptor-relative operations."""
+
+    root_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    root_fd = os.open(state_path, root_flags)
+    opened_fds = [root_fd]
+    temp_name = f".{filename}.{uuid.uuid4().hex}.tmp"
+    session_fd: int | None = None
+    try:
+        parent_fd = root_fd
+        for component in ("periscope", "agents", agent_id, "sessions"):
+            parent_fd = _open_local_directory(parent_fd, component)
+            opened_fds.append(parent_fd)
+        session_fd = parent_fd
+
+        temp_fd = os.open(
+            temp_name,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+            0o600,
+            dir_fd=session_fd,
+        )
+        with os.fdopen(temp_fd, "w", encoding="utf-8") as temp:
+            temp.write(payload)
+            temp.flush()
+            os.fsync(temp.fileno())
+
+        os.replace(
+            temp_name,
+            filename,
+            src_dir_fd=session_fd,
+            dst_dir_fd=session_fd,
+        )
+        os.fsync(session_fd)
+    finally:
+        if session_fd is not None:
+            try:
+                os.unlink(temp_name, dir_fd=session_fd)
+            except FileNotFoundError:
+                pass
+        for directory_fd in reversed(opened_fds):
+            os.close(directory_fd)
+
+    return (
+        state_path
+        / "periscope"
+        / "agents"
+        / agent_id
+        / "sessions"
+        / filename
+    )
+
+
+def _write_portable_local_trajectory(
+    session_dir: Path,
+    *,
+    filename: str,
+    payload: str,
+) -> Path:
+    """Portable fallback for platforms without POSIX descriptor semantics."""
+
+    for directory in (
+        session_dir.parent.parent.parent,
+        session_dir.parent.parent,
+        session_dir.parent,
+        session_dir,
+    ):
+        if directory.exists() and directory.is_symlink():
+            raise ValueError(
+                f"Symlinked Periscope directory is forbidden: {directory}"
+            )
+        directory.mkdir(exist_ok=True, mode=0o700)
+
+    final_path = session_dir / filename
+    temp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=session_dir,
+            prefix=f".{filename}.",
+            suffix=".tmp",
+            delete=False,
+        ) as temp:
+            temp_path = Path(temp.name)
+            temp.write(payload)
+            temp.flush()
+            os.fsync(temp.fileno())
+        os.replace(temp_path, final_path)
+    finally:
+        if temp_path is not None:
+            temp_path.unlink(missing_ok=True)
+    return final_path
+
+
 def write_internal_trajectory(
     *,
     state_dir: Path | str,
@@ -180,50 +296,25 @@ def write_internal_trajectory(
     except ValueError:
         raise ValueError(f"Destination path escape detected outside configured state root: {session_dir}")
 
-    for directory in (
-        agents_dir.parent,
-        agents_dir,
-        agents_dir / safe_agent,
-        session_dir,
-    ):
-        directory.mkdir(exist_ok=True, mode=0o700)
-        if os.name != "nt":
-            directory.chmod(0o700)
-
-    final_path = (session_dir / f"{safe_session}.jsonl").resolve()
-    try:
-        final_path.relative_to(session_dir)
-        final_path.relative_to(state_path)
-    except ValueError:
-        raise ValueError(f"Final trajectory escape detected: {final_path}")
-
     payload = "".join(
         json.dumps(entry, ensure_ascii=False, separators=(",", ":")) + "\n"
         for entry in entries
     )
-
-    temp_path: Path | None = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
-            dir=session_dir,
-            prefix=f".{safe_session}.",
-            suffix=".tmp",
-            delete=False,
-        ) as temp:
-            temp_path = Path(temp.name)
-            temp.write(payload)
-            temp.flush()
-            os.fsync(temp.fileno())
-        if os.name != "nt":
-            temp_path.chmod(0o600)
-        os.replace(temp_path, final_path)
-    finally:
-        if temp_path is not None:
-            temp_path.unlink(missing_ok=True)
-
-    return final_path
+    filename = f"{safe_session}.jsonl"
+    if os.name != "nt" and all(
+        hasattr(os, name) for name in ("O_DIRECTORY", "O_NOFOLLOW")
+    ):
+        return _write_posix_local_trajectory(
+            state_path,
+            agent_id=safe_agent,
+            filename=filename,
+            payload=payload,
+        )
+    return _write_portable_local_trajectory(
+        session_dir,
+        filename=filename,
+        payload=payload,
+    )
 
 
 def emit_openclaw_session(
