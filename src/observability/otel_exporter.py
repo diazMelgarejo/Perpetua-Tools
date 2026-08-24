@@ -11,15 +11,23 @@ from __future__ import annotations
 import logging
 import os
 import threading
+from ipaddress import ip_address
 from typing import Any, Dict, Optional
+from urllib.parse import urlparse, urlunparse
 
 from src.observability.core import (
     BaseObservation,
     BiasAdvisoryObservation,
-    DomainObservation,
     EgressCompleteObservation,
     EgressValidationObservation,
     TaskLifecycleObservation,
+)
+from utils.ssrf_pinned_adapter import (
+    AddressDenied,
+    SSRFPolicyError,
+    default_address_allowed,
+    default_url_allowed,
+    ssrf_session,
 )
 
 logger = logging.getLogger(__name__)
@@ -29,7 +37,7 @@ try:
     import opentelemetry.trace as otel_trace
     from opentelemetry.sdk.resources import Resource
     from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
     try:
         from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
@@ -49,52 +57,124 @@ _IS_CONFIGURED = False
 _ACTIVE_PROVIDER: Optional[Any] = None
 
 
+def _otel_url_allowed(url: str) -> None:
+    """Validate an OTLP/HTTP destination before and during transport use."""
+
+    default_url_allowed(url)
+    parsed = urlparse(url)
+    # Accessing ParseResult.port performs numeric and range validation.
+    _ = parsed.port
+    if parsed.scheme.lower() != "https":
+        raise SSRFPolicyError("OTLP export requires an https endpoint")
+    if parsed.query or parsed.fragment:
+        raise SSRFPolicyError(
+            "OTLP endpoint query strings and fragments are forbidden"
+        )
+
+    # Hostnames are resolved and checked by SSRFPinnedHTTPAdapter immediately
+    # before each connection. Reject obvious local names and every IP literal
+    # at configuration time as well, so invalid configuration fails early.
+    hostname = (parsed.hostname or "").lower()
+    if hostname == "localhost" or hostname.endswith(".localhost"):
+        raise SSRFPolicyError("OTLP endpoint localhost destinations are forbidden")
+    try:
+        ip_address(hostname)
+    except ValueError:
+        # A DNS hostname is intentionally validated at connection time.
+        pass
+    else:
+        default_address_allowed(hostname)
+
+
+def _append_otlp_trace_path(endpoint: str) -> str:
+    parsed = urlparse(endpoint)
+    path = parsed.path.rstrip("/")
+    if not path.endswith("/v1/traces"):
+        path = f"{path}/v1/traces"
+    return urlunparse(parsed._replace(path=path))
+
+
+def _resolve_otel_traces_endpoint(endpoint: Optional[str]) -> str:
+    if endpoint is not None:
+        return endpoint.strip()
+
+    traces_endpoint = os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "").strip()
+    if traces_endpoint:
+        return traces_endpoint
+
+    base_endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "").strip()
+    return _append_otlp_trace_path(base_endpoint) if base_endpoint else ""
+
+
+def _build_otlp_span_processor(endpoint: str) -> Any:
+    session = ssrf_session(url_checker=_otel_url_allowed)
+    # Proxy environment variables would move the connection boundary away
+    # from the validated, IP-pinned destination.
+    session.trust_env = False
+    exporter = OTLPSpanExporter(endpoint=endpoint, session=session)
+    return BatchSpanProcessor(exporter)
+
+
 def configure_otel_exporter(
     endpoint: Optional[str] = None,
     custom_span_processor: Optional[Any] = None,
     force_reconfigure: bool = False,
+    tracer_provider: Optional[Any] = None,
 ) -> bool:
     """Configure one OTLP/HTTP Protobuf trace pipeline per process.
 
     Thread-safe and idempotent. Reuses an existing global TracerProvider if
     already installed by the runtime, or registers a new TracerProvider with
     safe resource metadata and OTLPSpanExporter (or custom processor).
+
+    ``force_reconfigure`` is retained for caller compatibility, but never
+    attempts to replace OpenTelemetry's process-global provider. Replacing it
+    is unsupported by the SDK and can silently create an orphan pipeline.
     """
     global _IS_CONFIGURED, _ACTIVE_PROVIDER
     if not HAS_OTEL:
         return False
 
     with _CONFIG_LOCK:
-        if _IS_CONFIGURED and not force_reconfigure:
+        if _IS_CONFIGURED:
             return True
 
-        target_endpoint = (
-            endpoint
-            if endpoint is not None
-            else (
-                os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "").strip()
-                or os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "").strip()
-            )
-        )
+        target_endpoint = _resolve_otel_traces_endpoint(endpoint)
 
         if not target_endpoint and custom_span_processor is None:
             return False
 
+        if target_endpoint:
+            try:
+                _otel_url_allowed(target_endpoint)
+            except (AddressDenied, SSRFPolicyError, ValueError) as exc:
+                logger.warning("OTLP endpoint rejected by egress policy: %s", exc)
+                return False
+
         try:
+            if custom_span_processor is not None:
+                span_processor = custom_span_processor
+            elif HAS_OTLP_EXPORTER and target_endpoint:
+                span_processor = _build_otlp_span_processor(target_endpoint)
+            else:
+                logger.debug(
+                    "OTLP exporter requested but "
+                    "opentelemetry-exporter-otlp-proto-http unavailable"
+                )
+                return False
+
+            if tracer_provider is not None:
+                tracer_provider.add_span_processor(span_processor)
+                _ACTIVE_PROVIDER = tracer_provider
+                _IS_CONFIGURED = True
+                return True
+
             current_provider = otel_trace.get_tracer_provider()
 
             # If an existing TracerProvider is already active in the process,
             # attach processors to it to preserve global trace continuity.
-            if isinstance(current_provider, TracerProvider) and not force_reconfigure:
-                if custom_span_processor is not None:
-                    current_provider.add_span_processor(custom_span_processor)
-                elif HAS_OTLP_EXPORTER and target_endpoint:
-                    exporter = OTLPSpanExporter(endpoint=target_endpoint)
-                    current_provider.add_span_processor(BatchSpanProcessor(exporter))
-                else:
-                    logger.debug("OTLP exporter requested but opentelemetry-exporter-otlp-proto-http unavailable")
-                    return False
-
+            if isinstance(current_provider, TracerProvider):
+                current_provider.add_span_processor(span_processor)
                 _ACTIVE_PROVIDER = current_provider
                 _IS_CONFIGURED = True
                 return True
@@ -107,22 +187,21 @@ def configure_otel_exporter(
                 }
             )
             provider = TracerProvider(resource=resource)
-
-            if custom_span_processor is not None:
-                provider.add_span_processor(custom_span_processor)
-            elif HAS_OTLP_EXPORTER and target_endpoint:
-                exporter = OTLPSpanExporter(endpoint=target_endpoint)
-                provider.add_span_processor(BatchSpanProcessor(exporter))
-            else:
-                logger.debug("OTLP exporter requested but opentelemetry-exporter-otlp-proto-http unavailable")
-                return False
+            provider.add_span_processor(span_processor)
 
             otel_trace.set_tracer_provider(provider)
             active = otel_trace.get_tracer_provider()
 
             # Ensure provider was actually accepted or is a functional TracerProvider
-            if active is provider or isinstance(active, TracerProvider):
-                _ACTIVE_PROVIDER = active if isinstance(active, TracerProvider) else provider
+            if active is provider:
+                _ACTIVE_PROVIDER = provider
+                _IS_CONFIGURED = True
+                return True
+            elif isinstance(active, TracerProvider):
+                # Another runtime won the process-global registration race.
+                # Attach to the provider that actually became active.
+                active.add_span_processor(span_processor)
+                _ACTIVE_PROVIDER = active
                 _IS_CONFIGURED = True
                 return True
             else:
@@ -136,18 +215,11 @@ def configure_otel_exporter(
 
 
 def _reset_otel_for_testing() -> None:
-    """Reset configuration state for isolated unit tests."""
+    """Reset only PT-owned state; never mutate OpenTelemetry private globals."""
     global _IS_CONFIGURED, _ACTIVE_PROVIDER
     with _CONFIG_LOCK:
         _IS_CONFIGURED = False
         _ACTIVE_PROVIDER = None
-        if HAS_OTEL:
-            try:
-                otel_trace._TRACER_PROVIDER = None
-                if hasattr(otel_trace, "_TRACER_PROVIDER_SET_ONCE"):
-                    otel_trace._TRACER_PROVIDER_SET_ONCE._done = False
-            except Exception:
-                pass
 
 
 def project_to_otel_attributes(observation: BaseObservation) -> Dict[str, Any]:

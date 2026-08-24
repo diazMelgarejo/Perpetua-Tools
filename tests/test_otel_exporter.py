@@ -1,6 +1,8 @@
 """Tests for OpenTelemetry projection and privacy gating in src/observability/otel_exporter.py."""
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 
 from src.observability.core import (
@@ -18,6 +20,51 @@ from src.observability.otel_exporter import (
     export_observation_to_otel,
     project_to_otel_attributes,
 )
+
+
+class _FakeTracerProvider:
+    def __init__(self, resource=None) -> None:
+        self.resource = resource
+        self.processors: list[object] = []
+
+    def add_span_processor(self, processor: object) -> None:
+        self.processors.append(processor)
+
+
+def _install_fake_otel(monkeypatch: pytest.MonkeyPatch):
+    import src.observability.otel_exporter as exporter_module
+
+    state = {"provider": object()}
+    exporter_calls: list[dict[str, object]] = []
+
+    class FakeExporter:
+        def __init__(self, **kwargs: object) -> None:
+            exporter_calls.append(kwargs)
+
+    class FakeBatchSpanProcessor:
+        def __init__(self, exporter: object) -> None:
+            self.exporter = exporter
+
+    monkeypatch.setattr(exporter_module, "HAS_OTEL", True)
+    monkeypatch.setattr(exporter_module, "HAS_OTLP_EXPORTER", True)
+    monkeypatch.setattr(exporter_module, "TracerProvider", _FakeTracerProvider)
+    monkeypatch.setattr(exporter_module, "OTLPSpanExporter", FakeExporter)
+    monkeypatch.setattr(exporter_module, "BatchSpanProcessor", FakeBatchSpanProcessor)
+    monkeypatch.setattr(
+        exporter_module,
+        "Resource",
+        SimpleNamespace(create=lambda attributes: dict(attributes)),
+    )
+    monkeypatch.setattr(
+        exporter_module,
+        "otel_trace",
+        SimpleNamespace(
+            get_tracer_provider=lambda: state["provider"],
+            set_tracer_provider=lambda provider: state.__setitem__("provider", provider),
+        ),
+    )
+    return exporter_module, state, exporter_calls
+
 
 try:
     from opentelemetry.sdk.trace.export import SimpleSpanProcessor
@@ -243,3 +290,129 @@ class TestOTelProjection:
         spans = memory_exporter.get_finished_spans()
         assert len(spans) == 1
         assert spans[0].name == "egress.request.complete"
+
+
+@pytest.mark.parametrize(
+    "endpoint",
+    [
+        "http://collector.example/v1/traces",
+        "https://169.254.169.254/v1/traces",
+        "https://10.0.0.10/v1/traces",
+        "https://[::ffff:169.254.169.254]/v1/traces",
+        "https://localhost/v1/traces",
+        "https://user:password@collector.example/v1/traces",
+        "https://collector.example/v1/traces?token=secret",
+        "https://collector.example:99999/v1/traces",
+    ],
+)
+def test_otlp_endpoint_policy_rejects_unsafe_destinations_before_exporter_creation(
+    endpoint: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    exporter_module, _state, exporter_calls = _install_fake_otel(monkeypatch)
+
+    assert exporter_module.configure_otel_exporter(endpoint=endpoint) is False
+    assert exporter_calls == []
+
+
+def test_otlp_exporter_uses_connection_time_pinned_session(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    exporter_module, _state, exporter_calls = _install_fake_otel(monkeypatch)
+
+    assert (
+        exporter_module.configure_otel_exporter(
+            endpoint="https://collector.example/v1/traces"
+        )
+        is True
+    )
+
+    assert len(exporter_calls) == 1
+    session = exporter_calls[0]["session"]
+    from utils.ssrf_pinned_adapter import SSRFPinnedHTTPAdapter
+
+    assert isinstance(
+        session.get_adapter("https://collector.example"),
+        SSRFPinnedHTTPAdapter,
+    )
+    assert session.max_redirects == 0
+    assert session.trust_env is False
+
+
+def test_generic_otlp_endpoint_appends_trace_export_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    exporter_module, _state, exporter_calls = _install_fake_otel(monkeypatch)
+    monkeypatch.delenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", raising=False)
+    monkeypatch.setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "https://collector.example/base")
+
+    assert exporter_module.configure_otel_exporter() is True
+    assert (
+        exporter_calls[0]["endpoint"]
+        == "https://collector.example/base/v1/traces"
+    )
+
+
+def test_test_reset_does_not_mutate_opentelemetry_private_globals(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    exporter_module, state, _exporter_calls = _install_fake_otel(monkeypatch)
+    sentinel = state["provider"]
+
+    exporter_module._reset_otel_for_testing()
+
+    assert state["provider"] is sentinel
+    assert not hasattr(exporter_module.otel_trace, "_TRACER_PROVIDER")
+    assert not hasattr(exporter_module.otel_trace, "_TRACER_PROVIDER_SET_ONCE")
+
+
+def test_force_reconfigure_attaches_to_an_existing_global_provider(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import src.observability.otel_exporter as exporter_module
+
+    external_provider = _FakeTracerProvider()
+    processor = object()
+    monkeypatch.setattr(exporter_module, "HAS_OTEL", True)
+    monkeypatch.setattr(exporter_module, "TracerProvider", _FakeTracerProvider)
+    monkeypatch.setattr(
+        exporter_module,
+        "otel_trace",
+        SimpleNamespace(
+            get_tracer_provider=lambda: external_provider,
+            # OpenTelemetry accepts one global provider; later registrations
+            # are ignored. The configurator must therefore attach to the
+            # provider it found instead of constructing an orphan provider.
+            set_tracer_provider=lambda _provider: None,
+        ),
+    )
+
+    assert (
+        exporter_module.configure_otel_exporter(
+            custom_span_processor=processor,
+            force_reconfigure=True,
+        )
+        is True
+    )
+    assert external_provider.processors == [processor]
+
+
+def test_injected_provider_does_not_replace_the_global_provider(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    exporter_module, state, _exporter_calls = _install_fake_otel(monkeypatch)
+    global_provider = state["provider"]
+    injected_provider = _FakeTracerProvider()
+    processor = object()
+
+    assert (
+        exporter_module.configure_otel_exporter(
+            custom_span_processor=processor,
+            tracer_provider=injected_provider,
+        )
+        is True
+    )
+
+    assert injected_provider.processors == [processor]
+    assert state["provider"] is global_provider
+    assert exporter_module._ACTIVE_PROVIDER is injected_provider
