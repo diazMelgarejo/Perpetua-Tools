@@ -49,6 +49,14 @@ try:
 
     HAS_OTEL = True
 except ImportError:
+    # Keep a stable module surface when the optional SDK is absent. Besides
+    # making feature detection explicit, this lets callers/tests inject a
+    # complete implementation without depending on which import failed.
+    otel_trace = None  # type: ignore[assignment]
+    Resource = None  # type: ignore[assignment,misc]
+    TracerProvider = None  # type: ignore[assignment,misc]
+    BatchSpanProcessor = None  # type: ignore[assignment,misc]
+    OTLPSpanExporter = None  # type: ignore[assignment,misc]
     HAS_OTEL = False
     HAS_OTLP_EXPORTER = False
 

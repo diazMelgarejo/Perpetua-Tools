@@ -31,6 +31,19 @@ class _FakeTracerProvider:
         self.processors.append(processor)
 
 
+def test_optional_otel_dependency_surface_is_stable() -> None:
+    import src.observability.otel_exporter as exporter_module
+
+    for name in (
+        "otel_trace",
+        "Resource",
+        "TracerProvider",
+        "BatchSpanProcessor",
+        "OTLPSpanExporter",
+    ):
+        assert hasattr(exporter_module, name)
+
+
 def _install_fake_otel(monkeypatch: pytest.MonkeyPatch):
     import src.observability.otel_exporter as exporter_module
 
