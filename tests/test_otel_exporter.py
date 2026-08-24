@@ -352,6 +352,25 @@ def test_otlp_exporter_uses_connection_time_pinned_session(
     assert session.trust_env is False
 
 
+def test_otlp_exporter_preserves_explicit_ca_bundle(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    exporter_module, _state, exporter_calls = _install_fake_otel(monkeypatch)
+    monkeypatch.setenv("REQUESTS_CA_BUNDLE", "/private/collector-ca.pem")
+    monkeypatch.setenv("CURL_CA_BUNDLE", "/ignored/curl-ca.pem")
+
+    assert (
+        exporter_module.configure_otel_exporter(
+            endpoint="https://collector.example/v1/traces"
+        )
+        is True
+    )
+
+    session = exporter_calls[0]["session"]
+    assert session.verify == "/private/collector-ca.pem"
+    assert session.trust_env is False
+
+
 def test_generic_otlp_endpoint_appends_trace_export_path(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -371,12 +390,14 @@ def test_test_reset_does_not_mutate_opentelemetry_private_globals(
 ) -> None:
     exporter_module, state, _exporter_calls = _install_fake_otel(monkeypatch)
     sentinel = state["provider"]
+    exporter_module._IS_CONFIGURED = True
+    exporter_module._ACTIVE_PROVIDER = sentinel
 
     exporter_module._reset_otel_for_testing()
 
     assert state["provider"] is sentinel
-    assert not hasattr(exporter_module.otel_trace, "_TRACER_PROVIDER")
-    assert not hasattr(exporter_module.otel_trace, "_TRACER_PROVIDER_SET_ONCE")
+    assert exporter_module._IS_CONFIGURED is False
+    assert exporter_module._ACTIVE_PROVIDER is None
 
 
 def test_force_reconfigure_attaches_to_an_existing_global_provider(

@@ -116,6 +116,11 @@ def _resolve_otel_traces_endpoint(endpoint: Optional[str]) -> str:
 
 def _build_otlp_span_processor(endpoint: str) -> Any:
     session = ssrf_session(url_checker=_otel_url_allowed)
+    # Preserve Requests' explicit CA-bundle configuration while removing all
+    # other environment-derived transport behavior (notably proxies).
+    ca_bundle = os.getenv("REQUESTS_CA_BUNDLE") or os.getenv("CURL_CA_BUNDLE")
+    if ca_bundle:
+        session.verify = ca_bundle
     # Proxy environment variables would move the connection boundary away
     # from the validated, IP-pinned destination.
     session.trust_env = False

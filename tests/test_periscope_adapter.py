@@ -1,11 +1,12 @@
 import json
 import logging
 import os
-import tempfile
 import time
 from pathlib import Path
 
 import pytest
+
+import orchestrator.periscope_adapter as adapter
 
 from orchestrator.periscope_adapter import (
     AGENT_ALPHACLAW_ROUTING,
@@ -546,26 +547,32 @@ def test_atomic_write_cannot_be_redirected_by_late_session_symlink(
     monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "1")
     outside = tmp_path.parent / f"{tmp_path.name}-outside"
     outside.mkdir()
-    real_named_temporary_file = tempfile.NamedTemporaryFile
-
-    def swap_session_directory(*args: object, **kwargs: object):
-        session_dir = Path(str(kwargs["dir"]))
-        session_dir.rmdir()
-        session_dir.symlink_to(outside, target_is_directory=True)
-        return real_named_temporary_file(*args, **kwargs)
-
-    monkeypatch.setattr(tempfile, "NamedTemporaryFile", swap_session_directory)
-
-    result = emit_openclaw_session(
-        state_dir=tmp_path,
-        agent_id="pt-supervisor",
-        session_id="job-race",
-        user_text="private prompt",
-        assistant_text="private response",
-        started_at="2026-08-24T12:00:00Z",
-        ended_at="2026-08-24T12:01:00Z",
+    session_dir = (
+        tmp_path / "periscope" / "agents" / "pt-supervisor" / "sessions"
     )
+    real_open_local_directory = adapter._open_local_directory
 
-    assert result is not None
-    assert result.resolve().is_relative_to(tmp_path.resolve())
+    def swap_session_directory(parent_fd: int, component: str) -> int:
+        child_fd = real_open_local_directory(parent_fd, component)
+        if component == "sessions":
+            # The descriptor is pinned before an attacker replaces the
+            # pathname. The subsequent write must fail closed, never follow
+            # the replacement symlink.
+            session_dir.rmdir()
+            session_dir.symlink_to(outside, target_is_directory=True)
+        return child_fd
+
+    monkeypatch.setattr(adapter, "_open_local_directory", swap_session_directory)
+
+    with pytest.raises(FileNotFoundError):
+        emit_openclaw_session(
+            state_dir=tmp_path,
+            agent_id="pt-supervisor",
+            session_id="job-race",
+            user_text="private prompt",
+            assistant_text="private response",
+            started_at="2026-08-24T12:00:00Z",
+            ended_at="2026-08-24T12:01:00Z",
+        )
+
     assert list(outside.iterdir()) == []
