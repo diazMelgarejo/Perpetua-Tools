@@ -1,0 +1,33 @@
+{
+  "schema_version": "pt-orama.observability/v1",
+  "event_id": "c1e83912-7b24-4f81-9bfa-873b18567103",
+  "occurred_at": "2026-08-24T12:00:02Z",
+  "event_name": "task.lifecycle",
+  "trace_id": null,
+  "span_id": null,
+  "parent_span_id": null,
+  "run_id": "run-8819",
+  "task_id": "phase-1-task-102",
+  "agent": {
+    "id": "pt-supervisor",
+    "instance_id": "8f3918a0-2f63-4b92-8001-90a816b341f2",
+    "harness": "gemini"
+  },
+  "source": {
+    "repo": "diazMelgarejo/Perpetua-Tools",
+    "commit": "38ad105116fedcf22959f373d259890c6508849a",
+    "component": "orchestrator.coordination.task_queue"
+  },
+  "privacy": {
+    "classification": "redacted",
+    "redaction_version": "v1"
+  },
+  "lifecycle_stage": "claimed",
+  "task_name": "l3-egress-verification",
+  "phase": "phase-1",
+  "priority": "P0",
+  "assigned_agent": "pt-supervisor",
+  "source_ref": "main",
+  "expected_base_sha": "f16fe057836994e4b5c30160e517d642174493d1",
+  "notes_present": true
+}

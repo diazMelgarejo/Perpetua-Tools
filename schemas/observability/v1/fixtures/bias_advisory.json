@@ -1,0 +1,31 @@
+{
+  "schema_version": "pt-orama.observability/v1",
+  "event_id": "c1e83912-7b24-4f81-9bfa-873b18567104",
+  "occurred_at": "2026-08-24T12:00:03Z",
+  "event_name": "coordination.bias_advisory",
+  "trace_id": null,
+  "span_id": null,
+  "parent_span_id": null,
+  "run_id": "run-8819",
+  "task_id": "phase-1-task-102",
+  "agent": {
+    "id": "pt-sentinel",
+    "instance_id": "8f3918a0-2f63-4b92-8001-90a816b341f2",
+    "harness": "gemini"
+  },
+  "source": {
+    "repo": "diazMelgarejo/Perpetua-Tools",
+    "commit": "38ad105116fedcf22959f373d259890c6508849a",
+    "component": "orchestrator.coordination.bias_detector"
+  },
+  "privacy": {
+    "classification": "redacted",
+    "redaction_version": "v1"
+  },
+  "coordination_risk": "low",
+  "confidence_mean": 0.88,
+  "confidence_stdev": 0.04,
+  "distinct_agent_count": 3,
+  "evidence_window_size": 12,
+  "rationale_codes": ["high_consensus_verified", "multi_agent_sample_valid"]
+}
