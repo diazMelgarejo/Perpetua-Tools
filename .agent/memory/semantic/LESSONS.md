@@ -4,6 +4,10 @@
 
 ## Auto-promoted entries will be appended below
 
+### unknown
+
+- Multi-agent review flywheel: when CodeRabbit or Cursor reviews multi-repo observability contracts, trace physical enforcement before schemas, resolve process-scoped tracer pipelines with explicit resource bounds, restrict internal trajectory sinks strictly to local filesystem roots (rejecting remote URLs), and batch all remediations locally before pushing exactly once per branch.  <!-- status=accepted confidence=0.9 evidence=0 id=lesson_multiagent_observability_flywheel_20260824 -->
+
 ### 2026-08
 
 - ~~Handwaving a known error always costs more later than fixing it now. When a check surfaces something that looks minor, tangential, or "not what I'm here to fix," the instinct to note it and move on is usually wrong -- the cost doesn't disappear, it just relocates to whoever hits it next (often the same agent, in a later, more expensive context). Treat every surfaced finding as either fixed now or explicitly, visibly deferred with a stated reason -- never silently absorbed into "I'll get to it."~~  <!-- status=legacy confidence=0.7 evidence=0 id=lesson_legacy_0b3f101508e4 superseded_by=lesson_502211a1be56 -->

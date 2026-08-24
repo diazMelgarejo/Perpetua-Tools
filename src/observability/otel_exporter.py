@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 from typing import Any, Dict, Optional
 
 from src.observability.core import (
@@ -26,12 +27,88 @@ logger = logging.getLogger(__name__)
 # Check if official OpenTelemetry SDK is installed
 try:
     import opentelemetry.trace as otel_trace
+    from opentelemetry.sdk.resources import Resource
     from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor
+
+    try:
+        from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+
+        HAS_OTLP_EXPORTER = True
+    except ImportError:
+        OTLPSpanExporter = None  # type: ignore
+        HAS_OTLP_EXPORTER = False
 
     HAS_OTEL = True
 except ImportError:
     HAS_OTEL = False
+    HAS_OTLP_EXPORTER = False
+
+_CONFIG_LOCK = threading.Lock()
+_IS_CONFIGURED = False
+_ACTIVE_PROVIDER: Optional[Any] = None
+
+
+def configure_otel_exporter(
+    endpoint: Optional[str] = None,
+    custom_span_processor: Optional[Any] = None,
+    force_reconfigure: bool = False,
+) -> bool:
+    """Configure one OTLP/HTTP Protobuf trace pipeline per process.
+
+    Thread-safe and idempotent. Installs TracerProvider with OTLPSpanExporter
+    (or custom processor) and safe resource metadata.
+    """
+    global _IS_CONFIGURED, _ACTIVE_PROVIDER
+    if not HAS_OTEL:
+        return False
+
+    with _CONFIG_LOCK:
+        if _IS_CONFIGURED and not force_reconfigure:
+            return True
+
+        target_endpoint = (
+            endpoint
+            if endpoint is not None
+            else os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "").strip()
+        )
+
+        if not target_endpoint and custom_span_processor is None:
+            return False
+
+        try:
+            resource = Resource.create(
+                {
+                    "service.name": "perpetua-tools",
+                    "telemetry.sdk.language": "python",
+                }
+            )
+            provider = TracerProvider(resource=resource)
+
+            if custom_span_processor is not None:
+                provider.add_span_processor(custom_span_processor)
+            elif HAS_OTLP_EXPORTER and target_endpoint:
+                exporter = OTLPSpanExporter(endpoint=target_endpoint)
+                provider.add_span_processor(BatchSpanProcessor(exporter))
+            else:
+                logger.debug("OTLP exporter requested but opentelemetry-exporter-otlp-proto-http unavailable")
+                return False
+
+            otel_trace.set_tracer_provider(provider)
+            _ACTIVE_PROVIDER = provider
+            _IS_CONFIGURED = True
+            return True
+        except Exception as exc:
+            logger.debug("Failed to configure OTel exporter: %s", exc)
+            return False
+
+
+def _reset_otel_for_testing() -> None:
+    """Reset configuration state for isolated unit tests."""
+    global _IS_CONFIGURED, _ACTIVE_PROVIDER
+    with _CONFIG_LOCK:
+        _IS_CONFIGURED = False
+        _ACTIVE_PROVIDER = None
 
 
 def project_to_otel_attributes(observation: BaseObservation) -> Dict[str, Any]:
@@ -133,10 +210,17 @@ def export_observation_to_otel(observation: BaseObservation) -> bool:
     Returns True if successfully exported, False if OTel is not enabled or unconfigured.
     Raises PermissionError if observation is internal_only.
     """
+    # 1. Project attributes first (raises PermissionError if internal_only)
     attrs = project_to_otel_attributes(observation)
-    otlp_endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "").strip()
-    if not otlp_endpoint or not HAS_OTEL:
+
+    if not HAS_OTEL:
         return False
+
+    # 2. Ensure pipeline is configured
+    if not _IS_CONFIGURED:
+        configured = configure_otel_exporter()
+        if not configured:
+            return False
 
     try:
         tracer = otel_trace.get_tracer("oramasys.observability")

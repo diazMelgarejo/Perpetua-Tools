@@ -227,6 +227,8 @@ async def feed_bias_detector_from_gossip(
             or payload.get("task_id")
             or ""
         )
+        if not message and kind not in ("task_failed", "task_abandoned", "agent_killed"):
+            continue
         ev_agent_id = str(
             payload.get("agent_id")
             or payload.get("assigned_agent")

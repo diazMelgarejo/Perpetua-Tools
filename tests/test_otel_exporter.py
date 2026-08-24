@@ -12,7 +12,27 @@ from src.observability.core import (
     SourceProvenance,
     TaskLifecycleObservation,
 )
-from src.observability.otel_exporter import export_observation_to_otel, project_to_otel_attributes
+from src.observability.otel_exporter import (
+    _reset_otel_for_testing,
+    configure_otel_exporter,
+    export_observation_to_otel,
+    project_to_otel_attributes,
+)
+
+try:
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    HAS_OTEL_TEST_EXPORTER = True
+except ImportError:
+    HAS_OTEL_TEST_EXPORTER = False
+
+
+@pytest.fixture(autouse=True)
+def reset_otel():
+    _reset_otel_for_testing()
+    yield
+    _reset_otel_for_testing()
 
 
 @pytest.fixture
@@ -113,7 +133,8 @@ class TestOTelProjection:
             project_to_otel_attributes(obs)
         assert "only 'redacted' records are eligible" in str(exc.value)
 
-    def test_export_observation_returns_false_when_unconfigured(self, sample_agent, sample_source) -> None:
+    def test_export_observation_returns_false_when_unconfigured(self, sample_agent, sample_source, monkeypatch) -> None:
+        monkeypatch.delenv("OTEL_EXPORTER_OTLP_ENDPOINT", raising=False)
         obs = EgressValidationObservation(
             agent=sample_agent,
             source=sample_source,
@@ -124,5 +145,68 @@ class TestOTelProjection:
             validation_ms=1.0,
             destination_hash="sha256:test",
         )
-        # Without OTEL_EXPORTER_OTLP_ENDPOINT set, export safely returns False non-blockingly
+        # Without endpoint configured, export safely returns False non-blockingly
         assert export_observation_to_otel(obs) is False
+
+    @pytest.mark.skipif(not HAS_OTEL_TEST_EXPORTER, reason="OpenTelemetry SDK in-memory exporter required")
+    def test_in_memory_exporter_receives_finished_span(self, sample_agent, sample_source) -> None:
+        memory_exporter = InMemorySpanExporter()
+        span_processor = SimpleSpanProcessor(memory_exporter)
+        configured = configure_otel_exporter(custom_span_processor=span_processor, force_reconfigure=True)
+        assert configured is True
+
+        obs = EgressCompleteObservation(
+            agent=sample_agent,
+            source=sample_source,
+            endpoint_class="remote",
+            transport="pinned_requests",
+            outcome="completed",
+            status_code=200,
+            duration_ms=45.6,
+            destination_hash="sha256:fedcba987654",
+        )
+
+        exported = export_observation_to_otel(obs)
+        assert exported is True
+
+        spans = memory_exporter.get_finished_spans()
+        assert len(spans) == 1
+        span = spans[0]
+        assert span.name == "egress.request.complete"
+        assert span.attributes["oramasys.destination.hash"] == "sha256:fedcba987654"
+        assert span.attributes["http.response.status_code"] == 200
+        assert span.attributes["oramasys.duration_ms"] == 45.6
+        assert "server.address" not in span.attributes
+
+    @pytest.mark.skipif(not HAS_OTEL_TEST_EXPORTER, reason="OpenTelemetry SDK in-memory exporter required")
+    def test_internal_only_observation_never_reaches_exporter(self, sample_agent, sample_source) -> None:
+        memory_exporter = InMemorySpanExporter()
+        span_processor = SimpleSpanProcessor(memory_exporter)
+        configure_otel_exporter(custom_span_processor=span_processor, force_reconfigure=True)
+
+        obs = EgressValidationObservation(
+            agent=sample_agent,
+            source=sample_source,
+            privacy=PrivacyEnvelope(classification="internal_only"),
+            endpoint_class="local",
+            transport="local_http",
+            outcome="allowed",
+            port=8001,
+            validation_ms=0.5,
+            destination_hash="sha256:local",
+        )
+
+        with pytest.raises(PermissionError):
+            export_observation_to_otel(obs)
+
+        # Invariant: exporter buffer has 0 spans
+        assert len(memory_exporter.get_finished_spans()) == 0
+
+    def test_repeated_configuration_is_idempotent(self) -> None:
+        if not HAS_OTEL_TEST_EXPORTER:
+            pytest.skip("OpenTelemetry SDK not installed")
+        memory_exporter = InMemorySpanExporter()
+        processor = SimpleSpanProcessor(memory_exporter)
+        assert configure_otel_exporter(custom_span_processor=processor, force_reconfigure=True) is True
+        # Second call without force_reconfigure should return True immediately without reconfiguring
+        assert configure_otel_exporter(custom_span_processor=processor, force_reconfigure=False) is True

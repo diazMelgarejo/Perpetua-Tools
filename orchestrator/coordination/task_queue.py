@@ -382,6 +382,7 @@ async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | Non
     payload = {
         "kind": "task_claim",
         "task_id": task_id,
+        "agent_id": agent_id,
         "assigned_agent": agent_id,
         "status": QueuedTaskState.CLAIMED.value,
         "worktree": current_worktree_label(),
@@ -433,6 +434,7 @@ async def queue_complete(bus: GossipBus, task_id: str, agent_id: str, notes: str
         {
             "kind": "task_complete",
             "task_id": task_id,
+            "agent_id": agent_id,
             "status": QueuedTaskState.COMPLETED.value,
             "notes": notes,
         },
@@ -485,6 +487,7 @@ async def queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) ->
             {
                 "kind": "task_failed",
                 "task_id": task_id,
+                "agent_id": agent_id,
                 "retry_count": retry_count,
                 "max_retries": max_retries,
                 "status": QueuedTaskState.QUEUED.value,
@@ -513,6 +516,7 @@ async def queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) ->
         {
             "kind": "task_abandoned",
             "task_id": task_id,
+            "agent_id": agent_id,
             "retry_count": retry_count,
             "max_retries": max_retries,
             "status": "abandoned",

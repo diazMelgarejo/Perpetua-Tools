@@ -78,6 +78,42 @@ class TestRedaction:
         record = json.loads(_sink_path().read_text(encoding="utf-8").splitlines()[0])
         assert record["resolved_ip_hash"] is None
 
+    def test_direct_serialization_event_kind_and_status_code(self, sink_dir: Path) -> None:
+        # 1. Validation event
+        emit(
+            EgressEvent(
+                endpoint_class="remote",
+                host="api.example.com",
+                port=443,
+                scheme="https",
+                event_kind="validation",
+            )
+        )
+        lines = _sink_path().read_text(encoding="utf-8").splitlines()
+        val_rec = json.loads(lines[0])
+        assert val_rec["event"] == "egress_validation"
+        assert val_rec["event_kind"] == "validation"
+        assert val_rec["status_code"] is None
+
+        # 2. Complete event
+        emit(
+            EgressEvent(
+                endpoint_class="remote",
+                host="api.example.com",
+                port=443,
+                scheme="https",
+                event_kind="complete",
+                status_code=200,
+                duration_ms=145.2,
+            )
+        )
+        lines = _sink_path().read_text(encoding="utf-8").splitlines()
+        comp_rec = json.loads(lines[1])
+        assert comp_rec["event"] == "egress_request_complete"
+        assert comp_rec["event_kind"] == "complete"
+        assert comp_rec["status_code"] == 200
+        assert comp_rec["duration_ms"] == 145.2
+
 
 class TestNonBlocking:
     def test_emit_swallows_sink_write_failure(self, sink_dir: Path, monkeypatch: pytest.MonkeyPatch) -> None:

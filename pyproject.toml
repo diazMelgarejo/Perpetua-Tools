@@ -136,7 +136,7 @@ pt-launch = "perpetua_tools.agent_launcher:main"
 
 [tool.setuptools.packages.find]
 where = [".", "src"]
-include = ["orchestrator*", "perpetua*", "perpetua_tools*", "utils*"]
+include = ["orchestrator*", "perpetua*", "perpetua_tools*", "utils*", "observability*"]
 exclude = ["tests*", "vendor*", ".state*"]
 
 [tool.pytest.ini_options]

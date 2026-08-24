@@ -25,7 +25,7 @@ class AgentIdentity(BaseModel):
 class SourceProvenance(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     repo: str
-    commit: str = Field(..., min_length=40, max_length=40)
+    commit: str = Field(..., pattern=r"^[0-9a-f]{40}$", min_length=40, max_length=40)
     component: str
 
 

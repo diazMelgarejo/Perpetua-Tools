@@ -57,6 +57,15 @@ class TestObservabilityCoreModels:
             )
         assert "at least 40 characters" in str(exc.value)
 
+    def test_non_hex_commit_sha_is_rejected(self) -> None:
+        with pytest.raises(ValidationError) as exc:
+            SourceProvenance(
+                repo="diazMelgarejo/Perpetua-Tools",
+                commit="g" * 40,  # 40 chars but non-hex
+                component="utils.ssrf_pinned_adapter",
+            )
+        assert "pattern" in str(exc.value).lower() or "should match pattern" in str(exc.value).lower()
+
     def test_extra_fields_are_forbidden(self) -> None:
         with pytest.raises(ValidationError) as exc:
             EgressValidationObservation(
