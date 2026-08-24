@@ -1,0 +1,42 @@
+{
+  "id": "399a47787f8b",
+  "key": "manual_399a47",
+  "name": "manual_399a47",
+  "claim": "Before publishing a Git tree through an API, require the constructed remote tree SHA to equal the locally verified tree SHA; chunk large blobs instead of trusting truncated command output.",
+  "conditions": [
+    "ci",
+    "observability",
+    "review-remediation",
+    "security",
+    "ssrf"
+  ],
+  "evidence_ids": [
+    "2026-08-24T21:20:59.704398+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-24T21:20:59.704398+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-24T21:20:59.704398+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-24T21:20:59.800114+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A prior observability commit appeared to delete a massive file set because an incomplete remote tree was constructed from truncated memory content. Exact tree-SHA equality prevented branch publication until the full blobs were recreated.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-24T21:20:59.704398+00:00"
+      ],
+      "lessons_sha": "609c5a813b7d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-24T21:20:59.800098+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A prior observability commit appeared to delete a massive file set because an incomplete remote tree was constructed from truncated memory content. Exact tree-SHA equality prevented branch publication until the full blobs were recreated."
+}

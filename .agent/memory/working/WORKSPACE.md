@@ -7,6 +7,17 @@
 
 ## Current focus
 
+### Observability review closure (2026-08-24)
+
+**Completed on existing PRs:** PT #371 and orama-system #328 are mergeable
+with all GitHub checks green. The closure corrected five review-proven gaps:
+exact remote tree reconstruction for large memory blobs; stable optional-OTel
+module seams in CI; explicit CA-bundle preservation while disabling proxy
+inheritance; a POSIX race test that exercises descriptor-relative writes and
+fails closed; and an ADR that scopes HTTPS and platform guarantees precisely.
+The durable claims and one episodic reflection are in the graduated memory
+records dated 2026-08-24.
+
 | Area | Branch / PR | Role |
 | ---- | ----------- | ---- |
 | **SSRF Layer-2 Docs Shipped** | `fix/oramasys-standards-convergence-20260818` (orama) | **Done (c841ed31)** — `T5-SSRF-orama-layer2-docs-provisional-to-shipped-7a767b81`. Marked Layer 2 as SHIPPED with Split-Identity pool isolation in Docs 32 & SSRF Plan. |

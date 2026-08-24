@@ -1,0 +1,42 @@
+{
+  "id": "fa960a6235d2",
+  "key": "manual_fa960a",
+  "name": "manual_fa960a",
+  "claim": "When disabling Requests environment trust to prevent proxy-based SSRF boundary shifts, preserve explicit CA configuration first: REQUESTS_CA_BUNDLE takes precedence and CURL_CA_BUNDLE is the fallback.",
+  "conditions": [
+    "ci",
+    "observability",
+    "review-remediation",
+    "security",
+    "ssrf"
+  ],
+  "evidence_ids": [
+    "2026-08-24T21:21:00.289011+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-24T21:21:00.289011+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-24T21:21:00.289011+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-24T21:21:00.389114+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "trust_env=False correctly disables inherited proxies but also stops Requests from discovering private CA bundles. Assigning session.verify before disabling trust keeps mTLS-adjacent private-CA deployments available without reopening proxy inheritance.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-24T21:21:00.289011+00:00"
+      ],
+      "lessons_sha": "ccab5cbd3435"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-24T21:21:00.389102+00:00",
+  "reviewer": "learn.py",
+  "rationale": "trust_env=False correctly disables inherited proxies but also stops Requests from discovering private CA bundles. Assigning session.verify before disabling trust keeps mTLS-adjacent private-CA deployments available without reopening proxy inheritance."
+}

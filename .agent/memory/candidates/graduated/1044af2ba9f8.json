@@ -1,0 +1,42 @@
+{
+  "id": "1044af2ba9f8",
+  "key": "manual_1044af",
+  "name": "manual_1044af",
+  "claim": "Optional integrations need a stable module surface even when their dependency is absent, and CI must exercise that absence rather than relying on a developer environment with the dependency installed.",
+  "conditions": [
+    "ci",
+    "observability",
+    "review-remediation",
+    "security",
+    "ssrf"
+  ],
+  "evidence_ids": [
+    "2026-08-24T21:20:59.994208+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-24T21:20:59.994208+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-24T21:20:59.994208+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-24T21:21:00.103060+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "OpenTelemetry was installed locally but absent in GitHub CI, so monkeypatched tests failed before exercising the exporter. Defining explicit optional placeholders and adding an import-absence regression made the test seam portable.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-24T21:20:59.994208+00:00"
+      ],
+      "lessons_sha": "fdac2882f915"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-24T21:21:00.103044+00:00",
+  "reviewer": "learn.py",
+  "rationale": "OpenTelemetry was installed locally but absent in GitHub CI, so monkeypatched tests failed before exercising the exporter. Defining explicit optional placeholders and adding an import-absence regression made the test seam portable."
+}

@@ -1,0 +1,42 @@
+{
+  "id": "5ea2a39c2b12",
+  "key": "manual_5ea2a3",
+  "name": "manual_5ea2a3",
+  "claim": "A security race regression is only evidence when it perturbs the production branch actually used on that platform; descriptor-relative POSIX tests should inject after the directory descriptor opens and assert fail-closed behavior if the pathname is replaced.",
+  "conditions": [
+    "ci",
+    "observability",
+    "review-remediation",
+    "security",
+    "ssrf"
+  ],
+  "evidence_ids": [
+    "2026-08-24T21:21:00.568546+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-24T21:21:00.568546+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-24T21:21:00.568546+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-24T21:21:00.653959+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The first Periscope race test patched tempfile.NamedTemporaryFile, which the POSIX implementation never uses. Patching _open_local_directory exposed the real result: an unlink-and-symlink replacement cannot redirect the write and instead fails closed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-24T21:21:00.568546+00:00"
+      ],
+      "lessons_sha": "de1dcf35442c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-24T21:21:00.653947+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The first Periscope race test patched tempfile.NamedTemporaryFile, which the POSIX implementation never uses. Patching _open_local_directory exposed the real result: an unlink-and-symlink replacement cannot redirect the write and instead fails closed."
+}
