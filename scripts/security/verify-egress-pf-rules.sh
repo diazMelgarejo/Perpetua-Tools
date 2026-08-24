@@ -62,20 +62,62 @@ done
 
 # 3. Check pfctl loaded rules and parent-anchor attachment, unless test-skipped
 if [[ "$PFCTL_SKIP" -ne 1 ]]; then
-  LOADED_RULES="$(pfctl -a "$ANCHOR_NAME" -s rules 2>/dev/null || true)"
-  if [[ -z "$LOADED_RULES" ]]; then
-    echo "WARN: pf anchor $ANCHOR_NAME is not loaded or pf is inactive (run sudo bash scripts/security/install-egress-pf-rules.sh)" >&2
+  # 3a. Check if PF is actively enabled in kernel
+  PF_INFO="$(pfctl -s info 2>/dev/null || true)"
+  if ! echo "$PF_INFO" | grep -qi "Status: Enabled"; then
+    echo "WARN: pf packet filtering is not enabled in kernel (run sudo pfctl -e)" >&2
     exit 3
   fi
-  # Loaded-and-populated is necessary but not sufficient: pf only evaluates
-  # an anchor's rules when a parent "anchor" directive in the root ruleset
-  # (pf.conf) actually attaches it. Confirm that attachment exists.
+
+  # 3b. Check loaded anchor rules match required rules
+  LOADED_RAW="$(pfctl -a "$ANCHOR_NAME" -s rules 2>/dev/null || true)"
+  LOADED_RULE_LINES=()
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && LOADED_RULE_LINES+=("$line")
+  done < <(echo "$LOADED_RAW" | grep -vE '^\s*(#.*)?$' || true)
+
+  if [[ "${#LOADED_RULE_LINES[@]}" -ne "${#REQUIRED_RULES[@]}" ]]; then
+    echo "WARN: pf anchor $ANCHOR_NAME loaded rules (${#LOADED_RULE_LINES[@]}) do not match expected count (${#REQUIRED_RULES[@]})" >&2
+    exit 3
+  fi
+
+  for i in "${!REQUIRED_RULES[@]}"; do
+    if [[ "${LOADED_RULE_LINES[$i]}" != "${REQUIRED_RULES[$i]}" ]]; then
+      echo "WARN: pf anchor $ANCHOR_NAME loaded rule mismatch at position $((i + 1)): expected '${REQUIRED_RULES[$i]}', got '${LOADED_RULE_LINES[$i]}'" >&2
+      exit 3
+    fi
+  done
+
+  # 3c. Check anchor attachment and rule ordering in root ruleset (pf.conf)
   ROOT_RULES="$(pfctl -sr 2>/dev/null || true)"
   if ! echo "$ROOT_RULES" | grep -qF "anchor \"$ANCHOR_NAME\""; then
     echo "WARN: pf anchor $ANCHOR_NAME is loaded but not attached in the root ruleset -- it will never be evaluated (run sudo bash scripts/security/install-egress-pf-rules.sh)" >&2
     exit 4
   fi
+
+  # 3d. Check rule ordering: assert no broad 'pass out quick' rule precedes the anchor in root ruleset
+  ORDERING_VIOLATION=0
+  VIOLATING_RULE=""
+  while IFS= read -r rule_line; do
+    if echo "$rule_line" | grep -qF "anchor \"$ANCHOR_NAME\""; then
+      break
+    fi
+    if echo "$rule_line" | grep -qE '^\s*pass\s+out\s+quick(\s+all|\s+inet|\s+inet6|\s+to\s+any|\s+proto)'; then
+      ORDERING_VIOLATION=1
+      VIOLATING_RULE="$rule_line"
+      break
+    fi
+  done < <(echo "$ROOT_RULES" | grep -vE '^\s*(#.*)?$' || true)
+
+  if [[ "$ORDERING_VIOLATION" -eq 1 ]]; then
+    echo "WARN: pf root ruleset contains broad pass rule before anchor '$ANCHOR_NAME' which neutralizes it: '$VIOLATING_RULE'" >&2
+    exit 5
+  fi
 fi
 
-echo "OK: Layer-3 macOS pf egress rules verified at $ANCHOR_FILE"
+if [[ "${1:-}" == "--json" ]]; then
+  echo "{\"layer\":\"pf-egress\",\"status\":\"ok\",\"anchor\":\"$ANCHOR_NAME\",\"rules_count\":${#REQUIRED_RULES[@]}}"
+else
+  echo "OK: Layer-3 macOS pf egress rules verified at $ANCHOR_FILE"
+fi
 exit 0
