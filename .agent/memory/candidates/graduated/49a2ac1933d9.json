@@ -1,0 +1,42 @@
+{
+  "id": "49a2ac1933d9",
+  "key": "manual_49a2ac",
+  "name": "manual_49a2ac",
+  "claim": "Remote telemetry exporters must reuse the canonical connection-time pinned transport and disable environment proxies; preflight URL validation alone does not close DNS rebinding or proxy boundary shifts.",
+  "conditions": [
+    "dns-rebinding",
+    "observability",
+    "otlp",
+    "proxy",
+    "ssrf"
+  ],
+  "evidence_ids": [
+    "2026-08-24T13:19:46.508723+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-24T13:19:46.508723+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-24T13:19:46.508723+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-24T13:19:46.807587+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT observability closure tests showed that OTLP accepted unsafe endpoints and its requests session inherited proxy routing until configure_otel_exporter injected SSRFPinnedHTTPAdapter with trust_env disabled.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-24T13:19:46.508723+00:00"
+      ],
+      "lessons_sha": "a888983748e3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-24T13:19:46.807568+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT observability closure tests showed that OTLP accepted unsafe endpoints and its requests session inherited proxy routing until configure_otel_exporter injected SSRFPinnedHTTPAdapter with trust_env disabled."
+}
