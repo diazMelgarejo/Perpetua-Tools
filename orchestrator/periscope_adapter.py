@@ -140,6 +140,92 @@ def _message_entry(
     }
 
 
+def _validate_local_path(path: Path | str) -> Path:
+    raw = str(path or "").strip()
+    if re.match(r"^[a-zA-Z][a-zA-Z0-9+-.]*://", raw) or raw.startswith(r"\\") or raw.startswith("//"):
+        raise ValueError(
+            f"Remote destination URLs and Windows UNC paths are forbidden for local Periscope trajectory sink: {raw}"
+        )
+    return Path(path).resolve()
+
+
+def write_internal_trajectory(
+    *,
+    state_dir: Path | str,
+    agent_id: str,
+    session_id: str,
+    entries: list[dict[str, Any]],
+) -> Path | None:
+    """Write trajectory strictly to local workstation storage beneath state_dir.
+
+    Enforces the local-only trust boundary: rejects URL destinations, prevents
+    directory traversal outside the resolved periscope root, and never forwards
+    to remote OTLP or HTTP endpoints.
+    """
+    if not emitter_enabled():
+        return None
+
+    safe_agent = _validate_component("agent_id", agent_id)
+    safe_session = _validate_component("session_id", session_id)
+
+    state_path = _validate_local_path(state_dir)
+    state_path.mkdir(parents=True, exist_ok=True)
+    agents_dir = periscope_agents_dir(state_path).resolve()
+    session_dir = (agents_dir / safe_agent / "sessions").resolve()
+
+    # Assert strict containment below both state_path and periscope agents root
+    try:
+        session_dir.relative_to(state_path)
+        session_dir.relative_to(agents_dir)
+    except ValueError:
+        raise ValueError(f"Destination path escape detected outside configured state root: {session_dir}")
+
+    for directory in (
+        agents_dir.parent,
+        agents_dir,
+        agents_dir / safe_agent,
+        session_dir,
+    ):
+        directory.mkdir(exist_ok=True, mode=0o700)
+        if os.name != "nt":
+            directory.chmod(0o700)
+
+    final_path = (session_dir / f"{safe_session}.jsonl").resolve()
+    try:
+        final_path.relative_to(session_dir)
+        final_path.relative_to(state_path)
+    except ValueError:
+        raise ValueError(f"Final trajectory escape detected: {final_path}")
+
+    payload = "".join(
+        json.dumps(entry, ensure_ascii=False, separators=(",", ":")) + "\n"
+        for entry in entries
+    )
+
+    temp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=session_dir,
+            prefix=f".{safe_session}.",
+            suffix=".tmp",
+            delete=False,
+        ) as temp:
+            temp_path = Path(temp.name)
+            temp.write(payload)
+            temp.flush()
+            os.fsync(temp.fileno())
+        if os.name != "nt":
+            temp_path.chmod(0o600)
+        os.replace(temp_path, final_path)
+    finally:
+        if temp_path is not None:
+            temp_path.unlink(missing_ok=True)
+
+    return final_path
+
+
 def emit_openclaw_session(
     *,
     state_dir: Path | str,
@@ -157,28 +243,12 @@ def emit_openclaw_session(
     Returns ``None`` when the optional adapter is disabled. Re-emitting the same
     ``agent_id``/``session_id`` atomically replaces the prior observation.
     """
-
     if not emitter_enabled():
         return None
 
-    safe_agent = _validate_component("agent_id", agent_id)
     safe_session = _validate_component("session_id", session_id)
     if not started_at or not ended_at:
         raise ValueError("started_at and ended_at are required")
-
-    state_path = Path(state_dir)
-    state_path.mkdir(parents=True, exist_ok=True)
-    agents_dir = periscope_agents_dir(state_path)
-    session_dir = agents_dir / safe_agent / "sessions"
-    for directory in (
-        agents_dir.parent,
-        agents_dir,
-        agents_dir / safe_agent,
-        session_dir,
-    ):
-        directory.mkdir(exist_ok=True, mode=0o700)
-        if os.name != "nt":
-            directory.chmod(0o700)
 
     entries = [
         {
@@ -202,34 +272,13 @@ def emit_openclaw_session(
             model=model,
         ),
     ]
-    payload = "".join(
-        json.dumps(entry, ensure_ascii=False, separators=(",", ":")) + "\n"
-        for entry in entries
+
+    return write_internal_trajectory(
+        state_dir=state_dir,
+        agent_id=agent_id,
+        session_id=session_id,
+        entries=entries,
     )
-
-    final_path = session_dir / f"{safe_session}.jsonl"
-    temp_path: Path | None = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
-            dir=session_dir,
-            prefix=f".{safe_session}.",
-            suffix=".tmp",
-            delete=False,
-        ) as temp:
-            temp_path = Path(temp.name)
-            temp.write(payload)
-            temp.flush()
-            os.fsync(temp.fileno())
-        if os.name != "nt":
-            temp_path.chmod(0o600)
-        os.replace(temp_path, final_path)
-    finally:
-        if temp_path is not None:
-            temp_path.unlink(missing_ok=True)
-
-    return final_path
 
 
 _ROUTING_EVENT_KEYS = (

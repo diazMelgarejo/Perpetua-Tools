@@ -59,18 +59,22 @@ class EgressEvent:
     host: str
     port: int
     scheme: str
+    event_kind: Literal["validation", "complete"] = "validation"
     resolved_ip: str | None = None
     redirect_count: int = 0
     deny_reason: DenyReason | None = None
     provider_route: str | None = None
     duration_ms: float | None = None
     validation_duration_ms: float | None = None
+    status_code: int | None = None
     ts: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
     def to_redacted_dict(self) -> dict:
+        event_label = "egress_validation" if self.event_kind == "validation" else "egress_request_complete"
         payload = {
             "ts": self.ts,
-            "event": "egress_dispatch",
+            "event": event_label,
+            "event_kind": self.event_kind,
             "endpoint_class": self.endpoint_class,
             "host_hash": _hash(self.host) if self.host else None,
             "resolved_ip_hash": _hash(self.resolved_ip) if self.resolved_ip else None,
@@ -81,6 +85,7 @@ class EgressEvent:
             "provider_route": self.provider_route,
             "duration_ms": self.duration_ms,
             "validation_duration_ms": self.validation_duration_ms,
+            "status_code": self.status_code,
         }
         return payload
 

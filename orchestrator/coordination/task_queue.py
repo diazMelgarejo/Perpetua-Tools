@@ -86,6 +86,8 @@ async def queue_add(
         payload["source_ref"] = source_ref.strip()
     if expected_base_sha is not None:
         payload["expected_base_sha"] = expected_base_sha
+    # DUAL-WRITE SUNSET POLICY: Legacy heartbeat payload writes are deprecated and
+    # will be permanently retired upon Phase 4 docs-crystallization + one release cycle (ADR Doc 55).
     await bus.emit("heartbeat", payload)
     print(f"enqueued: {task_id} ({phase}, {priority_enum.name})")
 
@@ -380,6 +382,7 @@ async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | Non
     payload = {
         "kind": "task_claim",
         "task_id": task_id,
+        "agent_id": agent_id,
         "assigned_agent": agent_id,
         "status": QueuedTaskState.CLAIMED.value,
         "worktree": current_worktree_label(),
@@ -431,6 +434,7 @@ async def queue_complete(bus: GossipBus, task_id: str, agent_id: str, notes: str
         {
             "kind": "task_complete",
             "task_id": task_id,
+            "agent_id": agent_id,
             "status": QueuedTaskState.COMPLETED.value,
             "notes": notes,
         },
@@ -483,6 +487,7 @@ async def queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) ->
             {
                 "kind": "task_failed",
                 "task_id": task_id,
+                "agent_id": agent_id,
                 "retry_count": retry_count,
                 "max_retries": max_retries,
                 "status": QueuedTaskState.QUEUED.value,
@@ -511,6 +516,7 @@ async def queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) ->
         {
             "kind": "task_abandoned",
             "task_id": task_id,
+            "agent_id": agent_id,
             "retry_count": retry_count,
             "max_retries": max_retries,
             "status": "abandoned",

@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.oramasys.net/observability/v1/event-core.schema.json",
+  "title": "oramasys Canonical Domain Observation Schema v1",
+  "description": "Normative JSON Schema for pt-orama domain observations, enforcing strict zero-leak privacy and full 40-character SHA provenance.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "event_id",
+    "occurred_at",
+    "event_name",
+    "agent",
+    "source",
+    "privacy"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "pt-orama.observability/v1"
+    },
+    "event_id": {
+      "type": "string",
+      "description": "Standard UUID string"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "event_name": {
+      "type": "string",
+      "enum": [
+        "egress.validation",
+        "egress.request.complete",
+        "task.lifecycle",
+        "coordination.bias_advisory"
+      ]
+    },
+    "trace_id": {
+      "type": ["string", "null"]
+    },
+    "span_id": {
+      "type": ["string", "null"]
+    },
+    "parent_span_id": {
+      "type": ["string", "null"]
+    },
+    "run_id": {
+      "type": ["string", "null"]
+    },
+    "task_id": {
+      "type": ["string", "null"]
+    },
+    "agent": {
+      "type": "object",
+      "required": ["id", "instance_id", "harness"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        },
+        "instance_id": {
+          "type": "string"
+        },
+        "harness": {
+          "type": "string",
+          "enum": ["claude-code", "codex", "hermes", "gemini", "cursor", "standalone"]
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["repo", "commit", "component"],
+      "additionalProperties": false,
+      "properties": {
+        "repo": {
+          "type": "string"
+        },
+        "commit": {
+          "type": "string",
+          "minLength": 40,
+          "maxLength": 40
+        },
+        "component": {
+          "type": "string"
+        }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "required": ["classification", "redaction_version"],
+      "additionalProperties": false,
+      "properties": {
+        "classification": {
+          "type": "string",
+          "enum": ["redacted", "internal_only"]
+        },
+        "redaction_version": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

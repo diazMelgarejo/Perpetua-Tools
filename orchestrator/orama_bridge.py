@@ -116,6 +116,7 @@ def _dispatch_oramasys_http(url: str, payload: Dict[str, Any], timeout: float) -
         if not getattr(exc, "_egress_telemetry_emitted", False):
             emit(
                 EgressEvent(
+                    event_kind="complete",
                     endpoint_class="local" if is_local else "remote",
                     host=hostname,
                     port=port,
@@ -127,11 +128,13 @@ def _dispatch_oramasys_http(url: str, payload: Dict[str, Any], timeout: float) -
         raise
     emit(
         EgressEvent(
+            event_kind="complete",
             endpoint_class="local" if is_local else "remote",
             host=hostname,
             port=port,
             scheme=parsed.scheme,
             duration_ms=(time.monotonic() - started) * 1000,
+            status_code=getattr(response, "status_code", None),
         )
     )
     return response

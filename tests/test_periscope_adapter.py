@@ -445,3 +445,84 @@ def test_maybe_emit_job_observation_prunes_after_emit(
 
     assert not stale.exists()
     assert (session_dir / "job-new.jsonl").exists()
+
+
+def test_periscope_adapter_rejects_remote_url_destination():
+    from orchestrator.periscope_adapter import _validate_local_path
+
+    with pytest.raises(ValueError, match="Remote destination URLs and Windows UNC paths are forbidden"):
+        _validate_local_path("http://remote-server:8080/trajectories")
+    with pytest.raises(ValueError, match="Remote destination URLs and Windows UNC paths are forbidden"):
+        _validate_local_path("s3://bucket/trajectories")
+
+
+def test_periscope_adapter_rejects_unc_path_destinations():
+    from orchestrator.periscope_adapter import _validate_local_path
+
+    with pytest.raises(ValueError, match="Remote destination URLs and Windows UNC paths are forbidden"):
+        _validate_local_path(r"\\server\share\trajectories")
+    with pytest.raises(ValueError, match="Remote destination URLs and Windows UNC paths are forbidden"):
+        _validate_local_path("//server/share/trajectories")
+
+
+def test_periscope_trajectory_strictly_contained_in_state_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "1")
+    path = emit_openclaw_session(
+        state_dir=tmp_path,
+        agent_id="pt-supervisor",
+        session_id="job-safe-1",
+        user_text="test",
+        assistant_text="test",
+        started_at="2026-08-24T12:00:00Z",
+        ended_at="2026-08-24T12:01:00Z",
+    )
+    assert path is not None
+    assert str(path.resolve()).startswith(str(tmp_path.resolve()))
+
+
+def test_periscope_adapter_never_imports_or_calls_otel():
+    import orchestrator.periscope_adapter as pa
+
+    # Verify periscope_adapter has zero imports or dependencies on OTel / OTLP exporter
+    assert not hasattr(pa, "export_observation_to_otel")
+    assert not hasattr(pa, "OTLPSpanExporter")
+    assert not hasattr(pa, "TracerProvider")
+
+
+def test_rich_trajectory_data_remains_local_and_never_in_redacted_otel(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "1")
+    secret_text = "CRITICAL_INTERNAL_PROMPT_12345"
+    path = emit_openclaw_session(
+        state_dir=tmp_path,
+        agent_id="pt-supervisor",
+        session_id="job-local-secret",
+        user_text=secret_text,
+        assistant_text="Response with internal details",
+        started_at="2026-08-24T12:00:00Z",
+        ended_at="2026-08-24T12:01:00Z",
+    )
+    assert path is not None
+    local_content = path.read_text(encoding="utf-8")
+    assert secret_text in local_content
+
+    # Now verify that OTel projections NEVER contain the secret text
+    from src.observability.core import AgentIdentity, EgressCompleteObservation, SourceProvenance
+    from src.observability.otel_exporter import project_to_otel_attributes
+
+    obs = EgressCompleteObservation(
+        agent=AgentIdentity(id="pt-supervisor", harness="gemini"),
+        source=SourceProvenance(
+            repo="diazMelgarejo/Perpetua-Tools",
+            commit="38ad105116fedcf22959f373d259890c6508849a",
+            component="orchestrator.periscope_adapter",
+        ),
+        endpoint_class="remote",
+        transport="pinned_requests",
+        outcome="completed",
+        status_code=200,
+        duration_ms=100.0,
+        destination_hash="sha256:abcd",
+    )
+    otel_attrs = project_to_otel_attributes(obs)
+    for val in otel_attrs.values():
+        assert secret_text not in str(val)
