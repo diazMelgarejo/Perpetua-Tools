@@ -210,3 +210,36 @@ class TestOTelProjection:
         assert configure_otel_exporter(custom_span_processor=processor, force_reconfigure=True) is True
         # Second call without force_reconfigure should return True immediately without reconfiguring
         assert configure_otel_exporter(custom_span_processor=processor, force_reconfigure=False) is True
+
+    @pytest.mark.skipif(not HAS_OTEL_TEST_EXPORTER, reason="OpenTelemetry SDK in-memory exporter required")
+    def test_reuses_existing_global_tracer_provider(self, sample_agent, sample_source) -> None:
+        import opentelemetry.trace as otel_trace
+        from opentelemetry.sdk.trace import TracerProvider
+
+        # Simulate an external harness having already installed a TracerProvider
+        external_provider = TracerProvider()
+        otel_trace.set_tracer_provider(external_provider)
+
+        memory_exporter = InMemorySpanExporter()
+        processor = SimpleSpanProcessor(memory_exporter)
+
+        # configure_otel_exporter should attach processor to the existing TracerProvider
+        configured = configure_otel_exporter(custom_span_processor=processor, force_reconfigure=False)
+        assert configured is True
+
+        obs = EgressCompleteObservation(
+            agent=sample_agent,
+            source=sample_source,
+            endpoint_class="remote",
+            transport="pinned_requests",
+            outcome="completed",
+            status_code=200,
+            duration_ms=50.0,
+            destination_hash="sha256:abcd",
+        )
+
+        exported = export_observation_to_otel(obs)
+        assert exported is True
+        spans = memory_exporter.get_finished_spans()
+        assert len(spans) == 1
+        assert spans[0].name == "egress.request.complete"

@@ -56,8 +56,9 @@ def configure_otel_exporter(
 ) -> bool:
     """Configure one OTLP/HTTP Protobuf trace pipeline per process.
 
-    Thread-safe and idempotent. Installs TracerProvider with OTLPSpanExporter
-    (or custom processor) and safe resource metadata.
+    Thread-safe and idempotent. Reuses an existing global TracerProvider if
+    already installed by the runtime, or registers a new TracerProvider with
+    safe resource metadata and OTLPSpanExporter (or custom processor).
     """
     global _IS_CONFIGURED, _ACTIVE_PROVIDER
     if not HAS_OTEL:
@@ -77,6 +78,25 @@ def configure_otel_exporter(
             return False
 
         try:
+            current_provider = otel_trace.get_tracer_provider()
+
+            # If an existing TracerProvider is already active in the process,
+            # attach processors to it to preserve global trace continuity.
+            if isinstance(current_provider, TracerProvider) and not force_reconfigure:
+                if custom_span_processor is not None:
+                    current_provider.add_span_processor(custom_span_processor)
+                elif HAS_OTLP_EXPORTER and target_endpoint:
+                    exporter = OTLPSpanExporter(endpoint=target_endpoint)
+                    current_provider.add_span_processor(BatchSpanProcessor(exporter))
+                else:
+                    logger.debug("OTLP exporter requested but opentelemetry-exporter-otlp-proto-http unavailable")
+                    return False
+
+                _ACTIVE_PROVIDER = current_provider
+                _IS_CONFIGURED = True
+                return True
+
+            # Otherwise, instantiate a fresh TracerProvider with safe resource metadata
             resource = Resource.create(
                 {
                     "service.name": "perpetua-tools",
@@ -95,9 +115,18 @@ def configure_otel_exporter(
                 return False
 
             otel_trace.set_tracer_provider(provider)
-            _ACTIVE_PROVIDER = provider
-            _IS_CONFIGURED = True
-            return True
+            active = otel_trace.get_tracer_provider()
+
+            # Ensure provider was actually accepted or is a functional TracerProvider
+            if active is provider or isinstance(active, TracerProvider):
+                _ACTIVE_PROVIDER = active if isinstance(active, TracerProvider) else provider
+                _IS_CONFIGURED = True
+                return True
+            else:
+                logger.debug("TracerProvider registration was ignored and active provider is not functional")
+                _ACTIVE_PROVIDER = None
+                _IS_CONFIGURED = False
+                return False
         except Exception as exc:
             logger.debug("Failed to configure OTel exporter: %s", exc)
             return False
@@ -109,6 +138,13 @@ def _reset_otel_for_testing() -> None:
     with _CONFIG_LOCK:
         _IS_CONFIGURED = False
         _ACTIVE_PROVIDER = None
+        if HAS_OTEL:
+            try:
+                otel_trace._TRACER_PROVIDER = None
+                if hasattr(otel_trace, "_TRACER_PROVIDER_SET_ONCE"):
+                    otel_trace._TRACER_PROVIDER_SET_ONCE._done = False
+            except Exception:
+                pass
 
 
 def project_to_otel_attributes(observation: BaseObservation) -> Dict[str, Any]:
@@ -223,7 +259,10 @@ def export_observation_to_otel(observation: BaseObservation) -> bool:
             return False
 
     try:
-        tracer = otel_trace.get_tracer("oramasys.observability")
+        if _ACTIVE_PROVIDER is not None:
+            tracer = _ACTIVE_PROVIDER.get_tracer("oramasys.observability")
+        else:
+            tracer = otel_trace.get_tracer("oramasys.observability")
         span_name = getattr(observation, "event_name", "domain.observation")
         with tracer.start_as_current_span(span_name, attributes=attrs):
             pass

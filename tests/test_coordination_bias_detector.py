@@ -66,6 +66,42 @@ class TestCoordinationBiasDetector:
         assert score.echo_loop_detected is False
         assert score.coordination_risk == "high"
 
+    def test_agreement_collapse_triggers_at_exact_three_agent_boundary(self) -> None:
+        detector = CoordinationBiasDetector()
+        # Exactly 3 distinct agents across 4 decisions (minimum activation boundary) -> agreement_collapse = True
+        diverse_texts = [
+            "Alpha agent analyzed memory footprint and CPU utilization profiles.",
+            "Beta worker examined PostgreSQL connection pool timeout configurations.",
+            "Gamma orchestrator verified cryptographic hashes of the local dataset.",
+            "Alpha agent audited WebSocket heartbeat intervals across worker nodes.",
+        ]
+        agents = ["agent-0", "agent-1", "agent-2", "agent-0"]
+        for agent, text in zip(agents, diverse_texts):
+            detector.add_decision(0.95, text, agent_id=agent)
+        score = detector.detect_bias()
+        assert score.distinct_agent_count == 3
+        assert score.agreement_collapse is True
+        assert score.bias_types["groupthink"] > 0.85
+        assert score.echo_loop_detected is False
+        assert score.coordination_risk == "high"
+
+    def test_agreement_collapse_does_not_trigger_with_only_two_distinct_agents(self) -> None:
+        detector = CoordinationBiasDetector()
+        # Exactly 2 distinct agents (< 3) -> groupthink is 0.0, agreement_collapse = False
+        diverse_texts = [
+            "Alpha agent analyzed memory footprint and CPU utilization profiles.",
+            "Beta worker examined PostgreSQL connection pool timeout configurations.",
+            "Alpha agent reviewed database migration indexing strategies.",
+            "Beta worker verified cryptographic hash signatures of payloads.",
+        ]
+        agents = ["agent-alpha", "agent-beta", "agent-alpha", "agent-beta"]
+        for agent, text in zip(agents, diverse_texts):
+            detector.add_decision(0.95, text, agent_id=agent)
+        score = detector.detect_bias()
+        assert score.agreement_collapse is False
+        assert score.distinct_agent_count == 2
+        assert score.bias_types["groupthink"] == 0.0
+
     def test_single_agent_high_consensus_does_not_trigger_groupthink(self) -> None:
         detector = CoordinationBiasDetector()
         # Identical high confidence from only 1 agent -> groupthink is 0.0, agreement_collapse = False
@@ -80,6 +116,19 @@ class TestCoordinationBiasDetector:
         score = detector.detect_bias()
         assert score.agreement_collapse is False
         assert score.distinct_agent_count == 1
+        assert score.bias_types["groupthink"] == 0.0
+        assert score.echo_loop_detected is False
+
+    def test_single_agent_repeated_reasoning_triggers_echo_loop_without_groupthink(self) -> None:
+        detector = CoordinationBiasDetector()
+        # Repeated identical reasoning from agent-solo -> echo_loop_detected = True, agreement_collapse = False
+        repeated_text = "The agent verified that all invariants match the expected system state exactly."
+        for _ in range(4):
+            detector.add_decision(0.95, repeated_text, agent_id="agent-solo")
+        score = detector.detect_bias()
+        assert score.distinct_agent_count == 1
+        assert score.echo_loop_detected is True
+        assert score.agreement_collapse is False
         assert score.bias_types["groupthink"] == 0.0
 
     def test_echo_loop_detected_trigger_at_exact_threshold(self) -> None:
