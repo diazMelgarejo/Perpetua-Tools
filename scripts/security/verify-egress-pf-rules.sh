@@ -102,7 +102,11 @@ if [[ "$PFCTL_SKIP" -ne 1 ]]; then
     if echo "$rule_line" | grep -qF "anchor \"$ANCHOR_NAME\""; then
       break
     fi
-    if echo "$rule_line" | grep -qE '^\s*pass\s+out\s+quick(\s+all|\s+inet|\s+inet6|\s+to\s+any|\s+proto)'; then
+    # Any outbound pass rule with the quick modifier before the anchor can
+    # terminate evaluation before the anchor is reached. Match all common
+    # spellings (bare quick, from/to any, interface-scoped) — not just the
+    # narrow suffix set that misses `pass out quick from any to any`.
+    if echo "$rule_line" | grep -qE '^\s*pass\s+out\b.*\bquick\b'; then
       ORDERING_VIOLATION=1
       VIOLATING_RULE="$rule_line"
       break

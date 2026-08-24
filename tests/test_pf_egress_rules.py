@@ -244,6 +244,56 @@ class TestPFEgressScripts:
         assert res.returncode == 3
         assert "loaded rules" in res.stderr
 
+    def test_verifier_fails_when_pass_quick_from_any_precedes_anchor(self, darwin_uname_env, tmp_path) -> None:
+        stub_dir = tmp_path / "pfctl-stub-ordering-from-any"
+        stub_dir.mkdir()
+        fake_anchor = tmp_path / "anchor"
+        fake_anchor.write_text("\n".join(EXPECTED_RULES) + "\n", encoding="utf-8")
+        loaded_rules = "\n".join(EXPECTED_RULES)
+        (stub_dir / "pfctl").write_text(
+            f"#!/bin/bash\n"
+            f"if [[ \"$*\" == *\"-s info\"* ]]; then echo 'Status: Enabled'; exit 0; fi\n"
+            f"if [[ \"$*\" == *\"-s rules\"* ]]; then cat <<'EOF'\n{loaded_rules}\nEOF\nexit 0; fi\n"
+            f"if [[ \"$*\" == *\"-sr\"* ]]; then echo 'pass out quick from any to any keep state'; echo 'anchor \"com.perpetua-tools.egress-deny\"'; exit 0; fi\n"
+            f"exit 0\n",
+            encoding="utf-8",
+        )
+        (stub_dir / "pfctl").chmod(0o755)
+        env = {
+            **darwin_uname_env,
+            "PATH": f"{stub_dir}:{darwin_uname_env['PATH']}",
+            "PF_ANCHOR_FILE": str(fake_anchor),
+            "PFCTL_SKIP": "0",
+        }
+        res = subprocess.run(["bash", str(VERIFY_SCRIPT)], capture_output=True, text=True, env=env, check=False)
+        assert res.returncode == 5
+        assert "contains broad pass rule before anchor" in res.stderr
+
+    def test_verifier_fails_when_bare_pass_quick_precedes_anchor(self, darwin_uname_env, tmp_path) -> None:
+        stub_dir = tmp_path / "pfctl-stub-ordering-bare-quick"
+        stub_dir.mkdir()
+        fake_anchor = tmp_path / "anchor"
+        fake_anchor.write_text("\n".join(EXPECTED_RULES) + "\n", encoding="utf-8")
+        loaded_rules = "\n".join(EXPECTED_RULES)
+        (stub_dir / "pfctl").write_text(
+            f"#!/bin/bash\n"
+            f"if [[ \"$*\" == *\"-s info\"* ]]; then echo 'Status: Enabled'; exit 0; fi\n"
+            f"if [[ \"$*\" == *\"-s rules\"* ]]; then cat <<'EOF'\n{loaded_rules}\nEOF\nexit 0; fi\n"
+            f"if [[ \"$*\" == *\"-sr\"* ]]; then echo 'pass out quick'; echo 'anchor \"com.perpetua-tools.egress-deny\"'; exit 0; fi\n"
+            f"exit 0\n",
+            encoding="utf-8",
+        )
+        (stub_dir / "pfctl").chmod(0o755)
+        env = {
+            **darwin_uname_env,
+            "PATH": f"{stub_dir}:{darwin_uname_env['PATH']}",
+            "PF_ANCHOR_FILE": str(fake_anchor),
+            "PFCTL_SKIP": "0",
+        }
+        res = subprocess.run(["bash", str(VERIFY_SCRIPT)], capture_output=True, text=True, env=env, check=False)
+        assert res.returncode == 5
+        assert "contains broad pass rule before anchor" in res.stderr
+
     def test_verifier_fails_when_broad_pass_rule_precedes_anchor(self, darwin_uname_env, tmp_path) -> None:
         stub_dir = tmp_path / "pfctl-stub-ordering"
         stub_dir.mkdir()
