@@ -1,0 +1,47 @@
+{
+  "id": "35be0e2b1ff6",
+  "key": "manual_35be0e",
+  "name": "manual_35be0e",
+  "claim": "Keep PT .agent canonical in v1; route runtime lessons only through provisioned Anamnesis.",
+  "conditions": [
+    "agent",
+    "anamnesis",
+    "canonical",
+    "keep",
+    "lessons",
+    "only",
+    "provisioned",
+    "route",
+    "runtime",
+    "through"
+  ],
+  "evidence_ids": [
+    "2026-08-25T00:34:46.854441+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-25T00:34:46.854441+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-25T00:34:46.854441+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-25T00:34:46.974503+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A stable Orama capture controller must not silently create a second memory authority. Development delegates to PT now; runtime fails closed until its private backend is deliberately provisioned, and automatic push remains human-gated.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-25T00:34:46.854441+00:00"
+      ],
+      "lessons_sha": "ae5eb6bfb389"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-25T00:34:46.974484+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A stable Orama capture controller must not silently create a second memory authority. Development delegates to PT now; runtime fails closed until its private backend is deliberately provisioned, and automatic push remains human-gated."
+}
