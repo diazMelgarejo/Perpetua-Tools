@@ -10,11 +10,8 @@ from __future__ import annotations
 import atexit
 import os
 import re
-import subprocess
 import threading
 from dataclasses import dataclass
-from functools import lru_cache
-from pathlib import Path
 from urllib.parse import urlparse
 
 from src.observability.core import (
@@ -53,33 +50,15 @@ def _configured_endpoint() -> str:
     return os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "").strip()
 
 
-@lru_cache(maxsize=1)
-def _resolve_source_commit() -> str | None:
-    """Return an auditable 40-character source commit or fail closed.
+def _configured_source_commit() -> str | None:
+    """Return deploy-time PT provenance without performing runtime I/O.
 
-    Operators may supply ``PERPETUA_TOOLS_COMMIT`` for packaged deployments.
-    Source checkouts fall back to ``git rev-parse HEAD``.  We never invent a
-    placeholder SHA because provenance is part of the observability contract.
-    The result is stable for the process lifetime and therefore resolved once.
+    Remote telemetry requires an auditable 40-character source commit. The
+    deployment/startup environment owns that value; the request-adjacent egress
+    path never shells out to Git or invents a fallback provenance identifier.
     """
     configured = os.getenv("PERPETUA_TOOLS_COMMIT", "").strip().lower()
-    if _SHA40.fullmatch(configured):
-        return configured
-
-    repo_root = Path(__file__).resolve().parents[2]
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            cwd=repo_root,
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=2,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return None
-    commit = result.stdout.strip().lower()
-    return commit if _SHA40.fullmatch(commit) else None
+    return configured if _SHA40.fullmatch(configured) else None
 
 
 def _is_collector_transport(event: EgressEvent) -> bool:
@@ -107,6 +86,8 @@ def initialize_observability() -> ObservabilityRuntimeState:
         return ObservabilityRuntimeState(False, "endpoint_absent")
     if not HAS_OTEL:
         return ObservabilityRuntimeState(False, "dependency_absent")
+    if _configured_source_commit() is None:
+        return ObservabilityRuntimeState(False, "provenance_unavailable")
 
     enabled = configure_otel_exporter()
     if not enabled:
@@ -126,7 +107,7 @@ def build_egress_observation(event: EgressEvent) -> EgressValidationObservation 
 
     redacted = event.to_redacted_dict()
     destination_hash = redacted.get("host_hash")
-    commit = _resolve_source_commit()
+    commit = _configured_source_commit()
     if not isinstance(destination_hash, str) or not commit:
         return None
 
@@ -163,6 +144,9 @@ def build_egress_observation(event: EgressEvent) -> EgressValidationObservation 
 def observe_egress_event(event: EgressEvent) -> bool:
     """Export one existing redacted egress event without affecting its caller."""
     try:
+        # FastAPI initializes this during lifespan startup. CLI/one-shot callers
+        # retain this cheap lazy fallback; it performs configuration reads only
+        # and never starts Git or another subprocess.
         state = initialize_observability()
         if not state.enabled:
             return False

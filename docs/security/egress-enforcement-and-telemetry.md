@@ -70,13 +70,16 @@ from src.observability.core import (
 The canonical egress telemetry `emit()` path remains the single producer boundary. After its
 local redacted JSONL write, it hands the same `EgressEvent` to
 `src/observability/runtime.py`, which constructs a typed redacted observation and submits it
-through the existing OTLP exporter when an endpoint and optional OTel dependencies are present.
+through the existing OTLP exporter when an endpoint, deploy-time provenance, and optional OTel
+dependencies are present.
 
 Important runtime rules:
 
 - conversion consumes `EgressEvent.to_redacted_dict()` rather than raw host/IP fields;
 - remote events map to `pinned_requests`; local bridge events map to `local_http`;
 - exporter failure never fails the originating PT request;
+- remote projection requires `PERPETUA_TOOLS_COMMIT` to contain the deployed 40-character PT
+  commit SHA; runtime telemetry never starts Git or another subprocess to discover provenance;
 - Collector connection events remain in the local redacted sink but are not re-exported,
   preventing telemetry-of-telemetry recursion;
 - no request correlation identifier is synthesized because `EgressEvent` does not currently
@@ -112,10 +115,11 @@ projection.
 ## 5. OTLP Runtime Lifecycle
 
 Remote export is opt-in. Install the optional dependency group and configure an HTTPS trace
-endpoint outside git:
+endpoint plus the exact deployed PT commit outside git:
 
 ```bash
 uv sync --extra otel
+export PERPETUA_TOOLS_COMMIT="<40-character deployed PT commit SHA>"
 export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="https://otel-collector.example.com:4318/v1/traces"
 ```
 
@@ -129,10 +133,13 @@ The initial Collector must resolve only to addresses allowed by PT's existing gl
 policy. Private exposure is achieved with ingress firewall/security-group restrictions, not by
 weakening PT to allow RFC1918, CGNAT/Tailscale, WireGuard-private, ULA, or link-local addresses.
 
-PT configures the exporter lazily on the first real runtime egress event (or explicitly through
-the smoke command), once per process. At process exit it force-flushes buffered spans. PT only
-calls provider `shutdown()` when PT created that provider; a provider installed by another
-runtime is borrowed and is never terminated by PT.
+The canonical FastAPI lifespan initializes the exporter before request handling when all required
+configuration is present and shuts it down during application teardown. CLI and one-shot callers
+retain the same lazy initialization fallback, but that fallback performs configuration reads only:
+if deploy-time provenance is absent or invalid, remote projection remains disabled with
+`reason="provenance_unavailable"`. No runtime telemetry path executes Git. PT only calls provider
+`shutdown()` when PT created that provider; a provider installed by another runtime is borrowed
+and is never terminated by PT.
 
 ---
 
@@ -146,7 +153,8 @@ python -m src.observability.smoke
 
 A successful run returns JSON indicating that the exporter was configured, a synthetic redacted
 observation was constructed and submitted, the provider was explicitly flushed, and an
-`internal_only` negative control was rejected.
+`internal_only` negative control was rejected. If `PERPETUA_TOOLS_COMMIT` is unavailable or not a
+40-character SHA, the command fails closed with `reason="provenance_unavailable"`.
 
 The smoke command proves PT submission and flush behavior. A real Collector rollout additionally
 requires Collector-side evidence that the span arrived and that forbidden raw values are absent.
@@ -163,8 +171,9 @@ Promote one macOS host at a time.
    `status="ok"`.
 3. **TLS/SNI:** verify the Collector certificate independently with `openssl s_client`; do not use
    an arbitrary `GET /` as the OTLP TLS acceptance test.
-4. **PT transport smoke:** run `python -m src.observability.smoke` with the configured HTTPS OTLP
-   endpoint and require configured/submitted/flushed success.
+4. **PT transport smoke:** set `PERPETUA_TOOLS_COMMIT` to the exact deployed 40-character commit,
+   run `python -m src.observability.smoke` with the configured HTTPS OTLP endpoint, and require
+   configured/submitted/flushed success.
 5. **Collector proof:** during rollout, use the Collector debug exporter to confirm the expected
    safe attributes and absence of raw host/IP/prompt/secret/path data.
 6. **Periscope local proof:** set `PERISCOPE_EMITTER_ENABLED=1`, configure Periscope `openclaw_dirs`
