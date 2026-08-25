@@ -1,0 +1,46 @@
+{
+  "id": "4cf1c0cf3940",
+  "key": "manual_4cf1c0",
+  "name": "manual_4cf1c0",
+  "claim": "Whole-file deletion is a publication-integrity event, not ordinary diff noise. Before every commit run git diff --cached --name-status plus scripts/git/check_file_deletion_guard.sh --staged; before every push run git diff --name-status <actual-base>..HEAD plus --range <actual-base>..HEAD. For Git data/tree API publication, build from the verified base tree and require the returned tree SHA to equal local HEAD^{tree} before updating any ref. Treat GIT_SCOPE_E_FILE_DELETION as a stop: restore/amend accidental paths; an intentional removal requires GIT_ALLOW_FILE_DELETIONS=1 and a nonempty GIT_FILE_DELETION_JUSTIFICATION recorded in the commit and PR. Never use routine --no-verify.",
+  "conditions": [
+    "git-data-api",
+    "git-diff-filter-D",
+    "pre-commit",
+    "pre-push",
+    "publication-safety",
+    "reverse-diff",
+    "tree-sha",
+    "whole-file-deletion",
+    "worktree-integrity"
+  ],
+  "evidence_ids": [
+    "2026-08-24T21:46:46.711130+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-24T21:46:46.711130+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-24T21:46:46.711130+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-24T21:46:46.793190+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "This is the durable synthesis of three related failures: (1) orama-system commit 95db1dd017a7b982778f62b53ee1a66b3599a436 visibly registered 1,881 changed files and 270,621 deletions after a malformed publication path, making the repository appear gone; (2) the same class can look like a reverse diff when an API-created tree retains only the submitted changed entries and omits unchanged base-tree entries; and (3) PT candidate fb36c00f3db7 caught an abandoned-branch replay that would have deleted five permanent graduated-memory audit files. It complements candidate deb085daf874: text-marker checks miss delete/modify and rename/delete states, so Git status and D-filter checks\u2014not narrative or grep\u2014are authoritative. The Orama canonical remediation is git-file-deletion-guard with dual commit/push gates and tree-SHA equality proof.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-24T21:46:46.711130+00:00"
+      ],
+      "lessons_sha": "59ca327810d9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-24T21:46:46.793176+00:00",
+  "reviewer": "learn.py",
+  "rationale": "This is the durable synthesis of three related failures: (1) orama-system commit 95db1dd017a7b982778f62b53ee1a66b3599a436 visibly registered 1,881 changed files and 270,621 deletions after a malformed publication path, making the repository appear gone; (2) the same class can look like a reverse diff when an API-created tree retains only the submitted changed entries and omits unchanged base-tree entries; and (3) PT candidate fb36c00f3db7 caught an abandoned-branch replay that would have deleted five permanent graduated-memory audit files. It complements candidate deb085daf874: text-marker checks miss delete/modify and rename/delete states, so Git status and D-filter checks\u2014not narrative or grep\u2014are authoritative. The Orama canonical remediation is git-file-deletion-guard with dual commit/push gates and tree-SHA equality proof."
+}
