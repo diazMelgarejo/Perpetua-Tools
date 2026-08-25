@@ -13,8 +13,8 @@ import re
 import subprocess
 import threading
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
-from typing import Any
 from urllib.parse import urlparse
 
 from src.observability.core import (
@@ -37,6 +37,7 @@ _COMPONENT = "utils.egress_telemetry"
 _SHA40 = re.compile(r"^[0-9a-f]{40}$")
 _LIFECYCLE_LOCK = threading.Lock()
 _ATEXIT_REGISTERED = False
+_AGENT = AgentIdentity(id="pt-runtime-egress", harness="standalone")
 
 
 @dataclass(frozen=True)
@@ -52,12 +53,14 @@ def _configured_endpoint() -> str:
     return os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "").strip()
 
 
+@lru_cache(maxsize=1)
 def _resolve_source_commit() -> str | None:
     """Return an auditable 40-character source commit or fail closed.
 
     Operators may supply ``PERPETUA_TOOLS_COMMIT`` for packaged deployments.
     Source checkouts fall back to ``git rev-parse HEAD``.  We never invent a
     placeholder SHA because provenance is part of the observability contract.
+    The result is stable for the process lifetime and therefore resolved once.
     """
     configured = os.getenv("PERPETUA_TOOLS_COMMIT", "").strip().lower()
     if _SHA40.fullmatch(configured):
@@ -127,14 +130,13 @@ def build_egress_observation(event: EgressEvent) -> EgressValidationObservation 
     if not isinstance(destination_hash, str) or not commit:
         return None
 
-    agent = AgentIdentity(id="pt-runtime-egress", harness="standalone")
     source = SourceProvenance(repo=_REPO, commit=commit, component=_COMPONENT)
     transport = "local_http" if redacted["endpoint_class"] == "local" else "pinned_requests"
 
     if redacted["event_kind"] == "validation":
         deny_reason = redacted.get("deny_reason")
         return EgressValidationObservation(
-            agent=agent,
+            agent=_AGENT,
             source=source,
             endpoint_class=redacted["endpoint_class"],
             transport=transport,
@@ -147,7 +149,7 @@ def build_egress_observation(event: EgressEvent) -> EgressValidationObservation 
         )
 
     return EgressCompleteObservation(
-        agent=agent,
+        agent=_AGENT,
         source=source,
         endpoint_class=redacted["endpoint_class"],
         transport=transport,
