@@ -63,6 +63,7 @@ except ImportError:
 _CONFIG_LOCK = threading.Lock()
 _IS_CONFIGURED = False
 _ACTIVE_PROVIDER: Optional[Any] = None
+_OWNS_PROVIDER = False
 
 
 def _otel_url_allowed(url: str) -> None:
@@ -144,7 +145,7 @@ def configure_otel_exporter(
     attempts to replace OpenTelemetry's process-global provider. Replacing it
     is unsupported by the SDK and can silently create an orphan pipeline.
     """
-    global _IS_CONFIGURED, _ACTIVE_PROVIDER
+    global _IS_CONFIGURED, _ACTIVE_PROVIDER, _OWNS_PROVIDER
     if not HAS_OTEL:
         return False
 
@@ -185,6 +186,7 @@ def configure_otel_exporter(
             if tracer_provider is not None:
                 tracer_provider.add_span_processor(span_processor)
                 _ACTIVE_PROVIDER = tracer_provider
+                _OWNS_PROVIDER = False
                 _IS_CONFIGURED = True
                 return True
 
@@ -195,6 +197,7 @@ def configure_otel_exporter(
             if isinstance(current_provider, TracerProvider):
                 current_provider.add_span_processor(span_processor)
                 _ACTIVE_PROVIDER = current_provider
+                _OWNS_PROVIDER = False
                 _IS_CONFIGURED = True
                 return True
 
@@ -214,6 +217,7 @@ def configure_otel_exporter(
             # Ensure provider was actually accepted or is a functional TracerProvider
             if active is provider:
                 _ACTIVE_PROVIDER = provider
+                _OWNS_PROVIDER = True
                 _IS_CONFIGURED = True
                 return True
             elif isinstance(active, TracerProvider):
@@ -221,24 +225,106 @@ def configure_otel_exporter(
                 # Attach to the provider that actually became active.
                 active.add_span_processor(span_processor)
                 _ACTIVE_PROVIDER = active
+                _OWNS_PROVIDER = False
                 _IS_CONFIGURED = True
                 return True
             else:
                 logger.debug("TracerProvider registration was ignored and active provider is not functional")
                 _ACTIVE_PROVIDER = None
+                _OWNS_PROVIDER = False
                 _IS_CONFIGURED = False
                 return False
         except Exception as exc:
             logger.debug("Failed to configure OTel exporter: %s", exc)
+            _OWNS_PROVIDER = False
             return False
+
+
+def force_flush_otel(timeout_millis: int = 5000) -> bool:
+    """Force delivery of buffered spans through the active PT provider.
+
+    Returns False when OTel is disabled/unconfigured or when the provider does
+    not expose a flush seam.  The timeout is delegated to the official SDK
+    provider and is intended for smoke tests and orderly process shutdown only.
+    """
+    provider = _ACTIVE_PROVIDER
+    if provider is None:
+        return False
+    flush = getattr(provider, "force_flush", None)
+    if not callable(flush):
+        return False
+    try:
+        result = flush(timeout_millis=max(1, int(timeout_millis)))
+    except TypeError:
+        # Some test doubles/older compatible providers accept positional only.
+        result = flush(max(1, int(timeout_millis)))
+    except Exception as exc:
+        logger.debug("OTel force_flush failed non-blockingly: %s", exc)
+        return False
+    return result is not False
+
+
+def shutdown_otel(timeout_millis: int = 5000) -> bool:
+    """Flush PT telemetry and shut down only a provider PT actually owns.
+
+    A provider installed by another runtime is borrowed: PT may force-flush it
+    to deliver the processor PT attached, but must never terminate that global
+    provider. For a PT-created provider, OpenTelemetry's ``shutdown()`` has no
+    timeout parameter, so it runs on a daemon helper thread and is bounded by
+    the requested wait budget.
+    """
+    global _IS_CONFIGURED, _ACTIVE_PROVIDER, _OWNS_PROVIDER
+    provider = _ACTIVE_PROVIDER
+    if provider is None:
+        return True
+
+    # Give pending spans a bounded delivery attempt before detaching PT state.
+    force_flush_otel(timeout_millis=max(1, int(timeout_millis)))
+    if not _OWNS_PROVIDER:
+        with _CONFIG_LOCK:
+            if _ACTIVE_PROVIDER is provider:
+                _ACTIVE_PROVIDER = None
+                _IS_CONFIGURED = False
+                _OWNS_PROVIDER = False
+        return True
+
+    shutdown = getattr(provider, "shutdown", None)
+    if not callable(shutdown):
+        return False
+
+    done = threading.Event()
+    failed = []
+
+    def _run_shutdown() -> None:
+        try:
+            shutdown()
+        except Exception as exc:  # pragma: no cover - defensive provider seam
+            failed.append(exc)
+        finally:
+            done.set()
+
+    worker = threading.Thread(target=_run_shutdown, name="pt-otel-shutdown", daemon=True)
+    worker.start()
+    finished = done.wait(max(1, int(timeout_millis)) / 1000.0)
+    if finished and not failed:
+        with _CONFIG_LOCK:
+            if _ACTIVE_PROVIDER is provider:
+                _ACTIVE_PROVIDER = None
+                _IS_CONFIGURED = False
+                _OWNS_PROVIDER = False
+        return True
+    if failed:
+        logger.debug("OTel shutdown failed non-blockingly: %s", failed[0])
+    return False
 
 
 def _reset_otel_for_testing() -> None:
     """Reset only PT-owned state; never mutate OpenTelemetry private globals."""
-    global _IS_CONFIGURED, _ACTIVE_PROVIDER
+    global _IS_CONFIGURED, _ACTIVE_PROVIDER, _OWNS_PROVIDER
     with _CONFIG_LOCK:
         _IS_CONFIGURED = False
         _ACTIVE_PROVIDER = None
+        _OWNS_PROVIDER = False
 
 
 def project_to_otel_attributes(observation: BaseObservation) -> Dict[str, Any]:

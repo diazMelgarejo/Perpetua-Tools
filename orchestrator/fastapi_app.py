@@ -19,6 +19,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 
+from src.observability.runtime import initialize_observability, shutdown_observability
 from orchestrator.control_plane_auth import (
     ensure_control_plane_token,
     redact_runtime_payload,
@@ -153,6 +154,12 @@ async def _resolve_routing_bg() -> None:
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
+    observability_state = initialize_observability()
+    if observability_state.enabled:
+        _startup_log.info("OTel runtime initialized")
+    elif observability_state.reason not in {"endpoint_absent", "dependency_absent"}:
+        _startup_log.warning("OTel runtime disabled: %s", observability_state.reason)
+
     token = ensure_control_plane_token()
     if token:
         _startup_log.info(
@@ -166,7 +173,10 @@ async def _lifespan(app: FastAPI):
     _routing_task = asyncio.create_task(_resolve_routing_bg(), name="routing-bg")
     _bg_startup_tasks.add(_routing_task)
     _routing_task.add_done_callback(_bg_startup_tasks.discard)
-    yield
+    try:
+        yield
+    finally:
+        shutdown_observability(timeout_ms=2000)
 
 
 app = FastAPI(

@@ -103,11 +103,11 @@ def _sink_path(now: float | None = None) -> Path:
 
 
 def emit(event: EgressEvent) -> None:
-    """Append a redacted egress event to the local JSONL sink.
+    """Emit one redacted egress event to local JSONL and optional OTLP.
 
-    Fire-and-forget: never raises into the caller's request path. A sink
-    failure (permissions, disk full, missing dir) is swallowed silently --
-    telemetry must never be able to break a live dispatch.
+    Both sinks are fire-and-forget and isolated from one another: a local disk
+    failure must not suppress an otherwise configured remote redacted export,
+    and an OTel failure must never fail the originating PT request.
     """
     try:
         payload = event.to_redacted_dict()
@@ -116,6 +116,16 @@ def emit(event: EgressEvent) -> None:
         with path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(payload, sort_keys=True) + "\n")
     except Exception:  # noqa: BLE001 -- telemetry must never raise into the request path
+        pass
+
+    # Lazy import avoids a module cycle: the runtime bridge itself consumes
+    # this canonical EgressEvent type.  It also keeps the optional OTel stack
+    # completely dormant when no endpoint/dependency is configured.
+    try:
+        from src.observability.runtime import observe_egress_event
+
+        observe_egress_event(event)
+    except Exception:  # noqa: BLE001 -- remote telemetry is equally non-blocking
         pass
 
 
