@@ -4,11 +4,11 @@
   "name": "manual_cb77c6",
   "claim": "Cross-repository security contracts must state only enforceable platform guarantees, link every remediation commit, and update the companion ADR whenever review changes the implementation's actual failure mode.",
   "conditions": [
-    "ci",
-    "observability",
-    "review-remediation",
-    "security",
-    "ssrf"
+    "cross-repository-contract",
+    "platform-guarantee",
+    "companion-adr",
+    "remediation-evidence",
+    "review-remediation"
   ],
   "evidence_ids": [
     "2026-08-24T21:21:00.842950+00:00"

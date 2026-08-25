@@ -4,11 +4,11 @@
   "name": "manual_399a47",
   "claim": "Before publishing a Git tree through an API, require the constructed remote tree SHA to equal the locally verified tree SHA; chunk large blobs instead of trusting truncated command output.",
   "conditions": [
-    "ci",
-    "observability",
-    "review-remediation",
-    "security",
-    "ssrf"
+    "git-tree-api",
+    "tree-sha-verification",
+    "large-blob-publication",
+    "truncated-output",
+    "review-remediation"
   ],
   "evidence_ids": [
     "2026-08-24T21:20:59.704398+00:00"

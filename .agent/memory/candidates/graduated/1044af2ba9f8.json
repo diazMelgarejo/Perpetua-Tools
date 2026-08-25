@@ -4,11 +4,11 @@
   "name": "manual_1044af",
   "claim": "Optional integrations need a stable module surface even when their dependency is absent, and CI must exercise that absence rather than relying on a developer environment with the dependency installed.",
   "conditions": [
-    "ci",
-    "observability",
-    "review-remediation",
-    "security",
-    "ssrf"
+    "optional-dependency",
+    "dependency-absent-import",
+    "stable-module-surface",
+    "clean-interpreter",
+    "review-remediation"
   ],
   "evidence_ids": [
     "2026-08-24T21:20:59.994208+00:00"

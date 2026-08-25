@@ -7,7 +7,9 @@
 
 ## Current focus
 
-### Observability review closure (2026-08-24)
+### Historical observability review closure snapshot (2026-08-24)
+
+> Historical snapshot retained for provenance; this is not the current active workspace state.
 
 **Completed on existing PRs:** PT #371 and orama-system #328 are mergeable
 with all GitHub checks green. The closure corrected five review-proven gaps:

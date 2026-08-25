@@ -4,11 +4,12 @@
   "name": "manual_fa960a",
   "claim": "When disabling Requests environment trust to prevent proxy-based SSRF boundary shifts, preserve explicit CA configuration first: REQUESTS_CA_BUNDLE takes precedence and CURL_CA_BUNDLE is the fallback.",
   "conditions": [
-    "ci",
-    "observability",
-    "review-remediation",
-    "security",
-    "ssrf"
+    "requests-trust-env",
+    "requests-ca-bundle",
+    "curl-ca-bundle",
+    "proxy-inheritance",
+    "ssrf-boundary",
+    "review-remediation"
   ],
   "evidence_ids": [
     "2026-08-24T21:21:00.289011+00:00"
