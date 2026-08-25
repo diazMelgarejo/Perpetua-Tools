@@ -32,7 +32,7 @@ def reset_pt_otel_state():
     _reset_otel_for_testing()
 
 
-def test_force_flush_and_shutdown_use_active_provider(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_shutdown_owned_provider_flushes_and_terminates(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[object] = []
 
     class Provider:
@@ -46,11 +46,38 @@ def test_force_flush_and_shutdown_use_active_provider(monkeypatch: pytest.Monkey
     provider = Provider()
     monkeypatch.setattr(exporter_module, "_ACTIVE_PROVIDER", provider)
     monkeypatch.setattr(exporter_module, "_IS_CONFIGURED", True)
+    monkeypatch.setattr(exporter_module, "_OWNS_PROVIDER", True)
 
     assert exporter_module.force_flush_otel(1234) is True
     assert exporter_module.shutdown_otel(1234) is True
     assert ("flush", 1234) in calls
     assert "shutdown" in calls
+    assert exporter_module._ACTIVE_PROVIDER is None
+    assert exporter_module._IS_CONFIGURED is False
+    assert exporter_module._OWNS_PROVIDER is False
+
+
+def test_shutdown_borrowed_provider_flushes_but_never_terminates(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[object] = []
+
+    class Provider:
+        def force_flush(self, timeout_millis: int) -> bool:
+            calls.append(("flush", timeout_millis))
+            return True
+
+        def shutdown(self) -> None:
+            calls.append("shutdown")
+
+    provider = Provider()
+    monkeypatch.setattr(exporter_module, "_ACTIVE_PROVIDER", provider)
+    monkeypatch.setattr(exporter_module, "_IS_CONFIGURED", True)
+    monkeypatch.setattr(exporter_module, "_OWNS_PROVIDER", False)
+
+    assert exporter_module.shutdown_otel(1234) is True
+    assert ("flush", 1234) in calls
+    assert "shutdown" not in calls
     assert exporter_module._ACTIVE_PROVIDER is None
     assert exporter_module._IS_CONFIGURED is False
 
