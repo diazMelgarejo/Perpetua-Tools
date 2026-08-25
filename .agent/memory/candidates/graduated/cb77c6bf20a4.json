@@ -1,0 +1,42 @@
+{
+  "id": "cb77c6bf20a4",
+  "key": "manual_cb77c6",
+  "name": "manual_cb77c6",
+  "claim": "Cross-repository security contracts must state only enforceable platform guarantees, link every remediation commit, and update the companion ADR whenever review changes the implementation's actual failure mode.",
+  "conditions": [
+    "cross-repository-contract",
+    "platform-guarantee",
+    "companion-adr",
+    "remediation-evidence",
+    "review-remediation"
+  ],
+  "evidence_ids": [
+    "2026-08-24T21:21:00.842950+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-24T21:21:00.842950+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-24T21:21:00.842950+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-24T21:21:00.982076+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The first ADR overclaimed HTTPS scope and portable race safety. It now requires HTTPS for every configured endpoint, scopes late-symlink guarantees to POSIX descriptor operations, labels the portable guard best-effort, and records the final PT evidence.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-24T21:21:00.842950+00:00"
+      ],
+      "lessons_sha": "a5663e7fb8e5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-24T21:21:00.982061+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The first ADR overclaimed HTTPS scope and portable race safety. It now requires HTTPS for every configured endpoint, scopes late-symlink guarantees to POSIX descriptor operations, labels the portable guard best-effort, and records the final PT evidence."
+}
