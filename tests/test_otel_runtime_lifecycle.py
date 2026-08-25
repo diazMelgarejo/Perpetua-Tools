@@ -13,6 +13,15 @@ from src.observability.otel_exporter import (
 )
 from utils.egress_telemetry import EgressEvent
 
+try:
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    HAS_OTEL_TEST_EXPORTER = True
+except ImportError:
+    HAS_OTEL_TEST_EXPORTER = False
+
 _COMMIT = "b" * 40
 
 
@@ -44,16 +53,6 @@ def test_force_flush_and_shutdown_use_active_provider(monkeypatch: pytest.Monkey
     assert "shutdown" in calls
     assert exporter_module._ACTIVE_PROVIDER is None
     assert exporter_module._IS_CONFIGURED is False
-
-
-try:
-    from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
-
-    HAS_OTEL_TEST_EXPORTER = True
-except ImportError:
-    HAS_OTEL_TEST_EXPORTER = False
 
 
 @pytest.mark.skipif(not HAS_OTEL_TEST_EXPORTER, reason="OpenTelemetry SDK in-memory exporter required")
