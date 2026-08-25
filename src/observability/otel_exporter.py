@@ -233,6 +233,73 @@ def configure_otel_exporter(
             return False
 
 
+def force_flush_otel(timeout_millis: int = 5000) -> bool:
+    """Force delivery of buffered spans through the active PT provider.
+
+    Returns False when OTel is disabled/unconfigured or when the provider does
+    not expose a flush seam.  The timeout is delegated to the official SDK
+    provider and is intended for smoke tests and orderly process shutdown only.
+    """
+    provider = _ACTIVE_PROVIDER
+    if provider is None:
+        return False
+    flush = getattr(provider, "force_flush", None)
+    if not callable(flush):
+        return False
+    try:
+        result = flush(timeout_millis=max(1, int(timeout_millis)))
+    except TypeError:
+        # Some test doubles/older compatible providers accept positional only.
+        result = flush(max(1, int(timeout_millis)))
+    except Exception as exc:
+        logger.debug("OTel force_flush failed non-blockingly: %s", exc)
+        return False
+    return result is not False
+
+
+def shutdown_otel(timeout_millis: int = 5000) -> bool:
+    """Bound the caller's wait while shutting down the active OTel provider.
+
+    OpenTelemetry's provider ``shutdown()`` has no timeout parameter.  Run it
+    on a daemon helper thread and join only for the requested budget so PT
+    shutdown cannot hang indefinitely on an unavailable collector.
+    """
+    global _IS_CONFIGURED, _ACTIVE_PROVIDER
+    provider = _ACTIVE_PROVIDER
+    if provider is None:
+        return True
+
+    # Give pending spans a bounded delivery attempt before provider shutdown.
+    force_flush_otel(timeout_millis=max(1, int(timeout_millis)))
+    shutdown = getattr(provider, "shutdown", None)
+    if not callable(shutdown):
+        return False
+
+    done = threading.Event()
+    failed = []
+
+    def _run_shutdown() -> None:
+        try:
+            shutdown()
+        except Exception as exc:  # pragma: no cover - defensive provider seam
+            failed.append(exc)
+        finally:
+            done.set()
+
+    worker = threading.Thread(target=_run_shutdown, name="pt-otel-shutdown", daemon=True)
+    worker.start()
+    finished = done.wait(max(1, int(timeout_millis)) / 1000.0)
+    if finished and not failed:
+        with _CONFIG_LOCK:
+            if _ACTIVE_PROVIDER is provider:
+                _ACTIVE_PROVIDER = None
+                _IS_CONFIGURED = False
+        return True
+    if failed:
+        logger.debug("OTel shutdown failed non-blockingly: %s", failed[0])
+    return False
+
+
 def _reset_otel_for_testing() -> None:
     """Reset only PT-owned state; never mutate OpenTelemetry private globals."""
     global _IS_CONFIGURED, _ACTIVE_PROVIDER
