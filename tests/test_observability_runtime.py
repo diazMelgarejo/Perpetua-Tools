@@ -3,9 +3,11 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
+import orchestrator.orama_bridge as orama_bridge
 import src.observability.runtime as runtime
 from src.observability.otel_exporter import project_to_otel_attributes
 from utils.egress_telemetry import EgressEvent, _sink_path, emit
@@ -131,6 +133,36 @@ def test_canonical_emit_invokes_runtime_bridge_once(
     records = _sink_path().read_text(encoding="utf-8").splitlines()
     assert len(records) == 1
     assert json.loads(records[0])["event_kind"] == "complete"
+
+
+def test_real_orama_bridge_path_reaches_runtime_producer(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("PERPETUA_TELEMETRY_DIR", str(tmp_path))
+    seen: list[EgressEvent] = []
+    monkeypatch.setattr(runtime, "observe_egress_event", lambda event: seen.append(event) or True)
+    monkeypatch.setattr(orama_bridge, "_is_local_oramasys_endpoint", lambda _url: True)
+
+    import httpx
+
+    monkeypatch.setattr(
+        httpx,
+        "post",
+        lambda *_args, **_kwargs: SimpleNamespace(status_code=200),
+    )
+
+    response = orama_bridge._dispatch_oramasys_http(
+        "http://localhost:8001/oramasys",
+        {"task_description": "smoke"},
+        1.0,
+    )
+
+    assert response.status_code == 200
+    completion_events = [event for event in seen if event.event_kind == "complete"]
+    assert len(completion_events) == 1
+    assert completion_events[0].endpoint_class == "local"
+    assert completion_events[0].status_code == 200
 
 
 def test_remote_export_is_independent_of_local_sink(
