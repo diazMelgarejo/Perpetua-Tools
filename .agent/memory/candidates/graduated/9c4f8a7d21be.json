@@ -1,0 +1,23 @@
+{
+  "id": "9c4f8a7d21be",
+  "key": "manual_9c4f8a",
+  "name": "manual_9c4f8a",
+  "status": "accepted",
+  "canonical_salience": 9.0,
+  "claim": "Canonical MiniGraph finalization: the blanket 'ALWAYS create new objects, NEVER mutate existing ones' instruction was located in orama-system/.cursor/rules/common-coding-style.mdc and superseded on PR #333 by boundary-aware mutation semantics. PerpetuaState generations are deeply isolated with model_copy(update=delta, deep=True); MiniGraph remains an intentional mutable construction builder whose compile() creates the detached runtime snapshot; persistent structural sharing is reserved for future versioned GraphSpec; GraphPlugin multicast guarantees identical GraphObservation delivery to every registered plugin while allowing plugin-specific deterministic filtering; R2.4 separately proves delivery integrity, semantic filtering, and plugin-vs-no-plugin final-state parity. The one-scheduler architecture remains CompiledGraph._run() -> GraphObservation -> aobserve()/GraphEvent -> asteps(). GraphSpec validation remains fail-closed in orama-system.",
+  "related_lesson_ids": [
+    "lesson_e0ff7f2d6717",
+    "lesson_1079e8c74f20",
+    "lesson_4a711949b3ed"
+  ],
+  "evidence_ids": [
+    "orama-system:.cursor/rules/common-coding-style.mdc",
+    "orama-system:docs/v2/59-minigraph-state-mutation-observer-finalization.md",
+    "oramasys/perpetua-core:src/perpetua_core/state.py",
+    "oramasys/perpetua-core:src/tests/graph/plugins/test_observer.py"
+  ],
+  "rationale": "Links the final architecture to the earlier MiniGraph memory chain using the supported graduated-candidate linkage field. It preserves the append-only memory rule while separating that targeted historical-record rule from the superseded blanket coding-style mutation ban.",
+  "reviewer": "host-agent",
+  "provisional": false,
+  "accepted_at": "2026-08-28T04:35:00+08:00"
+}
