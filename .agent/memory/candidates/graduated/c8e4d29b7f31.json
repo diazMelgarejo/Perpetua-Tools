@@ -1,0 +1,42 @@
+{
+  "id": "c8e4d29b7f31",
+  "key": "manual_c8e4d2",
+  "name": "manual_c8e4d2",
+  "claim": "Supersedes the observer-mechanism portion of lesson_4a711949b3ed while preserving its provenance finding. The final MiniGraph reconciliation is not 'asteps() is the sole scheduler plus callbacks over asteps()'. Current perpetua-core PR #1 has one private scheduler, CompiledGraph._run(), yielding a state-bearing execution record; ainvoke() and asteps() are projections over that scheduler. The correct architecture promotes the rich record into an intentional GraphObservation(event, state, optional node delta) seam for trusted in-process consumers, while GraphEvent remains a sanitized control-only projection for streaming/API/UI. A plugin-layer dispatcher drains GraphObservation once and pushes each observation to N GraphPlugin listeners in deterministic registration order, so a checkpointer, tracer, audit hook, and interrupt observer can all observe one run without racing a single async generator. This preserves the 05-feasibility-review.md GraphPlugin groundwork and the one-scheduler invariant simultaneously. The older orama v2 pattern-mining library is evidence beneath the canonical reconciliation rather than superseded history: LangGraph checkpoint/session/reducer ideas feed durability and R3/R4; Pydantic AI tool-schema extraction survives in the generic tool layer without its runtime; Karpathy March-of-Nines becomes evaluator/verification doctrine above the kernel; Swarm/CrewAI/AutoGen map to edges/subgraphs/bounded topology; Foundry evaluation/isolation/routing split across evaluator, effect/security policy, and runtime/GraphSpec layers.",
+  "conditions": [
+    "graphplugin",
+    "graphobservation",
+    "graphevent",
+    "asteps",
+    "minigraph",
+    "observer",
+    "fan-out",
+    "checkpointer",
+    "tracer",
+    "langgraph",
+    "pydantic-ai",
+    "march-of-nines",
+    "swarm",
+    "crewai",
+    "autogen",
+    "foundry"
+  ],
+  "evidence_ids": [
+    "2026-08-27T21:43:00+08:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 9.0,
+  "staged_at": "2026-08-27T21:43:00+08:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-27T21:43:00+08:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Direct operator instruction to update PT .agent main after verifying the orama pattern library, GraphPlugin provenance, and actual perpetua-core PR #1 scheduler implementation."
+    }
+  ],
+  "related_lesson_ids": [
+    "lesson_4a711949b3ed"
+  ]
+}
