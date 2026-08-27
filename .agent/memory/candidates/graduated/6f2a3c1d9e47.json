@@ -1,0 +1,29 @@
+{
+  "id": "6f2a3c1d9e47",
+  "key": "manual_6f2a3c",
+  "name": "manual_6f2a3c",
+  "status": "accepted",
+  "canonical_salience": 9.0,
+  "claim": "Final MiniGraph mutation/observer reconciliation superseding the remaining overstatements in lesson_e0ff7f2d6717 and extending lesson_1079e8c74f20. The previously hard-to-locate blanket rule was found in orama-system/.cursor/rules/common-coding-style.mdc as an alwaysApply instruction: 'ALWAYS create new objects, NEVER mutate existing ones'. That rule is now explicitly superseded on orama PR #333 by a boundary-aware policy: immutable/copy-on-write semantics for values, versioned specifications, and published snapshots; intentional local mutation is allowed for documented builder/workspace/buffer/cache APIs when it cannot leak across snapshot boundaries. MiniGraph therefore remains a mutable construction builder whose add_node/add_edge mutate self and return self; compile() is the detached immutable runtime boundary. Persistent structural sharing is retained as a good idea but relocated to the future versioned GraphSpec layer, where with_node/with_edge-style persistent updates fit identity, diffing, optimization, and promotion semantics. PerpetuaState.merge() is now implemented in oramasys/perpetua-core PR #1 with model_copy(update=delta, deep=True), closing the verified nested-container aliasing bug while preserving the rule that nodes/observers treat received state as immutable input. Observer R2.4 is corrected: every registered plugin must be DELIVERED every GraphObservation in deterministic order, but semantic plugins may ACT on different subsets (e.g. Checkpointer persists node.end while Tracer records the full structural stream). Regression proof is split into identical spy-plugin delivery, heterogeneous semantic filtering, and plugin-enabled-vs-no-plugin final-state parity. The one-scheduler architecture remains _run() -> GraphObservation -> aobserve()/GraphEvent->asteps(), with GraphPlugin multicast draining aobserve() exactly once. GraphSpec validation remains fail-closed in orama-system. Process-only merge-conflict mechanics from lesson_e0ff7f2d6717 remain valid but are not MiniGraph architecture.",
+  "supersedes": [
+    "lesson_e0ff7f2d6717",
+    "lesson_1079e8c74f20"
+  ],
+  "preserves": [
+    "lesson_4a711949b3ed",
+    "c8e4d29b7f31"
+  ],
+  "evidence": [
+    "orama-system/.cursor/rules/common-coding-style.mdc",
+    "orama-system/docs/v2/59-minigraph-state-mutation-observer-finalization.md",
+    "orama-system/docs/v2/plans/2026-08-27-minigraph-observer-fanout-addendum.md",
+    "oramasys/perpetua-core/src/perpetua_core/state.py",
+    "oramasys/perpetua-core/src/tests/test_state_isolation.py",
+    "oramasys/perpetua-core/src/tests/graph/test_builder_contract.py",
+    "oramasys/perpetua-core/src/tests/graph/plugins/test_observer.py"
+  ],
+  "rationale": "A blanket no-mutation rule was finally located and shown to be the source of the builder conflict. The final design keeps immutability where it is semantically load-bearing and preserves established builder semantics where mutation is the contract. Observer delivery and plugin-specific action are separated explicitly, eliminating the prior R2.4 overconstraint.",
+  "reviewer": "host-agent",
+  "provisional": false,
+  "accepted_at": "2026-08-28T04:30:00+08:00"
+}
