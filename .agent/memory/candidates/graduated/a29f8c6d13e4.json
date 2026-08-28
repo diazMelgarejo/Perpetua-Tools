@@ -1,0 +1,41 @@
+{
+  "id": "a29f8c6d13e4",
+  "key": "weekly_reconciliation_2026_08_23_29",
+  "name": "weekly_reconciliation_2026_08_23_29",
+  "claim": "For the 2026-08-23 through 2026-08-29 architecture week, preserve one cross-repo provenance chain rather than treating each review fix as isolated. PT landed security/egress/observability/coordination work through PRs #362-#372; the MiniGraph reconciliation then established the one-scheduler GraphObservation/GraphEvent/GraphPlugin model, boundary-aware mutation semantics, recovered mined patterns, fail-closed GraphSpec placement, and durable deterministic resumability as an adopted R4 target. The blanket global no-mutation rule was located and superseded without weakening PT's append-only memory rule. The latest core review found two real remaining defects at the prior PR #1 head: mutable delta values were still caller-aliased despite deep=True, and checkout credentials were persisted into later PR-controlled steps. Both were implemented on the core branch at 488bc6cc440247ca86811c46ae0dd05869898324, but exact-head CI/review is still required before closure claims. Reusable operating rule: recall .agent first, fix source abstractions, preserve append-only provenance, verify exact SHA, re-sweep review threads, and distinguish deferred capability work from feature rejection.",
+  "conditions": [
+    "weekly reconciliation",
+    "minigraph reconciliation",
+    "perpetua-core PR 1",
+    "graphobservation",
+    "graphplugin",
+    "durable deterministic resume",
+    "observability",
+    "egress",
+    "delta aliasing",
+    "persist-credentials",
+    "exact SHA review"
+  ],
+  "evidence_ids": [
+    "2026-08-29T06:47:00+08:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 9.8,
+  "staged_at": "2026-08-29T06:47:00+08:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-29T06:47:00+08:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Direct operator instruction to record everything important from the week and apply all still-valid Claude/PT lessons while reconciling orama-system PR #333 and perpetua-core PR #1."
+    }
+  ],
+  "related_lesson_ids": [
+    "lesson_230c6d2c5a7e",
+    "lesson_e0ff7f2d6717",
+    "lesson_1079e8c74f20",
+    "lesson_1687311690d7",
+    "lesson_4a711949b3ed"
+  ]
+}
