@@ -1,0 +1,38 @@
+{
+  "id": "7b5d3e91a4c2",
+  "key": "manual_7b5d3e",
+  "name": "manual_7b5d3e",
+  "claim": "MiniGraph/orama resumability is retained as an explicit R4 target. The canonical classification is: LangGraph checkpoint/thread identity ADOPT; atomic successful-boundary checkpoints ADOPT/ADAPT; durable resumability ADOPT R4 target; the phrase 'perfect resumption' REJECT WORDING ONLY; durable deterministic resume ADOPT TARGET. A wording correction must not be interpreted as feature deletion. The intended guarantee is deterministic continuation from an explicit compatible saved session/graph boundary with checkpoint lineage, graph/version/schema identity, replay policy, and effect identity/idempotency/dedupe. This is deliberately not total reversibility or time travel: graph-state restoration cannot erase external side effects that already occurred, which require idempotency, dedupe, compensation, or explicit human/policy handling. In reconciliation documents, distinguish feature disposition from wording disposition and treat deferred as not implemented in the current PR, not rejected.",
+  "conditions": [
+    "resumability",
+    "resume",
+    "checkpoint",
+    "session-state",
+    "langgraph",
+    "perfect-resumption",
+    "durable-resume",
+    "r4",
+    "replay",
+    "idempotency",
+    "dedupe"
+  ],
+  "evidence_ids": [
+    "2026-08-28T00:00:00+08:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 9.0,
+  "staged_at": "2026-08-28T00:00:00+08:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-28T00:00:00+08:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Direct operator clarification: be realistic but daring; reject only overbroad wording, never infer feature dropping when durable resumability remains an adopted target. Mirrored into orama-system PR #333 documentation."
+    }
+  ],
+  "related_lesson_ids": [
+    "lesson_e0ff7f2d6717",
+    "lesson_4a711949b3ed"
+  ]
+}
