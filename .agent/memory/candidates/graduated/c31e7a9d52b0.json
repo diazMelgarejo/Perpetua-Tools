@@ -1,0 +1,37 @@
+{
+  "id": "c31e7a9d52b0",
+  "key": "minigraph_core_review_closure_2026_08_29",
+  "name": "minigraph_core_review_closure_2026_08_29",
+  "claim": "The two real oramasys/perpetua-core PR #1 findings preserved by lesson_230c6d2c5a7e are closed for exact head 488bc6cc440247ca86811c46ae0dd05869898324. PerpetuaState.merge now deep-copies both inherited state and caller-owned delta values, with a nested mutable delta regression proving isolation in both directions. The PR workflow sets persist-credentials: false on actions/checkout@v4. CodeRabbit marks both corresponding review threads addressed/resolved, and GitHub Actions run 33218400901 succeeds on Python 3.11 and 3.12. This closure is exact-head evidence only; any later code head must be reverified.",
+  "conditions": [
+    "perpetua-core PR 1",
+    "delta aliasing",
+    "deepcopy delta",
+    "persist-credentials",
+    "CWE-522",
+    "exact-head CI",
+    "CodeRabbit closure"
+  ],
+  "evidence_ids": [
+    "2026-08-29T07:00:00+08:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 9.5,
+  "staged_at": "2026-08-29T07:00:00+08:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-29T07:00:00+08:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Exact-head review/CI closure recorded after implementing every still-valid finding from the latest PT/Claude lesson."
+    }
+  ],
+  "related_lesson_ids": [
+    "lesson_230c6d2c5a7e",
+    "lesson_e0ff7f2d6717",
+    "lesson_1079e8c74f20",
+    "lesson_1687311690d7",
+    "lesson_4a711949b3ed"
+  ]
+}
