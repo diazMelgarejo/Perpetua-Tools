@@ -1,0 +1,41 @@
+{
+  "id": "b74d21c908fa",
+  "key": "pt_unbundling_ownership_2026_08_29",
+  "name": "pt_unbundling_ownership_2026_08_29",
+  "claim": "Perpetua-Tools must be unbundled by capability authority rather than copied wholesale into perpetua-core. Existing destination repos are perpetua-core for universal dependency-minimal execution mechanics, orama-system for GraphSpec/lint/evaluation/effect policy, oramasys/oramasys for application/service composition, and oramasys/agate for hardware capability/affinity contracts. PT memory, observability, coordination/mesh, endpoint/security, agent/provider adapters, research tooling, and operational harnesses should first become explicit satellite module/package boundaries; new standalone repository names are provisional until dependency graph and release cadence justify them. Migration is strangler-style: inventory, freeze behavior with contract tests, define destination interface, dual-run/differential-test where useful, migrate consumers, declare authority/sunset, then delete legacy writable copies. Never move provider/network/storage/policy concerns into the core scheduler merely for convenience. Preserve append-only memory, fail-closed security, one writable source of truth, and mutator != evaluator throughout migration.",
+  "conditions": [
+    "Perpetua-Tools unbundling",
+    "satellite modules",
+    "perpetua-core ownership",
+    "orama-system ownership",
+    "oramasys agate",
+    "memory satellite",
+    "observability satellite",
+    "coordination mesh",
+    "endpoint policy",
+    "adapter migration",
+    "strangler migration"
+  ],
+  "evidence_ids": [
+    "2026-08-29T06:47:00+08:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 10.0,
+  "staged_at": "2026-08-29T06:47:00+08:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-29T06:47:00+08:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Direct operator instruction to plan migration of all existing PT features into perpetua-core and other repos as PT is unbundled into satellite modules."
+    }
+  ],
+  "related_lesson_ids": [
+    "lesson_230c6d2c5a7e",
+    "lesson_e0ff7f2d6717",
+    "lesson_1079e8c74f20",
+    "lesson_1687311690d7",
+    "lesson_4a711949b3ed"
+  ]
+}
