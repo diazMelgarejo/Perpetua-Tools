@@ -99,10 +99,12 @@ Corrective branch:
 Current corrective head recorded in this cycle:
 
 ```text
-0324b99e1292adffb98fa76ead90b1b72d95e309
+1fb26bca65afbeaafa2bd356afe824d7df070ba1
 ```
 
-The branch is four commits ahead of merged `main` and is **not merged**.
+The branch remains **not merged**. It contains the executable corrections,
+regression proof, a current post-merge convergence record, and repository-facing
+documentation cleanup.
 
 Corrections:
 
@@ -113,11 +115,14 @@ Corrections:
 - regression tests prove unknown-route rejection, listener isolation, and live
   final-state isolation;
 - `docs/POST_MERGE_CONVERGENCE_2026-08-29.md` records the authority/status
-  boundary and labels the old `docs/PROGRESS.md` ledger as historical evidence.
+  boundary;
+- `README.md` states the cross-repository authority split rather than describing
+  LLM/hardware policy as core-owned;
+- `docs/PROGRESS.md` labels itself as the historical May 2026 RC-1 salvage ledger
+  and points to the current convergence record.
 
-No commit-status checks or PR-triggered workflow runs were returned for
-`0324b99...` during this verification. Do not convert that absence into a claim
-that CI passed.
+No merge was performed. Exact-head CI/status must be checked separately before
+claiming `1fb26bc...` green.
 
 ## Agate PR 1
 
