@@ -109,6 +109,23 @@ compiled / published / observed snapshot
   immutable after publication
 ```
 
+**2026-08-29 precision correction, confirmed against the real
+`oramasys/perpetua-core` repo directly (`docs/POST_MERGE_CONVERGENCE_2026-08-29.md`
+on the unmerged `2026-08-29-001-post-merge-convergence` branch — this
+does NOT mean it is merged/authorized, only that the fix exists and is
+documented there):** "immutable after publication" describes the
+per-listener **isolation** guarantee the real fan-out dispatcher
+delivers (`state=observation.state.model_copy(deep=True)`,
+`delta=deepcopy(observation.delta)`) — one plugin mutating its own
+detached copy cannot affect another plugin's copy of the same
+observation, or the scheduler's live state. It is not a claim that any
+individual copy is literally read-only: each `detached` payload is an
+ordinary, mutable `PerpetuaState`/`dict`, and a plugin can freely
+mutate its *own* copy with no error raised. Do not read this section as
+claiming a plugin's mutation of its own copy would raise `TypeError` —
+it will not; the guarantee is isolation between listeners, not
+enforcement within one.
+
 For MiniGraph:
 
 ```text
@@ -188,6 +205,28 @@ They do not yet prove unknown-route boundary failure or mutating-listener
 isolation.
 
 A green workflow proves the tested implementation, not untested invariants.
+
+**2026-08-29 update, confirmed by fetching the real repo directly:** both
+gaps genuinely have fixes already, recorded in
+`oramasys/perpetua-core`'s own `docs/POST_MERGE_CONVERGENCE_2026-08-29.md`
+on `main`. Branch and commits, for whoever picks this up — **not
+merged, requires explicit operator authorization per that document's
+own stated policy, do not treat this as already integrated**:
+
+```text
+branch: 2026-08-29-001-post-merge-convergence
+gap 1 (unknown-route rejection) implementation: 84120f2ee529333ea02cb94e149df7a26fe404b5
+gap 2 (per-listener isolation) implementation:  382e67edee7aab3f972e1a173e20934f10034102
+regression tests (both gaps):                    6615bf37cca164d0e13a710c7ac54ffa2a334e49
+test file: src/tests/graph/test_post_merge_convergence.py
+```
+
+Gap 2's real fix uses deep-copy isolation
+(`state=observation.state.model_copy(deep=True)`,
+`delta=deepcopy(observation.delta)`), matching what this document's own
+"MiniGraph mutation boundary" section above was corrected to describe
+— confirmed as the same technique, not independently verified as
+equivalent by assumption.
 
 ## Orama architecture and documentation authority
 
