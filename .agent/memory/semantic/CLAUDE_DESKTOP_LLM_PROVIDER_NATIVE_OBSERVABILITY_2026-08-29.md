@@ -240,7 +240,11 @@ The modernization review hardened several fail-closed boundaries:
 - a hostname that is not itself loopback MUST NOT gain loopback privileges just
   because DNS resolves it to `127.0.0.0/8`, `::1`, or an IPv4-mapped loopback
   address. Treat that as an SSRF boundary violation and deny it before remote
-  allowlist/HTTPS policy can grant access;
+  allowlist/HTTPS policy can grant access. **Status: required, pushed to the
+  open PR branch, not yet merged to `main` at the current head** (verified
+  directly against the real PR rather than assumed — confirmed
+  `2026-08-29-canonical-typescript-modernization` is still an open,
+  unmerged PR as of this check);
 - only an **omitted** provider selector may fall back to `activeProvider`.
   Explicit values other than `ollama` or `lmstudio` must be rejected for every
   provider-selecting tool before dispatch or mutation;
