@@ -183,6 +183,13 @@ Boundary tests must cover unknown/stale/unavailable readiness.
 OpenTelemetry is out of scope for Claude-Desktop-LLM because provider-native
 observability targets Ollama and LM Studio directly.
 
+This is a Claude-Desktop-LLM scoping decision, not a PT-wide OTLP retraction.
+PT's own `configure_otel_exporter(...)` remains supported when an OTLP
+endpoint is configured and the optional SDK/exporter dependencies are
+present. Provider-native Ollama/LM Studio signals stay authoritative for
+Claude-Desktop-LLM regardless; OTLP export, where PT uses it, is optional
+secondary evidence, never a substitute source of truth.
+
 This changes only the observability implementation choice. It does NOT shrink
 or replace the architecture.
 
@@ -258,24 +265,31 @@ Other established hardening:
 
 ## Claude repository authority migration
 
-By 2026-08-30 the organization repository exists:
+As of 2026-08-30 the organization repository is the established, released
+canonical home:
 
 ```text
 oramasys/Claude-Desktop-LLM
 ```
 
-Its `main` baseline is intended to represent the completed canonical TypeScript
-modernization snapshot directly, not a merge into the historical personal
-repository.
+Its `main` represents the completed canonical TypeScript modernization
+directly, not a merge into the historical personal repository
+(`diazMelgarejo/Claude-Desktop-LLM`). That personal repository and its open
+PR #1 are superseded and intentionally left untouched going forward.
 
-The verified baseline snapshot used for organization initialization is:
+Current released state: `v2.2.1` (a hotfix superseding a deleted `v2.2.0`,
+which shipped a critical Happy-Eyeballs `connect.lookup` regression --
+[release notes](https://github.com/oramasys/Claude-Desktop-LLM/releases/tag/v2.2.1)).
 
-```text
-cc06ed4878abf7b36c791755ef31466c70cd8ccf
-```
+Every hardening rule in this document under "Claude endpoint-policy
+hardening" and "Claude provider and tool-input hardening" -- including the
+DNS-derived-loopback rejection -- is `merged` (per the Status vocabulary
+below) on `oramasys/Claude-Desktop-LLM` `main` and shipped in `v2.2.1`, not
+merely `pushed` to an open, unmerged PR branch.
 
-Treat the organization repository as the forward authority once that baseline
-is established and verified.
+The organization repository is the forward authority; do not treat the
+personal repository's `main` or open PRs as authoritative for this
+project going forward.
 
 ## Status vocabulary
 
