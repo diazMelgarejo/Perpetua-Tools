@@ -1,0 +1,42 @@
+{
+  "id": "22093a47c729",
+  "key": "manual_22093a",
+  "name": "manual_22093a",
+  "claim": "A stale GITHUB_TOKEN environment variable silently overrides a valid gh/git keyring credential over HTTPS, producing '401 Bad credentials' or 'Invalid username or token' even when 'gh auth status' shows a correctly logged-in account. Fix: unset GITHUB_TOKEN before git push / gh api calls, and re-unset every time since shell env does not persist across tool-call boundaries in this harness.",
+  "conditions": [
+    "GITHUB_TOKEN",
+    "bad credentials",
+    "gh auth",
+    "git push failed",
+    "keyring"
+  ],
+  "evidence_ids": [
+    "2026-08-30T04:36:45.072855+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-30T04:36:45.072855+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-30T04:36:45.072855+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-30T04:36:45.213084+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Hit this exact failure pushing to diazMelgarejo/Claude-Desktop-LLM: 'gh auth status' showed a valid keyring login for the right account, but git push still failed until GITHUB_TOKEN was unset and gh auth switch was re-run against the keyring account.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-30T04:36:45.072855+00:00"
+      ],
+      "lessons_sha": "ad0bf0f512ad"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-30T04:36:45.213073+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Hit this exact failure pushing to diazMelgarejo/Claude-Desktop-LLM: 'gh auth status' showed a valid keyring login for the right account, but git push still failed until GITHUB_TOKEN was unset and gh auth switch was re-run against the keyring account."
+}

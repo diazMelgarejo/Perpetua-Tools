@@ -1,0 +1,43 @@
+{
+  "id": "d74d82b3b257",
+  "key": "manual_d74d82",
+  "name": "manual_d74d82",
+  "claim": "A custom undici connect.lookup callback must handle BOTH dns.lookup callback forms -- (err, address, family) AND, when options.all is true, (err, [{address, family}, ...]) -- because Node 22's net.Socket.connect requests Happy-Eyeballs-style lookups (options.all===true) for any HOSTNAME target. IP-literal targets never invoke connect.lookup at all, so tests using only IP literals will pass while every real hostname-based request throws 'Invalid IP address: undefined' in production.",
+  "conditions": [
+    "DNS pinning",
+    "connect.lookup",
+    "happy eyeballs",
+    "hostname vs IP literal test gap",
+    "options.all",
+    "undici"
+  ],
+  "evidence_ids": [
+    "2026-08-30T05:39:42.023844+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-30T05:39:42.023844+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-30T05:39:42.023844+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-30T05:39:42.245819+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Found on Claude-Desktop-LLM's endpoint-policy.ts pinnedDispatcher: the connect-time IP-pinning mechanism (built to close a DNS-rebinding TOCTOU gap) only implemented the bare (address, family) callback form. This broke every real request through the documented DEFAULT config (OLLAMA_URL=http://localhost:11434, a hostname) end-to-end against live Ollama, while 64/64 unit tests stayed green because every existing ephemeral-server test used a 127.0.0.1 IP literal, which Node's net module never routes through connect.lookup in the first place. Only surfaced when manually driving the actual compiled server over real stdio against a live local model -- confirms that policy/security code doing custom DNS/connection interception needs at least one hostname-target integration test, not just IP-literal unit tests.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-30T05:39:42.023844+00:00"
+      ],
+      "lessons_sha": "85438fcee49d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-30T05:39:42.245808+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Found on Claude-Desktop-LLM's endpoint-policy.ts pinnedDispatcher: the connect-time IP-pinning mechanism (built to close a DNS-rebinding TOCTOU gap) only implemented the bare (address, family) callback form. This broke every real request through the documented DEFAULT config (OLLAMA_URL=http://localhost:11434, a hostname) end-to-end against live Ollama, while 64/64 unit tests stayed green because every existing ephemeral-server test used a 127.0.0.1 IP literal, which Node's net module never routes through connect.lookup in the first place. Only surfaced when manually driving the actual compiled server over real stdio against a live local model -- confirms that policy/security code doing custom DNS/connection interception needs at least one hostname-target integration test, not just IP-literal unit tests."
+}

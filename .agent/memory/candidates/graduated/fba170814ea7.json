@@ -1,0 +1,43 @@
+{
+  "id": "fba170814ea7",
+  "key": "manual_fba170",
+  "name": "manual_fba170",
+  "claim": "Ollama and LM Studio CAN run concurrently on this Mac for light-to-moderate single-request workloads -- the documented Mac inference-mode table (Ollama=active/warm primary, LM Studio=passive/probe-only) is an operational convention/division-of-labor choice, not a hard technical impossibility.",
+  "conditions": [
+    "concurrent",
+    "lm studio",
+    "mac inference mode",
+    "ollama",
+    "resource contention",
+    "same machine"
+  ],
+  "evidence_ids": [
+    "2026-08-30T05:44:37.079631+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-30T05:44:37.079631+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-30T05:44:37.079631+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-30T05:44:37.412822+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Directly tested 2026-08-30: with Ollama already holding qwen3.5:9b-mlx loaded in memory, launched LM Studio and loaded qwen3.5-9b-mlx there too. Both /v1/completions (LM Studio) and /api/generate (Ollama) responded correctly to real requests while the other was also active. Claude-Desktop-LLM's check_llm_status tool (queries both providers concurrently in one call) reported both connected with correct default models, no errors, no hang. Free memory was tight (~865MB free pages) but nothing failed for this single-request-at-a-time test. Does not rule out contention under sustained/heavy concurrent load from both engines at once -- only disproves the strict 'cannot run both, period' framing for light usage.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-30T05:44:37.079631+00:00"
+      ],
+      "lessons_sha": "bacb2e072e33"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-30T05:44:37.412813+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Directly tested 2026-08-30: with Ollama already holding qwen3.5:9b-mlx loaded in memory, launched LM Studio and loaded qwen3.5-9b-mlx there too. Both /v1/completions (LM Studio) and /api/generate (Ollama) responded correctly to real requests while the other was also active. Claude-Desktop-LLM's check_llm_status tool (queries both providers concurrently in one call) reported both connected with correct default models, no errors, no hang. Free memory was tight (~865MB free pages) but nothing failed for this single-request-at-a-time test. Does not rule out contention under sustained/heavy concurrent load from both engines at once -- only disproves the strict 'cannot run both, period' framing for light usage."
+}

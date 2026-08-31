@@ -1,0 +1,47 @@
+{
+  "id": "f60e9a3a7ade",
+  "key": "manual_f60e9a",
+  "name": "manual_f60e9a",
+  "claim": "CLOSED, NEVER-REOPEN rule: NEVER run Ollama and LM Studio under real concurrent heavy inference load on this Mac (M2 Pro), and never design or run a test that would. This is not an open research question -- the user has direct first-hand experience of a prior agent doing exactly this and causing the laptop to overheat and force-shutdown, with no replacement available. Confirmed independently: M2 Pro units are documented to reach ~108C under sustained heavy load (8K video export case study), and Apple's MacBook Pro fan curves are tuned for quiet operation over aggressive cooling -- the chip runs very hot before throttling engages, which is exactly the profile that produces an emergency/force shutdown rather than a graceful slowdown. Two LLM engines holding large models in shared unified memory and sustaining heavy GPU load concurrently is precisely this failure mode. Superficial single-request 'both servers reachable' tests (e.g. calling each provider's lightweight healthCheck) are NOT evidence either way and must never be used to justify going further -- see the retraction in lesson_d0beabdc9b21.",
+  "conditions": [
+    "M2 Pro",
+    "closed question",
+    "concurrent",
+    "force shutdown",
+    "hardware safety",
+    "lm studio",
+    "never test",
+    "ollama",
+    "overheat",
+    "thermal"
+  ],
+  "evidence_ids": [
+    "2026-08-30T05:51:39.282634+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-30T05:51:39.282634+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-30T05:51:39.282634+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-30T05:51:39.415513+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "User corrected an agent (this session, 2026-08-30) who initially treated this as 'genuinely open' after a weak healthCheck-only test. User stated plainly: an agent tried this before, the laptop overheated and force-shut-down, there is no replacement, and repeating it would ruin the hardware with zero benefit. Verified the PT .agent/memory, orama-system docs/LESSONS.md, and Claude's own memory contain NO prior record of that incident -- it existed only as the user's direct testimony, not as written history, which is exactly why it must be captured permanently now.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-30T05:51:39.282634+00:00"
+      ],
+      "lessons_sha": "72bcfc7bb6be"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-30T05:51:39.415502+00:00",
+  "reviewer": "learn.py",
+  "rationale": "User corrected an agent (this session, 2026-08-30) who initially treated this as 'genuinely open' after a weak healthCheck-only test. User stated plainly: an agent tried this before, the laptop overheated and force-shut-down, there is no replacement, and repeating it would ruin the hardware with zero benefit. Verified the PT .agent/memory, orama-system docs/LESSONS.md, and Claude's own memory contain NO prior record of that incident -- it existed only as the user's direct testimony, not as written history, which is exactly why it must be captured permanently now."
+}

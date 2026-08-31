@@ -1,0 +1,42 @@
+{
+  "id": "a8314abe1daa",
+  "key": "manual_a8314a",
+  "name": "manual_a8314a",
+  "claim": "Before hardcoding a new default model name in a provider config, verify it is actually pulled/loaded in the live runtime (e.g. curl the provider's own /api/tags or /v1/models) rather than assuming availability from a naming convention or another config file's reference to it.",
+  "conditions": [
+    "default model",
+    "nvfp4",
+    "ollama",
+    "provider config",
+    "verify before default"
+  ],
+  "evidence_ids": [
+    "2026-08-30T04:36:45.633220+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-30T04:36:45.633220+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-30T04:36:45.633220+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-30T04:36:45.772974+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Confirmed qwen3.5:9b-nvfp4 was genuinely present in the local Ollama instance via /api/tags before making it Claude-Desktop-LLM's OLLAMA_MODEL default, since nvfp4 quantization has real hardware prerequisites and a wrong assumption would have broken out-of-box UX for anyone using the new default.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-30T04:36:45.633220+00:00"
+      ],
+      "lessons_sha": "c19b39318b02"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-30T04:36:45.772961+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Confirmed qwen3.5:9b-nvfp4 was genuinely present in the local Ollama instance via /api/tags before making it Claude-Desktop-LLM's OLLAMA_MODEL default, since nvfp4 quantization has real hardware prerequisites and a wrong assumption would have broken out-of-box UX for anyone using the new default."
+}

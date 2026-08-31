@@ -1,0 +1,42 @@
+{
+  "id": "ed9964a08154",
+  "key": "manual_ed9964",
+  "name": "manual_ed9964",
+  "claim": "When a user's instructions contain internally contradictory values (e.g. two different version-number formats for the same bump, or an ambiguous repo-location instruction), investigate the live/factual state first (check if referenced repos/branches actually exist, what state they're in) and THEN present AskUserQuestion with options grounded in those facts -- never guess a resolution or silently pick the 'most likely' reading.",
+  "conditions": [
+    "AFRP",
+    "AskUserQuestion",
+    "ambiguous instructions",
+    "investigate before asking",
+    "never guess"
+  ],
+  "evidence_ids": [
+    "2026-08-30T04:36:46.359569+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-30T04:36:46.359569+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-30T04:36:46.359569+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-30T04:36:46.499794+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "User's request said 'Bump version to 1.5.0.0' (invalid 4-part semver) in one line and 'release v1.5' in another, both a downgrade from the actual current 2.0.0, plus an ambiguous 'close out using the new oramasys repos' with no repo URL given. Checking GitHub first (oramasys/Claude-Desktop-LLM already existed as a fork, its main already fast-forwarded) turned a vague question into a sharp, well-grounded 4-question AskUserQuestion set the user could answer precisely and quickly.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-30T04:36:46.359569+00:00"
+      ],
+      "lessons_sha": "c95274695d2a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-30T04:36:46.499776+00:00",
+  "reviewer": "learn.py",
+  "rationale": "User's request said 'Bump version to 1.5.0.0' (invalid 4-part semver) in one line and 'release v1.5' in another, both a downgrade from the actual current 2.0.0, plus an ambiguous 'close out using the new oramasys repos' with no repo URL given. Checking GitHub first (oramasys/Claude-Desktop-LLM already existed as a fork, its main already fast-forwarded) turned a vague question into a sharp, well-grounded 4-question AskUserQuestion set the user could answer precisely and quickly."
+}
