@@ -3,6 +3,7 @@
   "key": "manual_d0beab",
   "name": "manual_d0beab",
   "claim": "Retraction: lesson_fba170814ea7's 'Ollama and LM Studio can run concurrently' claim was vacuous and should not be trusted as evidence. check_llm_status only calls each provider's lightweight healthCheck() (a GET to /api/tags or /v1/models), which proves the HTTP server is reachable -- it does NOT prove a model is actually resident in GPU/unified memory at that instant. Ollama unloads idle models within minutes (confirmed via 'ollama ps' showing a model, then empty output shortly after); the two providers were almost certainly never actually memory-resident at the same moment during that test. The user explicitly stopped a follow-up test that would have force-loaded and concurrently hammered both engines, citing hardware/thermal risk -- do not attempt to settle this by deliberately loading concurrent heavy inference load on both engines; if the question matters, it needs a deliberate, cautious, user-directed test, not an agent-initiated stress test.",
+  "supersedes": "lesson_fba170814ea7",
   "conditions": [
     "concurrent",
     "healthCheck is not memory residency",
