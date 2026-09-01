@@ -1,0 +1,41 @@
+{
+  "id": "96854673cb96",
+  "key": "manual_968546",
+  "name": "manual_968546",
+  "claim": "When a function has both a required-precondition check (e.g. 'signature must be non-empty') and an early-return branch for a different condition (e.g. 'decision is blocked, return early'), validate the precondition BEFORE the early-return branch, not after -- otherwise the early-return path silently skips the precondition entirely, and that's usually the path most likely to reach production unnoticed.",
+  "conditions": [
+    "blocked path",
+    "precondition before early return",
+    "silent bypass",
+    "validation order"
+  ],
+  "evidence_ids": [
+    "2026-09-01T04:04:31.167189+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-01T04:04:31.167189+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-01T04:04:31.167189+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-01T04:04:31.299957+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Real bug in both the Python and TypeScript CIDF cores (PR #338): execute_with_fallback/executeWithFallback checked 'if decision.blocked: return blocked-result' BEFORE checking 'if not signature: raise'. This meant an empty signature was silently accepted on every blocked decision (no eligible tool found) -- exactly the path most likely to occur in real usage without anyone noticing the missing signature, since blocked results don't execute anything anyway that would surface the problem.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-01T04:04:31.167189+00:00"
+      ],
+      "lessons_sha": "4f8dade64f54"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-01T04:04:31.299944+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Real bug in both the Python and TypeScript CIDF cores (PR #338): execute_with_fallback/executeWithFallback checked 'if decision.blocked: return blocked-result' BEFORE checking 'if not signature: raise'. This meant an empty signature was silently accepted on every blocked decision (no eligible tool found) -- exactly the path most likely to occur in real usage without anyone noticing the missing signature, since blocked results don't execute anything anyway that would surface the problem."
+}

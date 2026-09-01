@@ -1,0 +1,43 @@
+{
+  "id": "e73221f5a7b4",
+  "key": "manual_e73221",
+  "name": "manual_e73221",
+  "claim": "An async function's 'I performed side-effect X, so set flag claimed=True to remember to clean it up on cancellation' pattern is NOT cancellation-safe if the flag is set on the line AFTER an awaited call that can itself be cancelled mid-flight after its underlying effect already happened. The cancellation-safe window is the gap between 'effect happened' (inside the awaited call, invisible to the caller) and 'caller's own flag reflects it' (the next line) -- a CancelledError landing in that exact gap causes the caller's cleanup handler to see claimed=False and skip releasing a resource that was actually already acquired.",
+  "conditions": [
+    "TOCTOU",
+    "asyncio cancellation",
+    "cancellation-safe",
+    "claim acquisition race",
+    "idempotency store",
+    "python async"
+  ],
+  "evidence_ids": [
+    "2026-09-01T04:04:31.550117+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-01T04:04:31.550117+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-01T04:04:31.550117+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-01T04:04:31.681073+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Confirmed real, Major-severity finding on oramasys/oramasys PR #1's GatewayLifecycle.run(): 'existing = await self._store.claim(key)' can have the store's implementation internally reserve the key before the await resumes; if cancelled in that window, the local 'claimed' bool never becomes True, so the except-CancelledError handler's 'if claimed: abort()' guard skips releasing the reservation -- the key leaks permanently and every later identical request blocks forever. The PR explicitly listed 'cancellation-safe claim release' as an already-solved safety property; it wasn't, for this exact acquisition window. General fix pattern: make the store's own claim() atomic with respect to cancellation (e.g. use asyncio.shield around only the reservation, or have claim() itself return a token whose absence unambiguously means nothing was reserved).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-01T04:04:31.550117+00:00"
+      ],
+      "lessons_sha": "cd0c2afd6fb9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-01T04:04:31.681063+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Confirmed real, Major-severity finding on oramasys/oramasys PR #1's GatewayLifecycle.run(): 'existing = await self._store.claim(key)' can have the store's implementation internally reserve the key before the await resumes; if cancelled in that window, the local 'claimed' bool never becomes True, so the except-CancelledError handler's 'if claimed: abort()' guard skips releasing the reservation -- the key leaks permanently and every later identical request blocks forever. The PR explicitly listed 'cancellation-safe claim release' as an already-solved safety property; it wasn't, for this exact acquisition window. General fix pattern: make the store's own claim() atomic with respect to cancellation (e.g. use asyncio.shield around only the reservation, or have claim() itself return a token whose absence unambiguously means nothing was reserved)."
+}
