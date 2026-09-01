@@ -1,0 +1,42 @@
+{
+  "id": "15d8d3b390c8",
+  "key": "manual_15d8d3",
+  "name": "manual_15d8d3",
+  "claim": "Before continuing work on a shared feature branch across sessions, always git fetch+pull (ff-only) first, even mid-task -- do not assume the remote state matches what you last pushed.",
+  "conditions": [
+    "before editing",
+    "concurrent session",
+    "git pull",
+    "multi-agent collision",
+    "shared branch"
+  ],
+  "evidence_ids": [
+    "2026-08-30T04:36:43.555174+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-30T04:36:43.555174+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-30T04:36:43.555174+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-30T04:36:43.876237+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "On diazMelgarejo/Claude-Desktop-LLM PR #1, a concurrent session (same identity, same day) pushed 3 more CodeRabbit-driven security fixes (IPv6-bracket loopback bypass, DNS-resolved-to-loopback trust bypass, provider-validation gap) to the same branch after my last push. Continuing to edit from stale local state would have silently dropped or conflicted with real security fixes. Caught only because I re-fetched before making further changes.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-30T04:36:43.555174+00:00"
+      ],
+      "lessons_sha": "3e75bb228aad"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-30T04:36:43.876226+00:00",
+  "reviewer": "learn.py",
+  "rationale": "On diazMelgarejo/Claude-Desktop-LLM PR #1, a concurrent session (same identity, same day) pushed 3 more CodeRabbit-driven security fixes (IPv6-bracket loopback bypass, DNS-resolved-to-loopback trust bypass, provider-validation gap) to the same branch after my last push. Continuing to edit from stale local state would have silently dropped or conflicted with real security fixes. Caught only because I re-fetched before making further changes."
+}

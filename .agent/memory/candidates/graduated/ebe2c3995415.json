@@ -1,0 +1,42 @@
+{
+  "id": "ebe2c3995415",
+  "key": "manual_ebe2c3",
+  "name": "manual_ebe2c3",
+  "claim": "Promoting a personal-account repo (diazMelgarejo/<repo>) to 'canonical under oramasys' is done by fast-forward-pushing the oramasys GitHub fork's own main branch directly to the desired commit -- not by merging a PR from the personal repo into oramasys, and not by GitHub's repo-transfer feature. The personal repo and any open PRs against it are left untouched unless explicitly told to close/merge them.",
+  "conditions": [
+    "canonical repo",
+    "fast-forward main",
+    "oramasys fork",
+    "personal repo left alone",
+    "repo promotion"
+  ],
+  "evidence_ids": [
+    "2026-08-30T04:36:45.994061+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-30T04:36:45.994061+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-30T04:36:45.994061+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-30T04:36:46.131117+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Confirmed on Claude-Desktop-LLM: oramasys/Claude-Desktop-LLM already existed as a GitHub fork of diazMelgarejo/Claude-Desktop-LLM, and its main had already been fast-forward-pushed directly to the working branch tip by a prior session -- bypassing a PR merge into the stale personal-repo main entirely. Confirmed via AskUserQuestion this was the intended pattern (oramasys fork = new canonical, personal repo left alone) rather than a full repo-transfer or a merge-then-mirror.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-30T04:36:45.994061+00:00"
+      ],
+      "lessons_sha": "f82f429f75e7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-30T04:36:46.131107+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Confirmed on Claude-Desktop-LLM: oramasys/Claude-Desktop-LLM already existed as a GitHub fork of diazMelgarejo/Claude-Desktop-LLM, and its main had already been fast-forward-pushed directly to the working branch tip by a prior session -- bypassing a PR merge into the stale personal-repo main entirely. Confirmed via AskUserQuestion this was the intended pattern (oramasys fork = new canonical, personal repo left alone) rather than a full repo-transfer or a merge-then-mirror."
+}

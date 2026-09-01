@@ -1,0 +1,42 @@
+{
+  "id": "f9911f5b8e57",
+  "key": "manual_f9911f",
+  "name": "manual_f9911f",
+  "claim": "When adding a new validation/deny check to an existing multi-branch security gate, insert it AFTER the pre-existing allow/deny decision, not before -- ordering changes which error code fires for already-covered cases and can silently break passing tests.",
+  "conditions": [
+    "diff verification",
+    "endpoint policy",
+    "run full test suite",
+    "security check ordering",
+    "validateAndPin"
+  ],
+  "evidence_ids": [
+    "2026-08-30T04:36:44.558275+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-08-30T04:36:44.558275+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-08-30T04:36:44.558275+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-08-30T04:36:44.818671+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Added an HTTPS-required-for-non-loopback check ahead of the existing allowRemoteLlm/host-allowlist check in endpoint-policy.ts's validateAndPin(). This flipped the thrown error code (scheme_disallowed instead of non_loopback_denied) for the plain deny-by-default case, breaking 3 previously-passing tests. Only caught because the full test suite was re-run immediately after applying the diff -- a diff/plan document should never be trusted as correct without a full build+test pass against the live code.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-08-30T04:36:44.558275+00:00"
+      ],
+      "lessons_sha": "9ff9054f91ba"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-08-30T04:36:44.818658+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Added an HTTPS-required-for-non-loopback check ahead of the existing allowRemoteLlm/host-allowlist check in endpoint-policy.ts's validateAndPin(). This flipped the thrown error code (scheme_disallowed instead of non_loopback_denied) for the plain deny-by-default case, breaking 3 previously-passing tests. Only caught because the full test suite was re-run immediately after applying the diff -- a diff/plan document should never be trusted as correct without a full build+test pass against the live code."
+}
