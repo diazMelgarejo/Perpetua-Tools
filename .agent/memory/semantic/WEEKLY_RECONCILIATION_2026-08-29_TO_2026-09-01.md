@@ -73,9 +73,12 @@ small it looks.
 ## 2. `orama-system` PR #338 — CIDF core/skill sync
 
 PR #338 synchronized CIDF's executable v1.3 contract (Python core, TS core,
-policy JSON, linters, tests) with `bin/orama-system/cidf/SKILL.md`. CodeRabbit
-flagged 6 findings; each was verified against actual runtime behavior (not
-applied blind) before fixing:
+policy JSON, linters, tests) with `bin/orama-system/cidf/SKILL.md`.
+CodeRabbit's review flagged several of the findings below; independent
+verification against actual runtime behavior surfaced at least one more
+same-class bug CodeRabbit's review did not catch (see below) — each finding
+was checked against real code before fixing, not applied blind, regardless
+of which review process first surfaced it:
 
 - `execution_tools.py`'s `cidf_insert()` silently dropped
   `estimated_setup_seconds`/`estimated_run_seconds` from `task_meta` and
