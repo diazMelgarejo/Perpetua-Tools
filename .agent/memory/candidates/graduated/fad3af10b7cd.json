@@ -1,0 +1,44 @@
+{
+  "id": "fad3af10b7cd",
+  "key": "manual_fad3af",
+  "name": "manual_fad3af",
+  "claim": "Supersedes lesson_757476abb44e: GitHub authorization evidence must bind token type to the exact method and endpoint; a linked user profile or repository admin/push metadata does not describe a GitHub App installation token's endpoint permissions, a PR-metadata 403 does not prove merge denial, and every 403 diagnosis must capture X-Accepted-GitHub-Permissions or state that the exact missing permission remains unproven.",
+  "conditions": [
+    "endpoint-authorization",
+    "evidence-boundary",
+    "fine-grained-pat",
+    "github-app",
+    "installation-token",
+    "supersedes",
+    "x-accepted-github-permissions"
+  ],
+  "evidence_ids": [
+    "2026-09-02T22:10:53.736243+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-02T22:10:53.736243+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-02T22:10:53.736243+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-02T22:10:53.825848+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Review of the 2026-09-02 Periscope incident found that the prior lesson conflated the linked repository-owner profile with the connector's installation identity and grouped PR metadata and merge permissions without a merge-endpoint request. Observed evidence supports Contents and collaborator endpoint denial for the App token, and PR PATCH denial for the fine-grained PAT; response permission headers were not captured.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-02T22:10:53.736243+00:00"
+      ],
+      "lessons_sha": "847199c2f5aa"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-02T22:10:53.825834+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Review of the 2026-09-02 Periscope incident found that the prior lesson conflated the linked repository-owner profile with the connector's installation identity and grouped PR metadata and merge permissions without a merge-endpoint request. Observed evidence supports Contents and collaborator endpoint denial for the App token, and PR PATCH denial for the fine-grained PAT; response permission headers were not captured."
+}

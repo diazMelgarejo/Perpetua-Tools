@@ -34,30 +34,38 @@ publication, review, and merge authorization are distinct decisions.
 
 ## Authorization diagnosis procedure
 
-Never infer GitHub write capability from a displayed user role. Probe the
-exact API boundary needed by the task: repository contents, pull-request
-metadata, review-thread resolution, and merge are separate permissions.
+Never infer GitHub write capability from a displayed user role or repository
+metadata. The connector acts as a GitHub App installation identity, not as the
+linked repository owner. Probe the exact endpoint needed by the task:
+repository contents, pull-request metadata, review-thread resolution, and
+merge have distinct authorization checks.
 
-In this incident, the GitHub connector authenticated as the repository owner
-and reported admin/push repository metadata, yet Contents writes returned
-`403 Resource not accessible by integration`. The same connector also failed
-the collaborator-permission endpoint. This identifies an installation-token
-scope limitation, not branch protection or a repository-code failure.
+In this incident, the installation token received `403 Resource not
+accessible by integration` from the Contents-write endpoint and the
+collaborator-permission endpoint. Repository metadata also displayed
+`admin`/`push`, but those fields did not authorize either failing request and
+must not be used as endpoint-specific evidence. The responses' token type and
+endpoint are known; their `X-Accepted-GitHub-Permissions` headers were not
+captured, so the exact missing App permission is unproven.
 
-A backup PAT successfully wrote the two Contents commits but returned
-`403 Resource not accessible by personal access token` for PR metadata. Thus,
-PAT repository-content scope does not imply Pull Requests write or merge
-scope. Diagnose and report that boundary precisely; do not retry unrelated
-operations or claim that a PR description/merge changed.
+A fine-grained PAT successfully performed Git/Contents writes, but
+`PATCH /repos/diazMelgarejo/periscope/pulls/49` returned `403 Resource not
+accessible by personal access token`. This proves only that the PR-metadata
+update was denied. No merge-endpoint request was made after the operator said
+not to merge, so this incident does not prove merge permission was absent.
+For future 403s, record token type, exact method and endpoint, status/message,
+and `X-Accepted-GitHub-Permissions` before drawing a scope conclusion.
 
 ## Durable operating rules
 
 - Treat any token pasted into chat as exposed: never echo, log, commit, or
-  place it in a PR body; rotate it after use.
+  place it in a PR body; revoke or rotate it before further privileged use,
+  then obtain any replacement through a secure channel.
 - Do not use a token to broaden task scope. Use it only for the explicitly
   authorized repository and operation.
-- Verify remote state after each API write by fetching the exact branch and
-  checking the intended source/test markers and head SHA.
+- Verify the resource changed by each write: branch content/blob and head SHA
+  for content writes; PR metadata for description changes; review state for
+  thread resolution; and merged state plus target-branch content for merges.
 - Keep PR descriptions truthful. If a discovery branch gains a production
   repair, its description must be corrected before review; inability to edit
   metadata is a documented authorization blocker, not permission to merge.
