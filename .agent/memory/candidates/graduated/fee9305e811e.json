@@ -1,0 +1,45 @@
+{
+  "id": "fee9305e811e",
+  "key": "manual_fee930",
+  "name": "manual_fee930",
+  "claim": "After any uncertain GitHub Contents API write, read the target ref and compare the expected blob before retrying; a new commit SHA or successful transport response is not proof of insertion, and a retry after delayed success can create an empty child commit with the same tree as its parent.",
+  "conditions": [
+    "destination-verification",
+    "empty-commit",
+    "github-contents-api",
+    "idempotency",
+    "periscope-pr-49",
+    "retry",
+    "tree-sha",
+    "uncertain-write"
+  ],
+  "evidence_ids": [
+    "2026-09-02T22:08:49.476053+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-02T22:08:49.476053+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-02T22:08:49.476053+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-02T22:08:49.577300+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Periscope PR #49 provides exact proof: 214b0c03 changed one test file with 45 insertions and produced tree bd81bba7; child faf515e4 repeated the subject but had the identical bd81bba7 tree and zero file delta after a blind retry. This extends existing empty-commit lesson lesson_9fac191b11e1 from automation-authored/no-op commits to API timeout and retry semantics.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-02T22:08:49.476053+00:00"
+      ],
+      "lessons_sha": "583edfd316bc"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-02T22:08:49.577256+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Periscope PR #49 provides exact proof: 214b0c03 changed one test file with 45 insertions and produced tree bd81bba7; child faf515e4 repeated the subject but had the identical bd81bba7 tree and zero file delta after a blind retry. This extends existing empty-commit lesson lesson_9fac191b11e1 from automation-authored/no-op commits to API timeout and retry semantics."
+}
