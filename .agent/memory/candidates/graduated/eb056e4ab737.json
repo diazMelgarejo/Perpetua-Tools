@@ -1,0 +1,42 @@
+{
+  "id": "eb056e4ab737",
+  "key": "manual_eb056e",
+  "name": "manual_eb056e",
+  "claim": "When fixing automated-review findings (CodeRabbit, etc.) across a multi-language port of the same logic (e.g. a Python core + TypeScript core implementing one contract), always check whether the SAME bug class exists in the sibling language/test file too, even if the review only flagged one side -- automated reviewers commonly miss the parallel copy.",
+  "conditions": [
+    "code review findings",
+    "cross-language parity",
+    "multi-language port",
+    "sibling bug",
+    "test fixture bug"
+  ],
+  "evidence_ids": [
+    "2026-09-01T04:04:30.368951+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-01T04:04:30.368951+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-01T04:04:30.368951+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-01T04:04:30.508502+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "On orama-system PR #338, CodeRabbit flagged a test-fixture bug in conformance.test.ts (makeEnv() silently enabling extra methods with no registered executor, producing unexpected attempt-log entries). The Python suite's test_conformance.py had the IDENTICAL bug in its equivalent test, never flagged by the review, confirmed red via an actual pytest run before fixing. Caught only because I habitually re-ran the full suite after applying review fixes rather than trusting the diff was complete.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-01T04:04:30.368951+00:00"
+      ],
+      "lessons_sha": "fe5ab9f9ae83"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-01T04:04:30.508489+00:00",
+  "reviewer": "learn.py",
+  "rationale": "On orama-system PR #338, CodeRabbit flagged a test-fixture bug in conformance.test.ts (makeEnv() silently enabling extra methods with no registered executor, producing unexpected attempt-log entries). The Python suite's test_conformance.py had the IDENTICAL bug in its equivalent test, never flagged by the review, confirmed red via an actual pytest run before fixing. Caught only because I habitually re-ran the full suite after applying review fixes rather than trusting the diff was complete."
+}

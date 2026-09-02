@@ -1,0 +1,42 @@
+{
+  "id": "6bd737c6a512",
+  "key": "manual_6bd737",
+  "name": "manual_6bd737",
+  "claim": "In a cross-language contract where a JSON/wire format represents 'value unknown' as null, a TypeScript guard written as `!== undefined` does NOT exclude null (null !== undefined is true in JS) -- it will fall through and get silently coerced (e.g. to 0 in a > comparison), producing a wrong decision. Use `!= null` (loose equality) to exclude both null and undefined in one check, or type the field explicitly as `T | null` and check that.",
+  "conditions": [
+    "JSON null convention",
+    "cross-language contract",
+    "loose equality",
+    "null vs undefined",
+    "typescript"
+  ],
+  "evidence_ids": [
+    "2026-09-01T04:04:30.792783+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-01T04:04:30.792783+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-01T04:04:30.792783+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-01T04:04:30.923141+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Real production bug found on orama-system PR #338: contentInsertionFramework.ts's automationJustified() checked estimated_run_seconds !== undefined, but the JSON policy's own convention for 'unknown estimate' is null. A null run-estimate slipped past the undefined-only guard and coerced to 0 in the subsequent > comparison, closing an automation gate based on a false 'run is instant' assumption instead of treating the value as unknown.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-01T04:04:30.792783+00:00"
+      ],
+      "lessons_sha": "fd4969fa5686"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-01T04:04:30.923134+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Real production bug found on orama-system PR #338: contentInsertionFramework.ts's automationJustified() checked estimated_run_seconds !== undefined, but the JSON policy's own convention for 'unknown estimate' is null. A null run-estimate slipped past the undefined-only guard and coerced to 0 in the subsequent > comparison, closing an automation gate based on a false 'run is instant' assumption instead of treating the value as unknown."
+}
