@@ -2,6 +2,23 @@
 
 ## Facts preserved
 
+### Empty-commit proof
+
+Periscope PR #49 later demonstrated the exact empty-commit failure mode.
+GitHub's raw comparison establishes that `faf515e4` has parent
+`214b0c03`, is one commit ahead, and has an empty changed-file list. In
+contrast, `214b0c03` contains the real 45-line watcher regression. The
+same subject line on both commits is not evidence of duplicated work; the
+tree/diff proof is authoritative. Treat `faf515e4` as a publication-record
+failure: it adds history but no content.
+
+Before declaring a commit published, compare `HEAD^..HEAD` and require at
+least one changed file when the task claims a code or documentation change.
+For API publication, verify the returned commit tree differs from its
+parent's tree and that the expected path/blob is present on the target ref.
+Do not use commit count, subject, or a successful HTTP response as proof of
+content publication.
+
 The Windows timeout in Periscope's watcher tests was a real deadlock, not a
 test-timeout problem. A remove or rename event had already invalidated the
 native fsnotify watch; calling `Remove` again from the event loop could block
