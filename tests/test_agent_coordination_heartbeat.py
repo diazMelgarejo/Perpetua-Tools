@@ -32,6 +32,7 @@ from orchestrator.coordination.liveness import (
     _heartbeat_list as heartbeat_list,
     _heartbeat_timeline as heartbeat_timeline,
 )
+from orchestrator.coordination.claims import log_message
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -200,6 +201,33 @@ async def test_find_agent_heartbeats_current_worktree_updates_from_pulse(bus, ca
     captured = capsys.readouterr()
     assert "feature/new-branch@/path/two" in captured.out
     assert "docs/old-branch@/path/one" not in captured.out
+
+
+@pytest.mark.asyncio
+async def test_log_message_does_not_refresh_agent_liveness(bus):
+    """Board notes are status evidence, never a substitute for a pulse."""
+    stale_at = time.time() - (LIVENESS_IDLE_SEC + 10)
+    async with bus.connect() as db:
+        await bus.insert_event(
+            db,
+            "heartbeat",
+            {
+                "kind": "agent_register",
+                "agent_id": "logged-but-stale",
+                "agent_type": "cli-tool",
+                "model": "local",
+                "worktree": "feature@/path",
+                "notes": "",
+            },
+            timestamp=stale_at,
+        )
+        await db.commit()
+
+    await log_message(bus, "logged-but-stale", "Still working")
+
+    state = await find_agent_heartbeats(bus, "logged-but-stale")
+    assert state["logged-but-stale"]["status"] == "STALLED"
+    assert state["logged-but-stale"]["last_heartbeat_ts"] == stale_at
 
 
 @pytest.mark.asyncio

@@ -71,3 +71,9 @@ def test_packet_rejects_malformed_json(tmp_path: Path) -> None:
 
     with pytest.raises(HandoffValidationError, match="JSON"):
         load_handoff_packet(packet)
+
+
+def test_documented_example_is_valid() -> None:
+    example = Path(__file__).parents[1] / "docs" / "coordination" / "examples" / "handoff-packet-v1.json"
+
+    assert load_handoff_packet(example).schema_version == 1

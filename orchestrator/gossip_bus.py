@@ -79,6 +79,28 @@ def resolve_gossip_db_path(state_dir: Path | str | None = None) -> str:
 _pending_embeds: set[asyncio.Task] = set()
 _MAX_PENDING = 500
 
+
+async def cancel_pending_embeddings_for_current_loop() -> None:
+    """Cancel and drain background embeddings before a one-shot loop closes.
+
+    A CLI command persists its event before scheduling optional embedding. If
+    `asyncio.run()` closes immediately afterward, an embedding's aiosqlite
+    worker can still attempt to resolve a future against the closed loop. Only
+    tasks created on the current loop are ours to stop; tasks owned by another
+    long-lived runtime must remain untouched.
+    """
+    loop = asyncio.get_running_loop()
+    pending = [
+        task
+        for task in _pending_embeds
+        if task.get_loop() is loop and not task.done()
+    ]
+    for task in pending:
+        task.cancel()
+    if pending:
+        await asyncio.gather(*pending, return_exceptions=True)
+    _pending_embeds.difference_update(pending)
+
 _CREATE_TABLE = """
 CREATE TABLE IF NOT EXISTS gossip (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,

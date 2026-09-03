@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "session_id": "session-example-001",
+  "job_id": "job-example-001",
+  "task_id": "example-handoff-validation",
+  "assigned_agent_id": "win-autoresearcher",
+  "role": "autoresearcher",
+  "intent": "Run the approved dry-run research plan and return evidence for the coder.",
+  "branch": "feat/example-handoff",
+  "worktree": "feature-handoff-worktree",
+  "starting_head": "1234567",
+  "current_head": "89abcde",
+  "commit_sha": "89abcde",
+  "files_changed": [
+    "orchestrator/autoresearch_bridge.py",
+    "tests/test_autoresearch_bridge.py"
+  ],
+  "root_cause_addressed": "The existing handoff did not preserve a machine-checkable source line or test evidence.",
+  "tests": [
+    {
+      "command": "python -m pytest tests/test_autoresearch_bridge.py -q",
+      "result": "passed"
+    }
+  ],
+  "known_risks_or_follow_up": "none",
+  "human_authorized": true,
+  "merge_authorized": false,
+  "deployment_authorized": false
+}

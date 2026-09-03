@@ -50,6 +50,26 @@ pytest tests/test_agent_coordination_cli_contract.py -q
 
 ---
 
+## Validated handoffs (v1)
+
+New standard dispatches can use a typed JSON packet before queue admission:
+
+```bash
+python scripts/agent_coordination.py handoff validate handoff.json
+python scripts/agent_coordination.py queue add <task> <phase> --handoff handoff.json
+```
+
+The packet is validated before any queue mutation; accepted packets record a
+non-liveness `handoff_admitted` audit event. Read
+[the template](agent-handoff-template.md) and start from
+[the executable example](examples/handoff-packet-v1.json).
+
+`log()` remains a board-status message, not a heartbeat. A long-running worker
+must emit its own `heartbeat pulse <agent-id>` periodically; queue admission
+and later logs never keep a dead or stalled worker falsely ACTIVE.
+
+---
+
 ## Cross-links
 
 - STM / swarm security graph:

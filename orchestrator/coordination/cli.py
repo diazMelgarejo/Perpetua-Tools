@@ -89,6 +89,11 @@ from orchestrator.gossip_bus import (  # noqa: E402
     GossipBus,
     GossipBusError,
     _canonical_repo_state_dir,
+    cancel_pending_embeddings_for_current_loop,
+)
+from orchestrator.handoff_validation import (  # noqa: E402
+    HandoffValidationError,
+    load_handoff_packet,
 )
 from orchestrator.coordination.liveness import (  # noqa: E402
     _heartbeat_check,
@@ -175,6 +180,64 @@ def _exit_code(result: object) -> int:
     return 1 if result is False else 0
 
 
+async def queue_add_from_handoff(
+    bus: GossipBus,
+    handoff_path: Path,
+    task_name: str,
+    phase: str,
+    priority: str,
+    notes: str,
+    depends_on: Optional[str],
+    *,
+    source_ref: Optional[str] = None,
+    expected_base_sha: Optional[str] = None,
+) -> bool | None:
+    """Validate a v1 packet before admitting its task to the queue.
+
+    The resulting `handoff_admitted` event is an audit record only.  It is not
+    a heartbeat pulse because an enqueueing coordinator cannot prove that the
+    assigned worker is presently alive.
+    """
+    try:
+        packet = load_handoff_packet(handoff_path)
+    except HandoffValidationError as exc:
+        return _error(str(exc))
+    if source_ref is not None and source_ref != packet.source_ref:
+        return _error("--source-ref conflicts with handoff branch")
+    if expected_base_sha is not None and expected_base_sha.lower() != packet.expected_base_sha:
+        return _error("--expected-base-sha conflicts with handoff starting_head")
+
+    result = await _queue_add(
+        bus,
+        task_name,
+        phase,
+        priority,
+        notes,
+        depends_on,
+        source_ref=packet.source_ref,
+        expected_base_sha=packet.expected_base_sha,
+    )
+    if result is False:
+        return False
+    await bus.emit(
+        "heartbeat",
+        {
+            "kind": "handoff_admitted",
+            "schema_version": packet.schema_version,
+            "session_id": packet.session_id,
+            "job_id": packet.job_id,
+            "task_id": packet.task_id,
+            "queue_task_name": task_name,
+            "agent_id": packet.assigned_agent_id,
+            "role": packet.role,
+            "branch": packet.branch,
+            "starting_head": packet.starting_head,
+        },
+    )
+    print(f"handoff admitted: {packet.task_id}")
+    return result
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Queue Helper Functions
 # ─────────────────────────────────────────────────────────────────────────────
@@ -197,6 +260,15 @@ def canonical_repo_root() -> Path:
 
 
 async def _amain(args: argparse.Namespace) -> int:
+    if args.cmd == "handoff":
+        try:
+            packet = load_handoff_packet(args.packet)
+        except HandoffValidationError as exc:
+            _error(str(exc))
+            return 1
+        print(f"valid handoff: {packet.task_id}")
+        return 0
+
     bus = make_gossip_bus(canonical_db_path())
     await getattr(bus, "local", bus).init_db()
     result = None
@@ -248,16 +320,29 @@ async def _amain(args: argparse.Namespace) -> int:
             result = await _workflow_critical_path(bus)
     elif args.cmd == "queue":
         if args.subcmd == "add":
-            result = await _queue_add(
-                bus,
-                args.task_name,
-                args.phase,
-                args.priority,
-                args.notes or "",
-                args.depends_on,
-                source_ref=args.source_ref,
-                expected_base_sha=args.expected_base_sha,
-            )
+            if args.handoff is not None:
+                result = await queue_add_from_handoff(
+                    bus,
+                    args.handoff,
+                    args.task_name,
+                    args.phase,
+                    args.priority,
+                    args.notes or "",
+                    args.depends_on,
+                    source_ref=args.source_ref,
+                    expected_base_sha=args.expected_base_sha,
+                )
+            else:
+                result = await _queue_add(
+                    bus,
+                    args.task_name,
+                    args.phase,
+                    args.priority,
+                    args.notes or "",
+                    args.depends_on,
+                    source_ref=args.source_ref,
+                    expected_base_sha=args.expected_base_sha,
+                )
         elif args.subcmd == "list":
             result = await _queue_list(bus, args.phase, args.priority, args.agent)
         elif args.subcmd == "claim":
@@ -329,6 +414,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_log.add_argument("agent_id")
     p_log.add_argument("message")
 
+    p_handoff = sub.add_parser("handoff", help="Validate agent handoff packets")
+    handoff_sub = p_handoff.add_subparsers(dest="subcmd", required=True)
+    p_handoff_validate = handoff_sub.add_parser("validate", help="Validate a v1 JSON handoff packet")
+    p_handoff_validate.add_argument("packet", type=Path)
+
     # Phase tracking commands
     p_phase = sub.add_parser("phase", help="Manage workflow phases")
     phase_sub = p_phase.add_subparsers(dest="subcmd", required=True)
@@ -378,6 +468,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_queue_add.add_argument("--notes", default="")
     p_queue_add.add_argument("--depends-on", default=None)
+    p_queue_add.add_argument(
+        "--handoff",
+        type=Path,
+        default=None,
+        help="Validated HandoffPacketV1 JSON required by the standard dispatch path",
+    )
     p_queue_add.add_argument(
         "--source-ref", default=None,
         help="Git ref (branch/commit-ish) this job's work should be based on"
@@ -446,14 +542,20 @@ def build_parser() -> argparse.ArgumentParser:
     return ap
 
 
-def main() -> int:
-    ap = build_parser()
-    args = ap.parse_args()
+async def _run_cli(args: argparse.Namespace) -> int:
     try:
-        return asyncio.run(_amain(args))
+        return await _amain(args)
     except GossipBusError as exc:
         _error(str(exc))
         return 1
+    finally:
+        await cancel_pending_embeddings_for_current_loop()
+
+
+def main() -> int:
+    ap = build_parser()
+    args = ap.parse_args()
+    return asyncio.run(_run_cli(args))
 
 
 if __name__ == "__main__":
