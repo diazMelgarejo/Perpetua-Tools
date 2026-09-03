@@ -63,3 +63,23 @@ class PeriscopeLessonSupersessionTests(unittest.TestCase):
         ]
         for claim in retained_claims:
             self.assertTrue(any(claim in accepted for accepted in accepted_claims))
+
+    def test_bullet_rendering_never_emits_unpaired_strikethrough(self):
+        """A status row whose stored claim already carries a fossilized,
+        unpaired ~~ (a relic of the original bug's own broken output being
+        re-ingested by a prior migration pass) must not propagate that
+        fossil into rendered output, regardless of status or supersession.
+        """
+        from render_lessons import _bullet_for
+
+        fossil = {
+            "id": "lesson_legacy_test_fossil",
+            "claim": "~~A fossilized leading delimiter with no matching close.",
+            "status": "legacy",
+        }
+        bullet = _bullet_for(fossil, superseded_by={})
+        self.assertEqual(bullet.count("~~") % 2, 0, bullet)
+        self.assertNotIn("~~~~", bullet)
+
+        rendered = render_lessons_as_text(str(SEMANTIC))
+        self.assertEqual(rendered.count("~~") % 2, 0)

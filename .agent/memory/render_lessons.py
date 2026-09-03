@@ -124,6 +124,12 @@ def _bullet_for(lesson, superseded_by):
     # truncated duplicate as a legacy lesson. Keep the structured claim intact
     # in lessons.jsonl; normalize only this derived, one-bullet rendering.
     claim = " ".join(str(lesson.get("claim", "")).split())
+    # A prior migration pass could have captured an already-struck source
+    # line verbatim, fossilizing a leading/trailing ~~ into the stored claim
+    # itself. Strip unconditionally, before any status branch below -- not
+    # just for status=="retracted" -- so no combination of status/supersession
+    # can ever re-emit that fossil as an unpaired, malformed delimiter.
+    claim = claim.removeprefix("~~").removesuffix("~~").strip()
     conf = lesson.get("confidence", "?")
     status = lesson.get("status", "accepted")
     ev = lesson.get("evidence_ids", [])
@@ -133,10 +139,6 @@ def _bullet_for(lesson, superseded_by):
     if sup_by:
         return f"- ~~{claim}~~  <!-- {ann} superseded_by={sup_by} -->"
     if status == "retracted":
-        # Legacy migration could have captured an already-struck source line.
-        # The derived retraction marker owns this presentation, so do not emit
-        # nested strikethrough delimiters.
-        claim = claim.removeprefix("~~").removesuffix("~~").strip()
         return f"- ~~[RETRACTED] {claim}~~  <!-- {ann} -->"
     if status == "provisional":
         return f"- [PROVISIONAL] {claim}  <!-- {ann} -->"
