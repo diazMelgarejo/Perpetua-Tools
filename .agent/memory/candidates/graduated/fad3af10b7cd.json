@@ -40,5 +40,6 @@
   "rejection_count": 0,
   "accepted_at": "2026-09-02T22:10:53.825834+00:00",
   "reviewer": "learn.py",
-  "rationale": "Review of the 2026-09-02 Periscope incident found that the prior lesson conflated the linked repository-owner profile with the connector's installation identity and grouped PR metadata and merge permissions without a merge-endpoint request. Observed evidence supports Contents and collaborator endpoint denial for the App token, and PR PATCH denial for the fine-grained PAT; response permission headers were not captured."
+  "rationale": "Review of the 2026-09-02 Periscope incident found that the prior lesson conflated the linked repository-owner profile with the connector's installation identity and grouped PR metadata and merge permissions without a merge-endpoint request. Observed evidence supports Contents and collaborator endpoint denial for the App token, and PR PATCH denial for the fine-grained PAT; response permission headers were not captured.",
+  "supersedes": "lesson_757476abb44e"
 }
