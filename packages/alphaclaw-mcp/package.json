@@ -20,7 +20,7 @@
     "@diazmelgarejo/alphaclaw-adapter": "file:../alphaclaw-adapter",
     "@hono/node-server": "2.0.12",
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "fast-uri": "3.1.5",
+    "fast-uri": "3.1.7",
     "hono": "^4.13.0"
   },
   "devDependencies": {
