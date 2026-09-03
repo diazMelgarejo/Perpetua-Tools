@@ -35,14 +35,15 @@ class PeriscopeLessonSupersessionTests(unittest.TestCase):
         lessons = _latest_lessons_by_id()
 
         self.assertEqual(lessons[AUTHORIZATION_ID]["supersedes"], OLD_ID)
-        self.assertEqual(lessons[LEGACY_ID]["status"], "retracted")
+        self.assertEqual(lessons[LEGACY_ID]["status"], "legacy")
 
         rendered = render_lessons_as_text(str(SEMANTIC))
         old_line = next(line for line in rendered.splitlines() if f"id={OLD_ID}" in line)
         self.assertTrue(old_line.startswith("- ~~"))
         self.assertIn(f"superseded_by={AUTHORIZATION_ID}", old_line)
         legacy_line = next(line for line in rendered.splitlines() if f"id={LEGACY_ID}" in line)
-        self.assertTrue(legacy_line.startswith("- ~~[RETRACTED]"))
+        self.assertTrue(legacy_line.startswith("- ~~"))
+        self.assertIn("superseded_by=lesson_cb52a6a3600d", legacy_line)
 
         original_jsonl, original_md = recall.LESSONS_JSONL, recall.LESSONS_MD
         self.addCleanup(setattr, recall, "LESSONS_JSONL", original_jsonl)
