@@ -10,32 +10,32 @@
     "provenance"
   ],
   "evidence_ids": [
-    "2026-09-03T19:44:55.460348+00:00"
+    "2026-09-03T19:48:57.329631+00:00"
   ],
   "cluster_size": 1,
   "canonical_salience": 8.0,
-  "staged_at": "2026-09-03T19:44:55.460348+00:00",
+  "staged_at": "2026-09-03T19:48:57.329631+00:00",
   "status": "accepted",
   "decisions": [
     {
-      "ts": "2026-09-03T19:44:55.460348+00:00",
+      "ts": "2026-09-03T19:48:57.329631+00:00",
       "action": "staged",
       "reviewer": "learn"
     },
     {
-      "ts": "2026-09-03T19:44:55.552578+00:00",
+      "ts": "2026-09-03T19:48:57.464337+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
       "notes": "Separated from lesson_757476abb44e so PR-locality and non-merge discipline remain structured recall guidance after the authorization-only supersession.",
       "provisional": false,
       "evidence_snapshot": [
-        "2026-09-03T19:44:55.460348+00:00"
+        "2026-09-03T19:48:57.329631+00:00"
       ],
-      "lessons_sha": "ea8756c9bd31"
+      "lessons_sha": "058488e91d8b"
     }
   ],
   "rejection_count": 0,
-  "accepted_at": "2026-09-03T19:44:55.552564+00:00",
+  "accepted_at": "2026-09-03T19:48:57.464319+00:00",
   "reviewer": "learn.py",
   "rationale": "Separated from lesson_757476abb44e so PR-locality and non-merge discipline remain structured recall guidance after the authorization-only supersession."
 }
