@@ -118,7 +118,12 @@ def load_lessons(semantic_dir):
 
 
 def _bullet_for(lesson, superseded_by):
-    claim = lesson.get("claim", "")
+    # A JSON claim may carry paragraph breaks. Markdown bullets and the legacy
+    # migration parser are line-oriented, so emitting it verbatim can leave
+    # strikethrough delimiters unclosed on the first line and re-import a
+    # truncated duplicate as a legacy lesson. Keep the structured claim intact
+    # in lessons.jsonl; normalize only this derived, one-bullet rendering.
+    claim = " ".join(str(lesson.get("claim", "")).split())
     conf = lesson.get("confidence", "?")
     status = lesson.get("status", "accepted")
     ev = lesson.get("evidence_ids", [])
@@ -128,6 +133,10 @@ def _bullet_for(lesson, superseded_by):
     if sup_by:
         return f"- ~~{claim}~~  <!-- {ann} superseded_by={sup_by} -->"
     if status == "retracted":
+        # Legacy migration could have captured an already-struck source line.
+        # The derived retraction marker owns this presentation, so do not emit
+        # nested strikethrough delimiters.
+        claim = claim.removeprefix("~~").removesuffix("~~").strip()
         return f"- ~~[RETRACTED] {claim}~~  <!-- {ann} -->"
     if status == "provisional":
         return f"- [PROVISIONAL] {claim}  <!-- {ann} -->"

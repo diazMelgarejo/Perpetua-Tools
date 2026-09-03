@@ -1,0 +1,42 @@
+{
+  "id": "b85d462f63ae",
+  "key": "manual_b85d46",
+  "name": "manual_b85d46",
+  "claim": "Never label a CI failure flaky or recommend a rerun from proxy signals alone. First read the failing assertion and trace the exercised code path; a passing/failing sample with no local diff can still be a deterministic bug whose triggering event order is uncommon.",
+  "conditions": [
+    "ci-triage",
+    "flaky",
+    "handwaving",
+    "proxy-conclusion",
+    "root-cause"
+  ],
+  "evidence_ids": [
+    "2026-09-03T19:44:55.294757+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-03T19:44:55.294757+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-03T19:44:55.294757+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-03T19:44:55.402557+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Separated from lesson_757476abb44e so the anti-hand-waving method remains structured recall guidance after the authorization-only supersession.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-03T19:44:55.294757+00:00"
+      ],
+      "lessons_sha": "6fa47715e78d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-03T19:44:55.402541+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Separated from lesson_757476abb44e so the anti-hand-waving method remains structured recall guidance after the authorization-only supersession."
+}

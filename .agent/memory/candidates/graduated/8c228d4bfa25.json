@@ -1,0 +1,42 @@
+{
+  "id": "8c228d4bfa25",
+  "key": "manual_8c228d",
+  "name": "manual_8c228d",
+  "claim": "On Windows fsnotify remove or rename events, retain watcher ownership and budget cleanup but do not call the native Remove API again for an already invalidated watch: the redundant call can block watcher shutdown. Prove the event-ordering fix with a regression that observes no second native removal.",
+  "conditions": [
+    "fsnotify",
+    "invalidated-watch",
+    "regression",
+    "watcher-deadlock",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-09-03T19:44:55.139229+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-03T19:44:55.139229+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-03T19:44:55.139229+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-03T19:44:55.235865+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Separated from lesson_757476abb44e so its verified watcher-deadlock root cause remains available after the authorization-only supersession.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-03T19:44:55.139229+00:00"
+      ],
+      "lessons_sha": "9f8c4036613a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-03T19:44:55.235854+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Separated from lesson_757476abb44e so its verified watcher-deadlock root cause remains available after the authorization-only supersession."
+}

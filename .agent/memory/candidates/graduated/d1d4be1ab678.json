@@ -1,0 +1,41 @@
+{
+  "id": "d1d4be1ab678",
+  "key": "manual_d1d4be",
+  "name": "manual_d1d4be",
+  "claim": "Treat discovery, publication, review, and merge as separate authorizations. A discovery PR may carry a verified production fix, but save, commit, push, publish, or fix instructions do not authorize merging it; preserve PR-local provenance until explicit merge authorization is given.",
+  "conditions": [
+    "discovery-pr",
+    "merge-authorization",
+    "pr-locality",
+    "provenance"
+  ],
+  "evidence_ids": [
+    "2026-09-03T19:44:55.460348+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-03T19:44:55.460348+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-03T19:44:55.460348+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-03T19:44:55.552578+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Separated from lesson_757476abb44e so PR-locality and non-merge discipline remain structured recall guidance after the authorization-only supersession.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-03T19:44:55.460348+00:00"
+      ],
+      "lessons_sha": "ea8756c9bd31"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-03T19:44:55.552564+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Separated from lesson_757476abb44e so PR-locality and non-merge discipline remain structured recall guidance after the authorization-only supersession."
+}
