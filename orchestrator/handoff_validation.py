@@ -10,6 +10,8 @@ from pydantic import BaseModel, Field, ValidationError, field_validator, model_v
 
 
 _SHA_RE = re.compile(r"^[0-9a-fA-F]{7,40}$")
+
+
 class HandoffValidationError(ValueError):
     """A handoff packet is malformed, incomplete, or requests forbidden authority."""
 
