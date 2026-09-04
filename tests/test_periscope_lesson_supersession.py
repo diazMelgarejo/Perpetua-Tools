@@ -18,6 +18,14 @@ SEMANTIC = REPO_ROOT / ".agent" / "memory" / "semantic"
 OLD_ID = "lesson_757476abb44e"
 AUTHORIZATION_ID = "lesson_fad3af10b7cd"
 LEGACY_ID = "lesson_legacy_98de53b747ff"
+AGGREGATE_ID = "lesson_cb52a6a3600d"
+SCOPE_RULE_ID = "lesson_7bc8852a44b6"
+FOCUSED_IDS = {
+    "lesson_8c228d4bfa25",
+    "lesson_b85d462f63ae",
+    "lesson_d1d4be1ab678",
+}
+SCOPE_CANDIDATE = REPO_ROOT / ".agent" / "memory" / "candidates" / "graduated" / "7bc8852a44b6.json"
 
 
 def _latest_lessons_by_id():
@@ -43,7 +51,16 @@ class PeriscopeLessonSupersessionTests(unittest.TestCase):
         self.assertIn(f"superseded_by={AUTHORIZATION_ID}", old_line)
         legacy_line = next(line for line in rendered.splitlines() if f"id={LEGACY_ID}" in line)
         self.assertTrue(legacy_line.startswith("- ~~"))
-        self.assertIn("superseded_by=lesson_cb52a6a3600d", legacy_line)
+        self.assertIn(f"superseded_by={AGGREGATE_ID}", legacy_line)
+        aggregate_line = next(line for line in rendered.splitlines() if f"id={AGGREGATE_ID}" in line)
+        self.assertTrue(aggregate_line.startswith("- ~~"))
+        self.assertIn(f"superseded_by={SCOPE_RULE_ID}", aggregate_line)
+        self.assertEqual(lessons[SCOPE_RULE_ID]["supersedes"], AGGREGATE_ID)
+        candidate = json.loads(SCOPE_CANDIDATE.read_text(encoding="utf-8"))
+        self.assertEqual(
+            set(candidate["related_lesson_ids"]),
+            {AGGREGATE_ID, *FOCUSED_IDS},
+        )
 
         original_jsonl, original_md = recall.LESSONS_JSONL, recall.LESSONS_MD
         self.addCleanup(setattr, recall, "LESSONS_JSONL", original_jsonl)
@@ -52,6 +69,9 @@ class PeriscopeLessonSupersessionTests(unittest.TestCase):
         recall.LESSONS_MD = str(SEMANTIC / "LESSONS.md")
         recalled_ids = {row["id"] for row in recall._load_structured()}
         self.assertNotIn(OLD_ID, recalled_ids)
+        self.assertNotIn(AGGREGATE_ID, recalled_ids)
+        self.assertIn(SCOPE_RULE_ID, recalled_ids)
+        self.assertTrue(FOCUSED_IDS <= recalled_ids)
 
         retained_claims = [
             "already invalidated watch",
