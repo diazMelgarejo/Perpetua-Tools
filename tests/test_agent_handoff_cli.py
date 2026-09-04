@@ -36,6 +36,37 @@ def _packet(**overrides: object) -> dict[str, object]:
     return payload
 
 
+def _monitorability() -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "phylax": {
+            "policy_pack_id": "phylax-monitorability",
+            "policy_pack_version": "1.0.0",
+            "risk_tier": "high",
+            "capability_grant_ids": ["grant_0123456789abcdef"],
+            "reported_monitor_decision": "escalate",
+            "severity": "high",
+            "confidence": 0.82,
+            "escalation_state": "human_review_required",
+            "retention_class": "incident_scoped",
+            "reasoning_availability": "none",
+            "evidence_refs": ["evidence_0123456789abcdef"],
+        },
+        "privacy": {
+            "classification": "redacted",
+            "redaction_profile_id": "handoff-v1",
+            "export_allowed": False,
+            "raw_reasoning_persisted_in_packet": False,
+            "raw_reasoning_exported": False,
+        },
+        "integrity": {
+            "provenance_commit_sha": "0123456789abcdef0123456789abcdef01234567",
+            "ordered_evidence_refs": ["evidence_0123456789abcdef"],
+            "redacted_manifest_sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        },
+    }
+
+
 def _write_packet(tmp_path: Path, **overrides: object) -> Path:
     path = tmp_path / "handoff.json"
     path.write_text(json.dumps(_packet(**overrides)), encoding="utf-8")
@@ -117,3 +148,27 @@ async def test_invalid_handoff_writes_no_queue_or_admission_event(
 
     assert await bus.tail(limit=20, event_type="heartbeat") == []
     assert "tests" in capsys.readouterr().err
+
+
+@pytest.mark.asyncio
+async def test_monitorability_audit_projects_only_allowlisted_redacted_fields(
+    bus: GossipBus, tmp_path: Path
+) -> None:
+    assert await cli.queue_add_from_handoff(
+        bus,
+        _write_packet(tmp_path, monitorability=_monitorability()),
+        "packet-work",
+        "Phase-1",
+        "NORMAL",
+        "",
+        None,
+    ) is None
+
+    events = await bus.tail(limit=20, event_type="heartbeat")
+    admitted = next(event["payload"] for event in events if event["payload"].get("kind") == "handoff_admitted")
+    assert admitted["oramasys.phylax.reported_monitor_decision"] == "escalate"
+    assert admitted["oramasys.phylax.risk_tier"] == "high"
+    assert admitted["oramasys.evidence.manifest_sha256"] == _monitorability()["integrity"]["redacted_manifest_sha256"]
+    assert "capability_grant_ids" not in admitted
+    assert "evidence_refs" not in admitted
+    assert "sealed_evidence_ref" not in admitted
