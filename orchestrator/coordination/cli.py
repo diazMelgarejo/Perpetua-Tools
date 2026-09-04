@@ -220,20 +220,39 @@ async def queue_add_from_handoff(
     )
     if result is False:
         return False
+    audit_payload = {
+        "kind": "handoff_admitted",
+        "schema_version": packet.schema_version,
+        "session_id": packet.session_id,
+        "job_id": packet.job_id,
+        "task_id": packet.task_id,
+        "queue_task_name": task_name,
+        "agent_id": packet.assigned_agent_id,
+        "role": packet.role,
+        "branch": packet.branch,
+        "starting_head": packet.starting_head,
+    }
+    if packet.monitorability is not None:
+        context = packet.monitorability.phylax
+        audit_payload.update(
+            {
+                "monitorability_schema_version": packet.monitorability.schema_version,
+                "oramasys.phylax.policy_pack.id": context.policy_pack_id,
+                "oramasys.phylax.policy_pack.version": context.policy_pack_version,
+                "oramasys.phylax.risk_tier": context.risk_tier,
+                "oramasys.phylax.reported_monitor_decision": context.reported_monitor_decision,
+                "oramasys.phylax.severity": context.severity,
+                "oramasys.phylax.confidence": context.confidence,
+                "oramasys.phylax.escalation_state": context.escalation_state,
+                "oramasys.phylax.retention_class": context.retention_class,
+                "oramasys.phylax.reasoning_availability": context.reasoning_availability,
+                "oramasys.evidence.manifest_sha256": packet.monitorability.integrity.redacted_manifest_sha256,
+                "oramasys.provenance.commit_sha": packet.monitorability.integrity.provenance_commit_sha,
+            }
+        )
     await bus.emit(
         "heartbeat",
-        {
-            "kind": "handoff_admitted",
-            "schema_version": packet.schema_version,
-            "session_id": packet.session_id,
-            "job_id": packet.job_id,
-            "task_id": packet.task_id,
-            "queue_task_name": task_name,
-            "agent_id": packet.assigned_agent_id,
-            "role": packet.role,
-            "branch": packet.branch,
-            "starting_head": packet.starting_head,
-        },
+        audit_payload,
     )
     print(f"handoff admitted: {packet.task_id}")
     return result
