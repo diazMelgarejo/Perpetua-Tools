@@ -68,6 +68,11 @@ non-liveness `handoff_admitted` audit event. Read
 must emit its own `heartbeat pulse <agent-id>` periodically; queue admission
 and later logs never keep a dead or stalled worker falsely ACTIVE.
 
+The optional v1 `monitorability` envelope is privacy-redacted and contains only
+typed evidence metadata plus a caller-reported advisory state. Its full Phylax
+v2 migration, derived-inference boundary, and assurance gates are governed by
+[the three-part Orama reference plan](https://github.com/diazMelgarejo/orama-system/tree/main/docs/v2/references).
+
 ---
 
 ## Cross-links
