@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import aiosqlite
 import json
+import os
 import re
 import time
 import uuid
@@ -351,11 +352,29 @@ async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | Non
         return _error(f"{task_id} was abandoned. Cannot reclaim.")
 
     required_agent_id = task_state.get("required_agent_id")
-    if required_agent_id is not None and required_agent_id != agent_id:
-        return _error(
-            f"{task_id} is reserved for {required_agent_id!r}, not {agent_id!r}; "
-            "only the validated handoff recipient can claim it."
-        )
+    if required_agent_id is not None:
+        # No cryptographic identity exists in this codebase (verified before
+        # adding this check, not assumed) -- this is the strongest signal
+        # achievable without building new auth infrastructure, not a claim
+        # of real authentication. PT_AGENT_ID, when set, reflects the
+        # calling agent's own launch environment rather than a per-call CLI
+        # argument, so a real impersonation attempt now requires
+        # deliberately overriding that environment, not just typing a
+        # different agent_id. A malicious actor in an untrusted environment
+        # can still do this; this closes the accidental/careless case the
+        # review named, nothing more.
+        env_agent_id = os.environ.get("PT_AGENT_ID")
+        if env_agent_id is not None and env_agent_id != agent_id:
+            return _error(
+                f"agent_id {agent_id!r} does not match this process's "
+                f"PT_AGENT_ID environment ({env_agent_id!r}); refusing to "
+                "claim under a mismatched identity."
+            )
+        if required_agent_id != agent_id:
+            return _error(
+                f"{task_id} is reserved for {required_agent_id!r}, not {agent_id!r}; "
+                "only the validated handoff recipient can claim it."
+            )
 
     depends_on = task_state.get("depends_on", [])
     # depends_on is authored with short task_name values (e.g.
