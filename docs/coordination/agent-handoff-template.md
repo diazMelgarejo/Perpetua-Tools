@@ -39,6 +39,25 @@ that another process is alive. A long-running worker is ACTIVE only when it
 continues to send explicit heartbeat pulses. If pulses stop, the normal
 IDLE/STALLED/DEAD transitions remain in force even if board logs continue.
 
+## Monitorability extension
+
+New standard handoffs may include the optional strict `monitorability` envelope
+shown in the executable JSON example. It is a redacted evidence bridge to a
+future Phylax policy pack, not a monitor engine or authority grant.
+
+- `reported_monitor_decision` is caller-reported advisory context; it is not a
+  trusted Phylax decision.
+- Use only opaque `grant_`, `evidence_`, and `sealed_` references. Never paste
+  raw prompts, outputs, tool payloads, reasoning, secrets, URLs, paths, hosts,
+  or credentials.
+- Raw reasoning is not persisted in this packet and never enters queue events,
+  GossipBus audit, or normal telemetry.
+- `block` is invalid in v1. A reported monitor result cannot authorize merge,
+  deployment, approval, or a worker action.
+
+The complete v2 migration and Phylax derived-inference design live in
+[the Orama v2 references](https://github.com/diazMelgarejo/orama-system/blob/main/docs/v2/references/phylax-monitorability-part-1-v1-evidence-contract.md).
+
 ## Handoff checklist
 
 | Check | Required proof |
