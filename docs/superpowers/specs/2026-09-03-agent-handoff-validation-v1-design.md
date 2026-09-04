@@ -25,14 +25,16 @@ migrate coordination to v2.
 `orchestrator/handoff_validation.py` owns the `HandoffPacketV1` Pydantic
 contract and a pure file-loader/validator. A packet carries the source line,
 worker intent, evidence expectations, verification commands, and explicit
-authority limits. Validation returns field-specific diagnostics at the CLI
-boundary rather than raw parser exceptions.
+authority limits. Validation returns typed field/code/message diagnostics at
+the CLI boundary rather than raw parser exceptions. It is strict and closed:
+coercion and undeclared fields are rejected.
 
 `scripts/agent_coordination.py handoff validate PACKET.json` is the operator
 preflight. `queue add ... --handoff PACKET.json` uses that exact validator
 before it calls `queue_add`; an invalid packet therefore emits no queue event
 and cannot become dispatchable through the new standard path. A valid packet's
-branch and starting SHA become the existing queue source-line fields.
+branch and starting SHA become the existing queue source-line fields, and its
+named recipient becomes a queue reservation that no other worker can claim.
 
 The gate emits a `handoff_admitted` audit event only after validation and
 enqueue succeed. It must not pulse the assigned agent: admitting work proves

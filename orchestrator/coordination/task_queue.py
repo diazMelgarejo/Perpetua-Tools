@@ -45,6 +45,7 @@ async def queue_add(
     depends_on: Optional[str],
     source_ref: Optional[str] = None,
     expected_base_sha: Optional[str] = None,
+    required_agent_id: Optional[str] = None,
 ) -> bool | None:
     """Enqueue a new task with optional priority and dependencies.
 
@@ -65,6 +66,8 @@ async def queue_add(
             f"expected_base_sha {expected_base_sha!r} is not a valid git SHA "
             "(7-40 hex characters)"
         )
+    if required_agent_id is not None and not required_agent_id.strip():
+        return _error("required_agent_id, if given, must not be empty")
     task_id = f"{phase}-{task_name}-{uuid.uuid4().hex[:8]}"
     priority_enum = TaskPriority.from_string(priority)
     depends_on_list = [t.strip() for t in depends_on.split(",")] if depends_on else []
@@ -86,6 +89,10 @@ async def queue_add(
         payload["source_ref"] = source_ref.strip()
     if expected_base_sha is not None:
         payload["expected_base_sha"] = expected_base_sha
+    if required_agent_id is not None:
+        # This is a dispatch reservation, not a claim: `assigned_agent` stays
+        # empty until the receiving worker explicitly claims the task.
+        payload["required_agent_id"] = required_agent_id.strip()
     # DUAL-WRITE SUNSET POLICY: Legacy heartbeat payload writes are deprecated and
     # will be permanently retired upon Phase 4 docs-crystallization + one release cycle (ADR Doc 55).
     await bus.emit("heartbeat", payload)
@@ -330,6 +337,13 @@ async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | Non
         return _error(f"{task_id} already completed. Cannot reclaim.")
     if status == "abandoned":
         return _error(f"{task_id} was abandoned. Cannot reclaim.")
+
+    required_agent_id = task_state.get("required_agent_id")
+    if required_agent_id is not None and required_agent_id != agent_id:
+        return _error(
+            f"{task_id} is reserved for {required_agent_id!r}, not {agent_id!r}; "
+            "only the validated handoff recipient can claim it."
+        )
 
     depends_on = task_state.get("depends_on", [])
     # depends_on is authored with short task_name values (e.g.

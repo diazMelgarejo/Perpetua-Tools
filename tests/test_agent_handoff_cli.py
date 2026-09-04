@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 import orchestrator.coordination.cli as cli
-from orchestrator.gossip_bus import GossipBus
+from orchestrator.gossip_bus import GossipBus, cancel_pending_embeddings_for_current_loop
 
 
 def _packet(**overrides: object) -> dict[str, object]:
@@ -46,7 +46,10 @@ def _write_packet(tmp_path: Path, **overrides: object) -> Path:
 async def bus(tmp_path: Path) -> GossipBus:
     result = GossipBus(str(tmp_path / "handoff.db"))
     await result.init_db()
-    return result
+    try:
+        yield result
+    finally:
+        await cancel_pending_embeddings_for_current_loop()
 
 
 @pytest.mark.asyncio
@@ -95,8 +98,13 @@ async def test_valid_handoff_enqueues_and_records_non_liveness_admission(
     admitted = next(
         event["payload"] for event in events if event["payload"].get("kind") == "handoff_admitted"
     )
+    queued = next(event["payload"] for event in events if event["payload"].get("kind") == "task_enqueue")
     assert admitted["agent_id"] == "agent-1"
     assert admitted["task_id"] == "task-1"
+    assert queued["required_agent_id"] == "agent-1"
+
+    assert await cli._queue_claim(bus, queued["task_id"], "agent-2") is False
+    assert await cli._queue_claim(bus, queued["task_id"], "agent-1") is None
 
 
 @pytest.mark.asyncio

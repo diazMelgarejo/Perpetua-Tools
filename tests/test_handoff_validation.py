@@ -56,12 +56,46 @@ def test_valid_packet_loads(tmp_path: Path) -> None:
         ({"tests": []}, "tests"),
         ({"merge_authorized": True}, "merge_authorized"),
         ({"deployment_authorized": True}, "deployment_authorized"),
+        ({"human_authorized": 1}, "human_authorized"),
+        ({"merge_authorized": 0}, "merge_authorized"),
+        ({"schema_version": True}, "schema_version"),
+        ({"publish_authorized": True}, "publish_authorized"),
     ],
 )
 def test_packet_rejects_invalid_or_unauthorized_values(
     tmp_path: Path, overrides: dict[str, object], field: str
 ) -> None:
     with pytest.raises(HandoffValidationError, match=field):
+        load_handoff_packet(_write_packet(tmp_path, **overrides))
+
+
+def test_packet_exposes_machine_readable_validation_diagnostics(tmp_path: Path) -> None:
+    with pytest.raises(HandoffValidationError) as raised:
+        load_handoff_packet(
+            _write_packet(
+                tmp_path,
+                starting_head="not-a-sha",
+                merge_authorized=True,
+            )
+        )
+
+    assert {(item.field, item.code) for item in raised.value.diagnostics} >= {
+        ("starting_head", "value_error"),
+        ("merge_authorized", "literal_error"),
+    }
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"intent": "   "},
+        {"files_changed": ["   "]},
+        {"tests": [{"command": "  ", "result": "passed"}]},
+        {"tests": [{"command": "pytest -q", "result": "  "}]},
+    ],
+)
+def test_packet_rejects_whitespace_only_evidence(tmp_path: Path, overrides: dict[str, object]) -> None:
+    with pytest.raises(HandoffValidationError):
         load_handoff_packet(_write_packet(tmp_path, **overrides))
 
 

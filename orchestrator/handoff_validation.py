@@ -3,28 +3,63 @@ from __future__ import annotations
 
 import json
 import re
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, Sequence
 
-from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 
 _SHA_RE = re.compile(r"^[0-9a-fA-F]{7,40}$")
 
 
+@dataclass(frozen=True)
+class HandoffDiagnostic:
+    """One stable, machine-readable handoff validation finding."""
+
+    field: str
+    code: str
+    message: str
+
+
 class HandoffValidationError(ValueError):
     """A handoff packet is malformed, incomplete, or requests forbidden authority."""
+
+    def __init__(self, diagnostics: Sequence[HandoffDiagnostic]) -> None:
+        self.diagnostics = tuple(diagnostics)
+        super().__init__(
+            "; ".join(f"{item.field}: {item.message}" for item in self.diagnostics)
+        )
 
 
 class TestEvidenceV1(BaseModel):
     """One executable verification command and its observed result."""
 
+    model_config = ConfigDict(strict=True, extra="forbid")
+
     command: str = Field(min_length=1)
     result: str = Field(min_length=1)
+
+    @field_validator("command", "result")
+    @classmethod
+    def _nonblank_evidence(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("must not be blank")
+        return value
 
 
 class HandoffPacketV1(BaseModel):
     """Machine source of truth for one pre-dispatch handoff in v1."""
+
+    model_config = ConfigDict(strict=True, extra="forbid")
 
     schema_version: Literal[1]
     session_id: str = Field(min_length=1)
@@ -45,6 +80,40 @@ class HandoffPacketV1(BaseModel):
     human_authorized: Literal[True]
     merge_authorized: Literal[False]
     deployment_authorized: Literal[False]
+
+    @field_validator("schema_version", mode="before")
+    @classmethod
+    def _schema_version_is_plain_int(cls, value: object) -> object:
+        if type(value) is not int:
+            raise ValueError("must be the integer 1, not a coerced value")
+        return value
+
+    @field_validator(
+        "human_authorized", "merge_authorized", "deployment_authorized", mode="before"
+    )
+    @classmethod
+    def _authority_is_plain_bool(cls, value: object) -> object:
+        if type(value) is not bool:
+            raise ValueError("must be a JSON boolean, not a coerced value")
+        return value
+
+    @field_validator(
+        "session_id",
+        "job_id",
+        "task_id",
+        "assigned_agent_id",
+        "intent",
+        "branch",
+        "worktree",
+        "root_cause_addressed",
+        "known_risks_or_follow_up",
+    )
+    @classmethod
+    def _nonblank_text(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("must not be blank")
+        return value
 
     @field_validator("starting_head", "current_head", "commit_sha")
     @classmethod
@@ -77,12 +146,18 @@ class HandoffPacketV1(BaseModel):
         return self.starting_head
 
 
-def _format_validation_error(error: ValidationError) -> str:
-    details = []
+def _validation_diagnostics(error: ValidationError) -> tuple[HandoffDiagnostic, ...]:
+    details: list[HandoffDiagnostic] = []
     for item in error.errors(include_url=False):
         location = ".".join(str(part) for part in item["loc"]) or "packet"
-        details.append(f"{location}: {item['msg']}")
-    return "; ".join(details)
+        details.append(
+            HandoffDiagnostic(
+                field=location,
+                code=item["type"],
+                message=item["msg"],
+            )
+        )
+    return tuple(details)
 
 
 def validate_handoff_packet(payload: Any) -> HandoffPacketV1:
@@ -90,7 +165,7 @@ def validate_handoff_packet(payload: Any) -> HandoffPacketV1:
     try:
         return HandoffPacketV1.model_validate(payload)
     except ValidationError as exc:
-        raise HandoffValidationError(_format_validation_error(exc)) from exc
+        raise HandoffValidationError(_validation_diagnostics(exc)) from exc
 
 
 def load_handoff_packet(path: Path) -> HandoffPacketV1:
@@ -98,12 +173,15 @@ def load_handoff_packet(path: Path) -> HandoffPacketV1:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        raise HandoffValidationError(f"invalid handoff JSON at {path}: {exc}") from exc
+        raise HandoffValidationError(
+            (HandoffDiagnostic("packet", "invalid_json", f"invalid JSON at {path}: {exc}"),)
+        ) from exc
     return validate_handoff_packet(payload)
 
 
 __all__ = [
     "HandoffPacketV1",
+    "HandoffDiagnostic",
     "HandoffValidationError",
     "TestEvidenceV1",
     "load_handoff_packet",

@@ -216,6 +216,7 @@ async def queue_add_from_handoff(
         depends_on,
         source_ref=packet.source_ref,
         expected_base_sha=packet.expected_base_sha,
+        required_agent_id=packet.assigned_agent_id,
     )
     if result is False:
         return False

@@ -24,7 +24,7 @@ never enough to admit work through the validated queue path.
      --handoff handoff.json --priority high
    ```
 
-6. The receiving worker acknowledges, claims its task, and sends its own
+6. The named receiving worker acknowledges, claims its reserved task, and sends its own
    explicit heartbeat pulse periodically while it is active:
 
    ```bash
@@ -56,4 +56,5 @@ Validation errors, conflicting CLI source fields, malformed JSON, unsupported
 authority, missing evidence, and inconsistent heads reject admission before a
 queue task or admission audit is written. Repair the packet, validate again,
 then enqueue. Do not bypass validation by replacing it with a board log or an
-unstructured file drop.
+unstructured file drop. JSON is strict: undeclared fields and coercions such
+as `1` for `human_authorized` are rejected.
