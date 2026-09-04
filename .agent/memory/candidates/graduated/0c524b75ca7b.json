@@ -345,5 +345,6 @@
   "rejection_count": 0,
   "accepted_at": "2026-09-03T19:45:37.845131+00:00",
   "reviewer": "host-agent",
-  "rationale": "Direct request to preserve this investigation's reusable insights as prior art for future agents -- five distinct, verified techniques and gotchas from a real supersession-scope incident."
+  "rationale": "Direct request to preserve this investigation's reusable insights as prior art for future agents -- five distinct, verified techniques and gotchas from a real supersession-scope incident.",
+  "supersedes": "lesson_legacy_594b57e88e37"
 }
