@@ -1,0 +1,47 @@
+{
+  "id": "7bc8852a44b6",
+  "key": "manual_7bc885",
+  "name": "manual_7bc885",
+  "claim": "When a retrieval system retires a superseded record wholesale, split a broad record before narrowly correcting it: keep each independent rule as focused active lessons, then retire the redundant aggregate and retain only the supersession-scope mechanism as distinct guidance.",
+  "conditions": [
+    "deduplication",
+    "recall",
+    "structured-memory",
+    "supersession"
+  ],
+  "evidence_ids": [
+    "2026-09-04T01:07:57.208815+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-04T01:07:57.208815+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-04T01:07:57.208815+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-04T01:08:02.607961+00:00",
+      "action": "graduated",
+      "reviewer": "codex",
+      "notes": "Replaces the aggregate duplicate with its unique supersession-scope rule; the concrete watcher, anti-hand-waving, and PR-locality guidance remains active in lessons 8c228d4bfa25, b85d462f63ae, and d1d4be1ab678.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-04T01:07:57.208815+00:00"
+      ],
+      "lessons_sha": "6af0193d1b97"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-04T01:08:02.607945+00:00",
+  "reviewer": "codex",
+  "related_lesson_ids": [
+    "lesson_cb52a6a3600d",
+    "lesson_8c228d4bfa25",
+    "lesson_b85d462f63ae",
+    "lesson_d1d4be1ab678"
+  ],
+  "rationale": "Replaces the aggregate duplicate with its unique supersession-scope rule; the concrete watcher, anti-hand-waving, and PR-locality guidance remains active in lessons 8c228d4bfa25, b85d462f63ae, and d1d4be1ab678."
+}

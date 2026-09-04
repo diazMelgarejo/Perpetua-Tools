@@ -319,5 +319,6 @@
   "rejection_count": 0,
   "accepted_at": "2026-08-29T21:31:59.247915+00:00",
   "reviewer": "host-agent",
-  "rationale": "Direct instruction to document for v2/oramasys bulk remediation before CI finished -- two real, verified security fixes plus a more consequential comparative-architecture finding (the TS port diverged from the canonical Python pattern it claims to mirror, which is exactly where the vulnerability was introduced) worth checking systematically across future ports."
+  "rationale": "Direct instruction to document for v2/oramasys bulk remediation before CI finished -- two real, verified security fixes plus a more consequential comparative-architecture finding (the TS port diverged from the canonical Python pattern it claims to mirror, which is exactly where the vulnerability was introduced) worth checking systematically across future ports.",
+  "supersedes": "lesson_legacy_6cc23d837789"
 }
