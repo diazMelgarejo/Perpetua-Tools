@@ -77,6 +77,7 @@ import asyncio
 import aiosqlite
 import json
 import re
+import sqlite3
 import sys
 import time
 import uuid
@@ -163,6 +164,8 @@ from orchestrator.coordination.task_queue import (  # noqa: E402
     release_claim_with_event as _release_claim_with_event,
     task_snapshot as _task_snapshot,
     try_atomic_claim as _try_atomic_claim,
+    _queue_add_impl,
+    _validate_queue_add_args,
 )
 
 
@@ -191,12 +194,21 @@ async def queue_add_from_handoff(
     *,
     source_ref: Optional[str] = None,
     expected_base_sha: Optional[str] = None,
-) -> bool | None:
+) -> str | bool | None:
     """Validate a v1 packet before admitting its task to the queue.
 
     The resulting `handoff_admitted` event is an audit record only.  It is not
     a heartbeat pulse because an enqueueing coordinator cannot prove that the
     assigned worker is presently alive.
+
+    Admission is atomic: the queue record and the handoff_admitted audit
+    event commit together in one transaction, or neither is externally
+    visible. Both events live in the same GossipBus-backed SQLite database
+    (confirmed directly, not assumed), so this is a genuine single-database
+    transaction, not a distributed one -- no outbox/idempotency-key pattern
+    is needed for that reason. On success, returns the generated
+    queue_task_id (str); returns False on any validation failure, with
+    nothing written.
     """
     try:
         packet = load_handoff_packet(handoff_path)
@@ -207,19 +219,12 @@ async def queue_add_from_handoff(
     if expected_base_sha is not None and expected_base_sha.lower() != packet.expected_base_sha:
         return _error("--expected-base-sha conflicts with handoff starting_head")
 
-    result = await _queue_add(
-        bus,
-        task_name,
-        phase,
-        priority,
-        notes,
-        depends_on,
-        source_ref=packet.source_ref,
-        expected_base_sha=packet.expected_base_sha,
-        required_agent_id=packet.assigned_agent_id,
+    validated = _validate_queue_add_args(
+        packet.source_ref, packet.expected_base_sha, packet.assigned_agent_id
     )
-    if result is False:
+    if validated is False:
         return False
+
     audit_payload = {
         "kind": "handoff_admitted",
         "schema_version": packet.schema_version,
@@ -250,12 +255,33 @@ async def queue_add_from_handoff(
                 "oramasys.provenance.commit_sha": packet.monitorability.integrity.provenance_commit_sha,
             }
         )
-    await bus.emit(
-        "heartbeat",
-        audit_payload,
-    )
-    print(f"handoff admitted: {packet.task_id}")
-    return result
+
+    try:
+        async with bus.connect() as db:
+            try:
+                queue_task_id = await _queue_add_impl(
+                    bus, db, task_name, phase, priority, notes, depends_on,
+                    source_ref=packet.source_ref,
+                    expected_base_sha=packet.expected_base_sha,
+                    required_agent_id=packet.assigned_agent_id,
+                )
+                audit_payload["queue_task_id"] = queue_task_id
+                row_id, _event_uuid, safe_payload, inserted = await bus.insert_event(
+                    db, "heartbeat", audit_payload
+                )
+                await db.commit()
+            except Exception as exc:
+                await db.rollback()
+                raise GossipBusError(
+                    f"handoff admission for {task_name!r} failed: {exc}"
+                ) from exc
+    except GossipBusError as exc:
+        return _error(str(exc))
+
+    if inserted:
+        bus.schedule_embedding(row_id, safe_payload)
+    print(f"handoff admitted: {packet.task_id} (queue_task_id={queue_task_id})")
+    return queue_task_id
 
 
 # ─────────────────────────────────────────────────────────────────────────────

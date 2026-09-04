@@ -47,7 +47,7 @@ async def queue_add(
     source_ref: Optional[str] = None,
     expected_base_sha: Optional[str] = None,
     required_agent_id: Optional[str] = None,
-) -> bool | None:
+) -> str | bool | None:
     """Enqueue a new task with optional priority and dependencies.
 
     source_ref/expected_base_sha are optional here (not yet hard-required)
@@ -59,16 +59,61 @@ async def queue_add(
     needs that cross-repo rollout done deliberately, not silently bundled
     into one file's fix. When provided, both are validated and persisted;
     omitting them still works, matching every existing caller unchanged.
+
+    Returns the generated task_id (str) on success, False on validation
+    failure. Previously returned None on success -- confirmed safe before
+    changing this: every existing caller across this repo's test suite
+    calls this and discards the return value; none inspect it.
     """
+    validated = _validate_queue_add_args(source_ref, expected_base_sha, required_agent_id)
+    if validated is False:
+        return False
+    async with bus.connect() as db:
+        task_id = await _queue_add_impl(
+            bus, db, task_name, phase, priority, notes, depends_on,
+            source_ref=source_ref, expected_base_sha=expected_base_sha,
+            required_agent_id=required_agent_id,
+        )
+        await db.commit()
+    return task_id
+
+
+def _validate_queue_add_args(
+    source_ref: Optional[str], expected_base_sha: Optional[str], required_agent_id: Optional[str]
+) -> bool:
+    """Shared validation, run before opening any transaction, by both
+    queue_add and queue_add_from_handoff's atomic path."""
     if source_ref is not None and not source_ref.strip():
-        return _error("source_ref, if given, must not be empty")
+        _error("source_ref, if given, must not be empty")
+        return False
     if expected_base_sha is not None and not _SHA_RE.match(expected_base_sha):
-        return _error(
+        _error(
             f"expected_base_sha {expected_base_sha!r} is not a valid git SHA "
             "(7-40 hex characters)"
         )
+        return False
     if required_agent_id is not None and not required_agent_id.strip():
-        return _error("required_agent_id, if given, must not be empty")
+        _error("required_agent_id, if given, must not be empty")
+        return False
+    return True
+
+
+async def _queue_add_impl(
+    bus: GossipBus,
+    db,
+    task_name: str,
+    phase: str,
+    priority: str,
+    notes: str,
+    depends_on: Optional[str],
+    source_ref: Optional[str] = None,
+    expected_base_sha: Optional[str] = None,
+    required_agent_id: Optional[str] = None,
+) -> str:
+    """Insert the task_enqueue event on an existing connection, without
+    committing -- the caller controls the transaction boundary. Assumes
+    _validate_queue_add_args already passed; does not re-validate.
+    """
     task_id = f"{phase}-{task_name}-{uuid.uuid4().hex[:8]}"
     priority_enum = TaskPriority.from_string(priority)
     depends_on_list = [t.strip() for t in depends_on.split(",")] if depends_on else []
@@ -96,8 +141,11 @@ async def queue_add(
         payload["required_agent_id"] = required_agent_id.strip()
     # DUAL-WRITE SUNSET POLICY: Legacy heartbeat payload writes are deprecated and
     # will be permanently retired upon Phase 4 docs-crystallization + one release cycle (ADR Doc 55).
-    await bus.emit("heartbeat", payload)
+    row_id, _event_uuid, safe_payload, inserted = await bus.insert_event(db, "heartbeat", payload)
+    if inserted:
+        bus.schedule_embedding(row_id, safe_payload)
     print(f"enqueued: {task_id} ({phase}, {priority_enum.name})")
+    return task_id
 
 
 _TASK_EVENT_KINDS = (
