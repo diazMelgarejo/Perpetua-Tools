@@ -109,6 +109,13 @@ def test_packet_accepts_a_complete_redacted_monitorability_envelope(tmp_path: Pa
         (_monitorability(integrity={**_monitorability()["integrity"], "ordered_evidence_refs": ["evidence_fedcba9876543210"]}), "integrity"),
         (_monitorability(otel={**_monitorability()["otel"], "conversation_id": "RAW CoT: user password is secret"}), "conversation_id"),
         (_monitorability(otel={**_monitorability()["otel"], "parent_span_id": "fedcba9876543210", "trace_id": None, "span_id": None}), "otel"),
+        (_monitorability(unexpected_top_level_field="not part of the envelope"), "unexpected_top_level_field"),
+        (_monitorability(phylax={**_monitorability()["phylax"], "unexpected_field": "raw"}), "unexpected_field"),
+        (_monitorability(privacy={**_monitorability()["privacy"], "unexpected_field": "raw"}), "unexpected_field"),
+        (_monitorability(integrity={**_monitorability()["integrity"], "unexpected_field": "raw"}), "unexpected_field"),
+        (_monitorability(otel={**_monitorability()["otel"], "unexpected_field": "raw"}), "unexpected_field"),
+        (_monitorability(phylax={**_monitorability()["phylax"], "policy_pack_id": "http://evil.example/callback"}), "policy_pack_id"),
+        (_monitorability(privacy={**_monitorability()["privacy"], "redaction_profile_id": "https://evil.example"}), "redaction_profile_id"),
     ],
 )
 def test_packet_rejects_invalid_or_raw_monitorability_data(

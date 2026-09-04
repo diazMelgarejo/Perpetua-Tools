@@ -23,7 +23,7 @@ _SPAN_ID_RE = re.compile(r"^[0-9a-f]{16}$")
 _FULL_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _OPAQUE_REFERENCE_RE = re.compile(r"^(?:evidence|sealed|grant)_[0-9a-f]{16,64}$")
-_MONITORABILITY_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:@/-]{0,127}$")
+_MONITORABILITY_IDENTIFIER_RE = re.compile(r"^(?!/)(?!.*://)[A-Za-z0-9][A-Za-z0-9._:@/-]{0,127}$")
 
 
 @dataclass(frozen=True)
