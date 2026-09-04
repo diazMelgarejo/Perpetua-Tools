@@ -201,6 +201,18 @@ async def latest_task_snapshots(bus: GossipBus) -> dict[str, dict]:
     return snapshots
 
 
+def _presence_pulse_payload(agent_id: str) -> dict:
+    """Same shape as liveness.py's _heartbeat_pulse -- kept identical so
+    a dispatch-update-triggered pulse is indistinguishable from an
+    explicit manual one to find_agent_heartbeats()."""
+    return {
+        "kind": "agent_pulse",
+        "agent_id": agent_id,
+        "worktree": current_worktree_label(),
+        "timestamp": time.time(),
+    }
+
+
 async def try_atomic_claim(
     bus: GossipBus,
     task_id: str,
@@ -412,6 +424,11 @@ async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | Non
             f"{task_id} could not be claimed; coordination database remained "
             "busy. Retry safely."
         )
+    # Correct the "board log() is not a heartbeat" gap: a task claim is a
+    # real, verifiable unit of dispatch activity from a genuinely live
+    # agent -- post presence explicitly rather than relying on the agent
+    # to separately remember an out-of-band pulse call.
+    await bus.emit("heartbeat", _presence_pulse_payload(agent_id))
     print(f"claimed: {task_id} by {agent_id}")
 
 
@@ -464,6 +481,12 @@ async def queue_complete(bus: GossipBus, task_id: str, agent_id: str, notes: str
             f"{task_id} could not be completed; coordination database remained "
             "busy. Retry safely."
         )
+    # Correct the "board log() is not a heartbeat" gap: task completion is a
+    # real, verifiable unit of dispatch activity from a genuinely live agent
+    # (unlike cleanup_stale_queue_claims's release, which acts on behalf of
+    # an already-DEAD agent and must never post presence). Post it here,
+    # not inside release_claim_with_event, so the two paths stay distinct.
+    await bus.emit("heartbeat", _presence_pulse_payload(agent_id))
     print(f"completed: {task_id}")
 
 
@@ -520,6 +543,10 @@ async def queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) ->
                 f"{task_id} could not be requeued; coordination database "
                 "remained busy. Retry safely."
             )
+        # Same reasoning as queue_complete: a live agent reporting its own
+        # failure is genuine dispatch activity, distinct from the
+        # dead-agent cleanup path -- post presence here explicitly.
+        await bus.emit("heartbeat", _presence_pulse_payload(agent_id))
         print(f"failed: {task_id}, retry {retry_count}/{max_retries}")
         return
 
@@ -549,6 +576,7 @@ async def queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) ->
             f"{task_id} could not be abandoned; coordination database remained "
             "busy. Retry safely."
         )
+    await bus.emit("heartbeat", _presence_pulse_payload(agent_id))
     print(f"abandoned: {task_id} (max retries exceeded)")
 
 
