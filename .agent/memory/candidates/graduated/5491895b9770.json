@@ -206,5 +206,6 @@
   "rejection_count": 0,
   "accepted_at": "2026-09-02T22:42:12.767758+00:00",
   "reviewer": "host-agent",
-  "rationale": "A real, distinct verification-discipline gap found via direct review on orama-system PR #339, fixed in both afrp/failure-modes.md and afrp/SKILL.md this session -- generalizes beyond git to any content-publication workflow."
+  "rationale": "A real, distinct verification-discipline gap found via direct review on orama-system PR #339, fixed in both afrp/failure-modes.md and afrp/SKILL.md this session -- generalizes beyond git to any content-publication workflow.",
+  "supersedes": "lesson_legacy_40f886e5f5c1"
 }
