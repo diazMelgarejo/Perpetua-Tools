@@ -183,6 +183,29 @@ def _exit_code(result: object) -> int:
     return 1 if result is False else 0
 
 
+async def _find_existing_admission_by_job_id(bus: GossipBus, job_id: str) -> Optional[dict]:
+    """Look up a prior handoff_admitted event for this exact job_id.
+
+    Deliberately an unbounded query narrowed at the SQL level (matching
+    fetch_task_events' own established pattern in task_queue.py), not a
+    size-bounded bus.tail() scan filtered in Python -- a bounded window
+    over the combined heartbeat stream (which also carries agent-liveness
+    pulses and task-lifecycle events) could silently miss an older
+    duplicate once enough unrelated traffic accumulates, defeating the
+    idempotency check with no error or warning.
+    """
+    async with bus.connect() as db:
+        cursor = await db.execute(
+            "SELECT payload_json FROM gossip WHERE event_type = 'heartbeat' "
+            "AND json_extract(payload_json, '$.kind') = 'handoff_admitted' "
+            "AND json_extract(payload_json, '$.job_id') = ? "
+            "ORDER BY id ASC LIMIT 1",
+            (job_id,),
+        )
+        row = await cursor.fetchone()
+    return json.loads(row[0]) if row else None
+
+
 async def queue_add_from_handoff(
     bus: GossipBus,
     handoff_path: Path,
@@ -205,8 +228,13 @@ async def queue_add_from_handoff(
     event commit together in one transaction, or neither is externally
     visible. Both events live in the same GossipBus-backed SQLite database
     (confirmed directly, not assumed), so this is a genuine single-database
-    transaction, not a distributed one -- no outbox/idempotency-key pattern
-    is needed for that reason. On success, returns the generated
+    transaction, not a distributed one.
+
+    Idempotent on the packet's own job_id: a retried admission (e.g. after
+    an ambiguous network/process outcome) for a job_id that was already
+    admitted returns the existing queue_task_id unchanged rather than
+    creating a second queue row -- true idempotency (same request, same
+    result), not just an error on retry. On success, returns the
     queue_task_id (str); returns False on any validation failure, with
     nothing written.
     """
@@ -224,6 +252,15 @@ async def queue_add_from_handoff(
     )
     if validated is False:
         return False
+
+    existing = await _find_existing_admission_by_job_id(bus, packet.job_id)
+    if existing is not None:
+        print(
+            f"handoff admission for job_id {packet.job_id!r} already exists "
+            f"(queue_task_id={existing['queue_task_id']}); returning existing "
+            "admission unchanged, not creating a duplicate."
+        )
+        return existing["queue_task_id"]
 
     audit_payload = {
         "kind": "handoff_admitted",

@@ -181,14 +181,14 @@ async def test_admission_rolls_back_enqueue_when_audit_write_fails(
 
 
 @pytest.mark.asyncio
-async def test_duplicate_handoff_admission_does_not_double_enqueue(
+async def test_duplicate_handoff_admission_is_idempotent_on_job_id(
     bus: GossipBus, tmp_path: Path
 ) -> None:
     """Admitting the same packet twice (e.g. a retried CLI invocation after
-    an ambiguous network/process outcome) must not silently create two
-    queue rows for the same underlying handoff -- each admission call
-    generates its own fresh queue_task_id, so a caller retrying blindly
-    would otherwise get two live reservations for one piece of work."""
+    an ambiguous network/process outcome) must not create two queue rows
+    for the same underlying handoff. Resolved per the atomicity-boundary
+    open question: idempotent on the packet's own job_id -- the retry
+    returns the SAME queue_task_id, not an error and not a duplicate."""
     packet_path = _write_packet(tmp_path)
 
     first_id = await cli.queue_add_from_handoff(
@@ -199,22 +199,42 @@ async def test_duplicate_handoff_admission_does_not_double_enqueue(
     second_id = await cli.queue_add_from_handoff(
         bus, packet_path, "packet-work", "Phase-1", "NORMAL", "", None
     )
-    assert isinstance(second_id, str) and second_id
-    assert second_id != first_id, (
-        "two admissions of the identical packet produced the same queue_task_id, "
-        "which would mask a real duplicate rather than surfacing two rows"
+    assert second_id == first_id, (
+        "a retried admission for the identical job_id must return the "
+        "existing queue_task_id, not create a new one"
     )
 
     events = await bus.tail(limit=20, event_type="heartbeat")
     admitted = [e["payload"] for e in events if e["payload"].get("kind") == "handoff_admitted"]
-    assert len(admitted) == 2, (
-        "queue_add_from_handoff has no idempotency key today -- this test "
-        "documents that a retried admission genuinely creates a second "
-        "queue row/audit event, not a silent duplicate; true idempotency "
-        "would need an explicit dedup key (e.g. packet job_id) and is not "
-        "implemented -- flagged, not silently assumed away, per the "
-        "atomicity-boundary open question"
+    enqueued = [e["payload"] for e in events if e["payload"].get("kind") == "task_enqueue"]
+    assert len(admitted) == 1, "the retry must not create a second audit event"
+    assert len(enqueued) == 1, "the retry must not create a second queue row"
+
+
+@pytest.mark.asyncio
+async def test_different_job_id_is_not_treated_as_a_duplicate(
+    bus: GossipBus, tmp_path: Path
+) -> None:
+    """The idempotency check is scoped to job_id specifically -- two
+    genuinely distinct packets (different job_id) must both admit as
+    separate, real queue rows, confirming the check doesn't over-match."""
+    (tmp_path / "first").mkdir()
+    (tmp_path / "second").mkdir()
+    first_path = _write_packet(tmp_path / "first", job_id="job-1")
+    second_path = _write_packet(tmp_path / "second", job_id="job-2")
+
+    first_id = await cli.queue_add_from_handoff(
+        bus, first_path, "packet-work", "Phase-1", "NORMAL", "", None
     )
+    second_id = await cli.queue_add_from_handoff(
+        bus, second_path, "packet-work", "Phase-1", "NORMAL", "", None
+    )
+    assert isinstance(first_id, str) and isinstance(second_id, str)
+    assert first_id != second_id
+
+    events = await bus.tail(limit=20, event_type="heartbeat")
+    admitted = [e["payload"] for e in events if e["payload"].get("kind") == "handoff_admitted"]
+    assert len(admitted) == 2
 
 
 
