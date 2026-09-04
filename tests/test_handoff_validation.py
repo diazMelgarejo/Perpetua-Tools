@@ -35,6 +35,49 @@ def _packet(**overrides: object) -> dict[str, object]:
     return packet
 
 
+def _monitorability(**overrides: object) -> dict[str, object]:
+    envelope: dict[str, object] = {
+        "schema_version": 1,
+        "otel": {
+            "trace_id": "0123456789abcdef0123456789abcdef",
+            "span_id": "0123456789abcdef",
+            "operation_name": "invoke_agent",
+            "provider_name": "openai",
+        "agent_id": "handoff-validator",
+        "agent_name": "handoff-validator",
+            "agent_version": "1.0.0",
+            "request_model": "gpt-test",
+        },
+        "phylax": {
+            "policy_pack_id": "phylax-monitorability",
+            "policy_pack_version": "1.0.0",
+            "risk_tier": "high",
+            "capability_grant_ids": ["grant_0123456789abcdef"],
+            "reported_monitor_decision": "escalate",
+            "severity": "high",
+            "confidence": 0.82,
+            "escalation_state": "human_review_required",
+            "retention_class": "incident_scoped",
+            "reasoning_availability": "none",
+            "evidence_refs": ["evidence_0123456789abcdef"],
+        },
+        "privacy": {
+            "classification": "redacted",
+            "redaction_profile_id": "handoff-v1",
+            "export_allowed": False,
+            "raw_reasoning_persisted_in_packet": False,
+            "raw_reasoning_exported": False,
+        },
+        "integrity": {
+            "provenance_commit_sha": "0123456789abcdef0123456789abcdef01234567",
+            "ordered_evidence_refs": ["evidence_0123456789abcdef"],
+            "redacted_manifest_sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        },
+    }
+    envelope.update(overrides)
+    return envelope
+
+
 def _write_packet(tmp_path: Path, **overrides: object) -> Path:
     path = tmp_path / "handoff.json"
     path.write_text(json.dumps(_packet(**overrides)), encoding="utf-8")
@@ -46,6 +89,33 @@ def test_valid_packet_loads(tmp_path: Path) -> None:
 
     assert packet.current_head == packet.commit_sha
     assert packet.source_ref == packet.branch
+
+
+def test_packet_accepts_a_complete_redacted_monitorability_envelope(tmp_path: Path) -> None:
+    packet = load_handoff_packet(_write_packet(tmp_path, monitorability=_monitorability()))
+
+    assert packet.monitorability is not None
+    assert packet.monitorability.phylax.reported_monitor_decision == "escalate"
+    assert packet.monitorability.privacy.raw_reasoning_persisted_in_packet is False
+
+
+@pytest.mark.parametrize(
+    ("monitorability", "field"),
+    [
+        (_monitorability(phylax={**_monitorability()["phylax"], "reported_monitor_decision": "block"}), "reported_monitor_decision"),
+        (_monitorability(phylax={**_monitorability()["phylax"], "evidence_refs": ["raw tool output"]}), "evidence_refs"),
+        (_monitorability(phylax={**_monitorability()["phylax"], "reasoning_trace": "hidden"}), "reasoning_trace"),
+        (_monitorability(privacy={**_monitorability()["privacy"], "raw_reasoning_persisted_in_packet": True}), "raw_reasoning_persisted_in_packet"),
+        (_monitorability(integrity={**_monitorability()["integrity"], "ordered_evidence_refs": ["evidence_fedcba9876543210"]}), "integrity"),
+        (_monitorability(otel={**_monitorability()["otel"], "conversation_id": "RAW CoT: user password is secret"}), "conversation_id"),
+        (_monitorability(otel={**_monitorability()["otel"], "parent_span_id": "fedcba9876543210", "trace_id": None, "span_id": None}), "otel"),
+    ],
+)
+def test_packet_rejects_invalid_or_raw_monitorability_data(
+    tmp_path: Path, monitorability: dict[str, object], field: str
+) -> None:
+    with pytest.raises(HandoffValidationError, match=field):
+        load_handoff_packet(_write_packet(tmp_path, monitorability=monitorability))
 
 
 @pytest.mark.parametrize(
