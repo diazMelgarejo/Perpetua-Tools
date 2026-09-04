@@ -24,8 +24,15 @@ never enough to admit work through the validated queue path.
      --handoff handoff.json --priority high
    ```
 
-6. The named receiving worker acknowledges, claims its reserved task, and sends its own
-   explicit heartbeat pulse periodically while it is active:
+6. The named receiving worker acknowledges and claims its reserved task using
+   the generated queue task ID printed by admission:
+
+   ```bash
+   python scripts/agent_coordination.py queue claim <queue-task-id> <agent-id>
+   ```
+
+7. The receiving worker sends its own explicit heartbeat pulse periodically
+   while it is active:
 
    ```bash
    python scripts/agent_coordination.py heartbeat pulse <agent-id>

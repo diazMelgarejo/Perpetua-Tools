@@ -352,7 +352,7 @@ def load_handoff_packet(path: Path) -> HandoffPacketV1:
     """Load and validate a UTF-8 JSON handoff file without leaking parser internals."""
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise HandoffValidationError(
             (HandoffDiagnostic("packet", "invalid_json", f"invalid JSON at {path}: {exc}"),)
         ) from exc
