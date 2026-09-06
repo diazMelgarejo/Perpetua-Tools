@@ -77,6 +77,7 @@ import asyncio
 import aiosqlite
 import json
 import re
+import sqlite3
 import sys
 import time
 import uuid
@@ -89,6 +90,11 @@ from orchestrator.gossip_bus import (  # noqa: E402
     GossipBus,
     GossipBusError,
     _canonical_repo_state_dir,
+    cancel_pending_embeddings_for_current_loop,
+)
+from orchestrator.handoff_validation import (  # noqa: E402
+    HandoffValidationError,
+    load_handoff_packet,
 )
 from orchestrator.coordination.liveness import (  # noqa: E402
     _heartbeat_check,
@@ -158,6 +164,8 @@ from orchestrator.coordination.task_queue import (  # noqa: E402
     release_claim_with_event as _release_claim_with_event,
     task_snapshot as _task_snapshot,
     try_atomic_claim as _try_atomic_claim,
+    _queue_add_impl,
+    _validate_queue_add_args,
 )
 
 
@@ -173,6 +181,144 @@ def _warning(message: str) -> bool:
 
 def _exit_code(result: object) -> int:
     return 1 if result is False else 0
+
+
+async def _find_existing_admission_by_job_id(bus: GossipBus, job_id: str) -> Optional[dict]:
+    """Look up a prior handoff_admitted event for this exact job_id.
+
+    Deliberately an unbounded query narrowed at the SQL level (matching
+    fetch_task_events' own established pattern in task_queue.py), not a
+    size-bounded bus.tail() scan filtered in Python -- a bounded window
+    over the combined heartbeat stream (which also carries agent-liveness
+    pulses and task-lifecycle events) could silently miss an older
+    duplicate once enough unrelated traffic accumulates, defeating the
+    idempotency check with no error or warning.
+    """
+    async with bus.connect() as db:
+        cursor = await db.execute(
+            "SELECT payload_json FROM gossip WHERE event_type = 'heartbeat' "
+            "AND json_extract(payload_json, '$.kind') = 'handoff_admitted' "
+            "AND json_extract(payload_json, '$.job_id') = ? "
+            "ORDER BY id ASC LIMIT 1",
+            (job_id,),
+        )
+        row = await cursor.fetchone()
+    return json.loads(row[0]) if row else None
+
+
+async def queue_add_from_handoff(
+    bus: GossipBus,
+    handoff_path: Path,
+    task_name: str,
+    phase: str,
+    priority: str,
+    notes: str,
+    depends_on: Optional[str],
+    *,
+    source_ref: Optional[str] = None,
+    expected_base_sha: Optional[str] = None,
+) -> str | bool | None:
+    """Validate a v1 packet before admitting its task to the queue.
+
+    The resulting `handoff_admitted` event is an audit record only.  It is not
+    a heartbeat pulse because an enqueueing coordinator cannot prove that the
+    assigned worker is presently alive.
+
+    Admission is atomic: the queue record and the handoff_admitted audit
+    event commit together in one transaction, or neither is externally
+    visible. Both events live in the same GossipBus-backed SQLite database
+    (confirmed directly, not assumed), so this is a genuine single-database
+    transaction, not a distributed one.
+
+    Idempotent on the packet's own job_id: a retried admission (e.g. after
+    an ambiguous network/process outcome) for a job_id that was already
+    admitted returns the existing queue_task_id unchanged rather than
+    creating a second queue row -- true idempotency (same request, same
+    result), not just an error on retry. On success, returns the
+    queue_task_id (str); returns False on any validation failure, with
+    nothing written.
+    """
+    try:
+        packet = load_handoff_packet(handoff_path)
+    except HandoffValidationError as exc:
+        return _error(str(exc))
+    if source_ref is not None and source_ref != packet.source_ref:
+        return _error("--source-ref conflicts with handoff branch")
+    if expected_base_sha is not None and expected_base_sha.lower() != packet.expected_base_sha:
+        return _error("--expected-base-sha conflicts with handoff starting_head")
+
+    validated = _validate_queue_add_args(
+        packet.source_ref, packet.expected_base_sha, packet.assigned_agent_id
+    )
+    if validated is False:
+        return False
+
+    existing = await _find_existing_admission_by_job_id(bus, packet.job_id)
+    if existing is not None:
+        print(
+            f"handoff admission for job_id {packet.job_id!r} already exists "
+            f"(queue_task_id={existing['queue_task_id']}); returning existing "
+            "admission unchanged, not creating a duplicate."
+        )
+        return existing["queue_task_id"]
+
+    audit_payload = {
+        "kind": "handoff_admitted",
+        "schema_version": packet.schema_version,
+        "session_id": packet.session_id,
+        "job_id": packet.job_id,
+        "task_id": packet.task_id,
+        "queue_task_name": task_name,
+        "agent_id": packet.assigned_agent_id,
+        "role": packet.role,
+        "branch": packet.branch,
+        "starting_head": packet.starting_head,
+    }
+    if packet.monitorability is not None:
+        context = packet.monitorability.phylax
+        audit_payload.update(
+            {
+                "monitorability_schema_version": packet.monitorability.schema_version,
+                "oramasys.phylax.policy_pack.id": context.policy_pack_id,
+                "oramasys.phylax.policy_pack.version": context.policy_pack_version,
+                "oramasys.phylax.risk_tier": context.risk_tier,
+                "oramasys.phylax.reported_monitor_decision": context.reported_monitor_decision,
+                "oramasys.phylax.severity": context.severity,
+                "oramasys.phylax.confidence": context.confidence,
+                "oramasys.phylax.escalation_state": context.escalation_state,
+                "oramasys.phylax.retention_class": context.retention_class,
+                "oramasys.phylax.reasoning_availability": context.reasoning_availability,
+                "oramasys.evidence.manifest_sha256": packet.monitorability.integrity.redacted_manifest_sha256,
+                "oramasys.provenance.commit_sha": packet.monitorability.integrity.provenance_commit_sha,
+            }
+        )
+
+    try:
+        async with bus.connect() as db:
+            try:
+                queue_task_id = await _queue_add_impl(
+                    bus, db, task_name, phase, priority, notes, depends_on,
+                    source_ref=packet.source_ref,
+                    expected_base_sha=packet.expected_base_sha,
+                    required_agent_id=packet.assigned_agent_id,
+                )
+                audit_payload["queue_task_id"] = queue_task_id
+                row_id, _event_uuid, safe_payload, inserted = await bus.insert_event(
+                    db, "heartbeat", audit_payload
+                )
+                await db.commit()
+            except Exception as exc:
+                await db.rollback()
+                raise GossipBusError(
+                    f"handoff admission for {task_name!r} failed: {exc}"
+                ) from exc
+    except GossipBusError as exc:
+        return _error(str(exc))
+
+    if inserted:
+        bus.schedule_embedding(row_id, safe_payload)
+    print(f"handoff admitted: {packet.task_id} (queue_task_id={queue_task_id})")
+    return queue_task_id
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -197,6 +343,15 @@ def canonical_repo_root() -> Path:
 
 
 async def _amain(args: argparse.Namespace) -> int:
+    if args.cmd == "handoff":
+        try:
+            packet = load_handoff_packet(args.packet)
+        except HandoffValidationError as exc:
+            _error(str(exc))
+            return 1
+        print(f"valid handoff: {packet.task_id}")
+        return 0
+
     bus = make_gossip_bus(canonical_db_path())
     await getattr(bus, "local", bus).init_db()
     result = None
@@ -248,16 +403,29 @@ async def _amain(args: argparse.Namespace) -> int:
             result = await _workflow_critical_path(bus)
     elif args.cmd == "queue":
         if args.subcmd == "add":
-            result = await _queue_add(
-                bus,
-                args.task_name,
-                args.phase,
-                args.priority,
-                args.notes or "",
-                args.depends_on,
-                source_ref=args.source_ref,
-                expected_base_sha=args.expected_base_sha,
-            )
+            if args.handoff is not None:
+                result = await queue_add_from_handoff(
+                    bus,
+                    args.handoff,
+                    args.task_name,
+                    args.phase,
+                    args.priority,
+                    args.notes or "",
+                    args.depends_on,
+                    source_ref=args.source_ref,
+                    expected_base_sha=args.expected_base_sha,
+                )
+            else:
+                result = await _queue_add(
+                    bus,
+                    args.task_name,
+                    args.phase,
+                    args.priority,
+                    args.notes or "",
+                    args.depends_on,
+                    source_ref=args.source_ref,
+                    expected_base_sha=args.expected_base_sha,
+                )
         elif args.subcmd == "list":
             result = await _queue_list(bus, args.phase, args.priority, args.agent)
         elif args.subcmd == "claim":
@@ -329,6 +497,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_log.add_argument("agent_id")
     p_log.add_argument("message")
 
+    p_handoff = sub.add_parser("handoff", help="Validate agent handoff packets")
+    handoff_sub = p_handoff.add_subparsers(dest="subcmd", required=True)
+    p_handoff_validate = handoff_sub.add_parser("validate", help="Validate a v1 JSON handoff packet")
+    p_handoff_validate.add_argument("packet", type=Path)
+
     # Phase tracking commands
     p_phase = sub.add_parser("phase", help="Manage workflow phases")
     phase_sub = p_phase.add_subparsers(dest="subcmd", required=True)
@@ -378,6 +551,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_queue_add.add_argument("--notes", default="")
     p_queue_add.add_argument("--depends-on", default=None)
+    p_queue_add.add_argument(
+        "--handoff",
+        type=Path,
+        default=None,
+        help="Validated HandoffPacketV1 JSON required by the standard dispatch path",
+    )
     p_queue_add.add_argument(
         "--source-ref", default=None,
         help="Git ref (branch/commit-ish) this job's work should be based on"
@@ -446,14 +625,20 @@ def build_parser() -> argparse.ArgumentParser:
     return ap
 
 
-def main() -> int:
-    ap = build_parser()
-    args = ap.parse_args()
+async def _run_cli(args: argparse.Namespace) -> int:
     try:
-        return asyncio.run(_amain(args))
+        return await _amain(args)
     except GossipBusError as exc:
         _error(str(exc))
         return 1
+    finally:
+        await cancel_pending_embeddings_for_current_loop()
+
+
+def main() -> int:
+    ap = build_parser()
+    args = ap.parse_args()
+    return asyncio.run(_run_cli(args))
 
 
 if __name__ == "__main__":

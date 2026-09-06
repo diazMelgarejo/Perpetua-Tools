@@ -19,6 +19,7 @@ from orchestrator.gossip_bus import (
     GossipBus,
     _canonical_repo_state_dir,
     _pending_embeds,
+    cancel_pending_embeddings_for_current_loop,
     _sanitize_fts_query,
     resolve_default_state_dir,
     resolve_gossip_db_path,
@@ -343,6 +344,33 @@ async def test_pending_embeds_set_prevents_gc(tmp_path):
         assert len(_pending_embeds) == 1, "Task must be registered while in-flight"
         await asyncio.sleep(0.2)
         assert len(_pending_embeds) == 0, "Task must be discarded after done-callback"
+
+
+@pytest.mark.asyncio
+async def test_cli_shutdown_cancels_and_drains_its_pending_embeddings(tmp_path):
+    """One-shot CLI loops must not close while an embedding owns aiosqlite I/O."""
+    from unittest.mock import patch
+    import orchestrator.gossip_bus as gossip_mod
+
+    bus = GossipBus(str(tmp_path / "shutdown.db"))
+    await bus.init_db()
+    _pending_embeds.clear()
+    started = asyncio.Event()
+
+    async def blocked_embed(self, row_id, payload):
+        started.set()
+        await asyncio.Event().wait()
+
+    with patch.object(gossip_mod.GossipBus, "_embed_and_store", blocked_embed):
+        await bus.emit("dispatch", {"prompt": "shutdown test"})
+        await started.wait()
+        pending = [task for task in _pending_embeds if task.get_loop() is asyncio.get_running_loop()]
+        assert len(pending) == 1
+
+        await cancel_pending_embeddings_for_current_loop()
+
+    assert not [task for task in _pending_embeds if task.get_loop() is asyncio.get_running_loop()]
+    assert pending[0].cancelled()
 
 
 

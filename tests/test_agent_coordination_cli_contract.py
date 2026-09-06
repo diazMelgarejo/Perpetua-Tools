@@ -22,6 +22,7 @@ EXPECTED_LEAVES = {
     ("release",),
     ("list",),
     ("log",),
+    ("handoff", "validate"),
     ("phase", "list"),
     ("phase", "status"),
     ("phase", "start"),
@@ -79,11 +80,11 @@ def _arg_dests(parser: argparse.ArgumentParser, argv: list[str]) -> set[str]:
     return set(vars(parser.parse_args(argv)))
 
 
-def test_parser_exposes_exactly_the_29_supported_leaf_commands():
+def test_parser_exposes_exactly_the_30_supported_leaf_commands():
     parser = core_cli.build_parser()
 
     assert _leaf_paths(parser) == EXPECTED_LEAVES
-    assert len(EXPECTED_LEAVES) == 29
+    assert len(EXPECTED_LEAVES) == 30
 
 
 @pytest.mark.parametrize(
@@ -95,6 +96,7 @@ def test_parser_exposes_exactly_the_29_supported_leaf_commands():
         (["release", "agent-a", "task-a"], {"cmd", "agent_id", "task"}),
         (["list", "task-a"], {"cmd", "task"}),
         (["log", "agent-a", "message"], {"cmd", "agent_id", "message"}),
+        (["handoff", "validate", "handoff.json"], {"cmd", "subcmd", "packet"}),
         (["phase", "list"], {"cmd", "subcmd"}),
         (["phase", "status", "Phase-1"], {"cmd", "subcmd", "phase_name"}),
         (["phase", "start", "Phase-1", "--depends-on", "Phase-0", "--agent", "agent-a"], {"cmd", "subcmd", "phase_name", "depends_on", "agent"}),
@@ -103,7 +105,7 @@ def test_parser_exposes_exactly_the_29_supported_leaf_commands():
         (["phase", "block", "Phase-1", "--reason", "blocked"], {"cmd", "subcmd", "phase_name", "reason"}),
         (["phase", "unblock", "Phase-1", "--reason", "resolved"], {"cmd", "subcmd", "phase_name", "reason"}),
         (["workflow", "critical-path"], {"cmd", "subcmd"}),
-        (["queue", "add", "task-a", "Phase-1", "--priority", "HIGH", "--notes", "notes", "--depends-on", "dep", "--source-ref", "main", "--expected-base-sha", "abc123"], {"cmd", "subcmd", "task_name", "phase", "priority", "notes", "depends_on", "source_ref", "expected_base_sha"}),
+        (["queue", "add", "task-a", "Phase-1", "--priority", "HIGH", "--notes", "notes", "--depends-on", "dep", "--source-ref", "main", "--expected-base-sha", "abc123"], {"cmd", "subcmd", "task_name", "phase", "priority", "notes", "depends_on", "source_ref", "expected_base_sha", "handoff"}),
         (["queue", "list", "--phase", "Phase-1", "--priority", "HIGH", "--agent", "agent-a"], {"cmd", "subcmd", "phase", "priority", "agent"}),
         (["queue", "claim", "task-id", "agent-a"], {"cmd", "subcmd", "task_id", "agent_id"}),
         (["queue", "complete", "task-id", "agent-a", "--notes", "done"], {"cmd", "subcmd", "task_id", "agent_id", "notes"}),

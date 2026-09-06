@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import aiosqlite
 import json
+import os
 import re
 import time
 import uuid
@@ -45,7 +46,8 @@ async def queue_add(
     depends_on: Optional[str],
     source_ref: Optional[str] = None,
     expected_base_sha: Optional[str] = None,
-) -> bool | None:
+    required_agent_id: Optional[str] = None,
+) -> str | bool | None:
     """Enqueue a new task with optional priority and dependencies.
 
     source_ref/expected_base_sha are optional here (not yet hard-required)
@@ -57,14 +59,61 @@ async def queue_add(
     needs that cross-repo rollout done deliberately, not silently bundled
     into one file's fix. When provided, both are validated and persisted;
     omitting them still works, matching every existing caller unchanged.
+
+    Returns the generated task_id (str) on success, False on validation
+    failure. Previously returned None on success -- confirmed safe before
+    changing this: every existing caller across this repo's test suite
+    calls this and discards the return value; none inspect it.
     """
+    validated = _validate_queue_add_args(source_ref, expected_base_sha, required_agent_id)
+    if validated is False:
+        return False
+    async with bus.connect() as db:
+        task_id = await _queue_add_impl(
+            bus, db, task_name, phase, priority, notes, depends_on,
+            source_ref=source_ref, expected_base_sha=expected_base_sha,
+            required_agent_id=required_agent_id,
+        )
+        await db.commit()
+    return task_id
+
+
+def _validate_queue_add_args(
+    source_ref: Optional[str], expected_base_sha: Optional[str], required_agent_id: Optional[str]
+) -> bool:
+    """Shared validation, run before opening any transaction, by both
+    queue_add and queue_add_from_handoff's atomic path."""
     if source_ref is not None and not source_ref.strip():
-        return _error("source_ref, if given, must not be empty")
+        _error("source_ref, if given, must not be empty")
+        return False
     if expected_base_sha is not None and not _SHA_RE.match(expected_base_sha):
-        return _error(
+        _error(
             f"expected_base_sha {expected_base_sha!r} is not a valid git SHA "
             "(7-40 hex characters)"
         )
+        return False
+    if required_agent_id is not None and not required_agent_id.strip():
+        _error("required_agent_id, if given, must not be empty")
+        return False
+    return True
+
+
+async def _queue_add_impl(
+    bus: GossipBus,
+    db,
+    task_name: str,
+    phase: str,
+    priority: str,
+    notes: str,
+    depends_on: Optional[str],
+    source_ref: Optional[str] = None,
+    expected_base_sha: Optional[str] = None,
+    required_agent_id: Optional[str] = None,
+) -> str:
+    """Insert the task_enqueue event on an existing connection, without
+    committing -- the caller controls the transaction boundary. Assumes
+    _validate_queue_add_args already passed; does not re-validate.
+    """
     task_id = f"{phase}-{task_name}-{uuid.uuid4().hex[:8]}"
     priority_enum = TaskPriority.from_string(priority)
     depends_on_list = [t.strip() for t in depends_on.split(",")] if depends_on else []
@@ -86,10 +135,17 @@ async def queue_add(
         payload["source_ref"] = source_ref.strip()
     if expected_base_sha is not None:
         payload["expected_base_sha"] = expected_base_sha
+    if required_agent_id is not None:
+        # This is a dispatch reservation, not a claim: `assigned_agent` stays
+        # empty until the receiving worker explicitly claims the task.
+        payload["required_agent_id"] = required_agent_id.strip()
     # DUAL-WRITE SUNSET POLICY: Legacy heartbeat payload writes are deprecated and
     # will be permanently retired upon Phase 4 docs-crystallization + one release cycle (ADR Doc 55).
-    await bus.emit("heartbeat", payload)
+    row_id, _event_uuid, safe_payload, inserted = await bus.insert_event(db, "heartbeat", payload)
+    if inserted:
+        bus.schedule_embedding(row_id, safe_payload)
     print(f"enqueued: {task_id} ({phase}, {priority_enum.name})")
+    return task_id
 
 
 _TASK_EVENT_KINDS = (
@@ -192,6 +248,18 @@ async def latest_task_snapshots(bus: GossipBus) -> dict[str, dict]:
             continue
         snapshots.setdefault(task_id, {}).update(payload)
     return snapshots
+
+
+def _presence_pulse_payload(agent_id: str) -> dict:
+    """Same shape as liveness.py's _heartbeat_pulse -- kept identical so
+    a dispatch-update-triggered pulse is indistinguishable from an
+    explicit manual one to find_agent_heartbeats()."""
+    return {
+        "kind": "agent_pulse",
+        "agent_id": agent_id,
+        "worktree": current_worktree_label(),
+        "timestamp": time.time(),
+    }
 
 
 async def try_atomic_claim(
@@ -331,6 +399,31 @@ async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | Non
     if status == "abandoned":
         return _error(f"{task_id} was abandoned. Cannot reclaim.")
 
+    required_agent_id = task_state.get("required_agent_id")
+    if required_agent_id is not None:
+        # No cryptographic identity exists in this codebase (verified before
+        # adding this check, not assumed) -- this is the strongest signal
+        # achievable without building new auth infrastructure, not a claim
+        # of real authentication. PT_AGENT_ID, when set, reflects the
+        # calling agent's own launch environment rather than a per-call CLI
+        # argument, so a real impersonation attempt now requires
+        # deliberately overriding that environment, not just typing a
+        # different agent_id. A malicious actor in an untrusted environment
+        # can still do this; this closes the accidental/careless case the
+        # review named, nothing more.
+        env_agent_id = os.environ.get("PT_AGENT_ID")
+        if env_agent_id is not None and env_agent_id != agent_id:
+            return _error(
+                f"agent_id {agent_id!r} does not match this process's "
+                f"PT_AGENT_ID environment ({env_agent_id!r}); refusing to "
+                "claim under a mismatched identity."
+            )
+        if required_agent_id != agent_id:
+            return _error(
+                f"{task_id} is reserved for {required_agent_id!r}, not {agent_id!r}; "
+                "only the validated handoff recipient can claim it."
+            )
+
     depends_on = task_state.get("depends_on", [])
     # depends_on is authored with short task_name values (e.g.
     # "PT-T5-CONTRACT-001"), but `snapshots` is keyed by the full
@@ -398,6 +491,11 @@ async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | Non
             f"{task_id} could not be claimed; coordination database remained "
             "busy. Retry safely."
         )
+    # Correct the "board log() is not a heartbeat" gap: a task claim is a
+    # real, verifiable unit of dispatch activity from a genuinely live
+    # agent -- post presence explicitly rather than relying on the agent
+    # to separately remember an out-of-band pulse call.
+    await bus.emit("heartbeat", _presence_pulse_payload(agent_id))
     print(f"claimed: {task_id} by {agent_id}")
 
 
@@ -450,6 +548,12 @@ async def queue_complete(bus: GossipBus, task_id: str, agent_id: str, notes: str
             f"{task_id} could not be completed; coordination database remained "
             "busy. Retry safely."
         )
+    # Correct the "board log() is not a heartbeat" gap: task completion is a
+    # real, verifiable unit of dispatch activity from a genuinely live agent
+    # (unlike cleanup_stale_queue_claims's release, which acts on behalf of
+    # an already-DEAD agent and must never post presence). Post it here,
+    # not inside release_claim_with_event, so the two paths stay distinct.
+    await bus.emit("heartbeat", _presence_pulse_payload(agent_id))
     print(f"completed: {task_id}")
 
 
@@ -506,6 +610,10 @@ async def queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) ->
                 f"{task_id} could not be requeued; coordination database "
                 "remained busy. Retry safely."
             )
+        # Same reasoning as queue_complete: a live agent reporting its own
+        # failure is genuine dispatch activity, distinct from the
+        # dead-agent cleanup path -- post presence here explicitly.
+        await bus.emit("heartbeat", _presence_pulse_payload(agent_id))
         print(f"failed: {task_id}, retry {retry_count}/{max_retries}")
         return
 
@@ -535,6 +643,7 @@ async def queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) ->
             f"{task_id} could not be abandoned; coordination database remained "
             "busy. Retry safely."
         )
+    await bus.emit("heartbeat", _presence_pulse_payload(agent_id))
     print(f"abandoned: {task_id} (max retries exceeded)")
 
 

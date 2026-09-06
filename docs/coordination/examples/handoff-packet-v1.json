@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "session_id": "session-example-001",
+  "job_id": "job-example-001",
+  "task_id": "example-handoff-validation",
+  "assigned_agent_id": "win-autoresearcher",
+  "role": "autoresearcher",
+  "intent": "Run the approved dry-run research plan and return evidence for the coder.",
+  "branch": "feat/example-handoff",
+  "worktree": "feature-handoff-worktree",
+  "starting_head": "1234567",
+  "current_head": "89abcde",
+  "commit_sha": "89abcde",
+  "files_changed": [
+    "orchestrator/autoresearch_bridge.py",
+    "tests/test_autoresearch_bridge.py"
+  ],
+  "root_cause_addressed": "The existing handoff did not preserve a machine-checkable source line or test evidence.",
+  "tests": [
+    {
+      "command": "python -m pytest tests/test_autoresearch_bridge.py -q",
+      "result": "passed"
+    }
+  ],
+  "known_risks_or_follow_up": "none",
+  "human_authorized": true,
+  "merge_authorized": false,
+  "deployment_authorized": false,
+  "monitorability": {
+    "schema_version": 1,
+    "phylax": {
+      "policy_pack_id": "phylax-monitorability",
+      "policy_pack_version": "1.0.0",
+      "risk_tier": "high",
+      "capability_grant_ids": ["grant_0123456789abcdef"],
+      "reported_monitor_decision": "escalate",
+      "severity": "high",
+      "confidence": 0.82,
+      "escalation_state": "human_review_required",
+      "retention_class": "incident_scoped",
+      "reasoning_availability": "none",
+      "evidence_refs": ["evidence_0123456789abcdef"]
+    },
+    "privacy": {
+      "classification": "redacted",
+      "redaction_profile_id": "handoff-v1",
+      "export_allowed": false,
+      "raw_reasoning_persisted_in_packet": false,
+      "raw_reasoning_exported": false
+    },
+    "integrity": {
+      "provenance_commit_sha": "0123456789abcdef0123456789abcdef01234567",
+      "ordered_evidence_refs": ["evidence_0123456789abcdef"],
+      "redacted_manifest_sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    }
+  }
+}
