@@ -1,0 +1,97 @@
+contract_version: 1
+name: pt-endpoint-policy-behavior-vectors
+notes:
+  - Transport reconstruction vectors cover endpoint identity only.
+  - SSRF redirect behavior is intentionally outside this vector suite.
+transport_reconstruction:
+  authority: src/utils/endpoint_policy_core.py
+  function: build_transport_url
+  vectors:
+    - id: transport-qualified-https-url
+      input: https://win-box.example:1234
+      backend_port: 11434
+      expect: https://win-box.example:11434
+    - id: transport-bare-host-port
+      input: 127.0.1.1:1234
+      backend_port: 11434
+      expect: http://127.0.1.1:11434
+    - id: transport-bare-host-default-port
+      input: lmstudio.local
+      backend_port: 1234
+      expect: http://lmstudio.local:1234
+    - id: transport-ipv6-bracketed
+      input: http://[::1]:1234
+      backend_port: 11434
+      expect: http://[::1]:11434
+    - id: transport-ipv6-bare
+      input: ::1
+      backend_port: 11434
+      expect: http://[::1]:11434
+    - id: transport-backend-port-replacement
+      input: http://127.0.0.1:1234
+      backend_port: 11434
+      expect: http://127.0.0.1:11434
+    - id: transport-malformed-scheme
+      input: file:///etc/passwd
+      backend_port: 11434
+      expect: null
+    - id: transport-malformed-port
+      input: http://127.0.0.1:notaport
+      backend_port: 11434
+      expect: null
+    - id: transport-credentials-rejected
+      input: http://user:pass@127.0.0.1:1234
+      backend_port: 11434
+      expect: null
+    - id: transport-normalization
+      input: HTTPS://WIN-BOX.EXAMPLE:1234
+      backend_port: 11434
+      expect: https://win-box.example:11434
+model_endpoint_allow_deny:
+  authority: src/utils/model_endpoint_url.py
+  function: validate_model_endpoint_url
+  vectors:
+    - id: model-qualified-private-url
+      input: http://10.0.0.1:11434
+      allow_public: false
+      expect: http://10.0.0.1:11434
+    - id: model-bare-host-loopback
+      input: localhost:1234
+      allow_public: false
+      expect: http://localhost:1234
+    - id: model-ipv6-loopback
+      input: http://[::1]:11434
+      allow_public: false
+      expect: http://[::1]:11434
+    - id: model-default-port-normalization
+      input: https://LOCALHOST
+      allow_public: false
+      expect: https://localhost:443
+    - id: model-public-deny
+      input: http://8.8.8.8:1234
+      allow_public: false
+      expect_error: ModelEndpointPolicyError
+    - id: model-public-opt-in
+      input: http://8.8.8.8:1234
+      allow_public: true
+      expect: http://8.8.8.8:1234
+    - id: model-public-hostname-deny
+      input: http://model.example.com:1234
+      allow_public: false
+      expect_error: ModelEndpointPolicyError
+    - id: model-public-hostname-opt-in
+      input: http://model.example.com:1234
+      allow_public: true
+      expect: http://model.example.com:1234
+    - id: model-malformed-scheme
+      input: file:///etc/passwd
+      allow_public: false
+      expect_error: ModelEndpointPolicyError
+    - id: model-malformed-port
+      input: http://127.0.0.1:notaport
+      allow_public: false
+      expect_error: ModelEndpointPolicyError
+    - id: model-credentials-rejected
+      input: http://user:pass@127.0.0.1:1234
+      allow_public: false
+      expect_error: ModelEndpointPolicyError

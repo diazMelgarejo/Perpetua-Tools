@@ -6,6 +6,42 @@ canonical_package: packages/endpoint-policy
 canonical_contract: config/endpoint-policy-contract.yml
 package_license: Apache-2.0
 
+transport_reconstruction:
+  boundary: transport reconstruction
+  executable_authority: src/utils/endpoint_policy_core.py
+  executable_authorities:
+    - src/utils/endpoint_policy_core.py
+  public_functions:
+    - parse_transport_identity
+    - build_transport_url
+  rule: Only this module owns reconstruction of discovered model endpoints into runtime transport URLs.
+
+model_endpoint_validation:
+  boundary: model-endpoint allow/deny
+  authority: src/utils/model_endpoint_url.py
+  public_package: packages/endpoint-policy
+  rule: Model endpoint validation owns network class allow/deny and package compatibility; it is distinct from transport reconstruction.
+
+ssrf_layers:
+  preflight_boundary: SSRF preflight
+  preflight_authority: src/utils/ssrf_fetch_policy.py
+  pinned_transport_boundary: SSRF pinned transport
+  pinned_transport_authority: src/utils/ssrf_pinned_adapter.py
+  rule: SSRF preflight and pinned transport enforce outbound request safety, including redirect behavior outside transport reconstruction vectors.
+
+machine_readable_evidence:
+  importer_inventory: config/endpoint-policy-importer-inventory.yml
+  behavior_vectors: config/endpoint-policy-behavior-vectors.yml
+
+migration_window:
+  status: open
+  criteria:
+    - No new direct importers outside the listed adapters in config/endpoint-policy-importer-inventory.yml.
+    - PT behavior vectors pass in local and CI test suites.
+    - Peer repo behavior vectors pass in local and CI test suites.
+    - PT/orama parity checks pass for transport reconstruction and model-endpoint validation.
+  closes_when: All criteria pass; date-based closure is not sufficient.
+
 invariants:
   - id: transport-identity
     rule: Transport identity is scheme + hostname + backend-specific port.

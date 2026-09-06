@@ -19,6 +19,8 @@ REQUIRED_FILES = [
     "tests/test_hardware_routing.py",
     "scripts/security/check_endpoint_policy_core.py",
     CONTRACT_PATH,
+    "config/endpoint-policy-importer-inventory.yml",
+    "config/endpoint-policy-behavior-vectors.yml",
     ".github/workflows/security-invariants.yml",
     "AGENTS.md",
 ]
@@ -115,6 +117,12 @@ def assert_contract_names_peer_repos() -> None:
         "bin/orama-system/skills/oramasys-method/references/integrative-merge.md",
         "bin/orama-system/skills/git-history-surgery/SKILL.md",
         ".claude/skills/hardware-policy/SKILL.md",
+        "executable_authority: src/utils/endpoint_policy_core.py",
+        "model_endpoint_validation:",
+        "ssrf_layers:",
+        "config/endpoint-policy-importer-inventory.yml",
+        "config/endpoint-policy-behavior-vectors.yml",
+        "No new direct importers outside the listed adapters",
     ]
     missing = [needle for needle in required if needle not in text]
     if missing:

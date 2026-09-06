@@ -1,0 +1,88 @@
+contract_version: 1
+name: endpoint-policy-importer-inventory
+generated_by: static-python-import-scan
+scope:
+  tracked_python_files_only: true
+  import_forms:
+    - import
+    - from-import
+targets:
+  utils.endpoint_policy_core:
+    boundary: transport reconstruction
+    consumers:
+      - path: orchestrator/fastapi_app.py
+        boundary: transport reconstruction
+      - path: orchestrator/lan_discovery.py
+        boundary: transport reconstruction
+      - path: orchestrator/model_registry.py
+        boundary: transport reconstruction
+      - path: src/perpetua_tools/agent_launcher.py
+        boundary: transport reconstruction
+      - path: src/utils/ssrf_pinned_adapter.py
+        boundary: SSRF pinned transport
+      - path: tests/test_endpoint_policy_core.py
+        boundary: transport reconstruction
+  utils.model_endpoint_url:
+    boundary: model-endpoint allow/deny
+    consumers:
+      - path: orchestrator/autoresearch_bridge.py
+        boundary: model-endpoint allow/deny
+      - path: orchestrator/connectivity.py
+        boundary: model-endpoint allow/deny
+      - path: orchestrator/fastapi_app.py
+        boundary: model-endpoint allow/deny
+      - path: orchestrator/frugality_router.py
+        boundary: model-endpoint allow/deny
+      - path: orchestrator/orama_bridge.py
+        boundary: model-endpoint allow/deny
+      - path: orchestrator/supervisor.py
+        boundary: model-endpoint allow/deny
+      - path: orchestrator/worker_registry.py
+        boundary: model-endpoint allow/deny
+      - path: packages/endpoint-policy/tests/test_validator.py
+        boundary: published package compatibility
+      - path: src/perpetua/discovery/registry.py
+        boundary: model-endpoint allow/deny
+      - path: src/perpetua_tools/agent_launcher.py
+        boundary: model-endpoint allow/deny
+      - path: src/perpetua_tools/alphaclaw_bootstrap.py
+        boundary: model-endpoint allow/deny
+      - path: tests/test_model_endpoint_url.py
+        boundary: model-endpoint allow/deny
+  endpoint_policy:
+    boundary: published package compatibility
+    consumers:
+      - path: packages/endpoint-policy/tests/test_fuzz.py
+        boundary: published package compatibility
+      - path: packages/endpoint-policy/tests/test_validator.py
+        boundary: published package compatibility
+  utils.ssrf_fetch_policy:
+    boundary: SSRF preflight
+    consumers:
+      - path: src/utils/ssrf_pinned_adapter.py
+        boundary: SSRF pinned transport
+      - path: tests/test_ssrf_fetch_policy.py
+        boundary: SSRF preflight
+      - path: tests/test_ssrf_pinned_adapter.py
+        boundary: SSRF pinned transport
+  utils.ssrf_pinned_adapter:
+    boundary: SSRF pinned transport
+    consumers:
+      - path: orchestrator/connectivity.py
+        boundary: SSRF pinned transport
+      - path: orchestrator/orama_bridge.py
+        boundary: SSRF pinned transport
+      - path: orchestrator/perplexity_client.py
+        boundary: SSRF pinned transport
+      - path: src/observability/otel_exporter.py
+        boundary: SSRF pinned transport
+      - path: tests/test_egress_telemetry.py
+        boundary: SSRF pinned transport
+      - path: tests/test_orama_bridge.py
+        boundary: SSRF pinned transport
+      - path: tests/test_otel_exporter.py
+        boundary: SSRF pinned transport
+      - path: tests/test_perplexity_client.py
+        boundary: SSRF pinned transport
+      - path: tests/test_ssrf_pinned_adapter.py
+        boundary: SSRF pinned transport
