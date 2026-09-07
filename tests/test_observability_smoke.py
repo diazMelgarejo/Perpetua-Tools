@@ -74,10 +74,12 @@ async def test_fastapi_lifespan_owns_observability_startup_and_shutdown(
     import orchestrator.fastapi_app as fastapi_app
 
     calls: list[object] = []
+    scheduled: list[object] = []
 
     class _FakeLoop:
         def run_in_executor(self, _executor, fn, *args):
-            fn(*args)
+            del _executor, args
+            scheduled.append(fn)
             return None
 
     class _FakeTask:
@@ -92,8 +94,15 @@ async def test_fastapi_lifespan_owns_observability_startup_and_shutdown(
     monkeypatch.setattr(fastapi_app.asyncio, "get_event_loop", lambda: _FakeLoop())
     monkeypatch.setattr(fastapi_app.asyncio, "create_task", _fake_create_task)
     monkeypatch.setattr(fastapi_app, "ensure_control_plane_token", lambda: None)
-    monkeypatch.setattr(fastapi_app, "_init_gossip_db", lambda: None)
-    monkeypatch.setattr(fastapi_app, "_run_ecc_sync_bg", lambda: None)
+    def init_gossip() -> None:
+        return None
+
+    def run_ecc_sync() -> None:
+        return None
+
+    monkeypatch.delenv("ECC_SYNC_ENABLED", raising=False)
+    monkeypatch.setattr(fastapi_app, "_init_gossip_db", init_gossip)
+    monkeypatch.setattr(fastapi_app, "_run_ecc_sync_bg", run_ecc_sync)
     monkeypatch.setattr(
         fastapi_app,
         "initialize_observability",
@@ -108,6 +117,7 @@ async def test_fastapi_lifespan_owns_observability_startup_and_shutdown(
 
     async with fastapi_app._lifespan(fastapi_app.app):
         assert calls == ["initialize"]
+        assert scheduled == [init_gossip]
 
     assert calls == ["initialize", ("shutdown", 2000)]
 

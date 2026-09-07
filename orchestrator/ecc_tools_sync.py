@@ -1,9 +1,9 @@
 """
 orchestrator/ecc_tools_sync.py
 ------------------------------
-Idempotent runtime sync of https://github.com/affaan-m/everything-claude-code
+Reviewed sync of https://github.com/affaan-m/everything-claude-code
 
-Runs at FastAPI startup and on-demand via POST /ecc/sync
+Runs only after explicit operator opt-in or an authenticated forced request.
 
 Behaviour:
   1. Clone or `git pull` the ECC Tools repo into vendor/ecc-tools/
@@ -39,10 +39,14 @@ except ImportError:  # pragma: no cover - fallback for minimal environments
 ECC_REPO_URL: str = "https://github.com/affaan-m/everything-claude-code.git"
 ECC_REPO_BRANCH: str = "main"
 
-# Set ECC_SYNC_ENABLED=false to skip live git clone/pull at startup.
-# Useful for offline deployments, CI environments, and unit test runs.
-# Default: true (enabled — pulls latest ECC Tools on every startup).
-ECC_SYNC_ENABLED: bool = os.getenv("ECC_SYNC_ENABLED", "true").lower() in ("true", "1", "yes")
+def ecc_sync_enabled() -> bool:
+    """Return whether startup is explicitly allowed to run a live ECC sync.
+
+    Read the environment at invocation time rather than import time. Pytest and
+    service launchers commonly set environment policy after importing modules;
+    caching this decision made their safety setting ineffective.
+    """
+    return os.getenv("ECC_SYNC_ENABLED", "false").lower() in ("true", "1", "yes")
 
 # Vendor dir (cloned ECC Tools lives here, relative to project root)
 VENDOR_DIR: Path = Path("vendor/ecc-tools")
@@ -258,7 +262,7 @@ def sync_ecc_tools(force: bool = False) -> dict[str, Any]:
     """
     Full idempotent ECC Tools sync: clone/pull, hash-gated copy, persist .state/ecc_sync.json.
     """
-    if not ECC_SYNC_ENABLED:
+    if not force and not ecc_sync_enabled():
         logger.info("[ECC Sync] Skipped (ECC_SYNC_ENABLED=false)")
         return {"status": "skipped", "message": "ECC Tools sync disabled via ECC_SYNC_ENABLED"}
     state = _load_state()
