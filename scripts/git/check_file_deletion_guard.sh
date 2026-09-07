@@ -49,13 +49,26 @@ deletions="$(mktemp)"
 trap 'rm -f "$deletions"' EXIT
 
 if [[ "$mode" == "staged" ]]; then
-  git diff --cached --name-only --diff-filter=D >"$deletions"
+  git diff --cached --no-renames --name-only --diff-filter=D >"$deletions"
   review_command="git diff --cached --name-status"
   restore_command="git restore --staged --worktree -- <path>"
 else
-  git diff --name-only --diff-filter=D "$range" >"$deletions"
+  git diff --no-renames --name-only --diff-filter=D "$range" >"$deletions"
   review_command="git diff --name-status $range"
-  restore_command="git restore --source=HEAD^ --staged --worktree -- <path>"
+  if [[ "$range" == *".."* ]]; then
+    # A genuine A..B (or A...B) range -- HEAD^ has no relationship to the
+    # range's own boundaries and can point at the wrong commit entirely for
+    # anything wider than a single-commit range. Use the range's own left
+    # side: the file was definitely present there, for any deletion this
+    # guard could have flagged within the range, even if a later commit
+    # inside the range is a more precise (but not universally safe) source.
+    range_start="${range%%..*}"
+    restore_command="git restore --source=$range_start --staged --worktree -- <path>"
+  else
+    # A single ref, not a range -- the original HEAD^-relative-to-that-ref
+    # assumption is well-defined here.
+    restore_command="git restore --source=${range}^ --staged --worktree -- <path>"
+  fi
 fi
 
 [[ -s "$deletions" ]] || exit 0
