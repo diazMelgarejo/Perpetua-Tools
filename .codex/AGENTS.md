@@ -2,18 +2,19 @@
 
 This supplements the root `AGENTS.md` with Codex-specific guidance.
 
-For repo navigation, surface ownership, and PR diff packet guidance, read
-`vendor/ecc-tools/docs/CODEX-NAVIGATION-GUIDE.md` after this supplement (vendored path --
-this guide is not promoted to a top-level `docs/` copy in this repo).
+For repository navigation, surface ownership, and review expectations, follow
+the root `AGENTS.md` and the repository's maintained documentation. Treat the
+vendored ECC checkout as upstream source material, never as unreviewed runtime
+authority.
 
 ## Model Recommendations
 
 | Task Type | Recommended Model |
 |-----------|------------------|
-| Routine coding, tests, formatting | GPT 5.5 |
-| Complex features, architecture | GPT 5.5 |
-| Debugging, refactoring | GPT 5.5 |
-| Security review | GPT 5.5 |
+| Routine coding, tests, formatting | Current fast or standard model selected for the task |
+| Complex features, architecture | Current high-reasoning model selected for the task |
+| Debugging, refactoring | Current standard or high-reasoning model selected for the task |
+| Security review | Current high-reasoning model with independent review |
 
 ## Skills Discovery
 
@@ -58,25 +59,17 @@ ECC's canonical Codex section name is `[mcp_servers.context7]`. The launcher pac
 `@upstash/context7-mcp`; only the TOML section name is normalized for consistency with
 `codex mcp list` and the reference config.
 
-### Automatic config.toml merging
+### Curated project configuration
 
-The sync script (`scripts/sync-ecc-to-codex.sh`) uses a Node-based TOML parser to safely merge
-ECC MCP servers into `~/.codex/config.toml`:
+`.codex/config.toml` is a reviewed project baseline, not a live vendor-sync
+destination. Upstream ECC changes are proposals: inspect them, preserve
+project-specific pins and local overlays, then apply only the compatible parts
+in a reviewable commit. In particular, do not replace an explicitly reviewed
+MCP package version with a floating package name as incidental sync output.
 
-- **Add-only by default** — missing ECC servers are appended; existing servers are never
-  modified or removed.
-- **7 managed servers** — Supabase, Playwright, Context7, Exa, GitHub, Memory, Sequential
-  Thinking.
-- **Canonical naming** — ECC manages Context7 as `[mcp_servers.context7]`; legacy
-  `[mcp_servers.context7-mcp]` entries are treated as aliases during updates.
-- **Package-manager aware** — uses the project's configured package manager (npm/pnpm/yarn/bun)
-  instead of hardcoding `pnpm`.
-- **Drift warnings** — if an existing server's config differs from the ECC recommendation, the
-  script logs a warning.
-- **`--update-mcp`** — explicitly replaces all ECC-managed servers with the latest recommended
-  config (safely removes subtables like `[mcp_servers.supabase.env]`).
-- **User config is always preserved** — custom servers, args, env vars, and credentials outside
-  ECC-managed sections are never touched.
+Keep user-level configuration and credentials outside the repository. The
+project file may document recommended servers, but it must not overwrite
+operator-specific server settings or secrets.
 
 ## External Action Boundaries
 
@@ -108,17 +101,19 @@ Sample role configs in this repo:
 
 | Feature | Claude Code | Codex CLI |
 |---------|------------|-----------|
-| Hooks | 8+ event types | Not yet supported |
+| Hooks | 8+ event types | Version-dependent; verify the installed CLI |
 | Context file | CLAUDE.md + AGENTS.md | AGENTS.md only |
-| Skills | Skills loaded via plugin | `.agents/skills/` directory |
+| Skills | Skills loaded via plugin | Project `.agents/skills/` plus installed plugins |
 | Commands | `/slash` commands | Instruction-based |
 | Agents | Subagent Task tool | Multi-agent via `/agent` and `[agents.<name>]` roles |
-| Security | Hook-based enforcement | Instruction + sandbox |
+| Security | Hook-based enforcement | Instructions, sandbox, and explicitly trusted hooks |
 | MCP | Full support | Supported via `config.toml` and `codex mcp add` |
 
-## Security Without Hooks
+## Security Boundaries
 
-Since Codex lacks hooks, security enforcement is instruction-based:
+Codex hook availability varies by installed version. Treat only explicitly
+configured and trusted hooks as defense-in-depth; instructions and the sandbox
+remain mandatory controls:
 
 1. Always validate inputs at system boundaries
 2. Never hardcode secrets — use environment variables

@@ -1,7 +1,7 @@
 ---
 name: add-new-api-endpoint
 description: Workflow command scaffold for add-new-api-endpoint in Perpetua-Tools.
-allowed_tools: ["Bash", "Read", "Write", "Grep", "Glob"]
+allowed-tools: ["Bash", "Read", "Write", "Grep", "Glob"]
 ---
 
 # /add-new-api-endpoint

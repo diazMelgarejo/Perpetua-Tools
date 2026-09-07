@@ -6,6 +6,7 @@ import json
 import logging
 import re as _re
 import os
+import platform
 import time
 from contextlib import asynccontextmanager
 from dataclasses import asdict
@@ -29,7 +30,7 @@ from orchestrator.control_plane_asgi import ControlPlaneAuthMiddleware
 from orchestrator import autoresearch_bridge
 from orchestrator import __version__ as _ORCHESTRATOR_VERSION
 from orchestrator.agent_tracker import AgentTracker
-from orchestrator.connectivity import backend_health_map
+from orchestrator.connectivity import backend_health_map, check_lm_studio
 from utils.endpoint_policy_core import build_transport_url
 from utils.model_endpoint_url import ModelEndpointPolicyError, validate_model_endpoint_url
 from orchestrator.control_plane import (
@@ -43,7 +44,7 @@ from orchestrator.cost_guard import (
     TokenCliffExceededError,
     UnknownReservationError,
 )
-from orchestrator.ecc_tools_sync import get_sync_status, sync_ecc_tools
+from orchestrator.ecc_tools_sync import ecc_sync_enabled, get_sync_status, sync_ecc_tools
 from orchestrator.model_registry import ModelRegistry
 from orchestrator.model_transport import (
     ProviderConfigError,
@@ -93,6 +94,38 @@ _TRACE_ID_PATTERN = r"^%s$" % TRACE_ID_PATTERN
 _GLM_ORCHESTRATOR_MODEL = "glm-5.1:cloud"
 _AUTORESEARCH_TASK_TYPES = {"autoresearch", "autoresearch-coder", "ml-experiment"}
 _LOCAL_RUNTIME_BACKENDS = {"ollama", "lm-studio", "mlx"}
+def _resolve_health_lm_studio_candidates() -> list[str]:
+    """Windows deployments must probe LM_STUDIO_WIN_ENDPOINTS, not the
+    Mac-only LM_STUDIO_MAC_ENDPOINT -- otherwise /health silently reports
+    status for the wrong backend when the two differ (CodeRabbit finding,
+    PT PR #380). Mirrors the existing platform-detection convention
+    (alphaclaw_tls_proxy.py's ``platform.system() == "Windows"``) and the
+    existing loud-failure convention for an unset Windows endpoint
+    (worker_registry.py's LM_STUDIO_WIN_ENDPOINTS resolution).
+
+    Returns every configured candidate, not just the first: worker_registry.py's
+    own dispatch path (_lmstudio_win_worker) already fails over to a later
+    healthy candidate when the first is down, so /health reporting status for
+    only the first configured host -- while a later one is actually healthy --
+    would make a load balancer remove a healthy instance (CodeRabbit finding).
+    The health route probes each candidate in order and reports the first
+    that responds; this only widens what /health *checks*, it still never
+    performs the dispatcher's own endpoint selection.
+    """
+    if platform.system() == "Windows":
+        raw = os.getenv("LM_STUDIO_WIN_ENDPOINTS", "").strip()
+        if not raw:
+            raise RuntimeError(
+                "LM_STUDIO_WIN_ENDPOINTS is not set on a Windows deployment. "
+                "Set it to the Windows LM Studio URL, e.g. http://127.0.1.1:1234"
+            )
+        return [c.strip() for c in raw.split(",") if c.strip()]
+    return [os.getenv("LM_STUDIO_MAC_ENDPOINT", "http://localhost:1234")]
+
+
+HEALTH_OLLAMA_HOST: str = os.getenv("OLLAMA_MAC_ENDPOINT", "http://localhost:11434")
+HEALTH_LM_STUDIO_CANDIDATES: list[str] = _resolve_health_lm_studio_candidates()
+HEALTH_MLX_HOST: str = "http://localhost:8081"
 
 # GC guard for fire-and-forget startup tasks (D_GCG-1 from RAG backport 2026-05-22).
 # asyncio.create_task() only holds a *weak* reference; without a strong reference
@@ -167,8 +200,10 @@ async def _lifespan(app: FastAPI):
         )
     # GossipBus init runs in executor so it never blocks port binding.
     asyncio.get_event_loop().run_in_executor(None, _init_gossip_db)
-    # Both background tasks fire at t=0; neither blocks port binding.
-    asyncio.get_event_loop().run_in_executor(None, _run_ecc_sync_bg)
+    # ECC updates can rewrite tracked harness files. They are an explicit
+    # operator action, not an application-startup side effect.
+    if ecc_sync_enabled():
+        asyncio.get_event_loop().run_in_executor(None, _run_ecc_sync_bg)
     # Hold a strong reference so GC cannot collect the task before it runs (D_GCG-1).
     _routing_task = asyncio.create_task(_resolve_routing_bg(), name="routing-bg")
     _bg_startup_tasks.add(_routing_task)
@@ -561,11 +596,7 @@ def get_user_input_status() -> Dict[str, Any]:
 
 
 @app.get("/health", tags=["system"])
-def health(
-    ollama_host: str = os.getenv("OLLAMA_MAC_ENDPOINT", "http://localhost:11434"),
-    lm_studio_host: str = os.getenv("LM_STUDIO_MAC_ENDPOINT", "http://localhost:1234"),
-    mlx_host: str = "http://localhost:8081",
-) -> Dict[str, Any]:
+def health() -> Dict[str, Any]:
     def _validated(raw: str, default: str) -> str:
         candidate = (raw or default).strip()
         try:
@@ -573,9 +604,27 @@ def health(
         except ModelEndpointPolicyError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    safe_ollama = _validated(ollama_host, "http://localhost:11434")
-    safe_lm = _validated(lm_studio_host, "http://localhost:1234")
-    safe_mlx = _validated(mlx_host, "http://localhost:8081")
+    def _select_healthy_lm_studio_host() -> str:
+        """Probe every configured candidate in order, same failover
+        semantics as worker_registry.py's _lmstudio_win_worker: return the
+        first that responds, so a down first candidate doesn't make /health
+        report the backend as unhealthy while a later candidate is actually
+        up. Falls back to the last-probed candidate's host when none
+        respond, so backend_health_map's own probe below still reports a
+        real (if failing) endpoint rather than a silently wrong one.
+        """
+        validated = [
+            _validated(c, "http://localhost:1234") for c in HEALTH_LM_STUDIO_CANDIDATES
+        ]
+        last = validated[-1]
+        for candidate in validated:
+            if check_lm_studio(candidate).get("ok"):
+                return candidate
+        return last
+
+    safe_ollama = _validated(HEALTH_OLLAMA_HOST, "http://localhost:11434")
+    safe_lm = _select_healthy_lm_studio_host()
+    safe_mlx = _validated(HEALTH_MLX_HOST, "http://localhost:8081")
     return {
         "status": "ok",
         "version": _ORCHESTRATOR_VERSION,
