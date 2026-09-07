@@ -1,0 +1,42 @@
+{
+  "id": "432f535474c5",
+  "key": "manual_432f53",
+  "name": "manual_432f53",
+  "claim": "Never assume Python's ipaddress predicates (is_reserved, is_private, is_global) map cleanly onto security-policy intent -- verify each predicate directly on the interpreter in use before writing address-classification logic that gates network egress",
+  "conditions": [
+    "address-classification",
+    "ipaddress",
+    "python-stdlib",
+    "security-policy",
+    "verification"
+  ],
+  "evidence_ids": [
+    "2026-09-07T11:44:47.173706+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-07T11:44:47.173706+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-07T11:44:47.173706+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-07T11:44:47.293046+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CPython 3.13's ipaddress.ip_address('::1').is_reserved is True, which silently rejected IPv6 loopback as a prohibited address in a dial-authorization gate -- a real functional bug that survived three review passes (author, CodeRabbit, an independent adversarial review) because everyone trusted the predicate name over checking its actual behavior.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-07T11:44:47.173706+00:00"
+      ],
+      "lessons_sha": "64bdd4b0a9b6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-07T11:44:47.293037+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CPython 3.13's ipaddress.ip_address('::1').is_reserved is True, which silently rejected IPv6 loopback as a prohibited address in a dial-authorization gate -- a real functional bug that survived three review passes (author, CodeRabbit, an independent adversarial review) because everyone trusted the predicate name over checking its actual behavior."
+}

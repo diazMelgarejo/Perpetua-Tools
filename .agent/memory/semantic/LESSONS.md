@@ -43,6 +43,10 @@
 - Gate 4 Half A (v2 dedicated model-server dialer + TelosPort wiring, oramasys/oramasys) is blocked on oramasys/oramasys PR #2 merging first  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_9fb9c2a1c996 -->
 - Gate 4 Half B (PT agent_launcher.py's adoption of the dedicated model-server dialer) is blocked on PT PR #380 merging first  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_8127a78eabdf -->
 - v2.5 storage features (background daemon for LanceDB vacuum/embed-retry/scheduled DuckDB refresh, and DuckDB fleet-wide analytics dashboards) are deferred until v2.1's dense-info-layer shape (orama-system docs/v2/67) lands and stabilizes  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_56fef2ac3619 -->
+- When a board note references a 'full report' file separate from its inline board summary, read the actual file before acting -- the inline summary is a compressed pointer, not a substitute  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_dc81d8d0b6fd -->
+- In this environment's sandboxed shell, a PreToolUse hook denies direct access to virtualenv-relative interpreter and package-manager binaries -- install and run Python packages via the ambient system interpreter's module-invocation form against an explicit package path instead of creating or invoking a project-local venv  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_b57fed2b933c -->
+- Never assume Python's ipaddress predicates (is_reserved, is_private, is_global) map cleanly onto security-policy intent -- verify each predicate directly on the interpreter in use before writing address-classification logic that gates network egress  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_432f535474c5 -->
+- A git push to GitHub over HTTPS can fail transiently with a connection timeout (exit 128, 'Failed to connect to github.com port 443') even with valid credentials and no actual network outage -- retry the exact same push once before treating it as a real auth or connectivity problem  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_3d7fc6a370dd -->
 
 ### 2026-08
 

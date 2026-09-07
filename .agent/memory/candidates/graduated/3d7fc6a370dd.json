@@ -1,0 +1,42 @@
+{
+  "id": "3d7fc6a370dd",
+  "key": "manual_3d7fc6",
+  "name": "manual_3d7fc6",
+  "claim": "A git push to GitHub over HTTPS can fail transiently with a connection timeout (exit 128, 'Failed to connect to github.com port 443') even with valid credentials and no actual network outage -- retry the exact same push once before treating it as a real auth or connectivity problem",
+  "conditions": [
+    "git",
+    "github",
+    "network-retry",
+    "push",
+    "transient-failure"
+  ],
+  "evidence_ids": [
+    "2026-09-07T11:44:47.371435+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-07T11:44:47.371435+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-07T11:44:47.371435+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-07T11:44:47.494024+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Hit this twice this session on otherwise-successful commits; a plain retry succeeded both times with no other change, confirming it was transient rather than a real credential or network issue.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-07T11:44:47.371435+00:00"
+      ],
+      "lessons_sha": "4558bb5a9222"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-07T11:44:47.494014+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Hit this twice this session on otherwise-successful commits; a plain retry succeeded both times with no other change, confirming it was transient rather than a real credential or network issue."
+}
