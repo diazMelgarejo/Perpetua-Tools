@@ -214,7 +214,10 @@ async def test_check_remote_worker_still_dials_a_genuine_lan_address(monkeypatch
         "192.168.1.10 is a literal IP, so it is its own 'resolved' address -- "
         "the dial URL must still target it directly, unchanged"
     )
-    assert headers["Host"] == "192.168.1.10"
+    assert headers["Host"] == "192.168.1.10:11434", (
+        "port 11434 is not the scheme's default -- Host must include it "
+        "(RFC 7230 §5.4), even though SNI never carries a port"
+    )
     assert extensions["sni_hostname"] == "192.168.1.10"
 
 
@@ -388,3 +391,56 @@ async def test_check_lmstudio_worker_sends_token_over_https(monkeypatch):
     assert len(calls) == 1
     _, headers = calls[0]
     assert headers["Authorization"] == "Bearer secret-token-value"
+
+
+@pytest.mark.parametrize(
+    "url, host, expected",
+    [
+        ("http://model-server.lan:11434/api/tags", "model-server.lan", "model-server.lan:11434"),
+        ("http://model-server.lan:80/api/tags", "model-server.lan", "model-server.lan"),
+        ("http://model-server.lan/api/tags", "model-server.lan", "model-server.lan"),
+        ("https://lmstudio.lan:443/v1/models", "lmstudio.lan", "lmstudio.lan"),
+        ("https://lmstudio.lan:8443/v1/models", "lmstudio.lan", "lmstudio.lan:8443"),
+        ("http://192.168.1.10:11434/api/tags", "192.168.1.10", "192.168.1.10:11434"),
+    ],
+)
+def test_host_header_authority_includes_only_non_default_ports(url, host, expected):
+    assert agent_launcher._host_header_authority(url, host) == expected
+
+
+@pytest.mark.asyncio
+async def test_check_remote_worker_omits_default_port_from_host_header(monkeypatch):
+    """The other half of the review's requirement: a default port (80 for
+    http) must still be omitted from Host, not just non-default ports
+    included -- verified end-to-end through the real dialing path, not
+    only the unit-level table above."""
+    monkeypatch.setattr(
+        agent_launcher.socket,
+        "getaddrinfo",
+        lambda host, *a, **kw: [(2, 1, 6, "", ("10.0.0.50", 0))],
+    )
+
+    class _FakeResponse:
+        status_code = 200
+
+    calls = []
+
+    class _FakeClient:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *exc_info):
+            return False
+
+        async def get(self, url, headers=None, extensions=None):
+            calls.append(headers)
+            return _FakeResponse()
+
+    monkeypatch.setattr(agent_launcher.httpx, "AsyncClient", lambda **kw: _FakeClient())
+
+    reachable, _ = await agent_launcher.check_remote_worker(
+        "http://model-server.lan:80", _retries=0
+    )
+
+    assert reachable is True
+    assert calls[0]["Host"] == "model-server.lan"

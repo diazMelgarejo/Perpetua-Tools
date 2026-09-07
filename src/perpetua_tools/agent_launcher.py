@@ -227,18 +227,40 @@ def resolve_dial_target(url: str) -> tuple[str, str]:
 def _retarget_url_to_ip(url: str, validated_ip: str) -> str:
     """Rewrite *url*'s host to *validated_ip*, preserving scheme/port/path.
 
-    Used alongside ``headers={"Host": original_host}`` and
-    ``extensions={"sni_hostname": original_host}`` on the outgoing request
-    -- the URL controls what address is actually dialed; the header/
-    extension control what the server and TLS handshake see, so a
-    virtual-hosted server or a certificate issued for the hostname both
-    keep working correctly even though the connection itself never
-    re-resolves that hostname.
+    Used alongside ``headers={"Host": _host_header_authority(url, host)}``
+    and ``extensions={"sni_hostname": host}`` on the outgoing request -- the
+    URL controls what address is actually dialed; the header/extension
+    control what the server and TLS handshake see, so a virtual-hosted
+    server or a certificate issued for the hostname both keep working
+    correctly even though the connection itself never re-resolves that
+    hostname. Host and SNI deliberately differ in shape -- see
+    ``_host_header_authority``'s docstring.
     """
     parsed = urlparse(url)
     port_part = f":{parsed.port}" if parsed.port else ""
     netloc = f"{validated_ip}{port_part}"
     return parsed._replace(netloc=netloc).geturl()
+
+
+def _host_header_authority(url: str, host: str) -> str:
+    """Return the value for the HTTP ``Host`` header: *host*, or
+    ``host:port`` when *url*'s port is present and not the scheme's
+    default.
+
+    Deliberately different from the TLS SNI value (always bare *host*,
+    never a port -- RFC 6066's SNI extension has no port field at all).
+    The Host header follows RFC 7230 §5.4 instead, which requires the port
+    whenever it differs from the scheme's default; omitting a non-default
+    port here would misrepresent the actual target to the server (or any
+    intermediary inspecting Host), even though the TCP connection itself
+    still reaches the correct port via the dial URL.
+    """
+    parsed = urlparse(url)
+    port = parsed.port
+    default_port = 443 if parsed.scheme == "https" else 80
+    if port is None or port == default_port:
+        return host
+    return f"{host}:{port}"
 
 
 def _safe_port(parsed, default: int) -> int:
@@ -693,13 +715,14 @@ async def check_remote_worker(
         _launcher_logger.warning("check_remote_worker: refusing to dial (%s)", exc)
         return False, None
     dial_url = _retarget_url_to_ip(f"{base_url}/api/tags", validated_ip)
+    host_authority = _host_header_authority(base_url, original_host)
     for attempt in range(_retries + 1):
         t0 = time.monotonic()
         try:
             async with httpx.AsyncClient(timeout=timeout) as client:
                 resp = await client.get(
                     dial_url,
-                    headers={"Host": original_host},
+                    headers={"Host": host_authority},
                     extensions={"sni_hostname": original_host},
                 )
                 if resp.status_code == 200:
@@ -742,7 +765,7 @@ async def check_lmstudio_worker(
         )
         return False, None
     headers = {"Authorization": f"Bearer {LMS_API_TOKEN}"} if LMS_API_TOKEN else {}
-    headers["Host"] = original_host
+    headers["Host"] = _host_header_authority(base_url, original_host)
     dial_url = _retarget_url_to_ip(url, validated_ip)
     for attempt in range(_retries + 1):
         t0 = time.monotonic()
