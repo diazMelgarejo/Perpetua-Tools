@@ -10,7 +10,8 @@ Use this workflow when working on **add-language-rules** in `everything-claude-c
 
 ## Goal
 
-Adds a new programming language to the rules system, including coding style, hooks, patterns, security, and testing guidelines.
+Adds a new programming language to the rules system, including coding style,
+hooks, patterns, security, and testing guidelines.
 
 ## Common Files
 
@@ -30,7 +31,8 @@ Adds a new programming language to the rules system, including coding style, hoo
 ## Typical Commit Signals
 
 - Create a new directory under rules/{language}/
-- Add coding-style.md, hooks.md, patterns.md, security.md, and testing.md files with language-specific content
+- Add coding-style.md, hooks.md, patterns.md, security.md, and testing.md
+  files with language-specific content
 - Optionally reference or link to related skills
 
 ## Notes

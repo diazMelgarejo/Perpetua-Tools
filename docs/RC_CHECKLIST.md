@@ -51,6 +51,7 @@ All items must be checked before pushing the tag.
 ---
 
 **Once all boxes are checked, stamp the tag:**
+
 ```bash
 git tag v1.0-rc && git push origin v1.0-rc
 ```
