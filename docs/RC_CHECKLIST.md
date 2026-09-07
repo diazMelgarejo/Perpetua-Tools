@@ -8,8 +8,9 @@ All items must be checked before pushing the tag.
 ## Infrastructure
 
 - [x] Redis soft import in `orchestrator.py` — no `ImportError` if package absent
-- [x] ECC sync gate — `ECC_SYNC_ENABLED` env var in `ecc_tools_sync.py` (default: true);
-      `conftest.py` sets it to false at test session scope
+- [x] ECC sync gate — `ECC_SYNC_ENABLED` is runtime-read and defaults to false;
+      startup sync requires explicit operator opt-in, while an authenticated
+      forced sync remains available for reviewed maintenance
 - [x] Async httpx fix — `orama_bridge.py` uses `httpx.AsyncClient` in the new
       `call_orama_mcp_or_bridge()` wrapper (was blocking the FastAPI event loop)
 

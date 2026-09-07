@@ -42,10 +42,43 @@ def test_agent_tracker_falls_back_to_memory(monkeypatch, tmp_path):
     assert tracker.find_existing("orchestrator", task_hash=None).agent_id == record.agent_id
 
 
-def test_sync_returns_structured_error_when_vendor_clone_unavailable(monkeypatch):
+def test_sync_is_opt_in_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
     import orchestrator.ecc_tools_sync as sync_mod
 
-    monkeypatch.setattr(sync_mod, "ECC_SYNC_ENABLED", True)
+    def unexpected_clone() -> bool:
+        raise AssertionError("disabled ECC sync must not clone or pull")
+
+    monkeypatch.delenv("ECC_SYNC_ENABLED", raising=False)
+    monkeypatch.setattr(sync_mod, "_ensure_cloned", unexpected_clone)
+
+    result = sync_mod.sync_ecc_tools(force=False)
+
+    assert result == {
+        "status": "skipped",
+        "message": "ECC Tools sync disabled via ECC_SYNC_ENABLED",
+    }
+
+
+def test_force_sync_runs_when_background_opt_in_is_disabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import orchestrator.ecc_tools_sync as sync_mod
+
+    monkeypatch.delenv("ECC_SYNC_ENABLED", raising=False)
+    monkeypatch.setattr(sync_mod, "_ensure_cloned", lambda: False)
+
+    result = sync_mod.sync_ecc_tools(force=True)
+
+    assert result["status"] == "error"
+    assert "vendor clone unavailable" in result["message"]
+
+
+def test_sync_returns_structured_error_when_vendor_clone_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import orchestrator.ecc_tools_sync as sync_mod
+
+    monkeypatch.setenv("ECC_SYNC_ENABLED", "true")
     monkeypatch.setattr(sync_mod, "_ensure_cloned", lambda: False)
     result = sync_mod.sync_ecc_tools(force=False)
 
@@ -276,4 +309,3 @@ def test_reconcile_request_rejects_unsafe_hardware_profile():
             model_id="safe-model",
             hardware_profile="win-rtx3080:*",
         )
-

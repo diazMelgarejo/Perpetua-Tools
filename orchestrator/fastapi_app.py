@@ -43,7 +43,7 @@ from orchestrator.cost_guard import (
     TokenCliffExceededError,
     UnknownReservationError,
 )
-from orchestrator.ecc_tools_sync import get_sync_status, sync_ecc_tools
+from orchestrator.ecc_tools_sync import ecc_sync_enabled, get_sync_status, sync_ecc_tools
 from orchestrator.model_registry import ModelRegistry
 from orchestrator.model_transport import (
     ProviderConfigError,
@@ -170,8 +170,10 @@ async def _lifespan(app: FastAPI):
         )
     # GossipBus init runs in executor so it never blocks port binding.
     asyncio.get_event_loop().run_in_executor(None, _init_gossip_db)
-    # Both background tasks fire at t=0; neither blocks port binding.
-    asyncio.get_event_loop().run_in_executor(None, _run_ecc_sync_bg)
+    # ECC updates can rewrite tracked harness files. They are an explicit
+    # operator action, not an application-startup side effect.
+    if ecc_sync_enabled():
+        asyncio.get_event_loop().run_in_executor(None, _run_ecc_sync_bg)
     # Hold a strong reference so GC cannot collect the task before it runs (D_GCG-1).
     _routing_task = asyncio.create_task(_resolve_routing_bg(), name="routing-bg")
     _bg_startup_tasks.add(_routing_task)
