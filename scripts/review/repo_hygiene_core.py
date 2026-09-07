@@ -260,6 +260,7 @@ AGENT_EMAIL_LITERAL_ALLOWED_DOMAINS = frozenset({
     "devin.ai",
     "codeium.com",
     "kimi.ai",
+    "cline.bot",
     # RFC 2606 / documentation fixtures only. Do not add personal mail domains.
     "example.invalid",
     "example.com",
