@@ -41,3 +41,9 @@
 - Type nit: `chosen` narrowing in dialer.py (assert or non-optional local).
 - 192.88.99.0/24 (6to4 relay anycast) candidate for `_IPV4_PROHIBITED_NETWORKS`.
 - Half B once PT PR #380 merges.
+
+## Related memory (consolidated on this hotfix PR branch)
+
+- `.agent/memory/working/GATE4_ENDPOINT_CAPABILITY_HANDOFF_2026-09-07.md` — v2-only F07 transport-capability follow-up (Ollama/LM Studio/gateway/MLX endpoint evidence; implementation local pending review).
+- Episodic provenance: be97d89c (proactive-recall record) and 78197e69 (handoff record) — the two unpushed commits this branch was ahead of origin before this consolidation.
+- Full findings report: OpenClaw `references/2026-09-07-gate4-halfa-pr3-independent-review-and-fixes.md`.

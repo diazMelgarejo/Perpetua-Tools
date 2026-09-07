@@ -100,3 +100,7 @@ contract change plus tests; they must not be added as generic TCP exceptions.
 - A port alone is not a sufficient capability. Pair it with transport and
   provider identity so a control-plane endpoint cannot be silently treated as
   a model-server endpoint.
+
+## Related memory
+
+- `.agent/memory/working/GATE4_HALFA_PR3_CYCLE_AND_48H_TIMELINE_2026-09-07.md` (cherry-picked here as part of the memory consolidation) — full 48h timeline, 12 durable lessons, and PR #3 final state through the second independent review (APPROVE-WITH-NITS at 6cc3f6c, 59/59).
