@@ -22,6 +22,8 @@ targets:
         boundary: SSRF pinned transport
       - path: tests/test_endpoint_policy_core.py
         boundary: transport reconstruction
+      - path: tests/test_endpoint_policy_vectors.py
+        boundary: transport reconstruction
   utils.model_endpoint_url:
     boundary: model-endpoint allow/deny
     consumers:
@@ -48,6 +50,8 @@ targets:
       - path: src/perpetua_tools/alphaclaw_bootstrap.py
         boundary: model-endpoint allow/deny
       - path: tests/test_model_endpoint_url.py
+        boundary: model-endpoint allow/deny
+      - path: tests/test_endpoint_policy_vectors.py
         boundary: model-endpoint allow/deny
   endpoint_policy:
     boundary: published package compatibility
