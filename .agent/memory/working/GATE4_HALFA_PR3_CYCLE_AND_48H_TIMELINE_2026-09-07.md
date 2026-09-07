@@ -34,16 +34,70 @@
 11. **Pin git dependencies to commit SHAs** — mutable main in a dependency is a live supply-chain channel into CI.
 12. **Stacked PRs are reviewable before the base merges** — just not landable.
 
+## Claude's wrap-up (2026-09-07, post-consolidation)
+
+Everything above this section was written before F07's implementation
+landed and before Codex's own review of it surfaced one more real finding.
+Closing the loop:
+
+1. **F07 is done, not fast-follow.** Reviewed Codex's `0ccc87f` (independent
+   purpose-keyed + provider-keyed transport allowlist — genuinely more
+   elegant than the flat table I'd sketched: it catches cross-provider port
+   confusion a single table would miss). Answered all 3 handoff review
+   questions in the dialer module docstring (`openclaw_gateway`'s
+   `provider_kind` overload accepted for Gate 4's current fake-backed scope,
+   flagged explicitly as Gate 5's job to resolve before it's load-bearing).
+   Fast-forward merged onto PR #3.
+2. **Codex's second review caught a real one: the Important finding.**
+   `lifecycle.py` authorized config/health once, the dialer authorized
+   (and exact-matched) a *second* time internally, but readiness I/O and
+   persisted `RoutingState` used the *first* decision's echoed `.endpoint`
+   — never independently classified or dial-validated. Verified this was a
+   genuine bypass, not a theoretical one: the RED regression test actually
+   returned `"ready"` against the pre-fix code. Fixed at the lifecycle
+   boundary (exact-match + expiry check on both decisions, immediately
+   after each `authorize()` call; downstream readiness/state now use
+   `request.config_endpoint`/`health_endpoint` — the same values the dialer
+   validates — never the decision's own copy). Also folded in Cline's 3
+   non-blocking nits from independent review #3 (N1: `provider_kind`
+   Literal now has one home in `contracts.py`, imported by `dialer.py`; N2:
+   the required-field API break is noted in the commit message, no
+   changelog convention exists yet to carry it separately; N3: confirmed
+   correct as-is, no action). 2 new regression tests, 69/69 full suite.
+   Pushed once to `oramasys/oramasys` as `fab7bf1`.
+3. **Type nit (`chosen` narrowing) was already resolved** — Codex's very
+   first remediation commit (`57a0153`) had already dropped the `or ""`
+   fallback; the open-thread note above was stale by the time it was
+   written.
+4. **192.88.99.0/24 (6to4 relay anycast) remains genuinely open** — lower
+   severity than F01's Teredo/6to4 gap was (this range is `is_global=True`,
+   so it already requires the existing `allow_public` opt-in; it isn't a
+   free bypass). Worth folding into `_IPV4_PROHIBITED_NETWORKS` next time
+   the dialer is touched, not urgent enough to justify a standalone PR.
+5. **This memory file's own episodic log had a real defect**: the 4
+   proactive-recall entries appended in `4d141ac8` landed chronologically
+   *after* later-timestamped entries already in the file, breaking its
+   otherwise-monotonic append order. Sorted the full 795-entry file by
+   timestamp before pushing (verified: identical content set, reorder
+   only). Small thing, but "arrange chronologically" was an explicit ask
+   this round — worth naming so it doesn't quietly happen again.
+
+**Status as of this push:** PR #3 (`oramasys/oramasys`) is feature-complete
+for Gate 4 Half A — all 17 Cline findings, all CodeRabbit findings, and the
+Important decision-mismatch finding are resolved, 69/69 tests. Still CI
+green, human review pending, stacked on PR #2. This memory consolidation
+(5 prior commits + this wrap-up) ships as one push to
+`hotfix/health-route-ssrf-gap-20260907`.
+
 ## Open threads for the next session
 
 - PR #2 + PR #3: CI green, human review pending; after PR #2 merges, PR #3's base can move to main.
-- F07 fast-follow: per-purpose port allowlist (needs a real port inventory from actual Ollama/LM Studio deployments first).
-- Type nit: `chosen` narrowing in dialer.py (assert or non-optional local).
-- 192.88.99.0/24 (6to4 relay anycast) candidate for `_IPV4_PROHIBITED_NETWORKS`.
-- Half B once PT PR #380 merges.
+- 192.88.99.0/24 (6to4 relay anycast) candidate for `_IPV4_PROHIBITED_NETWORKS` — genuinely open, low severity.
+- Half B once PT PR #380/#381 merges.
 
 ## Related memory (consolidated on this hotfix PR branch)
 
-- `.agent/memory/working/GATE4_ENDPOINT_CAPABILITY_HANDOFF_2026-09-07.md` — v2-only F07 transport-capability follow-up (Ollama/LM Studio/gateway/MLX endpoint evidence; implementation local pending review).
+- `.agent/memory/working/GATE4_ENDPOINT_CAPABILITY_HANDOFF_2026-09-07.md` — v2-only F07 transport-capability follow-up (Ollama/LM Studio/gateway/MLX endpoint evidence; implementation reviewed and merged as `0ccc87f`).
 - Episodic provenance: be97d89c (proactive-recall record) and 78197e69 (handoff record) — the two unpushed commits this branch was ahead of origin before this consolidation.
 - Full findings report: OpenClaw `references/2026-09-07-gate4-halfa-pr3-independent-review-and-fixes.md`.
+- **Note:** PT PR #380 (this branch's original PR) merged mid-session at `34ce1039`, before this consolidation was pushed — the 6 commits from `be97d89c` onward ship via PT PR #381 instead (opened when the first push discovered #380 was already closed).
