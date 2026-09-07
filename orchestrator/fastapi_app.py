@@ -6,6 +6,7 @@ import json
 import logging
 import re as _re
 import os
+import platform
 import time
 from contextlib import asynccontextmanager
 from dataclasses import asdict
@@ -93,8 +94,33 @@ _TRACE_ID_PATTERN = r"^%s$" % TRACE_ID_PATTERN
 _GLM_ORCHESTRATOR_MODEL = "glm-5.1:cloud"
 _AUTORESEARCH_TASK_TYPES = {"autoresearch", "autoresearch-coder", "ml-experiment"}
 _LOCAL_RUNTIME_BACKENDS = {"ollama", "lm-studio", "mlx"}
+def _resolve_health_lm_studio_host() -> str:
+    """Windows deployments must probe LM_STUDIO_WIN_ENDPOINTS, not the
+    Mac-only LM_STUDIO_MAC_ENDPOINT -- otherwise /health silently reports
+    status for the wrong backend when the two differ (CodeRabbit finding,
+    PT PR #380). Mirrors the existing platform-detection convention
+    (alphaclaw_tls_proxy.py's ``platform.system() == "Windows"``) and the
+    existing loud-failure convention for an unset Windows endpoint
+    (worker_registry.py's LM_STUDIO_WIN_ENDPOINTS resolution).
+
+    /health is a lightweight status probe, not the dispatcher's full
+    candidate-list prober (worker_registry.py) -- it uses the first
+    configured candidate when LM_STUDIO_WIN_ENDPOINTS lists several; a
+    multi-candidate liveness probe belongs there, not here.
+    """
+    if platform.system() == "Windows":
+        raw = os.getenv("LM_STUDIO_WIN_ENDPOINTS", "").strip()
+        if not raw:
+            raise RuntimeError(
+                "LM_STUDIO_WIN_ENDPOINTS is not set on a Windows deployment. "
+                "Set it to the Windows LM Studio URL, e.g. http://127.0.1.1:1234"
+            )
+        return raw.split(",")[0].strip()
+    return os.getenv("LM_STUDIO_MAC_ENDPOINT", "http://localhost:1234")
+
+
 HEALTH_OLLAMA_HOST: str = os.getenv("OLLAMA_MAC_ENDPOINT", "http://localhost:11434")
-HEALTH_LM_STUDIO_HOST: str = os.getenv("LM_STUDIO_MAC_ENDPOINT", "http://localhost:1234")
+HEALTH_LM_STUDIO_HOST: str = _resolve_health_lm_studio_host()
 HEALTH_MLX_HOST: str = "http://localhost:8081"
 
 # GC guard for fire-and-forget startup tasks (D_GCG-1 from RAG backport 2026-05-22).
