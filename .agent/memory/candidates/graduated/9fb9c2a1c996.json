@@ -1,0 +1,41 @@
+{
+  "id": "9fb9c2a1c996",
+  "key": "manual_9fb9c2",
+  "name": "manual_9fb9c2",
+  "claim": "Gate 4 Half A (v2 dedicated model-server dialer + TelosPort wiring, oramasys/oramasys) is blocked on oramasys/oramasys PR #2 merging first",
+  "conditions": [
+    "dedicated-dialer",
+    "gate4",
+    "oramasys-pr2",
+    "telosport"
+  ],
+  "evidence_ids": [
+    "2026-09-07T05:20:33.362499+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-07T05:20:33.362499+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-07T05:20:33.362499+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-07T05:20:33.494652+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama-system docs/v2/66 requires the typed TelosPort migration (EndpointRef/EndpointUseRequest) before Gate 4 work begins per ADR 62 and Gate 1 evidence; PR #2 was still open as of 2026-09-07 when doc 66 was corrected to state this as an explicit merge prerequisite rather than an already-complete wiring. Do not start Half A implementation before checking PR #2's live merge state.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-07T05:20:33.362499+00:00"
+      ],
+      "lessons_sha": "92a3eb70636d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-07T05:20:33.494641+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama-system docs/v2/66 requires the typed TelosPort migration (EndpointRef/EndpointUseRequest) before Gate 4 work begins per ADR 62 and Gate 1 evidence; PR #2 was still open as of 2026-09-07 when doc 66 was corrected to state this as an explicit merge prerequisite rather than an already-complete wiring. Do not start Half A implementation before checking PR #2's live merge state."
+}

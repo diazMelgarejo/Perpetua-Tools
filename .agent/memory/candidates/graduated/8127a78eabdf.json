@@ -1,0 +1,42 @@
+{
+  "id": "8127a78eabdf",
+  "key": "manual_8127a7",
+  "name": "manual_8127a7",
+  "claim": "Gate 4 Half B (PT agent_launcher.py's adoption of the dedicated model-server dialer) is blocked on PT PR #380 merging first",
+  "conditions": [
+    "agent-launcher",
+    "dedicated-dialer",
+    "gate4",
+    "pr380",
+    "regime-boundary"
+  ],
+  "evidence_ids": [
+    "2026-09-07T05:20:38.477999+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-07T05:20:38.477999+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-07T05:20:38.477999+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-07T05:20:38.599319+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama-system docs/v2/66 sequences Half B (routing agent_launcher.py's model-server override path through the new dialer instead of raw httpx) strictly after PR #380 lands, since #380 is the smallest-safe interim fix (remove caller-supplied /health overrides) and the dialer work builds on top of that landed state, not in parallel with it. Half B is also explicitly scoped as its own human-reviewed PT PR, never a same-repo edit landed directly by an agent, per the v1/v2 regime boundary in ADR 62.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-07T05:20:38.477999+00:00"
+      ],
+      "lessons_sha": "91e070087d51"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-07T05:20:38.599308+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama-system docs/v2/66 sequences Half B (routing agent_launcher.py's model-server override path through the new dialer instead of raw httpx) strictly after PR #380 lands, since #380 is the smallest-safe interim fix (remove caller-supplied /health overrides) and the dialer work builds on top of that landed state, not in parallel with it. Half B is also explicitly scoped as its own human-reviewed PT PR, never a same-repo edit landed directly by an agent, per the v1/v2 regime boundary in ADR 62."
+}

@@ -1,0 +1,43 @@
+{
+  "id": "56fef2ac3619",
+  "key": "manual_56fef2",
+  "name": "manual_56fef2",
+  "claim": "v2.5 storage features (background daemon for LanceDB vacuum/embed-retry/scheduled DuckDB refresh, and DuckDB fleet-wide analytics dashboards) are deferred until v2.1's dense-info-layer shape (orama-system docs/v2/67) lands and stabilizes",
+  "conditions": [
+    "background-daemon",
+    "doc67",
+    "duckdb",
+    "fleet-analytics",
+    "lancedb",
+    "v2.5"
+  ],
+  "evidence_ids": [
+    "2026-09-07T05:20:44.826165+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-07T05:20:44.826165+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-07T05:20:44.826165+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-07T05:20:44.946740+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Doc 67 explicitly scopes v2.1 to a single in-process LanceDB writer task and a stateless, uncached DuckDB query surface; the standalone background daemon and any materialized-view/dashboard feature work is out of scope until v2.1 ships, since v2.5's daemon writes to a DuckDB-native persisted cache file that doesn't exist yet. Do not start v2.5 daemon or fleet-analytics work before v2.1's two-store shape (SQLite+FTS5 coordination log with the kind column promoted, per-machine LanceDB) is merged and running.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-07T05:20:44.826165+00:00"
+      ],
+      "lessons_sha": "cb6885918c8d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-07T05:20:44.946728+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Doc 67 explicitly scopes v2.1 to a single in-process LanceDB writer task and a stateless, uncached DuckDB query surface; the standalone background daemon and any materialized-view/dashboard feature work is out of scope until v2.1 ships, since v2.5's daemon writes to a DuckDB-native persisted cache file that doesn't exist yet. Do not start v2.5 daemon or fleet-analytics work before v2.1's two-store shape (SQLite+FTS5 coordination log with the kind column promoted, per-machine LanceDB) is merged and running."
+}
