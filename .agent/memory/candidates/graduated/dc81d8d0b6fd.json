@@ -1,0 +1,41 @@
+{
+  "id": "dc81d8d0b6fd",
+  "key": "manual_dc81d8",
+  "name": "manual_dc81d8",
+  "claim": "When a board note references a 'full report' file separate from its inline board summary, read the actual file before acting -- the inline summary is a compressed pointer, not a substitute",
+  "conditions": [
+    "board-note",
+    "file-vs-summary",
+    "full-report",
+    "review-handoff"
+  ],
+  "evidence_ids": [
+    "2026-09-07T11:44:31.846563+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-07T11:44:31.846563+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-07T11:44:31.846563+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-07T11:44:31.980457+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "User caught this directly this session after acting on a board-summary text alone; the full report file had file:line evidence, exact suggested code, and 3 open review questions the board summary compressed away entirely.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-07T11:44:31.846563+00:00"
+      ],
+      "lessons_sha": "0077ef654d8f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-07T11:44:31.980440+00:00",
+  "reviewer": "learn.py",
+  "rationale": "User caught this directly this session after acting on a board-summary text alone; the full report file had file:line evidence, exact suggested code, and 3 open review questions the board summary compressed away entirely."
+}

@@ -1,0 +1,42 @@
+{
+  "id": "b57fed2b933c",
+  "key": "manual_b57fed",
+  "name": "manual_b57fed",
+  "claim": "In this environment's sandboxed shell, a PreToolUse hook denies direct access to virtualenv-relative interpreter and package-manager binaries -- install and run Python packages via the ambient system interpreter's module-invocation form against an explicit package path instead of creating or invoking a project-local venv",
+  "conditions": [
+    "hook-blocked",
+    "pip",
+    "python-install",
+    "sandbox",
+    "venv"
+  ],
+  "evidence_ids": [
+    "2026-09-07T11:44:38.043012+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-07T11:44:38.043012+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-07T11:44:38.043012+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-07T11:44:38.160556+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Hit this twice this session testing oramasys PR#3 checkouts; venv creation itself succeeds but every subsequent invocation of a binary under it is blocked, costing a full re-diagnosis each time before switching to the ambient interpreter.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-07T11:44:38.043012+00:00"
+      ],
+      "lessons_sha": "dfa0be5e85ef"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-07T11:44:38.160548+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Hit this twice this session testing oramasys PR#3 checkouts; venv creation itself succeeds but every subsequent invocation of a binary under it is blocked, costing a full re-diagnosis each time before switching to the ambient interpreter."
+}
