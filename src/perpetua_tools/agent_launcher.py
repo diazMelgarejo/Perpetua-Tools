@@ -95,6 +95,93 @@ def _is_loopback_host(host: str) -> bool:
         return False
 
 
+# ---------------------------------------------------------------------------
+# DNS-resolution + address-class validation for the model-server dial paths.
+#
+# Gate 2 (orama-system docs/v2/64) named this gap precisely: syntactic
+# validation (validate_model_endpoint_url) checks the URL's *text*, never
+# what its host actually *resolves to* -- a hostname that looks harmless can
+# still resolve to a prohibited address (cloud metadata, Teredo/6to4-encoded
+# addresses, CGNAT/6to4-relay shared space). This mirrors -- does not
+# import -- the classification rules oramasys/oramasys's
+# src/orama/gateway/dialer.py enforces for the v2 Gateway Lifecycle dialer
+# (Gate 4 Half A); PT never depends on a v2 package, per the v1/v2 regime
+# boundary, so the same rules are reimplemented natively here instead.
+# ---------------------------------------------------------------------------
+
+_IPV4_PROHIBITED_NETWORKS = (
+    ipaddress.ip_network("100.64.0.0/10"),   # CGNAT (RFC 6598)
+    ipaddress.ip_network("192.88.99.0/24"),  # 6to4 relay anycast (RFC 3068)
+)
+_IPV6_PROHIBITED_NETWORKS = (
+    ipaddress.ip_network("2001::/32"),  # Teredo
+    ipaddress.ip_network("2002::/16"),  # 6to4
+)
+
+
+def _is_dialable_address(address_text: str) -> bool:
+    """Return True if *address_text* is safe for agent_launcher.py to dial.
+
+    Loopback is always safe (checked first: CPython's ipaddress module
+    reports IPv6 loopback ``::1`` as ``is_reserved == True``, which would
+    otherwise reject the most common local target -- the same interpreter
+    quirk closed in the v2 dialer this mirrors). RFC1918/ULA private ranges
+    are safe -- this repo's entire LAN-discovery model assumes private-
+    network model servers. Everything else -- unspecified, multicast,
+    link-local (including the cloud-metadata address), reserved, Teredo,
+    6to4, 6to4-relay-anycast, CGNAT, and any other public-routable address
+    -- is rejected: agent_launcher.py's dial targets are always configured
+    LAN/loopback endpoints, never a caller-opted-in public model server (PT
+    has no equivalent of Telos's ``allow_public`` opt-in at this layer).
+    """
+    address = ipaddress.ip_address(address_text)
+    if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped:
+        address = address.ipv4_mapped
+    if address.is_loopback:
+        return True
+    prohibited_networks = (
+        _IPV6_PROHIBITED_NETWORKS
+        if isinstance(address, ipaddress.IPv6Address)
+        else _IPV4_PROHIBITED_NETWORKS
+    )
+    if (
+        address.is_unspecified
+        or address.is_multicast
+        or address.is_link_local
+        or address.is_reserved
+        or any(address in network for network in prohibited_networks)
+    ):
+        return False
+    return address.is_private
+
+
+def resolve_and_validate_dial_host(url: str) -> str:
+    """Resolve *url*'s host via DNS and reject if any resolved address is
+    outside the allowed local/private classes (see ``_is_dialable_address``).
+    Returns *url* unchanged on success. Raises ``ValueError`` with a stable,
+    redacted message on rejection or DNS failure -- callers decide whether
+    that means skip-and-report-unreachable (the two probe functions below)
+    or a hard failure (a future caller that must not silently degrade).
+    """
+    host = urlparse(url).hostname
+    if not host:
+        raise ValueError(f"cannot parse a host from {redact_endpoint_for_log(url)}")
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except socket.gaierror as exc:
+        raise ValueError(
+            f"DNS resolution failed for {redact_endpoint_for_log(url)}: {exc}"
+        ) from exc
+    for info in infos:
+        address_text = info[4][0]
+        if not _is_dialable_address(address_text):
+            raise ValueError(
+                f"{redact_endpoint_for_log(url)} resolves to a prohibited or "
+                f"public address; refusing to dial"
+            )
+    return url
+
+
 def _safe_port(parsed, default: int) -> int:
     """Read ParseResult.port, falling back to *default* on malformed/out-of-range ports.
 
@@ -350,8 +437,9 @@ def resolve_local_or_remote(
                     return f"http://localhost:{_safe_port(parsed, port)}"
             remote_url = override if "://" in override else f"http://{override}"
             try:
-                return validate_model_endpoint_url(remote_url)
-            except ModelEndpointPolicyError as exc:
+                validated = validate_model_endpoint_url(remote_url)
+                return resolve_and_validate_dial_host(validated)
+            except (ModelEndpointPolicyError, ValueError) as exc:
                 _launcher_logger.warning(
                     "resolve_local_or_remote: %s=%s rejected by endpoint policy (%s) "
                     "-- falling back to fallback_ip",
@@ -364,8 +452,9 @@ def resolve_local_or_remote(
     fallback_url = build_transport_url(fallback_ip or "127.0.0.1", port)
     if fallback_url:
         try:
-            return validate_model_endpoint_url(fallback_url)
-        except ModelEndpointPolicyError as exc:
+            validated = validate_model_endpoint_url(fallback_url)
+            return resolve_and_validate_dial_host(validated)
+        except (ModelEndpointPolicyError, ValueError) as exc:
             _launcher_logger.warning(
                 "resolve_local_or_remote: fallback_ip rejected by endpoint policy (%s) "
                 "-- using loopback fallback",
@@ -534,8 +623,16 @@ async def check_remote_worker(
 
     Retries once (2 s gap) when the first attempt fails with a connection
     error — catches backends that are mid-boot. Returns (False, None) if all
-    attempts fail.
+    attempts fail. DNS-resolves and address-classifies base_url before any
+    dial (Gate 2 finding: base_url is a launcher-configured LAN endpoint,
+    not request-time input, but was previously dialed with zero validation
+    of any kind -- not even the syntactic check other call sites use).
     """
+    try:
+        await asyncio.to_thread(resolve_and_validate_dial_host, base_url)
+    except ValueError as exc:
+        _launcher_logger.warning("check_remote_worker: refusing to dial (%s)", exc)
+        return False, None
     for attempt in range(_retries + 1):
         t0 = time.monotonic()
         try:
@@ -561,8 +658,15 @@ async def check_lmstudio_worker(
 
     Passes LM_STUDIO_API_TOKEN as Bearer if set, so secured deployments are
     not misreported as unreachable. Retries once (2 s gap) to catch backends
-    still booting.
+    still booting. DNS-resolves and address-classifies base_url before any
+    dial, including before the Bearer token is ever attached to a request
+    (Gate 2 finding: no validation of any kind previously ran here).
     """
+    try:
+        await asyncio.to_thread(resolve_and_validate_dial_host, base_url)
+    except ValueError as exc:
+        _launcher_logger.warning("check_lmstudio_worker: refusing to dial (%s)", exc)
+        return False, None
     url = f"{base_url.rstrip('/')}/v1/models"
     headers = {"Authorization": f"Bearer {LMS_API_TOKEN}"} if LMS_API_TOKEN else {}
     for attempt in range(_retries + 1):
