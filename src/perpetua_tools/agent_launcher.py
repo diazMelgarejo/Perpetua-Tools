@@ -182,6 +182,65 @@ def resolve_and_validate_dial_host(url: str) -> str:
     return url
 
 
+def resolve_dial_target(url: str) -> tuple[str, str]:
+    """Resolve *url*'s host, validate every resolved address, and return
+    ``(validated_ip, original_host)`` -- the exact address a caller must
+    dial, plus the hostname to present via the Host header and TLS SNI.
+
+    A separate function from ``resolve_and_validate_dial_host`` above,
+    deliberately: that function's unchanged-URL return is relied on by
+    ``resolve_local_or_remote``'s callers for purposes other than an
+    immediate dial (config display, further URL construction), so its
+    contract stays as-is rather than risk a ripple effect there. This one
+    exists specifically for callers that dial the result immediately --
+    ``check_remote_worker``/``check_lmstudio_worker`` below -- closing a
+    real DNS-rebinding/TOCTOU gap: validating a hostname's resolved address
+    here, then handing the *hostname string* to an HTTP client that
+    re-resolves it independently at connect time, means a second,
+    adversarial DNS answer between the two resolutions is never checked.
+    Returning the validated IP directly, for the caller to dial verbatim,
+    closes that window -- the address validated is the address dialed, with
+    no second resolution in between. Raises ``ValueError`` under the same
+    conditions as ``resolve_and_validate_dial_host``; on success, returns
+    the *first* validated address (matching ``httpx``'s own default
+    single-address dial behavior, not a multi-address failover list).
+    """
+    host = urlparse(url).hostname
+    if not host:
+        raise ValueError(f"cannot parse a host from {redact_endpoint_for_log(url)}")
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except socket.gaierror as exc:
+        raise ValueError(
+            f"DNS resolution failed for {redact_endpoint_for_log(url)}: {exc}"
+        ) from exc
+    for info in infos:
+        address_text = info[4][0]
+        if not _is_dialable_address(address_text):
+            raise ValueError(
+                f"{redact_endpoint_for_log(url)} resolves to a prohibited or "
+                f"public address; refusing to dial"
+            )
+    return infos[0][4][0], host
+
+
+def _retarget_url_to_ip(url: str, validated_ip: str) -> str:
+    """Rewrite *url*'s host to *validated_ip*, preserving scheme/port/path.
+
+    Used alongside ``headers={"Host": original_host}`` and
+    ``extensions={"sni_hostname": original_host}`` on the outgoing request
+    -- the URL controls what address is actually dialed; the header/
+    extension control what the server and TLS handshake see, so a
+    virtual-hosted server or a certificate issued for the hostname both
+    keep working correctly even though the connection itself never
+    re-resolves that hostname.
+    """
+    parsed = urlparse(url)
+    port_part = f":{parsed.port}" if parsed.port else ""
+    netloc = f"{validated_ip}{port_part}"
+    return parsed._replace(netloc=netloc).geturl()
+
+
 def _safe_port(parsed, default: int) -> int:
     """Read ParseResult.port, falling back to *default* on malformed/out-of-range ports.
 
@@ -629,15 +688,20 @@ async def check_remote_worker(
     of any kind -- not even the syntactic check other call sites use).
     """
     try:
-        await asyncio.to_thread(resolve_and_validate_dial_host, base_url)
+        validated_ip, original_host = await asyncio.to_thread(resolve_dial_target, base_url)
     except ValueError as exc:
         _launcher_logger.warning("check_remote_worker: refusing to dial (%s)", exc)
         return False, None
+    dial_url = _retarget_url_to_ip(f"{base_url}/api/tags", validated_ip)
     for attempt in range(_retries + 1):
         t0 = time.monotonic()
         try:
             async with httpx.AsyncClient(timeout=timeout) as client:
-                resp = await client.get(f"{base_url}/api/tags")
+                resp = await client.get(
+                    dial_url,
+                    headers={"Host": original_host},
+                    extensions={"sni_hostname": original_host},
+                )
                 if resp.status_code == 200:
                     latency = int((time.monotonic() - t0) * 1000)
                     return True, latency
@@ -663,17 +727,30 @@ async def check_lmstudio_worker(
     (Gate 2 finding: no validation of any kind previously ran here).
     """
     try:
-        await asyncio.to_thread(resolve_and_validate_dial_host, base_url)
+        validated_ip, original_host = await asyncio.to_thread(resolve_dial_target, base_url)
     except ValueError as exc:
         _launcher_logger.warning("check_lmstudio_worker: refusing to dial (%s)", exc)
         return False, None
     url = f"{base_url.rstrip('/')}/v1/models"
+    is_https = urlparse(base_url).scheme == "https"
+    if LMS_API_TOKEN and not is_https:
+        _launcher_logger.warning(
+            "check_lmstudio_worker: LM_STUDIO_API_TOKEN is set but %s is not "
+            "HTTPS -- refusing to send the Bearer token in cleartext or to "
+            "silently probe unauthenticated; reporting unavailable",
+            redact_endpoint_for_log(base_url),
+        )
+        return False, None
     headers = {"Authorization": f"Bearer {LMS_API_TOKEN}"} if LMS_API_TOKEN else {}
+    headers["Host"] = original_host
+    dial_url = _retarget_url_to_ip(url, validated_ip)
     for attempt in range(_retries + 1):
         t0 = time.monotonic()
         try:
             async with httpx.AsyncClient(timeout=timeout) as client:
-                resp = await client.get(url, headers=headers)
+                resp = await client.get(
+                    dial_url, headers=headers, extensions={"sni_hostname": original_host}
+                )
                 if resp.status_code < 400:
                     latency = int((time.monotonic() - t0) * 1000)
                     return True, latency

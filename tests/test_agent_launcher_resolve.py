@@ -180,10 +180,14 @@ async def test_check_lmstudio_worker_refuses_to_dial_a_prohibited_resolved_addre
 async def test_check_remote_worker_still_dials_a_genuine_lan_address(monkeypatch):
     """Confirm the fix isn't over-broad -- a real LAN target must still be
     reachable through the normal path (mocking only the HTTP layer, not
-    DNS/classification)."""
+    DNS/classification). Also confirms the IP-pinning fix's own shape: the
+    dialed URL's host is the validated IP, while Host/SNI still carry the
+    original hostname."""
 
     class _FakeResponse:
         status_code = 200
+
+    calls = []
 
     class _FakeClient:
         async def __aenter__(self):
@@ -192,7 +196,8 @@ async def test_check_remote_worker_still_dials_a_genuine_lan_address(monkeypatch
         async def __aexit__(self, *exc_info):
             return False
 
-        async def get(self, url):
+        async def get(self, url, headers=None, extensions=None):
+            calls.append((url, headers, extensions))
             return _FakeResponse()
 
     monkeypatch.setattr(agent_launcher.httpx, "AsyncClient", lambda **kw: _FakeClient())
@@ -203,3 +208,183 @@ async def test_check_remote_worker_still_dials_a_genuine_lan_address(monkeypatch
 
     assert reachable is True
     assert latency is not None
+    assert len(calls) == 1
+    dial_url, headers, extensions = calls[0]
+    assert dial_url.startswith("http://192.168.1.10:11434/"), (
+        "192.168.1.10 is a literal IP, so it is its own 'resolved' address -- "
+        "the dial URL must still target it directly, unchanged"
+    )
+    assert headers["Host"] == "192.168.1.10"
+    assert extensions["sni_hostname"] == "192.168.1.10"
+
+
+@pytest.mark.asyncio
+async def test_check_remote_worker_dials_the_validated_address_despite_dns_rebinding(
+    monkeypatch,
+):
+    """The actual DNS-rebinding/TOCTOU regression the review asked for:
+    getaddrinfo returns a safe LAN address on the validation call, then a
+    prohibited address on any later call, simulating an adversarial DNS
+    server changing its answer between validation and connection. The fix
+    must dial the address returned by the FIRST (validation) call only --
+    a real re-resolution here would connect to the prohibited address
+    instead, and the test would need to assert that failure to catch a
+    regression."""
+    calls = {"n": 0}
+
+    def _rebinding_getaddrinfo(host, *args, **kwargs):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return [(2, 1, 6, "", ("192.168.1.10", 0))]  # safe, on validation
+        return [(2, 1, 6, "", ("169.254.169.254", 0))]  # rebound to metadata IP
+
+    monkeypatch.setattr(agent_launcher.socket, "getaddrinfo", _rebinding_getaddrinfo)
+
+    class _FakeResponse:
+        status_code = 200
+
+    calls_made = []
+
+    class _FakeClient:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *exc_info):
+            return False
+
+        async def get(self, url, headers=None, extensions=None):
+            calls_made.append(url)
+            return _FakeResponse()
+
+    monkeypatch.setattr(agent_launcher.httpx, "AsyncClient", lambda **kw: _FakeClient())
+
+    reachable, latency = await agent_launcher.check_remote_worker(
+        "http://model-server.lan:11434", _retries=0
+    )
+
+    assert reachable is True
+    assert len(calls_made) == 1
+    assert calls_made[0].startswith("http://192.168.1.10:11434/"), (
+        f"dialed {calls_made[0]!r} -- must be the address validated on the "
+        "FIRST getaddrinfo call, never a later, rebound answer"
+    )
+    assert calls["n"] == 1, (
+        "resolve_dial_target must call getaddrinfo exactly once -- a second "
+        "call anywhere in the dial path re-opens the rebinding window"
+    )
+
+
+@pytest.mark.asyncio
+async def test_check_lmstudio_worker_dials_the_validated_address_despite_dns_rebinding(
+    monkeypatch,
+):
+    """Same DNS-rebinding regression as above, for the LM Studio path."""
+    monkeypatch.setattr(agent_launcher, "LMS_API_TOKEN", "")
+    calls = {"n": 0}
+
+    def _rebinding_getaddrinfo(host, *args, **kwargs):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return [(2, 1, 6, "", ("10.0.0.20", 0))]
+        return [(2, 1, 6, "", ("169.254.169.254", 0))]
+
+    monkeypatch.setattr(agent_launcher.socket, "getaddrinfo", _rebinding_getaddrinfo)
+
+    class _FakeResponse:
+        status_code = 200
+
+    calls_made = []
+
+    class _FakeClient:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *exc_info):
+            return False
+
+        async def get(self, url, headers=None, extensions=None):
+            calls_made.append(url)
+            return _FakeResponse()
+
+    monkeypatch.setattr(agent_launcher.httpx, "AsyncClient", lambda **kw: _FakeClient())
+
+    reachable, latency = await agent_launcher.check_lmstudio_worker(
+        "http://lmstudio.lan:1234", _retries=0
+    )
+
+    assert reachable is True
+    assert len(calls_made) == 1
+    assert calls_made[0].startswith("http://10.0.0.20:1234/")
+
+
+@pytest.mark.asyncio
+async def test_check_lmstudio_worker_refuses_to_send_token_over_http(monkeypatch):
+    """The credential-leak regression the review asked for: LMS_API_TOKEN
+    set, endpoint is HTTP (not HTTPS) -- must report unavailable, never
+    send the token in cleartext, and never silently retry unauthenticated
+    (which would misreport a secured endpoint as reachable)."""
+    monkeypatch.setattr(agent_launcher, "LMS_API_TOKEN", "secret-token-value")
+    monkeypatch.setattr(
+        agent_launcher.socket,
+        "getaddrinfo",
+        lambda host, *a, **kw: [(2, 1, 6, "", ("10.0.0.40", 0))],
+    )
+
+    called = False
+
+    class _UnreachedClient:
+        async def __aenter__(self):
+            nonlocal called
+            called = True
+            raise AssertionError("httpx.AsyncClient must not be constructed")
+
+        async def __aexit__(self, *exc_info):
+            return False
+
+    monkeypatch.setattr(agent_launcher.httpx, "AsyncClient", lambda **kw: _UnreachedClient())
+
+    reachable, latency = await agent_launcher.check_lmstudio_worker(
+        "http://lmstudio.lan:1234", _retries=0
+    )
+
+    assert (reachable, latency) == (False, None)
+    assert called is False
+
+
+@pytest.mark.asyncio
+async def test_check_lmstudio_worker_sends_token_over_https(monkeypatch):
+    """Regression: confirm the fix isn't over-broad -- HTTPS + a token must
+    still work, with the token genuinely attached."""
+    monkeypatch.setattr(agent_launcher, "LMS_API_TOKEN", "secret-token-value")
+    monkeypatch.setattr(
+        agent_launcher.socket,
+        "getaddrinfo",
+        lambda host, *a, **kw: [(2, 1, 6, "", ("10.0.0.30", 0))],
+    )
+
+    class _FakeResponse:
+        status_code = 200
+
+    calls = []
+
+    class _FakeClient:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *exc_info):
+            return False
+
+        async def get(self, url, headers=None, extensions=None):
+            calls.append((url, headers))
+            return _FakeResponse()
+
+    monkeypatch.setattr(agent_launcher.httpx, "AsyncClient", lambda **kw: _FakeClient())
+
+    reachable, latency = await agent_launcher.check_lmstudio_worker(
+        "https://lmstudio.lan:1234", _retries=0
+    )
+
+    assert reachable is True
+    assert len(calls) == 1
+    _, headers = calls[0]
+    assert headers["Authorization"] == "Bearer secret-token-value"
