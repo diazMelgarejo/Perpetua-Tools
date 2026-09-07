@@ -93,6 +93,9 @@ _TRACE_ID_PATTERN = r"^%s$" % TRACE_ID_PATTERN
 _GLM_ORCHESTRATOR_MODEL = "glm-5.1:cloud"
 _AUTORESEARCH_TASK_TYPES = {"autoresearch", "autoresearch-coder", "ml-experiment"}
 _LOCAL_RUNTIME_BACKENDS = {"ollama", "lm-studio", "mlx"}
+HEALTH_OLLAMA_HOST: str = os.getenv("OLLAMA_MAC_ENDPOINT", "http://localhost:11434")
+HEALTH_LM_STUDIO_HOST: str = os.getenv("LM_STUDIO_MAC_ENDPOINT", "http://localhost:1234")
+HEALTH_MLX_HOST: str = "http://localhost:8081"
 
 # GC guard for fire-and-forget startup tasks (D_GCG-1 from RAG backport 2026-05-22).
 # asyncio.create_task() only holds a *weak* reference; without a strong reference
@@ -561,11 +564,7 @@ def get_user_input_status() -> Dict[str, Any]:
 
 
 @app.get("/health", tags=["system"])
-def health(
-    ollama_host: str = os.getenv("OLLAMA_MAC_ENDPOINT", "http://localhost:11434"),
-    lm_studio_host: str = os.getenv("LM_STUDIO_MAC_ENDPOINT", "http://localhost:1234"),
-    mlx_host: str = "http://localhost:8081",
-) -> Dict[str, Any]:
+def health() -> Dict[str, Any]:
     def _validated(raw: str, default: str) -> str:
         candidate = (raw or default).strip()
         try:
@@ -573,9 +572,9 @@ def health(
         except ModelEndpointPolicyError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    safe_ollama = _validated(ollama_host, "http://localhost:11434")
-    safe_lm = _validated(lm_studio_host, "http://localhost:1234")
-    safe_mlx = _validated(mlx_host, "http://localhost:8081")
+    safe_ollama = _validated(HEALTH_OLLAMA_HOST, "http://localhost:11434")
+    safe_lm = _validated(HEALTH_LM_STUDIO_HOST, "http://localhost:1234")
+    safe_mlx = _validated(HEALTH_MLX_HOST, "http://localhost:8081")
     return {
         "status": "ok",
         "version": _ORCHESTRATOR_VERSION,
