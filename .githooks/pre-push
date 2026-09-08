@@ -75,6 +75,20 @@ range_for_ref() {
   fi
 }
 
+# A commit can be created in a clone without hooks. Re-check every outgoing
+# range at publication time so the final remote tree cannot silently drop a
+# tracked file. The script distinguishes ordinary line removals from D-status
+# whole-file removals and requires an explicit, justified override for the latter.
+if [[ ! -x "$ROOT/scripts/git/check_file_deletion_guard.sh" ]]; then
+  echo "pre-push: blocked — check_file_deletion_guard.sh missing or not executable" >&2
+  exit 1
+fi
+while read -r local_ref local_oid remote_ref remote_oid; do
+  [[ "$local_ref" =~ refs/heads/ ]] || continue
+  [[ "$local_oid" == "$zero" ]] && continue
+  bash "$ROOT/scripts/git/check_file_deletion_guard.sh" --range "$(range_for_ref "$local_oid" "$remote_oid")" || exit $?
+done <"$push_refs"
+
 audit_range_for_ref() {
   local local_oid="$1"
   local remote_oid="$2"
