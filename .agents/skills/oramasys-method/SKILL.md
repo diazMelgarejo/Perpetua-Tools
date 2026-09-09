@@ -1,21 +1,59 @@
 ---
 name: oramasys-method
-description: "Successor and drop-in replacement for the legacy ultrathink-system method. Applies the orama-system 5-stage methodology (Context Immersion → Visionary Architecture → Ruthless Refinement → Masterful Execution → Crystallize) with the AFRP…"
+description: "Use when the user asks for ultrathink, oramasys, deep multi-step reasoning, architecture, a complex refactor, careful planning, or an additive PR merge. The successor to ultrathink-system applies the orama-system five-stage method, AFRP…"
 ---
 
 # oramasys-method
 
-This is a thin wrapper. The canonical skill lives in this repo at the path below
-(resolve the repo root at runtime — paths are never hardcoded).
+This is a thin wrapper. The canonical skill lives in the orama-system repo at
+the path below. Resolution is read-only and marker-verified — never fetch,
+pull, prune, install, register, or modify anything while loading a skill.
 
 - Canonical skill path (repo-relative): `bin/orama-system/skills/oramasys-method/SKILL.md`
 
 ## Before Use
 
-Before relying on the canonical card, check whether the canonical repository can safely sync:
+Resolve the canonical repository root, in order, using the first candidate
+whose `bin/orama-system/skills/oramasys-method/SKILL.md` exists as a file. Never hardcode a workstation path — search
+instead. Do not guess or fall back to a different repository's copy if none
+resolves.
+
+1. `ORAMA_SYSTEM_ROOT` or `ORAMA_SYSTEM_PATH`, if set.
+2. `$(git rev-parse --show-toplevel 2>/dev/null)` — correct only when the
+   current working directory is already inside the canonical repo itself.
+3. A bounded, marker-based search of the current git repo's parent and
+   grandparent directories (depth 2) for a sibling checkout containing `bin/orama-system/skills/oramasys-method/SKILL.md`
+   — the same crawl `scripts/git/resolve_sibling_git_repo.sh` performs. If
+   the current directory is not inside a git repo, this step has nothing to
+   search from and is skipped.
 
 ```bash
-ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+ROOT=""
+for cand in "$ORAMA_SYSTEM_ROOT" "$ORAMA_SYSTEM_PATH" \
+    "$(git rev-parse --show-toplevel 2>/dev/null)"; do
+  [ -n "$cand" ] && [ -f "$cand/bin/orama-system/skills/oramasys-method/SKILL.md" ] && ROOT="$cand" && break
+done
+if [ -z "$ROOT" ] && base="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+  parent="$(dirname "$base")"
+  for d in "$parent"/*/ "$(dirname "$parent")"/*/; do
+    [ -f "${d}bin/orama-system/skills/oramasys-method/SKILL.md" ] && ROOT="${d%/}" && break
+  done
+fi
+```
+
+If `$ROOT` is still empty, report the canonical skill as unavailable and ask
+for its location only if the task genuinely needs it.
+
+## Load Canonical Skill
+
+Read `$ROOT/bin/orama-system/skills/oramasys-method/SKILL.md` and follow it. Do not copy behavior from this wrapper.
+
+## Refresh (explicit maintenance only — never a side effect of loading)
+
+Synchronizing the canonical repo is a separate, explicitly authorized action.
+When asked to refresh it:
+
+```bash
 cd "$ROOT/bin/orama-system/skills/oramasys-method"
 git fetch origin --prune
 git status --short --branch
@@ -28,10 +66,6 @@ git pull --ff-only
 ```
 
 If the worktree is dirty, the branch is not tracking origin, or fast-forward is impossible, do not overwrite local work. Report the drift and read the current canonical card with that caveat.
-
-## Load Canonical Skill
-
-Open and follow `bin/orama-system/skills/oramasys-method/SKILL.md` (relative to the repo root). Do not copy behavior from this wrapper.
 
 ## Windows UTF-8 Note
 

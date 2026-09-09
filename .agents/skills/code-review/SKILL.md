@@ -5,17 +5,55 @@ description: "Use when reviewing code across multiple files, PRs, or unfamiliar 
 
 # code-review
 
-This is a thin wrapper. The canonical skill lives in this repo at the path below
-(resolve the repo root at runtime — paths are never hardcoded).
+This is a thin wrapper. The canonical skill lives in the orama-system repo at
+the path below. Resolution is read-only and marker-verified — never fetch,
+pull, prune, install, register, or modify anything while loading a skill.
 
 - Canonical skill path (repo-relative): `bin/orama-system/skills/code-review/SKILL.md`
 
 ## Before Use
 
-Before relying on the canonical card, check whether the canonical repository can safely sync:
+Resolve the canonical repository root, in order, using the first candidate
+whose `bin/orama-system/skills/code-review/SKILL.md` exists as a file. Never hardcode a workstation path — search
+instead. Do not guess or fall back to a different repository's copy if none
+resolves.
+
+1. `ORAMA_SYSTEM_ROOT` or `ORAMA_SYSTEM_PATH`, if set.
+2. `$(git rev-parse --show-toplevel 2>/dev/null)` — correct only when the
+   current working directory is already inside the canonical repo itself.
+3. A bounded, marker-based search of the current git repo's parent and
+   grandparent directories (depth 2) for a sibling checkout containing `bin/orama-system/skills/code-review/SKILL.md`
+   — the same crawl `scripts/git/resolve_sibling_git_repo.sh` performs. If
+   the current directory is not inside a git repo, this step has nothing to
+   search from and is skipped.
 
 ```bash
-ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+ROOT=""
+for cand in "$ORAMA_SYSTEM_ROOT" "$ORAMA_SYSTEM_PATH" \
+    "$(git rev-parse --show-toplevel 2>/dev/null)"; do
+  [ -n "$cand" ] && [ -f "$cand/bin/orama-system/skills/code-review/SKILL.md" ] && ROOT="$cand" && break
+done
+if [ -z "$ROOT" ] && base="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+  parent="$(dirname "$base")"
+  for d in "$parent"/*/ "$(dirname "$parent")"/*/; do
+    [ -f "${d}bin/orama-system/skills/code-review/SKILL.md" ] && ROOT="${d%/}" && break
+  done
+fi
+```
+
+If `$ROOT` is still empty, report the canonical skill as unavailable and ask
+for its location only if the task genuinely needs it.
+
+## Load Canonical Skill
+
+Read `$ROOT/bin/orama-system/skills/code-review/SKILL.md` and follow it. Do not copy behavior from this wrapper.
+
+## Refresh (explicit maintenance only — never a side effect of loading)
+
+Synchronizing the canonical repo is a separate, explicitly authorized action.
+When asked to refresh it:
+
+```bash
 cd "$ROOT/bin/orama-system/skills/code-review"
 git fetch origin --prune
 git status --short --branch
@@ -28,32 +66,6 @@ git pull --ff-only
 ```
 
 If the worktree is dirty, the branch is not tracking origin, or fast-forward is impossible, do not overwrite local work. Report the drift and read the current canonical card with that caveat.
-
-## Load Canonical Skill
-
-Open and follow `bin/orama-system/skills/code-review/SKILL.md` (relative to the repo root). Do not copy behavior from this wrapper.
-
-## Review provenance and remediation
-
-For PR reviews, CI findings, and bot comments, also load:
-
-- [Branch-Local Review Remediation](../../../.agent/references/branch-local-review-remediation.md)
-
-Bind each finding to the exact reviewed branch and head. Cluster findings by shared invariant, fix the owning abstraction, add focused regression tests, and do not place review-only fixes on `main` before merge.
-
-## Perpetua-Tools: hardware affinity reviews
-
-When the diff touches model IDs, routing, `openclaw.json`, `launch_researchers.py`,
-or `hardware_policy.py`, also load **`.claude/skills/hardware-policy/SKILL.md`** and verify:
-
-1. No duplicate YAML parsers (`rg '_simple_policy_parse|def _forbidden'`)
-2. Alias ids covered in `model_hardware_policy.yml`
-3. `pytest tests/test_launch_researchers_affinity.py tests/test_hardware_routing.py -q`
-
-## Related skills
-
-- [`../agent-methodology/SKILL.md`](../agent-methodology/SKILL.md) — Apply the Oramasys context, synthesis, TDD, and verification stages.
-- [`../git-history-surgery/SKILL.md`](../git-history-surgery/SKILL.md) — Preserve review lineage when the branch needs rebase or recovery.
 
 ## Windows UTF-8 Note
 
