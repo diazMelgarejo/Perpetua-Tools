@@ -55,19 +55,30 @@ if [[ "$mode" == "staged" ]]; then
 else
   git diff --no-renames --name-only --diff-filter=D "$range" >"$deletions"
   review_command="git diff --name-status $range"
-  if [[ "$range" == *".."* ]]; then
-    # A genuine A..B (or A...B) range -- HEAD^ has no relationship to the
-    # range's own boundaries and can point at the wrong commit entirely for
-    # anything wider than a single-commit range. Use the range's own left
-    # side: the file was definitely present there, for any deletion this
-    # guard could have flagged within the range, even if a later commit
-    # inside the range is a more precise (but not universally safe) source.
+  if [[ "$range" == *"..."* ]]; then
+    range_left="${range%%...*}"
+    range_right="${range#*...}"
+    range_start="$(git merge-base "$range_left" "$range_right" 2>/dev/null || true)"
+    if [[ -n "$range_start" ]]; then
+      restore_command="git restore --source=$range_start --staged --worktree -- <path>"
+    else
+      restore_command="review the merge-base manually before restoring <path>"
+    fi
+  elif [[ "$range" == *".."* ]]; then
+    # A two-dot A..B range compares A to B, so A is the correct baseline for
+    # an accidental deletion restore hint. HEAD^ may point at an unrelated
+    # commit when the reviewed range is wider than one commit.
     range_start="${range%%..*}"
     restore_command="git restore --source=$range_start --staged --worktree -- <path>"
   else
-    # A single ref, not a range -- the original HEAD^-relative-to-that-ref
-    # assumption is well-defined here.
-    restore_command="git restore --source=${range}^ --staged --worktree -- <path>"
+    # A single ref, not a range -- the original parent-relative assumption is
+    # well-defined only when the ref has a parent. Root-commit callers should
+    # use an explicit empty-tree range instead.
+    if git rev-parse --verify "${range}^" >/dev/null 2>&1; then
+      restore_command="git restore --source=${range}^ --staged --worktree -- <path>"
+    else
+      restore_command="review the root-commit deletion manually before restoring <path>"
+    fi
   fi
 fi
 
