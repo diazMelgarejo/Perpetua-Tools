@@ -34,7 +34,8 @@
     ],
     "Perpetua-Tools": [
       "dependabot[bot]@users.noreply.github.com",
-      "coderabbitai[bot]@users.noreply.github.com"
+      "coderabbitai[bot]@users.noreply.github.com",
+      "github-actions[bot]@users.noreply.github.com"
     ]
   }
 }
