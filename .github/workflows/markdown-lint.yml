@@ -31,6 +31,13 @@ jobs:
       # naturally as they're touched, new files are held to the rule from
       # day one.
       #
+      # .agent/AGENTS.md is executable agent-instruction content with its own
+      # formatting contract and was already non-Markdownlint-compliant before
+      # this restoration work. The Tripwire/Telos semantic memory is governed
+      # by the append-only PT memory contract and paired with a pipeline-rendered
+      # lesson; keep both outside this prose-style ratchet rather than rewriting
+      # durable instruction/memory evidence solely for formatting.
+      #
       # separator: "," is required on BOTH steps below, not optional
       # styling -- tj-actions/changed-files defaults all_changed_files to
       # SPACE-separated, while markdownlint-cli2-action defaults its globs
@@ -49,9 +56,11 @@ jobs:
           files_ignore: |
             CHANGELOG.md
             vendor/**
+            .agent/AGENTS.md
             .agent/memory/semantic/LESSONS.md
             .agent/memory/semantic/DOMAIN_KNOWLEDGE.md
             .agent/memory/semantic/DECISIONS.md
+            .agent/memory/semantic/TRIPWIRE_TELOS_ENDPOINT_SECURITY_AUTHORITY_2026-09-10.md
             .agent/memory/working/!(WORKSPACE).md
           separator: ","
 

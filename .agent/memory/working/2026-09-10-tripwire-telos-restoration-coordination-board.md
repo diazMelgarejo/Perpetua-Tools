@@ -1,189 +1,239 @@
 # Coordination Board — Tripwire → Telos Restoration — 2026-09-10
 
-> **READ FIRST:** `.agent/memory/semantic/TRIPWIRE_TELOS_ENDPOINT_SECURITY_AUTHORITY_2026-09-10.md`
+> **READ FIRST — durable authority:**
 >
-> That semantic memory is the durable architecture rule. This board is the
-> execution/status projection for cross-agent coordination.
+> 1. `.agent/memory/semantic/TRIPWIRE_TELOS_ENDPOINT_SECURITY_AUTHORITY_2026-09-10.md`
+> 2. canonical graduated lesson: `lesson_5efb8cefb8af`
+> 3. `.agent/memory/semantic/LESSONS.md` (rendered by the canonical PT memory pipeline; do not hand-edit)
+>
+> This board is the current execution/status projection. The semantic memory and
+> graduated lesson carry the durable rule.
 
 ## Mission
 
-Restore and preserve the accepted 2026-08-29 architecture: Telos is the sole
-reusable v2 endpoint-security authority succeeding Tripwire. Eliminate
-semantic-only Telos interpretations and permanent consumer-owned secure
-connectors without breaking the v1/v2 regime boundary.
+Restore and preserve the accepted 2026-08-29 architecture: `oramasys/telos` is
+the sole reusable v2 endpoint-security authority succeeding Tripwire. Eliminate
+the semantic-only Telos interpretation and permanent consumer-owned secure
+connectors without violating the v1/v2 clean-room boundary.
 
 ## Canonical ownership
 
-| Repository / owner | Authority |
+| Repository / owner | Canonical authority |
 | --- | --- |
-| `oramasys/telos` | **ALL endpoint-specific security**: identity, SSRF/address policy, DNS/rebinding, pinning, redirect/proxy/TLS destination safety, endpoint-use authorization |
-| `oramasys/phylax` | generic security/safety admission, provenance/integrity/redaction, generic runtime-check and monitorability substrate |
-| `oramasys/oramasys` | application/workflow composition, provider-purpose/port policy, route/budget/effect policy |
-| `oramasys/Claude-Desktop-LLM` | Ollama/LM Studio protocol, lifecycle, readiness, provider-native observability; **consumer of Telos** |
-| `oramasys/agate` | hardware capability, fit, placement evidence |
+| `oramasys/telos` | **ALL endpoint-specific security**: endpoint identity, SSRF/address policy, DNS/rebinding, connection pinning, redirect/proxy/TLS destination safety, endpoint-use authorization |
+| `oramasys/phylax` | generic compile/runtime security and safety admission, provenance/integrity/redaction, generic runtime-check and monitorability substrate |
+| `oramasys/oramasys` | application/workflow composition, route/budget/effect and provider-purpose policy; consumer of Telos for endpoint security |
+| `oramasys/Claude-Desktop-LLM` | Ollama/LM Studio protocol, lifecycle, readiness and provider-native observability; consumer of Telos |
+| `oramasys/agate` | hardware capability/fit/placement evidence |
 | `oramasys/perpetua-core` | irreducible execution mechanics |
-| PT v1 | independent v1 endpoint security in its own regime; parity/provenance evidence for v2 only |
+| PT v1 | independent v1 endpoint security in its own regime; clean-room parity/provenance evidence for v2 only |
 
-## Current restoration PRs
+**Ownership versus enforcement:** the ownership table is canonical now. It does
+not imply that every historical outbound path has already been migrated. A path
+is Telos-enforced only after an explicit consumer migration and verification.
 
-| Repo | PR / branch | Current head recorded by this board | Status / action |
+## Verified restoration PRs
+
+| Repo | PR / branch | Exact verified head | Verification |
 | --- | --- | --- | --- |
-| `oramasys/telos` | PR #1 / `2026-09-10-restore-tripwire-endpoint-authority` | `5c1d341b9b7b18703228dd27c81d5149495b418a` | full Tripwire/Telos implementation + harmonized evidence/errata; do not merge without owner command |
-| `oramasys/Claude-Desktop-LLM` | PR #1 / `2026-09-10-transfer-endpoint-security-to-telos` | `6a602e8786708dbe62a112360ddde4ba63b8c3ad` | local secure connector transferred to Telos bridge; exact-head CI success |
-| `oramasys/phylax` | PR #1 / `2026-09-10-restore-apache2-telos-boundary` | `cbdded2c556867d3867b2b8b071a333d025737cf` | Apache-2.0 + explicit Telos endpoint exclusion; runtime code unchanged |
-| `diazMelgarejo/orama-system` | PR #351 / `docs/v2-audit-migration-harmonization-20260909` | re-fetch before edits | reused canonical docs/errata PR; never create a competing restoration docs PR |
-| `diazMelgarejo/Perpetua-Tools` | PR #382 / `gate4/halfb-dialer-adoption-20260907` | this board's containing PR head | v1 dialer parity + durable restoration memory; v1 remains independent |
+| `oramasys/telos` | PR #1 / `2026-09-10-restore-tripwire-endpoint-authority` | `509d38299011d82f8df14e577169898bdebc344c` | CI run `34407975637`: Python 3.11 + 3.12 success; 29/29 tests; 88.38% coverage on 3.11; compile smoke success; no review threads |
+| `oramasys/Claude-Desktop-LLM` | PR #1 / `2026-09-10-transfer-endpoint-security-to-telos` | `6a602e8786708dbe62a112360ddde4ba63b8c3ad` | CI run `34407097945`: success; no review threads |
+| `oramasys/phylax` | PR #1 / `2026-09-10-restore-apache2-telos-boundary` | `9c5ad79e95c0400a0e24ef7c4f5d6fd90a9b27c5` | CI run `34407316622`: success; no review threads |
+| `diazMelgarejo/orama-system` | PR #351 / `docs/v2-audit-migration-harmonization-20260909` | re-fetch before every edit; ADR 62 correction commit `42bef136120eaadd311ab2e21a7f17d2db1017ba`; enforcement-clarity fix `b33da9908f0aa33ffeb760ec7742c7016b12c0bf` | existing PR reused; CodeRabbit enforcement finding resolved; exact-head CI controls readiness |
+| `diazMelgarejo/Perpetua-Tools` | PR #382 / `gate4/halfb-dialer-adoption-20260907` | re-fetch current head; canonical lesson generation commit `6a8bc5faf8abf274932e9ee5b80d45781935a9d8` | `learn.py` → `graduate.py` pipeline completed; JSONL validation succeeded; rendered memory generated by tooling |
+
+No PR in this board is authorized to merge merely because it is verified.
+Explicit owner merge instruction remains required.
+
+## Canonical PT memory record
+
+### Human-readable semantic memory
+
+`.agent/memory/semantic/TRIPWIRE_TELOS_ENDPOINT_SECURITY_AUTHORITY_2026-09-10.md`
+
+### Machine-retrievable graduated lesson
+
+`lesson_5efb8cefb8af`
+
+Claim:
+
+> Telos is the sole reusable v2 endpoint-security authority succeeding Tripwire;
+> it owns endpoint identity, SSRF and DNS-rebinding defense, pinned transport,
+> redirect, proxy and TLS destination safety, and endpoint-use authorization,
+> while PT remains an independent v1 authority and v2 consumers must not
+> reimplement secure connectors.
+
+The lesson was generated through PT's canonical `.agent/tools/learn.py` and
+`graduate.py` path. The pipeline appended the episodic evidence, appended the
+semantic JSONL record, regenerated `LESSONS.md`, moved the candidate to
+`memory/candidates/graduated/5efb8cefb8af.json`, validated JSONL, committed, and
+pushed it to PR #382.
+
+Evidence timestamp:
+`2026-09-09T21:41:38.100378+00:00`.
 
 ## Implemented Telos parity contract
 
-The restored Telos branch includes:
+The restored Telos implementation contains:
 
-- normalized `EndpointRef` without caller-trusted `is_public`;
-- Telos-produced `EndpointIdentity` bound to vetted addresses;
-- all-answer DNS validation and fail-closed mixed trust classes;
-- loopback/private/link-local/multicast/unspecified/special-use/metadata handling;
+- canonical HTTP/HTTPS endpoint identity and IDNA hostname normalization;
+- no caller-trusted public/private classification;
+- every DNS A/AAAA answer validated before dispatch;
+- cloud metadata, loopback/private policy, link-local, multicast, unspecified,
+  special-use and transition-network protections;
 - IPv4-mapped IPv6 normalization;
-- public HTTPS policy where configured;
-- purpose semantic authorization distinct from transport admission;
-- pinned HTTP(S) connection to vetted IP;
+- CGNAT `100.64.0.0/10` treatment;
+- 6to4 relay anycast `192.88.99.0/24` denial;
+- Teredo `2001::/32` and 6to4 `2002::/16` denial;
+- semantic endpoint authorization distinct from transport admission;
+- pinned HTTP(S) connections to vetted IPs;
 - post-connect peer equality verification;
-- authoritative HTTP Host and TLS SNI identity;
+- authoritative HTTP `Host` and TLS SNI using canonical endpoint identity;
 - direct transport that does not honor environment proxies;
-- redirect re-entry through identity/resolution/transport/semantic policy;
-- 301/302/303 → GET + body drop;
+- redirect re-entry through identity, DNS, transport and semantic authorization;
+- 301/302/303 → GET + body/body-header removal;
 - 307/308 method/body preservation;
-- cross-origin Authorization/Cookie/Proxy-Authorization stripping;
-- bounded redirects, timeouts, and cooperative cancellation boundaries;
+- cross-origin stripping of `Authorization`, `Cookie`, and `Proxy-Authorization`;
+- bounded redirects and socket/read deadlines;
+- cooperative cancellation before network work and at redirect re-entry;
 - language-neutral JSONL bridge for non-Python consumers.
 
-Verification before docs-only harmonization: **28 passing tests, 91.29% line
-coverage**. Project floor is >=80%; stricter component thresholds are binding
-and MUST NOT be lowered.
+### Telos verification
+
+Exact head: `509d38299011d82f8df14e577169898bdebc344c`.
+
+GitHub Actions matrix run `34407975637`:
+
+- Python 3.11: success;
+- Python 3.12: success;
+- Python 3.11 suite: **29 passed**;
+- Python 3.11 total line coverage: **88.38%**;
+- required floor: **80%**;
+- `compileall`: success.
+
+The earlier CI failure was a test-double portability defect: a fake TLS context
+lacked stdlib `SSLContext.verify_mode`. Production transport was not weakened;
+the fake context was corrected and the matrix rerun succeeded.
 
 ## Claude consumer-transfer rule
 
-`Claude-Desktop-LLM/src/policy/endpoint-policy.ts` is now only a compatibility
-facade. Endpoint-security execution goes through `TelosBridgeClient` /
-`python -m telos.bridge`.
+`Claude-Desktop-LLM/src/policy/endpoint-policy.ts` is now a provider-facing
+compatibility facade. Endpoint-security execution goes through the Telos bridge.
 
 Rules:
 
 - no direct-fetch fallback;
-- each provider is restricted to its configured `baseUrl` as an allowed
-  endpoint;
-- remote opt-in/host lists are operator intent passed to Telos;
-- provider protocol tests may inject a deterministic Telos transport double,
-  but production must not inject a policy-bypassing connector;
-- Node 22 CI enforces >=80% line/function/branch coverage.
+- provider protocol/lifecycle remains in Claude-Desktop-LLM;
+- exact configured provider endpoints are passed as operator/application intent;
+- policy decisions, DNS, pinning, redirects, proxy and TLS destination safety
+  remain Telos-owned;
+- provider tests may inject a deterministic Telos transport double, but must not
+  duplicate Telos policy semantics;
+- >=80% line/function/branch coverage remains binding, with higher thresholds
+  never lowered.
 
-Exact-head `6a602e8786708dbe62a112360ddde4ba63b8c3ad` CI: **success**.
+Exact verified head: `6a602e8786708dbe62a112360ddde4ba63b8c3ad`.
+CI run `34407097945`: success.
 
 ## Phylax correction rule
 
-Phylax uses Apache-2.0 and explicitly excludes:
+Phylax is Apache-2.0 and explicitly excludes endpoint-specific security.
 
-- URL parsing/canonicalization;
-- SSRF/IP classification;
-- DNS resolution/rebinding protection;
-- pinning/dialer/socket behavior;
-- redirect/proxy/TLS destination policy;
-- endpoint semantic authorization.
+It owns generic compile/runtime security, safety admission, provenance,
+integrity/redaction and generic runtime-check/monitorability mechanisms.
 
-All of those belong to Telos. Phylax retains generic security/safety admission,
-provenance/integrity/redaction, and generic runtime-check/monitorability
-mechanisms.
+It does **not** own URL identity, SSRF classification, DNS/rebinding, pinning,
+redirect/proxy/TLS destination policy, or endpoint-use authorization.
 
-## PT PR #382 interpretation
+Exact verified head: `9c5ad79e95c0400a0e24ef7c4f5d6fd90a9b27c5`.
+CI run `34407316622`: success.
 
-PT PR #382 remains valid v1 hardening. Its native DNS/classification checks are
-required because v1 never imports v2 packages.
+## Orama ADR 62 / documentation rule
 
-Do **not** interpret its parity with the Oramasys Gateway dialer as granting PT
-or Oramasys steady-state v2 endpoint-security authority. In v2, the owner is
-Telos.
+`diazMelgarejo/orama-system` PR #351 remains the single restoration docs PR.
+
+ADR 62 now states:
+
+- 2026-08-29 design remains canonical;
+- semantic-only September Telos scaffold was implementation drift;
+- Telos is the steady-state endpoint-security owner;
+- PT is v1-only/runtime-independent and v2 evidence only;
+- Claude is a Telos consumer;
+- Oramasys Gateway's dedicated dialer is transitional implementation evidence,
+  not a second authority;
+- Telos and Phylax are Apache-2.0;
+- unrelated external citations cannot establish private repo facts.
+
+E10 explicitly distinguishes **canonical ownership** from **migration
+completion/enforcement**. Direct legacy/current `curl`, `urllib`, `httpx`, and
+Gateway outbound paths are not automatically Telos-enforced merely because the
+architecture assigns ownership to Telos.
 
 ## Oramasys Gateway Lifecycle migration dependency
 
-Current source:
+`oramasys/oramasys/src/orama/gateway/dialer.py` is still a transitional v2
+consumer-migration target. It contains strong parity evidence, much of which has
+now been absorbed into Telos, but it still owns DNS/classification/connector
+behavior under the old semantic-only contract.
 
-`oramasys/oramasys/src/orama/gateway/dialer.py`
+Do not perform a cosmetic dependency bump. Its consumer contract must be
+rewritten deliberately so that:
 
-Current behavior contains valuable parity vectors but was designed under the
-wrong semantic-only Telos scaffold. It still owns DNS/classification/connector
-logic and consumes caller-supplied `EndpointRef.is_public`.
+- Oramasys retains application/provider purpose and port policy;
+- Telos owns endpoint identity, DNS/address classification and secure transport;
+- caller-supplied `EndpointRef.is_public` does not return as trusted evidence;
+- lifecycle/provider behavior remains testable and fail-closed.
 
-### Preserve as parity evidence
-
-- CGNAT `100.64.0.0/10`;
-- 6to4 relay anycast `192.88.99.0/24`;
-- Teredo `2001::/32`;
-- 6to4 `2002::/16`;
-- validate every A/AAAA answer;
-- bounded DNS + connector timeout;
-- IPv4-mapped IPv6 handling.
-
-### Migration constraint
-
-Do not merely bump the Telos dependency SHA. The restored Telos contract removes
-caller-trusted `EndpointRef.is_public`, so Gateway Lifecycle requires an
-explicit consumer-contract rewrite. Oramasys may retain provider/application
-purpose + port policy. DNS/classification/socket-pinning must move behind Telos.
+This is an application-consumer migration dependency, not a reason to split
+endpoint-security authority again.
 
 ## License policy
 
 ```text
-oramasys/telos          Apache-2.0
-oramasys/phylax         Apache-2.0
-PT endpoint-policy      Apache-2.0 (v1 evidence/runtime in v1)
-oramasys/oramasys       MIT
-oramasys/perpetua-core  MIT
-Claude-Desktop-LLM      MIT consumer
+oramasys/telos           Apache-2.0
+oramasys/phylax          Apache-2.0
+PT endpoint-policy       Apache-2.0 (v1 runtime/evidence)
+oramasys/oramasys        MIT
+oramasys/perpetua-core   MIT
+Claude-Desktop-LLM       MIT consumer
 ```
 
 ## Citation / evidence policy
 
-Architecture claims MUST cite repository files, commits, PR/review evidence, PT
-`.agent` memory, or explicit owner-approved decisions.
+Architecture claims MUST be grounded in repository files, exact commits,
+PR/review evidence, PT `.agent` memory, or explicit owner-approved decisions.
 
-“Document 7” is untrusted secondary synthesis due to citation contamination.
-Do not use unrelated external citations to establish private repository facts.
-Do not invent unknown author/date/tool provenance.
+“Document 7” is quarantined as untrusted secondary synthesis because unrelated
+external citations were used to support private repository claims. Do not
+invent its author/date/tool provenance; do not replace contaminated citations
+with merely plausible links.
 
 ## Hard agent rules
 
-1. **Never reimplement a secure connector outside Telos in v2.**
+1. **Never reimplement a permanent secure connector outside Telos in v2.**
 2. **Never add a direct network fallback when Telos is unavailable or denies.**
-3. **Never restore caller-supplied `is_public` as authorization evidence.**
+3. **Never restore caller-supplied `is_public` as security authority.**
 4. **Never make PT v1 depend on Telos or another v2 package.**
 5. **Never make Telos depend on PT v1 at runtime.**
-6. Keep application/provider semantics with their domain owner; use Telos for
-   endpoint-security mechanism/decision.
-7. Maintain >=80% project coverage; preserve every higher component threshold.
-8. Verify exact PR head + CI + review threads before completion claims.
-9. Fix all live review findings in cohesive batches; re-sweep after push.
-10. **Never merge unless the owner explicitly says merge.**
+6. Keep provider/application semantics with their domain owners and outsource
+   endpoint-security mechanics/decisions to Telos.
+7. Maintain >=80% project coverage; preserve every stricter component threshold.
+8. Verify exact PR head, CI and review threads before completion claims.
+9. Re-fetch after every concurrent branch update; do not overwrite another
+   agent's additive work without reconciliation.
+10. **Never merge unless the owner explicitly authorizes merge.**
 
-## Dependency / execution order
+## Retrieval / distribution cues
 
-1. Keep Telos PR #1 as the canonical implementation target.
-2. Keep Phylax PR #1 aligned to Telos exclusion/license governance.
-3. Keep Claude PR #1 as the reference non-Python consumer pattern.
-4. Rewrite the Oramasys Gateway dialer as a Telos consumer without losing its
-   application-specific port/purpose constraints or parity vectors.
-5. Reconcile Orama PR #351 with exact final heads and migration status.
-6. Keep this PT semantic memory and board cross-linked to the exact evidence.
-7. Human reviews and explicitly authorizes merges; agents do not merge.
+Before endpoint-security work, agents should retrieve:
 
-## Durable memory link
+- `lesson_5efb8cefb8af`;
+- `TRIPWIRE_TELOS_ENDPOINT_SECURITY_AUTHORITY_2026-09-10.md`;
+- this coordination board;
+- current PR heads for Telos #1, Claude-Desktop-LLM #1, Phylax #1, Orama #351,
+  and PT #382.
 
-Canonical memory path:
-
-`.agent/memory/semantic/TRIPWIRE_TELOS_ENDPOINT_SECURITY_AUTHORITY_2026-09-10.md`
-
-GitHub branch link:
-
-`https://github.com/diazMelgarejo/Perpetua-Tools/blob/gate4/halfb-dialer-adoption-20260907/.agent/memory/semantic/TRIPWIRE_TELOS_ENDPOINT_SECURITY_AUTHORITY_2026-09-10.md`
-
-If the branch/PR is later merged, prefer the merged-main location. Until then,
-verify PR #382's current head before relying on transient status fields in this
-board; the semantic ownership rule itself is durable.
+Recall triggers include Tripwire, Telos, Phylax, endpoint-policy, SSRF, DNS
+rebinding, socket pinning, metadata endpoints, redirect safety, proxy isolation,
+TLS Host/SNI, Claude provider networking, Gateway Lifecycle dialer, v1/v2
+regime separation, Apache-2.0 security satellites, and citation contamination.
