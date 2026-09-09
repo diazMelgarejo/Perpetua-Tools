@@ -105,7 +105,13 @@ required in v2, `docs/v2/48-board-job-source-line-schema.md` in
 
 ### Step-by-step
 
-1. **Simulate first — touch nothing.**
+1. **Start with read-only conflict analysis; a real trial merge needs its own worktree.**
+   Prefer read-only ref/tree/diff inspection first — a supported `git merge-tree`
+   analysis when suitable (check its version-specific behavior). `git merge
+   --no-commit --no-ff` is NOT read-only: it mutates the index/worktree and
+   `--no-commit` is not a read-only guarantee. If a real trial merge is needed,
+   perform it only in a fresh disposable worktree from the verified target tip —
+   never in a dirty or shared working checkout — and record the source/target SHAs:
    ```bash
    git merge --no-commit --no-ff <branch>
    git diff --name-only --diff-filter=U   # enumerate ALL conflicts
