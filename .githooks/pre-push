@@ -64,11 +64,16 @@ range_for_ref() {
   local local_oid="$1"
   local remote_oid="$2"
   if [[ "$remote_oid" == "$zero" ]]; then
-    local upstream_oid
+    local upstream_oid empty_tree
     if upstream_oid="$(git rev-parse --verify "$upstream_ref" 2>/dev/null)"; then
       printf '%s..%s\n' "$upstream_oid" "$local_oid"
     else
-      echo "${local_oid}"
+      # New remote ref with no usable upstream: scan the complete pushed tree
+      # from the empty tree to local_oid. This covers one-commit, multi-commit,
+      # and root-commit initial pushes without falling back to a working-tree
+      # comparison that can miss committed deletions.
+      empty_tree="$(git hash-object -t tree /dev/null)"
+      printf '%s..%s\n' "$empty_tree" "$local_oid"
     fi
   else
     echo "${remote_oid}..${local_oid}"
