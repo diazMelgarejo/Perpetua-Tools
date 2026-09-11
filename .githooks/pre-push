@@ -68,12 +68,60 @@ range_for_ref() {
     if upstream_oid="$(git rev-parse --verify "$upstream_ref" 2>/dev/null)"; then
       printf '%s..%s\n' "$upstream_oid" "$local_oid"
     else
-      echo "${local_oid}"
+      # No authoritative upstream boundary exists. Callers that merely need
+      # the reachable pushed history can use local_oid; the deletion guard has
+      # a dedicated per-commit scanner below so committed deletions cannot be
+      # hidden by the final tree.
+      printf '%s\n' "$local_oid"
     fi
   else
-    echo "${remote_oid}..${local_oid}"
+    printf '%s..%s\n' "$remote_oid" "$local_oid"
   fi
 }
+
+# A commit can be created in a clone without hooks. Re-check every outgoing
+# range at publication time so the final remote tree cannot silently drop a
+# tracked file. For a brand-new remote ref with no usable upstream there is no
+# trustworthy range boundary, so inspect each reachable commit transition:
+# empty-tree -> root for roots, then parent -> child for ordinary commits.
+# This catches a delete hidden by a later add while allowing a clean initial
+# tree that simply does not contain unrelated historical files.
+if [[ ! -x "$ROOT/scripts/git/check_file_deletion_guard.sh" ]]; then
+  echo "pre-push: blocked — check_file_deletion_guard.sh missing or not executable" >&2
+  exit 1
+fi
+
+check_deletions_for_ref() {
+  local local_oid="$1"
+  local remote_oid="$2"
+  local upstream_oid empty_tree sha parent
+
+  if [[ "$remote_oid" != "$zero" ]]; then
+    bash "$ROOT/scripts/git/check_file_deletion_guard.sh" --range "${remote_oid}..${local_oid}"
+    return $?
+  fi
+
+  if upstream_oid="$(git rev-parse --verify "$upstream_ref" 2>/dev/null)"; then
+    bash "$ROOT/scripts/git/check_file_deletion_guard.sh" --range "${upstream_oid}..${local_oid}"
+    return $?
+  fi
+
+  empty_tree="$(git hash-object -t tree /dev/null)"
+  while IFS= read -r sha; do
+    [[ -n "$sha" ]] || continue
+    if parent="$(git rev-parse --verify "${sha}^" 2>/dev/null)"; then
+      bash "$ROOT/scripts/git/check_file_deletion_guard.sh" --range "${parent}..${sha}" || return $?
+    else
+      bash "$ROOT/scripts/git/check_file_deletion_guard.sh" --range "${empty_tree}..${sha}" || return $?
+    fi
+  done < <(git rev-list --reverse "$local_oid")
+}
+
+while read -r local_ref local_oid remote_ref remote_oid; do
+  [[ "$local_ref" =~ refs/heads/ ]] || continue
+  [[ "$local_oid" == "$zero" ]] && continue
+  check_deletions_for_ref "$local_oid" "$remote_oid" || exit $?
+done <"$push_refs"
 
 audit_range_for_ref() {
   local local_oid="$1"

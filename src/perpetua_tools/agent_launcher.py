@@ -29,9 +29,13 @@ import ipaddress
 import socket
 import time
 from collections import deque
+from collections.abc import AsyncIterable, AsyncIterator, Iterable
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Protocol, cast
 from urllib.parse import urlparse
 
+import httpcore
 from utils.hardware_policy import HardwareAffinityError, check_affinity
 from utils.endpoint_policy_core import build_transport_url
 from utils.model_endpoint_url import (
@@ -93,6 +97,256 @@ def _is_loopback_host(host: str) -> bool:
         return ipaddress.ip_address(host).is_loopback
     except ValueError:
         return False
+
+
+# ---------------------------------------------------------------------------
+# DNS-resolution + address-class validation for the model-server dial paths.
+#
+# Gate 2 (orama-system docs/v2/64) named this gap precisely: syntactic
+# validation (validate_model_endpoint_url) checks the URL's *text*, never
+# what its host actually *resolves to* -- a hostname that looks harmless can
+# still resolve to a prohibited address (cloud metadata, Teredo/6to4-encoded
+# addresses, CGNAT/6to4-relay shared space). This mirrors -- does not
+# import -- the classification rules oramasys/oramasys's
+# src/orama/gateway/dialer.py enforces for the v2 Gateway Lifecycle dialer
+# (Gate 4 Half A); PT never depends on a v2 package, per the v1/v2 regime
+# boundary, so the same rules are reimplemented natively here instead.
+# ---------------------------------------------------------------------------
+
+_IPV4_PROHIBITED_NETWORKS = (
+    ipaddress.ip_network("100.64.0.0/10"),   # CGNAT (RFC 6598)
+    ipaddress.ip_network("192.88.99.0/24"),  # 6to4 relay anycast (RFC 3068)
+)
+_IPV6_PROHIBITED_NETWORKS = (
+    ipaddress.ip_network("2001::/32"),  # Teredo
+    ipaddress.ip_network("2002::/16"),  # 6to4
+)
+
+
+def _is_dialable_address(address_text: str) -> bool:
+    """Return True if *address_text* is safe for agent_launcher.py to dial.
+
+    Loopback is always safe (checked first: CPython's ipaddress module
+    reports IPv6 loopback ``::1`` as ``is_reserved == True``, which would
+    otherwise reject the most common local target -- the same interpreter
+    quirk closed in the v2 dialer this mirrors). RFC1918/ULA private ranges
+    are safe -- this repo's entire LAN-discovery model assumes private-
+    network model servers. Everything else -- unspecified, multicast,
+    link-local (including the cloud-metadata address), reserved, Teredo,
+    6to4, 6to4-relay-anycast, CGNAT, and any other public-routable address
+    -- is rejected: agent_launcher.py's dial targets are always configured
+    LAN/loopback endpoints, never a caller-opted-in public model server (PT
+    has no equivalent of Telos's ``allow_public`` opt-in at this layer).
+    """
+    address = ipaddress.ip_address(address_text)
+    if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped:
+        address = address.ipv4_mapped
+    if address.is_loopback:
+        return True
+    prohibited_networks = (
+        _IPV6_PROHIBITED_NETWORKS
+        if isinstance(address, ipaddress.IPv6Address)
+        else _IPV4_PROHIBITED_NETWORKS
+    )
+    if (
+        address.is_unspecified
+        or address.is_multicast
+        or address.is_link_local
+        or address.is_reserved
+        or any(address in network for network in prohibited_networks)
+    ):
+        return False
+    return address.is_private
+
+
+@dataclass(frozen=True)
+class _ValidatedDialTarget:
+    """A resolve-once model-server destination.
+
+    ``origin_url`` keeps the configured hostname for HTTP Host and TLS SNI;
+    ``resolved_address`` is the only address the transport may connect to.
+    """
+
+    origin_url: str
+    hostname: str
+    resolved_address: str
+
+
+class _PinnedAsyncNetworkBackend(httpcore.AsyncNetworkBackend):
+    """Connect only to one validated address while retaining the URL origin."""
+
+    def __init__(
+        self,
+        *,
+        hostname: str,
+        resolved_address: str,
+        delegate: httpcore.AsyncNetworkBackend | None = None,
+    ) -> None:
+        self._hostname = hostname.casefold()
+        self._resolved_address = resolved_address
+        self._delegate = delegate or httpcore.AnyIOBackend()
+
+    async def connect_tcp(
+        self,
+        host: str,
+        port: int,
+        timeout: float | None = None,
+        local_address: str | None = None,
+        socket_options: Iterable[httpcore.SOCKET_OPTION] | None = None,
+    ) -> httpcore.AsyncNetworkStream:
+        if host.casefold() != self._hostname:
+            raise RuntimeError("pinned transport received an unexpected hostname")
+        return await self._delegate.connect_tcp(
+            self._resolved_address,
+            port,
+            timeout=timeout,
+            local_address=local_address,
+            socket_options=socket_options,
+        )
+
+    async def connect_unix_socket(
+        self,
+        path: str,
+        timeout: float | None = None,
+        socket_options: Iterable[httpcore.SOCKET_OPTION] | None = None,
+    ) -> httpcore.AsyncNetworkStream:
+        return await self._delegate.connect_unix_socket(
+            path,
+            timeout=timeout,
+            socket_options=socket_options,
+        )
+
+    async def sleep(self, seconds: float) -> None:
+        await self._delegate.sleep(seconds)
+
+
+class _HttpcoreAsyncStream(Protocol):
+    def __aiter__(self) -> AsyncIterator[bytes]: ...
+
+    async def aclose(self) -> None: ...
+
+
+class _HttpcoreAsyncByteStream(httpx.AsyncByteStream):
+    def __init__(self, stream: _HttpcoreAsyncStream) -> None:
+        self._stream = stream
+
+    async def __aiter__(self) -> AsyncIterator[bytes]:
+        async for part in self._stream:
+            yield part
+
+    async def aclose(self) -> None:
+        await self._stream.aclose()
+
+
+class _PinnedAsyncHTTPTransport(httpx.AsyncBaseTransport):
+    """HTTPX transport that connects to a validated IP without rewriting URLs."""
+
+    def __init__(self, target: _ValidatedDialTarget) -> None:
+        self._pool = httpcore.AsyncConnectionPool(
+            network_backend=_PinnedAsyncNetworkBackend(
+                hostname=target.hostname,
+                resolved_address=target.resolved_address,
+            ),
+            max_connections=1,
+            max_keepalive_connections=0,
+        )
+
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        core_request = httpcore.Request(
+            method=request.method,
+            url=httpcore.URL(
+                scheme=request.url.raw_scheme,
+                host=request.url.raw_host,
+                port=request.url.port,
+                target=request.url.raw_path,
+            ),
+            headers=request.headers.raw,
+            content=request.stream,
+            extensions=request.extensions,
+        )
+        core_response = await self._pool.handle_async_request(core_request)
+        assert isinstance(core_response.stream, AsyncIterable)
+        return httpx.Response(
+            status_code=core_response.status,
+            headers=core_response.headers,
+            stream=_HttpcoreAsyncByteStream(cast(_HttpcoreAsyncStream, core_response.stream)),
+            extensions=core_response.extensions,
+        )
+
+    async def aclose(self) -> None:
+        await self._pool.aclose()
+
+
+def _resolve_and_pin_dial_host(url: str) -> _ValidatedDialTarget:
+    """Resolve *url*'s host via DNS and reject if any resolved address is
+    outside the allowed local/private classes (see ``_is_dialable_address``).
+    Returns a target containing the original URL and one validated IP address.
+    The caller must connect only through ``_PinnedAsyncHTTPTransport`` so a
+    DNS answer cannot change between validation and connection. Raises
+    ``ValueError`` with a stable, redacted message on rejection or DNS failure.
+    """
+    parsed = urlparse(url)
+    host = parsed.hostname
+    if parsed.scheme.lower() not in {"http", "https"} or not host:
+        raise ValueError(f"cannot parse a host from {redact_endpoint_for_log(url)}")
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except socket.gaierror as exc:
+        raise ValueError(
+            f"DNS resolution failed for {redact_endpoint_for_log(url)}: {exc}"
+        ) from exc
+    resolved_addresses: list[str] = []
+    for info in infos:
+        address_text = info[4][0]
+        if not isinstance(address_text, str):
+            raise ValueError(f"DNS resolution returned an invalid address for {redact_endpoint_for_log(url)}")
+        if not _is_dialable_address(address_text):
+            raise ValueError(
+                f"{redact_endpoint_for_log(url)} resolves to a prohibited or "
+                f"public address; refusing to dial"
+            )
+        resolved_addresses.append(address_text)
+    if not resolved_addresses:
+        raise ValueError(
+            f"DNS resolution returned no addresses for {redact_endpoint_for_log(url)}"
+        )
+    return _ValidatedDialTarget(
+        origin_url=url,
+        hostname=host,
+        resolved_address=resolved_addresses[0],
+    )
+
+
+def resolve_and_validate_dial_host(url: str) -> str:
+    """Preserve the legacy validation-only API for existing launcher callers."""
+    _resolve_and_pin_dial_host(url)
+    return url
+
+
+async def _pinned_get(
+    target: _ValidatedDialTarget,
+    path: str,
+    *,
+    timeout: int,
+    headers: dict[str, str] | None = None,
+) -> httpx.Response:
+    """Issue one no-redirect request through the target's pinned transport."""
+    async with httpx.AsyncClient(
+        timeout=timeout,
+        transport=_PinnedAsyncHTTPTransport(target),
+        follow_redirects=False,
+        trust_env=False,
+    ) as client:
+        return await client.get(
+            f"{target.origin_url.rstrip('/')}{path}", headers=headers
+        )
+
+
+def _lmstudio_auth_headers(target: _ValidatedDialTarget) -> dict[str, str]:
+    """Never forward an LM Studio bearer token over cleartext HTTP."""
+    if LMS_API_TOKEN and urlparse(target.origin_url).scheme.lower() == "https":
+        return {"Authorization": f"Bearer {LMS_API_TOKEN}"}
+    return {}
 
 
 def _safe_port(parsed, default: int) -> int:
@@ -350,8 +604,9 @@ def resolve_local_or_remote(
                     return f"http://localhost:{_safe_port(parsed, port)}"
             remote_url = override if "://" in override else f"http://{override}"
             try:
-                return validate_model_endpoint_url(remote_url)
-            except ModelEndpointPolicyError as exc:
+                validated = validate_model_endpoint_url(remote_url)
+                return resolve_and_validate_dial_host(validated)
+            except (ModelEndpointPolicyError, ValueError) as exc:
                 _launcher_logger.warning(
                     "resolve_local_or_remote: %s=%s rejected by endpoint policy (%s) "
                     "-- falling back to fallback_ip",
@@ -364,8 +619,9 @@ def resolve_local_or_remote(
     fallback_url = build_transport_url(fallback_ip or "127.0.0.1", port)
     if fallback_url:
         try:
-            return validate_model_endpoint_url(fallback_url)
-        except ModelEndpointPolicyError as exc:
+            validated = validate_model_endpoint_url(fallback_url)
+            return resolve_and_validate_dial_host(validated)
+        except (ModelEndpointPolicyError, ValueError) as exc:
             _launcher_logger.warning(
                 "resolve_local_or_remote: fallback_ip rejected by endpoint policy (%s) "
                 "-- using loopback fallback",
@@ -534,16 +790,23 @@ async def check_remote_worker(
 
     Retries once (2 s gap) when the first attempt fails with a connection
     error — catches backends that are mid-boot. Returns (False, None) if all
-    attempts fail.
+    attempts fail. DNS-resolves and address-classifies base_url before any
+    dial (Gate 2 finding: base_url is a launcher-configured LAN endpoint,
+    not request-time input, but was previously dialed with zero validation
+    of any kind -- not even the syntactic check other call sites use).
     """
+    try:
+        target = await asyncio.to_thread(_resolve_and_pin_dial_host, base_url)
+    except ValueError as exc:
+        _launcher_logger.warning("check_remote_worker: refusing to dial (%s)", exc)
+        return False, None
     for attempt in range(_retries + 1):
         t0 = time.monotonic()
         try:
-            async with httpx.AsyncClient(timeout=timeout) as client:
-                resp = await client.get(f"{base_url}/api/tags")
-                if resp.status_code == 200:
-                    latency = int((time.monotonic() - t0) * 1000)
-                    return True, latency
+            resp = await _pinned_get(target, "/api/tags", timeout=timeout)
+            if resp.status_code == 200:
+                latency = int((time.monotonic() - t0) * 1000)
+                return True, latency
         except Exception:
             pass
         if attempt < _retries:
@@ -559,20 +822,26 @@ async def check_lmstudio_worker(
 ) -> tuple[bool, int | None]:
     """Return (reachable, latency_ms) for the LM Studio instance at base_url.
 
-    Passes LM_STUDIO_API_TOKEN as Bearer if set, so secured deployments are
-    not misreported as unreachable. Retries once (2 s gap) to catch backends
-    still booting.
+    Passes LM_STUDIO_API_TOKEN as Bearer only over HTTPS, so cleartext
+    endpoints cannot receive credentials. Retries once (2 s gap) to catch
+    backends still booting. DNS-resolves, address-classifies, and IP-pins
+    base_url before any dial, including before the Bearer token is attached.
     """
-    url = f"{base_url.rstrip('/')}/v1/models"
-    headers = {"Authorization": f"Bearer {LMS_API_TOKEN}"} if LMS_API_TOKEN else {}
+    try:
+        target = await asyncio.to_thread(_resolve_and_pin_dial_host, base_url)
+    except ValueError as exc:
+        _launcher_logger.warning("check_lmstudio_worker: refusing to dial (%s)", exc)
+        return False, None
+    headers = _lmstudio_auth_headers(target)
     for attempt in range(_retries + 1):
         t0 = time.monotonic()
         try:
-            async with httpx.AsyncClient(timeout=timeout) as client:
-                resp = await client.get(url, headers=headers)
-                if resp.status_code < 400:
-                    latency = int((time.monotonic() - t0) * 1000)
-                    return True, latency
+            resp = await _pinned_get(
+                target, "/v1/models", timeout=timeout, headers=headers
+            )
+            if resp.status_code < 400:
+                latency = int((time.monotonic() - t0) * 1000)
+                return True, latency
         except Exception:
             pass
         if attempt < _retries:
@@ -608,18 +877,22 @@ async def _fetch_models(
     """
     async def _ollama_tags(url: str) -> list[str]:
         try:
-            async with httpx.AsyncClient(timeout=DETECT_TIMEOUT) as c:
-                r = await c.get(f"{url}/api/tags")
-                return [m["name"] for m in r.json().get("models", [])]
+            target = await asyncio.to_thread(_resolve_and_pin_dial_host, url)
+            response = await _pinned_get(target, "/api/tags", timeout=DETECT_TIMEOUT)
+            return [m["name"] for m in response.json().get("models", [])]
         except Exception:
             return []
 
     async def _lms_models(url: str) -> list[str]:
-        hdrs = {"Authorization": f"Bearer {LMS_API_TOKEN}"} if LMS_API_TOKEN else {}
         try:
-            async with httpx.AsyncClient(timeout=DETECT_TIMEOUT) as c:
-                r = await c.get(f"{url.rstrip('/')}/v1/models", headers=hdrs)
-                return [m["id"] for m in r.json().get("data", [])]
+            target = await asyncio.to_thread(_resolve_and_pin_dial_host, url)
+            response = await _pinned_get(
+                target,
+                "/v1/models",
+                timeout=DETECT_TIMEOUT,
+                headers=_lmstudio_auth_headers(target),
+            )
+            return [m["id"] for m in response.json().get("data", [])]
         except Exception:
             return []
 

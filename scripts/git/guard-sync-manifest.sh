@@ -35,6 +35,7 @@ GUARD_SYNC_EXECUTABLES=(
   check_commit_message.sh
   check_identity.sh
   check_no_pending_merge.sh
+  check_file_deletion_guard.sh
   daily-attribution-guard.sh
   neutralize-cursor-coauthor-hook.sh
   expunge-all-workspace-repos.sh

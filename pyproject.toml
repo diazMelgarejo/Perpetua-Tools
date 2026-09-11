@@ -47,6 +47,10 @@ dependencies = [
     # Async and networking
     "aiohttp>=3.14.3",
     "httpx>=0.26.0",
+    # agent_launcher.py's Gate 4 model-server transport uses httpcore's
+    # public async network-backend interface to pin a validated TCP peer
+    # without changing the request hostname used for Host and TLS SNI.
+    "httpcore>=1.0,<2",
     # src/utils/ssrf_pinned_adapter.py (Layer-2 SSRF pinning transport, PR #359)
     # subclasses urllib3's HTTPConnectionPool/HTTPSConnectionPool via requests.adapters.HTTPAdapter.
     # >=2.32.2: CVE-2024-35195 (Session.verify=False on one request silently disabled cert

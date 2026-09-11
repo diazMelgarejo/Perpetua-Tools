@@ -46,6 +46,7 @@ WELL_KNOWN_COAUTHOR_DOMAIN_SUFFIXES=(
   codeium.com
   nousresearch.com
   kimi.ai
+  cline.bot
 )
 
 WELL_KNOWN_COAUTHOR_NAME_MARKERS=(
@@ -78,6 +79,7 @@ WELL_KNOWN_COAUTHOR_NAME_MARKERS=(
   hermes
   nousresearch
   kimi
+  cline
 )
 
 email_domain_ok() {
