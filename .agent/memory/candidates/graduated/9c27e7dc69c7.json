@@ -1,0 +1,41 @@
+{
+  "id": "9c27e7dc69c7",
+  "key": "manual_9c27e7",
+  "name": "manual_9c27e7",
+  "claim": "MiniGraph converts a graph node's Interrupt into an interrupted PerpetuaState (status=interrupted, interrupt_node/interrupt_prompt/interrupt_payload metadata), it does NOT propagate to the ainvoke caller \u2014 assert on the returned state, and never record an interrupt as a failure outcome in ledgers because it is structural HITL control flow",
+  "conditions": [
+    "graph-testing",
+    "hitl",
+    "interrupt",
+    "minigraph"
+  ],
+  "evidence_ids": [
+    "2026-09-11T21:02:07.690140+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-11T21:02:07.690140+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-11T21:02:07.690140+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-11T21:02:07.810141+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "First outbound-ledger test wrongly expected pytest.raises(Interrupt); existing transport-contract tests and a rerun against real MiniGraph semantics showed the interrupted-state shape.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-11T21:02:07.690140+00:00"
+      ],
+      "lessons_sha": "7e44fdbba180"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-11T21:02:07.810130+00:00",
+  "reviewer": "learn.py",
+  "rationale": "First outbound-ledger test wrongly expected pytest.raises(Interrupt); existing transport-contract tests and a rerun against real MiniGraph semantics showed the interrupted-state shape."
+}

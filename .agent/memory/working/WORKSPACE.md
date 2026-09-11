@@ -7,6 +7,36 @@
 
 ## Current focus
 
+### MigrationDebt-20260911/12 closure (2026-09-12)
+
+> Current session state, recorded by kimi-for-coding during the MigrationDebt program close-out.
+> The 2026-08-24 snapshot below is retained for provenance only.
+
+**Board sweep:** all stale MigrationDebt rows on the coordination board were
+closed (7 rows terminal-closed); the queue is at zero active claims. Malformed
+`depends_on` rows cannot be claimed or failed via the normal queue verbs — they
+are terminal-closed via an append-only `task_failed` bus event with
+`retry_count=max` (lesson: never delete board rows).
+
+**Publications (4 PRs awaiting operator merge):**
+
+| Area | Branch / PR | State |
+| ---- | ----------- | ----- |
+| Agate migration-debt close-out | diazMelgarejo/agate-system PR #2 | CI green, mergeable |
+| oramasys migration-debt evidence | orama-system PR #7 | open |
+| PT evidence foundations | PT `migration/pt-evidence-foundations-20260911` → PR #385 | open; carries this memory commit |
+| oramasys outbound decision ledger | orama-system PR #10 | stacked on convergence branch `baf04c1`; suite 105/105 (RED-first) |
+
+**Agate 1B contract review:** PASSED — TypeScript consumer contract review
+recorded in the OpenClaw references tree (agate-1b typescript contract review,
+2026-09-11).
+
+**Memory this session:** 4 episodic reflections + 6 graduated lessons
+(board-row terminal-close, heartbeat cleanup scope vs. queue claims, MiniGraph
+Interrupt→interrupted-state conversion, `asyncio.wait_for` empty-string
+TimeoutError translation, fresh-worktree-per-packet discipline, RED-first
+evidence capture).
+
 ### Historical observability review closure snapshot (2026-08-24)
 
 > Historical snapshot retained for provenance; this is not the current active workspace state.

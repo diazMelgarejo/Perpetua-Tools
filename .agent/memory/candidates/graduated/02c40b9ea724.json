@@ -1,0 +1,41 @@
+{
+  "id": "02c40b9ea724",
+  "key": "manual_02c40b",
+  "name": "manual_02c40b",
+  "claim": "agent_coordination heartbeat cleanup releases only legacy agent_claim rows; the distributed-queue exclusion gate (task_claims) is cleaned by heartbeat_monitor's cleanup_stale_queue_claims, and its DEAD classification can mislabel an 80h-silent agent as IDLE \u2014 verify stale queue claims manually and use the sanctioned fail-as-claimant path (queue fail <id> <claimant> then claim+complete) for dead-claimant closure",
+  "conditions": [
+    "heartbeat",
+    "liveness",
+    "stale-claim",
+    "task_claims"
+  ],
+  "evidence_ids": [
+    "2026-09-11T21:01:56.868799+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-11T21:01:56.868799+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-11T21:01:56.868799+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-11T21:01:56.988034+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "gate4-f07-port-allowlist stayed claimed after cleanup ran; heartbeat_monitor classified its 80h-silent claimant IDLE, so auto-release skipped it; manual fail path closed it cleanly.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-11T21:01:56.868799+00:00"
+      ],
+      "lessons_sha": "dce966a79411"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-11T21:01:56.988024+00:00",
+  "reviewer": "learn.py",
+  "rationale": "gate4-f07-port-allowlist stayed claimed after cleanup ran; heartbeat_monitor classified its 80h-silent claimant IDLE, so auto-release skipped it; manual fail path closed it cleanly."
+}
