@@ -1,0 +1,40 @@
+{
+  "id": "75f7eaa356e9",
+  "key": "manual_75f7ea",
+  "name": "manual_75f7ea",
+  "claim": "Before rotating any credential in response to another agent's 'push blocked by stale/exposed credential' report, verify the actual failure first: run 'gh auth status' and a 'git push --dry-run' in the current session. A report from a different agent session is frequently a shadowed/stale GITHUB_TOKEN env var in THAT session's shell, not a genuinely compromised or expired credential -- this repo's own convention of unsetting GITHUB_TOKEN before every gh/git call already avoids the failure mode being reported.",
+  "conditions": [
+    "cross-session-handoff",
+    "git-credentials",
+    "verification-before-action"
+  ],
+  "evidence_ids": [
+    "2026-09-11T21:58:07.407882+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-11T21:58:07.407882+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-11T21:58:07.407882+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-11T21:58:07.534360+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-09-12: a handoff report claimed a stale Git HTTPS credential blocked push to oramasys/agate PR #2, recommending rotation. Verified directly instead of rotating -- gh auth status showed a valid active keyring token, and a dry-run push succeeded cleanly. Pushed the actual commit with zero auth issues. Rotating a working credential on an unverified report would have been unnecessary churn and a real security-adjacent action taken without cause.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-11T21:58:07.407882+00:00"
+      ],
+      "lessons_sha": "d148d9885265"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-11T21:58:07.534350+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-09-12: a handoff report claimed a stale Git HTTPS credential blocked push to oramasys/agate PR #2, recommending rotation. Verified directly instead of rotating -- gh auth status showed a valid active keyring token, and a dry-run push succeeded cleanly. Pushed the actual commit with zero auth issues. Rotating a working credential on an unverified report would have been unnecessary churn and a real security-adjacent action taken without cause."
+}
