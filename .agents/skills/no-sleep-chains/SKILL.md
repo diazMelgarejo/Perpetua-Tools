@@ -1,6 +1,6 @@
 ---
 name: no-sleep-chains
-description: "Renamed to `shell-hygiene`. Redirect stub — use shell-hygiene: Safe shell command execution for agents in this environment. Covers two enforced gotchas: (1) sleep N && <command> chains are blocked — wait on background processes, file growth, or conditions with Monitor until-loops / run_in_background…"
+description: "Renamed to `shell-hygiene`. Redirect stub — use shell-hygiene: Safe shell command execution for agents. Covers enforced no-sleep-chain rules and zsh word-splitting behavior. Agents must use Monitor until-loops and run_in_background instead of sleep chains, and iterate command output with `while IFS=…"
 ---
 
 # no-sleep-chains → renamed to `shell-hygiene`
