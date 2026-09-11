@@ -103,3 +103,54 @@ class PeriscopeLessonSupersessionTests(unittest.TestCase):
 
         rendered = render_lessons_as_text(str(SEMANTIC))
         self.assertEqual(rendered.count("~~") % 2, 0)
+
+    def test_every_accepted_graduated_candidate_is_present_in_lessons_jsonl(self):
+        """Regression for the actual failure this suite exists to catch: a
+        commit (294f5ec9, 2026-09-09) intended to add one new lesson instead
+        net-deleted 34 lines from lessons.jsonl, silently dropping 31
+        previously-accepted records with no error, no test failure at the
+        time, and no indication anything was wrong until this file's own
+        supersession test happened to reference one of the dropped IDs.
+        Runs against the real repository's real candidate/lessons files,
+        not a synthetic fixture -- lesson_99bda2060ce7 (itself one of the
+        records this exact bug dropped) states precisely why: isolated
+        fixtures can all pass while the real tracked content silently
+        diverges, because concurrent edits accumulate content no fixture
+        modeled.
+        """
+        graduated_dir = REPO_ROOT / ".agent" / "memory" / "candidates" / "graduated"
+        lessons = _latest_lessons_by_id()
+
+        missing = []
+        for path in sorted(graduated_dir.glob("*.json")):
+            candidate = json.loads(path.read_text(encoding="utf-8"))
+            if candidate.get("status") != "accepted":
+                continue
+            expected_id = f"lesson_{candidate['id']}"
+            if expected_id not in lessons:
+                missing.append(expected_id)
+
+        self.assertEqual(
+            missing, [],
+            f"{len(missing)} accepted graduated candidate(s) are missing "
+            f"from lessons.jsonl -- the exact failure mode this test exists "
+            f"to catch: {missing}",
+        )
+
+    def test_every_supersedes_field_is_hashable(self):
+        """superseded_by_map() uses each row's supersedes value as a dict
+        key -- a list there (found during this same repair, in a candidate
+        whose claim genuinely referenced two other lessons but whose
+        supersedes field was never narrowed to the single schema-conforming
+        target) crashes rendering with an unhashable-type TypeError. Catch
+        this shape error directly, against the real file, before it can
+        reach render_lessons() and break every future regeneration."""
+        lessons = _latest_lessons_by_id()
+        bad = {
+            lid: row["supersedes"]
+            for lid, row in lessons.items()
+            if row.get("supersedes") is not None
+            and not isinstance(row["supersedes"], str)
+        }
+        self.assertEqual(bad, {}, f"non-string supersedes field(s): {bad}")
+
