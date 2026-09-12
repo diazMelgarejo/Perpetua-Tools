@@ -59,8 +59,11 @@ immediately instead of silently, had it existed first.
 
 While checking PT's recent history for *further* instances of the same
 class of bug (prompted by a direct operator question about accidental
-deletions), found a second, independent occurrence: `f1408af1` dropped
-`lessons.jsonl` from 1226 lines to 492 (735 records) and inflated
+deletions), found a second, independent occurrence: `f1408af1` reduced
+`lessons.jsonl` from 1,226 valid JSON records to a 493-physical-line blob:
+492 valid JSON records and one malformed first line with a binary prefix. The
+ID-set difference was 735 deleted IDs (not the surviving record count), and it
+inflated
 `AGENT_LEARNINGS.jsonl` from 782 to 2273 lines. The very next commit,
 `5c97b162` ("fix(memory): preserve canonical JSONL blobs"), had already
 caught and repaired it before this session found it.
@@ -151,31 +154,36 @@ result:
 
 ```python
 import base64
-raw_data = b"A" * 10000
+raw_data = b"A" * (12288 * 2 + 1)
 
 # Multiple of 3: 12288 = 4096 * 3
 chunks_good = [raw_data[i:i+12288] for i in range(0, len(raw_data), 12288)]
 encoded_good = [base64.b64encode(c) for c in chunks_good]
+decoded_good = base64.b64decode(b"".join(encoded_good), validate=True)
+assert decoded_good == raw_data
 # -> no padding in any non-final chunk; naive concatenation decodes
-#    back to the original 10000 bytes exactly.
+#    back to the original bytes exactly.
 
 # NOT a multiple of 3: 7000
 chunks_bad = [raw_data[i:i+7000] for i in range(0, len(raw_data), 7000)]
 encoded_bad = [base64.b64encode(c) for c in chunks_bad]
 # -> the first chunk's encoding ends in '=' padding even though more
-#    data follows; naive concatenation decodes to exactly 7000 bytes,
-#    silently dropping the remaining 3000. No exception at any step.
+#    data follows; the strict Python decoder rejects the concatenated stream.
+#    This is deliberately a decoder-specific reproduction, not a claim about
+#    every decoder or a safe substitute for length/hash verification.
 ```
 
-This confirms the mechanism precisely: Base64 encodes 3 raw bytes into 4
-output characters. A chunk boundary that doesn't land on a multiple of 3
-forces that chunk's own encoding to end in padding (`=`), which is a
-decoder's end-of-stream signal — concatenating a padded, non-final chunk
-with more chunks after it produces a stream a standards-conformant decoder
-treats as complete at the first padding marker. The output is short,
-not corrupted-looking — a plausible byte count for a truncated file, which
-is exactly why the 79-byte payload didn't visually scream "something is
-wrong" the way a garbled string might.
+This confirms only the reproduced producer/decoder contract: Python
+independently Base64-encodes each raw chunk, concatenates the encoded chunks,
+then Python `base64.b64decode(..., validate=True)` decodes once. Base64 encodes
+3 raw bytes into 4 output characters, so a non-3-byte interior boundary creates
+interior padding. This decoder rejects the malformed stream rather than silently
+truncating it. Other decoders may stop at the first padding marker or behave
+differently, so no broader behavior is claimed. APIs that decode each part
+separately do not require 3-byte alignment. Record the producer/decoder contract
+and validate final decoded length and a cryptographic hash. The 79-byte payload
+is evidence of a failed publication path, not proof that every decoder silently
+truncates.
 
 ### 5. The four integrity levels **[relayed, reasoning independently sound]**
 
