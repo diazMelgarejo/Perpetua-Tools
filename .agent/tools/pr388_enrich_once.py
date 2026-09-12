@@ -6,7 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = ROOT / "memory" / "semantic" / "DOMAIN_KNOWLEDGE.md"
 LESSONS = ROOT / "memory" / "semantic" / "lessons.jsonl"
 
