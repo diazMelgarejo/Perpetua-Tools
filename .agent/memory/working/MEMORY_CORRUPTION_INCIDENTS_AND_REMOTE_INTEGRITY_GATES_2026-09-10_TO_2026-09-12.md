@@ -231,3 +231,78 @@ encountered three times without originally having that name for it.
   something felt off. No equivalent automated check yet exists for the
   `ae52aff`-class corruption (a file replaced with valid-looking-length
   binary garbage) — a gap named here, not yet closed.
+
+
+## Directly Observed ChatGPT Work / Remote-Workspace Constraints **[direct, follow-up session]**
+
+This follow-up session ran in the same class of ChatGPT Work sandbox as the
+agent whose report initiated this incident record. The following constraints
+were directly observed here. They are added as operational context, not
+retroactive proof of the prior agent's exact implementation or root cause.
+
+### Split authentication planes
+
+The local shell and the connected GitHub integration are separate
+authentication planes. A local `git push` failed with
+`could not read Username for 'https://github.com'`, while the authenticated
+GitHub integration could read PR #388, update its existing branch, and return
+commit and blob identifiers. Therefore:
+
+- never infer local Git transport authority from a working GitHub app;
+- never infer GitHub-app write authority from a local CLI failure;
+- choose the authorized path deliberately, then independently fetch the remote
+  result from the exact branch after each consequential write.
+
+This distinction is especially important in a sandbox without an interactive
+credential prompt, stored desktop keychain, or a configured `gh` session.
+
+### Checkout state is evidence, not truth
+
+A no-checkout/partial clone initially left this session's worktree reporting
+a very large set of tracked files as deleted. The intended PR ref was not yet
+materialized locally. After fetching the exact pull-request ref and switching
+to a detached checkout of it, the apparent mass-deletion state disappeared.
+
+Treat that symptom as an incomplete checkout state until proven otherwise:
+
+1. inspect the current ref and whether the requested object exists;
+2. fetch the exact PR head/ref explicitly;
+3. use a detached, exact-SHA checkout for review;
+4. only then interpret `git status`, diffs, file counts, or deletions.
+
+Do not repair, stage, commit, or publish an apparent mass deletion before this
+sequence. In shared and ephemeral workspaces, an incomplete checkout is a more
+plausible first hypothesis than a request to delete the repository.
+
+### API-writing constraints and safe publication
+
+Remote-workspace APIs may expose a text-oriented file-write operation even
+when local Git transport is unavailable. Prefer that UTF-8 path for UTF-8
+source and documentation files. Do not invent a chunked Base64 reconstruction
+path merely to work around a missing local push; if an API requires Base64,
+document whether it accepts one complete payload or separately decodes each
+part before choosing a multipart protocol.
+
+For every path, validate four distinct facts:
+
+1. local intended content is parseable/valid;
+2. the write endpoint acknowledges the request;
+3. a fresh remote read at the exact branch head has the intended bytes and
+   expected Git blob SHA;
+4. after any authorized merge, the destination ref has those same bytes.
+
+A returned SHA is useful evidence but does not replace the later exact-ref
+read. Output truncation, partial clones, missing decoders, and unavailable
+interactive auth are environmental constraints—not excuses to collapse these
+four gates.
+
+### Relationship to the reconstructed Base64 incident
+
+This session did **not** reproduce the earlier binary corruption: the
+connected GitHub integration accepted direct UTF-8 writes. It did reproduce
+the underlying operational pressure that can lead an agent to unsafe content
+reconstruction: local Git transport was unavailable while remote API writes
+remained available. The earlier Base64 account remains marked **[relayed,
+mechanism independently reproduced]**. These follow-up observations are
+**[direct]** and should not be conflated with a claim that the same exact API
+or decoder was used by the prior agent.
