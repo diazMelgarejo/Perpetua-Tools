@@ -338,6 +338,6 @@ They occur at different abstraction layers and require different evidence.
 
 ## Compact mnemonic
 
-**AUTH -> REF -> BYTES -> PARSE -> REVIEW -> MERGE -> BYTES AGAIN**
+`AUTH -> REF -> BYTES -> PARSE -> REVIEW -> MERGE -> BYTES AGAIN`
 
 If any arrow is unverified, the publication is not finished.
