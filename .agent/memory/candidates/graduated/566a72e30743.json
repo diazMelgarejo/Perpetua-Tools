@@ -1,0 +1,42 @@
+{
+  "id": "566a72e30743",
+  "key": "manual_566a72",
+  "name": "manual_566a72",
+  "claim": "In a partial or not-yet-materialized remote checkout, treat apparent mass deletion as checkout-state ambiguity until the exact remote ref and objects are fetched and materialized; do not repair or publish from git status alone.",
+  "conditions": [
+    "exact ref",
+    "git status",
+    "mass deletion",
+    "partial checkout",
+    "remote workspace"
+  ],
+  "evidence_ids": [
+    "2026-09-12T13:29:10.411790+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-12T13:29:10.411790+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-12T13:29:10.411790+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-12T13:29:10.538601+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A PR #388 follow-up session directly observed a partial/no-checkout worktree report widespread tracked deletions that disappeared after the exact PR ref was fetched and checked out.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-12T13:29:10.411790+00:00"
+      ],
+      "lessons_sha": "fd1062edd0be"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-12T13:29:10.538585+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A PR #388 follow-up session directly observed a partial/no-checkout worktree report widespread tracked deletions that disappeared after the exact PR ref was fetched and checked out."
+}

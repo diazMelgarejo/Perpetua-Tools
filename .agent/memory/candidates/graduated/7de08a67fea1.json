@@ -1,0 +1,42 @@
+{
+  "id": "7de08a67fea1",
+  "key": "manual_7de08a",
+  "name": "manual_7de08a",
+  "claim": "Never reconstruct a large tracked file from displayed or truncated tool output; use raw Git/blob/file transport or explicit byte-offset manifests, then verify final byte count and content hash.",
+  "conditions": [
+    "byte integrity",
+    "content api",
+    "remote workspace",
+    "tool output",
+    "truncation"
+  ],
+  "evidence_ids": [
+    "2026-09-12T13:29:10.612386+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-12T13:29:10.612386+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-12T13:29:10.612386+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-12T13:29:10.735444+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Remote-agent output can be excerpted, wrapped, capped, or marked truncated. The PR #388 incident arc showed that per-step success does not prove reconstructed bytes; authoritative raw transport plus final size/hash checks are required.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-12T13:29:10.612386+00:00"
+      ],
+      "lessons_sha": "a9edeac61717"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-12T13:29:10.735429+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Remote-agent output can be excerpted, wrapped, capped, or marked truncated. The PR #388 incident arc showed that per-step success does not prove reconstructed bytes; authoritative raw transport plus final size/hash checks are required."
+}

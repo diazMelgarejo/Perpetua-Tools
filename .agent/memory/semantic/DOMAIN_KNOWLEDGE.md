@@ -523,3 +523,36 @@ Coordination is **file inbox only** — agents never execute on the peer host ov
 | LM Studio `:1234` | **Passive only** | Catalog/probe OK; not primary coder path |
 
 Mac subagents (cursor-agent, mac-researcher) use Ollama for local runs. Win uses LM Studio `:1234` (27B).
+
+## Remote Content Integrity in Limited Sandboxes (verified 2026-09-12)
+
+Canonical detailed reference:
+`REMOTE_CONTENT_INTEGRITY_AND_LIMITED_WORKSPACE_DOMAIN_KNOWLEDGE_2026-09-12.md`.
+
+Stable facts from the PR #388 incident arc:
+
+- local Git credentials, `gh` CLI authentication, and a connected GitHub App/API
+  are separate authority planes; success or failure in one does not establish
+  authority in another;
+- a partial, sparse, detached, or not-yet-materialized checkout can present
+  mass deletions that disappear once the exact remote ref/object is fetched and
+  materialized; `git status` describes the checkout, not remote repository truth;
+- UTF-8 text should use a complete text transport when available; manual Base64
+  chunking requires an explicit producer/decoder contract;
+- Base64 maps 3 raw bytes to 4 encoded characters. `12,288 = 4,096 * 3`, so a
+  full 12,288-byte raw chunk encodes to 16,384 Base64 characters without
+  padding. This is a worked alignment example, not a universal chunk size;
+- independently encoded non-final chunks need 3-byte alignment only when their
+  encoded forms are concatenated and decoded once. Independently decoded parts
+  do not have that requirement;
+- displayed tool output, search snippets, or any payload marked truncated are
+  not safe byte transports. Prefer Git objects/raw file APIs; otherwise record
+  byte offsets, lengths, ordering, expected final size, and expected final hash;
+- local validity, write acknowledgement, exact remote-head integrity, and
+  merged-destination integrity are four independent facts. Verify each one;
+- Git blob identity proves exact file content, while commit identity also
+  includes tree/history/metadata. Different commit SHAs can contain identical
+  file blobs.
+
+Compact publication mnemonic:
+`AUTH -> REF -> BYTES -> PARSE -> REVIEW -> MERGE -> BYTES AGAIN`.
