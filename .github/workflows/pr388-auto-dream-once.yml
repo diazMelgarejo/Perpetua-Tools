@@ -1,0 +1,64 @@
+name: PR 388 one-shot memory dream
+
+on:
+  push:
+    branches:
+      - docs/memory-corruption-incidents-remote-integrity-20260912
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pr388-memory-dream
+  cancel-in-progress: false
+
+jobs:
+  dream:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: docs/memory-corruption-incidents-remote-integrity-20260912
+          persist-credentials: true
+
+      - name: Run PT dream cycle
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .agent/memory/*.py
+          python3 .agent/memory/auto_dream.py
+
+      - name: Validate memory outputs
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for path in Path('.agent/memory').rglob('*.jsonl'):
+              for number, line in enumerate(path.read_text(encoding='utf-8').splitlines(), 1):
+                  if line.strip():
+                      try:
+                          json.loads(line)
+                      except Exception as exc:
+                          raise SystemExit(f'{path}:{number}: {exc}')
+          print('jsonl ok')
+          PY
+          python3 scripts/review/repo_hygiene.py
+          git diff --check
+
+      - name: Commit dream outputs and remove runner
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .agent/memory
+          git rm .github/workflows/pr388-auto-dream-once.yml
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'No dream-cycle changes and workflow already absent; nothing to commit.'
+            exit 0
+          fi
+          git commit -m 'docs(memory): run PR 388 dream cycle'
+          git push origin HEAD:docs/memory-corruption-incidents-remote-integrity-20260912
