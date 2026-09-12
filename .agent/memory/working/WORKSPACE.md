@@ -1,11 +1,24 @@
 # WORKSPACE — current task state
 
-**Updated:** 2026-09-12 (Hermes-Security/DX close-out, agate PR #2 publish,
-multi-repo verification sweep)  
-**Claimed by:** claude-main  
-**Active branch (orama):** `hermes-security-perp-harness-remote-trust-20260912` (PR #355)  
-**Active branch (PT):** this branch
-(`migration/pt-evidence-foundations-20260911`, PR #385) — memory-only commit  
+**Updated:** 2026-09-12 (UTC; live remote re-verification and migration-debt
+status renewal)
+**Claimed by:** current operator session
+**Current authoritative status:** see
+`MIGRATION_DEBT_AFRP_CIDF_STATUS_2026-09-12.md`. It records the fresh remote
+state: the verified migration/debt deltas are in their respective `main`
+branches; do not create replacement PRs without first finding a new, non-empty
+delta.
+
+## Current addendum — migration debt, AFRP/CIDF, and Telos (2026-09-12 UTC)
+
+- Orama System `main` contains AFRP PR #356 (`39988ce…`); its root skill already
+  activates AFRP and CIDF.  The durable rule is fresh live-authority reads before
+  and after a consequential remote action.
+- Perpetua Core `main` contains the Telos discovery and required-`graph_id`
+  changes (PRs #3/#4).  Agate PR #3 and Oramasys PR #11 are also merged.
+- The only material remaining release gate is evidence from the three physical
+  hardware-profile canaries; cloud verification cannot substitute for it.
+- Historical sections below remain provenance, not live work instructions.
 
 ## Current focus
 
