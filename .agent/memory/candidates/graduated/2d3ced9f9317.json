@@ -1,0 +1,42 @@
+{
+  "id": "2d3ced9f9317",
+  "key": "manual_2d3ced",
+  "name": "manual_2d3ced",
+  "claim": "Only when independently Base64-encoded chunks are concatenated for one final decode, use a multiple-of-3 raw chunk size (e.g. 12,288 = 4,096x3) to avoid interior padding; per-part decoding does not require it. Record the producer/decoder contract and verify the final decoded length and cryptographic hash.",
+  "conditions": [
+    "base64",
+    "chunking",
+    "encoding",
+    "remote-content-integrity",
+    "silent-corruption"
+  ],
+  "evidence_ids": [
+    "2026-09-12T10:14:41.494043+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-12T10:14:41.494043+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-12T10:14:41.494043+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-12T10:14:41.620229+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-09-12 incident: a text file reached Perpetua Core main as a 79-byte binary payload after an encoded, chunked content-path write. Root cause traced and independently reproduced with real Python: encoding 10000 bytes in 7000-byte chunks (not a multiple of 3) produced padding in the first chunk and silently decoded to exactly 7000 bytes, dropping the rest. The same content chunked at 12288 bytes (a multiple of 3) produced zero mid-stream padding and decoded byte-for-byte correct. Every individual encode/decode/API call reported success in both cases -- the corruption was invisible to per-step checks. Full write-up: oramasys/orama-system PR #357, bin/orama-system/cidf/references/remote-content-integrity-reference-card.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-12T10:14:41.494043+00:00"
+      ],
+      "lessons_sha": "179d1a6bde31"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-12T10:14:41.620219+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-09-12 incident: a text file reached Perpetua Core main as a 79-byte binary payload after an encoded, chunked content-path write. Root cause traced and independently reproduced with real Python: encoding 10000 bytes in 7000-byte chunks (not a multiple of 3) produced padding in the first chunk and silently decoded to exactly 7000 bytes, dropping the rest. The same content chunked at 12288 bytes (a multiple of 3) produced zero mid-stream padding and decoded byte-for-byte correct. Every individual encode/decode/API call reported success in both cases -- the corruption was invisible to per-step checks. Full write-up: oramasys/orama-system PR #357, bin/orama-system/cidf/references/remote-content-integrity-reference-card.md."
+}

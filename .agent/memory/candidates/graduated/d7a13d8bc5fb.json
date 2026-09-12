@@ -1,0 +1,42 @@
+{
+  "id": "d7a13d8bc5fb",
+  "key": "manual_d7a13d",
+  "name": "manual_d7a13d",
+  "claim": "Treat local file validity, API write acknowledgment (a returned SHA or success response), remote object integrity at the exact branch head, and merged destination integrity as four separate facts that must each be checked independently -- none implies any of the others, since an API acknowledges receipt of a write request, not the correctness of its content",
+  "conditions": [
+    "api-verification",
+    "git-blob-sha",
+    "merge-safety",
+    "remote-content-integrity",
+    "verification-before-action"
+  ],
+  "evidence_ids": [
+    "2026-09-12T10:14:47.448656+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-12T10:14:47.448656+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-12T10:14:47.448656+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-12T10:14:47.562982+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-09-12 incident: an agent verified local file validity, then treated a successful API write and its returned blob SHA as proof the remote content was correct, and merged without independently fetching and re-parsing the remote object at the exact PR head or the destination after merge. The correct sequence: local validation, then remote branch fetch-and-parse, then an exact-head pre-merge recheck, then a destination recheck after merge. This is exactly how a 79-byte binary payload reached Perpetua Core main while every logged step along the way reported success. Full procedure: oramasys/orama-system PR #357's remote-content-integrity-reference-card.md (three required gates plus post-merge recheck).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-12T10:14:47.448656+00:00"
+      ],
+      "lessons_sha": "6b78b0cfa131"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-12T10:14:47.562972+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-09-12 incident: an agent verified local file validity, then treated a successful API write and its returned blob SHA as proof the remote content was correct, and merged without independently fetching and re-parsing the remote object at the exact PR head or the destination after merge. The correct sequence: local validation, then remote branch fetch-and-parse, then an exact-head pre-merge recheck, then a destination recheck after merge. This is exactly how a 79-byte binary payload reached Perpetua Core main while every logged step along the way reported success. Full procedure: oramasys/orama-system PR #357's remote-content-integrity-reference-card.md (three required gates plus post-merge recheck)."
+}
