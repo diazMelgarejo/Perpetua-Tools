@@ -1,0 +1,41 @@
+{
+  "id": "5800cf2c280e",
+  "key": "manual_5800cf",
+  "name": "manual_5800cf",
+  "claim": "When a board packet names a source SHA, never reuse a worktree that other live agents share \u2014 they can commit under you mid-review (HEAD moved and the working tree changed between two read commands in one session); create a fresh worktree from the exact source_ref SHA even if a checked-out worktree already exists",
+  "conditions": [
+    "concurrency",
+    "multi-agent",
+    "source-ref",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-09-11T21:02:30.356528+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-11T21:02:30.356528+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-11T21:02:30.356528+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-11T21:02:30.473952+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "During the Agate review another agent committed two slices and the bindings work appeared/disappeared between tool calls; the fresh-worktree rule from the board-job source-line protocol would have avoided the moving-ground hazard.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-11T21:02:30.356528+00:00"
+      ],
+      "lessons_sha": "46c713447099"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-11T21:02:30.473939+00:00",
+  "reviewer": "learn.py",
+  "rationale": "During the Agate review another agent committed two slices and the bindings work appeared/disappeared between tool calls; the fresh-worktree rule from the board-job source-line protocol would have avoided the moving-ground hazard."
+}

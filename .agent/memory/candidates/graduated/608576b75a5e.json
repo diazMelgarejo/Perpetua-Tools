@@ -1,0 +1,41 @@
+{
+  "id": "608576b75a5e",
+  "key": "manual_608576",
+  "name": "manual_608576",
+  "claim": "RED-first discipline: write the failing test and capture its failure output BEFORE implementing; the captured RED evidence (collection error or assertion output) belongs in the board completion notes and PR body, not just the final green count",
+  "conditions": [
+    "evidence",
+    "red-first",
+    "tdd",
+    "testing"
+  ],
+  "evidence_ids": [
+    "2026-09-11T21:02:30.553462+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-11T21:02:30.553462+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-11T21:02:30.553462+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-11T21:02:30.671578+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The outbound-ledger lane captured the collection-error RED state before implementing; reviewers and the board could verify the tests actually failed first \u2014 cheap, high-trust evidence.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-11T21:02:30.553462+00:00"
+      ],
+      "lessons_sha": "3d797bb31e85"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-11T21:02:30.671566+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The outbound-ledger lane captured the collection-error RED state before implementing; reviewers and the board could verify the tests actually failed first \u2014 cheap, high-trust evidence."
+}

@@ -1,0 +1,41 @@
+{
+  "id": "3b815e5abf37",
+  "key": "manual_3b815e",
+  "name": "manual_3b815e",
+  "claim": "A GossipBus queue row with a malformed depends_on is unclaimable AND cannot be failed via the CLI (fail requires a current claimant); the only terminal close is an append-only task_failed event emitted directly on the bus with retry_count=max_retries and status=failed, with supersession evidence in the notes \u2014 never delete rows or edit the claims table",
+  "conditions": [
+    "board-cleanup",
+    "gossipbus",
+    "malformed-dependency",
+    "queue"
+  ],
+  "evidence_ids": [
+    "2026-09-11T21:01:56.656533+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-11T21:01:56.656533+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-11T21:01:56.656533+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-11T21:01:56.784049+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Closing 2026-09-11 stale rows: CLI fail errored on unclaimed rows; direct bus events closed them with full forensics while preserving the append-only model.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-11T21:01:56.656533+00:00"
+      ],
+      "lessons_sha": "1b5b0c15f032"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-11T21:01:56.784040+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Closing 2026-09-11 stale rows: CLI fail errored on unclaimed rows; direct bus events closed them with full forensics while preserving the append-only model."
+}

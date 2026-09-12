@@ -1,0 +1,41 @@
+{
+  "id": "c660861f37c1",
+  "key": "manual_c66086",
+  "name": "manual_c66086",
+  "claim": "When asked to fix a specific CodeRabbit review finding by URL/ID, fetch that exact review's comments and diff against the PR's CURRENT head before writing any code -- a relayed finding is frequently already resolved (the repo owner or another agent fixed it since the finding was captured), and CodeRabbit itself posts an 'Addressed in commit <sha>' confirmation directly in the comment thread when that happens. Check for that confirmation and verify the cited commit is actually reachable from current HEAD before assuming work remains.",
+  "conditions": [
+    "coderabbit-findings",
+    "pr-review",
+    "stale-instructions",
+    "verification-before-action"
+  ],
+  "evidence_ids": [
+    "2026-09-11T21:58:14.181389+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-11T21:58:14.181389+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-11T21:58:14.181389+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-11T21:58:14.300777+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-09-12: given 3 explicit CodeRabbit fix requests across oramasys/oramasys#6, oramasys/agate#2, oramasys/perpetua-core#4. All 3 were already fixed and CodeRabbit-confirmed at each PR's current HEAD -- verified via git log/API rather than blindly re-applying the pasted diffs, which would have been redundant no-op commits at best and a conflicting/stale-base edit at worst.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-11T21:58:14.181389+00:00"
+      ],
+      "lessons_sha": "6d3cabcccd90"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-11T21:58:14.300764+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-09-12: given 3 explicit CodeRabbit fix requests across oramasys/oramasys#6, oramasys/agate#2, oramasys/perpetua-core#4. All 3 were already fixed and CodeRabbit-confirmed at each PR's current HEAD -- verified via git log/API rather than blindly re-applying the pasted diffs, which would have been redundant no-op commits at best and a conflicting/stale-base edit at worst."
+}

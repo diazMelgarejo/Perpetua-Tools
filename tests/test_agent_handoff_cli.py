@@ -133,11 +133,47 @@ async def test_valid_handoff_enqueues_and_records_non_liveness_admission(
     queued = next(event["payload"] for event in events if event["payload"].get("kind") == "task_enqueue")
     assert admitted["agent_id"] == "agent-1"
     assert admitted["task_id"] == "task-1"
+    assert admitted["branch"] == queued["source_ref"] == "feat/agent-handoff-validation-v1"
+    assert admitted["starting_head"] == queued["expected_base_sha"] == "1234567"
     assert queued["required_agent_id"] == "agent-1"
     assert admitted["queue_task_id"] == queued["task_id"] == queue_task_id
 
     assert await cli._queue_claim(bus, queued["task_id"], "agent-2") is False
     assert await cli._queue_claim(bus, queued["task_id"], "agent-1") is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("source_ref", "expected_base_sha", "error_fragment"),
+    [
+        ("feat/other-source", None, "--source-ref conflicts with handoff branch"),
+        (None, "7654321", "--expected-base-sha conflicts with handoff starting_head"),
+    ],
+)
+async def test_handoff_admission_rejects_conflicting_source_line_atomically(
+    bus: GossipBus,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    source_ref: str | None,
+    expected_base_sha: str | None,
+    error_fragment: str,
+) -> None:
+    """A caller cannot silently replace the packet's reviewed source line."""
+    result = await cli.queue_add_from_handoff(
+        bus,
+        _write_packet(tmp_path),
+        "packet-work",
+        "Phase-1",
+        "NORMAL",
+        "",
+        None,
+        source_ref=source_ref,
+        expected_base_sha=expected_base_sha,
+    )
+
+    assert result is False
+    assert await bus.tail(limit=20, event_type="heartbeat") == []
+    assert error_fragment in capsys.readouterr().err
 
 
 @pytest.mark.asyncio

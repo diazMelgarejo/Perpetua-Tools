@@ -1,0 +1,42 @@
+{
+  "id": "8320ab46363d",
+  "key": "manual_8320ab",
+  "name": "manual_8320ab",
+  "claim": "asyncio.wait_for raises a builtin TimeoutError whose str() is empty \u2014 at any containment boundary translate it into an explicit RuntimeError carrying the bound (e.g. provider invocation timed out after Ns) so error deltas and append-only ledgers record a real message",
+  "conditions": [
+    "asyncio",
+    "error-messages",
+    "ledger",
+    "timeout",
+    "wait_for"
+  ],
+  "evidence_ids": [
+    "2026-09-11T21:02:07.892385+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-11T21:02:07.892385+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-11T21:02:07.892385+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-11T21:02:08.010587+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Timeout test caught 'provider invocation failed: ' with no message; translating at the seam gave both the error delta and the ledger record a readable, bounded message.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-11T21:02:07.892385+00:00"
+      ],
+      "lessons_sha": "bfe0d2e6eef2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-11T21:02:08.010577+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Timeout test caught 'provider invocation failed: ' with no message; translating at the seam gave both the error delta and the ledger record a readable, bounded message."
+}

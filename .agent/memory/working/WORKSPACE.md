@@ -1,11 +1,86 @@
 # WORKSPACE — current task state
 
-**Updated:** 2026-08-20 (Standards Convergence, SSRF Defense-in-Depth, Frugality Harmonization)  
-**Claimed by:** Agnes (`agnes-antigravity-claude`)  
-**Active branch (PT):** `fix/pt-standards-convergence-20260818`  
-**Active branch (orama):** `fix/oramasys-standards-convergence-20260818`  
+**Updated:** 2026-09-12 (Hermes-Security/DX close-out, agate PR #2 publish,
+multi-repo verification sweep)  
+**Claimed by:** claude-main  
+**Active branch (orama):** `hermes-security-perp-harness-remote-trust-20260912` (PR #355)  
+**Active branch (PT):** this branch
+(`migration/pt-evidence-foundations-20260911`, PR #385) — memory-only commit  
 
 ## Current focus
+
+### Hermes-Security/DX close-out + cross-repo verification sweep (2026-09-12, claude-main)
+
+**Queue tasks completed (all 3 claimed and closed):**
+
+| Task | Result |
+| ---- | ------ |
+| `Hermes-Security-resolve-perp-harness-remote-trust` | Additive `_pt_remote_trusted()` check in `resolve_perp_harness.sh` — real git remote must match the canonical PT URL when one is configured; no-remote case (all 9 pre-existing marker-only fixtures) still accepted. RED confirmed before the fix (reverted source, watched 2 rejection tests genuinely fail). 21/21 tests. |
+| `Hermes-DX-hermes-quickstart-doc` | New `references/quickstart.md` — every command's output verified against real script source + a live run, not guessed. |
+| `Hermes-DX-hermes-command-card-template` | `openclaw-status/SKILL.md` template applied to `hermes-spawn`/`hermes-delegate`/`hermes-orama`, additive only. Also closed a pre-existing OSSF-1 frontmatter/Boundaries gap on all 3 files (never previously touched since that gate landed). |
+
+All 3 landed on `orama-system` PR #355 (3 logical-batch commits, single push).
+
+**Cross-repo verification sweep (given 3 explicit CodeRabbit fix requests + a handoff report):**
+
+- `oramasys/oramasys#6`, `oramasys/agate#2` (review 5175271655),
+  `oramasys/perpetua-core#4` — all 3 requested findings were **already fixed
+  and CodeRabbit-confirmed** at each PR's current HEAD before any code was
+  touched. Verified via `git log`/API, not re-applied. Lesson recorded
+  (`lesson_c660861f37c1`): always check a relayed CodeRabbit finding against
+  current HEAD first.
+- `oramasys/agate#2` had 2 **genuinely unresolved** findings on a *different*
+  review (TS packaging/import-path bug in `hardware_profiles.ts`; a
+  `TypeError`-before-`ValueError` gap on `verdict_tier`). A prior session's
+  local fix (`f569de2`, unpushed) already addressed both correctly —
+  verified 73/73 Python + 4/4 TypeScript tests, then fast-forward-pushed
+  directly onto PR #2's branch. PR #2 now `CLEAN`.
+- A handoff report claimed push was blocked by a "stale/exposed Git HTTPS
+  credential," recommending rotation. **Did not rotate anything** — verified
+  first (`gh auth status` showed a valid active keyring token; a dry-run
+  push succeeded cleanly). The real cause was almost certainly a shadowed
+  `GITHUB_TOKEN` env var in that other session's shell, not a compromised
+  credential. Lesson recorded (`lesson_75f7eaa356e9`): verify an auth
+  failure directly before ever rotating a credential on another session's
+  say-so.
+- `oramasys/telos` (`main` @ `b214308`, no open PRs) and `oramasys#8` (closed
+  as superseded, confirmed no unique delta) — both confirmed exactly as
+  reported by `codex-telos-pr8-remediation`; nothing further needed.
+
+**PT-side status:** PT PR #382 (Gate 4 Half B) and #383 (F01 wrapper resync)
+both merged since — the branch/worktree churn from that is expected, not a
+problem.
+
+### MigrationDebt-20260911/12 closure (2026-09-12)
+
+> Current session state, recorded by kimi-for-coding during the MigrationDebt program close-out.
+> The 2026-08-24 snapshot below is retained for provenance only.
+
+**Board sweep:** all stale MigrationDebt rows on the coordination board were
+closed (7 rows terminal-closed); the queue is at zero active claims. Malformed
+`depends_on` rows cannot be claimed or failed via the normal queue verbs — they
+are terminal-closed via an append-only `task_failed` bus event with
+`retry_count=max` (lesson: never delete board rows).
+
+**Publications (4 PRs awaiting operator merge):**
+
+| Area | Branch / PR | State |
+| ---- | ----------- | ----- |
+| Agate migration-debt close-out | diazMelgarejo/agate-system PR #2 | CI green, mergeable |
+| oramasys migration-debt evidence | orama-system PR #7 | open |
+| PT evidence foundations | PT `migration/pt-evidence-foundations-20260911` → PR #385 | open; carries this memory commit |
+| oramasys outbound decision ledger | orama-system PR #10 | stacked on convergence branch `baf04c1`; suite 105/105 (RED-first) |
+
+**Agate 1B contract review:** PASSED — TypeScript consumer contract review
+recorded in the OpenClaw references tree (agate-1b typescript contract review,
+2026-09-11).
+
+**Memory this session:** 4 episodic reflections + 8 graduated lessons
+(board-row terminal-close, heartbeat cleanup scope vs. queue claims, MiniGraph
+Interrupt→interrupted-state conversion, `asyncio.wait_for` empty-string
+TimeoutError translation, fresh-worktree-per-packet discipline, RED-first
+evidence capture, plus the 2 recorded above from the Hermes-Security/DX
+close-out: `lesson_c660861f37c1` and `lesson_75f7eaa356e9`).
 
 ### Historical observability review closure snapshot (2026-08-24)
 
