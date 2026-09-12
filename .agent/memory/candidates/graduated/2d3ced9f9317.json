@@ -2,7 +2,7 @@
   "id": "2d3ced9f9317",
   "key": "manual_2d3ced",
   "name": "manual_2d3ced",
-  "claim": "When chunking Base64-encoded content for a multi-part API write, the chunk size must be a multiple of 3 raw bytes (e.g. 12288 = 4096x3); any other size makes an interior chunk end in Base64 padding, and a standards-conformant decoder treats padding as end-of-stream, silently truncating everything concatenated after it with no error at any step",
+  "claim": "Only when independently Base64-encoded chunks are concatenated for one final decode, use a multiple-of-3 raw chunk size (e.g. 12,288 = 4,096x3) to avoid interior padding; per-part decoding does not require it. Record the producer/decoder contract and verify the final decoded length and cryptographic hash.",
   "conditions": [
     "base64",
     "chunking",
