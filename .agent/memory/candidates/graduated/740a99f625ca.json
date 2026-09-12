@@ -1,0 +1,42 @@
+{
+  "id": "740a99f625ca",
+  "key": "manual_740a99",
+  "name": "manual_740a99",
+  "claim": "Treat local Git credentials, gh CLI authentication, and connected GitHub App/API authorization as separate authority planes; verify the failing plane before rotating credentials or changing transport.",
+  "conditions": [
+    "authentication plane",
+    "gh cli",
+    "git credentials",
+    "github app",
+    "remote workspace"
+  ],
+  "evidence_ids": [
+    "2026-09-12T13:29:10.209148+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-12T13:29:10.209148+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-12T13:29:10.209148+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-12T13:29:10.337850+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR #388 directly observed local git push authentication fail while the connected GitHub integration could still read and write the branch. Conflating those planes causes unnecessary credential changes and unsafe transport workarounds.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-12T13:29:10.209148+00:00"
+      ],
+      "lessons_sha": "309041b3f7b5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-12T13:29:10.337815+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR #388 directly observed local git push authentication fail while the connected GitHub integration could still read and write the branch. Conflating those planes causes unnecessary credential changes and unsafe transport workarounds."
+}
