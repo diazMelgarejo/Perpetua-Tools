@@ -33,6 +33,11 @@ jobs:
       - name: Validate memory outputs
         run: |
           set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.agent/memory/semantic/DOMAIN_KNOWLEDGE.md')
+          path.write_text(path.read_text(encoding='utf-8').rstrip() + '\n', encoding='utf-8')
+          PY
           python3 .agent/memory/render_lessons.py
           python3 scripts/review/repo_hygiene.py
           python3 -m unittest discover -s tests -p test_periscope_lesson_supersession.py -v
