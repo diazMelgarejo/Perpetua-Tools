@@ -1,0 +1,42 @@
+{
+  "id": "10568fa659b1",
+  "key": "manual_10568f",
+  "name": "manual_10568f",
+  "claim": "A dependency needed only to exercise cross-package compatibility in CI should not be published through any package metadata at all -- not project.dependencies, and not any [project.optional-dependencies] extra, since an optional extra is still published metadata that advertises a dependency relationship the package does not actually own. Install the compatibility fixture from a separate requirements file in a distinct CI step instead, keeping the package's own dependency declarations completely free of it",
+  "conditions": [
+    "architectural-ownership",
+    "ci-fixture",
+    "dependency-boundary",
+    "optional-dependencies",
+    "package-metadata"
+  ],
+  "evidence_ids": [
+    "2026-09-13T02:01:12.071352+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-13T02:01:12.071352+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-13T02:01:12.071352+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-13T02:01:12.182485+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-09-13, oramasys/perpetua-core PR #6: this session's own first fix moved a test-only Agate dependency from dev into a distinctly-named optional-dependency group (test-agate-compat) inside pyproject.toml, reasoning that this kept dev genuinely test-tooling-only. A later commit on the same PR (89488880) established a stronger invariant: even a distinctly-named optional extra is still Core-published metadata implying a dependency relationship Core does not architecturally own. The final, adopted design moved the pin to requirements/test-agate-compat.txt entirely outside pyproject.toml, with CI installing it as a second, separate pip step -- and added a dedicated test (test_core_does_not_publish_agate_as_an_optional_dependency) specifically to prevent a future change from quietly reintroducing the dependency through an optional extra after removing it from required dependencies. General principle: package ownership and CI-environment composition are distinct authority surfaces, and a stronger, cleaner invariant is worth adopting even after a working, weaker one already exists. Full write-up: .agent/memory/working/PERPETUA_CORE_PR6_RECOVERY_ARCHITECTURE_AND_REVIEW_LESSONS_2026-09-13.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-13T02:01:12.071352+00:00"
+      ],
+      "lessons_sha": "d9b6da98c90d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-13T02:01:12.182472+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-09-13, oramasys/perpetua-core PR #6: this session's own first fix moved a test-only Agate dependency from dev into a distinctly-named optional-dependency group (test-agate-compat) inside pyproject.toml, reasoning that this kept dev genuinely test-tooling-only. A later commit on the same PR (89488880) established a stronger invariant: even a distinctly-named optional extra is still Core-published metadata implying a dependency relationship Core does not architecturally own. The final, adopted design moved the pin to requirements/test-agate-compat.txt entirely outside pyproject.toml, with CI installing it as a second, separate pip step -- and added a dedicated test (test_core_does_not_publish_agate_as_an_optional_dependency) specifically to prevent a future change from quietly reintroducing the dependency through an optional extra after removing it from required dependencies. General principle: package ownership and CI-environment composition are distinct authority surfaces, and a stronger, cleaner invariant is worth adopting even after a working, weaker one already exists. Full write-up: .agent/memory/working/PERPETUA_CORE_PR6_RECOVERY_ARCHITECTURE_AND_REVIEW_LESSONS_2026-09-13.md."
+}

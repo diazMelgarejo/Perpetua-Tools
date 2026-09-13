@@ -1,0 +1,42 @@
+{
+  "id": "32c529e8de3c",
+  "key": "manual_32c529",
+  "name": "manual_32c529",
+  "claim": "An automated code review finding is scoped to the exact commit range the reviewer actually examined, not to submission time -- when a later fix appears to contradict an earlier review comment, check the reviewer's own reviewed commit range against the current head before implementing the older recommendation literally, since the finding may already be stale",
+  "conditions": [
+    "automated-review",
+    "coderabbit",
+    "commit-range",
+    "live-authority",
+    "stale-review"
+  ],
+  "evidence_ids": [
+    "2026-09-13T02:00:58.737919+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-13T02:00:58.737919+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-13T02:00:58.737919+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-13T02:00:58.849964+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-09-13, oramasys/perpetua-core PR #6: CodeRabbit flagged a dependency-declaration contradiction that was technically correct for a deliberate RED commit (intentionally left non-compliant to prove a new packaging invariant would catch it), but the review's own metadata showed it had reviewed only through that RED commit, even though a later GREEN head already existed with the fix. Presenting the exact current head let CodeRabbit re-evaluate and confirm the fix, rather than the agent blindly re-implementing a now-obsolete recommendation. General procedure when an automated reviewer appears to disagree with a later fix: inspect its reviewed commit range, inspect the current PR head SHA, compare the exact current diff, check current CI on the exact head, distinguish a stale finding from a current one, then reply with exact-head evidence. Full write-up: .agent/memory/working/PERPETUA_CORE_PR6_RECOVERY_ARCHITECTURE_AND_REVIEW_LESSONS_2026-09-13.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-13T02:00:58.737919+00:00"
+      ],
+      "lessons_sha": "b8685ecbebb2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-13T02:00:58.849953+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-09-13, oramasys/perpetua-core PR #6: CodeRabbit flagged a dependency-declaration contradiction that was technically correct for a deliberate RED commit (intentionally left non-compliant to prove a new packaging invariant would catch it), but the review's own metadata showed it had reviewed only through that RED commit, even though a later GREEN head already existed with the fix. Presenting the exact current head let CodeRabbit re-evaluate and confirm the fix, rather than the agent blindly re-implementing a now-obsolete recommendation. General procedure when an automated reviewer appears to disagree with a later fix: inspect its reviewed commit range, inspect the current PR head SHA, compare the exact current diff, check current CI on the exact head, distinguish a stale finding from a current one, then reply with exact-head evidence. Full write-up: .agent/memory/working/PERPETUA_CORE_PR6_RECOVERY_ARCHITECTURE_AND_REVIEW_LESSONS_2026-09-13.md."
+}
