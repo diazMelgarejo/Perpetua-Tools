@@ -1,0 +1,41 @@
+{
+  "id": "b1377bbce2a0",
+  "key": "manual_b1377b",
+  "name": "manual_b1377b",
+  "claim": "Do not resolve a review thread involving executable behavior until the exact current head is confirmed green on the affected tests and relevant CI -- a resolved thread's UI state is not proof of correctness, and describing planned validation as if it were completed evidence is a distinct, separate error from the underlying bug",
+  "conditions": [
+    "ci-gate",
+    "completion-claim",
+    "evidence-before-assertion",
+    "review-thread-resolution"
+  ],
+  "evidence_ids": [
+    "2026-09-13T02:00:48.951795+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-13T02:00:48.951795+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-13T02:00:48.951795+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-13T02:00:49.054968+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-09-13, oramasys/orama-system PR #357: four CodeRabbit findings were marked resolved while the exact current head was CI-red on tests the remediation itself had touched. The canonical gate is FINDING -> CURRENT HEAD -> RED PROOF -> MINIMAL FIX -> FOCUSED GREEN -> FULL GREEN -> RE-READ FINDING -> RESOLVE -- each step is a separate fact requiring its own evidence: a conceptually sound fix, a passing new test, an unbroken old test, a green focused file, a green full suite, a green exact-head CI run, and a resolved thread are six distinct claims, and none of the earlier ones proves any of the later ones. Full write-up: .agent/memory/working/ORAMA_PR357_PR_BODY_INTEGRITY_FALSE_POSITIVE_AND_RECOVERY_2026-09-13.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-13T02:00:48.951795+00:00"
+      ],
+      "lessons_sha": "057137ad8cb1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-13T02:00:49.054956+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-09-13, oramasys/orama-system PR #357: four CodeRabbit findings were marked resolved while the exact current head was CI-red on tests the remediation itself had touched. The canonical gate is FINDING -> CURRENT HEAD -> RED PROOF -> MINIMAL FIX -> FOCUSED GREEN -> FULL GREEN -> RE-READ FINDING -> RESOLVE -- each step is a separate fact requiring its own evidence: a conceptually sound fix, a passing new test, an unbroken old test, a green focused file, a green full suite, a green exact-head CI run, and a resolved thread are six distinct claims, and none of the earlier ones proves any of the later ones. Full write-up: .agent/memory/working/ORAMA_PR357_PR_BODY_INTEGRITY_FALSE_POSITIVE_AND_RECOVERY_2026-09-13.md."
+}
