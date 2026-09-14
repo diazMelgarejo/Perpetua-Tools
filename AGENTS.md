@@ -69,6 +69,13 @@ content but get **new SHAs**.
   AskUserQuestions: ask the user which record to change, what status to apply,
   and whether deletion/replacement is truly intended.
 
+For the episodic JSONL log, apply structured parsing to validation and encode
+only newly appended records. Never reserialize historical rows or change their
+fields in place; append a superseding record instead. Preserve the exact base
+byte prefix, including pre-existing duplicates. Run the
+[episodic preservation gate](references/episodic-append-only-preservation.md)
+against the pinned PR base and re-fetched remote head before declaring it safe.
+
 ## Git attribution
 
 - Use the repo git hooks in `scripts/git/` when available.
