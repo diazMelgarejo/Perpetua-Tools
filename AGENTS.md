@@ -15,13 +15,18 @@ content but get **new SHAs**.
   a branch can read "N behind" while its tip is byte-identical to a commit already in `main`.
   "N behind + identical content" is a contradiction: **HALT**, it means a rewrite.
 - **ALWAYS** use the **tree-twin** test via the in-repo tool:
+
   ```bash
   scripts/git/reanchor_scan.sh . origin/main heads      # local branches
   git cherry -v origin/main <tip> <base>                # + = missing from main, - = already in
   ```
-- Canonical method: orama [git-reanchor SKILL.md § 5](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/git-reanchor/SKILL.md).
-  Why it recurs + branch salvage map: [`docs/LESSONS.md` § 2026-06-05](https://github.com/diazMelgarejo/Perpetua-Tools/blob/main/docs/LESSONS.md) ·
-  failure catalog [Failure Mode 7](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/afrp/failure-modes.md).
+
+- Canonical method: orama [git-reanchor SKILL.md §
+  5](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/git-reanchor/SKILL.md).
+  Why it recurs + branch salvage map: [`docs/LESSONS.md` §
+  2026-06-05](https://github.com/diazMelgarejo/Perpetua-Tools/blob/main/docs/LESSONS.md) ·
+  failure catalog [Failure Mode
+  7](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/afrp/failure-modes.md).
 - Reviving/force-updating a remote branch requires **explicit current-user authorization**
   (see § Security PR stacking). Preserve old tips before any force-push.
 - Companion: orama [`AGENTS.md`](https://github.com/diazMelgarejo/orama-system/blob/main/AGENTS.md).
@@ -32,27 +37,51 @@ content but get **new SHAs**.
 **Applies when touching model IDs, routing, `openclaw.json`, or inference dispatch.**
 
 - **Policy SSoT:** `config/model_hardware_policy.yml` — never duplicate lists in markdown or skills.
-- **Canonical API:** `src/utils/hardware_policy.py` — all runtimes and `scripts/hardware_policy_cli.py` MUST delegate here.
-- **Never fork parsers:** After changing the canonical module, grep for `_simple_policy_parse`, `_forbidden`, or local YAML copies. Duplicate parsers silently diverge (PR #131).
-- **LM Studio proxy:** Mac `/v1/models` lists Win models; enforce by provider/platform, not list membership.
-- **Alias merge:** `windows_only_aliases` (quant-suffixed ids) must flow through `_normalize_policy` — see tests in `test_hardware_routing.py`.
-- **Researcher path:** `scripts/launch_researchers.py` uses `_pick_model_with_affinity` + `_platform_for_role` — no blind `models[0]`.
-- **Validation:** `orama-system/start.sh --hardware-policy` → `hardware_policy_cli.py --check-openclaw`.
-- **Skill:** `.claude/skills/hardware-policy/SKILL.md` (operational playbook; mirrored in `.agents/skills/`).
+- **Canonical API:** `src/utils/hardware_policy.py` — all runtimes and
+  `scripts/hardware_policy_cli.py` MUST delegate here.
+- **Never fork parsers:** After changing the canonical module, grep for `_simple_policy_parse`,
+  `_forbidden`, or local YAML copies. Duplicate parsers silently diverge (PR #131).
+- **LM Studio proxy:** Mac `/v1/models` lists Win models; enforce by provider/platform, not list
+  membership.
+- **Alias merge:** `windows_only_aliases` (quant-suffixed ids) must flow through `_normalize_policy`
+  — see tests in `test_hardware_routing.py`.
+- **Researcher path:** `scripts/launch_researchers.py` uses `_pick_model_with_affinity` +
+  `_platform_for_role` — no blind `models[0]`.
+- **Validation:** `orama-system/start.sh --hardware-policy` → `hardware_policy_cli.py
+  --check-openclaw`.
+- **Skill:** `.claude/skills/hardware-policy/SKILL.md` (operational playbook; mirrored in
+  `.agents/skills/`).
 - **Import direction:** orama imports PT affinity one-way; PT never imports orama for policy rules.
 
 ## Endpoint transport policy — scheme + host + port
 
-**Applies when touching active_tilting, model endpoint reconstruction, SSRF policy, routing, LAN discovery, or any code that turns a discovered host into a runtime URL.**
+**Applies when touching active_tilting, model endpoint reconstruction, SSRF policy, routing, LAN
+discovery, or any code that turns a discovered host into a runtime URL.**
 
-- **Transport identity:** endpoint identity is `scheme + hostname + backend-specific port`. Preserve the discovered `http`/`https` scheme first, normalize host second, then route by backend-specific port.
-- **Canonical reconstruction API:** `src/utils/endpoint_policy_core.py`. Runtime routing code MUST delegate URL reconstruction to `build_transport_url()` or `parse_transport_identity()` instead of calling `urlparse()` locally.
-- **SSRF/network allow policy:** `src/utils/model_endpoint_url.py` remains the allow/deny validation layer. Do not merge network-class policy into transport reconstruction helpers.
-- **Active tilting invariant:** LM Studio keeps the discovered endpoint unchanged; Ollama reuses the discovered scheme/host but switches to the Ollama model port (`11434`).
-- **CI contract:** `config/endpoint-policy-contract.yml` plus `scripts/security/check_endpoint_policy_core.py` define the Perpetua canonical side; `diazMelgarejo/orama-system` mirrors it through `config/endpoint-policy-contract.yml` and `.github/workflows/endpoint-policy-contract.yml`.
-- **Existing skills to load:** use orama `bin/orama-system/skills/oramasys-method/SKILL.md` for architecture-heavy endpoint changes, `bin/orama-system/skills/oramasys-method/references/integrative-merge.md` for cross-repo synthesis, `bin/orama-system/skills/git-history-surgery/SKILL.md` before judging rewritten branch state, and `.claude/skills/hardware-policy/SKILL.md` when routing intersects hardware affinity.
-- **Security policy:** read orama `docs/SECURITY-POLICY.md` before endpoint-security remediation PRs.
-- **Validation:** run `python scripts/security/check_endpoint_policy_core.py` and `pytest tests/test_endpoint_policy_core.py tests/test_scheme_preservation.py tests/test_model_endpoint_url.py -q`.
+- **Transport identity:** endpoint identity is `scheme + hostname + backend-specific port`. Preserve
+  the discovered `http`/`https` scheme first, normalize host second, then route by backend-specific
+  port.
+- **Canonical reconstruction API:** `src/utils/endpoint_policy_core.py`. Runtime routing code MUST
+  delegate URL reconstruction to `build_transport_url()` or `parse_transport_identity()` instead of
+  calling `urlparse()` locally.
+- **SSRF/network allow policy:** `src/utils/model_endpoint_url.py` remains the allow/deny validation
+  layer. Do not merge network-class policy into transport reconstruction helpers.
+- **Active tilting invariant:** LM Studio keeps the discovered endpoint unchanged; Ollama reuses the
+  discovered scheme/host but switches to the Ollama model port (`11434`).
+- **CI contract:** `config/endpoint-policy-contract.yml` plus
+  `scripts/security/check_endpoint_policy_core.py` define the Perpetua canonical side;
+  `diazMelgarejo/orama-system` mirrors it through `config/endpoint-policy-contract.yml` and
+  `.github/workflows/endpoint-policy-contract.yml`.
+- **Existing skills to load:** use orama `bin/orama-system/skills/oramasys-method/SKILL.md` for
+  architecture-heavy endpoint changes,
+  `bin/orama-system/skills/oramasys-method/references/integrative-merge.md` for cross-repo
+  synthesis, `bin/orama-system/skills/git-history-surgery/SKILL.md` before judging rewritten branch
+  state, and `.claude/skills/hardware-policy/SKILL.md` when routing intersects hardware affinity.
+- **Security policy:** read orama `docs/SECURITY-POLICY.md` before endpoint-security remediation
+  PRs.
+- **Validation:** run `python scripts/security/check_endpoint_policy_core.py` and `pytest
+  tests/test_endpoint_policy_core.py tests/test_scheme_preservation.py
+  tests/test_model_endpoint_url.py -q`.
 
 ## Prime directives for agent-maintained records
 
@@ -108,7 +137,8 @@ Load **oramasys-method** (`.claude/skills/oramasys-method/SKILL.md`) and follow 
 [integrative-merge reference](https://github.com/diazMelgarejo/orama-system/blob/main/bin/orama-system/skills/oramasys-method/references/integrative-merge.md):
 
 - **Synthesize, never amputate** — additive, blending, union, superset; archive instead of delete.
-- Portable brain summary: [`.agent/AGENTS.md` § Multi-agent merge conflict protocol](.agent/AGENTS.md).
+- Portable brain summary: [`.agent/AGENTS.md` § Multi-agent merge conflict
+  protocol](.agent/AGENTS.md).
 
 ## Cursor Cloud: git commits
 
@@ -131,7 +161,8 @@ See orama-system `docs/wiki/09-cursor-cloud-commit-attribution.md` (canonical).
 **Applies to every agent.** The guard scripts here — `audit_attribution.sh`,
 `banned_attribution_lib.sh`, `check_commit_message.sh`, `check_identity.sh`,
 `daily-attribution-guard.sh` (+ deps) — are **byte-identical copies of orama's canonical
-versions** ([orama `scripts/git/`](https://github.com/diazMelgarejo/orama-system/tree/main/scripts/git)).
+versions** ([orama
+`scripts/git/`](https://github.com/diazMelgarejo/orama-system/tree/main/scripts/git)).
 
 - **NEVER hand-edit a guard script in this repo.** A stale fork once made PT's strict
   `pre-push` reject the mainstream-AI co-authors (`coderabbitai`, `dependabot`,
