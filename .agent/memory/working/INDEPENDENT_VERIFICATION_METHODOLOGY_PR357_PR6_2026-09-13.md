@@ -37,8 +37,9 @@ Given three job URLs and no prior context, the verification sequence was:
    independently investigate every other failure rather than assume they're
    related — three unrelated failures were found, checked against the
    pre-fix state (identical failures, confirming pre-existing), and traced
-   to a missing `jq` binary in the local sandbox specifically, not a real CI
-   condition.
+   to a missing `jq` binary in this local sandbox. The affected CI jobs at
+   their recorded head SHAs were not independently verified, so this local
+   result does not establish whether CI had the same condition.
 7. When a separate agent's own retrospective was later provided, **treat it
    as a claim to check, not a fact to inherit** — independently reproduced
    its central technical claim (the exact byte-count mismatch, 12 vs 11
@@ -87,8 +88,9 @@ session, before building on it or citing it as settled:
 - Independently verified real RED (`git stash`, exact CI failure text
   reproduced locally) and real GREEN (`git stash pop`, both tests pass).
 - Independently confirmed 3 unrelated local test failures were pre-existing
-  (identical with and without the fix) and environment-specific (missing
-  `jq`), not related to the incident under investigation.
+  (identical with and without the fix) and caused in this sandbox by missing
+  `jq`. This is a local-reproduction conclusion only; no claim is made about
+  the corresponding CI jobs without their exact-head evidence.
 - Independently confirmed `oramasys/perpetua-core` PR #6's final merged head
   (`a7a6624092a747538094f3d07779a0fa09fb8da9`) and current `main`'s
   `requirements/test-agate-compat.txt` content match the companion
