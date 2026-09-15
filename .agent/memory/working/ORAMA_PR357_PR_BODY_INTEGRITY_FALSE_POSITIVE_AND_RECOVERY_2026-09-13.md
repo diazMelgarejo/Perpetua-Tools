@@ -440,3 +440,26 @@ This dossier complements, rather than supersedes:
 - the Perpetua Core PR #6 recovery dossier already carried by this PT memory branch.
 
 The new refinement is that **integrity verification must be representation-aware**. The earlier exact-byte lessons remain fully authoritative for tracked files and binary/content transport; they must not be transplanted mechanically onto external text metadata fields with different serialization semantics.
+
+## Follow-up: historical-document deduplication preserves evidence
+
+**Date:** 2026-09-15
+**Source:** Orama PR #359, `docs/SYNC_ANALYSIS.md` Markdownlint remediation
+
+A duplicated table row is a representation defect, not permission to reduce the
+historical record. The initial repair removed both duplicate fragments and kept
+only a shortened summary, losing the original OPT 3 test count and routing
+contract evidence. The correct reconciliation retains one complete canonical
+row: `tests/test_ultrathink_integration.py` with its 12-test routing-contract
+statement.
+
+The same rule applies when an old proposal has later been implemented. Preserve
+the original proposal or rationale as explicitly labelled pre-resolution
+history; state the later status and implementing commit beside it. Do not leave
+historical future tense as if it were a current obligation, and do not delete
+the historical reasoning merely because the outcome is now known.
+
+**Working rule:** deduplicate redundant representation only. Retain every
+distinct claim, count, path, commitment, and decision; reconcile later truth
+additively. Markdownlint and review cleanup must improve structure without
+amputating evidence.
