@@ -1,0 +1,42 @@
+{
+  "id": "813caf53e6bd",
+  "key": "manual_813caf",
+  "name": "manual_813caf",
+  "claim": "For mutable GitHub PR or issue text, define the canonical logical representation at the actual transport boundary before hashing: JSON serialization can preserve a trailing LF inside a string, while printf may add one and Bash command substitution may remove trailing LFs. Use exact bytes for Git blobs, tracked files and binary transport; do not attribute shell or CLI loss to JSON.",
+  "conditions": [
+    "github pr body",
+    "json serialization",
+    "representation boundary",
+    "shell command substitution",
+    "trailing newline"
+  ],
+  "evidence_ids": [
+    "2026-09-14T12:18:49.989441+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-14T12:18:49.989441+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-14T12:18:49.989441+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-14T12:19:01.812439+00:00",
+      "action": "graduated",
+      "reviewer": "Codex-review-remediation",
+      "notes": "Accepted after verifying the precise representation boundary: JSON strings preserve an LF; printf adds the helper LF and Bash command substitution removes trailing LFs. The new accepted record corrects the causal explanation while retaining the original exact-byte-versus-logical-text distinction.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-14T12:18:49.989441+00:00"
+      ],
+      "lessons_sha": "b9ef1d505e5b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-14T12:19:01.812421+00:00",
+  "reviewer": "Codex-review-remediation",
+  "rationale": "Accepted after verifying the precise representation boundary: JSON strings preserve an LF; printf adds the helper LF and Bash command substitution removes trailing LFs. The new accepted record corrects the causal explanation while retaining the original exact-byte-versus-logical-text distinction."
+}

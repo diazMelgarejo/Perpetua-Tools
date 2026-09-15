@@ -1,0 +1,58 @@
+name: Episodic append-only integrity
+
+on:
+  pull_request:
+    branches: [main]
+  merge_group:
+    types: [checks_requested]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  episodic-append-only:
+    name: Episodic append-only integrity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Select exact event revisions
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
+          name = os.environ["GITHUB_EVENT_NAME"]
+          if name == "pull_request":
+              base = event["pull_request"]["base"]["sha"]
+              head = event["pull_request"]["head"]["sha"]
+          elif name == "merge_group":
+              base = event["merge_group"]["base_sha"]
+              head = event["merge_group"]["head_sha"]
+          elif name == "push":
+              base, head = event["before"], event["after"]
+          else:
+              raise SystemExit("Unsupported event; no implicit comparison base")
+          for value in (base, head):
+              if not re.fullmatch(r"[0-9a-f]{40}", value) or value == "0" * 40:
+                  raise SystemExit("Exact nonzero commit revisions are required")
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as output:
+              output.write(f"APPEND_BASE_SHA={base}\nAPPEND_HEAD_SHA={head}\n")
+          PY
+
+      - name: Test preservation checker
+        run: python3 -m unittest discover -s tests -p test_episodic_append_only.py -v
+
+      - name: Verify historical bytes and new records
+        run: |
+          python3 scripts/review/check_episodic_append_only.py \
+            --base "$APPEND_BASE_SHA" --head "$APPEND_HEAD_SHA"

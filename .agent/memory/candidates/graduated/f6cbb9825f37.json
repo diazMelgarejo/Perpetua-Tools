@@ -1,0 +1,43 @@
+{
+  "id": "f6cbb9825f37",
+  "key": "manual_f6cbb9",
+  "name": "manual_f6cbb9",
+  "claim": "Choose the canonical representation before choosing a hash. Exact-byte hashing is correct for Git blobs, tracked files, and binary transport, where an exact byte identity is the actual invariant. It is wrong when applied to a mutable external text field (e.g. a GitHub PR/issue body) whose transport (JSON serialization, CLI output, shell command substitution) does not preserve incidental bytes such as a trailing newline -- comparing raw bytes there creates false-positive integrity failures on genuinely correct writes, not stronger integrity",
+  "conditions": [
+    "false-positive",
+    "hash-comparison",
+    "integrity-check",
+    "representation-boundary",
+    "text-metadata",
+    "trailing-newline"
+  ],
+  "evidence_ids": [
+    "2026-09-13T02:00:31.028198+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-13T02:00:31.028198+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-13T02:00:31.028198+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-13T02:00:31.140003+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-09-13 incident, oramasys/orama-system PR #357: a post-write integrity guard (added to close a real concurrent-edit race in scripts/cursor/append-pr-body.sh) compared raw SHA-256 hashes of a locally-written file (printf '%s\\n', which adds a trailing newline) against the same content re-read through the GitHub API. The two never matched, even on a correct write, because command substitution and JSON text fields do not preserve that added byte -- confirmed with a direct, minimal reproduction (12 bytes vs 11) before fixing by normalizing (rstrip newline) before hashing. Two full domains exist and must not be conflated: Git blob / tracked artifact / binary payload -> exact bytes; GitHub PR/issue text metadata -> canonical logical text representation with transport newline semantics explicitly defined. Full write-up: .agent/memory/working/ORAMA_PR357_PR_BODY_INTEGRITY_FALSE_POSITIVE_AND_RECOVERY_2026-09-13.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-13T02:00:31.028198+00:00"
+      ],
+      "lessons_sha": "fb691a0e2313"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-13T02:00:31.139990+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-09-13 incident, oramasys/orama-system PR #357: a post-write integrity guard (added to close a real concurrent-edit race in scripts/cursor/append-pr-body.sh) compared raw SHA-256 hashes of a locally-written file (printf '%s\\n', which adds a trailing newline) against the same content re-read through the GitHub API. The two never matched, even on a correct write, because command substitution and JSON text fields do not preserve that added byte -- confirmed with a direct, minimal reproduction (12 bytes vs 11) before fixing by normalizing (rstrip newline) before hashing. Two full domains exist and must not be conflated: Git blob / tracked artifact / binary payload -> exact bytes; GitHub PR/issue text metadata -> canonical logical text representation with transport newline semantics explicitly defined. Full write-up: .agent/memory/working/ORAMA_PR357_PR_BODY_INTEGRITY_FALSE_POSITIVE_AND_RECOVERY_2026-09-13.md."
+}

@@ -1,0 +1,42 @@
+{
+  "id": "f996346116aa",
+  "key": "manual_f99634",
+  "name": "manual_f99634",
+  "claim": "A detailed, well-written incident or recovery report from another agent or session is a claim to independently check, not a fact to inherit -- reproduce its central technical claims directly, and resolve every cited commit SHA, byte count, or CI run against the live repository before citing that report's account as accurate",
+  "conditions": [
+    "cross-agent-trust",
+    "incident-inheritance",
+    "independent-verification",
+    "relayed-report",
+    "reproduce-before-cite"
+  ],
+  "evidence_ids": [
+    "2026-09-13T02:02:13.952391+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-13T02:02:13.952391+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-13T02:02:13.952391+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-13T02:02:14.061930+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-09-13: before treating a separate agent's retrospective on the PR #357 trailing-newline incident as established, independently reproduced its central claim (a 12-byte vs 11-byte mismatch from printf adding a trailing newline that a JSON/command-substitution round-trip does not preserve) with isolated bash and od, rather than citing the report's own numbers directly. Also independently confirmed its cited commit SHAs, PR #6's final merged head, and the resulting pyproject.toml/requirements-file state against the live GitHub API before building on any of it. This is the same discipline as lesson_d7a13d8bc5fb (the four integrity levels) applied one level up: a narrative about a fix is itself a claim about the world, not a substitute for checking the world. Full write-up: .agent/memory/working/INDEPENDENT_VERIFICATION_METHODOLOGY_PR357_PR6_2026-09-13.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-13T02:02:13.952391+00:00"
+      ],
+      "lessons_sha": "c8ca70063928"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-13T02:02:14.061918+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-09-13: before treating a separate agent's retrospective on the PR #357 trailing-newline incident as established, independently reproduced its central claim (a 12-byte vs 11-byte mismatch from printf adding a trailing newline that a JSON/command-substitution round-trip does not preserve) with isolated bash and od, rather than citing the report's own numbers directly. Also independently confirmed its cited commit SHAs, PR #6's final merged head, and the resulting pyproject.toml/requirements-file state against the live GitHub API before building on any of it. This is the same discipline as lesson_d7a13d8bc5fb (the four integrity levels) applied one level up: a narrative about a fix is itself a claim about the world, not a substitute for checking the world. Full write-up: .agent/memory/working/INDEPENDENT_VERIFICATION_METHODOLOGY_PR357_PR6_2026-09-13.md."
+}
