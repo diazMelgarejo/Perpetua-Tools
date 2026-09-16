@@ -48,7 +48,7 @@ if [ -f "$ROOT/scripts/review/repo_hygiene.py" ]; then
 fi
 
 BASE="$(git merge-base origin/main HEAD 2>/dev/null || git rev-parse HEAD)"
-gate episodic-append-only episodic-append-only --base "$BASE" --head HEAD
+gate episodic-append-only episodic-append-only --base "$BASE" --worktree
 
 FAILED=0
 for i in "${!GATE_NAMES[@]}"; do

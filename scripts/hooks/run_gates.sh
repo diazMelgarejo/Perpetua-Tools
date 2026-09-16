@@ -29,7 +29,7 @@ case "${1:-}" in
     ;;
   repo-hygiene)
     shift
-    exec python3 "$ROOT/scripts/review/repo_hygiene.py" "${2:-$ROOT}"
+    exec python3 "$ROOT/scripts/review/repo_hygiene.py" "${1:-$ROOT}"
     ;;
   *)
     echo "run_gates: unknown gate '${1:-}'" >&2

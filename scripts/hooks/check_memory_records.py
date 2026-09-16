@@ -12,6 +12,9 @@ Checks, in order of what actually failed in the 848da335af02 incident:
    validate.py heuristic, applied at the hook).
 6. Supersedes/links must reference records that exist in the tracked
    candidates/graduated set (no dangling supersession).
+7. Directly staged candidates under graduated/ or rejected/ must carry a
+   decisions[] entry with a non-empty reviewer for the terminal action
+   (blocks self-graduation / schema-by-guess at the hook).
 
 Exit 1 lists every failing staged file. Reference cards and working
 narratives (.md) are not schema-validated (repo_hygiene covers their
@@ -109,6 +112,30 @@ def validate_candidate(path: Path, problems: list[str], tracked: dict[str, dict]
             f"{path}: supersedes target {supersedes!r} does not exist in the "
             f"tracked graduated corpus"
         )
+    # Terminal-lane candidates must show an evidence-backed review decision
+    # (author of a record cannot be its only graduation reviewer signal).
+    if "graduated" in path.parts or "rejected" in path.parts:
+        decisions = data.get("decisions")
+        if not isinstance(decisions, list) or not decisions:
+            problems.append(
+                f"{path}: graduated/rejected candidates require a non-empty "
+                f"decisions[] list with a reviewer (no self-graduation)"
+            )
+        else:
+            terminal = {"graduated", "accepted", "rejected"}
+            reviewed = [
+                d for d in decisions
+                if isinstance(d, dict)
+                and d.get("action") in terminal
+                and isinstance(d.get("reviewer"), str)
+                and d.get("reviewer").strip()
+            ]
+            if not reviewed:
+                problems.append(
+                    f"{path}: no decisions[] entry with action in "
+                    f"{sorted(terminal)} and a non-empty reviewer -- "
+                    f"blocks self-graduation at the hook"
+                )
 
 
 def main() -> int:
