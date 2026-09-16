@@ -11,7 +11,7 @@ import asyncio
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 from urllib.parse import urlparse
 
 import httpx
@@ -342,7 +342,15 @@ class ProviderTransportRegistry:
             return None, None
         return int(input_tokens) + int(output_tokens), None  # Anthropic doesn't return cost directly
 
-    async def dispatch(self, model: str, prompt: str, max_tokens: int, stage: str) -> DispatchResult:
+    async def dispatch(
+        self,
+        model: str,
+        prompt: str,
+        max_tokens: int,
+        stage: str,
+        *,
+        commit: Callable[[], None] | None = None,
+    ) -> DispatchResult:
         """Dispatch one already-gated stage without exposing provider internals."""
         del stage  # Trace attribution remains the runner's responsibility.
         target = self._models.get(model)
@@ -356,6 +364,8 @@ class ProviderTransportRegistry:
         self._require_verified_provenance(target, provider)
         credential = self._credential(provider)
         endpoint = self._endpoint(target, provider)
+        if commit is not None:
+            commit()
         if target.backend == "bigmodel":
             body = await self._post(
                 provider,

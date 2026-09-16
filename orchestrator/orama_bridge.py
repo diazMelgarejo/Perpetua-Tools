@@ -13,6 +13,9 @@ from utils.egress_telemetry import EgressEvent, classify_deny_reason, emit
 
 log = logging.getLogger("orchestrator.orama_bridge")
 
+CONTROL_PLANE_DEPTH_HEADER = "X-Control-Plane-Depth"
+MAX_CONTROL_PLANE_DEPTH = 2
+
 
 OPTIMIZE_FOR_TO_REASONING_DEPTH = {
     "reliability": "ultra",
@@ -46,13 +49,24 @@ def normalize_oramasys_endpoint(endpoint: str) -> str:
 
 def resolve_oramasys_endpoint(configured_endpoint: str) -> str:
     """Resolve canonical then v1-compatible endpoint overrides."""
-    endpoint = (
+    from utils.model_endpoint_url import ModelEndpointPolicyError, validate_model_endpoint_url
+
+    env_endpoint = (
         os.getenv("ORAMASYS_ENDPOINT", "").strip()
         or os.getenv("ORAMA_ENDPOINT", "").strip()
         or os.getenv("ULTRATHINK_ENDPOINT", "").strip()
-        or configured_endpoint
     )
-    return normalize_oramasys_endpoint(endpoint)
+    resolved = normalize_oramasys_endpoint(env_endpoint or configured_endpoint)
+    if not resolved:
+        return resolved
+    if env_endpoint:
+        try:
+            validate_model_endpoint_url(resolved, allow_public=False)
+        except ModelEndpointPolicyError as exc:
+            raise ValueError(
+                "resolved oramasys endpoint is not permitted: %s" % resolved
+            ) from exc
+    return resolved
 
 
 def parse_oramasys_timeout(timeout_value: Any, default: float = 120.0) -> float:
@@ -130,7 +144,10 @@ def _dispatch_oramasys_http(url: str, payload: Dict[str, Any], timeout: float) -
     is_local = _is_local_oramasys_endpoint(url)
     started = time.monotonic()
     try:
-        headers = auth_headers()
+        headers = {
+            **auth_headers(),
+            CONTROL_PLANE_DEPTH_HEADER: "1",
+        }
         if is_local:
             import httpx
 

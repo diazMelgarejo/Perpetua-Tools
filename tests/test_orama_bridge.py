@@ -21,6 +21,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from orchestrator.orama_bridge import (
+    CONTROL_PLANE_DEPTH_HEADER,
     call_oramasys_bridge,
     normalize_oramasys_endpoint,
     parse_oramasys_timeout,
@@ -88,6 +89,21 @@ class TestResolveEndpoint:
 
         assert resolve_oramasys_endpoint("http://localhost:8001/oramasys") == (
             "http://localhost:8103/oramasys"
+        )
+
+    def test_rejects_public_env_endpoint_override(self, monkeypatch):
+        monkeypatch.setenv("ORAMASYS_ENDPOINT", "https://example.com/oramasys")
+
+        with pytest.raises(ValueError, match="not permitted"):
+            resolve_oramasys_endpoint("http://localhost:8001/oramasys")
+
+    def test_configured_public_endpoint_is_not_revalidated(self, monkeypatch):
+        monkeypatch.delenv("ORAMASYS_ENDPOINT", raising=False)
+        monkeypatch.delenv("ORAMA_ENDPOINT", raising=False)
+        monkeypatch.delenv("ULTRATHINK_ENDPOINT", raising=False)
+
+        assert resolve_oramasys_endpoint("https://orama.example.com") == (
+            "https://orama.example.com/oramasys"
         )
 
 
@@ -189,7 +205,10 @@ class TestCallBridgeRemote:
             "POST",
             "https://orama.example.com/oramasys",
             json=build_oramasys_http_payload("Test task", "deep_reasoning"),
-            headers={"Authorization": "Bearer orama-test-token"},
+            headers={
+                "Authorization": "Bearer orama-test-token",
+                CONTROL_PLANE_DEPTH_HEADER: "1",
+            },
             timeout=3.0,
         )
 
@@ -234,7 +253,10 @@ class TestCallBridgeLocal:
         mock_httpx_post.assert_called_once_with(
             "http://127.0.0.1:8001/oramasys",
             json=build_oramasys_http_payload("Test task", "deep_reasoning"),
-            headers=auth_headers(),
+            headers={
+                **auth_headers(),
+                CONTROL_PLANE_DEPTH_HEADER: "1",
+            },
             timeout=120.0,
         )
         mock_ssrf_request.assert_not_called()

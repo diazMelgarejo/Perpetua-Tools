@@ -161,9 +161,16 @@ class Tier5ExecutionService:
         async def marked_dispatch(
             model: str, stage_prompt: str, max_tokens: int, stage_name: str
         ) -> DispatchResult:
-            # Commit the stage marker BEFORE performing provider I/O
-            self.ledger.mark_dispatch(run_id, stage_name)
-            return await dispatch(model, stage_prompt, max_tokens, stage_name)
+            def commit() -> None:
+                self.ledger.mark_dispatch(run_id, stage_name)
+
+            return await dispatch(
+                model,
+                stage_prompt,
+                max_tokens,
+                stage_name,
+                commit=commit,
+            )
 
         try:
             result = await self.runner.run(

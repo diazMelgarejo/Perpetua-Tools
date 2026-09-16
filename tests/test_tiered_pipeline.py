@@ -15,10 +15,13 @@ def pipeline_files(tmp_path: Path) -> tuple[Path, Path, Path]:
     models.write_text(
         """models:
   - name: paid-fast
+    backend: openrouter
     frugality_tier: 5
   - name: paid-strong
+    backend: openrouter
     frugality_tier: 5
   - name: local-model
+    backend: ollama
     frugality_tier: 1
 """,
         encoding="utf-8",

@@ -52,6 +52,8 @@ from orchestrator.model_transport import (
     ProviderTransportRegistry,
 )
 from orchestrator.orama_bridge import (
+    CONTROL_PLANE_DEPTH_HEADER,
+    MAX_CONTROL_PLANE_DEPTH,
     call_oramasys_mcp_or_bridge,
     resolve_oramasys_timeout,
 )
@@ -992,6 +994,7 @@ async def register_tiered_pipeline_approval(
 async def run_tiered_pipeline(
     recipe_name: str,
     request: TieredPipelineRequest,
+    http_request: Request,
     idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
     runner: TieredPipelineRunner = Depends(get_tiered_pipeline_runner),
     transport: ProviderTransportRegistry = Depends(get_provider_transport),
@@ -1009,6 +1012,20 @@ async def run_tiered_pipeline(
             status_code=422,
             detail="Idempotency-Key header is required and must be a valid canonical UUIDv4",
         )
+    depth_raw = http_request.headers.get(CONTROL_PLANE_DEPTH_HEADER, "").strip()
+    if depth_raw:
+        try:
+            depth = int(depth_raw)
+        except ValueError:
+            raise HTTPException(
+                status_code=422,
+                detail="Control-plane depth header must be an integer",
+            ) from None
+        if depth > MAX_CONTROL_PLANE_DEPTH:
+            raise HTTPException(
+                status_code=409,
+                detail="Control-plane call depth exceeded",
+            )
     clean_idempotency_key = idempotency_key.strip()
     run_id = f"run-{clean_idempotency_key}"
 

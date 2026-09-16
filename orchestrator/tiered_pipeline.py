@@ -18,7 +18,7 @@ from typing import Awaitable, Callable, Mapping
 
 import yaml
 
-from orchestrator.gate import gate_permits, load_frugality_tier_by_name
+from orchestrator.gate import gate_permits, load_backend_by_name, load_frugality_tier_by_name
 
 _log = logging.getLogger(__name__)
 
@@ -348,7 +348,7 @@ class TieredPipelineRunner:
             if configured_trace_path
             else DEFAULT_TRACE
         )
-        self._models, self._recipes = self._load_and_validate()
+        self._models, self._recipes, self._model_backends = self._load_and_validate()
 
     @staticmethod
     def _load_revoked_trace_ids() -> frozenset[str]:
@@ -390,7 +390,7 @@ class TieredPipelineRunner:
 
     def _load_and_validate(
         self,
-    ) -> tuple[dict[str, tuple[str, ...]], dict[str, PipelineRecipe]]:
+    ) -> tuple[dict[str, tuple[str, ...]], dict[str, PipelineRecipe], dict[str, str]]:
         if not self.config_path.is_file():
             raise PipelineConfigError("pipeline config missing: %s" % self.config_path)
         if not self.models_path.is_file():
@@ -456,7 +456,10 @@ class TieredPipelineRunner:
                     candidate for candidate in candidates if candidate != override
                 ]
             models[alias] = tuple(dict.fromkeys(candidates))
-        tiers = load_frugality_tier_by_name(str(self.models_path.parent))
+        config_dir = str(self.models_path.parent)
+        tiers = load_frugality_tier_by_name(config_dir)
+        backends = load_backend_by_name(config_dir)
+        model_backends: dict[str, str] = {}
         for alias, candidates in models.items():
             for model_name in candidates:
                 tier = tiers.get(model_name)
@@ -465,6 +468,13 @@ class TieredPipelineRunner:
                         "pipeline model %s=%r must be frugality tier %d; found %r"
                         % (alias, model_name, PIPELINE_TIER, tier)
                     )
+                backend = backends.get(model_name)
+                if not isinstance(backend, str) or not backend.strip():
+                    raise PipelineConfigError(
+                        "pipeline model %s=%r is missing a backend in the model registry"
+                        % (alias, model_name)
+                    )
+                model_backends[model_name] = backend.strip()
 
         recipes: dict[str, PipelineRecipe] = {}
         for recipe_name, recipe_row in recipe_rows.items():
@@ -570,7 +580,26 @@ class TieredPipelineRunner:
                 cost_reservation_usd=cost_reservation_usd,
             )
 
-        return models, recipes
+        return models, recipes, model_backends
+
+    def _candidate_backend(self, model_name: str) -> str:
+        backend = self._model_backends.get(model_name)
+        if not backend:
+            raise PipelineConfigError(
+                "pipeline model %r is missing a backend in the model registry" % model_name
+            )
+        return backend
+
+    def _assert_candidate_in_scope(
+        self, model_name: str, approval: PipelineApproval
+    ) -> None:
+        backend = self._candidate_backend(model_name)
+        allowed = frozenset(item.strip().lower() for item in approval.scope if item.strip())
+        if backend.lower() not in allowed:
+            raise PipelineApprovalError(
+                "approval scope %s does not authorize provider %r for model %r"
+                % (list(approval.scope), backend, model_name)
+            )
 
     def recipe(self, name: str) -> PipelineRecipe:
         try:
@@ -716,6 +745,7 @@ class TieredPipelineRunner:
             result: DispatchResult | None = None
             last_unavailable: PipelineCandidateUnavailableError | None = None
             for model in stage.models:
+                self._assert_candidate_in_scope(model, approval)
                 started = time.monotonic()
                 try:
                     result = await dispatch(model, stage_prompt, stage.max_tokens, stage.name)

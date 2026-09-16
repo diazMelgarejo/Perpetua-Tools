@@ -15,12 +15,16 @@ def candidate_pipeline_files(tmp_path: Path) -> tuple[Path, Path, Path]:
     models.write_text(
         """models:
   - name: fast-primary
+    backend: openrouter
     frugality_tier: 5
   - name: fast-fallback
+    backend: anthropic
     frugality_tier: 5
   - name: strong-primary
+    backend: openrouter
     frugality_tier: 5
   - name: strong-fallback
+    backend: anthropic
     frugality_tier: 5
 """,
         encoding="utf-8",
@@ -60,18 +64,20 @@ def _runner(files: tuple[Path, Path, Path]) -> tp.TieredPipelineRunner:
     )
 
 
-def _approval() -> tp.PipelineApproval:
-    return tp.PipelineApproval(
-        trace_id="candidate-fallback-test",
-        approved_by="operator",
-        purpose="verify configured model fallbacks",
-        recipe="classify_then_generate",
-        route_tier=5,
-        max_tokens=30,
-        max_cost_usd=0.25,
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
-        scope=("openrouter", "anthropic", "bigmodel"),
-    )
+def _approval(**overrides: object) -> tp.PipelineApproval:
+    fields: dict[str, object] = {
+        "trace_id": "candidate-fallback-test",
+        "approved_by": "operator",
+        "purpose": "verify configured model fallbacks",
+        "recipe": "classify_then_generate",
+        "route_tier": 5,
+        "max_tokens": 30,
+        "max_cost_usd": 0.25,
+        "expires_at": datetime.now(timezone.utc) + timedelta(hours=1),
+        "scope": ("openrouter", "anthropic", "bigmodel"),
+    }
+    fields.update(overrides)
+    return tp.PipelineApproval(**fields)
 
 
 def test_candidate_pools_are_ordered_and_env_override_is_preferred(
@@ -195,3 +201,32 @@ async def test_ambiguous_paid_failure_never_dispatches_a_second_candidate(
         )
 
     assert attempts == ["fast-primary"]
+
+
+@pytest.mark.asyncio
+async def test_out_of_scope_candidate_is_rejected_before_dispatch(
+    candidate_pipeline_files: tuple[Path, Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("PIPELINE_TIERED_ENABLED", "1")
+    monkeypatch.delenv("ORAMASYS_OFFLINE", raising=False)
+    attempts: list[str] = []
+
+    async def dispatch(
+        model: str, prompt: str, max_tokens: int, stage: str
+    ) -> tp.DispatchResult:
+        del prompt, max_tokens, stage
+        attempts.append(model)
+        return tp.DispatchResult(text="ok", total_tokens=1, cost_usd=0.01)
+
+    narrow_approval = _approval(scope=("anthropic",))
+
+    with pytest.raises(tp.PipelineApprovalError, match="does not authorize provider"):
+        await _runner(candidate_pipeline_files).run(
+            "classify_then_generate",
+            "original",
+            approval=narrow_approval,
+            dispatch=dispatch,
+        )
+
+    assert attempts == []
