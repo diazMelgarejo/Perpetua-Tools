@@ -1,0 +1,42 @@
+{
+  "id": "b641aa5bc682",
+  "key": "manual_b641aa",
+  "name": "manual_b641aa",
+  "claim": "A new regression test passing is not TDD GREEN by itself -- run the whole neighboring test file, not just the new test, since a fix aimed at one failure mode can silently break an established, adjacent positive invariant it never re-checked",
+  "conditions": [
+    "happy-path",
+    "neighboring-invariant",
+    "red-green",
+    "regression-test",
+    "tdd"
+  ],
+  "evidence_ids": [
+    "2026-09-13T02:00:40.168464+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-13T02:00:40.168464+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-13T02:00:40.168464+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-13T02:00:40.270639+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-09-13, oramasys/orama-system PR #357: after adding a concurrency-guard fix, the new negative regression test (rejecting a stale-write race) passed, but the pre-existing, established happy-path test (test_append_pr_body_consumes_grant) failed on the exact same head -- a genuinely correct concurrency design implemented with the wrong equality check. The failure was only caught because the full test file (pytest tests/test_append_pr_body_grant_flow.py -v, not just the single new test) was run and inspected. A safety guard that only ever passes failure scenarios and rejects all successful operations is not a valid improvement, however sound its underlying design. Full write-up: .agent/memory/working/ORAMA_PR357_PR_BODY_INTEGRITY_FALSE_POSITIVE_AND_RECOVERY_2026-09-13.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-13T02:00:40.168464+00:00"
+      ],
+      "lessons_sha": "7982ca4cca54"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-13T02:00:40.270627+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-09-13, oramasys/orama-system PR #357: after adding a concurrency-guard fix, the new negative regression test (rejecting a stale-write race) passed, but the pre-existing, established happy-path test (test_append_pr_body_consumes_grant) failed on the exact same head -- a genuinely correct concurrency design implemented with the wrong equality check. The failure was only caught because the full test file (pytest tests/test_append_pr_body_grant_flow.py -v, not just the single new test) was run and inspected. A safety guard that only ever passes failure scenarios and rejects all successful operations is not a valid improvement, however sound its underlying design. Full write-up: .agent/memory/working/ORAMA_PR357_PR_BODY_INTEGRITY_FALSE_POSITIVE_AND_RECOVERY_2026-09-13.md."
+}

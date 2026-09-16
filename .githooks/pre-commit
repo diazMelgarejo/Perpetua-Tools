@@ -1,39 +1,73 @@
 #!/usr/bin/env bash
-set -euo pipefail
+# Parallel pre-commit gate runner.
+#
+# Pattern source: orama-system agent-security CI — "split the invocation,
+# not the gate logic" (docs/v2/plans/2026-08-20-agent-security-ci-runtime-
+# efficiency.md): each gate is one implementation in scripts/hooks/
+# run_gates.sh, invoked by name. Local parallelism uses background jobs
+# (gates are independent reads of the staged tree); CI runs the same gates
+# as separate parallel jobs via the same dispatcher, so hook and CI can
+# never drift.
+set -uo pipefail
 ROOT="$(git rev-parse --show-toplevel)"
+DISPATCH="$ROOT/scripts/hooks/run_gates.sh"
 
-# Guard: scrub macOS .DS_Store from .git/ internals before hygiene runs.
-# .gitignore cannot cover .git/; Finder drops .DS_Store here and it trips
-# repo_hygiene's "metadata inside git refs" gate. Best-effort, non-blocking.
+# --- sequential pre-pass (cheap, side-effecting): scrub .DS_Store ---
 if [[ -x "$ROOT/scripts/git/scrub_dsstore.sh" ]]; then
   bash "$ROOT/scripts/git/scrub_dsstore.sh" || true
 fi
 
-# Fast-fail: private LAN IPs in tracked config (3080/5080 endpoints → env vars).
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "error: python3 is required for the pre-commit gates" >&2
+  echo "error: run 'git commit --no-verify' only if you accept the risk" >&2
+  exit 1
+fi
+
+GATE_NAMES=()
+GATE_PIDS=()
+GATE_LOGS=()
+
+gate() {
+  local name="$1"; shift
+  local log
+  log="$(mktemp -t pt-gate.XXXXXX)"
+  GATE_NAMES+=("$name")
+  GATE_LOGS+=("$log")
+  ( bash "$DISPATCH" "$@" ) >"$log" 2>&1 &
+  GATE_PIDS+=("$!")
+}
+
 if [ -f "$ROOT/scripts/hooks/no_committed_lan_topology.py" ]; then
-  if ! command -v python3 >/dev/null 2>&1; then
-    echo "ERROR: python3 required for LAN topology pre-commit gate" >&2
-    exit 1
-  fi
-  python3 "$ROOT/scripts/hooks/no_committed_lan_topology.py" || exit 1
+  gate lan-topology lan-topology
 fi
 
-# Canonical hygiene gate — the SAME check CI runs (scripts/review/repo_hygiene.py):
-# commit identity, forbidden tokens, workstation/personal paths, secrets, bidi
-# controls, markdown-link hygiene, etc. Running it here catches a leak BEFORE it
-# enters history, so the expunge-git scrub is a last resort, not the routine
-# (#1802 follow-up). repo_hygiene.py subsumes check_identity (kept in sync), so
-# this preserves the prior identity gate and adds the rest.
+gate memory-records memory-records
+
 if [ -f "$ROOT/scripts/review/repo_hygiene.py" ]; then
-  if ! command -v python3 >/dev/null 2>&1; then
-    echo "error: scripts/review/repo_hygiene.py exists but python3 is not available" >&2
-    echo "error: refusing to silently fall back to the narrower identity-only check" >&2
-    echo "error: install python3, or run 'git commit --no-verify' if you understand the risk" >&2
-    exit 1
-  fi
-  exec python3 "$ROOT/scripts/review/repo_hygiene.py" "$ROOT"
+  gate repo-hygiene repo-hygiene "$ROOT"
 fi
 
-# Fallback for clones that predate the hygiene script (script itself
-# missing, not merely python3 missing): identity check only.
-exec "$ROOT/scripts/git/check_identity.sh"
+BASE="$(git merge-base origin/main HEAD 2>/dev/null || git rev-parse HEAD)"
+gate episodic-append-only episodic-append-only --base "$BASE" --worktree
+
+FAILED=0
+for i in "${!GATE_NAMES[@]}"; do
+  name="${GATE_NAMES[$i]}"
+  pid="${GATE_PIDS[$i]}"
+  log="${GATE_LOGS[$i]}"
+  if wait "$pid"; then
+    echo "PASS: $name"
+  else
+    echo "FAIL: $name" >&2
+    sed 's/^/    /' "$log" >&2
+    FAILED=1
+  fi
+  rm -f "$log"
+done
+
+if [ "$FAILED" -ne 0 ]; then
+  echo "pre-commit: one or more gates failed; commit rejected" >&2
+  echo "pre-commit: fix the failures or use 'git commit --no-verify' only if you accept the risk" >&2
+  exit 1
+fi
+exit 0
