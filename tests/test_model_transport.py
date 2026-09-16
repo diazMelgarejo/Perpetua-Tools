@@ -15,6 +15,18 @@ from orchestrator.model_transport import (
 from orchestrator.model_registry import ModelRegistry
 
 
+def test_provider_transport_fallback_safety_distinguishes_definitive_and_ambiguous_failures():
+    assert ProviderTransportError("provider", status_code=401).fallback_safe is True
+    assert ProviderTransportError("provider", status_code=500).fallback_safe is True
+    assert ProviderTransportError("provider", status_code=502).fallback_safe is False
+    assert ProviderTransportError("provider", status_code=504).fallback_safe is False
+    assert ProviderTransportError("provider").fallback_safe is False
+    assert ProviderTransportError("provider", fallback_safe=True).fallback_safe is True
+    assert ProviderTransportError("provider", fallback_safe=False).fallback_safe is False
+    assert ProviderConfigError("invalid provenance").fallback_safe is False
+    assert ProviderConfigError("missing credential", fallback_safe=True).fallback_safe is True
+
+
 @pytest.fixture
 def transport_config(tmp_path):
     config_dir = tmp_path / "config"

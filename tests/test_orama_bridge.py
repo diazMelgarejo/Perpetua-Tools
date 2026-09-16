@@ -25,6 +25,8 @@ from orchestrator.orama_bridge import (
     normalize_oramasys_endpoint,
     parse_oramasys_timeout,
     build_oramasys_http_payload,
+    resolve_oramasys_endpoint,
+    resolve_oramasys_timeout,
 )
 
 
@@ -53,6 +55,12 @@ class TestNormalizeEndpoint:
     def test_appends_ultrathink_path(self):
         assert normalize_oramasys_endpoint("http://localhost:8001") == "http://localhost:8001/oramasys"
 
+    def test_replaces_legacy_orama_path(self):
+        assert normalize_oramasys_endpoint("http://localhost:8001/orama") == "http://localhost:8001/oramasys"
+
+    def test_replaces_legacy_ultrathink_path(self):
+        assert normalize_oramasys_endpoint("http://localhost:8001/ultrathink") == "http://localhost:8001/oramasys"
+
     def test_does_not_double_append(self):
         assert normalize_oramasys_endpoint("http://localhost:8001/oramasys") == "http://localhost:8001/oramasys"
 
@@ -61,6 +69,26 @@ class TestNormalizeEndpoint:
 
     def test_empty_returns_empty(self):
         assert normalize_oramasys_endpoint("") == ""
+
+
+class TestResolveEndpoint:
+    def test_canonical_env_overrides_config_and_legacy_envs(self, monkeypatch):
+        monkeypatch.setenv("ORAMASYS_ENDPOINT", "http://localhost:8101/oramasys")
+        monkeypatch.setenv("ORAMA_ENDPOINT", "http://localhost:8102/orama")
+        monkeypatch.setenv("ULTRATHINK_ENDPOINT", "http://localhost:8103/ultrathink")
+
+        assert resolve_oramasys_endpoint("http://localhost:8001/oramasys") == (
+            "http://localhost:8101/oramasys"
+        )
+
+    def test_legacy_ultrathink_env_remains_compatible(self, monkeypatch):
+        monkeypatch.delenv("ORAMASYS_ENDPOINT", raising=False)
+        monkeypatch.delenv("ORAMA_ENDPOINT", raising=False)
+        monkeypatch.setenv("ULTRATHINK_ENDPOINT", "http://localhost:8103/ultrathink")
+
+        assert resolve_oramasys_endpoint("http://localhost:8001/oramasys") == (
+            "http://localhost:8103/oramasys"
+        )
 
 
 class TestParseTimeout:
@@ -75,6 +103,18 @@ class TestParseTimeout:
 
     def test_custom_default(self):
         assert parse_oramasys_timeout("", default=60.0) == 60.0
+
+    def test_non_positive_timeout_uses_default(self):
+        assert parse_oramasys_timeout("0") == 120.0
+        assert parse_oramasys_timeout("-1", default=60.0) == 60.0
+
+    def test_resolver_prefers_canonical_env_and_accepts_legacy(self, monkeypatch):
+        monkeypatch.setenv("ORAMASYS_TIMEOUT", "42")
+        monkeypatch.setenv("ORAMA_TIMEOUT", "43")
+        assert resolve_oramasys_timeout(120) == 42.0
+
+        monkeypatch.delenv("ORAMASYS_TIMEOUT")
+        assert resolve_oramasys_timeout(120) == 43.0
 
 
 class TestBuildPayload:
@@ -130,6 +170,29 @@ class TestCallBridgeRemote:
                 task_type="deep_reasoning",
             )
 
+    @patch("utils.ssrf_pinned_adapter.ssrf_request")
+    def test_uses_scoped_control_plane_auth_headers(self, mock_ssrf_request, monkeypatch):
+        monkeypatch.setenv("ORAMA_CONTROL_PLANE_TOKEN", "orama-test-token")
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = {"result": "ok"}
+        mock_resp.raise_for_status.return_value = None
+        mock_ssrf_request.return_value = mock_resp
+
+        call_oramasys_bridge(
+            endpoint="https://orama.example.com",
+            timeout=3.0,
+            task="Test task",
+            task_type="deep_reasoning",
+        )
+
+        mock_ssrf_request.assert_called_once_with(
+            "POST",
+            "https://orama.example.com/oramasys",
+            json=build_oramasys_http_payload("Test task", "deep_reasoning"),
+            headers={"Authorization": "Bearer orama-test-token"},
+            timeout=3.0,
+        )
+
 
 class TestCallBridgeLocal:
     """Regression coverage for CodeRabbit finding on orchestrator/orama_bridge.py:68-72
@@ -166,7 +229,14 @@ class TestCallBridgeLocal:
             task_type="deep_reasoning",
         )
 
-        mock_httpx_post.assert_called_once()
+        from orchestrator.control_plane_auth import auth_headers
+
+        mock_httpx_post.assert_called_once_with(
+            "http://127.0.0.1:8001/oramasys",
+            json=build_oramasys_http_payload("Test task", "deep_reasoning"),
+            headers=auth_headers(),
+            timeout=120.0,
+        )
         mock_ssrf_request.assert_not_called()
         assert result["response"]["result"] == "ok"
 

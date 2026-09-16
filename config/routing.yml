@@ -52,16 +52,16 @@ routes:
   # Fallback: local qwen3:30b if orama endpoint unreachable.
   deep_reasoning:
     description: Complex multi-step reasoning, privacy-critical tasks
-    endpoint: "${ORAMA_ENDPOINT}"
-    timeout: "${ORAMA_TIMEOUT}"
+    endpoint: "http://localhost:8001/oramasys"
+    timeout: 120
     requires: [orama_available]
     fallback: local_qwen30b
     roles: [orama, strategy, top-level, fallback]
 
   code_analysis:
     description: Deep code analysis requiring extended reasoning
-    endpoint: "${ORAMA_ENDPOINT}"
-    timeout: "${ORAMA_TIMEOUT}"
+    endpoint: "http://localhost:8001/oramasys"
+    timeout: 120
     requires: [orama_available]
     model: qwen3-coder:14b
     fallback: local_qwen30b

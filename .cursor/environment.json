@@ -1,5 +1,5 @@
 {
-  "install": "bash scripts/cursor/cloud-bootstrap.sh",
+  "install": "bash scripts/cursor/cloud-install.sh",
   "start": "bash scripts/cursor/cloud-bootstrap.sh",
   "environment": {
     "PERPETUA_TOOLS_PATH": "${workspaceFolder}",

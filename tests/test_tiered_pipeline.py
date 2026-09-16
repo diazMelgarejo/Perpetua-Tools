@@ -900,4 +900,4 @@ def test_pipeline_model_env_override_resolves_when_valid(
     pipelines, models, trace = pipeline_files
     monkeypatch.setenv("PIPELINE_FAST_MODEL", "paid-strong")  # a different, still-valid tier-5 model
     runner = tp.TieredPipelineRunner(config_path=pipelines, models_path=models, trace_path=trace)
-    assert runner._models["fast"] == "paid-strong"
+    assert runner._models["fast"] == ("paid-strong", "paid-fast")

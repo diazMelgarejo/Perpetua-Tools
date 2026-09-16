@@ -1,11 +1,21 @@
 version: 1
+enabled: true
 
-# Tier-5 execution is opt-in. Model aliases are validated against the canonical
-# registry; the composition root owns provider selection and transport.
+# Tier-5 execution is approval-gated. Candidate pools are ordered, validated against
+# the canonical model registry, and tried until one real provider request
+# confirms adapter, model, endpoint, and credential readiness. Operators can
+# prepend an eligible registered model with PIPELINE_<ALIAS>_MODEL.
 models:
-  # These names are validated against config/models.yml at runner startup.
-  fast: glm-5.2
-  strong: claude-sonnet-5
+  fast:
+    candidates:
+      - openrouter-gpt-4o-mini
+      - glm-5.2
+      - claude-sonnet-5
+  strong:
+    candidates:
+      - openrouter-claude-sonnet-4.6
+      - claude-sonnet-5
+      - glm-5.2
 
 recipes:
   classify_then_generate:

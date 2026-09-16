@@ -11,7 +11,7 @@ import logging
 import os
 import re
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Awaitable, Callable, Mapping
@@ -40,11 +40,12 @@ DEFAULT_MODELS = Path(__file__).resolve().parent.parent / "config" / "models.yml
 DEFAULT_TRACE = Path(__file__).resolve().parent.parent / ".state" / "frugality_pipeline.jsonl"
 DEFAULT_APPROVAL_DIR = Path(__file__).resolve().parent.parent / ".state" / "pipeline_approvals"
 
-_ALLOWED_TOP_LEVEL_KEYS = frozenset({"version", "models", "recipes"})
+_ALLOWED_TOP_LEVEL_KEYS = frozenset({"version", "enabled", "models", "recipes"})
 _ALLOWED_RECIPE_KEYS = frozenset(
     {"stages", "max_total_tokens", "max_input_tokens", "cost_reservation_usd"}
 )
 _ALLOWED_STAGE_KEYS = frozenset({"name", "model", "max_tokens", "input_from", "instruction"})
+_ALLOWED_MODEL_ALIAS_KEYS = frozenset({"candidates"})
 
 @dataclass(frozen=True)
 class DispatchResult:
@@ -94,6 +95,14 @@ class PipelineExecutionError(PipelineError):
     """Raised when an injected provider dispatcher cannot complete a stage."""
 
 
+class PipelineCandidateUnavailableError(PipelineExecutionError):
+    """Raised when one configured candidate is not currently dispatchable."""
+
+    def __init__(self, message: str, *, fallback_safe: bool = True) -> None:
+        super().__init__(message)
+        self.fallback_safe = fallback_safe
+
+
 def validate_trace_id(trace_id: str) -> str:
     """Validate the trace identifier at every approval boundary.
 
@@ -118,10 +127,15 @@ def _reject_unknown_keys(obj: Mapping[str, object], allowed: frozenset[str], whe
 @dataclass(frozen=True)
 class PipelineStage:
     name: str
-    model: str
+    models: tuple[str, ...]
     max_tokens: int
     input_from: str | None = None
     instruction: str = ""
+
+    @property
+    def model(self) -> str:
+        """Return the primary candidate for v1 callers expecting one model."""
+        return self.models[0]
 
 
 @dataclass(frozen=True)
@@ -166,12 +180,21 @@ class PipelineResult:
     requested_tokens: int
     total_tokens_used: int | None
     total_cost_usd: float | None
+    models_used: Mapping[str, str] = field(default_factory=dict)
     replay: bool = False
 
 
-def tiered_pipeline_enabled() -> bool:
-    """Return True only for the literal opt-in value ``1``."""
-    return os.getenv(PIPELINE_FLAG, "0").strip() == "1"
+def tiered_pipeline_enabled(config_path: str | Path | None = None) -> bool:
+    """Resolve explicit env override, then the canonical config default."""
+    override = os.getenv(PIPELINE_FLAG)
+    if override is not None:
+        return override.strip() == "1"
+    path = Path(config_path) if config_path is not None else DEFAULT_CONFIG
+    try:
+        raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        return False
+    return isinstance(raw, Mapping) and raw.get("enabled") is True
 
 
 def _input_token_upper_bound(value: str) -> int:
@@ -365,7 +388,9 @@ class TieredPipelineRunner:
                 "revocation file %r is unreadable" % revoked_path
             ) from exc
 
-    def _load_and_validate(self) -> tuple[dict[str, str], dict[str, PipelineRecipe]]:
+    def _load_and_validate(
+        self,
+    ) -> tuple[dict[str, tuple[str, ...]], dict[str, PipelineRecipe]]:
         if not self.config_path.is_file():
             raise PipelineConfigError("pipeline config missing: %s" % self.config_path)
         if not self.models_path.is_file():
@@ -377,6 +402,8 @@ class TieredPipelineRunner:
         if not isinstance(raw, dict):
             raise PipelineConfigError("pipeline config root must be a mapping")
         _reject_unknown_keys(raw, _ALLOWED_TOP_LEVEL_KEYS, "pipeline config root")
+        if "enabled" in raw and not isinstance(raw["enabled"], bool):
+            raise PipelineConfigError("pipeline config enabled must be a boolean")
 
         model_aliases = raw.get("models")
         recipe_rows = raw.get("recipes")
@@ -396,19 +423,48 @@ class TieredPipelineRunner:
         # indirection, without reopening the registry-bypass gap that
         # motivated reverting it (see docs/next/2026-08-11-model-registry-provenance.md
         # and .agent/memory/working/2026-08-10-p4-tier5-pipeline-closure.md).
-        models: dict[str, str] = {}
-        for alias, model_name in model_aliases.items():
-            alias = str(alias)
-            override = os.getenv("PIPELINE_%s_MODEL" % alias.upper(), "").strip()
-            models[alias] = override if override else str(model_name)
-        tiers = load_frugality_tier_by_name(str(self.models_path.parent))
-        for alias, model_name in models.items():
-            tier = tiers.get(model_name)
-            if tier != PIPELINE_TIER:
-                raise PipelineConfigError(
-                    "pipeline model %s=%r must be frugality tier %d; found %r"
-                    % (alias, model_name, PIPELINE_TIER, tier)
+        models: dict[str, tuple[str, ...]] = {}
+        for raw_alias, model_config in model_aliases.items():
+            alias = str(raw_alias)
+            if isinstance(model_config, str):
+                candidates = [model_config.strip()]
+            elif isinstance(model_config, Mapping):
+                _reject_unknown_keys(
+                    model_config,
+                    _ALLOWED_MODEL_ALIAS_KEYS,
+                    "pipeline model alias %r" % alias,
                 )
+                raw_candidates = model_config.get("candidates")
+                if not isinstance(raw_candidates, list) or not raw_candidates:
+                    raise PipelineConfigError(
+                        "pipeline model alias %r requires a non-empty candidates list"
+                        % alias
+                    )
+                candidates = [str(candidate).strip() for candidate in raw_candidates]
+            else:
+                raise PipelineConfigError(
+                    "pipeline model alias %r must be a model name or candidates mapping"
+                    % alias
+                )
+            if not candidates or any(not candidate for candidate in candidates):
+                raise PipelineConfigError(
+                    "pipeline model alias %r contains an empty candidate" % alias
+                )
+            override = os.getenv("PIPELINE_%s_MODEL" % alias.upper(), "").strip()
+            if override:
+                candidates = [override] + [
+                    candidate for candidate in candidates if candidate != override
+                ]
+            models[alias] = tuple(dict.fromkeys(candidates))
+        tiers = load_frugality_tier_by_name(str(self.models_path.parent))
+        for alias, candidates in models.items():
+            for model_name in candidates:
+                tier = tiers.get(model_name)
+                if tier != PIPELINE_TIER:
+                    raise PipelineConfigError(
+                        "pipeline model %s=%r must be frugality tier %d; found %r"
+                        % (alias, model_name, PIPELINE_TIER, tier)
+                    )
 
         recipes: dict[str, PipelineRecipe] = {}
         for recipe_name, recipe_row in recipe_rows.items():
@@ -464,7 +520,7 @@ class TieredPipelineRunner:
                 stages.append(
                     PipelineStage(
                         name=name,
-                        model=models[alias],
+                        models=models[alias],
                         max_tokens=max_tokens,
                         input_from=input_from,
                         instruction=str(row.get("instruction", "")).strip(),
@@ -576,6 +632,7 @@ class TieredPipelineRunner:
         *,
         recipe: str,
         stage: PipelineStage,
+        model: str,
         elapsed_ms: int,
         status: str,
         trace_id: str,
@@ -591,7 +648,7 @@ class TieredPipelineRunner:
                 "pipeline.trace_id": trace_id,
                 "pipeline.recipe": recipe,
                 "pipeline.stage": stage.name,
-                "pipeline.model": stage.model,
+                "pipeline.model": model,
                 "pipeline.max_tokens": stage.max_tokens,
                 "pipeline.tokens_used": tokens_used,
                 "pipeline.cost_usd": cost_usd,
@@ -616,7 +673,7 @@ class TieredPipelineRunner:
         override_confirmed: bool = False,
         override_reason: str | None = None,
     ) -> PipelineResult:
-        if not tiered_pipeline_enabled():
+        if not tiered_pipeline_enabled(self.config_path):
             raise PipelineDisabledError(
                 "%s=1 is required for Tier-5 pipeline execution" % PIPELINE_FLAG
             )
@@ -645,6 +702,7 @@ class TieredPipelineRunner:
             raise PipelinePolicyError(denied_reason or "canonical frugality gate denied Tier 5")
 
         outputs: dict[str, str] = {}
+        models_used: dict[str, str] = {}
         requested_tokens = 0
         total_tokens_used: int | None = 0
         total_cost_usd: float | None = 0.0
@@ -655,19 +713,52 @@ class TieredPipelineRunner:
                     "stage %s input exceeds max_input_tokens %d"
                     % (stage.name, recipe.max_input_tokens)
                 )
-            started = time.monotonic()
-            try:
-                result = await dispatch(stage.model, stage_prompt, stage.max_tokens, stage.name)
-            except Exception as exc:
-                self._emit_trace(
-                    recipe=recipe.name,
-                    stage=stage,
-                    elapsed_ms=max(0, int((time.monotonic() - started) * 1000)),
-                    status="failed",
-                    trace_id=approval.trace_id,
-                    error_class=type(exc).__name__,
-                )
-                raise
+            result: DispatchResult | None = None
+            last_unavailable: PipelineCandidateUnavailableError | None = None
+            for model in stage.models:
+                started = time.monotonic()
+                try:
+                    result = await dispatch(model, stage_prompt, stage.max_tokens, stage.name)
+                except PipelineCandidateUnavailableError as exc:
+                    if not exc.fallback_safe:
+                        self._emit_trace(
+                            recipe=recipe.name,
+                            stage=stage,
+                            model=model,
+                            elapsed_ms=max(0, int((time.monotonic() - started) * 1000)),
+                            status="failed",
+                            trace_id=approval.trace_id,
+                            error_class=type(exc).__name__,
+                        )
+                        raise
+                    last_unavailable = exc
+                    self._emit_trace(
+                        recipe=recipe.name,
+                        stage=stage,
+                        model=model,
+                        elapsed_ms=max(0, int((time.monotonic() - started) * 1000)),
+                        status="unavailable",
+                        trace_id=approval.trace_id,
+                        error_class=type(exc).__name__,
+                    )
+                    continue
+                except Exception as exc:
+                    self._emit_trace(
+                        recipe=recipe.name,
+                        stage=stage,
+                        model=model,
+                        elapsed_ms=max(0, int((time.monotonic() - started) * 1000)),
+                        status="failed",
+                        trace_id=approval.trace_id,
+                        error_class=type(exc).__name__,
+                    )
+                    raise
+                models_used[stage.name] = model
+                break
+            if result is None:
+                raise PipelineExecutionError(
+                    "stage %r has no available configured model" % stage.name
+                ) from last_unavailable
             output = result.text
             if not isinstance(output, str) or not output.strip():
                 raise PipelineExecutionError(
@@ -690,6 +781,7 @@ class TieredPipelineRunner:
             self._emit_trace(
                 recipe=recipe.name,
                 stage=stage,
+                model=models_used[stage.name],
                 elapsed_ms=max(0, int((time.monotonic() - started) * 1000)),
                 status="completed",
                 trace_id=approval.trace_id,
@@ -713,4 +805,5 @@ class TieredPipelineRunner:
             requested_tokens=requested_tokens,
             total_tokens_used=total_tokens_used,
             total_cost_usd=total_cost_usd,
+            models_used=dict(models_used),
         )

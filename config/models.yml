@@ -61,6 +61,50 @@ models:
     # OPENCLAW_MODELS_PROVIDERS_BIGMODEL_APIKEY.
     frugality_tier: 5
 
+  # ── ONLINE: OpenRouter shared-endpoint tiered pipeline defaults ────────────
+  # Both aliases use one OpenRouter credential/endpoint. Provider routing on
+  # OpenRouter handles upstream replicas; PT handles cross-model/provider
+  # fallback from config/pipelines.yml when this adapter is unavailable.
+  - name: "openrouter-gpt-4o-mini"
+    api_model: "openai/gpt-4o-mini"
+    backend: openrouter
+    device: cloud
+    host: "https://openrouter.ai"
+    port: 443
+    api_path: "/api/v1/chat/completions"
+    context_window: 128000
+    roles: [pipeline-fast, classification]
+    priority: 3
+    online: true
+    reasoning: fast-classification
+    description: "OpenRouter fast stage default"
+    frugality_tier: 5
+    provenance:
+      kind: provider-api
+      source_model_id: "openai/gpt-4o-mini"
+      source_url: "https://openrouter.ai/openai/gpt-4o-mini"
+      verified_on: "2026-09-16"
+
+  - name: "openrouter-claude-sonnet-4.6"
+    api_model: "anthropic/claude-sonnet-4.6"
+    backend: openrouter
+    device: cloud
+    host: "https://openrouter.ai"
+    port: 443
+    api_path: "/api/v1/chat/completions"
+    context_window: 1000000
+    roles: [pipeline-strong, strategy, architecture]
+    priority: 4
+    online: true
+    reasoning: strong-generation
+    description: "OpenRouter strong stage default"
+    frugality_tier: 5
+    provenance:
+      kind: provider-api
+      source_model_id: "anthropic/claude-sonnet-4.6"
+      source_url: "https://openrouter.ai/anthropic/claude-sonnet-4.6"
+      verified_on: "2026-09-16"
+
   # ── Priority 05 - LOCAL: Windows LM Studio (v1.0 RC canonical) ────────────
   # Qwen3.5-27B Q4_K_M — GPU Offload=40, Context=16384
   # HF: Jackrong/Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF

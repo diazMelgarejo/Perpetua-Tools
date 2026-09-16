@@ -18,20 +18,28 @@ import httpx
 import yaml
 
 from orchestrator.model_registry import ModelRegistry, ModelTarget
-from orchestrator.tiered_pipeline import PIPELINE_TIER, DispatchResult, PipelineExecutionError
+from orchestrator.tiered_pipeline import (
+    PIPELINE_TIER,
+    DispatchResult,
+    PipelineCandidateUnavailableError,
+)
 
 DEFAULT_CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
 DEFAULT_PROVIDERS = DEFAULT_CONFIG_DIR / "providers.yml"
 _RETRYABLE_STATUS_CODES = frozenset({408, 409, 425, 429, 500, 502, 503, 504})
+_AMBIGUOUS_STATUS_CODES = frozenset({502, 504})
 _ALLOWED_EFFORTS = frozenset({"low", "medium", "high", "xhigh", "max"})
 _OPENAI_SHAPE_BACKENDS = frozenset({"mistral", "deepseek", "groq", "dashscope", "meta_llama"})
 
 
-class ProviderConfigError(PipelineExecutionError):
+class ProviderConfigError(PipelineCandidateUnavailableError):
     """Raised when provider or model configuration is invalid."""
 
+    def __init__(self, message: str, *, fallback_safe: bool = False) -> None:
+        super().__init__(message, fallback_safe=fallback_safe)
 
-class ProviderTransportError(PipelineExecutionError):
+
+class ProviderTransportError(PipelineCandidateUnavailableError):
     """A redacted provider failure suitable for operator-facing responses."""
 
     def __init__(
@@ -41,15 +49,24 @@ class ProviderTransportError(PipelineExecutionError):
         status_code: int | None = None,
         request_id: str | None = None,
         retryable: bool = False,
+        fallback_safe: bool | None = None,
     ) -> None:
         self.provider = provider
         self.status_code = status_code
         self.request_id = request_id
         self.retryable = retryable
+        self.fallback_safe = (
+            status_code is not None and status_code not in _AMBIGUOUS_STATUS_CODES
+            if fallback_safe is None
+            else fallback_safe
+        )
         suffix = f" HTTP {status_code}" if status_code is not None else ""
         retry = "; retryable" if retryable else ""
         correlation = f" (request {request_id})" if request_id else ""
-        super().__init__(f"{provider} provider request failed{suffix}{retry}{correlation}")
+        super().__init__(
+            f"{provider} provider request failed{suffix}{retry}{correlation}",
+            fallback_safe=self.fallback_safe,
+        )
 
 
 @dataclass(frozen=True)
@@ -134,7 +151,8 @@ class ProviderTransportRegistry:
         value = os.getenv(provider.credential_env, "").strip()
         if not value:
             raise ProviderConfigError(
-                f"provider {provider.backend!r} requires local environment variable {provider.credential_env}"
+                f"provider {provider.backend!r} requires local environment variable {provider.credential_env}",
+                fallback_safe=True,
             )
         return value
 
@@ -227,8 +245,23 @@ class ProviderTransportRegistry:
                         raise last_error
                 except ProviderTransportError:
                     raise
+                # ConnectError is a NetworkError subclass, but an unestablished
+                # connection is safe to fall back from while a mid-request
+                # network failure may have reached and billed the provider.
+                except httpx.ConnectError:
+                    last_error = ProviderTransportError(
+                        provider.backend,
+                        retryable=True,
+                        fallback_safe=True,
+                    )
                 except (httpx.TimeoutException, httpx.NetworkError, httpx.ProtocolError):
-                    last_error = ProviderTransportError(provider.backend, retryable=True)
+                    # The provider may have received an ambiguous timed-out
+                    # request. Do not move to another paid model after retries.
+                    last_error = ProviderTransportError(
+                        provider.backend,
+                        retryable=True,
+                        fallback_safe=False,
+                    )
 
                 if attempt + 1 < provider.max_attempts:
                     await asyncio.sleep(self._retry_delay(response, attempt))
