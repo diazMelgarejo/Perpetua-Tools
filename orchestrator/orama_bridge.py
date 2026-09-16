@@ -34,10 +34,17 @@ def normalize_oramasys_endpoint(endpoint: str) -> str:
     expanded = os.path.expandvars(str(endpoint or "")).rstrip("/")
     if not expanded:
         return ""
+    # If the env-var placeholder was not expanded (e.g. ORAMA_ENDPOINT is unset
+    # and routing.yml contains the literal "${ORAMA_ENDPOINT}"), the result
+    # still contains "$".  Returning "" prevents an HTTP call to an invalid URL.
+    if "$" in expanded:
+        return ""
     if expanded.endswith("/oramasys"):
         return expanded
     if expanded.endswith("/ultrathink"):
         return f"{expanded[:-len('/ultrathink')]}/oramasys"
+    if expanded.endswith("/orama"):
+        return f"{expanded[:-len('/orama')]}/oramasys"
     return f"{expanded}/oramasys"
 
 
@@ -78,6 +85,19 @@ def _is_local_oramasys_endpoint(url: str) -> bool:
     return True
 
 
+def _build_bridge_headers() -> dict:
+    """Return an Authorization header when ORAMA_BRIDGE_TOKEN is set.
+
+    This token authenticates PT's outbound calls to the orama server when
+    orama's control-plane auth is enforced.  Set ORAMA_BRIDGE_TOKEN to the
+    same value as ORAMA_CONTROL_PLANE_TOKEN on the orama side.  When the
+    variable is absent or empty, no header is injected (allows unauthenticated
+    local deployments to keep working unchanged).
+    """
+    token = os.getenv("ORAMA_BRIDGE_TOKEN", "").strip()
+    return {"Authorization": f"Bearer {token}"} if token else {}
+
+
 def _dispatch_oramasys_http(url: str, payload: Dict[str, Any], timeout: float) -> Any:
     """The one HTTP-call implementation for both sync and async callers.
 
@@ -102,16 +122,17 @@ def _dispatch_oramasys_http(url: str, payload: Dict[str, Any], timeout: float) -
     hostname = parsed.hostname or ""
     port = parsed.port or (443 if parsed.scheme == "https" else 80)
     is_local = _is_local_oramasys_endpoint(url)
+    headers = _build_bridge_headers()
     started = time.monotonic()
     try:
         if is_local:
             import httpx
 
-            response = httpx.post(url, json=payload, timeout=timeout)
+            response = httpx.post(url, json=payload, headers=headers, timeout=timeout)
         else:
             from utils.ssrf_pinned_adapter import ssrf_request
 
-            response = ssrf_request("POST", url, json=payload, timeout=timeout)
+            response = ssrf_request("POST", url, json=payload, headers=headers, timeout=timeout)
     except Exception as exc:
         if not getattr(exc, "_egress_telemetry_emitted", False):
             emit(

@@ -62,6 +62,23 @@ class TestNormalizeEndpoint:
     def test_empty_returns_empty(self):
         assert normalize_oramasys_endpoint("") == ""
 
+    def test_orama_path_is_normalized_to_oramasys(self):
+        """Endpoint set to .../orama (old name or typo) must become .../oramasys."""
+        assert normalize_oramasys_endpoint("http://localhost:8001/orama") == "http://localhost:8001/oramasys"
+
+    def test_unexpanded_env_var_returns_empty(self, monkeypatch):
+        """When ORAMA_ENDPOINT is unset, routing.yml's ${ORAMA_ENDPOINT} stays
+        literal after os.path.expandvars; returning empty prevents an HTTP call
+        to an invalid URL and avoids a confusing connection error at dispatch
+        time."""
+        monkeypatch.delenv("ORAMA_ENDPOINT", raising=False)
+        assert normalize_oramasys_endpoint("${ORAMA_ENDPOINT}") == ""
+
+    def test_expanded_env_var_is_normalized(self, monkeypatch):
+        """Env var expansion succeeds and /oramasys is appended normally."""
+        monkeypatch.setenv("ORAMA_ENDPOINT", "http://localhost:8001")
+        assert normalize_oramasys_endpoint("${ORAMA_ENDPOINT}") == "http://localhost:8001/oramasys"
+
 
 class TestParseTimeout:
     def test_valid_number(self):
@@ -188,6 +205,64 @@ class TestCallBridgeLocal:
 
         mock_httpx_post.assert_called_once()
         mock_ssrf_request.assert_not_called()
+
+
+class TestBridgeAuthHeaders:
+    """Verify that ORAMA_BRIDGE_TOKEN is forwarded as a Bearer header."""
+
+    @patch("httpx.post")
+    def test_auth_token_sent_as_bearer_to_local_endpoint(self, mock_httpx_post, monkeypatch):
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = {"result": "ok"}
+        mock_resp.raise_for_status.return_value = None
+        mock_httpx_post.return_value = mock_resp
+
+        monkeypatch.setenv("ORAMA_BRIDGE_TOKEN", "my-secret-token")
+        call_oramasys_bridge(
+            endpoint="http://127.0.0.1:8001",
+            timeout=5.0,
+            task="auth task",
+            task_type="deep_reasoning",
+        )
+
+        _, call_kwargs = mock_httpx_post.call_args
+        assert call_kwargs["headers"]["Authorization"] == "Bearer my-secret-token"
+
+    @patch("httpx.post")
+    def test_no_auth_header_when_token_unset(self, mock_httpx_post, monkeypatch):
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = {"result": "ok"}
+        mock_resp.raise_for_status.return_value = None
+        mock_httpx_post.return_value = mock_resp
+
+        monkeypatch.delenv("ORAMA_BRIDGE_TOKEN", raising=False)
+        call_oramasys_bridge(
+            endpoint="http://127.0.0.1:8001",
+            timeout=5.0,
+            task="no auth task",
+            task_type="deep_reasoning",
+        )
+
+        _, call_kwargs = mock_httpx_post.call_args
+        assert "Authorization" not in call_kwargs.get("headers", {})
+
+    @patch("utils.ssrf_pinned_adapter.ssrf_request")
+    def test_auth_token_forwarded_to_remote_endpoint(self, mock_ssrf_request, monkeypatch):
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = {"result": "ok"}
+        mock_resp.raise_for_status.return_value = None
+        mock_ssrf_request.return_value = mock_resp
+
+        monkeypatch.setenv("ORAMA_BRIDGE_TOKEN", "remote-token")
+        call_oramasys_bridge(
+            endpoint="https://orama.example.com",
+            timeout=5.0,
+            task="remote auth task",
+            task_type="deep_reasoning",
+        )
+
+        _, call_kwargs = mock_ssrf_request.call_args
+        assert call_kwargs["headers"]["Authorization"] == "Bearer remote-token"
 
 
 class TestCallBridgeAsyncLocal:
