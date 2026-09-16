@@ -260,8 +260,10 @@ class TestUltrathinkRouting:
 # ---------------------------------------------------------------------------
 
 class TestRoutingYmlUltrathinkContract:
-    """Verify routing.yml correctly declares ultrathink for deep_reasoning
-    and code_analysis. Runs against the YAML file directly — no server needed."""
+    """Verify canonical oramasys routing while v1 fallback behavior remains.
+
+    Runs against the YAML file directly — no server needed.
+    """
 
     @pytest.fixture(scope="class")
     def routing(self):
@@ -271,19 +273,19 @@ class TestRoutingYmlUltrathinkContract:
         with open(routing_yml) as f:
             return yaml.safe_load(f)
 
-    def test_deep_reasoning_has_ultrathink_endpoint(self, routing: dict):
+    def test_deep_reasoning_has_oramasys_default_endpoint(self, routing: dict):
         routes = routing["routes"]
         assert "deep_reasoning" in routes
         route = routes["deep_reasoning"]
-        assert "endpoint" in route
-        assert "ORAMA_ENDPOINT" in route["endpoint"]
+        assert route["endpoint"] == "http://localhost:8001/oramasys"
+        assert route["timeout"] == 120
 
-    def test_code_analysis_has_ultrathink_endpoint(self, routing: dict):
+    def test_code_analysis_has_oramasys_default_endpoint(self, routing: dict):
         routes = routing["routes"]
         assert "code_analysis" in routes
         route = routes["code_analysis"]
-        assert "endpoint" in route
-        assert "ORAMA_ENDPOINT" in route["endpoint"]
+        assert route["endpoint"] == "http://localhost:8001/oramasys"
+        assert route["timeout"] == 120
 
     def test_deep_reasoning_has_ultrathink_fallback(self, routing: dict):
         route = routing["routes"]["deep_reasoning"]

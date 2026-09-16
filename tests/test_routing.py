@@ -43,13 +43,14 @@ def test_required_routes_present(routing_config):
         assert route in routes, f"Missing route: {route}"
 
 
-def test_ultrathink_routes_have_endpoint(routing_config):
-    """deep_reasoning and code_analysis must reference ORAMA_ENDPOINT."""
+def test_oramasys_routes_have_canonical_default_endpoint(routing_config):
+    """Oramasys routes must work without requiring an environment variable."""
     routes = routing_config["routes"]
     for route_name in ("deep_reasoning", "code_analysis"):
         route = routes[route_name]
         assert "endpoint" in route, f"{route_name} missing endpoint"
-        assert "ORAMA_ENDPOINT" in route["endpoint"]
+        assert route["endpoint"] == "http://localhost:8001/oramasys"
+        assert route["timeout"] == 120
 
 
 def test_ultrathink_routes_have_fallback(routing_config):
