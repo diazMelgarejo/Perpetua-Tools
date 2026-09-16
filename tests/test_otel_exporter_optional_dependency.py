@@ -41,8 +41,14 @@ def test_otel_exporter_dependency_absent_surface_is_stable() -> None:
         """
     )
 
+    # Run in a fresh subprocess so module-level state from the current test
+    # process cannot contaminate the opentelemetry absence probe. The `-I`
+    # (isolated) flag is intentionally absent: it would also exclude
+    # site-packages such as pydantic, which otel_exporter's import chain
+    # legitimately depends on. The blocked_import shim above is sufficient to
+    # simulate missing opentelemetry without stripping the whole site-packages.
     subprocess.run(
-        [sys.executable, "-I", "-c", script, str(repo_root)],
+        [sys.executable, "-c", script, str(repo_root)],
         cwd=repo_root,
         check=True,
         text=True,
