@@ -22,7 +22,8 @@
   "cluster_size": 1,
   "canonical_salience": 8.0,
   "staged_at": "2026-09-16T00:00:00+00:00",
-  "status": "accepted",
+  "status": "rejected",
+  "rejection_count": 1,
   "decisions": [
     {
       "ts": "2026-09-16T00:00:00+00:00",
@@ -33,6 +34,13 @@
       "ts": "2026-09-16T00:00:00+00:00",
       "action": "graduated",
       "reviewer": "cline-gate4-halfa"
+    },
+    {
+      "ts": "2026-09-16T11:26:33+00:00",
+      "action": "rejected",
+      "reviewer": "Codex-review-remediation",
+      "notes": "Rejected as a malformed duplicate: the filename/id mismatch has no corresponding lessons.jsonl row. The valid append-only supersession of lesson_f6cbb9825f37 is lesson_813caf53e6bd; this rejected record remains for auditability.",
+      "superseded_by": "lesson_813caf53e6bd"
     }
   ]
 }

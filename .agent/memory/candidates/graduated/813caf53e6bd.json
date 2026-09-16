@@ -38,5 +38,8 @@
   "rejection_count": 0,
   "accepted_at": "2026-09-14T12:19:01.812421+00:00",
   "reviewer": "Codex-review-remediation",
-  "rationale": "Accepted after verifying the precise representation boundary: JSON strings preserve an LF; printf adds the helper LF and Bash command substitution removes trailing LFs. The new accepted record corrects the causal explanation while retaining the original exact-byte-versus-logical-text distinction."
+  "rationale": "Accepted after verifying the precise representation boundary: JSON strings preserve an LF; printf adds the helper LF and Bash command substitution removes trailing LFs. The new accepted record corrects the causal explanation while retaining the original exact-byte-versus-logical-text distinction.",
+  "related_lesson_ids": [
+    "lesson_f6cbb9825f37"
+  ]
 }
