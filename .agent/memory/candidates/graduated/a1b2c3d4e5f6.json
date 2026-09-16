@@ -1,0 +1,38 @@
+{
+  "id": "848da335af02",
+  "key": "manual_848da335af02",
+  "name": "manual_848da335af02",
+  "supersedes": "lesson_f6cbb9825f37",
+  "claim": "Representation-boundary correction to lesson_f6cbb9825f37: JSON serialization itself CAN preserve a trailing LF inside a string value -- it is not a lossy boundary. The actual lossy boundary in the recorded incident was the shell/CLI layer: `printf '%s\\n'` appended the local LF and Bash command substitution in the CLI/readback path stripped it. Exact-byte hashing remains correct for Git blobs, tracked files, and binary transport, and remains wrong for mutable external text fields (GitHub PR/issue bodies) -- but the misidentified root cause is the shell/command-substitution boundary, not JSON serialization. Prefer content-hash or canonicalized-comparison for external text fields; do not attribute loss to JSON.",
+  "conditions": [
+    "false-positive",
+    "hash-comparison",
+    "integrity-check",
+    "representation-boundary",
+    "text-metadata",
+    "trailing-newline",
+    "shell-boundary",
+    "command-substitution",
+    "superseding-record"
+  ],
+  "evidence_ids": [
+    "2026-09-13T02:00:31.028198+00:00",
+    "2026-09-16T00:00:00+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-16T00:00:00+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-16T00:00:00+00:00",
+      "action": "staged",
+      "reviewer": "cline-gate4-halfa"
+    },
+    {
+      "ts": "2026-09-16T00:00:00+00:00",
+      "action": "graduated",
+      "reviewer": "cline-gate4-halfa"
+    }
+  ]
+}
