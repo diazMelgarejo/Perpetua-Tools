@@ -15,15 +15,17 @@ discard_stale_orama_env_overrides 2>/dev/null || true
 ORAMA_SYSTEM_PATH="$(resolve_orama_root 2>/dev/null || true)"
 export ORAMA_SYSTEM_PATH
 
-if [[ -x scripts/cursor/ci-bootstrap-private-attribution.sh ]]; then
+# Invoke with bash + -f, not -x: git mode 100644 still runs (Cloud Agent
+# start used to skip the attribution seeder and then fail verify-git-guards).
+if [[ -f scripts/cursor/ci-bootstrap-private-attribution.sh ]]; then
   bash scripts/cursor/ci-bootstrap-private-attribution.sh
 fi
 
-if [[ -x scripts/cursor/install-user-git-environment.sh ]]; then
+if [[ -f scripts/cursor/install-user-git-environment.sh ]]; then
   bash scripts/cursor/install-user-git-environment.sh
 fi
 
-if [[ -x scripts/git/neutralize-cursor-coauthor-hook.sh ]]; then
+if [[ -f scripts/git/neutralize-cursor-coauthor-hook.sh ]]; then
   bash scripts/git/neutralize-cursor-coauthor-hook.sh --all-agent-hooks
 fi
 
@@ -33,15 +35,15 @@ fi
 git config --local user.name "cyre" 2>/dev/null || true
 git config --local user.email "Lawrence@cyre.me" 2>/dev/null || true
 
-if [[ -x scripts/git/install-local-hooks.sh ]]; then
+if [[ -f scripts/git/install-local-hooks.sh ]]; then
   bash scripts/git/install-local-hooks.sh
 fi
 
-if [[ -x scripts/git/verify-git-guards.sh ]]; then
+if [[ -f scripts/git/verify-git-guards.sh ]]; then
   bash scripts/git/verify-git-guards.sh
 fi
 
-if [[ -x scripts/git/scan-tracked-banned-tokens.sh ]]; then
+if [[ -f scripts/git/scan-tracked-banned-tokens.sh ]]; then
   bash scripts/git/scan-tracked-banned-tokens.sh
 fi
 

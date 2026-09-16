@@ -13,6 +13,7 @@
 #   memory-records          staged .agent/memory/** record validation
 #   episodic-append-only <base> <head>   pinned-boundary byte check
 #   repo-hygiene <root>     canonical hygiene (same check CI runs)
+#   script-mode             git mode 100755 for Cursor bootstrap shell scripts
 set -uo pipefail
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
@@ -30,6 +31,9 @@ case "${1:-}" in
   repo-hygiene)
     shift
     exec python3 "$ROOT/scripts/review/repo_hygiene.py" "${1:-$ROOT}"
+    ;;
+  script-mode)
+    exec python3 "$ROOT/scripts/hooks/check_tracked_script_mode.py"
     ;;
   *)
     echo "run_gates: unknown gate '${1:-}'" >&2

@@ -1,6 +1,10 @@
 {
   "install": "bash scripts/cursor/cloud-bootstrap.sh",
   "start": "bash scripts/cursor/cloud-bootstrap.sh",
+  "repositoryDependencies": [
+    "github.com/diazMelgarejo/orama-system",
+    "github.com/oramasys/oramasys"
+  ],
   "environment": {
     "PERPETUA_TOOLS_PATH": "${workspaceFolder}",
     "REPO_ROOT": "${workspaceFolder}",

@@ -88,6 +88,9 @@ jobs:
       - name: Verify git guards
         run: bash scripts/git/verify-git-guards.sh
 
+      - name: Cursor bootstrap scripts are git mode 100755
+        run: python3 scripts/hooks/check_tracked_script_mode.py
+
       - name: Provision verboten-literals for CI
         # CI checks out this repo in isolation, so repo_hygiene.py's
         # openclaw_workspace_root() ancestor walk never finds a sibling

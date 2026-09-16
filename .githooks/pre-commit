@@ -47,6 +47,10 @@ if [ -f "$ROOT/scripts/review/repo_hygiene.py" ]; then
   gate repo-hygiene repo-hygiene "$ROOT"
 fi
 
+if [ -f "$ROOT/scripts/hooks/check_tracked_script_mode.py" ]; then
+  gate script-mode script-mode
+fi
+
 BASE="$(git merge-base origin/main HEAD 2>/dev/null || git rev-parse HEAD)"
 gate episodic-append-only episodic-append-only --base "$BASE" --worktree
 
