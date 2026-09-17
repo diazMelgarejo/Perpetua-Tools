@@ -63,6 +63,17 @@ class TestPublicBlocked:
         with pytest.raises(ModelEndpointPolicyError):
             validate_model_endpoint_url("http://evil.example.com:1234")
 
+    def test_127_prefix_hostname_not_treated_as_loopback(self):
+        with pytest.raises(ModelEndpointPolicyError, match="RFC1918"):
+            validate_model_endpoint_url("http://127.attacker.example:8000")
+
+    def test_127_prefix_hostname_blocked_with_require_tls_flag(self):
+        with pytest.raises(ModelEndpointPolicyError, match="RFC1918"):
+            validate_model_endpoint_url(
+                "http://127.attacker.example:8000",
+                require_tls_for_non_loopback=True,
+            )
+
     def test_public_ip_allowed_with_opt_in(self, monkeypatch):
         monkeypatch.setenv("ALLOW_PUBLIC_MODEL_ENDPOINTS", "1")
         assert allow_public_model_endpoints()
