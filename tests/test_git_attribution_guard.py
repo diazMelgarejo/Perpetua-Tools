@@ -35,6 +35,15 @@ def _ensure_banned_patterns() -> None:
     assert patterns.is_file(), "banned-attribution-patterns missing"
 
 
+def _seed_home_patterns_without_session_hook(home: Path) -> None:
+    """Patterns present, sessionStart hook absent (verify-git-guards contract)."""
+    _ensure_banned_patterns()
+    dest = home / ".cursor" / "openclaw"
+    dest.mkdir(parents=True, exist_ok=True)
+    src = ROOT / ".cursor/private/banned-attribution-patterns"
+    shutil.copy(src, dest / "banned-attribution-patterns")
+
+
 def _first_banned_token() -> str:
     _ensure_banned_patterns()
     for line in (ROOT / ".cursor/private/banned-attribution-patterns").read_text(
@@ -438,10 +447,10 @@ def test_verify_guards_github_actions_does_not_print_cursor_session_hook_fail():
 
 def test_verify_guards_without_github_actions_checks_session_hook(tmp_path):
     """When GITHUB_ACTIONS is unset, script checks for the Cursor session hook and fails if absent."""
-    _ensure_banned_patterns()
-    # Use a fake HOME with no Cursor hooks so the check reliably fails
+    # Use a fake HOME with patterns present and no Cursor sessionStart hook
     fake_home = tmp_path / "home"
     fake_home.mkdir()
+    _seed_home_patterns_without_session_hook(fake_home)
     env = {
         **os.environ,
         "HOME": str(fake_home),
