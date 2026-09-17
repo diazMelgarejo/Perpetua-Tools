@@ -1,0 +1,43 @@
+{
+  "id": "28698cd86a94",
+  "key": "manual_2bb73f",
+  "name": "manual_2bb73f",
+  "claim": "A UTF-8 BOM before the opening --- in SKILL.md makes OSSF-1 frontmatter validation fail with missing YAML \u2014 strip with utf-8-sig read/write; content is unchanged.",
+  "conditions": [
+    "BOM",
+    "OSSF-1",
+    "UTF-8",
+    "afrp",
+    "frontmatter",
+    "skill-md"
+  ],
+  "evidence_ids": [
+    "2026-09-16T07:48:39.147974+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-16T07:48:39.147974+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-16T07:48:39.147974+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-16T07:48:39.277325+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Caught 2026-08-08 pilot on bin/orama-system/afrp/SKILL.md: file began with U+FEFF so check_ossf1_skill_md.py FM_RE ^--- did not match. Fixed before commit e5e2cc51.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-16T07:48:39.147974+00:00"
+      ],
+      "lessons_sha": "846ade847e9d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-16T07:48:39.277312+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Caught 2026-08-08 pilot on bin/orama-system/afrp/SKILL.md: file began with U+FEFF so check_ossf1_skill_md.py FM_RE ^--- did not match. Fixed before commit e5e2cc51."
+}

@@ -1,0 +1,42 @@
+{
+  "id": "1995705fb757",
+  "key": "manual_6eb0e9",
+  "name": "manual_6eb0e9",
+  "claim": "A document that has lived for weeks in a non-git-tracked private folder has never been checked by any linter the target repo enforces -- expect real, pre-existing markdownlint/hygiene debt on first mirror into a CI-gated repo, not just the new content added during the mirror itself; run the actual linter, not a visual read, before treating a long-lived draft as CI-ready.",
+  "conditions": [
+    "ci",
+    "documentation",
+    "markdownlint",
+    "mirror",
+    "unlinted-drafts"
+  ],
+  "evidence_ids": [
+    "2026-09-17T02:44:47.005900+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-17T02:44:47.005900+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-17T02:44:47.005900+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-17T02:44:47.126965+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "agent-envelope: agent=claude-main model=claude-sonnet-5 date=2026-09-17 | The 6 OSSF draft documents (2026-09-16-ossf-part0..4 + publication plan) had lived only in OpenClaw's non-git references/ folder since authoring. First markdownlint-cli2 pass on the orama-system mirror found ~45 pre-existing table/line-length/fenced-code-language violations that had nothing to do with my own additions -- confirmed by running the linter, not assumed from a clean visual read of the source.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-17T02:44:47.005900+00:00"
+      ],
+      "lessons_sha": "d8944cb6fb76"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-17T02:44:47.126949+00:00",
+  "reviewer": "learn.py",
+  "rationale": "agent-envelope: agent=claude-main model=claude-sonnet-5 date=2026-09-17 | The 6 OSSF draft documents (2026-09-16-ossf-part0..4 + publication plan) had lived only in OpenClaw's non-git references/ folder since authoring. First markdownlint-cli2 pass on the orama-system mirror found ~45 pre-existing table/line-length/fenced-code-language violations that had nothing to do with my own additions -- confirmed by running the linter, not assumed from a clean visual read of the source."
+}
