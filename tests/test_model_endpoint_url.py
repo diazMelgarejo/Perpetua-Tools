@@ -103,6 +103,61 @@ class TestMalformed:
         ]
 
 
+class TestRequireTlsForNonLoopback:
+    """Opt-in scheme hardening for trusted, credential-bearing callers.
+
+    Reproduces CodeRabbit review 5234774766 (orama-system PR#363), Finding 2:
+    a trusted control-plane client (PT pipeline route) sends a bearer token
+    on every call; plain HTTP to a private-network (non-loopback) endpoint
+    exposes that token to anyone on-path on the LAN segment. Default
+    behavior (flag unset/False) is unchanged -- every other caller of this
+    function (LM Studio / Ollama / Windows-coder-pool endpoints, explicitly
+    documented as trusted-LAN HTTP by design) is unaffected.
+    """
+
+    def test_default_still_allows_http_to_private_network_host(self):
+        # Sweeping this module's default would break the documented
+        # LAN-trusting model-inference use case; the flag must be opt-in.
+        assert (
+            validate_model_endpoint_url("http://192.168.1.50:8000")
+            == "http://192.168.1.50:8000"
+        )
+
+    def test_flag_allows_the_documented_loopback_default(self):
+        assert (
+            validate_model_endpoint_url(
+                "http://localhost:8000", require_tls_for_non_loopback=True
+            )
+            == "http://localhost:8000"
+        )
+        assert (
+            validate_model_endpoint_url(
+                "http://127.0.0.1:8000", require_tls_for_non_loopback=True
+            )
+            == "http://127.0.0.1:8000"
+        )
+
+    def test_flag_rejects_http_to_rfc1918_private_host(self):
+        with pytest.raises(ModelEndpointPolicyError, match="https"):
+            validate_model_endpoint_url(
+                "http://192.168.1.50:8000", require_tls_for_non_loopback=True
+            )
+
+    def test_flag_rejects_http_to_10_range_private_host(self):
+        with pytest.raises(ModelEndpointPolicyError, match="https"):
+            validate_model_endpoint_url(
+                "http://10.0.0.5:8000", require_tls_for_non_loopback=True
+            )
+
+    def test_flag_allows_https_to_private_network_host(self):
+        assert (
+            validate_model_endpoint_url(
+                "https://192.168.1.50:8443", require_tls_for_non_loopback=True
+            )
+            == "https://192.168.1.50:8443"
+        )
+
+
 class TestLoggingRedaction:
     def test_private_ip_redacted(self):
         out = redact_endpoint_for_log("http://127.0.4.1:1234")
