@@ -75,6 +75,22 @@ def test_bridge_does_not_duplicate_adapter_deny_telemetry():
     emit.assert_not_called()
 
 
+def test_remote_http_bridge_refuses_to_send_bearer_credentials(monkeypatch):
+    """Remote plaintext transport is permitted only when it carries no bearer."""
+    import orchestrator.orama_bridge as bridge
+
+    monkeypatch.setattr(bridge, "auth_headers", lambda: {"Authorization": "Bearer secret"})
+    with (
+        patch("utils.ssrf_pinned_adapter.ssrf_request") as request,
+        pytest.raises(ValueError, match="remote HTTP endpoint with bearer credentials"),
+    ):
+        bridge._dispatch_oramasys_http(
+            "http://orama.example.com/oramasys", {"task": "test"}, 1.0
+        )
+
+    request.assert_not_called()
+
+
 class TestNormalizeEndpoint:
     def test_appends_ultrathink_path(self):
         assert normalize_oramasys_endpoint("http://localhost:8001") == "http://localhost:8001/oramasys"

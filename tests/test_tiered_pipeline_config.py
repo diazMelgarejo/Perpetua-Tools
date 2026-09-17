@@ -2,6 +2,7 @@ from orchestrator.tiered_pipeline import TieredPipelineRunner, tiered_pipeline_e
 
 
 def test_repository_pipeline_config_resolves_ordered_tier_five_candidates(monkeypatch) -> None:
+    monkeypatch.delenv("PIPELINE_TIERED_ENABLED", raising=False)
     monkeypatch.delenv("PIPELINE_FAST_MODEL", raising=False)
     monkeypatch.delenv("PIPELINE_STRONG_MODEL", raising=False)
     runner = TieredPipelineRunner()

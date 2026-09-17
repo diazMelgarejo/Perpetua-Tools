@@ -204,7 +204,7 @@ async def test_ambiguous_paid_failure_never_dispatches_a_second_candidate(
 
 
 @pytest.mark.asyncio
-async def test_out_of_scope_candidate_is_rejected_before_dispatch(
+async def test_out_of_scope_candidate_is_skipped_and_later_in_scope_candidates_run(
     candidate_pipeline_files: tuple[Path, Path, Path],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -221,11 +221,41 @@ async def test_out_of_scope_candidate_is_rejected_before_dispatch(
 
     narrow_approval = _approval(scope=("anthropic",))
 
-    with pytest.raises(tp.PipelineApprovalError, match="does not authorize provider"):
+    result = await _runner(candidate_pipeline_files).run(
+        "classify_then_generate",
+        "original",
+        approval=narrow_approval,
+        dispatch=dispatch,
+    )
+
+    assert attempts == ["fast-fallback", "strong-fallback"]
+    assert result.models_used == {
+        "classify": "fast-fallback",
+        "generate": "strong-fallback",
+    }
+
+
+@pytest.mark.asyncio
+async def test_pipeline_rejects_stage_only_when_no_candidate_is_in_approval_scope(
+    candidate_pipeline_files: tuple[Path, Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("PIPELINE_TIERED_ENABLED", "1")
+    monkeypatch.delenv("ORAMASYS_OFFLINE", raising=False)
+    attempts: list[str] = []
+
+    async def dispatch(
+        model: str, prompt: str, max_tokens: int, stage: str
+    ) -> tp.DispatchResult:
+        del prompt, max_tokens, stage
+        attempts.append(model)
+        return tp.DispatchResult(text="unexpected", total_tokens=1, cost_usd=0.01)
+
+    with pytest.raises(tp.PipelineApprovalError, match="no candidate within approval scope"):
         await _runner(candidate_pipeline_files).run(
             "classify_then_generate",
             "original",
-            approval=narrow_approval,
+            approval=_approval(scope=("bigmodel",)),
             dispatch=dispatch,
         )
 

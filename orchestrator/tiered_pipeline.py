@@ -185,7 +185,13 @@ class PipelineResult:
 
 
 def tiered_pipeline_enabled(config_path: str | Path | None = None) -> bool:
-    """Resolve explicit env override, then the canonical config default."""
+    """Resolve an explicit env override, otherwise the canonical config default.
+
+    ``PIPELINE_TIERED_ENABLED`` is deliberately override-only: leaving it
+    unset keeps every runtime, config file, and deployment on the one checked-
+    in ``config/pipelines.yml`` default rather than maintaining competing
+    defaults in environment and YAML.
+    """
     override = os.getenv(PIPELINE_FLAG)
     if override is not None:
         return override.strip() == "1"
@@ -590,16 +596,12 @@ class TieredPipelineRunner:
             )
         return backend
 
-    def _assert_candidate_in_scope(
+    def _candidate_is_in_scope(
         self, model_name: str, approval: PipelineApproval
-    ) -> None:
+    ) -> bool:
         backend = self._candidate_backend(model_name)
         allowed = frozenset(item.strip().lower() for item in approval.scope if item.strip())
-        if backend.lower() not in allowed:
-            raise PipelineApprovalError(
-                "approval scope %s does not authorize provider %r for model %r"
-                % (list(approval.scope), backend, model_name)
-            )
+        return backend.lower() in allowed
 
     def recipe(self, name: str) -> PipelineRecipe:
         try:
@@ -744,9 +746,21 @@ class TieredPipelineRunner:
                 )
             result: DispatchResult | None = None
             last_unavailable: PipelineCandidateUnavailableError | None = None
+            has_in_scope_candidate = False
             for model in stage.models:
-                self._assert_candidate_in_scope(model, approval)
                 started = time.monotonic()
+                if not self._candidate_is_in_scope(model, approval):
+                    self._emit_trace(
+                        recipe=recipe.name,
+                        stage=stage,
+                        model=model,
+                        elapsed_ms=max(0, int((time.monotonic() - started) * 1000)),
+                        status="skipped",
+                        trace_id=approval.trace_id,
+                        error_class="PipelineApprovalError",
+                    )
+                    continue
+                has_in_scope_candidate = True
                 try:
                     result = await dispatch(model, stage_prompt, stage.max_tokens, stage.name)
                 except PipelineCandidateUnavailableError as exc:
@@ -786,6 +800,11 @@ class TieredPipelineRunner:
                 models_used[stage.name] = model
                 break
             if result is None:
+                if not has_in_scope_candidate:
+                    raise PipelineApprovalError(
+                        "stage %r has no candidate within approval scope %s"
+                        % (stage.name, list(approval.scope))
+                    )
                 raise PipelineExecutionError(
                     "stage %r has no available configured model" % stage.name
                 ) from last_unavailable

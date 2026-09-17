@@ -148,6 +148,12 @@ def _dispatch_oramasys_http(url: str, payload: Dict[str, Any], timeout: float) -
             **auth_headers(),
             CONTROL_PLANE_DEPTH_HEADER: "1",
         }
+        if (
+            not is_local
+            and parsed.scheme == "http"
+            and headers.get("Authorization", "").startswith("Bearer ")
+        ):
+            raise ValueError("refusing remote HTTP endpoint with bearer credentials")
         if is_local:
             import httpx
 

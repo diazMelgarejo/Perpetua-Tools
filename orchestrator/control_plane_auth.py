@@ -133,15 +133,17 @@ def accepted_control_plane_tokens(
     mode = control_plane_auth_mode()
     pt = pt_lane_token_candidates()
     orama = orama_lane_token_candidates()
+    # Protected routes are lane-scoped even in joint deployments. A shared
+    # local credential can deliberately be configured in both lane variables;
+    # accepting either lane's distinct token here would let an Orama-only
+    # credential invoke PT pipeline routes (and vice versa).
     if mode == "joint":
-        return frozenset(_merge_unique(pt, orama))
+        return frozenset(pt if scope == "pt" else orama)
     if mode == "pt_only":
         return frozenset(pt)
     if mode == "orama_only":
         return frozenset(orama)
-    if scope == "pt":
-        return frozenset(pt or orama)
-    return frozenset(orama or pt)
+    return frozenset(pt if scope == "pt" else orama)
 
 
 def outbound_control_plane_tokens() -> list[str]:
