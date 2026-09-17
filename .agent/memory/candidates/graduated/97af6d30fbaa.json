@@ -1,0 +1,42 @@
+{
+  "id": "97af6d30fbaa",
+  "key": "manual_2a1bbf",
+  "name": "manual_2a1bbf",
+  "claim": "Before pushing to a shared PR branch, git fetch and diff origin/<branch>..HEAD first -- another agent can commit directly into the same physical worktree path across sessions with no board signal until a later digest post, so a local HEAD commit is provisional until verified against the remote tip, not assumed to be yours alone.",
+  "conditions": [
+    "collision",
+    "git-fetch",
+    "multi-agent",
+    "shared-branch",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-09-17T02:44:32.765809+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-17T02:44:32.765809+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-17T02:44:32.765809+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-17T02:44:32.906252+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "agent-envelope: agent=claude-main model=claude-sonnet-5 date=2026-09-17 | Discovered mid-task on orama-system PR#360 (docs/ossf-publication-plan-20260916): my own worktree at /private<local-tmp-file> had 3 unexpected commits (39efcd3e, 4754377b, 63f137ef) from cursor-composer-ossf-draft on top of my original 11b98cff, discovered only via git log inspection, not any board push notification. Fetch+diff caught it before an accidental force-push or duplicate-work situation.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-17T02:44:32.765809+00:00"
+      ],
+      "lessons_sha": "02334bafc466"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-17T02:44:32.906242+00:00",
+  "reviewer": "learn.py",
+  "rationale": "agent-envelope: agent=claude-main model=claude-sonnet-5 date=2026-09-17 | Discovered mid-task on orama-system PR#360 (docs/ossf-publication-plan-20260916): my own worktree at /private<local-tmp-file> had 3 unexpected commits (39efcd3e, 4754377b, 63f137ef) from cursor-composer-ossf-draft on top of my original 11b98cff, discovered only via git log inspection, not any board push notification. Fetch+diff caught it before an accidental force-push or duplicate-work situation."
+}
