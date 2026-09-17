@@ -1,10 +1,13 @@
 # oramasys PR #14 review-thread cleanup — 2026-09-17
 
-**Search:** `oramasys/oramasys#14` · `review-thread cleanup` · `accept-risk deferred` · `e424391fb35c`
+**Search:** `oramasys/oramasys#14` · `review-thread cleanup` ·
+`accept-risk deferred` · `e424391fb35c`
 
 ## Record
 
-After [oramasys/oramasys PR #14](https://github.com/oramasys/oramasys/pull/14) review-thread cleanup (2026-09-17):
+After
+[oramasys/oramasys PR #14](https://github.com/oramasys/oramasys/pull/14)
+review-thread cleanup (2026-09-17):
 
 - **11** fixed threads marked resolved
 - **0** open threads remain
