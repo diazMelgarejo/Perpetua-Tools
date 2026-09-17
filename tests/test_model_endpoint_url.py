@@ -103,6 +103,48 @@ class TestMalformed:
         ]
 
 
+class TestRequireTlsForNonLoopback:
+    def test_default_still_allows_http_to_private_network_host(self):
+        assert (
+            validate_model_endpoint_url("http://192.168.1.50:8000")
+            == "http://192.168.1.50:8000"
+        )
+
+    def test_require_tls_flag_allows_the_documented_loopback_default(self):
+        assert (
+            validate_model_endpoint_url(
+                "http://localhost:8000", require_tls_for_non_loopback=True
+            )
+            == "http://localhost:8000"
+        )
+        assert (
+            validate_model_endpoint_url(
+                "http://127.0.0.1:8000", require_tls_for_non_loopback=True
+            )
+            == "http://127.0.0.1:8000"
+        )
+
+    def test_require_tls_flag_rejects_http_to_rfc1918_private_host(self):
+        with pytest.raises(ModelEndpointPolicyError, match="https"):
+            validate_model_endpoint_url(
+                "http://192.168.1.50:8000", require_tls_for_non_loopback=True
+            )
+
+    def test_require_tls_flag_rejects_http_to_10_range_private_host(self):
+        with pytest.raises(ModelEndpointPolicyError, match="https"):
+            validate_model_endpoint_url(
+                "http://10.0.0.5:8000", require_tls_for_non_loopback=True
+            )
+
+    def test_require_tls_flag_allows_https_to_private_network_host(self):
+        assert (
+            validate_model_endpoint_url(
+                "https://192.168.1.50:8443", require_tls_for_non_loopback=True
+            )
+            == "https://192.168.1.50:8443"
+        )
+
+
 class TestLoggingRedaction:
     def test_private_ip_redacted(self):
         out = redact_endpoint_for_log("http://127.0.4.1:1234")
