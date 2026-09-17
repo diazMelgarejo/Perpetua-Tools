@@ -1,7 +1,8 @@
 # OSSF Publication Suite — Session Record (2026-09-16 → 2026-09-17)
 
 **Status:** working memory (informative); normative drafts on orama-system PR #360  
-**Related:** `OSSF1_SKILL_FORMAT_STANDARDIZATION_SAGA_2026-08-07.md` (append-only — do not rewrite)  
+**Related:** `OSSF1_SKILL_FORMAT_STANDARDIZATION_SAGA_2026-08-07.md`
+(append-only — do not rewrite)  
 **Canonical working tree:** OpenClaw `references/` (pre-ratification)  
 **Repo mirror:** `orama-system` branch `docs/ossf-publication-plan-20260916` → PR #360  
 

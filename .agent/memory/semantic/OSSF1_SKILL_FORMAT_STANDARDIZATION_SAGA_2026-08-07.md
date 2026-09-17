@@ -1,16 +1,23 @@
 # OSSF-1 Skill Format Standardization Saga
 
 **Decision window:** 2026-08-07 through 2026-08-08  
-**Status:** orama enforcement landed on branch `2026-08-07-001-harden-skills-vendor-blend-lessons`; PT portable brain deferred until v2 `oramasys/*`  
+**Status:** orama enforcement landed on branch
+`2026-08-07-001-harden-skills-vendor-blend-lessons`; PT portable brain deferred
+until v2 `oramasys/*`  
 **Canonical enforcement repo:** orama-system (not Perpetua-Tools until org migration)
 
 ---
 
 ## 1. Why this arc exists
 
-By 2026-08-07 the stack had **355** primary-scope `SKILL.md` files across orama-system and Perpetua-Tools, but at least **six incompatible “good” shapes** (Claude-minimal wrappers, orama skillify full/partial, OpenClaw overlays, PT portable brain, Cursor metadata, and broken frontmatter). Agents could not rely on a single validator or a single authoring card.
+By 2026-08-07 the stack had **355** primary-scope `SKILL.md` files across
+orama-system and Perpetua-Tools, but at least **six incompatible “good”
+shapes** (Claude-minimal wrappers, orama skillify full/partial, OpenClaw
+overlays, PT portable brain, Cursor metadata, and broken frontmatter).
+Agents could not rely on a single validator or a single authoring card.
 
-The response was not “pick Anthropic OR orama” — it was a **fusion standard** with a enforceable subset for canonical orama skills first.
+The response was not “pick Anthropic OR orama” — it was a **fusion
+standard** with a enforceable subset for canonical orama skills first.
 
 ---
 
@@ -32,7 +39,9 @@ The response was not “pick Anthropic OR orama” — it was a **fusion standar
 
 ## 3. What OSSF-1 is (enforced shape)
 
-**OSSF-1** = *Oramasys Standard Skill Format v1* — the machine-checkable subset of the fusion spec for **canonical** skills under `bin/orama-system/**/SKILL.md`.
+**OSSF-1** = *Oramasys Standard Skill Format v1* — the machine-checkable
+subset of the fusion spec for **canonical** skills under
+`bin/orama-system/**/SKILL.md`.
 
 ### Required frontmatter
 
@@ -53,7 +62,8 @@ The response was not “pick Anthropic OR orama” — it was a **fusion standar
 - Perpetua-Tools `.agent/skills/*` portable brain
 - Entire PT repo until v2 `oramasys/*` org split
 
-Pilot wrappers (e.g. `pt-orama-security-planner`) were upgraded manually but are **not** gated by the hook until scope expands.
+Pilot wrappers (e.g. `pt-orama-security-planner`) were upgraded manually
+but are **not** gated by the hook until scope expands.
 
 ---
 
@@ -69,20 +79,23 @@ Pilot wrappers (e.g. `pt-orama-security-planner`) were upgraded manually but are
 | **Incident doctrine** | orama `docs/LESSONS.md` §2026-08-08 | Yes | PR #283 content-loss case study |
 | **PT portable brain** | `.agent/skills/*` | No OSSF-1 gate yet | Triggers/tools/constraints native format |
 
-**Gap (intentional as of 2026-08-08):** no single orama `docs/v2/NN-ossf-1.md` ADR — OSSF-1 lives in hook docstring + hub fusion docs + lessons. Promote to `docs/v2/` when the pilot wave merges to `main`.
+**Gap (intentional as of 2026-08-08):** no single orama
+`docs/v2/NN-ossf-1.md` ADR — OSSF-1 lives in hook docstring + hub fusion
+docs + lessons. Promote to `docs/v2/` when the pilot wave merges to
+`main`.
 
 ---
 
 ## 5. Pilot wave scope (orama paths only)
 
-**P1 — no frontmatter / nonstandard**
+### P1 — no frontmatter / nonstandard
 
 - `bin/orama-system/afrp/SKILL.md`
 - `bin/orama-system/skills/openclaw-skills/SKILL.md`
 - `bin/orama-system/skills/self-discovery/SKILL.md`
 - `.agents/skills/pt-orama-security-planner/SKILL.md` (wrapper; manual pilot)
 
-**P4 — orama skillify partial (canon subset)**
+### P4 — orama skillify partial (canon subset)
 
 - `bin/orama-system/skills/codex-mcp-debugging/SKILL.md`
 - `bin/orama-system/skills/hardware-affinity-gate/SKILL.md`
@@ -101,7 +114,8 @@ When a canonical skill exceeds the 500-line ceiling:
 2. Move long operating procedures to `references/<topic>.md`.
 3. Re-run hook on staged `SKILL.md` only (reference files are not gated).
 
-`mcp-orchestration` stayed at 496 lines by compressing tail sections into reference pointers before adding Boundaries.
+`mcp-orchestration` stayed at 496 lines by compressing tail sections into
+reference pointers before adding Boundaries.
 
 ---
 
@@ -113,7 +127,9 @@ When a canonical skill exceeds the 500-line ceiling:
 | Portable brain, runtime memory, lessons pipeline | Perpetua-Tools `.agent/` | This saga + `lesson_*` entries |
 | ADRs / decisions D1–D17+ | orama `docs/v2/` | Generated pointers only in `docs/adr/` |
 
-PT must **not** copy OSSF-1 hook into CI until the v2 org migration plan says otherwise — but PT **must** remember the saga so agents do not re-litigate format clusters.
+PT must **not** copy OSSF-1 hook into CI until the v2 org migration plan
+says otherwise — but PT **must** remember the saga so agents do not
+re-litigate format clusters.
 
 ---
 
