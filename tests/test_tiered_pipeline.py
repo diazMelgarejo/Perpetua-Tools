@@ -15,10 +15,13 @@ def pipeline_files(tmp_path: Path) -> tuple[Path, Path, Path]:
     models.write_text(
         """models:
   - name: paid-fast
+    backend: openrouter
     frugality_tier: 5
   - name: paid-strong
+    backend: openrouter
     frugality_tier: 5
   - name: local-model
+    backend: ollama
     frugality_tier: 1
 """,
         encoding="utf-8",
@@ -900,4 +903,4 @@ def test_pipeline_model_env_override_resolves_when_valid(
     pipelines, models, trace = pipeline_files
     monkeypatch.setenv("PIPELINE_FAST_MODEL", "paid-strong")  # a different, still-valid tier-5 model
     runner = tp.TieredPipelineRunner(config_path=pipelines, models_path=models, trace_path=trace)
-    assert runner._models["fast"] == "paid-strong"
+    assert runner._models["fast"] == ("paid-strong", "paid-fast")

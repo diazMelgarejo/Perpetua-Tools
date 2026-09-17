@@ -65,6 +65,7 @@ class _Runner:
             requested_tokens=512,
             total_tokens_used=480,
             total_cost_usd=0.1,
+            models_used={"classify": "fast-ready", "generate": "strong-ready"},
         )
 
 
@@ -167,6 +168,10 @@ def test_pipeline_run_returns_final_output_without_internal_stage_payload(
     assert body["recipe"] == "classify_then_generate"
     assert body["output"] == "final answer"
     assert body["requested_tokens"] == 512
+    assert body["models_used"] == {
+        "classify": "fast-ready",
+        "generate": "strong-ready",
+    }
     assert body["cost_reservation_usd"] == 0.25
     assert body["held_microusd"] == 0
     assert body["settled_microusd"] == int(0.1 * MICROUSD_PER_USD)
@@ -203,6 +208,9 @@ def test_pipeline_run_idempotent_replay_returns_existing_state(
     assert resp2.status_code == 200
     assert resp2.json()["run_id"] == f"run-{key}"
     assert resp2.json()["status"] == "completed"
+    assert resp2.json()["output"] == ""
+    assert resp2.json()["models_used"] == {}
+    assert resp2.json()["replay"] is True
 
 
 @pytest.mark.integration
@@ -313,6 +321,27 @@ def test_pipeline_run_fails_closed_when_feature_is_disabled(control_plane_client
     )
     assert response.status_code == 409
     assert response.json()["detail"] == "Tier-5 pipelines are disabled"
+
+
+@pytest.mark.integration
+def test_pipeline_run_fails_closed_without_ledger_hmac_key(
+    control_plane_client, monkeypatch
+) -> None:
+    approval = _valid_approval()
+    monkeypatch.setattr(app_module, "load_pipeline_approval", lambda trace_id: approval)
+    monkeypatch.delenv(HMAC_KEY_ENV, raising=False)
+
+    response = control_plane_client.post(
+        "/pipelines/classify_then_generate/run",
+        json={"prompt": "do the work", "trace_id": approval.trace_id},
+        headers={
+            "Authorization": "Bearer pt-test-token",
+            "Idempotency-Key": str(uuid.uuid4()),
+        },
+    )
+
+    assert response.status_code == 500
+    assert response.json()["detail"] == "Tier-5 configuration error"
 
 
 @pytest.mark.integration

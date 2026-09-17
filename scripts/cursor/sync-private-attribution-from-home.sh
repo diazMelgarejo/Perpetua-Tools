@@ -12,6 +12,12 @@ HOME_GUIDE="${OPENCLAW}/banned-attribution-local.md"
 HOME_LESSON="${OPENCLAW}/private-lessons/perpetua-tools-git-attribution.md"
 
 if [[ ! -f "$HOME_PATTERNS" ]]; then
+  # Repo already bootstrapped: do not abort callers (verify-git-guards) before
+  # later checks such as Cursor sessionStart hook presence.
+  if [[ -s "$PRIVATE/banned-attribution-patterns" ]]; then
+    printf 'OK: HOME patterns absent; using existing %s\n' "$PRIVATE/banned-attribution-patterns"
+    exit 0
+  fi
   ORAMA="$(source "$REPO_ROOT/scripts/resolve_orama_root.sh" >/dev/null 2>&1 && resolve_orama_root 2>/dev/null || true)"
   if [[ -x "${ORAMA}/scripts/cursor/write-openclaw-private-attribution.sh" ]]; then
     bash "${ORAMA}/scripts/cursor/write-openclaw-private-attribution.sh"

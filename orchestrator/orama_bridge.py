@@ -8,9 +8,13 @@ import time
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
+from orchestrator.control_plane_auth import auth_headers
 from utils.egress_telemetry import EgressEvent, classify_deny_reason, emit
 
 log = logging.getLogger("orchestrator.orama_bridge")
+
+CONTROL_PLANE_DEPTH_HEADER = "X-Control-Plane-Depth"
+MAX_CONTROL_PLANE_DEPTH = 2
 
 
 OPTIMIZE_FOR_TO_REASONING_DEPTH = {
@@ -38,15 +42,51 @@ def normalize_oramasys_endpoint(endpoint: str) -> str:
         return expanded
     if expanded.endswith("/ultrathink"):
         return f"{expanded[:-len('/ultrathink')]}/oramasys"
+    if expanded.endswith("/orama"):
+        return f"{expanded[:-len('/orama')]}/oramasys"
     return f"{expanded}/oramasys"
+
+
+def resolve_oramasys_endpoint(configured_endpoint: str) -> str:
+    """Resolve canonical then v1-compatible endpoint overrides."""
+    from utils.model_endpoint_url import ModelEndpointPolicyError, validate_model_endpoint_url
+
+    env_endpoint = (
+        os.getenv("ORAMASYS_ENDPOINT", "").strip()
+        or os.getenv("ORAMA_ENDPOINT", "").strip()
+        or os.getenv("ULTRATHINK_ENDPOINT", "").strip()
+    )
+    resolved = normalize_oramasys_endpoint(env_endpoint or configured_endpoint)
+    if not resolved:
+        return resolved
+    if env_endpoint:
+        try:
+            validate_model_endpoint_url(resolved, allow_public=False)
+        except ModelEndpointPolicyError as exc:
+            raise ValueError(
+                "resolved oramasys endpoint is not permitted: %s" % resolved
+            ) from exc
+    return resolved
 
 
 def parse_oramasys_timeout(timeout_value: Any, default: float = 120.0) -> float:
     expanded = os.path.expandvars(str(timeout_value or "")).strip()
     try:
-        return float(expanded)
+        parsed = float(expanded)
     except (TypeError, ValueError):
         return default
+    return parsed if parsed > 0 else default
+
+
+def resolve_oramasys_timeout(configured_timeout: Any) -> float:
+    """Resolve canonical then v1-compatible timeout overrides."""
+    timeout = (
+        os.getenv("ORAMASYS_TIMEOUT", "").strip()
+        or os.getenv("ORAMA_TIMEOUT", "").strip()
+        or os.getenv("ULTRATHINK_TIMEOUT", "").strip()
+        or configured_timeout
+    )
+    return parse_oramasys_timeout(timeout)
 
 
 def build_oramasys_http_payload(task: str, task_type: str) -> Dict[str, Any]:
@@ -104,14 +144,35 @@ def _dispatch_oramasys_http(url: str, payload: Dict[str, Any], timeout: float) -
     is_local = _is_local_oramasys_endpoint(url)
     started = time.monotonic()
     try:
+        headers = {
+            **auth_headers(),
+            CONTROL_PLANE_DEPTH_HEADER: "1",
+        }
+        if (
+            not is_local
+            and parsed.scheme == "http"
+            and headers.get("Authorization", "").startswith("Bearer ")
+        ):
+            raise ValueError("refusing remote HTTP endpoint with bearer credentials")
         if is_local:
             import httpx
 
-            response = httpx.post(url, json=payload, timeout=timeout)
+            response = httpx.post(
+                url,
+                json=payload,
+                headers=headers,
+                timeout=timeout,
+            )
         else:
             from utils.ssrf_pinned_adapter import ssrf_request
 
-            response = ssrf_request("POST", url, json=payload, timeout=timeout)
+            response = ssrf_request(
+                "POST",
+                url,
+                json=payload,
+                headers=headers,
+                timeout=timeout,
+            )
     except Exception as exc:
         if not getattr(exc, "_egress_telemetry_emitted", False):
             emit(
@@ -148,7 +209,7 @@ def call_oramasys_bridge(
     task_type: str,
 ) -> Dict[str, Any]:
     """Synchronous HTTP bridge kept for direct callers."""
-    url = normalize_oramasys_endpoint(endpoint)
+    url = resolve_oramasys_endpoint(endpoint)
     payload = build_oramasys_http_payload(task, task_type)
     response = _dispatch_oramasys_http(url, payload, timeout)
     response.raise_for_status()
@@ -201,7 +262,7 @@ async def call_oramasys_mcp_or_bridge(
         except Exception as exc:
             log.warning("MCP transport failed (%s), falling back to HTTP", exc)
 
-    url = normalize_oramasys_endpoint(endpoint)
+    url = resolve_oramasys_endpoint(endpoint)
     payload = build_oramasys_http_payload(task, task_type)
     response = await asyncio.to_thread(_dispatch_oramasys_http, url, payload, timeout)
     response.raise_for_status()
@@ -210,7 +271,9 @@ async def call_oramasys_mcp_or_bridge(
 
 # Backward-compatible aliases for one v1.x release.
 normalize_ultrathink_endpoint = normalize_oramasys_endpoint
+resolve_ultrathink_endpoint = resolve_oramasys_endpoint
 parse_ultrathink_timeout = parse_oramasys_timeout
+resolve_ultrathink_timeout = resolve_oramasys_timeout
 build_ultrathink_http_payload = build_oramasys_http_payload
 call_ultrathink_bridge = call_oramasys_bridge
 call_ultrathink_mcp_or_bridge = call_oramasys_mcp_or_bridge

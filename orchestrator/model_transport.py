@@ -11,27 +11,35 @@ import asyncio
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 from urllib.parse import urlparse
 
 import httpx
 import yaml
 
 from orchestrator.model_registry import ModelRegistry, ModelTarget
-from orchestrator.tiered_pipeline import PIPELINE_TIER, DispatchResult, PipelineExecutionError
+from orchestrator.tiered_pipeline import (
+    PIPELINE_TIER,
+    DispatchResult,
+    PipelineCandidateUnavailableError,
+)
 
 DEFAULT_CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
 DEFAULT_PROVIDERS = DEFAULT_CONFIG_DIR / "providers.yml"
-_RETRYABLE_STATUS_CODES = frozenset({408, 409, 425, 429, 500, 502, 503, 504})
+_RETRYABLE_STATUS_CODES = frozenset({408, 409, 425, 429, 502, 503, 504})
+_AMBIGUOUS_STATUS_CODES = frozenset({500, 502, 504})
 _ALLOWED_EFFORTS = frozenset({"low", "medium", "high", "xhigh", "max"})
 _OPENAI_SHAPE_BACKENDS = frozenset({"mistral", "deepseek", "groq", "dashscope", "meta_llama"})
 
 
-class ProviderConfigError(PipelineExecutionError):
+class ProviderConfigError(PipelineCandidateUnavailableError):
     """Raised when provider or model configuration is invalid."""
 
+    def __init__(self, message: str, *, fallback_safe: bool = False) -> None:
+        super().__init__(message, fallback_safe=fallback_safe)
 
-class ProviderTransportError(PipelineExecutionError):
+
+class ProviderTransportError(PipelineCandidateUnavailableError):
     """A redacted provider failure suitable for operator-facing responses."""
 
     def __init__(
@@ -41,15 +49,24 @@ class ProviderTransportError(PipelineExecutionError):
         status_code: int | None = None,
         request_id: str | None = None,
         retryable: bool = False,
+        fallback_safe: bool | None = None,
     ) -> None:
         self.provider = provider
         self.status_code = status_code
         self.request_id = request_id
         self.retryable = retryable
+        self.fallback_safe = (
+            status_code is not None and status_code not in _AMBIGUOUS_STATUS_CODES
+            if fallback_safe is None
+            else fallback_safe
+        )
         suffix = f" HTTP {status_code}" if status_code is not None else ""
         retry = "; retryable" if retryable else ""
         correlation = f" (request {request_id})" if request_id else ""
-        super().__init__(f"{provider} provider request failed{suffix}{retry}{correlation}")
+        super().__init__(
+            f"{provider} provider request failed{suffix}{retry}{correlation}",
+            fallback_safe=self.fallback_safe,
+        )
 
 
 @dataclass(frozen=True)
@@ -134,7 +151,8 @@ class ProviderTransportRegistry:
         value = os.getenv(provider.credential_env, "").strip()
         if not value:
             raise ProviderConfigError(
-                f"provider {provider.backend!r} requires local environment variable {provider.credential_env}"
+                f"provider {provider.backend!r} requires local environment variable {provider.credential_env}",
+                fallback_safe=True,
             )
         return value
 
@@ -227,8 +245,23 @@ class ProviderTransportRegistry:
                         raise last_error
                 except ProviderTransportError:
                     raise
+                # ConnectError is a NetworkError subclass, but an unestablished
+                # connection is safe to fall back from while a mid-request
+                # network failure may have reached and billed the provider.
+                except httpx.ConnectError:
+                    last_error = ProviderTransportError(
+                        provider.backend,
+                        retryable=True,
+                        fallback_safe=True,
+                    )
                 except (httpx.TimeoutException, httpx.NetworkError, httpx.ProtocolError):
-                    last_error = ProviderTransportError(provider.backend, retryable=True)
+                    # The provider may have received an ambiguous timed-out
+                    # request. Do not move to another paid model after retries.
+                    last_error = ProviderTransportError(
+                        provider.backend,
+                        retryable=True,
+                        fallback_safe=False,
+                    )
 
                 if attempt + 1 < provider.max_attempts:
                     await asyncio.sleep(self._retry_delay(response, attempt))
@@ -309,81 +342,83 @@ class ProviderTransportRegistry:
             return None, None
         return int(input_tokens) + int(output_tokens), None  # Anthropic doesn't return cost directly
 
-    async def dispatch(self, model: str, prompt: str, max_tokens: int, stage: str) -> DispatchResult:
+    async def dispatch(
+        self,
+        model: str,
+        prompt: str,
+        max_tokens: int,
+        stage: str,
+        *,
+        commit: Callable[[], None] | None = None,
+    ) -> DispatchResult:
         """Dispatch one already-gated stage without exposing provider internals."""
         del stage  # Trace attribution remains the runner's responsibility.
-        target = self._models.get(model)
-        if target is None:
-            raise ProviderConfigError(f"unknown model {model!r} in provider transport")
-        if target.frugality_tier != PIPELINE_TIER or target.device != "cloud":
-            raise ProviderConfigError(f"model {model!r} is not an eligible Tier-5 cloud target")
-        provider = self._providers.get(target.backend)
-        if provider is None:
-            raise ProviderConfigError(f"no provider transport is configured for backend {target.backend!r}")
-        self._require_verified_provenance(target, provider)
-        credential = self._credential(provider)
-        endpoint = self._endpoint(target, provider)
-        if target.backend == "bigmodel":
-            body = await self._post(
-                provider,
-                endpoint=endpoint,
-                headers={"Authorization": f"Bearer {credential}", "Content-Type": "application/json"},
-                payload=self._openai_payload(target, prompt, max_tokens),
-            )
-            text = self._openai_text(body, target.backend)
-            tokens, cost = self._openai_usage(body)
-            return DispatchResult(text=text, total_tokens=tokens, cost_usd=cost)
-        if target.backend == "anthropic":
-            if not provider.api_version:
-                raise ProviderConfigError("Anthropic provider requires api_version")
-            body = await self._post(
-                provider,
-                endpoint=endpoint,
-                headers={
+        try:
+            target = self._models.get(model)
+            if target is None:
+                raise ProviderConfigError(f"unknown model {model!r} in provider transport")
+            if target.frugality_tier != PIPELINE_TIER or target.device != "cloud":
+                raise ProviderConfigError(f"model {model!r} is not an eligible Tier-5 cloud target")
+            provider = self._providers.get(target.backend)
+            if provider is None:
+                raise ProviderConfigError(f"no provider transport is configured for backend {target.backend!r}")
+            self._require_verified_provenance(target, provider)
+            credential = self._credential(provider)
+            endpoint = self._endpoint(target, provider)
+
+            def extract_openai_text(body: Mapping[str, Any]) -> str:
+                return self._openai_text(body, target.backend)
+
+            if target.backend == "anthropic":
+                if not provider.api_version:
+                    raise ProviderConfigError("Anthropic provider requires api_version")
+                headers = {
                     "x-api-key": credential,
                     "anthropic-version": provider.api_version,
                     "content-type": "application/json",
-                },
-                payload=self._anthropic_payload(target, prompt, max_tokens),
-            )
-            text = self._anthropic_text(body)
-            tokens, cost = self._anthropic_usage(body)
-            return DispatchResult(text=text, total_tokens=tokens, cost_usd=cost)
-        if target.backend == "openrouter":
-            # OpenRouter's chat/completions response shape matches OpenAI's
-            # (choices[0].message.content), verified against its own API
-            # reference. Referer/title headers are optional attribution
-            # OpenRouter uses for its public model-ranking page -- never
-            # required for the request to succeed, so they're only sent when
-            # explicitly configured, never fabricated.
-            headers = {"Authorization": f"Bearer {credential}", "Content-Type": "application/json"}
-            referer = os.getenv("OPENROUTER_HTTP_REFERER", "").strip()
-            title = os.getenv("OPENROUTER_APP_TITLE", "").strip()
-            if referer:
-                headers["HTTP-Referer"] = referer
-            if title:
-                headers["X-Title"] = title
-            body = await self._post(
-                provider,
-                endpoint=endpoint,
-                headers=headers,
-                payload=self._openai_payload(target, prompt, max_tokens),
-            )
-            text = self._openai_text(body, target.backend)
-            tokens, cost = self._openai_usage(body)
-            return DispatchResult(text=text, total_tokens=tokens, cost_usd=cost)
-        if target.backend in _OPENAI_SHAPE_BACKENDS:
-            # All four are OpenAI-Chat-Completions-shaped: standard Bearer
-            # auth, choices[0].message.content response shape -- verified per
-            # backend against each provider's own API reference before adding
-            # its config/providers.yml entry.
-            body = await self._post(
-                provider,
-                endpoint=endpoint,
-                headers={"Authorization": f"Bearer {credential}", "Content-Type": "application/json"},
-                payload=self._openai_payload(target, prompt, max_tokens),
-            )
-            text = self._openai_text(body, target.backend)
-            tokens, cost = self._openai_usage(body)
-            return DispatchResult(text=text, total_tokens=tokens, cost_usd=cost)
-        raise ProviderConfigError(f"backend {target.backend!r} has no native adapter")
+                }
+                payload = self._anthropic_payload(target, prompt, max_tokens)
+                extract_text = self._anthropic_text
+                extract_usage = self._anthropic_usage
+            elif target.backend == "openrouter":
+                # OpenRouter's chat/completions response shape matches OpenAI's
+                # (choices[0].message.content), verified against its own API
+                # reference. Referer/title headers are optional attribution
+                # OpenRouter uses for its public model-ranking page -- never
+                # required for the request to succeed, so they're only sent when
+                # explicitly configured, never fabricated.
+                headers = {"Authorization": f"Bearer {credential}", "Content-Type": "application/json"}
+                referer = os.getenv("OPENROUTER_HTTP_REFERER", "").strip()
+                title = os.getenv("OPENROUTER_APP_TITLE", "").strip()
+                if referer:
+                    headers["HTTP-Referer"] = referer
+                if title:
+                    headers["X-Title"] = title
+                payload = self._openai_payload(target, prompt, max_tokens)
+                extract_text = extract_openai_text
+                extract_usage = self._openai_usage
+            elif target.backend == "bigmodel" or target.backend in _OPENAI_SHAPE_BACKENDS:
+                # These adapters are OpenAI-Chat-Completions-shaped: standard
+                # Bearer auth, choices[0].message.content response shape --
+                # verified per backend against its provider API reference.
+                headers = {"Authorization": f"Bearer {credential}", "Content-Type": "application/json"}
+                payload = self._openai_payload(target, prompt, max_tokens)
+                extract_text = extract_openai_text
+                extract_usage = self._openai_usage
+            else:
+                raise ProviderConfigError(f"backend {target.backend!r} has no native adapter")
+        except ProviderConfigError as exc:
+            # All configuration and native-payload validation above happens
+            # before commit()/I/O, so another approved candidate may be tried.
+            exc.fallback_safe = True
+            raise
+
+        if commit is not None:
+            commit()
+        body = await self._post(provider, endpoint=endpoint, headers=headers, payload=payload)
+        tokens, cost = extract_usage(body)
+        return DispatchResult(
+            text=extract_text(body),
+            total_tokens=tokens,
+            cost_usd=cost,
+        )

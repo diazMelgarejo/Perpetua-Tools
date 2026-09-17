@@ -133,15 +133,17 @@ def accepted_control_plane_tokens(
     mode = control_plane_auth_mode()
     pt = pt_lane_token_candidates()
     orama = orama_lane_token_candidates()
+    # Protected routes are lane-scoped even in joint deployments. A shared
+    # local credential can deliberately be configured in both lane variables;
+    # accepting either lane's distinct token here would let an Orama-only
+    # credential invoke PT pipeline routes (and vice versa).
     if mode == "joint":
-        return frozenset(_merge_unique(pt, orama))
+        return frozenset(pt if scope == "pt" else orama)
     if mode == "pt_only":
         return frozenset(pt)
     if mode == "orama_only":
         return frozenset(orama)
-    if scope == "pt":
-        return frozenset(pt or orama)
-    return frozenset(orama or pt)
+    return frozenset(pt if scope == "pt" else orama)
 
 
 def outbound_control_plane_tokens() -> list[str]:
@@ -199,14 +201,29 @@ def auth_enforced() -> bool:
     return True
 
 
-def verify_control_plane_auth(request: Request) -> None:
+def control_plane_path_scope(path: str) -> Literal["pt", "orama"]:
+    """Return the lane that must authorize a protected control-plane route."""
+    if path.startswith("/pipelines"):
+        return "pt"
+    if path.startswith("/orchestrate"):
+        return "pt"
+    return "orama"
+
+
+def verify_control_plane_auth(request: Request, *, path: str | None = None) -> None:
     if not auth_enforced():
         return
-    if not accepted_control_plane_tokens("pt"):
+    if path is not None:
+        route_path = path
+    else:
+        url = getattr(request, "url", None)
+        route_path = url.path if url is not None else "/"
+    scope = control_plane_path_scope(route_path)
+    if not accepted_control_plane_tokens(scope):
         raise HTTPException(status_code=503, detail="Control plane token not configured")
     auth_header = request.headers.get("authorization", "")
     provided = auth_header[7:].strip() if auth_header.startswith("Bearer ") else ""
-    if not token_matches_control_plane(provided, scope="pt"):
+    if not token_matches_control_plane(provided, scope=scope):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 
@@ -214,7 +231,8 @@ def control_plane_auth_failure(request: Request) -> JSONResponse | None:
     if not auth_enforced():
         return None
     try:
-        verify_control_plane_auth(request)
+        url = getattr(request, "url", None)
+        verify_control_plane_auth(request, path=url.path if url is not None else None)
     except HTTPException as exc:
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
     return None
