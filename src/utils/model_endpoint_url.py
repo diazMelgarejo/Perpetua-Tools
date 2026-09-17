@@ -58,8 +58,6 @@ def _host_allowed(host: str, *, allow_public: bool) -> bool:
         return False
     if normalized in ("localhost", "::1") or normalized.endswith(".localhost"):
         return True
-    if normalized.startswith("127."):
-        return True
     try:
         addr = ipaddress.ip_address(normalized)
     except ValueError:
@@ -79,8 +77,6 @@ def _is_loopback_host(host: str) -> bool:
     """True only for loopback (not the wider RFC1918-private set `_host_allowed` permits)."""
     normalized = host.strip().lower()
     if normalized in ("localhost", "::1") or normalized.endswith(".localhost"):
-        return True
-    if normalized.startswith("127."):
         return True
     try:
         addr = ipaddress.ip_address(normalized)
