@@ -50,6 +50,14 @@ Checkout now uses `peer_ref` from `--github-output`. While Orama PR #363 is open
 - While orama-system PR #363 is open, checkout `cursor/tiered-pipeline-runtime-fb76`. After it merges, declared peer is `main`.
 - If `declared=true` and peer checkout fails, fail the job. Silent `main` fallback stays only for unmapped same-named-ref attempts.
 
+## Green tip `8cc496b87f4f98a39af41c8b1dafa6979c805cf9` (2026-09-19)
+
+Verified on origin: Git hygiene, Episodic append-only, Markdownlint, mesh, security-invariants, verify-summary-present, Merge-claim, lint-and-test 3.11, lint-and-test 3.12 all SUCCESS. PR #395 `mergeable=MERGEABLE`, `mergeStateStatus=CLEAN`. Waiting on Seth for merge. Do not merge, force-update, or open a second PR.
+
+Do not treat `7f8b834` as CI green: that SHA had zero Actions workflow runs; the check was only CodeRabbit status=success.
+
+Memory-gate fix that made lint-and-test green: `check_memory_records.py` accepts `cluster.pattern_id(claim, conditions)` (learn.py) and legacy `sha256(claim)[:12]`; invented ids still fail.
+
 ## Publish rules still in force
 
 Ordinary non-force fast-forward only. No merge, no second PR, no history rewrite.

@@ -1,0 +1,49 @@
+{
+  "id": "bb6bb14284a5",
+  "key": "manual_bb6bb1",
+  "name": "manual_bb6bb1",
+  "claim": "PT #395 went green at 8cc496b after three real failures, not because 7f8b834 looked checked: (1) quoted echo of GITHUB_HEAD_REF into GITHUB_OUTPUT made stack-map lookup miss, checkout used the PT branch name on orama-system, continue-on-error fell through to orama main, and endpoint-policy parity compared the wrong tree -- write GITHUB_OUTPUT via --github-output, checkout the open Orama PR 363 branch cursor/tiered-pipeline-runtime-fb76 until that PR merges then use main, and fail declared-peer checkout instead of silent main fallback; diagnose from the job-log fetch refspec, not conclusion=success. (2) Remote orama_bridge Bearer hops need an HTTPS url_checker on every redirect, and packaged endpoint_policy hosts must not treat startswith 127-dot as loopback. (3) Memory-gate tests mint sha256(claim) while learn.py mints cluster.pattern_id(claim, conditions); the hook must accept both tooling mints and still reject invented ids. A SHA with zero Actions runs is not CI green even if CodeRabbit is success.",
+  "conditions": [
+    "127-prefix",
+    "CI",
+    "CodeRabbit-illusion",
+    "GITHUB_OUTPUT",
+    "bearer-https",
+    "continue-on-error",
+    "lint-and-test",
+    "orama-peer",
+    "pattern_id",
+    "quoted-argv",
+    "sha256-claim",
+    "stacked-parity"
+  ],
+  "evidence_ids": [
+    "2026-09-19T09:41:27.323925+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-19T09:41:27.323925+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-19T09:41:27.323925+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-19T09:41:27.422881+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Recorded after PT PR #395 tip 8cc496b87f4f98a39af41c8b1dafa6979c805cf9 showed Git hygiene, Episodic append-only, Markdownlint, mesh, security-invariants, verify-summary-present, Merge-claim, and lint-and-test 3.11 plus 3.12 SUCCESS with mergeStateStatus CLEAN. Prior red: job 105865624057 step 13 parity against orama main after quoted GITHUB_OUTPUT; job 105867665238 lint-and-test failed test_pre_commit_memory_gates because fixtures used sha256(claim) while the hook required pattern_id only. Security substance remains bearer HTTPS hops and no 127-prefix hostname exception. 7f8b834 had zero Actions runs.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-19T09:41:27.323925+00:00"
+      ],
+      "lessons_sha": "02db637042f0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-19T09:41:27.422869+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Recorded after PT PR #395 tip 8cc496b87f4f98a39af41c8b1dafa6979c805cf9 showed Git hygiene, Episodic append-only, Markdownlint, mesh, security-invariants, verify-summary-present, Merge-claim, and lint-and-test 3.11 plus 3.12 SUCCESS with mergeStateStatus CLEAN. Prior red: job 105865624057 step 13 parity against orama main after quoted GITHUB_OUTPUT; job 105867665238 lint-and-test failed test_pre_commit_memory_gates because fixtures used sha256(claim) while the hook required pattern_id only. Security substance remains bearer HTTPS hops and no 127-prefix hostname exception. 7f8b834 had zero Actions runs."
+}
