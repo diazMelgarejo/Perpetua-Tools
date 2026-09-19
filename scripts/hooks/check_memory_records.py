@@ -6,8 +6,9 @@ Checks, in order of what actually failed in the 848da335af02 incident:
 2. JSONL line strictness for episodic/semantic files.
 3. Candidate schema: required fields (id, key, name, claim, status,
    decisions[]); known top-level fields only.
-4. Id derivation: id == cluster.pattern_id(claim, conditions) (same helper
-   learn.py and auto-dream use; catches ids minted outside the memory tooling).
+4. Id derivation: id must match cluster.pattern_id(claim, conditions)
+   (learn.py / auto-dream) or sha256(claim).hexdigest()[:12] (legacy hook
+   mint). Random hand-written ids still fail.
 5. Normalized-claim duplicate detection against the tracked corpus (the
    validate.py heuristic, applied at the hook).
 6. Supersedes/links must reference records that exist in the tracked
@@ -23,6 +24,7 @@ content). This is PT's own memory discipline per the OSSF-1 saga boundary
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import subprocess
@@ -79,6 +81,14 @@ def tracked_candidate_records() -> dict[str, dict]:
     return records
 
 
+def derived_candidate_ids(claim: str, conditions: list | tuple | None = None) -> set[str]:
+    """Ids the memory tooling may mint for this claim."""
+    return {
+        pattern_id(claim, conditions or []),
+        hashlib.sha256((claim or "").encode("utf-8")).hexdigest()[:12],
+    }
+
+
 def normalized(text: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"[^\w\s]", " ", (text or "").lower())).strip()
 
@@ -93,12 +103,13 @@ def validate_candidate(path: Path, problems: list[str], tracked: dict[str, dict]
     if missing:
         problems.append(f"{path}: missing required fields: {missing}")
         return
-    derived = pattern_id(data["claim"], data.get("conditions") or [])
-    if data["id"] != derived:
+    allowed_ids = derived_candidate_ids(data["claim"], data.get("conditions") or [])
+    if data["id"] not in allowed_ids:
+        expected = ", ".join(sorted(allowed_ids))
         problems.append(
-            f"{path}: id {data['id']!r} is not the memory-tooling derivation of "
-            f"the claim+conditions (expected {derived!r} from cluster.pattern_id) "
-            f"-- ids must be minted by learn.py, never hand-written"
+            f"{path}: id {data['id']!r} is not a memory-tooling derivation of "
+            f"the claim (expected one of: {expected}) -- ids must be minted by "
+            f"learn.py or the legacy sha256(claim) helper, never invented"
         )
     if data.get("status") not in {"staged", "accepted", "graduated", "rejected"}:
         problems.append(f"{path}: unknown status {data.get('status')!r}")
