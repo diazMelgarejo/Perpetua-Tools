@@ -126,6 +126,40 @@ class PreCommitMemoryGateTests(unittest.TestCase):
             checker.validate_candidate(path, problems, {}, set())
             self.assertEqual(problems, [])
 
+    def test_learn_py_pattern_id_is_accepted(self) -> None:
+        checker = _load_check_memory_records()
+        claim = "Learn.py mints pattern ids from claim and conditions."
+        record = _candidate(
+            claim,
+            status="staged",
+            decisions=[],
+            conditions=["learn.py", "pattern_id"],
+        )
+        record["id"] = checker.pattern_id(claim, record["conditions"])
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "candidates" / "staged" / "record.json"
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(record), encoding="utf-8")
+            problems: list[str] = []
+            checker.validate_candidate(path, problems, {}, set())
+            self.assertEqual(problems, [])
+
+    def test_invented_candidate_id_is_rejected(self) -> None:
+        checker = _load_check_memory_records()
+        record = _candidate(
+            "Invented ids must still fail the hook.",
+            status="staged",
+            decisions=[],
+        )
+        record["id"] = "deadbeefdead"
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "candidates" / "staged" / "record.json"
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(record), encoding="utf-8")
+            problems: list[str] = []
+            checker.validate_candidate(path, problems, {}, set())
+            self.assertTrue(any("deadbeefdead" in item for item in problems))
+
 
 if __name__ == "__main__":
     unittest.main()

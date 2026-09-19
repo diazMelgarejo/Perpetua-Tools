@@ -108,14 +108,35 @@ def _is_local_oramasys_endpoint(url: str) -> bool:
     ``ALLOW_PUBLIC_MODEL_ENDPOINTS`` -- this call only classifies routing
     (local vs. remote transport), it never gates a request outright, so it
     must not be swayed by an env var meant for a different policy surface.
+
+    ``require_tls_for_non_loopback=True`` is also explicit here: a private
+    (RFC1918) HTTP endpoint would otherwise classify as "local" and route
+    through ``_dispatch_oramasys_http``'s direct, unencrypted transport,
+    letting a network observer on that LAN read or modify the payload.
+    Requiring TLS for any non-loopback target sends such an endpoint down
+    the existing SSRF-deny path instead, where it is correctly rejected
+    rather than silently trusted.
     """
     from utils.model_endpoint_url import ModelEndpointPolicyError, validate_model_endpoint_url
 
     try:
-        validate_model_endpoint_url(url, allow_public=False)
+        validate_model_endpoint_url(
+            url,
+            allow_public=False,
+            require_tls_for_non_loopback=True,
+        )
     except ModelEndpointPolicyError:
         return False
     return True
+
+
+def _require_https_bearer_url(url: str) -> None:
+    """Keep a bearer credential on TLS for every pinned-transport hop."""
+    from utils.ssrf_pinned_adapter import SSRFPolicyError, default_url_allowed
+
+    default_url_allowed(url)
+    if urlparse(url).scheme.lower() != "https":
+        raise SSRFPolicyError("refusing bearer credentials for a non-HTTPS URL")
 
 
 def _dispatch_oramasys_http(url: str, payload: Dict[str, Any], timeout: float) -> Any:
@@ -166,12 +187,17 @@ def _dispatch_oramasys_http(url: str, payload: Dict[str, Any], timeout: float) -
         else:
             from utils.ssrf_pinned_adapter import ssrf_request
 
+            request_kwargs: dict[str, Any] = {
+                "json": payload,
+                "headers": headers,
+                "timeout": timeout,
+            }
+            if headers.get("Authorization", "").startswith("Bearer "):
+                request_kwargs["url_checker"] = _require_https_bearer_url
             response = ssrf_request(
                 "POST",
                 url,
-                json=payload,
-                headers=headers,
-                timeout=timeout,
+                **request_kwargs,
             )
     except Exception as exc:
         if not getattr(exc, "_egress_telemetry_emitted", False):

@@ -16,8 +16,6 @@ def host_allowed(host: str, *, allow_public: bool) -> bool:
         return False
     if normalized in ("localhost", "::1") or normalized.endswith(".localhost"):
         return True
-    if normalized.startswith("127."):
-        return True
     try:
         addr = ipaddress.ip_address(normalized)
     except ValueError:

@@ -11,7 +11,7 @@ All HTTP calls are mocked - runs fully offline in CI.
 from __future__ import annotations
 
 import os
-from unittest.mock import patch, MagicMock
+from unittest.mock import ANY, MagicMock, patch
 
 import pytest
 
@@ -26,6 +26,7 @@ from orchestrator.orama_bridge import (
     normalize_oramasys_endpoint,
     parse_oramasys_timeout,
     build_oramasys_http_payload,
+    _is_local_oramasys_endpoint,
     resolve_oramasys_endpoint,
     resolve_oramasys_timeout,
 )
@@ -52,6 +53,20 @@ _ENDPOINT_ENV_KEYS = (
 def isolate_oramasys_endpoint_env(monkeypatch):
     for key in _ENDPOINT_ENV_KEYS:
         monkeypatch.delenv(key, raising=False)
+
+
+def test_is_local_oramasys_endpoint_requires_tls_for_private_http():
+    """Regression for a real finding: a private (RFC1918) HTTP endpoint
+    must NOT classify as local, since that routes it through
+    _dispatch_oramasys_http's direct, unencrypted transport where a network
+    observer on that LAN could read or modify the payload. Loopback HTTP
+    stays local (orama's typical deployment); RFC1918 HTTPS stays local
+    (TLS satisfies the requirement); only RFC1918 HTTP changes."""
+    assert _is_local_oramasys_endpoint("http://localhost:8001") is True
+    assert _is_local_oramasys_endpoint("http://127.0.0.1:8001") is True
+    assert _is_local_oramasys_endpoint("https://192.168.1.50:8001") is True
+    assert _is_local_oramasys_endpoint("http://192.168.1.50:8001") is False
+    assert _is_local_oramasys_endpoint("http://10.0.0.5:8001") is False
 
 
 def test_bridge_does_not_duplicate_adapter_deny_telemetry():
@@ -271,8 +286,38 @@ class TestCallBridgeRemote:
                 CONTROL_PLANE_DEPTH_HEADER: "1",
             },
             timeout=3.0,
+            url_checker=ANY,
         )
         mock_httpx_post.assert_not_called()
+
+    @patch("httpx.post")
+    @patch("utils.ssrf_pinned_adapter.ssrf_request")
+    def test_bearer_remote_transport_rejects_http_redirect_hops(
+        self, mock_ssrf_request, mock_httpx_post, monkeypatch
+    ):
+        """Bearer credentials may follow only HTTPS redirect destinations."""
+        mock_httpx_post.side_effect = AssertionError(
+            "remote public endpoints must use ssrf_request, not direct httpx"
+        )
+        monkeypatch.setenv("ORAMA_CONTROL_PLANE_TOKEN", "orama-test-token")
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = {"result": "ok"}
+        mock_resp.raise_for_status.return_value = None
+        mock_ssrf_request.return_value = mock_resp
+
+        call_oramasys_bridge(
+            endpoint=REMOTE_PUBLIC_ENDPOINT,
+            timeout=3.0,
+            task="Test task",
+            task_type="deep_reasoning",
+        )
+
+        url_checker = mock_ssrf_request.call_args.kwargs["url_checker"]
+        url_checker("https://redirect.example/final")
+        from utils.ssrf_pinned_adapter import SSRFPolicyError
+
+        with pytest.raises(SSRFPolicyError, match="HTTPS"):
+            url_checker("http://redirect.example/final")
 
 
 class TestCallBridgeLocal:

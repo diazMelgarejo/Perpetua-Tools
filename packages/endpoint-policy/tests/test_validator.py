@@ -75,6 +75,11 @@ def test_public_host_requires_opt_in():
     )
 
 
+def test_127_prefix_hostname_is_not_loopback():
+    with pytest.raises(ModelEndpointPolicyError):
+        validate_model_endpoint_url("http://127.attacker.example:8000", allow_public=False)
+
+
 def test_credentials_rejected():
     with pytest.raises(ModelEndpointPolicyError):
         validate_model_endpoint_url("http://user:pass@localhost:1234")
@@ -118,6 +123,7 @@ def test_differential_parity_with_mirror():
         "http://[::ffff:127.0.0.1]:80", "http://api.example.com",
         "http://user:pass@localhost", "ftp://localhost", "", "127.0.2.1:1234",
         "https://127.0.1.1", "http://gpu-box", "http://localhost:0",
+        "http://127.attacker.example:8000",
     ]
     for url in vectors:
         try:

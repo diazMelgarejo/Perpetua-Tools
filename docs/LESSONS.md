@@ -50,6 +50,12 @@ cline-agent allowlisted in openclaw.json but NOT dispatched via gateway. All run
 
 ---
 
+## 2026-09-19 — PT PR #395 TLS bearer hops + Orama PR #363 peer ref
+
+Follow-up on `fix/pt-pipeline-endpoint-tls-20260917`: keep bearer credentials on HTTPS for every pinned-transport redirect hop; reject spoofed `127.`-prefix hostnames in packaged endpoint-policy; CI checks out Orama via `refs/pull/363/head` (equivalent branch `cursor/tiered-pipeline-runtime-fb76`), not a missing `pr-363` ref. Graduated lesson `lesson_b7d7be187d74` plus working chronicle `.agent/memory/working/PT395_PIPELINE_ENDPOINT_TLS_FOLLOWUP_2026-09-19.md`. Publish was one ordinary fast-forward onto the existing PR branch (parent `d751f2aa`).
+
+---
+
 ## 2026-09-17 — oramasys PR #14 review-thread cleanup (accept-risk deferred)
 
 After [oramasys/oramasys#14](https://github.com/oramasys/oramasys/pull/14) cleanup: 11 fixed threads resolved, 0 open remain; PR still unmerged at `e424391fb35c`. Deferred accept-risk with **no open GitHub threads left to keep**: (1) FleetBindingStore ceremony vs S-AuthZ `/run` Bearer, (2) raw `uvicorn --host` without `bin/serve`, (3) in-process-only NIP-98 replay. Durable note: `.agent/memory/semantic/ORAMASYS_PR14_REVIEW_THREAD_CLEANUP_2026-09-17.md`.

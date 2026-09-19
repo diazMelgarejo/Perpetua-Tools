@@ -29,24 +29,38 @@ jobs:
       - name: Bootstrap private attribution patterns (self-contained)
         run: bash scripts/cursor/ci-bootstrap-private-attribution.sh
 
-      - name: Checkout orama-system (PR branch for stacked cross-repo parity)
+      - name: Resolve orama-system policy-stack ref
+        if: github.event_name == 'pull_request'
+        id: orama-policy-ref
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 scripts/review/resolve_orama_policy_ref.py --github-output -- "$GITHUB_HEAD_REF"
+
+      - name: Checkout orama-system (declared or same-named peer)
         if: github.event_name == 'pull_request'
         id: checkout-orama-pr
         uses: actions/checkout@v4
         with:
           repository: diazMelgarejo/orama-system
-          ref: ${{ github.head_ref }}
+          ref: ${{ steps.orama-policy-ref.outputs.peer_ref }}
           path: orama-system
           fetch-depth: 1
           persist-credentials: false
-        continue-on-error: true
+        continue-on-error: ${{ steps.orama-policy-ref.outputs.declared != 'true' }}
+
+      - name: Fail if declared Orama peer checkout failed
+        if: github.event_name == 'pull_request' && steps.orama-policy-ref.outputs.declared == 'true' && steps.checkout-orama-pr.outcome != 'success'
+        run: |
+          echo "::error::Declared Orama peer '${{ steps.orama-policy-ref.outputs.peer_ref }}' (source=${{ steps.orama-policy-ref.outputs.source }}) could not be checked out; refusing silent main fallback."
+          exit 1
 
       - name: Clear orama-system before main fallback
-        if: github.event_name != 'pull_request' || steps.checkout-orama-pr.outcome != 'success'
+        if: github.event_name != 'pull_request' || (steps.checkout-orama-pr.outcome != 'success' && steps.orama-policy-ref.outputs.declared != 'true')
         run: rm -rf orama-system
 
       - name: Checkout orama-system (main fallback)
-        if: github.event_name != 'pull_request' || steps.checkout-orama-pr.outcome != 'success'
+        if: github.event_name != 'pull_request' || (steps.checkout-orama-pr.outcome != 'success' && steps.orama-policy-ref.outputs.declared != 'true')
         uses: actions/checkout@v4
         with:
           repository: diazMelgarejo/orama-system
