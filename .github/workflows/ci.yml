@@ -29,13 +29,19 @@ jobs:
       - name: Bootstrap private attribution patterns (self-contained)
         run: bash scripts/cursor/ci-bootstrap-private-attribution.sh
 
+      - name: Resolve orama-system policy-stack ref
+        if: github.event_name == 'pull_request'
+        id: orama-policy-ref
+        run: |
+          echo "ref=$(python3 scripts/review/resolve_orama_policy_ref.py \"$GITHUB_HEAD_REF\")" >> "$GITHUB_OUTPUT"
+
       - name: Checkout orama-system (PR branch for stacked cross-repo parity)
         if: github.event_name == 'pull_request'
         id: checkout-orama-pr
         uses: actions/checkout@v4
         with:
           repository: diazMelgarejo/orama-system
-          ref: ${{ github.head_ref }}
+          ref: ${{ steps.orama-policy-ref.outputs.ref }}
           path: orama-system
           fetch-depth: 1
           persist-credentials: false

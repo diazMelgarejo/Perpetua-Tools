@@ -6,8 +6,8 @@ Checks, in order of what actually failed in the 848da335af02 incident:
 2. JSONL line strictness for episodic/semantic files.
 3. Candidate schema: required fields (id, key, name, claim, status,
    decisions[]); known top-level fields only.
-4. Id derivation: id == sha256(claim).hexdigest()[:12] (catches ids minted
-   outside the memory tooling).
+4. Id derivation: id == cluster.pattern_id(claim, conditions) (same helper
+   learn.py and auto-dream use; catches ids minted outside the memory tooling).
 5. Normalized-claim duplicate detection against the tracked corpus (the
    validate.py heuristic, applied at the hook).
 6. Supersedes/links must reference records that exist in the tracked
@@ -23,7 +23,6 @@ content). This is PT's own memory discipline per the OSSF-1 saga boundary
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import re
 import subprocess
@@ -31,6 +30,8 @@ import sys
 from pathlib import Path
 
 MEMORY_ROOT = Path(".agent/memory")
+sys.path.insert(0, str(MEMORY_ROOT))
+from cluster import pattern_id  # noqa: E402
 
 
 def _no_duplicate_pairs(pairs):
@@ -92,12 +93,12 @@ def validate_candidate(path: Path, problems: list[str], tracked: dict[str, dict]
     if missing:
         problems.append(f"{path}: missing required fields: {missing}")
         return
-    derived = hashlib.sha256(data["claim"].encode("utf-8")).hexdigest()[:12]
+    derived = pattern_id(data["claim"], data.get("conditions") or [])
     if data["id"] != derived:
         problems.append(
             f"{path}: id {data['id']!r} is not the memory-tooling derivation of "
-            f"the claim (expected {derived!r}) -- ids must be minted by learn.py,"
-            f" never hand-written"
+            f"the claim+conditions (expected {derived!r} from cluster.pattern_id) "
+            f"-- ids must be minted by learn.py, never hand-written"
         )
     if data.get("status") not in {"staged", "accepted", "graduated", "rejected"}:
         problems.append(f"{path}: unknown status {data.get('status')!r}")

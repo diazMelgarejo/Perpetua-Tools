@@ -11,7 +11,7 @@ All HTTP calls are mocked - runs fully offline in CI.
 from __future__ import annotations
 
 import os
-from unittest.mock import patch, MagicMock
+from unittest.mock import ANY, MagicMock, patch
 
 import pytest
 
@@ -286,8 +286,38 @@ class TestCallBridgeRemote:
                 CONTROL_PLANE_DEPTH_HEADER: "1",
             },
             timeout=3.0,
+            url_checker=ANY,
         )
         mock_httpx_post.assert_not_called()
+
+    @patch("httpx.post")
+    @patch("utils.ssrf_pinned_adapter.ssrf_request")
+    def test_bearer_remote_transport_rejects_http_redirect_hops(
+        self, mock_ssrf_request, mock_httpx_post, monkeypatch
+    ):
+        """Bearer credentials may follow only HTTPS redirect destinations."""
+        mock_httpx_post.side_effect = AssertionError(
+            "remote public endpoints must use ssrf_request, not direct httpx"
+        )
+        monkeypatch.setenv("ORAMA_CONTROL_PLANE_TOKEN", "orama-test-token")
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = {"result": "ok"}
+        mock_resp.raise_for_status.return_value = None
+        mock_ssrf_request.return_value = mock_resp
+
+        call_oramasys_bridge(
+            endpoint=REMOTE_PUBLIC_ENDPOINT,
+            timeout=3.0,
+            task="Test task",
+            task_type="deep_reasoning",
+        )
+
+        url_checker = mock_ssrf_request.call_args.kwargs["url_checker"]
+        url_checker("https://redirect.example/final")
+        from utils.ssrf_pinned_adapter import SSRFPolicyError
+
+        with pytest.raises(SSRFPolicyError, match="HTTPS"):
+            url_checker("http://redirect.example/final")
 
 
 class TestCallBridgeLocal:

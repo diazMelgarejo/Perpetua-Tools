@@ -130,6 +130,15 @@ def _is_local_oramasys_endpoint(url: str) -> bool:
     return True
 
 
+def _require_https_bearer_url(url: str) -> None:
+    """Keep a bearer credential on TLS for every pinned-transport hop."""
+    from utils.ssrf_pinned_adapter import SSRFPolicyError, default_url_allowed
+
+    default_url_allowed(url)
+    if urlparse(url).scheme.lower() != "https":
+        raise SSRFPolicyError("refusing bearer credentials for a non-HTTPS URL")
+
+
 def _dispatch_oramasys_http(url: str, payload: Dict[str, Any], timeout: float) -> Any:
     """The one HTTP-call implementation for both sync and async callers.
 
@@ -178,12 +187,17 @@ def _dispatch_oramasys_http(url: str, payload: Dict[str, Any], timeout: float) -
         else:
             from utils.ssrf_pinned_adapter import ssrf_request
 
+            request_kwargs: dict[str, Any] = {
+                "json": payload,
+                "headers": headers,
+                "timeout": timeout,
+            }
+            if headers.get("Authorization", "").startswith("Bearer "):
+                request_kwargs["url_checker"] = _require_https_bearer_url
             response = ssrf_request(
                 "POST",
                 url,
-                json=payload,
-                headers=headers,
-                timeout=timeout,
+                **request_kwargs,
             )
     except Exception as exc:
         if not getattr(exc, "_egress_telemetry_emitted", False):
