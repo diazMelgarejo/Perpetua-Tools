@@ -53,6 +53,11 @@ def redact_endpoint_for_log(url: str) -> str:
 
 
 def _host_allowed(host: str, *, allow_public: bool) -> bool:
+    """Return whether a host is permitted by the model endpoint policy.
+
+    Loopback names and IP addresses classified as private are allowed. Link-local
+    addresses are always rejected; ``allow_public`` controls other nonempty hosts.
+    """
     normalized = host.strip().lower()
     if not normalized:
         return False
@@ -105,7 +110,7 @@ def validate_model_endpoint_url(
     on-path on the LAN segment. The documented loopback default
     (``http://localhost:8000``) always stays valid regardless of this flag.
 
-    Returns scheme://host[:port] without a trailing slash.
+    Returns ``scheme://host:port`` without a trailing slash.
     """
     if allow_public is None:
         allow_public = allow_public_model_endpoints()

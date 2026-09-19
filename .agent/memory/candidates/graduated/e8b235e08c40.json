@@ -1,0 +1,42 @@
+{
+  "id": "e8b235e08c40",
+  "key": "manual_5cafd5",
+  "name": "manual_5cafd5",
+  "claim": "The harmonized v2 skill standard is the Oramasys Atomic Skill Card Format in references/2026-09-12-v2-skill-construction-guide.md \u2014 OSSF-1 is its machine-checkable floor, not a competing format; extend check_ossf1_skill_md.py for Wave-1 lint, never add a parallel SKILL.md validator.",
+  "conditions": [
+    "Atomic-Skill-Card",
+    "Kungfu",
+    "OSSF-1",
+    "single-validator",
+    "v2-skill-construction-guide"
+  ],
+  "evidence_ids": [
+    "2026-09-16T08:29:50.313423+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-16T08:29:50.313423+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-16T08:29:50.313423+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-16T08:29:50.453215+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Reconciliation applied 2026-09-16 per operator request, converging PT OSSF1_SKILL_FORMAT_STANDARDIZATION_SAGA_2026-08-07 with board plan row 2840 and Kungfu reviews Part 4. Prior lesson_74da980b662b scoped OSSF-1 to orama pre-commit only until v2 cutover; post-cutover enforcement moves to one extended contract test.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-16T08:29:50.313423+00:00"
+      ],
+      "lessons_sha": "4616e37c23ef"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-16T08:29:50.453198+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Reconciliation applied 2026-09-16 per operator request, converging PT OSSF1_SKILL_FORMAT_STANDARDIZATION_SAGA_2026-08-07 with board plan row 2840 and Kungfu reviews Part 4. Prior lesson_74da980b662b scoped OSSF-1 to orama pre-commit only until v2 cutover; post-cutover enforcement moves to one extended contract test."
+}

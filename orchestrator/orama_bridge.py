@@ -108,11 +108,23 @@ def _is_local_oramasys_endpoint(url: str) -> bool:
     ``ALLOW_PUBLIC_MODEL_ENDPOINTS`` -- this call only classifies routing
     (local vs. remote transport), it never gates a request outright, so it
     must not be swayed by an env var meant for a different policy surface.
+
+    ``require_tls_for_non_loopback=True`` is also explicit here: a private
+    (RFC1918) HTTP endpoint would otherwise classify as "local" and route
+    through ``_dispatch_oramasys_http``'s direct, unencrypted transport,
+    letting a network observer on that LAN read or modify the payload.
+    Requiring TLS for any non-loopback target sends such an endpoint down
+    the existing SSRF-deny path instead, where it is correctly rejected
+    rather than silently trusted.
     """
     from utils.model_endpoint_url import ModelEndpointPolicyError, validate_model_endpoint_url
 
     try:
-        validate_model_endpoint_url(url, allow_public=False)
+        validate_model_endpoint_url(
+            url,
+            allow_public=False,
+            require_tls_for_non_loopback=True,
+        )
     except ModelEndpointPolicyError:
         return False
     return True

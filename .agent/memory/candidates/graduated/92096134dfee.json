@@ -1,0 +1,42 @@
+{
+  "id": "92096134dfee",
+  "key": "manual_1e1766",
+  "name": "manual_1e1766",
+  "claim": "When a canonical SKILL.md exceeds the OSSF-1 500-line ceiling, extract procedural bulk into references/ and keep the orchestrator card under the limit \u2014 never weaken the Boundaries section to save lines.",
+  "conditions": [
+    "500-line",
+    "OSSF-1",
+    "hermes-harness",
+    "progressive-disclosure",
+    "references"
+  ],
+  "evidence_ids": [
+    "2026-09-16T07:48:38.932622+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-16T07:48:38.932622+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-16T07:48:38.932622+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-16T07:48:39.061361+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Pilot 2026-08-08: hermes-harness split to references/ossf-operating-procedures.md; mcp-orchestration trimmed tail prose to 496 lines before adding Boundaries. Pattern documented in OSSF1_SKILL_FORMAT_STANDARDIZATION_SAGA_2026-08-07.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-16T07:48:38.932622+00:00"
+      ],
+      "lessons_sha": "11aa693c8185"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-16T07:48:39.061348+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Pilot 2026-08-08: hermes-harness split to references/ossf-operating-procedures.md; mcp-orchestration trimmed tail prose to 496 lines before adding Boundaries. Pattern documented in OSSF1_SKILL_FORMAT_STANDARDIZATION_SAGA_2026-08-07.md."
+}

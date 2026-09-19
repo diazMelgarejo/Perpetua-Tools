@@ -1,0 +1,42 @@
+{
+  "id": "69b8bb02befc",
+  "key": "manual_c5d812",
+  "name": "manual_c5d812",
+  "claim": "When mirroring a document set into a different co-located target directory, path prefixes get deliberately re-normalized for the new context (e.g. references/foo.md becomes foo.md once siblings are co-located in the mirror) -- never blindly copy lint or content fixes back to the canonical source without checking whether a given diff line is a deliberate context-specific normalization or a real defect.",
+  "conditions": [
+    "canonical",
+    "documentation",
+    "mirror",
+    "path-normalization",
+    "sync"
+  ],
+  "evidence_ids": [
+    "2026-09-17T02:44:39.656721+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-17T02:44:39.656721+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-17T02:44:39.656721+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-17T02:44:39.779147+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "agent-envelope: agent=claude-main model=claude-sonnet-5 date=2026-09-17 | Caught before acting: orama-system PR#360's mirrored construction guide had references/2026-09-14-....md link paths stripped to 2026-09-14-....md (correct for co-located mirror files). A blind cp-based sync of my markdownlint line-wrap fixes back to the OpenClaw canonical copy would have silently re-broken those paths by reintroducing the mirror's stripped prefixes into the wrong context. Fixed line-wrapping independently in each location instead of diffing/copying wholesale.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-17T02:44:39.656721+00:00"
+      ],
+      "lessons_sha": "0dc647605d5f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-17T02:44:39.779137+00:00",
+  "reviewer": "learn.py",
+  "rationale": "agent-envelope: agent=claude-main model=claude-sonnet-5 date=2026-09-17 | Caught before acting: orama-system PR#360's mirrored construction guide had references/2026-09-14-....md link paths stripped to 2026-09-14-....md (correct for co-located mirror files). A blind cp-based sync of my markdownlint line-wrap fixes back to the OpenClaw canonical copy would have silently re-broken those paths by reintroducing the mirror's stripped prefixes into the wrong context. Fixed line-wrapping independently in each location instead of diffing/copying wholesale."
+}
