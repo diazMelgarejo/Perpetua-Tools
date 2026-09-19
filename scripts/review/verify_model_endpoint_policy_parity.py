@@ -11,6 +11,7 @@ sync-drift risk:
 from __future__ import annotations
 
 import ast
+import hashlib
 import os
 import sys
 from dataclasses import dataclass
@@ -21,12 +22,14 @@ from pathlib import Path
 class _FileSpec:
     filename: str
     policy_functions: tuple[str, ...]
+    require_identical_bytes: bool = False
 
 
 FILES_TO_CHECK: tuple[_FileSpec, ...] = (
     _FileSpec(
         "model_endpoint_url.py",
-        ("_host_allowed", "validate_model_endpoint_url", "parse_model_endpoint_list"),
+        ("_host_allowed", "validate_model_endpoint_url", "parse_model_endpoint_list", "_is_loopback_host"),
+        require_identical_bytes=True,
     ),
     _FileSpec(
         "endpoint_policy_core.py",
@@ -75,8 +78,30 @@ def _check_one(spec: _FileSpec, local_dir: Path, peer_dir: Path) -> bool:
         print(f"model-endpoint-policy-parity: local file missing: {local_path}", file=sys.stderr)
         return False
     if not peer_path.is_file():
-        print(f"model-endpoint-policy-parity: skip ({spec.filename} peer not present on peer branch)")
-        return True
+        print(f"model-endpoint-policy-parity: FAIL — peer file missing: {peer_path}", file=sys.stderr)
+        print(
+            "  hint: a missing peer file is not skip-success; if this file was "
+            "intentionally removed on the peer side, update FILES_TO_CHECK explicitly "
+            "rather than let a missing file pass silently.",
+            file=sys.stderr,
+        )
+        return False
+
+    if spec.require_identical_bytes:
+        local_bytes = local_path.read_bytes()
+        peer_bytes = peer_path.read_bytes()
+        local_digest = hashlib.sha256(local_bytes).hexdigest()
+        peer_digest = hashlib.sha256(peer_bytes).hexdigest()
+        if local_digest != peer_digest:
+            print(
+                f"model-endpoint-policy-parity: FAIL — {spec.filename} byte-identical "
+                "requirement violated (sha256 mismatch, AST-equal policy functions may "
+                "still differ elsewhere in the file -- e.g. a docstring-only drift)",
+                file=sys.stderr,
+            )
+            print(f"  local:  {local_path}  sha256={local_digest}", file=sys.stderr)
+            print(f"  peer:   {peer_path}  sha256={peer_digest}", file=sys.stderr)
+            return False
 
     local_src = _extract_policy_source(local_path, spec.policy_functions)
     peer_src = _extract_policy_source(peer_path, spec.policy_functions)
@@ -108,8 +133,21 @@ def _check_one(spec: _FileSpec, local_dir: Path, peer_dir: Path) -> bool:
 def main() -> int:
     peer_dir = _sibling_utils_dir()
     if peer_dir is None:
-        print("model-endpoint-policy-parity: skip (orama-system sibling not available)")
-        return 0
+        if os.getenv("PARITY_ALLOW_MISSING_SIBLING") == "1":
+            print(
+                "model-endpoint-policy-parity: skip (orama-system sibling not "
+                "available; PARITY_ALLOW_MISSING_SIBLING=1 set -- local-only opt-out, "
+                "CI must never set this)"
+            )
+            return 0
+        print(
+            "model-endpoint-policy-parity: FAIL — orama-system sibling not available "
+            "and PARITY_ALLOW_MISSING_SIBLING is not set. A missing sibling is not a "
+            "pass: set ORAMA_SYSTEM_ROOT, or set PARITY_ALLOW_MISSING_SIBLING=1 "
+            "explicitly for local development only (never in CI).",
+            file=sys.stderr,
+        )
+        return 1
 
     ok = True
     for spec in FILES_TO_CHECK:

@@ -179,6 +179,76 @@ def test_pipeline_run_returns_final_output_without_internal_stage_payload(
     assert _Runner.captured_run_kwargs["approval"] is approval
 
 
+@pytest.mark.parametrize("raw_depth", ["-1", "+1", "1_0", "2.0", "abc", "+0"])
+def test_pipeline_run_rejects_non_canonical_depth_header(
+    raw_depth: str, control_plane_client, monkeypatch
+) -> None:
+    """Task B1 (lockstep heal for orama PR 363 / PT PR 395): int(depth_raw)
+    accepts -1, +1 (PEP 3127 sign), and 1_0 (PEP 515 underscore) without
+    error, and 2.0 was mapped to the same 409 as a real over-ceiling depth
+    -- collapsing a parse failure into the loop-detection error. A header
+    that is not ^[0-9]+$ must be 422 with a dict detail whose "error" field
+    orama's own JSON contract can match (CONTROL_PLANE_DEPTH_INVALID), not
+    409, and must be rejected before recipe lookup."""
+    approval = _valid_approval()
+    monkeypatch.setattr(app_module, "load_pipeline_approval", lambda trace_id: approval)
+
+    response = control_plane_client.post(
+        "/pipelines/classify_then_generate/run",
+        json={"prompt": "do the work", "trace_id": approval.trace_id},
+        headers={
+            "Authorization": "Bearer pt-test-token",
+            "Idempotency-Key": str(uuid.uuid4()),
+            "X-Control-Plane-Depth": raw_depth,
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"]["error"] == "CONTROL_PLANE_DEPTH_INVALID"
+
+
+def test_pipeline_run_accepts_missing_depth_header(control_plane_client, monkeypatch) -> None:
+    """No header at all is the ordinary top-level case, not a parse
+    failure -- must proceed exactly like depth 0."""
+    approval = _valid_approval()
+    monkeypatch.setattr(app_module, "load_pipeline_approval", lambda trace_id: approval)
+
+    response = control_plane_client.post(
+        "/pipelines/classify_then_generate/run",
+        json={"prompt": "do the work", "trace_id": approval.trace_id},
+        headers={
+            "Authorization": "Bearer pt-test-token",
+            "Idempotency-Key": str(uuid.uuid4()),
+        },
+    )
+
+    assert response.status_code == 200
+
+
+def test_pipeline_run_rejects_depth_past_ceiling_as_loop_not_invalid(
+    control_plane_client, monkeypatch
+) -> None:
+    """A well-formed header past the ceiling is a real loop (409), not a
+    parse failure (422) -- confirms the two error paths stay genuinely
+    distinct after the digits-only rewrite, matching the same contract
+    orama enforces on its own side."""
+    approval = _valid_approval()
+    monkeypatch.setattr(app_module, "load_pipeline_approval", lambda trace_id: approval)
+
+    response = control_plane_client.post(
+        "/pipelines/classify_then_generate/run",
+        json={"prompt": "do the work", "trace_id": approval.trace_id},
+        headers={
+            "Authorization": "Bearer pt-test-token",
+            "Idempotency-Key": str(uuid.uuid4()),
+            "X-Control-Plane-Depth": "3",
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"]["error"] == "CONTROL_PLANE_LOOP"
+
+
 @pytest.mark.integration
 def test_pipeline_run_idempotent_replay_returns_existing_state(
     control_plane_client, monkeypatch
