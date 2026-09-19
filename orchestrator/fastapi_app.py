@@ -52,8 +52,10 @@ from orchestrator.model_transport import (
     ProviderTransportRegistry,
 )
 from orchestrator.orama_bridge import (
+    CONTROL_PLANE_DEPTH_HEADER,
+    MAX_CONTROL_PLANE_DEPTH,
     call_oramasys_mcp_or_bridge,
-    parse_oramasys_timeout,
+    resolve_oramasys_timeout,
 )
 from orchestrator.tiered_pipeline import (
     PipelineApproval,
@@ -356,7 +358,7 @@ def get_tier5_execution_service(
     ledger: Tier5BudgetLedger = Depends(get_tier5_budget_ledger),
     runner: TieredPipelineRunner = Depends(get_tiered_pipeline_runner),
 ) -> Tier5ExecutionService:
-    hmac_key = os.getenv(HMAC_KEY_ENV, "pt-tier5-default-hmac-key-2026")
+    hmac_key = os.getenv(HMAC_KEY_ENV)
     return Tier5ExecutionService(ledger=ledger, runner=runner, hmac_key=hmac_key)
 
 
@@ -922,7 +924,7 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
         response["token_cliff_warning"] = token_cliff_warning
 
     if req.task_type in _ORAMASYS_TASK_TYPES and route_cfg.get("endpoint"):
-        timeout = parse_oramasys_timeout(route_cfg.get("timeout"))
+        timeout = resolve_oramasys_timeout(route_cfg.get("timeout"))
         try:
             bridge_result = {
                 "enabled": True,
@@ -992,6 +994,7 @@ async def register_tiered_pipeline_approval(
 async def run_tiered_pipeline(
     recipe_name: str,
     request: TieredPipelineRequest,
+    http_request: Request,
     idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
     runner: TieredPipelineRunner = Depends(get_tiered_pipeline_runner),
     transport: ProviderTransportRegistry = Depends(get_provider_transport),
@@ -1009,6 +1012,20 @@ async def run_tiered_pipeline(
             status_code=422,
             detail="Idempotency-Key header is required and must be a valid canonical UUIDv4",
         )
+    depth_raw = http_request.headers.get(CONTROL_PLANE_DEPTH_HEADER, "").strip()
+    if depth_raw:
+        try:
+            depth = int(depth_raw)
+        except ValueError:
+            raise HTTPException(
+                status_code=422,
+                detail="Control-plane depth header must be an integer",
+            ) from None
+        if depth > MAX_CONTROL_PLANE_DEPTH:
+            raise HTTPException(
+                status_code=409,
+                detail="Control-plane call depth exceeded",
+            )
     clean_idempotency_key = idempotency_key.strip()
     run_id = f"run-{clean_idempotency_key}"
 
@@ -1017,7 +1034,7 @@ async def run_tiered_pipeline(
     except PipelineConfigError as exc:
         raise HTTPException(status_code=404, detail="Unknown pipeline recipe") from exc
 
-    if not tiered_pipeline_enabled():
+    if not tiered_pipeline_enabled(getattr(runner, "config_path", None)):
         raise HTTPException(status_code=409, detail="Tier-5 pipelines are disabled")
 
     # A missing, unreadable, or malformed approval artifact and a genuinely
@@ -1079,6 +1096,7 @@ async def run_tiered_pipeline(
         "output": result.output,
         "replay": result.replay,
         "requested_tokens": result.requested_tokens,
+        "models_used": dict(result.models_used),
         "held_microusd": reservation.held_microusd,
         "settled_microusd": reservation.settled_microusd,
         "cost_reservation_usd": recipe.cost_reservation_usd,

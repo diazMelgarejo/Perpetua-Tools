@@ -50,3 +50,9 @@ cline-agent allowlisted in openclaw.json but NOT dispatched via gateway. All run
 
 ---
 
+## 2026-09-17 — oramasys PR #14 review-thread cleanup (accept-risk deferred)
+
+After [oramasys/oramasys#14](https://github.com/oramasys/oramasys/pull/14) cleanup: 11 fixed threads resolved, 0 open remain; PR still unmerged at `e424391fb35c`. Deferred accept-risk with **no open GitHub threads left to keep**: (1) FleetBindingStore ceremony vs S-AuthZ `/run` Bearer, (2) raw `uvicorn --host` without `bin/serve`, (3) in-process-only NIP-98 replay. Durable note: `.agent/memory/semantic/ORAMASYS_PR14_REVIEW_THREAD_CLEANUP_2026-09-17.md`.
+
+---
+

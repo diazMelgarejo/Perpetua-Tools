@@ -49,7 +49,7 @@ def _make_approval(
         max_tokens=max_tokens,
         max_cost_usd=max_cost_usd,
         expires_at=datetime.now(timezone.utc) + timedelta(minutes=expires_in_minutes),
-        scope=("tier5",),
+        scope=("openrouter",),
     )
 
 
@@ -64,8 +64,10 @@ def _make_runner(
     models_file.write_text(
         """models:
   - name: paid-fast
+    backend: openrouter
     frugality_tier: 5
   - name: paid-strong
+    backend: openrouter
     frugality_tier: 5
 """,
         encoding="utf-8",
@@ -185,7 +187,16 @@ async def test_dispatch_marker_committed_before_provider_io(
     run_id = "run-marker-spy-001"
     io_order: list[str] = []
 
-    async def spy_dispatch(model: str, prompt: str, max_tokens: int, stage_name: str) -> DispatchResult:
+    async def spy_dispatch(
+        model: str,
+        prompt: str,
+        max_tokens: int,
+        stage_name: str,
+        *,
+        commit=None,
+    ) -> DispatchResult:
+        if commit is not None:
+            commit()
         # Check SQLite during dispatch to verify marker was ALREADY committed
         row = ledger.get_reservation(run_id)
         assert row is not None
@@ -223,7 +234,16 @@ async def test_post_marker_settle_failure_does_not_mask_original_exception(
     approval = _make_approval()
     run_id = "run-settle-fails-001"
 
-    async def timeout_dispatch(model: str, prompt: str, max_tokens: int, stage_name: str) -> DispatchResult:
+    async def timeout_dispatch(
+        model: str,
+        prompt: str,
+        max_tokens: int,
+        stage_name: str,
+        *,
+        commit=None,
+    ) -> DispatchResult:
+        if commit is not None:
+            commit()
         raise TimeoutError("provider timed out after dispatch marker")
 
     monkeypatch.setattr(
@@ -253,7 +273,16 @@ async def test_post_marker_timeout_consumes_full_hold(
     approval = _make_approval()
     run_id = "run-timeout-001"
 
-    async def timeout_dispatch(model: str, prompt: str, max_tokens: int, stage_name: str) -> DispatchResult:
+    async def timeout_dispatch(
+        model: str,
+        prompt: str,
+        max_tokens: int,
+        stage_name: str,
+        *,
+        commit=None,
+    ) -> DispatchResult:
+        if commit is not None:
+            commit()
         raise TimeoutError("provider timed out after dispatch marker")
 
     with pytest.raises(TimeoutError, match="provider timed out"):
@@ -284,7 +313,16 @@ async def test_partial_pipeline_failure_consumes_held_amount(
     approval = _make_approval()
     run_id = "run-partial-001"
 
-    async def partial_dispatch(model: str, prompt: str, max_tokens: int, stage_name: str) -> DispatchResult:
+    async def partial_dispatch(
+        model: str,
+        prompt: str,
+        max_tokens: int,
+        stage_name: str,
+        *,
+        commit=None,
+    ) -> DispatchResult:
+        if commit is not None:
+            commit()
         if stage_name == "draft":
             return DispatchResult(text="draft result", total_tokens=50, cost_usd=0.005)
         raise RuntimeError("stage review crashed")
@@ -316,7 +354,16 @@ async def test_successful_run_releases_verified_unused_difference(
     run_id = "run-success-001"
 
     # Held is $0.05 (50,000 microUSD). Actual spend is $0.01 + $0.01 = $0.02 (20,000 microUSD).
-    async def success_dispatch(model: str, prompt: str, max_tokens: int, stage_name: str) -> DispatchResult:
+    async def success_dispatch(
+        model: str,
+        prompt: str,
+        max_tokens: int,
+        stage_name: str,
+        *,
+        commit=None,
+    ) -> DispatchResult:
+        if commit is not None:
+            commit()
         return DispatchResult(text=f"valid output from {stage_name}", total_tokens=100, cost_usd=0.01)
 
     result, reservation = await service.execute(
@@ -345,7 +392,16 @@ async def test_successful_run_with_missing_cost_consumes_full_hold(
     approval = _make_approval()
     run_id = "run-no-telemetry-001"
 
-    async def no_cost_dispatch(model: str, prompt: str, max_tokens: int, stage_name: str) -> DispatchResult:
+    async def no_cost_dispatch(
+        model: str,
+        prompt: str,
+        max_tokens: int,
+        stage_name: str,
+        *,
+        commit=None,
+    ) -> DispatchResult:
+        if commit is not None:
+            commit()
         return DispatchResult(text=f"valid output from {stage_name}", total_tokens=None, cost_usd=None)
 
     result, reservation = await service.execute(
@@ -373,8 +429,17 @@ async def test_idempotency_replay_returns_existing_reservation(
     key = "550e8400-e29b-41d4-a716-446655440007"
     call_count = 0
 
-    async def dispatch_count(model: str, prompt: str, max_tokens: int, stage_name: str) -> DispatchResult:
+    async def dispatch_count(
+        model: str,
+        prompt: str,
+        max_tokens: int,
+        stage_name: str,
+        *,
+        commit=None,
+    ) -> DispatchResult:
         nonlocal call_count
+        if commit is not None:
+            commit()
         call_count += 1
         return DispatchResult(text="output", total_tokens=100, cost_usd=0.01)
 
@@ -421,7 +486,16 @@ async def test_idempotency_conflict_raises_error(
     approval1 = _make_approval()
     key = "550e8400-e29b-41d4-a716-446655440008"
 
-    async def simple_dispatch(model: str, prompt: str, max_tokens: int, stage_name: str) -> DispatchResult:
+    async def simple_dispatch(
+        model: str,
+        prompt: str,
+        max_tokens: int,
+        stage_name: str,
+        *,
+        commit=None,
+    ) -> DispatchResult:
+        if commit is not None:
+            commit()
         return DispatchResult(text="output", total_tokens=100, cost_usd=0.01)
 
     await service.execute(

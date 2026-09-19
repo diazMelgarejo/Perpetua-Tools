@@ -344,6 +344,20 @@ def filter_chain_by_gate(
     return kept
 
 
+def load_backend_by_name(config_dir: Optional[str] = None) -> Dict[str, Optional[str]]:
+    """Read ``config/models.yml`` and return ``{model_name: backend}``."""
+    base = Path(config_dir) if config_dir else Path(__file__).resolve().parent.parent / "config"
+    path = base / "models.yml"
+    if not path.exists():
+        return {}
+    raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    return {
+        item["name"]: item.get("backend")
+        for item in raw.get("models", [])
+        if "name" in item
+    }
+
+
 def load_frugality_tier_by_name(config_dir: Optional[str] = None) -> Dict[str, Optional[int]]:
     """Read `config/models.yml` directly and return `{model_name:
     frugality_tier}`.

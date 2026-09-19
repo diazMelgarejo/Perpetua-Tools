@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from orchestrator.control_plane_auth import (
+    accepted_control_plane_tokens,
     auth_enforced,
     control_plane_auth_failure,
     redact_runtime_payload,
@@ -20,6 +21,16 @@ from orchestrator.control_plane_auth import (
 from orchestrator.control_plane_asgi import ControlPlaneAuthMiddleware
 import orchestrator.fastapi_app as _fapp
 from orchestrator.fastapi_app import app
+
+
+def test_joint_mode_tokens_remain_restricted_to_their_control_plane_scope(monkeypatch):
+    """A lane token cannot authorize the other lane's protected routes."""
+    monkeypatch.setenv("PT_CONTROL_PLANE_TOKEN", "pt-only-token")
+    monkeypatch.setenv("ORAMA_CONTROL_PLANE_TOKEN", "orama-only-token")
+    monkeypatch.delenv("ORAMA_CONTROL_PLANE_TOKEN_LOCAL", raising=False)
+
+    assert accepted_control_plane_tokens("pt") == frozenset({"pt-only-token"})
+    assert accepted_control_plane_tokens("orama") == frozenset({"orama-only-token"})
 
 
 def test_control_plane_auth_uses_pure_asgi_with_cors_outermost(monkeypatch):

@@ -34,6 +34,15 @@ def _ensure_banned_patterns() -> None:
     assert (ROOT / ".cursor/private/banned-attribution-patterns").is_file()
 
 
+def _seed_home_patterns_without_session_hook(home: Path) -> None:
+    """Patterns present, sessionStart hook absent (verify-git-guards contract)."""
+    _ensure_banned_patterns()
+    dest = home / ".cursor" / "openclaw"
+    dest.mkdir(parents=True, exist_ok=True)
+    src = ROOT / ".cursor/private/banned-attribution-patterns"
+    shutil.copy(src, dest / "banned-attribution-patterns")
+
+
 def _pattern_tokens() -> set[str]:
     _ensure_banned_patterns()
     tokens: set[str] = set()
@@ -295,9 +304,9 @@ def test_verify_guards_github_actions_does_not_print_cursor_session_hook_fail(tm
 
 
 def test_verify_guards_without_github_actions_checks_session_hook(tmp_path):
-    _ensure_banned_patterns()
     fake_home = tmp_path / "home"
     fake_home.mkdir()
+    _seed_home_patterns_without_session_hook(fake_home)
     proc = subprocess.run(
         ["bash", str(VERIFY_GUARDS)],
         capture_output=True,

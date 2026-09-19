@@ -697,3 +697,19 @@ destructive ops (#1734). PATH must include `~/.bun/bin` for `gstack-gbrain-detec
 **Status:** active — operator re-enables autopilot after root fixes.
 
 ---
+
+## 2026-09-17: oramasys PR #14 review threads closed; three accept-risk items deferred without open threads
+
+**Decision:** Treat [oramasys/oramasys PR #14](https://github.com/oramasys/oramasys/pull/14) review-thread cleanup as complete for GitHub thread tracking: 11 fixed threads resolved, 0 open. The PR remains open/unmerged at tip `e424391fb35c`. Three deferred accept-risk items have **no remaining open threads** and must not be “kept alive” by inventing new review comments:
+
+1. FleetBindingStore ceremony (separate from S-AuthZ `/run` Bearer)
+2. raw `uvicorn --host` without `bin/serve` as the policy launcher
+3. in-process-only (not distributed) NIP-98 replay
+
+**Rationale:** Thread count is not the same as merge-readiness. Accept-risk items stay in durable memory so a later audit can find them without GitHub’s review UI.
+
+**Status:** recorded (PR still open)
+
+**Links:** `.agent/memory/semantic/ORAMASYS_PR14_REVIEW_THREAD_CLEANUP_2026-09-17.md`
+
+---

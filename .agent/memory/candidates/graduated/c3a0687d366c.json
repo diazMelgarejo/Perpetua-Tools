@@ -1,0 +1,41 @@
+{
+  "id": "c3a0687d366c",
+  "key": "manual_19af93",
+  "name": "manual_19af93",
+  "claim": "OSSF normative drafts live in orama-system PR #360 docs/v2/references/ as an informative mirror; OpenClaw references/ remains the pre-ratification working tree \u2014 construction guide and reconciliation plan are hub-only unless explicitly copied to the orama mirror",
+  "conditions": [
+    "mirror",
+    "ossf",
+    "publication",
+    "repo-split"
+  ],
+  "evidence_ids": [
+    "2026-09-17T02:33:06.841361+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-17T02:33:06.841361+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-17T02:33:06.841361+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-17T02:33:06.987402+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Dual-review and G0 work split artifacts across an untracked OpenClaw hub and orama PR #360; agents must not treat duplicate untracked copies on wrong orama branches as canonical or commit hub-only Kungfu/migration plans into the OSSF PR scope",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-17T02:33:06.841361+00:00"
+      ],
+      "lessons_sha": "e407c7940ab5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-17T02:33:06.987391+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Dual-review and G0 work split artifacts across an untracked OpenClaw hub and orama PR #360; agents must not treat duplicate untracked copies on wrong orama branches as canonical or commit hub-only Kungfu/migration plans into the OSSF PR scope"
+}

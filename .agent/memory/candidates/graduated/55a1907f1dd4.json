@@ -1,0 +1,43 @@
+{
+  "id": "55a1907f1dd4",
+  "key": "manual_74da98",
+  "name": "manual_74da98",
+  "claim": "OSSF-1 enforcement in orama-system applies only to staged bin/orama-system/**/SKILL.md until the v2 oramasys org migration \u2014 do not add the same pre-commit gate to Perpetua-Tools .agent/skills or install mirrors yet.",
+  "conditions": [
+    "OSSF-1",
+    "PT-deferred",
+    "orama-system",
+    "pre-commit",
+    "skill-format",
+    "v2-oramasys"
+  ],
+  "evidence_ids": [
+    "2026-09-16T07:48:38.603451+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-16T07:48:38.603451+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-16T07:48:38.603451+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-16T07:48:38.832779+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Decision 2026-08-08 on branch 2026-08-07-001-harden-skills-vendor-blend-lessons: commit 9fb770fd/7c276765 added check_ossf1_skill_md.py scoped to bin/orama-system/ only. PT portable brain keeps triggers/tools/constraints format; wrappers stay thin pointers. See .agent/memory/semantic/OSSF1_SKILL_FORMAT_STANDARDIZATION_SAGA_2026-08-07.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-16T07:48:38.603451+00:00"
+      ],
+      "lessons_sha": "38f042c3427d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-16T07:48:38.832768+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Decision 2026-08-08 on branch 2026-08-07-001-harden-skills-vendor-blend-lessons: commit 9fb770fd/7c276765 added check_ossf1_skill_md.py scoped to bin/orama-system/ only. PT portable brain keeps triggers/tools/constraints format; wrappers stay thin pointers. See .agent/memory/semantic/OSSF1_SKILL_FORMAT_STANDARDIZATION_SAGA_2026-08-07.md."
+}

@@ -15,6 +15,40 @@ from orchestrator.model_transport import (
 from orchestrator.model_registry import ModelRegistry
 
 
+def test_provider_transport_fallback_safety_distinguishes_definitive_and_ambiguous_failures():
+    assert ProviderTransportError("provider", status_code=401).fallback_safe is True
+    assert ProviderTransportError("provider", status_code=500).fallback_safe is False
+    assert ProviderTransportError("provider", status_code=502).fallback_safe is False
+    assert ProviderTransportError("provider", status_code=504).fallback_safe is False
+    assert ProviderTransportError("provider").fallback_safe is False
+    assert ProviderTransportError("provider", fallback_safe=True).fallback_safe is True
+    assert ProviderTransportError("provider", fallback_safe=False).fallback_safe is False
+    assert ProviderConfigError("invalid provenance").fallback_safe is False
+    assert ProviderConfigError("missing credential", fallback_safe=True).fallback_safe is True
+
+
+@pytest.mark.asyncio
+async def test_anthropic_configuration_is_validated_before_dispatch_is_committed(
+    transport_config, monkeypatch
+) -> None:
+    """A bad native request must not consume a candidate's dispatch marker."""
+    config_dir, providers = transport_config
+    providers.write_text(
+        providers.read_text(encoding="utf-8").replace("    api_version: 2023-06-01\n", ""),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("ANTHROPIC_TEST_KEY", "test-key")
+    committed: list[bool] = []
+
+    with pytest.raises(ProviderConfigError, match="requires api_version") as exc_info:
+        await ProviderTransportRegistry(config_dir=config_dir, providers_path=providers).dispatch(
+            "sonnet-paid", "write this", 16, "generate", commit=lambda: committed.append(True)
+        )
+
+    assert committed == []
+    assert exc_info.value.fallback_safe is True
+
+
 @pytest.fixture
 def transport_config(tmp_path):
     config_dir = tmp_path / "config"
