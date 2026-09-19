@@ -53,12 +53,15 @@ def redact_endpoint_for_log(url: str) -> str:
 
 
 def _host_allowed(host: str, *, allow_public: bool) -> bool:
+    """Return whether a host is permitted by the model endpoint policy.
+
+    Loopback names and IP addresses classified as private are allowed. Link-local
+    addresses are always rejected; ``allow_public`` controls other nonempty hosts.
+    """
     normalized = host.strip().lower()
     if not normalized:
         return False
     if normalized in ("localhost", "::1") or normalized.endswith(".localhost"):
-        return True
-    if normalized.startswith("127."):
         return True
     try:
         addr = ipaddress.ip_address(normalized)
@@ -75,14 +78,39 @@ def _host_allowed(host: str, *, allow_public: bool) -> bool:
     return allow_public
 
 
+def _is_loopback_host(host: str) -> bool:
+    """True only for loopback (not the wider RFC1918-private set `_host_allowed` permits)."""
+    normalized = host.strip().lower()
+    if normalized in ("localhost", "::1") or normalized.endswith(".localhost"):
+        return True
+    try:
+        addr = ipaddress.ip_address(normalized)
+    except ValueError:
+        return False
+    if isinstance(addr, ipaddress.IPv6Address) and addr.ipv4_mapped is not None:
+        addr = addr.ipv4_mapped
+    return addr.is_loopback
+
+
 def validate_model_endpoint_url(
     url: str,
     *,
     allow_public: bool | None = None,
+    require_tls_for_non_loopback: bool = False,
 ) -> str:
     """Validate and normalize a model server base URL (no path).
 
-    Returns scheme://host[:port] without a trailing slash.
+    ``require_tls_for_non_loopback`` is opt-in and defaults to False,
+    preserving this function's long-standing LAN-trusting polarity for its
+    primary callers (LM Studio / Ollama / Windows-coder-pool endpoints,
+    intentionally plain HTTP on a trusted LAN). Set it True only for a
+    caller that sends a sensitive credential (e.g. a control-plane bearer
+    token) on every request to the validated endpoint, where plain HTTP to
+    anything beyond loopback would expose that credential to anyone
+    on-path on the LAN segment. The documented loopback default
+    (``http://localhost:8000``) always stays valid regardless of this flag.
+
+    Returns ``scheme://host:port`` without a trailing slash.
     """
     if allow_public is None:
         allow_public = allow_public_model_endpoints()
@@ -120,6 +148,16 @@ def validate_model_endpoint_url(
             "endpoint host is not loopback or RFC1918 private "
             f"({redact_endpoint_for_log(raw)}); set ALLOW_PUBLIC_MODEL_ENDPOINTS=1 "
             "to allow public hosts"
+        )
+
+    if (
+        require_tls_for_non_loopback
+        and scheme == "http"
+        and not _is_loopback_host(host)
+    ):
+        raise ModelEndpointPolicyError(
+            "http scheme is only allowed for loopback endpoints; use https for "
+            f"private-network hosts ({redact_endpoint_for_log(raw)})"
         )
 
     if port is None:
