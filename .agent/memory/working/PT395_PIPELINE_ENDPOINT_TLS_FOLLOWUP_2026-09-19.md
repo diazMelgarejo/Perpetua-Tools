@@ -29,6 +29,12 @@
 - `scripts/hooks/check_memory_records.py` derives ids with `cluster.pattern_id` so `learn.py`-minted candidates pass the memory gate
 - This chronicle and `docs/LESSONS.md` session line
 
+## CI wiring (job 105865624057)
+
+The resolve step wrote a quoted PT branch into `GITHUB_OUTPUT` (`\"$GITHUB_HEAD_REF\"` inside an already-quoted `echo`), so checkout fetched `refs/heads/"fix/pt-pipeline-endpoint-tls-20260917"` on orama-system, failed, and `continue-on-error` greenwashed a `main` fallback. Parity then compared PT tip against orama `main`.
+
+Checkout now uses `peer_ref` from `--github-output`. While Orama PR #363 is open, that is `cursor/tiered-pipeline-runtime-fb76` (`refs/pull/363/head` remains an equivalent). After #363 merges, resolve returns `main` as the declared peer. Declared checkout failure fails the job; `main` fallback is only for unmapped same-named-ref attempts.
+
 ## Publish rules still in force
 
 Ordinary non-force fast-forward only. No merge, no second PR, no history rewrite.
