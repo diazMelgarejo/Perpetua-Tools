@@ -11,10 +11,14 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 _STACKS_PATH = _REPO_ROOT / "config" / "cross-repo-policy-stacks.json"
 
 
+def load_policy_stacks() -> dict:
+    """Return the cross-repo policy-stack document."""
+    return json.loads(_STACKS_PATH.read_text(encoding="utf-8"))
+
+
 def resolve_orama_policy_ref(head_ref: str) -> str:
     """Return the declared Orama peer ref, or the same-named ref by default."""
-    data = json.loads(_STACKS_PATH.read_text(encoding="utf-8"))
-    refs = data.get("orama_system_refs", {})
+    refs = load_policy_stacks().get("orama_system_refs", {})
     return str(refs.get(head_ref, head_ref))
 
 
