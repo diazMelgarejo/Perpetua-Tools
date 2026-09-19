@@ -35,6 +35,21 @@ The resolve step wrote a quoted PT branch into `GITHUB_OUTPUT` (`\"$GITHUB_HEAD_
 
 Checkout now uses `peer_ref` from `--github-output`. While Orama PR #363 is open, that is `cursor/tiered-pipeline-runtime-fb76` (`refs/pull/363/head` remains an equivalent). After #363 merges, resolve returns `main` as the declared peer. Declared checkout failure fails the job; `main` fallback is only for unmapped same-named-ref attempts.
 
+## How we diagnosed job 105865624057
+
+1. Step 13 said `model-endpoint-policy-parity: FAIL — model_endpoint_url.py policy functions diverged`. That is a content mismatch, not a missing sibling.
+2. Step 8 conclusion was `success` because `continue-on-error: true`. The fetch line in that step is the evidence: `origin +refs/heads/"fix/pt-pipeline-endpoint-tls-20260917"*` (literal quotes in the refspec) on `diazMelgarejo/orama-system`.
+3. Local `resolve_orama_policy_ref.py fix/pt-pipeline-endpoint-tls-20260917` against the committed JSON returned the mapped peer. So the map was right; CI argv was not.
+4. Root cause: `echo "ref=$(python3 … \"$GITHUB_HEAD_REF\")"` inside an already-quoted string. Bash kept the quotes as part of the argument; JSON lookup missed; same-named-ref fallback echoed those quotes into `GITHUB_OUTPUT`.
+5. Steps 9–10 then checked out orama `main`. PT tip had dropped the unsafe `127.` hostname exception; orama `main` had not. Parity failed for a real policy delta against the wrong tree.
+
+## How we fixed it (`8cc3d170`)
+
+- Resolver `--github-output` logs `GITHUB_HEAD_REF`, normalized name, `peer_ref`, `declared`, `source`, `merged` and appends unquoted fields to `GITHUB_OUTPUT`.
+- Strip wrapping quotes and `refs/heads/` before map lookup.
+- While orama-system PR #363 is open, checkout `cursor/tiered-pipeline-runtime-fb76`. After it merges, declared peer is `main`.
+- If `declared=true` and peer checkout fails, fail the job. Silent `main` fallback stays only for unmapped same-named-ref attempts.
+
 ## Publish rules still in force
 
 Ordinary non-force fast-forward only. No merge, no second PR, no history rewrite.

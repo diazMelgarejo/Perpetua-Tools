@@ -1,0 +1,46 @@
+{
+  "id": "5bec3440ef6b",
+  "key": "manual_5bec34",
+  "name": "manual_5bec34",
+  "claim": "When a GitHub Actions resolve step writes GITHUB_OUTPUT via echo inside double quotes that also backslash-quotes GITHUB_HEAD_REF, the sibling-ref resolver receives literal quote characters, misses the stack-map key, and same-named-ref fallback checks out the PT branch name on the peer repo. Diagnose from the checkout fetch refspec in the job log (quoted refs/heads fragments), not from continue-on-error conclusion=success. Write GITHUB_OUTPUT from a --github-output helper; log the input head and resolved peer; checkout the open sibling PR branch until that PR is merged into main, then use main; if a declared peer checkout fails, fail the job instead of silently falling back to main and greenwashing cross-repo parity.",
+  "conditions": [
+    "CI",
+    "GITHUB_HEAD_REF",
+    "GITHUB_OUTPUT",
+    "checkout-refspec",
+    "continue-on-error",
+    "merge-aware-peer",
+    "orama-peer",
+    "quoted-argv",
+    "stacked-parity"
+  ],
+  "evidence_ids": [
+    "2026-09-19T08:20:58.097187+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-19T08:20:58.097187+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-19T08:20:58.097187+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-19T08:20:58.193820+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT PR #395 CI job 105865624057 (head 8cc3d170 parent dcfb07ce) failed step 13 model-endpoint-policy-parity because step 8 fetched a quoted PT branch on orama-system, then main fallback compared PT tip (no unsafe 127-prefix hostname exception) against orama main. Local resolve against the committed stack map was correct. Fix: unquoted --github-output, merge-aware Orama PR #363 peer (open -> cursor/tiered-pipeline-runtime-fb76, merged -> main), fail declared checkout instead of continue-on-error.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-19T08:20:58.097187+00:00"
+      ],
+      "lessons_sha": "99e162af9b8c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-19T08:20:58.193811+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT PR #395 CI job 105865624057 (head 8cc3d170 parent dcfb07ce) failed step 13 model-endpoint-policy-parity because step 8 fetched a quoted PT branch on orama-system, then main fallback compared PT tip (no unsafe 127-prefix hostname exception) against orama main. Local resolve against the committed stack map was correct. Fix: unquoted --github-output, merge-aware Orama PR #363 peer (open -> cursor/tiered-pipeline-runtime-fb76, merged -> main), fail declared checkout instead of continue-on-error."
+}
