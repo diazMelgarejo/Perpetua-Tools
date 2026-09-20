@@ -6,6 +6,12 @@
       "peer_pull": 363,
       "peer_repository": "diazMelgarejo/orama-system",
       "equivalents": ["refs/pull/363/head"]
+    },
+    "fix/pipeline-lockstep-heal-20260919": {
+      "peer_ref": "cursor/tiered-pipeline-runtime-fb76",
+      "peer_pull": 363,
+      "peer_repository": "diazMelgarejo/orama-system",
+      "equivalents": ["refs/pull/363/head"]
     }
   }
 }

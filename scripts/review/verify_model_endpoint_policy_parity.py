@@ -11,22 +11,68 @@ sync-drift risk:
 from __future__ import annotations
 
 import ast
+import hashlib
+import logging
 import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+
+class _LevelRangeFilter(logging.Filter):
+    """Route INFO to stdout and WARNING+ to stderr without duplicating lines."""
+
+    def __init__(self, min_level: int, max_level: int) -> None:
+        super().__init__()
+        self._min_level = min_level
+        self._max_level = max_level
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return self._min_level <= record.levelno <= self._max_level
+
+
+class _CurrentStreamHandler(logging.Handler):
+    """Write at emit time so pytest/capsys redirects still see the line."""
+
+    def __init__(self, stream_attr: str) -> None:
+        super().__init__()
+        self._stream_attr = stream_attr
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            stream = getattr(sys, self._stream_attr)
+            stream.write(self.format(record) + "\n")
+            stream.flush()
+        except Exception:
+            self.handleError(record)
+
+
+_LOG = logging.getLogger("model_endpoint_policy_parity")
+if not _LOG.handlers:
+    _fmt = logging.Formatter("%(message)s")
+    _stdout = _CurrentStreamHandler("stdout")
+    _stdout.setFormatter(_fmt)
+    _stdout.addFilter(_LevelRangeFilter(logging.DEBUG, logging.INFO))
+    _stderr = _CurrentStreamHandler("stderr")
+    _stderr.setFormatter(_fmt)
+    _stderr.addFilter(_LevelRangeFilter(logging.WARNING, logging.CRITICAL))
+    _LOG.addHandler(_stdout)
+    _LOG.addHandler(_stderr)
+    _LOG.setLevel(logging.INFO)
+    _LOG.propagate = False
 
 
 @dataclass(frozen=True)
 class _FileSpec:
     filename: str
     policy_functions: tuple[str, ...]
+    require_identical_bytes: bool = False
 
 
 FILES_TO_CHECK: tuple[_FileSpec, ...] = (
     _FileSpec(
         "model_endpoint_url.py",
-        ("_host_allowed", "validate_model_endpoint_url", "parse_model_endpoint_list"),
+        ("_host_allowed", "validate_model_endpoint_url", "parse_model_endpoint_list", "_is_loopback_host"),
+        require_identical_bytes=True,
     ),
     _FileSpec(
         "endpoint_policy_core.py",
@@ -75,8 +121,30 @@ def _check_one(spec: _FileSpec, local_dir: Path, peer_dir: Path) -> bool:
         print(f"model-endpoint-policy-parity: local file missing: {local_path}", file=sys.stderr)
         return False
     if not peer_path.is_file():
-        print(f"model-endpoint-policy-parity: skip ({spec.filename} peer not present on peer branch)")
-        return True
+        print(f"model-endpoint-policy-parity: FAIL — peer file missing: {peer_path}", file=sys.stderr)
+        print(
+            "  hint: a missing peer file is not skip-success; if this file was "
+            "intentionally removed on the peer side, update FILES_TO_CHECK explicitly "
+            "rather than let a missing file pass silently.",
+            file=sys.stderr,
+        )
+        return False
+
+    if spec.require_identical_bytes:
+        local_bytes = local_path.read_bytes()
+        peer_bytes = peer_path.read_bytes()
+        local_digest = hashlib.sha256(local_bytes).hexdigest()
+        peer_digest = hashlib.sha256(peer_bytes).hexdigest()
+        if local_digest != peer_digest:
+            _LOG.error(
+                "model-endpoint-policy-parity: FAIL — %s byte-identical "
+                "requirement violated (sha256 mismatch, AST-equal policy functions may "
+                "still differ elsewhere in the file -- e.g. a docstring-only drift)",
+                spec.filename,
+            )
+            _LOG.error("  local:  %s  sha256=%s", local_path, local_digest)
+            _LOG.error("  peer:   %s  sha256=%s", peer_path, peer_digest)
+            return False
 
     local_src = _extract_policy_source(local_path, spec.policy_functions)
     peer_src = _extract_policy_source(peer_path, spec.policy_functions)
@@ -108,8 +176,20 @@ def _check_one(spec: _FileSpec, local_dir: Path, peer_dir: Path) -> bool:
 def main() -> int:
     peer_dir = _sibling_utils_dir()
     if peer_dir is None:
-        print("model-endpoint-policy-parity: skip (orama-system sibling not available)")
-        return 0
+        if os.getenv("PARITY_ALLOW_MISSING_SIBLING") == "1":
+            _LOG.info(
+                "model-endpoint-policy-parity: skip (orama-system sibling not "
+                "available; PARITY_ALLOW_MISSING_SIBLING=1 set -- local-only opt-out, "
+                "CI must never set this)"
+            )
+            return 0
+        _LOG.error(
+            "model-endpoint-policy-parity: FAIL — orama-system sibling not available "
+            "and PARITY_ALLOW_MISSING_SIBLING is not set. A missing sibling is not a "
+            "pass: set ORAMA_SYSTEM_ROOT, or set PARITY_ALLOW_MISSING_SIBLING=1 "
+            "explicitly for local development only (never in CI)."
+        )
+        return 1
 
     ok = True
     for spec in FILES_TO_CHECK:

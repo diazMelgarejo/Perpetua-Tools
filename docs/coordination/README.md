@@ -17,6 +17,7 @@
 | [`../next/2026-07-17-coordination-module-consolidation-plan.md`](../next/2026-07-17-coordination-module-consolidation-plan.md) | Mother plan (Parts 1–3, migration ladder) |
 | [`../references/coordination-consolidation-plan-review-2026-07-18.md`](../references/coordination-consolidation-plan-review-2026-07-18.md) | Codex review — **in-repo** evidence (supersedes off-repo handoffs) |
 | [`../next/2026-07-27-coordination-phase-0f-part2-autoplan.plan.md`](../next/2026-07-27-coordination-phase-0f-part2-autoplan.plan.md) | **Autoplan intake** — 0F completion + `liveness.py` |
+| [`offline-sandbox-agent-report.md`](offline-sandbox-agent-report.md) | **Offline/sandbox fallback** — Markdown report when there is no LAN / not on the same machine; validated JSON ([`agent-handoff-template.md`](agent-handoff-template.md)) stays preferred when the queue is reachable |
 
 ---
 
@@ -63,6 +64,10 @@ The packet is validated before any queue mutation; accepted packets record a
 non-liveness `handoff_admitted` audit event. Read
 [the template](agent-handoff-template.md) and start from
 [the executable example](examples/handoff-packet-v1.json).
+When the queue or LAN is unreachable, use the
+[offline/sandbox Markdown report](offline-sandbox-agent-report.md) as the
+fallback; convert it to validated JSON once the queue is reachable. Do not
+treat that Markdown file as an admission packet.
 
 `log()` remains a board-status message, not a heartbeat. A long-running worker
 must emit its own `heartbeat pulse <agent-id>` periodically; queue admission

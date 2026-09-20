@@ -1014,17 +1014,35 @@ async def run_tiered_pipeline(
         )
     depth_raw = http_request.headers.get(CONTROL_PLANE_DEPTH_HEADER, "").strip()
     if depth_raw:
-        try:
-            depth = int(depth_raw)
-        except ValueError:
+        # Digits-only, not int()-with-except: int() accepts "-1" (skips the
+        # ceiling gate below since a negative depth never exceeds MAX), "+1"
+        # (PEP 3127 sign), and "1_0" (PEP 515 underscore, silently becomes
+        # 10) -- none of these are the canonical unsigned decimal this
+        # header is defined as. Matches orama's own digits-only contract on
+        # the sending side (lockstep heal, PR 363/395).
+        if _re.fullmatch(r"^[0-9]+$", depth_raw) is None:
             raise HTTPException(
                 status_code=422,
-                detail="Control-plane depth header must be an integer",
-            ) from None
+                detail={
+                    "error": "CONTROL_PLANE_DEPTH_INVALID",
+                    "detail": "X-Control-Plane-Depth must be an unsigned decimal integer",
+                },
+            )
+        # Digit-only strings can still exceed sys.int_max_str_digits, which
+        # makes int() raise ValueError (a 500). Compare significant length
+        # against MAX first; oversize is a ceiling hit, not a parse failure.
+        significant = depth_raw.lstrip("0") or "0"
+        if len(significant) > len(str(MAX_CONTROL_PLANE_DEPTH)):
+            depth = MAX_CONTROL_PLANE_DEPTH + 1
+        else:
+            depth = int(depth_raw)
         if depth > MAX_CONTROL_PLANE_DEPTH:
             raise HTTPException(
                 status_code=409,
-                detail="Control-plane call depth exceeded",
+                detail={
+                    "error": "CONTROL_PLANE_LOOP",
+                    "detail": "Control-plane call depth exceeded",
+                },
             )
     clean_idempotency_key = idempotency_key.strip()
     run_id = f"run-{clean_idempotency_key}"
