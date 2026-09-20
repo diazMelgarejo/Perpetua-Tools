@@ -249,6 +249,34 @@ def test_pipeline_run_rejects_depth_past_ceiling_as_loop_not_invalid(
     assert response.json()["detail"]["error"] == "CONTROL_PLANE_LOOP"
 
 
+def test_pipeline_run_rejects_oversized_decimal_depth_as_loop_not_500(
+    control_plane_client, monkeypatch
+) -> None:
+    """Digit-only headers longer than sys.int_max_str_digits used to make
+    int() raise ValueError after the regex gate, escaping as HTTP 500.
+    Oversize is still a ceiling hit (409 LOOP), never a 422 parse failure
+    and never an uncaught 500."""
+    import sys
+
+    approval = _valid_approval()
+    monkeypatch.setattr(app_module, "load_pipeline_approval", lambda trace_id: approval)
+    limit = sys.get_int_max_str_digits()
+    raw_depth = "9" * (limit + 1 if limit else 64)
+
+    response = control_plane_client.post(
+        "/pipelines/classify_then_generate/run",
+        json={"prompt": "do the work", "trace_id": approval.trace_id},
+        headers={
+            "Authorization": "Bearer pt-test-token",
+            "Idempotency-Key": str(uuid.uuid4()),
+            "X-Control-Plane-Depth": raw_depth,
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"]["error"] == "CONTROL_PLANE_LOOP"
+
+
 @pytest.mark.integration
 def test_pipeline_run_idempotent_replay_returns_existing_state(
     control_plane_client, monkeypatch

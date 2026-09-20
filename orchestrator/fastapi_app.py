@@ -1028,7 +1028,14 @@ async def run_tiered_pipeline(
                     "detail": "X-Control-Plane-Depth must be an unsigned decimal integer",
                 },
             )
-        depth = int(depth_raw)  # safe: digits only, matched above
+        # Digit-only strings can still exceed sys.int_max_str_digits, which
+        # makes int() raise ValueError (a 500). Compare significant length
+        # against MAX first; oversize is a ceiling hit, not a parse failure.
+        significant = depth_raw.lstrip("0") or "0"
+        if len(significant) > len(str(MAX_CONTROL_PLANE_DEPTH)):
+            depth = MAX_CONTROL_PLANE_DEPTH + 1
+        else:
+            depth = int(depth_raw)
         if depth > MAX_CONTROL_PLANE_DEPTH:
             raise HTTPException(
                 status_code=409,
