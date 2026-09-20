@@ -12,10 +12,53 @@ from __future__ import annotations
 
 import ast
 import hashlib
+import logging
 import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+
+class _LevelRangeFilter(logging.Filter):
+    """Route INFO to stdout and WARNING+ to stderr without duplicating lines."""
+
+    def __init__(self, min_level: int, max_level: int) -> None:
+        super().__init__()
+        self._min_level = min_level
+        self._max_level = max_level
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return self._min_level <= record.levelno <= self._max_level
+
+
+class _CurrentStreamHandler(logging.Handler):
+    """Write at emit time so pytest/capsys redirects still see the line."""
+
+    def __init__(self, stream_attr: str) -> None:
+        super().__init__()
+        self._stream_attr = stream_attr
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            stream = getattr(sys, self._stream_attr)
+            stream.write(self.format(record) + "\n")
+            stream.flush()
+        except Exception:
+            self.handleError(record)
+
+
+_LOG = logging.getLogger("model_endpoint_policy_parity")
+if not _LOG.handlers:
+    _fmt = logging.Formatter("%(message)s")
+    _stdout = _CurrentStreamHandler("stdout")
+    _stdout.setFormatter(_fmt)
+    _stdout.addFilter(_LevelRangeFilter(logging.DEBUG, logging.INFO))
+    _stderr = _CurrentStreamHandler("stderr")
+    _stderr.setFormatter(_fmt)
+    _stderr.addFilter(_LevelRangeFilter(logging.WARNING, logging.CRITICAL))
+    _LOG.addHandler(_stdout)
+    _LOG.addHandler(_stderr)
+    _LOG.setLevel(logging.INFO)
+    _LOG.propagate = False
 
 
 @dataclass(frozen=True)
@@ -93,14 +136,14 @@ def _check_one(spec: _FileSpec, local_dir: Path, peer_dir: Path) -> bool:
         local_digest = hashlib.sha256(local_bytes).hexdigest()
         peer_digest = hashlib.sha256(peer_bytes).hexdigest()
         if local_digest != peer_digest:
-            print(
-                f"model-endpoint-policy-parity: FAIL — {spec.filename} byte-identical "
+            _LOG.error(
+                "model-endpoint-policy-parity: FAIL — %s byte-identical "
                 "requirement violated (sha256 mismatch, AST-equal policy functions may "
                 "still differ elsewhere in the file -- e.g. a docstring-only drift)",
-                file=sys.stderr,
+                spec.filename,
             )
-            print(f"  local:  {local_path}  sha256={local_digest}", file=sys.stderr)
-            print(f"  peer:   {peer_path}  sha256={peer_digest}", file=sys.stderr)
+            _LOG.error("  local:  %s  sha256=%s", local_path, local_digest)
+            _LOG.error("  peer:   %s  sha256=%s", peer_path, peer_digest)
             return False
 
     local_src = _extract_policy_source(local_path, spec.policy_functions)
@@ -134,18 +177,17 @@ def main() -> int:
     peer_dir = _sibling_utils_dir()
     if peer_dir is None:
         if os.getenv("PARITY_ALLOW_MISSING_SIBLING") == "1":
-            print(
+            _LOG.info(
                 "model-endpoint-policy-parity: skip (orama-system sibling not "
                 "available; PARITY_ALLOW_MISSING_SIBLING=1 set -- local-only opt-out, "
                 "CI must never set this)"
             )
             return 0
-        print(
+        _LOG.error(
             "model-endpoint-policy-parity: FAIL — orama-system sibling not available "
             "and PARITY_ALLOW_MISSING_SIBLING is not set. A missing sibling is not a "
             "pass: set ORAMA_SYSTEM_ROOT, or set PARITY_ALLOW_MISSING_SIBLING=1 "
-            "explicitly for local development only (never in CI).",
-            file=sys.stderr,
+            "explicitly for local development only (never in CI)."
         )
         return 1
 
