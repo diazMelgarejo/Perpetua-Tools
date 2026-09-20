@@ -3,6 +3,9 @@
 Use [the JSON example](examples/handoff-packet-v1.json) as the machine source
 of truth. This document is the human companion; free-form Markdown alone is
 never enough to admit work through the validated queue path.
+When the queue or LAN is unreachable (offline, sandbox, or not on the same
+machine), fill [`offline-sandbox-agent-report.md`](offline-sandbox-agent-report.md)
+and convert it to this JSON packet before admission.
 
 ## Required workflow
 
