@@ -48,6 +48,36 @@ def test_tmp_path_is_redacted():
     assert "<local-tmp-file>" in result
 
 
+def test_bare_tmp_dir_mention_is_scrubbed():
+    """Regression: a bare `/private/tmp` with no trailing path segment matched
+    nothing, so a live lesson rationale graduated to tracked memory with the
+    raw directory path intact. macOS resolves /tmp to /private/tmp, so the
+    scrub must cover both spellings and must not leave a `/private` remnant."""
+    for text in (
+        "The entire /private/tmp tree was cleaned mid-session.",
+        "The entire /tmp tree was cleaned mid-session.",
+    ):
+        result = sanitize_tracked_path_leaks(text)
+        assert "/tmp" not in result
+        assert "/private" not in result
+        assert "<local-tmp-dir>" in result
+
+
+def test_tmp_path_scrub_leaves_no_private_prefix():
+    """A path form must be consumed whole, not partially, by the path pattern."""
+    result = sanitize_tracked_path_leaks("Worktree lived at /private/tmp/pt-thing.")
+    assert "/private" not in result
+    assert "/tmp" not in result
+    assert "<local-tmp-file>" in result
+
+
+def test_bare_tmp_scrub_does_not_eat_real_paths():
+    """The bare-directory pattern must not truncate a real /tmp/<file> path."""
+    result = sanitize_tracked_path_leaks("see /tmp/notes.md now")
+    assert "<local-tmp-file>" in result
+    assert "/tmp" not in result
+
+
 def test_no_false_positive_on_system_path():
     # /usr/local/bin should never be touched
     text = "installed at /usr/local/bin/python3"
