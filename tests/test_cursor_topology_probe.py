@@ -43,9 +43,22 @@ def _load_probe_module() -> ModuleType:
     return module
 
 
+def _git_env() -> dict[str, str]:
+    """Drop inherited repo-location variables so fixtures init the temp checkout."""
+    env = os.environ.copy()
+    env.pop("GIT_DIR", None)
+    env.pop("GIT_WORK_TREE", None)
+    return env
+
+
 def _git_init(path: Path) -> Path:
     path.mkdir(parents=True, exist_ok=True)
-    subprocess.run(["git", "init", "-q"], cwd=path, check=True)
+    subprocess.run(
+        ["git", "init", "-q"],
+        cwd=path,
+        check=True,
+        env=_git_env(),
+    )
     return path
 
 
@@ -78,7 +91,7 @@ def test_probe_returns_required_keys(tmp_path: Path, probe_mod: ModuleType) -> N
     assert result["board_size"] is None or isinstance(result["board_size"], int)
 
 
-def test_mode_a_when_full_coordinator_identity_matches(
+def test_mode_a_when_full_orchestrator_identity_matches(
     tmp_path: Path, probe_mod: ModuleType
 ) -> None:
     repo = _git_init(tmp_path / "coord-root")
@@ -87,9 +100,9 @@ def test_mode_a_when_full_coordinator_identity_matches(
 
     result = probe_mod.probe(
         repo,
-        coordinator_ino=st.st_ino,
-        coordinator_dev=st.st_dev,
-        coordinator_size=st.st_size,
+        orchestrator_ino=st.st_ino,
+        orchestrator_dev=st.st_dev,
+        orchestrator_size=st.st_size,
     )
 
     assert result["mode"] == "A"
@@ -105,7 +118,7 @@ def test_mode_a_when_full_coordinator_identity_matches(
 def test_mode_b_when_board_missing(tmp_path: Path, probe_mod: ModuleType) -> None:
     repo = _git_init(tmp_path / "no-board")
 
-    result = probe_mod.probe(repo, coordinator_ino=12345)
+    result = probe_mod.probe(repo, orchestrator_ino=12345)
 
     assert result["mode"] == "B"
     assert result["board_present"] is False
@@ -114,7 +127,7 @@ def test_mode_b_when_board_missing(tmp_path: Path, probe_mod: ModuleType) -> Non
     assert result["board_size"] is None
 
 
-def test_mode_b_when_coordinator_ino_mismatches(
+def test_mode_b_when_orchestrator_ino_mismatches(
     tmp_path: Path, probe_mod: ModuleType
 ) -> None:
     repo = _git_init(tmp_path / "inode-mismatch")
@@ -123,9 +136,9 @@ def test_mode_b_when_coordinator_ino_mismatches(
 
     result = probe_mod.probe(
         repo,
-        coordinator_ino=st.st_ino + 999_999,
-        coordinator_dev=st.st_dev,
-        coordinator_size=st.st_size,
+        orchestrator_ino=st.st_ino + 999_999,
+        orchestrator_dev=st.st_dev,
+        orchestrator_size=st.st_size,
     )
 
     assert result["mode"] == "B"
@@ -133,7 +146,7 @@ def test_mode_b_when_coordinator_ino_mismatches(
     assert result["board_ino"] == st.st_ino
 
 
-def test_mode_b_when_coordinator_device_mismatches(
+def test_mode_b_when_orchestrator_device_mismatches(
     tmp_path: Path, probe_mod: ModuleType
 ) -> None:
     repo = _git_init(tmp_path / "device-mismatch")
@@ -142,16 +155,16 @@ def test_mode_b_when_coordinator_device_mismatches(
 
     result = probe_mod.probe(
         repo,
-        coordinator_ino=st.st_ino,
-        coordinator_dev=st.st_dev + 1,
-        coordinator_size=st.st_size,
+        orchestrator_ino=st.st_ino,
+        orchestrator_dev=st.st_dev + 1,
+        orchestrator_size=st.st_size,
     )
 
     assert result["mode"] == "B"
     assert result["board_dev"] == st.st_dev
 
 
-def test_mode_b_when_coordinator_size_mismatches(
+def test_mode_b_when_orchestrator_size_mismatches(
     tmp_path: Path, probe_mod: ModuleType
 ) -> None:
     repo = _git_init(tmp_path / "size-mismatch")
@@ -160,9 +173,9 @@ def test_mode_b_when_coordinator_size_mismatches(
 
     result = probe_mod.probe(
         repo,
-        coordinator_ino=st.st_ino,
-        coordinator_dev=st.st_dev,
-        coordinator_size=st.st_size + 1,
+        orchestrator_ino=st.st_ino,
+        orchestrator_dev=st.st_dev,
+        orchestrator_size=st.st_size + 1,
     )
 
     assert result["mode"] == "B"
@@ -190,9 +203,9 @@ def test_mode_b_when_toplevel_differs_from_repo_root_via_symlink(
 
     result = probe_mod.probe(
         link_root,
-        coordinator_ino=st.st_ino,
-        coordinator_dev=st.st_dev,
-        coordinator_size=st.st_size,
+        orchestrator_ino=st.st_ino,
+        orchestrator_dev=st.st_dev,
+        orchestrator_size=st.st_size,
     )
 
     assert result["mode"] == "B"
@@ -200,13 +213,13 @@ def test_mode_b_when_toplevel_differs_from_repo_root_via_symlink(
     assert Path(result["toplevel"]).resolve() != link_root.resolve()
 
 
-def test_mode_b_without_complete_coordinator_identity_even_if_board_present(
+def test_mode_b_without_complete_orchestrator_identity_even_if_board_present(
     tmp_path: Path, probe_mod: ModuleType
 ) -> None:
-    repo = _git_init(tmp_path / "no-coordinator-ino")
+    repo = _git_init(tmp_path / "no-orchestrator-ino")
     board = _write_board(repo)
 
-    result = probe_mod.probe(repo, coordinator_ino=_stat_board(board).st_ino)
+    result = probe_mod.probe(repo, orchestrator_ino=_stat_board(board).st_ino)
 
     assert result["mode"] == "B"
     assert result["board_present"] is True
@@ -267,17 +280,18 @@ def test_cli_prints_json_and_exits_zero(tmp_path: Path) -> None:
         [
             sys.executable,
             str(PROBE_SCRIPT),
-            "--coordinator-ino",
+            "--orchestrator-ino",
             str(st.st_ino),
-            "--coordinator-dev",
+            "--orchestrator-dev",
             str(st.st_dev),
-            "--coordinator-size",
+            "--orchestrator-size",
             str(st.st_size),
         ],
         cwd=repo,
         capture_output=True,
         text=True,
         check=False,
+        env=_git_env(),
     )
 
     assert result.returncode == 0, result.stderr
@@ -286,7 +300,7 @@ def test_cli_prints_json_and_exits_zero(tmp_path: Path) -> None:
     assert payload["mode"] in ("A", "B")
 
 
-def test_cli_accepts_missing_coordinator_ino_flag(tmp_path: Path) -> None:
+def test_cli_accepts_missing_orchestrator_ino_flag(tmp_path: Path) -> None:
     repo = _git_init(tmp_path / "cli-no-ino")
 
     result = subprocess.run(
@@ -295,6 +309,7 @@ def test_cli_accepts_missing_coordinator_ino_flag(tmp_path: Path) -> None:
         capture_output=True,
         text=True,
         check=False,
+        env=_git_env(),
     )
 
     assert result.returncode == 0, result.stderr
@@ -308,7 +323,48 @@ def test_mode_b_when_not_a_git_repo(tmp_path: Path) -> None:
 
     bare = tmp_path / "not-a-repo"
     bare.mkdir()
-    result = probe(bare, coordinator_ino=1)
+    result = probe(bare, orchestrator_ino=1)
     assert result["mode"] == "B"
     assert result["board_present"] is False
     assert result["toplevel"] is None or result["toplevel"] == ""
+
+
+def test_rev_parse_timeout_classifies_mode_b(
+    tmp_path: Path, probe_mod: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo = _git_init(tmp_path / "stalled-git")
+
+    def _timeout(*_args: object, **_kwargs: object) -> None:
+        raise subprocess.TimeoutExpired(cmd="git", timeout=5)
+
+    monkeypatch.setattr(probe_mod.subprocess, "run", _timeout)
+    result = probe_mod.probe(repo, orchestrator_ino=1, orchestrator_dev=1, orchestrator_size=1)
+    assert result["mode"] == "B"
+    assert result["toplevel"] is None
+    assert result["queue_write_authority"] is False
+
+
+def test_probe_ignores_inherited_git_location(
+    tmp_path: Path, probe_mod: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo = _git_init(tmp_path / "real-checkout")
+    monkeypatch.setenv("GIT_DIR", str(tmp_path / "not-a-git"))
+    monkeypatch.setenv("GIT_WORK_TREE", str(tmp_path))
+    result = probe_mod.probe(repo)
+    assert Path(result["toplevel"]).resolve() == repo.resolve()
+
+
+def test_mode_b_when_board_path_is_a_directory(
+    tmp_path: Path, probe_mod: ModuleType
+) -> None:
+    repo = _git_init(tmp_path / "dir-board")
+    (repo / ".state" / "perpetua_core.db").mkdir(parents=True)
+    result = probe_mod.probe(
+        repo,
+        orchestrator_ino=1,
+        orchestrator_dev=1,
+        orchestrator_size=1,
+    )
+    assert result["board_present"] is False
+    assert result["board_ino"] is None
+    assert result["mode"] == "B"
