@@ -16,22 +16,38 @@ from pathlib import Path
 from typing import Any, Optional
 
 
-def _git_rev_parse(root: Path, arg: str) -> str:
+def _git_rev_parse(root: Path, arg: str) -> Optional[str]:
     completed = subprocess.run(
         ["git", "-C", str(root), "rev-parse", arg],
         capture_output=True,
         text=True,
-        check=True,
+        check=False,
     )
-    return completed.stdout.strip()
+    if completed.returncode != 0:
+        return None
+    return completed.stdout.strip() or None
 
 
 def probe(repo_root: Path, coordinator_ino: Optional[int] = None) -> dict[str, Any]:
     """Return cwd/toplevel/board identity and Mode A|B for *repo_root*."""
     root = Path(repo_root)
-    toplevel = Path(_git_rev_parse(root, "--show-toplevel")).resolve()
+    root_resolved = root.resolve()
+    toplevel_raw = _git_rev_parse(root, "--show-toplevel")
     git_common_dir = _git_rev_parse(root, "--git-common-dir")
 
+    if toplevel_raw is None:
+        return {
+            "cwd": str(Path.cwd()),
+            "toplevel": None,
+            "git_common_dir": None,
+            "board_present": False,
+            "board_dev": None,
+            "board_ino": None,
+            "board_size": None,
+            "mode": "B",
+        }
+
+    toplevel = Path(toplevel_raw).resolve()
     board_path = toplevel / ".state" / "perpetua_core.db"
     board_present = board_path.is_file()
     board_dev: Optional[int] = None
@@ -43,7 +59,6 @@ def probe(repo_root: Path, coordinator_ino: Optional[int] = None) -> dict[str, A
         board_ino = st.st_ino
         board_size = st.st_size
 
-    root_resolved = root.resolve()
     same_root = toplevel == root_resolved
     inode_ok = (
         coordinator_ino is not None

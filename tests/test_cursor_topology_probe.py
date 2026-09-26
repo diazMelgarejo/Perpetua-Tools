@@ -236,3 +236,15 @@ def test_cli_accepts_missing_coordinator_ino_flag(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
     assert payload["mode"] == "B"
+
+
+def test_mode_b_when_not_a_git_repo(tmp_path):
+    """Non-git directories must be Mode B, not a subprocess crash."""
+    from scripts.cursor.topology_probe import probe
+
+    bare = tmp_path / "not-a-repo"
+    bare.mkdir()
+    result = probe(bare, coordinator_ino=1)
+    assert result["mode"] == "B"
+    assert result["board_present"] is False
+    assert result["toplevel"] is None or result["toplevel"] == ""
