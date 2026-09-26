@@ -297,16 +297,16 @@ _PROHIBITED_ADDRESS_SCAN_EXCEPTIONS = frozenset({
     "tests/test_repo_hygiene.py",
     "tests/test_repo_hygiene_private_ranges.py",
 })
+# Candidate extraction only. Classification uses ipaddress.ip_address so a
+# partial IPv6 grammar cannot drop compressed forms, and a trailing colon
+# (IPv4 port) cannot hide the host. Bracketed literals keep an optional port.
 _STAGED_ADDRESS_TOKEN_RE = re.compile(
     r"(?i)(?<![\w:])(?:"
-    r"(?:\d{1,3}\.){3}\d{1,3}"
+    r"\[[0-9a-f:.]+\](?::\d+)?"
     r"|::ffff:(?:\d{1,3}\.){3}\d{1,3}"
-    r"|::1"
-    r"|(?:[0-9a-f]{1,4}:){7}[0-9a-f]{1,4}"
-    r"|(?:[0-9a-f]{1,4}:){1,6}:[0-9a-f]{1,4}"
-    r"|(?:[0-9a-f]{1,4}:){1,6}:"
-    r"|:(?::[0-9a-f]{1,4}){1,7}"
-    r")(?![\w:])"
+    r"|(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?"
+    r"|(?:[0-9a-f]{0,4}:){2,7}[0-9a-f]{0,4}"
+    r")(?![\w])"
 )
 _HUNK_NEW_START_RE = re.compile(r"\+(\d+)(?:,\d+)?")
 GENERATED_ARTIFACT_PATTERNS = (
@@ -373,6 +373,7 @@ def run_git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
         [git_exe, "-C", str(root), *args],
         check=False,
         text=True,
+        encoding="utf-8",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
@@ -842,50 +843,91 @@ def _classify_prohibited_address(token: str) -> str | None:
     return None
 
 
+def _parsed_address_token(raw: str) -> str | None:
+    """Return a complete address literal, or None when the candidate is not one.
+
+    Bracketed IPv6 drops the brackets and any trailing port. A bare token is
+    parsed whole first, so a compressed address is not split on its last
+    hextet. Only a token ipaddress rejects is retried with a trailing ``:port``
+    removed (``192.168.0.1:8080``).
+    """
+    token = raw
+    if token.startswith("[") and "]" in token:
+        token = token[1:token.index("]")]
+    try:
+        ipaddress.ip_address(token)
+    except ValueError:
+        host, sep, port = token.rpartition(":")
+        if not sep or not port.isdigit() or not host or host.endswith(":"):
+            return None
+        try:
+            ipaddress.ip_address(host)
+        except ValueError:
+            return None
+        return host
+    return token
+
+
 def _prohibited_classes_in_text(text: str) -> list[str]:
     found: list[str] = []
     seen: set[str] = set()
     for match in _STAGED_ADDRESS_TOKEN_RE.finditer(text):
-        kind = _classify_prohibited_address(match.group())
+        token = _parsed_address_token(match.group())
+        if token is None:
+            continue
+        kind = _classify_prohibited_address(token)
         if kind and kind not in seen:
             seen.add(kind)
             found.append(kind)
     return found
 
 
+def _apply_diff_file_header(raw: str) -> str | None:
+    """Return the path from a ``+++`` header outside a hunk, or None for /dev/null."""
+    path = raw[4:]
+    if path == "/dev/null":
+        return None
+    if path.startswith(("b/", "a/")):
+        path = path[2:]
+    if path.startswith('"') and path.endswith('"'):
+        path = path[1:-1]
+    return path
+
+
 def _iter_staged_added_lines(diff_text: str):
-    """Yield (path, new_line_no, line_text) for added lines in a cached diff."""
+    """Yield (path, new_line_no, line_text) for added lines in a cached diff.
+
+    ``+++`` is a file header only before the first hunk. Inside a hunk an
+    added line whose text starts with ``++`` is also ``+++...`` in the patch
+    and must be scanned as content.
+    """
     rel: str | None = None
     new_line: int | None = None
+    in_hunk = False
     for raw in diff_text.splitlines():
         if raw.startswith("diff --git "):
             rel = None
             new_line = None
-            continue
-        if raw.startswith("+++ "):
-            path = raw[4:]
-            if path == "/dev/null":
-                rel = None
-            else:
-                if path.startswith(("b/", "a/")):
-                    path = path[2:]
-                if path.startswith('"') and path.endswith('"'):
-                    path = path[1:-1]
-                rel = path
+            in_hunk = False
             continue
         if raw.startswith("@@"):
+            in_hunk = True
             match = _HUNK_NEW_START_RE.search(raw)
             new_line = int(match.group(1)) if match else None
             continue
-        if rel is None or new_line is None:
+        if in_hunk:
+            if rel is None or new_line is None:
+                continue
+            if raw.startswith("+"):
+                yield rel, new_line, raw[1:]
+                new_line += 1
+            elif raw.startswith("-") or raw.startswith("\\"):
+                continue
+            else:
+                new_line += 1
             continue
-        if raw.startswith("+"):
-            yield rel, new_line, raw[1:]
-            new_line += 1
-        elif raw.startswith("-") or raw.startswith("\\"):
-            continue
-        else:
-            new_line += 1
+        if raw.startswith("+++ "):
+            rel = _apply_diff_file_header(raw)
 
 
 def scan_staged_prohibited_address_literals(root: Path) -> list[str]:
@@ -901,7 +943,7 @@ def scan_staged_prohibited_address_literals(root: Path) -> list[str]:
         "--cached",
         "-U0",
         "--no-color",
-        "--diff-filter=ACMR",
+        "--diff-filter=ACMRT",
     )
     if proc.returncode != 0:
         detail = proc.stderr.strip() or "git diff --cached failed"

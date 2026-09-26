@@ -826,6 +826,9 @@ def test_staged_rfc1918_literal_blocks_and_public_docs_address_does_not(tmp_path
         "@@ -1,0 +1,2 @@\n"
         "+lan_ip: \"192.168.0.1\"\n"
         "+docs: \"192.0.2.1\"\n"
+        "+++ 10.1.2.3\n"
+        "+ula: fd12:3456::1:2\n"
+        "+bind: 192.168.1.9:8080\n"
     )
 
     def fake_run_git(root, *args):
@@ -834,8 +837,13 @@ def test_staged_rfc1918_literal_blocks_and_public_docs_address_does_not(tmp_path
 
     monkeypatch.setattr(core, "run_git", fake_run_git)
     errors = core.scan_staged_prohibited_address_literals(tmp_path)
-    assert len(errors) == 1
-    assert "rfc1918" in errors[0]
+    assert len(errors) == 4
     assert "config/example.yml:1" in errors[0]
-    assert "192.168.0.1" not in errors[0]
-    assert "192.0.2.1" not in errors[0]
+    assert any("rfc1918" in error and "config/example.yml:3" in error for error in errors)
+    assert any("ula" in error and "config/example.yml:4" in error for error in errors)
+    assert any("rfc1918" in error and "config/example.yml:5" in error for error in errors)
+    joined = "\n".join(errors)
+    assert "192.168.0.1" not in joined
+    assert "192.0.2.1" not in joined
+    assert "10.1.2.3" not in joined
+    assert "fd12:3456::1:2" not in joined

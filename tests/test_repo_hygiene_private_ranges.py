@@ -109,6 +109,9 @@ def test_staged_prohibited_address_classes_match_dialer(tmp_path: Path) -> None:
         "127.0.0.1": "loopback",
         "::1": "loopback",
         "fc00::1": "ula",
+        "fd12:3456::1:2": "ula",
+        "192.168.0.1:8080": "rfc1918",
+        "[fd12:3456::1]:443": "ula",
         "100.64.0.1": "cgnat",
         "::ffff:192.168.0.1": "rfc1918",
     }
@@ -149,6 +152,57 @@ def test_public_and_adjacent_ranges_are_not_prohibited(tmp_path: Path) -> None:
     _git(repo, "add", "docs/note.md")
     mod = load_repo_hygiene()
     assert mod.scan_staged_prohibited_address_literals(repo) == []
+
+
+def test_staged_line_that_git_prefixes_as_file_header_is_scanned(tmp_path: Path) -> None:
+    """Added text ``++ <address>`` is ``+++ <address>`` in the patch, not a header."""
+    repo = tmp_path / "repo"
+    _init_hygiene_repo(repo)
+    note = repo / "docs" / "note.md"
+    note.parent.mkdir()
+    note.write_text("++ 192.168.0.1\n", encoding="utf-8")
+    _git(repo, "add", "docs/note.md")
+
+    mod = load_repo_hygiene()
+    errors = mod.scan_staged_prohibited_address_literals(repo)
+    assert len(errors) == 1
+    assert "rfc1918" in errors[0]
+    assert "docs/note.md:1" in errors[0]
+    assert "192.168.0.1" not in errors[0]
+
+
+def test_typechange_from_symlink_is_scanned(tmp_path: Path) -> None:
+    """A regular file that replaces a staged symlink is a type change, not ACMR."""
+    repo = tmp_path / "repo"
+    _init_hygiene_repo(repo)
+    note = repo / "docs" / "note.md"
+    note.parent.mkdir()
+    note.symlink_to("README.md")
+    _git(repo, "add", "docs/note.md")
+    _git(repo, "commit", "-m", "link")
+    note.unlink()
+    note.write_text("gateway 192.168.0.1\n", encoding="utf-8")
+    _git(repo, "add", "docs/note.md")
+
+    mod = load_repo_hygiene()
+    errors = mod.scan_staged_prohibited_address_literals(repo)
+    assert len(errors) == 1
+    assert "rfc1918" in errors[0]
+    assert "docs/note.md:1" in errors[0]
+
+
+def test_run_git_decodes_as_utf8(tmp_path: Path, monkeypatch) -> None:
+    mod = load_repo_hygiene()
+    core = sys.modules["repo_hygiene_core"]
+    captured: dict = {}
+
+    def fake_run(cmd, **kwargs):
+        captured.update(kwargs)
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(core.subprocess, "run", fake_run)
+    mod.run_git(tmp_path, "status")
+    assert captured["encoding"] == "utf-8"
 
 
 def test_scanner_source_exception_allows_range_definitions(tmp_path: Path) -> None:
