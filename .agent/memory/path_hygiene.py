@@ -37,7 +37,29 @@ _WIN_HOME_TAIL = re.compile(r"(?i)C:\\Users\\" + _WIN_SEG)
 # preserve. No placeholder path is meaningful here (there's nothing a
 # portable equivalent could point at), so the whole reference is replaced
 # with a neutral description rather than a path-shaped stand-in.
-_TMP_PATH = re.compile(r"/tmp/" + _SEG)
+#
+# Two gaps closed after a live leak: macOS resolves /tmp to /private/tmp, and
+# matching the bare "/tmp/<seg>" inside "/private/tmp/<seg>" left a telltale
+# "/private" prefix behind in the scrubbed text. Separately, a BARE mention of
+# the directory with no trailing segment ("the /private/tmp tree was cleaned")
+# matched nothing at all and passed through verbatim. The optional /private
+# group and the bare-directory pattern cover both, and the bare form is
+# anchored with a negative lookahead so it cannot eat the start of a real
+# /tmp/<seg> path (which the path pattern above has already handled).
+# Dot-prefixed scratch names (a leading "." plus ".secret") must match, but a
+# sentence period after the path must not be swallowed. _SEG excludes "."
+# entirely, which dropped both. Allow an optional leading dot and internal
+# dots, and stop before a trailing punctuation mark.
+_TMP_SEG = r"\.?(?:[^/\\\s\"'(),.;:!?]+(?:\.[^/\\\s\"'(),.;:!?]+)*)"
+_TMP_PATH = re.compile(r"(?:/private)?/tmp/" + _TMP_SEG)
+# A bare directory mention may be followed by sentence punctuation such as
+# "/tmp." A dot that starts a filename ("/tmp.log", "/private/tmp.tar.gz")
+# is not that mention. The lookahead rejects a filename character, and a dot
+# only when another filename character follows it. "/tmp/<seg>" is already
+# consumed by _TMP_PATH.
+_TMP_DIR = re.compile(
+    r"(?:/private)?/tmp(?![A-Za-z0-9_/-]|\.[A-Za-z0-9_/-])"
+)
 # Workspace-tree doxxing: even after home-anchor substitution, user download
 # tree layout must not persist in tracked memory (LINT-006 antipattern).
 _WIN_HOME_ANCHOR = r"%USERPROFILE%"
@@ -161,6 +183,11 @@ def sanitize_tracked_path_leaks(text: str) -> str:
     text = _WORKSPACE_DOXX_WIN.sub(_WORKSPACE_ROOT, text)
     text = _WORKSPACE_DOXX_UNIX.sub(_WORKSPACE_ROOT, text)
     text = _TMP_PATH.sub("<local-tmp-file>", text)
+    # Bare directory mentions (no trailing segment) survive the path pattern,
+    # so they need their own sweep -- see the pattern comment for the live leak
+    # that motivated it. Runs after _TMP_PATH so real paths are already
+    # consumed and cannot be partially re-matched here.
+    text = _TMP_DIR.sub("<local-tmp-dir>", text)
     return text
 
 

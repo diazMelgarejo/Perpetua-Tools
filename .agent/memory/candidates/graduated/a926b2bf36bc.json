@@ -1,0 +1,41 @@
+{
+  "id": "a926b2bf36bc",
+  "key": "manual_a926b2",
+  "name": "manual_a926b2",
+  "claim": "Full narrative for the 2026-09-26 PT#399/orama#366 post-merge session follow-up (remote worker, Kungfu W0 reviews, PR-comment closeout) is at .agent/memory/working/2026-09-26-pt399-orama366-session-followup-lessons.md",
+  "conditions": [
+    "narrative",
+    "orama366",
+    "pt399",
+    "session-followup"
+  ],
+  "evidence_ids": [
+    "2026-09-26T05:36:10.659874+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-26T05:36:10.659874+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-26T05:36:10.659874+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-26T05:36:10.804343+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Pointer lesson so semantic search finds the follow-up narrative without reopening the gate narrative.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-26T05:36:10.659874+00:00"
+      ],
+      "lessons_sha": "6f5a45371409"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-26T05:36:10.804329+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Pointer lesson so semantic search finds the follow-up narrative without reopening the gate narrative."
+}

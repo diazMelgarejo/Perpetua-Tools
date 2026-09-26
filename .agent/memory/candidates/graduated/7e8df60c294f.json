@@ -1,0 +1,38 @@
+{
+  "id": "7e8df60c294f",
+  "key": "manual_7e8df6",
+  "name": "manual_7e8df6",
+  "claim": "Refresh the local coordination handoff registry and board snapshot after consequential board writes so a remotely summoned worker sees current merge tips and open holds.",
+  "conditions": [
+    "openclaw handoff snapshot remote-worker"
+  ],
+  "evidence_ids": [
+    "2026-09-26T05:35:39.246907+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-26T05:35:39.246907+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-26T05:35:39.246907+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-26T05:35:39.384414+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Remote-worker coordination required durable local handoff artifacts beside GossipBus.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-26T05:35:39.246907+00:00"
+      ],
+      "lessons_sha": "df1d52c026c5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-26T05:35:39.384404+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Remote-worker coordination required durable local handoff artifacts beside GossipBus."
+}

@@ -1,0 +1,43 @@
+{
+  "id": "8e8d5636d1c8",
+  "key": "manual_8e8d56",
+  "name": "manual_8e8d56",
+  "claim": "Stale-claim cleanup can resurrect a task whose retries were already exhausted, because the release path does not consult retry_count before requeueing. After running cleanup, re-read the board and if a retry-exhausted task reappears as queued, re-assert its terminal state explicitly and file the gap as a board-logic caveat instead of leaving a dead task looking claimable.",
+  "conditions": [
+    "board-logic",
+    "cleanup",
+    "queue",
+    "requeue",
+    "retry-exhausted",
+    "terminal-state"
+  ],
+  "evidence_ids": [
+    "2026-09-25T15:45:37.426944+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-25T15:45:37.426944+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-25T15:45:37.426944+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-25T15:45:37.560455+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Running heartbeat cleanup to clear dead claims moved a task that had already failed 3/3 from the FAILED group back into QUEUED, making an exhausted task appear available for a fresh claimant. The state was restored with an explicit terminal event, and the requeue-without-retry-check behavior was recorded for the queue maintainers.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-25T15:45:37.426944+00:00"
+      ],
+      "lessons_sha": "ab529c1042b8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-25T15:45:37.560439+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Running heartbeat cleanup to clear dead claims moved a task that had already failed 3/3 from the FAILED group back into QUEUED, making an exhausted task appear available for a fresh claimant. The state was restored with an explicit terminal event, and the requeue-without-retry-check behavior was recorded for the queue maintainers."
+}

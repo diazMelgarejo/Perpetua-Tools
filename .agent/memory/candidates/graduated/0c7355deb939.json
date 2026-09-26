@@ -1,0 +1,44 @@
+{
+  "id": "0c7355deb939",
+  "key": "manual_0c7355",
+  "name": "manual_0c7355",
+  "claim": "A bash script that runs set -u must length-guard EVERY array expansion, because macOS stock bash 3.2 treats an empty-array expansion of the form dollar-brace-arr-at-brace as an unbound-variable error rather than an empty expansion. Canonical idiom: [[ ${#arr[@]} -gt 0 ]] && cmd+=(arr-elements). This is the THIRD recurrence of the same defect class (after commit_clean_test.sh verify_args and a profiling wrapper), so treat it as a systemic pattern: when fixing one instance, scan every set -u script in the repo with a single regex for unguarded += expansions and fix all confirmed instances, then prove the fix against a stubbed dependency that leaves the array empty.",
+  "conditions": [
+    "bash3.2",
+    "empty-array",
+    "nounset",
+    "set-u",
+    "shell",
+    "systemic-recurrence",
+    "unicode"
+  ],
+  "evidence_ids": [
+    "2026-09-25T15:45:11.895066+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-25T15:45:11.895066+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-25T15:45:11.895066+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-25T15:45:12.031403+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Gate 4 / K1 dispatch: the tracked ClinePass wrapper (run_clinepass_deepseek_flash.sh) aborted with auto_args[@]: unbound variable at line 92 whenever the installed Cline CLI advertised neither flag of a drift pair, so codex could not dispatch a Cline worker through the tracked wrapper and had to route through a throwaway compatibility copy. Reproduced end-to-end with a stub CLI (exit 1 before, exit 0 after) and confirmed the positive path still passed the flags. A repo-wide scan of 128 set -u scripts found exactly two risky sites; the sibling exec_cline.sh was already guarded, which is how the correct idiom was identified. Fixed in orama-system commit 88209503.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-25T15:45:11.895066+00:00"
+      ],
+      "lessons_sha": "349d99a5d3ab"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-25T15:45:12.031390+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Gate 4 / K1 dispatch: the tracked ClinePass wrapper (run_clinepass_deepseek_flash.sh) aborted with auto_args[@]: unbound variable at line 92 whenever the installed Cline CLI advertised neither flag of a drift pair, so codex could not dispatch a Cline worker through the tracked wrapper and had to route through a throwaway compatibility copy. Reproduced end-to-end with a stub CLI (exit 1 before, exit 0 after) and confirmed the positive path still passed the flags. A repo-wide scan of 128 set -u scripts found exactly two risky sites; the sibling exec_cline.sh was already guarded, which is how the correct idiom was identified. Fixed in orama-system commit 88209503."
+}

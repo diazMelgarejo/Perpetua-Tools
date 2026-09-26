@@ -1,5 +1,17 @@
 # WORKSPACE — current task state
 
+**Updated:** 2026-09-25 (Cross-repo Gate 4 dialer + migration board
+cycle — additive session pointer)
+**Session records:**
+`memory/working/2026-09-25-cross-repo-gate4-dialer-and-migration-board-cycle.md`
+and
+`memory/working/MIGRATION_BOARD_RECONCILIATION_AND_CLINEPASS_FIX_2026-09-25.md`
+**Agent:** `cline-session-20260907` · **Board:** PT GossipBus
+**State:** Six migration reminder rows reconciled closed against verified
+lanes; one operator-only row left queued with a runbook; dead-claimant
+claim cleared. Cross-repo dialer parity work recorded; nothing merged by
+that session.
+
 **Updated:** 2026-09-12 (UTC; live remote re-verification and migration-debt
 status renewal)
 **Claimed by:** current operator session

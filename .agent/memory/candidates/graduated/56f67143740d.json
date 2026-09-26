@@ -1,0 +1,43 @@
+{
+  "id": "56f67143740d",
+  "key": "manual_56f671",
+  "name": "manual_56f671",
+  "claim": "Treat a board snapshot as a volatile observation, not a source of truth: resolve each task terminal state from its own ordered event timeline before acting. A queue listing read at one moment can show work as open that is already closed, because the board is append-only and busy, so re-read and reconcile per task id rather than reasoning from a single listing.",
+  "conditions": [
+    "append-only",
+    "board",
+    "event-timeline",
+    "gossip",
+    "snapshot",
+    "stale-read"
+  ],
+  "evidence_ids": [
+    "2026-09-25T15:45:49.761065+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-25T15:45:49.761065+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-25T15:45:49.761065+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-25T15:45:49.885522+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "An initial queue read showed four open jobs including three Hermes tasks and a CRG wiring task, all of which already had terminal events, one completed and merged and one failed after exhausting retries. The live queue had in fact moved on to a different batch of seven rows. Acting on the stale listing would have meant claiming and executing work that was already finished or abandoned.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-25T15:45:49.761065+00:00"
+      ],
+      "lessons_sha": "1106c1a348af"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-25T15:45:49.885513+00:00",
+  "reviewer": "learn.py",
+  "rationale": "An initial queue read showed four open jobs including three Hermes tasks and a CRG wiring task, all of which already had terminal events, one completed and merged and one failed after exhausting retries. The live queue had in fact moved on to a different batch of seven rows. Acting on the stale listing would have meant claiming and executing work that was already finished or abandoned."
+}

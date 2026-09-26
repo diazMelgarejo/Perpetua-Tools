@@ -1,0 +1,38 @@
+{
+  "id": "b4b39bd86ecd",
+  "key": "manual_b4b39b",
+  "name": "manual_b4b39b",
+  "claim": "When a Cursor cloud worker must coordinate with a Mac-local GossipBus, treat the SQLite board as intra-host only: cloud VMs cannot claim the local queue atomically. Use PR comments plus a local handoff file for remote visibility; on same-machine summons, emit via GossipBus and always pair agent_note with agent_pulse.",
+  "conditions": [
+    "gossipbus cloud-worker remote-handoff agent_pulse"
+  ],
+  "evidence_ids": [
+    "2026-09-26T05:35:38.320678+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-26T05:35:38.320678+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-26T05:35:38.320678+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-26T05:35:38.471067+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Cloud SQLite boards are machine-local; remote claim races invent false ownership.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-26T05:35:38.320678+00:00"
+      ],
+      "lessons_sha": "0f45409b9ba6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-26T05:35:38.471059+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Cloud SQLite boards are machine-local; remote claim races invent false ownership."
+}

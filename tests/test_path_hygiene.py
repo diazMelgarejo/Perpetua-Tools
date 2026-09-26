@@ -48,6 +48,77 @@ def test_tmp_path_is_redacted():
     assert "<local-tmp-file>" in result
 
 
+def test_bare_tmp_dir_mention_is_scrubbed():
+    """Regression: a bare `/private/tmp` with no trailing path segment matched
+    nothing, so a live lesson rationale graduated to tracked memory with the
+    raw directory path intact. macOS resolves /tmp to /private/tmp, so the
+    scrub must cover both spellings and must not leave a `/private` remnant."""
+    for text in (
+        "The entire /private/tmp tree was cleaned mid-session.",
+        "The entire /tmp tree was cleaned mid-session.",
+    ):
+        result = sanitize_tracked_path_leaks(text)
+        assert "/tmp" not in result
+        assert "/private" not in result
+        assert "<local-tmp-dir>" in result
+
+
+def test_tmp_path_scrub_leaves_no_private_prefix():
+    """A path form must be consumed whole, not partially, by the path pattern."""
+    result = sanitize_tracked_path_leaks("Worktree lived at /private/tmp/pt-thing.")
+    assert "/private" not in result
+    assert "/tmp" not in result
+    assert "<local-tmp-file>" in result
+
+
+def test_dot_prefixed_tmp_paths_are_scrubbed():
+    """A leading dot is part of the scratch name under both roots."""
+    for text in (
+        "secret at /tmp/.secret",
+        "secret at /private/tmp/.secret",
+    ):
+        result = sanitize_tracked_path_leaks(text)
+        assert "/tmp" not in result
+        assert "/private" not in result
+        assert ".secret" not in result
+        assert "<local-tmp-file>" in result
+
+
+def test_dotted_filename_is_not_a_tmp_dir_mention():
+    """'/tmp.log' is a filename, not the scratch directory plus punctuation."""
+    for text in (
+        "archived to /tmp.log",
+        "archived to /private/tmp.tar.gz",
+    ):
+        assert sanitize_tracked_path_leaks(text) == text
+
+
+def test_punctuated_tmp_dir_is_scrubbed():
+    """'/tmp.' is a bare directory plus sentence punctuation, not a path."""
+    for text in (
+        "see /tmp.",
+        "see /private/tmp.",
+    ):
+        result = sanitize_tracked_path_leaks(text)
+        assert "/tmp" not in result
+        assert "/private" not in result
+        assert "<local-tmp-dir>" in result
+        assert result.endswith(".")
+
+
+def test_tmp_path_keeps_trailing_sentence_period():
+    result = sanitize_tracked_path_leaks("Worktree lived at /private/tmp/pt-thing.")
+    assert result.endswith(".")
+    assert "<local-tmp-file>" in result
+
+
+def test_bare_tmp_scrub_does_not_eat_real_paths():
+    """The bare-directory pattern must not truncate a real /tmp/<file> path."""
+    result = sanitize_tracked_path_leaks("see /tmp/notes.md now")
+    assert "<local-tmp-file>" in result
+    assert "/tmp" not in result
+
+
 def test_no_false_positive_on_system_path():
     # /usr/local/bin should never be touched
     text = "installed at /usr/local/bin/python3"

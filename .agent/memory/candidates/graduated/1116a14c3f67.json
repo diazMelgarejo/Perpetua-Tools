@@ -1,0 +1,43 @@
+{
+  "id": "1116a14c3f67",
+  "key": "manual_1116a1",
+  "name": "manual_1116a1",
+  "claim": "Tasks that require physical hardware execution stay QUEUED with an operator runbook attached; never claim them, never mark them complete, and never substitute synthetic or replayed output for the demanded evidence. Publish the exact command surface, the evidence shape, the sanitization rules, and the completion condition so a human can discharge it without guesswork.",
+  "conditions": [
+    "acceptance",
+    "evidence-integrity",
+    "hardware",
+    "hitl",
+    "operator-only",
+    "runbook"
+  ],
+  "evidence_ids": [
+    "2026-09-25T15:45:37.643259+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-25T15:45:37.643259+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-25T15:45:37.643259+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-25T15:45:37.764309+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The physical canary acceptance row demands genuine, spatially-distinct, UTC-stamped host outputs. An agent cannot produce them, so the row was deliberately left queued rather than claimed, and a runbook was produced showing the collector has no CLI and no flags at all, emits no timestamp, and ships synthetic-only tests that must never be cited as host evidence. Fabricating completion would have manufactured acceptance evidence that cannot exist without physical execution.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-25T15:45:37.643259+00:00"
+      ],
+      "lessons_sha": "928090a1cd2a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-25T15:45:37.764296+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The physical canary acceptance row demands genuine, spatially-distinct, UTC-stamped host outputs. An agent cannot produce them, so the row was deliberately left queued rather than claimed, and a runbook was produced showing the collector has no CLI and no flags at all, emits no timestamp, and ships synthetic-only tests that must never be cited as host evidence. Fabricating completion would have manufactured acceptance evidence that cannot exist without physical execution."
+}
