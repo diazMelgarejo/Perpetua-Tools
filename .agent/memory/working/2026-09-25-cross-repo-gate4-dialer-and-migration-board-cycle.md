@@ -82,6 +82,7 @@ derivation of that exact claim.
 ## Worktree use case (clarified 2026-09-26)
 
 `lesson_25db2fe45992` is superseded by `lesson_3c8025df4a77`.
+`lesson_3c8025df4a77` is superseded by `lesson_3be49392d3d3`.
 
 Seth, the GrokBot chief of staff, spawns multiple cloud Cursor agent
 instances. Each instance that writes files uses its own git worktree so
@@ -91,7 +92,9 @@ canonical checkout stays put.
 
 One agent verifying a claimed commit reads that commit from the canonical
 checkout and does not create a worktree. Local-branch divergence is judged
-with `scripts/git/reanchor_scan.sh` against `origin/main`.
+with `scripts/git/reanchor_scan.sh . origin/main heads`. The script
+requires a repo path and defaults its scope to remotes, so a local-branch
+check has to pass `heads`.
 
 ## Open items for humans
 

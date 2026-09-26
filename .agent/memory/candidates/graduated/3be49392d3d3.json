@@ -1,0 +1,44 @@
+{
+  "id": "3be49392d3d3",
+  "key": "manual_3be493",
+  "name": "manual_3be493",
+  "claim": "When Seth, the GrokBot chief of staff, spawns multiple cloud Cursor agent instances, each instance that writes files uses its own git worktree. A local worker agent liaises between those cloud instances and the MacBook Pro Orchestrator, and the Orchestrator canonical checkout stays put. One agent verifying a claimed commit reads that commit from the canonical checkout and does not create a worktree. Before attributing a failure to the lane under review, judge local-branch divergence with scripts/git/reanchor_scan.sh . origin/main heads. The heads scope is required because the script defaults to remotes.",
+  "conditions": [
+    "cloud-cursor-agent",
+    "grokbot",
+    "local-worker",
+    "orchestrator",
+    "reanchor-scan",
+    "seth",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-09-26T09:25:33.866681+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-26T09:25:33.866681+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-26T09:25:33.866681+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-26T09:25:34.008923+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit review 5325320807 comment 4110831906 on Perpetua-Tools PR 400. lesson_3c8025df4a77 named reanchor_scan.sh against origin/main and omitted the required repo path and scope. The script requires a repo path and defaults scope to remotes, so a local-branch check is scripts/git/reanchor_scan.sh . origin/main heads. The episodic mirror of the older claim stays append-only.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-26T09:25:33.866681+00:00"
+      ],
+      "lessons_sha": "269e4d361cfc"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-26T09:25:34.008912+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit review 5325320807 comment 4110831906 on Perpetua-Tools PR 400. lesson_3c8025df4a77 named reanchor_scan.sh against origin/main and omitted the required repo path and scope. The script requires a repo path and defaults scope to remotes, so a local-branch check is scripts/git/reanchor_scan.sh . origin/main heads. The episodic mirror of the older claim stays append-only."
+}
