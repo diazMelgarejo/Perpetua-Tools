@@ -84,6 +84,15 @@ def test_dot_prefixed_tmp_paths_are_scrubbed():
         assert "<local-tmp-file>" in result
 
 
+def test_dotted_filename_is_not_a_tmp_dir_mention():
+    """'/tmp.log' is a filename, not the scratch directory plus punctuation."""
+    for text in (
+        "archived to /tmp.log",
+        "archived to /private/tmp.tar.gz",
+    ):
+        assert sanitize_tracked_path_leaks(text) == text
+
+
 def test_punctuated_tmp_dir_is_scrubbed():
     """'/tmp.' is a bare directory plus sentence punctuation, not a path."""
     for text in (

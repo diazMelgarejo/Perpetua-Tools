@@ -53,9 +53,13 @@ _WIN_HOME_TAIL = re.compile(r"(?i)C:\\Users\\" + _WIN_SEG)
 _TMP_SEG = r"\.?(?:[^/\\\s\"'(),.;:!?]+(?:\.[^/\\\s\"'(),.;:!?]+)*)"
 _TMP_PATH = re.compile(r"(?:/private)?/tmp/" + _TMP_SEG)
 # A bare directory mention may be followed by sentence punctuation such as
-# "/tmp." The lookahead treats "." as a terminator. It still refuses to eat
-# "/tmp/<seg>", which _TMP_PATH has already consumed.
-_TMP_DIR = re.compile(r"(?:/private)?/tmp(?![A-Za-z0-9_/-])")
+# "/tmp." A dot that starts a filename ("/tmp.log", "/private/tmp.tar.gz")
+# is not that mention. The lookahead rejects a filename character, and a dot
+# only when another filename character follows it. "/tmp/<seg>" is already
+# consumed by _TMP_PATH.
+_TMP_DIR = re.compile(
+    r"(?:/private)?/tmp(?![A-Za-z0-9_/-]|\.[A-Za-z0-9_/-])"
+)
 # Workspace-tree doxxing: even after home-anchor substitution, user download
 # tree layout must not persist in tracked memory (LINT-006 antipattern).
 _WIN_HOME_ANCHOR = r"%USERPROFILE%"
