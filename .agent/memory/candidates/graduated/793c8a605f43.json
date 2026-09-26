@@ -1,0 +1,41 @@
+{
+  "id": "793c8a605f43",
+  "key": "manual_793c8a",
+  "name": "manual_793c8a",
+  "claim": "Lockstep copies of the prohibited-address scanner must match including docstrings. Perpetua-Tools implements it in scripts/review/repo_hygiene_core.py. orama-system keeps a monolith scripts/review/repo_hygiene.py with no core module, and its tests exempt that monolith path.",
+  "conditions": [
+    "docstring",
+    "lockstep",
+    "orama-system",
+    "repo-hygiene"
+  ],
+  "evidence_ids": [
+    "2026-09-26T03:37:25.071965+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-26T03:37:25.071965+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-26T03:37:25.071965+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-26T03:37:25.166753+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A docstring-only drift in orama-system _parsed_address_token was realigned in 66d9348ee98c7196d92554d87cb72d4fdf128db2 so scanner text matches Perpetua-Tools. Tests patch repo_hygiene_core in Perpetua-Tools and the monolith module in orama-system.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-26T03:37:25.071965+00:00"
+      ],
+      "lessons_sha": "cfa858401443"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-26T03:37:25.166743+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A docstring-only drift in orama-system _parsed_address_token was realigned in 66d9348ee98c7196d92554d87cb72d4fdf128db2 so scanner text matches Perpetua-Tools. Tests patch repo_hygiene_core in Perpetua-Tools and the monolith module in orama-system."
+}

@@ -1,0 +1,42 @@
+{
+  "id": "665bf32d698c",
+  "key": "manual_665bf3",
+  "name": "manual_665bf3",
+  "claim": "A staged private-range address gate must extract a complete address token and validate it with ipaddress. A partial IPv6 grammar plus a trailing word-or-colon boundary misses port-suffixed IPv4 and compressed unique-local addresses.",
+  "conditions": [
+    "address-gate",
+    "ipaddress",
+    "private-range",
+    "token-grammar",
+    "ula"
+  ],
+  "evidence_ids": [
+    "2026-09-26T03:37:24.314750+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-26T03:37:24.314750+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-26T03:37:24.314750+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-26T03:37:24.428439+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit review 5324084599 comment 4109787018 on Perpetua-Tools PR 399 commit ff26c2845afabb8d5f7b3bc4c5a273005262d9cc. Fixed in 0037cbe4bd5e8ba971464790fedec5e42341cbbc and synced to orama-system. Parse the whole token first; strip a trailing colon-port only when ipaddress rejects it.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-26T03:37:24.314750+00:00"
+      ],
+      "lessons_sha": "1d48692cef30"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-26T03:37:24.428428+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit review 5324084599 comment 4109787018 on Perpetua-Tools PR 399 commit ff26c2845afabb8d5f7b3bc4c5a273005262d9cc. Fixed in 0037cbe4bd5e8ba971464790fedec5e42341cbbc and synced to orama-system. Parse the whole token first; strip a trailing colon-port only when ipaddress rejects it."
+}

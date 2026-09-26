@@ -1,0 +1,41 @@
+{
+  "id": "5e615e7b7866",
+  "key": "manual_5e615e",
+  "name": "manual_5e615e",
+  "claim": "In a unified diff, a triple-plus line is a file header only outside a hunk. Inside a hunk, an added line whose text starts with two plus signs is also a triple-plus line in the patch and must be scanned as added content.",
+  "conditions": [
+    "hunk-header",
+    "private-range",
+    "repo-hygiene",
+    "unified-diff"
+  ],
+  "evidence_ids": [
+    "2026-09-26T03:37:24.475397+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-26T03:37:24.475397+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-26T03:37:24.475397+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-26T03:37:24.579307+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit review 5324084599 comment 4109787024 on Perpetua-Tools PR 399. Treating every triple-plus line as a header skipped an added content line. Fixed in 0037cbe4bd5e8ba971464790fedec5e42341cbbc.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-26T03:37:24.475397+00:00"
+      ],
+      "lessons_sha": "3e2f5b0f44ca"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-26T03:37:24.579297+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit review 5324084599 comment 4109787024 on Perpetua-Tools PR 399. Treating every triple-plus line as a header skipped an added content line. Fixed in 0037cbe4bd5e8ba971464790fedec5e42341cbbc."
+}
