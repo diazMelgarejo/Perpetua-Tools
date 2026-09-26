@@ -53,10 +53,11 @@ def test_status_exits_zero_and_prints_truthful_json() -> None:
 
 def test_status_ignores_gossip_env_cosmetics() -> None:
     """Setting relay env vars must not make status claim a live relay."""
+    secret = "synthetic-secret-must-not-appear"
     result = _run(
         "status",
         GOSSIP_PEERS="https://coord.example",
-        GOSSIP_SHARED_SECRET="test-secret",
+        GOSSIP_SHARED_SECRET=secret,
     )
 
     assert result.returncode == 0, result.stderr
@@ -66,6 +67,7 @@ def test_status_ignores_gossip_env_cosmetics() -> None:
     assert payload.get("gossip_env_present") is True
     assert "relay configured" not in result.stdout.lower()
     assert "forwarded" not in result.stdout.lower()
+    assert secret not in result.stdout
 
 
 def test_status_embeds_advisory_topology_probe() -> None:
