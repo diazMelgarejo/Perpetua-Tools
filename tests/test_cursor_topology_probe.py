@@ -12,6 +12,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 
@@ -59,29 +60,32 @@ def _stat_board(board: Path) -> os.stat_result:
 
 
 @pytest.fixture
-def probe_mod():
+def probe_mod() -> ModuleType:
     return _load_probe_module()
 
 
-def test_probe_returns_required_keys(tmp_path: Path, probe_mod) -> None:
+def test_probe_returns_required_keys(tmp_path: Path, probe_mod: ModuleType) -> None:
     repo = _git_init(tmp_path / "repo")
     result = probe_mod.probe(repo)
 
     assert isinstance(result, dict)
     assert REQUIRED_KEYS <= set(result.keys())
+    assert Path(result["cwd"]).resolve() == repo.resolve()
     assert isinstance(result["board_present"], bool)
     assert result["mode"] in ("A", "B")
     assert result["board_size"] is None or isinstance(result["board_size"], int)
 
 
 def test_mode_a_when_board_present_and_coordinator_ino_matches(
-    tmp_path: Path, probe_mod
+    tmp_path: Path, probe_mod: ModuleType
 ) -> None:
     repo = _git_init(tmp_path / "coord-root")
     board = _write_board(repo)
     st = _stat_board(board)
 
-    result = probe_mod.probe(repo, coordinator_ino=st.st_ino)
+    result = probe_mod.probe(
+        repo, coordinator_ino=st.st_ino, coordinator_dev=st.st_dev
+    )
 
     assert result["mode"] == "A"
     assert result["board_present"] is True
@@ -91,7 +95,7 @@ def test_mode_a_when_board_present_and_coordinator_ino_matches(
     assert Path(result["toplevel"]).resolve() == repo.resolve()
 
 
-def test_mode_b_when_board_missing(tmp_path: Path, probe_mod) -> None:
+def test_mode_b_when_board_missing(tmp_path: Path, probe_mod: ModuleType) -> None:
     repo = _git_init(tmp_path / "no-board")
 
     result = probe_mod.probe(repo, coordinator_ino=12345)
@@ -103,20 +107,39 @@ def test_mode_b_when_board_missing(tmp_path: Path, probe_mod) -> None:
     assert result["board_size"] is None
 
 
-def test_mode_b_when_coordinator_ino_mismatches(tmp_path: Path, probe_mod) -> None:
+def test_mode_b_when_coordinator_ino_mismatches(
+    tmp_path: Path, probe_mod: ModuleType
+) -> None:
     repo = _git_init(tmp_path / "inode-mismatch")
     board = _write_board(repo)
     st = _stat_board(board)
 
-    result = probe_mod.probe(repo, coordinator_ino=st.st_ino + 999_999)
+    result = probe_mod.probe(
+        repo, coordinator_ino=st.st_ino + 999_999, coordinator_dev=st.st_dev
+    )
 
     assert result["mode"] == "B"
     assert result["board_present"] is True
     assert result["board_ino"] == st.st_ino
 
 
+def test_mode_b_when_coordinator_device_mismatches(
+    tmp_path: Path, probe_mod: ModuleType
+) -> None:
+    repo = _git_init(tmp_path / "device-mismatch")
+    board = _write_board(repo)
+    st = _stat_board(board)
+
+    result = probe_mod.probe(
+        repo, coordinator_ino=st.st_ino, coordinator_dev=st.st_dev + 1
+    )
+
+    assert result["mode"] == "B"
+    assert result["board_dev"] == st.st_dev
+
+
 def test_mode_b_when_toplevel_differs_from_repo_root_via_symlink(
-    tmp_path: Path, probe_mod
+    tmp_path: Path, probe_mod: ModuleType
 ) -> None:
     """Mode B when caller's repo_root resolves differently from git toplevel.
 
@@ -133,20 +156,22 @@ def test_mode_b_when_toplevel_differs_from_repo_root_via_symlink(
     link_root = tmp_path / "via-symlink"
     link_root.symlink_to(nested)
 
-    result = probe_mod.probe(link_root, coordinator_ino=st.st_ino)
+    result = probe_mod.probe(
+        link_root, coordinator_ino=st.st_ino, coordinator_dev=st.st_dev
+    )
 
     assert result["mode"] == "B"
     assert Path(result["toplevel"]).resolve() == real.resolve()
     assert Path(result["toplevel"]).resolve() != link_root.resolve()
 
 
-def test_mode_b_without_coordinator_ino_even_if_board_present(
-    tmp_path: Path, probe_mod
+def test_mode_b_without_complete_coordinator_identity_even_if_board_present(
+    tmp_path: Path, probe_mod: ModuleType
 ) -> None:
     repo = _git_init(tmp_path / "no-coordinator-ino")
     _write_board(repo)
 
-    result = probe_mod.probe(repo)
+    result = probe_mod.probe(repo, coordinator_ino=_stat_board(_write_board(repo)).st_ino)
 
     assert result["mode"] == "B"
     assert result["board_present"] is True
@@ -209,6 +234,8 @@ def test_cli_prints_json_and_exits_zero(tmp_path: Path) -> None:
             str(PROBE_SCRIPT),
             "--coordinator-ino",
             str(st.st_ino),
+            "--coordinator-dev",
+            str(st.st_dev),
         ],
         cwd=repo,
         capture_output=True,
