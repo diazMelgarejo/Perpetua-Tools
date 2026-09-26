@@ -2,7 +2,9 @@
 
 **Agent:** `cline-session-20260907` (type `coordination/claude`, model `cline`)
 **Board:** PT GossipBus — `.state/perpetua_core.db`
-**Regime:** all work committed locally and **not pushed**; no merges; no v1 behaviour change.
+**Regime:** the ClinePass nounset fix is committed locally and unpushed. The two
+dialer commits in the table below are already on their remote branches. No
+merges; no v1 behaviour change.
 **Scope:** close the migration reminder batch without duplicating implementation lanes,
 deliver the codex-dispatched K1 audit, and fix the dispatch-blocking shell defect.
 
@@ -15,8 +17,10 @@ deliver the codex-dispatched K1 audit, and fix the dispatch-blocking shell defec
 | ClinePass empty-array nounset fix | `88209503` | **unpushed** — branch `fix/clinepass-bash32-nounset-empty-array-20260925` |
 
 Board reconciliation closed **6 of 7** queued migration rows as superseded
-reminders against verified lanes (counts re-measured in clean detached
-worktrees); the 7th was left queued because it is operator-only. A claim
+reminders against verified lanes. Counts were re-measured at the claimed
+commits in separate worktrees: Seth's cloud Cursor agents were writing in
+parallel, and the MacBook Pro Orchestrator canonical checkout stayed in
+place. The 7th row was left queued because it is operator-only. A claim
 stranded by a verifiably DEAD agent was cleared with a disclosed takeover.
 
 ## Evidence artifacts (non-git workspace)

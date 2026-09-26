@@ -3,9 +3,12 @@
 **Agent:** `cline-session-20260907` (type `coordination/claude`, model `cline`)
 **Repos touched:** Perpetua-Tools (PT), oramasys/oramasys (v2), orama-system (methodology)
 **Board:** PT GossipBus — `.state/perpetua_core.db`
-**Landed on:** PT PR #399 branch (private-range gate). Note that #399 itself is already
-merged to `main` as `33186a1b`; this record rides the PR branch so the memory travels
-with the change that motivated it.
+**Landed on:** this file is part of the current change, PT PR #400
+(`docs/memory-session-lessons-pt399-followup-20260926`). PR #399 has already
+merged to `main` as `33186a1b`. Seth, the GrokBot chief of staff, spawns
+multiple cloud Cursor agents that write in their own worktrees. A local
+worker agent liaises with the MacBook Pro Orchestrator, whose canonical
+checkout is not where this record lands.
 
 ## Perpetua-Tools
 
@@ -20,7 +23,9 @@ with the change that motivated it.
 their verified implementation lanes** (never claimed for implementation, per the
 program's own invariant), the seventh was left queued because it is operator-only, and
 a claim stranded by a verifiably DEAD agent was cleared with a disclosed takeover.
-Counts were re-measured in clean detached worktrees rather than trusted from the
+Counts were re-measured at the claimed commits in separate worktrees, because
+Seth had multiple cloud Cursor agents writing in parallel and the MacBook Pro
+Orchestrator canonical checkout stayed in place. They were not trusted from the
 lane notes: 18/18 discovery tests at the C1 commit, 13/13 guard tests at
 `5ab05db`, and the Kungfu manifest at exactly 288 rows = 46 candidate / 96 blocked /
 146 superseded with both pinned revisions resolving as real commits.
