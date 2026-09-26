@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import ipaddress
 import os
 import re
 import shutil
@@ -279,6 +280,35 @@ _RFC1918_PRIVATE_IP_RE = re.compile(
     r"|\b192\.168\.\d{1,3}\.\d{1,3}\b"          # 192.168.0.0/16
     r")"
 )
+# Staged-diff gate. Same classes the SSRF dialer denies in
+# src/utils/ssrf_pinned_adapter.py `_DENIED_NETWORKS` for these families:
+# RFC1918, IPv4/IPv6 loopback, ULA (fc00::/7), and CGNAT (100.64.0.0/10).
+# Checked on added index lines only, so unstaged local overlay drift is ignored.
+_PROHIBITED_RFC1918_NETS = (
+    ipaddress.ip_network("10.0.0.0/8"),
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
+)
+_PROHIBITED_CGNAT_NET = ipaddress.ip_network("100.64.0.0/10")
+_PROHIBITED_ULA_NET = ipaddress.ip_network("fc00::/7")
+_PROHIBITED_ADDRESS_SCAN_EXCEPTIONS = frozenset({
+    "scripts/review/repo_hygiene.py",
+    "scripts/review/repo_hygiene_core.py",
+    "tests/test_repo_hygiene.py",
+    "tests/test_repo_hygiene_private_ranges.py",
+})
+_STAGED_ADDRESS_TOKEN_RE = re.compile(
+    r"(?i)(?<![\w:])(?:"
+    r"(?:\d{1,3}\.){3}\d{1,3}"
+    r"|::ffff:(?:\d{1,3}\.){3}\d{1,3}"
+    r"|::1"
+    r"|(?:[0-9a-f]{1,4}:){7}[0-9a-f]{1,4}"
+    r"|(?:[0-9a-f]{1,4}:){1,6}:[0-9a-f]{1,4}"
+    r"|(?:[0-9a-f]{1,4}:){1,6}:"
+    r"|:(?::[0-9a-f]{1,4}){1,7}"
+    r")(?![\w:])"
+)
+_HUNK_NEW_START_RE = re.compile(r"\+(\d+)(?:,\d+)?")
 GENERATED_ARTIFACT_PATTERNS = (
     ".DS_Store",
     "*/.DS_Store",
@@ -793,6 +823,105 @@ def check_identity(root: Path) -> list[str]:
     return []
 
 
+def _classify_prohibited_address(token: str) -> str | None:
+    """Return rfc1918, loopback, ula, or cgnat when token is a prohibited literal."""
+    try:
+        addr = ipaddress.ip_address(token)
+    except ValueError:
+        return None
+    if isinstance(addr, ipaddress.IPv6Address) and addr.ipv4_mapped is not None:
+        addr = addr.ipv4_mapped
+    if addr.is_loopback:
+        return "loopback"
+    if isinstance(addr, ipaddress.IPv4Address) and addr in _PROHIBITED_CGNAT_NET:
+        return "cgnat"
+    if any(addr in net for net in _PROHIBITED_RFC1918_NETS):
+        return "rfc1918"
+    if isinstance(addr, ipaddress.IPv6Address) and addr in _PROHIBITED_ULA_NET:
+        return "ula"
+    return None
+
+
+def _prohibited_classes_in_text(text: str) -> list[str]:
+    found: list[str] = []
+    seen: set[str] = set()
+    for match in _STAGED_ADDRESS_TOKEN_RE.finditer(text):
+        kind = _classify_prohibited_address(match.group())
+        if kind and kind not in seen:
+            seen.add(kind)
+            found.append(kind)
+    return found
+
+
+def _iter_staged_added_lines(diff_text: str):
+    """Yield (path, new_line_no, line_text) for added lines in a cached diff."""
+    rel: str | None = None
+    new_line: int | None = None
+    for raw in diff_text.splitlines():
+        if raw.startswith("diff --git "):
+            rel = None
+            new_line = None
+            continue
+        if raw.startswith("+++ "):
+            path = raw[4:]
+            if path == "/dev/null":
+                rel = None
+            else:
+                if path.startswith(("b/", "a/")):
+                    path = path[2:]
+                if path.startswith('"') and path.endswith('"'):
+                    path = path[1:-1]
+                rel = path
+            continue
+        if raw.startswith("@@"):
+            match = _HUNK_NEW_START_RE.search(raw)
+            new_line = int(match.group(1)) if match else None
+            continue
+        if rel is None or new_line is None:
+            continue
+        if raw.startswith("+"):
+            yield rel, new_line, raw[1:]
+            new_line += 1
+        elif raw.startswith("-") or raw.startswith("\\"):
+            continue
+        else:
+            new_line += 1
+
+
+def scan_staged_prohibited_address_literals(root: Path) -> list[str]:
+    """Block a commit whose index adds a prohibited address literal.
+
+    Reads ``git diff --cached`` only. Unstaged working-tree edits, including
+    local discovery overlays, are not part of the commit and are ignored.
+    Error text names the path, line, and address class, never the literal.
+    """
+    proc = run_git(
+        root,
+        "diff",
+        "--cached",
+        "-U0",
+        "--no-color",
+        "--diff-filter=ACMR",
+    )
+    if proc.returncode != 0:
+        detail = proc.stderr.strip() or "git diff --cached failed"
+        return [f"prohibited private-range scan failed: {detail}"]
+    errors: list[str] = []
+    reported: set[tuple[str, int, str]] = set()
+    for rel, line_no, line in _iter_staged_added_lines(proc.stdout):
+        if rel in _PROHIBITED_ADDRESS_SCAN_EXCEPTIONS:
+            continue
+        for kind in _prohibited_classes_in_text(line):
+            key = (rel, line_no, kind)
+            if key in reported:
+                continue
+            reported.add(key)
+            errors.append(
+                f"prohibited private-range literal ({kind}) in staged file: {rel}:{line_no}"
+            )
+    return errors
+
+
 def check_workflow_permissions(root: Path) -> list[str]:
     errors: list[str] = []
     workflow_dir = root / ".github" / "workflows"
@@ -846,6 +975,7 @@ def main() -> int:
     errors.extend(check_workflow_permissions(root))
     errors.extend(scan_private_verboten_literals(root, files))
     errors.extend(scan_agent_private_surface(root, files))
+    errors.extend(scan_staged_prohibited_address_literals(root))
 
     for line in report_status(root):
         print(f"INFO: {line}")

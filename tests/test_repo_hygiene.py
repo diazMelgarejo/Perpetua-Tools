@@ -805,3 +805,37 @@ def test_personal_path_windows_real_username_flagged(tmp_path):
     mod = load_repo_hygiene()
     errors = mod.scan_personal_paths(tmp_path, ["README.md"])
     assert any("alice" in e for e in errors), f"real username not flagged: {errors}"
+
+
+def _load_hygiene_core():
+    path = ROOT / "scripts" / "review" / "repo_hygiene_core.py"
+    spec = importlib.util.spec_from_file_location("repo_hygiene_core", path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_staged_rfc1918_literal_blocks_and_public_docs_address_does_not(tmp_path, monkeypatch):
+    """A staged private-range literal blocks; a documentation address does not."""
+    core = _load_hygiene_core()
+    diff = (
+        "diff --git a/config/example.yml b/config/example.yml\n"
+        "--- a/config/example.yml\n"
+        "+++ b/config/example.yml\n"
+        "@@ -1,0 +1,2 @@\n"
+        "+lan_ip: \"192.168.0.1\"\n"
+        "+docs: \"192.0.2.1\"\n"
+    )
+
+    def fake_run_git(root, *args):
+        assert args[:2] == ("diff", "--cached")
+        return subprocess.CompletedProcess(args=["git", *args], returncode=0, stdout=diff, stderr="")
+
+    monkeypatch.setattr(core, "run_git", fake_run_git)
+    errors = core.scan_staged_prohibited_address_literals(tmp_path)
+    assert len(errors) == 1
+    assert "rfc1918" in errors[0]
+    assert "config/example.yml:1" in errors[0]
+    assert "192.168.0.1" not in errors[0]
+    assert "192.0.2.1" not in errors[0]
