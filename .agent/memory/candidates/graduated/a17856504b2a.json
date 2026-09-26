@@ -1,0 +1,38 @@
+{
+  "id": "a17856504b2a",
+  "key": "manual_a17856",
+  "name": "manual_a17856",
+  "claim": "A GossipBus review job whose notes say do not claim until a published source_ref and expected_base_sha exist must stay held even when depends_on is empty. Empty depends_on is not permission to claim.",
+  "conditions": [
+    "gossipbus depends_on held-job source_ref"
+  ],
+  "evidence_ids": [
+    "2026-09-26T05:35:38.556990+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-26T05:35:38.556990+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-26T05:35:38.556990+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-26T05:35:38.694024+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "R1 Cursor shared-claim transport reviews were correctly held pending a published PT tip.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-26T05:35:38.556990+00:00"
+      ],
+      "lessons_sha": "897edd12e1d1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-26T05:35:38.694016+00:00",
+  "reviewer": "learn.py",
+  "rationale": "R1 Cursor shared-claim transport reviews were correctly held pending a published PT tip."
+}
