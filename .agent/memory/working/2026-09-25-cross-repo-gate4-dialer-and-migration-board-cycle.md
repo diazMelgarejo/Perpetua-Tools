@@ -74,6 +74,20 @@ the sibling dialer layer, the second from a gate rejection caused by carrying
 sanitized claim text into a graduated candidate whose id must stay a tooling
 derivation of that exact claim.
 
+## Worktree use case (clarified 2026-09-26)
+
+`lesson_25db2fe45992` is superseded by `lesson_3c8025df4a77`.
+
+Seth, the GrokBot chief of staff, spawns multiple cloud Cursor agent
+instances. Each instance that writes files uses its own git worktree so
+those writes do not collide. A local worker agent is the liaison between
+those cloud instances and the MacBook Pro Orchestrator. The Orchestrator
+canonical checkout stays put.
+
+One agent verifying a claimed commit reads that commit from the canonical
+checkout and does not create a worktree. Local-branch divergence is judged
+with `scripts/git/reanchor_scan.sh` against `origin/main`.
+
 ## Open items for humans
 
 Physical canary evidence (operator-only, runbook published) · push of the local

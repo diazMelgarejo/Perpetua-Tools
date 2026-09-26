@@ -1,0 +1,44 @@
+{
+  "id": "3c8025df4a77",
+  "key": "manual_3c8025",
+  "name": "manual_3c8025",
+  "claim": "When Seth, the GrokBot chief of staff, spawns multiple cloud Cursor agent instances, each instance that writes files uses its own git worktree. A local worker agent liaises between those cloud instances and the MacBook Pro Orchestrator, and the Orchestrator canonical checkout stays put. One agent verifying a claimed commit reads that commit from the canonical checkout and does not create a worktree. Before attributing a failure to the lane under review, judge local-branch divergence with scripts/git/reanchor_scan.sh against origin/main.",
+  "conditions": [
+    "cloud-cursor-agent",
+    "grokbot",
+    "local-worker",
+    "orchestrator",
+    "reanchor-scan",
+    "seth",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-09-26T07:59:03.424316+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-26T07:59:03.424316+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-26T07:59:03.424316+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-26T07:59:03.551003+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit review 5325082254 comment 4110603549 on Perpetua-Tools PR 400 treated lesson_25db2fe45992 as a universal detached-worktree step. The operating case is parallel cloud Cursor agents spawned by Seth, the GrokBot chief of staff, liaising with the MacBook Pro Orchestrator through a local worker agent. A single verifier stays on the canonical checkout. Divergence uses scripts/git/reanchor_scan.sh, not an ahead/behind count.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-26T07:59:03.424316+00:00"
+      ],
+      "lessons_sha": "5fb144bb8ffa"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-26T07:59:03.550991+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit review 5325082254 comment 4110603549 on Perpetua-Tools PR 400 treated lesson_25db2fe45992 as a universal detached-worktree step. The operating case is parallel cloud Cursor agents spawned by Seth, the GrokBot chief of staff, liaising with the MacBook Pro Orchestrator through a local worker agent. A single verifier stays on the canonical checkout. Divergence uses scripts/git/reanchor_scan.sh, not an ahead/behind count."
+}
