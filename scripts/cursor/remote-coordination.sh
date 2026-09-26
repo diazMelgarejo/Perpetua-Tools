@@ -54,6 +54,11 @@ if not isinstance(topology, dict):
     topology = {}
 
 # Hard-enforce the authority boundary even if an older probe is present.
+topology = {
+    key: topology.get(key)
+    for key in ("mode", "board_present", "topology_match")
+    if key in topology
+}
 topology["queue_write_authority"] = False
 
 payload = {

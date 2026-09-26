@@ -79,6 +79,17 @@ def test_status_embeds_advisory_topology_probe() -> None:
     assert "topology_match" in topo
 
 
+def test_status_redacts_local_topology_paths() -> None:
+    """A remote-facing status envelope must not disclose workstation topology."""
+    result = _run("status")
+
+    assert result.returncode == 0, result.stderr
+    topology = json.loads(result.stdout)["topology"]
+    assert "cwd" not in topology
+    assert "toplevel" not in topology
+    assert "git_common_dir" not in topology
+
+
 def test_pulse_is_refused_even_with_https_gossip_env() -> None:
     result = _run(
         "pulse",
