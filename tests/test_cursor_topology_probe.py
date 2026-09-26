@@ -27,11 +27,13 @@ REQUIRED_KEYS = {
     "board_dev",
     "board_ino",
     "board_size",
+    "topology_match",
+    "queue_write_authority",
     "mode",
 }
 
 
-def _load_probe_module():
+def _load_probe_module() -> ModuleType:
     import importlib.util
 
     spec = importlib.util.spec_from_file_location("topology_probe", PROBE_SCRIPT)
@@ -76,7 +78,7 @@ def test_probe_returns_required_keys(tmp_path: Path, probe_mod: ModuleType) -> N
     assert result["board_size"] is None or isinstance(result["board_size"], int)
 
 
-def test_mode_a_when_board_present_and_coordinator_ino_matches(
+def test_mode_a_when_full_coordinator_identity_matches(
     tmp_path: Path, probe_mod: ModuleType
 ) -> None:
     repo = _git_init(tmp_path / "coord-root")
@@ -84,10 +86,15 @@ def test_mode_a_when_board_present_and_coordinator_ino_matches(
     st = _stat_board(board)
 
     result = probe_mod.probe(
-        repo, coordinator_ino=st.st_ino, coordinator_dev=st.st_dev
+        repo,
+        coordinator_ino=st.st_ino,
+        coordinator_dev=st.st_dev,
+        coordinator_size=st.st_size,
     )
 
     assert result["mode"] == "A"
+    assert result["topology_match"] is True
+    assert result["queue_write_authority"] is False
     assert result["board_present"] is True
     assert result["board_ino"] == st.st_ino
     assert result["board_dev"] == st.st_dev
@@ -115,7 +122,10 @@ def test_mode_b_when_coordinator_ino_mismatches(
     st = _stat_board(board)
 
     result = probe_mod.probe(
-        repo, coordinator_ino=st.st_ino + 999_999, coordinator_dev=st.st_dev
+        repo,
+        coordinator_ino=st.st_ino + 999_999,
+        coordinator_dev=st.st_dev,
+        coordinator_size=st.st_size,
     )
 
     assert result["mode"] == "B"
@@ -131,11 +141,33 @@ def test_mode_b_when_coordinator_device_mismatches(
     st = _stat_board(board)
 
     result = probe_mod.probe(
-        repo, coordinator_ino=st.st_ino, coordinator_dev=st.st_dev + 1
+        repo,
+        coordinator_ino=st.st_ino,
+        coordinator_dev=st.st_dev + 1,
+        coordinator_size=st.st_size,
     )
 
     assert result["mode"] == "B"
     assert result["board_dev"] == st.st_dev
+
+
+def test_mode_b_when_coordinator_size_mismatches(
+    tmp_path: Path, probe_mod: ModuleType
+) -> None:
+    repo = _git_init(tmp_path / "size-mismatch")
+    board = _write_board(repo)
+    st = _stat_board(board)
+
+    result = probe_mod.probe(
+        repo,
+        coordinator_ino=st.st_ino,
+        coordinator_dev=st.st_dev,
+        coordinator_size=st.st_size + 1,
+    )
+
+    assert result["mode"] == "B"
+    assert result["topology_match"] is False
+    assert result["queue_write_authority"] is False
 
 
 def test_mode_b_when_toplevel_differs_from_repo_root_via_symlink(
@@ -157,7 +189,10 @@ def test_mode_b_when_toplevel_differs_from_repo_root_via_symlink(
     link_root.symlink_to(nested)
 
     result = probe_mod.probe(
-        link_root, coordinator_ino=st.st_ino, coordinator_dev=st.st_dev
+        link_root,
+        coordinator_ino=st.st_ino,
+        coordinator_dev=st.st_dev,
+        coordinator_size=st.st_size,
     )
 
     assert result["mode"] == "B"
@@ -169,9 +204,9 @@ def test_mode_b_without_complete_coordinator_identity_even_if_board_present(
     tmp_path: Path, probe_mod: ModuleType
 ) -> None:
     repo = _git_init(tmp_path / "no-coordinator-ino")
-    _write_board(repo)
+    board = _write_board(repo)
 
-    result = probe_mod.probe(repo, coordinator_ino=_stat_board(_write_board(repo)).st_ino)
+    result = probe_mod.probe(repo, coordinator_ino=_stat_board(board).st_ino)
 
     assert result["mode"] == "B"
     assert result["board_present"] is True
@@ -236,6 +271,8 @@ def test_cli_prints_json_and_exits_zero(tmp_path: Path) -> None:
             str(st.st_ino),
             "--coordinator-dev",
             str(st.st_dev),
+            "--coordinator-size",
+            str(st.st_size),
         ],
         cwd=repo,
         capture_output=True,
@@ -265,7 +302,7 @@ def test_cli_accepts_missing_coordinator_ino_flag(tmp_path: Path) -> None:
     assert payload["mode"] == "B"
 
 
-def test_mode_b_when_not_a_git_repo(tmp_path):
+def test_mode_b_when_not_a_git_repo(tmp_path: Path) -> None:
     """Non-git directories must be Mode B, not a subprocess crash."""
     from scripts.cursor.topology_probe import probe
 
