@@ -1,0 +1,42 @@
+{
+  "id": "796f2af67e59",
+  "key": "manual_796f2a",
+  "name": "manual_796f2a",
+  "claim": "Never report a worktree-hosted commit as delivered or lost without resolving it from the PARENT repository and checking whether the remote branch contains it as an ancestor. Deleting a temporary worktree removes the checkout, not the commits, because worktrees share the parent object store; but that survival guarantee is worthless if nobody verifies it, so run the reachability check before any temp-directory cleanup and state per-commit push status explicitly.",
+  "conditions": [
+    "commit-reachability",
+    "push-status",
+    "remote-verification",
+    "tmp-cleanup",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-09-25T15:45:25.036952+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-25T15:45:25.036952+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-25T15:45:25.036952+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-25T15:45:25.162137+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The entire <local-tmp-dir> tree was cleaned mid-session, removing three Gate 4 worktrees that held my two fix commits. Both commits survived and were verifiable from the parent repos, and the PT branch already existed on origin with my commit as an ancestor of the remote tip while the oramasys branch tip matched my SHA byte-for-byte. Reporting from memory instead of measuring would either have claimed work was safely delivered when the checkout was gone, or raised a false alarm that the fixes were destroyed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-25T15:45:25.036952+00:00"
+      ],
+      "lessons_sha": "a041560cbecd"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-25T15:45:25.162128+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The entire <local-tmp-dir> tree was cleaned mid-session, removing three Gate 4 worktrees that held my two fix commits. Both commits survived and were verifiable from the parent repos, and the PT branch already existed on origin with my commit as an ancestor of the remote tip while the oramasys branch tip matched my SHA byte-for-byte. Reporting from memory instead of measuring would either have claimed work was safely delivered when the checkout was gone, or raised a false alarm that the fixes were destroyed."
+}

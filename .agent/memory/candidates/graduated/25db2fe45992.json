@@ -1,0 +1,42 @@
+{
+  "id": "25db2fe45992",
+  "key": "manual_25db2f",
+  "name": "manual_25db2f",
+  "claim": "Verify a lane claim by re-measuring the exact counts in a CLEAN detached worktree checked out at the claimed commit, not in the primary clone. A primary checkout that has diverged from the upstream branch can produce failures that do not reproduce at the verified ref, so first establish how far the local branch has drifted before attributing any failure to the lane under review.",
+  "conditions": [
+    "detached-worktree",
+    "diverged-checkout",
+    "false-failure",
+    "ref-discipline",
+    "verification"
+  ],
+  "evidence_ids": [
+    "2026-09-25T15:45:49.530760+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-25T15:45:49.530760+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-25T15:45:49.530760+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-25T15:45:49.676139+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A discovery test failed in the primary clone, which looked like a regression in the composition-layer probe lane. The clone was 68 commits ahead of upstream, and the same test passed at both the upstream ref and the lane commit in clean detached worktrees, so the failure was a checkout-divergence artifact. Re-measuring in clean worktrees also confirmed exact claims that had been stated loosely, including 18 discovery tests and 13 guard tests at the O1 commit.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-25T15:45:49.530760+00:00"
+      ],
+      "lessons_sha": "dfd439094b4d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-25T15:45:49.676130+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A discovery test failed in the primary clone, which looked like a regression in the composition-layer probe lane. The clone was 68 commits ahead of upstream, and the same test passed at both the upstream ref and the lane commit in clean detached worktrees, so the failure was a checkout-divergence artifact. Re-measuring in clean worktrees also confirmed exact claims that had been stated loosely, including 18 discovery tests and 13 guard tests at the O1 commit."
+}

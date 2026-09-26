@@ -1,0 +1,43 @@
+{
+  "id": "5d45449492c4",
+  "key": "manual_5d4544",
+  "name": "manual_5d4544",
+  "claim": "Program-level rows whose names carry a phase prefix and a tasklist pointer are coordination reminders, not implementation lanes. Reconcile them closed against their verified implementation lane with evidence; never claim them for implementation, because the program invariant that created them exists precisely to stop two agents doing the same work under two different ids.",
+  "conditions": [
+    "board",
+    "coordination",
+    "invariant",
+    "reconcile",
+    "reminder-row",
+    "superseded"
+  ],
+  "evidence_ids": [
+    "2026-09-25T15:45:25.248881+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-25T15:45:25.248881+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-25T15:45:25.248881+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-25T15:45:25.368442+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Seven MigrationProgram rows sat QUEUED after the migration waves closed, but the program tasklist stated outright that they are superseded pointers while the authoritative mig-* implementation lanes own the work. All six with verified lanes were closed as superseded with per-row evidence, and the seventh was left queued as operator-only. Claiming them as implementation would have duplicated six finished workstreams and contradicted the program ledger.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-25T15:45:25.248881+00:00"
+      ],
+      "lessons_sha": "6c4a6ae6a588"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-25T15:45:25.368432+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Seven MigrationProgram rows sat QUEUED after the migration waves closed, but the program tasklist stated outright that they are superseded pointers while the authoritative mig-* implementation lanes own the work. All six with verified lanes were closed as superseded with per-row evidence, and the seventh was left queued as operator-only. Claiming them as implementation would have duplicated six finished workstreams and contradicted the program ledger."
+}

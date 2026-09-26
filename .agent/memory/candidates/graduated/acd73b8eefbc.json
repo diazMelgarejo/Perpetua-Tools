@@ -1,0 +1,43 @@
+{
+  "id": "acd73b8eefbc",
+  "key": "manual_acd73b",
+  "name": "manual_acd73b",
+  "claim": "A queue row can remain claimed by a DEAD agent with no atomic claim row, so stale-claim cleanup has nothing to release and the row strands forever. Close it with a disclosed takeover completion only after independently verifying the work actually landed from current refs, and record the prior agent, its verified DEAD status, and the evidence in the event payload rather than silently reassigning ownership.",
+  "conditions": [
+    "atomic-claim",
+    "board-hygiene",
+    "dead-agent",
+    "queue",
+    "stale-claim",
+    "takeover"
+  ],
+  "evidence_ids": [
+    "2026-09-25T15:45:37.207572+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-25T15:45:37.207572+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-25T15:45:37.207572+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-25T15:45:37.341106+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The O1 lane row stayed claimed after its claimant was verifiably DEAD and its work had genuinely landed. The atomic claims table was empty, so the standard cleanup released nothing and the row would have blocked the claimed column indefinitely. The completion was emitted as an explicit takeover naming the prior agent and its DEAD state plus commit and test evidence, matching existing board practice of taking over from a dead agent.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-25T15:45:37.207572+00:00"
+      ],
+      "lessons_sha": "64689ac17d08"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-25T15:45:37.341091+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The O1 lane row stayed claimed after its claimant was verifiably DEAD and its work had genuinely landed. The atomic claims table was empty, so the standard cleanup released nothing and the row would have blocked the claimed column indefinitely. The completion was emitted as an explicit takeover naming the prior agent and its DEAD state plus commit and test evidence, matching existing board practice of taking over from a dead agent."
+}
