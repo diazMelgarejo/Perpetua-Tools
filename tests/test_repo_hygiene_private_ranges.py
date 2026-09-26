@@ -205,6 +205,55 @@ def test_run_git_decodes_as_utf8(tmp_path: Path, monkeypatch) -> None:
     assert captured["encoding"] == "utf-8"
 
 
+def test_commit_range_scan_sees_committed_literal_when_index_is_clean(tmp_path: Path) -> None:
+    """CI has an empty index; the supplied base/head range still sees added lines."""
+    repo = tmp_path / "repo"
+    _init_hygiene_repo(repo)
+    base = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+    ).stdout.strip()
+    note = repo / "docs" / "note.md"
+    note.parent.mkdir()
+    note.write_text("gateway 192.168.0.1\n", encoding="utf-8")
+    _git(repo, "add", "docs/note.md")
+    _git(repo, "commit", "-m", "add note")
+
+    mod = load_repo_hygiene()
+    assert mod.scan_staged_prohibited_address_literals(repo) == []
+    errors = mod.scan_staged_prohibited_address_literals(
+        repo, diff_base=base, diff_head="HEAD"
+    )
+    assert len(errors) == 1
+    assert "rfc1918" in errors[0]
+    assert "commit range" in errors[0]
+    assert "docs/note.md:1" in errors[0]
+    assert "192.168.0.1" not in errors[0]
+    assert mod.scan_staged_prohibited_address_literals(repo, diff_base=base)[0].endswith(
+        "diff base and head must both be set"
+    )
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(HYGIENE_PATH),
+            str(repo),
+            "--address-diff-base",
+            base,
+            "--address-diff-head",
+            "HEAD",
+        ],
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    assert proc.returncode == 1
+    assert "prohibited private-range literal (rfc1918) in commit range: docs/note.md:1" in proc.stderr
+
+
 def test_scanner_source_exception_allows_range_definitions(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     _init_hygiene_repo(repo)
