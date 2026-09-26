@@ -37,6 +37,9 @@ gate() {
   GATE_PIDS+=("$!")
 }
 
+# The canonical staged RFC1918/loopback/ULA/CGNAT literal gate runs inside
+# scripts/review/repo_hygiene.py (repo-hygiene gate below). The standalone
+# no_committed_lan_topology.py hook remains an optional earlier exit.
 if [ -f "$ROOT/scripts/hooks/no_committed_lan_topology.py" ]; then
   gate lan-topology lan-topology
 fi

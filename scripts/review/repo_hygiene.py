@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Repo hygiene entrypoint with deterministic CI identity authorization.
 
-The full scanner implementation is retained byte-for-byte in
-``repo_hygiene_core.py``. This entrypoint owns the identity boundary because
-CI cannot depend on operator-local ``.verboten-literals.local`` state.
+The full scanner implementation is retained in ``repo_hygiene_core.py``,
+including the staged prohibited-address gate (RFC1918, loopback, ULA, CGNAT).
+This entrypoint owns the identity boundary because CI cannot depend on
+operator-local ``.verboten-literals.local`` state. Pre-commit execs this file.
 """
 from __future__ import annotations
 

@@ -127,7 +127,22 @@ jobs:
           echo "OPENCLAW_VERBOTEN_LITERALS=$literals_path" >> "$GITHUB_ENV"
 
       - name: Repo hygiene gate
-        run: python3 scripts/review/repo_hygiene.py .
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_SHA: ${{ github.sha }}
+        run: |
+          set -eu
+          args=()
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            git fetch origin "$BASE_REF" || true
+            args+=(--address-diff-base "origin/$BASE_REF" --address-diff-head "$HEAD_SHA")
+          elif [ -n "${BEFORE_SHA:-}" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+            args+=(--address-diff-base "$BEFORE_SHA" --address-diff-head "$PUSH_SHA")
+          fi
+          python3 scripts/review/repo_hygiene.py . "${args[@]}"
 
       - name: Local runtime overlay gate (committed config)
         run: python3 scripts/git/check_local_runtime_overlay.py . --mode tree

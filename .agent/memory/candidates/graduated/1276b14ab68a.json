@@ -1,0 +1,41 @@
+{
+  "id": "1276b14ab68a",
+  "key": "manual_1276b1",
+  "name": "manual_1276b1",
+  "claim": "A staged diff scan that uses diff-filter ACMR misses a type change where a regular file replaces a symlink. Include T so the filter is ACMRT and that replacement is scanned.",
+  "conditions": [
+    "diff-filter",
+    "repo-hygiene",
+    "symlink",
+    "typechange"
+  ],
+  "evidence_ids": [
+    "2026-09-26T03:37:24.766608+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-26T03:37:24.766608+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-26T03:37:24.766608+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-26T03:37:24.858687+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit review 5324084599 comment 4109787029 on Perpetua-Tools PR 399. ACMR dropped type-change T. Fixed in 0037cbe4bd5e8ba971464790fedec5e42341cbbc and mirrored in orama-system.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-26T03:37:24.766608+00:00"
+      ],
+      "lessons_sha": "a09ae343d1a4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-26T03:37:24.858677+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit review 5324084599 comment 4109787029 on Perpetua-Tools PR 399. ACMR dropped type-change T. Fixed in 0037cbe4bd5e8ba971464790fedec5e42341cbbc and mirrored in orama-system."
+}

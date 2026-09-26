@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import ipaddress
 import os
 import re
 import shutil
@@ -279,6 +280,35 @@ _RFC1918_PRIVATE_IP_RE = re.compile(
     r"|\b192\.168\.\d{1,3}\.\d{1,3}\b"          # 192.168.0.0/16
     r")"
 )
+# Staged-diff gate. Same classes the SSRF dialer denies in
+# src/utils/ssrf_pinned_adapter.py `_DENIED_NETWORKS` for these families:
+# RFC1918, IPv4/IPv6 loopback, ULA (fc00::/7), and CGNAT (100.64.0.0/10).
+# Checked on added index lines only, so unstaged local overlay drift is ignored.
+_PROHIBITED_RFC1918_NETS = (
+    ipaddress.ip_network("10.0.0.0/8"),
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
+)
+_PROHIBITED_CGNAT_NET = ipaddress.ip_network("100.64.0.0/10")
+_PROHIBITED_ULA_NET = ipaddress.ip_network("fc00::/7")
+_PROHIBITED_ADDRESS_SCAN_EXCEPTIONS = frozenset({
+    "scripts/review/repo_hygiene.py",
+    "scripts/review/repo_hygiene_core.py",
+    "tests/test_repo_hygiene.py",
+    "tests/test_repo_hygiene_private_ranges.py",
+})
+# Candidate extraction only. Classification uses ipaddress.ip_address so a
+# partial IPv6 grammar cannot drop compressed forms, and a trailing colon
+# (IPv4 port) cannot hide the host. Bracketed literals keep an optional port.
+_STAGED_ADDRESS_TOKEN_RE = re.compile(
+    r"(?i)(?<![\w:])(?:"
+    r"\[[0-9a-f:.]+\](?::\d+)?"
+    r"|::ffff:(?:\d{1,3}\.){3}\d{1,3}"
+    r"|(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?"
+    r"|(?:[0-9a-f]{0,4}:){2,7}[0-9a-f]{0,4}"
+    r")(?![\w])"
+)
+_HUNK_NEW_START_RE = re.compile(r"\+(\d+)(?:,\d+)?")
 GENERATED_ARTIFACT_PATTERNS = (
     ".DS_Store",
     "*/.DS_Store",
@@ -343,6 +373,7 @@ def run_git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
         [git_exe, "-C", str(root), *args],
         check=False,
         text=True,
+        encoding="utf-8",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
@@ -793,6 +824,179 @@ def check_identity(root: Path) -> list[str]:
     return []
 
 
+def _classify_prohibited_address(token: str) -> str | None:
+    """Return rfc1918, loopback, ula, or cgnat when token is a prohibited literal."""
+    try:
+        addr = ipaddress.ip_address(token)
+    except ValueError:
+        return None
+    if isinstance(addr, ipaddress.IPv6Address) and addr.ipv4_mapped is not None:
+        addr = addr.ipv4_mapped
+    if addr.is_loopback:
+        return "loopback"
+    if isinstance(addr, ipaddress.IPv4Address) and addr in _PROHIBITED_CGNAT_NET:
+        return "cgnat"
+    if any(addr in net for net in _PROHIBITED_RFC1918_NETS):
+        return "rfc1918"
+    if isinstance(addr, ipaddress.IPv6Address) and addr in _PROHIBITED_ULA_NET:
+        return "ula"
+    return None
+
+
+def _parsed_address_token(raw: str) -> str | None:
+    """Return a complete address literal, or None when the candidate is not one.
+
+    Bracketed IPv6 drops the brackets and any trailing port. A bare token is
+    parsed whole first, so a compressed address is not split on its last
+    hextet. Only a token ipaddress rejects is retried with a trailing ``:port``
+    removed (``192.168.0.1:8080``).
+    """
+    token = raw
+    if token.startswith("[") and "]" in token:
+        token = token[1:token.index("]")]
+    try:
+        ipaddress.ip_address(token)
+    except ValueError:
+        host, sep, port = token.rpartition(":")
+        if not sep or not port.isdigit() or not host or host.endswith(":"):
+            return None
+        try:
+            ipaddress.ip_address(host)
+        except ValueError:
+            return None
+        return host
+    return token
+
+
+def _prohibited_classes_in_text(text: str) -> list[str]:
+    found: list[str] = []
+    seen: set[str] = set()
+    for match in _STAGED_ADDRESS_TOKEN_RE.finditer(text):
+        token = _parsed_address_token(match.group())
+        if token is None:
+            continue
+        kind = _classify_prohibited_address(token)
+        if kind and kind not in seen:
+            seen.add(kind)
+            found.append(kind)
+    return found
+
+
+def _apply_diff_file_header(raw: str) -> str | None:
+    """Return the path from a ``+++`` header outside a hunk, or None for /dev/null."""
+    path = raw[4:]
+    if path == "/dev/null":
+        return None
+    if path.startswith(("b/", "a/")):
+        path = path[2:]
+    if path.startswith('"') and path.endswith('"'):
+        path = path[1:-1]
+    return path
+
+
+def _iter_staged_added_lines(diff_text: str):
+    """Yield (path, new_line_no, line_text) for added lines in a cached diff.
+
+    ``+++`` is a file header only before the first hunk. Inside a hunk an
+    added line whose text starts with ``++`` is also ``+++...`` in the patch
+    and must be scanned as content.
+    """
+    rel: str | None = None
+    new_line: int | None = None
+    in_hunk = False
+    for raw in diff_text.splitlines():
+        if raw.startswith("diff --git "):
+            rel = None
+            new_line = None
+            in_hunk = False
+            continue
+        if raw.startswith("@@"):
+            in_hunk = True
+            match = _HUNK_NEW_START_RE.search(raw)
+            new_line = int(match.group(1)) if match else None
+            continue
+        if in_hunk:
+            if rel is None or new_line is None:
+                continue
+            if raw.startswith("+"):
+                yield rel, new_line, raw[1:]
+                new_line += 1
+            elif raw.startswith("-") or raw.startswith("\\"):
+                continue
+            else:
+                new_line += 1
+            continue
+        if raw.startswith("+++ "):
+            rel = _apply_diff_file_header(raw)
+
+
+def _address_scan_diff_spec(
+    diff_base: str | None,
+    diff_head: str | None,
+) -> tuple[list[str], str] | str:
+    """Return ``(git diff args, finding location)`` or an error string.
+
+    No endpoints means the index (``--cached``), which pre-commit uses.
+    Both endpoints mean the three-dot range CI passes for a pull request.
+    """
+    if (diff_base is None) != (diff_head is None):
+        return "diff base and head must both be set"
+    if diff_base is None:
+        return ["--cached"], "staged file"
+    if (
+        not diff_base
+        or not diff_head
+        or diff_base.startswith("-")
+        or diff_head.startswith("-")
+    ):
+        return "diff refs must be non-empty and must not start with '-'"
+    return [f"{diff_base}...{diff_head}"], "commit range"
+
+
+def scan_staged_prohibited_address_literals(
+    root: Path,
+    *,
+    diff_base: str | None = None,
+    diff_head: str | None = None,
+) -> list[str]:
+    """Block prohibited address literals on added lines.
+
+    Default is ``git diff --cached`` so pre-commit ignores unstaged overlay
+    drift. CI passes ``diff_base`` and ``diff_head`` to scan the pull-request
+    range, because a CI checkout has an empty index. Error text names the
+    path, line, and address class, never the literal.
+    """
+    spec = _address_scan_diff_spec(diff_base, diff_head)
+    if isinstance(spec, str):
+        return [f"prohibited private-range scan failed: {spec}"]
+    diff_args, where = spec
+    proc = run_git(
+        root,
+        "diff",
+        *diff_args,
+        "-U0",
+        "--no-color",
+        "--diff-filter=ACMRT",
+    )
+    if proc.returncode != 0:
+        detail = proc.stderr.strip() or "git diff failed"
+        return [f"prohibited private-range scan failed: {detail}"]
+    errors: list[str] = []
+    reported: set[tuple[str, int, str]] = set()
+    for rel, line_no, line in _iter_staged_added_lines(proc.stdout):
+        if rel in _PROHIBITED_ADDRESS_SCAN_EXCEPTIONS:
+            continue
+        for kind in _prohibited_classes_in_text(line):
+            key = (rel, line_no, kind)
+            if key in reported:
+                continue
+            reported.add(key)
+            errors.append(
+                f"prohibited private-range literal ({kind}) in {where}: {rel}:{line_no}"
+            )
+    return errors
+
+
 def check_workflow_permissions(root: Path) -> list[str]:
     errors: list[str] = []
     workflow_dir = root / ".github" / "workflows"
@@ -828,6 +1032,16 @@ def report_status(root: Path) -> list[str]:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Repo hygiene guard for Perpetua-Tools")
     parser.add_argument("repo", nargs="?", default=".", help="repository root")
+    parser.add_argument(
+        "--address-diff-base",
+        default=None,
+        help="base ref for the prohibited-address scan (CI); omit to scan the index",
+    )
+    parser.add_argument(
+        "--address-diff-head",
+        default=None,
+        help="head ref for the prohibited-address scan (CI); required with --address-diff-base",
+    )
     args = parser.parse_args()
 
     root = Path(args.repo).resolve()
@@ -846,6 +1060,13 @@ def main() -> int:
     errors.extend(check_workflow_permissions(root))
     errors.extend(scan_private_verboten_literals(root, files))
     errors.extend(scan_agent_private_surface(root, files))
+    errors.extend(
+        scan_staged_prohibited_address_literals(
+            root,
+            diff_base=args.address_diff_base,
+            diff_head=args.address_diff_head,
+        )
+    )
 
     for line in report_status(root):
         print(f"INFO: {line}")

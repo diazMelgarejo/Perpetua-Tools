@@ -1,0 +1,41 @@
+{
+  "id": "886258809448",
+  "key": "manual_886258",
+  "name": "manual_886258",
+  "claim": "git diff --cached is the right pre-commit default and is empty on a CI checkout. CI must pass an explicit three-dot base and head. For pull requests use the pull-request head SHA, not the synthetic merge commit.",
+  "conditions": [
+    "cached-diff",
+    "ci-diff",
+    "commit-range",
+    "private-range"
+  ],
+  "evidence_ids": [
+    "2026-09-26T03:37:24.904282+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-26T03:37:24.904282+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-26T03:37:24.904282+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-26T03:37:25.021293+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit review 5324280369 comment 4109939031 on orama-system PR 366. Empty CI index hid committed prohibited-address literals. Fixed in Perpetua-Tools a8292083d3e0fd18985efbd551da56bde5cd9c18 and orama-system 121aeea1ecd970d6ff15f26fb1added8a6d2c954. One-sided base or head is an error. Refs must be non-empty and must not start with a dash.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-26T03:37:24.904282+00:00"
+      ],
+      "lessons_sha": "17f6a3852c31"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-26T03:37:25.021277+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit review 5324280369 comment 4109939031 on orama-system PR 366. Empty CI index hid committed prohibited-address literals. Fixed in Perpetua-Tools a8292083d3e0fd18985efbd551da56bde5cd9c18 and orama-system 121aeea1ecd970d6ff15f26fb1added8a6d2c954. One-sided base or head is an error. Refs must be non-empty and must not start with a dash."
+}
