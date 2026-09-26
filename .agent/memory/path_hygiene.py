@@ -46,8 +46,16 @@ _WIN_HOME_TAIL = re.compile(r"(?i)C:\\Users\\" + _WIN_SEG)
 # group and the bare-directory pattern cover both, and the bare form is
 # anchored with a negative lookahead so it cannot eat the start of a real
 # /tmp/<seg> path (which the path pattern above has already handled).
-_TMP_PATH = re.compile(r"(?:/private)?/tmp/" + _SEG)
-_TMP_DIR = re.compile(r"(?:/private)?/tmp(?![A-Za-z0-9_./-])")
+# Dot-prefixed scratch names (a leading "." plus ".secret") must match, but a
+# sentence period after the path must not be swallowed. _SEG excludes "."
+# entirely, which dropped both. Allow an optional leading dot and internal
+# dots, and stop before a trailing punctuation mark.
+_TMP_SEG = r"\.?(?:[^/\\\s\"'(),.;:!?]+(?:\.[^/\\\s\"'(),.;:!?]+)*)"
+_TMP_PATH = re.compile(r"(?:/private)?/tmp/" + _TMP_SEG)
+# A bare directory mention may be followed by sentence punctuation such as
+# "/tmp." The lookahead treats "." as a terminator. It still refuses to eat
+# "/tmp/<seg>", which _TMP_PATH has already consumed.
+_TMP_DIR = re.compile(r"(?:/private)?/tmp(?![A-Za-z0-9_/-])")
 # Workspace-tree doxxing: even after home-anchor substitution, user download
 # tree layout must not persist in tracked memory (LINT-006 antipattern).
 _WIN_HOME_ANCHOR = r"%USERPROFILE%"
