@@ -1,0 +1,28 @@
+---
+description: Truthful status-only remote coordination helper; never a fake event relay
+alwaysApply: true
+---
+
+# Remote Coordination Boundary (I2 — truthful)
+
+A Cursor cloud or isolated worker has its own checkout and SQLite state. It does
+**not** share the local coordinator queue. This helper is **status-only**.
+
+1. Run `scripts/cursor/remote-coordination.sh status` before reporting work. It
+   prints JSON with `remote_relay=false`, `forwards_events=false`, and
+   `queue_write_authority=false`, plus an advisory `topology` block from
+   `topology_probe.py` when present.
+2. There is **no remote event relay** in this helper. Setting `GOSSIP_PEERS` or
+   `GOSSIP_SHARED_SECRET` does **not** enable forwarding and must not be treated
+   as “relay configured.”
+3. Do **not** call `pulse` / `log` through this script — those actions are
+   refused (status-only). Do **not** invoke `agent_coordination.py` queue claim,
+   complete, or fail from a cloud/isolated worker (would mutate worker-local
+   SQLite only and create a false shared-claim record).
+4. Report through the review branch, pull request, or handoff artifact and let
+   the local coordinator make authoritative queue transitions.
+5. Start write work only from a declared `source_ref` + `expected_base_sha` in a
+   fresh worktree. If either is absent, remain read-only.
+
+Local Mode A coordinator checkouts continue to use the canonical coordination
+CLI directly under coordinator policy — never because this helper said Mode A.

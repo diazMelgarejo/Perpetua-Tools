@@ -47,4 +47,9 @@ if [[ -f scripts/git/scan-tracked-banned-tokens.sh ]]; then
   bash scripts/git/scan-tracked-banned-tokens.sh
 fi
 
+# Truthful status-only helper (I2): no network call, no pulse, no relay cosmetics.
+if [[ -f scripts/cursor/remote-coordination.sh ]]; then
+  bash scripts/cursor/remote-coordination.sh status || true
+fi
+
 printf '>>> [cloud-bootstrap] complete\n'
