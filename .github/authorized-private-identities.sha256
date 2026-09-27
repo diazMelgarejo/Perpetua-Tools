@@ -5,3 +5,7 @@
 # publishing the underlying address or depending on operator-local files.
 # One digest per line; blank lines and comments are ignored.
 6eafa823be2762a845783ee34cdfe952586086c6ebb6d09bf6816cab1ec6b8e7
+# cline-session-20260907 <agent@oramasys.local> — agent identity authorized by
+# the human operator on 2026-09-27 so agent-authored commits stop being rejected
+# by the repo-hygiene identity gate. Remove this line to revoke.
+ba04133de33615c10e8f2da6d208eae6fccfd9e98c85df0b83025ac9782ff3dc

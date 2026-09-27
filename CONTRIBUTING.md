@@ -19,11 +19,14 @@ description of residual risk.
 - Discuss design-level or cross-cutting work before implementing it.
 - Read [`SECURITY.md`](SECURITY.md) and
   [`.github/AUTHORIZED_CONTRIBUTORS.md`](.github/AUTHORIZED_CONTRIBUTORS.md).
-- Commit identity must match `AUTHORIZED_CONTRIBUTORS.md`: the owner authors as
-  one of the owner emails listed there; AI-assisted commits list the
-  assistant as `Co-authored-by`, never as the git author. Note that git author
-  identity does **not** by itself distinguish a human from an autonomous agent
-  in this stack — agents inherit the local git config.
+- Commit identity must match `AUTHORIZED_CONTRIBUTORS.md`. The owner authors as
+  one of the owner emails listed there. A human-authored commit records Cursor
+  or Claude assistance as `Co-authored-by`, not as the git author. An
+  authorized AI assistant, including `cline-session-20260907`, authors with its
+  listed identity and adds a Cursor or Claude `Co-authored-by` trailer only
+  when that assistant actually contributed. Git author identity does **not**
+  by itself distinguish a human from an autonomous agent in this stack — agents
+  inherit the local git config.
 
 ## Reporting issues
 

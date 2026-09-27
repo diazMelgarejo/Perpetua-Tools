@@ -1,4 +1,6 @@
-<!-- Read CONTRIBUTING.md before requesting review. Use a concise,
+<!-- markdownlint-disable MD041 -->
+<!-- A top-level heading here is copied into every new pull request body.
+     Read CONTRIBUTING.md before requesting review. Use a concise,
      descriptive title (Conventional Commits style, e.g. fix(memory): ...).
      Answer what applies; write N/A with a short reason for the rest.
      These prompts inform reviewers — they do not replace the repository's
@@ -38,8 +40,13 @@
 - [ ] This PR is one logical unit of work.
 - [ ] Tests were added or updated when behavior changed.
 - [ ] Documentation was updated where users, operators, or future contributors need it.
-- [ ] Commit identity matches `.github/AUTHORIZED_CONTRIBUTORS.md`; AI assistance is `Co-authored-by`, not author.
-- [ ] Any `.agent/memory/` change went through the memory tooling (not hand-edited JSONL), or the invariant was verified programmatically and noted below.
+- [ ] Commit identity matches `.github/AUTHORIZED_CONTRIBUTORS.md`: a
+      human-authored commit records Cursor or Claude assistance as
+      `Co-authored-by`; an authorized AI author uses that listed identity,
+      and adds those trailers only when that assistant contributed.
+- [ ] Any `.agent/memory/` change went through the memory tooling (not
+      hand-edited JSONL), or the invariant was verified programmatically
+      and noted below.
 - [ ] This PR is ready for review, or it is marked draft.
 
 ## Optional: knowledge capture
