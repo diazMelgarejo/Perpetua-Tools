@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -139,3 +140,49 @@ def test_cursor_rule_forbids_fake_relay_and_queue_claims() -> None:
     assert "GOSSIP_PEERS" in rule
     # Must not instruct agents that env vars enable a live relay
     assert "forwarded" not in rule.lower() or "not forwarded" in rule.lower()
+
+
+def test_refuse_action_exits_instead_of_returning() -> None:
+    """A non-zero return in a case arm is not a reliable set -e failure."""
+    source = SCRIPT.read_text(encoding="utf-8")
+    refuse = source.split("refuse_action()", 1)[1].split("emit_status()", 1)[0]
+    assert "exit 64" in refuse
+    assert "return 64" not in refuse
+
+
+def test_status_does_not_place_probe_json_on_python_argv(tmp_path: Path) -> None:
+    """Workstation topology must not show up in `ps` argv of the status helper."""
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    log = tmp_path / "argv.log"
+    real_python = shutil.which("python3")
+    assert real_python is not None
+    wrapper = bindir / "python3"
+    wrapper.write_text(
+        "#!/bin/sh\n"
+        f"printf '%s\\n' \"$@\" >> {log}\n"
+        f"exec {real_python} \"$@\"\n",
+        encoding="utf-8",
+    )
+    wrapper.chmod(0o755)
+
+    env = dict(os.environ)
+    env.pop("GOSSIP_PEERS", None)
+    env.pop("GOSSIP_SHARED_SECRET", None)
+    env["PATH"] = f"{bindir}{os.pathsep}{env.get('PATH', '')}"
+    result = subprocess.run(
+        ["bash", str(SCRIPT), "status"],
+        cwd=ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["queue_write_authority"] is False
+    recorded = log.read_text(encoding="utf-8")
+    assert "git_common_dir" not in recorded
+    assert str(ROOT) not in recorded
+    assert "board_ino" not in recorded

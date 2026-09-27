@@ -25,7 +25,9 @@ refuse_action() {
   printf '%s\n' \
     "remote-coordination.sh is status-only: '${action}' is not implemented (no remote event relay; no local CLI passthrough cosmetics)" \
     >&2
-  return 64
+  # exit, not return: a non-zero return inside a case arm is not a reliable
+  # set -e failure on every bash (the arm can be treated as a conditional).
+  exit 64
 }
 
 emit_status() {
@@ -40,14 +42,17 @@ emit_status() {
     topo_json="$(python3 scripts/cursor/topology_probe.py 2>/dev/null || echo '{}')"
   fi
 
-  python3 - "$gossip_env_present" "$topo_json" <<'PY'
+  # Probe JSON stays on fd 3. Passing it as argv exposes workstation
+  # paths and board identity in process listings for the life of the process.
+  python3 - "$gossip_env_present" 3<<<"$topo_json" <<'PY'
 import json
+import os
 import sys
 
 gossip_env_present = sys.argv[1].lower() == "true"
 try:
-    topology = json.loads(sys.argv[2] or "{}")
-except json.JSONDecodeError:
+    topology = json.loads(os.fdopen(3).read() or "{}")
+except (OSError, json.JSONDecodeError):
     topology = {}
 
 if not isinstance(topology, dict):
