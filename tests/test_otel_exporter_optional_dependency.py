@@ -14,9 +14,13 @@ def test_otel_exporter_dependency_absent_surface_is_stable() -> None:
         """
         import builtins
         import sys
+        from pathlib import Path
 
         repo_root = sys.argv[1]
-        sys.path.insert(0, repo_root)
+        # ``src.observability`` is imported as a package from the repository
+        # root, while its established sibling ``utils`` is a top-level package
+        # rooted at ``src``.  ``-I`` intentionally omits both project roots.
+        sys.path[:0] = [repo_root, str(Path(repo_root) / "src")]
         real_import = builtins.__import__
 
         def blocked_import(name, globals=None, locals=None, fromlist=(), level=0):
