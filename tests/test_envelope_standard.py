@@ -12,6 +12,7 @@ from orchestrator.envelope_standard import (
     load_envelope,
     validate_envelope,
 )
+from orchestrator.handoff_validation import HandoffPacketV1
 
 _NOW = "2026-09-27T00:00:00+00:00"
 _FULL_SHA = "a" * 40
@@ -67,29 +68,6 @@ def _authorship_panel(**overrides: object) -> dict[str, object]:
     return panel
 
 
-def _delivery_panel(**overrides: object) -> dict[str, object]:
-    panel: dict[str, object] = {
-        "session_id": "sess-1",
-        "job_id": "job-1",
-        "task_id": "task-1",
-        "assigned_agent_id": "agent-a",
-        "role": "implementer",
-        "intent": "close I2",
-        "branch": "feat/x",
-        "worktree_ref": "wt-a",
-        "starting_head": _SHA7,
-        "current_head": _FULL_SHA,
-        "commit_sha": _FULL_SHA,
-        "files_changed": ["a.py"],
-        "tests": ["12 passed"],
-        "human_authorized": True,
-        "merge_authorized": False,
-        "deployment_authorized": False,
-    }
-    panel.update(overrides)
-    return panel
-
-
 def _claim_panel(**overrides: object) -> dict[str, object]:
     panel: dict[str, object] = {
         "operation": "claim",
@@ -103,6 +81,32 @@ def _claim_panel(**overrides: object) -> dict[str, object]:
     }
     panel.update(overrides)
     return panel
+
+
+def _handoff_packet(**overrides: object) -> dict[str, object]:
+    packet: dict[str, object] = {
+        "schema_version": 1,
+        "session_id": "session-376",
+        "job_id": "job-376",
+        "task_id": "task-1",
+        "assigned_agent_id": "agent-a",
+        "role": "coder",
+        "intent": "Validate the packet before dispatch.",
+        "branch": "feat/envelope-standard",
+        "worktree": "feature-worktree",
+        "starting_head": _SHA7,
+        "current_head": _FULL_SHA,
+        "commit_sha": _FULL_SHA,
+        "files_changed": ["orchestrator/envelope_standard.py"],
+        "root_cause_addressed": "Delivery must retain its native validator.",
+        "tests": [{"command": "pytest -q", "result": "passed"}],
+        "known_risks_or_follow_up": "none",
+        "human_authorized": True,
+        "merge_authorized": False,
+        "deployment_authorized": False,
+    }
+    packet.update(overrides)
+    return packet
 
 
 def test_minimal_status_envelope_is_conformant() -> None:
@@ -220,7 +224,7 @@ def test_kind_requires_exactly_its_own_panel() -> None:
                     "liveness_effect": "none",
                     "observed_at": _NOW,
                 },
-                "delivery": _delivery_panel(),
+                "delivery": _handoff_packet(),
             }
         )
 
@@ -238,11 +242,11 @@ def test_status_panel_literals_are_enforced() -> None:
         )
 
 
-def test_delivery_panel_keeps_short_and_full_sha_rules_separate() -> None:
+def test_delivery_uses_the_native_handoff_sha_rules() -> None:
     envelope = validate_envelope(
         {
             "header": _header(envelope_kind="delivery"),
-            "delivery": _delivery_panel(),
+            "delivery": _handoff_packet(),
         }
     )
     assert envelope.delivery is not None
@@ -250,7 +254,7 @@ def test_delivery_panel_keeps_short_and_full_sha_rules_separate() -> None:
         validate_envelope(
             {
                 "header": _header(envelope_kind="delivery"),
-                "delivery": _delivery_panel(commit_sha=_SHA7),
+                "delivery": _handoff_packet(commit_sha="not-a-sha"),
             }
         )
 
@@ -260,7 +264,7 @@ def test_delivery_cannot_authorize_merge_or_deployment() -> None:
         validate_envelope(
             {
                 "header": _header(envelope_kind="delivery"),
-                "delivery": _delivery_panel(merge_authorized=True),
+                "delivery": _handoff_packet(merge_authorized=True),
             }
         )
 
@@ -316,17 +320,17 @@ def test_round_ref_projection_must_match_delivery() -> None:
     mismatch = _header(envelope_kind="delivery", correlation={"round_ref": "round-9"})
     with pytest.raises(EnvelopeStandardError):
         validate_envelope(
-            {"header": mismatch, "delivery": _delivery_panel(round_ref="r-1")}
+            {"header": mismatch, "delivery": _handoff_packet(round_ref="r-1")}
         )
     # both sides present and equal -> accept
     matching = _header(envelope_kind="delivery", correlation={"round_ref": "r-1"})
     envelope = validate_envelope(
-        {"header": matching, "delivery": _delivery_panel(round_ref="r-1")}
+        {"header": matching, "delivery": _handoff_packet(round_ref="r-1")}
     )
     assert envelope.delivery is not None
     # only the projection appears: the rule applies when both appear
     lone = _header(envelope_kind="delivery", correlation={"round_ref": "round-9"})
-    assert validate_envelope({"header": lone, "delivery": _delivery_panel()})
+    assert validate_envelope({"header": lone, "delivery": _handoff_packet()})
 
 
 def test_claim_principal_projection_must_match_canonical() -> None:
@@ -366,3 +370,32 @@ def test_load_envelope_round_trips_a_valid_file(tmp_path: Path) -> None:
     path.write_text(json.dumps(_status_envelope()), encoding="utf-8")
     envelope = load_envelope(path)
     assert envelope.header.envelope_id == "env-0001"
+
+
+def test_delivery_delegates_to_the_native_handoff_validator() -> None:
+    envelope = validate_envelope(
+        {
+            "header": _header(envelope_kind="delivery"),
+            "delivery": _handoff_packet(),
+        }
+    )
+    assert isinstance(envelope.delivery, HandoffPacketV1)
+
+
+def test_round_is_not_an_agent_envelope_kind() -> None:
+    with pytest.raises(EnvelopeStandardError):
+        validate_envelope(
+            {
+                "header": _header(envelope_kind="round"),
+                "round": {
+                    "round_id": "round-1",
+                    "session_id": "session-376",
+                    "objective_ref": "objective-1",
+                    "stop_condition_codes": ["complete"],
+                    "ordered_handoff_refs": ["handoff-1"],
+                    "authority": "coordination_only",
+                    "liveness_effect": "none",
+                    "expires_at": _NOW,
+                },
+            }
+        )

@@ -260,6 +260,7 @@ class HandoffPacketV1(BaseModel):
     merge_authorized: Literal[False]
     deployment_authorized: Literal[False]
     monitorability: MonitorabilityEnvelopeV1 | None = None
+    round_ref: str | None = None
 
     @field_validator("schema_version", mode="before")
     @classmethod

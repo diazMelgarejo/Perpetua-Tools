@@ -28,11 +28,12 @@ from pydantic import (
     model_validator,
 )
 
-ENVELOPE_KINDS = ("authorship", "status", "delivery", "claim", "round")
+from orchestrator.handoff_validation import HandoffPacketV1
+
+ENVELOPE_KINDS = ("authorship", "status", "delivery", "claim")
 
 _HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
 _SHA_RE = re.compile(r"^[0-9a-fA-F]{7,40}$")
-_FULL_SHA_RE = re.compile(r"^[0-9a-fA-F]{40}$")
 _OPAQUE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{3,127}$")
 
 Availability = Literal["active", "inactive", "unknown"]
@@ -191,7 +192,7 @@ class EnvelopeHeader(BaseModel):
 
     envelope_id: str = Field(min_length=1)
     envelope_schema_version: str = Field(min_length=1)
-    envelope_kind: Literal["authorship", "status", "delivery", "claim", "round"]
+    envelope_kind: Literal["authorship", "status", "delivery", "claim"]
     created_at: datetime
     privacy_tier: PrivacyTier
     author: AuthorPanel
@@ -280,44 +281,6 @@ class StatusPanel(BaseModel):
         return _coerce_dt(value, "status.observed_at")
 
 
-class DeliveryPanel(BaseModel):
-    """Kind panel for ``delivery`` (doc 69 section 6)."""
-
-    model_config = ConfigDict(strict=True, extra="forbid")
-
-    session_id: str = Field(min_length=1)
-    job_id: str = Field(min_length=1)
-    task_id: str = Field(min_length=1)
-    assigned_agent_id: str = Field(min_length=1)
-    role: str = Field(min_length=1)
-    intent: str = Field(min_length=1)
-    branch: str = Field(min_length=1)
-    worktree_ref: str = Field(min_length=1)
-    starting_head: str
-    current_head: str
-    commit_sha: str
-    files_changed: list[str]
-    tests: list[str]
-    human_authorized: bool
-    merge_authorized: Literal[False]
-    deployment_authorized: Literal[False]
-    round_ref: str | None = None
-
-    @field_validator("starting_head", "current_head")
-    @classmethod
-    def _short_sha(cls, value: str) -> str:
-        if not _SHA_RE.match(value):
-            raise ValueError("must be 7-40 hex characters")
-        return value
-
-    @field_validator("commit_sha")
-    @classmethod
-    def _full_sha(cls, value: str) -> str:
-        if not _FULL_SHA_RE.match(value):
-            raise ValueError("commit_sha must be exactly 40 hex characters")
-        return value
-
-
 class ClaimPanel(BaseModel):
     """Kind panel for ``claim`` — the doc 68 section 4.2 request fields.
 
@@ -345,29 +308,7 @@ class ClaimPanel(BaseModel):
         return value
 
 
-class RoundPanel(BaseModel):
-    """Kind panel for the ``round`` sibling (doc 69 section 8)."""
-
-    model_config = ConfigDict(strict=True, extra="forbid")
-
-    round_id: str = Field(min_length=1)
-    session_id: str = Field(min_length=1)
-    controller_id: str | None = None
-    objective_ref: str = Field(min_length=1)
-    stop_condition_codes: list[str] = Field(min_length=1)
-    ordered_handoff_refs: list[str] = Field(min_length=1)
-    authorization_ref: str | None = None
-    authority: Literal["coordination_only"]
-    liveness_effect: Literal["none"]
-    expires_at: datetime
-
-    @field_validator("expires_at", mode="before")
-    @classmethod
-    def _round_tz(cls, value: Any) -> datetime:
-        return _coerce_dt(value, "round.expires_at")
-
-
-_PANEL_FIELDS = ("authorship", "status", "delivery", "claim", "round")
+_PANEL_FIELDS = ("authorship", "status", "delivery", "claim")
 
 
 class AgentEnvelope(BaseModel):
@@ -382,9 +323,8 @@ class AgentEnvelope(BaseModel):
     header: EnvelopeHeader
     authorship: AuthorshipPanel | None = None
     status: StatusPanel | None = None
-    delivery: DeliveryPanel | None = None
+    delivery: HandoffPacketV1 | None = None
     claim: ClaimPanel | None = None
-    round: RoundPanel | None = None
 
     @model_validator(mode="after")
     def _exactly_one_matching_panel(self) -> AgentEnvelope:
