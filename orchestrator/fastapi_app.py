@@ -761,13 +761,106 @@ def list_models() -> Dict[str, Any]:
     return {"models": [model.__dict__ for model in registry.list_models()]}
 
 
+class ModelsRouteRequest(BaseModel):
+    """Body the orama portal already POSTs during swarm preview.
+
+    ``objective`` is accepted and ignored: routing is hardware/role based,
+    not prompt inspection. Extra keys stay ignored so the portal can grow
+    preview fields without a lockstep PT bump.
+    """
+
+    objective: str = ""
+    task_type: str = "default"
+    role: Optional[str] = None
+    preferred_device: Optional[str] = None
+
+
+def _normalize_preferred_device(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return None
+    cleaned = str(value).strip()
+    if not cleaned or cleaned.lower() in {"auto", "none", "default"}:
+        return None
+    return cleaned
+
+
+def _backend_hint_from_target(target: Any) -> str:
+    backend = str(getattr(target, "backend", "") or "").strip().lower()
+    device = str(getattr(target, "device", "") or "").strip().lower()
+    if backend in {"lm-studio", "lmstudio", "lm_studio"}:
+        return "lmstudio-win" if "win" in device else "lmstudio-mac"
+    return backend or "auto"
+
+
+def _model_hint_from_target(target: Any) -> Optional[str]:
+    for attr in ("api_model", "name"):
+        value = getattr(target, attr, None)
+        if value:
+            return str(value)
+    return None
+
+
+def _models_route_payload(
+    *,
+    task_type: str,
+    preferred_device: Optional[str] = None,
+    role: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Shared GET/POST /models/route body for the orama portal facade.
+
+    Orama's swarm preview POSTs JSON and reads ``backend_hint`` / ``model_hint``
+    (with ``backend`` / ``model`` / ``model_id`` aliases). GET keeps the
+    historical ``fallback_chain`` and adds the same hint keys additively.
+    """
+    from orchestrator.worker_registry import resolve_role_backend
+
+    preferred = _normalize_preferred_device(preferred_device)
+    resolved_task = (task_type or "default").strip() or "default"
+    chain = registry.route_task(resolved_task, preferred_device=preferred)
+    payload: Dict[str, Any] = {
+        "fallback_chain": [model.__dict__ for model in chain],
+        "routing_source": "pt:/models/route",
+    }
+    hint_backend: Optional[str] = None
+    hint_model: Optional[str] = None
+    cleaned_role = (role or "").strip() or None
+    if cleaned_role:
+        mapped = resolve_role_backend(cleaned_role, None)
+        if mapped is not None:
+            hint_backend, hint_model = mapped
+            payload["role"] = cleaned_role
+    if hint_backend is None and chain:
+        hint_backend = _backend_hint_from_target(chain[0])
+        hint_model = _model_hint_from_target(chain[0])
+    if hint_backend:
+        payload["backend_hint"] = hint_backend
+        payload["backend"] = hint_backend
+        payload["provider"] = hint_backend
+    if hint_model:
+        payload["model_hint"] = hint_model
+        payload["model"] = hint_model
+        payload["model_id"] = hint_model
+    return payload
+
+
 @app.get("/models/route", tags=["models"])
 def route(
     task_type: str = Query("default"),
     preferred_device: Optional[str] = Query(None),
 ) -> Dict[str, Any]:
-    chain = registry.route_task(task_type, preferred_device=preferred_device)
-    return {"fallback_chain": [model.__dict__ for model in chain]}
+    return _models_route_payload(
+        task_type=task_type, preferred_device=preferred_device
+    )
+
+
+@app.post("/models/route", tags=["models"])
+def route_post(req: ModelsRouteRequest) -> Dict[str, Any]:
+    """Accept the orama portal swarm-preview POST that GET cannot satisfy."""
+    return _models_route_payload(
+        task_type=req.task_type,
+        preferred_device=req.preferred_device,
+        role=req.role,
+    )
 
 
 @app.post("/orchestrate", tags=["orchestrate"])
@@ -1225,9 +1318,26 @@ class _JobSubmitRequest(BaseModel):
     task_type:    str = ""
 
 
+def _optional_meta_str(metadata: Dict[str, Any], key: str) -> Optional[str]:
+    value = metadata.get(key)
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
 @app.post("/v1/jobs", tags=["supervisor"])
 async def supervisor_submit_job(req: _JobSubmitRequest):
-    """Submit a job to the V1 OrchestrationSupervisor (file-based persistence)."""
+    """Submit a job to the V1 OrchestrationSupervisor (file-based persistence).
+
+    The orama portal swarm launcher sends worker identity (role, session_id,
+    artifact_policy, …) inside ``metadata`` rather than as top-level JobSpec
+    fields. Hoist those strings onto JobSpec so dispatch, affinity, and gossip
+    see the same contract as in-process callers.
+    """
+    meta = req.metadata or {}
+    constraints = req.constraints if isinstance(req.constraints, dict) else {}
+    task_type = req.task_type or str(constraints.get("task_type") or "").strip()
     spec = JobSpec(
         job_id=_new_id(),
         intent=req.intent,
@@ -1235,7 +1345,12 @@ async def supervisor_submit_job(req: _JobSubmitRequest):
         backend_hint=req.backend_hint,
         constraints=req.constraints,
         metadata=req.metadata,
-        task_type=req.task_type,
+        task_type=task_type,
+        role=_optional_meta_str(meta, "role"),
+        specialization=_optional_meta_str(meta, "specialization"),
+        session_id=_optional_meta_str(meta, "session_id"),
+        parent_orchestrator_id=_optional_meta_str(meta, "parent_orchestrator_id"),
+        artifact_policy=_optional_meta_str(meta, "artifact_policy"),
     )
     try:
         job_id = await _get_supervisor().submit_job(spec)

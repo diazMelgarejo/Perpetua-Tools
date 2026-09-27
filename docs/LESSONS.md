@@ -6,6 +6,12 @@
 
 ---
 
+## 2026-09-27 — Orama Knowledge Portal / swarm facade gap (PT)
+
+Read-only Knowledge Portal search/MCP/A2A stays in orama-system and does not need PT endpoints. The swarm-approval slice already POSTs `PT /models/route` and `PT /v1/jobs` with role metadata. PT previously only had GET `/models/route` (`fallback_chain`) and left `JobSpec.role` empty when identity lived in `metadata`. Minimal facade: POST `/models/route` returning `backend_hint`/`model_hint`, hoist portal metadata onto `JobSpec`. Approval HMAC remains Orama-owned.
+
+---
+
 ## 2026-07-10 — Checkpoint 1.0 team review + repo grounding + alexandria policy | Claude Code
 
 **Session:** Phase 0 blocker fixes + multi-agent orchestration (Codex + Cline + Sonnet-5)
