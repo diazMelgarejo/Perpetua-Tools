@@ -25,8 +25,8 @@ refuse_action() {
   printf '%s\n' \
     "remote-coordination.sh is status-only: '${action}' is not implemented (no remote event relay; no local CLI passthrough cosmetics)" \
     >&2
-  # exit, not return: a non-zero return inside a case arm is not a reliable
-  # set -e failure on every bash (the arm can be treated as a conditional).
+  # Exit, rather than return: a non-zero return in a case arm is not a
+  # reliable `set -e` failure on every Bash implementation.
   exit 64
 }
 
@@ -42,12 +42,14 @@ emit_status() {
     topo_json="$(python3 scripts/cursor/topology_probe.py 2>/dev/null || echo '{}')"
   fi
 
-  # Probe JSON stays on fd 3. Passing it as argv exposes workstation
-  # paths and board identity in process listings for the life of the process.
+  # Keep probe JSON off argv: it can contain local topology during the
+  # subprocess lifetime even though the emitted payload is redacted.
   python3 - "$gossip_env_present" 3<<<"$topo_json" <<'PY'
+import datetime
 import json
 import os
 import sys
+import uuid
 
 gossip_env_present = sys.argv[1].lower() == "true"
 try:
@@ -66,6 +68,46 @@ topology = {
 }
 topology["queue_write_authority"] = False
 
+# Agent label only. Private human identities are never emitted: the standing
+# redaction rule applies, and an agent label (e.g. cline-session-20260907) is
+# not a private identity.
+AGENT_LABEL_ENV = ("PT_AGENT_ID", "OPENCLAW_AGENT_ID", "CLINE_AGENT_ID", "AGENT_ID")
+
+
+def _agent_label() -> str:
+    for key in AGENT_LABEL_ENV:
+        value = os.environ.get(key, "").strip()
+        if value:
+            return value
+    return "cursor-remote-worker"
+
+
+now = datetime.datetime.now(datetime.timezone.utc)
+label = _agent_label()
+
+# Doc 69 Tier U header + the status kind panel. Identity verification is false
+# because a local advisory observes nothing about a principal, and availability
+# is "unknown" because no presence signal is sampled here.
+header = {
+    "envelope_id": f"status-{uuid.uuid4().hex[:16]}",
+    "envelope_schema_version": "1",
+    "envelope_kind": "status",
+    "created_at": now.isoformat(),
+    "privacy_tier": "internal_only",
+    "author": {"agent_id": label, "model": None, "availability": "unknown"},
+    "actor": {
+        "agent_id": label,
+        "instance_id": f"inst-{uuid.uuid4().hex[:12]}",
+        "identity_verified": False,
+    },
+    "redaction": {"applied": True},
+}
+status_panel = {
+    "authority": "read_only",
+    "liveness_effect": "none",
+    "observed_at": now.isoformat(),
+}
+
 payload = {
     "helper": "status-only",
     "remote_relay": False,
@@ -78,6 +120,8 @@ payload = {
         else "no gossip relay env set"
     ),
     "topology": topology,
+    "header": header,
+    "status": status_panel,
     "guidance": (
         "Mode B / cloud: report via PR or handoff; local coordinator owns queue "
         "transitions. Do not treat topology mode A as mutation authority."

@@ -7,14 +7,16 @@ Contract (plan I2 + Addendum D):
 - pulse/log are refused (status-only helper); queue ops remain unsupported
 - status should surface advisory topology_probe fields when the probe exists
 """
+
 from __future__ import annotations
 
+import getpass
 import json
 import os
 import shutil
+import socket
 import subprocess
 from pathlib import Path
-
 
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ROOT / "scripts" / "cursor" / "remote-coordination.sh"
@@ -102,7 +104,10 @@ def test_pulse_is_refused_even_with_https_gossip_env() -> None:
     )
 
     assert result.returncode == 64
-    assert "status-only" in result.stderr.lower() or "not implemented" in result.stderr.lower()
+    assert (
+        "status-only" in result.stderr.lower()
+        or "not implemented" in result.stderr.lower()
+    )
     assert "forward" not in result.stdout.lower()
 
 
@@ -110,7 +115,10 @@ def test_log_is_refused() -> None:
     result = _run("log", "cursor-cloud-test", "hello")
 
     assert result.returncode == 64
-    assert "status-only" in result.stderr.lower() or "not implemented" in result.stderr.lower()
+    assert (
+        "status-only" in result.stderr.lower()
+        or "not implemented" in result.stderr.lower()
+    )
 
 
 def test_queue_operations_remain_unsupported() -> None:
@@ -142,6 +150,80 @@ def test_cursor_rule_forbids_fake_relay_and_queue_claims() -> None:
     assert "forwarded" not in rule.lower() or "not forwarded" in rule.lower()
 
 
+# --- doc 69 header conformance (v1 standard implementer role) -----------------
+
+
+def test_status_carries_the_doc69_tier_u_header() -> None:
+    result = _run("status")
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+
+    header = payload["header"]
+    assert set(header) == {
+        "envelope_id",
+        "envelope_schema_version",
+        "envelope_kind",
+        "created_at",
+        "privacy_tier",
+        "author",
+        "actor",
+        "redaction",
+    }
+    assert header["envelope_kind"] == "status"
+    assert header["privacy_tier"] == "internal_only"
+    assert header["redaction"]["applied"] is True
+    assert header["author"]["availability"] in {"active", "inactive", "unknown"}
+    assert header["actor"]["identity_verified"] is False
+    assert header["envelope_id"].startswith("status-")
+    assert payload["status"] == {
+        "authority": "read_only",
+        "liveness_effect": "none",
+        "observed_at": payload["status"]["observed_at"],
+    }
+
+
+def test_status_header_validates_through_the_envelope_standard() -> None:
+    from datetime import datetime
+
+    from orchestrator.envelope_standard import validate_envelope
+
+    payload = json.loads(_run("status").stdout)
+    envelope = validate_envelope(
+        {"header": payload["header"], "status": payload["status"]}
+    )
+
+    assert envelope.header.envelope_kind == "status"
+    created = datetime.fromisoformat(payload["header"]["created_at"])
+    assert created.tzinfo is not None and created.utcoffset() is not None
+
+
+def test_status_header_uses_an_opaque_agent_label() -> None:
+    payload = json.loads(_run("status", PT_AGENT_ID="agent-label-under-test").stdout)
+
+    assert payload["header"]["author"]["agent_id"] == "agent-label-under-test"
+    assert payload["header"]["actor"]["agent_id"] == "agent-label-under-test"
+    assert payload["header"]["actor"]["instance_id"].startswith("inst-")
+
+
+def test_status_header_publishes_no_private_human_identity() -> None:
+    result = _run("status")
+    assert result.returncode == 0, result.stderr
+    stdout = result.stdout
+
+    # The standing rule: private human identities are always redacted. Agent
+    # labels are allowed; human account names, hosts and home paths are not.
+    for private in (getpass.getuser(), socket.gethostname(), str(Path.home())):
+        if len(private) > 3:
+            assert private not in stdout
+
+
+def test_status_header_is_not_emitted_for_refused_actions() -> None:
+    for action in ("pulse", "log"):
+        result = _run(action)
+        assert result.returncode == 64
+        assert "header" not in result.stdout
+
+
 def test_refuse_action_exits_instead_of_returning() -> None:
     """A non-zero return in a case arm is not a reliable set -e failure."""
     source = SCRIPT.read_text(encoding="utf-8")
@@ -151,7 +233,7 @@ def test_refuse_action_exits_instead_of_returning() -> None:
 
 
 def test_status_does_not_place_probe_json_on_python_argv(tmp_path: Path) -> None:
-    """Workstation topology must not show up in `ps` argv of the status helper."""
+    """Workstation topology must not show up in the status helper argv."""
     bindir = tmp_path / "bin"
     bindir.mkdir()
     log = tmp_path / "argv.log"
@@ -180,8 +262,7 @@ def test_status_does_not_place_probe_json_on_python_argv(tmp_path: Path) -> None
     )
 
     assert result.returncode == 0, result.stderr
-    payload = json.loads(result.stdout)
-    assert payload["queue_write_authority"] is False
+    assert json.loads(result.stdout)["queue_write_authority"] is False
     recorded = log.read_text(encoding="utf-8")
     assert "git_common_dir" not in recorded
     assert str(ROOT) not in recorded
