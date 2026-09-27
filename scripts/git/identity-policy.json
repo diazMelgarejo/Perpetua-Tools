@@ -23,6 +23,7 @@
     {"email": "claude@anthropic.com", "allowed_names": ["Claude"]},
     {"email": "noreply@anthropic.com", "allowed_names": []},
     {"email": "cursoragent@cursor.com", "allowed_names": ["Cursor Agent"]},
+    {"email": "agent@oramasys.local", "allowed_names": ["cline-session-20260907"]},
     {"email": "kimi-agent@kimi.ai", "allowed_names": ["Kimi Agent"]},
     {"email": "cloud-kimi-agent@kimi.ai", "allowed_names": ["Cloud Kimi Agent"]},
     {"email": "noreply@coderabbit.ai", "allowed_names": ["CodeRabbit"]}
@@ -30,7 +31,8 @@
   "repo_bot_identities": {
     "orama-system": [
       "cursor[bot]@users.noreply.github.com",
-      "coderabbitai[bot]@users.noreply.github.com"
+      "coderabbitai[bot]@users.noreply.github.com",
+      "dependabot[bot]@users.noreply.github.com"
     ],
     "Perpetua-Tools": [
       "dependabot[bot]@users.noreply.github.com",
