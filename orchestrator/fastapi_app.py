@@ -761,6 +761,61 @@ def list_models() -> Dict[str, Any]:
     return {"models": [model.__dict__ for model in registry.list_models()]}
 
 
+def _backend_hint_for_target(target: Any) -> str:
+    """Map a registry ModelTarget onto supervisor / Orama backend_hint names.
+
+    ``ModelRegistry`` stores backends as ``lm-studio`` / ``ollama`` / ``mlx``.
+    Orama's portal (PR #368/#369) and ``worker_registry.resolve_backend``
+    read ``lmstudio-mac`` / ``lmstudio-win`` (and the registry name otherwise).
+    """
+    backend = str(getattr(target, "backend", "") or "").strip()
+    device = str(getattr(target, "device", "") or "").lower()
+    key = backend.lower().replace("_", "-")
+    if key in {"lm-studio", "lmstudio"}:
+        return "lmstudio-win" if "win" in device else "lmstudio-mac"
+    return backend
+
+
+def _model_hint_for_target(target: Any) -> str:
+    api_model = str(getattr(target, "api_model", "") or "").strip()
+    name = str(getattr(target, "name", "") or "").strip()
+    return api_model or name
+
+
+def _prefer_role_in_chain(chain: List[Any], role: Optional[str]) -> List[Any]:
+    if not role:
+        return chain
+    matching = [m for m in chain if role in (getattr(m, "roles", None) or [])]
+    if not matching:
+        return chain
+    rest = [m for m in chain if m not in matching]
+    return matching + rest
+
+
+def _orama_route_payload(chain: List[Any]) -> Dict[str, Any]:
+    first = chain[0]
+    backend_hint = _backend_hint_for_target(first)
+    model_hint = _model_hint_for_target(first)
+    return {
+        "backend_hint": backend_hint,
+        "backend": backend_hint,
+        "provider": backend_hint,
+        "model_hint": model_hint,
+        "model": model_hint,
+        "model_id": model_hint,
+        "fallback_chain": [model.__dict__ for model in chain],
+    }
+
+
+class _ModelsRouteRequest(BaseModel):
+    """Body for POST /models/route — Orama portal co-install contract (#368/#369)."""
+
+    objective: str
+    task_type: str
+    role: Optional[str] = None
+    preferred_device: Optional[str] = None
+
+
 @app.get("/models/route", tags=["models"])
 def route(
     task_type: str = Query("default"),
@@ -768,6 +823,18 @@ def route(
 ) -> Dict[str, Any]:
     chain = registry.route_task(task_type, preferred_device=preferred_device)
     return {"fallback_chain": [model.__dict__ for model in chain]}
+
+
+@app.post("/models/route", tags=["models"])
+def route_post(req: _ModelsRouteRequest) -> Dict[str, Any]:
+    """Orama portal ``_route_preview_assignment`` posts this shape and reads
+    ``backend_hint|backend|provider`` plus ``model_hint|model|model_id``.
+    """
+    chain = registry.route_task(req.task_type, preferred_device=req.preferred_device)
+    chain = _prefer_role_in_chain(chain, req.role)
+    if not chain:
+        raise HTTPException(status_code=404, detail="no route candidates")
+    return _orama_route_payload(chain)
 
 
 @app.post("/orchestrate", tags=["orchestrate"])
@@ -1223,6 +1290,14 @@ class _JobSubmitRequest(BaseModel):
     # Without this field the skill gate in _dispatch() is never triggered
     # for API-submitted jobs.
     task_type:    str = ""
+    # Unified absorption plan §5.1 — Orama api_swarm_launch posts these
+    # top-level; JobSpec already stores them. Ignoring them dropped role
+    # affinity / session lineage from portal-launched jobs.
+    role:                    Optional[str] = None
+    specialization:          Optional[str] = None
+    session_id:              Optional[str] = None
+    parent_orchestrator_id:  Optional[str] = None
+    artifact_policy:         Optional[str] = None
 
 
 @app.post("/v1/jobs", tags=["supervisor"])
@@ -1236,6 +1311,11 @@ async def supervisor_submit_job(req: _JobSubmitRequest):
         constraints=req.constraints,
         metadata=req.metadata,
         task_type=req.task_type,
+        role=req.role,
+        specialization=req.specialization,
+        session_id=req.session_id,
+        parent_orchestrator_id=req.parent_orchestrator_id,
+        artifact_policy=req.artifact_policy,
     )
     try:
         job_id = await _get_supervisor().submit_job(spec)
