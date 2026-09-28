@@ -15,10 +15,10 @@ from fastapi.testclient import TestClient
 from orchestrator import fastapi_app
 from orchestrator.fastapi_app import (
     _JobSubmitRequest,
-    _backend_hint_for_target,
-    _model_hint_for_target,
-    _orama_route_payload,
-    _prefer_role_in_chain,
+    _LINEAGE_TRUST_CALLER_REPORTED,
+    _backend_hint_from_target,
+    _model_hint_from_target,
+    _models_route_payload,
     app,
 )
 from orchestrator.supervisor import JobSpec
@@ -29,7 +29,7 @@ def _candidate(**overrides) -> SimpleNamespace:
         name="qwen-win",
         backend="lm-studio",
         device="win-rtx3080",
-        host="http://127.0.0.1",
+        host="http://lmstudio.example",
         port=1234,
         context_window=32768,
         roles=["coder", "general"],
@@ -44,42 +44,33 @@ def _candidate(**overrides) -> SimpleNamespace:
 
 class TestBackendHintMapping:
     def test_lm_studio_win_device_maps_to_lmstudio_win(self):
-        assert _backend_hint_for_target(_candidate()) == "lmstudio-win"
+        assert _backend_hint_from_target(_candidate()) == "lmstudio-win"
 
     def test_lm_studio_mac_device_maps_to_lmstudio_mac(self):
         t = _candidate(device="mac-studio", name="qwen-mac", api_model="Qwen3.5-9B-MLX-4bit")
-        assert _backend_hint_for_target(t) == "lmstudio-mac"
+        assert _backend_hint_from_target(t) == "lmstudio-mac"
 
     def test_registry_backend_passthrough(self):
         t = _candidate(backend="ollama", device="mac-studio")
-        assert _backend_hint_for_target(t) == "ollama"
+        assert _backend_hint_from_target(t) == "ollama"
 
     def test_model_hint_prefers_api_model(self):
         t = _candidate()
-        assert _model_hint_for_target(t) == t.api_model
+        assert _model_hint_from_target(t) == t.api_model
 
     def test_model_hint_falls_back_to_name(self):
         t = _candidate(api_model="")
-        assert _model_hint_for_target(t) == "qwen-win"
-
-
-class TestPreferRole:
-    def test_matching_role_moves_to_front(self):
-        a = _candidate(name="a", roles=["general"])
-        b = _candidate(name="b", roles=["coder"])
-        ordered = _prefer_role_in_chain([a, b], "coder")
-        assert [m.name for m in ordered] == ["b", "a"]
-
-    def test_unknown_role_keeps_order(self):
-        a = _candidate(name="a")
-        b = _candidate(name="b")
-        ordered = _prefer_role_in_chain([a, b], "architect-agent")
-        assert [m.name for m in ordered] == ["a", "b"]
+        assert _model_hint_from_target(t) == "qwen-win"
 
 
 class TestOramaRoutePayload:
-    def test_payload_includes_keys_orama_reads(self):
-        payload = _orama_route_payload([_candidate()])
+    def test_payload_includes_keys_orama_reads(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(
+            fastapi_app.registry,
+            "route_task",
+            lambda task_type, preferred_device=None: [_candidate()],
+        )
+        payload = _models_route_payload(task_type="code_analysis")
         assert payload["backend_hint"] == "lmstudio-win"
         assert payload["backend"] == "lmstudio-win"
         assert payload["provider"] == "lmstudio-win"
@@ -119,7 +110,7 @@ class TestPostModelsRoute:
         assert isinstance(body["fallback_chain"], list)
         assert body["fallback_chain"]
 
-    def test_get_route_unchanged_shape(self, monkeypatch: pytest.MonkeyPatch):
+    def test_get_route_keeps_fallback_chain(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setattr(
             fastapi_app.registry,
             "route_task",
@@ -129,10 +120,11 @@ class TestPostModelsRoute:
             resp = client.get("/models/route", params={"task_type": "default"})
         assert resp.status_code == 200
         body = resp.json()
-        assert set(body.keys()) == {"fallback_chain"}
-        assert "backend_hint" not in body
+        assert isinstance(body["fallback_chain"], list)
+        assert body["fallback_chain"]
+        assert body["backend_hint"] == "lmstudio-win"
 
-    def test_empty_chain_returns_404(self, monkeypatch: pytest.MonkeyPatch):
+    def test_empty_chain_returns_hints_absent(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setattr(
             fastapi_app.registry,
             "route_task",
@@ -143,16 +135,23 @@ class TestPostModelsRoute:
                 "/models/route",
                 json={"objective": "none", "task_type": "unknown-task"},
             )
-        assert resp.status_code == 404
-        assert "no route candidates" in str(resp.json().get("detail", "")).lower()
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["fallback_chain"] == []
+        assert "backend_hint" not in body
 
-    def test_missing_objective_is_422(self):
+    def test_missing_objective_is_accepted(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(
+            fastapi_app.registry,
+            "route_task",
+            lambda task_type, preferred_device=None: [],
+        )
         with TestClient(app, raise_server_exceptions=False) as client:
             resp = client.post(
                 "/models/route",
                 json={"task_type": "default"},
             )
-        assert resp.status_code == 422
+        assert resp.status_code == 200, resp.text
 
 
 class TestJobSubmitRequestSection51:
@@ -199,7 +198,11 @@ class TestJobSubmitRequestSection51:
             "parent_orchestrator_id": "portal",
             "artifact_policy": "default",
             "constraints": {"max_tokens": 128},
-            "metadata": {"role": "coder", "model": "win-qwen"},
+            "metadata": {
+                "role": "coder",
+                "model": "win-qwen",
+                "lineage_trust": "verified",
+            },
         }
         with TestClient(app, raise_server_exceptions=False) as client:
             resp = client.post("/v1/jobs", json=payload)
@@ -210,6 +213,7 @@ class TestJobSubmitRequestSection51:
         assert spec.specialization == "python-coding"
         assert spec.session_id == "sess-orama"
         assert spec.parent_orchestrator_id == "portal"
+        assert spec.metadata.get("lineage_trust") == _LINEAGE_TRUST_CALLER_REPORTED
         assert spec.artifact_policy == "default"
         assert spec.metadata.get("model") == "win-qwen"
         assert spec.task_type == "code_analysis"

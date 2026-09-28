@@ -761,59 +761,86 @@ def list_models() -> Dict[str, Any]:
     return {"models": [model.__dict__ for model in registry.list_models()]}
 
 
-def _backend_hint_for_target(target: Any) -> str:
-    """Map a registry ModelTarget onto supervisor / Orama backend_hint names.
+class ModelsRouteRequest(BaseModel):
+    """Body the orama portal already POSTs during swarm preview.
 
-    ``ModelRegistry`` stores backends as ``lm-studio`` / ``ollama`` / ``mlx``.
-    Orama's portal (PR #368/#369) and ``worker_registry.resolve_backend``
-    read ``lmstudio-mac`` / ``lmstudio-win`` (and the registry name otherwise).
+    ``objective`` is accepted and ignored: routing is hardware/role based,
+    not prompt inspection. Extra keys stay ignored so the portal can grow
+    preview fields without a lockstep PT bump.
     """
-    backend = str(getattr(target, "backend", "") or "").strip()
-    device = str(getattr(target, "device", "") or "").lower()
-    key = backend.lower().replace("_", "-")
-    if key in {"lm-studio", "lmstudio"}:
-        return "lmstudio-win" if "win" in device else "lmstudio-mac"
-    return backend
 
-
-def _model_hint_for_target(target: Any) -> str:
-    api_model = str(getattr(target, "api_model", "") or "").strip()
-    name = str(getattr(target, "name", "") or "").strip()
-    return api_model or name
-
-
-def _prefer_role_in_chain(chain: List[Any], role: Optional[str]) -> List[Any]:
-    if not role:
-        return chain
-    matching = [m for m in chain if role in (getattr(m, "roles", None) or [])]
-    if not matching:
-        return chain
-    rest = [m for m in chain if m not in matching]
-    return matching + rest
-
-
-def _orama_route_payload(chain: List[Any]) -> Dict[str, Any]:
-    first = chain[0]
-    backend_hint = _backend_hint_for_target(first)
-    model_hint = _model_hint_for_target(first)
-    return {
-        "backend_hint": backend_hint,
-        "backend": backend_hint,
-        "provider": backend_hint,
-        "model_hint": model_hint,
-        "model": model_hint,
-        "model_id": model_hint,
-        "fallback_chain": [model.__dict__ for model in chain],
-    }
-
-
-class _ModelsRouteRequest(BaseModel):
-    """Body for POST /models/route — Orama portal co-install contract (#368/#369)."""
-
-    objective: str
-    task_type: str
+    objective: str = ""
+    task_type: str = "default"
     role: Optional[str] = None
     preferred_device: Optional[str] = None
+
+
+def _normalize_preferred_device(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return None
+    cleaned = str(value).strip()
+    if not cleaned or cleaned.lower() in {"auto", "none", "default"}:
+        return None
+    return cleaned
+
+
+def _backend_hint_from_target(target: Any) -> str:
+    backend = str(getattr(target, "backend", "") or "").strip().lower()
+    device = str(getattr(target, "device", "") or "").strip().lower()
+    if backend in {"lm-studio", "lmstudio", "lm_studio"}:
+        return "lmstudio-win" if "win" in device else "lmstudio-mac"
+    return backend or "auto"
+
+
+def _model_hint_from_target(target: Any) -> Optional[str]:
+    for attr in ("api_model", "name"):
+        value = getattr(target, attr, None)
+        if value:
+            return str(value)
+    return None
+
+
+def _models_route_payload(
+    *,
+    task_type: str,
+    preferred_device: Optional[str] = None,
+    role: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Shared GET/POST /models/route body for the orama portal facade.
+
+    Orama's swarm preview POSTs JSON and reads ``backend_hint`` / ``model_hint``
+    (with ``backend`` / ``model`` / ``model_id`` aliases). GET keeps the
+    historical ``fallback_chain`` and adds the same hint keys additively.
+    """
+    from orchestrator.worker_registry import resolve_role_backend
+
+    preferred = _normalize_preferred_device(preferred_device)
+    resolved_task = (task_type or "default").strip() or "default"
+    chain = registry.route_task(resolved_task, preferred_device=preferred)
+    payload: Dict[str, Any] = {
+        "fallback_chain": [model.__dict__ for model in chain],
+        "routing_source": "pt:/models/route",
+    }
+    hint_backend: Optional[str] = None
+    hint_model: Optional[str] = None
+    cleaned_role = (role or "").strip() or None
+    if cleaned_role:
+        mapped = resolve_role_backend(cleaned_role, None)
+        if mapped is not None:
+            hint_backend, hint_model = mapped
+            payload["role"] = cleaned_role
+    if hint_backend is None and chain:
+        hint_backend = _backend_hint_from_target(chain[0])
+        hint_model = _model_hint_from_target(chain[0])
+    if hint_backend:
+        payload["backend_hint"] = hint_backend
+        payload["backend"] = hint_backend
+        payload["provider"] = hint_backend
+    if hint_model:
+        payload["model_hint"] = hint_model
+        payload["model"] = hint_model
+        payload["model_id"] = hint_model
+    return payload
 
 
 @app.get("/models/route", tags=["models"])
@@ -821,8 +848,19 @@ def route(
     task_type: str = Query("default"),
     preferred_device: Optional[str] = Query(None),
 ) -> Dict[str, Any]:
-    chain = registry.route_task(task_type, preferred_device=preferred_device)
-    return {"fallback_chain": [model.__dict__ for model in chain]}
+    return _models_route_payload(
+        task_type=task_type, preferred_device=preferred_device
+    )
+
+
+@app.post("/models/route", tags=["models"])
+def route_post(req: ModelsRouteRequest) -> Dict[str, Any]:
+    """Accept the orama portal swarm-preview POST that GET cannot satisfy."""
+    return _models_route_payload(
+        task_type=req.task_type,
+        preferred_device=req.preferred_device,
+        role=req.role,
+    )
 
 
 @app.post("/models/route", tags=["models"])
@@ -1290,32 +1328,83 @@ class _JobSubmitRequest(BaseModel):
     # Without this field the skill gate in _dispatch() is never triggered
     # for API-submitted jobs.
     task_type:    str = ""
-    # Unified absorption plan §5.1 — Orama api_swarm_launch posts these
-    # top-level; JobSpec already stores them. Ignoring them dropped role
-    # affinity / session lineage from portal-launched jobs.
-    role:                    Optional[str] = None
-    specialization:          Optional[str] = None
-    session_id:              Optional[str] = None
-    parent_orchestrator_id:  Optional[str] = None
-    artifact_policy:         Optional[str] = None
+    # Unified absorption plan §5.1. Orama may send these top-level or inside
+    # metadata. Top-level wins when present. session_id and
+    # parent_orchestrator_id are caller-reported lineage, not PT-verified identity.
+    role: Optional[str] = None
+    specialization: Optional[str] = None
+    session_id: Optional[str] = None
+    parent_orchestrator_id: Optional[str] = None
+    artifact_policy: Optional[str] = None
+
+
+_LINEAGE_TRUST_CALLER_REPORTED = "caller_reported"
+
+
+def _optional_meta_str(metadata: Dict[str, Any], key: str) -> Optional[str]:
+    value = metadata.get(key)
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _metadata_with_unverified_lineage(
+    metadata: Dict[str, Any],
+    *,
+    session_id: Optional[str],
+    parent_orchestrator_id: Optional[str],
+) -> Dict[str, Any]:
+    """Label persisted session lineage as caller-reported.
+
+    The control-plane bearer admits the submitter; it does not prove ownership
+    of ``session_id`` or ``parent_orchestrator_id``. Downstream code must not
+    treat those fields as PT-verified provenance.
+    """
+    stamped = dict(metadata)
+    if session_id or parent_orchestrator_id:
+        stamped["lineage_trust"] = _LINEAGE_TRUST_CALLER_REPORTED
+    return stamped
 
 
 @app.post("/v1/jobs", tags=["supervisor"])
 async def supervisor_submit_job(req: _JobSubmitRequest):
-    """Submit a job to the V1 OrchestrationSupervisor (file-based persistence)."""
+    """Submit a job to the V1 OrchestrationSupervisor (file-based persistence).
+
+    The orama portal swarm launcher sends worker identity (role, session_id,
+    artifact_policy, …) inside ``metadata`` and sometimes top-level. Hoist those
+    strings onto JobSpec. ``session_id`` and ``parent_orchestrator_id`` stay
+    caller-reported: persisted jobs set ``metadata.lineage_trust`` to
+    ``caller_reported`` and do not treat them as authenticated provenance.
+    """
+    meta = req.metadata or {}
+    constraints = req.constraints if isinstance(req.constraints, dict) else {}
+    task_type = req.task_type.strip() or str(constraints.get("task_type") or "").strip()
+
+    def _field(explicit: Optional[str], key: str) -> Optional[str]:
+        if explicit is not None and str(explicit).strip():
+            return str(explicit).strip()
+        return _optional_meta_str(meta, key)
+
+    session_id = _field(req.session_id, "session_id")
+    parent_orchestrator_id = _field(req.parent_orchestrator_id, "parent_orchestrator_id")
     spec = JobSpec(
         job_id=_new_id(),
         intent=req.intent,
         prompt=req.prompt,
         backend_hint=req.backend_hint,
         constraints=req.constraints,
-        metadata=req.metadata,
-        task_type=req.task_type,
-        role=req.role,
-        specialization=req.specialization,
-        session_id=req.session_id,
-        parent_orchestrator_id=req.parent_orchestrator_id,
-        artifact_policy=req.artifact_policy,
+        metadata=_metadata_with_unverified_lineage(
+            meta,
+            session_id=session_id,
+            parent_orchestrator_id=parent_orchestrator_id,
+        ),
+        task_type=task_type,
+        role=_field(req.role, "role"),
+        specialization=_field(req.specialization, "specialization"),
+        session_id=session_id,
+        parent_orchestrator_id=parent_orchestrator_id,
+        artifact_policy=_field(req.artifact_policy, "artifact_policy"),
     )
     try:
         job_id = await _get_supervisor().submit_job(spec)
