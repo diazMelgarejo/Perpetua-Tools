@@ -1316,6 +1316,13 @@ class _JobSubmitRequest(BaseModel):
     # Without this field the skill gate in _dispatch() is never triggered
     # for API-submitted jobs.
     task_type:    str = ""
+    # Orama portal may send worker identity both in metadata and at the top
+    # level. Top-level wins when present.
+    role: Optional[str] = None
+    specialization: Optional[str] = None
+    session_id: Optional[str] = None
+    parent_orchestrator_id: Optional[str] = None
+    artifact_policy: Optional[str] = None
 
 
 def _optional_meta_str(metadata: Dict[str, Any], key: str) -> Optional[str]:
@@ -1338,6 +1345,12 @@ async def supervisor_submit_job(req: _JobSubmitRequest):
     meta = req.metadata or {}
     constraints = req.constraints if isinstance(req.constraints, dict) else {}
     task_type = req.task_type or str(constraints.get("task_type") or "").strip()
+
+    def _field(explicit: Optional[str], key: str) -> Optional[str]:
+        if explicit is not None and str(explicit).strip():
+            return str(explicit).strip()
+        return _optional_meta_str(meta, key)
+
     spec = JobSpec(
         job_id=_new_id(),
         intent=req.intent,
@@ -1346,11 +1359,11 @@ async def supervisor_submit_job(req: _JobSubmitRequest):
         constraints=req.constraints,
         metadata=req.metadata,
         task_type=task_type,
-        role=_optional_meta_str(meta, "role"),
-        specialization=_optional_meta_str(meta, "specialization"),
-        session_id=_optional_meta_str(meta, "session_id"),
-        parent_orchestrator_id=_optional_meta_str(meta, "parent_orchestrator_id"),
-        artifact_policy=_optional_meta_str(meta, "artifact_policy"),
+        role=_field(req.role, "role"),
+        specialization=_field(req.specialization, "specialization"),
+        session_id=_field(req.session_id, "session_id"),
+        parent_orchestrator_id=_field(req.parent_orchestrator_id, "parent_orchestrator_id"),
+        artifact_policy=_field(req.artifact_policy, "artifact_policy"),
     )
     try:
         job_id = await _get_supervisor().submit_job(spec)

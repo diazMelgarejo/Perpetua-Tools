@@ -1,5 +1,13 @@
 # WORKSPACE — current task state
 
+**Updated:** 2026-09-28 (portal facade audit + swarm approval fixes)
+**Session record:** `memory/working/PORTAL_FACADE_ORAMA_SWARM_2026-09-28.md`
+**State:** Perpetua-Tools draft #404 is reopened on
+`cursor/portal-facade-route-jobs-3c54` (`POST /models/route`, job identity
+hoist, top-level role fields). Orama portal launch/approval fixes are on
+`cursor/portal-swarm-approval-fixes-3c54`. Knowledge search, MCP, and A2A
+were not added to Perpetua. Neither pull request is merged.
+
 **Updated:** 2026-09-25 (Cross-repo Gate 4 dialer + migration board
 cycle — additive session pointer)
 **Session records:**
