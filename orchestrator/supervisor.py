@@ -114,6 +114,25 @@ class JobSpec(BaseModel):
         return self.model_dump()
 
 
+def caller_reported_lineage_metadata(
+    metadata: Dict[str, Any] | None,
+    *,
+    session_id: Optional[str],
+    parent_orchestrator_id: Optional[str],
+) -> Dict[str, Any]:
+    """Stamp session lineage as caller-reported; never persist ``verified``.
+
+    Submit and replay copy ``session_id`` / ``parent_orchestrator_id`` as
+    correlation metadata. They are not authorization grants.
+    ``lineage_trust="verified"`` is reserved and is not produced here.
+    """
+    stamped = dict(metadata) if isinstance(metadata, dict) else {}
+    stamped.pop("lineage_trust", None)
+    if session_id or parent_orchestrator_id:
+        stamped["lineage_trust"] = "caller_reported"
+    return stamped
+
+
 # ── Pure persistence helpers ──────────────────────────────────────────────────
 def _new_id() -> str:
     return str(uuid.uuid4())
@@ -362,20 +381,28 @@ class OrchestrationSupervisor:
         if overrides:
             spec_dict = {**spec_dict, **overrides}
 
+        session_id = spec_dict.get("session_id")
+        parent_orchestrator_id = spec_dict.get("parent_orchestrator_id")
+        metadata = caller_reported_lineage_metadata(
+            spec_dict.get("metadata"),
+            session_id=session_id,
+            parent_orchestrator_id=parent_orchestrator_id,
+        )
         new_spec = JobSpec(
             job_id=_new_id(),
             intent=spec_dict.get("intent", "freeform"),
             prompt=spec_dict.get("prompt", ""),
             backend_hint=spec_dict.get("backend_hint"),
             constraints=spec_dict.get("constraints", {}),
-            metadata=spec_dict.get("metadata", {}),
+            metadata=metadata,
             role=spec_dict.get("role"),
             specialization=spec_dict.get("specialization"),
-            session_id=spec_dict.get("session_id"),
-            parent_orchestrator_id=spec_dict.get("parent_orchestrator_id"),
+            session_id=session_id,
+            parent_orchestrator_id=parent_orchestrator_id,
             artifact_policy=spec_dict.get("artifact_policy"),
             authenticated_lane=spec_dict.get("authenticated_lane"),
-            lineage_trust=spec_dict.get("lineage_trust", "caller_reported"),
+            # Replay never honors stored or override lineage_trust=verified.
+            lineage_trust="caller_reported",
             # Preserve skill-routing field so retries follow the same path.
             task_type=spec_dict.get("task_type", ""),
         )

@@ -1267,7 +1267,13 @@ def autoresearch_gpu_status() -> Dict[str, Any]:
 # Brainstorm ref: orama-system/docs/2026-05-08-v1-supervisor-brainstorm.md §5
 # Legacy /orchestrate route (orchestrator.py) stays intact — backwards compatible.
 
-from orchestrator.supervisor import JobSpec, JobStatus, OrchestrationSupervisor, _new_id  # noqa: E402
+from orchestrator.supervisor import (  # noqa: E402
+    JobSpec,
+    JobStatus,
+    OrchestrationSupervisor,
+    _new_id,
+    caller_reported_lineage_metadata,
+)
 
 # Security: job_id flows into filesystem paths (.state/jobs/<id>/result.json)
 # via OrchestrationSupervisor. Validate the format at the HTTP boundary so a
@@ -1347,11 +1353,11 @@ def _metadata_with_unverified_lineage(
     of ``session_id`` or ``parent_orchestrator_id``. Downstream code must not
     treat those fields as PT-verified provenance.
     """
-    stamped = dict(metadata)
-    stamped.pop("lineage_trust", None)
-    if session_id or parent_orchestrator_id:
-        stamped["lineage_trust"] = "caller_reported"
-    return stamped
+    return caller_reported_lineage_metadata(
+        metadata,
+        session_id=session_id,
+        parent_orchestrator_id=parent_orchestrator_id,
+    )
 
 
 @app.post("/v1/jobs", tags=["supervisor"])
