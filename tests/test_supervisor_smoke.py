@@ -758,6 +758,27 @@ def test_job_submit_request_has_task_type_field():
     assert req2.task_type == "new_agent"
 
 
+def test_job_submit_request_forwards_section_51_fields():
+    """Orama api_swarm_launch posts §5.1 fields top-level; the HTTP model must keep them."""
+    from orchestrator.fastapi_app import _JobSubmitRequest
+
+    req = _JobSubmitRequest(
+        prompt="hello",
+        role="coder",
+        specialization="python-coding",
+        session_id="s1",
+        parent_orchestrator_id="portal",
+        artifact_policy="default",
+        metadata={"model": "win-qwen"},
+    )
+    assert req.role == "coder"
+    assert req.specialization == "python-coding"
+    assert req.session_id == "s1"
+    assert req.parent_orchestrator_id == "portal"
+    assert req.artifact_policy == "default"
+    assert req.metadata["model"] == "win-qwen"
+
+
 # ── _inject_memory_context (Item 7 — RAG wiring) ─────────────────────────────
 
 @pytest.mark.asyncio

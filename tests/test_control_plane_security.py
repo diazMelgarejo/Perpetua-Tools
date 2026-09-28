@@ -6,6 +6,10 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
+from orchestrator.control_plane_auth import (
+    mutation_path_documented_in_post_prefixes,
+    pt_path_requires_auth,
+)
 from orchestrator.fastapi_app import app
 from orchestrator.memory_governance import classify_and_redact
 from orchestrator.redaction import contains_secret, redact_text
@@ -22,6 +26,12 @@ def client(monkeypatch):
 def test_health_public_when_auth_enforced(client):
     response = client.get("/health")
     assert response.status_code == 200
+
+
+def test_models_post_requires_auth_and_is_documented():
+    assert pt_path_requires_auth("/models/route", "POST") is True
+    assert pt_path_requires_auth("/models/route", "GET") is True
+    assert mutation_path_documented_in_post_prefixes("/models/route") is True
 
 
 def test_v1_jobs_requires_bearer(client):

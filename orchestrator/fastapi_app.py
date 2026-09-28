@@ -22,6 +22,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from src.observability.runtime import initialize_observability, shutdown_observability
 from orchestrator.control_plane_auth import (
+    authenticated_control_plane_lane,
     ensure_control_plane_token,
     redact_runtime_payload,
 )
@@ -1316,12 +1317,13 @@ class _JobSubmitRequest(BaseModel):
     # Without this field the skill gate in _dispatch() is never triggered
     # for API-submitted jobs.
     task_type:    str = ""
-    # Orama portal may send worker identity both in metadata and at the top
-    # level. Top-level wins when present.
+    # Unified absorption plan §5.1. Orama may send these top-level or inside
+    # metadata. Top-level wins when present. session_id and
+    # parent_orchestrator_id are caller-reported lineage, not PT-verified identity.
     role: Optional[str] = None
     specialization: Optional[str] = None
-    session_id: Optional[str] = None
-    parent_orchestrator_id: Optional[str] = None
+    session_id: Optional[str] = Field(default=None, max_length=256)
+    parent_orchestrator_id: Optional[str] = Field(default=None, max_length=256)
     artifact_policy: Optional[str] = None
 
 
@@ -1333,15 +1335,36 @@ def _optional_meta_str(metadata: Dict[str, Any], key: str) -> Optional[str]:
     return text or None
 
 
+def _metadata_with_unverified_lineage(
+    metadata: Dict[str, Any],
+    *,
+    session_id: Optional[str],
+    parent_orchestrator_id: Optional[str],
+) -> Dict[str, Any]:
+    """Label persisted session lineage as caller-reported.
+
+    The control-plane bearer admits the submitter; it does not prove ownership
+    of ``session_id`` or ``parent_orchestrator_id``. Downstream code must not
+    treat those fields as PT-verified provenance.
+    """
+    stamped = dict(metadata)
+    stamped.pop("lineage_trust", None)
+    if session_id or parent_orchestrator_id:
+        stamped["lineage_trust"] = "caller_reported"
+    return stamped
+
+
 @app.post("/v1/jobs", tags=["supervisor"])
-async def supervisor_submit_job(req: _JobSubmitRequest):
+async def supervisor_submit_job(req: _JobSubmitRequest, http_request: Request):
     """Submit a job to the V1 OrchestrationSupervisor (file-based persistence).
 
     The orama portal swarm launcher sends worker identity (role, session_id,
-    artifact_policy, …) inside ``metadata`` rather than as top-level JobSpec
-    fields. Hoist those strings onto JobSpec so dispatch, affinity, and gossip
-    see the same contract as in-process callers.
+    artifact_policy, …) inside ``metadata`` and sometimes top-level. Hoist those
+    strings onto JobSpec. ``session_id`` and ``parent_orchestrator_id`` stay
+    caller-reported: ``JobSpec.lineage_trust`` is ``caller_reported`` and
+    ``metadata.lineage_trust`` mirrors that label. Neither field is an auth grant.
     """
+    authenticated_lane = authenticated_control_plane_lane(http_request)
     meta = req.metadata or {}
     constraints = req.constraints if isinstance(req.constraints, dict) else {}
     task_type = req.task_type.strip() or str(constraints.get("task_type") or "").strip()
@@ -1351,19 +1374,27 @@ async def supervisor_submit_job(req: _JobSubmitRequest):
             return str(explicit).strip()
         return _optional_meta_str(meta, key)
 
+    session_id = _field(req.session_id, "session_id")
+    parent_orchestrator_id = _field(req.parent_orchestrator_id, "parent_orchestrator_id")
     spec = JobSpec(
         job_id=_new_id(),
         intent=req.intent,
         prompt=req.prompt,
         backend_hint=req.backend_hint,
         constraints=req.constraints,
-        metadata=req.metadata,
+        metadata=_metadata_with_unverified_lineage(
+            meta,
+            session_id=session_id,
+            parent_orchestrator_id=parent_orchestrator_id,
+        ),
         task_type=task_type,
         role=_field(req.role, "role"),
         specialization=_field(req.specialization, "specialization"),
-        session_id=_field(req.session_id, "session_id"),
-        parent_orchestrator_id=_field(req.parent_orchestrator_id, "parent_orchestrator_id"),
+        session_id=session_id,
+        parent_orchestrator_id=parent_orchestrator_id,
         artifact_policy=_field(req.artifact_policy, "artifact_policy"),
+        authenticated_lane=authenticated_lane,
+        lineage_trust="caller_reported",
     )
     try:
         job_id = await _get_supervisor().submit_job(spec)
@@ -1424,7 +1455,7 @@ async def supervisor_cancel_job(job_id: str):
 
 
 @app.post("/v1/jobs/{job_id}/replay", tags=["supervisor"])
-async def supervisor_replay_job(job_id: str):
+async def supervisor_replay_job(job_id: str, http_request: Request):
     """
     Replay a completed, failed, or cancelled job by creating a new job with a fresh job_id.
     
@@ -1446,7 +1477,13 @@ async def supervisor_replay_job(job_id: str):
     """
     _validate_job_id(job_id)
     try:
-        new_id = await _get_supervisor().replay(job_id)
+        new_id = await _get_supervisor().replay(
+            job_id,
+            overrides={
+                "authenticated_lane": authenticated_control_plane_lane(http_request),
+                "lineage_trust": "caller_reported",
+            },
+        )
         return {"original_job_id": job_id, "new_job_id": new_id, "state": JobStatus.QUEUED.value}
     except ValueError:
         raise HTTPException(status_code=404, detail="Job not found") from None

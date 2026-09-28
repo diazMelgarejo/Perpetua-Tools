@@ -21,7 +21,7 @@ import uuid
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -89,6 +89,10 @@ class JobSpec(BaseModel):
     session_id:              Optional[str] = None
     parent_orchestrator_id:  Optional[str] = None
     artifact_policy:         Optional[str] = None   # "default" | None | custom tag
+
+    # Provenance for §5.1 lineage: HTTP auth lane ≠ session ownership.
+    authenticated_lane: Optional[str] = None
+    lineage_trust: Literal["caller_reported", "verified"] = "caller_reported"
 
     # V1 depth invariant: workers do NOT spawn sub-workers
     depth: int = Field(default=0, ge=0)
@@ -370,6 +374,8 @@ class OrchestrationSupervisor:
             session_id=spec_dict.get("session_id"),
             parent_orchestrator_id=spec_dict.get("parent_orchestrator_id"),
             artifact_policy=spec_dict.get("artifact_policy"),
+            authenticated_lane=spec_dict.get("authenticated_lane"),
+            lineage_trust=spec_dict.get("lineage_trust", "caller_reported"),
             # Preserve skill-routing field so retries follow the same path.
             task_type=spec_dict.get("task_type", ""),
         )
