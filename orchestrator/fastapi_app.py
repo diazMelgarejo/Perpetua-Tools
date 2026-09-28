@@ -1341,25 +1341,6 @@ def _optional_meta_str(metadata: Dict[str, Any], key: str) -> Optional[str]:
     return text or None
 
 
-def _metadata_with_unverified_lineage(
-    metadata: Dict[str, Any],
-    *,
-    session_id: Optional[str],
-    parent_orchestrator_id: Optional[str],
-) -> Dict[str, Any]:
-    """Label persisted session lineage as caller-reported.
-
-    The control-plane bearer admits the submitter; it does not prove ownership
-    of ``session_id`` or ``parent_orchestrator_id``. Downstream code must not
-    treat those fields as PT-verified provenance.
-    """
-    return caller_reported_lineage_metadata(
-        metadata,
-        session_id=session_id,
-        parent_orchestrator_id=parent_orchestrator_id,
-    )
-
-
 @app.post("/v1/jobs", tags=["supervisor"])
 async def supervisor_submit_job(req: _JobSubmitRequest, http_request: Request):
     """Submit a job to the V1 OrchestrationSupervisor (file-based persistence).
@@ -1388,7 +1369,7 @@ async def supervisor_submit_job(req: _JobSubmitRequest, http_request: Request):
         prompt=req.prompt,
         backend_hint=req.backend_hint,
         constraints=req.constraints,
-        metadata=_metadata_with_unverified_lineage(
+        metadata=caller_reported_lineage_metadata(
             meta,
             session_id=session_id,
             parent_orchestrator_id=parent_orchestrator_id,
@@ -1487,7 +1468,6 @@ async def supervisor_replay_job(job_id: str, http_request: Request):
             job_id,
             overrides={
                 "authenticated_lane": authenticated_control_plane_lane(http_request),
-                "lineage_trust": "caller_reported",
             },
         )
         return {"original_job_id": job_id, "new_job_id": new_id, "state": JobStatus.QUEUED.value}

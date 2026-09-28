@@ -370,38 +370,33 @@ class OrchestrationSupervisor:
         return False
 
     async def replay(self, job_id: str, overrides: dict | None = None) -> str:
-        """Re-run a failed or cancelled job under a new job_id."""
+        """Re-queue a prior job under a new id; never promote lineage_trust."""
         events = _load_events(self._jobs_file)
         states = _latest_status_per_job(events)
         raw = states.get(job_id)
         if raw is None:
             raise ValueError(f"Job {job_id} not found")
 
-        spec_dict = raw.get("spec", {})
-        if overrides:
-            spec_dict = {**spec_dict, **overrides}
-
+        spec_dict = {**(raw.get("spec") or {}), **(overrides or {})}
         session_id = spec_dict.get("session_id")
         parent_orchestrator_id = spec_dict.get("parent_orchestrator_id")
-        metadata = caller_reported_lineage_metadata(
-            spec_dict.get("metadata"),
-            session_id=session_id,
-            parent_orchestrator_id=parent_orchestrator_id,
-        )
         new_spec = JobSpec(
             job_id=_new_id(),
             intent=spec_dict.get("intent", "freeform"),
             prompt=spec_dict.get("prompt", ""),
             backend_hint=spec_dict.get("backend_hint"),
             constraints=spec_dict.get("constraints", {}),
-            metadata=metadata,
+            metadata=caller_reported_lineage_metadata(
+                spec_dict.get("metadata"),
+                session_id=session_id,
+                parent_orchestrator_id=parent_orchestrator_id,
+            ),
             role=spec_dict.get("role"),
             specialization=spec_dict.get("specialization"),
             session_id=session_id,
             parent_orchestrator_id=parent_orchestrator_id,
             artifact_policy=spec_dict.get("artifact_policy"),
             authenticated_lane=spec_dict.get("authenticated_lane"),
-            # Replay never honors stored or override lineage_trust=verified.
             lineage_trust="caller_reported",
             # Preserve skill-routing field so retries follow the same path.
             task_type=spec_dict.get("task_type", ""),
