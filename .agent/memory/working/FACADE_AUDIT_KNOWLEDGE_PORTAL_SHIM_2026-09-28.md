@@ -36,7 +36,7 @@ This day: read-only facade audit **CLEAN**; Knowledge Portal shim re-audit **CLE
 - Evidence: PT #287 gossip LAN mandate already on `main` (`orchestrator/mesh_auth.py`, `fastapi_app` `/gossip/emit` + `/gossip/tail`, `tests/test_mesh_auth.py`). Swarm HITL (`preview_id` / `approval_token`) correctly **Orama-owned** (`portal_server` / `swarm_approval.py`); plan text said no PT change if the orama gate is authoritative.
 - Knowledge Portal shim re-audit under Seth’s clarification: **CLEAN** again. Orama portal does not import/discover any PT Knowledge Portal export/hook/docs when co-installed (`web/` has command-center + routing, swarm API — **no** `/api/knowledge`). Operational co-install bridges (`PERPETUA_TOOLS_ROOT`, jobs proxy, `hardware_policy`, alphaclaw affinity optional imports) are **out of Knowledge-Portal scope**.
 - Recommendation to V1 Housekeeping: stay **idle** until a real shim gap; no speculative docs stub.
-- Orama doc nit noted but **not** fixed here: ladder acceptance text says `POST /v1/gossip/*` → 401; live PT is `/gossip/*` → 503/403. Orama-owned; do not edit orama-system in this PR (and #368 is locked to another agent).
+- **Gossip path/status lockstep (paired with orama-system #368):** live PT FastAPI exposes `/gossip/emit` and `/gossip/tail` (`orchestrator/mesh_auth.require_gossip_auth`). When `PT_BIND_LAN` is unset/false and `GOSSIP_SHARED_SECRET` is empty, requests are allowed (loopback/dev). When `PT_BIND_LAN=1` and no secret is configured → **503**. When a secret is configured but `x-gossip-secret` is missing or wrong → **403**. Orama ladder acceptance text in `docs/v2/50-mesh-security-migration-ladder.md` was corrected in the same harmonization pass (was stale `POST /v1/gossip/*` → 401).
 
 **Not claimed:** no runtime, orchestrator, packages, tests, or OpenAPI changes; no PT knowledge/MCP/A2A runtime; no orama-system or perpetua-core implementation.
 
@@ -76,7 +76,7 @@ Share knowledge with peers. Only **one** agent actively works a given PR. First 
 - [ ] Idle on PT shim until orama-system #368 or V1 Portal Knowledge lands a **concrete** PT import/hook contract.
 - [ ] Do not touch orama-system #368.
 - [ ] No merge of this memory PR without Seth.
-- [ ] Orama ladder acceptance nit (`POST /v1/gossip/*` → 401 vs live PT `/gossip/*` → 503/403) remains orama-owned; not fixed here.
+- [x] Orama ladder gossip acceptance aligned with live PT `/gossip/*` + `require_gossip_auth` status matrix (lockstep orama-system #368 + this memory PR #405).
 
 ## Related PT memory
 
@@ -93,4 +93,4 @@ python .agent/tools/recall.py "orama-system 368 PR ownership lock bc-a3dd2228"
 python .agent/tools/recall.py "PT gossip LAN mandate mesh_auth CLEAN facade"
 ```
 
-**Recall hints:** Facade Audit · Knowledge Portal shim · not PT-owned adapter · CLEAN · V1 Housekeeping idle · Seth one-PR-owner · orama-system #368 · `bc-a3dd2228` · no `/api/knowledge` · `preview_id` / `approval_token` Orama HITL · `/gossip/*` 503/403 vs documented `/v1/gossip/*` 401.
+**Recall hints:** Facade Audit · Knowledge Portal shim · not PT-owned adapter · CLEAN · V1 Housekeeping idle · Seth one-PR-owner · orama-system #368 · no `/api/knowledge` · `preview_id` / `approval_token` Orama HITL · PT `/gossip/*` auth: allow (no LAN bind + no secret) · 503 (`PT_BIND_LAN=1`, no secret) · 403 (bad `x-gossip-secret`).
