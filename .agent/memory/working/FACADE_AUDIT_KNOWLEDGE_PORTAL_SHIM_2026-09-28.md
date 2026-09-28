@@ -1,7 +1,7 @@
 # Perpetua Facade Audit day — Knowledge Portal shim (2026-09-28)
 
 > **Repo:** `diazMelgarejo/Perpetua-Tools` only (V1).  
-> **This memory PR:** explicit Seth/user ask to record the day — **draft only**; do not merge without Seth.  
+> **This memory PR:** [Perpetua-Tools #405](https://github.com/diazMelgarejo/Perpetua-Tools/pull/405) (`cursor/facade-audit-memory-2026-09-28-43fe`) — explicit Seth/user ask to record the day — **draft only**; do not merge without Seth.  
 > **Facade/shim code PR:** none (CLEAN).  
 > **Orama lock (do not touch):** [orama-system #368](https://github.com/diazMelgarejo/orama-system/pull/368) → cloud agent `bc-a3dd2228`.  
 > **Related already on PT `main`:** gossip LAN mandate [#287](https://github.com/diazMelgarejo/Perpetua-Tools/pull/287) (`orchestrator/mesh_auth.py`, FastAPI `/gossip/emit` + `/gossip/tail`, `tests/test_mesh_auth.py`).
