@@ -28,6 +28,58 @@ def test_get_models_route_keeps_fallback_chain(client: TestClient):
     assert "backend_hint" in body or body["fallback_chain"] == []
 
 
+def test_post_models_route_requires_bearer_when_auth_enforced(monkeypatch):
+    monkeypatch.setenv("ORAMA_INSECURE_DEV", "0")
+    monkeypatch.setenv("ORAMA_CONTROL_PLANE_TOKEN", "portal-route-test-token")
+    monkeypatch.setattr(
+        "orchestrator.fastapi_app._models_route_payload",
+        lambda **kwargs: {"fallback_chain": [], "backend_hint": "echo"},
+    )
+
+    with TestClient(app, raise_server_exceptions=False) as secured_client:
+        denied = secured_client.post(
+            "/models/route",
+            json={"objective": "test", "task_type": "default"},
+        )
+        wrong = secured_client.post(
+            "/models/route",
+            json={"objective": "test", "task_type": "default"},
+            headers={"Authorization": "Bearer wrong-token"},
+        )
+        allowed = secured_client.post(
+            "/models/route",
+            json={"objective": "test", "task_type": "default"},
+            headers={"Authorization": "Bearer portal-route-test-token"},
+        )
+
+    assert denied.status_code == 401
+    assert wrong.status_code == 401
+    assert allowed.status_code == 200
+
+
+def test_post_models_route_fails_closed_without_configured_token(monkeypatch):
+    monkeypatch.setenv("ORAMA_INSECURE_DEV", "0")
+    monkeypatch.delenv("ORAMA_CONTROL_PLANE_TOKEN", raising=False)
+    monkeypatch.delenv("ORAMA_CONTROL_PLANE_TOKEN_LOCAL", raising=False)
+    monkeypatch.delenv("PT_CONTROL_PLANE_TOKEN", raising=False)
+    monkeypatch.setattr(
+        "orchestrator.control_plane_auth._read_persisted_token",
+        lambda path=None: "",
+    )
+    monkeypatch.setattr(
+        "orchestrator.control_plane_auth.accepted_control_plane_tokens",
+        lambda scope="orama": frozenset(),
+    )
+
+    with TestClient(app, raise_server_exceptions=False) as secured_client:
+        response = secured_client.post(
+            "/models/route",
+            json={"objective": "test", "task_type": "default"},
+        )
+
+    assert response.status_code == 503
+
+
 def test_post_models_route_returns_portal_hints_for_swarm_role(client: TestClient):
     resp = client.post(
         "/models/route",
@@ -109,7 +161,10 @@ def test_portal_launch_metadata_hoists_onto_jobspec(client: TestClient, monkeypa
     assert spec.parent_orchestrator_id == "orama-portal"
     assert spec.artifact_policy == "summary_and_refs_only"
     assert spec.task_type == "implementation"
+    assert spec.lineage_trust == "caller_reported"
+    assert spec.authenticated_lane == "insecure_dev"
     assert spec.metadata["artifact_policy"] == "summary_and_refs_only"
+    assert spec.metadata.get("lineage_trust") == "caller_reported"
 
 
 def test_whitespace_task_type_falls_back_to_constraints(

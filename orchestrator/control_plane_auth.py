@@ -46,11 +46,17 @@ _PROTECTED_GET_PREFIXES = (
     "/autoresearch/",
 )
 
+# Documented operator mutation surface (includes POST /models/route). Not an allowlist:
+# ``pt_path_requires_auth`` requires auth for every non-public mutation method.
 _PROTECTED_POST_PREFIXES = (
     "/user-input",
     "/runtime/bootstrap",
     "/orchestrate",
+    "/models",
     "/v1/jobs",
+    "/pipelines",
+    "/gossip",
+    "/agents",
     "/ecc/sync",
     "/autoresearch/",
 )
@@ -238,6 +244,29 @@ def control_plane_auth_failure(request: Request) -> JSONResponse | None:
     return None
 
 
+def authenticated_control_plane_lane(
+    request: Request,
+    *,
+    path: str | None = None,
+) -> Literal["pt", "orama", "insecure_dev"]:
+    """Return the authenticated control-plane lane without exposing credentials.
+
+    Bearer auth establishes which service lane called the API, not ownership of
+    caller-supplied ``session_id`` / ``parent_orchestrator_id`` lineage fields.
+    """
+    if path is not None:
+        route_path = path
+    else:
+        url = getattr(request, "url", None)
+        route_path = url.path if url is not None else "/"
+
+    if not auth_enforced():
+        return "insecure_dev"
+
+    verify_control_plane_auth(request, path=route_path)
+    return control_plane_path_scope(route_path)
+
+
 def pt_path_requires_auth(path: str, method: str) -> bool:
     if path in _PUBLIC_PATHS:
         return False
@@ -245,10 +274,17 @@ def pt_path_requires_auth(path: str, method: str) -> bool:
         return False
     upper = method.upper()
     if upper in ("POST", "PUT", "PATCH", "DELETE"):
+        # Fail-safe: every mutation route is protected. ``_PROTECTED_POST_PREFIXES``
+        # documents the surface (e.g. POST /models/route); it is not exhaustive.
         return True
     if upper in ("GET", "HEAD"):
         return any(path.startswith(prefix) for prefix in _PROTECTED_GET_PREFIXES)
     return False
+
+
+def mutation_path_documented_in_post_prefixes(path: str) -> bool:
+    """True when ``path`` is listed in the documented POST mutation surface."""
+    return any(path.startswith(prefix) for prefix in _PROTECTED_POST_PREFIXES)
 
 
 def _secure_write_token(path: Path, value: str) -> None:

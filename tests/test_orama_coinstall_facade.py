@@ -15,7 +15,6 @@ from fastapi.testclient import TestClient
 from orchestrator import fastapi_app
 from orchestrator.fastapi_app import (
     _JobSubmitRequest,
-    _LINEAGE_TRUST_CALLER_REPORTED,
     _backend_hint_from_target,
     _model_hint_from_target,
     _models_route_payload,
@@ -213,7 +212,9 @@ class TestJobSubmitRequestSection51:
         assert spec.specialization == "python-coding"
         assert spec.session_id == "sess-orama"
         assert spec.parent_orchestrator_id == "portal"
-        assert spec.metadata.get("lineage_trust") == _LINEAGE_TRUST_CALLER_REPORTED
+        assert spec.lineage_trust == "caller_reported"
+        assert spec.authenticated_lane == "insecure_dev"
+        assert spec.metadata.get("lineage_trust") == "caller_reported"
         assert spec.artifact_policy == "default"
         assert spec.metadata.get("model") == "win-qwen"
         assert spec.task_type == "code_analysis"

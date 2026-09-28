@@ -22,6 +22,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from src.observability.runtime import initialize_observability, shutdown_observability
 from orchestrator.control_plane_auth import (
+    authenticated_control_plane_lane,
     ensure_control_plane_token,
     redact_runtime_payload,
 )
@@ -863,18 +864,6 @@ def route_post(req: ModelsRouteRequest) -> Dict[str, Any]:
     )
 
 
-@app.post("/models/route", tags=["models"])
-def route_post(req: _ModelsRouteRequest) -> Dict[str, Any]:
-    """Orama portal ``_route_preview_assignment`` posts this shape and reads
-    ``backend_hint|backend|provider`` plus ``model_hint|model|model_id``.
-    """
-    chain = registry.route_task(req.task_type, preferred_device=req.preferred_device)
-    chain = _prefer_role_in_chain(chain, req.role)
-    if not chain:
-        raise HTTPException(status_code=404, detail="no route candidates")
-    return _orama_route_payload(chain)
-
-
 @app.post("/orchestrate", tags=["orchestrate"])
 async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
     task_hash = sha256(f"{req.task_type}:{req.task}".encode()).hexdigest()
@@ -1333,12 +1322,9 @@ class _JobSubmitRequest(BaseModel):
     # parent_orchestrator_id are caller-reported lineage, not PT-verified identity.
     role: Optional[str] = None
     specialization: Optional[str] = None
-    session_id: Optional[str] = None
-    parent_orchestrator_id: Optional[str] = None
+    session_id: Optional[str] = Field(default=None, max_length=256)
+    parent_orchestrator_id: Optional[str] = Field(default=None, max_length=256)
     artifact_policy: Optional[str] = None
-
-
-_LINEAGE_TRUST_CALLER_REPORTED = "caller_reported"
 
 
 def _optional_meta_str(metadata: Dict[str, Any], key: str) -> Optional[str]:
@@ -1362,21 +1348,23 @@ def _metadata_with_unverified_lineage(
     treat those fields as PT-verified provenance.
     """
     stamped = dict(metadata)
+    stamped.pop("lineage_trust", None)
     if session_id or parent_orchestrator_id:
-        stamped["lineage_trust"] = _LINEAGE_TRUST_CALLER_REPORTED
+        stamped["lineage_trust"] = "caller_reported"
     return stamped
 
 
 @app.post("/v1/jobs", tags=["supervisor"])
-async def supervisor_submit_job(req: _JobSubmitRequest):
+async def supervisor_submit_job(req: _JobSubmitRequest, http_request: Request):
     """Submit a job to the V1 OrchestrationSupervisor (file-based persistence).
 
     The orama portal swarm launcher sends worker identity (role, session_id,
     artifact_policy, …) inside ``metadata`` and sometimes top-level. Hoist those
     strings onto JobSpec. ``session_id`` and ``parent_orchestrator_id`` stay
-    caller-reported: persisted jobs set ``metadata.lineage_trust`` to
-    ``caller_reported`` and do not treat them as authenticated provenance.
+    caller-reported: ``JobSpec.lineage_trust`` is ``caller_reported`` and
+    ``metadata.lineage_trust`` mirrors that label. Neither field is an auth grant.
     """
+    authenticated_lane = authenticated_control_plane_lane(http_request)
     meta = req.metadata or {}
     constraints = req.constraints if isinstance(req.constraints, dict) else {}
     task_type = req.task_type.strip() or str(constraints.get("task_type") or "").strip()
@@ -1405,6 +1393,8 @@ async def supervisor_submit_job(req: _JobSubmitRequest):
         session_id=session_id,
         parent_orchestrator_id=parent_orchestrator_id,
         artifact_policy=_field(req.artifact_policy, "artifact_policy"),
+        authenticated_lane=authenticated_lane,
+        lineage_trust="caller_reported",
     )
     try:
         job_id = await _get_supervisor().submit_job(spec)
@@ -1465,7 +1455,7 @@ async def supervisor_cancel_job(job_id: str):
 
 
 @app.post("/v1/jobs/{job_id}/replay", tags=["supervisor"])
-async def supervisor_replay_job(job_id: str):
+async def supervisor_replay_job(job_id: str, http_request: Request):
     """
     Replay a completed, failed, or cancelled job by creating a new job with a fresh job_id.
     
@@ -1487,7 +1477,13 @@ async def supervisor_replay_job(job_id: str):
     """
     _validate_job_id(job_id)
     try:
-        new_id = await _get_supervisor().replay(job_id)
+        new_id = await _get_supervisor().replay(
+            job_id,
+            overrides={
+                "authenticated_lane": authenticated_control_plane_lane(http_request),
+                "lineage_trust": "caller_reported",
+            },
+        )
         return {"original_job_id": job_id, "new_job_id": new_id, "state": JobStatus.QUEUED.value}
     except ValueError:
         raise HTTPException(status_code=404, detail="Job not found") from None
