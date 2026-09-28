@@ -1344,7 +1344,7 @@ async def supervisor_submit_job(req: _JobSubmitRequest):
     """
     meta = req.metadata or {}
     constraints = req.constraints if isinstance(req.constraints, dict) else {}
-    task_type = req.task_type or str(constraints.get("task_type") or "").strip()
+    task_type = req.task_type.strip() or str(constraints.get("task_type") or "").strip()
 
     def _field(explicit: Optional[str], key: str) -> Optional[str]:
         if explicit is not None and str(explicit).strip():

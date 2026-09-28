@@ -112,6 +112,30 @@ def test_portal_launch_metadata_hoists_onto_jobspec(client: TestClient, monkeypa
     assert spec.metadata["artifact_policy"] == "summary_and_refs_only"
 
 
+def test_whitespace_task_type_falls_back_to_constraints(
+    client: TestClient, monkeypatch
+):
+    captured: dict = {}
+
+    class _FakeSupervisor:
+        async def submit_job(self, spec):
+            captured["spec"] = spec
+            return spec.job_id
+
+    monkeypatch.setattr("orchestrator.fastapi_app._supervisor", _FakeSupervisor())
+    resp = client.post(
+        "/v1/jobs",
+        json={
+            "intent": "apply",
+            "prompt": "Ship launch",
+            "task_type": "   ",
+            "constraints": {"task_type": "implementation"},
+        },
+    )
+    assert resp.status_code == 200, resp.text
+    assert captured["spec"].task_type == "implementation"
+
+
 def test_top_level_role_wins_over_metadata(client: TestClient, monkeypatch):
     captured: dict = {}
 
