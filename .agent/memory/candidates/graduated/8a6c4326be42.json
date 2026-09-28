@@ -1,0 +1,41 @@
+{
+  "id": "8a6c4326be42",
+  "key": "manual_8a6c43",
+  "name": "manual_8a6c43",
+  "claim": "Orama swarm launch must dispatch the cached approved preview and send Perpetua top-level role, task_type, and metadata.model. Perpetua POST /models/route and POST /v1/jobs accept that shim. Do not add knowledge search, MCP, or A2A to Perpetua.",
+  "conditions": [
+    "job metadata",
+    "models route",
+    "preview cache",
+    "swarm launch"
+  ],
+  "evidence_ids": [
+    "2026-09-28T01:16:37.906493+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-28T01:16:37.906493+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-28T01:16:37.906493+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-28T01:16:38.022363+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-09-28 portal facade audit. Rebuilding the preview on launch minted a second approval and failed the fingerprint whenever routing flickered. Job identity left only in metadata left JobSpec.role empty. Draft Perpetua-Tools #404 and orama-system branch cursor/portal-swarm-approval-fixes-3c54.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-28T01:16:37.906493+00:00"
+      ],
+      "lessons_sha": "14972529c434"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-28T01:16:38.022353+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-09-28 portal facade audit. Rebuilding the preview on launch minted a second approval and failed the fingerprint whenever routing flickered. Job identity left only in metadata left JobSpec.role empty. Draft Perpetua-Tools #404 and orama-system branch cursor/portal-swarm-approval-fixes-3c54."
+}
