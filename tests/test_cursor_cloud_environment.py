@@ -19,3 +19,5 @@ def test_cloud_install_provisions_the_locked_dev_test_environment() -> None:
     assert install_command == "bash scripts/cursor/cloud-install.sh"
     assert "sync --extra dev --frozen" in script
     assert ".venv/bin/python -m pytest --version" in script
+    assert "astral.sh/uv/install.sh" in script
+    assert "python3 -m venv" not in script
