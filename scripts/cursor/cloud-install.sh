@@ -33,6 +33,11 @@ if [[ -z "$UV_BIN" ]]; then
   UV_BIN="${UV_INSTALL_DIR}/uv"
 fi
 
-"$UV_BIN" sync --extra dev --frozen
+# Cursor base images ship /usr/bin/python3 without ensurepip/python3-venv, so
+# `uv venv` against the system interpreter fails (INSTALL_FAILED on env builds).
+# uv-managed CPython includes venv support and satisfies requires-python >=3.11.
+PY_MINOR="3.12"
+"$UV_BIN" python install "${PY_MINOR}"
+"$UV_BIN" sync --extra dev --frozen --python "${PY_MINOR}"
 .venv/bin/python -m pytest --version
 bash scripts/cursor/cloud-bootstrap.sh
