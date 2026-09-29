@@ -109,6 +109,34 @@ def test_backend_hint_omits_unknown_or_empty_backend() -> None:
     assert _backend_hint_from_target(target) is None
 
 
+def test_post_models_route_omits_backend_hints_for_target_without_backend(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = SimpleNamespace(
+        backend="",
+        device="mac",
+        name="qwen",
+        api_model="qwen",
+        __dict__={"backend": "", "device": "mac", "name": "qwen", "api_model": "qwen"},
+    )
+    monkeypatch.setattr(
+        "orchestrator.fastapi_app.registry.route_task",
+        lambda *args, **kwargs: [target],
+    )
+
+    response = client.post(
+        "/models/route",
+        json={"task_type": "default"},
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["fallback_chain"]
+    assert all(key not in body for key in ("backend_hint", "backend", "provider"))
+    assert body.get("model_hint") == "qwen"
+
+
 def test_post_models_route_uses_role_specialization(
     client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
