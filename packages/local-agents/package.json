@@ -29,6 +29,6 @@
     "hono": "^4.13.7"
   },
   "devDependencies": {
-    "vitest": "^4.1.8"
+    "vitest": "^5.0.2"
   }
 }
