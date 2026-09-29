@@ -1,0 +1,44 @@
+{
+  "id": "2517668c02a5",
+  "key": "manual_251766",
+  "name": "manual_251766",
+  "claim": "For supervisor replay, reconstruct the new job from the original durable QUEUED event, admit only terminal predecessor states, and stamp the replayed record as caller_reported. This preserves provenance and observability; lineage labels are not authorization decisions.",
+  "conditions": [
+    "lineage-trust",
+    "observability",
+    "provenance",
+    "queued-event",
+    "replay",
+    "supervisor",
+    "terminal-lifecycle"
+  ],
+  "evidence_ids": [
+    "2026-09-29T07:44:36.539530+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-29T07:44:36.539530+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-29T07:44:36.539530+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-29T07:44:36.678337+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Cursor identified that terminal lifecycle events omit JobSpec, while AntiGravity independently emphasized durable queued reconstruction and caller-reported replay provenance. Focused replay and smoke tests cover queued-spec recovery, terminal-only admission, and lifecycle field precedence.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-29T07:44:36.539530+00:00"
+      ],
+      "lessons_sha": "aaabe1cfd7de"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-29T07:44:36.678327+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Cursor identified that terminal lifecycle events omit JobSpec, while AntiGravity independently emphasized durable queued reconstruction and caller-reported replay provenance. Focused replay and smoke tests cover queued-spec recovery, terminal-only admission, and lifecycle field precedence."
+}
