@@ -8,14 +8,16 @@ enabled: true
 models:
   fast:
     candidates:
+      - glm-5.2
       - glm-5.1:cloud
       - Qwen3.5-9B-MLX-4bit
       - claude-sonnet-5
   strong:
     candidates:
+      - glm-5.2
       - glm-5.1:cloud
-      - Qwen3.5-9B-MLX-4bit
       - claude-sonnet-5
+      - Qwen3.5-9B-MLX-4bit
 
 recipes:
   classify_then_generate:
