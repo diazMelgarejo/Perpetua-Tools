@@ -217,11 +217,11 @@ async def test_replay_creates_new_job(tmp_path):
     original_id = await sup.submit_job(spec)
     await _await_job(sup, original_id)
 
-    # Inject a FAILED event so replay is valid (replay works on any terminal state)
+    # Replay reads the durable QUEUED source, not a terminal lifecycle record.
     _append_event(
         tmp_path / "jobs.jsonl",
         original_id,
-        {"status": JobStatus.FAILED.value, "spec": spec.to_dict(), "error": "injected"},
+        {"status": JobStatus.FAILED.value, "error": "injected"},
     )
 
     new_id = await sup.replay(original_id)
@@ -553,12 +553,18 @@ async def test_replay_preserves_task_type(tmp_path):
 
     new_id = await sup.replay(original_id)
     assert new_id != original_id
+    replay_task = sup._active.get(new_id)
+    assert replay_task is not None
+    await replay_task
 
-    # Load the replayed job's spec from the event log and assert task_type survived.
+    # The terminal event omits spec. task_type comes from the QUEUED source.
     events = _load_events(tmp_path / "jobs.jsonl")
-    states = _latest_status_per_job(events)
-    replayed_state = states.get(new_id) or {}
-    replayed_spec = replayed_state.get("spec", {})
+    replayed_spec = next(
+        event["spec"]
+        for event in events
+        if event.get("job_id") == new_id
+        and event.get("status") == JobStatus.QUEUED.value
+    )
     assert replayed_spec.get("task_type") == "add_channel", (
         f"task_type was lost during replay; got: {replayed_spec.get('task_type')!r}"
     )
@@ -1052,7 +1058,7 @@ async def test_record_to_gossip_omits_role_when_none(tmp_path):
 
 @pytest.mark.asyncio
 async def test_record_to_gossip_merges_extra_dict(tmp_path):
-    """Extra kwargs must be merged into the emitted payload."""
+    """Extra kwargs add detail without changing the immutable trust label."""
     from unittest.mock import AsyncMock, MagicMock, patch
 
     sup = _make_sup(tmp_path)
@@ -1075,10 +1081,32 @@ async def test_record_to_gossip_merges_extra_dict(tmp_path):
     sup._gossip_bus = fake_bus
 
     with patch("orchestrator.memory_node.ensure_gossip_db_ready", AsyncMock()):
-        await sup._record_to_gossip("error", spec, {"detail": "timeout", "policy": True})
+        await sup._record_to_gossip(
+            "error",
+            spec,
+            {"detail": "timeout", "policy": True, "lineage_trust": "verified"},
+        )
 
     assert emitted[0]["detail"] == "timeout"
     assert emitted[0]["policy"] is True
+    assert emitted[0]["lineage_trust"] == spec.lineage_trust
+
+
+def test_lifecycle_event_keeps_status_and_trust_owned_by_jobspec(tmp_path: Path) -> None:
+    """Lifecycle details cannot overwrite the state or provenance they describe."""
+    sup = _make_sup(tmp_path)
+    spec = JobSpec(intent="echo", lineage_trust="caller_reported")
+
+    sup._append_lifecycle_event(
+        spec,
+        JobStatus.SUCCEEDED,
+        status=JobStatus.FAILED,
+        lineage_trust="verified",
+    )
+
+    event = _load_events(tmp_path / "jobs.jsonl")[0]
+    assert event["status"] == JobStatus.SUCCEEDED.value
+    assert event["lineage_trust"] == "caller_reported"
 
 
 @pytest.mark.asyncio

@@ -119,13 +119,52 @@ async def test_replay_without_lineage_stays_compatible(tmp_path: Path) -> None:
     job_id = await sup.submit_job(
         JobSpec(intent="echo", prompt="hello", backend_hint="echo")
     )
+    original = sup._active.get(job_id)
+    assert original is not None
+    await original
+
     new_id = await sup.replay(job_id)
-    status = await sup.get_status(new_id)
-    assert status is not None
-    spec = status["spec"]
+    events = _load_events(sup._jobs_file)
+    queued = next(
+        event
+        for event in events
+        if event.get("job_id") == new_id
+        and event.get("status") == JobStatus.QUEUED.value
+    )
+    spec = queued["spec"]
     assert spec["lineage_trust"] == "caller_reported"
     assert spec["session_id"] is None
     assert "lineage_trust" not in spec["metadata"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "status",
+    [JobStatus.QUEUED, JobStatus.RUNNING, JobStatus.WAITING_INPUT],
+)
+async def test_replay_rejects_a_job_still_in_flight(
+    tmp_path: Path,
+    status: JobStatus,
+) -> None:
+    sup = OrchestrationSupervisor(state_dir=tmp_path)
+    job_id = "in-flight-job"
+    _append_event(
+        tmp_path / "jobs.jsonl",
+        job_id,
+        {
+            "status": JobStatus.QUEUED.value,
+            "spec": JobSpec(intent="echo", prompt="still running").model_dump(),
+        },
+    )
+    if status is not JobStatus.QUEUED:
+        _append_event(
+            tmp_path / "jobs.jsonl",
+            job_id,
+            {"status": status.value},
+        )
+
+    with pytest.raises(ValueError, match="not replayable"):
+        await sup.replay(job_id)
 
 
 @pytest.mark.asyncio

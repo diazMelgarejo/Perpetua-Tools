@@ -233,6 +233,15 @@ def _latest_status_per_job(events: list[dict]) -> dict[str, dict]:
     return states
 
 
+_REPLAYABLE_STATUSES = frozenset(
+    {
+        JobStatus.SUCCEEDED.value,
+        JobStatus.FAILED.value,
+        JobStatus.CANCELLED.value,
+    }
+)
+
+
 def _queued_spec_for_job(events: list[dict], job_id: str) -> dict | None:
     """Return the original persisted spec for one job's QUEUED transition.
 
@@ -391,12 +400,14 @@ class OrchestrationSupervisor:
         return False
 
     async def replay(self, job_id: str, overrides: dict | None = None) -> str:
-        """Re-queue a prior job under a new id; never promote lineage_trust."""
+        """Re-queue a terminal job under a new id; never promote lineage_trust."""
         events = _load_events(self._jobs_file)
         states = _latest_status_per_job(events)
         raw = states.get(job_id)
         if raw is None:
             raise ValueError(f"Job {job_id} not found")
+        if raw.get("status") not in _REPLAYABLE_STATUSES:
+            raise ValueError(f"Job {job_id} is not replayable")
 
         queued_spec = _queued_spec_for_job(events, job_id)
         if queued_spec is None:
@@ -542,6 +553,9 @@ class OrchestrationSupervisor:
             payload["role"] = spec.role
         if extra:
             payload.update(extra)
+        # The immutable JobSpec owns this provenance label.  An error/result
+        # detail may add context, but cannot relabel the job it reports.
+        payload["lineage_trust"] = spec.lineage_trust
         try:
             from orchestrator.memory_node import ensure_gossip_db_ready  # noqa: PLC0415
 
@@ -823,16 +837,16 @@ class OrchestrationSupervisor:
     def _append_lifecycle_event(
         self,
         job_spec: JobSpec,
-        status: JobStatus,
+        lifecycle_status: JobStatus,
         **fields: Any,
     ) -> None:
-        """Append one monitorable lifecycle event without changing its source spec."""
+        """Append one monitorable lifecycle event with supervisor-owned state."""
         self._append_event(
             job_spec.job_id,
             {
-                "status": status,
-                "lineage_trust": job_spec.lineage_trust,
                 **fields,
+                "status": lifecycle_status,
+                "lineage_trust": job_spec.lineage_trust,
             },
         )
 
