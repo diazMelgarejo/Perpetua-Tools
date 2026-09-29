@@ -104,6 +104,36 @@ def test_backend_hint_maps_lm_studio_windows_device():
     assert _backend_hint_from_target(target) == "lmstudio-win"
 
 
+def test_backend_hint_omits_unknown_or_empty_backend() -> None:
+    target = SimpleNamespace(backend="", device="mac", name="qwen")
+    assert _backend_hint_from_target(target) is None
+
+
+def test_post_models_route_uses_role_specialization(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setitem(
+        ROLE_BACKEND_MAP,
+        ("context-agent", "codebase-map"),
+        ("special-backend", "special-model"),
+    )
+
+    response = client.post(
+        "/models/route",
+        json={
+            "objective": "Map the codebase",
+            "task_type": "implementation",
+            "role": "context-agent",
+            "specialization": "codebase-map",
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["backend_hint"] == "special-backend"
+    assert response.json()["model_hint"] == "special-model"
+
+
 def test_models_route_payload_ignores_empty_role(monkeypatch):
     dummy = SimpleNamespace(
         backend="ollama",

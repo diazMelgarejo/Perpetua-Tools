@@ -780,6 +780,7 @@ class ModelsRouteRequest(BaseModel):
     objective: str = ""
     task_type: str = "default"
     role: Optional[str] = None
+    specialization: Optional[str] = None
     preferred_device: Optional[str] = None
 
 
@@ -792,12 +793,12 @@ def _normalize_preferred_device(value: Optional[str]) -> Optional[str]:
     return cleaned
 
 
-def _backend_hint_from_target(target: Any) -> str:
+def _backend_hint_from_target(target: Any) -> Optional[str]:
     backend = str(getattr(target, "backend", "") or "").strip().lower()
     device = str(getattr(target, "device", "") or "").strip().lower()
     if backend in {"lm-studio", "lmstudio", "lm_studio"}:
         return "lmstudio-win" if "win" in device else "lmstudio-mac"
-    return backend or "auto"
+    return backend or None
 
 
 def _model_hint_from_target(target: Any) -> Optional[str]:
@@ -813,6 +814,7 @@ def _models_route_payload(
     task_type: str,
     preferred_device: Optional[str] = None,
     role: Optional[str] = None,
+    specialization: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Shared GET/POST /models/route body for the orama portal facade.
 
@@ -832,8 +834,9 @@ def _models_route_payload(
     hint_backend: Optional[str] = None
     hint_model: Optional[str] = None
     cleaned_role = (role or "").strip() or None
+    cleaned_specialization = (specialization or "").strip() or None
     if cleaned_role:
-        mapped = resolve_role_backend(cleaned_role, None)
+        mapped = resolve_role_backend(cleaned_role, cleaned_specialization)
         if mapped is not None:
             hint_backend, hint_model = mapped
             payload["role"] = cleaned_role
@@ -868,6 +871,7 @@ def route_post(req: ModelsRouteRequest) -> Dict[str, Any]:
         task_type=req.task_type,
         preferred_device=req.preferred_device,
         role=req.role,
+        specialization=req.specialization,
     )
 
 
