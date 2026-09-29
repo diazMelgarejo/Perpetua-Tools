@@ -17,7 +17,10 @@ from fastapi.testclient import TestClient
 from orchestrator.fastapi_app import app
 from orchestrator.supervisor import (
     JobSpec,
+    JobStatus,
     OrchestrationSupervisor,
+    _append_event,
+    _load_events,
     caller_reported_lineage_metadata,
 )
 
@@ -47,15 +50,29 @@ async def test_replay_downgrades_stored_verified_lineage(tmp_path: Path) -> None
     sup = OrchestrationSupervisor(state_dir=tmp_path)
     original = JobSpec(
         intent="echo",
-        prompt="hello",
+        prompt="preserve this terminal replay prompt",
         backend_hint="echo",
+        constraints={"max_tokens": 55},
+        metadata={"lineage_trust": "verified", "model": "echo-model"},
+        role="reviewer",
+        specialization="replay",
         session_id="someone-elses-session",
         parent_orchestrator_id="someone-elses-parent",
-        metadata={"lineage_trust": "verified"},
+        artifact_policy="retain",
+        task_type="review",
         lineage_trust="verified",
         authenticated_lane="orama",
     )
     job_id = await sup.submit_job(original)
+    task = sup._active.get(job_id)
+    assert task is not None
+    await task
+
+    terminal = await sup.get_status(job_id)
+    assert terminal is not None
+    assert terminal["status"] == "succeeded"
+    assert "spec" not in terminal
+
     new_id = await sup.replay(
         job_id,
         overrides={
@@ -63,14 +80,37 @@ async def test_replay_downgrades_stored_verified_lineage(tmp_path: Path) -> None
             "lineage_trust": "verified",
         },
     )
-    status = await sup.get_status(new_id)
-    assert status is not None
-    spec = status["spec"]
+    events = _load_events(sup._jobs_file)
+    queued = next(
+        event
+        for event in events
+        if event.get("job_id") == new_id
+        and event.get("status") == JobStatus.QUEUED.value
+    )
+    spec = queued["spec"]
+    assert spec["intent"] == "echo"
+    assert spec["prompt"] == "preserve this terminal replay prompt"
+    assert spec["backend_hint"] == "echo"
+    assert spec["constraints"] == {"max_tokens": 55}
+    assert spec["metadata"]["model"] == "echo-model"
+    assert spec["role"] == "reviewer"
+    assert spec["specialization"] == "replay"
     assert spec["session_id"] == "someone-elses-session"
     assert spec["parent_orchestrator_id"] == "someone-elses-parent"
+    assert spec["artifact_policy"] == "retain"
+    assert spec["task_type"] == "review"
     assert spec["lineage_trust"] == "caller_reported"
     assert spec["authenticated_lane"] == "pt"
     assert spec["metadata"]["lineage_trust"] == "caller_reported"
+    assert queued["lineage_trust"] == "caller_reported"
+
+    task = sup._active.get(new_id)
+    assert task is not None
+    await task
+    status = await sup.get_status(new_id)
+    assert status is not None
+    assert terminal["lineage_trust"] == "verified"
+    assert status["lineage_trust"] == "caller_reported"
 
 
 @pytest.mark.asyncio
@@ -86,6 +126,19 @@ async def test_replay_without_lineage_stays_compatible(tmp_path: Path) -> None:
     assert spec["lineage_trust"] == "caller_reported"
     assert spec["session_id"] is None
     assert "lineage_trust" not in spec["metadata"]
+
+
+@pytest.mark.asyncio
+async def test_replay_rejects_job_without_a_queued_spec(tmp_path: Path) -> None:
+    sup = OrchestrationSupervisor(state_dir=tmp_path)
+    _append_event(
+        tmp_path / "jobs.jsonl",
+        "incomplete-job",
+        {"status": JobStatus.SUCCEEDED.value},
+    )
+
+    with pytest.raises(ValueError, match="queued specification"):
+        await sup.replay("incomplete-job")
 
 
 def test_insecure_dev_submit_records_lane(monkeypatch: pytest.MonkeyPatch) -> None:

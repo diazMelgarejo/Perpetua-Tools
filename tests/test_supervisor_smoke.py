@@ -532,13 +532,21 @@ async def test_replay_preserves_task_type(tmp_path):
     )
     original_id = spec.job_id
 
-    # Inject a FAILED event so replay() has something to replay.
+    # Model the durable source event before the terminal failure. Replay must
+    # recover its input from QUEUED, not from a lifecycle event that omits spec.
+    _append_event(
+        tmp_path / "jobs.jsonl",
+        original_id,
+        {
+            "status": JobStatus.QUEUED.value,
+            "spec": spec.model_dump(),
+        },
+    )
     _append_event(
         tmp_path / "jobs.jsonl",
         original_id,
         {
             "status": JobStatus.FAILED.value,
-            "spec": spec.model_dump(),
             "error": "injected failure",
         },
     )
@@ -971,6 +979,7 @@ async def test_record_to_gossip_emits_core_payload(tmp_path):
     assert payload["job_id"] == spec.job_id
     assert payload["prompt"] == spec.prompt
     assert payload["intent"] == spec.intent
+    assert payload["lineage_trust"] == spec.lineage_trust
 
 
 @pytest.mark.asyncio

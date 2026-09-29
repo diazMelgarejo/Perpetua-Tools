@@ -233,6 +233,23 @@ def _latest_status_per_job(events: list[dict]) -> dict[str, dict]:
     return states
 
 
+def _queued_spec_for_job(events: list[dict], job_id: str) -> dict | None:
+    """Return the original persisted spec for one job's QUEUED transition.
+
+    Lifecycle events intentionally record only state-specific data. Replay must
+    therefore recover its source from the first QUEUED event, rather than the
+    latest terminal event selected by ``_latest_status_per_job``.
+    """
+    for event in events:
+        if event.get("job_id") != job_id:
+            continue
+        if event.get("status") != JobStatus.QUEUED.value:
+            continue
+        spec = event.get("spec")
+        return spec if isinstance(spec, dict) else None
+    return None
+
+
 # ── Main supervisor class ─────────────────────────────────────────────────────
 class OrchestrationSupervisor:
     """
@@ -331,7 +348,11 @@ class OrchestrationSupervisor:
             )
             check_affinity(model_id, plat)
 
-        self._append_event(spec.job_id, {"status": JobStatus.QUEUED, "spec": spec.to_dict()})
+        self._append_lifecycle_event(
+            spec,
+            JobStatus.QUEUED,
+            spec=spec.to_dict(),
+        )
         task = asyncio.create_task(
             self._run_worker(spec),
             name=f"worker-{spec.job_id}",
@@ -377,7 +398,11 @@ class OrchestrationSupervisor:
         if raw is None:
             raise ValueError(f"Job {job_id} not found")
 
-        spec_dict = {**(raw.get("spec") or {}), **(overrides or {})}
+        queued_spec = _queued_spec_for_job(events, job_id)
+        if queued_spec is None:
+            raise ValueError(f"Job {job_id} has no queued specification")
+
+        spec_dict = {**queued_spec, **(overrides or {})}
         session_id = spec_dict.get("session_id")
         parent_orchestrator_id = spec_dict.get("parent_orchestrator_id")
         new_spec = JobSpec(
@@ -426,7 +451,7 @@ class OrchestrationSupervisor:
         Raises:
             asyncio.CancelledError: Re-raised after recording a CANCELLED event when the running task is cancelled.
         """
-        self._append_event(spec.job_id, {"status": JobStatus.RUNNING})
+        self._append_lifecycle_event(spec, JobStatus.RUNNING)
         job_dir = self._state_dir / "jobs" / spec.job_id
         job_dir.mkdir(parents=True, exist_ok=True)
 
@@ -451,10 +476,11 @@ class OrchestrationSupervisor:
                 }
                 serialized = json.dumps(truncated, ensure_ascii=False, indent=2)
             (job_dir / "result.json").write_text(serialized, encoding="utf-8")
-            self._append_event(spec.job_id, {
-                "status": JobStatus.SUCCEEDED,
-                "artifact": str(job_dir / "result.json"),
-            })
+            self._append_lifecycle_event(
+                spec,
+                JobStatus.SUCCEEDED,
+                artifact=str(job_dir / "result.json"),
+            )
             await self._record_to_gossip("result", spec)
             self._maybe_emit_periscope_job(
                 spec,
@@ -463,25 +489,27 @@ class OrchestrationSupervisor:
 
         except asyncio.CancelledError:
             # Write CANCELLED checkpoint BEFORE propagating cancellation
-            self._append_event(spec.job_id, {"status": JobStatus.CANCELLED})
+            self._append_lifecycle_event(spec, JobStatus.CANCELLED)
             self._maybe_emit_periscope_job(spec, assistant_text="cancelled")
             raise
 
         except HardwareAffinityError as exc:
             # Fail-closed — SKILL.md rule: no auto-retry on policy errors
-            self._append_event(spec.job_id, {
-                "status": JobStatus.FAILED,
-                "error": str(exc),
-                "policy": True,
-            })
+            self._append_lifecycle_event(
+                spec,
+                JobStatus.FAILED,
+                error=str(exc),
+                policy=True,
+            )
             await self._record_to_gossip("error", spec, {"detail": str(exc), "policy": True})
             self._maybe_emit_periscope_job(spec, assistant_text=str(exc)[:2000])
 
         except Exception as exc:
-            self._append_event(spec.job_id, {
-                "status": JobStatus.FAILED,
-                "error": str(exc),
-            })
+            self._append_lifecycle_event(
+                spec,
+                JobStatus.FAILED,
+                error=str(exc),
+            )
             await self._record_to_gossip("error", spec, {"detail": str(exc)})
             self._maybe_emit_periscope_job(spec, assistant_text=str(exc)[:2000])
 
@@ -508,6 +536,7 @@ class OrchestrationSupervisor:
             "job_id": spec.job_id,
             "prompt": spec.prompt,
             "intent": spec.intent,
+            "lineage_trust": spec.lineage_trust,
         }
         if spec.role:
             payload["role"] = spec.role
@@ -790,6 +819,22 @@ class OrchestrationSupervisor:
 
     def _append_event(self, job_id: str, event: dict) -> None:
         _append_event(self._jobs_file, job_id, event)
+
+    def _append_lifecycle_event(
+        self,
+        job_spec: JobSpec,
+        status: JobStatus,
+        **fields: Any,
+    ) -> None:
+        """Append one monitorable lifecycle event without changing its source spec."""
+        self._append_event(
+            job_spec.job_id,
+            {
+                "status": status,
+                "lineage_trust": job_spec.lineage_trust,
+                **fields,
+            },
+        )
 
     @staticmethod
     def _prepare_spec_for_inference(
