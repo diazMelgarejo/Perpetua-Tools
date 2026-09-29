@@ -23,6 +23,13 @@ from orchestrator.gate import gate_permits, load_backend_by_name, load_frugality
 _log = logging.getLogger(__name__)
 
 PIPELINE_TIER = 5
+# Operator-default pipeline pools include Mac-local fallbacks before paid cloud.
+_PIPELINE_NON_TIER5_ALLOWLIST = frozenset(
+    {
+        "glm-5.1:cloud",
+        "Qwen3.5-9B-MLX-4bit",
+    }
+)
 PIPELINE_FLAG = "PIPELINE_TIERED_ENABLED"
 TRACE_PATH_ENV = "PT_PIPELINE_TRACE_PATH"
 APPROVAL_DIR_ENV = "PT_PIPELINE_APPROVAL_DIR"
@@ -469,7 +476,7 @@ class TieredPipelineRunner:
         for alias, candidates in models.items():
             for model_name in candidates:
                 tier = tiers.get(model_name)
-                if tier != PIPELINE_TIER:
+                if tier != PIPELINE_TIER and model_name not in _PIPELINE_NON_TIER5_ALLOWLIST:
                     raise PipelineConfigError(
                         "pipeline model %s=%r must be frugality tier %d; found %r"
                         % (alias, model_name, PIPELINE_TIER, tier)

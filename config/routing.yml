@@ -55,8 +55,8 @@ routes:
     endpoint: "http://localhost:8001/oramasys"
     timeout: 120
     requires: [orama_available]
-    fallback: local_qwen30b
-    roles: [orama, strategy, top-level, fallback]
+    fallback: Qwen3.5-9B-MLX-4bit
+    roles: [deep_reasoning]
 
   code_analysis:
     description: Deep code analysis requiring extended reasoning

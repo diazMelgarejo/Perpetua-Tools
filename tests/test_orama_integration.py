@@ -50,34 +50,17 @@ def _make_candidate(name="ultrathink", backend="ultrathink", device="any",
 # Fixtures
 # ---------------------------------------------------------------------------
 
+_DEEP_REASONING_CHAIN = (
+    "glm-5.1:cloud",
+    "Qwen3.5-9B-MLX-4bit",
+    "claude-sonnet-5",
+)
+
+
 @pytest.fixture(scope="module")
 def client():
-    """TestClient with ModelRegistry, CostGuard, AgentTracker, and
-    ultrathink HTTP calls all mocked out for offline CI."""
-    ultrathink_candidate = _make_candidate(
-        name="ultrathink",
-        backend="ultrathink",
-        device="any",
-        host="localhost",
-        port=8001,
-        online=False,
-        reasoning=True,
-    )
-    fallback_candidate = _make_candidate(
-        name="local_qwen30b",
-        backend="ollama",
-        device="win-rtx3080",
-        host="localhost",
-        port=11434,
-        online=False,
-        reasoning=False,
-    )
-
+    """TestClient with CostGuard and bridge calls mocked for offline CI."""
     with (
-        patch(
-            "orchestrator.model_registry.ModelRegistry.route_task",
-            return_value=[ultrathink_candidate, fallback_candidate],
-        ),
         patch(
             "orchestrator.fastapi_app.resolve_routing_state",
             new=lambda: __import__("asyncio").sleep(
@@ -123,57 +106,51 @@ def client():
 # Contract tests
 # ---------------------------------------------------------------------------
 
-class TestUltrathinkRouting:
-    """Verify PT correctly routes deep-reasoning tasks to ultrathink.
-    Satisfies SYNC_ANALYSIS OPT 3: Unified Integration Test.
-    """
+class TestDeepReasoningRouting:
+    """Verify PT routes deep_reasoning through the Mac-first model pool."""
 
-    # ---- 1. deep_reasoning route → ultrathink ---------------------------
-
-    def test_deep_reasoning_routes_to_ultrathink(self, client: TestClient):
-        """POST /orchestrate with task_type=deep_reasoning must select
-        the ultrathink backend as the primary model."""
-        resp = client.post("/orchestrate", json={
-            "task": "Analyze the distributed caching architecture for edge cases.",
-            "task_type": "deep_reasoning",
-        })
-        assert resp.status_code == 200, resp.text
-        body = resp.json()
-        # Must be created (not conflict — fresh TrackerAgent state)
-        assert body["status"] == "created"
-        selected = body["selected_model"]
-        assert selected["backend"] == "ultrathink", (
-            f"Expected ultrathink backend, got: {selected['backend']}"
+    def test_deep_reasoning_selects_glm_cloud_primary(self, client: TestClient):
+        resp = client.post(
+            "/orchestrate",
+            json={
+                "task": "Analyze the distributed caching architecture for edge cases.",
+                "task_type": "deep_reasoning",
+                "force": True,
+            },
         )
-
-    def test_deep_reasoning_response_has_ultrathink_host(self, client: TestClient):
-        """The selected_model host must reference the ultrathink endpoint
-        (localhost:8001) matching PERPLEXITY_BRIDGE.md ORAMA_ENDPOINT default."""
-        resp = client.post("/orchestrate", json={
-            "task": "Ultra-deep multi-step reasoning task for privacy-critical data.",
-            "task_type": "deep_reasoning",
-            "force": True,  # bypass idempotency so test is repeatable
-        })
-        assert resp.status_code == 200, resp.text
-        body = resp.json()
-        host_str = body["selected_model"]["host"]
-        assert "8001" in host_str, (
-            f"Expected ultrathink port 8001 in host, got: {host_str}"
-        )
-
-    # ---- 2. code_analysis route → ultrathink ----------------------------
-
-    def test_code_analysis_routes_to_ultrathink(self, client: TestClient):
-        """POST /orchestrate with task_type=code_analysis must also
-        select the ultrathink backend (deep code analysis requires extended reasoning)."""
-        resp = client.post("/orchestrate", json={
-            "task": "Full codebase audit: identify security vulnerabilities in auth module.",
-            "task_type": "code_analysis",
-        })
         assert resp.status_code == 200, resp.text
         body = resp.json()
         assert body["status"] == "created"
-        assert body["selected_model"]["backend"] == "ultrathink"
+        assert body["selected_model"]["name"] == "glm-5.1:cloud"
+
+    def test_deep_reasoning_selected_model_is_mac_ollama_lane(self, client: TestClient):
+        resp = client.post(
+            "/orchestrate",
+            json={
+                "task": "Ultra-deep multi-step reasoning task for privacy-critical data.",
+                "task_type": "deep_reasoning",
+                "force": True,
+            },
+        )
+        assert resp.status_code == 200, resp.text
+        selected = resp.json()["selected_model"]
+        assert selected["backend"] == "ollama"
+        assert selected["device"] == "mac-studio"
+
+    def test_code_analysis_still_uses_coding_lane(self, client: TestClient):
+        resp = client.post(
+            "/orchestrate",
+            json={
+                "task": "Full codebase audit: identify security vulnerabilities in auth module.",
+                "task_type": "code_analysis",
+                "preferred_device": "win-rtx3080",
+                "force": True,
+            },
+        )
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["status"] == "created"
+        assert body["selected_model"]["device"] == "win-rtx3080"
 
     # ---- 3. Response structure matches BRIDGE spec ----------------------
 
@@ -204,35 +181,18 @@ class TestUltrathinkRouting:
         # fallback_chain is a list
         assert isinstance(body["fallback_chain"], list)
 
-    # ---- 4. Fallback chain contains local_qwen30b -----------------------
-
-    def test_fallback_chain_contains_local_qwen30b(self, client: TestClient):
-        """When ultrathink is the primary selection, local_qwen30b must be
-        in the fallback chain (as configured in routing.yml)."""
-        resp = client.post("/orchestrate", json={
-            "task": "Fallback chain verification task.",
-            "task_type": "deep_reasoning",
-            "force": True,
-        })
-        assert resp.status_code == 200, resp.text
-        chain = resp.json()["fallback_chain"]
-        fallback_names = [entry["name"] for entry in chain]
-        assert "local_qwen30b" in fallback_names, (
-            f"Expected local_qwen30b in fallback chain, got: {fallback_names}"
+    def test_deep_reasoning_fallback_chain_order(self, client: TestClient):
+        resp = client.post(
+            "/orchestrate",
+            json={
+                "task": "Fallback chain verification task.",
+                "task_type": "deep_reasoning",
+                "force": True,
+            },
         )
-
-    # ---- 5. reasoning flag is True for ultrathink -----------------------
-
-    def test_ultrathink_selected_model_has_reasoning_true(self, client: TestClient):
-        """selected_model.reasoning must be True for ultrathink selections
-        (signals extended-reasoning capability to callers)."""
-        resp = client.post("/orchestrate", json={
-            "task": "Reasoning flag verification.",
-            "task_type": "deep_reasoning",
-            "force": True,
-        })
         assert resp.status_code == 200, resp.text
-        assert resp.json()["selected_model"]["reasoning"] is True
+        fallback_names = [entry["name"] for entry in resp.json()["fallback_chain"]]
+        assert fallback_names == list(_DEEP_REASONING_CHAIN[1:])
 
     # ---- 6. Idempotency: same task → conflict on second call ------------
 
@@ -287,10 +247,9 @@ class TestRoutingYmlUltrathinkContract:
         assert route["endpoint"] == "http://localhost:8001/oramasys"
         assert route["timeout"] == 120
 
-    def test_deep_reasoning_has_ultrathink_fallback(self, routing: dict):
+    def test_deep_reasoning_has_mac_lm_studio_fallback(self, routing: dict):
         route = routing["routes"]["deep_reasoning"]
-        assert "fallback" in route
-        assert route["fallback"] == "local_qwen30b"
+        assert route.get("fallback") == "Qwen3.5-9B-MLX-4bit"
 
     def test_code_analysis_has_ultrathink_fallback(self, routing: dict):
         route = routing["routes"]["code_analysis"]

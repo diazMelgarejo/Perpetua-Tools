@@ -10,14 +10,14 @@ def test_repository_pipeline_config_resolves_ordered_tier_five_candidates(monkey
 
     assert tiered_pipeline_enabled() is True
     assert recipe.stages[0].models == (
-        "openrouter-gpt-4o-mini",
-        "glm-5.2",
+        "glm-5.1:cloud",
+        "Qwen3.5-9B-MLX-4bit",
         "claude-sonnet-5",
     )
     assert recipe.stages[1].models == (
-        "openrouter-claude-sonnet-4.6",
+        "glm-5.1:cloud",
+        "Qwen3.5-9B-MLX-4bit",
         "claude-sonnet-5",
-        "glm-5.2",
     )
     assert sum(stage.max_tokens for stage in recipe.stages) <= recipe.max_total_tokens
     assert recipe.max_input_tokens > 0

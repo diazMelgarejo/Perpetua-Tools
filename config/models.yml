@@ -21,6 +21,7 @@ models:
       - "long_context"
       - "strategy"
       - "general"
+      - "deep_reasoning"
     description: "Top Orchestrator - Cloud-Local Hybrid"
     tier: "primary"
     # frugality_tier=4 (free_proprietary): ":cloud" suffix routes through
@@ -138,7 +139,7 @@ models:
     port: 1234
     context_window: 4096
     gpu_offload: full
-    roles: [mac_orchestrator, refiner, verifier, final-validator, presenter, top-level]
+    roles: [mac_orchestrator, refiner, verifier, final-validator, presenter, top-level, deep_reasoning]
     priority: 10
     status: "🔵 Preferred Fallback"
     online: false
@@ -230,7 +231,7 @@ models:
     port: 443
     context_window: 1000000
     max_tokens: 128000
-    roles: [strategy, architecture, top-level]
+    roles: [strategy, architecture, top-level, deep_reasoning]
     priority: 50
     online: true
     reasoning: medium-depth
@@ -281,7 +282,7 @@ models:
     host: "${WIN_OLLAMA_ENDPOINT:-http://localhost:11434}"
     port: 11434
     context_window: 32768
-    roles: [autoresearch-critic, critic, refiner, strategy, fallback]
+    roles: [autoresearch-critic, critic, refiner, fallback]
     priority: 15
     online: false
     reasoning: windows-local-critic
