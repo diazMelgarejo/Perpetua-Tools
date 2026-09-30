@@ -1314,6 +1314,21 @@ def _validate_job_id(job_id: str) -> str:
     return job_id
 
 
+def _replay_value_error_to_http(exc: ValueError) -> HTTPException:
+    """Map supervisor replay failures to client-safe HTTP status codes."""
+    message = str(exc).casefold()
+    if "not found" in message:
+        return HTTPException(status_code=404, detail="Job not found")
+    if "not replayable" in message:
+        return HTTPException(status_code=409, detail="Job is not replayable")
+    if "queued specification" in message:
+        return HTTPException(
+            status_code=422,
+            detail="Job has no queued specification",
+        )
+    return HTTPException(status_code=400, detail="Replay request could not be completed")
+
+
 _supervisor: OrchestrationSupervisor | None = None
 
 
@@ -1471,7 +1486,9 @@ async def supervisor_replay_job(job_id: str, http_request: Request):
     
     Raises:
         HTTPException: 400 if `job_id` is not a valid UUIDv4.
-        HTTPException: 404 if the original job cannot be found or replay is not possible.
+        HTTPException: 404 if the original job cannot be found.
+        HTTPException: 409 if the job exists but is not in a replayable state.
+        HTTPException: 422 if the job has no queued specification to replay.
     """
     _validate_job_id(job_id)
     try:
@@ -1482,8 +1499,8 @@ async def supervisor_replay_job(job_id: str, http_request: Request):
             },
         )
         return {"original_job_id": job_id, "new_job_id": new_id, "state": JobStatus.QUEUED.value}
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Job not found") from None
+    except ValueError as exc:
+        raise _replay_value_error_to_http(exc) from None
 
 
 if __name__ == "__main__":

@@ -64,7 +64,7 @@ def test_orchestrate_calls_oramasys_bridge_with_mapped_depth(monkeypatch):
 
     with (
         patch(
-            "orchestrator.model_registry.ModelRegistry.route_task",
+            "orchestrator.fastapi_app.registry.route_task",
             return_value=[ultrathink_candidate, fallback_candidate],
         ),
         patch("orchestrator.cost_guard.CostGuard.can_spend", return_value=True),
