@@ -16,7 +16,7 @@ import sys
 import os
 from pathlib import Path
 from typing import Any, Dict
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -60,7 +60,48 @@ _DEEP_REASONING_CHAIN = (
 @pytest.fixture(scope="module")
 def client():
     """TestClient with CostGuard and bridge calls mocked for offline CI."""
+    deep_reasoning_candidates = [
+        _make_candidate(
+            name="glm-5.1:cloud",
+            backend="ollama",
+            device="mac-studio",
+            host="localhost",
+            port=11434,
+        ),
+        _make_candidate(
+            name="Qwen3.5-9B-MLX-4bit",
+            backend="lmstudio-mac",
+            device="mac-studio",
+        ),
+        _make_candidate(
+            name="claude-sonnet-5",
+            backend="anthropic",
+            device="cloud",
+        ),
+    ]
+    code_analysis_candidate = _make_candidate(
+        name="Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2",
+        backend="lmstudio-win",
+        device="win-rtx3080",
+    )
+
+    def route_task(task_type: str, *, preferred_device: str | None = None):
+        if task_type == "code_analysis" or preferred_device == "win-rtx3080":
+            return [code_analysis_candidate]
+        return deep_reasoning_candidates
+
+    async def candidate_ready(_candidate: MagicMock) -> tuple[bool, str]:
+        return True, "mock-ready"
+
     with (
+        # Patch the live singleton. A class-level patch can be shadowed by a
+        # test that assigns this instance attribute directly.
+        patch("orchestrator.fastapi_app.registry.route_task", new=route_task),
+        patch("orchestrator.fastapi_app._candidate_availability", new=candidate_ready),
+        patch(
+            "orchestrator.fastapi_app.call_oramasys_mcp_or_bridge",
+            new=AsyncMock(return_value={"status": "mocked"}),
+        ),
         patch(
             "orchestrator.fastapi_app.resolve_routing_state",
             new=lambda: __import__("asyncio").sleep(

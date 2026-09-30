@@ -8,6 +8,7 @@ Specifically ensures deep_reasoning and code_analysis tasks target correctly.
 from __future__ import annotations
 import os
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Dict, List
 import pytest
 from fastapi.testclient import TestClient
@@ -18,7 +19,7 @@ REPO_ROOT = Path(__file__).parent.parent
 os.environ["OLLAMA_HOST"] = "http://localhost"
 
 from orchestrator.model_registry import ModelRegistry
-from orchestrator.fastapi_app import app
+from orchestrator.fastapi_app import _resolve_candidates, app
 from utils.hardware_policy import HardwareAffinityError, check_affinity, filter_models_for_platform, load_policy
 import utils.hardware_policy as _hw_policy_mod
 
@@ -362,6 +363,29 @@ def test_orchestrate_falls_back_to_mac_lmstudio_when_glm_unavailable(monkeypatch
     assert data["selected_model"]["name"] == "Qwen3.5-9B-MLX-4bit"
     availability = data["availability"]
     assert any(entry["detail"] == "rate-limited" for entry in availability.values())
+
+
+@pytest.mark.asyncio
+async def test_oramasys_prefers_ready_fallback_over_unavailable_primary(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    primary = SimpleNamespace(name="primary", backend="ollama", device="mac")
+    fallback = SimpleNamespace(name="fallback", backend="lm-studio", device="mac")
+
+    async def selectively_ready(candidate: Any) -> tuple[bool, str]:
+        return (candidate is fallback, "ready" if candidate is fallback else "offline")
+
+    monkeypatch.setattr(
+        "orchestrator.fastapi_app._candidate_availability", selectively_ready
+    )
+
+    resolved, availability = await _resolve_candidates(
+        [primary, fallback], "deep_reasoning"
+    )
+
+    assert resolved == [fallback]
+    assert availability["primary@mac"]["ready"] is False
+    assert availability["fallback@mac"]["ready"] is True
 
 
 def test_autoresearch_returns_user_action_when_no_local_backend_reachable(monkeypatch, client):

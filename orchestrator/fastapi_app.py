@@ -522,10 +522,12 @@ async def _resolve_candidates(
             return [], availability
         return local_ready, availability
 
-    # Oramasys task types keep the registry-ordered Mac-first pool even when
-    # cloud endpoints answer probes in CI (local GLM/LM Studio probes fail offline).
+    # Preserve registry order among reachable candidates. If every probe fails,
+    # retain the configured chain so callers can still report or attempt their
+    # declared fallbacks rather than treating an unavailable probe as a route
+    # configuration error.
     if task_type in _ORAMASYS_TASK_TYPES:
-        return candidates, availability
+        return resolved or candidates, availability
 
     return resolved or candidates, availability
 
