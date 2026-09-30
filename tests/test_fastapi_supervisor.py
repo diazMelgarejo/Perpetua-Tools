@@ -337,6 +337,7 @@ class TestReplayJobEndpointStates:
 
     def test_queued_job_returns_409_not_replayable(self, monkeypatch, tmp_path: Path):
         job_id = str(uuid.uuid4())
+        monkeypatch.setenv("PT_STATE_DIR", str(tmp_path))
         sup = OrchestrationSupervisor(state_dir=tmp_path)
         _append_event(
             tmp_path / "jobs.jsonl",
@@ -359,6 +360,7 @@ class TestReplayJobEndpointStates:
         tmp_path: Path,
     ):
         job_id = str(uuid.uuid4())
+        monkeypatch.setenv("PT_STATE_DIR", str(tmp_path))
         sup = OrchestrationSupervisor(state_dir=tmp_path)
         _append_event(
             tmp_path / "jobs.jsonl",
