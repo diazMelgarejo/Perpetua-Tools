@@ -120,11 +120,15 @@ def caller_reported_lineage_metadata(
     session_id: Optional[str],
     parent_orchestrator_id: Optional[str],
 ) -> Dict[str, Any]:
-    """Stamp session lineage as caller-reported; never persist ``verified``.
+    """Label persisted session lineage as caller-reported; never persist ``verified``.
 
-    Submit and replay copy ``session_id`` / ``parent_orchestrator_id`` as
-    correlation metadata. They are not authorization grants.
-    ``lineage_trust="verified"`` is reserved and is not produced here.
+    The control-plane bearer admits the submitter; it does not prove ownership
+    of ``session_id`` or ``parent_orchestrator_id``. Downstream code must not
+    treat those fields as PT-verified provenance.
+
+    Submit and replay copy those ids as correlation metadata only. They are not
+    authorization grants. ``lineage_trust="verified"`` is reserved and is not
+    produced here.
     """
     stamped = dict(metadata) if isinstance(metadata, dict) else {}
     stamped.pop("lineage_trust", None)
@@ -400,7 +404,12 @@ class OrchestrationSupervisor:
         return False
 
     async def replay(self, job_id: str, overrides: dict | None = None) -> str:
-        """Re-queue a terminal job under a new id; never promote lineage_trust."""
+        """Re-run a failed or cancelled job under a new job_id.
+
+        Rebuilds the queued specification (not the terminal event), restamps
+        ``lineage_trust`` as ``caller_reported``, and never promotes stored or
+        override trust to ``verified``.
+        """
         events = _load_events(self._jobs_file)
         states = _latest_status_per_job(events)
         raw = states.get(job_id)

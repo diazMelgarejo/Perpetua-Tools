@@ -1,13 +1,20 @@
-"""test_ultrathink_integration.py — Unified integration test (SYNC_ANALYSIS OPT 3)
+"""Unified orchestrate integration tests (SYNC_ANALYSIS OPT 3).
 
 Verifies the end-to-end contract between Perpetua-Tools and orama-system:
-  POST /orchestrate with task_type="deep_reasoning"  →  ultrathink endpoint in response
-  POST /orchestrate with task_type="code_analysis"   →  ultrathink endpoint in response
-  Response structure matches the MCP-first bridge contract, with HTTP `/ultrathink`
-  available as an implemented backup bridge when explicitly enabled
 
-All HTTP calls to ultrathink (port 8001) and Ollama are mocked — runs fully offline in CI.
-No version bump — rolling changes pre-v1.0 RC.
+  POST /orchestrate with ``task_type="deep_reasoning"`` selects the Mac-first
+  reasoning pool (glm cloud primary, MLX and Claude fallbacks).
+
+  POST /orchestrate with ``task_type="code_analysis"`` honors the Windows coding
+  lane when requested.
+
+Earlier revisions asserted ultrathink (port 8001) as the primary selected
+backend; ``config/routing.yml`` still names the oramasys endpoint and
+``local_qwen30b`` fallback while registry selection follows the Mac-first pool.
+Response structure matches the MCP-first bridge contract, with HTTP backup when
+enabled.
+
+Model discovery, availability probes, and bridge calls are mocked for offline CI.
 """
 
 from __future__ import annotations
@@ -59,7 +66,12 @@ _DEEP_REASONING_CHAIN = (
 
 @pytest.fixture(scope="module")
 def client():
-    """TestClient with CostGuard and bridge calls mocked for offline CI."""
+    """TestClient with registry routing, availability, CostGuard, and bridge mocked.
+
+    Patches the live ``fastapi_app.registry`` singleton (not only the
+    ``ModelRegistry`` class) so portal and orchestrate tests stay isolated.
+    Ultrathink and Ollama HTTP are not contacted.
+    """
     deep_reasoning_candidates = [
         _make_candidate(
             name="glm-5.1:cloud",
@@ -150,10 +162,20 @@ def client():
 # ---------------------------------------------------------------------------
 
 class TestDeepReasoningRouting:
-    """Verify PT routes deep_reasoning through the Mac-first model pool."""
+    """Verify deep-reasoning orchestration through the Mac-first model pool.
+
+    Supersedes the former ``TestUltrathinkRouting`` contract that required
+    ultrathink as ``selected_model``; oramasys bridge routing remains configured
+    in ``routing.yml`` while the registry path under test is offline and
+    Mac-first. Satisfies SYNC_ANALYSIS OPT 3: unified integration test.
+    """
 
     def test_deep_reasoning_selects_glm_cloud_primary(self, client: TestClient):
-        """Verify deep-reasoning requests select the GLM cloud model first."""
+        """POST /orchestrate deep_reasoning selects glm-5.1:cloud as primary.
+
+        Replaces the earlier ultrathink-primary assertion when the Mac-first pool
+        is configured ahead of the oramasys bridge candidate.
+        """
         resp = client.post(
             "/orchestrate",
             json={
@@ -168,7 +190,11 @@ class TestDeepReasoningRouting:
         assert body["selected_model"]["name"] == "glm-5.1:cloud"
 
     def test_deep_reasoning_selected_model_is_mac_ollama_lane(self, client: TestClient):
-        """Verify the selected reasoning model uses Ollama on the Mac device."""
+        """Selected reasoning model uses Ollama on the Mac device.
+
+        The prior contract checked ``localhost:8001`` (ultrathink /
+        ``ORAMA_ENDPOINT``); this asserts the Mac Ollama lane instead.
+        """
         resp = client.post(
             "/orchestrate",
             json={
@@ -183,7 +209,11 @@ class TestDeepReasoningRouting:
         assert selected["device"] == "mac-studio"
 
     def test_code_analysis_still_uses_coding_lane(self, client: TestClient):
-        """Verify code analysis honors the requested Windows coding device."""
+        """POST /orchestrate code_analysis honors the Windows coding device.
+
+        Deep code analysis still routes through extended reasoning; the selected
+        backend is the Windows LM Studio lane rather than ultrathink primary.
+        """
         resp = client.post(
             "/orchestrate",
             json={
@@ -228,7 +258,11 @@ class TestDeepReasoningRouting:
         assert isinstance(body["fallback_chain"], list)
 
     def test_deep_reasoning_fallback_chain_order(self, client: TestClient):
-        """Verify the response preserves the configured reasoning fallback order."""
+        """Response preserves the Mac-first reasoning fallback order.
+
+        When ultrathink was primary, ``local_qwen30b`` followed in
+        ``routing.yml``; the registry chain now lists MLX and Claude after glm.
+        """
         resp = client.post(
             "/orchestrate",
             json={
@@ -295,7 +329,11 @@ class TestRoutingYmlUltrathinkContract:
         assert route["timeout"] == 120
 
     def test_deep_reasoning_has_mac_lm_studio_fallback(self, routing: dict):
-        """Verify routing configuration names the Mac LM Studio reasoning fallback."""
+        """``routing.yml`` names the Mac LM Studio reasoning fallback.
+
+        ``selected_model.reasoning`` remains part of the bridge spec; ultrathink
+        selections used to assert ``reasoning is True`` for extended reasoning.
+        """
         route = routing["routes"]["deep_reasoning"]
         assert route.get("fallback") == "Qwen3.5-9B-MLX-4bit"
 

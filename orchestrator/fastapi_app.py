@@ -1498,7 +1498,8 @@ async def supervisor_replay_job(job_id: str, http_request: Request):
     Raises:
         HTTPException: 400 if `job_id` is not a valid UUIDv4.
         HTTPException: 404 if the original job cannot be found.
-        HTTPException: 409 if the job exists but is not in a replayable state.
+        HTTPException: 409 if the job exists but is not in a replayable state
+            (supersedes the earlier single 404 for all replay failures).
         HTTPException: 422 if the job has no queued specification to replay.
     """
     _validate_job_id(job_id)

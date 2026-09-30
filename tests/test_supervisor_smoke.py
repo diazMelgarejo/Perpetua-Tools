@@ -1058,7 +1058,12 @@ async def test_record_to_gossip_omits_role_when_none(tmp_path):
 
 @pytest.mark.asyncio
 async def test_record_to_gossip_merges_extra_dict(tmp_path):
-    """Extra kwargs add detail without changing the immutable trust label."""
+    """Extra kwargs merge into the emitted payload and cannot restamp trust.
+
+    Extra fields such as ``detail`` and ``policy`` are merged into the gossip
+    payload. ``lineage_trust`` stays owned by ``JobSpec`` and is not overwritten
+    by lifecycle extras.
+    """
     from unittest.mock import AsyncMock, MagicMock, patch
 
     sup = _make_sup(tmp_path)
