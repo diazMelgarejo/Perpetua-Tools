@@ -501,6 +501,11 @@ async def _resolve_candidates(
     candidates: List[Any],
     task_type: str,
 ) -> tuple[list[Any], dict[str, dict[str, Any]]]:
+    """Return reachable candidates in registry order and their probe results.
+
+    Autoresearch requires reachable local candidates; other tasks retain the
+    configured chain when every probe fails.
+    """
     resolved: list[Any] = []
     availability: dict[str, dict[str, Any]] = {}
 
@@ -794,6 +799,7 @@ def _normalize_preferred_device(value: Optional[str]) -> Optional[str]:
 
 
 def _backend_hint_from_target(target: Any) -> Optional[str]:
+    """Normalize a target backend, selecting the LM Studio device or None if unset."""
     backend = str(getattr(target, "backend", "") or "").strip().lower()
     device = str(getattr(target, "device", "") or "").strip().lower()
     if backend in {"lm-studio", "lmstudio", "lm_studio"}:

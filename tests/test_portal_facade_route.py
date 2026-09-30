@@ -32,6 +32,7 @@ def offline_route(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture
 def client(offline_route: None) -> Generator[TestClient, None, None]:
+    """Yield a portal test client with model discovery replaced by offline routing."""
     with TestClient(app, raise_server_exceptions=False) as test_client:
         yield test_client
 
@@ -48,6 +49,7 @@ def test_post_models_route_requires_bearer_when_auth_enforced(
     monkeypatch: pytest.MonkeyPatch,
     offline_route: None,
 ) -> None:
+    """Verify route requests require a matching bearer token when auth is enforced."""
     monkeypatch.setenv("ORAMA_INSECURE_DEV", "0")
     monkeypatch.setenv("ORAMA_CONTROL_PLANE_TOKEN", "portal-route-test-token")
     monkeypatch.setattr(
@@ -80,6 +82,7 @@ def test_post_models_route_fails_closed_without_configured_token(
     monkeypatch: pytest.MonkeyPatch,
     offline_route: None,
 ) -> None:
+    """Verify route requests return HTTP 503 when no control-plane token is configured."""
     monkeypatch.setenv("ORAMA_INSECURE_DEV", "0")
     monkeypatch.delenv("ORAMA_CONTROL_PLANE_TOKEN", raising=False)
     monkeypatch.delenv("ORAMA_CONTROL_PLANE_TOKEN_LOCAL", raising=False)
@@ -127,6 +130,7 @@ def test_backend_hint_maps_lm_studio_windows_device():
 
 
 def test_backend_hint_omits_unknown_or_empty_backend() -> None:
+    """Verify a target with an empty backend produces no backend hint."""
     target = SimpleNamespace(backend="", device="mac", name="qwen")
     assert _backend_hint_from_target(target) is None
 
@@ -135,6 +139,7 @@ def test_post_models_route_omits_backend_hints_for_target_without_backend(
     client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Verify missing backends omit provider hints while retaining model and chain data."""
     target = SimpleNamespace(
         backend="",
         device="mac",
@@ -163,6 +168,7 @@ def test_post_models_route_uses_role_specialization(
     client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Verify role specialization selects its registered backend and model hints."""
     monkeypatch.setitem(
         ROLE_BACKEND_MAP,
         ("context-agent", "codebase-map"),

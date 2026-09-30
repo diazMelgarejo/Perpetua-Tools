@@ -26,6 +26,7 @@ from orchestrator.supervisor import (
 
 
 def test_helper_strips_forged_verified_trust() -> None:
+    """Verify lineage stamping downgrades forged trust and preserves other metadata."""
     stamped = caller_reported_lineage_metadata(
         {"lineage_trust": "verified", "model": "qwen"},
         session_id="someone-elses-session",
@@ -37,6 +38,7 @@ def test_helper_strips_forged_verified_trust() -> None:
 
 
 def test_helper_omits_trust_label_without_lineage_ids() -> None:
+    """Verify metadata has no trust label when neither lineage identifier is present."""
     stamped = caller_reported_lineage_metadata(
         {"lineage_trust": "verified"},
         session_id=None,
@@ -47,6 +49,7 @@ def test_helper_omits_trust_label_without_lineage_ids() -> None:
 
 @pytest.mark.asyncio
 async def test_replay_downgrades_stored_verified_lineage(tmp_path: Path) -> None:
+    """Verify replay preserves the queued spec but downgrades stored and overridden trust."""
     sup = OrchestrationSupervisor(state_dir=tmp_path)
     original = JobSpec(
         intent="echo",
@@ -115,6 +118,7 @@ async def test_replay_downgrades_stored_verified_lineage(tmp_path: Path) -> None
 
 @pytest.mark.asyncio
 async def test_replay_without_lineage_stays_compatible(tmp_path: Path) -> None:
+    """Verify replay accepts jobs without lineage IDs and omits metadata trust labels."""
     sup = OrchestrationSupervisor(state_dir=tmp_path)
     job_id = await sup.submit_job(
         JobSpec(intent="echo", prompt="hello", backend_hint="echo")
@@ -146,6 +150,7 @@ async def test_replay_rejects_a_job_still_in_flight(
     tmp_path: Path,
     status: JobStatus,
 ) -> None:
+    """Verify queued, running, and waiting jobs cannot be replayed."""
     sup = OrchestrationSupervisor(state_dir=tmp_path)
     job_id = "in-flight-job"
     _append_event(
@@ -169,6 +174,7 @@ async def test_replay_rejects_a_job_still_in_flight(
 
 @pytest.mark.asyncio
 async def test_replay_rejects_job_without_a_queued_spec(tmp_path: Path) -> None:
+    """Verify replay rejects terminal jobs whose original queued specification is absent."""
     sup = OrchestrationSupervisor(state_dir=tmp_path)
     _append_event(
         tmp_path / "jobs.jsonl",
@@ -181,11 +187,13 @@ async def test_replay_rejects_job_without_a_queued_spec(tmp_path: Path) -> None:
 
 
 def test_insecure_dev_submit_records_lane(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify development-mode submission records its lane and caller-reported lineage."""
     monkeypatch.setenv("ORAMA_INSECURE_DEV", "1")
     captured: dict = {}
 
     class _Fake:
         async def submit_job(self, spec):
+            """Capture the submitted specification and return its ID without starting a worker."""
             captured["spec"] = spec
             return spec.job_id
 

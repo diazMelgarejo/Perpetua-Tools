@@ -86,11 +86,13 @@ def client():
     )
 
     def route_task(task_type: str, *, preferred_device: str | None = None):
+        """Return offline coding or reasoning candidates according to the requested route."""
         if task_type == "code_analysis" or preferred_device == "win-rtx3080":
             return [code_analysis_candidate]
         return deep_reasoning_candidates
 
     async def candidate_ready(_candidate: MagicMock) -> tuple[bool, str]:
+        """Mark fixture candidates ready without contacting model servers."""
         return True, "mock-ready"
 
     with (
@@ -151,6 +153,7 @@ class TestDeepReasoningRouting:
     """Verify PT routes deep_reasoning through the Mac-first model pool."""
 
     def test_deep_reasoning_selects_glm_cloud_primary(self, client: TestClient):
+        """Verify deep-reasoning requests select the GLM cloud model first."""
         resp = client.post(
             "/orchestrate",
             json={
@@ -165,6 +168,7 @@ class TestDeepReasoningRouting:
         assert body["selected_model"]["name"] == "glm-5.1:cloud"
 
     def test_deep_reasoning_selected_model_is_mac_ollama_lane(self, client: TestClient):
+        """Verify the selected reasoning model uses Ollama on the Mac device."""
         resp = client.post(
             "/orchestrate",
             json={
@@ -179,6 +183,7 @@ class TestDeepReasoningRouting:
         assert selected["device"] == "mac-studio"
 
     def test_code_analysis_still_uses_coding_lane(self, client: TestClient):
+        """Verify code analysis honors the requested Windows coding device."""
         resp = client.post(
             "/orchestrate",
             json={
@@ -223,6 +228,7 @@ class TestDeepReasoningRouting:
         assert isinstance(body["fallback_chain"], list)
 
     def test_deep_reasoning_fallback_chain_order(self, client: TestClient):
+        """Verify the response preserves the configured reasoning fallback order."""
         resp = client.post(
             "/orchestrate",
             json={
@@ -289,6 +295,7 @@ class TestRoutingYmlUltrathinkContract:
         assert route["timeout"] == 120
 
     def test_deep_reasoning_has_mac_lm_studio_fallback(self, routing: dict):
+        """Verify routing configuration names the Mac LM Studio reasoning fallback."""
         route = routing["routes"]["deep_reasoning"]
         assert route.get("fallback") == "Qwen3.5-9B-MLX-4bit"
 

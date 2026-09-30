@@ -32,6 +32,7 @@ def _make_candidate(
 
 
 def test_orchestrate_calls_oramasys_bridge_with_mapped_depth(monkeypatch):
+    """Verify deep-reasoning orchestration uses the HTTP backup with ultra depth."""
     monkeypatch.setenv("ORAMA_ENDPOINT", "http://localhost:8001")
 
     ultrathink_candidate = _make_candidate()

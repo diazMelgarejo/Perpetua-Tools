@@ -306,6 +306,7 @@ class TestReplayJobEndpointValidation:
         assert detail == "Job not found"
 
     def test_400_detail_contains_uuid4(self):
+        """Verify an invalid replay job ID produces a detail naming the UUID4 requirement."""
         with TestClient(app, raise_server_exceptions=False) as client:
             resp = client.post("/v1/jobs/not-a-uuid/replay")
         assert "uuid4" in resp.json().get("detail", "").lower()
@@ -315,16 +316,19 @@ class TestReplayValueErrorHttpMapping:
     """Supervisor replay ValueError messages map to distinct HTTP statuses."""
 
     def test_not_found_maps_to_404(self):
+        """Verify missing jobs map to a 404 without exposing the job ID."""
         exc = _replay_value_error_to_http(ValueError("Job abc not found"))
         assert exc.status_code == 404
         assert exc.detail == "Job not found"
 
     def test_not_replayable_maps_to_409(self):
+        """Verify nonterminal replay attempts map to a sanitized 409 response."""
         exc = _replay_value_error_to_http(ValueError("Job abc is not replayable"))
         assert exc.status_code == 409
         assert exc.detail == "Job is not replayable"
 
     def test_missing_queued_spec_maps_to_422(self):
+        """Verify a missing queued specification maps to a sanitized 422 response."""
         exc = _replay_value_error_to_http(
             ValueError("Job abc has no queued specification")
         )
@@ -336,6 +340,7 @@ class TestReplayJobEndpointStates:
     """Replay HTTP responses distinguish missing jobs from invalid replay state."""
 
     def test_queued_job_returns_409_not_replayable(self, monkeypatch, tmp_path: Path):
+        """Verify the replay endpoint rejects a persisted queued job with HTTP 409."""
         job_id = str(uuid.uuid4())
         monkeypatch.setenv("PT_STATE_DIR", str(tmp_path))
         sup = OrchestrationSupervisor(state_dir=tmp_path)
@@ -359,6 +364,7 @@ class TestReplayJobEndpointStates:
         monkeypatch,
         tmp_path: Path,
     ):
+        """Verify terminal jobs lacking a queued specification receive HTTP 422."""
         job_id = str(uuid.uuid4())
         monkeypatch.setenv("PT_STATE_DIR", str(tmp_path))
         sup = OrchestrationSupervisor(state_dir=tmp_path)

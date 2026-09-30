@@ -369,10 +369,12 @@ def test_orchestrate_falls_back_to_mac_lmstudio_when_glm_unavailable(monkeypatch
 async def test_oramasys_prefers_ready_fallback_over_unavailable_primary(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Verify routing selects a reachable fallback and retains both probe results."""
     primary = SimpleNamespace(name="primary", backend="ollama", device="mac")
     fallback = SimpleNamespace(name="fallback", backend="lm-studio", device="mac")
 
     async def selectively_ready(candidate: Any) -> tuple[bool, str]:
+        """Report only the fallback candidate as reachable without network probes."""
         return (candidate is fallback, "ready" if candidate is fallback else "offline")
 
     monkeypatch.setattr(

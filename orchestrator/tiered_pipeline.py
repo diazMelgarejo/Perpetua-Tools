@@ -404,6 +404,12 @@ class TieredPipelineRunner:
     def _load_and_validate(
         self,
     ) -> tuple[dict[str, tuple[str, ...]], dict[str, PipelineRecipe], dict[str, str]]:
+        """Load model aliases, recipes, and backend mappings from pipeline configuration.
+
+        Apply model overrides while preserving fallback order, then validate model
+        eligibility, stage dependencies, and resource limits. Raise
+        PipelineConfigError for missing files or invalid configuration.
+        """
         if not self.config_path.is_file():
             raise PipelineConfigError("pipeline config missing: %s" % self.config_path)
         if not self.models_path.is_file():
