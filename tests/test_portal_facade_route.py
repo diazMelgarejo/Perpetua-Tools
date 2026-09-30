@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+from typing import Generator
 
 import pytest
 from fastapi.testclient import TestClient
@@ -15,7 +16,22 @@ from orchestrator.worker_registry import ROLE_BACKEND_MAP
 
 
 @pytest.fixture
-def client():
+def offline_route(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep portal HTTP tests independent of LAN model discovery."""
+    target = SimpleNamespace(
+        backend="ollama",
+        device="mac-studio",
+        name="test-model",
+        api_model="test-model",
+    )
+    monkeypatch.setattr(
+        "orchestrator.fastapi_app.registry.route_task",
+        lambda *args, **kwargs: [target],
+    )
+
+
+@pytest.fixture
+def client(offline_route: None) -> Generator[TestClient, None, None]:
     with TestClient(app, raise_server_exceptions=False) as test_client:
         yield test_client
 
@@ -28,7 +44,10 @@ def test_get_models_route_keeps_fallback_chain(client: TestClient):
     assert "backend_hint" in body or body["fallback_chain"] == []
 
 
-def test_post_models_route_requires_bearer_when_auth_enforced(monkeypatch):
+def test_post_models_route_requires_bearer_when_auth_enforced(
+    monkeypatch: pytest.MonkeyPatch,
+    offline_route: None,
+) -> None:
     monkeypatch.setenv("ORAMA_INSECURE_DEV", "0")
     monkeypatch.setenv("ORAMA_CONTROL_PLANE_TOKEN", "portal-route-test-token")
     monkeypatch.setattr(
@@ -57,7 +76,10 @@ def test_post_models_route_requires_bearer_when_auth_enforced(monkeypatch):
     assert allowed.status_code == 200
 
 
-def test_post_models_route_fails_closed_without_configured_token(monkeypatch):
+def test_post_models_route_fails_closed_without_configured_token(
+    monkeypatch: pytest.MonkeyPatch,
+    offline_route: None,
+) -> None:
     monkeypatch.setenv("ORAMA_INSECURE_DEV", "0")
     monkeypatch.delenv("ORAMA_CONTROL_PLANE_TOKEN", raising=False)
     monkeypatch.delenv("ORAMA_CONTROL_PLANE_TOKEN_LOCAL", raising=False)
@@ -102,6 +124,64 @@ def test_post_models_route_returns_portal_hints_for_swarm_role(client: TestClien
 def test_backend_hint_maps_lm_studio_windows_device():
     target = SimpleNamespace(backend="lm-studio", device="win-rtx3080", name="qwen")
     assert _backend_hint_from_target(target) == "lmstudio-win"
+
+
+def test_backend_hint_omits_unknown_or_empty_backend() -> None:
+    target = SimpleNamespace(backend="", device="mac", name="qwen")
+    assert _backend_hint_from_target(target) is None
+
+
+def test_post_models_route_omits_backend_hints_for_target_without_backend(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = SimpleNamespace(
+        backend="",
+        device="mac",
+        name="qwen",
+        api_model="qwen",
+        __dict__={"backend": "", "device": "mac", "name": "qwen", "api_model": "qwen"},
+    )
+    monkeypatch.setattr(
+        "orchestrator.fastapi_app.registry.route_task",
+        lambda *args, **kwargs: [target],
+    )
+
+    response = client.post(
+        "/models/route",
+        json={"task_type": "default"},
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["fallback_chain"]
+    assert all(key not in body for key in ("backend_hint", "backend", "provider"))
+    assert body.get("model_hint") == "qwen"
+
+
+def test_post_models_route_uses_role_specialization(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setitem(
+        ROLE_BACKEND_MAP,
+        ("context-agent", "codebase-map"),
+        ("special-backend", "special-model"),
+    )
+
+    response = client.post(
+        "/models/route",
+        json={
+            "objective": "Map the codebase",
+            "task_type": "implementation",
+            "role": "context-agent",
+            "specialization": "codebase-map",
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["backend_hint"] == "special-backend"
+    assert response.json()["model_hint"] == "special-model"
 
 
 def test_models_route_payload_ignores_empty_role(monkeypatch):

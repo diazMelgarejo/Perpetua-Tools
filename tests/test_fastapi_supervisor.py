@@ -10,11 +10,20 @@ disabled and the tests focus exclusively on the job-id validation layer.
 """
 from __future__ import annotations
 
+import uuid
+from pathlib import Path
+
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
-from orchestrator.fastapi_app import _UUID4_RE, _validate_job_id, app
+from orchestrator.fastapi_app import (
+    _UUID4_RE,
+    _replay_value_error_to_http,
+    _validate_job_id,
+    app,
+)
+from orchestrator.supervisor import JobSpec, JobStatus, OrchestrationSupervisor, _append_event
 
 
 # ── _validate_job_id unit tests ───────────────────────────────────────────────
@@ -300,3 +309,67 @@ class TestReplayJobEndpointValidation:
         with TestClient(app, raise_server_exceptions=False) as client:
             resp = client.post("/v1/jobs/not-a-uuid/replay")
         assert "uuid4" in resp.json().get("detail", "").lower()
+
+
+class TestReplayValueErrorHttpMapping:
+    """Supervisor replay ValueError messages map to distinct HTTP statuses."""
+
+    def test_not_found_maps_to_404(self):
+        exc = _replay_value_error_to_http(ValueError("Job abc not found"))
+        assert exc.status_code == 404
+        assert exc.detail == "Job not found"
+
+    def test_not_replayable_maps_to_409(self):
+        exc = _replay_value_error_to_http(ValueError("Job abc is not replayable"))
+        assert exc.status_code == 409
+        assert exc.detail == "Job is not replayable"
+
+    def test_missing_queued_spec_maps_to_422(self):
+        exc = _replay_value_error_to_http(
+            ValueError("Job abc has no queued specification")
+        )
+        assert exc.status_code == 422
+        assert exc.detail == "Job has no queued specification"
+
+
+class TestReplayJobEndpointStates:
+    """Replay HTTP responses distinguish missing jobs from invalid replay state."""
+
+    def test_queued_job_returns_409_not_replayable(self, monkeypatch, tmp_path: Path):
+        job_id = str(uuid.uuid4())
+        monkeypatch.setenv("PT_STATE_DIR", str(tmp_path))
+        sup = OrchestrationSupervisor(state_dir=tmp_path)
+        _append_event(
+            tmp_path / "jobs.jsonl",
+            job_id,
+            {
+                "status": JobStatus.QUEUED.value,
+                "spec": JobSpec(intent="echo", prompt="still queued").model_dump(),
+            },
+        )
+        monkeypatch.setattr("orchestrator.fastapi_app._supervisor", sup)
+        with TestClient(app, raise_server_exceptions=False) as client:
+            resp = client.post(f"/v1/jobs/{job_id}/replay")
+        assert resp.status_code == 409
+        assert resp.json().get("detail") == "Job is not replayable"
+        assert job_id not in resp.json().get("detail", "")
+
+    def test_terminal_job_without_queued_spec_returns_422(
+        self,
+        monkeypatch,
+        tmp_path: Path,
+    ):
+        job_id = str(uuid.uuid4())
+        monkeypatch.setenv("PT_STATE_DIR", str(tmp_path))
+        sup = OrchestrationSupervisor(state_dir=tmp_path)
+        _append_event(
+            tmp_path / "jobs.jsonl",
+            job_id,
+            {"status": JobStatus.SUCCEEDED.value},
+        )
+        monkeypatch.setattr("orchestrator.fastapi_app._supervisor", sup)
+        with TestClient(app, raise_server_exceptions=False) as client:
+            resp = client.post(f"/v1/jobs/{job_id}/replay")
+        assert resp.status_code == 422
+        assert resp.json().get("detail") == "Job has no queued specification"
+        assert job_id not in resp.json().get("detail", "")

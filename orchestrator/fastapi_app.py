@@ -780,6 +780,7 @@ class ModelsRouteRequest(BaseModel):
     objective: str = ""
     task_type: str = "default"
     role: Optional[str] = None
+    specialization: Optional[str] = None
     preferred_device: Optional[str] = None
 
 
@@ -792,12 +793,12 @@ def _normalize_preferred_device(value: Optional[str]) -> Optional[str]:
     return cleaned
 
 
-def _backend_hint_from_target(target: Any) -> str:
+def _backend_hint_from_target(target: Any) -> Optional[str]:
     backend = str(getattr(target, "backend", "") or "").strip().lower()
     device = str(getattr(target, "device", "") or "").strip().lower()
     if backend in {"lm-studio", "lmstudio", "lm_studio"}:
         return "lmstudio-win" if "win" in device else "lmstudio-mac"
-    return backend or "auto"
+    return backend or None
 
 
 def _model_hint_from_target(target: Any) -> Optional[str]:
@@ -813,6 +814,7 @@ def _models_route_payload(
     task_type: str,
     preferred_device: Optional[str] = None,
     role: Optional[str] = None,
+    specialization: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Shared GET/POST /models/route body for the orama portal facade.
 
@@ -832,8 +834,9 @@ def _models_route_payload(
     hint_backend: Optional[str] = None
     hint_model: Optional[str] = None
     cleaned_role = (role or "").strip() or None
+    cleaned_specialization = (specialization or "").strip() or None
     if cleaned_role:
-        mapped = resolve_role_backend(cleaned_role, None)
+        mapped = resolve_role_backend(cleaned_role, cleaned_specialization)
         if mapped is not None:
             hint_backend, hint_model = mapped
             payload["role"] = cleaned_role
@@ -868,6 +871,7 @@ def route_post(req: ModelsRouteRequest) -> Dict[str, Any]:
         task_type=req.task_type,
         preferred_device=req.preferred_device,
         role=req.role,
+        specialization=req.specialization,
     )
 
 
@@ -1310,6 +1314,21 @@ def _validate_job_id(job_id: str) -> str:
     return job_id
 
 
+def _replay_value_error_to_http(exc: ValueError) -> HTTPException:
+    """Map supervisor replay failures to client-safe HTTP status codes."""
+    message = str(exc).casefold()
+    if "not found" in message:
+        return HTTPException(status_code=404, detail="Job not found")
+    if "not replayable" in message:
+        return HTTPException(status_code=409, detail="Job is not replayable")
+    if "queued specification" in message:
+        return HTTPException(
+            status_code=422,
+            detail="Job has no queued specification",
+        )
+    return HTTPException(status_code=400, detail="Replay request could not be completed")
+
+
 _supervisor: OrchestrationSupervisor | None = None
 
 
@@ -1467,7 +1486,9 @@ async def supervisor_replay_job(job_id: str, http_request: Request):
     
     Raises:
         HTTPException: 400 if `job_id` is not a valid UUIDv4.
-        HTTPException: 404 if the original job cannot be found or replay is not possible.
+        HTTPException: 404 if the original job cannot be found.
+        HTTPException: 409 if the job exists but is not in a replayable state.
+        HTTPException: 422 if the job has no queued specification to replay.
     """
     _validate_job_id(job_id)
     try:
@@ -1478,8 +1499,8 @@ async def supervisor_replay_job(job_id: str, http_request: Request):
             },
         )
         return {"original_job_id": job_id, "new_job_id": new_id, "state": JobStatus.QUEUED.value}
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Job not found") from None
+    except ValueError as exc:
+        raise _replay_value_error_to_http(exc) from None
 
 
 if __name__ == "__main__":
