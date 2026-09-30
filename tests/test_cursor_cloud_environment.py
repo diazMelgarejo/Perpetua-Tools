@@ -31,3 +31,6 @@ def test_cloud_install_provisions_the_locked_dev_test_environment() -> None:
     assert "python3 -m venv" not in script
     assert 'HOME="${HOME:-/home/ubuntu}"' in script
     assert "export HOME" in script
+    assert "does not checksum the download" in script
+    assert "same trust class" in script
+    assert "Cloud VM is the trust boundary" in script
