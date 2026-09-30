@@ -1,5 +1,16 @@
 # WORKSPACE — current task state
 
+**Updated:** 2026-09-30 (Three-day cycle synthesis: PR #404, PR #408, PR #410,
+PR #413, Oramasys PR #20)
+**Session record:** `memory/working/2026-09-30-three-day-cycle-pr404-pr408-pr410-pr413-synthesis.md`
+**Board:** Live SQLite GossipBus (`.state/perpetua_core.db`)
+**State:** PR #404 merged into `origin/main` (`8f97473c`). PR #408 (`37427fba`),
+PR #410 (`ad4a4136`), and PR #413 (`f1c4dd00`) rebased and stacked cleanly on
+main. Supervisor terminal-only replay guard and queued spec recovery verified
+green (75/75 tests). Oramasys PR #20 (`3e9818c7`) verified green (218/218
+tests). Coordination status and board-authority doctrine were recorded on
+GossipBus.
+
 **Updated:** 2026-09-28 (portal facade audit + swarm approval fixes)
 **Session record:** `memory/working/PORTAL_FACADE_ORAMA_SWARM_2026-09-28.md`
 **State:** Perpetua-Tools draft #404 is reopened on

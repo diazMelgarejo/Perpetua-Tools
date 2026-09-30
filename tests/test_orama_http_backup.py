@@ -1,4 +1,10 @@
-﻿from __future__ import annotations
+"""HTTP backup contract for deep-reasoning orchestration.
+
+The test file is plain UTF-8. A leading BOM made docstring tools
+fail to parse it.
+"""
+
+from __future__ import annotations
 
 import sys
 from pathlib import Path
@@ -20,6 +26,7 @@ def _make_candidate(
     online=False,
     reasoning=True,
 ):
+    """Build a route candidate double with the fields the orchestrate path reads."""
     candidate = MagicMock()
     candidate.name = name
     candidate.backend = backend
@@ -32,6 +39,7 @@ def _make_candidate(
 
 
 def test_orchestrate_calls_oramasys_bridge_with_mapped_depth(monkeypatch):
+    """Verify deep-reasoning orchestration uses the HTTP backup with ultra depth."""
     monkeypatch.setenv("ORAMA_ENDPOINT", "http://localhost:8001")
 
     ultrathink_candidate = _make_candidate()
@@ -64,7 +72,7 @@ def test_orchestrate_calls_oramasys_bridge_with_mapped_depth(monkeypatch):
 
     with (
         patch(
-            "orchestrator.model_registry.ModelRegistry.route_task",
+            "orchestrator.fastapi_app.registry.route_task",
             return_value=[ultrathink_candidate, fallback_candidate],
         ),
         patch("orchestrator.cost_guard.CostGuard.can_spend", return_value=True),

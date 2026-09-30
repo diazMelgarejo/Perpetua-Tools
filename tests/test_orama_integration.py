@@ -1,13 +1,20 @@
-"""test_ultrathink_integration.py — Unified integration test (SYNC_ANALYSIS OPT 3)
+"""Unified orchestrate integration tests (SYNC_ANALYSIS OPT 3).
 
 Verifies the end-to-end contract between Perpetua-Tools and orama-system:
-  POST /orchestrate with task_type="deep_reasoning"  →  ultrathink endpoint in response
-  POST /orchestrate with task_type="code_analysis"   →  ultrathink endpoint in response
-  Response structure matches the MCP-first bridge contract, with HTTP `/ultrathink`
-  available as an implemented backup bridge when explicitly enabled
 
-All HTTP calls to ultrathink (port 8001) and Ollama are mocked — runs fully offline in CI.
-No version bump — rolling changes pre-v1.0 RC.
+  POST /orchestrate with ``task_type="deep_reasoning"`` selects the Mac-first
+  reasoning pool (glm cloud primary, MLX and Claude fallbacks).
+
+  POST /orchestrate with ``task_type="code_analysis"`` honors the Windows coding
+  lane when requested.
+
+Earlier revisions asserted ultrathink (port 8001) as the primary selected
+backend; ``config/routing.yml`` still names the oramasys endpoint and
+``local_qwen30b`` fallback while registry selection follows the Mac-first pool.
+Response structure matches the MCP-first bridge contract, with HTTP backup when
+enabled.
+
+Model discovery, availability probes, and bridge calls are mocked for offline CI.
 """
 
 from __future__ import annotations
@@ -16,7 +23,7 @@ import sys
 import os
 from pathlib import Path
 from typing import Any, Dict
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -50,33 +57,64 @@ def _make_candidate(name="ultrathink", backend="ultrathink", device="any",
 # Fixtures
 # ---------------------------------------------------------------------------
 
+_DEEP_REASONING_CHAIN = (
+    "glm-5.1:cloud",
+    "Qwen3.5-9B-MLX-4bit",
+    "claude-sonnet-5",
+)
+
+
 @pytest.fixture(scope="module")
 def client():
-    """TestClient with ModelRegistry, CostGuard, AgentTracker, and
-    ultrathink HTTP calls all mocked out for offline CI."""
-    ultrathink_candidate = _make_candidate(
-        name="ultrathink",
-        backend="ultrathink",
-        device="any",
-        host="localhost",
-        port=8001,
-        online=False,
-        reasoning=True,
-    )
-    fallback_candidate = _make_candidate(
-        name="local_qwen30b",
-        backend="ollama",
+    """TestClient with registry routing, availability, CostGuard, and bridge mocked.
+
+    Patches the live ``fastapi_app.registry`` singleton (not only the
+    ``ModelRegistry`` class) so portal and orchestrate tests stay isolated.
+    Ultrathink and Ollama HTTP are not contacted.
+    """
+    deep_reasoning_candidates = [
+        _make_candidate(
+            name="glm-5.1:cloud",
+            backend="ollama",
+            device="mac-studio",
+            host="localhost",
+            port=11434,
+        ),
+        _make_candidate(
+            name="Qwen3.5-9B-MLX-4bit",
+            backend="lmstudio-mac",
+            device="mac-studio",
+        ),
+        _make_candidate(
+            name="claude-sonnet-5",
+            backend="anthropic",
+            device="cloud",
+        ),
+    ]
+    code_analysis_candidate = _make_candidate(
+        name="Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2",
+        backend="lmstudio-win",
         device="win-rtx3080",
-        host="localhost",
-        port=11434,
-        online=False,
-        reasoning=False,
     )
 
+    def route_task(task_type: str, *, preferred_device: str | None = None):
+        """Return offline coding or reasoning candidates according to the requested route."""
+        if task_type == "code_analysis" or preferred_device == "win-rtx3080":
+            return [code_analysis_candidate]
+        return deep_reasoning_candidates
+
+    async def candidate_ready(_candidate: MagicMock) -> tuple[bool, str]:
+        """Mark fixture candidates ready without contacting model servers."""
+        return True, "mock-ready"
+
     with (
+        # Patch the live singleton. A class-level patch can be shadowed by a
+        # test that assigns this instance attribute directly.
+        patch("orchestrator.fastapi_app.registry.route_task", new=route_task),
+        patch("orchestrator.fastapi_app._candidate_availability", new=candidate_ready),
         patch(
-            "orchestrator.model_registry.ModelRegistry.route_task",
-            return_value=[ultrathink_candidate, fallback_candidate],
+            "orchestrator.fastapi_app.call_oramasys_mcp_or_bridge",
+            new=AsyncMock(return_value={"status": "mocked"}),
         ),
         patch(
             "orchestrator.fastapi_app.resolve_routing_state",
@@ -123,57 +161,72 @@ def client():
 # Contract tests
 # ---------------------------------------------------------------------------
 
-class TestUltrathinkRouting:
-    """Verify PT correctly routes deep-reasoning tasks to ultrathink.
-    Satisfies SYNC_ANALYSIS OPT 3: Unified Integration Test.
+class TestDeepReasoningRouting:
+    """Verify deep-reasoning orchestration through the Mac-first model pool.
+
+    Supersedes the former ``TestUltrathinkRouting`` contract that required
+    ultrathink as ``selected_model``; oramasys bridge routing remains configured
+    in ``routing.yml`` while the registry path under test is offline and
+    Mac-first. Satisfies SYNC_ANALYSIS OPT 3: unified integration test.
     """
 
-    # ---- 1. deep_reasoning route → ultrathink ---------------------------
+    def test_deep_reasoning_selects_glm_cloud_primary(self, client: TestClient):
+        """POST /orchestrate deep_reasoning selects glm-5.1:cloud as primary.
 
-    def test_deep_reasoning_routes_to_ultrathink(self, client: TestClient):
-        """POST /orchestrate with task_type=deep_reasoning must select
-        the ultrathink backend as the primary model."""
-        resp = client.post("/orchestrate", json={
-            "task": "Analyze the distributed caching architecture for edge cases.",
-            "task_type": "deep_reasoning",
-        })
-        assert resp.status_code == 200, resp.text
-        body = resp.json()
-        # Must be created (not conflict — fresh TrackerAgent state)
-        assert body["status"] == "created"
-        selected = body["selected_model"]
-        assert selected["backend"] == "ultrathink", (
-            f"Expected ultrathink backend, got: {selected['backend']}"
+        Replaces the earlier ultrathink-primary assertion when the Mac-first pool
+        is configured ahead of the oramasys bridge candidate.
+        """
+        resp = client.post(
+            "/orchestrate",
+            json={
+                "task": "Analyze the distributed caching architecture for edge cases.",
+                "task_type": "deep_reasoning",
+                "force": True,
+            },
         )
-
-    def test_deep_reasoning_response_has_ultrathink_host(self, client: TestClient):
-        """The selected_model host must reference the ultrathink endpoint
-        (localhost:8001) matching PERPLEXITY_BRIDGE.md ORAMA_ENDPOINT default."""
-        resp = client.post("/orchestrate", json={
-            "task": "Ultra-deep multi-step reasoning task for privacy-critical data.",
-            "task_type": "deep_reasoning",
-            "force": True,  # bypass idempotency so test is repeatable
-        })
-        assert resp.status_code == 200, resp.text
-        body = resp.json()
-        host_str = body["selected_model"]["host"]
-        assert "8001" in host_str, (
-            f"Expected ultrathink port 8001 in host, got: {host_str}"
-        )
-
-    # ---- 2. code_analysis route → ultrathink ----------------------------
-
-    def test_code_analysis_routes_to_ultrathink(self, client: TestClient):
-        """POST /orchestrate with task_type=code_analysis must also
-        select the ultrathink backend (deep code analysis requires extended reasoning)."""
-        resp = client.post("/orchestrate", json={
-            "task": "Full codebase audit: identify security vulnerabilities in auth module.",
-            "task_type": "code_analysis",
-        })
         assert resp.status_code == 200, resp.text
         body = resp.json()
         assert body["status"] == "created"
-        assert body["selected_model"]["backend"] == "ultrathink"
+        assert body["selected_model"]["name"] == "glm-5.1:cloud"
+
+    def test_deep_reasoning_selected_model_is_mac_ollama_lane(self, client: TestClient):
+        """Selected reasoning model uses Ollama on the Mac device.
+
+        The prior contract checked ``localhost:8001`` (ultrathink /
+        ``ORAMA_ENDPOINT``); this asserts the Mac Ollama lane instead.
+        """
+        resp = client.post(
+            "/orchestrate",
+            json={
+                "task": "Ultra-deep multi-step reasoning task for privacy-critical data.",
+                "task_type": "deep_reasoning",
+                "force": True,
+            },
+        )
+        assert resp.status_code == 200, resp.text
+        selected = resp.json()["selected_model"]
+        assert selected["backend"] == "ollama"
+        assert selected["device"] == "mac-studio"
+
+    def test_code_analysis_still_uses_coding_lane(self, client: TestClient):
+        """POST /orchestrate code_analysis honors the Windows coding device.
+
+        Deep code analysis still routes through extended reasoning; the selected
+        backend is the Windows LM Studio lane rather than ultrathink primary.
+        """
+        resp = client.post(
+            "/orchestrate",
+            json={
+                "task": "Full codebase audit: identify security vulnerabilities in auth module.",
+                "task_type": "code_analysis",
+                "preferred_device": "win-rtx3080",
+                "force": True,
+            },
+        )
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["status"] == "created"
+        assert body["selected_model"]["device"] == "win-rtx3080"
 
     # ---- 3. Response structure matches BRIDGE spec ----------------------
 
@@ -204,35 +257,23 @@ class TestUltrathinkRouting:
         # fallback_chain is a list
         assert isinstance(body["fallback_chain"], list)
 
-    # ---- 4. Fallback chain contains local_qwen30b -----------------------
+    def test_deep_reasoning_fallback_chain_order(self, client: TestClient):
+        """Response preserves the Mac-first reasoning fallback order.
 
-    def test_fallback_chain_contains_local_qwen30b(self, client: TestClient):
-        """When ultrathink is the primary selection, local_qwen30b must be
-        in the fallback chain (as configured in routing.yml)."""
-        resp = client.post("/orchestrate", json={
-            "task": "Fallback chain verification task.",
-            "task_type": "deep_reasoning",
-            "force": True,
-        })
-        assert resp.status_code == 200, resp.text
-        chain = resp.json()["fallback_chain"]
-        fallback_names = [entry["name"] for entry in chain]
-        assert "local_qwen30b" in fallback_names, (
-            f"Expected local_qwen30b in fallback chain, got: {fallback_names}"
+        When ultrathink was primary, ``local_qwen30b`` followed in
+        ``routing.yml``; the registry chain now lists MLX and Claude after glm.
+        """
+        resp = client.post(
+            "/orchestrate",
+            json={
+                "task": "Fallback chain verification task.",
+                "task_type": "deep_reasoning",
+                "force": True,
+            },
         )
-
-    # ---- 5. reasoning flag is True for ultrathink -----------------------
-
-    def test_ultrathink_selected_model_has_reasoning_true(self, client: TestClient):
-        """selected_model.reasoning must be True for ultrathink selections
-        (signals extended-reasoning capability to callers)."""
-        resp = client.post("/orchestrate", json={
-            "task": "Reasoning flag verification.",
-            "task_type": "deep_reasoning",
-            "force": True,
-        })
         assert resp.status_code == 200, resp.text
-        assert resp.json()["selected_model"]["reasoning"] is True
+        fallback_names = [entry["name"] for entry in resp.json()["fallback_chain"]]
+        assert fallback_names == list(_DEEP_REASONING_CHAIN[1:])
 
     # ---- 6. Idempotency: same task → conflict on second call ------------
 
@@ -287,10 +328,14 @@ class TestRoutingYmlUltrathinkContract:
         assert route["endpoint"] == "http://localhost:8001/oramasys"
         assert route["timeout"] == 120
 
-    def test_deep_reasoning_has_ultrathink_fallback(self, routing: dict):
+    def test_deep_reasoning_has_mac_lm_studio_fallback(self, routing: dict):
+        """``routing.yml`` names the Mac LM Studio reasoning fallback.
+
+        ``selected_model.reasoning`` remains part of the bridge spec; ultrathink
+        selections used to assert ``reasoning is True`` for extended reasoning.
+        """
         route = routing["routes"]["deep_reasoning"]
-        assert "fallback" in route
-        assert route["fallback"] == "local_qwen30b"
+        assert route.get("fallback") == "Qwen3.5-9B-MLX-4bit"
 
     def test_code_analysis_has_ultrathink_fallback(self, routing: dict):
         route = routing["routes"]["code_analysis"]

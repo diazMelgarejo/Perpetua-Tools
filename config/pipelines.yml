@@ -8,14 +8,16 @@ enabled: true
 models:
   fast:
     candidates:
-      - openrouter-gpt-4o-mini
       - glm-5.2
+      - glm-5.1:cloud
+      - Qwen3.5-9B-MLX-4bit
       - claude-sonnet-5
   strong:
     candidates:
-      - openrouter-claude-sonnet-4.6
-      - claude-sonnet-5
       - glm-5.2
+      - glm-5.1:cloud
+      - claude-sonnet-5
+      - Qwen3.5-9B-MLX-4bit
 
 recipes:
   classify_then_generate:

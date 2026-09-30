@@ -1,0 +1,44 @@
+{
+  "id": "d5c812edd47c",
+  "key": "manual_d5c812",
+  "name": "manual_d5c812",
+  "claim": "A command-line parser must distinguish a missing option value from a supplied value rejected by validation, while preserving a single nonzero failure path and an actionable diagnostic.",
+  "conditions": [
+    "cli",
+    "diagnostics",
+    "malformed-option",
+    "missing-value",
+    "parser",
+    "shell",
+    "validation"
+  ],
+  "evidence_ids": [
+    "2026-09-29T07:44:36.759614+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-29T07:44:36.759614+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-29T07:44:36.759614+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-29T07:44:36.893633+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The Bash 3.2 launcher follow-up distinguishes dangling --host from blank or option-like host values at the parser boundary, then verifies the same diagnostic contract through the executable.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-29T07:44:36.759614+00:00"
+      ],
+      "lessons_sha": "e81ba2a57a03"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-29T07:44:36.893617+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The Bash 3.2 launcher follow-up distinguishes dangling --host from blank or option-like host values at the parser boundary, then verifies the same diagnostic contract through the executable."
+}

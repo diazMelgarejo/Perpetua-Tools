@@ -24,6 +24,13 @@ if [[ -z "$UV_BIN" ]]; then
   # Bootstrap uv via the standalone installer (no venv required).
   # The installer is unpinned and this script does not checksum the download.
   # That is the same trust class as the previous unpinned `pip install uv`.
+  # Privileges: the installer writes the uv binary under $HOME/.local/bin.
+  # Later steps also write uv's data and cache directories and this repo's
+  # .venv; cloud-bootstrap.sh writes $HOME/.cursor. The hook does not escalate
+  # and does not grant supervisor job authority.
+  # Interruption: a killed download can leave an executable at
+  # $HOME/.local/bin/uv. The next run reuses that file without a checksum
+  # and without resuming the interrupted installer.
   UV_INSTALL_DIR="${HOME}/.local/bin"
   mkdir -p "$UV_INSTALL_DIR"
   curl -fsSL https://astral.sh/uv/install.sh | env \

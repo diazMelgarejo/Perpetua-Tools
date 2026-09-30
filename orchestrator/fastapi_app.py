@@ -501,6 +501,11 @@ async def _resolve_candidates(
     candidates: List[Any],
     task_type: str,
 ) -> tuple[list[Any], dict[str, dict[str, Any]]]:
+    """Return reachable candidates in registry order and their probe results.
+
+    Autoresearch requires reachable local candidates; other tasks retain the
+    configured chain when every probe fails.
+    """
     resolved: list[Any] = []
     availability: dict[str, dict[str, Any]] = {}
 
@@ -521,6 +526,13 @@ async def _resolve_candidates(
         if not local_ready:
             return [], availability
         return local_ready, availability
+
+    # Preserve registry order among reachable candidates. If every probe fails,
+    # retain the configured chain so callers can still report or attempt their
+    # declared fallbacks rather than treating an unavailable probe as a route
+    # configuration error.
+    if task_type in _ORAMASYS_TASK_TYPES:
+        return resolved or candidates, availability
 
     return resolved or candidates, availability
 
@@ -773,6 +785,7 @@ class ModelsRouteRequest(BaseModel):
     objective: str = ""
     task_type: str = "default"
     role: Optional[str] = None
+    specialization: Optional[str] = None
     preferred_device: Optional[str] = None
 
 
@@ -785,12 +798,13 @@ def _normalize_preferred_device(value: Optional[str]) -> Optional[str]:
     return cleaned
 
 
-def _backend_hint_from_target(target: Any) -> str:
+def _backend_hint_from_target(target: Any) -> Optional[str]:
+    """Normalize a target backend, selecting the LM Studio device or None if unset."""
     backend = str(getattr(target, "backend", "") or "").strip().lower()
     device = str(getattr(target, "device", "") or "").strip().lower()
     if backend in {"lm-studio", "lmstudio", "lm_studio"}:
         return "lmstudio-win" if "win" in device else "lmstudio-mac"
-    return backend or "auto"
+    return backend or None
 
 
 def _model_hint_from_target(target: Any) -> Optional[str]:
@@ -806,6 +820,7 @@ def _models_route_payload(
     task_type: str,
     preferred_device: Optional[str] = None,
     role: Optional[str] = None,
+    specialization: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Shared GET/POST /models/route body for the orama portal facade.
 
@@ -825,8 +840,9 @@ def _models_route_payload(
     hint_backend: Optional[str] = None
     hint_model: Optional[str] = None
     cleaned_role = (role or "").strip() or None
+    cleaned_specialization = (specialization or "").strip() or None
     if cleaned_role:
-        mapped = resolve_role_backend(cleaned_role, None)
+        mapped = resolve_role_backend(cleaned_role, cleaned_specialization)
         if mapped is not None:
             hint_backend, hint_model = mapped
             payload["role"] = cleaned_role
@@ -861,6 +877,7 @@ def route_post(req: ModelsRouteRequest) -> Dict[str, Any]:
         task_type=req.task_type,
         preferred_device=req.preferred_device,
         role=req.role,
+        specialization=req.specialization,
     )
 
 
@@ -1267,7 +1284,13 @@ def autoresearch_gpu_status() -> Dict[str, Any]:
 # Brainstorm ref: orama-system/docs/2026-05-08-v1-supervisor-brainstorm.md §5
 # Legacy /orchestrate route (orchestrator.py) stays intact — backwards compatible.
 
-from orchestrator.supervisor import JobSpec, JobStatus, OrchestrationSupervisor, _new_id  # noqa: E402
+from orchestrator.supervisor import (  # noqa: E402
+    JobSpec,
+    JobStatus,
+    OrchestrationSupervisor,
+    _new_id,
+    caller_reported_lineage_metadata,
+)
 
 # Security: job_id flows into filesystem paths (.state/jobs/<id>/result.json)
 # via OrchestrationSupervisor. Validate the format at the HTTP boundary so a
@@ -1295,6 +1318,26 @@ def _validate_job_id(job_id: str) -> str:
             detail="job_id must be a uuid4-formatted server-issued identifier",
         )
     return job_id
+
+
+def _replay_value_error_to_http(exc: ValueError) -> HTTPException:
+    """Map supervisor replay failures to client-safe HTTP status codes.
+
+    The fixed details are the orama portal allowlist: ``Job not found`` (404),
+    ``Job is not replayable`` (409), and ``Job has no queued specification``
+    (422). Any other ``ValueError`` stays a generic 400.
+    """
+    message = str(exc).casefold()
+    if "not found" in message:
+        return HTTPException(status_code=404, detail="Job not found")
+    if "not replayable" in message:
+        return HTTPException(status_code=409, detail="Job is not replayable")
+    if "queued specification" in message:
+        return HTTPException(
+            status_code=422,
+            detail="Job has no queued specification",
+        )
+    return HTTPException(status_code=400, detail="Replay request could not be completed")
 
 
 _supervisor: OrchestrationSupervisor | None = None
@@ -1335,25 +1378,6 @@ def _optional_meta_str(metadata: Dict[str, Any], key: str) -> Optional[str]:
     return text or None
 
 
-def _metadata_with_unverified_lineage(
-    metadata: Dict[str, Any],
-    *,
-    session_id: Optional[str],
-    parent_orchestrator_id: Optional[str],
-) -> Dict[str, Any]:
-    """Label persisted session lineage as caller-reported.
-
-    The control-plane bearer admits the submitter; it does not prove ownership
-    of ``session_id`` or ``parent_orchestrator_id``. Downstream code must not
-    treat those fields as PT-verified provenance.
-    """
-    stamped = dict(metadata)
-    stamped.pop("lineage_trust", None)
-    if session_id or parent_orchestrator_id:
-        stamped["lineage_trust"] = "caller_reported"
-    return stamped
-
-
 @app.post("/v1/jobs", tags=["supervisor"])
 async def supervisor_submit_job(req: _JobSubmitRequest, http_request: Request):
     """Submit a job to the V1 OrchestrationSupervisor (file-based persistence).
@@ -1382,7 +1406,7 @@ async def supervisor_submit_job(req: _JobSubmitRequest, http_request: Request):
         prompt=req.prompt,
         backend_hint=req.backend_hint,
         constraints=req.constraints,
-        metadata=_metadata_with_unverified_lineage(
+        metadata=caller_reported_lineage_metadata(
             meta,
             session_id=session_id,
             parent_orchestrator_id=parent_orchestrator_id,
@@ -1473,7 +1497,10 @@ async def supervisor_replay_job(job_id: str, http_request: Request):
     
     Raises:
         HTTPException: 400 if `job_id` is not a valid UUIDv4.
-        HTTPException: 404 if the original job cannot be found or replay is not possible.
+        HTTPException: 404 if the original job cannot be found.
+        HTTPException: 409 if the job exists but is not in a replayable state
+            (supersedes the earlier single 404 for all replay failures).
+        HTTPException: 422 if the job has no queued specification to replay.
     """
     _validate_job_id(job_id)
     try:
@@ -1481,12 +1508,11 @@ async def supervisor_replay_job(job_id: str, http_request: Request):
             job_id,
             overrides={
                 "authenticated_lane": authenticated_control_plane_lane(http_request),
-                "lineage_trust": "caller_reported",
             },
         )
         return {"original_job_id": job_id, "new_job_id": new_id, "state": JobStatus.QUEUED.value}
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Job not found") from None
+    except ValueError as exc:
+        raise _replay_value_error_to_http(exc) from None
 
 
 if __name__ == "__main__":
