@@ -5,7 +5,12 @@ and replayed as correlation metadata. Supervisor dispatch, artifact writes,
 and hardware affinity do not read them as authorization. Periscope and
 handoff ``session_id`` fields are different types and are out of this contract.
 ``lineage_trust="verified"`` is reserved and is not produced by HTTP submit
-or replay.
+or replay. HTTP replay stamps ``authenticated_lane`` from the current
+request; a supervisor ``overrides`` entry replaces the queued lane.
+Caller-supplied lineage ids stay correlation metadata; they do not authorize
+dispatch. Cloud install privileges and recovery from an interrupted ``uv``
+download are outside this contract: the install hook does not stamp jobs, and
+a partial ``$HOME/.local/bin/uv`` is not a supervisor replay.
 """
 from __future__ import annotations
 
@@ -192,6 +197,8 @@ def test_insecure_dev_submit_records_lane(monkeypatch: pytest.MonkeyPatch) -> No
     captured: dict = {}
 
     class _Fake:
+        """Stand-in supervisor that records the submitted job and does not run it."""
+
         async def submit_job(self, spec):
             """Capture the submitted specification and return its ID without starting a worker."""
             captured["spec"] = spec

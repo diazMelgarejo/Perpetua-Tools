@@ -1321,7 +1321,12 @@ def _validate_job_id(job_id: str) -> str:
 
 
 def _replay_value_error_to_http(exc: ValueError) -> HTTPException:
-    """Map supervisor replay failures to client-safe HTTP status codes."""
+    """Map supervisor replay failures to client-safe HTTP status codes.
+
+    The fixed details are the orama portal allowlist: ``Job not found`` (404),
+    ``Job is not replayable`` (409), and ``Job has no queued specification``
+    (422). Any other ``ValueError`` stays a generic 400.
+    """
     message = str(exc).casefold()
     if "not found" in message:
         return HTTPException(status_code=404, detail="Job not found")

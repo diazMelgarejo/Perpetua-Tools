@@ -1,4 +1,10 @@
-﻿from __future__ import annotations
+"""HTTP backup contract for deep-reasoning orchestration.
+
+The test file is plain UTF-8. A leading BOM made docstring tools
+fail to parse it.
+"""
+
+from __future__ import annotations
 
 import sys
 from pathlib import Path
@@ -20,6 +26,7 @@ def _make_candidate(
     online=False,
     reasoning=True,
 ):
+    """Build a route candidate double with the fields the orchestrate path reads."""
     candidate = MagicMock()
     candidate.name = name
     candidate.backend = backend
