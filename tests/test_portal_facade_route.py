@@ -126,6 +126,7 @@ def test_post_models_route_returns_portal_hints_for_swarm_role(client: TestClien
 
 
 def test_normalize_preferred_device_maps_portal_words():
+    """Map portal-friendly device words to registry device ids."""
     assert _normalize_preferred_device("mac") == "mac-studio"
     assert _normalize_preferred_device("windows") == "win-rtx3080"
     assert _normalize_preferred_device("shared") == "shared-ollama"
@@ -137,9 +138,11 @@ def test_post_models_route_passes_mapped_device_to_registry(
     client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Normalize portal preferred_device before calling registry.route_task."""
     seen: list[str | None] = []
 
     def capture_route(task_type, preferred_device=None):
+        """Record preferred_device passed through from the route handler."""
         seen.append(preferred_device)
         target = SimpleNamespace(
             backend="ollama",

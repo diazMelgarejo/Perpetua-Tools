@@ -342,6 +342,7 @@ class TestReplayValueErrorHttpMapping:
         assert exc.detail == "Job has no queued specification"
 
     def test_unrelated_value_error_with_not_found_stays_400(self):
+        """Substring ``not found`` in unrelated errors must not become HTTP 404."""
         exc = _replay_value_error_to_http(ValueError("config file not found"))
         assert exc.status_code == 400
         assert exc.detail == "Replay request could not be completed"
@@ -393,9 +394,16 @@ class TestReplayJobEndpointStates:
 
 
 class TestSupervisorSubmitErrors:
+    """Submit endpoint maps supervisor ValueError to a stable client-facing detail."""
+
     def test_submit_value_error_returns_fixed_detail(self, monkeypatch: pytest.MonkeyPatch):
+        """Return the fixed submit error detail instead of leaking internal messages."""
+
         class _RejectingSupervisor:
+            """Supervisor stub that always rejects submit with ValueError."""
+
             async def submit_job(self, spec):
+                """Raise a ValueError to exercise the HTTP error mapping."""
                 raise ValueError("internal depth policy rejected")
 
         monkeypatch.setattr("orchestrator.fastapi_app._supervisor", _RejectingSupervisor())

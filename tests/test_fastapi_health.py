@@ -10,6 +10,7 @@ from orchestrator import fastapi_app
 
 
 def _host_url(*octets: int, port: int) -> str:
+    """Build an http URL from octets without embedding prohibited literals in tests."""
     return f"http://{'.'.join(str(o) for o in octets)}:{port}"
 
 
@@ -74,9 +75,11 @@ def test_resolve_health_lm_studio_candidates_uses_mac_endpoint_off_windows(
 def test_health_query_params_cannot_override_configured_hosts(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Ignore query-string host overrides; health probes use configured env hosts."""
     captured: dict[str, str] = {}
 
     def fake_backend_health_map(**kwargs):
+        """Record backend_health_map kwargs for assertion."""
         captured.update(kwargs)
         return {"ok": True}
 
