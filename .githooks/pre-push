@@ -28,8 +28,8 @@ fi
 _is_guard_managed_path() {
   local path="$1" e
   if [[ "$_GUARD_MANIFEST_LOADED" == "1" ]]; then
-    for e in "${GUARD_PARITY_REQUIRED[@]}"; do
-      [[ "$path" == "scripts/git/$e" ]] && return 0
+    for e in "${GUARD_PARITY_ROOT_REQUIRED[@]}"; do
+      [[ "$path" == "$e" ]] && return 0
     done
     for e in "${GUARD_SYNC_GITHOOKS[@]}"; do
       [[ "$path" == ".githooks/$e" ]] && return 0
@@ -179,16 +179,32 @@ while read -r local_ref local_oid remote_ref remote_oid; do
 done <"$push_refs"
 
 if [[ "$guard_touch" == "1" ]] && [[ "${GUARD_SYNC_SKIP_DIVERGENCE_CHECK:-0}" != "1" ]]; then
-  if [[ ! -x "$ROOT/scripts/git/check-guard-sync-divergence.sh" ]]; then
-    echo "pre-push: blocked — check-guard-sync-divergence.sh missing or not executable" >&2
+  if [[ "$_GUARD_MANIFEST_LOADED" != "1" ]]; then
+    echo "pre-push: blocked — guard-sync manifest unavailable" >&2
     exit 1
   fi
-  WORKSPACE_ROOT="${WORKSPACE_ROOT:-$(cd "$ROOT/.." && pwd)}" \
-    bash "$ROOT/scripts/git/check-guard-sync-divergence.sh" --workspace || {
-    echo "pre-push: blocked — guard-sync divergence (promote siblings upstream first)" >&2
-    echo "  See: bin/orama-system/skills/guard-sync-divergence-guard/SKILL.md" >&2
-    exit 1
-  }
+  if [[ -f "$ROOT/bin/orama-system/SKILL.md" ]]; then
+    # Publishing canonical guards cannot clobber a downstream checkout. Check
+    # the canonical manifest locally; cross-worktree divergence belongs to the
+    # sync operation that actually overwrites mirrors.
+    bash "$ROOT/scripts/git/verify-guard-parity.sh" || {
+      echo "pre-push: blocked — canonical guard manifest is invalid" >&2
+      exit 1
+    }
+  else
+    # A downstream publication must still prove this checkout is a known
+    # canonical version. Compare this target directly rather than scanning an
+    # arbitrary parent directory full of unrelated temporary worktrees.
+    if [[ ! -x "$ROOT/scripts/git/check-guard-sync-divergence.sh" ]]; then
+      echo "pre-push: blocked — check-guard-sync-divergence.sh missing or not executable" >&2
+      exit 1
+    fi
+    bash "$ROOT/scripts/git/check-guard-sync-divergence.sh" "$ROOT" || {
+      echo "pre-push: blocked — guard-sync divergence (promote or re-sync this mirror first)" >&2
+      echo "  See: bin/orama-system/skills/guard-sync-divergence-guard/SKILL.md" >&2
+      exit 1
+    }
+  fi
 fi
 
 if [[ -x scripts/cursor/sync-private-attribution-from-home.sh ]]; then
