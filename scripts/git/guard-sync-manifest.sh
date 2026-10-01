@@ -68,12 +68,55 @@ GUARD_SYNC_GITHOOKS=(
   pre-push
 )
 
-# Every synced path must be byte-identical in downstream repos when parity runs.
-# (reanchor_scan.sh ships via full repo checkout — not in this manifest.)
+# Cursor Cloud helpers are also canonical payloads. Keep their lists here so
+# install, divergence detection, and parity validation cannot silently cover
+# different surfaces.
+GUARD_SYNC_CURSOR_EXECUTABLES=(
+  append-pr-body.sh
+  grant-pr-body-human-override.sh
+  pr-body-grant-lib.py
+  hooks/pr-body-guard-core.py
+  hooks/pr-body-backup-lib.sh
+  hooks/before-shell-pr-body-guard.sh
+  hooks/before-mcp-pr-body-guard.sh
+)
+
+GUARD_SYNC_CURSOR_COMMANDS=(
+  pr.md
+)
+
+GUARD_SYNC_CURSOR_RULES=(
+  no-commit-attribution.mdc
+  never-undo-attribution-expunge.mdc
+  append-only-pr-body.mdc
+  banned-attribution-local.mdc
+  zero-banned-attribution-everywhere.mdc
+)
+
+# Compatibility view for callers that address the legacy scripts/git-relative
+# manifest. New code must use GUARD_PARITY_ROOT_REQUIRED below.
 GUARD_PARITY_REQUIRED=(
   "${GUARD_SYNC_EXECUTABLES[@]}"
   "${GUARD_SYNC_DATA_FILES[@]}"
 )
+
+# Every unconditional sync destination, expressed relative to repo root.
+# .githooks remains conditional on an explicit hooks-path opt-in and is
+# therefore checked separately by the callers that understand that condition.
+GUARD_PARITY_ROOT_REQUIRED=()
+for _guard_sync_rel in "${GUARD_PARITY_REQUIRED[@]}"; do
+  GUARD_PARITY_ROOT_REQUIRED+=("scripts/git/${_guard_sync_rel}")
+done
+for _guard_sync_rel in "${GUARD_SYNC_CURSOR_EXECUTABLES[@]}"; do
+  GUARD_PARITY_ROOT_REQUIRED+=("scripts/cursor/${_guard_sync_rel}")
+done
+for _guard_sync_rel in "${GUARD_SYNC_CURSOR_COMMANDS[@]}"; do
+  GUARD_PARITY_ROOT_REQUIRED+=(".cursor/commands/${_guard_sync_rel}")
+done
+for _guard_sync_rel in "${GUARD_SYNC_CURSOR_RULES[@]}"; do
+  GUARD_PARITY_ROOT_REQUIRED+=(".cursor/rules/${_guard_sync_rel}")
+done
+unset _guard_sync_rel
 
 # Dirty guard-sync paths with GUARD_SYNC_ON_DIRTY=skip — not success, not a hard failure.
 GUARD_SYNC_EXIT_DIRTY_SKIP=2

@@ -68,19 +68,36 @@ def _bash_array(name: str) -> list[str]:
 
 @pytest.mark.unit
 def test_manifest_files_exist_on_disk() -> None:
-    all_paths = _bash_array("GUARD_SYNC_EXECUTABLES") + _bash_array("GUARD_SYNC_DATA_FILES")
-    missing = [rel for rel in all_paths if not (GIT / rel).is_file()]
+    """Every manifest path exists in the canonical checkout."""
+    all_paths = _bash_array("GUARD_PARITY_ROOT_REQUIRED")
+    missing = [rel for rel in all_paths if not (ROOT / rel).is_file()]
     assert not missing, f"manifest lists missing files: {missing}"
 
 
 @pytest.mark.unit
+def test_cursor_executables_are_executable_in_canonical_source() -> None:
+    """Cursor guard executables in the manifest are executable on disk."""
+    helpers = _bash_array("GUARD_SYNC_CURSOR_EXECUTABLES")
+    non_executable = [
+        f"scripts/cursor/{rel}"
+        for rel in helpers
+        if not (ROOT / "scripts/cursor" / rel).stat().st_mode & 0o111
+    ]
+    assert not non_executable, f"cursor helpers must match their synced executable mode: {non_executable}"
+
+
+@pytest.mark.unit
 def test_parity_required_expands_in_bash() -> None:
-    """GUARD_PARITY_REQUIRED is assembled at source time from the two sync arrays."""
-    parity = _bash_array("GUARD_PARITY_REQUIRED")
-    expected = set(_bash_array("GUARD_SYNC_EXECUTABLES")) | set(
-        _bash_array("GUARD_SYNC_DATA_FILES")
-    )
-    assert set(parity) == expected
+    """Every unconditional sync destination participates in root-level parity."""
+    parity = set(_bash_array("GUARD_PARITY_ROOT_REQUIRED"))
+    expected = {
+        *(f"scripts/git/{rel}" for rel in _bash_array("GUARD_SYNC_EXECUTABLES")),
+        *(f"scripts/git/{rel}" for rel in _bash_array("GUARD_SYNC_DATA_FILES")),
+        *(f"scripts/cursor/{rel}" for rel in _bash_array("GUARD_SYNC_CURSOR_EXECUTABLES")),
+        *(f".cursor/commands/{rel}" for rel in _bash_array("GUARD_SYNC_CURSOR_COMMANDS")),
+        *(f".cursor/rules/{rel}" for rel in _bash_array("GUARD_SYNC_CURSOR_RULES")),
+    }
+    assert parity == expected
 
 
 @pytest.mark.unit
@@ -121,3 +138,24 @@ def test_verify_guard_parity_passes_in_canonical_repo() -> None:
         encoding="utf-8",
     )
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+@pytest.mark.unit
+def test_verify_guard_parity_reports_cursor_helper_drift(tmp_path: Path) -> None:
+    """Parity verification reports drift in a mirrored Cursor helper."""
+    target = tmp_path / "downstream"
+    target.mkdir()
+    drifted = target / "scripts/cursor/append-pr-body.sh"
+    drifted.parent.mkdir(parents=True)
+    drifted.write_text("# divergent\n", encoding="utf-8")
+
+    result = subprocess.run(
+        ["bash", str(VERIFY), str(target)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
+
+    assert result.returncode != 0
+    assert "scripts/cursor/append-pr-body.sh DRIFTED" in result.stdout

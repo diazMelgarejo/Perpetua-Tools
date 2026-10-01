@@ -31,28 +31,9 @@ guard_sync_dirty_paths() {
   local rel dest
   local -a paths=()
 
-  for rel in "${GUARD_SYNC_EXECUTABLES[@]}" "${GUARD_SYNC_DATA_FILES[@]}"; do
-    paths+=("scripts/git/$rel")
-  done
+  paths+=("${GUARD_PARITY_ROOT_REQUIRED[@]}")
   for rel in "${GUARD_SYNC_GITHOOKS[@]}"; do
     paths+=(".githooks/$rel")
-  done
-  for rel in \
-    append-pr-body.sh \
-    grant-pr-body-human-override.sh \
-    pr-body-grant-lib.py \
-    hooks/pr-body-guard-core.py \
-    hooks/pr-body-backup-lib.sh \
-    hooks/before-shell-pr-body-guard.sh \
-    hooks/before-mcp-pr-body-guard.sh; do
-    paths+=("scripts/cursor/$rel")
-  done
-  for rel in pr.md; do
-    paths+=(".cursor/commands/$rel")
-  done
-  for rel in no-commit-attribution.mdc never-undo-attribution-expunge.mdc append-only-pr-body.mdc \
-    banned-attribution-local.mdc zero-banned-attribution-everywhere.mdc; do
-    paths+=(".cursor/rules/$rel")
   done
 
   local dirty=""
@@ -269,34 +250,20 @@ if _repo_uses_githooks "$target"; then
 fi
 
 # Cursor Cloud agent helpers (orama canonical — synced to PT + AlphaClaw, not periscope).
-for cursor_rel in \
-  append-pr-body.sh \
-  grant-pr-body-human-override.sh \
-  pr-body-grant-lib.py; do
+for cursor_rel in "${GUARD_SYNC_CURSOR_EXECUTABLES[@]}"; do
   [[ -f "$source_root/scripts/cursor/$cursor_rel" ]] || continue
   atomic_install_file \
     "$source_root/scripts/cursor/$cursor_rel" \
     "$target/scripts/cursor/$cursor_rel" \
     0755
 done
-
-for cursor_hook_rel in \
-  hooks/pr-body-guard-core.py \
-  hooks/pr-body-backup-lib.sh \
-  hooks/before-shell-pr-body-guard.sh \
-  hooks/before-mcp-pr-body-guard.sh; do
-  [[ -f "$source_root/scripts/cursor/$cursor_hook_rel" ]] || continue
+for cursor_command_rel in "${GUARD_SYNC_CURSOR_COMMANDS[@]}"; do
+  [[ -f "$source_root/.cursor/commands/$cursor_command_rel" ]] || continue
   atomic_install_file \
-    "$source_root/scripts/cursor/$cursor_hook_rel" \
-    "$target/scripts/cursor/$cursor_hook_rel" \
-    0755
-done
-if [[ -f "$source_root/.cursor/commands/pr.md" ]]; then
-  atomic_install_file \
-    "$source_root/.cursor/commands/pr.md" \
-    "$target/.cursor/commands/pr.md" \
+    "$source_root/.cursor/commands/$cursor_command_rel" \
+    "$target/.cursor/commands/$cursor_command_rel" \
     0644
-fi
+done
 
 # daily-attribution-guard.sh is now a normal synced file (canonical full impl in the
 # copy list above) — self-contained, byte-identical in every repo, derives its own
@@ -304,7 +271,7 @@ fi
 # exec itself (infinite recursion). Single source of truth, zero fragmentation.
 
 # Repo-local agent rules (Cursor Cloud) — no forbidden tokens in these files.
-for rule in no-commit-attribution.mdc never-undo-attribution-expunge.mdc append-only-pr-body.mdc banned-attribution-local.mdc zero-banned-attribution-everywhere.mdc; do
+for rule in "${GUARD_SYNC_CURSOR_RULES[@]}"; do
   [[ -f "$source_root/.cursor/rules/$rule" ]] || continue
   atomic_install_file \
     "$source_root/.cursor/rules/$rule" \
