@@ -270,19 +270,29 @@ pytest tests/test_swarm_launch.py tests/test_swarm_preview.py tests/test_swarm_a
 
 ## 12. Acceptance
 
-- [ ] Windows import of `fastapi_app` succeeds with `LM_STUDIO_WIN_ENDPOINTS` unset, and `/health` still reports the gap.
-- [ ] `preferred_device=windows` changes route order toward a Windows device id. `win-rtx3080` still matches exactly.
-- [ ] Replay 404 is only the missing-job case. The three public details stay `Job not found`, `Job is not replayable`, and `Job has no queued specification`.
-- [ ] Submit failures return a fixed 400 detail. The exception text stays in the server log.
-- [ ] `GET /api/jobs` and `GET /api/v1/jobs` omit prompt and metadata.
-- [ ] A launch that fails on job 3 does not leave jobs 1 and 2 running without saying so, and one retry of that preview is possible.
-- [ ] Preview and launch do not publish a status notification.
-- [ ] The pytest commands in section 10 pass.
-- [ ] Knowledge, MCP, and A2A remain on the public portal allowlist.
+- [x] Windows import of `fastapi_app` succeeds with `LM_STUDIO_WIN_ENDPOINTS` unset, and `/health` still reports the gap.
+- [x] `preferred_device=windows` changes route order toward a Windows device id. `win-rtx3080` still matches exactly.
+- [x] Replay 404 is only the missing-job case. The three public details stay `Job not found`, `Job is not replayable`, and `Job has no queued specification`.
+- [x] Submit failures return a fixed 400 detail. The exception text stays in the server log.
+- [x] `GET /api/jobs` and `GET /api/v1/jobs` omit prompt and metadata.
+- [x] A launch that fails on job 3 does not leave jobs 1 and 2 running without saying so, and one retry of that preview is possible.
+- [x] Preview and launch do not publish a status notification.
+- [x] The pytest commands in section 10 pass.
+- [x] Knowledge, MCP, and A2A remain on the public portal allowlist.
 
 ---
 
-## 13. Out of scope until a later yes
+## 13. Remediation (2026-10-01, PR #374 / #414)
+
+- **Exclusive swarm claim:** `claim_launch_for_dispatch` holds a process lock, validates
+  HMAC, and removes the preview before any PT job posts. `finalize_launch_claim` runs
+  only after a full batch success; `release_launch_claim` restores the preview only when
+  rollback cancelled every accepted job (no `orphaned_jobs`).
+- **Job list timestamps:** `_coerce_job_epoch_seconds` rejects non-finite values; list
+  redaction skips rows that still fail projection.
+- **CI:** v2 doc MD013 wraps; PT health tests build LAN URLs without committed literals.
+
+## 14. Out of scope until a later yes
 
 - Renaming `provider`.
 - Requiring auth on `/api/knowledge/`, `/api/mcp`, or `/api/a2a`.

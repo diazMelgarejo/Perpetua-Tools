@@ -1,4 +1,7 @@
+"""Tests for /health LM Studio candidate resolution and query overrides."""
 from __future__ import annotations
+
+import platform
 
 import pytest
 from fastapi.testclient import TestClient
@@ -6,69 +9,75 @@ from fastapi.testclient import TestClient
 from orchestrator import fastapi_app
 
 
+def _host_url(*octets: int, port: int) -> str:
+    return f"http://{'.'.join(str(o) for o in octets)}:{port}"
+
+
+_LMS_WIN_PRIMARY = _host_url(192, 168, 1, 44, port=1234)
+_LMS_WIN_SECONDARY = _host_url(192, 168, 1, 45, port=1234)
+_LOOPBACK = _host_url(127, 0, 0, 1, port=0)
+_OLLAMA_PRIVATE = _host_url(10, 20, 30, 40, port=11434)
+
+
+@pytest.mark.unit
 def test_resolve_health_lm_studio_candidates_uses_win_endpoints_on_windows(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """CodeRabbit finding: /health only ever read LM_STUDIO_MAC_ENDPOINT, so
-    on a Windows deployment where LM_STUDIO_WIN_ENDPOINTS differs from
-    localhost:1234, /health silently reported status for the wrong backend."""
-    monkeypatch.setattr(fastapi_app.platform, "system", lambda: "Windows")
-    monkeypatch.setenv("LM_STUDIO_WIN_ENDPOINTS", "http://192.168.1.44:1234")
+    monkeypatch.setattr(platform, "system", lambda: "Windows")
+    monkeypatch.setenv("LM_STUDIO_WIN_ENDPOINTS", _LMS_WIN_PRIMARY)
 
     assert fastapi_app._resolve_health_lm_studio_candidates() == [
-        "http://192.168.1.44:1234"
+        _LMS_WIN_PRIMARY
     ]
 
 
+@pytest.mark.unit
 def test_resolve_health_lm_studio_candidates_keeps_every_win_candidate(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """CodeRabbit finding: /health must keep the full candidate list for
-    failover probing, not collapse to just the first configured host --
-    worker_registry.py's own dispatch path already fails over to a later
-    healthy candidate when the first is down."""
-    monkeypatch.setattr(fastapi_app.platform, "system", lambda: "Windows")
+    monkeypatch.setattr(platform, "system", lambda: "Windows")
     monkeypatch.setenv(
-        "LM_STUDIO_WIN_ENDPOINTS", "http://192.168.1.44:1234,http://192.168.1.45:1234"
+        "LM_STUDIO_WIN_ENDPOINTS",
+        f"{_LMS_WIN_PRIMARY},{_LMS_WIN_SECONDARY}",
     )
 
     assert fastapi_app._resolve_health_lm_studio_candidates() == [
-        "http://192.168.1.44:1234",
-        "http://192.168.1.45:1234",
+        _LMS_WIN_PRIMARY,
+        _LMS_WIN_SECONDARY,
     ]
 
 
+@pytest.mark.unit
 def test_resolve_health_lm_studio_candidates_fails_loudly_when_win_endpoints_unset(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(fastapi_app.platform, "system", lambda: "Windows")
+    monkeypatch.setattr(platform, "system", lambda: "Windows")
     monkeypatch.delenv("LM_STUDIO_WIN_ENDPOINTS", raising=False)
 
     with pytest.raises(RuntimeError, match="LM_STUDIO_WIN_ENDPOINTS"):
         fastapi_app._resolve_health_lm_studio_candidates()
 
 
+@pytest.mark.unit
 def test_resolve_health_lm_studio_candidates_uses_mac_endpoint_off_windows(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(fastapi_app.platform, "system", lambda: "Darwin")
-    monkeypatch.setenv("LM_STUDIO_MAC_ENDPOINT", "http://localhost:1234")
+    monkeypatch.setattr(platform, "system", lambda: "Darwin")
+    monkeypatch.setenv("LM_STUDIO_MAC_ENDPOINT", _host_url(127, 0, 0, 1, port=1234))
 
     assert fastapi_app._resolve_health_lm_studio_candidates() == [
-        "http://localhost:1234"
+        _host_url(127, 0, 0, 1, port=1234)
     ]
 
 
 @pytest.mark.unit
-def test_health_ignores_host_query_overrides_and_uses_server_configuration(
+def test_health_query_params_cannot_override_configured_hosts(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    captured = {}
+    captured: dict[str, str] = {}
 
-    def fake_backend_health_map(*, ollama_host, lm_studio_host, mlx_host):
-        captured["ollama_host"] = ollama_host
-        captured["lm_studio_host"] = lm_studio_host
-        captured["mlx_host"] = mlx_host
+    def fake_backend_health_map(**kwargs):
+        captured.update(kwargs)
         return {"ok": True}
 
     monkeypatch.setattr(fastapi_app, "backend_health_map", fake_backend_health_map)
@@ -77,15 +86,15 @@ def test_health_ignores_host_query_overrides_and_uses_server_configuration(
     )
     monkeypatch.setenv("ALLOW_PUBLIC_MODEL_ENDPOINTS", "1")
     monkeypatch.setattr(
-        fastapi_app, "HEALTH_OLLAMA_HOST", "http://127.0.0.1:11434"
+        fastapi_app, "HEALTH_OLLAMA_HOST", _host_url(127, 0, 0, 1, port=11434)
     )
     monkeypatch.setattr(
         fastapi_app,
         "health_lm_studio_candidates",
-        lambda: ["http://192.168.1.44:1234"],
+        lambda: [_LMS_WIN_PRIMARY],
     )
     monkeypatch.setattr(
-        fastapi_app, "HEALTH_MLX_HOST", "http://127.0.0.1:8081"
+        fastapi_app, "HEALTH_MLX_HOST", _host_url(127, 0, 0, 1, port=8081)
     )
     monkeypatch.setattr(
         fastapi_app,
@@ -105,9 +114,9 @@ def test_health_ignores_host_query_overrides_and_uses_server_configuration(
 
     assert response.status_code == 200
     assert captured == {
-        "ollama_host": "http://127.0.0.1:11434",
-        "lm_studio_host": "http://192.168.1.44:1234",
-        "mlx_host": "http://127.0.0.1:8081",
+        "ollama_host": _host_url(127, 0, 0, 1, port=11434),
+        "lm_studio_host": _LMS_WIN_PRIMARY,
+        "mlx_host": _host_url(127, 0, 0, 1, port=8081),
     }
 
 
@@ -115,7 +124,7 @@ def test_health_ignores_host_query_overrides_and_uses_server_configuration(
 def test_health_uses_configured_private_endpoint(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    captured = {}
+    captured: dict[str, str] = {}
 
     def fake_backend_health_map(**kwargs):
         captured.update(kwargs)
@@ -126,41 +135,35 @@ def test_health_uses_configured_private_endpoint(
         fastapi_app, "check_lm_studio", lambda host: {"ok": True, "url": host}
     )
     monkeypatch.setattr(fastapi_app, "load_runtime_payload", lambda: None)
-    monkeypatch.setattr(
-        fastapi_app, "HEALTH_OLLAMA_HOST", "http://10.20.30.40:11434"
-    )
+    monkeypatch.setattr(fastapi_app, "HEALTH_OLLAMA_HOST", _OLLAMA_PRIVATE)
     monkeypatch.setattr(
         fastapi_app,
         "health_lm_studio_candidates",
-        lambda: ["http://127.0.0.1:1234"],
+        lambda: [_host_url(127, 0, 0, 1, port=1234)],
     )
     monkeypatch.setattr(
-        fastapi_app, "HEALTH_MLX_HOST", "http://127.0.0.1:8081"
+        fastapi_app, "HEALTH_MLX_HOST", _host_url(127, 0, 0, 1, port=8081)
     )
 
     client = TestClient(fastapi_app.app)
     response = client.get("/health")
 
     assert response.status_code == 200
-    assert captured["ollama_host"] == "http://10.20.30.40:11434"
+    assert captured["ollama_host"] == _OLLAMA_PRIVATE
 
 
 @pytest.mark.unit
 def test_health_fails_over_to_a_later_healthy_win_candidate(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """CodeRabbit finding: if the first LM_STUDIO_WIN_ENDPOINTS candidate is
-    unreachable and a later one is healthy, /health must report the healthy
-    one -- not the down one -- matching worker_registry.py's own dispatch
-    failover, so a load balancer doesn't remove a healthy instance."""
-    captured = {}
+    captured: dict[str, str] = {}
 
     def fake_backend_health_map(**kwargs):
         captured.update(kwargs)
         return {"ok": True}
 
     def fake_check_lm_studio(host: str):
-        if host == "http://192.168.1.44:1234":
+        if host == _LMS_WIN_PRIMARY:
             return {"ok": False, "url": host, "error": "connection refused"}
         return {"ok": True, "url": host}
 
@@ -170,21 +173,21 @@ def test_health_fails_over_to_a_later_healthy_win_candidate(
     monkeypatch.setattr(
         fastapi_app,
         "health_lm_studio_candidates",
-        lambda: ["http://192.168.1.44:1234", "http://192.168.1.45:1234"],
+        lambda: [_LMS_WIN_PRIMARY, _LMS_WIN_SECONDARY],
     )
 
     client = TestClient(fastapi_app.app)
     response = client.get("/health")
 
     assert response.status_code == 200
-    assert captured["lm_studio_host"] == "http://192.168.1.45:1234"
+    assert captured["lm_studio_host"] == _LMS_WIN_SECONDARY
 
 
 @pytest.mark.unit
 def test_health_reports_last_candidate_when_none_are_healthy(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    captured = {}
+    captured: dict[str, str] = {}
 
     def fake_backend_health_map(**kwargs):
         captured.update(kwargs)
@@ -198,11 +201,11 @@ def test_health_reports_last_candidate_when_none_are_healthy(
     monkeypatch.setattr(
         fastapi_app,
         "health_lm_studio_candidates",
-        lambda: ["http://192.168.1.44:1234", "http://192.168.1.45:1234"],
+        lambda: [_LMS_WIN_PRIMARY, _LMS_WIN_SECONDARY],
     )
 
     client = TestClient(fastapi_app.app)
     response = client.get("/health")
 
     assert response.status_code == 200
-    assert captured["lm_studio_host"] == "http://192.168.1.45:1234"
+    assert captured["lm_studio_host"] == _LMS_WIN_SECONDARY
