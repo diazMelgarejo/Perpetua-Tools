@@ -243,17 +243,34 @@ Branch from `main` `fe247da0b55e491e745be9e6014ae6d518a8b35d` after Phase 1 free
 
 ## 10. Validation
 
-Perpetua-Tools:
+Perpetua-Tools (portal facade + supervisor cancellation):
 
 ```bash
+pytest tests/test_supervisor_smoke.py::test_cancel_with_terminal_state_records_pre_start_cancellation \
+  tests/test_supervisor_smoke.py::test_pre_start_cancellations_do_not_exhaust_admission_slots -q
+pytest tests/test_supervisor_smoke.py tests/test_fastapi_supervisor.py -q
 pytest tests/test_fastapi_health.py tests/test_fastapi_supervisor.py tests/test_portal_facade_route.py tests/test_hardware_routing.py -q
 ```
 
-orama-system:
+orama-system (lockstep portal set — includes Task 6 jobs redaction/proxy):
 
 ```bash
 pytest tests/test_swarm_launch.py tests/test_swarm_preview.py tests/test_swarm_approval.py tests/test_control_plane_auth.py tests/test_portal_jobs_redaction.py tests/test_portal_jobs_proxy.py -q
 ```
+
+orama-system (rollback-finality subset):
+
+```bash
+pytest tests/test_swarm_launch.py::test_swarm_launch_returns_partial_dispatch_failure \
+  tests/test_swarm_launch.py::test_swarm_launch_retry_after_partial_dispatch_failure \
+  tests/test_swarm_launch.py::test_swarm_launch_blocks_retry_when_cancel_is_only_acknowledged \
+  tests/test_swarm_launch.py::test_swarm_launch_blocks_retry_when_orphans_remain \
+  tests/test_swarm_launch.py::test_swarm_launch_blocks_retry_on_ambiguous_submission -q
+```
+
+**Evidence (2026-10-02, branch `cursor/portal-facade-hardening-751b`):** PT pre-start
+tests 2 passed; `test_supervisor_smoke.py` + `test_fastapi_supervisor.py` 120 passed;
+health/route/hardware 109 passed. orama lockstep set 93 passed.
 
 ---
 
@@ -328,3 +345,58 @@ Follow-up on lockstep branch `cursor/portal-facade-hardening-751b` (PT PR #414, 
 - **Test:** `test_cancel_with_terminal_state_records_pre_start_cancellation` asserts durable `cancelled` and `job_id not in sup._active`. `test_pre_start_cancellations_do_not_exhaust_admission_slots` runs 25 submit-and-immediate-cancel cycles, keeps `_active` empty, and accepts a 26th submission.
 - **Lockstep effect:** a terminally confirmed cancellation releases the Perpetua admission slot. orama still restores a preview only after every accepted job reports terminal `cancelled`.
 - **Scope boundary:** orama runtime behavior is unchanged. Acknowledgement-only and unresolved outcomes stay non-retryable. Rollback slot release for the pre-start path is complete.
+- **Rollback-final definition:** `terminal_state="cancelled"` plus the job no longer occupies `_active` on PT. Not a guarantee of CLI subprocess containment.
+- **Validation commit:** `0d40d18b` (`fix(supervisor): release pre-start cancelled slots`). Paired orama docs: `d0bd49ec`.
+
+## 19. Accepted lockstep decisions (2026-10-02)
+
+1. Identity-safe `_active` cleanup in `cancel_with_terminal_state()`; `_run_worker().finally` remains the normal path.
+2. Cancellation finality = durable terminal lifecycle + admission-slot release on PT.
+3. Orama stays fail-closed for ambiguous, unidentifiable, acknowledgement-only, and timeout outcomes.
+4. PT owns job lifecycle and admission; orama owns preview claims and retry eligibility.
+5. Subprocess-tree containment is **out of scope** for PR #414/#374 (separate workstream).
+6. Distinguish cancel requested, supervisor cancelled, and external process containment in telemetry design.
+7. Use existing portal SSE / supervisor-jobs surfaces for future containment observability; no second event authority.
+
+## 20. Cancellation is not execution containment
+
+Stopping a job is intent and control-plane state, not proof that CLI child
+processes exited. `asyncio` task cancellation can end the supervisor coroutine
+while a subprocess remains alive. Portal rollback must not treat HTTP 200 on
+cancel as containment proof.
+
+## 21. Future containment observability (deferred)
+
+When implemented, expose redacted state only (no raw PID/command line in portal
+payloads): `cancel_requested`, `supervisor_terminal_state`, `child_state`,
+`tree_state`, `containment_state`, `observed_at`. Looking Glass and
+`/api/status` may show a compact badge; G7 notification patterns apply.
+
+**Code anchors (no production change in #414):** `orchestrator/supervisor.py`,
+`orchestrator/worker_registry.py`, `orchestrator/dangerous_workers.py`,
+`orchestrator/periscope_adapter.py`, `tests/test_supervisor_smoke.py`,
+`docs/cross-platform.md`.
+
+## 22. Cross-repository contract (canonical)
+
+| Question | Owner |
+|---|---|
+| Did the job reach terminal `cancelled`? | Perpetua-Tools |
+| Does the job still occupy `_active`? | Perpetua-Tools |
+| May the swarm approval be reused? | orama-system |
+| Is rollback sufficiently proven for one retry? | orama-system |
+
+Orama cancel consumer minimum: `cancel_requested: true` and
+`terminal_state: "cancelled"`. Documented in orama
+`docs/v2/references/portal-pt-cancel-rollback-contract.md` and ladder § Dispatch
+rollback finality.
+
+## 23. Lockstep closure checklist (2026-10-02)
+
+- [x] `cancel_with_terminal_state()` identity-safe `_active` removal when `task.cancelled()`.
+- [x] `CANCELLED` event appended only when durable status is not already `cancelled`.
+- [x] `test_cancel_with_terminal_state_records_pre_start_cancellation` asserts `job_id not in sup._active`.
+- [x] `test_pre_start_cancellations_do_not_exhaust_admission_slots` (25 cycles + 26th submit).
+- [x] Running-job cancellation and FastAPI supervisor suites green.
+- [x] Orama rollback tests unchanged; fail-closed for ack-only / orphan / ambiguous.
+- [x] Ladder + reference contract doc updated; no orama working-memory mirror of this plan.
