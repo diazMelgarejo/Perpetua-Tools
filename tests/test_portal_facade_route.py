@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from orchestrator.fastapi_app import (
     _backend_hint_from_target,
     _models_route_payload,
+    _normalize_preferred_device,
     app,
 )
 from orchestrator.worker_registry import ROLE_BACKEND_MAP
@@ -122,6 +123,47 @@ def test_post_models_route_returns_portal_hints_for_swarm_role(client: TestClien
     assert body["model_hint"] == expected_model
     assert body["routing_source"] == "pt:/models/route"
     assert isinstance(body["fallback_chain"], list)
+
+
+def test_normalize_preferred_device_maps_portal_words():
+    assert _normalize_preferred_device("mac") == "mac-studio"
+    assert _normalize_preferred_device("windows") == "win-rtx3080"
+    assert _normalize_preferred_device("shared") == "shared-ollama"
+    assert _normalize_preferred_device("win-rtx3080") == "win-rtx3080"
+    assert _normalize_preferred_device("auto") is None
+
+
+def test_post_models_route_passes_mapped_device_to_registry(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seen: list[str | None] = []
+
+    def capture_route(task_type, preferred_device=None):
+        seen.append(preferred_device)
+        target = SimpleNamespace(
+            backend="ollama",
+            device=preferred_device or "mac-studio",
+            name="test-model",
+            api_model="test-model",
+        )
+        return [target]
+
+    monkeypatch.setattr(
+        "orchestrator.fastapi_app.registry.route_task",
+        capture_route,
+    )
+    response = client.post(
+        "/models/route",
+        json={
+            "objective": "Ship",
+            "task_type": "implementation",
+            "role": "context-agent",
+            "preferred_device": "windows",
+        },
+    )
+    assert response.status_code == 200
+    assert seen == ["win-rtx3080"]
 
 
 def test_backend_hint_maps_lm_studio_windows_device():

@@ -1,7 +1,6 @@
 # Portal facade review and draft plan
 
-**Status:** Plan only — **implementation paused** pending your manual review.  
-**Do not treat this file as authorization to code.** A separate explicit yes is required before resuming work.  
+**Status:** Implemented on lockstep branch `cursor/portal-facade-hardening-751b` (orama PR #374, PT PR #414).  
 **Perpetua-Tools `main`:** `8eabb6e3769ddf5c8d63bda07bb07c71b4aa1f50` (merge of #408, 2026-10-01)  
 **orama-system `main`:** `fe247da0b55e491e745be9e6014ae6d518a8b35d` (merge of #372, 2026-10-01)  
 **Complexity:** Medium
