@@ -297,4 +297,13 @@ pytest tests/test_swarm_launch.py tests/test_swarm_preview.py tests/test_swarm_a
 - Renaming `provider`.
 - Requiring auth on `/api/knowledge/`, `/api/mcp`, or `/api/a2a`.
 - Rewriting `_pid_on_port` for Windows.
-- Any commit, push, or pull request for implementation work until you explicitly approve resuming the plan.
+
+## 15. CodeRabbit / review remediation workflow (PT memory)
+
+During bot or CI remediation on an **open** lockstep PR (`cursor/portal-facade-hardening-751b`):
+
+1. Fix every file in the sweep **once** locally (no push per file).
+2. **Commit in separate logical batches** (one concern per commit).
+3. **Push exactly once per repository** after full verification (`pytest` commands in §10; `repo_hygiene` when the diff touches scanned paths).
+
+Not: one commit + one push per repo per fix. See also `2026-09-30-three-day-cycle-pr404-pr408-pr410-pr413-synthesis.md` §D and `CODERABBIT_REMEDIATION_AND_REANCHOR_ARC_2026-08-09.md`.
