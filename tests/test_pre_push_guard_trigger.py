@@ -21,6 +21,7 @@ pytestmark = pytest.mark.unit
 
 
 def _init_repo(path: Path) -> None:
+    """Initialize a git fixture repository with a fixed identity."""
     path.mkdir(parents=True, exist_ok=True)
     subprocess.run(["git", "init", "-b", "main"], cwd=path, check=True, capture_output=True)
     # An approved human identity (see tests/test_audit_engine.py), not an
@@ -40,6 +41,7 @@ def _init_repo(path: Path) -> None:
 
 
 def _commit_file(repo: Path, rel: str, content: str, msg: str) -> None:
+    """Add and commit one file in a fixture repository."""
     dest = repo / rel
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(content, encoding="utf-8")
@@ -57,6 +59,7 @@ def _commit_file(repo: Path, rel: str, content: str, msg: str) -> None:
 
 
 def _head(repo: Path) -> str:
+    """Return the fixture repository HEAD oid."""
     return subprocess.run(
         ["git", "rev-parse", "HEAD"],
         cwd=repo,
@@ -122,6 +125,7 @@ def _setup_repo_with_origin(base: Path) -> Path:
 def _run_pre_push(
     repo: Path, workspace_root: Path, canon_root: Path
 ) -> subprocess.CompletedProcess[str]:
+    """Invoke .githooks/pre-push against one outgoing ref update."""
     local_sha = _head(repo)
     remote_sha = "0" * 40
     # Deliberately NOT refs/heads/main — avoids the unrelated Phase 0
