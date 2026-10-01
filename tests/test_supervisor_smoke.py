@@ -243,6 +243,24 @@ async def test_cancel_with_terminal_state_records_pre_start_cancellation(tmp_pat
     status = await sup.get_status(job_id)
     assert status is not None
     assert status["status"] == JobStatus.CANCELLED.value
+    assert job_id not in sup._active
+
+
+@pytest.mark.asyncio
+async def test_pre_start_cancellations_do_not_exhaust_admission_slots(tmp_path: Path) -> None:
+    """Twenty-five immediate cancellations leave a slot for the next submit."""
+    sup = _make_sup(tmp_path)
+    for _ in range(sup.MAX_THREADS):
+        job_id = await sup.submit_job(_echo_spec("pre-start cancel"))
+        requested, terminal_state = await sup.cancel_with_terminal_state(job_id)
+        assert requested is True
+        assert terminal_state == JobStatus.CANCELLED.value
+        assert job_id not in sup._active
+        assert sup._active == {}
+
+    accepted = await sup.submit_job(_echo_spec("after released slots"))
+    assert accepted
+    assert accepted in sup._active
 
 
 # ── Replay ────────────────────────────────────────────────────────────────────

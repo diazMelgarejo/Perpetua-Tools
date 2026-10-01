@@ -318,3 +318,13 @@ Not: one commit + one push per repo per fix. See also `2026-09-30-three-day-cycl
 ## 17. Not part of portal facade PR #414
 
 PR-body grant hardening is **Perpetua-Tools PR #415** (`cursor/pr-body-grant-parity-751b`), not the portal-facade branch.
+
+## 18. Pre-start cancellation slot release (2026-10-02)
+
+Follow-up on lockstep branch `cursor/portal-facade-hardening-751b` (PT PR #414, orama PR #374). Lockstep Plan v2 is accepted; this section records the implementation.
+
+- **Root cause:** `cancel_with_terminal_state()` appended `CANCELLED` when `task.cancelled()` was true, but a task cancelled before `_run_worker()` starts never runs that method’s `finally` block, so the task stayed in `_active` and could exhaust `MAX_THREADS` (25).
+- **Fix:** identity-guarded removal. When `task.cancelled()` is true, pop `_active[job_id]` only if `self._active.get(job_id) is task`. Append `CANCELLED` only when the durable status is not already `cancelled`.
+- **Test:** `test_cancel_with_terminal_state_records_pre_start_cancellation` asserts durable `cancelled` and `job_id not in sup._active`. `test_pre_start_cancellations_do_not_exhaust_admission_slots` runs 25 submit-and-immediate-cancel cycles, keeps `_active` empty, and accepts a 26th submission.
+- **Lockstep effect:** a terminally confirmed cancellation releases the Perpetua admission slot. orama still restores a preview only after every accepted job reports terminal `cancelled`.
+- **Scope boundary:** orama runtime behavior is unchanged. Acknowledgement-only and unresolved outcomes stay non-retryable. Rollback slot release for the pre-start path is complete.

@@ -490,9 +490,12 @@ class OrchestrationSupervisor:
 
         status = await self.get_status(job_id)
         terminal_state = status.get("status") if status is not None else None
-        if task.cancelled() and terminal_state != JobStatus.CANCELLED.value:
-            self._append_event(job_id, {"status": JobStatus.CANCELLED})
-            terminal_state = JobStatus.CANCELLED.value
+        if task.cancelled():
+            if self._active.get(job_id) is task:
+                self._active.pop(job_id, None)
+            if terminal_state != JobStatus.CANCELLED.value:
+                self._append_event(job_id, {"status": JobStatus.CANCELLED})
+                terminal_state = JobStatus.CANCELLED.value
         return True, terminal_state
 
     async def replay(self, job_id: str, overrides: dict | None = None) -> str:
