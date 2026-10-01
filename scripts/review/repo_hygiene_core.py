@@ -74,10 +74,17 @@ TOPOLOGY_TOKEN_EXCEPTIONS = {
 # Hidden / bidirectional Unicode controls — Trojan-Source defense (CVE-2021-42574).
 # These can hide malicious code in diffs. Block in all tracked files except the
 # hygiene script and its tests, which name the codepoints for documentation.
+# Build by codepoint so this module does not self-trip scan_bidi_controls (LINT BiDi).
 BIDI_CONTROL_CHARS = {
-    "‪": "LRE", "‫": "RLE", "‬": "PDF",
-    "‭": "LRO", "‮": "RLO",
-    "⁦": "LRI", "⁧": "RLI", "⁨": "FSI", "⁩": "PDI",
+    chr(0x202A): "LRE",
+    chr(0x202B): "RLE",
+    chr(0x202C): "PDF",
+    chr(0x202D): "LRO",
+    chr(0x202E): "RLO",
+    chr(0x2066): "LRI",
+    chr(0x2067): "RLI",
+    chr(0x2068): "FSI",
+    chr(0x2069): "PDI",
 }
 BIDI_CONTROL_EXCEPTIONS = {
     "scripts/review/repo_hygiene.py",
