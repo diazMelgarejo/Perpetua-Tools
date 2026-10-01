@@ -274,7 +274,14 @@ class TestCancelJobEndpointValidation:
             async def cancel_with_terminal_state(self, job_id: str) -> tuple[bool, str]:
                 return True, "cancelled"
 
-        monkeypatch.setattr(fastapi_app, "_get_supervisor", _ConfirmedSupervisor)
+            async def get_status(self, job_id: str) -> dict:
+                return {
+                    "status": "cancelled",
+                    "worker_kind": "cli",
+                    "containment_state": "verified",
+                }
+
+        monkeypatch.setattr(fastapi_app, "_get_supervisor", lambda: _ConfirmedSupervisor())
         jid = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
         with TestClient(app, raise_server_exceptions=False) as client:
             resp = client.post(f"/v1/jobs/{jid}/cancel")
@@ -284,6 +291,8 @@ class TestCancelJobEndpointValidation:
             "job_id": jid,
             "cancel_requested": True,
             "terminal_state": "cancelled",
+            "worker_kind": "cli",
+            "containment_state": "verified",
         }
 
     def test_400_detail_contains_uuid4(self):

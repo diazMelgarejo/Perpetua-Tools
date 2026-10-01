@@ -15,6 +15,7 @@ References:
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import json
 import os
 import uuid
@@ -35,6 +36,15 @@ MAX_THREADS = 25    # Anthropic spec ceiling — 25 concurrent workers max
 STATE_DIR = Path(".state")
 JOBS_JSONL = STATE_DIR / "jobs.jsonl"
 CANCEL_CONFIRM_TIMEOUT_SECONDS = 5.0
+
+_supervisor_ctx: contextvars.ContextVar["OrchestrationSupervisor | None"] = (
+    contextvars.ContextVar("orchestration_supervisor", default=None)
+)
+
+
+def current_orchestration_supervisor() -> "OrchestrationSupervisor | None":
+    """Return the supervisor executing the current worker task, if any."""
+    return _supervisor_ctx.get()
 
 # Backends that run entirely on the Mac GPU.  The Windows coder pool preempts
 # these when a healthy Windows endpoint is available.  "mlx" is included so a
@@ -364,6 +374,7 @@ class OrchestrationSupervisor:
             self._state_dir = Path(state_dir)
         self._jobs_file = self._state_dir / "jobs.jsonl"
         self._active: dict[str, asyncio.Task] = {}
+        self._children: dict[str, asyncio.subprocess.Process] = {}
         # Cached GossipBus (set on first _record_to_gossip; reused per
         # supervisor instance to avoid re-running CREATE TABLE IF NOT EXISTS
         # schema DDL on every job completion). Lazy because GossipBus opens an
@@ -496,7 +507,67 @@ class OrchestrationSupervisor:
             if terminal_state != JobStatus.CANCELLED.value:
                 self._append_event(job_id, {"status": JobStatus.CANCELLED})
                 terminal_state = JobStatus.CANCELLED.value
+        if terminal_state == JobStatus.CANCELLED.value:
+            await self._record_direct_child_containment(job_id)
         return True, terminal_state
+
+    def note_child(self, job_id: str, proc: asyncio.subprocess.Process) -> None:
+        """Register a direct CLI child for ``job_id`` (identity-safe)."""
+        existing = self._children.get(job_id)
+        if (
+            existing is not None
+            and existing is not proc
+            and existing.returncode is None
+        ):
+            return
+        self._children[job_id] = proc
+
+    def clear_child(self, job_id: str, proc: asyncio.subprocess.Process) -> None:
+        """Remove a registered child only when it is still the mapped object."""
+        if self._children.get(job_id) is proc:
+            self._children.pop(job_id, None)
+
+    async def _record_direct_child_containment(self, job_id: str) -> None:
+        """After durable cancel, terminate the direct CLI child and persist outcome."""
+        proc = self._children.get(job_id)
+        if proc is None:
+            self._append_event(
+                job_id,
+                {
+                    "status": JobStatus.CANCELLED.value,
+                    "worker_kind": "in-process",
+                    "containment_state": "not-applicable",
+                },
+            )
+            return
+
+        containment_state = "verified" if proc.returncode is not None else None
+        if containment_state is None:
+            try:
+                proc.terminate()
+            except ProcessLookupError:
+                containment_state = "unresolved"
+            except Exception:
+                containment_state = "unresolved"
+            else:
+                try:
+                    await asyncio.wait_for(
+                        proc.wait(), timeout=CANCEL_CONFIRM_TIMEOUT_SECONDS
+                    )
+                except asyncio.TimeoutError:
+                    pass
+                containment_state = (
+                    "verified" if proc.returncode is not None else "unresolved"
+                )
+        self.clear_child(job_id, proc)
+        self._append_event(
+            job_id,
+            {
+                "status": JobStatus.CANCELLED.value,
+                "worker_kind": "cli",
+                "containment_state": containment_state,
+            },
+        )
 
     async def replay(self, job_id: str, overrides: dict | None = None) -> str:
         """Re-run a failed or cancelled job under a new job_id.
@@ -569,6 +640,7 @@ class OrchestrationSupervisor:
         job_dir = self._state_dir / "jobs" / spec.job_id
         job_dir.mkdir(parents=True, exist_ok=True)
 
+        ctx_token = _supervisor_ctx.set(self)
         try:
             result = await self._dispatch(spec)
             # Write result artifact BEFORE persisting final state.
@@ -628,6 +700,7 @@ class OrchestrationSupervisor:
             self._maybe_emit_periscope_job(spec, assistant_text=str(exc)[:2000])
 
         finally:
+            _supervisor_ctx.reset(ctx_token)
             self._active.pop(spec.job_id, None)
 
     async def _record_to_gossip(

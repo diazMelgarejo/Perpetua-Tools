@@ -263,6 +263,128 @@ async def test_pre_start_cancellations_do_not_exhaust_admission_slots(tmp_path: 
     assert accepted in sup._active
 
 
+@pytest.mark.asyncio
+async def test_cancel_echo_reports_in_process_not_applicable(tmp_path: Path) -> None:
+    """In-process workers report not-applicable containment on durable cancel."""
+    sup = _make_sup(tmp_path)
+    spec = _echo_spec("slow echo")
+
+    async def _slow(_spec: JobSpec) -> dict[str, str]:
+        await asyncio.sleep(60)
+        return {"output": "never"}
+
+    sup._dispatch = _slow
+    job_id = await sup.submit_job(spec)
+    await asyncio.sleep(0.05)
+
+    requested, terminal_state = await sup.cancel_with_terminal_state(job_id)
+
+    assert requested is True
+    assert terminal_state == JobStatus.CANCELLED.value
+    status = await sup.get_status(job_id)
+    assert status is not None
+    assert status["worker_kind"] == "in-process"
+    assert status["containment_state"] == "not-applicable"
+
+
+@pytest.mark.asyncio
+async def test_cancel_cli_child_containment_verified(tmp_path: Path) -> None:
+    """A registered direct CLI child is terminated and reported verified."""
+    sup = _make_sup(tmp_path)
+
+    class _FakeCliProc:
+        def __init__(self) -> None:
+            self.returncode = None
+
+        def terminate(self) -> None:
+            self.returncode = 0
+
+        async def wait(self) -> int:
+            return self.returncode or 0
+
+    fake_proc = _FakeCliProc()
+
+    async def _blocked_cli(spec: JobSpec) -> dict[str, str]:
+        sup.note_child(spec.job_id, fake_proc)  # type: ignore[arg-type]
+        while fake_proc.returncode is None:
+            await asyncio.sleep(0.02)
+
+    sup._dispatch = _blocked_cli
+    job_id = await sup.submit_job(_echo_spec("cli block"))
+    await asyncio.sleep(0.05)
+
+    requested, terminal_state = await sup.cancel_with_terminal_state(job_id)
+
+    assert requested is True
+    assert terminal_state == JobStatus.CANCELLED.value
+    status = await sup.get_status(job_id)
+    assert status is not None
+    assert status["worker_kind"] == "cli"
+    assert status["containment_state"] == "verified"
+    assert job_id not in sup._children
+
+
+@pytest.mark.asyncio
+async def test_cancel_cli_child_containment_unresolved(tmp_path: Path, monkeypatch) -> None:
+    """When the direct child never exits, containment is unresolved."""
+    from orchestrator import supervisor as supervisor_mod
+
+    monkeypatch.setattr(supervisor_mod, "CANCEL_CONFIRM_TIMEOUT_SECONDS", 0.05)
+    sup = _make_sup(tmp_path)
+
+    class _StubbornProc:
+        def __init__(self) -> None:
+            self.returncode = None
+
+        def terminate(self) -> None:
+            return
+
+        async def wait(self) -> None:
+            await asyncio.sleep(60)
+
+    fake_proc = _StubbornProc()
+
+    async def _blocked_cli(spec: JobSpec) -> dict[str, str]:
+        sup.note_child(spec.job_id, fake_proc)  # type: ignore[arg-type]
+        while fake_proc.returncode is None:
+            await asyncio.sleep(0.02)
+
+    sup._dispatch = _blocked_cli
+    job_id = await sup.submit_job(_echo_spec("stubborn cli"))
+    await asyncio.sleep(0.05)
+
+    requested, terminal_state = await sup.cancel_with_terminal_state(job_id)
+
+    assert requested is True
+    assert terminal_state == JobStatus.CANCELLED.value
+    status = await sup.get_status(job_id)
+    assert status is not None
+    assert status["worker_kind"] == "cli"
+    assert status["containment_state"] == "unresolved"
+    events = _load_events(tmp_path / "jobs.jsonl")
+    last = [e for e in events if e.get("job_id") == job_id][-1]
+    assert "pid" not in last
+    assert "argv" not in last
+
+
+@pytest.mark.asyncio
+async def test_note_child_does_not_replace_live_process(tmp_path: Path) -> None:
+    """note_child keeps the first still-running process for a job id."""
+    sup = _make_sup(tmp_path)
+    job_id = _new_id()
+
+    class _Proc:
+        def __init__(self, name: str) -> None:
+            self.name = name
+            self.returncode = None
+
+    first = _Proc("first")
+    second = _Proc("second")
+    sup.note_child(job_id, first)  # type: ignore[arg-type]
+    sup.note_child(job_id, second)  # type: ignore[arg-type]
+    assert sup._children[job_id] is first
+
+
 # ── Replay ────────────────────────────────────────────────────────────────────
 
 @pytest.mark.asyncio

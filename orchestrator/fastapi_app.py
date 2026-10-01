@@ -1504,12 +1504,21 @@ async def supervisor_cancel_job(job_id: str):
         be `cancelled`, rather than treating the acknowledgement as proof.
     """
     _validate_job_id(job_id)
-    cancel_requested, terminal_state = await _get_supervisor().cancel_with_terminal_state(job_id)
-    return {
+    sup = _get_supervisor()
+    cancel_requested, terminal_state = await sup.cancel_with_terminal_state(job_id)
+    body: dict[str, Any] = {
         "job_id": job_id,
         "cancel_requested": cancel_requested,
         "terminal_state": terminal_state,
     }
+    if cancel_requested:
+        status = await sup.get_status(job_id)
+        if status is not None:
+            if status.get("worker_kind") is not None:
+                body["worker_kind"] = status["worker_kind"]
+            if status.get("containment_state") is not None:
+                body["containment_state"] = status["containment_state"]
+    return body
 
 
 @app.post("/v1/jobs/{job_id}/replay", tags=["supervisor"])

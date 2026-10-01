@@ -590,3 +590,24 @@ Live delivery uses the existing PT observation/Periscope seam and Orama `Notific
 - [ ] Looking Glass uses existing PT Supervisor/Periscope and Orama portal/SSE notification seams.
 - [ ] No second observability datastore, event bus, or job authority is introduced.
 - [ ] Direct-child containment is documented as v1; grandchildren/process-tree reaping remains a separate workstream.
+
+## 25. V1 CLI containment implementation landed (2026-10-02)
+
+Branch `cursor/cli-subprocess-containment-v1-751b` implements the minimal MVP
+from §24 and the harmonized plan artifact:
+
+- PT: `_children`, `note_child` / `clear_child`, post-cancel containment in
+  `cancel_with_terminal_state`, CLI worker registration, cancel HTTP fields.
+- Orama: swarm rollback predicate on `worker_kind` + `containment_state`,
+  redaction allowlist, contract + ladder doc updates.
+- v2 only in docs: process-tree reaping, Looking Glass UI, `unsupported` wire
+  value, and expanded telemetry remain deferred.
+
+### 25.1 Acceptance (v1 MVP)
+
+- [x] Codex, Gemini, and Antigravity direct children register and clear safely.
+- [x] Durable `CANCELLED` remains distinct from containment fields.
+- [x] Verified / unresolved / not-applicable recorded without PID or argv.
+- [x] Orama blocks restore for CLI + present non-pass containment states.
+- [x] Absent `containment_state` keeps mixed-deploy rollback behavior.
+- [x] No new observability datastore or SSE event type in v1.
