@@ -2,7 +2,7 @@
 # verify-guard-parity.sh — enforce the zero-fragmentation invariant (docs/v2/27).
 #
 # Checks (fail-closed):
-#   1. MANIFEST — every GUARD_PARITY_REQUIRED path exists on disk in canonical repo.
+#   1. MANIFEST — every GUARD_PARITY_ROOT_REQUIRED path exists on disk in canonical repo.
 #   2. SYNC BINDING — sync-attribution-guard-scripts.sh sources guard-sync-manifest.sh.
 #   3. PARITY (optional) — downstream copies byte-identical to orama canonical.
 #
@@ -15,18 +15,18 @@
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CANON="$SCRIPT_DIR"
+CANON_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 SYNC="$SCRIPT_DIR/sync-attribution-guard-scripts.sh"
 # shellcheck source=guard-sync-manifest.sh
 source "$SCRIPT_DIR/guard-sync-manifest.sh"
 rc=0
 
 echo "== MANIFEST: canonical guard files exist =="
-for rel in "${GUARD_PARITY_REQUIRED[@]}"; do
-  if [[ -f "$CANON/$rel" ]]; then
+for rel in "${GUARD_PARITY_ROOT_REQUIRED[@]}"; do
+  if [[ -f "$CANON_ROOT/$rel" ]]; then
     echo "  OK  $rel"
   else
-    echo "  FAIL $rel missing from canonical scripts/git/"; rc=1
+    echo "  FAIL $rel missing from canonical repo"; rc=1
   fi
 done
 
@@ -49,15 +49,15 @@ fi
 if [[ ${#targets[@]} -gt 0 ]]; then
   echo "== PARITY: downstream guard copies byte-identical to canonical =="
   for repo in "${targets[@]}"; do
-    canon_root="$(cd "$CANON/../.." && pwd)"
+    canon_root="$CANON_ROOT"
     if ! repo_root="$(cd "$repo" 2>/dev/null && pwd)"; then
       echo "  FAIL cannot access target repository: $repo"; rc=1
       continue
     fi
     [[ "$repo_root" == "$canon_root" ]] && continue
-    for rel in "${GUARD_PARITY_REQUIRED[@]}"; do
-      src="$CANON/$rel"
-      dst="$repo/scripts/git/$rel"
+    for rel in "${GUARD_PARITY_ROOT_REQUIRED[@]}"; do
+      src="$CANON_ROOT/$rel"
+      dst="$repo/$rel"
       [[ -f "$src" ]] || continue
       if [[ ! -f "$dst" ]]; then
         echo "  FAIL $(basename "$repo")/$rel absent — run: bash scripts/git/sync-attribution-guard-scripts.sh $repo"; rc=1
