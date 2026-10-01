@@ -400,3 +400,193 @@ rollback finality.
 - [x] Running-job cancellation and FastAPI supervisor suites green.
 - [x] Orama rollback tests unchanged; fail-closed for ack-only / orphan / ambiguous.
 - [x] Ladder + reference contract doc updated; no orama working-memory mirror of this plan.
+
+
+## 24. V1 CLI subprocess containment and Looking Glass seam (2026-10-02)
+
+This is a deferred implementation workstream after PR #414 / #374. It does not silently expand the portal-facade runtime scope.
+
+### 24.1 Existing execution boundaries
+
+Perpetua-Tools already has real external-process boundaries. Reuse them.
+
+- `orchestrator/worker_registry.py`
+  - `_codex_worker()`, `_gemini_worker()`, and `_agy_worker()` use `asyncio.create_subprocess_exec(...)`.
+  - All three use `stdin=DEVNULL`, capture stdout/stderr, and currently call `proc.terminate()` on timeout.
+  - `WORKER_REGISTRY` identifies them as `codex`, `gemini`, and `agy`.
+- `orchestrator/dangerous_workers.py`
+  - `DANGEROUS_CLI_BACKENDS = {"codex", "gemini", "agy"}`.
+  - They are gated by `PT_ALLOW_DANGEROUS_CLI_WORKERS`.
+- `orchestrator/supervisor.py`
+  - owns durable lifecycle, `_active` tracking, cancellation, terminal events, status/listing, and observation emission.
+  - Durable `CANCELLED` proves supervisor/task state and admission cleanup. It does not prove that an external CLI child exited.
+
+### 24.2 Existing observation and portal boundaries
+
+Orama already has the future Looking Glass seam.
+
+- PT `orchestrator/periscope_adapter.py` exposes the PT-owned observation path consumed by Periscope.
+- Orama `src/orama_system/portal_server.py` already exposes Supervisor Jobs, portal status, job monitoring, cancellation/rollback handling, and status redaction.
+- Orama `src/orama_system/portal_notifications.py` provides `NotificationHub` and `PortalNotificationPublisher`.
+- `PortalNotificationPublisher` diffs successive redacted `/api/status` snapshots into typed notifications.
+- Existing portal SSE/notification consumers provide the delivery seam.
+
+Future flow:
+
+`CLI child -> PT supervisor containment observation -> PT/Periscope observation -> redacted Orama status -> existing SSE/notification path -> Looking Glass`
+
+Do not create another observability datastore, event bus, status service, or parallel event authority.
+
+### 24.3 Contract: CANCELLED is not execution containment
+
+The architecture must distinguish:
+
+1. `cancel_requested`: cancellation was requested.
+2. `supervisor_terminal_state`: PT reached durable `cancelled`.
+3. `containment_state`: the external process was verified stopped, remains unresolved, or containment is unsupported.
+
+HTTP cancellation success and durable `CANCELLED` must never silently imply process termination.
+
+CLI subprocess termination/reaping is a separate implementation workstream. It is not an implicit property of the existing `CANCELLED` state.
+
+### 24.4 V1 containment states
+
+Expose only redacted states. Never expose raw PID, command line, stdout, or stderr through portal/job payloads.
+
+| State | Meaning |
+|---|---|
+| `not-applicable` | No external CLI child applies, such as an in-process/echo worker. |
+| `verified` | The direct PT-created child was observed to exit after containment action. |
+| `unresolved` | PT attempted containment but the direct child was still running or the bounded wait expired. |
+| `unsupported` | The runtime cannot provide the requested containment guarantee. |
+
+Future redacted telemetry may include `cancel_requested`, `supervisor_terminal_state`, `worker_kind`, `child_state`, `containment_state`, `observed_at`, plus unresolved count/age. Do not include PID, argv/command line, raw process output, or other operational secrets.
+
+### 24.5 V1 implementation boundary
+
+V1 covers the direct child created by PT for Codex, Gemini, and Antigravity.
+
+V1 does not:
+- promise process-tree termination;
+- reap grandchildren spawned by the CLI;
+- introduce a second job store;
+- introduce a new observability system;
+- require a dedicated Looking Glass panel as part of containment.
+
+Grandchild/process-tree termination and stronger OS-specific process-group/job-object reaping remain separate future work.
+
+### 24.6 Proposed PT implementation
+
+Add a process-local child registry on the supervisor, separate from `_active`, keyed by `job_id`, conceptually:
+
+```python
+_children: dict[str, asyncio.subprocess.Process]
+```
+
+The three CLI workers register the direct subprocess before `communicate()` and clear it in `finally`. Echo and HTTP workers never register.
+
+After durable `CANCELLED` handling and admission-slot release:
+
+- no registered CLI child -> `not-applicable`;
+- registered CLI child -> request termination and bounded-wait:
+  - child exited -> `verified`;
+  - child remains alive or wait expires -> `unresolved`.
+
+Record the outcome through the existing job observation/event path and return it through the existing cancel response. Never persist the PID. Registration must be idempotently cleared so timeout and cancellation cannot accidentally terminate a later process associated with the same job id.
+
+### 24.7 Proposed Orama rollback rule
+
+Consume containment state only when present:
+
+- `worker_kind == cli` plus a present `containment_state` other than `verified` is unresolved/orphaned for rollback purposes and keeps the approval consumed.
+- If `containment_state` is absent, retain today's mixed-deploy behavior: `terminal_state == cancelled` remains the legacy rollback criterion.
+- `not-applicable` does not block existing retry behavior.
+- `unsupported` remains a non-proven result and must not silently become `verified`.
+
+### 24.8 Future Looking Glass observability
+
+Looking Glass should answer:
+
+- Was cancellation requested?
+- Did PT reach durable `cancelled`?
+- Is this a CLI worker?
+- Was direct-child containment attempted?
+- Was it verified?
+- Is it unresolved or unsupported?
+- How many unresolved jobs exist?
+- How old is the oldest unresolved observation?
+
+Use compact redacted status/badges and the existing Supervisor Jobs/status infrastructure. Detailed process diagnostics remain server-side.
+
+Live delivery uses the existing PT observation/Periscope seam and Orama `NotificationHub` / `PortalNotificationPublisher` / SSE path. Do not add another notification channel.
+
+### 24.9 Implementation phases
+
+**Phase A — PT child registry**
+- Add process-local child tracking to `orchestrator/supervisor.py`.
+- Add minimal register/clear hooks usable by `worker_registry.py`.
+- Register/clear Codex, Gemini, and Antigravity subprocesses.
+- Keep the registry separate from `_active`.
+- Never place PID, command line, or stdout/stderr in public job events.
+
+**Phase B — PT cancellation containment**
+- Extend the existing cancellation path only after durable `CANCELLED` handling.
+- Terminate the registered direct child and bounded-wait for exit.
+- Record redacted `worker_kind` and `containment_state`.
+- Keep identity-safe cleanup so stale cancellation cannot touch another process.
+- Preserve existing admission-slot semantics.
+
+**Phase C — PT tests**
+- Fake subprocess: cancellation while `communicate()` is blocked causes `terminate()` and eventually `verified`.
+- Child still alive after bounded wait produces `unresolved`.
+- Timeout still terminates and clears registration.
+- Echo/in-process cancellation produces `not-applicable` and never calls terminate.
+- Repeated cancellation cannot terminate a different process stored under the same `job_id`.
+- Public status/event payload contains no PID, argv, stdout, or stderr.
+
+**Phase D — Orama consumer**
+- Add CLI `unresolved` / `unsupported` rollback rule.
+- Test `worker_kind=cli, containment_state=unresolved` keeps preview consumed.
+- Test `unsupported` remains non-proven and blocks restore.
+- Test `not-applicable` preserves current retry behavior.
+- Test legacy cancellation body with only `terminal_state=cancelled` preserves mixed-deploy compatibility.
+
+**Phase E — Looking Glass propagation**
+- Extend existing Supervisor Jobs/status projection with redacted containment state.
+- Feed state changes through existing Orama notification publisher and SSE path.
+- Surface unresolved count/age where the existing portal status model can carry it.
+- Do not add a new event authority or persistence layer.
+
+**Phase F — Documentation**
+- Update `docs/v2/references/portal-pt-cancel-rollback-contract.md`.
+- Keep this workstream separate from PR #414/#374 runtime scope.
+- State explicitly that grandchildren/process trees require later implementation.
+
+### 24.10 Source assertion points
+
+| Repository | Source | Assertion |
+|---|---|---|
+| PT | `orchestrator/supervisor.py` | durable lifecycle, `_active`, cancellation, terminal events, status, observation emission |
+| PT | `orchestrator/worker_registry.py` | actual Codex/Gemini/Antigravity subprocess creation and timeout termination |
+| PT | `orchestrator/dangerous_workers.py` | explicit CLI subprocess security gate |
+| PT | `orchestrator/periscope_adapter.py` | existing PT observation/Periscope seam |
+| PT | `tests/test_supervisor_smoke.py` | existing cancellation/admission test boundary |
+| Orama | `src/orama_system/portal_server.py` | Supervisor Jobs, status, redaction, cancellation/rollback, portal monitoring |
+| Orama | `src/orama_system/portal_notifications.py` | `NotificationHub` and `PortalNotificationPublisher` |
+| Orama | existing SSE notification consumers | live notification delivery seam |
+| Orama | `docs/v2/references/portal-pt-cancel-rollback-contract.md` | cancellation/rollback contract boundary |
+
+### 24.11 Acceptance criteria
+
+- [ ] Codex, Gemini, and Antigravity direct children can be registered and cleared without changing the existing job authority.
+- [ ] Durable `CANCELLED` remains distinct from process containment.
+- [ ] A cancelled CLI child that exits is reported as `verified`.
+- [ ] A child that remains alive after bounded containment is reported as `unresolved`.
+- [ ] Unsupported containment is explicit and never silently treated as verified.
+- [ ] Echo/in-process workers remain `not-applicable`.
+- [ ] Orama blocks rollback restore for present CLI `unresolved` / `unsupported` containment.
+- [ ] Legacy jobs without containment fields retain mixed-deploy compatibility.
+- [ ] No PID, command line, stdout, or stderr reaches portal/job-list payloads.
+- [ ] Looking Glass uses existing PT Supervisor/Periscope and Orama portal/SSE notification seams.
+- [ ] No second observability datastore, event bus, or job authority is introduced.
+- [ ] Direct-child containment is documented as v1; grandchildren/process-tree reaping remains a separate workstream.
