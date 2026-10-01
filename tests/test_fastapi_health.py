@@ -80,7 +80,9 @@ def test_health_ignores_host_query_overrides_and_uses_server_configuration(
         fastapi_app, "HEALTH_OLLAMA_HOST", "http://127.0.0.1:11434"
     )
     monkeypatch.setattr(
-        fastapi_app, "HEALTH_LM_STUDIO_CANDIDATES", ["http://192.168.1.44:1234"]
+        fastapi_app,
+        "health_lm_studio_candidates",
+        lambda: ["http://192.168.1.44:1234"],
     )
     monkeypatch.setattr(
         fastapi_app, "HEALTH_MLX_HOST", "http://127.0.0.1:8081"
@@ -128,7 +130,9 @@ def test_health_uses_configured_private_endpoint(
         fastapi_app, "HEALTH_OLLAMA_HOST", "http://10.20.30.40:11434"
     )
     monkeypatch.setattr(
-        fastapi_app, "HEALTH_LM_STUDIO_CANDIDATES", ["http://127.0.0.1:1234"]
+        fastapi_app,
+        "health_lm_studio_candidates",
+        lambda: ["http://127.0.0.1:1234"],
     )
     monkeypatch.setattr(
         fastapi_app, "HEALTH_MLX_HOST", "http://127.0.0.1:8081"
@@ -165,8 +169,8 @@ def test_health_fails_over_to_a_later_healthy_win_candidate(
     monkeypatch.setattr(fastapi_app, "load_runtime_payload", lambda: None)
     monkeypatch.setattr(
         fastapi_app,
-        "HEALTH_LM_STUDIO_CANDIDATES",
-        ["http://192.168.1.44:1234", "http://192.168.1.45:1234"],
+        "health_lm_studio_candidates",
+        lambda: ["http://192.168.1.44:1234", "http://192.168.1.45:1234"],
     )
 
     client = TestClient(fastapi_app.app)
@@ -193,8 +197,8 @@ def test_health_reports_last_candidate_when_none_are_healthy(
     monkeypatch.setattr(fastapi_app, "load_runtime_payload", lambda: None)
     monkeypatch.setattr(
         fastapi_app,
-        "HEALTH_LM_STUDIO_CANDIDATES",
-        ["http://192.168.1.44:1234", "http://192.168.1.45:1234"],
+        "health_lm_studio_candidates",
+        lambda: ["http://192.168.1.44:1234", "http://192.168.1.45:1234"],
     )
 
     client = TestClient(fastapi_app.app)

@@ -246,6 +246,18 @@ _REPLAYABLE_STATUSES = frozenset(
 )
 
 
+class ReplayJobNotFoundError(ValueError):
+    """Raised when replay targets a job id that has no lifecycle events."""
+
+
+class ReplayJobNotReplayableError(ValueError):
+    """Raised when the job's latest status is not a terminal replayable state."""
+
+
+class ReplayNoQueuedSpecError(ValueError):
+    """Raised when no durable QUEUED event carries the job's JobSpec."""
+
+
 def _queued_spec_for_job(events: list[dict], job_id: str) -> dict | None:
     """Return the original persisted spec for one job's QUEUED transition.
 
@@ -414,13 +426,13 @@ class OrchestrationSupervisor:
         states = _latest_status_per_job(events)
         raw = states.get(job_id)
         if raw is None:
-            raise ValueError(f"Job {job_id} not found")
+            raise ReplayJobNotFoundError(f"Job {job_id} not found")
         if raw.get("status") not in _REPLAYABLE_STATUSES:
-            raise ValueError(f"Job {job_id} is not replayable")
+            raise ReplayJobNotReplayableError(f"Job {job_id} is not replayable")
 
         queued_spec = _queued_spec_for_job(events, job_id)
         if queued_spec is None:
-            raise ValueError(f"Job {job_id} has no queued specification")
+            raise ReplayNoQueuedSpecError(f"Job {job_id} has no queued specification")
 
         spec_dict = {**queued_spec, **(overrides or {})}
         session_id = spec_dict.get("session_id")
