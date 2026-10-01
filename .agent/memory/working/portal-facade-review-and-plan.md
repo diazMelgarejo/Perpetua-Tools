@@ -611,3 +611,15 @@ from §24 and the harmonized plan artifact:
 - [x] Orama blocks restore for CLI + present non-pass containment states.
 - [x] Absent `containment_state` keeps mixed-deploy rollback behavior.
 - [x] No new observability datastore or SSE event type in v1.
+
+## 26. v1.1 hardening (containment races and rollback matrix)
+
+Applied on the same branches as §25. Still v1 code only.
+
+- `CONTAINMENT_TIMEOUT_SECONDS` is a separate bound (same 5.0s value). Waits use monotonic `loop.time()`.
+- `verified` requires `returncode is not None`. `terminate()` alone stays `unresolved`.
+- Already-exited children are `verified` without another terminate.
+- `clear_child` remains identity-safe across replacement during terminate.
+- Containment annotation errors do not revoke durable `cancelled`.
+- Orama `cancellation_allows_restore` is the single rollback matrix, including unknown present CLI values.
+- v2 docs only: `unsupported`, `containment_scope`, Looking Glass semantic fields.

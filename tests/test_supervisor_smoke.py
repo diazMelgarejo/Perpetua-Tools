@@ -385,6 +385,159 @@ async def test_note_child_does_not_replace_live_process(tmp_path: Path) -> None:
     assert sup._children[job_id] is first
 
 
+@pytest.mark.asyncio
+async def test_already_exited_child_is_verified_without_terminate(tmp_path: Path) -> None:
+    """An exited direct child is verified; terminate() is not required."""
+    sup = _make_sup(tmp_path)
+
+    class _Exited:
+        def __init__(self) -> None:
+            self.returncode = 0
+            self.terminate_calls = 0
+
+        def terminate(self) -> None:
+            self.terminate_calls += 1
+
+        async def wait(self) -> int:
+            return 0
+
+    proc = _Exited()
+
+    async def _dispatch(spec: JobSpec) -> dict[str, str]:
+        sup.note_child(spec.job_id, proc)  # type: ignore[arg-type]
+        await asyncio.sleep(60)
+        return {"output": "never"}
+
+    sup._dispatch = _dispatch
+    job_id = await sup.submit_job(_echo_spec("already exited"))
+    await asyncio.sleep(0.05)
+    requested, terminal_state = await sup.cancel_with_terminal_state(job_id)
+    status = await sup.get_status(job_id)
+    assert requested is True
+    assert terminal_state == JobStatus.CANCELLED.value
+    assert status is not None
+    assert status["containment_state"] == "verified"
+    assert proc.terminate_calls == 0
+
+
+@pytest.mark.asyncio
+async def test_terminate_without_exit_stays_unresolved(tmp_path: Path, monkeypatch) -> None:
+    """terminate() alone cannot produce verified."""
+    from orchestrator import supervisor as supervisor_mod
+
+    monkeypatch.setattr(supervisor_mod, "CONTAINMENT_TIMEOUT_SECONDS", 0.05)
+    sup = _make_sup(tmp_path)
+
+    class _Hangs:
+        def __init__(self) -> None:
+            self.returncode = None
+            self.terminate_calls = 0
+
+        def terminate(self) -> None:
+            self.terminate_calls += 1
+
+        async def wait(self) -> None:
+            await asyncio.sleep(60)
+
+    proc = _Hangs()
+
+    async def _dispatch(spec: JobSpec) -> dict[str, str]:
+        sup.note_child(spec.job_id, proc)  # type: ignore[arg-type]
+        await asyncio.sleep(60)
+        return {"output": "never"}
+
+    sup._dispatch = _dispatch
+    job_id = await sup.submit_job(_echo_spec("hangs"))
+    await asyncio.sleep(0.05)
+    await sup.cancel_with_terminal_state(job_id)
+    status = await sup.get_status(job_id)
+    assert proc.terminate_calls == 1
+    assert status is not None
+    assert status["containment_state"] == "unresolved"
+    assert job_id not in sup._children
+
+
+@pytest.mark.asyncio
+async def test_stale_clear_does_not_drop_replacement_child(tmp_path: Path) -> None:
+    """Identity-safe clear leaves a newer process registered under the same id."""
+    sup = _make_sup(tmp_path)
+    job_id = _new_id()
+
+    class _Proc:
+        def __init__(self) -> None:
+            self.returncode = None
+
+    first = _Proc()
+    second = _Proc()
+    sup.note_child(job_id, first)  # type: ignore[arg-type]
+    first.returncode = 0
+    sup.note_child(job_id, second)  # type: ignore[arg-type]
+    sup.clear_child(job_id, first)  # type: ignore[arg-type]
+    assert sup._children[job_id] is second
+
+
+@pytest.mark.asyncio
+async def test_containment_clears_only_the_looked_up_process(tmp_path: Path) -> None:
+    """A replacement registered during terminate is not removed by stale cleanup."""
+    sup = _make_sup(tmp_path)
+    job_holder: dict[str, str] = {}
+
+    class _Replacement:
+        returncode = None
+
+    replacement = _Replacement()
+
+    class _Original:
+        def __init__(self) -> None:
+            self.returncode = None
+
+        def terminate(self) -> None:
+            self.returncode = 0
+            sup.note_child(job_holder["id"], replacement)  # type: ignore[arg-type]
+
+        async def wait(self) -> int:
+            return 0
+
+    original = _Original()
+
+    async def _dispatch(spec: JobSpec) -> dict[str, str]:
+        job_holder["id"] = spec.job_id
+        sup.note_child(spec.job_id, original)  # type: ignore[arg-type]
+        await asyncio.sleep(60)
+        return {"output": "never"}
+
+    sup._dispatch = _dispatch
+    job_id = await sup.submit_job(_echo_spec("swap"))
+    await asyncio.sleep(0.05)
+    await sup.cancel_with_terminal_state(job_id)
+    assert sup._children.get(job_id) is replacement
+
+
+@pytest.mark.asyncio
+async def test_containment_annotation_failure_keeps_cancelled(tmp_path: Path) -> None:
+    """A failed containment write does not turn durable cancel into a failed request."""
+    sup = _make_sup(tmp_path)
+
+    async def _slow(_spec: JobSpec) -> dict[str, str]:
+        await asyncio.sleep(60)
+        return {"output": "never"}
+
+    sup._dispatch = _slow
+    original = sup._append_event
+
+    def _guard(job_id: str, event: dict) -> None:
+        if "containment_state" in event:
+            raise OSError("annotation failed")
+        original(job_id, event)
+
+    sup._append_event = _guard  # type: ignore[method-assign]
+    job_id = await sup.submit_job(_echo_spec("annotate"))
+    await asyncio.sleep(0.05)
+    requested, terminal_state = await sup.cancel_with_terminal_state(job_id)
+    assert requested is True
+    assert terminal_state == JobStatus.CANCELLED.value
+
+
 # ── Replay ────────────────────────────────────────────────────────────────────
 
 @pytest.mark.asyncio

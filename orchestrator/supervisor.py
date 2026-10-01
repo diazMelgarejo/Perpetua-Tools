@@ -36,6 +36,13 @@ MAX_THREADS = 25    # Anthropic spec ceiling — 25 concurrent workers max
 STATE_DIR = Path(".state")
 JOBS_JSONL = STATE_DIR / "jobs.jsonl"
 CANCEL_CONFIRM_TIMEOUT_SECONDS = 5.0
+# Separate concept from cancel confirmation. v1 uses the same duration.
+CONTAINMENT_TIMEOUT_SECONDS = CANCEL_CONFIRM_TIMEOUT_SECONDS
+CONTAINMENT_VERIFIED = "verified"
+CONTAINMENT_UNRESOLVED = "unresolved"
+CONTAINMENT_NOT_APPLICABLE = "not-applicable"
+WORKER_KIND_CLI = "cli"
+WORKER_KIND_IN_PROCESS = "in-process"
 
 _supervisor_ctx: contextvars.ContextVar["OrchestrationSupervisor | None"] = (
     contextvars.ContextVar("orchestration_supervisor", default=None)
@@ -45,6 +52,27 @@ _supervisor_ctx: contextvars.ContextVar["OrchestrationSupervisor | None"] = (
 def current_orchestration_supervisor() -> "OrchestrationSupervisor | None":
     """Return the supervisor executing the current worker task, if any."""
     return _supervisor_ctx.get()
+
+
+async def wait_process_exit(proc: asyncio.subprocess.Process, timeout: float) -> None:
+    """Wait until ``proc`` exits or the monotonic deadline passes.
+
+    ``verified`` is decided only from ``returncode``. Calling ``terminate()``
+    is not itself proof of exit. The deadline uses ``loop.time()`` so a wall
+    clock step cannot stretch or shrink the containment window.
+    """
+    if timeout <= 0 or proc.returncode is not None:
+        return
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + timeout
+    while proc.returncode is None:
+        remaining = deadline - loop.time()
+        if remaining <= 0:
+            return
+        try:
+            await asyncio.wait_for(proc.wait(), timeout=remaining)
+        except asyncio.TimeoutError:
+            return
 
 # Backends that run entirely on the Mac GPU.  The Windows coder pool preempts
 # these when a healthy Windows endpoint is available.  "mlx" is included so a
@@ -508,7 +536,11 @@ class OrchestrationSupervisor:
                 self._append_event(job_id, {"status": JobStatus.CANCELLED})
                 terminal_state = JobStatus.CANCELLED.value
         if terminal_state == JobStatus.CANCELLED.value:
-            await self._record_direct_child_containment(job_id)
+            # Containment annotation must not revoke a durable cancellation.
+            try:
+                await self._record_direct_child_containment(job_id)
+            except Exception:
+                pass
         return True, terminal_state
 
     def note_child(self, job_id: str, proc: asyncio.subprocess.Process) -> None:
@@ -528,43 +560,43 @@ class OrchestrationSupervisor:
             self._children.pop(job_id, None)
 
     async def _record_direct_child_containment(self, job_id: str) -> None:
-        """After durable cancel, terminate the direct CLI child and persist outcome."""
+        """After durable cancel, terminate the direct CLI child and persist outcome.
+
+        ``worker_kind`` is derived here from whether this supervisor registered a
+        child. Callers cannot supply it. ``verified`` requires ``returncode``;
+        a successful ``terminate()`` call is not enough.
+        """
         proc = self._children.get(job_id)
         if proc is None:
             self._append_event(
                 job_id,
                 {
                     "status": JobStatus.CANCELLED.value,
-                    "worker_kind": "in-process",
-                    "containment_state": "not-applicable",
+                    "worker_kind": WORKER_KIND_IN_PROCESS,
+                    "containment_state": CONTAINMENT_NOT_APPLICABLE,
                 },
             )
             return
 
-        containment_state = "verified" if proc.returncode is not None else None
-        if containment_state is None:
+        if proc.returncode is None:
             try:
                 proc.terminate()
             except ProcessLookupError:
-                containment_state = "unresolved"
+                pass
             except Exception:
-                containment_state = "unresolved"
-            else:
-                try:
-                    await asyncio.wait_for(
-                        proc.wait(), timeout=CANCEL_CONFIRM_TIMEOUT_SECONDS
-                    )
-                except asyncio.TimeoutError:
-                    pass
-                containment_state = (
-                    "verified" if proc.returncode is not None else "unresolved"
-                )
+                pass
+            await wait_process_exit(proc, CONTAINMENT_TIMEOUT_SECONDS)
+        containment_state = (
+            CONTAINMENT_VERIFIED
+            if proc.returncode is not None
+            else CONTAINMENT_UNRESOLVED
+        )
         self.clear_child(job_id, proc)
         self._append_event(
             job_id,
             {
                 "status": JobStatus.CANCELLED.value,
-                "worker_kind": "cli",
+                "worker_kind": WORKER_KIND_CLI,
                 "containment_state": containment_state,
             },
         )

@@ -236,11 +236,11 @@ async def _run_dangerous_cli_subprocess(
 ) -> dict:
     """Spawn a direct CLI child, register it with the supervisor, and collect output."""
     from orchestrator.supervisor import (
-        CANCEL_CONFIRM_TIMEOUT_SECONDS,
+        CONTAINMENT_TIMEOUT_SECONDS,
         current_orchestration_supervisor,
+        wait_process_exit,
     )
 
-    prompt = getattr(spec, "prompt", "")
     timeout = float(_get_constraint(spec, "max_seconds", 300))
     job_id = getattr(spec, "job_id", "")
     proc = await asyncio.create_subprocess_exec(
@@ -256,10 +256,7 @@ async def _run_dangerous_cli_subprocess(
         stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
     except asyncio.TimeoutError:
         proc.terminate()
-        try:
-            await asyncio.wait_for(proc.wait(), timeout=CANCEL_CONFIRM_TIMEOUT_SECONDS)
-        except asyncio.TimeoutError:
-            pass
+        await wait_process_exit(proc, CONTAINMENT_TIMEOUT_SECONDS)
         raise RuntimeError(f"{backend} worker timed out after {timeout}s")
     finally:
         if proc.returncode is not None and sup is not None and job_id:
