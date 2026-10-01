@@ -845,6 +845,9 @@ def _models_route_payload(
     Orama's swarm preview POSTs JSON and reads ``backend_hint`` / ``model_hint``
     (with ``backend`` / ``model`` / ``model_id`` aliases). GET keeps the
     historical ``fallback_chain`` and adds the same hint keys additively.
+
+    When a backend hint is present, ``provider`` is a copy of ``backend_hint``
+    (routing backend id for the portal, not an LLM vendor name).
     """
     from orchestrator.worker_registry import resolve_role_backend
 
@@ -870,7 +873,6 @@ def _models_route_payload(
     if hint_backend:
         payload["backend_hint"] = hint_backend
         payload["backend"] = hint_backend
-        # Portal readers treat ``provider`` as a backend-hint alias (not an LLM vendor).
         payload["provider"] = hint_backend
     if hint_model:
         payload["model_hint"] = hint_model
