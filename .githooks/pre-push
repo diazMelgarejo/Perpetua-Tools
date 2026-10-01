@@ -43,8 +43,9 @@ _is_guard_managed_path() {
   # scripts/git/ would let a manifest-managed githook change (e.g.
   # .githooks/commit-msg) skip divergence validation exactly when the
   # manifest is unavailable — fail-open in precisely the case meant to be
-  # the safety net (caught in review, PR 311).
-  [[ "$path" =~ ^(scripts/git/|\.githooks/) ]]
+  # the safety net (caught in review, PR 311). Cursor payloads listed in
+  # guard-sync-manifest.sh must match here too (PR 375).
+  [[ "$path" =~ ^(scripts/(git|cursor)/|\.githooks/|\.cursor/(commands|rules)/) ]]
 }
 
 # Guard: scrub macOS .DS_Store from .git/ internals (see scrub_dsstore.sh).

@@ -21,6 +21,7 @@ pytestmark = pytest.mark.unit
 
 
 def _init_repo(path: Path) -> None:
+    """Initialize a git fixture repository with a fixed identity."""
     path.mkdir(parents=True, exist_ok=True)
     subprocess.run(["git", "init", "-b", "main"], cwd=path, check=True, capture_output=True)
     # An approved human identity (see tests/test_audit_engine.py), not an
@@ -40,6 +41,7 @@ def _init_repo(path: Path) -> None:
 
 
 def _commit_file(repo: Path, rel: str, content: str, msg: str) -> None:
+    """Add and commit one file in a fixture repository."""
     dest = repo / rel
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(content, encoding="utf-8")
@@ -57,6 +59,7 @@ def _commit_file(repo: Path, rel: str, content: str, msg: str) -> None:
 
 
 def _head(repo: Path) -> str:
+    """Return the fixture repository HEAD oid."""
     return subprocess.run(
         ["git", "rev-parse", "HEAD"],
         cwd=repo,
@@ -122,6 +125,7 @@ def _setup_repo_with_origin(base: Path) -> Path:
 def _run_pre_push(
     repo: Path, workspace_root: Path, canon_root: Path
 ) -> subprocess.CompletedProcess[str]:
+    """Invoke .githooks/pre-push against one outgoing ref update."""
     local_sha = _head(repo)
     remote_sha = "0" * 40
     # Deliberately NOT refs/heads/main — avoids the unrelated Phase 0
@@ -248,5 +252,36 @@ def test_githooks_change_triggers_scan_even_when_manifest_unavailable(
     # A missing manifest means the hook cannot establish the managed-path
     # contract. It must fail before choosing either canonical or downstream
     # validation, never silently pass the changed hook through.
+    assert result.returncode == 1, combined
+    assert "guard-sync manifest unavailable" in combined, combined
+
+
+def test_cursor_payload_change_triggers_scan_even_when_manifest_unavailable(
+    tmp_path: Path,
+) -> None:
+    """When the manifest is missing, Cursor-only outgoing changes must still
+    set guard_touch so pre-push fails closed instead of skipping validation."""
+    workspace = tmp_path / "ws"
+    repo = _setup_repo_with_origin(workspace)
+    manifest = repo / "scripts" / "git" / "guard-sync-manifest.sh"
+    manifest.unlink()
+    _commit_file(
+        repo,
+        "scripts/cursor/append-pr-body.sh",
+        "#!/usr/bin/env bash\necho changed\n",
+        "modify manifest-managed cursor helper",
+    )
+
+    sibling = workspace / "Perpetua-Tools"
+    _init_repo(sibling)
+    _commit_file(
+        sibling,
+        "scripts/git/audit_engine.py",
+        "# sibling mutation absent from canonical\n",
+        "sibling mutation",
+    )
+
+    result = _run_pre_push(repo, workspace, repo)
+    combined = result.stdout + result.stderr
     assert result.returncode == 1, combined
     assert "guard-sync manifest unavailable" in combined, combined

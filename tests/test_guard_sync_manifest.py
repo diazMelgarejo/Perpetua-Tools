@@ -68,6 +68,7 @@ def _bash_array(name: str) -> list[str]:
 
 @pytest.mark.unit
 def test_manifest_files_exist_on_disk() -> None:
+    """Every manifest path exists in the canonical checkout."""
     all_paths = _bash_array("GUARD_PARITY_ROOT_REQUIRED")
     missing = [rel for rel in all_paths if not (ROOT / rel).is_file()]
     assert not missing, f"manifest lists missing files: {missing}"
@@ -75,6 +76,7 @@ def test_manifest_files_exist_on_disk() -> None:
 
 @pytest.mark.unit
 def test_cursor_executables_are_executable_in_canonical_source() -> None:
+    """Cursor guard executables in the manifest are executable on disk."""
     helpers = _bash_array("GUARD_SYNC_CURSOR_EXECUTABLES")
     non_executable = [
         f"scripts/cursor/{rel}"
@@ -140,6 +142,7 @@ def test_verify_guard_parity_passes_in_canonical_repo() -> None:
 
 @pytest.mark.unit
 def test_verify_guard_parity_reports_cursor_helper_drift(tmp_path: Path) -> None:
+    """Parity verification reports drift in a mirrored Cursor helper."""
     target = tmp_path / "downstream"
     target.mkdir()
     drifted = target / "scripts/cursor/append-pr-body.sh"
