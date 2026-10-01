@@ -356,6 +356,22 @@ async def test_list_jobs_projects_queued_columns_onto_terminal_rows(tmp_path: Pa
     assert row["created_at"]
     assert row["updated_at"] >= row["created_at"]
 
+    _append_event(
+        tmp_path / "jobs.jsonl",
+        spec.job_id,
+        {
+            "status": JobStatus.FAILED.value,
+            "intent": "latest-intent",
+            "role": None,
+            "backend_hint": "latest-backend",
+        },
+    )
+    row = next(job for job in sup.list_jobs() if job["job_id"] == spec.job_id)
+    assert row["status"] == JobStatus.FAILED.value
+    assert row["intent"] == "latest-intent"
+    assert row["role"] == "executor-agent"
+    assert row["backend_hint"] == "latest-backend"
+
 
 # ── Windows coder pool dispatch ───────────────────────────────────────────────
 # _get_reachable_windows_coder is now async (uses httpx.AsyncClient).

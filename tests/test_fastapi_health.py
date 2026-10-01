@@ -60,6 +60,17 @@ def test_resolve_health_lm_studio_candidates_fails_loudly_when_win_endpoints_uns
 
 
 @pytest.mark.unit
+def test_health_returns_503_when_win_endpoints_are_unset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """GET /health maps an unset Windows LM Studio resolver error to HTTP 503."""
+    monkeypatch.setattr(platform, "system", lambda: "Windows")
+    monkeypatch.delenv("LM_STUDIO_WIN_ENDPOINTS", raising=False)
+    response = TestClient(fastapi_app.app).get("/health")
+    assert response.status_code == 503
+
+
+@pytest.mark.unit
 def test_resolve_health_lm_studio_candidates_uses_mac_endpoint_off_windows(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
