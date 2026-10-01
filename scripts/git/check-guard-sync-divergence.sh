@@ -137,6 +137,15 @@ _check_pair() {
   return 1
 }
 
+_check_root_pair() {
+  local sibling_root="$1" root_rel="$2"
+  local prefix rel
+
+  prefix="$(dirname "$root_rel")"
+  rel="$(basename "$root_rel")"
+  _check_pair "$sibling_root" "$rel" "$prefix"
+}
+
 _repo_uses_githooks() {
   local root="$1" hooks_path hooks_abs expected_abs
   if [[ -f "$root/.githooks/.guard-sync-opt-in" ]]; then
@@ -175,8 +184,8 @@ _scan_sibling() {
   fi
 
   echo "== DIVERGENCE: $(basename "$sibling_root") vs canonical =="
-  for rel in "${GUARD_PARITY_REQUIRED[@]}"; do
-    _check_pair "$sibling_root" "$rel" || pair_rc=1
+  for rel in "${GUARD_PARITY_ROOT_REQUIRED[@]}"; do
+    _check_root_pair "$sibling_root" "$rel" || pair_rc=1
   done
   if _repo_uses_githooks "$sibling_root"; then
     for rel in "${GUARD_SYNC_GITHOOKS[@]}"; do
