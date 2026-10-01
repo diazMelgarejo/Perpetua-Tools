@@ -207,6 +207,44 @@ async def test_cancel_running_job(tmp_path):
     assert status["status"] == JobStatus.CANCELLED.value
 
 
+@pytest.mark.asyncio
+async def test_cancel_with_terminal_state_confirms_persisted_cancellation(tmp_path: Path) -> None:
+    """Confirmation reports cancelled only after its event is durable."""
+    sup = _make_sup(tmp_path)
+    spec = _echo_spec("slow")
+
+    async def _slow(s: JobSpec) -> dict[str, str]:
+        await asyncio.sleep(60)
+        return {"output": "never"}
+
+    sup._dispatch = _slow
+    job_id = await sup.submit_job(spec)
+    await asyncio.sleep(0.05)
+
+    requested, terminal_state = await sup.cancel_with_terminal_state(job_id)
+
+    assert requested is True
+    assert terminal_state == JobStatus.CANCELLED.value
+    status = await sup.get_status(job_id)
+    assert status is not None
+    assert status["status"] == JobStatus.CANCELLED.value
+
+
+@pytest.mark.asyncio
+async def test_cancel_with_terminal_state_records_pre_start_cancellation(tmp_path: Path) -> None:
+    """A task cancelled before its coroutine starts still gets a terminal event."""
+    sup = _make_sup(tmp_path)
+    job_id = await sup.submit_job(_echo_spec("never starts"))
+
+    requested, terminal_state = await sup.cancel_with_terminal_state(job_id)
+
+    assert requested is True
+    assert terminal_state == JobStatus.CANCELLED.value
+    status = await sup.get_status(job_id)
+    assert status is not None
+    assert status["status"] == JobStatus.CANCELLED.value
+
+
 # ── Replay ────────────────────────────────────────────────────────────────────
 
 @pytest.mark.asyncio

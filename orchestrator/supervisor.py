@@ -34,6 +34,7 @@ MAX_DEPTH = 1       # Anthropic hard constraint: depth > 1 rejected
 MAX_THREADS = 25    # Anthropic spec ceiling — 25 concurrent workers max
 STATE_DIR = Path(".state")
 JOBS_JSONL = STATE_DIR / "jobs.jsonl"
+CANCEL_CONFIRM_TIMEOUT_SECONDS = 5.0
 
 # Backends that run entirely on the Mac GPU.  The Windows coder pool preempts
 # these when a healthy Windows endpoint is available.  "mlx" is included so a
@@ -335,6 +336,7 @@ class OrchestrationSupervisor:
       submit_job(spec)       → job_id (str)
       get_status(job_id)     → dict | None
       cancel(job_id)         → bool
+      cancel_with_terminal_state(job_id) → (requested, terminal state)
       replay(job_id, …)      → new job_id (str)
       list_jobs(status?)     → list[dict]
     """
@@ -461,6 +463,37 @@ class OrchestrationSupervisor:
             task.cancel()
             return True
         return False
+
+    async def cancel_with_terminal_state(self, job_id: str) -> tuple[bool, str | None]:
+        """Request cancellation and report the durable terminal state, if reached.
+
+        ``cancel()`` keeps its legacy acknowledgement-only behavior.  Callers
+        that need to decide whether it is safe to reuse a dispatch approval use
+        this method instead: it waits a bounded interval for the task's
+        cancellation checkpoint and returns ``cancelled`` only after that
+        checkpoint is persisted. A task cancelled before its coroutine starts
+        needs an explicit event because it cannot write the checkpoint itself.
+        """
+        task = self._active.get(job_id)
+        if task is None or task.done() or not task.cancel():
+            status = await self.get_status(job_id)
+            return False, status.get("status") if status is not None else None
+
+        try:
+            await asyncio.wait_for(
+                asyncio.shield(task), timeout=CANCEL_CONFIRM_TIMEOUT_SECONDS
+            )
+        except asyncio.CancelledError:
+            pass
+        except asyncio.TimeoutError:
+            pass
+
+        status = await self.get_status(job_id)
+        terminal_state = status.get("status") if status is not None else None
+        if task.cancelled() and terminal_state != JobStatus.CANCELLED.value:
+            self._append_event(job_id, {"status": JobStatus.CANCELLED})
+            terminal_state = JobStatus.CANCELLED.value
+        return True, terminal_state
 
     async def replay(self, job_id: str, overrides: dict | None = None) -> str:
         """Re-run a failed or cancelled job under a new job_id.

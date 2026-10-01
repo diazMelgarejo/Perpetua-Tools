@@ -17,6 +17,7 @@ import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
+import orchestrator.fastapi_app as fastapi_app
 from orchestrator.fastapi_app import (
     _JOB_SUBMIT_ERROR_DETAIL,
     _UUID4_RE,
@@ -264,6 +265,26 @@ class TestCancelJobEndpointValidation:
         body = resp.json()
         assert body["job_id"] == jid
         assert body["cancel_requested"] is False
+        assert body["terminal_state"] is None
+
+    def test_terminal_state_is_returned_for_confirmed_cancellation(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """The cancellation endpoint distinguishes acknowledgement from terminal state."""
+
+        class _ConfirmedSupervisor:
+            async def cancel_with_terminal_state(self, job_id: str) -> tuple[bool, str]:
+                return True, "cancelled"
+
+        monkeypatch.setattr(fastapi_app, "_get_supervisor", _ConfirmedSupervisor)
+        jid = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+        with TestClient(app, raise_server_exceptions=False) as client:
+            resp = client.post(f"/v1/jobs/{jid}/cancel")
+
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "job_id": jid,
+            "cancel_requested": True,
+            "terminal_state": "cancelled",
+        }
 
     def test_400_detail_contains_uuid4(self):
         with TestClient(app, raise_server_exceptions=False) as client:

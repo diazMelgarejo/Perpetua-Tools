@@ -1496,12 +1496,20 @@ async def supervisor_cancel_job(job_id: str):
     Returns:
         dict: {
             "job_id": job_id,
-            "cancel_requested": bool
-        } where `cancel_requested` is `True` if a cancellation was requested, `False` otherwise.
+            "cancel_requested": bool,
+            "terminal_state": str | None,
+        } where `cancel_requested` is `True` if a cancellation was requested.
+        `terminal_state` is the persisted lifecycle state after the request
+        completes; callers that must avoid duplicate dispatches require it to
+        be `cancelled`, rather than treating the acknowledgement as proof.
     """
     _validate_job_id(job_id)
-    cancelled = await _get_supervisor().cancel(job_id)
-    return {"job_id": job_id, "cancel_requested": cancelled}
+    cancel_requested, terminal_state = await _get_supervisor().cancel_with_terminal_state(job_id)
+    return {
+        "job_id": job_id,
+        "cancel_requested": cancel_requested,
+        "terminal_state": terminal_state,
+    }
 
 
 @app.post("/v1/jobs/{job_id}/replay", tags=["supervisor"])
