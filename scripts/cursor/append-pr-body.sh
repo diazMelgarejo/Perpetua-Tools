@@ -20,22 +20,77 @@ Mandatory workflow:
   1. Fetch current body (gh pr view --json body)
   2. Save timestamped backup (.git/pr-body-backups/<repo>-pr<N>-<ts>.md)
   3. Insert new ## Follow-up block before CURSOR_AGENT_PR_BODY_END or CodeRabbit section
-  4. gh pr edit --body-file (full merged body — integrative, not delta-only)
+  4. Re-fetch and reject a stale body immediately before write
+  5. gh pr edit --body-file (full merged body — integrative, not delta-only)
+  6. Re-read and verify the remote body equals the merged body
 
 Never pass body= with only the latest paragraph to ManagePullRequest update_pr.
 EOF
 }
 
-count_substring() {
-  local haystack="$1"
-  local needle="$2"
-  local count=0
-  local rest="$haystack"
-  while [[ "$rest" == *"$needle"* ]]; do
-    count=$((count + 1))
-    rest="${rest#*"$needle"}"
-  done
-  printf '%s' "$count"
+guard_trace() {
+  # Test-only seam: records which integrity guard was actually reached, so
+  # tests can assert on runtime behaviour rather than scanning source text.
+  # Never affects production control flow -- inert unless a test sets the var.
+  if [[ -n "${PR_BODY_GUARD_TRACE_FILE:-}" ]]; then
+    printf '%s\n' "$1" >>"$PR_BODY_GUARD_TRACE_FILE"
+  fi
+}
+
+sha256_file() {
+  python3 - "$1" <<'PY'
+import hashlib
+import sys
+from pathlib import Path
+
+print(hashlib.sha256(Path(sys.argv[1]).read_bytes()).hexdigest())
+PY
+}
+
+sha256_gh_view_body() {
+  python3 - "$1" <<'PY'
+import hashlib
+import sys
+from pathlib import Path
+
+# `gh pr view --jq .body` writes one presentation LF after the JSON string.
+# Remove exactly that transport byte, never the PR body's own trailing bytes.
+content = Path(sys.argv[1]).read_bytes()
+if not content.endswith(b"\n"):
+    raise SystemExit("gh pr view output lacked its expected presentation newline")
+print(hashlib.sha256(content[:-1]).hexdigest())
+PY
+}
+
+build_merged_body() {
+  python3 - "$1" "$2" "$3" "$4" "$CURSOR_BODY_END" "$CODERABBIT_MARKER" <<'PY'
+import sys
+from pathlib import Path
+
+remote_path, append_path, out_path, title, cursor_end, coderabbit_marker = sys.argv[1:]
+body = Path(remote_path).read_bytes()
+if not body.endswith(b"\n"):
+    raise SystemExit("gh pr view output lacked its expected presentation newline")
+body = body[:-1]  # Strip the one `gh --jq` presentation LF only.
+append_block = Path(append_path).read_bytes()
+cursor_end_b = cursor_end.encode("utf-8")
+coderabbit_marker_b = coderabbit_marker.encode("utf-8")
+if cursor_end_b in append_block or coderabbit_marker_b in append_block:
+    raise SystemExit("append content must not contain reserved PR body delimiters")
+if body.count(cursor_end_b) > 1:
+    raise SystemExit("PR body contains multiple CURSOR_AGENT_PR_BODY_END markers; manual repair required")
+if body.count(coderabbit_marker_b) > 1:
+    raise SystemExit("PR body contains multiple CodeRabbit markers; manual repair required")
+
+follow_up = b"\n\n## " + title.encode("utf-8") + b"\n\n" + append_block
+if cursor_end_b in body:
+    merged = body.replace(cursor_end_b, follow_up + b"\n" + cursor_end_b, 1)
+elif coderabbit_marker_b in body:
+    merged = body.replace(coderabbit_marker_b, follow_up + b"\n\n" + coderabbit_marker_b, 1)
+else:
+    merged = body + follow_up
+Path(out_path).write_bytes(merged)
+PY
 }
 
 normalize_follow_up_title() {
@@ -127,11 +182,73 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GRANT_LIB="$SCRIPT_DIR/pr-body-grant-lib.py"
 
-grant_append_args=(--repo "$repo_slug" --pr "$pr_number")
+remote_tmp="$(mktemp)"
+reread_tmp="$(mktemp)"
+prewrite_tmp="$(mktemp)"
+postwrite_tmp="$(mktemp)"
+append_tmp="$(mktemp)"
+out="$(mktemp)"
+grant_finalized=0
+grant_append_args=(--repo "$repo_slug" --pr "$pr_number" --file "$append_tmp")
+release_on_fail() {
+  if [[ "$grant_finalized" -eq 1 ]]; then
+    return 0
+  fi
+  python3 "$GRANT_LIB" release "${grant_append_args[@]}" >/dev/null 2>&1 || true
+}
+trap 'release_on_fail; rm -f "$out" "$append_tmp" "$remote_tmp" "$reread_tmp" "$prewrite_tmp" "$postwrite_tmp"' EXIT
+
+# Freeze the payload before any grant lifecycle operation. The grant binds
+# bytes, not a mutable pathname; verify, reconcile, reserve, mark, consume,
+# and failure release must therefore all receive this same snapshot.  Validate
+# and bound a file source *before* copying it: an untrusted path must not be
+# able to fill the temporary filesystem before the grant library rejects it.
 if [[ -n "$append_file" ]]; then
-  grant_append_args+=(--file "$append_file")
+  python3 - "$append_file" "$append_tmp" <<'PY'
+import os
+import stat
+import sys
+from pathlib import Path
+
+MAX_APPEND_FILE_BYTES = 1024 * 1024
+source = Path(sys.argv[1])
+destination = Path(sys.argv[2])
+flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+try:
+    fd = os.open(source, flags)
+except OSError as exc:
+    raise SystemExit(f"error: cannot open append file safely: {source}: {exc}") from exc
+
+try:
+    source_stat = os.fstat(fd)
+    if not stat.S_ISREG(source_stat.st_mode):
+        raise SystemExit(f"error: append file is not a regular file: {source}")
+    if source_stat.st_size > MAX_APPEND_FILE_BYTES:
+        raise SystemExit(
+            "error: append file exceeds size limit "
+            f"({source_stat.st_size} > {MAX_APPEND_FILE_BYTES} bytes): {source}"
+        )
+    chunks: list[bytes] = []
+    remaining = MAX_APPEND_FILE_BYTES + 1
+    while remaining:
+        chunk = os.read(fd, min(65536, remaining))
+        if not chunk:
+            break
+        chunks.append(chunk)
+        remaining -= len(chunk)
+    data = b"".join(chunks)
+    if len(data) > MAX_APPEND_FILE_BYTES:
+        raise SystemExit(
+            "error: append file exceeds size limit "
+            f"(more than {MAX_APPEND_FILE_BYTES} bytes): {source}"
+        )
+finally:
+    os.close(fd)
+
+destination.write_bytes(data)
+PY
 else
-  grant_append_args+=(--message "$append_message")
+  printf '%s' "$append_message" >"$append_tmp"
 fi
 
 verify_cmd=(python3 "$GRANT_LIB" verify "${grant_append_args[@]}")
@@ -146,24 +263,8 @@ else
   title="$(normalize_follow_up_title "$title")"
 fi
 
-if [[ -n "$append_file" ]]; then
-  append_block="$(cat "$append_file")"
-else
-  append_block="$append_message"
-fi
-
-remote_tmp="$(mktemp)"
-out="$(mktemp)"
-grant_finalized=0
-release_on_fail() {
-  if [[ "$grant_finalized" -eq 1 ]]; then
-    return 0
-  fi
-  python3 "$GRANT_LIB" release "${grant_append_args[@]}" >/dev/null 2>&1 || true
-}
-trap 'release_on_fail; rm -f "$out" "$remote_tmp"' EXIT
-
 "$GH_BIN" pr view "$pr_number" --repo "$repo_slug" --json body --jq .body >"$remote_tmp"
+current_body_digest="$(sha256_gh_view_body "$remote_tmp")"
 reconcile_rc=0
 reconcile_cmd=(
   python3 "$GRANT_LIB" reconcile "${grant_append_args[@]}"
@@ -181,75 +282,86 @@ if [[ "$reconcile_rc" -ne 2 ]]; then
   exit 1
 fi
 
-reserve_cmd=(python3 "$GRANT_LIB" reserve "${grant_append_args[@]}")
-if ! "${reserve_cmd[@]}"; then
-  echo "hint: operator runs grant-pr-body-human-override.sh with the same --file|--message" >&2
-  exit 1
-fi
-
-if [[ "$append_block" == *"$CURSOR_BODY_END"* || "$append_block" == *"$CODERABBIT_MARKER"* ]]; then
-  echo "error: append content must not contain reserved PR body delimiters" >&2
-  exit 1
-fi
-
 backup_dir="$(resolve_git_backup_dir)"
 mkdir -p "$backup_dir"
 ts="$(date -u +%Y%m%dT%H%M%SZ)"
 safe_slug="${repo_slug//\//-}"
 backup_path="$(mktemp "${backup_dir}/${safe_slug}-pr${pr_number}-${ts}.XXXXXX")"
 
-current_body="$(cat "$remote_tmp")"
-printf '%s\n' "$current_body" >"$backup_path"
+python3 - "$remote_tmp" "$backup_path" <<'PY'
+import sys
+from pathlib import Path
+
+body = Path(sys.argv[1]).read_bytes()
+if not body.endswith(b"\n"):
+    raise SystemExit("gh pr view output lacked its expected presentation newline")
+Path(sys.argv[2]).write_bytes(body[:-1])
+PY
 echo "backup: $backup_path"
 
-cursor_delim_count="$(count_substring "$current_body" "$CURSOR_BODY_END")"
-coderabbit_delim_count="$(count_substring "$current_body" "$CODERABBIT_MARKER")"
-if ((cursor_delim_count > 1)); then
-  echo "error: PR body contains $cursor_delim_count CURSOR_AGENT_PR_BODY_END markers; manual repair required" >&2
-  exit 1
-fi
-if ((coderabbit_delim_count > 1)); then
-  echo "error: PR body contains $coderabbit_delim_count CodeRabbit markers; manual repair required" >&2
+if ! build_merged_body "$remote_tmp" "$append_tmp" "$out" "$title"; then
+  echo "error: unable to build merged PR body" >&2
   exit 1
 fi
 
-follow_up=$(
-  cat <<EOF
-
-## ${title}
-
-${append_block}
-EOF
+base_body_digest="sha256:$(sha256_gh_view_body "$remote_tmp")"
+merged_body_digest="sha256:$(sha256_file "$out")"
+reserve_cmd=(
+  python3 "$GRANT_LIB" reserve "${grant_append_args[@]}"
+  --base-body-digest "$base_body_digest"
+  --merged-body-digest "$merged_body_digest"
 )
-
-merged="$current_body"
-if [[ "$merged" == *"$CURSOR_BODY_END"* ]]; then
-  merged="${merged/"$CURSOR_BODY_END"/${follow_up}
-$CURSOR_BODY_END}"
-elif [[ "$merged" == *"$CODERABBIT_MARKER"* ]]; then
-  merged="${merged/"$CODERABBIT_MARKER"/${follow_up}
-
-$CODERABBIT_MARKER}"
-else
-  merged="${merged}${follow_up}"
+if ! "${reserve_cmd[@]}"; then
+  echo "hint: operator runs grant-pr-body-human-override.sh with the same --file|--message" >&2
+  exit 1
 fi
 
-remote_body="$("$GH_BIN" pr view "$pr_number" --repo "$repo_slug" --json body --jq .body)"
-if [[ "$remote_body" != "$current_body" ]]; then
-  echo "error: PR body changed since initial read; aborting to avoid overwrite" >&2
+# This is best-effort optimistic concurrency, not an atomic precondition:
+# GitHub's PR-body endpoint has no compare-and-swap or expected-revision
+# argument. A local lock cannot prevent external GitHub edits between this
+# final reread and `gh pr edit`; use comment/notes reporting when that risk is
+# unacceptable. The guard still prevents stale writes observed before it.
+"$GH_BIN" pr view "$pr_number" --repo "$repo_slug" --json body --jq .body >"$reread_tmp"
+if [[ "$(sha256_gh_view_body "$reread_tmp")" != "$current_body_digest" ]]; then
+  guard_trace PR_BODY_E_STALE_ON_REREAD
+  echo "error: [PR_BODY_E_STALE_ON_REREAD] PR body changed since initial read; aborting to avoid overwrite" >&2
   echo "hint: review concurrent edits and re-run append-pr-body.sh" >&2
   exit 1
 fi
 
-printf '%s\n' "$merged" >"$out"
+"$GH_BIN" pr view "$pr_number" --repo "$repo_slug" --json body --jq .body >"$prewrite_tmp"
+prewrite_body_digest="$(sha256_gh_view_body "$prewrite_tmp")"
+if [[ "$prewrite_body_digest" != "$current_body_digest" ]]; then
+  guard_trace PR_BODY_E_STALE_PREWRITE
+  echo "error: [PR_BODY_E_STALE_PREWRITE] PR body changed immediately before write; aborting to avoid stale overwrite" >&2
+  echo "hint: review concurrent edits and re-run append-pr-body.sh with a fresh operator grant if needed" >&2
+  exit 1
+fi
+
 if ! "$GH_BIN" pr edit "$pr_number" --repo "$repo_slug" --body-file "$out"; then
   echo "error: gh pr edit failed" >&2
   exit 1
 fi
 
+# Mark remote_applied immediately once the write is accepted by the API --
+# BEFORE post-write verification, not after. release_nonce_reservation_atomic
+# (invoked via the EXIT trap on any later failure) already refuses to release
+# a reservation once remote_applied is true; that guard only protects a
+# failure path if remote_applied was set before that path could be reached.
+# Marking it after post-write verification left every failure between the
+# write and that mark -- including a genuine post-write mismatch -- free to
+# release the reservation and permit replay, despite a write having actually
+# landed. Confirmed this ordering gap directly before fixing, not assumed.
 mark_cmd=(python3 "$GRANT_LIB" mark-applied "${grant_append_args[@]}")
 if ! "${mark_cmd[@]}"; then
-  echo "error: grant mark-applied failed after PR body update — treat as security incident" >&2
+  echo "error: [PR_BODY_E_MARK_APPLIED_FAILED] grant mark-applied failed immediately after PR body write — treat as security incident" >&2
+  exit 1
+fi
+
+"$GH_BIN" pr view "$pr_number" --repo "$repo_slug" --json body --jq .body >"$postwrite_tmp"
+if [[ "$(sha256_gh_view_body "$postwrite_tmp")" != "$(sha256_file "$out")" ]]; then
+  guard_trace PR_BODY_E_POSTWRITE_MISMATCH
+  echo "error: [PR_BODY_E_POSTWRITE_MISMATCH] remote PR body does not match the merged body after write; treat as concurrency/integrity incident" >&2
   exit 1
 fi
 
