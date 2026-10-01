@@ -258,6 +258,17 @@ class ReplayNoQueuedSpecError(ValueError):
     """Raised when no durable QUEUED event carries the job's JobSpec."""
 
 
+def _first_queued_event(events: list[dict], job_id: str) -> dict | None:
+    """Return the first QUEUED lifecycle event for one job, if any."""
+    for event in events:
+        if (
+            event.get("job_id") == job_id
+            and event.get("status") == JobStatus.QUEUED.value
+        ):
+            return event
+    return None
+
+
 def _queued_spec_for_job(events: list[dict], job_id: str) -> dict | None:
     """Return the original persisted spec for one job's QUEUED transition.
 
@@ -265,14 +276,50 @@ def _queued_spec_for_job(events: list[dict], job_id: str) -> dict | None:
     therefore recover its source from the first QUEUED event, rather than the
     latest terminal event selected by ``_latest_status_per_job``.
     """
+    event = _first_queued_event(events, job_id)
+    if event is None:
+        return None
+    spec = event.get("spec")
+    return spec if isinstance(spec, dict) else None
+
+
+_LIST_SPEC_COLUMNS = ("intent", "role", "backend_hint")
+
+
+def _list_records_per_job(events: list[dict]) -> list[dict]:
+    """Project lifecycle events into safe list rows without changing status authority.
+
+    The queued event is the durable source of submitted intent and start time;
+    the latest event remains authoritative for lifecycle status and update time.
+    Full specs remain available to replay through ``_queued_spec_for_job`` but
+    are deliberately not copied to terminal list rows.
+    """
+    states = _latest_status_per_job(events)
+    queued_events: dict[str, dict] = {}
     for event in events:
-        if event.get("job_id") != job_id:
-            continue
-        if event.get("status") != JobStatus.QUEUED.value:
-            continue
-        spec = event.get("spec")
-        return spec if isinstance(spec, dict) else None
-    return None
+        job_id = event.get("job_id")
+        if (
+            isinstance(job_id, str)
+            and event.get("status") == JobStatus.QUEUED.value
+        ):
+            queued_events.setdefault(job_id, event)
+
+    records: list[dict] = []
+    for job_id, latest in states.items():
+        row = dict(latest)
+        queued = queued_events.get(job_id)
+        if queued is not None:
+            if row.get("created_at") is None and queued.get("ts") is not None:
+                row["created_at"] = queued["ts"]
+            spec = queued.get("spec")
+            if isinstance(spec, dict):
+                for key in _LIST_SPEC_COLUMNS:
+                    if row.get(key) is None and spec.get(key) is not None:
+                        row[key] = spec[key]
+        if row.get("updated_at") is None and row.get("ts") is not None:
+            row["updated_at"] = row["ts"]
+        records.append(row)
+    return records
 
 
 # ── Main supervisor class ─────────────────────────────────────────────────────
@@ -461,10 +508,9 @@ class OrchestrationSupervisor:
         return await self.submit_job(new_spec)
 
     def list_jobs(self, status: Optional[JobStatus] = None) -> list[dict]:
-        """Return all known jobs, optionally filtered by status."""
+        """Return safe list projections with queued intent and lifecycle timestamps."""
         events = _load_events(self._jobs_file)
-        states = _latest_status_per_job(events)
-        jobs = list(states.values())
+        jobs = _list_records_per_job(events)
         if status is not None:
             jobs = [j for j in jobs if j.get("status") == status.value]
         return jobs

@@ -276,6 +276,31 @@ async def test_list_jobs_no_filter(tmp_path):
     assert s2.job_id in ids
 
 
+@pytest.mark.asyncio
+async def test_list_jobs_projects_queued_columns_onto_terminal_rows(tmp_path: Path) -> None:
+    """A terminal list row retains display fields but not the submitted secret data."""
+    sup = _make_sup(tmp_path)
+    spec = JobSpec(
+        job_id=_new_id(),
+        intent="echo",
+        prompt="do not list this prompt",
+        backend_hint="echo",
+        role="executor-agent",
+    )
+    await sup.submit_job(spec)
+    await _await_job(sup, spec.job_id)
+
+    row = next(job for job in sup.list_jobs() if job["job_id"] == spec.job_id)
+    assert row["status"] == JobStatus.SUCCEEDED.value
+    assert row["intent"] == "echo"
+    assert row["role"] == "executor-agent"
+    assert row["backend_hint"] == "echo"
+    assert "spec" not in row
+    assert "prompt" not in row
+    assert row["created_at"]
+    assert row["updated_at"] >= row["created_at"]
+
+
 # ── Windows coder pool dispatch ───────────────────────────────────────────────
 # _get_reachable_windows_coder is now async (uses httpx.AsyncClient).
 # Tests mock the method directly instead of patching the sync connectivity helper.

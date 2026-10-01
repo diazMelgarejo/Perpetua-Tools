@@ -252,7 +252,7 @@ pytest tests/test_fastapi_health.py tests/test_fastapi_supervisor.py tests/test_
 orama-system:
 
 ```bash
-pytest tests/test_swarm_launch.py tests/test_swarm_preview.py tests/test_swarm_approval.py tests/test_control_plane_auth.py -q
+pytest tests/test_swarm_launch.py tests/test_swarm_preview.py tests/test_swarm_approval.py tests/test_control_plane_auth.py tests/test_portal_jobs_redaction.py tests/test_portal_jobs_proxy.py -q
 ```
 
 ---
