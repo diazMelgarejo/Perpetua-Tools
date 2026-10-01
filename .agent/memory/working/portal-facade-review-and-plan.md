@@ -1,6 +1,6 @@
 # Portal facade review and draft plan
 
-**Status:** Implemented on lockstep branch `cursor/portal-facade-hardening-751b` (orama PR #374, PT PR #414).  
+**Status:** Complete on lockstep branch `cursor/portal-facade-hardening-751b` (orama PR #374, PT PR #414).  
 **Perpetua-Tools `main`:** `8eabb6e3769ddf5c8d63bda07bb07c71b4aa1f50` (merge of #408, 2026-10-01)  
 **orama-system `main`:** `fe247da0b55e491e745be9e6014ae6d518a8b35d` (merge of #372, 2026-10-01)  
 **Complexity:** Medium
@@ -162,81 +162,82 @@ Launch submits those cached hints. It does not call `/models/route` again.
 | `orama-system/tests/test_swarm_launch.py` | UPDATE | Partial failure cancels or reports orphans, and one retry of that preview works |
 | `orama-system/tests/test_swarm_preview.py` | UPDATE | Preview does not publish a notification |
 | `orama-system/tests/test_control_plane_auth.py` | UPDATE | List routes omit prompt and metadata |
+| `orama-system/tests/test_portal_jobs_redaction.py` | ADD | HTTP + unit coverage for `/api/v1/jobs` bare list shape |
 
 ---
 
 ## 9. Tasks
 
-### Phase 1 — Perpetua-Tools
+### Phase 1 — Perpetua-Tools (done)
 
 Branch from `main` `8eabb6e3769ddf5c8d63bda07bb07c71b4aa1f50` only after this plan is approved for implementation.
 
-**Task 1. Lazy Windows health candidates**
+**Task 1. Lazy Windows health candidates** — [x]
 
 - Action: Stop calling `_resolve_health_lm_studio_candidates()` at import. Resolve on `/health` and on any probe that needs those URLs. An unset `LM_STUDIO_WIN_ENDPOINTS` on Windows logs a warning and makes `/health` report the failure. Import of `fastapi_app` succeeds.
 - Mirror: The existing loud failure in `worker_registry.py` stays on the dispatch path.
 - Validate: `pytest tests/test_fastapi_health.py -q`
 
-**Task 2. Portal device words**
+**Task 2. Portal device words** — [x]
 
 - Action: Map `mac`, `windows`, and `shared` onto the configured device ids before `route_task`. Leave exact ids such as `win-rtx3080` unchanged. `auto` stays unset.
 - Mirror: `select_for_role` already partitions candidates by exact `device`. The new helper feeds that function. It does not add a second router.
 - Validate: `pytest tests/test_portal_facade_route.py tests/test_hardware_routing.py -q`
 
-**Task 3. Stable replay errors**
+**Task 3. Stable replay errors** — [x]
 
 - Action: Raise named errors (or stable codes) from `replay` for missing job, non-terminal state, and missing queued spec. Map those types in `_replay_value_error_to_http`. Keep the three public detail strings. A `ValueError` whose text merely contains `not found` stays 400.
 - Mirror: Today's fixed detail strings in `_replay_value_error_to_http`.
 - Validate: `pytest tests/test_fastapi_supervisor.py -q`
 
-**Task 4. Fixed submit error detail**
+**Task 4. Fixed submit error detail** — [x]
 
 - Action: `supervisor_submit_job` returns one fixed 400 detail for `ValueError` and `RuntimeError`. Log `str(exc)` server-side.
 - Mirror: `_client_safe_error` on the orama side, and the replay mapper's generic 400.
 - Validate: the same supervisor test module.
 
-**Task 5. CORS list**
+**Task 5. CORS list** — [x]
 
 - Action: Keep one entry each for `http://localhost:3000` and `http://localhost:8002`.
 - Validate: import or a one-line assertion if a CORS test already exists. Do not add a test file only for duplicate strings.
 
-### Phase 2 — orama-system
+### Phase 2 — orama-system (done)
 
 Branch from `main` `fe247da0b55e491e745be9e6014ae6d518a8b35d` after Phase 1 freezes the public replay strings. The allowlist is lockstep with Perpetua.
 
-**Task 6. Redact job lists**
+**Task 6. Redact job lists** — [x]
 
 - Action: Run `redact_jobs_payload` in `api_jobs_proxy` and `api_get_jobs` before returning. Read the jobs-panel script first and keep every field it renders (`job_id`, `status`, `role`, and the other allowlist keys).
 - Mirror: `redact_job_record` already used by `/api/jobs/{id}`.
 - Validate: `pytest tests/test_control_plane_auth.py -q` plus the jobs-panel assertion if one exists.
 
-**Task 7. Hardware policy without a status publish**
+**Task 7. Hardware policy without a status publish** — [x]
 
 - Action: Extract the hardware-policy read from `api_status()`. Preview and launch call that helper. Notification publish stays on `GET /api/status` only.
 - Mirror: `api_hardware_policy` already returns `status["hardware_policy"]`. The new helper is what both that route and preview should share, with publish remaining in `api_status`.
 - Validate: `pytest tests/test_swarm_preview.py tests/test_swarm_launch.py -q`
 
-**Task 8. Partial launch**
+**Task 8. Partial launch** — [x]
 
 - Action: Submit the five jobs first. If any post fails, cancel the accepted job ids in that `session_id` through the existing Perpetua cancel route. If cancel fails, include those ids as `orphaned_jobs` in the response. Pop the approval token only after every post succeeds. If the batch rolls back, restore the preview so one retry works. A second successful launch still fails.
 - Mirror: `consume_launch` remains the single pop. `check_launch` remains the drift and signature check.
 - Validate: `pytest tests/test_swarm_launch.py tests/test_swarm_approval.py -q`
 
-**Task 9. Replay allowlist**
+**Task 9. Replay allowlist** — [x]
 
 - Action: Add the stable generic replay detail and the malformed job-id detail to `_REPLAY_UPSTREAM_DETAILS` once Phase 1 freezes those exact strings.
 - Mirror: The comment that already says the set is lockstep with `_replay_value_error_to_http`.
 - Validate: the portal replay proxy tests.
 
-**Task 10. Dead token and `fcntl`**
+**Task 10. Dead token and `fcntl`** — [x]
 
 - Action: Stop calling `resolved_control_plane_token()` in `_co_orchestration_html_response`. Move `import fcntl` inside the lock `try`, and return a clear unsupported-platform result on `ImportError`.
 - Mirror: `_portal_cp_fetch_bootstrap` already ignores its token argument.
 - Validate: the co-orchestration and configure-tool tests that already exist. Leave `_pid_on_port` unless a Windows lifecycle test fails.
 
-### Phase 3 — Docstring only
+### Phase 3 — Docstring only (done)
 
-**Task 11.** In `_models_route_payload`, state that `provider` is a copy of `backend_hint`. Do not rename the key. Do not change `portal_path_is_public`.
+**Task 11.** — [x] In `_models_route_payload`, state that `provider` is a copy of `backend_hint`. Do not rename the key. Do not change `portal_path_is_public`.
 
 ---
 
@@ -307,3 +308,13 @@ During bot or CI remediation on an **open** lockstep PR (`cursor/portal-facade-h
 3. **Push exactly once per repository** after full verification (`pytest` commands in §10; `repo_hygiene` when the diff touches scanned paths).
 
 Not: one commit + one push per repo per fix. See also `2026-09-30-three-day-cycle-pr404-pr408-pr410-pr413-synthesis.md` §D and `CODERABBIT_REMEDIATION_AND_REANCHOR_ARC_2026-08-09.md`.
+
+## 16. Plan closure (2026-10-01)
+
+- Phases 1–3 and §13 remediation are implemented on `cursor/portal-facade-hardening-751b`.
+- Orama mirror copy: `orama-system/.agent/memory/working/portal-facade-review-and-plan.md` (same text; PT path remains canonical for edits).
+- Job-list redaction is covered by `tests/test_portal_jobs_redaction.py`, `tests/test_portal_jobs_proxy.py`, and `tests/test_control_plane_auth.py`.
+
+## 17. Not part of portal facade PR #414
+
+Uncommitted local edits under `Perpetua-Tools/scripts/cursor/` (`append-pr-body.sh`, `pr-body-grant-lib.py`) are **PR body HMAC / grant hardening** work in progress. They are not staged on the portal-facade branch unless a separate review explicitly scopes them.
