@@ -209,7 +209,7 @@ Branch from `main` `fe247da0b55e491e745be9e6014ae6d518a8b35d` after Phase 1 free
 
 - Action: Run `redact_jobs_payload` in `api_jobs_proxy` and `api_get_jobs` before returning. Read the jobs-panel script first and keep every field it renders (`job_id`, `status`, `role`, and the other allowlist keys).
 - Mirror: `redact_job_record` already used by `/api/jobs/{id}`.
-- Validate: `pytest tests/test_control_plane_auth.py -q` plus the jobs-panel assertion if one exists.
+- Validate: [x] `pytest tests/test_control_plane_auth.py -q` — `test_redact_jobs_list_omits_prompt_and_metadata_for_portal_pollers`; plus `tests/test_portal_jobs_redaction.py` (`GET /api/v1/jobs` bare list) and `tests/test_portal_jobs_proxy.py`.
 
 **Task 7. Hardware policy without a status publish** — [x]
 
@@ -311,10 +311,10 @@ Not: one commit + one push per repo per fix. See also `2026-09-30-three-day-cycl
 
 ## 16. Plan closure (2026-10-01)
 
-- Phases 1–3 and §13 remediation are implemented on `cursor/portal-facade-hardening-751b`.
-- Orama mirror copy: `orama-system/.agent/memory/working/portal-facade-review-and-plan.md` (same text; PT path remains canonical for edits).
-- Job-list redaction is covered by `tests/test_portal_jobs_redaction.py`, `tests/test_portal_jobs_proxy.py`, and `tests/test_control_plane_auth.py`.
+- Phases 1–3 and §13 remediation are implemented on lockstep branch `cursor/portal-facade-hardening-751b` (orama PR #374, PT PR #414).
+- **Canonical plan:** this file only (`Perpetua-Tools/.agent/memory/working/portal-facade-review-and-plan.md`). No orama working-memory mirror.
+- Task 6 validation: `tests/test_control_plane_auth.py::test_redact_jobs_list_omits_prompt_and_metadata_for_portal_pollers` plus portal jobs redaction/proxy tests (§9 Task 6).
 
 ## 17. Not part of portal facade PR #414
 
-Uncommitted local edits under `Perpetua-Tools/scripts/cursor/` (`append-pr-body.sh`, `pr-body-grant-lib.py`) are **PR body HMAC / grant hardening** work in progress. They are not staged on the portal-facade branch unless a separate review explicitly scopes them.
+PR-body grant hardening is **Perpetua-Tools PR #415** (`cursor/pr-body-grant-parity-751b`), not the portal-facade branch.
