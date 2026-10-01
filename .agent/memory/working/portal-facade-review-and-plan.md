@@ -623,3 +623,9 @@ Applied on the same branches as §25. Still v1 code only.
 - Containment annotation errors do not revoke durable `cancelled`.
 - Orama `cancellation_allows_restore` is the single rollback matrix, including unknown present CLI values.
 - v2 docs only: `unsupported`, `containment_scope`, Looking Glass semantic fields.
+
+## 27. CodeRabbit PR #418 — creation-race fix (lockstep)
+
+- Shield `create_subprocess_exec` so cancel during spawn still `note_child`s the direct process; supervisor containment is the sole terminate/record path on that path.
+- Containment annotation failures: WARNING log, durable `cancelled` unchanged; orama mixed-deploy when fields absent (contract matrix).
+- `note_child` identity policy documented in supervisor docstring + orama contract edge-case table.

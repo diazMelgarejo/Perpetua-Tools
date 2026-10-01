@@ -537,14 +537,25 @@ class OrchestrationSupervisor:
                 terminal_state = JobStatus.CANCELLED.value
         if terminal_state == JobStatus.CANCELLED.value:
             # Containment annotation must not revoke a durable cancellation.
+            import logging
+
             try:
                 await self._record_direct_child_containment(job_id)
-            except Exception:
-                pass
+            except Exception as exc:
+                logging.getLogger(__name__).warning(
+                    "containment annotation failed for job %s: %s",
+                    job_id,
+                    exc,
+                )
         return True, terminal_state
 
     def note_child(self, job_id: str, proc: asyncio.subprocess.Process) -> None:
-        """Register a direct CLI child for ``job_id`` (identity-safe)."""
+        """Register a direct CLI child for ``job_id`` (identity-safe).
+
+        If a different still-running process is already mapped for ``job_id``,
+        the existing entry is kept (v1 identity policy). A later registration
+        replaces only when the prior child has exited or is the same object.
+        """
         existing = self._children.get(job_id)
         if (
             existing is not None

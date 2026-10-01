@@ -243,23 +243,42 @@ async def _run_dangerous_cli_subprocess(
 
     timeout = float(_get_constraint(spec, "max_seconds", 300))
     job_id = getattr(spec, "job_id", "")
-    proc = await asyncio.create_subprocess_exec(
-        *cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-        stdin=asyncio.subprocess.DEVNULL,
+    # Shield creation so a cancel during create_subprocess_exec still registers
+    # the direct child for supervisor containment (narrow race window).
+    creation = asyncio.create_task(
+        asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            stdin=asyncio.subprocess.DEVNULL,
+        )
     )
+    cancelled_during_creation = False
+    try:
+        proc = await asyncio.shield(creation)
+    except asyncio.CancelledError:
+        cancelled_during_creation = True
+        proc = await creation
+
     sup = current_orchestration_supervisor()
     if sup is not None and job_id:
         sup.note_child(job_id, proc)
     try:
+        if cancelled_during_creation:
+            # Retain registration; supervisor containment terminates and records.
+            raise asyncio.CancelledError() from None
         stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
     except asyncio.TimeoutError:
         proc.terminate()
         await wait_process_exit(proc, CONTAINMENT_TIMEOUT_SECONDS)
-        raise RuntimeError(f"{backend} worker timed out after {timeout}s")
+        raise RuntimeError(f"{backend} worker timed out after {timeout}s") from None
     finally:
-        if proc.returncode is not None and sup is not None and job_id:
+        if (
+            not cancelled_during_creation
+            and proc.returncode is not None
+            and sup is not None
+            and job_id
+        ):
             sup.clear_child(job_id, proc)
 
     if proc.returncode != 0:

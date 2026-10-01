@@ -514,6 +514,65 @@ async def test_containment_clears_only_the_looked_up_process(tmp_path: Path) -> 
 
 
 @pytest.mark.asyncio
+async def test_cancel_during_subprocess_creation_still_registers_cli_child(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Cancel while create_subprocess_exec is pending still maps a CLI child."""
+    from orchestrator.worker_registry import _run_dangerous_cli_subprocess
+
+    sup = _make_sup(tmp_path)
+    spawn_blocked = asyncio.Event()
+    release_spawn = asyncio.Event()
+
+    class _FakeProc:
+        def __init__(self) -> None:
+            self.returncode = None
+
+        def terminate(self) -> None:
+            self.returncode = 0
+
+        async def wait(self) -> int:
+            return self.returncode or 0
+
+        async def communicate(self) -> tuple[bytes, bytes]:
+            await asyncio.Event().wait()
+            return b"", b""
+
+    async def _slow_create(*_args: object, **_kwargs: object) -> _FakeProc:
+        spawn_blocked.set()
+        await release_spawn.wait()
+        return _FakeProc()
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", _slow_create)
+
+    spec = JobSpec(
+        job_id=_new_id(),
+        intent="freeform",
+        prompt="race",
+        backend_hint="codex",
+    )
+
+    async def _cli(spec_in: JobSpec) -> dict[str, str]:
+        return await _run_dangerous_cli_subprocess(spec_in, ["codex", "x"], "codex")
+
+    sup._dispatch = _cli
+    job_id = await sup.submit_job(spec)
+    await spawn_blocked.wait()
+    cancel_task = asyncio.create_task(sup.cancel_with_terminal_state(job_id))
+    await asyncio.sleep(0.05)
+    release_spawn.set()
+    requested, terminal_state = await cancel_task
+
+    assert requested is True
+    assert terminal_state == JobStatus.CANCELLED.value
+    status = await sup.get_status(job_id)
+    assert status is not None
+    assert status["worker_kind"] == "cli"
+    assert status["containment_state"] == "verified"
+
+
+@pytest.mark.asyncio
 async def test_containment_annotation_failure_keeps_cancelled(tmp_path: Path) -> None:
     """A failed containment write does not turn durable cancel into a failed request."""
     sup = _make_sup(tmp_path)
