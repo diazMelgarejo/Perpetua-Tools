@@ -19,7 +19,7 @@ REPO_ROOT = Path(__file__).parent.parent
 os.environ["OLLAMA_HOST"] = "http://localhost"
 
 from orchestrator.model_registry import ModelRegistry
-from orchestrator.fastapi_app import _resolve_candidates, app
+from orchestrator.fastapi_app import _normalize_preferred_device, _resolve_candidates, app
 from utils.hardware_policy import HardwareAffinityError, check_affinity, filter_models_for_platform, load_policy
 import utils.hardware_policy as _hw_policy_mod
 
@@ -85,6 +85,20 @@ def test_deep_reasoning_routing_by_hardware_profile(registry):
                      if m.online and m.name not in ("glm-5.1:cloud", "claude-sonnet-5")]
     assert all(glm_idx < ci for ci in general_cloud), \
         "glm-5.1:cloud should appear before general cloud fallbacks"
+
+def test_normalize_preferred_device_maps_portal_words_before_route_task(registry):
+    """Portal device words normalize to registry ids; exact ids are unchanged."""
+    assert _normalize_preferred_device("windows") == "win-rtx3080"
+    assert _normalize_preferred_device("mac") == "mac-studio"
+    assert _normalize_preferred_device("shared") == "shared-ollama"
+    assert _normalize_preferred_device("win-rtx3080") == "win-rtx3080"
+    assert _normalize_preferred_device("auto") is None
+
+    win_chain = registry.route_task(
+        "code_analysis", preferred_device=_normalize_preferred_device("windows")
+    )
+    assert win_chain[0].device == "win-rtx3080"
+
 
 def test_code_analysis_routing_by_hardware_profile(registry):
     """

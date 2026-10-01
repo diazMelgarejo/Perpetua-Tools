@@ -127,8 +127,16 @@ def _resolve_health_lm_studio_candidates() -> list[str]:
 
 
 HEALTH_OLLAMA_HOST: str = os.getenv("OLLAMA_MAC_ENDPOINT", "http://localhost:11434")
-HEALTH_LM_STUDIO_CANDIDATES: list[str] = _resolve_health_lm_studio_candidates()
 HEALTH_MLX_HOST: str = "http://localhost:8081"
+
+
+def health_lm_studio_candidates() -> list[str]:
+    """Resolve LM Studio probe URLs at call time (not import time).
+
+    Windows co-install shims must import ``fastapi_app`` even when
+    ``LM_STUDIO_WIN_ENDPOINTS`` is unset; ``/health`` surfaces that gap.
+    """
+    return _resolve_health_lm_studio_candidates()
 
 # GC guard for fire-and-forget startup tasks (D_GCG-1 from RAG backport 2026-05-22).
 # asyncio.create_task() only holds a *weak* reference; without a strong reference
@@ -235,8 +243,8 @@ app.add_middleware(ControlPlaneAuthMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000", "http://localhost:3000",
-        "http://localhost:8002", "http://localhost:8002",  # portal
+        "http://localhost:3000",
+        "http://localhost:8002",  # portal
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
@@ -628,8 +636,12 @@ def health() -> Dict[str, Any]:
         respond, so backend_health_map's own probe below still reports a
         real (if failing) endpoint rather than a silently wrong one.
         """
+        try:
+            candidates = health_lm_studio_candidates()
+        except RuntimeError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
         validated = [
-            _validated(c, "http://localhost:1234") for c in HEALTH_LM_STUDIO_CANDIDATES
+            _validated(c, "http://localhost:1234") for c in candidates
         ]
         last = validated[-1]
         for candidate in validated:
@@ -795,7 +807,13 @@ def _normalize_preferred_device(value: Optional[str]) -> Optional[str]:
     cleaned = str(value).strip()
     if not cleaned or cleaned.lower() in {"auto", "none", "default"}:
         return None
-    return cleaned
+    portal_aliases = {
+        "mac": "mac-studio",
+        "windows": "win-rtx3080",
+        "win": "win-rtx3080",
+        "shared": "shared-ollama",
+    }
+    return portal_aliases.get(cleaned.lower(), cleaned)
 
 
 def _backend_hint_from_target(target: Any) -> Optional[str]:
@@ -827,6 +845,9 @@ def _models_route_payload(
     Orama's swarm preview POSTs JSON and reads ``backend_hint`` / ``model_hint``
     (with ``backend`` / ``model`` / ``model_id`` aliases). GET keeps the
     historical ``fallback_chain`` and adds the same hint keys additively.
+
+    When a backend hint is present, ``provider`` is a copy of ``backend_hint``
+    (routing backend id for the portal, not an LLM vendor name).
     """
     from orchestrator.worker_registry import resolve_role_backend
 
@@ -1288,9 +1309,14 @@ from orchestrator.supervisor import (  # noqa: E402
     JobSpec,
     JobStatus,
     OrchestrationSupervisor,
+    ReplayJobNotFoundError,
+    ReplayJobNotReplayableError,
+    ReplayNoQueuedSpecError,
     _new_id,
     caller_reported_lineage_metadata,
 )
+
+_JOB_SUBMIT_ERROR_DETAIL = "Job submission could not be completed"
 
 # Security: job_id flows into filesystem paths (.state/jobs/<id>/result.json)
 # via OrchestrationSupervisor. Validate the format at the HTTP boundary so a
@@ -1327,12 +1353,11 @@ def _replay_value_error_to_http(exc: ValueError) -> HTTPException:
     ``Job is not replayable`` (409), and ``Job has no queued specification``
     (422). Any other ``ValueError`` stays a generic 400.
     """
-    message = str(exc).casefold()
-    if "not found" in message:
+    if isinstance(exc, ReplayJobNotFoundError):
         return HTTPException(status_code=404, detail="Job not found")
-    if "not replayable" in message:
+    if isinstance(exc, ReplayJobNotReplayableError):
         return HTTPException(status_code=409, detail="Job is not replayable")
-    if "queued specification" in message:
+    if isinstance(exc, ReplayNoQueuedSpecError):
         return HTTPException(
             status_code=422,
             detail="Job has no queued specification",
@@ -1424,7 +1449,8 @@ async def supervisor_submit_job(req: _JobSubmitRequest, http_request: Request):
         job_id = await _get_supervisor().submit_job(spec)
         return {"job_id": job_id, "state": JobStatus.QUEUED.value}
     except (ValueError, RuntimeError) as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        _startup_log.warning("job submit rejected: %s", exc)
+        raise HTTPException(status_code=400, detail=_JOB_SUBMIT_ERROR_DETAIL)
 
 
 @app.get("/v1/jobs", tags=["supervisor"])
@@ -1470,12 +1496,20 @@ async def supervisor_cancel_job(job_id: str):
     Returns:
         dict: {
             "job_id": job_id,
-            "cancel_requested": bool
-        } where `cancel_requested` is `True` if a cancellation was requested, `False` otherwise.
+            "cancel_requested": bool,
+            "terminal_state": str | None,
+        } where `cancel_requested` is `True` if a cancellation was requested.
+        `terminal_state` is the persisted lifecycle state after the request
+        completes; callers that must avoid duplicate dispatches require it to
+        be `cancelled`, rather than treating the acknowledgement as proof.
     """
     _validate_job_id(job_id)
-    cancelled = await _get_supervisor().cancel(job_id)
-    return {"job_id": job_id, "cancel_requested": cancelled}
+    cancel_requested, terminal_state = await _get_supervisor().cancel_with_terminal_state(job_id)
+    return {
+        "job_id": job_id,
+        "cancel_requested": cancel_requested,
+        "terminal_state": terminal_state,
+    }
 
 
 @app.post("/v1/jobs/{job_id}/replay", tags=["supervisor"])

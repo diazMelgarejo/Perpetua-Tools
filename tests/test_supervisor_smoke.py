@@ -207,6 +207,62 @@ async def test_cancel_running_job(tmp_path):
     assert status["status"] == JobStatus.CANCELLED.value
 
 
+@pytest.mark.asyncio
+async def test_cancel_with_terminal_state_confirms_persisted_cancellation(tmp_path: Path) -> None:
+    """Confirmation reports cancelled only after its event is durable."""
+    sup = _make_sup(tmp_path)
+    spec = _echo_spec("slow")
+
+    async def _slow(s: JobSpec) -> dict[str, str]:
+        await asyncio.sleep(60)
+        return {"output": "never"}
+
+    sup._dispatch = _slow
+    job_id = await sup.submit_job(spec)
+    await asyncio.sleep(0.05)
+
+    requested, terminal_state = await sup.cancel_with_terminal_state(job_id)
+
+    assert requested is True
+    assert terminal_state == JobStatus.CANCELLED.value
+    status = await sup.get_status(job_id)
+    assert status is not None
+    assert status["status"] == JobStatus.CANCELLED.value
+
+
+@pytest.mark.asyncio
+async def test_cancel_with_terminal_state_records_pre_start_cancellation(tmp_path: Path) -> None:
+    """A task cancelled before its coroutine starts still gets a terminal event."""
+    sup = _make_sup(tmp_path)
+    job_id = await sup.submit_job(_echo_spec("never starts"))
+
+    requested, terminal_state = await sup.cancel_with_terminal_state(job_id)
+
+    assert requested is True
+    assert terminal_state == JobStatus.CANCELLED.value
+    status = await sup.get_status(job_id)
+    assert status is not None
+    assert status["status"] == JobStatus.CANCELLED.value
+    assert job_id not in sup._active
+
+
+@pytest.mark.asyncio
+async def test_pre_start_cancellations_do_not_exhaust_admission_slots(tmp_path: Path) -> None:
+    """Twenty-five immediate cancellations leave a slot for the next submit."""
+    sup = _make_sup(tmp_path)
+    for _ in range(sup.MAX_THREADS):
+        job_id = await sup.submit_job(_echo_spec("pre-start cancel"))
+        requested, terminal_state = await sup.cancel_with_terminal_state(job_id)
+        assert requested is True
+        assert terminal_state == JobStatus.CANCELLED.value
+        assert job_id not in sup._active
+        assert sup._active == {}
+
+    accepted = await sup.submit_job(_echo_spec("after released slots"))
+    assert accepted
+    assert accepted in sup._active
+
+
 # ── Replay ────────────────────────────────────────────────────────────────────
 
 @pytest.mark.asyncio
@@ -274,6 +330,47 @@ async def test_list_jobs_no_filter(tmp_path):
     ids = {j["job_id"] for j in all_jobs}
     assert s1.job_id in ids
     assert s2.job_id in ids
+
+
+@pytest.mark.asyncio
+async def test_list_jobs_projects_queued_columns_onto_terminal_rows(tmp_path: Path) -> None:
+    """A terminal list row retains display fields but not the submitted secret data."""
+    sup = _make_sup(tmp_path)
+    spec = JobSpec(
+        job_id=_new_id(),
+        intent="echo",
+        prompt="do not list this prompt",
+        backend_hint="echo",
+        role="executor-agent",
+    )
+    await sup.submit_job(spec)
+    await _await_job(sup, spec.job_id)
+
+    row = next(job for job in sup.list_jobs() if job["job_id"] == spec.job_id)
+    assert row["status"] == JobStatus.SUCCEEDED.value
+    assert row["intent"] == "echo"
+    assert row["role"] == "executor-agent"
+    assert row["backend_hint"] == "echo"
+    assert "spec" not in row
+    assert "prompt" not in row
+    assert row["created_at"]
+    assert row["updated_at"] >= row["created_at"]
+
+    _append_event(
+        tmp_path / "jobs.jsonl",
+        spec.job_id,
+        {
+            "status": JobStatus.FAILED.value,
+            "intent": "latest-intent",
+            "role": None,
+            "backend_hint": "latest-backend",
+        },
+    )
+    row = next(job for job in sup.list_jobs() if job["job_id"] == spec.job_id)
+    assert row["status"] == JobStatus.FAILED.value
+    assert row["intent"] == "latest-intent"
+    assert row["role"] == "executor-agent"
+    assert row["backend_hint"] == "latest-backend"
 
 
 # ── Windows coder pool dispatch ───────────────────────────────────────────────

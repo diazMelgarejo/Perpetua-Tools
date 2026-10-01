@@ -17,7 +17,9 @@ import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
+import orchestrator.fastapi_app as fastapi_app
 from orchestrator.fastapi_app import (
+    _JOB_SUBMIT_ERROR_DETAIL,
     _UUID4_RE,
     _replay_value_error_to_http,
     _validate_job_id,
@@ -263,6 +265,26 @@ class TestCancelJobEndpointValidation:
         body = resp.json()
         assert body["job_id"] == jid
         assert body["cancel_requested"] is False
+        assert body["terminal_state"] is None
+
+    def test_terminal_state_is_returned_for_confirmed_cancellation(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """The cancellation endpoint distinguishes acknowledgement from terminal state."""
+
+        class _ConfirmedSupervisor:
+            async def cancel_with_terminal_state(self, job_id: str) -> tuple[bool, str]:
+                return True, "cancelled"
+
+        monkeypatch.setattr(fastapi_app, "_get_supervisor", _ConfirmedSupervisor)
+        jid = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+        with TestClient(app, raise_server_exceptions=False) as client:
+            resp = client.post(f"/v1/jobs/{jid}/cancel")
+
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "job_id": jid,
+            "cancel_requested": True,
+            "terminal_state": "cancelled",
+        }
 
     def test_400_detail_contains_uuid4(self):
         with TestClient(app, raise_server_exceptions=False) as client:
@@ -313,27 +335,38 @@ class TestReplayJobEndpointValidation:
 
 
 class TestReplayValueErrorHttpMapping:
-    """Supervisor replay ValueError messages map to distinct HTTP statuses."""
+    """Supervisor replay errors map to distinct HTTP statuses."""
 
     def test_not_found_maps_to_404(self):
-        """Verify missing jobs map to a 404 without exposing the job ID."""
-        exc = _replay_value_error_to_http(ValueError("Job abc not found"))
+        from orchestrator.supervisor import ReplayJobNotFoundError
+
+        exc = _replay_value_error_to_http(ReplayJobNotFoundError("Job abc not found"))
         assert exc.status_code == 404
         assert exc.detail == "Job not found"
 
     def test_not_replayable_maps_to_409(self):
-        """Verify nonterminal replay attempts map to a sanitized 409 response."""
-        exc = _replay_value_error_to_http(ValueError("Job abc is not replayable"))
+        from orchestrator.supervisor import ReplayJobNotReplayableError
+
+        exc = _replay_value_error_to_http(
+            ReplayJobNotReplayableError("Job abc is not replayable")
+        )
         assert exc.status_code == 409
         assert exc.detail == "Job is not replayable"
 
     def test_missing_queued_spec_maps_to_422(self):
-        """Verify a missing queued specification maps to a sanitized 422 response."""
+        from orchestrator.supervisor import ReplayNoQueuedSpecError
+
         exc = _replay_value_error_to_http(
-            ValueError("Job abc has no queued specification")
+            ReplayNoQueuedSpecError("Job abc has no queued specification")
         )
         assert exc.status_code == 422
         assert exc.detail == "Job has no queued specification"
+
+    def test_unrelated_value_error_with_not_found_stays_400(self):
+        """Substring ``not found`` in unrelated errors must not become HTTP 404."""
+        exc = _replay_value_error_to_http(ValueError("config file not found"))
+        assert exc.status_code == 400
+        assert exc.detail == "Replay request could not be completed"
 
 
 class TestReplayJobEndpointStates:
@@ -379,3 +412,27 @@ class TestReplayJobEndpointStates:
         assert resp.status_code == 422
         assert resp.json().get("detail") == "Job has no queued specification"
         assert job_id not in resp.json().get("detail", "")
+
+
+class TestSupervisorSubmitErrors:
+    """Submit endpoint maps supervisor ValueError to a stable client-facing detail."""
+
+    def test_submit_value_error_returns_fixed_detail(self, monkeypatch: pytest.MonkeyPatch):
+        """Return the fixed submit error detail instead of leaking internal messages."""
+
+        class _RejectingSupervisor:
+            """Supervisor stub that always rejects submit with ValueError."""
+
+            async def submit_job(self, spec):
+                """Raise a ValueError to exercise the HTTP error mapping."""
+                raise ValueError("internal depth policy rejected")
+
+        monkeypatch.setattr("orchestrator.fastapi_app._supervisor", _RejectingSupervisor())
+        with TestClient(app, raise_server_exceptions=False) as client:
+            resp = client.post(
+                "/v1/jobs",
+                json={"intent": "echo", "prompt": "hello"},
+            )
+        assert resp.status_code == 400
+        assert resp.json()["detail"] == _JOB_SUBMIT_ERROR_DETAIL
+        assert "depth" not in resp.json()["detail"]
