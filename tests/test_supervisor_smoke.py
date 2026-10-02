@@ -707,6 +707,60 @@ async def test_containment_annotation_failure_keeps_cancelled(tmp_path: Path) ->
     assert terminal_state == JobStatus.CANCELLED.value
 
 
+@pytest.mark.asyncio
+async def test_failed_cli_annotation_retains_child_for_containment_retry(
+    tmp_path: Path,
+) -> None:
+    """A failed CLI annotation must not degrade a retry to in-process."""
+    sup = _make_sup(tmp_path)
+
+    class _ExitedCli:
+        def __init__(self) -> None:
+            self.returncode = 0
+
+        def terminate(self) -> None:
+            raise AssertionError("an exited child must not be terminated")
+
+        async def wait(self) -> int:
+            return 0
+
+    child = _ExitedCli()
+
+    async def _blocked_cli(spec: JobSpec) -> dict[str, str]:
+        sup.note_child(spec.job_id, child)  # type: ignore[arg-type]
+        await asyncio.sleep(60)
+        return {"output": "never"}
+
+    sup._dispatch = _blocked_cli
+    original = sup._append_event
+    fail_once = True
+
+    def _fail_first_cli_annotation(job_id: str, event: dict) -> None:
+        nonlocal fail_once
+        if event.get("worker_kind") == "cli" and fail_once:
+            fail_once = False
+            raise OSError("annotation failed")
+        original(job_id, event)
+
+    sup._append_event = _fail_first_cli_annotation  # type: ignore[method-assign]
+    job_id = await sup.submit_job(_echo_spec("retry CLI annotation"))
+    await asyncio.sleep(0.05)
+
+    requested, terminal_state = await sup.cancel_with_terminal_state(job_id)
+    assert requested is True
+    assert terminal_state == JobStatus.CANCELLED.value
+    status = await sup.get_status(job_id)
+    assert status is not None
+    assert status["worker_kind"] == "cli"
+    assert status["containment_state"] == "verified"
+    assert job_id not in sup._children
+    assert not any(
+        event.get("job_id") == job_id
+        and event.get("worker_kind") == "in-process"
+        for event in _load_events(sup._jobs_file)
+    )
+
+
 # ── Replay ────────────────────────────────────────────────────────────────────
 
 @pytest.mark.asyncio

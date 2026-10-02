@@ -527,19 +527,31 @@ class OrchestrationSupervisor:
         if not task.cancelled():
             return
 
-        if self._active.get(job_id) is task:
-            self._active.pop(job_id, None)
+        try:
+            if self._active.get(job_id) is task:
+                self._active.pop(job_id, None)
 
-        latest = _latest_status_per_job(_load_events(self._jobs_file)).get(job_id)
-        if latest is None or latest.get("status") != JobStatus.CANCELLED.value:
-            self._append_event(job_id, {"status": JobStatus.CANCELLED.value})
             latest = _latest_status_per_job(_load_events(self._jobs_file)).get(job_id)
+            if latest is None or latest.get("status") != JobStatus.CANCELLED.value:
+                self._append_event(job_id, {"status": JobStatus.CANCELLED.value})
+                latest = _latest_status_per_job(_load_events(self._jobs_file)).get(job_id)
 
-        # ``cancel_with_terminal_state`` may already have completed fast direct
-        # child containment before this callback runs. Do not append a second
-        # in-process annotation after that cleanup cleared the child mapping.
-        if not self._has_containment_annotation(latest):
-            self._ensure_containment_task(job_id)
+            # ``cancel_with_terminal_state`` may already have completed fast direct
+            # child containment before this callback runs. Do not append a second
+            # in-process annotation after that cleanup cleared the child mapping.
+            if not self._has_containment_annotation(latest):
+                self._ensure_containment_task(job_id)
+        except Exception as exc:
+            # Done callbacks otherwise surface only as event-loop diagnostics.
+            # Durable cancellation is already preserved; make the containment
+            # scheduling failure visible without crashing an unrelated task.
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "failed to schedule containment for cancelled job %s: %s",
+                job_id,
+                exc,
+            )
 
     @staticmethod
     def _has_containment_annotation(event: dict | None) -> bool:
@@ -704,7 +716,6 @@ class OrchestrationSupervisor:
             if proc.returncode is not None
             else CONTAINMENT_UNRESOLVED
         )
-        self.clear_child(job_id, proc)
         self._append_event(
             job_id,
             {
@@ -713,6 +724,10 @@ class OrchestrationSupervisor:
                 "containment_state": containment_state,
             },
         )
+        # Preserve the direct-child identity until the durable annotation is
+        # written. If that write fails, a later cancellation can retry CLI
+        # containment rather than falsely falling back to in-process.
+        self.clear_child(job_id, proc)
 
     async def replay(self, job_id: str, overrides: dict | None = None) -> str:
         """Re-run a failed or cancelled job under a new job_id.
