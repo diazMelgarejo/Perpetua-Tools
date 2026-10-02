@@ -1524,12 +1524,10 @@ async def supervisor_cancel_job(job_id: str):
         # cancellation. The direct-child map is retained until that annotation
         # is durable; while it remains present, report the conservative pair
         # expected by portal rollback policy.
-        children = getattr(sup, "_children", None)
         if (
             "worker_kind" not in body
             and "containment_state" not in body
-            and isinstance(children, dict)
-            and job_id in children
+            and sup.has_registered_child(job_id)
         ):
             body["worker_kind"] = WORKER_KIND_CLI
             body["containment_state"] = CONTAINMENT_UNRESOLVED

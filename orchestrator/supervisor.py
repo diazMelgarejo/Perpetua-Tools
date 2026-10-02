@@ -714,6 +714,10 @@ class OrchestrationSupervisor:
             return
         self._children[job_id] = proc
 
+    def has_registered_child(self, job_id: str) -> bool:
+        """Return whether this supervisor still owns a direct child for ``job_id``."""
+        return job_id in self._children
+
     def clear_child(self, job_id: str, proc: asyncio.subprocess.Process) -> None:
         """Remove a registered child only when it is still the mapped object."""
         if self._children.get(job_id) is proc:

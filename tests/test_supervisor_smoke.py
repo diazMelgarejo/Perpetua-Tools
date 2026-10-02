@@ -573,6 +573,45 @@ async def test_cancel_during_subprocess_creation_still_registers_cli_child(
 
 
 @pytest.mark.asyncio
+async def test_cancel_during_communicate_keeps_exited_child_registered(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A returncode set inside communicate() must not clear the CLI mapping."""
+    from orchestrator.supervisor import _supervisor_ctx
+    from orchestrator.worker_registry import _run_dangerous_cli_subprocess
+
+    sup = _make_sup(tmp_path)
+
+    class _ExitsThenCancels:
+        def __init__(self) -> None:
+            self.returncode = None
+
+        async def communicate(self) -> tuple[bytes, bytes]:
+            self.returncode = 0
+            raise asyncio.CancelledError()
+
+    async def _create(*_args: object, **_kwargs: object) -> _ExitsThenCancels:
+        return _ExitsThenCancels()
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", _create)
+    spec = JobSpec(
+        job_id=_new_id(),
+        intent="freeform",
+        prompt="communicate race",
+        backend_hint="codex",
+    )
+    token = _supervisor_ctx.set(sup)
+    try:
+        with pytest.raises(asyncio.CancelledError):
+            await _run_dangerous_cli_subprocess(spec, ["codex", "x"], "codex")
+    finally:
+        _supervisor_ctx.reset(token)
+
+    assert sup.has_registered_child(spec.job_id) is True
+
+
+@pytest.mark.asyncio
 async def test_request_cancel_during_child_termination_still_contains(
     tmp_path: Path,
 ) -> None:

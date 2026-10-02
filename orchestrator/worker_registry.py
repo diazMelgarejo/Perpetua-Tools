@@ -263,18 +263,24 @@ async def _run_dangerous_cli_subprocess(
     sup = current_orchestration_supervisor()
     if sup is not None and job_id:
         sup.note_child(job_id, proc)
+    cancelled = cancelled_during_creation
     try:
         if cancelled_during_creation:
             # Retain registration; supervisor containment terminates and records.
             raise asyncio.CancelledError() from None
         stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+    except asyncio.CancelledError:
+        # communicate() can set returncode before the pipe reads finish.
+        # Keep the mapping so containment does not record in-process.
+        cancelled = True
+        raise
     except asyncio.TimeoutError:
         proc.terminate()
         await wait_process_exit(proc, CONTAINMENT_TIMEOUT_SECONDS)
         raise RuntimeError(f"{backend} worker timed out after {timeout}s") from None
     finally:
         if (
-            not cancelled_during_creation
+            not cancelled
             and proc.returncode is not None
             and sup is not None
             and job_id
