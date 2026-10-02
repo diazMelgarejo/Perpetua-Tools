@@ -403,6 +403,9 @@ class OrchestrationSupervisor:
         self._jobs_file = self._state_dir / "jobs.jsonl"
         self._active: dict[str, asyncio.Task] = {}
         self._children: dict[str, asyncio.subprocess.Process] = {}
+        # Supervisor-owned containment. A cancelled HTTP request must not
+        # abandon a direct child after cancellation is already durable.
+        self._containment_tasks: dict[str, asyncio.Task] = {}
         # Cached GossipBus (set on first _record_to_gossip; reused per
         # supervisor instance to avoid re-running CREATE TABLE IF NOT EXISTS
         # schema DDL on every job completion). Lazy because GossipBus opens an
@@ -503,6 +506,45 @@ class OrchestrationSupervisor:
             return True
         return False
 
+    def _ensure_containment_task(self, job_id: str) -> asyncio.Task:
+        """Return the supervisor-owned cleanup task for one cancelled job.
+
+        The task is created once and stored on this supervisor. Cancelling the
+        caller that is awaiting it does not cancel the cleanup.
+        """
+        existing = self._containment_tasks.get(job_id)
+        if existing is not None and not existing.done():
+            return existing
+        task = asyncio.create_task(
+            self._run_containment_cleanup(job_id),
+            name=f"containment-{job_id}",
+        )
+        self._containment_tasks[job_id] = task
+
+        def _drop(done: asyncio.Task, jid: str = job_id) -> None:
+            if self._containment_tasks.get(jid) is done:
+                self._containment_tasks.pop(jid, None)
+
+        task.add_done_callback(_drop)
+        return task
+
+    async def _run_containment_cleanup(self, job_id: str) -> None:
+        """Terminate the direct child without tying that wait to the caller."""
+        import logging
+
+        try:
+            await self._record_direct_child_containment(job_id)
+        except Exception as exc:
+            logging.getLogger(__name__).warning(
+                "containment annotation failed for job %s: %s",
+                job_id,
+                exc,
+            )
+
+    async def _await_containment(self, job_id: str) -> None:
+        """Await this job's cleanup without letting caller cancellation stop it."""
+        await asyncio.shield(self._ensure_containment_task(job_id))
+
     async def cancel_with_terminal_state(self, job_id: str) -> tuple[bool, str | None]:
         """Request cancellation and report the durable terminal state, if reached.
 
@@ -512,11 +554,26 @@ class OrchestrationSupervisor:
         cancellation checkpoint and returns ``cancelled`` only after that
         checkpoint is persisted. A task cancelled before its coroutine starts
         needs an explicit event because it cannot write the checkpoint itself.
+
+        Direct-child containment runs on a supervisor-owned task. Callers await
+        that task, including a later cancel after the worker is already
+        terminal. Cancelling the caller does not cancel containment.
         """
+        inflight = self._containment_tasks.get(job_id)
+        if inflight is not None and not inflight.done():
+            await asyncio.shield(inflight)
+            status = await self.get_status(job_id)
+            terminal_state = status.get("status") if status is not None else None
+            return True, terminal_state
+
         task = self._active.get(job_id)
         if task is None or task.done() or not task.cancel():
             status = await self.get_status(job_id)
-            return False, status.get("status") if status is not None else None
+            terminal_state = status.get("status") if status is not None else None
+            if terminal_state == JobStatus.CANCELLED.value and job_id in self._children:
+                await self._await_containment(job_id)
+                return True, terminal_state
+            return False, terminal_state
 
         try:
             await asyncio.wait_for(
@@ -536,17 +593,7 @@ class OrchestrationSupervisor:
                 self._append_event(job_id, {"status": JobStatus.CANCELLED})
                 terminal_state = JobStatus.CANCELLED.value
         if terminal_state == JobStatus.CANCELLED.value:
-            # Containment annotation must not revoke a durable cancellation.
-            import logging
-
-            try:
-                await self._record_direct_child_containment(job_id)
-            except Exception as exc:
-                logging.getLogger(__name__).warning(
-                    "containment annotation failed for job %s: %s",
-                    job_id,
-                    exc,
-                )
+            await self._await_containment(job_id)
         return True, terminal_state
 
     def note_child(self, job_id: str, proc: asyncio.subprocess.Process) -> None:

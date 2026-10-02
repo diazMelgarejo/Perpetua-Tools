@@ -573,6 +573,67 @@ async def test_cancel_during_subprocess_creation_still_registers_cli_child(
 
 
 @pytest.mark.asyncio
+async def test_request_cancel_during_child_termination_still_contains(
+    tmp_path: Path,
+) -> None:
+    """Cancelling the cancel request must not abandon a registered CLI child.
+
+    Containment runs on a supervisor-owned task. A later cancel awaits that
+    same task and observes the recorded outcome.
+    """
+    sup = _make_sup(tmp_path)
+    termination_started = asyncio.Event()
+    release_exit = asyncio.Event()
+
+    class _SlowExit:
+        def __init__(self) -> None:
+            self.returncode = None
+
+        def terminate(self) -> None:
+            termination_started.set()
+
+        async def wait(self) -> int:
+            await release_exit.wait()
+            self.returncode = 0
+            return 0
+
+    fake_proc = _SlowExit()
+
+    async def _blocked_cli(spec: JobSpec) -> dict[str, str]:
+        sup.note_child(spec.job_id, fake_proc)  # type: ignore[arg-type]
+        await asyncio.sleep(60)
+        return {"output": "never"}
+
+    sup._dispatch = _blocked_cli
+    job_id = await sup.submit_job(_echo_spec("cancel during termination"))
+    await asyncio.sleep(0.05)
+
+    request = asyncio.create_task(sup.cancel_with_terminal_state(job_id))
+    await termination_started.wait()
+    request.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await request
+
+    assert job_id in sup._children
+    cleanup = sup._containment_tasks.get(job_id)
+    assert cleanup is not None and not cleanup.done()
+
+    later = asyncio.create_task(sup.cancel_with_terminal_state(job_id))
+    await asyncio.sleep(0)
+    release_exit.set()
+    requested, terminal_state = await later
+
+    assert requested is True
+    assert terminal_state == JobStatus.CANCELLED.value
+    status = await sup.get_status(job_id)
+    assert status is not None
+    assert status["worker_kind"] == "cli"
+    assert status["containment_state"] == "verified"
+    assert job_id not in sup._children
+    assert cleanup.done()
+
+
+@pytest.mark.asyncio
 async def test_containment_annotation_failure_keeps_cancelled(tmp_path: Path) -> None:
     """A failed containment write does not turn durable cancel into a failed request."""
     sup = _make_sup(tmp_path)
