@@ -682,7 +682,13 @@ class OrchestrationSupervisor:
                 asyncio.shield(task), timeout=CANCEL_CONFIRM_TIMEOUT_SECONDS
             )
         except asyncio.CancelledError:
-            pass
+            # Worker cancellation completes this shielded wait with
+            # ``CancelledError``; swallow that so we can persist the checkpoint.
+            # A caller cancelling *this* coroutine during the same wait must
+            # still propagate (containment may already run on the done callback).
+            current = asyncio.current_task()
+            if current is not None and current.cancelling():
+                raise
         except asyncio.TimeoutError:
             pass
 
