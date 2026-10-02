@@ -38,6 +38,8 @@ JOBS_JSONL = STATE_DIR / "jobs.jsonl"
 CANCEL_CONFIRM_TIMEOUT_SECONDS = 5.0
 # Separate concept from cancel confirmation. v1 uses the same duration.
 CONTAINMENT_TIMEOUT_SECONDS = CANCEL_CONFIRM_TIMEOUT_SECONDS
+CONTAINMENT_ANNOTATION_ATTEMPTS = 3
+CONTAINMENT_ANNOTATION_RETRY_DELAY_SECONDS = 0.05
 CONTAINMENT_VERIFIED = "verified"
 CONTAINMENT_UNRESOLVED = "unresolved"
 CONTAINMENT_NOT_APPLICABLE = "not-applicable"
@@ -406,6 +408,10 @@ class OrchestrationSupervisor:
         # Supervisor-owned containment. A cancelled HTTP request must not
         # abandon a direct child after cancellation is already durable.
         self._containment_tasks: dict[str, asyncio.Task] = {}
+        # A callback-owned cleanup may finish before another cancellation
+        # caller observes it. Remember that bounded attempt so one lifecycle
+        # cannot launch a second set of annotation retries.
+        self._containment_cleanup_finished: set[str] = set()
         # Cached GossipBus (set on first _record_to_gossip; reused per
         # supervisor instance to avoid re-running CREATE TABLE IF NOT EXISTS
         # schema DDL on every job completion). Lazy because GossipBus opens an
@@ -581,6 +587,10 @@ class OrchestrationSupervisor:
             completed: asyncio.Future[None] = asyncio.get_running_loop().create_future()
             completed.set_result(None)
             return completed
+        if job_id in self._containment_cleanup_finished:
+            completed = asyncio.get_running_loop().create_future()
+            completed.set_result(None)
+            return completed
 
         task = asyncio.create_task(
             self._run_containment_cleanup(job_id),
@@ -596,17 +606,42 @@ class OrchestrationSupervisor:
         return task
 
     async def _run_containment_cleanup(self, job_id: str) -> None:
-        """Terminate the direct child without tying that wait to the caller."""
+        """Persist direct-child containment without tying it to the caller.
+
+        A failed annotation retains the child mapping, so a bounded retry can
+        preserve the CLI classification rather than falling back to the
+        legacy in-process interpretation.  After the final failure the
+        mapping deliberately remains available for operator recovery and for
+        the HTTP cancellation response to report an unresolved CLI child.
+        """
         import logging
 
+        logger = logging.getLogger(__name__)
         try:
-            await self._record_direct_child_containment(job_id)
-        except Exception as exc:
-            logging.getLogger(__name__).warning(
-                "containment annotation failed for job %s: %s",
-                job_id,
-                exc,
-            )
+            for attempt in range(1, CONTAINMENT_ANNOTATION_ATTEMPTS + 1):
+                try:
+                    await self._record_direct_child_containment(job_id)
+                    return
+                except Exception as exc:
+                    if attempt == CONTAINMENT_ANNOTATION_ATTEMPTS:
+                        logger.warning(
+                            "containment annotation failed for job %s after %d attempts: %s",
+                            job_id,
+                            attempt,
+                            exc,
+                        )
+                        return
+                    logger.warning(
+                        "containment annotation failed for job %s on attempt %d/%d; retrying: %s",
+                        job_id,
+                        attempt,
+                        CONTAINMENT_ANNOTATION_ATTEMPTS,
+                        exc,
+                    )
+                    if CONTAINMENT_ANNOTATION_RETRY_DELAY_SECONDS > 0:
+                        await asyncio.sleep(CONTAINMENT_ANNOTATION_RETRY_DELAY_SECONDS)
+        finally:
+            self._containment_cleanup_finished.add(job_id)
 
     async def _await_containment(self, job_id: str) -> None:
         """Await this job's cleanup without letting caller cancellation stop it."""

@@ -683,6 +683,70 @@ async def test_legacy_cancel_still_owns_direct_child_containment(
 
 
 @pytest.mark.asyncio
+async def test_legacy_cancel_retries_a_failed_cli_annotation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Legacy cancellation retries one transient containment write failure."""
+    from orchestrator import supervisor as supervisor_mod
+
+    monkeypatch.setattr(
+        supervisor_mod,
+        "CONTAINMENT_ANNOTATION_RETRY_DELAY_SECONDS",
+        0.01,
+    )
+    sup = _make_sup(tmp_path)
+
+    class _ExitedCli:
+        def __init__(self) -> None:
+            self.returncode = 0
+
+        def terminate(self) -> None:
+            raise AssertionError("an exited child must not be terminated")
+
+        async def wait(self) -> int:
+            return 0
+
+    child = _ExitedCli()
+
+    async def _blocked_cli(spec: JobSpec) -> dict[str, str]:
+        sup.note_child(spec.job_id, child)  # type: ignore[arg-type]
+        await asyncio.sleep(60)
+        return {"output": "never"}
+
+    original_append = sup._append_event
+    attempts = 0
+    first_failure = asyncio.Event()
+
+    def _fail_once(job_id: str, event: dict) -> None:
+        nonlocal attempts
+        if event.get("worker_kind") == "cli":
+            attempts += 1
+            if attempts == 1:
+                first_failure.set()
+                raise OSError("transient containment storage failure")
+        original_append(job_id, event)
+
+    sup._dispatch = _blocked_cli
+    sup._append_event = _fail_once  # type: ignore[method-assign]
+    job_id = await sup.submit_job(_echo_spec("legacy retry containment"))
+    await asyncio.sleep(0)
+
+    assert await sup.cancel(job_id) is True
+    await asyncio.wait_for(first_failure.wait(), timeout=1)
+    cleanup = sup._containment_tasks.get(job_id)
+    assert cleanup is not None
+    await asyncio.wait_for(cleanup, timeout=1)
+
+    status = await sup.get_status(job_id)
+    assert attempts == 2
+    assert status is not None
+    assert status["worker_kind"] == "cli"
+    assert status["containment_state"] == "verified"
+    assert job_id not in sup._children
+
+
+@pytest.mark.asyncio
 async def test_containment_annotation_failure_keeps_cancelled(tmp_path: Path) -> None:
     """A failed containment write does not turn durable cancel into a failed request."""
     sup = _make_sup(tmp_path)
