@@ -590,3 +590,42 @@ Live delivery uses the existing PT observation/Periscope seam and Orama `Notific
 - [ ] Looking Glass uses existing PT Supervisor/Periscope and Orama portal/SSE notification seams.
 - [ ] No second observability datastore, event bus, or job authority is introduced.
 - [ ] Direct-child containment is documented as v1; grandchildren/process-tree reaping remains a separate workstream.
+
+## 25. V1 CLI containment implementation landed (2026-10-02)
+
+Branch `cursor/cli-subprocess-containment-v1-751b` implements the minimal MVP
+from §24 and the harmonized plan artifact:
+
+- PT: `_children`, `note_child` / `clear_child`, post-cancel containment in
+  `cancel_with_terminal_state`, CLI worker registration, cancel HTTP fields.
+- Orama: swarm rollback predicate on `worker_kind` + `containment_state`,
+  redaction allowlist, contract + ladder doc updates.
+- v2 only in docs: process-tree reaping, Looking Glass UI, `unsupported` wire
+  value, and expanded telemetry remain deferred.
+
+### 25.1 Acceptance (v1 MVP)
+
+- [x] Codex, Gemini, and Antigravity direct children register and clear safely.
+- [x] Durable `CANCELLED` remains distinct from containment fields.
+- [x] Verified / unresolved / not-applicable recorded without PID or argv.
+- [x] Orama blocks restore for CLI + present non-pass containment states.
+- [x] Absent `containment_state` keeps mixed-deploy rollback behavior.
+- [x] No new observability datastore or SSE event type in v1.
+
+## 26. v1.1 hardening (containment races and rollback matrix)
+
+Applied on the same branches as §25. Still v1 code only.
+
+- `CONTAINMENT_TIMEOUT_SECONDS` is a separate bound (same 5.0s value). Waits use monotonic `loop.time()`.
+- `verified` requires `returncode is not None`. `terminate()` alone stays `unresolved`.
+- Already-exited children are `verified` without another terminate.
+- `clear_child` remains identity-safe across replacement during terminate.
+- Containment annotation errors do not revoke durable `cancelled`.
+- Orama `cancellation_allows_restore` is the single rollback matrix, including unknown present CLI values.
+- v2 docs only: `unsupported`, `containment_scope`, Looking Glass semantic fields.
+
+## 27. CodeRabbit PR #418 — creation-race fix (lockstep)
+
+- Shield `create_subprocess_exec` so cancel during spawn still `note_child`s the direct process; supervisor containment is the sole terminate/record path on that path.
+- Containment annotation failures: WARNING log, durable `cancelled` unchanged; orama mixed-deploy when fields absent (contract matrix).
+- `note_child` identity policy documented in supervisor docstring + orama contract edge-case table.

@@ -1,5 +1,14 @@
 # WORKSPACE — current task state
 
+**Updated:** 2026-10-02 (PT PR #418 and Orama PR #376 containment cycle)
+**Session record:** `memory/working/2026-10-02-containment-cross-repo-cycle.md`
+**State:** Local containment hardening is committed and validated. PT retries
+containment annotation writes within one cleanup lifecycle and emits a
+fail-closed response pair for persistent direct-child annotation failure.
+Orama accepts only the two compatible containment pairs plus a true
+both-fields-absent legacy response. The in-memory jobs-log cache is deferred
+to v2. Publication order: PT PR #418, then Orama PR #376.
+
 **Updated:** 2026-09-30 (Three-day cycle synthesis: PR #404, PR #408, PR #410,
 PR #413, Oramasys PR #20)
 **Session record:** `memory/working/2026-09-30-three-day-cycle-pr404-pr408-pr410-pr413-synthesis.md`

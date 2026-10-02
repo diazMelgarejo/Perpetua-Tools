@@ -15,6 +15,7 @@ References:
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import json
 import os
 import uuid
@@ -35,6 +36,45 @@ MAX_THREADS = 25    # Anthropic spec ceiling — 25 concurrent workers max
 STATE_DIR = Path(".state")
 JOBS_JSONL = STATE_DIR / "jobs.jsonl"
 CANCEL_CONFIRM_TIMEOUT_SECONDS = 5.0
+# Separate concept from cancel confirmation. v1 uses the same duration.
+CONTAINMENT_TIMEOUT_SECONDS = CANCEL_CONFIRM_TIMEOUT_SECONDS
+CONTAINMENT_ANNOTATION_ATTEMPTS = 3
+CONTAINMENT_ANNOTATION_RETRY_DELAY_SECONDS = 0.05
+CONTAINMENT_VERIFIED = "verified"
+CONTAINMENT_UNRESOLVED = "unresolved"
+CONTAINMENT_NOT_APPLICABLE = "not-applicable"
+WORKER_KIND_CLI = "cli"
+WORKER_KIND_IN_PROCESS = "in-process"
+
+_supervisor_ctx: contextvars.ContextVar["OrchestrationSupervisor | None"] = (
+    contextvars.ContextVar("orchestration_supervisor", default=None)
+)
+
+
+def current_orchestration_supervisor() -> "OrchestrationSupervisor | None":
+    """Return the supervisor executing the current worker task, if any."""
+    return _supervisor_ctx.get()
+
+
+async def wait_process_exit(proc: asyncio.subprocess.Process, timeout: float) -> None:
+    """Wait until ``proc`` exits or the monotonic deadline passes.
+
+    ``verified`` is decided only from ``returncode``. Calling ``terminate()``
+    is not itself proof of exit. The deadline uses ``loop.time()`` so a wall
+    clock step cannot stretch or shrink the containment window.
+    """
+    if timeout <= 0 or proc.returncode is not None:
+        return
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + timeout
+    while proc.returncode is None:
+        remaining = deadline - loop.time()
+        if remaining <= 0:
+            return
+        try:
+            await asyncio.wait_for(proc.wait(), timeout=remaining)
+        except asyncio.TimeoutError:
+            return
 
 # Backends that run entirely on the Mac GPU.  The Windows coder pool preempts
 # these when a healthy Windows endpoint is available.  "mlx" is included so a
@@ -364,6 +404,14 @@ class OrchestrationSupervisor:
             self._state_dir = Path(state_dir)
         self._jobs_file = self._state_dir / "jobs.jsonl"
         self._active: dict[str, asyncio.Task] = {}
+        self._children: dict[str, asyncio.subprocess.Process] = {}
+        # Supervisor-owned containment. A cancelled HTTP request must not
+        # abandon a direct child after cancellation is already durable.
+        self._containment_tasks: dict[str, asyncio.Task] = {}
+        # A callback-owned cleanup may finish before another cancellation
+        # caller observes it. Remember that bounded attempt so one lifecycle
+        # cannot launch a second set of annotation retries.
+        self._containment_cleanup_finished: set[str] = set()
         # Cached GossipBus (set on first _record_to_gossip; reused per
         # supervisor instance to avoid re-running CREATE TABLE IF NOT EXISTS
         # schema DDL on every job completion). Lazy because GossipBus opens an
@@ -432,6 +480,15 @@ class OrchestrationSupervisor:
             name=f"worker-{spec.job_id}",
         )
         self._active[spec.job_id] = task
+        # The worker owns the durable cancellation transition. Its done
+        # callback starts direct-child containment after that transition even
+        # when the caller used the legacy acknowledgement-only ``cancel()`` or
+        # its request task disappeared before it could await cleanup.
+        task.add_done_callback(
+            lambda finished, job_id=spec.job_id: self._on_cancelled_worker_done(
+                job_id, finished
+            )
+        )
         return spec.job_id
 
     async def get_status(self, job_id: str) -> dict | None:
@@ -464,6 +521,132 @@ class OrchestrationSupervisor:
             return True
         return False
 
+    def _on_cancelled_worker_done(self, job_id: str, task: asyncio.Task) -> None:
+        """Persist a pre-start cancellation and schedule its owned cleanup.
+
+        A running worker writes ``cancelled`` before it re-raises
+        ``CancelledError``. A task cancelled before its coroutine begins has
+        no opportunity to write that event, so the completion callback writes
+        it here. In both cases containment begins independently of the API
+        request that initiated cancellation.
+        """
+        if not task.cancelled():
+            return
+
+        try:
+            if self._active.get(job_id) is task:
+                self._active.pop(job_id, None)
+
+            latest = _latest_status_per_job(_load_events(self._jobs_file)).get(job_id)
+            if latest is None or latest.get("status") != JobStatus.CANCELLED.value:
+                self._append_event(job_id, {"status": JobStatus.CANCELLED.value})
+                latest = _latest_status_per_job(_load_events(self._jobs_file)).get(job_id)
+
+            # ``cancel_with_terminal_state`` may already have completed fast direct
+            # child containment before this callback runs. Do not append a second
+            # in-process annotation after that cleanup cleared the child mapping.
+            if not self._has_containment_annotation(latest):
+                self._ensure_containment_task(job_id)
+        except Exception as exc:
+            # Done callbacks otherwise surface only as event-loop diagnostics.
+            # Durable cancellation is already preserved; make the containment
+            # scheduling failure visible without crashing an unrelated task.
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "failed to schedule containment for cancelled job %s: %s",
+                job_id,
+                exc,
+            )
+
+    @staticmethod
+    def _has_containment_annotation(event: dict | None) -> bool:
+        """Return whether a terminal event already records containment."""
+        return (
+            event is not None
+            and event.get("status") == JobStatus.CANCELLED.value
+            and "worker_kind" in event
+            and "containment_state" in event
+        )
+
+    def _ensure_containment_task(self, job_id: str) -> asyncio.Future[None]:
+        """Return the supervisor-owned cleanup task for one cancelled job.
+
+        The task is created once and stored on this supervisor. Cancelling the
+        caller that is awaiting it does not cancel the cleanup.
+        """
+        existing = self._containment_tasks.get(job_id)
+        if existing is not None and not existing.done():
+            return existing
+
+        latest = _latest_status_per_job(_load_events(self._jobs_file)).get(job_id)
+        if self._has_containment_annotation(latest):
+            # A completed cleanup task is removed from the in-memory registry.
+            # Re-read the durable event so a later waiter cannot emit a second
+            # ``in-process/not-applicable`` annotation after a fast CLI exit.
+            completed: asyncio.Future[None] = asyncio.get_running_loop().create_future()
+            completed.set_result(None)
+            return completed
+        if job_id in self._containment_cleanup_finished:
+            completed = asyncio.get_running_loop().create_future()
+            completed.set_result(None)
+            return completed
+
+        task = asyncio.create_task(
+            self._run_containment_cleanup(job_id),
+            name=f"containment-{job_id}",
+        )
+        self._containment_tasks[job_id] = task
+
+        def _drop(done: asyncio.Task, jid: str = job_id) -> None:
+            if self._containment_tasks.get(jid) is done:
+                self._containment_tasks.pop(jid, None)
+
+        task.add_done_callback(_drop)
+        return task
+
+    async def _run_containment_cleanup(self, job_id: str) -> None:
+        """Persist direct-child containment without tying it to the caller.
+
+        A failed annotation retains the child mapping, so a bounded retry can
+        preserve the CLI classification rather than falling back to the
+        legacy in-process interpretation.  After the final failure the
+        mapping deliberately remains available for operator recovery and for
+        the HTTP cancellation response to report an unresolved CLI child.
+        """
+        import logging
+
+        logger = logging.getLogger(__name__)
+        try:
+            for attempt in range(1, CONTAINMENT_ANNOTATION_ATTEMPTS + 1):
+                try:
+                    await self._record_direct_child_containment(job_id)
+                    return
+                except Exception as exc:
+                    if attempt == CONTAINMENT_ANNOTATION_ATTEMPTS:
+                        logger.warning(
+                            "containment annotation failed for job %s after %d attempts: %s",
+                            job_id,
+                            attempt,
+                            exc,
+                        )
+                        return
+                    logger.warning(
+                        "containment annotation failed for job %s on attempt %d/%d; retrying: %s",
+                        job_id,
+                        attempt,
+                        CONTAINMENT_ANNOTATION_ATTEMPTS,
+                        exc,
+                    )
+                    if CONTAINMENT_ANNOTATION_RETRY_DELAY_SECONDS > 0:
+                        await asyncio.sleep(CONTAINMENT_ANNOTATION_RETRY_DELAY_SECONDS)
+        finally:
+            self._containment_cleanup_finished.add(job_id)
+
+    async def _await_containment(self, job_id: str) -> None:
+        """Await this job's cleanup without letting caller cancellation stop it."""
+        await asyncio.shield(self._ensure_containment_task(job_id))
+
     async def cancel_with_terminal_state(self, job_id: str) -> tuple[bool, str | None]:
         """Request cancellation and report the durable terminal state, if reached.
 
@@ -473,20 +656,41 @@ class OrchestrationSupervisor:
         cancellation checkpoint and returns ``cancelled`` only after that
         checkpoint is persisted. A task cancelled before its coroutine starts
         needs an explicit event because it cannot write the checkpoint itself.
+
+        Direct-child containment runs on a supervisor-owned task. Callers await
+        that task, including a later cancel after the worker is already
+        terminal. Cancelling the caller does not cancel containment.
         """
+        inflight = self._containment_tasks.get(job_id)
+        if inflight is not None and not inflight.done():
+            await asyncio.shield(inflight)
+            status = await self.get_status(job_id)
+            terminal_state = status.get("status") if status is not None else None
+            return True, terminal_state
+
         task = self._active.get(job_id)
         if task is None or task.done() or not task.cancel():
             status = await self.get_status(job_id)
-            return False, status.get("status") if status is not None else None
+            terminal_state = status.get("status") if status is not None else None
+            if terminal_state == JobStatus.CANCELLED.value and job_id in self._children:
+                await self._await_containment(job_id)
+                return True, terminal_state
+            return False, terminal_state
 
+        worker_done = asyncio.Event()
+
+        def _mark_worker_done(_finished: asyncio.Task) -> None:
+            worker_done.set()
+
+        task.add_done_callback(_mark_worker_done)
         try:
-            await asyncio.wait_for(
-                asyncio.shield(task), timeout=CANCEL_CONFIRM_TIMEOUT_SECONDS
-            )
+            await asyncio.wait_for(worker_done.wait(), timeout=CANCEL_CONFIRM_TIMEOUT_SECONDS)
         except asyncio.CancelledError:
-            pass
+            raise
         except asyncio.TimeoutError:
             pass
+        finally:
+            task.remove_done_callback(_mark_worker_done)
 
         status = await self.get_status(job_id)
         terminal_state = status.get("status") if status is not None else None
@@ -496,7 +700,79 @@ class OrchestrationSupervisor:
             if terminal_state != JobStatus.CANCELLED.value:
                 self._append_event(job_id, {"status": JobStatus.CANCELLED})
                 terminal_state = JobStatus.CANCELLED.value
+        if terminal_state == JobStatus.CANCELLED.value:
+            await self._await_containment(job_id)
         return True, terminal_state
+
+    def note_child(self, job_id: str, proc: asyncio.subprocess.Process) -> None:
+        """Register a direct CLI child for ``job_id`` (identity-safe).
+
+        If a different still-running process is already mapped for ``job_id``,
+        the existing entry is kept (v1 identity policy). A later registration
+        replaces only when the prior child has exited or is the same object.
+        """
+        existing = self._children.get(job_id)
+        if (
+            existing is not None
+            and existing is not proc
+            and existing.returncode is None
+        ):
+            return
+        self._children[job_id] = proc
+
+    def has_registered_child(self, job_id: str) -> bool:
+        """Return whether this supervisor still owns a direct child for ``job_id``."""
+        return job_id in self._children
+
+    def clear_child(self, job_id: str, proc: asyncio.subprocess.Process) -> None:
+        """Remove a registered child only when it is still the mapped object."""
+        if self._children.get(job_id) is proc:
+            self._children.pop(job_id, None)
+
+    async def _record_direct_child_containment(self, job_id: str) -> None:
+        """After durable cancel, terminate the direct CLI child and persist outcome.
+
+        ``worker_kind`` is derived here from whether this supervisor registered a
+        child. Callers cannot supply it. ``verified`` requires ``returncode``;
+        a successful ``terminate()`` call is not enough.
+        """
+        proc = self._children.get(job_id)
+        if proc is None:
+            self._append_event(
+                job_id,
+                {
+                    "status": JobStatus.CANCELLED.value,
+                    "worker_kind": WORKER_KIND_IN_PROCESS,
+                    "containment_state": CONTAINMENT_NOT_APPLICABLE,
+                },
+            )
+            return
+
+        if proc.returncode is None:
+            try:
+                proc.terminate()
+            except ProcessLookupError:
+                pass
+            except Exception:
+                pass
+            await wait_process_exit(proc, CONTAINMENT_TIMEOUT_SECONDS)
+        containment_state = (
+            CONTAINMENT_VERIFIED
+            if proc.returncode is not None
+            else CONTAINMENT_UNRESOLVED
+        )
+        self._append_event(
+            job_id,
+            {
+                "status": JobStatus.CANCELLED.value,
+                "worker_kind": WORKER_KIND_CLI,
+                "containment_state": containment_state,
+            },
+        )
+        # Preserve the direct-child identity until the durable annotation is
+        # written. If that write fails, a later cancellation can retry CLI
+        # containment rather than falsely falling back to in-process.
+        self.clear_child(job_id, proc)
 
     async def replay(self, job_id: str, overrides: dict | None = None) -> str:
         """Re-run a failed or cancelled job under a new job_id.
@@ -569,6 +845,7 @@ class OrchestrationSupervisor:
         job_dir = self._state_dir / "jobs" / spec.job_id
         job_dir.mkdir(parents=True, exist_ok=True)
 
+        ctx_token = _supervisor_ctx.set(self)
         try:
             result = await self._dispatch(spec)
             # Write result artifact BEFORE persisting final state.
@@ -628,6 +905,7 @@ class OrchestrationSupervisor:
             self._maybe_emit_periscope_job(spec, assistant_text=str(exc)[:2000])
 
         finally:
+            _supervisor_ctx.reset(ctx_token)
             self._active.pop(spec.job_id, None)
 
     async def _record_to_gossip(

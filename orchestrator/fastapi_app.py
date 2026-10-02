@@ -1306,12 +1306,14 @@ def autoresearch_gpu_status() -> Dict[str, Any]:
 # Legacy /orchestrate route (orchestrator.py) stays intact — backwards compatible.
 
 from orchestrator.supervisor import (  # noqa: E402
+    CONTAINMENT_UNRESOLVED,
     JobSpec,
     JobStatus,
     OrchestrationSupervisor,
     ReplayJobNotFoundError,
     ReplayJobNotReplayableError,
     ReplayNoQueuedSpecError,
+    WORKER_KIND_CLI,
     _new_id,
     caller_reported_lineage_metadata,
 )
@@ -1504,12 +1506,32 @@ async def supervisor_cancel_job(job_id: str):
         be `cancelled`, rather than treating the acknowledgement as proof.
     """
     _validate_job_id(job_id)
-    cancel_requested, terminal_state = await _get_supervisor().cancel_with_terminal_state(job_id)
-    return {
+    sup = _get_supervisor()
+    cancel_requested, terminal_state = await sup.cancel_with_terminal_state(job_id)
+    body: dict[str, Any] = {
         "job_id": job_id,
         "cancel_requested": cancel_requested,
         "terminal_state": terminal_state,
     }
+    if cancel_requested:
+        status = await sup.get_status(job_id)
+        if status is not None:
+            if status.get("worker_kind") is not None:
+                body["worker_kind"] = status["worker_kind"]
+            if status.get("containment_state") is not None:
+                body["containment_state"] = status["containment_state"]
+        # A failed containment-event append must not look like a legacy
+        # cancellation. The direct-child map is retained until that annotation
+        # is durable; while it remains present, report the conservative pair
+        # expected by portal rollback policy.
+        if (
+            "worker_kind" not in body
+            and "containment_state" not in body
+            and sup.has_registered_child(job_id)
+        ):
+            body["worker_kind"] = WORKER_KIND_CLI
+            body["containment_state"] = CONTAINMENT_UNRESOLVED
+    return body
 
 
 @app.post("/v1/jobs/{job_id}/replay", tags=["supervisor"])

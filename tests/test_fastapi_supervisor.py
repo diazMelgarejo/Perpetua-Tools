@@ -10,6 +10,7 @@ disabled and the tests focus exclusively on the job-id validation layer.
 """
 from __future__ import annotations
 
+import asyncio
 import uuid
 from pathlib import Path
 
@@ -274,7 +275,14 @@ class TestCancelJobEndpointValidation:
             async def cancel_with_terminal_state(self, job_id: str) -> tuple[bool, str]:
                 return True, "cancelled"
 
-        monkeypatch.setattr(fastapi_app, "_get_supervisor", _ConfirmedSupervisor)
+            async def get_status(self, job_id: str) -> dict:
+                return {
+                    "status": "cancelled",
+                    "worker_kind": "cli",
+                    "containment_state": "verified",
+                }
+
+        monkeypatch.setattr(fastapi_app, "_get_supervisor", lambda: _ConfirmedSupervisor())
         jid = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
         with TestClient(app, raise_server_exceptions=False) as client:
             resp = client.post(f"/v1/jobs/{jid}/cancel")
@@ -284,7 +292,76 @@ class TestCancelJobEndpointValidation:
             "job_id": jid,
             "cancel_requested": True,
             "terminal_state": "cancelled",
+            "worker_kind": "cli",
+            "containment_state": "verified",
         }
+
+    @pytest.mark.asyncio
+    async def test_cancel_reports_unresolved_cli_when_all_containment_writes_fail(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """A retained direct child cannot be misreported as a legacy cancel."""
+        from orchestrator import supervisor as supervisor_mod
+
+        monkeypatch.setattr(
+            supervisor_mod,
+            "CONTAINMENT_ANNOTATION_RETRY_DELAY_SECONDS",
+            0,
+        )
+        sup = OrchestrationSupervisor(state_dir=tmp_path)
+
+        class _ExitedCli:
+            returncode = 0
+
+            def terminate(self) -> None:
+                raise AssertionError("an exited child must not be terminated")
+
+            async def wait(self) -> int:
+                return 0
+
+        child = _ExitedCli()
+
+        async def _blocked_cli(spec: JobSpec) -> dict[str, str]:
+            sup.note_child(spec.job_id, child)  # type: ignore[arg-type]
+            await asyncio.sleep(60)
+            return {"output": "never"}
+
+        original_append = sup._append_event
+        cli_annotation_attempts = 0
+
+        def _reject_cli_annotations(job_id: str, event: dict) -> None:
+            nonlocal cli_annotation_attempts
+            if event.get("worker_kind") == "cli":
+                cli_annotation_attempts += 1
+                raise OSError("containment storage unavailable")
+            original_append(job_id, event)
+
+        sup._dispatch = _blocked_cli
+        sup._append_event = _reject_cli_annotations  # type: ignore[method-assign]
+        monkeypatch.setattr(fastapi_app, "_get_supervisor", lambda: sup)
+        job_id = await sup.submit_job(
+            JobSpec(
+                job_id="3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                intent="echo",
+                prompt="containment write failure",
+                backend_hint="echo",
+            )
+        )
+        await asyncio.sleep(0)
+
+        body = await fastapi_app.supervisor_cancel_job(job_id)
+
+        assert body == {
+            "job_id": job_id,
+            "cancel_requested": True,
+            "terminal_state": JobStatus.CANCELLED.value,
+            "worker_kind": "cli",
+            "containment_state": "unresolved",
+        }
+        assert cli_annotation_attempts == supervisor_mod.CONTAINMENT_ANNOTATION_ATTEMPTS
+        assert job_id in sup._children
 
     def test_400_detail_contains_uuid4(self):
         with TestClient(app, raise_server_exceptions=False) as client:

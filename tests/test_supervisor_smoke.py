@@ -263,6 +263,622 @@ async def test_pre_start_cancellations_do_not_exhaust_admission_slots(tmp_path: 
     assert accepted in sup._active
 
 
+@pytest.mark.asyncio
+async def test_cancel_echo_reports_in_process_not_applicable(tmp_path: Path) -> None:
+    """In-process workers report not-applicable containment on durable cancel."""
+    sup = _make_sup(tmp_path)
+    spec = _echo_spec("slow echo")
+
+    async def _slow(_spec: JobSpec) -> dict[str, str]:
+        await asyncio.sleep(60)
+        return {"output": "never"}
+
+    sup._dispatch = _slow
+    job_id = await sup.submit_job(spec)
+    await asyncio.sleep(0.05)
+
+    requested, terminal_state = await sup.cancel_with_terminal_state(job_id)
+
+    assert requested is True
+    assert terminal_state == JobStatus.CANCELLED.value
+    status = await sup.get_status(job_id)
+    assert status is not None
+    assert status["worker_kind"] == "in-process"
+    assert status["containment_state"] == "not-applicable"
+
+
+@pytest.mark.asyncio
+async def test_cancel_cli_child_containment_verified(tmp_path: Path) -> None:
+    """A registered direct CLI child is terminated and reported verified."""
+    sup = _make_sup(tmp_path)
+
+    class _FakeCliProc:
+        def __init__(self) -> None:
+            self.returncode = None
+
+        def terminate(self) -> None:
+            self.returncode = 0
+
+        async def wait(self) -> int:
+            return self.returncode or 0
+
+    fake_proc = _FakeCliProc()
+
+    async def _blocked_cli(spec: JobSpec) -> dict[str, str]:
+        sup.note_child(spec.job_id, fake_proc)  # type: ignore[arg-type]
+        while fake_proc.returncode is None:
+            await asyncio.sleep(0.02)
+
+    sup._dispatch = _blocked_cli
+    job_id = await sup.submit_job(_echo_spec("cli block"))
+    await asyncio.sleep(0.05)
+
+    requested, terminal_state = await sup.cancel_with_terminal_state(job_id)
+
+    assert requested is True
+    assert terminal_state == JobStatus.CANCELLED.value
+    status = await sup.get_status(job_id)
+    assert status is not None
+    assert status["worker_kind"] == "cli"
+    assert status["containment_state"] == "verified"
+    assert job_id not in sup._children
+
+
+@pytest.mark.asyncio
+async def test_cancel_cli_child_containment_unresolved(tmp_path: Path, monkeypatch) -> None:
+    """When the direct child never exits, containment is unresolved."""
+    from orchestrator import supervisor as supervisor_mod
+
+    monkeypatch.setattr(supervisor_mod, "CANCEL_CONFIRM_TIMEOUT_SECONDS", 0.05)
+    sup = _make_sup(tmp_path)
+
+    class _StubbornProc:
+        def __init__(self) -> None:
+            self.returncode = None
+
+        def terminate(self) -> None:
+            return
+
+        async def wait(self) -> None:
+            await asyncio.sleep(60)
+
+    fake_proc = _StubbornProc()
+
+    async def _blocked_cli(spec: JobSpec) -> dict[str, str]:
+        sup.note_child(spec.job_id, fake_proc)  # type: ignore[arg-type]
+        while fake_proc.returncode is None:
+            await asyncio.sleep(0.02)
+
+    sup._dispatch = _blocked_cli
+    job_id = await sup.submit_job(_echo_spec("stubborn cli"))
+    await asyncio.sleep(0.05)
+
+    requested, terminal_state = await sup.cancel_with_terminal_state(job_id)
+
+    assert requested is True
+    assert terminal_state == JobStatus.CANCELLED.value
+    status = await sup.get_status(job_id)
+    assert status is not None
+    assert status["worker_kind"] == "cli"
+    assert status["containment_state"] == "unresolved"
+    events = _load_events(tmp_path / "jobs.jsonl")
+    last = [e for e in events if e.get("job_id") == job_id][-1]
+    assert "pid" not in last
+    assert "argv" not in last
+
+
+@pytest.mark.asyncio
+async def test_note_child_does_not_replace_live_process(tmp_path: Path) -> None:
+    """note_child keeps the first still-running process for a job id."""
+    sup = _make_sup(tmp_path)
+    job_id = _new_id()
+
+    class _Proc:
+        def __init__(self, name: str) -> None:
+            self.name = name
+            self.returncode = None
+
+    first = _Proc("first")
+    second = _Proc("second")
+    sup.note_child(job_id, first)  # type: ignore[arg-type]
+    sup.note_child(job_id, second)  # type: ignore[arg-type]
+    assert sup._children[job_id] is first
+
+
+@pytest.mark.asyncio
+async def test_already_exited_child_is_verified_without_terminate(tmp_path: Path) -> None:
+    """An exited direct child is verified; terminate() is not required."""
+    sup = _make_sup(tmp_path)
+
+    class _Exited:
+        def __init__(self) -> None:
+            self.returncode = 0
+            self.terminate_calls = 0
+
+        def terminate(self) -> None:
+            self.terminate_calls += 1
+
+        async def wait(self) -> int:
+            return 0
+
+    proc = _Exited()
+
+    async def _dispatch(spec: JobSpec) -> dict[str, str]:
+        sup.note_child(spec.job_id, proc)  # type: ignore[arg-type]
+        await asyncio.sleep(60)
+        return {"output": "never"}
+
+    sup._dispatch = _dispatch
+    job_id = await sup.submit_job(_echo_spec("already exited"))
+    await asyncio.sleep(0.05)
+    requested, terminal_state = await sup.cancel_with_terminal_state(job_id)
+    status = await sup.get_status(job_id)
+    assert requested is True
+    assert terminal_state == JobStatus.CANCELLED.value
+    assert status is not None
+    assert status["containment_state"] == "verified"
+    assert proc.terminate_calls == 0
+
+
+@pytest.mark.asyncio
+async def test_terminate_without_exit_stays_unresolved(tmp_path: Path, monkeypatch) -> None:
+    """terminate() alone cannot produce verified."""
+    from orchestrator import supervisor as supervisor_mod
+
+    monkeypatch.setattr(supervisor_mod, "CONTAINMENT_TIMEOUT_SECONDS", 0.05)
+    sup = _make_sup(tmp_path)
+
+    class _Hangs:
+        def __init__(self) -> None:
+            self.returncode = None
+            self.terminate_calls = 0
+
+        def terminate(self) -> None:
+            self.terminate_calls += 1
+
+        async def wait(self) -> None:
+            await asyncio.sleep(60)
+
+    proc = _Hangs()
+
+    async def _dispatch(spec: JobSpec) -> dict[str, str]:
+        sup.note_child(spec.job_id, proc)  # type: ignore[arg-type]
+        await asyncio.sleep(60)
+        return {"output": "never"}
+
+    sup._dispatch = _dispatch
+    job_id = await sup.submit_job(_echo_spec("hangs"))
+    await asyncio.sleep(0.05)
+    await sup.cancel_with_terminal_state(job_id)
+    status = await sup.get_status(job_id)
+    assert proc.terminate_calls == 1
+    assert status is not None
+    assert status["containment_state"] == "unresolved"
+    assert job_id not in sup._children
+
+
+@pytest.mark.asyncio
+async def test_stale_clear_does_not_drop_replacement_child(tmp_path: Path) -> None:
+    """Identity-safe clear leaves a newer process registered under the same id."""
+    sup = _make_sup(tmp_path)
+    job_id = _new_id()
+
+    class _Proc:
+        def __init__(self) -> None:
+            self.returncode = None
+
+    first = _Proc()
+    second = _Proc()
+    sup.note_child(job_id, first)  # type: ignore[arg-type]
+    first.returncode = 0
+    sup.note_child(job_id, second)  # type: ignore[arg-type]
+    sup.clear_child(job_id, first)  # type: ignore[arg-type]
+    assert sup._children[job_id] is second
+
+
+@pytest.mark.asyncio
+async def test_containment_clears_only_the_looked_up_process(tmp_path: Path) -> None:
+    """A replacement registered during terminate is not removed by stale cleanup."""
+    sup = _make_sup(tmp_path)
+    job_holder: dict[str, str] = {}
+
+    class _Replacement:
+        returncode = None
+
+    replacement = _Replacement()
+
+    class _Original:
+        def __init__(self) -> None:
+            self.returncode = None
+
+        def terminate(self) -> None:
+            self.returncode = 0
+            sup.note_child(job_holder["id"], replacement)  # type: ignore[arg-type]
+
+        async def wait(self) -> int:
+            return 0
+
+    original = _Original()
+
+    async def _dispatch(spec: JobSpec) -> dict[str, str]:
+        job_holder["id"] = spec.job_id
+        sup.note_child(spec.job_id, original)  # type: ignore[arg-type]
+        await asyncio.sleep(60)
+        return {"output": "never"}
+
+    sup._dispatch = _dispatch
+    job_id = await sup.submit_job(_echo_spec("swap"))
+    await asyncio.sleep(0.05)
+    await sup.cancel_with_terminal_state(job_id)
+    assert sup._children.get(job_id) is replacement
+
+
+@pytest.mark.asyncio
+async def test_cancel_during_subprocess_creation_still_registers_cli_child(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Cancel while create_subprocess_exec is pending still maps a CLI child."""
+    from orchestrator.worker_registry import _run_dangerous_cli_subprocess
+
+    sup = _make_sup(tmp_path)
+    spawn_blocked = asyncio.Event()
+    release_spawn = asyncio.Event()
+
+    class _FakeProc:
+        def __init__(self) -> None:
+            self.returncode = None
+
+        def terminate(self) -> None:
+            self.returncode = 0
+
+        async def wait(self) -> int:
+            return self.returncode or 0
+
+        async def communicate(self) -> tuple[bytes, bytes]:
+            await asyncio.Event().wait()
+            return b"", b""
+
+    async def _slow_create(*_args: object, **_kwargs: object) -> _FakeProc:
+        spawn_blocked.set()
+        await release_spawn.wait()
+        return _FakeProc()
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", _slow_create)
+
+    spec = JobSpec(
+        job_id=_new_id(),
+        intent="freeform",
+        prompt="race",
+        backend_hint="codex",
+    )
+
+    async def _cli(spec_in: JobSpec) -> dict[str, str]:
+        return await _run_dangerous_cli_subprocess(spec_in, ["codex", "x"], "codex")
+
+    sup._dispatch = _cli
+    job_id = await sup.submit_job(spec)
+    await spawn_blocked.wait()
+    cancel_task = asyncio.create_task(sup.cancel_with_terminal_state(job_id))
+    await asyncio.sleep(0.05)
+    release_spawn.set()
+    requested, terminal_state = await cancel_task
+
+    assert requested is True
+    assert terminal_state == JobStatus.CANCELLED.value
+    status = await sup.get_status(job_id)
+    assert status is not None
+    assert status["worker_kind"] == "cli"
+    assert status["containment_state"] == "verified"
+
+
+@pytest.mark.asyncio
+async def test_cancel_during_communicate_keeps_exited_child_registered(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A returncode set inside communicate() must not clear the CLI mapping."""
+    from orchestrator.supervisor import _supervisor_ctx
+    from orchestrator.worker_registry import _run_dangerous_cli_subprocess
+
+    sup = _make_sup(tmp_path)
+
+    class _ExitsThenCancels:
+        def __init__(self) -> None:
+            self.returncode = None
+
+        async def communicate(self) -> tuple[bytes, bytes]:
+            self.returncode = 0
+            raise asyncio.CancelledError()
+
+    async def _create(*_args: object, **_kwargs: object) -> _ExitsThenCancels:
+        return _ExitsThenCancels()
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", _create)
+    spec = JobSpec(
+        job_id=_new_id(),
+        intent="freeform",
+        prompt="communicate race",
+        backend_hint="codex",
+    )
+    token = _supervisor_ctx.set(sup)
+    try:
+        with pytest.raises(asyncio.CancelledError):
+            await _run_dangerous_cli_subprocess(spec, ["codex", "x"], "codex")
+    finally:
+        _supervisor_ctx.reset(token)
+
+    assert sup.has_registered_child(spec.job_id) is True
+
+
+@pytest.mark.asyncio
+async def test_request_cancel_during_child_termination_still_contains(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Cancelling the cancel request must not abandon a registered CLI child.
+
+    Containment runs on a supervisor-owned task. A later cancel awaits that
+    same task and observes the recorded outcome.
+    """
+    sup = _make_sup(tmp_path)
+    termination_started = asyncio.Event()
+    release_exit = asyncio.Event()
+    containment_wait_started = asyncio.Event()
+    original_await_containment = OrchestrationSupervisor._await_containment
+
+    async def _await_containment_with_hook(self: OrchestrationSupervisor, job_id: str) -> None:
+        containment_wait_started.set()
+        await original_await_containment(self, job_id)
+
+    monkeypatch.setattr(
+        OrchestrationSupervisor,
+        "_await_containment",
+        _await_containment_with_hook,
+    )
+
+    class _SlowExit:
+        def __init__(self) -> None:
+            self.returncode = None
+
+        def terminate(self) -> None:
+            termination_started.set()
+
+        async def wait(self) -> int:
+            await release_exit.wait()
+            self.returncode = 0
+            return 0
+
+    fake_proc = _SlowExit()
+
+    async def _blocked_cli(spec: JobSpec) -> dict[str, str]:
+        sup.note_child(spec.job_id, fake_proc)  # type: ignore[arg-type]
+        await asyncio.sleep(60)
+        return {"output": "never"}
+
+    sup._dispatch = _blocked_cli
+    job_id = await sup.submit_job(_echo_spec("cancel during termination"))
+    await asyncio.sleep(0.05)
+
+    request = asyncio.create_task(sup.cancel_with_terminal_state(job_id))
+    await asyncio.wait_for(containment_wait_started.wait(), timeout=10.0)
+    await termination_started.wait()
+    assert not request.done(), "cancel_with_terminal_state finished before caller cancel"
+    request.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await request
+
+    assert job_id in sup._children
+    cleanup = sup._containment_tasks.get(job_id)
+    assert cleanup is not None and not cleanup.done()
+
+    later = asyncio.create_task(sup.cancel_with_terminal_state(job_id))
+    await asyncio.sleep(0)
+    release_exit.set()
+    requested, terminal_state = await later
+
+    assert requested is True
+    assert terminal_state == JobStatus.CANCELLED.value
+    status = await sup.get_status(job_id)
+    assert status is not None
+    assert status["worker_kind"] == "cli"
+    assert status["containment_state"] == "verified"
+    assert job_id not in sup._children
+    assert cleanup.done()
+
+
+@pytest.mark.asyncio
+async def test_legacy_cancel_still_owns_direct_child_containment(
+    tmp_path: Path,
+) -> None:
+    """Legacy acknowledgement cancellation must not abandon a CLI child."""
+    sup = _make_sup(tmp_path)
+    termination_started = asyncio.Event()
+    release_exit = asyncio.Event()
+
+    class _SlowExit:
+        def __init__(self) -> None:
+            self.returncode = None
+
+        def terminate(self) -> None:
+            termination_started.set()
+
+        async def wait(self) -> int:
+            await release_exit.wait()
+            self.returncode = 0
+            return 0
+
+    fake_proc = _SlowExit()
+
+    async def _blocked_cli(spec: JobSpec) -> dict[str, str]:
+        sup.note_child(spec.job_id, fake_proc)  # type: ignore[arg-type]
+        await asyncio.sleep(60)
+        return {"output": "never"}
+
+    sup._dispatch = _blocked_cli
+    job_id = await sup.submit_job(_echo_spec("legacy cancel containment"))
+    await asyncio.sleep(0.05)
+
+    assert await sup.cancel(job_id) is True
+    await termination_started.wait()
+    release_exit.set()
+
+    for _ in range(20):
+        if job_id not in sup._children:
+            break
+        await asyncio.sleep(0)
+
+    status = await sup.get_status(job_id)
+    assert status is not None
+    assert status["status"] == JobStatus.CANCELLED.value
+    assert status["worker_kind"] == "cli"
+    assert status["containment_state"] == "verified"
+    assert job_id not in sup._children
+
+
+@pytest.mark.asyncio
+async def test_legacy_cancel_retries_a_failed_cli_annotation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Legacy cancellation retries one transient containment write failure."""
+    from orchestrator import supervisor as supervisor_mod
+
+    monkeypatch.setattr(
+        supervisor_mod,
+        "CONTAINMENT_ANNOTATION_RETRY_DELAY_SECONDS",
+        0.01,
+    )
+    sup = _make_sup(tmp_path)
+
+    class _ExitedCli:
+        def __init__(self) -> None:
+            self.returncode = 0
+
+        def terminate(self) -> None:
+            raise AssertionError("an exited child must not be terminated")
+
+        async def wait(self) -> int:
+            return 0
+
+    child = _ExitedCli()
+
+    async def _blocked_cli(spec: JobSpec) -> dict[str, str]:
+        sup.note_child(spec.job_id, child)  # type: ignore[arg-type]
+        await asyncio.sleep(60)
+        return {"output": "never"}
+
+    original_append = sup._append_event
+    attempts = 0
+    first_failure = asyncio.Event()
+
+    def _fail_once(job_id: str, event: dict) -> None:
+        nonlocal attempts
+        if event.get("worker_kind") == "cli":
+            attempts += 1
+            if attempts == 1:
+                first_failure.set()
+                raise OSError("transient containment storage failure")
+        original_append(job_id, event)
+
+    sup._dispatch = _blocked_cli
+    sup._append_event = _fail_once  # type: ignore[method-assign]
+    job_id = await sup.submit_job(_echo_spec("legacy retry containment"))
+    await asyncio.sleep(0)
+
+    assert await sup.cancel(job_id) is True
+    await asyncio.wait_for(first_failure.wait(), timeout=1)
+    cleanup = sup._containment_tasks.get(job_id)
+    assert cleanup is not None
+    await asyncio.wait_for(cleanup, timeout=1)
+
+    status = await sup.get_status(job_id)
+    assert attempts == 2
+    assert status is not None
+    assert status["worker_kind"] == "cli"
+    assert status["containment_state"] == "verified"
+    assert job_id not in sup._children
+
+
+@pytest.mark.asyncio
+async def test_containment_annotation_failure_keeps_cancelled(tmp_path: Path) -> None:
+    """A failed containment write does not turn durable cancel into a failed request."""
+    sup = _make_sup(tmp_path)
+
+    async def _slow(_spec: JobSpec) -> dict[str, str]:
+        await asyncio.sleep(60)
+        return {"output": "never"}
+
+    sup._dispatch = _slow
+    original = sup._append_event
+
+    def _guard(job_id: str, event: dict) -> None:
+        if "containment_state" in event:
+            raise OSError("annotation failed")
+        original(job_id, event)
+
+    sup._append_event = _guard  # type: ignore[method-assign]
+    job_id = await sup.submit_job(_echo_spec("annotate"))
+    await asyncio.sleep(0.05)
+    requested, terminal_state = await sup.cancel_with_terminal_state(job_id)
+    assert requested is True
+    assert terminal_state == JobStatus.CANCELLED.value
+
+
+@pytest.mark.asyncio
+async def test_failed_cli_annotation_retains_child_for_containment_retry(
+    tmp_path: Path,
+) -> None:
+    """A failed CLI annotation must not degrade a retry to in-process."""
+    sup = _make_sup(tmp_path)
+
+    class _ExitedCli:
+        def __init__(self) -> None:
+            self.returncode = 0
+
+        def terminate(self) -> None:
+            raise AssertionError("an exited child must not be terminated")
+
+        async def wait(self) -> int:
+            return 0
+
+    child = _ExitedCli()
+
+    async def _blocked_cli(spec: JobSpec) -> dict[str, str]:
+        sup.note_child(spec.job_id, child)  # type: ignore[arg-type]
+        await asyncio.sleep(60)
+        return {"output": "never"}
+
+    sup._dispatch = _blocked_cli
+    original = sup._append_event
+    fail_once = True
+
+    def _fail_first_cli_annotation(job_id: str, event: dict) -> None:
+        nonlocal fail_once
+        if event.get("worker_kind") == "cli" and fail_once:
+            fail_once = False
+            raise OSError("annotation failed")
+        original(job_id, event)
+
+    sup._append_event = _fail_first_cli_annotation  # type: ignore[method-assign]
+    job_id = await sup.submit_job(_echo_spec("retry CLI annotation"))
+    await asyncio.sleep(0.05)
+
+    requested, terminal_state = await sup.cancel_with_terminal_state(job_id)
+    assert requested is True
+    assert terminal_state == JobStatus.CANCELLED.value
+    status = await sup.get_status(job_id)
+    assert status is not None
+    assert status["worker_kind"] == "cli"
+    assert status["containment_state"] == "verified"
+    assert job_id not in sup._children
+    assert not any(
+        event.get("job_id") == job_id
+        and event.get("worker_kind") == "in-process"
+        for event in _load_events(sup._jobs_file)
+    )
+
+
 # ── Replay ────────────────────────────────────────────────────────────────────
 
 @pytest.mark.asyncio

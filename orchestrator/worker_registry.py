@@ -229,6 +229,76 @@ async def _lmstudio_mac_worker(spec: Any) -> dict:
     }
 
 
+async def _run_dangerous_cli_subprocess(
+    spec: Any,
+    cmd: list[str],
+    backend: str,
+) -> dict:
+    """Spawn a direct CLI child, register it with the supervisor, and collect output."""
+    from orchestrator.supervisor import (
+        CONTAINMENT_TIMEOUT_SECONDS,
+        current_orchestration_supervisor,
+        wait_process_exit,
+    )
+
+    timeout = float(_get_constraint(spec, "max_seconds", 300))
+    job_id = getattr(spec, "job_id", "")
+    # Shield creation so a cancel during create_subprocess_exec still registers
+    # the direct child for supervisor containment (narrow race window).
+    creation = asyncio.create_task(
+        asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            stdin=asyncio.subprocess.DEVNULL,
+        )
+    )
+    cancelled_during_creation = False
+    try:
+        proc = await asyncio.shield(creation)
+    except asyncio.CancelledError:
+        cancelled_during_creation = True
+        proc = await creation
+
+    sup = current_orchestration_supervisor()
+    if sup is not None and job_id:
+        sup.note_child(job_id, proc)
+    cancelled = cancelled_during_creation
+    try:
+        if cancelled_during_creation:
+            # Retain registration; supervisor containment terminates and records.
+            raise asyncio.CancelledError() from None
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+    except asyncio.CancelledError:
+        # communicate() can set returncode before the pipe reads finish.
+        # Keep the mapping so containment does not record in-process.
+        cancelled = True
+        raise
+    except asyncio.TimeoutError:
+        proc.terminate()
+        await wait_process_exit(proc, CONTAINMENT_TIMEOUT_SECONDS)
+        raise RuntimeError(f"{backend} worker timed out after {timeout}s") from None
+    finally:
+        if (
+            not cancelled
+            and proc.returncode is not None
+            and sup is not None
+            and job_id
+        ):
+            sup.clear_child(job_id, proc)
+
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"{backend} exited {proc.returncode}: {stderr.decode()[:500]}"
+        )
+
+    return {
+        "backend": backend,
+        "output": stdout.decode(errors="replace").strip(),
+        "returncode": proc.returncode,
+    }
+
+
 async def _codex_worker(spec: Any) -> dict:
     """Codex CLI worker — headless, isolated context, file-system-first.
 
@@ -241,34 +311,13 @@ async def _codex_worker(spec: Any) -> dict:
 
     assert_dangerous_cli_worker_allowed("codex")
     prompt = getattr(spec, "prompt", "")
-    timeout = float(_get_constraint(spec, "max_seconds", 300))
-
     cmd = [
         "codex",
         "--approval-mode", "auto-edit",
         "--quiet",
         prompt,
     ]
-    proc = await asyncio.create_subprocess_exec(
-        *cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-        stdin=asyncio.subprocess.DEVNULL,
-    )
-    try:
-        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
-    except asyncio.TimeoutError:
-        proc.terminate()
-        raise RuntimeError(f"codex worker timed out after {timeout}s")
-
-    if proc.returncode != 0:
-        raise RuntimeError(f"codex exited {proc.returncode}: {stderr.decode()[:500]}")
-
-    return {
-        "backend": "codex",
-        "output": stdout.decode(errors="replace").strip(),
-        "returncode": proc.returncode,
-    }
+    return await _run_dangerous_cli_subprocess(spec, cmd, "codex")
 
 
 async def _gemini_worker(spec: Any) -> dict:
@@ -286,29 +335,8 @@ async def _gemini_worker(spec: Any) -> dict:
 
     assert_dangerous_cli_worker_allowed("gemini")
     prompt = getattr(spec, "prompt", "")
-    timeout = float(_get_constraint(spec, "max_seconds", 300))
-
     cmd = ["gemini", "--yolo", "-p", prompt]
-    proc = await asyncio.create_subprocess_exec(
-        *cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-        stdin=asyncio.subprocess.DEVNULL,
-    )
-    try:
-        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
-    except asyncio.TimeoutError:
-        proc.terminate()
-        raise RuntimeError(f"gemini worker timed out after {timeout}s")
-
-    if proc.returncode != 0:
-        raise RuntimeError(f"gemini exited {proc.returncode}: {stderr.decode()[:500]}")
-
-    return {
-        "backend": "gemini",
-        "output": stdout.decode(errors="replace").strip(),
-        "returncode": proc.returncode,
-    }
+    return await _run_dangerous_cli_subprocess(spec, cmd, "gemini")
 
 
 async def _agy_worker(spec: Any) -> dict:
@@ -322,29 +350,8 @@ async def _agy_worker(spec: Any) -> dict:
 
     assert_dangerous_cli_worker_allowed("agy")
     prompt = getattr(spec, "prompt", "")
-    timeout = float(_get_constraint(spec, "max_seconds", 300))
-
     cmd = ["agy", "--dangerously-skip-permissions", "-p", prompt]
-    proc = await asyncio.create_subprocess_exec(
-        *cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-        stdin=asyncio.subprocess.DEVNULL,
-    )
-    try:
-        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
-    except asyncio.TimeoutError:
-        proc.terminate()
-        raise RuntimeError(f"agy worker timed out after {timeout}s")
-
-    if proc.returncode != 0:
-        raise RuntimeError(f"agy exited {proc.returncode}: {stderr.decode()[:500]}")
-
-    return {
-        "backend": "agy",
-        "output": stdout.decode(errors="replace").strip(),
-        "returncode": proc.returncode,
-    }
+    return await _run_dangerous_cli_subprocess(spec, cmd, "agy")
 
 
 async def _ollama_worker(spec: Any) -> dict:
