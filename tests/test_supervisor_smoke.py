@@ -614,6 +614,7 @@ async def test_cancel_during_communicate_keeps_exited_child_registered(
 @pytest.mark.asyncio
 async def test_request_cancel_during_child_termination_still_contains(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Cancelling the cancel request must not abandon a registered CLI child.
 
@@ -623,6 +624,18 @@ async def test_request_cancel_during_child_termination_still_contains(
     sup = _make_sup(tmp_path)
     termination_started = asyncio.Event()
     release_exit = asyncio.Event()
+    containment_wait_started = asyncio.Event()
+    original_await_containment = OrchestrationSupervisor._await_containment
+
+    async def _await_containment_with_hook(self: OrchestrationSupervisor, job_id: str) -> None:
+        containment_wait_started.set()
+        await original_await_containment(self, job_id)
+
+    monkeypatch.setattr(
+        OrchestrationSupervisor,
+        "_await_containment",
+        _await_containment_with_hook,
+    )
 
     class _SlowExit:
         def __init__(self) -> None:
@@ -648,7 +661,9 @@ async def test_request_cancel_during_child_termination_still_contains(
     await asyncio.sleep(0.05)
 
     request = asyncio.create_task(sup.cancel_with_terminal_state(job_id))
+    await asyncio.wait_for(containment_wait_started.wait(), timeout=10.0)
     await termination_started.wait()
+    assert not request.done(), "cancel_with_terminal_state finished before caller cancel"
     request.cancel()
     with pytest.raises(asyncio.CancelledError):
         await request
