@@ -1,0 +1,40 @@
+{
+  "id": "b8f15928f111",
+  "key": "manual_b8f159",
+  "name": "manual_b8f159",
+  "claim": "Orama pull request 379 changes only the post-merge review sweep workflow and does not change guard-sync files. That workflow is outside the guard-sync manifest, so syncing guard scripts must not copy it into Perpetua-Tools. A clean Perpetua-Tools tree at origin/main is already byte-identical to that pull request for every manifest path, and sync-attribution-guard-scripts.sh from that tree exits without edits. A local checkout that is behind origin/main can report lag even when the published main tree matches; do not treat that lag as a reason to edit guard scripts on a memory branch.",
+  "conditions": [
+    "guard-sync",
+    "orama-pr-379",
+    "post-merge-review-sweep"
+  ],
+  "evidence_ids": [
+    "2026-10-02T04:49:55.392120+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-02T04:49:55.392120+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-02T04:49:55.392120+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-02T04:49:55.528447+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "check-guard-sync-divergence.sh against the pull request head passed for a worktree created from origin/main, and the following sync wrote no files. The workspace scan also passed. The live checkout that is behind origin/main is a different tree and was not the sync target.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-02T04:49:55.392120+00:00"
+      ],
+      "lessons_sha": "b49e7518bf7d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-02T04:49:55.528430+00:00",
+  "reviewer": "learn.py",
+  "rationale": "check-guard-sync-divergence.sh against the pull request head passed for a worktree created from origin/main, and the following sync wrote no files. The workspace scan also passed. The live checkout that is behind origin/main is a different tree and was not the sync target."
+}

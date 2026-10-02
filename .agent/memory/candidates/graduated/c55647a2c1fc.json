@@ -1,0 +1,42 @@
+{
+  "id": "c55647a2c1fc",
+  "key": "manual_c55647",
+  "name": "manual_c55647",
+  "claim": "A self-hosted Cursor worker skips canvas diagnostics when agent-sdk/cursor is absent beside the installed agent build. Point that directory at the SDK shipped in the desktop app agent-exec extension. On a case-insensitive volume, an MCP server directory whose name differs only by case makes stat succeed so the writer skips the update, while the directory listing still reports the configured server id missing; rename the directory to the exact configured id. Cloud plugin install markers that are missing only while the manifest is being written are a race, not a missing plugin, once the marker digest matches the manifest. HTTP/2 PING timeouts and HTTP 504 responses on the worker bridge are session drops; the worker retries, and replacing the process opens a fresh session. Portable memory must not record host names, home paths, process ids, or bridge worker ids.",
+  "conditions": [
+    "bridge-ping",
+    "canvas-sdk",
+    "case-insensitive",
+    "cursor-worker",
+    "mcp-filesystem"
+  ],
+  "evidence_ids": [
+    "2026-10-02T04:49:49.010830+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-02T04:49:49.010830+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-02T04:49:49.010830+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-02T04:49:49.168838+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The canvas lookup uses the agent build directory whenever __dirname is set. The MCP miss was a case-only directory name, not a stopped server. The bridge errors cleared after a detached restart while the same worker identity stayed registered. Recorded without local topology fragments.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-02T04:49:49.010830+00:00"
+      ],
+      "lessons_sha": "88212d6c5063"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-02T04:49:49.168822+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The canvas lookup uses the agent build directory whenever __dirname is set. The MCP miss was a case-only directory name, not a stopped server. The bridge errors cleared after a detached restart while the same worker identity stayed registered. Recorded without local topology fragments."
+}
