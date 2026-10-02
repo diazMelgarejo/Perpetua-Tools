@@ -634,6 +634,55 @@ async def test_request_cancel_during_child_termination_still_contains(
 
 
 @pytest.mark.asyncio
+async def test_legacy_cancel_still_owns_direct_child_containment(
+    tmp_path: Path,
+) -> None:
+    """Legacy acknowledgement cancellation must not abandon a CLI child."""
+    sup = _make_sup(tmp_path)
+    termination_started = asyncio.Event()
+    release_exit = asyncio.Event()
+
+    class _SlowExit:
+        def __init__(self) -> None:
+            self.returncode = None
+
+        def terminate(self) -> None:
+            termination_started.set()
+
+        async def wait(self) -> int:
+            await release_exit.wait()
+            self.returncode = 0
+            return 0
+
+    fake_proc = _SlowExit()
+
+    async def _blocked_cli(spec: JobSpec) -> dict[str, str]:
+        sup.note_child(spec.job_id, fake_proc)  # type: ignore[arg-type]
+        await asyncio.sleep(60)
+        return {"output": "never"}
+
+    sup._dispatch = _blocked_cli
+    job_id = await sup.submit_job(_echo_spec("legacy cancel containment"))
+    await asyncio.sleep(0.05)
+
+    assert await sup.cancel(job_id) is True
+    await termination_started.wait()
+    release_exit.set()
+
+    for _ in range(20):
+        if job_id not in sup._children:
+            break
+        await asyncio.sleep(0)
+
+    status = await sup.get_status(job_id)
+    assert status is not None
+    assert status["status"] == JobStatus.CANCELLED.value
+    assert status["worker_kind"] == "cli"
+    assert status["containment_state"] == "verified"
+    assert job_id not in sup._children
+
+
+@pytest.mark.asyncio
 async def test_containment_annotation_failure_keeps_cancelled(tmp_path: Path) -> None:
     """A failed containment write does not turn durable cancel into a failed request."""
     sup = _make_sup(tmp_path)

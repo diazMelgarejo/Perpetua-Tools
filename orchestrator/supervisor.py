@@ -474,6 +474,15 @@ class OrchestrationSupervisor:
             name=f"worker-{spec.job_id}",
         )
         self._active[spec.job_id] = task
+        # The worker owns the durable cancellation transition. Its done
+        # callback starts direct-child containment after that transition even
+        # when the caller used the legacy acknowledgement-only ``cancel()`` or
+        # its request task disappeared before it could await cleanup.
+        task.add_done_callback(
+            lambda finished, job_id=spec.job_id: self._on_cancelled_worker_done(
+                job_id, finished
+            )
+        )
         return spec.job_id
 
     async def get_status(self, job_id: str) -> dict | None:
@@ -506,7 +515,43 @@ class OrchestrationSupervisor:
             return True
         return False
 
-    def _ensure_containment_task(self, job_id: str) -> asyncio.Task:
+    def _on_cancelled_worker_done(self, job_id: str, task: asyncio.Task) -> None:
+        """Persist a pre-start cancellation and schedule its owned cleanup.
+
+        A running worker writes ``cancelled`` before it re-raises
+        ``CancelledError``. A task cancelled before its coroutine begins has
+        no opportunity to write that event, so the completion callback writes
+        it here. In both cases containment begins independently of the API
+        request that initiated cancellation.
+        """
+        if not task.cancelled():
+            return
+
+        if self._active.get(job_id) is task:
+            self._active.pop(job_id, None)
+
+        latest = _latest_status_per_job(_load_events(self._jobs_file)).get(job_id)
+        if latest is None or latest.get("status") != JobStatus.CANCELLED.value:
+            self._append_event(job_id, {"status": JobStatus.CANCELLED.value})
+            latest = _latest_status_per_job(_load_events(self._jobs_file)).get(job_id)
+
+        # ``cancel_with_terminal_state`` may already have completed fast direct
+        # child containment before this callback runs. Do not append a second
+        # in-process annotation after that cleanup cleared the child mapping.
+        if not self._has_containment_annotation(latest):
+            self._ensure_containment_task(job_id)
+
+    @staticmethod
+    def _has_containment_annotation(event: dict | None) -> bool:
+        """Return whether a terminal event already records containment."""
+        return (
+            event is not None
+            and event.get("status") == JobStatus.CANCELLED.value
+            and "worker_kind" in event
+            and "containment_state" in event
+        )
+
+    def _ensure_containment_task(self, job_id: str) -> asyncio.Future[None]:
         """Return the supervisor-owned cleanup task for one cancelled job.
 
         The task is created once and stored on this supervisor. Cancelling the
@@ -515,6 +560,16 @@ class OrchestrationSupervisor:
         existing = self._containment_tasks.get(job_id)
         if existing is not None and not existing.done():
             return existing
+
+        latest = _latest_status_per_job(_load_events(self._jobs_file)).get(job_id)
+        if self._has_containment_annotation(latest):
+            # A completed cleanup task is removed from the in-memory registry.
+            # Re-read the durable event so a later waiter cannot emit a second
+            # ``in-process/not-applicable`` annotation after a fast CLI exit.
+            completed: asyncio.Future[None] = asyncio.get_running_loop().create_future()
+            completed.set_result(None)
+            return completed
+
         task = asyncio.create_task(
             self._run_containment_cleanup(job_id),
             name=f"containment-{job_id}",
