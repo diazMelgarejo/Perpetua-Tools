@@ -677,20 +677,20 @@ class OrchestrationSupervisor:
                 return True, terminal_state
             return False, terminal_state
 
+        worker_done = asyncio.Event()
+
+        def _mark_worker_done(_finished: asyncio.Task) -> None:
+            worker_done.set()
+
+        task.add_done_callback(_mark_worker_done)
         try:
-            await asyncio.wait_for(
-                asyncio.shield(task), timeout=CANCEL_CONFIRM_TIMEOUT_SECONDS
-            )
+            await asyncio.wait_for(worker_done.wait(), timeout=CANCEL_CONFIRM_TIMEOUT_SECONDS)
         except asyncio.CancelledError:
-            # Worker cancellation completes this shielded wait with
-            # ``CancelledError``; swallow that so we can persist the checkpoint.
-            # A caller cancelling *this* coroutine during the same wait must
-            # still propagate (containment may already run on the done callback).
-            current = asyncio.current_task()
-            if current is not None and current.cancelling():
-                raise
+            raise
         except asyncio.TimeoutError:
             pass
+        finally:
+            task.remove_done_callback(_mark_worker_done)
 
         status = await self.get_status(job_id)
         terminal_state = status.get("status") if status is not None else None
