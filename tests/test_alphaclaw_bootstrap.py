@@ -707,16 +707,16 @@ def test_build_openclaw_config_wires_anthropic_cloud_coder(monkeypatch):
     pt = {
         "coder_backend": "anthropic",
         "coder_endpoint": "https://api.anthropic.com",
-        "coder_model": "claude-sonnet-5",
+        "coder_model": "claude-sonnet-5-5",
     }
     config = alphaclaw_bootstrap.build_openclaw_config(pt)
     providers = config["models"]["providers"]
     assert "anthropic" in providers
     assert providers["anthropic"]["baseUrl"] == "https://api.anthropic.com"
     assert providers["anthropic"]["apiKey"] == "sk-ant-test-key-67890"
-    assert providers["anthropic"]["models"][0]["id"] == "claude-sonnet-5"
+    assert providers["anthropic"]["models"][0]["id"] == "claude-sonnet-5-5"
 
     coder_agent = next(a for a in config["agents"]["list"] if a["id"] == "coder")
-    assert coder_agent["model"]["primary"] == "anthropic/claude-sonnet-5"
+    assert coder_agent["model"]["primary"] == "anthropic/claude-sonnet-5-5"
 
 

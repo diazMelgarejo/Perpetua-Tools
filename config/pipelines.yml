@@ -11,12 +11,12 @@ models:
       - glm-5.2
       - glm-5.1:cloud
       - Qwen3.5-9B-MLX-4bit
-      - claude-sonnet-5
+      - claude-sonnet-5-5
   strong:
     candidates:
       - glm-5.2
       - glm-5.1:cloud
-      - claude-sonnet-5
+      - claude-sonnet-5-5
       - Qwen3.5-9B-MLX-4bit
 
 recipes:
