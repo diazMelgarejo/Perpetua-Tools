@@ -254,14 +254,16 @@ class _PublicCancelSupervisor:
     __slots__ = ("child_lookups", "_has_child")
 
     def __init__(self, *, has_child: bool) -> None:
+        """Record whether ``has_registered_child`` should report a retained child."""
         self.child_lookups: list[str] = []
         self._has_child = has_child
 
     async def cancel_with_terminal_state(self, job_id: str) -> tuple[bool, str]:
+        """Return a confirmed cancellation without exercising containment."""
         return True, "cancelled"
 
     async def get_status(self, job_id: str) -> dict:
-        # Internals must not be copied onto the cancel HTTP body.
+        """Return status with process internals that must not leak to HTTP."""
         return {
             "status": "cancelled",
             "pid": 4242,
@@ -274,6 +276,7 @@ class _PublicCancelSupervisor:
         }
 
     def has_registered_child(self, job_id: str) -> bool:
+        """Record the lookup and return the configured child-retention flag."""
         self.child_lookups.append(job_id)
         return self._has_child
 
