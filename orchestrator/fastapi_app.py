@@ -1491,19 +1491,26 @@ async def supervisor_get_job(job_id: str):
 async def supervisor_cancel_job(job_id: str):
     """
     Request cancellation of a running job identified by its job ID.
-    
+
     Parameters:
         job_id (str): UUIDv4 job identifier. Must match the server's UUIDv4 format; otherwise an HTTPException(400) is raised.
-    
+
     Returns:
-        dict: {
-            "job_id": job_id,
-            "cancel_requested": bool,
-            "terminal_state": str | None,
-        } where `cancel_requested` is `True` if a cancellation was requested.
-        `terminal_state` is the persisted lifecycle state after the request
-        completes; callers that must avoid duplicate dispatches require it to
-        be `cancelled`, rather than treating the acknowledgement as proof.
+        dict with:
+            job_id: the requested identifier
+            cancel_requested: True if a cancellation was requested
+            terminal_state: persisted lifecycle state after the request
+                completes; callers that must avoid duplicate dispatches
+                require it to be ``cancelled``, rather than treating the
+                acknowledgement as proof
+            worker_kind / containment_state: copied from last-known status
+                when present. If both are absent after a requested cancel
+                but ``has_registered_child(job_id)`` is true, the body uses
+                the fail-closed pair ``cli`` / ``unresolved`` so a retained
+                direct CLI child is never reported as a legacy cancel.
+
+        The handler never reads private supervisor maps. The JSON body
+        never includes pid, argv, cwd, env, stdout, or stderr.
     """
     _validate_job_id(job_id)
     sup = _get_supervisor()
