@@ -56,8 +56,8 @@ I want you to add input validation..."
 
 ### Effort levels:
 - `effort:low` — simple tasks, 1 function, obvious implementation
-- `effort:medium` — moderate complexity, needs reasoning
-- `effort:high` — reserve for architecture-level problems only
+- `effort:medium` — default for agent work unless the operator names another level
+- `effort:high` — escalation-token only (S-AuthZ bearer + fresh signed HITL, ≤24h)
 
 **Validate after every change.** Run tests or confirm output before marking done.
 
