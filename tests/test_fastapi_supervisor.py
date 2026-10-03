@@ -28,6 +28,15 @@ from orchestrator.fastapi_app import (
 )
 from orchestrator.supervisor import JobSpec, JobStatus, OrchestrationSupervisor, _append_event
 
+_CANCEL_RESPONSE_KEYS = {
+    "job_id",
+    "cancel_requested",
+    "terminal_state",
+    "worker_kind",
+    "containment_state",
+}
+_PROCESS_INTERNALS = ("pid", "argv", "cmdline", "env", "cwd", "stdout", "stderr")
+
 
 # ── _validate_job_id unit tests ───────────────────────────────────────────────
 
@@ -239,6 +248,36 @@ class TestGetJobEndpointValidation:
         assert resp.status_code == 400
 
 
+class _PublicCancelSupervisor:
+    """Stub with only the public cancel-endpoint surface; no ``_children`` map."""
+
+    __slots__ = ("child_lookups", "_has_child")
+
+    def __init__(self, *, has_child: bool) -> None:
+        self.child_lookups: list[str] = []
+        self._has_child = has_child
+
+    async def cancel_with_terminal_state(self, job_id: str) -> tuple[bool, str]:
+        return True, "cancelled"
+
+    async def get_status(self, job_id: str) -> dict:
+        # Internals must not be copied onto the cancel HTTP body.
+        return {
+            "status": "cancelled",
+            "pid": 4242,
+            "argv": ["/bin/false", "--secret"],
+            "cmdline": "false --secret",
+            "env": {"TOKEN": "leak"},
+            "cwd": "/tmp/job",
+            "stdout": "secret-out",
+            "stderr": "secret-err",
+        }
+
+    def has_registered_child(self, job_id: str) -> bool:
+        self.child_lookups.append(job_id)
+        return self._has_child
+
+
 class TestCancelJobEndpointValidation:
     """POST /v1/jobs/{job_id}/cancel — invalid job_id → 400."""
 
@@ -361,7 +400,57 @@ class TestCancelJobEndpointValidation:
             "containment_state": "unresolved",
         }
         assert cli_annotation_attempts == supervisor_mod.CONTAINMENT_ANNOTATION_ATTEMPTS
-        assert job_id in sup._children
+        assert sup.has_registered_child(job_id)
+
+    def test_fail_closed_cli_uses_public_has_registered_child(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Cancel must not read private ``_children`` for the fail-closed pair."""
+        sup = _PublicCancelSupervisor(has_child=True)
+        assert not hasattr(sup, "_children")
+        monkeypatch.setattr(fastapi_app, "_get_supervisor", lambda: sup)
+        jid = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+        with TestClient(app, raise_server_exceptions=False) as client:
+            resp = client.post(f"/v1/jobs/{jid}/cancel")
+
+        body = resp.json()
+        assert resp.status_code == 200
+        assert body == {
+            "job_id": jid,
+            "cancel_requested": True,
+            "terminal_state": "cancelled",
+            "worker_kind": "cli",
+            "containment_state": "unresolved",
+        }
+        assert set(body) <= _CANCEL_RESPONSE_KEYS
+        assert all(key not in body for key in _PROCESS_INTERNALS)
+        assert sup.child_lookups == [jid]
+
+    def test_legacy_cancel_when_has_registered_child_is_false(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """No retained child and no status fields → legacy cancel body."""
+        sup = _PublicCancelSupervisor(has_child=False)
+        assert not hasattr(sup, "_children")
+        monkeypatch.setattr(fastapi_app, "_get_supervisor", lambda: sup)
+        jid = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+        with TestClient(app, raise_server_exceptions=False) as client:
+            resp = client.post(f"/v1/jobs/{jid}/cancel")
+
+        body = resp.json()
+        assert resp.status_code == 200
+        assert body == {
+            "job_id": jid,
+            "cancel_requested": True,
+            "terminal_state": "cancelled",
+        }
+        assert "worker_kind" not in body
+        assert "containment_state" not in body
+        assert set(body) <= _CANCEL_RESPONSE_KEYS
+        assert all(key not in body for key in _PROCESS_INTERNALS)
+        assert sup.child_lookups == [jid]
 
     def test_400_detail_contains_uuid4(self):
         with TestClient(app, raise_server_exceptions=False) as client:

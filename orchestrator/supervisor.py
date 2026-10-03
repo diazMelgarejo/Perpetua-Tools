@@ -36,7 +36,9 @@ MAX_THREADS = 25    # Anthropic spec ceiling — 25 concurrent workers max
 STATE_DIR = Path(".state")
 JOBS_JSONL = STATE_DIR / "jobs.jsonl"
 CANCEL_CONFIRM_TIMEOUT_SECONDS = 5.0
-# Separate concept from cancel confirmation. v1 uses the same duration.
+# Direct-child terminate wait. Separate from cancel confirmation; v1 uses the
+# same duration. Worst-case HTTP cancel is confirm (5s) + containment (5s) +
+# annotation retries. Orama's portal cancel timeout (~15s) covers that budget.
 CONTAINMENT_TIMEOUT_SECONDS = CANCEL_CONFIRM_TIMEOUT_SECONDS
 CONTAINMENT_ANNOTATION_ATTEMPTS = 3
 CONTAINMENT_ANNOTATION_RETRY_DELAY_SECONDS = 0.05
@@ -377,6 +379,8 @@ class OrchestrationSupervisor:
       get_status(job_id)     → dict | None
       cancel(job_id)         → bool
       cancel_with_terminal_state(job_id) → (requested, terminal state)
+      has_registered_child(job_id) → bool (HTTP cancel fail-closed path)
+      note_child / clear_child → direct-child map (workers; not HTTP)
       replay(job_id, …)      → new job_id (str)
       list_jobs(status?)     → list[dict]
     """
@@ -710,6 +714,7 @@ class OrchestrationSupervisor:
         If a different still-running process is already mapped for ``job_id``,
         the existing entry is kept (v1 identity policy). A later registration
         replaces only when the prior child has exited or is the same object.
+        HTTP cancel does not read this map; it calls ``has_registered_child``.
         """
         existing = self._children.get(job_id)
         if (
@@ -721,7 +726,12 @@ class OrchestrationSupervisor:
         self._children[job_id] = proc
 
     def has_registered_child(self, job_id: str) -> bool:
-        """Return whether this supervisor still owns a direct child for ``job_id``."""
+        """Return whether this supervisor still owns a direct child for ``job_id``.
+
+        True while a ``note_child`` mapping remains. Containment keeps that
+        mapping when the annotation write fails so HTTP cancel can report
+        ``cli`` / ``unresolved`` through this method instead of a private map.
+        """
         return job_id in self._children
 
     def clear_child(self, job_id: str, proc: asyncio.subprocess.Process) -> None:
