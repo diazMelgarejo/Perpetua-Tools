@@ -344,4 +344,8 @@ unrelated commit.
 
 ## Portable Sites prompt contract (v1)
 
-PT owns [`packages/prompt-workspace/SPECS.md`](packages/prompt-workspace/SPECS.md); Orama consumes reviewed exact snapshots. See [implementation memory](.agent/memory/working/SITES_MCP_IMPLEMENTATION_2026-10-05.md). This independent JavaScript adapter contract does not replace the Python runtime or import the v2 repositories.
+PT owns [`packages/prompt-workspace/SPECS.md`](packages/prompt-workspace/SPECS.md); Orama consumes
+reviewed exact snapshots. See implementation memory in
+`.agent/memory/working/SITES_MCP_IMPLEMENTATION_2026-10-05.md`.
+This independent JavaScript adapter contract does not replace the Python runtime or import the v2
+repositories.
