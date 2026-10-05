@@ -58,6 +58,25 @@ def test_exact_agent_identity_approved():
     assert result.matched_kind == "agent"
 
 
+@pytest.mark.parametrize("name,email", [
+    ("Claude", "noreply@anthropic.com"),
+    ("Claude Code", "noreply@anthropic.com"),
+    ("Claude", "claude@anthropic.com"),
+])
+def test_known_anthropic_agent_identities_approved(name, email):
+    """The known public Claude author addresses stay approved (listed addresses, not the domain)."""
+    result = audit_engine.is_approved_identity(name, email, root=Path("."), policy_path=REAL_POLICY)
+    assert result.approved
+    assert result.matched_kind == "agent"
+
+
+def test_unlisted_anthropic_address_rejected():
+    result = audit_engine.is_approved_identity(
+        "Someone", "someone@anthropic.com", root=Path("."), policy_path=REAL_POLICY
+    )
+    assert not result.approved
+
+
 def test_disallowed_agent_name_rejected():
     result = audit_engine.is_approved_identity(
         "Not Codex", "codex@openai.com", root=Path("."), policy_path=REAL_POLICY

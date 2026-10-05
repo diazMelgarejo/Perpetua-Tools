@@ -19,6 +19,13 @@ if str(_SCRIPT_DIR) not in sys.path:
 
 import repo_hygiene_core as _core
 
+# Single source of truth for approved authors: scripts/git/identity-policy.json,
+# read through the byte-synced canonical engine (never a local allowlist).
+_GIT_SCRIPTS = _SCRIPT_DIR.parent / "git"
+if str(_GIT_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_GIT_SCRIPTS))
+import audit_engine  # noqa: E402
+
 for _name, _value in vars(_core).items():
     if not _name.startswith("__"):
         globals()[_name] = _value
@@ -58,7 +65,18 @@ def check_identity(root: Path) -> list[str]:
     email = _core.run_git(root, "config", "user.email").stdout.strip()
     if os.getenv("GITHUB_ACTIONS") == "true" and not name and not email:
         return []
-    if (name, email) in _core.APPROVED_IDENTITIES:
+    try:
+        policy_result = audit_engine.is_approved_identity(
+            name,
+            email,
+            root=root,
+            repo_name=root.name,
+            private_literal_values_fn=_core.private_literal_values,
+            profile="configured",
+        )
+    except audit_engine.IdentityPolicyError as exc:
+        return [f"identity policy error: {exc}"]
+    if policy_result.approved:
         return []
     if identity_fingerprint(name, email) in authorized_private_identity_hashes(root):
         return []
@@ -75,14 +93,11 @@ def check_identity(root: Path) -> list[str]:
     ):
         return []
 
-    expected = " or ".join(
-        f"{approved_name} <{approved_email}>"
-        for approved_name, approved_email in sorted(_core.APPROVED_IDENTITIES)
-    )
     return [
         "git identity mismatch: "
         f"found {name or '<unset>'} <{email or '<unset>'}>; "
-        f"expected {expected} or an authorized private identity fingerprint"
+        f"{policy_result.reason} (scripts/git/identity-policy.json) "
+        "and no authorized private identity fingerprint"
     ]
 
 

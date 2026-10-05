@@ -124,8 +124,9 @@ As-built: [`../orama-system/docs/v2/`](../orama-system/docs/v2/)
 
 ## § 6 — Git Hygiene
 
-- Commit identity: `cyre <Lawrence@cyre.me>`, `cyre <diazMelgarejo@gmail.com>`, or
-  `Codex <codex@openai.com>` — `bash scripts/git/check_identity.sh`
+- Commit identity: `cyre <Lawrence@cyre.me>`, `cyre <diazMelgarejo@gmail.com>`,
+  `Codex <codex@openai.com>`, or `Claude <noreply@anthropic.com>` — `bash scripts/git/check_identity.sh`.
+  Source of truth: `scripts/git/identity-policy.json` (listed addresses only, no vendor domains)
 - **Private banned-identity list (gitignored, not on GitHub):**
   `.cursor/private/agent-lesson-git-attribution.md` — sync via
   `bash scripts/cursor/install-user-git-environment.sh`; never copy tokens into tracked docs.
