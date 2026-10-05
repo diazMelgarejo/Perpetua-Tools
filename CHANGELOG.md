@@ -8,8 +8,12 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased] — Portable Sites prompt contract
 
-- Added an independent v1 JavaScript prompt contract and owner-scoped D1/SQLite store with immutable originals, idempotent inserts, bounded pagination and archive retention.
-- Added contract SPECS, SQLite tests, scoped CI and an additive Sites implementation memory hand-off. Historical memory records remain unchanged.
+- Added an independent v1 JavaScript prompt contract and owner-scoped D1/SQLite store with
+  immutable originals, idempotent inserts, bounded pagination and archive retention.
+- History is newest-first by `(created_at, id)` with an opaque cursor and a matching index;
+  saves enforce UTF-8 byte bounds on stored records.
+- Added contract SPECS, SQLite tests, scoped CI (no persisted checkout credentials) and additive
+  Sites implementation memory hand-offs. Historical memory records remain unchanged.
 
 ## [1.0.0-rc] - 2026-03-31 [SYNC]
 

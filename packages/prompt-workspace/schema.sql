@@ -11,4 +11,4 @@ CREATE TABLE IF NOT EXISTS prompt_records (
   PRIMARY KEY(owner_id, id),
   UNIQUE(owner_id, request_key)
 );
-CREATE INDEX IF NOT EXISTS prompt_records_owner_active ON prompt_records(owner_id, archived, id);
+CREATE INDEX IF NOT EXISTS prompt_records_owner_history ON prompt_records(owner_id, archived, created_at, id);
