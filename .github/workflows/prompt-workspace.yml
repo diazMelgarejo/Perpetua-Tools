@@ -1,0 +1,18 @@
+name: Portable prompt workspace
+on:
+  pull_request:
+    paths: ['packages/prompt-workspace/**', '.github/workflows/prompt-workspace.yml']
+  push:
+    branches: [main]
+    paths: ['packages/prompt-workspace/**', '.github/workflows/prompt-workspace.yml']
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test packages/prompt-workspace/tests/*.test.mjs

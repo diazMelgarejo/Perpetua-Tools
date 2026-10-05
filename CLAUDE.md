@@ -341,3 +341,7 @@ in an earlier session leaves residue across clones). Confirm via
 present," it's clone noise, not a real change. **Exclude it from `git add`
 explicitly** rather than trying to "fix" it; don't let it ride into an
 unrelated commit.
+
+## Portable Sites prompt contract (v1)
+
+PT owns [`packages/prompt-workspace/SPECS.md`](packages/prompt-workspace/SPECS.md); Orama consumes reviewed exact snapshots. See [implementation memory](.agent/memory/working/SITES_MCP_IMPLEMENTATION_2026-10-05.md). This independent JavaScript adapter contract does not replace the Python runtime or import the v2 repositories.
