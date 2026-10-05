@@ -70,6 +70,32 @@ def test_known_anthropic_agent_identities_approved(name, email):
     assert result.matched_kind == "agent"
 
 
+@pytest.mark.parametrize("repo", ["orama-system", "Perpetua-Tools"])
+@pytest.mark.parametrize("email", [
+    "claude[bot]@users.noreply.github.com",
+    "209825114+claude[bot]@users.noreply.github.com",  # GitHub numeric-ID form, same bot
+])
+def test_claude_github_app_bot_approved_in_both_repos(repo, email):
+    result = audit_engine.is_approved_identity(
+        "claude[bot]", email, root=Path("."), repo_name=repo, policy_path=REAL_POLICY
+    )
+    assert result.approved
+    assert result.matched_kind == "repo_bot"
+
+
+@pytest.mark.parametrize("name,email,repo", [
+    ("claude[bot]", "claude[bot]@users.noreply.github.com", "some-other-repo"),  # bots are per repo
+    ("x", "claude-evil[bot]@users.noreply.github.com", "orama-system"),
+    ("x", "claude[bot]@evil.example", "orama-system"),
+    ("x", "123+claude[bot]@evil.example", "orama-system"),
+])
+def test_claude_bot_approval_does_not_broaden(name, email, repo):
+    result = audit_engine.is_approved_identity(
+        name, email, root=Path("."), repo_name=repo, policy_path=REAL_POLICY
+    )
+    assert not result.approved
+
+
 def test_unlisted_anthropic_address_rejected():
     result = audit_engine.is_approved_identity(
         "Someone", "someone@anthropic.com", root=Path("."), policy_path=REAL_POLICY

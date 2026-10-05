@@ -7,6 +7,7 @@ These actors are authorized to author commits and open pull requests in this rep
 | `cyre` | Human (owner) | `diazMelgarejo@gmail.com`, `Lawrence@cyre.me`, plus configured private owner email |
 | `Cursor Agent` | AI assistant | `cursoragent@cursor.com` |
 | `Claude` | AI assistant | `noreply@anthropic.com` (any name), `claude@anthropic.com` (name `Claude`) |
+| `claude[bot]` | Automation | `claude[bot]@users.noreply.github.com` (the Claude GitHub App; GitHub's `<id>+claude[bot]@…` form matches too) |
 | `cline-session-20260907` | AI assistant | `agent@oramasys.local` (fingerprint in `authorized-private-identities.sha256`; authorized by the owner 2026-09-27) |
 | `dependabot[bot]` | Automation | `49699333+dependabot[bot]@users.noreply.github.com` |
 | `ecc-tools[bot]` | Automation | `257055122+ecc-tools[bot]@users.noreply.github.com` |
