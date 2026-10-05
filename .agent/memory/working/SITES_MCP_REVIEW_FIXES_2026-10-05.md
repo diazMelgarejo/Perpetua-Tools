@@ -11,6 +11,7 @@ earlier file's own ordering statements became false (corrected in place, same PR
 | History used `ORDER BY id`, and ids are random UUIDs | Order and cursor use `(created_at, id)`; cursor is `<created_at>\|<id>` and is validated | Test inserts an old record with the largest id and a same-millisecond pair |
 | Cursor OR scan risk | Row-value range `(created_at, id) < (?, ?)` served by `prompt_records_owner_history` | Query-plan test: index used, no temp B-tree |
 | Save did not bound stored bytes | `save` checks original (32,768 UTF-8 bytes, non-blank) and improved (163,840 bytes) | Multi-byte test: 16,385 two-byte characters rejected, 16,384 accepted |
+| Consumers classified errors by message substring | `PromptError` typed class; only it is displayable | Test: provider error saying `Invalid original` is not a `PromptError` |
 | Markdown lint (MD013) | Paragraphs reflowed at 100 columns | Line-length scan |
 | Checkout token reachable by PR tests | `persist-credentials: false` | Workflow diff |
 

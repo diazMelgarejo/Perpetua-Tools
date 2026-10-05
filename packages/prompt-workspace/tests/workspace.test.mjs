@@ -140,3 +140,12 @@ test('history pages return short previews without embedding full contracts', asy
   assert.equal(Object.hasOwn(item, 'original'), false);
   assert.equal((await store.get('alice', saved.id)).original, original);
 });
+
+test('validation failures are typed so consumers never classify errors by message text', async () => {
+  const store = new api.PromptStore(database());
+  assert.throws(() => api.compilePrompt({ original: '' }), api.PromptError);
+  await assert.rejects(store.list(''), api.PromptError);
+  await assert.rejects(store.save('alice', 'bad key!', api.compilePrompt({ original: 'x' })), api.PromptError);
+  const failing = new api.PromptStore({ prepare() { throw new Error('Invalid original secret'); } });
+  await assert.rejects(failing.list('alice'), error => !(error instanceof api.PromptError));
+});
