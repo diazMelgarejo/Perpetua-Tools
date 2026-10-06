@@ -63,7 +63,7 @@ def test_exact_agent_identity_approved():
     ("Claude Code", "noreply@anthropic.com"),
     ("Claude", "claude@anthropic.com"),
 ])
-def test_known_anthropic_agent_identities_approved(name, email):
+def test_known_anthropic_agent_identities_approved(name: str, email: str) -> None:
     """The known public Claude author addresses stay approved (listed addresses, not the domain)."""
     result = audit_engine.is_approved_identity(name, email, root=Path("."), policy_path=REAL_POLICY)
     assert result.approved
@@ -75,7 +75,7 @@ def test_known_anthropic_agent_identities_approved(name, email):
     "claude[bot]@users.noreply.github.com",
     "209825114+claude[bot]@users.noreply.github.com",  # GitHub numeric-ID form, same bot
 ])
-def test_claude_github_app_bot_approved_in_both_repos(repo, email):
+def test_claude_github_app_bot_approved_in_both_repos(repo: str, email: str) -> None:
     result = audit_engine.is_approved_identity(
         "claude[bot]", email, root=Path("."), repo_name=repo, policy_path=REAL_POLICY
     )
@@ -89,14 +89,14 @@ def test_claude_github_app_bot_approved_in_both_repos(repo, email):
     ("x", "claude[bot]@evil.example", "orama-system"),
     ("x", "123+claude[bot]@evil.example", "orama-system"),
 ])
-def test_claude_bot_approval_does_not_broaden(name, email, repo):
+def test_claude_bot_approval_does_not_broaden(name: str, email: str, repo: str) -> None:
     result = audit_engine.is_approved_identity(
         name, email, root=Path("."), repo_name=repo, policy_path=REAL_POLICY
     )
     assert not result.approved
 
 
-def test_unlisted_anthropic_address_rejected():
+def test_unlisted_anthropic_address_rejected() -> None:
     result = audit_engine.is_approved_identity(
         "Someone", "someone@anthropic.com", root=Path("."), policy_path=REAL_POLICY
     )
