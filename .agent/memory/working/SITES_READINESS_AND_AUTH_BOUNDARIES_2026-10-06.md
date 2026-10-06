@@ -73,3 +73,17 @@ handoff and have not been independently re-run against the hosted Site.
   explicit acceptance of a one-way publication is recorded. Code rollback never undoes D1 changes.
 - Review also found that the verifier must mirror the applier: Wrangler applies every `.sql` file
   in the migrations directory, so file set and journal must match. See the Orama reference note.
+
+## Canonical graduation and leaf review (2026-10-06 UTC)
+
+The follow-up targets #429 only. The existing `learn.py` staging tool invoked `graduate.py`
+with explicit rationales for `lesson_466c0e62569c` (readiness boundaries) and
+`lesson_c5a27e219768` (migration verification and additive status). Evidence mirrors and
+graduated candidate records accompany the two appended semantic records. The current renderer
+regenerated only `.agent/memory/semantic/LESSONS.md`; `docs/LESSONS.md` is retired and stays
+unchanged. Neither `graduate.py` nor its renderer was extended or modified.
+
+Orama #387 review reproduced and repaired index-only boundary and SQL comment/quotation gaps.
+Its complete adapter suite and refreshed built-Worker smoke passed locally with `localhost`.
+This does not add hosted browser or multiuser evidence. Preserve both historical JSONL byte
+prefixes, including duplicates, and require fetched-remote equality before publication closure.
