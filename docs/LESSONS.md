@@ -95,3 +95,11 @@ prompts deterministically; it does not run model inference.
 
 Implementation map: Orama `docs/v2/references/SITES-READINESS-R2-IMPLEMENTATION-2026-10-06.md`;
 PT working incident: `.agent/memory/working/SITES_READINESS_AND_AUTH_BOUNDARIES_2026-10-06.md`.
+
+## 2026-10-06 — Sites readiness: correct status text before merge
+
+A tracked note said plugin invocation was unverified after the authenticated call had succeeded.
+When a blocked gate later passes, append a dated status section to the unmerged note instead of
+merging text you know is stale, and keep concrete identifiers in the private runbook. A verifier
+must mirror the applier it guards: Wrangler applies every migration file in the directory, not
+only the journaled ones. Tracked UI error handling must keep the Site's own error text visible.
