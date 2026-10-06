@@ -1,0 +1,64 @@
+{
+  "id": "ccb7f08ea1ad",
+  "key": "manual_ccb7f0",
+  "name": "manual_ccb7f0",
+  "claim": "Harness model selection is provider-agnostic: Cursor/Grok Bot defaults to grok-4.6 medium with fast off; Anthropic defaults to claude-sonnet-5-5 medium; grok-4.5 is banned; auto is editor-only; escalation needs S-AuthZ bearer plus fresh signed HITL not config flags.",
+  "conditions": [
+    "anthropic",
+    "auto",
+    "banned",
+    "bearer",
+    "bot",
+    "claude-sonnet-5-5",
+    "config",
+    "cursor",
+    "defaults",
+    "editor-only",
+    "escalation",
+    "fast",
+    "flags",
+    "fresh",
+    "grok",
+    "grok-4",
+    "harness",
+    "hitl",
+    "medium",
+    "model",
+    "needs",
+    "off",
+    "plus",
+    "provider-agnostic",
+    "s-authz",
+    "selection",
+    "signed"
+  ],
+  "evidence_ids": [
+    "2026-10-03T04:56:03.052046+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-03T04:56:03.052046+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-03T04:56:03.052046+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-03T04:56:03.178119+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Aligns Perpetua-Tools with Alexandria model-governance (PR 1 tip e7ee9db6) and orama-system PR 381. Pins live in config/model-governance.yml. Cost gate stays fail-closed; cloud escalation default-deny.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-03T04:56:03.052046+00:00"
+      ],
+      "lessons_sha": "842e04ff5a91"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-03T04:56:03.178106+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Aligns Perpetua-Tools with Alexandria model-governance (PR 1 tip e7ee9db6) and orama-system PR 381. Pins live in config/model-governance.yml. Cost gate stays fail-closed; cloud escalation default-deny."
+}

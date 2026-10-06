@@ -6,6 +6,21 @@
 
 ---
 
+## 2026-10-03 — Harness model governance pin (Alexandria)
+
+Local pin: `docs/standards/model-governance.md` + `config/model-governance.yml`.
+Canonical: alexandria `docs/standards/model-governance.md` (PR #1, tip `e7ee9db6`).
+Sister: orama-system PR #381 (`812147f7`).
+
+Cursor / Grok Bot default is `grok-4.6` medium with fast off.
+Anthropic default is `claude-sonnet-5-5` medium.
+`grok-4.5` is banned from catalog, defaults, and fallbacks.
+Escalation token is S-AuthZ bearer plus fresh signed HITL (≤24h).
+Cost gate stays fail-closed. Cloud escalation stays default-deny.
+The local-first frugality ladder is not reordered.
+
+---
+
 ## 2026-09-27 — Orama Knowledge Portal / swarm facade gap (PT)
 
 Read-only Knowledge Portal search/MCP/A2A stays in orama-system and does not need PT endpoints. The swarm-approval slice already POSTs `PT /models/route` and `PT /v1/jobs` with role metadata. PT previously only had GET `/models/route` (`fallback_chain`) and left `JobSpec.role` empty when identity lived in `metadata`. Minimal facade: POST `/models/route` returning `backend_hint`/`model_hint`, hoist portal metadata onto `JobSpec`. Approval HMAC remains Orama-owned.

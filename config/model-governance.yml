@@ -1,0 +1,72 @@
+# Local pin of harness model-governance defaults for Perpetua-Tools.
+# Canonical standard (do not copy wholesale):
+# https://github.com/oramasys/alexandria/blob/docs/mig-pack-ingest-20260925/docs/standards/model-governance.md
+# alexandria PR #1, tip e7ee9db6
+#
+# This file does not reorder the runtime frugality ladder (local tiers first).
+# Cost gate stays fail-closed. Cloud escalation stays default-deny.
+# Config flags in this file are NOT an escalation token.
+
+version: 1
+canonical:
+  url: https://github.com/oramasys/alexandria/blob/docs/mig-pack-ingest-20260925/docs/standards/model-governance.md
+  pull_request: https://github.com/oramasys/alexandria/pull/1
+  tip: e7ee9db6
+
+invariants:
+  cost_gate: fail_closed
+  cloud_escalation: default_deny
+  harness_decides_path: true
+  agents_never_self_escalate: true
+  auto_is_editor_only: true
+
+# None of these count as an escalation token (S-AuthZ bearer + fresh signed HITL).
+not_escalation_token:
+  - config_flag
+  - env_var
+  - agent_writable_file
+  - cached_approval
+
+banned_launch_ids:
+  - grok-4.5
+
+cursor_grok_bot:
+  default:
+    usage_label: cursor-grok-4.6-medium
+    launch_id: grok-4.6
+    effort: medium
+    fast: false
+  allowed_ungated:
+    - launch_id: composer-2.5
+      fast: false
+  gated:
+    grok-4.7:
+      effort: medium
+      fast: false
+      requires: escalation_token
+
+anthropic:
+  default:
+    launch_id: claude-sonnet-5-5
+    legacy_pin: claude-sonnet-5
+    effort: medium
+  gated:
+    claude-opus-5-5:
+      effort: high
+      fast: false
+      requires: escalation_token
+    claude-fable-5-1:
+      effort: medium
+      requires:
+        - escalation_token
+        - budget_cap
+
+direct_xai:
+  default:
+    launch_id: grok-4.6
+    reasoning_effort: medium
+
+allowed_escalation_proof_kinds:
+  - github_verified_signoff
+  - offline_gpg
+  - control_plane_online_signer
