@@ -62,3 +62,29 @@ def test_check_identity_rejects_unregistered_private_identity(tmp_path, monkeypa
     errors = hygiene.check_identity(tmp_path)
     assert len(errors) == 1
     assert "identity mismatch" in errors[0]
+
+
+def _check(monkeypatch, tmp_path, name, email):
+    hygiene = load_repo_hygiene()
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.delenv("ORAMA_APPROVED_EMAILS", raising=False)
+    monkeypatch.delenv("OPENCLAW_VERBOTEN_LITERALS", raising=False)
+    monkeypatch.setattr(hygiene._core, "run_git", fake_git_config(name, email))
+    return hygiene.check_identity(tmp_path)
+
+
+def test_check_identity_reads_the_shared_policy_for_known_anthropic_identities(
+    tmp_path, monkeypatch
+):
+    """PT approves exactly what scripts/git/identity-policy.json approves."""
+    assert _check(monkeypatch, tmp_path, "Claude", "noreply@anthropic.com") == []
+    assert _check(monkeypatch, tmp_path, "Claude", "claude@anthropic.com") == []
+    assert _check(monkeypatch, tmp_path, "Codex", "codex@openai.com") == []
+
+
+def test_check_identity_does_not_approve_a_whole_vendor_domain(tmp_path, monkeypatch):
+    """Author emails are self-asserted: only listed agent addresses pass, never a domain."""
+    errors = _check(monkeypatch, tmp_path, "Someone", "someone@anthropic.com")
+    assert len(errors) == 1 and "identity mismatch" in errors[0]
+    errors = _check(monkeypatch, tmp_path, "Not Claude", "claude@anthropic.com")
+    assert len(errors) == 1 and "allowed_names" in errors[0]

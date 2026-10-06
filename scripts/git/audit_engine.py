@@ -279,6 +279,9 @@ def is_approved_identity(
                     f"email {email!r} is an approved agent identity, but name {name!r} "
                     f"is not in its allowed_names",
                 )
+        repo_bots = policy["repo_bot_identities"].get(repo_name, [])
+        if _repo_bot_approved(email, repo_bots):
+            return ClassificationResult(True, f"approved bot identity for {repo_name}", "repo_bot")
         if _private_identity_ok(name, email, root, literals_fn, email_only=True):
             return ClassificationResult(True, "approved private owner identity", "private")
         return ClassificationResult(False, f"identity {name!r} <{email!r}> not found in policy")
