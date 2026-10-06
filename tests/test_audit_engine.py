@@ -299,6 +299,19 @@ def test_configured_profile_allows_human_email_without_name_binding():
     assert result.approved
 
 
+@pytest.mark.parametrize("repo,approved", [
+    ("orama-system", True),
+    ("Perpetua-Tools", True),
+    ("some-other-repo", False),  # bots are per repo
+])
+def test_configured_profile_accepts_repo_scoped_bot(repo: str, approved: bool) -> None:
+    result = audit_engine.is_approved_identity(
+        "claude[bot]", "claude[bot]@users.noreply.github.com",
+        root=Path("."), repo_name=repo, policy_path=REAL_POLICY, profile="configured",
+    )
+    assert result.approved is approved
+
+
 def test_audit_relaxed_profile_allows_human_email_only():
     result = audit_engine.is_approved_identity(
         "not cyre", "lawrence@cyre.me",
