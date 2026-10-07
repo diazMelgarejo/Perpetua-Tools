@@ -54,3 +54,36 @@ identifiers and host paths belong in the off-repo runbook.
 See Orama `docs/v2/references/SITES-READINESS-R2-IMPLEMENTATION-2026-10-06.md` for the
 task/gate map. Pending: actual owner OAuth, plugin connection, original-preserving hosted
 prepare and separately approved multiuser testing before any sharing.
+
+## Status update after publication (appended 2026-10-06)
+
+This supersedes the "blocked" and "unverified" wording above where the two conflict; the earlier
+text stays as the record of what was known then. The facts come from the implementation agent's
+handoff and have not been independently re-run against the hosted Site.
+
+- The r2 candidate is published as a new private Site version with the owner-only allowlist kept.
+- Anonymous root, MCP and history access was denied (401) and returned no records.
+- The installed plugin made authenticated native calls: the approved prompt prepared with its
+  original preserved byte for byte, history listed, and a long plan was saved in two records, read
+  back, retried idempotently and rejected on changed content. Plugin invocation is therefore
+  verified for the owner's plugin session.
+- Still unverified: owner browser sign-in, two real accounts (hosted isolation) and the optional
+  forged-header probe, which needs its own authorization.
+- The first-publication reversal gate was not met: no unpublish operation is exposed and no
+  explicit acceptance of a one-way publication is recorded. Code rollback never undoes D1 changes.
+- Review also found that the verifier must mirror the applier: Wrangler applies every `.sql` file
+  in the migrations directory, so file set and journal must match. See the Orama reference note.
+
+## Canonical graduation and leaf review (2026-10-06 UTC)
+
+The follow-up targets #429 only. The existing `learn.py` staging tool invoked `graduate.py`
+with explicit rationales for `lesson_466c0e62569c` (readiness boundaries) and
+`lesson_c5a27e219768` (migration verification and additive status). Evidence mirrors and
+graduated candidate records accompany the two appended semantic records. The current renderer
+regenerated only `.agent/memory/semantic/LESSONS.md`; `docs/LESSONS.md` is retired and stays
+unchanged. Neither `graduate.py` nor its renderer was extended or modified.
+
+Orama #387 review reproduced and repaired index-only boundary and SQL comment/quotation gaps.
+Its complete adapter suite and refreshed built-Worker smoke passed locally with `localhost`.
+This does not add hosted browser or multiuser evidence. Preserve both historical JSONL byte
+prefixes, including duplicates, and require fetched-remote equality before publication closure.
