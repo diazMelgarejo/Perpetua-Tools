@@ -1,0 +1,40 @@
+{
+  "id": "c5a27e219768",
+  "key": "manual_c5a27e",
+  "name": "manual_c5a27e",
+  "claim": "A migration verifier must cover the same complete file set and execution order as its applier. Validate index-only boundaries and parse SQL comments and quoted tokens without hiding DML. When a blocked gate later passes, append dated evidence to tracked status before merge; never rewrite the earlier observation or revive retired lesson-rendering targets.",
+  "conditions": [
+    "append-only memory",
+    "migration verifier",
+    "review remediation"
+  ],
+  "evidence_ids": [
+    "2026-10-06T11:09:20.625420+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-06T11:09:20.625420+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-06T11:09:20.625420+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-06T11:09:20.766031+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT PR 429 records the Wrangler directory-versus-journal mismatch and later authenticated MCP transition; review of Orama PR 387 reproduced an out-of-range guard bypass and comment-stripping DML bypass. Graduate through the current semantic workflow only; docs/LESSONS.md remains unchanged.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-06T11:09:20.625420+00:00"
+      ],
+      "lessons_sha": "db9b607e62a9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-06T11:09:20.766012+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT PR 429 records the Wrangler directory-versus-journal mismatch and later authenticated MCP transition; review of Orama PR 387 reproduced an out-of-range guard bypass and comment-stripping DML bypass. Graduate through the current semantic workflow only; docs/LESSONS.md remains unchanged."
+}

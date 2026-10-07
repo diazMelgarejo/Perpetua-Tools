@@ -1,5 +1,13 @@
 # WORKSPACE — current task state
 
+**Updated:** 2026-10-06 (Sites saga crystallization)
+**Session record:** `memory/working/ORAMASYS_SITES_SAGA_CRYSTALLIZATION_2026-09-10_TO_2026-10-06.md`
+**State:** PT #429 remains the active leaf for canonical-memory review repairs.
+The new record links the memory-integrity incidents, v1 Sites/MCP readiness,
+authenticated-plugin evidence, review repairs and future-agent gates. It is
+append-only; historical JSONL content was not rewritten. Do not merge before
+fresh CodeRabbit/CI review and exact remote-head verification.
+
 **Updated:** 2026-10-02 (PT PR #418 and Orama PR #376 containment cycle)
 **Session record:** `memory/working/2026-10-02-containment-cross-repo-cycle.md`
 **State:** Local containment hardening is committed and validated. PT retries
