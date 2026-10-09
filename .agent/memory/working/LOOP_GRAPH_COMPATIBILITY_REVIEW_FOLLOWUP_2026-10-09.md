@@ -12,8 +12,8 @@ episodic rows or rendered lessons. It is not a newly graduated semantic lesson.
 - [New durable refusal/HITL contract](https://github.com/diazMelgarejo/orama-system/blob/main/docs/v2/references/2026-10-09-compatibility-refusal-hitl-contract.md)
 - [PT evidence plan](../../../../docs/plans/2026-10-09-minigraph-compatibility-evidence-plan.md)
 
-GitHub links now use PR branches; their original revision 3 publication-target
-claim described the historical cutoff, not current merge state. Full
+GitHub links now target `main`; the PR branches were deleted after merge. The
+original revision 3 publication-target claim described the historical cutoff. Full
 original archive members are preserved byte-for-byte in Orama's history folder.
 
 ## Lessons from the review

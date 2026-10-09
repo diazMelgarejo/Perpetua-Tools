@@ -5,7 +5,7 @@
 
 **Revision 3 canonical corrections:**
 [Orama execution index](https://github.com/diazMelgarejo/orama-system/blob/main/docs/v2/references/loop-graph-compatibility-2026-10-09/README.md).
-These records are in the coordinated open Orama PR branch, not yet merged.
+These records are published on Orama `main` (merged via Orama #388).
 Original rev2 documents and ADRs are preserved there; PT does not fork them.
 
 ## Purpose
