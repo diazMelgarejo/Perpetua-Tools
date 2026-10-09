@@ -1,0 +1,40 @@
+{
+  "id": "ab2c16e8fc32",
+  "key": "manual_ab2c16",
+  "name": "manual_ab2c16",
+  "claim": "A durable retrospective should record evidence, the chosen contract and its reasons, falsifying cases, remaining gates and exact resumption pointers, while labeling agent judgments as judgments.",
+  "conditions": [
+    "agent memory",
+    "future agents",
+    "retrospective"
+  ],
+  "evidence_ids": [
+    "2026-10-09T23:44:17.473743+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-09T23:44:17.473743+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-09T23:44:17.473743+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-09T23:44:17.573694+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The operator requested candid detailed reflection and reusable memory. A celebration or transcript without operational consequences would not prevent stale pins, duplicate PRs or false replay claims; the new records connect each lesson to measurable checks and unfinished work.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-09T23:44:17.473743+00:00"
+      ],
+      "lessons_sha": "70801b365b2e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-09T23:44:17.573677+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The operator requested candid detailed reflection and reusable memory. A celebration or transcript without operational consequences would not prevent stale pins, duplicate PRs or false replay claims; the new records connect each lesson to measurable checks and unfinished work."
+}

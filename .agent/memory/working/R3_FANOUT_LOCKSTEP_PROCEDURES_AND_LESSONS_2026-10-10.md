@@ -123,3 +123,12 @@ Prose lines obey the repository line-length lint (tables are exempt). Check
 
 No private identity, address, credential, device or workstation literal was
 written into tracked content. Records name categories only.
+
+## Additive current qualification
+
+For the current exact heads, merged #24 status, immutable canonical CI binding,
+replay limits and verified test counts, see
+`R3_REGISTRY_REPLAY_REVIEW_2026-10-10.md`. Complete procedures for both coordinated
+pairs are in `LOCKSTEP_COMPLETE_CHECKLIST_2026-10-10.md`; detailed Codex assessment
+and operational lessons are in `LOCKSTEP_PROCESS_RETROSPECTIVE_2026-10-10.md`.
+Earlier statements above are preserved as the author's historical checkpoint.
