@@ -22,3 +22,14 @@ historical records and link them to this protocol; do not rewrite their claims.
 
 See also: [R3 fan-out lockstep procedures and lessons](R3_FANOUT_LOCKSTEP_PROCEDURES_AND_LESSONS_2026-10-10.md)
 (2026-10-10 addendum; this record is unchanged otherwise).
+
+Current qualification: `R3_REGISTRY_REPLAY_REVIEW_2026-10-10.md` records exact
+published heads, both candidate profile digests, immutable canonical-docs CI
+binding and replay limits. The baseline registry and production Core `04759a5`
+remain unchanged. Candidate evidence must never silently promote production.
+
+Complete current two-pair procedure and artifact matrix:
+`LOCKSTEP_COMPLETE_CHECKLIST_2026-10-10.md`. Detailed agent assessment:
+`LOCKSTEP_PROCESS_RETROSPECTIVE_2026-10-10.md`. Publish these through the
+operator-named PT #432 stack, with #433 targeting `docs/r3-lockstep-memory`;
+preserve both PRs, both histories, original lessons and the additive #433 delta.

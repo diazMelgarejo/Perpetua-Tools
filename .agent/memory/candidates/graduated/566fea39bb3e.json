@@ -1,0 +1,40 @@
+{
+  "id": "566fea39bb3e",
+  "key": "manual_566fea",
+  "name": "manual_566fea",
+  "claim": "Human approval to implement a bridge is not a durable authorization grant for future tools, and import allowlisting does not contain provider network effects.",
+  "conditions": [
+    "Pydantic AI bridge",
+    "durable HITL",
+    "provider effects"
+  ],
+  "evidence_ids": [
+    "2026-10-09T23:44:17.148324+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-09T23:44:17.148324+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-09T23:44:17.148324+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-09T23:44:17.255602+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The operator approved D-LG-4 Phase 1; the current bridge still lacks durable scoped expiring single-use approval and production mediated transport. Pending requests cannot be autoapproved merely because implementation was authorized.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-09T23:44:17.148324+00:00"
+      ],
+      "lessons_sha": "ba70703acf1f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-09T23:44:17.255586+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The operator approved D-LG-4 Phase 1; the current bridge still lacks durable scoped expiring single-use approval and production mediated transport. Pending requests cannot be autoapproved merely because implementation was authorized."
+}
