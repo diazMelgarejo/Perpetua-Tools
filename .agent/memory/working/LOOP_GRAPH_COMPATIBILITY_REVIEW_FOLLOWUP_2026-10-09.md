@@ -79,3 +79,26 @@ are evidence from the earlier session, not a fresh run in the resumed session.
 The resumed shell stalled, including simple echo commands, so publication used
 GitHub git-data operations with explicit base-tree, file-content and
 parent-preservation checks. No merge, force update or branch deletion occurred.
+
+
+## Final nitpick closure and exact-head evidence
+
+The broader review also covered review-body nitpicks. Dynamic-import lint now
+resolves literal concatenation and literal-only f-strings; unresolved arguments
+produce an explicit review finding instead of silently disappearing. The
+test-first Core commit observed four expected failures on both interpreters
+before the fix. Scanner contracts remain synchronized across Core and Oramasys.
+
+- Final Core head: `b9b44775633c393ed709176a9bb1332014ab9320`. Python 3.11/3.12:
+  184 passed and 1 optional-framework module skipped each; 87.88% coverage.
+- Final Oramasys head: `1669fe6bfbc93c9e0017dea9a364856bc2d37208`. Python 3.11/3.12 real
+  offline oracle matrix: 283 passed each; regular CI passed.
+- Orama's active prototype evidence test now uses pytest and is explicitly
+  invoked by CI. Historical attachments remain unchanged.
+
+Read the [immutable final coordination handoff](https://github.com/diazMelgarejo/orama-system/blob/e2fad9e7c84ef65696e35a429456e55d8f5633cd/docs/v2/references/loop-graph-compatibility-2026-10-09/FOLLOWUP-VERIFICATION-AND-HANDOFF.md)
+before applying or replaying any older patches. Earlier follow-up heads and
+counts above describe intermediate snapshots; this section supersedes them.
+The current Core oracle candidate is test-only. Merge and production-pin
+promotion remain separate operator decisions. Durable HITL and full replacement
+compatibility remain unfinished capabilities.
