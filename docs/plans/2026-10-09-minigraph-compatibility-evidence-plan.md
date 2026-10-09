@@ -4,7 +4,7 @@
 **Cross-repository authority:** `orama-system/docs/v2/57-minigraph-final-reconciliation.md`
 
 **Revision 3 canonical corrections:**
-[Orama execution index](https://github.com/diazMelgarejo/orama-system/blob/docs/loop-graph-compatibility-r3/docs/v2/references/loop-graph-compatibility-2026-10-09/README.md).
+[Orama execution index](https://github.com/diazMelgarejo/orama-system/blob/main/docs/v2/references/loop-graph-compatibility-2026-10-09/README.md).
 These records are in the coordinated open Orama PR branch, not yet merged.
 Original rev2 documents and ADRs are preserved there; PT does not fork them.
 
@@ -99,7 +99,7 @@ not authorize Pydantic AI runtime adoption or dependencies from v1 into v2.
 
 ## Resolved enforcement and HITL policy
 
-The canonical [new durable approval/refusal contract](https://github.com/diazMelgarejo/orama-system/blob/docs/loop-graph-compatibility-r3/docs/v2/references/2026-10-09-compatibility-refusal-hitl-contract.md)
+The canonical [new durable approval/refusal contract](https://github.com/diazMelgarejo/orama-system/blob/main/docs/v2/references/2026-10-09-compatibility-refusal-hitl-contract.md)
 and revision 3 resolutions govern this section. The historical description below
 is an acceptance requirement, not an existing mechanism. Until the full durable
 vertical slice is implemented, overrides remain denied/pending.
@@ -139,7 +139,7 @@ or change v1 runtime behavior.
 ## Revision 4 approved implementation and evidence
 
 The earlier Phase-1 deferral is qualified by the operator's later approval.
-[Current execution record](https://github.com/diazMelgarejo/orama-system/blob/docs/loop-graph-compatibility-r3/docs/v2/references/loop-graph-compatibility-2026-10-09/EXECUTION-REVISION-4.md)
+[Current execution record](https://github.com/diazMelgarejo/orama-system/blob/main/docs/v2/references/loop-graph-compatibility-2026-10-09/EXECUTION-REVISION-4.md)
 records D-LG-1 policy binding and D-LG-4 offline bridges. No production provider
 effect, runtime dependency or deferred approval is thereby permitted.
 

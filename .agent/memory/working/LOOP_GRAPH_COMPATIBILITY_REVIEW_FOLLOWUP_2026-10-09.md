@@ -8,8 +8,8 @@ episodic rows or rendered lessons. It is not a newly graduated semantic lesson.
 ## Canonical records
 
 - [Orama revision 3 execution index](https://github.com/diazMelgarejo/orama-system/blob/19a81cdff1ef6031f5b31a1b982f6eb46fc84033/docs/v2/references/loop-graph-compatibility-2026-10-09/README.md)
-- [Current resolutions](https://github.com/diazMelgarejo/orama-system/blob/docs/loop-graph-compatibility-r3/docs/v2/references/loop-graph-compatibility-2026-10-09/REVISION-3-RESOLUTIONS.md)
-- [New durable refusal/HITL contract](https://github.com/diazMelgarejo/orama-system/blob/docs/loop-graph-compatibility-r3/docs/v2/references/2026-10-09-compatibility-refusal-hitl-contract.md)
+- [Current resolutions](https://github.com/diazMelgarejo/orama-system/blob/main/docs/v2/references/loop-graph-compatibility-2026-10-09/REVISION-3-RESOLUTIONS.md)
+- [New durable refusal/HITL contract](https://github.com/diazMelgarejo/orama-system/blob/main/docs/v2/references/2026-10-09-compatibility-refusal-hitl-contract.md)
 - [PT evidence plan](../../../../docs/plans/2026-10-09-minigraph-compatibility-evidence-plan.md)
 
 GitHub links now use PR branches; their original revision 3 publication-target
