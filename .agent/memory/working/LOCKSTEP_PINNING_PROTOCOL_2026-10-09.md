@@ -19,3 +19,6 @@ review-fix SHAs, merge order, and the next promotion or rollback action.
 
 This record qualifies earlier incomplete lockstep descriptions. Preserve those
 historical records and link them to this protocol; do not rewrite their claims.
+
+See also: [R3 fan-out lockstep procedures and lessons](R3_FANOUT_LOCKSTEP_PROCEDURES_AND_LESSONS_2026-10-10.md)
+(2026-10-10 addendum; this record is unchanged otherwise).
