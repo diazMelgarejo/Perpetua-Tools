@@ -76,6 +76,46 @@ changed conclusions; preserve earlier lessons and their dates.
 Before declaring a row complete, run the corresponding Orama acceptance gate,
 attach PT evidence, and request review.
 
+## Coordinated lockstep pinning protocol
+
+Use this protocol whenever a change crosses either coordinated pair. A pin is a
+statement about the exact artifact tested; it is never a moving branch name or
+a substitute for compatibility evidence.
+
+| Pair | Pin and source of truth | What every coordinated commit updates | Promotion rule |
+| --- | --- | --- | --- |
+| Perpetua-Tools ↔ Orama-System (v1) | Exact peer commit SHA and the versioned shared contract or fixture digest named by the change. PT remains the v1 canonical implementation; Orama records its independent consumer-side evidence. | Both PR descriptions and the coordination handoff name the peer SHA, contract/fixture digest, affected authority, test command and outcome. PT appends the evidence and lesson when the work changes a reusable method. Orama updates the active `docs/v2` decision/reference when design or cross-repository claims change. Matching contracts, reference links and acceptance results are checked in both trees. | Promote only after both peer revisions are published, their pairwise contract/acceptance gates pass, and the recorded SHAs and digests identify the exact tested trees. Neither v1 repository gains a dependency on v2. |
+| Perpetua Core ↔ Oramasys (v2) | Core's immutable commit SHA is the candidate pin. Oramasys carries it in a test-only oracle/overlay pin until Core merges; the production dependency pin remains at the last merged, validated Core revision. Graph policy binds to the structural `graph_id`, not to a branch name. | A Core change updates its tests, supported-surface matrix and compatibility evidence. The Oramasys companion update changes the oracle candidate SHA, oracle lock/environment evidence, graph-policy binding if structure changes, and real-framework/conformance results. PT appends the exact SHA, interpreter, lock/environment digest, commands and outcome; Orama updates the active design and release-gate references. | Merge Core first. Then replace the Oramasys production pin with the immutable merged Core SHA, rerun the complete Oramasys suite plus the relevant oracle matrix, record the new result, and only then treat the production pin as promoted. |
+
+For both pairs, every update follows the same sequence:
+
+1. Freeze the exact peer heads and record them before testing. Use a commit SHA,
+   never a branch label, in evidence, candidate overlays and review replies.
+2. Update both sides of the contract: implementation or fixture, tests, public
+   references, and the coordination handoff. If the change has no peer-side
+   effect, record that negative conclusion with the comparison performed.
+3. Run the local gate on each affected tree and the cross-repository gate that
+   consumes the pinned peer. Record interpreter, dependency/lock digest,
+   command, raw outcome and any supported normalization.
+4. Publish normal parent-preserving commits. Verify remote heads and trees,
+   attach exact fixing SHAs to review replies, and wait for CI at those heads.
+5. Update PT append-only memory with reusable method changes and link earlier
+   records by qualification rather than editing their claims. Update the active
+   Orama `docs/v2` record when the governing decision, ownership or release
+   gate changes.
+6. Promote a production pin only after the upstream artifact is merged and the
+   downstream full suite passes against that immutable merged artifact. A
+   candidate overlay, passing unit test, or passing branch CI does not promote
+   a production pin.
+
+The handoff for a coordinated change must therefore contain: both repository
+and commit identities; the pinned artifact and its role (candidate or
+production); contract, fixture and policy digests; changed files by authority;
+commands and results; CI URLs/status; review-thread SHAs; merge order; and the
+next promotion or rollback action. Preserve prior handoffs as historical
+snapshots and append a dated qualification when later evidence changes their
+status.
+
 ## User clarification and historical reconciliation
 
 On 2026-10-09 the user confirmed complete external LangChain/LangGraph API parity
