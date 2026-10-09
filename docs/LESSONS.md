@@ -103,3 +103,20 @@ When a blocked gate later passes, append a dated status section to the unmerged 
 merging text you know is stale, and keep concrete identifiers in the private runbook. A verifier
 must mirror the applier it guards: Wrangler applies every migration file in the directory, not
 only the journaled ones. Tracked UI error handling must keep the Site's own error text visible.
+
+## 2026-10-09 — Loop/graph revision 4: evidence before compatibility claims
+
+Use the existing one-scheduler architecture and keep structural graph hashes in
+Core; bind independently versioned application policy above it. An approval
+of an offline interoperability slice is not production provider authorization.
+
+The order test must force a different completion order and reject a mutant.
+Framework absence, unsupported symbols and broken transitive imports need
+different Python-native outcomes. A skipped optional test is not a parity pass.
+Test native installation separately from pinned real upstream oracle cells.
+
+Preserve historical cutoffs, source archive bytes and accepted memory rows.
+Four new graduated lessons and the earlier records they qualify are indexed in
+[the memory closure](../.agent/memory/working/LOOP_GRAPH_REVISION4_CLOSURE_2026-10-09.md).
+Commit logical batches; publish each branch once with exact expected-head checks.
+Latest review replies and handoffs must identify fixing SHAs, not assume merges.
