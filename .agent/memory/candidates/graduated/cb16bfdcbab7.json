@@ -1,0 +1,42 @@
+{
+  "id": "cb16bfdcbab7",
+  "key": "manual_cb16bf",
+  "name": "manual_cb16bf",
+  "claim": "Optional framework compatibility needs Python-native gap errors: ModuleNotFoundError with name for unsupported modules, AttributeError for unsupported attributes, and explicit explain diagnostics when from-import replaces the reason. A finder returning None permits fallthrough; importorskip can hide a real gap. Broken installed transitive imports must propagate, never silently enable fallback.",
+  "conditions": [
+    "compatibility",
+    "feature-detection",
+    "framework-free",
+    "importorskip",
+    "imports"
+  ],
+  "evidence_ids": [
+    "2026-10-09T11:55:11.883289+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-09T11:55:11.883289+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-09T11:55:11.883289+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-09T11:55:12.009796+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Real temporary installed-module and pytest importorskip tests in Oramasys #23 distinguish absence, unsupported symbols and broken dependencies. The no-eager-import lint checks exact typing branches, eager defaults, live lazy allowlists, all-module import tripwires and published dependency metadata. Both framework-free and pinned real-framework environments passed the relevant contracts on Python 3.12.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-09T11:55:11.883289+00:00"
+      ],
+      "lessons_sha": "ff044b921df1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-09T11:55:12.009780+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Real temporary installed-module and pytest importorskip tests in Oramasys #23 distinguish absence, unsupported symbols and broken dependencies. The no-eager-import lint checks exact typing branches, eager defaults, live lazy allowlists, all-module import tripwires and published dependency metadata. Both framework-free and pinned real-framework environments passed the relevant contracts on Python 3.12."
+}

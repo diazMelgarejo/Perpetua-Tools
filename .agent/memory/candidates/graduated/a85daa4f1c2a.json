@@ -1,0 +1,42 @@
+{
+  "id": "a85daa4f1c2a",
+  "key": "manual_a85daa",
+  "name": "manual_a85daa",
+  "claim": "Extend lesson_9c4f8a7d21be and lesson_c8e4d29b7f31: the approved D-LG-1 split keeps structural GraphSpec, graph_id and structural lint in Core; Oramasys owns an independently hashed graph_id-bound policy and application summary. D-LG-4 Phase 1 permits explicit graph-as-tool and offline agent-as-node bridges, not a framework dependency or production egress. Durable approvals and R3/R4 remain gated.",
+  "conditions": [
+    "compatibility",
+    "graph-policy",
+    "minigraph",
+    "ownership",
+    "pydantic-ai"
+  ],
+  "evidence_ids": [
+    "2026-10-09T11:55:11.668386+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-09T11:55:11.668386+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-09T11:55:11.668386+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-09T11:55:11.824736+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The 2026-10-09 operator approved the separate policy file/transclusion and bounded Phase 1. Orama PR #388 records active D-LG-1/D-LG-4; Core #8 and Oramasys #23 test the split. This qualifies ownership/runtime wording only, preserving prior one-scheduler, mutation and observer provenance. Policy lint is not admission, and provider-capable agents remain untrusted effects.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-09T11:55:11.668386+00:00"
+      ],
+      "lessons_sha": "d053b44ed390"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-09T11:55:11.824718+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The 2026-10-09 operator approved the separate policy file/transclusion and bounded Phase 1. Orama PR #388 records active D-LG-1/D-LG-4; Core #8 and Oramasys #23 test the split. This qualifies ownership/runtime wording only, preserving prior one-scheduler, mutation and observer provenance. Policy lint is not admission, and provider-capable agents remain untrusted effects."
+}

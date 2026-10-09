@@ -1,17 +1,19 @@
 # Loop/graph final review — append-only follow-up
 
-**Date:** 2026-10-09 UTC. **State:** local implementation, publication pending.
+**Date:** 2026-10-09 UTC. **Historical cutoff:** revision 3 local verification,
+before PR publication. Current qualification is appended below.
 This new record qualifies earlier research without editing accepted candidates,
 episodic rows or rendered lessons. It is not a newly graduated semantic lesson.
 
 ## Canonical records
 
-- [Orama revision 3 execution index](https://github.com/diazMelgarejo/orama-system/blob/main/docs/v2/references/loop-graph-compatibility-2026-10-09/README.md)
-- [Current resolutions](https://github.com/diazMelgarejo/orama-system/blob/main/docs/v2/references/loop-graph-compatibility-2026-10-09/REVISION-3-RESOLUTIONS.md)
-- [New durable refusal/HITL contract](https://github.com/diazMelgarejo/orama-system/blob/main/docs/v2/references/2026-10-09-compatibility-refusal-hitl-contract.md)
+- [Orama revision 3 execution index](https://github.com/diazMelgarejo/orama-system/blob/docs/loop-graph-compatibility-r3/docs/v2/references/loop-graph-compatibility-2026-10-09/README.md)
+- [Current resolutions](https://github.com/diazMelgarejo/orama-system/blob/docs/loop-graph-compatibility-r3/docs/v2/references/loop-graph-compatibility-2026-10-09/REVISION-3-RESOLUTIONS.md)
+- [New durable refusal/HITL contract](https://github.com/diazMelgarejo/orama-system/blob/docs/loop-graph-compatibility-r3/docs/v2/references/2026-10-09-compatibility-refusal-hitl-contract.md)
 - [PT evidence plan](../../../../docs/plans/2026-10-09-minigraph-compatibility-evidence-plan.md)
 
-GitHub links are intended publication locations, not proof of landing. Full
+GitHub links now use PR branches; their original revision 3 publication-target
+claim described the historical cutoff, not current merge state. Full
 original archive members are preserved byte-for-byte in Orama's history folder.
 
 ## Lessons from the review
@@ -44,3 +46,13 @@ replacement binding and bridges belong in `oramasys/oramasys`; existing adapters
 stay in Core. Agate/Phylax/Telos remain sole policy owners. All parity is best
 effort under enforcement. No override, dependency pin, force-push or merge was
 performed as part of this local repair.
+
+## Later resolution — revision 4
+
+The earlier local/publication-pending state is the revision 3 cutoff.
+The operator later approved D-LG-1's separate policy/transclusion and D-LG-4
+Phase 1. Core and Oramasys now have tested bounded implementation in their
+existing PRs. Production effects and durable approvals remain gated.
+See [the closure record](LOOP_GRAPH_REVISION4_CLOSURE_2026-10-09.md) for the
+memory lineage, durable lessons, tests and current next actions.
+No historical candidate or episodic/semantic row was edited in place.
