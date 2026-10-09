@@ -7,7 +7,7 @@ episodic rows or rendered lessons. It is not a newly graduated semantic lesson.
 
 ## Canonical records
 
-- [Orama revision 3 execution index](https://github.com/diazMelgarejo/orama-system/blob/docs/loop-graph-compatibility-r3/docs/v2/references/loop-graph-compatibility-2026-10-09/README.md)
+- [Orama revision 3 execution index](https://github.com/diazMelgarejo/orama-system/blob/19a81cdff1ef6031f5b31a1b982f6eb46fc84033/docs/v2/references/loop-graph-compatibility-2026-10-09/README.md)
 - [Current resolutions](https://github.com/diazMelgarejo/orama-system/blob/docs/loop-graph-compatibility-r3/docs/v2/references/loop-graph-compatibility-2026-10-09/REVISION-3-RESOLUTIONS.md)
 - [New durable refusal/HITL contract](https://github.com/diazMelgarejo/orama-system/blob/docs/loop-graph-compatibility-r3/docs/v2/references/2026-10-09-compatibility-refusal-hitl-contract.md)
 - [PT evidence plan](../../../../docs/plans/2026-10-09-minigraph-compatibility-evidence-plan.md)
@@ -56,3 +56,26 @@ existing PRs. Production effects and durable approvals remain gated.
 See [the closure record](LOOP_GRAPH_REVISION4_CLOSURE_2026-10-09.md) for the
 memory lineage, durable lessons, tests and current next actions.
 No historical candidate or episodic/semantic row was edited in place.
+
+
+## Later resolution — authorized follow-up publication
+
+On 2026-10-09 UTC the operator authorized subsequent corrective patches and
+publication until this review batch is complete. The prior one-update limit no
+longer blocks follow-up repairs; merge approval remains separate.
+
+- Core #8 follow-up: `82ce99190e25f9e06513c0fd47326eba4a6ab802`. Advisory routing declarations
+  no longer restrict valid native nodes or END. Import contracts match framework
+  families and preserve independent lookalikes.
+- Oramasys #23 follow-up: `172231848efc6d2b7a6182716010756cc9b44fe6`. The isolated oracle snapshot
+  includes editables 0.5, graph tools diagnose a missing output, and the oracle
+  candidate pins the new Core commit. Real routing regressions cover declared,
+  undeclared and terminal destinations.
+
+The revision 3 index above is now immutable and identifies the historical
+cutoff accurately. Earlier append-only lesson and candidate records remain
+unchanged. Fresh CI must be assessed at these exact heads; prior local results
+are evidence from the earlier session, not a fresh run in the resumed session.
+The resumed shell stalled, including simple echo commands, so publication used
+GitHub git-data operations with explicit base-tree, file-content and
+parent-preservation checks. No merge, force update or branch deletion occurred.
