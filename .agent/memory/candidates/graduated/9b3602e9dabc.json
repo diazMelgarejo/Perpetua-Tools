@@ -1,0 +1,40 @@
+{
+  "id": "9b3602e9dabc",
+  "key": "manual_9b3602",
+  "name": "manual_9b3602",
+  "claim": "Use GitHub REST to reply to review comments with applicable pull-request write permission; resolve or unresolve threads through GraphQL resolveReviewThread/unresolveReviewThread or a verified connector, and use the UI when that capability is unavailable. A prior contents-write-only token failed REST replies with 403 while GraphQL resolution succeeded; that is historical scoped evidence, not a universal bypass or proof of a REST resolution route. Fetch independent refs so a missing ref cannot silently suppress publication, rebuild missing test environments with their extras and verify imported module paths, lint prose, and triage rate-limit/own-reply/green notices without inventing findings.",
+  "conditions": [
+    "GitHub review threads",
+    "lockstep review",
+    "token permissions"
+  ],
+  "evidence_ids": [
+    "2026-10-09T23:57:57.260445+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-09T23:57:57.260445+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-09T23:57:57.260445+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-09T23:58:28.209937+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Review 5476411379 is valid: GitHub REST documents replies, while thread resolution is GraphQL. Official docs verified on 2026-10-10 Asia/Manila. Preserve original graduated candidate and historical JSONL rows; supersede unsupported REST resolution guidance. Historical lesson_c2cfa44e28df is token-specific evidence, not a universal permission promise.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-09T23:57:57.260445+00:00"
+      ],
+      "lessons_sha": "7927ca7577c5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-09T23:58:28.209920+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Review 5476411379 is valid: GitHub REST documents replies, while thread resolution is GraphQL. Official docs verified on 2026-10-10 Asia/Manila. Preserve original graduated candidate and historical JSONL rows; supersede unsupported REST resolution guidance. Historical lesson_c2cfa44e28df is token-specific evidence, not a universal permission promise."
+}

@@ -60,11 +60,25 @@ in one PR failed when the other PR added those fields to code. Resolve by
 flipping the registry entries in the same reviewed step, or by profile-qualified
 registry files, never by weakening the gate.
 
-### 4. Review-thread handling without GraphQL
+### 4. Review replies and thread resolution: corrected procedure
 
-Use the REST API only. Reply with the comment replies endpoint. Resolve and
-unresolve threads through the host's review-thread routes, not GraphQL. A bot
-that marks a finding "addressed in <sha>" needs no further action.
+GitHub REST supports review-comment replies with the applicable pull-request
+write permission. Resolving and unresolving threads use the GraphQL mutations
+`resolveReviewThread` and `unresolveReviewThread`, or a connector verified to
+perform those operations. GitHub does not document REST thread-resolution routes.
+If GraphQL/connector capability is unavailable, resolve the thread in the GitHub
+UI; do not claim a REST-only session completed that step.
+
+Historical lesson `lesson_c2cfa44e28df` records one contents-write-only token:
+REST replies returned 403, while GraphQL resolution succeeded. That scoped
+observation is not a universal permission guarantee or an authorization bypass.
+No host-specific REST resolution route was verified. A bot's addressed notice
+does not substitute for checking the actual thread and fixing head.
+
+This corrects review 5476411379. The original graduated candidate and historical
+JSONL rows remain intact; a tool-graduated replacement supersedes the wrong lesson.
+Sources: [REST review-comment replies](https://docs.github.com/en/rest/pulls/comments#create-a-reply-for-a-review-comment)
+and [GraphQL review threads](https://docs.github.com/en/graphql/reference/pulls#resolvereviewthread).
 
 ### 5. Notification triage
 
