@@ -102,3 +102,25 @@ counts above describe intermediate snapshots; this section supersedes them.
 The current Core oracle candidate is test-only. Merge and production-pin
 promotion remain separate operator decisions. Durable HITL and full replacement
 compatibility remain unfinished capabilities.
+
+## Budget stop and portable gap errors (later follow-up)
+
+A review of the final heads found two Oramasys defects that the counts above
+did not expose, both fixed in Oramasys `d938dac` and recorded in Orama
+`9dfe070`:
+
+- On `UsageLimitExceeded`, `as_node` returned an error delta, so downstream
+  nodes (including effect nodes) still ran and the run ended `done`. It now
+  raises Core's structural `Interrupt` with reason `budget_exhausted` and
+  `resumable: false`.
+- The gap error classes could not be unpickled; they now rebuild from their
+  constructor arguments.
+
+Both new tests fail on `1669fe6`. Local Python 3.12 against Core candidate
+`b9b4477`: oracle environment 284 passed, framework-free suite 271 passed.
+Core needed no further change.
+
+Lesson: a green count does not prove behaviour. The budget bug survived 283
+passing tests because its test had no node after the agent. Add the
+adversarial shape (a node after the stop, an undeclared route) before trusting
+a suite.
