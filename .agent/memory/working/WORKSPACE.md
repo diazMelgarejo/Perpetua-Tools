@@ -1,5 +1,13 @@
 # WORKSPACE — current task state
 
+**Updated:** 2026-10-09 UTC / 2026-10-10 Asia/Manila (R3 registry and replay review)
+**Session record:** `memory/working/R3_REGISTRY_REPLAY_REVIEW_2026-10-10.md`
+**State:** Core #9, Orama #390 and Oramasys #25 review fixes published. Core
+production pin remains `04759a5`. Two explicit candidate registry profiles qualify
+both consumer CI lanes. Durable replay, HITL, production foreign transport and
+full upstream replacement remain open; do not treat this audit as their closure.
+PT's new memory-only follow-up is separate from merged PT #431.
+
 **Updated:** 2026-10-06 (Sites saga crystallization)
 **Session record:** `memory/working/ORAMASYS_SITES_SAGA_CRYSTALLIZATION_2026-09-10_TO_2026-10-06.md`
 **State:** PT #429 remains the active leaf for canonical-memory review repairs.

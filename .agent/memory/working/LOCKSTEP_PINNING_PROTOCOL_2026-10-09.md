@@ -19,3 +19,8 @@ review-fix SHAs, merge order, and the next promotion or rollback action.
 
 This record qualifies earlier incomplete lockstep descriptions. Preserve those
 historical records and link them to this protocol; do not rewrite their claims.
+
+Current qualification: `R3_REGISTRY_REPLAY_REVIEW_2026-10-10.md` records exact
+published heads, both candidate profile digests, immutable canonical-docs CI
+binding and replay limits. The baseline registry and production Core `04759a5`
+remain unchanged. Candidate evidence must never silently promote production.
