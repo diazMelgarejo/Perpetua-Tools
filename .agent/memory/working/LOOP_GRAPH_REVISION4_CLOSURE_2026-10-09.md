@@ -61,7 +61,7 @@ in the final handoff/PR comments, not guessed here.
 
 ## Authority and next actions
 
-[Current Orama decisions](https://github.com/diazMelgarejo/orama-system/blob/docs/loop-graph-compatibility-r3/docs/v2/references/loop-graph-compatibility-2026-10-09/EXECUTION-REVISION-4.md).
+[Current Orama decisions](https://github.com/diazMelgarejo/orama-system/blob/main/docs/v2/references/loop-graph-compatibility-2026-10-09/EXECUTION-REVISION-4.md).
 Approved: D-LG-1 separate graph_id-bound policy with summary; D-LG-4 offline Phase 1.
 Not approved/complete: broad replacement, durable grants, production foreign
 provider egress, reducers/joins, durable resume/effect reconciliation, v0.x
