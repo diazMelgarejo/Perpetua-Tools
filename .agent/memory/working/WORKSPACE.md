@@ -273,7 +273,8 @@ Env must be User-level for scheduled tasks — `.env.local` not loaded by coord_
 
 ## Next
 
-- [x] P0 Core-pin requalification in Oramasys: ACTIVATED 2026-10-10 (see top entry). Was next after the completed R4
+- [x] P0 Core-pin requalification in Oramasys: ACTIVATED 2026-10-10 (see top entry).
+      Was next after the completed R4
       ratification and T0 restoration/baseline refresh. Then take independently
       reviewed T1/T2 and T3 slices. Approval does not waive any safety gate or
       authorize provider effects.
