@@ -1,5 +1,16 @@
 # WORKSPACE — current task state
 
+**Updated:** 2026-10-10 UTC (R4 documentation merged)
+**Source:** Orama PR #392 merged to main as `bccc152`; PT PR #432 merged to main as `8cdd492`.
+**State:** The R4 reference set, its T0 restoration/baseline record and the PT continuity
+memory are merged. The T0 record's restoration source `662a360b` was not resolvable
+from the remote at review; its hash table is exact only at the restoration commit
+`2fd1e0a`, and later review edits to `PLAN-R4-EXECUTION.md` and `REVIEW-RECORD.md` are not
+reflected in it. A draft P0 plan exists, unpublished, awaiting three operator decisions
+(pin target, file location, evidence record shape). The production Oramasys dependency
+remains pre-R3 Core `04759a5`; P0 is still open and gated. No pin, registry or code
+change has been made.
+
 **Updated:** 2026-10-10 UTC (R4 ratification and T0 restoration)
 **Source:** Orama PR #392, `docs/v2/references/r4-safety-compatibility-platform-2026-10-10/`
 **State:** The operator ratified D-LG-7, its named contracts and D-LG-6 (with
