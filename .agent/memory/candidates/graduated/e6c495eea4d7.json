@@ -1,0 +1,42 @@
+{
+  "id": "e6c495eea4d7",
+  "key": "manual_e6c495",
+  "name": "manual_e6c495",
+  "claim": "Treat a PR-stack handoff as time-bounded evidence: verify the live PR state and head immediately before reuse or publication; when a stacked follow-up has merged into its base branch, record it as historical integration rather than as an open lane, and correct the working handoff additively.",
+  "conditions": [
+    "append-only",
+    "continuity",
+    "handoff",
+    "live-metadata",
+    "pr-stack"
+  ],
+  "evidence_ids": [
+    "2026-10-10T05:36:16.872203+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-10T05:36:16.872203+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-10T05:36:16.872203+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-10T05:36:34.385967+00:00",
+      "action": "graduated",
+      "reviewer": "codex",
+      "notes": "Live GitHub metadata confirms that PT #433 merged into PT #432's branch. This replaces only the stale operational instruction to keep #433 open; historical evidence remains intact.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-10T05:36:16.872203+00:00"
+      ],
+      "lessons_sha": "e26480bf0f2f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-10T05:36:34.385953+00:00",
+  "reviewer": "codex",
+  "rationale": "Live GitHub metadata confirms that PT #433 merged into PT #432's branch. This replaces only the stale operational instruction to keep #433 open; historical evidence remains intact."
+}

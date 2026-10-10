@@ -1,0 +1,42 @@
+{
+  "id": "9fa998db1361",
+  "key": "manual_9fa998",
+  "name": "manual_9fa998",
+  "claim": "For recovery publication, construct and verify the complete target tree before an atomic non-force ref update; then fetch the remote head and compare its full tree and restored-file hashes to the verified local commit.",
+  "conditions": [
+    "github",
+    "publish",
+    "ref",
+    "tree",
+    "verification"
+  ],
+  "evidence_ids": [
+    "2026-10-10T05:48:31.362634+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-10T05:48:31.362634+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-10T05:48:31.362634+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-10T05:48:40.517713+00:00",
+      "action": "graduated",
+      "reviewer": "Codex AFRP Type C Practitioner Mode 2",
+      "notes": "The R4 recovery publication requires a complete-tree, compare-and-swap, and post-publication verification gate; retaining this procedure prevents future partial browser or API publications.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-10T05:48:31.362634+00:00"
+      ],
+      "lessons_sha": "2831a662ea01"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-10T05:48:40.517691+00:00",
+  "reviewer": "Codex AFRP Type C Practitioner Mode 2",
+  "rationale": "The R4 recovery publication requires a complete-tree, compare-and-swap, and post-publication verification gate; retaining this procedure prevents future partial browser or API publications."
+}

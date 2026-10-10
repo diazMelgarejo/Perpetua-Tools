@@ -1,0 +1,42 @@
+{
+  "id": "7ae63fd72d22",
+  "key": "manual_7ae63f",
+  "name": "manual_7ae63f",
+  "claim": "Treat a known-good local commit as canonical recovery evidence: restore the affected tracked paths exactly, compare each restored blob to the source commit, and put any new explanation in a separate append-only record.",
+  "conditions": [
+    "browser",
+    "commit",
+    "integrity",
+    "publication",
+    "restoration"
+  ],
+  "evidence_ids": [
+    "2026-10-10T05:48:31.323090+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-10T05:48:31.323090+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-10T05:48:31.323090+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-10T05:48:40.387756+00:00",
+      "action": "graduated",
+      "reviewer": "Codex AFRP Type C Practitioner Mode 2",
+      "notes": "The R4 recovery exposed and resolved a real truncation failure: 13 documented paths were restored byte-for-byte from the canonical local commit, while the recovery explanation remains separately append-only.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-10T05:48:31.323090+00:00"
+      ],
+      "lessons_sha": "72344f48ece6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-10T05:48:40.387742+00:00",
+  "reviewer": "Codex AFRP Type C Practitioner Mode 2",
+  "rationale": "The R4 recovery exposed and resolved a real truncation failure: 13 documented paths were restored byte-for-byte from the canonical local commit, while the recovery explanation remains separately append-only."
+}
