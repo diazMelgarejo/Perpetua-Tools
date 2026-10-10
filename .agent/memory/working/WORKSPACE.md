@@ -1,5 +1,28 @@
 # WORKSPACE — current task state
 
+**Updated:** 2026-10-10 UTC (R4 ratification and T0 restoration)
+**Source:** Orama PR #392, `docs/v2/references/r4-safety-compatibility-platform-2026-10-10/`
+**State:** The operator ratified D-LG-7, its named contracts and D-LG-6 (with
+Core #9 `4d217f6` and Oramasys #25 `f4dbf33` as implementation evidence). T0
+restored the full R4 reference set from Orama commit `662a360` after a browser
+publication truncated ten documents, and refreshed the canonical registry baseline.
+The production Oramasys dependency remains pre-R3 Core `04759a5`; P0 must still
+requalify and promote that pin. R3 mechanics are merged, but `ainvoke(loaded_state)`
+still begins traversal at `START`; it is not durable continuation. Durable HITL,
+foreign-provider transport and provider effects remain gated. The backward-clock
+high-water rule is fail-closed and its trusted-time recovery procedure is frozen at T0.
+
+**Updated:** 2026-10-09 UTC / 2026-10-10 Asia/Manila (R3 registry and replay review)
+**Session record:** `memory/working/R3_REGISTRY_REPLAY_REVIEW_2026-10-10.md`
+**State:** Core #9, Orama #390 and Oramasys #25 review fixes published. Core
+production pin remains `04759a5`. Two explicit candidate registry profiles qualify
+both consumer CI lanes. Durable replay, HITL, production foreign transport and
+full upstream replacement remain open; do not treat this audit as their closure.
+PT #432 remains the base memory PR, separate from merged PT #431. PT #433 merged into
+`docs/r3-lockstep-memory` on 2026-10-09 UTC; its procedures and retrospective are
+therefore part of #432's current history, not an open follow-up. No wider feature
+completion is claimed.
+
 **Updated:** 2026-10-06 (Sites saga crystallization)
 **Session record:** `memory/working/ORAMASYS_SITES_SAGA_CRYSTALLIZATION_2026-09-10_TO_2026-10-06.md`
 **State:** PT #429 remains the active leaf for canonical-memory review repairs.
@@ -228,6 +251,10 @@ Env must be User-level for scheduled tasks — `.env.local` not loaded by coord_
 
 ## Next
 
+- [ ] P0 Core-pin requalification in Oramasys remains next after the completed R4
+      ratification and T0 restoration/baseline refresh. Then take independently
+      reviewed T1/T2 and T3 slices. Approval does not waive any safety gate or
+      authorize provider effects.
 - [ ] Operator review/merge orama Hermes graft branches (Wave 0 taxonomy +
       Wave 1–2 envelope — both **done, pending review**, not released)
 - [ ] Push orama `2026-08-05-002-hermes-graft-plan-reference-fix` + open/update

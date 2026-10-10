@@ -1,0 +1,40 @@
+{
+  "id": "0bc38d2086e0",
+  "key": "manual_0bc38d",
+  "name": "manual_0bc38d",
+  "claim": "Qualify candidate runtime contracts in explicit immutable profiles without promoting the production dependency or rewriting baseline evidence.",
+  "conditions": [
+    "candidate promotion",
+    "lockstep pinning",
+    "ownership registry"
+  ],
+  "evidence_ids": [
+    "2026-10-09T23:33:48.497141+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-09T23:33:48.497141+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-09T23:33:48.497141+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-09T23:33:48.619305+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Oramasys R3 policy tests need schema-1 and schema-2 contracts simultaneously. Canonical profiles are byte-identical and digest-pinned; CI checks an immutable Orama revision while Core production remains 04759a5.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-09T23:33:48.497141+00:00"
+      ],
+      "lessons_sha": "73a69a5eb3fd"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-09T23:33:48.619288+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Oramasys R3 policy tests need schema-1 and schema-2 contracts simultaneously. Canonical profiles are byte-identical and digest-pinned; CI checks an immutable Orama revision while Core production remains 04759a5."
+}

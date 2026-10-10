@@ -1,0 +1,40 @@
+{
+  "id": "c34edb4dfae3",
+  "key": "manual_c34edb",
+  "name": "manual_c34edb",
+  "claim": "Broad drop-in compatibility claims require a finite versioned inventory of observable API and runtime contracts; offline oracle passes qualify only their tested cells.",
+  "conditions": [
+    "compatibility claims",
+    "oracle inventory",
+    "upstream replacement"
+  ],
+  "evidence_ids": [
+    "2026-10-09T23:44:16.994703+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-09T23:44:16.994703+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-09T23:44:16.994703+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-09T23:44:17.094976+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Real LangGraph 1.0.3, LangChain Core 1.0.7 and Pydantic AI slim 1.0.18 cells passed, while R3 fanout export, type identity, native checkpoint replay and other surfaces remain incomplete. The operator goal remains broader than this bounded review.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-09T23:44:16.994703+00:00"
+      ],
+      "lessons_sha": "f805ddd2c8ea"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-09T23:44:17.094958+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Real LangGraph 1.0.3, LangChain Core 1.0.7 and Pydantic AI slim 1.0.18 cells passed, while R3 fanout export, type identity, native checkpoint replay and other surfaces remain incomplete. The operator goal remains broader than this bounded review."
+}

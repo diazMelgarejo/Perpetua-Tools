@@ -1,0 +1,42 @@
+{
+  "id": "3eb4165ae12b",
+  "key": "manual_3eb416",
+  "name": "manual_3eb416",
+  "claim": "Disjoint file lists do not prove two PRs are independent: merge both into a scratch branch and run the cross-cutting conformance, registry and snapshot tests before reporting no conflict; a planned-field gate fails any code that ships the field early, so flip the registry in the same reviewed step or qualify the registry by profile.",
+  "conditions": [
+    "candidate-pin",
+    "fan-out",
+    "lockstep",
+    "registry",
+    "review"
+  ],
+  "evidence_ids": [
+    "2026-10-09T23:35:44.879982+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-09T23:35:44.879982+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-09T23:35:44.879982+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-09T23:35:45.033020+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "R3 fan-out lockstep stack, 2026-10-10; see working/R3_FANOUT_LOCKSTEP_PROCEDURES_AND_LESSONS_2026-10-10.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-09T23:35:44.879982+00:00"
+      ],
+      "lessons_sha": "220652ec1341"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-09T23:35:45.032998+00:00",
+  "reviewer": "learn.py",
+  "rationale": "R3 fan-out lockstep stack, 2026-10-10; see working/R3_FANOUT_LOCKSTEP_PROCEDURES_AND_LESSONS_2026-10-10.md"
+}
