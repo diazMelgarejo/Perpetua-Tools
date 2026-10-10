@@ -1,5 +1,16 @@
 # WORKSPACE — current task state
 
+**Updated:** 2026-10-10 UTC (P0 ACTIVATED — correction)
+**Source:** Orama closure PR #396 (`P0-ACTIVATED-CLOSURE-2026-10-10.md`, receipt 4);
+Oramasys #26 and #27 merged; Orama #394 and #395 merged.
+**State:** Corrects the entries below that call the P0 plan unpublished and the
+Oramasys dependency pre-R3. The P0 plan is published and executed. Oramasys `main`
+(`fa6e1e37`) pins Core `4d217f6b9e94e36554a9427198b8c2c4b7febc47`, with a manifest,
+a clean-install verifier and a result-file gate; the eight checks passed on that
+commit. Orama `main` is `792f4744` plus the closure. P0 is ACTIVATED. Still open
+for the operator: branch protection requiring the eight checks, and the action-pinning
+decision on Oramasys #27. T1 and later stay gated; the entries below are history.
+
 **Updated:** 2026-10-10 UTC (R4 documentation merged)
 **Source:** Orama PR #392 merged to main as `bccc152`; PT PR #432 merged to main as `8cdd492`.
 **State:** The R4 reference set, its T0 restoration/baseline record and the PT continuity
@@ -262,7 +273,8 @@ Env must be User-level for scheduled tasks — `.env.local` not loaded by coord_
 
 ## Next
 
-- [ ] P0 Core-pin requalification in Oramasys remains next after the completed R4
+- [x] P0 Core-pin requalification in Oramasys: ACTIVATED 2026-10-10 (see top entry).
+      Was next after the completed R4
       ratification and T0 restoration/baseline refresh. Then take independently
       reviewed T1/T2 and T3 slices. Approval does not waive any safety gate or
       authorize provider effects.
