@@ -1,0 +1,47 @@
+{
+  "id": "e2da550c3737",
+  "key": "manual_e2da55",
+  "name": "manual_e2da55",
+  "claim": "Never push directly to a canonical origin/main branch; treat it as operator-gated and route work through a feature branch and pull request",
+  "conditions": [
+    "401",
+    "branch-protection",
+    "gh_token",
+    "github",
+    "main",
+    "merge-freeze",
+    "operator-gate",
+    "origin",
+    "pull-request",
+    "push"
+  ],
+  "evidence_ids": [
+    "2026-10-12T20:04:47.611560+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-12T20:04:47.611560+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-12T20:04:47.611560+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-12T20:04:47.758959+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Canonical main branches are branch-protected and require a human or designated-reviewer merge; a direct push fails auth and violates the merge freeze. Stale GH_TOKEN environment overrides also surface as HTTP 401 even when real credentials exist.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-12T20:04:47.611560+00:00"
+      ],
+      "lessons_sha": "0ac6bd170ebe"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-12T20:04:47.758946+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Canonical main branches are branch-protected and require a human or designated-reviewer merge; a direct push fails auth and violates the merge freeze. Stale GH_TOKEN environment overrides also surface as HTTP 401 even when real credentials exist."
+}

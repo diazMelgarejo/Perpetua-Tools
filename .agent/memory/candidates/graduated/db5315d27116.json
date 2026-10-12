@@ -1,0 +1,44 @@
+{
+  "id": "db5315d27116",
+  "key": "manual_db5315",
+  "name": "manual_db5315",
+  "claim": "Do not place backticked code spans inside double-quoted GossipBus log payloads; use single quotes or a heredoc",
+  "conditions": [
+    "agent_note",
+    "backtick",
+    "command-substitution",
+    "gossip-bus",
+    "log",
+    "quoting",
+    "shell-hygiene"
+  ],
+  "evidence_ids": [
+    "2026-10-12T20:04:48.732740+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-12T20:04:48.732740+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-12T20:04:48.732740+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-12T20:04:48.864881+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "zsh and bash perform command substitution on backticks inside double quotes, deleting the intended text before the bus stores it; single-quoted or heredoc payloads preserve the literal message.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-12T20:04:48.732740+00:00"
+      ],
+      "lessons_sha": "103e596d2ebd"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-12T20:04:48.864867+00:00",
+  "reviewer": "learn.py",
+  "rationale": "zsh and bash perform command substitution on backticks inside double quotes, deleting the intended text before the bus stores it; single-quoted or heredoc payloads preserve the literal message."
+}
