@@ -1,5 +1,17 @@
 # WORKSPACE — current task state
 
+**Updated:** 2026-10-12 UTC (AlphaClaw bind lesson provenance remediation)
+**Session record:** `memory/working/ALPHACLAW_BIND_HOST_PROVENANCE_2026-09-28.md`
+**State:** The accepted AlphaClaw loopback-bind lesson
+[`lesson_1bbee93ff11e`](../semantic/LESSONS.md) retains its original September 28,
+2026 timestamps and evidence ID. The evidence ID now resolves to one explicitly
+labeled reconstructed episodic provenance record, appended during the October 12
+audit integration after direct verification of local AlphaClaw branch
+`subagent/mac-orchestrator/alphaclaw-bind-host`, commit
+`55d06572b2ebb9f9a5350eead962ba97db43d6b4`. The source branch remains local-only
+and is not contained in `main`, `origin/main`, or `upstream/main`; this is evidence
+of the implementation, not a claim that it was merged or published.
+
 **Updated:** 2026-10-10 UTC (P0 ACTIVATED — correction)
 **Source:** Orama closure PR #396 (`P0-ACTIVATED-CLOSURE-2026-10-10.md`, receipt 4);
 Oramasys #26 and #27 merged; Orama #394 and #395 merged.
