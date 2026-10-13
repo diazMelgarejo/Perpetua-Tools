@@ -221,7 +221,10 @@ patches apply to, the commands you ran and their results, and what you could not
 offline. The operator or an online agent applies with `git am` and publishes.
 
 **Rules for the outbox:**
-- Patches must apply cleanly to the base SHA you name; run `git am --check` first.
+- Validate the series by applying it, not with `git am --check` (that option does not
+  exist; `--check` belongs to `git apply`). Create a disposable worktree at the base SHA
+  you name (`git worktree add --detach <tmp-dir> <base-sha>`), run `git am` over the whole
+  series there, then discard the worktree. Put the base SHA in your board row.
 - One concern per patch series. Do not mix review fixes with new work.
 - Do not edit another agent's PR branch directly; propose it as a patch.
 
@@ -264,11 +267,18 @@ must fail. Restore afterwards.
 
 ## 8. Environment gotchas (each cost a debugging round)
 
-- **`env -u GITHUB_TOKEN`** before `gh`/`git push`: a stale token in the user environment file shadows the
-  working keyring credential. Never print or edit the secrets file.
-- **The autoresearch hook blocks `git push --force` and `git reset --hard`** by text. Use a
-  merge instead of a rebase, and `git update-ref` + `git read-tree --reset -u HEAD` to back
-  out. Do not word around the hook for a genuinely destructive command.
+- **Check `GH_TOKEN` and `GITHUB_TOKEN`** before `gh`/`git push` auth failures: `gh` reads
+  `GH_TOKEN` first, so unsetting only `GITHUB_TOKEN` can leave the stale one in place. Unset
+  whichever shadows the keyring credential, per command (`env -u <VAR> ...`). Git uses
+  `GITHUB_TOKEN` only when its credential helper (for example one installed by
+  `gh auth setup-git`) reads it. Never print or edit the secrets file.
+- **The autoresearch hook blocks `git push --force` and `git reset --hard`** by text. Treat
+  that as a stop sign, not an obstacle. Prefer a merge over a rebase so no force-push is
+  needed and the push is a plain fast-forward. Do not reach for lower-level commands
+  (`git update-ref`, `git read-tree --reset`) to get the same effect: they can discard
+  uncommitted or untracked work with no prompt and they sidestep the guard. If local state
+  must genuinely be discarded, run `git status` first, preserve anything uncommitted (a WIP
+  branch, or `git stash push -u -m <unique-tag>`), and get the operator's approval.
 - **Another hook blocks paths containing "log"** (for example a log directory under the OpenClaw state directory). Use other
   temp names.
 - **zsh traps:** never name a variable `path` (tied to `$PATH`); write `"${ref}:src/f.py"`
