@@ -16,6 +16,7 @@ import subprocess
 import sys
 from collections.abc import Callable
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 
@@ -26,7 +27,7 @@ KEY = "owner_name"
 VALUE = "SamplePlaceholder"
 
 
-def _load(name: str, path: Path):
+def _load(name: str, path: Path) -> ModuleType:
     """Import a script module by path without requiring it to be a package."""
     sys.path.insert(0, str(path.parent))
     try:
@@ -54,7 +55,7 @@ def _repo_hygiene(root: Path) -> list[str]:
 def _shell(root: Path) -> list[str]:
     """Resolve the key through the shell library the pre-commit scanners source."""
     result = subprocess.run(
-        ["bash", "-c", f'source "{LIB}"; list_private_literal_values "$1" "$2"', "_", str(root), KEY],
+        ["bash", "-c", 'source "$1"; list_private_literal_values "$2" "$3"', "_", str(LIB), str(root), KEY],
         capture_output=True, text=True, check=False,
     )
     return [line for line in result.stdout.splitlines() if line]
@@ -97,6 +98,20 @@ def test_registry_is_found_through_openclaw_root_when_there_is_no_ancestor(
     workspace = _workspace(tmp_path, "workspace")
     checkout = _outside_tree(tmp_path)
     monkeypatch.setenv("OPENCLAW_ROOT", str(workspace))
+
+    assert resolve(checkout) == [VALUE], label
+
+
+@pytest.mark.parametrize(("label", "resolve"), IMPLEMENTATIONS)
+def test_a_home_relative_openclaw_root_is_expanded(
+    label: str, resolve: Callable[[Path], list[str]], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """``~/workspace`` resolves the same way in Python and shell, never as a literal ``~``."""
+    home = tmp_path / "home"
+    _workspace(home, "workspace")
+    checkout = _outside_tree(tmp_path)
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("OPENCLAW_ROOT", "~/workspace")
 
     assert resolve(checkout) == [VALUE], label
 
