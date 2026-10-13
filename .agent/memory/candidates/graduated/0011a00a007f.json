@@ -1,0 +1,44 @@
+{
+  "id": "0011a00a007f",
+  "key": "manual_0011a0",
+  "name": "manual_0011a0",
+  "claim": "A review comment that flags a date as wrong may be a timezone artefact: an entry accepted at 20:00 UTC is already the next calendar day in UTC+8. When recording dates for an operator in UTC+8, state the UTC date with the local equivalent and record the audit time in both zones, instead of choosing one zone and being corrected by whichever zone the reviewer reads.",
+  "conditions": [
+    "audit",
+    "date",
+    "pht",
+    "provenance",
+    "review",
+    "timezone",
+    "utc"
+  ],
+  "evidence_ids": [
+    "2026-10-13T23:01:11.015488+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T23:01:11.015488+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T23:01:11.015488+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T23:01:11.143708+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit review on orama-system PR 404, 2026-10-14 (PHT): flagged a provenance range ending 2026-10-14 against a ledger entry dated 2026-10-13; lesson_24b4facd84d9 was accepted 2026-10-13T20:00:58Z which is 2026-10-14 04:00 PHT. The operator asked for both UTC and Philippine time of the audit.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T23:01:11.015488+00:00"
+      ],
+      "lessons_sha": "7ed15e98d422"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T23:01:11.143696+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit review on orama-system PR 404, 2026-10-14 (PHT): flagged a provenance range ending 2026-10-14 against a ledger entry dated 2026-10-13; lesson_24b4facd84d9 was accepted 2026-10-13T20:00:58Z which is 2026-10-14 04:00 PHT. The operator asked for both UTC and Philippine time of the audit."
+}

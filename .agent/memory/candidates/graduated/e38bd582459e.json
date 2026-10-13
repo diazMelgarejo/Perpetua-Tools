@@ -1,0 +1,43 @@
+{
+  "id": "e38bd582459e",
+  "key": "manual_e38bd5",
+  "name": "manual_e38bd5",
+  "claim": "Do not claim a milestone from a feature PRs green checks alone: qualify the final merged, immutable pins with fresh-install, compatibility-cell, and crash-recovery evidence, keep capability-dependent tests in explicit bands, and issue a dated receipt only after the full matrix is complete.",
+  "conditions": [
+    "capability-band",
+    "crash-recovery",
+    "fresh-install",
+    "milestone",
+    "qualification",
+    "receipt"
+  ],
+  "evidence_ids": [
+    "2026-10-13T19:49:44.227891+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T19:49:44.227891+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T19:49:44.227891+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T19:49:44.343177+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "T2/M1 review: PR #36 test cells are valuable prerequisite evidence, but they do not replace the outstanding production-install, final-pin compatibility, and crash-recovery qualification. The production Core pin lacks start markers, so the start-seam tests must be collected only in the capability band that supports them; M1 remains unclaimed until the final receipt.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T19:49:44.227891+00:00"
+      ],
+      "lessons_sha": "c587727cc2ab"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T19:49:44.343157+00:00",
+  "reviewer": "learn.py",
+  "rationale": "T2/M1 review: PR #36 test cells are valuable prerequisite evidence, but they do not replace the outstanding production-install, final-pin compatibility, and crash-recovery qualification. The production Core pin lacks start markers, so the start-seam tests must be collected only in the capability band that supports them; M1 remains unclaimed until the final receipt."
+}

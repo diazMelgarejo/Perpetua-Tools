@@ -1,0 +1,42 @@
+{
+  "id": "217dff5197f5",
+  "key": "manual_217dff",
+  "name": "manual_217dff",
+  "claim": "git -C <repo> worktree add <relative-path> resolves the relative path against <repo>, not the shell cwd, so the worktree is silently created inside the repo checkout; pass an absolute path and confirm git status of the repo is clean afterwards.",
+  "conditions": [
+    "git",
+    "git-C",
+    "relative-path",
+    "shell-hygiene",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-10-13T19:05:02.157544+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T19:05:02.157544+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T19:05:02.157544+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T19:05:02.284775+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Two worktrees landed inside the Core and Oramasys checkouts instead of the shared worktree hub. Detected only because the next cd failed; removed with git worktree remove and recreated with absolute paths.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T19:05:02.157544+00:00"
+      ],
+      "lessons_sha": "1d9aaf68b8a3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T19:05:02.284765+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Two worktrees landed inside the Core and Oramasys checkouts instead of the shared worktree hub. Detected only because the next cd failed; removed with git worktree remove and recreated with absolute paths."
+}

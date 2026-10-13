@@ -101,6 +101,19 @@ openclaw_workspace_root() {
     fi
     cur="$(dirname "$cur")"
   done
+  # A worktree outside the OpenClaw tree has no such ancestor. OPENCLAW_ROOT is the
+  # exported pointer to the workspace: fall back to it, only when the registry really is
+  # there, so a local gate is not silently weaker than CI. An ancestor still wins.
+  # A home-relative pointer is expanded as the Python resolvers do (Path.expanduser).
+  local pointer="${OPENCLAW_ROOT:-}"
+  case "$pointer" in
+    "~") pointer="$HOME" ;;
+    "~/"*) pointer="$HOME/${pointer#\~/}" ;;
+  esac
+  if [[ -n "$pointer" && -f "$pointer/.verboten-literals.local" ]]; then
+    printf '%s' "$pointer"
+    return 0
+  fi
   printf '%s' "$root"
 }
 

@@ -1,0 +1,44 @@
+{
+  "id": "fc1b75188281",
+  "key": "manual_fc1b75",
+  "name": "manual_fc1b75",
+  "claim": "A ruleset with strict_required_status_checks_policy requires the PR head to be current with its base: mergeStateStatus BEHIND with mergeable MERGEABLE is not a conflict. Prove it locally first (git merge-tree for textual conflicts, then the suites on the merged tree for semantic ones), then update the branch server-side without force and wait for the required checks on the new head before merging. UNSTABLE with only non-required checks pending is still mergeable.",
+  "conditions": [
+    "behind",
+    "github",
+    "merge-tree",
+    "mergeable",
+    "ruleset",
+    "strict-status-checks",
+    "update-branch"
+  ],
+  "evidence_ids": [
+    "2026-10-13T23:01:11.433091+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T23:01:11.433091+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T23:01:11.433091+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T23:01:11.563604+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "oramasys PR 36, 2026-10-14: reported as a merge conflict, it was BEHIND by three commits touching two unrelated test files; merge-tree was clean and 726 tests passed on the merged tree; gh pr update-branch plus 10 required checks was the whole fix.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T23:01:11.433091+00:00"
+      ],
+      "lessons_sha": "d0d9bc7c9c8e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T23:01:11.563594+00:00",
+  "reviewer": "learn.py",
+  "rationale": "oramasys PR 36, 2026-10-14: reported as a merge conflict, it was BEHIND by three commits touching two unrelated test files; merge-tree was clean and 726 tests passed on the merged tree; gh pr update-branch plus 10 required checks was the whole fix."
+}

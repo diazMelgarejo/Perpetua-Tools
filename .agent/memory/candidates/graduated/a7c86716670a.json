@@ -1,0 +1,42 @@
+{
+  "id": "a7c86716670a",
+  "key": "manual_a7c867",
+  "name": "manual_a7c867",
+  "claim": "Prefer an existing, version-compatible extensibility seam over a parallel convenience API: prove the seam works at every pinned version, compare its isolation and failure semantics, and reject a new hook if it weakens state isolation or forces an unnecessary release.",
+  "conditions": [
+    "core-extension",
+    "existing-seam",
+    "pinned-version",
+    "plugin-runner",
+    "state-isolation"
+  ],
+  "evidence_ids": [
+    "2026-10-13T19:49:43.640946+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T19:49:43.640946+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T19:49:43.640946+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T19:49:43.773969+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "T2 delivery review, 2026-10-14: Core run_with_plugins(delivery=, gate=) and DurableStartGate already existed at the production pin and later Core revisions. A proposed ainvoke(delivery=) seam duplicated that transport, forced a pin change, and allowed listener mutations to leak into final graph state in a scratch comparison.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T19:49:43.640946+00:00"
+      ],
+      "lessons_sha": "8b815ac62c53"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T19:49:43.773952+00:00",
+  "reviewer": "learn.py",
+  "rationale": "T2 delivery review, 2026-10-14: Core run_with_plugins(delivery=, gate=) and DurableStartGate already existed at the production pin and later Core revisions. A proposed ainvoke(delivery=) seam duplicated that transport, forced a pin change, and allowed listener mutations to leak into final graph state in a scratch comparison."
+}

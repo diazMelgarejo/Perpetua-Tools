@@ -1,0 +1,43 @@
+{
+  "id": "bc8a328bb7ea",
+  "key": "manual_bc8a32",
+  "name": "manual_bc8a32",
+  "claim": "Touching a legacy file pulls its accumulated lint and literal-gate debt into your commit, because the hooks lint the whole staged file and not only the diff. Fix the file in the same commit (rewrap, blank lines around fences, make private-range literals symbolic) and say so in the commit message. Do not bypass the hook and do not drop the change.",
+  "conditions": [
+    "commit",
+    "hooks",
+    "legacy-file",
+    "lint",
+    "literal-gate",
+    "staged-file"
+  ],
+  "evidence_ids": [
+    "2026-10-13T23:01:11.224726+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T23:01:11.224726+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T23:01:11.224726+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T23:01:11.352170+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama-system PR 404, 2026-10-14: a three-line edit to docs/wiki/06-multi-agent-collab.md was blocked by 17 markdown-lint errors and then by two private-literal findings that predated the edit; both fixed in the same commit.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T23:01:11.224726+00:00"
+      ],
+      "lessons_sha": "8389fbdacb85"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T23:01:11.352159+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama-system PR 404, 2026-10-14: a three-line edit to docs/wiki/06-multi-agent-collab.md was blocked by 17 markdown-lint errors and then by two private-literal findings that predated the edit; both fixed in the same commit."
+}

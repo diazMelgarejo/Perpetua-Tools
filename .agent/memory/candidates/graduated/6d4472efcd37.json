@@ -1,0 +1,43 @@
+{
+  "id": "6d4472efcd37",
+  "key": "manual_6d4472",
+  "name": "manual_6d4472",
+  "claim": "A repo hygiene gate that finds its forbidden-fragment registry by walking up to a directory containing a sibling checkout silently runs with zero tokens in any worktree outside that tree, so local commit hooks pass while CI, which injects the registry, fails; set OPENCLAW_VERBOTEN_LITERALS (all three loaders honor it) or run the gate with it set, and reproduce CI locally before pushing tracked memory.",
+  "conditions": [
+    "ci-parity",
+    "hygiene-gate",
+    "local-vs-ci",
+    "silent-false-pass",
+    "verboten-registry",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-10-13T19:20:28.423011+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T19:20:28.423011+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T19:20:28.423011+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T19:20:28.560630+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT PR 441, 2026-10-14: a working-memory hand-off passed every local gate, then CI rejected it for a workspace path form. The registry loader resolves its file by looking for an ancestor holding a sibling orama-system directory, which worktrees in the shared hub do not have, so the local gate had no tokens at all. The gate also stops at the first hit per file, so the first reported line is not the only one. Reproduced exactly by pointing the repo's own gate at the registry, which prints only file and line, so no fragment was read or echoed. The same lookup is duplicated in three places (a Python core, the audit engine and a shell library), two of them guard-synced, so a code fix must be a lockstep pair.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T19:20:28.423011+00:00"
+      ],
+      "lessons_sha": "f0f0811a91c4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T19:20:28.560618+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT PR 441, 2026-10-14: a working-memory hand-off passed every local gate, then CI rejected it for a workspace path form. The registry loader resolves its file by looking for an ancestor holding a sibling orama-system directory, which worktrees in the shared hub do not have, so the local gate had no tokens at all. The gate also stops at the first hit per file, so the first reported line is not the only one. Reproduced exactly by pointing the repo's own gate at the registry, which prints only file and line, so no fragment was read or echoed. The same lookup is duplicated in three places (a Python core, the audit engine and a shell library), two of them guard-synced, so a code fix must be a lockstep pair."
+}

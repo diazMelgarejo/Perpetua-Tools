@@ -1,0 +1,42 @@
+{
+  "id": "9fd72be1baa7",
+  "key": "manual_9fd72b",
+  "name": "manual_9fd72b",
+  "claim": "git fetch origin upstream does not fetch the upstream remote: with two arguments the second is a refspec asked of origin, so it looks for a branch named upstream on origin. A script that then resets to upstream/main uses a stale or missing target. Fetch each remote explicitly (git fetch origin; git fetch upstream), and capture the target SHA after the fetch.",
+  "conditions": [
+    "fork-main",
+    "git-fetch",
+    "refspec",
+    "remotes",
+    "upstream"
+  ],
+  "evidence_ids": [
+    "2026-10-13T22:55:48.423474+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T22:55:48.423474+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T22:55:48.423474+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T22:55:48.551348+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Found 2026-10-14 in orama-system scripts/periscope/rebuild-deps-prs-onto-merged.sh while gating its re-point of main to upstream/main; the line read git fetch origin upstream --prune. Fixed in orama-system PR 404.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T22:55:48.423474+00:00"
+      ],
+      "lessons_sha": "0e9eab5b4d74"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T22:55:48.551340+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Found 2026-10-14 in orama-system scripts/periscope/rebuild-deps-prs-onto-merged.sh while gating its re-point of main to upstream/main; the line read git fetch origin upstream --prune. Fixed in orama-system PR 404."
+}

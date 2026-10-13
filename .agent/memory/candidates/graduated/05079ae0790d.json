@@ -1,0 +1,44 @@
+{
+  "id": "05079ae0790d",
+  "key": "manual_05079a",
+  "name": "manual_05079a",
+  "claim": "A component's shutdown can return normally with its health tripped: a thread that outlived the grace period is reported, not raised. A caller that only guards shutdown raising will then record a finished run as completed. After quiescing on the success path, require the delivery to be healthy and otherwise record an unknown terminal with a delivery-specific reason (delivery.shutdown_incomplete) rather than completed.",
+  "conditions": [
+    "completed",
+    "delivery",
+    "health",
+    "runner",
+    "shutdown",
+    "terminal-outcome",
+    "unknown"
+  ],
+  "evidence_ids": [
+    "2026-10-13T23:01:11.854145+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T23:01:11.854145+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T23:01:11.854145+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T23:01:11.980557+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit review 5509741432 on oramasys PR 36, 2026-10-14: valid once shutdown began waiting for threads; runner-level test with a real observer and a runs_off_loop sink that outlives the grace period failed with DID NOT RAISE before the fix.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T23:01:11.854145+00:00"
+      ],
+      "lessons_sha": "feaaab16307c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T23:01:11.980545+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit review 5509741432 on oramasys PR 36, 2026-10-14: valid once shutdown began waiting for threads; runner-level test with a real observer and a runs_off_loop sink that outlives the grace period failed with DID NOT RAISE before the fix."
+}

@@ -1,0 +1,44 @@
+{
+  "id": "8efd05953754",
+  "key": "manual_8efd05",
+  "name": "manual_8efd05",
+  "claim": "The destructive-command safety hook matches the literal command text anywhere in a Bash call: inside a heredoc, a quoted python string, a grep pattern or a commit-message body, not only in the command that executes. Refines lesson_85ed00727240. When a document or script legitimately has to contain the text of a hard reset or a lease push, create or edit it with the Edit or Write tools (the hook watches Bash only), phrase searches as a regex that does not spell the literal, and word commit messages as hard reset. Never obfuscate the command to evade the hook; the block is a stop sign for the destructive action itself.",
+  "conditions": [
+    "autoresearch",
+    "commit-message",
+    "edit-tool",
+    "heredoc",
+    "hook",
+    "literal-match",
+    "write-tool"
+  ],
+  "evidence_ids": [
+    "2026-10-13T23:01:10.809208+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T23:01:10.809208+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T23:01:10.809208+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T23:01:10.934234+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Hit four times on 2026-10-14 in orama-system PR 404 work: a grep pattern, a python heredoc with a doc replacement, and a documentation example each blocked an otherwise harmless command. Refines lesson_85ed00727240 and lesson_87be43ee3c1d.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T23:01:10.809208+00:00"
+      ],
+      "lessons_sha": "6b930c0a4705"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T23:01:10.934225+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Hit four times on 2026-10-14 in orama-system PR 404 work: a grep pattern, a python heredoc with a doc replacement, and a documentation example each blocked an otherwise harmless command. Refines lesson_85ed00727240 and lesson_87be43ee3c1d."
+}

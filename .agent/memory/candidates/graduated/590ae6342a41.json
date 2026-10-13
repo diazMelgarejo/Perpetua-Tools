@@ -1,0 +1,42 @@
+{
+  "id": "590ae6342a41",
+  "key": "manual_590ae6",
+  "name": "manual_590ae6",
+  "claim": "Before moving a shared remote branch ref, prove every intended tree entry by comparing the remote-created blob SHA with the locally verified Git blob SHA, then use an expected-head compare-and-set update; a failed local reconstruction must leave the ref unchanged.",
+  "conditions": [
+    "blob-sha",
+    "compare-and-set",
+    "git-data",
+    "integrity",
+    "ref-update"
+  ],
+  "evidence_ids": [
+    "2026-10-13T20:08:04.270346+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T20:08:04.270346+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T20:08:04.270346+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T20:08:04.394681+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "ChatGPT Work/Codex GitHub update, 2026-10-14: a byte-level mismatch in reconstructed semantic memory was detected before the ref move because the candidate blob SHA did not equal git hash-object. The failed attempt created only unreachable objects; the PR branch stayed at its previous head.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T20:08:04.270346+00:00"
+      ],
+      "lessons_sha": "8fc8dca6ecf7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T20:08:04.394664+00:00",
+  "reviewer": "learn.py",
+  "rationale": "ChatGPT Work/Codex GitHub update, 2026-10-14: a byte-level mismatch in reconstructed semantic memory was detected before the ref move because the candidate blob SHA did not equal git hash-object. The failed attempt created only unreachable objects; the PR branch stayed at its previous head."
+}
