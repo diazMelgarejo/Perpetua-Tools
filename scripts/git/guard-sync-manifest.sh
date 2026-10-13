@@ -48,6 +48,7 @@ GUARD_SYNC_EXECUTABLES=(
   history-surgery-git.sh
   verify-pr-body-not-clobbered.sh
   scrub_dsstore.sh
+  check_markdown_lint.sh
 )
 
 # Non-executable policy/data files (mode 0644 when synced).
