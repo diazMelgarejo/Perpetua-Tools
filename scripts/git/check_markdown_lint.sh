@@ -7,7 +7,10 @@ set -uo pipefail
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT" || exit 1
 
-mapfile -t FILES < <(git diff --cached --name-only --diff-filter=ACMR -- '*.md')
+FILES=()
+while IFS= read -r f; do
+  [ -n "$f" ] && FILES+=("$f")
+done < <(git diff --cached --name-only --diff-filter=ACMR -- '*.md')
 [ "${#FILES[@]}" -eq 0 ] && exit 0
 
 if command -v markdownlint-cli2 >/dev/null 2>&1; then
