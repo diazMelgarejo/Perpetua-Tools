@@ -48,7 +48,8 @@
 - Clear a stale gbrain autopilot.lock only after verifying its recorded PID is dead and no sync or autopilot process is live, then run the sync in the background with a timeout guard  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_f4f941bc181b -->
 - Rebuild a code-review-graph index from the shell with uvx and local Ollama embeddings rather than assuming it is MCP-only  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_ddddf95f1a56 -->
 - Before fast-forwarding a shared canonical checkout, preserve its state with a named recovery branch and an untracked-inclusive stash  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_ebc4a3d6243e -->
-- Do not place backticked code spans inside double-quoted GossipBus log payloads; use single quotes or a heredoc  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_db5315d27116 -->
+- ~~Do not place backticked code spans inside double-quoted GossipBus log payloads; use single quotes or a heredoc~~  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_db5315d27116 superseded_by=lesson_dabd4071675e -->
+- Do not place backticked code spans inside double-quoted GossipBus log payloads; pass the payload from a QUOTED heredoc delimiter (<<'EOF') or single quotes. An unquoted delimiter (<<EOF) still performs command substitution, so it is not a safe alternative.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_dabd4071675e -->
 
 ### 2026-09
 

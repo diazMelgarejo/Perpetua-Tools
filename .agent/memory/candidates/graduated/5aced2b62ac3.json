@@ -41,5 +41,5 @@
   "rejection_count": 0,
   "accepted_at": "2026-10-12T20:04:47.989142+00:00",
   "reviewer": "learn.py",
-  "rationale": "A Supabase auto.conf or role/database default of transaction_read_only=on makes every INSERT fail regardless of gbrain state; fix with ALTER ROLE and ALTER DATABASE set default_transaction_read_only=off plus force_writable_session in config, then rerun the pinned-source sync."
+  "rationale": "A Supabase auto.conf or role/database default of transaction_read_only=on makes every INSERT fail regardless of gbrain state. First confirm the read-only default is accidental: a managed provider can set it deliberately (for example when the disk is nearly full), and then fixing the cause matters more than overriding it. Only then change the narrowest scope responsible (session, then role, then database) and set force_writable_session in config; rerun the pinned-source sync."
 }
