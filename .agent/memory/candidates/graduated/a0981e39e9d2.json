@@ -1,0 +1,44 @@
+{
+  "id": "a0981e39e9d2",
+  "key": "manual_a0981e",
+  "name": "manual_a0981e",
+  "claim": "Cancelling an asyncio task that awaits asyncio.to_thread or run_in_executor only stops the await: the thread keeps running and keeps holding its inputs. Accounting that releases a byte charge or queue slot in the awaiter's finally reports the resource free while it is in use. Shield the executor future, hand the release to its done-callback when the awaiter is cancelled, and make shutdown wait for outstanding thread calls inside its single deadline, reporting any that outlive it instead of presenting them as drained.",
+  "conditions": [
+    "accounting",
+    "asyncio",
+    "cancellation",
+    "run_in_executor",
+    "shutdown",
+    "thread",
+    "to_thread"
+  ],
+  "evidence_ids": [
+    "2026-10-13T23:01:11.646873+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T23:01:11.646873+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T23:01:11.646873+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T23:01:11.774713+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "oramasys PR 31 CodeRabbit Major, fixed in PR 36 on 2026-10-14: reproduced inflight bytes 367 to 0 while the thread was still running; four tests written first, red for the right reason.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T23:01:11.646873+00:00"
+      ],
+      "lessons_sha": "eb0b8d9bdd23"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T23:01:11.774701+00:00",
+  "reviewer": "learn.py",
+  "rationale": "oramasys PR 31 CodeRabbit Major, fixed in PR 36 on 2026-10-14: reproduced inflight bytes 367 to 0 while the thread was still running; four tests written first, red for the right reason."
+}

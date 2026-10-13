@@ -1,0 +1,43 @@
+{
+  "id": "fdcff1271292",
+  "key": "manual_fdcff1",
+  "name": "manual_fdcff1",
+  "claim": "Syncing an existing checkout to a remote branch should be a gated move, not a hard reset: refuse when the tree is dirty (untracked included) or when the move would leave a commit unreferenced, otherwise check the branch out at the exact target SHA with checkout -B. On a verified-clean tree that moves the branch and updates the files with no destructive command, and git itself refuses to overwrite anything. Return distinct refusal statuses (dirty, unpushed commits, cannot verify) so callers choose the policy; a boot-time caller should warn and leave the checkout untouched rather than die or erase.",
+  "conditions": [
+    "boot-safe",
+    "checkout-B",
+    "gate",
+    "hard-reset",
+    "mirror-sync",
+    "refuse-not-erase"
+  ],
+  "evidence_ids": [
+    "2026-10-13T23:01:10.593470+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T23:01:10.593470+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T23:01:10.593470+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T23:01:10.726241+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama-system PR 404, 2026-10-14: closed the clone_sibling gap in cloud-install.sh and gated the two fork-main scripts via lib-mirror-sync.sh; 36 tests against real bare repos. Grounded in lesson_fdb82283644f, lesson_881de77084d5, lesson_9fffe4530a95.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T23:01:10.593470+00:00"
+      ],
+      "lessons_sha": "932cfc9804bb"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T23:01:10.726226+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama-system PR 404, 2026-10-14: closed the clone_sibling gap in cloud-install.sh and gated the two fork-main scripts via lib-mirror-sync.sh; 36 tests against real bare repos. Grounded in lesson_fdb82283644f, lesson_881de77084d5, lesson_9fffe4530a95."
+}
