@@ -12,7 +12,11 @@ evidence timestamp, or September 28, 2026 acceptance date.
   `0.0.0.0` only in Docker or when `ALPHACLAW_BIND_HOST` is explicitly set.
 - **Candidate:** [`1bbee93ff11e`](../candidates/graduated/1bbee93ff11e.json)
 - **Original evidence ID / staged timestamp:** `2026-09-28T09:14:56.898944+00:00`
-- **Original acceptance timestamp:** `2026-09-28T09:14:57.155274+00:00`
+- **Acceptance timestamps (recorded in two places, which differ; both preserved unchanged):**
+  - Candidate `1bbee93ff11e.json` `accepted_at`: `2026-09-28T09:14:57.155274+00:00`
+  - Both `lesson_1bbee93ff11e` rows in `semantic/lessons.jsonl` `accepted_at`:
+    `2026-09-28T09:14:57.115805+00:00`
+  - The roughly 40 ms difference is historical. Neither record was rewritten.
 
 The preserved live episodic log and the available September 28 archive did not
 contain a row at the original evidence ID. They therefore could not prove the
