@@ -2,7 +2,7 @@
   "id": "94cbd6e80ee2",
   "key": "manual_94cbd6",
   "name": "manual_94cbd6",
-  "claim": "When 'gh'/'git push' auth fails with 'Invalid username or token', check for a stale env var matching the CLI's exact lookup name (GITHUB_TOKEN for gh/git) before assuming the stored credential is broken -- 'gh auth status' with that var unset reveals whether a working keyring-stored token is being shadowed; scope the fix to 'env -u GITHUB_TOKEN <cmd>' per-command rather than editing the secrets file that defines it.",
+  "claim": "When 'gh'/'git push' auth fails with 'Invalid username or token', check for a stale env var matching the CLI's exact lookup name (gh reads GH_TOKEN first, then GITHUB_TOKEN; Git uses GITHUB_TOKEN only when its configured credential helper, e.g. one installed by 'gh auth setup-git', reads it) before assuming the stored credential is broken -- check both GH_TOKEN and GITHUB_TOKEN, since GH_TOKEN takes precedence; 'gh auth status' with the shadowing var unset reveals whether a working keyring-stored token is being shadowed; scope the fix to 'env -u <shadowing var> <cmd>' (GH_TOKEN and/or GITHUB_TOKEN) per-command rather than editing the secrets file that defines it.",
   "conditions": [
     "credential-precedence",
     "env-var-shadowing",
@@ -27,7 +27,7 @@
       "ts": "2026-10-13T03:28:36.440095+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
-      "notes": "~/.env defines a stale/invalid GITHUB_TOKEN that gh CLI and git both check before their keyring-stored credential, so every push attempted 'normally' failed with 'Authentication failed', even though 'gh auth status' showed a valid, active diazMelgarejo keyring token underneath it. Same shape as the earlier GITHUB_PERSONAL_ACCESS_TOKEN-vs-CODEX_GITHUB_PERSONAL_ACCESS_TOKEN naming mismatch found this same session on the MCP github plugin: an env var with the exact name a tool checks silently overrides a working credential, and the fix is scoping/unsetting per-invocation, never guessing or rewriting the secrets file blind.",
+      "notes": "~/.env defines a stale/invalid GITHUB_TOKEN that gh CLI (and git, via a gh-installed credential helper) check before their keyring-stored credential, so every push attempted 'normally' failed with 'Authentication failed', even though 'gh auth status' showed a valid, active diazMelgarejo keyring token underneath it. Same shape as the earlier GITHUB_PERSONAL_ACCESS_TOKEN-vs-CODEX_GITHUB_PERSONAL_ACCESS_TOKEN naming mismatch found this same session on the MCP github plugin: an env var with the exact name a tool checks silently overrides a working credential, and the fix is scoping/unsetting per-invocation, never guessing or rewriting the secrets file blind.",
       "provisional": false,
       "evidence_snapshot": [
         "2026-10-13T03:28:36.312037+00:00"
@@ -38,5 +38,5 @@
   "rejection_count": 0,
   "accepted_at": "2026-10-13T03:28:36.440087+00:00",
   "reviewer": "learn.py",
-  "rationale": "~/.env defines a stale/invalid GITHUB_TOKEN that gh CLI and git both check before their keyring-stored credential, so every push attempted 'normally' failed with 'Authentication failed', even though 'gh auth status' showed a valid, active diazMelgarejo keyring token underneath it. Same shape as the earlier GITHUB_PERSONAL_ACCESS_TOKEN-vs-CODEX_GITHUB_PERSONAL_ACCESS_TOKEN naming mismatch found this same session on the MCP github plugin: an env var with the exact name a tool checks silently overrides a working credential, and the fix is scoping/unsetting per-invocation, never guessing or rewriting the secrets file blind."
+  "rationale": "~/.env defines a stale/invalid GITHUB_TOKEN that gh CLI (and git, via a gh-installed credential helper) check before their keyring-stored credential, so every push attempted 'normally' failed with 'Authentication failed', even though 'gh auth status' showed a valid, active diazMelgarejo keyring token underneath it. Same shape as the earlier GITHUB_PERSONAL_ACCESS_TOKEN-vs-CODEX_GITHUB_PERSONAL_ACCESS_TOKEN naming mismatch found this same session on the MCP github plugin: an env var with the exact name a tool checks silently overrides a working credential, and the fix is scoping/unsetting per-invocation, never guessing or rewriting the secrets file blind."
 }
