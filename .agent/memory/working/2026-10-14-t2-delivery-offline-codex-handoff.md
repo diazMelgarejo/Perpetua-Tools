@@ -7,6 +7,8 @@
 > **Snapshot:** verified live against GitHub and the local worktrees on 2026-10-14. Working
 > memory ages quickly: after any merge below, the PR table is stale. Re-verify with `gh`
 > before acting on a state claim.
+> **Paths:** `$WT_HUB` is the directory that holds the task worktrees. Its concrete value is
+> kept out of tracked files on purpose; the untracked original spells it out.
 > **Author:** claude-main, for the operator. **Board:** rows 4303-4337 hold the history.
 
 ---
@@ -124,7 +126,7 @@ the skills already state; nothing removed).
 
 ## 4. Local worktree map (all clean, 0 dirty)
 
-Hub: `~/code/oramasys/worktrees/`
+Hub: `$WT_HUB/`
 
 | Directory | Branch | Head | Use it for |
 | --- | --- | --- | --- |
@@ -136,10 +138,10 @@ Hub: `~/code/oramasys/worktrees/`
 | `2026-10-14-pt-t2-lessons` | `docs/t2-delivery-and-verification-lessons-20261014` | `911f9b17` | PR #441 |
 | `_outbox-codex-20261014/` | — | — | **Your deliverables go here** (§6) |
 
-Main checkouts (operator-owned; **do not edit**): `~/code/OpenClaw/orama-system`
+Main checkouts (operator-owned; **do not edit**): the orama-system main checkout
 (1 leftover change, `exa-mcp-daemon.py`, redundant since #400 merged),
-`~/code/OpenClaw/perplexity-api/Perpetua-Tools` (9 uncommitted lesson files, redundant
-since #440 merged — do not `git pull` over them), `~/code/oramasys/phylax` (a tracked
+the Perpetua-Tools main checkout (9 uncommitted lesson files, redundant
+since #440 merged — do not `git pull` over them), the phylax main checkout (a tracked
 `.DS_Store`).
 
 ---
@@ -178,8 +180,8 @@ Work in the matching worktree, commit locally, then export. Never push, never `g
 
 ```bash
 # in the worktree you changed (example: PR #36)
-cd "$HOME/code/oramasys/worktrees/t2-oramasys-main-20261014"
-OUT="$HOME/code/oramasys/worktrees/_outbox-codex-20261014"
+cd "$WT_HUB/t2-oramasys-main-20261014"
+OUT="$WT_HUB/_outbox-codex-20261014"
 git format-patch origin/feat/t2-admitted-observation-delivery-20261014..HEAD -o "$OUT/pr36"
 git bundle create "$OUT/pr36.bundle" origin/feat/t2-admitted-observation-delivery-20261014..HEAD
 ```
@@ -198,7 +200,7 @@ offline. The operator or an online agent applies with `git am` and publishes.
 ## 7. Reproduce the evidence offline
 
 ```bash
-H="$HOME/code/oramasys/worktrees"
+H="$WT_HUB"
 cd $H/t2-oramasys-main-20261014
 
 # The core_gate directory plus the observer-authority module, on both Core revisions.
@@ -232,12 +234,12 @@ must fail. Restore afterwards.
 
 ## 8. Environment gotchas (each cost a debugging round)
 
-- **`env -u GITHUB_TOKEN`** before `gh`/`git push`: a stale token in `~/.env` shadows the
+- **`env -u GITHUB_TOKEN`** before `gh`/`git push`: a stale token in the user environment file shadows the
   working keyring credential. Never print or edit the secrets file.
 - **The autoresearch hook blocks `git push --force` and `git reset --hard`** by text. Use a
   merge instead of a rebase, and `git update-ref` + `git read-tree --reset -u HEAD` to back
   out. Do not word around the hook for a genuinely destructive command.
-- **Another hook blocks paths containing "log"** (e.g. `~/.openclaw/log/...`). Use other
+- **Another hook blocks paths containing "log"** (for example a log directory under the OpenClaw state directory). Use other
   temp names.
 - **zsh traps:** never name a variable `path` (tied to `$PATH`); write `"${ref}:src/f.py"`
   not `"$ref:src/f.py"`; `git -C <repo> worktree add <relative>` resolves against the repo,
