@@ -1,0 +1,43 @@
+{
+  "id": "51791f8ae4a1",
+  "key": "manual_51791f",
+  "name": "manual_51791f",
+  "claim": "Treat an empty or omitted GitHub file-read payload for an oversized tracked file as unavailable data, not an empty file: do not rebuild from that response. Stream the verified local bytes instead and require the reconstructed remote blob SHA to equal the local Git object before publication.",
+  "conditions": [
+    "chatgpt-work",
+    "connector",
+    "fetch-file",
+    "oversized-file",
+    "remote-read",
+    "truncation"
+  ],
+  "evidence_ids": [
+    "2026-10-13T20:08:04.447731+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T20:08:04.447731+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T20:08:04.447731+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T20:08:04.560211+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "ChatGPT Work/Codex GitHub connector, 2026-10-14: fetch_file returned an empty base64 content field while still returning a SHA for the large semantic lessons JSONL. Reconstructing through unavailable endpoint text would silently truncate history; local-byte streaming retained the complete file.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T20:08:04.447731+00:00"
+      ],
+      "lessons_sha": "11993da5d130"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T20:08:04.560193+00:00",
+  "reviewer": "learn.py",
+  "rationale": "ChatGPT Work/Codex GitHub connector, 2026-10-14: fetch_file returned an empty base64 content field while still returning a SHA for the large semantic lessons JSONL. Reconstructing through unavailable endpoint text would silently truncate history; local-byte streaming retained the complete file."
+}
