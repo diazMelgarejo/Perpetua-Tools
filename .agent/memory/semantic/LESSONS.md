@@ -154,6 +154,7 @@
 - Orama swarm launch must dispatch the cached approved preview and send Perpetua top-level role, task_type, and metadata.model. Perpetua POST /models/route and POST /v1/jobs accept that shim. Do not add knowledge search, MCP, or A2A to Perpetua.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_8a6c4326be42 -->
 - For supervisor replay, reconstruct the new job from the original durable QUEUED event, admit only terminal predecessor states, and stamp the replayed record as caller_reported. This preserves provenance and observability; lineage labels are not authorization decisions.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_2517668c02a5 -->
 - A command-line parser must distinguish a missing option value from a supplied value rejected by validation, while preserving a single nonzero failure path and an actionable diagnostic.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_d5c812edd47c -->
+- AlphaClaw Express must default to loopback bind on bare metal; reserve 0.0.0.0 for Docker via runningInDocker() or ALPHACLAW_BIND_HOST, so macOS installs do not expose the setup UI to LAN.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_1bbee93ff11e -->
 
 ### 2026-08
 

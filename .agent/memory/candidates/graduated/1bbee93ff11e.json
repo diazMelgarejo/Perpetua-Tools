@@ -1,0 +1,64 @@
+{
+  "id": "1bbee93ff11e",
+  "key": "manual_1bbee9",
+  "name": "manual_1bbee9",
+  "claim": "AlphaClaw Express must default to loopback bind on bare metal; reserve 0.0.0.0 for Docker via runningInDocker() or ALPHACLAW_BIND_HOST, so macOS installs do not expose the setup UI to LAN.",
+  "conditions": [
+    "alphaclaw",
+    "alphaclaw_bind_host",
+    "bare",
+    "bind",
+    "default",
+    "docker",
+    "expose",
+    "express",
+    "installs",
+    "lan",
+    "loopback",
+    "macos",
+    "metal",
+    "reserve",
+    "runningindocker",
+    "setup",
+    "via"
+  ],
+  "evidence_ids": [
+    "2026-09-28T09:14:56.898944+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-09-28T09:14:56.898944+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-09-28T09:14:56.898944+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-09-28T09:14:57.155294+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Win peer finding F1 from win-finding-alphaclaw-bind-and-macos-gap.md; fixed on subagent/mac-orchestrator/alphaclaw-bind-host @ 55d06572.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-09-28T09:14:56.898944+00:00"
+      ],
+      "lessons_sha": "ff5098b6bb30"
+    },
+    {
+      "ts": "2026-10-12T11:24:45+00:00",
+      "action": "evidence-link-remediated",
+      "reviewer": "audit-integration",
+      "notes": "The original evidence timestamp was absent from the preserved live and September 28 archive logs. The audit integration appended a clearly labeled reconstructed episodic provenance record at the original timestamp after verifying the extant local AlphaClaw implementation: branch subagent/mac-orchestrator/alphaclaw-bind-host, commit 55d06572b2ebb9f9a5350eead962ba97db43d6b4 (2026-09-28T17:10:48+08:00). The source branch is local-only and is not contained in main, origin/main, or upstream/main.",
+      "evidence_snapshot": [
+        "2026-09-28T09:14:56.898944+00:00"
+      ],
+      "source_commit": "55d06572b2ebb9f9a5350eead962ba97db43d6b4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-09-28T09:14:57.155274+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Win peer finding F1 from win-finding-alphaclaw-bind-and-macos-gap.md; fixed on subagent/mac-orchestrator/alphaclaw-bind-host @ 55d06572. The originally referenced episodic timestamp was absent from preserved live and archived logs; the October 12 audit integration added a clearly labeled reconstruction linked to the independently verified local AlphaClaw commit rather than rewriting the historical lesson."
+}
