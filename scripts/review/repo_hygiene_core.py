@@ -387,9 +387,23 @@ def run_git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
 
 
 def openclaw_workspace_root(root: Path) -> Path:
+    """Return the workspace directory that holds the local-only literal registry.
+
+    The ancestor walk finds it for checkouts beneath the OpenClaw tree. A worktree kept
+    elsewhere has no such ancestor, which used to make the lookup miss the registry so
+    every local gate ran with no forbidden fragments and passed while CI, which injects
+    the registry, failed. ``OPENCLAW_ROOT`` is the exported pointer to the workspace, so
+    it is the fallback, used only when the walk finds nothing and only if the registry
+    file is really there. An ancestor, when found, still wins.
+    """
     for candidate in (root, *root.parents):
         if (candidate / "orama-system").is_dir():
             return candidate
+    configured = os.getenv("OPENCLAW_ROOT")
+    if configured:
+        workspace = Path(configured).expanduser()
+        if (workspace / VERBOTEN_LITERALS_FILE).is_file():
+            return workspace
     return root
 
 
