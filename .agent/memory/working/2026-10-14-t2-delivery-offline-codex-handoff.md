@@ -13,6 +13,36 @@
 
 ---
 
+## Update (later on 2026-10-14) — read before section 2
+
+State changed after this document was first written; the tables below are corrected where
+they are plain facts, and the changes are listed here so nothing is silently different.
+
+- **PR #37 is merged** (the harness fix). It is no longer open work.
+- **#36 gained review fixes** (head moved): a failing stop notifier no longer skips records
+  or masks the sink failure; the Core runner is resolved in preflight before any lease; the
+  authority binding runs inside the guarded lifecycle so a refusal still gets a terminal
+  receipt; and an observing delivery is shut down after a clean run and before the terminal
+  on every failure path (a failing close is suppressed on error paths, and reported as an
+  `unknown` terminal on a clean run). All five came from review comments and each was
+  verified against the code first.
+- **#404 gained review fixes and a second concern.** The four review findings were applied
+  (canonical-checkout exception, baseline-failure wording, precise relative-path and probe
+  claims). It now also carries the **registry-lookup fix** below.
+- **#441 now carries the matching PT half** of that fix plus a CI repair: the tracked copy
+  of this hand-off was rejected by the hygiene gate for spelling the workspace layout.
+- **Registry-lookup fix (orama #404, PT #441, lockstep):** the forbidden-fragment registry
+  was only found for checkouts beneath the OpenClaw tree, so a hub worktree ran every
+  local gate with **zero** tokens and passed falsely while CI failed. `OPENCLAW_ROOT` is now
+  the fallback (only when the ancestor walk finds nothing and only if the registry file is
+  there). Three copies changed identically and one parametrized test pins that they agree.
+- **Still not done:** T2 receipt items 3-4, the dated qualification receipt, and the ADR 71
+  interim-serving-gap note. M1 is not claimed.
+- **Other open PRs are not this work** and were not touched: oramasys #22, orama #381 and
+  PT #422 are Cursor-branch work with their own review findings (triaged on the board).
+
+---
+
 ## 0. Read this first
 
 **Your situation:** you can read, edit, test and commit locally, and post to the local
@@ -46,9 +76,9 @@ were written into the canonical skills and PT memory.
 
 | PR | Repo | Branch @ head | CI | What it is |
 | --- | --- | --- | --- | --- |
-| [#36](https://github.com/oramasys/oramasys/pull/36) | oramasys/oramasys | `feat/t2-admitted-observation-delivery-20261014` @ `afea6f48` | all green incl. 6 offline-oracle cells (production, policy-r3, core-r3 × py3.11/3.12); CodeRabbit pending | **T2 delivery fix** (see §3.D) |
-| [#37](https://github.com/oramasys/oramasys/pull/37) | oramasys/oramasys | `fix/terminal-evidence-source-checkout-20261014` @ `9f52ad6e` | all green, CLEAN | Test-harness fix (§3.E). Independent of #36 |
-| [#404](https://github.com/diazMelgarejo/orama-system/pull/404) | diazMelgarejo/orama-system | `docs/skills-shell-and-review-verification-lessons-20261014` @ `8eaad098` | green; `test (3.11)` pending | Canonical skill updates (§3.F) |
+| [#36](https://github.com/oramasys/oramasys/pull/36) | oramasys/oramasys | `feat/t2-admitted-observation-delivery-20261014` @ `38ae12d` (was `afea6f48`) | all green incl. 6 offline-oracle cells (production, policy-r3, core-r3 × py3.11/3.12); CodeRabbit pending | **T2 delivery fix** (see §3.D) |
+| [#37](https://github.com/oramasys/oramasys/pull/37) | oramasys/oramasys | `fix/terminal-evidence-source-checkout-20261014` @ `9f52ad6e` | **MERGED** | Test-harness fix (§3.E). Independent of #36 |
+| [#404](https://github.com/diazMelgarejo/orama-system/pull/404) | diazMelgarejo/orama-system | `docs/skills-shell-and-review-verification-lessons-20261014` @ `90b43132` (was `8eaad098`) | green; `test (3.11)` pending | Canonical skill updates (§3.F) |
 | [#441](https://github.com/diazMelgarejo/Perpetua-Tools/pull/441) | diazMelgarejo/Perpetua-Tools | `docs/t2-delivery-and-verification-lessons-20261014` @ `911f9b17` | green; `lint-and-test` + CodeRabbit pending | 7 lessons via `learn.py`. Lockstep with #404 |
 
 `UNSTABLE` merge state on these means **pending** checks, not failing ones.
@@ -130,11 +160,11 @@ Hub: `$WT_HUB/`
 
 | Directory | Branch | Head | Use it for |
 | --- | --- | --- | --- |
-| `t2-oramasys-main-20261014` | `feat/t2-admitted-observation-delivery-20261014` | `afea6f48` | **PR #36** — review and test here |
+| `t2-oramasys-main-20261014` | `feat/t2-admitted-observation-delivery-20261014` | `38ae12d` (was `afea6f48`) | **PR #36** — review and test here |
 | `t2-harness-fix-20261014` | `fix/terminal-evidence-source-checkout-20261014` | `9f52ad6e` | PR #37 |
 | `t2-core-main-20261014` | detached | `6d75cfe0` | Core `main` (#13) — `PYTHONPATH` source for tests |
 | `t2-core-pin-609ff0e` | detached | `609ff0ed` | **Production Core pin** — proves graceful degradation (no start seam) |
-| `2026-10-14-skills-lessons` | `docs/skills-shell-and-review-verification-lessons-20261014` | `8eaad098` | PR #404 |
+| `2026-10-14-skills-lessons` | `docs/skills-shell-and-review-verification-lessons-20261014` | `90b43132` (was `8eaad098`) | PR #404 |
 | `2026-10-14-pt-t2-lessons` | `docs/t2-delivery-and-verification-lessons-20261014` | `911f9b17` | PR #441 |
 | `_outbox-codex-20261014/` | — | — | **Your deliverables go here** (§6) |
 
