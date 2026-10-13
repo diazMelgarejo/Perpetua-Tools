@@ -79,7 +79,7 @@ were written into the canonical skills and PT memory.
 | [#36](https://github.com/oramasys/oramasys/pull/36) | oramasys/oramasys | `feat/t2-admitted-observation-delivery-20261014` @ `38ae12d` (was `afea6f48`) | all green incl. 6 offline-oracle cells (production, policy-r3, core-r3 × py3.11/3.12); CodeRabbit pending | **T2 delivery fix** (see §3.D) |
 | [#37](https://github.com/oramasys/oramasys/pull/37) | oramasys/oramasys | `fix/terminal-evidence-source-checkout-20261014` @ `9f52ad6e` | **MERGED** | Test-harness fix (§3.E). Independent of #36 |
 | [#404](https://github.com/diazMelgarejo/orama-system/pull/404) | diazMelgarejo/orama-system | `docs/skills-shell-and-review-verification-lessons-20261014` @ `90b43132` (was `8eaad098`) | green; `test (3.11)` pending | Canonical skill updates (§3.F) |
-| [#441](https://github.com/diazMelgarejo/Perpetua-Tools/pull/441) | diazMelgarejo/Perpetua-Tools | `docs/t2-delivery-and-verification-lessons-20261014` @ `911f9b17` | green; `lint-and-test` + CodeRabbit pending | 7 lessons via `learn.py`. Lockstep with #404 |
+| [#441](https://github.com/diazMelgarejo/Perpetua-Tools/pull/441) | diazMelgarejo/Perpetua-Tools | `docs/t2-delivery-and-verification-lessons-20261014` (head moves on every push; read it with `git rev-parse`) | green; `lint-and-test` + CodeRabbit pending | 7 lessons via `learn.py`. Lockstep with #404 |
 
 `UNSTABLE` merge state on these means **pending** checks, not failing ones.
 
