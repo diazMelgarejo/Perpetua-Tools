@@ -1,0 +1,43 @@
+{
+  "id": "129c8d545b61",
+  "key": "manual_129c8d",
+  "name": "manual_129c8d",
+  "claim": "When publishing a reapplied delta with an expected-head compare-and-set, capture the expected SHA once immediately after the initial fetch and reuse it unchanged; before the push require git merge-base --is-ancestor EXPECTED HEAD. An explicit force-with-lease branch:sha lease checks only the remote value and still permits a non-fast-forward update, so it cannot prove the tip contains the head it authorises replacing; re-resolving the tracking ref after the reapply can name a commit the tip lacks.",
+  "conditions": [
+    "ancestry",
+    "compare-and-set",
+    "expected-head",
+    "force-with-lease",
+    "publish",
+    "reapply"
+  ],
+  "evidence_ids": [
+    "2026-10-13T22:39:38.813789+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T22:39:38.813789+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T22:39:38.813789+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T22:39:38.942658+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit review 5510696885 on orama-system PR 404, 2026-10-14 (PHT) / 2026-10-13 UTC: the reapply card's publish examples re-resolved origin/BRANCH after the reapply and relied on the lease alone. Verified against git-push semantics. Refines lesson_590ae6342a41 (expected-head CAS); does not supersede it.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T22:39:38.813789+00:00"
+      ],
+      "lessons_sha": "a6f3fd33b20b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T22:39:38.942647+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit review 5510696885 on orama-system PR 404, 2026-10-14 (PHT) / 2026-10-13 UTC: the reapply card's publish examples re-resolved origin/BRANCH after the reapply and relied on the lease alone. Verified against git-push semantics. Refines lesson_590ae6342a41 (expected-head CAS); does not supersede it."
+}
