@@ -1,0 +1,43 @@
+{
+  "id": "ba06d89f1ee2",
+  "key": "manual_ba06d8",
+  "name": "manual_ba06d8",
+  "claim": "On Darwin the loser of two concurrent openat(dir_fd, name, O_CREAT) calls on the same new name gets a spurious ENOENT even though the directory exists (absolute paths and Linux are unaffected); retry once without O_CREAT to open what the rival made, keep the ownership and mode checks on the returned descriptor, and cover it with an injected-ENOENT test because Linux CI can never reproduce the race.",
+  "conditions": [
+    "ENOENT",
+    "O_CREAT",
+    "ci-blind-spot",
+    "darwin",
+    "openat",
+    "platform-race"
+  ],
+  "evidence_ids": [
+    "2026-10-13T06:44:22.224318+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T06:44:22.224318+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T06:44:22.224318+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T06:44:22.310362+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "phylax PR#11 2026-10-13: test_two_workers_can_bootstrap_from_an_empty_state_directory failed 100% on macOS even on the PR's own unmerged tip but passed on Linux CI, so it shipped unnoticed. Reproduced with bare O_RDWR|O_CREAT and a dir_fd; 300/300 loser ENOENT; absolute path 0 failures. Retry shapes (without O_CREAT, with O_CREAT, 4-loop) all measured 0 failures at 16 threads versus ~31% without, so the choice rested on semantics. A bounded single retry plus three deterministic injected tests (retry-once, unsafe-file-still-refused, vanished-dir-not-looped) make the behaviour testable on any OS.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T06:44:22.224318+00:00"
+      ],
+      "lessons_sha": "fb209e05e60a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T06:44:22.310356+00:00",
+  "reviewer": "learn.py",
+  "rationale": "phylax PR#11 2026-10-13: test_two_workers_can_bootstrap_from_an_empty_state_directory failed 100% on macOS even on the PR's own unmerged tip but passed on Linux CI, so it shipped unnoticed. Reproduced with bare O_RDWR|O_CREAT and a dir_fd; 300/300 loser ENOENT; absolute path 0 failures. Retry shapes (without O_CREAT, with O_CREAT, 4-loop) all measured 0 failures at 16 threads versus ~31% without, so the choice rested on semantics. A bounded single retry plus three deterministic injected tests (retry-once, unsafe-file-still-refused, vanished-dir-not-looped) make the behaviour testable on any OS."
+}

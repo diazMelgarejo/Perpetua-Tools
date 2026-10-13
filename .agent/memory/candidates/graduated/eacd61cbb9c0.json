@@ -1,0 +1,41 @@
+{
+  "id": "eacd61cbb9c0",
+  "key": "manual_eacd61",
+  "name": "manual_eacd61",
+  "claim": "A script shared byte-identically across orama-system and Perpetua-Tools that uses bash-4-only features (mapfile, associative arrays, etc.) silently breaks on any machine whose only bash is macOS's stock 3.2.57 (no GNU bash 4+ installed) -- check 'bash --version' before relying on bash 4 builtins in any shared git hook, and prefer a portable 'while IFS= read -r' loop over mapfile.",
+  "conditions": [
+    "bash-compatibility",
+    "macos",
+    "pre-commit-hook",
+    "shared-script"
+  ],
+  "evidence_ids": [
+    "2026-10-13T03:28:22.783594+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T03:28:22.783594+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T03:28:22.783594+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T03:28:22.913513+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "scripts/git/check_markdown_lint.sh (identical in both repos, wired into .githooks/pre-commit) used 'mapfile -t FILES < <(...)' which errors as 'mapfile: command not found' under bash 3.2, failing the hook on EVERY commit on this machine regardless of what was staged -- it failed before ever reaching the no-staged-.md-files early exit. Discovered 2026-10-13 only because it blocked an unrelated exa-mcp-daemon.py commit; fixed in orama PR #400, needs the same portable-loop fix applied in PT's copy of the script (and ideally a verify-guard-parity / sync-attribution-guard-scripts pass since these shared scripts are supposed to be kept byte-identical).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T03:28:22.783594+00:00"
+      ],
+      "lessons_sha": "a8e4af17db20"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T03:28:22.913496+00:00",
+  "reviewer": "learn.py",
+  "rationale": "scripts/git/check_markdown_lint.sh (identical in both repos, wired into .githooks/pre-commit) used 'mapfile -t FILES < <(...)' which errors as 'mapfile: command not found' under bash 3.2, failing the hook on EVERY commit on this machine regardless of what was staged -- it failed before ever reaching the no-staged-.md-files early exit. Discovered 2026-10-13 only because it blocked an unrelated exa-mcp-daemon.py commit; fixed in orama PR #400, needs the same portable-loop fix applied in PT's copy of the script (and ideally a verify-guard-parity / sync-attribution-guard-scripts pass since these shared scripts are supposed to be kept byte-identical)."
+}

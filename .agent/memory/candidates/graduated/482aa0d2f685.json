@@ -1,0 +1,42 @@
+{
+  "id": "482aa0d2f685",
+  "key": "manual_482aa0",
+  "name": "manual_482aa0",
+  "claim": "Never call loop.stop() directly from inside an asyncio background task while asyncio.run()'s own top-level future is still pending; signal shutdown via an asyncio.Event and await asyncio.wait({main_task, stop_task}, return_when=FIRST_COMPLETED) instead, then cancel/cleanup gracefully.",
+  "conditions": [
+    "asyncio",
+    "daemon",
+    "event-loop",
+    "exa-mcp",
+    "shutdown"
+  ],
+  "evidence_ids": [
+    "2026-10-13T03:28:11.766382+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T03:28:11.766382+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T03:28:11.766382+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T03:28:11.915705+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "exa-mcp-daemon.py's _read_backend called asyncio.get_event_loop().stop() on backend stdout EOF, racing asyncio.run()'s pending future and raising 'RuntimeError: Event loop stopped before Future completed'. The shared Exa MCP daemon (orama-system/PT/Codex singleton multiplexer) crash-looped on every backend restart from ~2026-08-22 until fixed 2026-10-13 (orama PR #400). A second latent bug (ProcessLookupError on self.proc.terminate() when the backend already exited) only surfaced once this fix made the cleanup path reachable -- a reminder that fixing the first bug in a crash path can expose a second one in the same path.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T03:28:11.766382+00:00"
+      ],
+      "lessons_sha": "0e76f217dacb"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T03:28:11.915695+00:00",
+  "reviewer": "learn.py",
+  "rationale": "exa-mcp-daemon.py's _read_backend called asyncio.get_event_loop().stop() on backend stdout EOF, racing asyncio.run()'s pending future and raising 'RuntimeError: Event loop stopped before Future completed'. The shared Exa MCP daemon (orama-system/PT/Codex singleton multiplexer) crash-looped on every backend restart from ~2026-08-22 until fixed 2026-10-13 (orama PR #400). A second latent bug (ProcessLookupError on self.proc.terminate() when the backend already exited) only surfaced once this fix made the cleanup path reachable -- a reminder that fixing the first bug in a crash path can expose a second one in the same path."
+}
