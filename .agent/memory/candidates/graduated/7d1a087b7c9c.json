@@ -1,0 +1,42 @@
+{
+  "id": "7d1a087b7c9c",
+  "key": "manual_7d1a08",
+  "name": "manual_7d1a08",
+  "claim": "When a test fails and you cannot explain it, debug the harness before the code: reproduce on pristine main under the same environment, change one factor at a time, read the child process stderr, sweep for the whole class once one instance is found, prove new tests with a mutant, and state your own harness errors out loud.",
+  "conditions": [
+    "baseline",
+    "debugging",
+    "harness",
+    "mutation-check",
+    "root-cause"
+  ],
+  "evidence_ids": [
+    "2026-10-13T19:05:02.786612+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T19:05:02.786612+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T19:05:02.786612+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T19:05:02.918142+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Two of three apparent failures were first attributed to the change under test; both reproduced identically on pristine origin/main. One was briefly caused by my own PYTHONPATH override replacing the checkout path. Removing the load-bearing line (bind and drain) and watching the new tests fail is what showed they actually bite.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T19:05:02.786612+00:00"
+      ],
+      "lessons_sha": "e2d76e85147c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T19:05:02.918132+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Two of three apparent failures were first attributed to the change under test; both reproduced identically on pristine origin/main. One was briefly caused by my own PYTHONPATH override replacing the checkout path. Removing the load-bearing line (bind and drain) and watching the new tests fail is what showed they actually bite."
+}

@@ -1,0 +1,42 @@
+{
+  "id": "fc146b1f409a",
+  "key": "manual_fc146b",
+  "name": "manual_fc146b",
+  "claim": "A fallback branch that CI never takes is untested and usually wrong: when a test prefers an installed package and falls back to a source checkout, compare how CI installs and invokes, make the branch decision a pure function, and unit-test both outcomes without a subprocess.",
+  "conditions": [
+    "ci-parity",
+    "dead-branch",
+    "pythonpath",
+    "subprocess",
+    "test-harness"
+  ],
+  "evidence_ids": [
+    "2026-10-13T19:05:02.575262+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T19:05:02.575262+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T19:05:02.575262+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T19:05:02.704648+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Three oramasys tests failed only in a source checkout. CI always pip-installs the package, so the cross-process helper's fallback, which dropped PYTHONPATH and never supplied the source root, was never taken there. pytest's pythonpath setting configures only the test process, so a child interpreter inherits no path to the checkout.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T19:05:02.575262+00:00"
+      ],
+      "lessons_sha": "91714ce390ae"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T19:05:02.704636+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Three oramasys tests failed only in a source checkout. CI always pip-installs the package, so the cross-process helper's fallback, which dropped PYTHONPATH and never supplied the source root, was never taken there. pytest's pythonpath setting configures only the test process, so a child interpreter inherits no path to the checkout."
+}
