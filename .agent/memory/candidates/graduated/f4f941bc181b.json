@@ -1,0 +1,44 @@
+{
+  "id": "f4f941bc181b",
+  "key": "manual_f4f941",
+  "name": "manual_f4f941",
+  "claim": "Clear a stale gbrain autopilot.lock only after verifying its recorded PID is dead and no sync or autopilot process is live, then run the sync in the background with a timeout guard",
+  "conditions": [
+    "autopilot.lock",
+    "background-sync",
+    "gbrain",
+    "lock-contention",
+    "nohup",
+    "stale-lock",
+    "timeout"
+  ],
+  "evidence_ids": [
+    "2026-10-12T20:04:48.075192+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-12T20:04:48.075192+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-12T20:04:48.075192+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-12T20:04:48.204089+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A dead autopilot PID leaves autopilot.lock behind and blocks every later sync with lock-held errors; long repo syncs exceed an interactive shell ceiling so they must run under nohup with a bounded timeout and a log to poll.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-12T20:04:48.075192+00:00"
+      ],
+      "lessons_sha": "89ec70d0c4e2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-12T20:04:48.204077+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A dead autopilot PID leaves autopilot.lock behind and blocks every later sync with lock-held errors; long repo syncs exceed an interactive shell ceiling so they must run under nohup with a bounded timeout and a log to poll."
+}
