@@ -62,6 +62,7 @@
 - Preflight an observing delivery capability before creating a lease or other owner state; once work starts, bind authoritative identity and close the per-run delivery inside the terminal-evidence lifecycle so refusal, binding failure, normal completion, and error paths all leave an auditable result.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7ad61d246de1 -->
 - Treat notifier, persistence, and cleanup failures as secondary to a critical delivery failure: preserve the primary sink error, attempt the identity-valid durable disposition, suppress only the secondary exception on error paths, and record a conservative terminal when no durable attempt can be named.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_b64dc37f1a03 -->
 - Do not claim a milestone from a feature PRs green checks alone: qualify the final merged, immutable pins with fresh-install, compatibility-cell, and crash-recovery evidence, keep capability-dependent tests in explicit bands, and issue a dated receipt only after the full matrix is complete.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_e38bd582459e -->
+- When an open PR branch advances concurrently, do not create a catch-up merge or rebase by default: re-read the new head, reapply the verified delta directly on it, and move on; reserve merge integration for a real dependency or a later PR that must combine independent histories.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_24b4facd84d9 -->
 
 ### 2026-09
 
