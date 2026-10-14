@@ -1,0 +1,38 @@
+{
+  "id": "b972da839f97",
+  "key": "manual_b972da",
+  "name": "manual_b972da",
+  "claim": "Agent verdicts such as verified or ratified must be reconciled against live CI check runs before any merge decision; local suite counts do not supersede failing oracle cells.",
+  "conditions": [
+    "verdict reconciliation ci-checks merge-decision local-vs-ci"
+  ],
+  "evidence_ids": [
+    "2026-10-14T05:38:53.643435+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-14T05:38:53.643435+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-14T05:38:53.643435+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-14T05:38:53.772461+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A fleet review marked five PRs verified while three had failing compatibility cells.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-14T05:38:53.643435+00:00"
+      ],
+      "lessons_sha": "9cdc84a57a24"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-14T05:38:53.772450+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A fleet review marked five PRs verified while three had failing compatibility cells."
+}

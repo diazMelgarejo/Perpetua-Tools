@@ -1,0 +1,38 @@
+{
+  "id": "5b4a29db282b",
+  "key": "manual_5b4a29",
+  "name": "manual_5b4a29",
+  "claim": "Agent heartbeat registries can list an active coordinator as dead for hundreds of hours; use board activity timestamps and the owner's workspace file mtimes as the liveness signal.",
+  "conditions": [
+    "liveness heartbeat coordination board mtime"
+  ],
+  "evidence_ids": [
+    "2026-10-14T05:38:52.384587+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-14T05:38:52.384587+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-14T05:38:52.384587+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-14T05:38:52.513726+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The registry showed the active coordinator dead while board rows and file mtimes were minutes old.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-14T05:38:52.384587+00:00"
+      ],
+      "lessons_sha": "13bbc4a2578d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-14T05:38:52.513717+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The registry showed the active coordinator dead while board rows and file mtimes were minutes old."
+}

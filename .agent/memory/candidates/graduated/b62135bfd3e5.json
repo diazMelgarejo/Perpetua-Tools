@@ -1,0 +1,38 @@
+{
+  "id": "b62135bfd3e5",
+  "key": "manual_b62135",
+  "name": "manual_b62135",
+  "claim": "Capability bands change the collected set, not only the pass count: compare collected test ids between cells before reading a pass-count delta; a +16 passed result was +18 seam-positive and -2 seam-absent.",
+  "conditions": [
+    "capability-band collected-set pass-count compatibility"
+  ],
+  "evidence_ids": [
+    "2026-10-14T05:38:51.320720+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-14T05:38:51.320720+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-14T05:38:51.320720+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-14T05:38:51.448173+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Reproduced by counting tests per module at exact SHAs; the negative count was left explicitly unverified.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-14T05:38:51.320720+00:00"
+      ],
+      "lessons_sha": "dcf167f09d2f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-14T05:38:51.448164+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Reproduced by counting tests per module at exact SHAs; the negative count was left explicitly unverified."
+}

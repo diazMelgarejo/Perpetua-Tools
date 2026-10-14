@@ -1,0 +1,38 @@
+{
+  "id": "c6fbe4f9b9ab",
+  "key": "manual_c6fbe4",
+  "name": "manual_c6fbe4",
+  "claim": "uv pip install treats a bare directory name with extras as a package name; pass ./dir[extra] so the local tree installs, otherwise a cell can silently skip the consumer and the failure hides in the output tail.",
+  "conditions": [
+    "uv pip-install extras local-path compatibility-cell"
+  ],
+  "evidence_ids": [
+    "2026-10-14T05:38:50.686615+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-14T05:38:50.686615+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-14T05:38:50.686615+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-14T05:38:50.815771+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Two first install cells reported success at the producer step while the consumer and pytest never installed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-14T05:38:50.686615+00:00"
+      ],
+      "lessons_sha": "ff4c8b5d2de2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-14T05:38:50.815763+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Two first install cells reported success at the producer step while the consumer and pytest never installed."
+}
