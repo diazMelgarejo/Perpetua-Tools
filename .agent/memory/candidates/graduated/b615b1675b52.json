@@ -1,0 +1,38 @@
+{
+  "id": "b615b1675b52",
+  "key": "manual_b615b1",
+  "name": "manual_b615b1",
+  "claim": "A mutant that survives is a missing test, not a pass: a compare-and-set guard survived mutation until a race test injected a competing recoverer between snapshot and takeover.",
+  "conditions": [
+    "mutation-testing compare-and-set race injected-competitor"
+  ],
+  "evidence_ids": [
+    "2026-10-14T05:38:52.810250+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-14T05:38:52.810250+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-14T05:38:52.810250+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-14T05:38:52.940108+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "No-CAS and no-winner-return mutants both passed the suite until two injected-race tests were added.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-14T05:38:52.810250+00:00"
+      ],
+      "lessons_sha": "8a0e64901b76"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-14T05:38:52.940099+00:00",
+  "reviewer": "learn.py",
+  "rationale": "No-CAS and no-winner-return mutants both passed the suite until two injected-race tests were added."
+}
