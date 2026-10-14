@@ -1,0 +1,63 @@
+{
+  "id": "8896b87b306f",
+  "key": "manual_8896b8",
+  "name": "manual_8896b8",
+  "claim": "In zsh, bracketed local requirement paths such as `./dir[extra]` must be quoted when passed as a shell argument; otherwise filename generation can rewrite or reject the path before the installer receives it. Use a quoted argument and verify that the intended local checkout was installed.",
+  "conditions": [
+    "argument",
+    "before",
+    "bracketed",
+    "checkout",
+    "dir",
+    "extra",
+    "filename",
+    "generation",
+    "installed",
+    "installer",
+    "intended",
+    "local",
+    "otherwise",
+    "passed",
+    "path",
+    "paths",
+    "quoted",
+    "receives",
+    "reject",
+    "requirement",
+    "rewrite",
+    "shell",
+    "such",
+    "use",
+    "verify",
+    "zsh"
+  ],
+  "evidence_ids": [
+    "2026-10-14T13:18:19.427299+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-14T13:18:19.427299+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-14T13:18:19.427299+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-14T13:18:26.591728+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Supersedes the command example that left a bracketed local path exposed to zsh filename generation; require literal argument passing and installation verification.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-14T13:18:19.427299+00:00"
+      ],
+      "lessons_sha": "ee407e2c56c7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-14T13:18:26.591717+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Supersedes the command example that left a bracketed local path exposed to zsh filename generation; require literal argument passing and installation verification."
+}
