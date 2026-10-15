@@ -182,8 +182,11 @@ required in v2, `docs/v2/48-board-job-source-line-schema.md` in
 
 ### Key invariants
 
-- "Merged" on GitHub ≠ content is on the target branch. Always verify with `git diff
-  origin/main...origin/<branch>` after any merge.
+- "Merged" on GitHub ≠ content is on the target branch. After any merge, verify the content on
+  the target: take the PR's file list (`gh pr diff <n> --name-only`) and diff those paths between
+  `origin/<branch>` and `origin/main`. Empty means present; non-empty means inspect (a later edit
+  or an omission). Do not use the three-dot form `origin/main...origin/<branch>`: it compares the
+  branch with the merge base, so it is empty after a real merge and says nothing about content.
 - CodeRabbit re-scans on every push and creates new comment threads. Run the post-merge sweep after
   every merge, not just once.
 - JSONL memory files (lessons.jsonl, AGENT_LEARNINGS.jsonl): dedup by `id` / `run_id` after union —
