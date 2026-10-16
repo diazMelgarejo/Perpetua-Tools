@@ -133,7 +133,13 @@ async def list_claims(bus: GossipBus, task_filter: str | None) -> None:
 
 
 async def log_message(bus: GossipBus, agent_id: str, message: str) -> None:
-    """Log a note from an agent to the coordination board."""
+    """Log a note from the current actor to the coordination board.
+
+    Callers describing another agent's work must retain author, actor,
+    endorsement, and takeover facts in ``message`` or use a richer supported
+    GossipBus payload. ``agent_id`` identifies the current actor; it must never
+    be used to silently reassign authorship.
+    """
     await bus.emit(
         "heartbeat",
         {"kind": "agent_note", "agent_id": agent_id, "message": message},
