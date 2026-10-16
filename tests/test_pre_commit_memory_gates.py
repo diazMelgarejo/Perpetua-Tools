@@ -41,6 +41,25 @@ def _candidate(claim: str, **extra) -> dict:
 
 
 class PreCommitMemoryGateTests(unittest.TestCase):
+    def test_provisional_graduation_keeps_the_terminal_reviewer_requirement(self) -> None:
+        """Tool-generated provisional status is valid only with a graduation review."""
+        checker = _load_check_memory_records()
+        for reviewed in (True, False):
+            with self.subTest(reviewed=reviewed), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp) / "candidates" / "graduated" / "record.json"
+                path.parent.mkdir(parents=True)
+                decision = {"action": "graduated" if reviewed else "staged",
+                            "reviewer": "reviewer-id", "provisional": True}
+                record = _candidate("Provisional graduation preserves review evidence.",
+                                    status="provisional", decisions=[decision])
+                path.write_text(json.dumps(record), encoding="utf-8")
+                problems: list[str] = []
+                checker.validate_candidate(path, problems, {}, set())
+                if reviewed:
+                    self.assertEqual(problems, [])
+                else:
+                    self.assertTrue(any("reviewer" in item for item in problems))
+
     def test_run_gates_repo_hygiene_uses_first_arg_after_shift(self) -> None:
         text = (ROOT / "scripts" / "hooks" / "run_gates.sh").read_text(encoding="utf-8")
         self.assertIn('"${1:-$ROOT}"', text)
