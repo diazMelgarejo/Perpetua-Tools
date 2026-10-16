@@ -13,7 +13,8 @@ def run_id():
     global _CACHED_RUN_ID
     if _CACHED_RUN_ID is None:
         # Opaque per-process fallback: a pid is reused across runs and leaks host detail.
-        _CACHED_RUN_ID = os.environ.get("AGENT_RUN_ID") or f"run-{uuid.uuid4().hex[:12]}"
+        configured = os.environ.get("AGENT_RUN_ID", "").strip()
+        _CACHED_RUN_ID = configured or f"run-{uuid.uuid4().hex[:12]}"
     return _CACHED_RUN_ID
 
 
