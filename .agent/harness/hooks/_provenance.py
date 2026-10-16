@@ -1,5 +1,5 @@
 """Shared provenance helpers for episodic entries. Cached per-process."""
-import os, subprocess
+import os, subprocess, uuid
 
 AGENT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -9,9 +9,12 @@ _CACHED_PROFILE = None
 
 
 def run_id():
+    """Return this process's run id: ``AGENT_RUN_ID``, else a cached opaque ``run-<12 hex>``."""
     global _CACHED_RUN_ID
     if _CACHED_RUN_ID is None:
-        _CACHED_RUN_ID = os.environ.get("AGENT_RUN_ID", f"pid-{os.getpid()}")
+        # Opaque per-process fallback: a pid is reused across runs and leaks host detail.
+        configured = os.environ.get("AGENT_RUN_ID", "").strip()
+        _CACHED_RUN_ID = configured or f"run-{uuid.uuid4().hex[:12]}"
     return _CACHED_RUN_ID
 
 
@@ -51,6 +54,7 @@ def profile():
 
 
 def commit_sha():
+    """Return the cached HEAD commit of the agent root, or an empty string without git."""
     global _CACHED_COMMIT
     if _CACHED_COMMIT is None:
         try:
@@ -66,6 +70,7 @@ def commit_sha():
 
 
 def build_source(skill):
+    """Return the ``source`` provenance mapping stamped on every episodic entry."""
     return {
         "skill": skill,
         "profile": profile(),
