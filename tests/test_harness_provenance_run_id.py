@@ -2,6 +2,7 @@
 import importlib.util
 import re
 import sys
+import uuid
 from pathlib import Path
 
 import pytest
@@ -18,13 +19,22 @@ def provenance(monkeypatch):
     return module
 
 
-def test_fallback_run_id_is_opaque_and_contains_no_process_id(provenance):
-    # Arrange
+def test_fallback_run_id_is_the_uuid_prefix_and_never_reads_the_pid(provenance, monkeypatch):
+    # Arrange: a fixed UUID, so the expected id is exact rather than probabilistic.
+    fixed = uuid.UUID("0123456789abcdef0123456789abcdef")
+    monkeypatch.setattr(provenance.uuid, "uuid4", lambda: fixed)
+
+    def forbidden_getpid():
+        raise AssertionError("fallback run id must not derive from the process id")
+
+    monkeypatch.setattr(provenance.os, "getpid", forbidden_getpid)
+
+    # Act
     run_id = provenance.run_id()
 
     # Assert
+    assert run_id == "run-0123456789ab"
     assert re.fullmatch(r"run-[0-9a-f]{12}", run_id)
-    assert str(provenance.os.getpid()) not in run_id
 
 
 def test_fallback_run_id_is_stable_within_a_process(provenance):
