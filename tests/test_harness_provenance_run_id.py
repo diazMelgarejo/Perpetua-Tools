@@ -12,6 +12,7 @@ HOOK = Path(__file__).resolve().parents[1] / ".agent/harness/hooks/_provenance.p
 
 @pytest.fixture
 def provenance(monkeypatch):
+    """Load a fresh copy of the provenance hook with ``AGENT_RUN_ID`` unset."""
     monkeypatch.delenv("AGENT_RUN_ID", raising=False)
     spec = importlib.util.spec_from_file_location("harness_provenance_under_test", HOOK)
     module = importlib.util.module_from_spec(spec)
@@ -21,10 +22,12 @@ def provenance(monkeypatch):
 
 def test_fallback_run_id_is_the_uuid_prefix_and_never_reads_the_pid(provenance, monkeypatch):
     # Arrange: a fixed UUID, so the expected id is exact rather than probabilistic.
+    """The fallback is the first 12 hex digits of a UUID and never touches the pid."""
     fixed = uuid.UUID("0123456789abcdef0123456789abcdef")
     monkeypatch.setattr(provenance.uuid, "uuid4", lambda: fixed)
 
     def forbidden_getpid():
+        """Fail the test if anything asks the process id."""
         raise AssertionError("fallback run id must not derive from the process id")
 
     monkeypatch.setattr(provenance.os, "getpid", forbidden_getpid)
@@ -38,10 +41,12 @@ def test_fallback_run_id_is_the_uuid_prefix_and_never_reads_the_pid(provenance, 
 
 
 def test_fallback_run_id_is_stable_within_a_process(provenance):
+    """Repeated calls return the same fallback id for the life of the process."""
     assert provenance.run_id() == provenance.run_id()
 
 
 def test_explicit_agent_run_id_is_honoured(provenance, monkeypatch):
+    """A configured ``AGENT_RUN_ID`` wins over the generated fallback."""
     monkeypatch.setenv("AGENT_RUN_ID", "ci-run-7")
     provenance._CACHED_RUN_ID = None
 
