@@ -1,0 +1,45 @@
+{
+  "id": "39c06b155df7",
+  "key": "manual_39c06b",
+  "name": "manual_39c06b",
+  "claim": "For direct AntiGravity reviews, verify nonempty substantive output as well as exit status. Headless command denial may return exit zero; disable-slash-commands can neutralize mode plan. A source-supplied no-tool review is a useful graceful degradation, but never counts as independent shell, test, artifact, or live-state verification.",
+  "conditions": [
+    "agy",
+    "antigravity",
+    "empty-output",
+    "frozen-branch",
+    "headless",
+    "permissions",
+    "review",
+    "source-supplied"
+  ],
+  "evidence_ids": [
+    "2026-10-16T22:06:24.614313+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-16T22:06:24.614313+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-16T22:06:24.614313+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-16T22:06:24.764941+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Four initial tool-enabled attempts returned empty output and permission-denial logs; four fresh source-supplied attempts returned review text. Use attached --print=VALUE, bounded runtime and separate source-pinned worktrees. Preserve frozen branches and the reviewer/maker distinction. Findings still require parent verification.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-16T22:06:24.614313+00:00"
+      ],
+      "lessons_sha": "ede46eabc9f2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-16T22:06:24.764926+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Four initial tool-enabled attempts returned empty output and permission-denial logs; four fresh source-supplied attempts returned review text. Use attached --print=VALUE, bounded runtime and separate source-pinned worktrees. Preserve frozen branches and the reviewer/maker distinction. Findings still require parent verification."
+}
