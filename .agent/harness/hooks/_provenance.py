@@ -1,5 +1,5 @@
 """Shared provenance helpers for episodic entries. Cached per-process."""
-import os, subprocess
+import os, subprocess, uuid
 
 AGENT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -11,7 +11,8 @@ _CACHED_PROFILE = None
 def run_id():
     global _CACHED_RUN_ID
     if _CACHED_RUN_ID is None:
-        _CACHED_RUN_ID = os.environ.get("AGENT_RUN_ID", f"pid-{os.getpid()}")
+        # Opaque per-process fallback: a pid is reused across runs and leaks host detail.
+        _CACHED_RUN_ID = os.environ.get("AGENT_RUN_ID") or f"run-{uuid.uuid4().hex[:12]}"
     return _CACHED_RUN_ID
 
 
