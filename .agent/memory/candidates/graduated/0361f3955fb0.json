@@ -1,0 +1,42 @@
+{
+  "id": "0361f3955fb0",
+  "key": "manual_0361f3",
+  "name": "manual_0361f3",
+  "claim": "Supersedes lesson_f66a1b3f7cc5 on where coordination records live. Claims and leases belong to the Orchestrator Controller, a boot module inside oramasys that starts before any Orchestrator, with no separate satellite repository (orama-system doc 68). The top Orchestrator is a client holding a Phylax root capability scope, never the writer, and spawn order confers no authority. Perpetua-Tools still serves coordination for v1 as it works today, and v2 corrects this in its own regime. A handoff is a release followed by a claim with lineage. The record-keeper stays separate from the authorizer: Phylax admits and never owns coordination records. Run-lease epoch fencing already lives in oramasys.",
+  "conditions": [
+    "architecture",
+    "coordination",
+    "orchestrator-controller",
+    "ownership",
+    "phylax"
+  ],
+  "evidence_ids": [
+    "2026-10-16T21:30:52.825737+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-16T21:30:52.825737+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-16T21:30:52.825737+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-16T21:30:52.995449+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Operator decision 2026-10-17 after checking doc 68 home decision, IC-1/IC-6/IC-27 and E1 executor/reconciler separation",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-16T21:30:52.825737+00:00"
+      ],
+      "lessons_sha": "c54f0ea6722b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-16T21:30:52.995432+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Operator decision 2026-10-17 after checking doc 68 home decision, IC-1/IC-6/IC-27 and E1 executor/reconciler separation"
+}

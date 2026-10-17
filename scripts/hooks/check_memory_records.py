@@ -111,7 +111,7 @@ def validate_candidate(path: Path, problems: list[str], tracked: dict[str, dict]
             f"the claim (expected one of: {expected}) -- ids must be minted by "
             f"learn.py or the legacy sha256(claim) helper, never invented"
         )
-    if data.get("status") not in {"staged", "accepted", "graduated", "rejected"}:
+    if data.get("status") not in {"staged", "accepted", "provisional", "graduated", "rejected"}:
         problems.append(f"{path}: unknown status {data.get('status')!r}")
     if normalized(data["claim"]) in tracked_claims and data["id"] not in tracked:
         problems.append(
