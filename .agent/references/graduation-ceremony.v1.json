@@ -1,0 +1,149 @@
+{
+  "schema": 1,
+  "name": "oramasys-mutation-graduation-ceremony",
+  "status": "convention",
+  "authorizes": "nothing",
+  "doc": "graduation-ceremony-mutation-approvals.md",
+  "roles": {
+    "maker": "produces the candidate (including AutoResearcher output); untrusted until the ceremony ends; never approves or self-verifies",
+    "evaluator": "fixed, versioned check; not editable by the maker during the experiment",
+    "non_maker_reviewers": [
+      "design",
+      "checker",
+      "independent_recompute"
+    ],
+    "operator": "only role that approves digests, accepts evidence, merges, promotes and activates"
+  },
+  "stages": [
+    {
+      "id": 0,
+      "name": "claim",
+      "gate": "one owner on the board; others do not push"
+    },
+    {
+      "id": 1,
+      "name": "candidate",
+      "gate": "immutable exact SHAs; consumer is the exact merging head"
+    },
+    {
+      "id": 2,
+      "name": "scope-record",
+      "gate": "states scope; status and capability flags are labels, not enforcement; pins in the package file take effect at merge"
+    },
+    {
+      "id": 3,
+      "name": "history-preserved",
+      "gate": "prior generation archived byte for byte and tested against independent frozen identities"
+    },
+    {
+      "id": 4,
+      "name": "checks-can-fail",
+      "gate": "mutation test refuses a self-consistent wrong input; red before green"
+    },
+    {
+      "id": 5,
+      "name": "verify-matrix",
+      "gate": "all supported interpreters, drift guard, lint baseline, CI at exact head"
+    },
+    {
+      "id": 6,
+      "name": "batch-review",
+      "gate": "one request, all exact heads, fixed return format"
+    },
+    {
+      "id": 7,
+      "name": "freeze-proposal",
+      "gate": "digests at exact head; operator script rehearsed without writes"
+    },
+    {
+      "id": 8,
+      "name": "operator-approval",
+      "gate": "operator-run; approval binds consumer, harness, manifest, coverage and allowlist digests",
+      "actor": "operator"
+    },
+    {
+      "id": 9,
+      "name": "hosted-evidence",
+      "gate": "dispatch only from a verified approval; per-file sealed digests"
+    },
+    {
+      "id": 10,
+      "name": "independent-recompute",
+      "gate": "non-maker recompute from raw artifacts; maker recompute labelled not independent"
+    },
+    {
+      "id": 11,
+      "name": "acceptance-and-receipt",
+      "gate": "operator accepts; metadata-only receipt with independence table and claim limits",
+      "actor": "operator"
+    },
+    {
+      "id": 12,
+      "name": "merge",
+      "gate": "for pins this is the activation; merge commits pinned to approved head; stacked base retargeted first; labels updated to match",
+      "actor": "operator"
+    },
+    {
+      "id": 13,
+      "name": "rollback-record",
+      "gate": "previous generation is the rollback target; rollback is a new reviewed generation"
+    },
+    {
+      "id": 14,
+      "name": "graduate-to-memory",
+      "gate": "after canonical evidence only; additive; lessons via the capture tool"
+    }
+  ],
+  "optimizer_candidates": {
+    "research_only_until": [
+      "versioned GraphSpec",
+      "GraphTrace corpus",
+      "locked evaluator",
+      "quality/cost/latency/reliability metrics",
+      "candidate isolation",
+      "promotion gate"
+    ],
+    "fixed_inputs_held_outside_mutator": [
+      "evaluator",
+      "safety policy",
+      "acceptance tests"
+    ],
+    "never": [
+      "alter the acceptance metric in the same experiment",
+      "mutate production topology from natural language",
+      "promote itself",
+      "merge"
+    ]
+  },
+  "virtual_versioning": {
+    "model": "generation = immutable named contract; ACTIVE pointer; consumers declare generation or edge; analogy: browser compatibility modes",
+    "states": [
+      "candidate",
+      "proposed",
+      "approved",
+      "evidenced",
+      "accepted",
+      "pins-merged",
+      "active",
+      "superseded",
+      "retired"
+    ],
+    "fidelity_classes": [
+      "declared",
+      "verified-installed",
+      "reproduced"
+    ],
+    "limits": [
+      "pins decide fresh installs, not running environments",
+      "frozen manifests keep original labels; live record supersedes",
+      "capabilities are separate switches in still_off"
+    ],
+    "status": "G0 approved 2026-10-18; only G1 (data-only) authorized",
+    "policy": [
+      "undeclared production, CI and installer consumers refuse",
+      "retired is forbidden while active or declared",
+      "rollback is a reviewed pointer-transition receipt, not a state"
+    ],
+    "canonical_design": "orama-system docs/v2 references: m1-virtual-versioning-generations-design-2026-10-18.md"
+  }
+}
