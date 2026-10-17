@@ -1,0 +1,40 @@
+{
+  "id": "4963dc322d30",
+  "key": "manual_4963dc",
+  "name": "manual_4963dc",
+  "claim": "A gate whose expected value is derived from the artifact it validates can never fail: take expected values from an independent table or the repository, keep prior generations archived byte for byte and tested against their own frozen identities, and prove every gate with a mutation test that a self-consistent wrong input is refused, written red before green.",
+  "conditions": [
+    "frozen generation archive",
+    "mutation test red green",
+    "validator tautology"
+  ],
+  "evidence_ids": [
+    "2026-10-17T21:55:55.108398+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-17T21:55:55.108398+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-17T21:55:55.108398+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-17T21:55:55.239183+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Hit in M1 generation 2: a lane check had been changed to compare the manifest with itself, which turned a required check green without testing anything; the wrong-lane mutation test failed before the fix. Derived from the M1 generation-2 pin promotion of 2026-10-18 and the graph-optimization gating in orama-system doc 57 section 14, the R4 plan task T8c and the operator remaining-implementation notes. Convention: .agent/references/graduation-ceremony-mutation-approvals.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-17T21:55:55.108398+00:00"
+      ],
+      "lessons_sha": "b7f9978ef4f3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-17T21:55:55.239172+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Hit in M1 generation 2: a lane check had been changed to compare the manifest with itself, which turned a required check green without testing anything; the wrong-lane mutation test failed before the fix. Derived from the M1 generation-2 pin promotion of 2026-10-18 and the graph-optimization gating in orama-system doc 57 section 14, the R4 plan task T8c and the operator remaining-implementation notes. Convention: .agent/references/graduation-ceremony-mutation-approvals.md."
+}
