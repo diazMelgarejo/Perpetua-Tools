@@ -599,8 +599,10 @@ pointer-transition receipt, not a state; undeclared production consumers refuse.
 list. Each generation has a sunset rule so compatibility debt does not accumulate.
 Where pins live matters: in oramasys the promoted Core pin repeated in 13 files and the harness
 drift guard forbids package-file changes between consumer and harness, so a pin edit in the
-package file is always a new consumer commit. Only an install-time constraints file chosen by the
-active pointer gives rollback without a consumer change. Design note:
+package file is always a new consumer commit. Option A performs a reviewed pointer transition
+between existing generation-specific environments; Option B is optional install-time constraints
+indirection for fresh installs. Neither path permits an undeclared consumer to follow `ACTIVE`.
+Design note:
 `.agent/references/virtual-versioning-generations-design.md`.
 
 Compact ceremony mnemonic:

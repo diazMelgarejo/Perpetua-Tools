@@ -51,7 +51,7 @@ evidence are the product.
 | 10 | Independent recompute | A non-maker recomputes from raw artifacts; the maker's recompute is labelled not independent | Reviewer recompute from raw artifacts; maker's labelled as such |
 | 11 | Acceptance and receipt | Operator accepts; a metadata-only receipt records identifiers, digests, counts, independence and claim limits | Receipt PR 416 |
 | 12 | Merge | **For pins this is the activation.** Merge commits pinned to the approved head so the SHAs stay reachable; retarget a stacked PR's base to the default branch before merging it; set the record's status to match what main installs in the same change or the next one | PR 414, 53, then 55; PR 55 retargeted first |
-| 13 | Rollback record | The previous generation is the rollback target; a rollback is a new reviewed generation, never a rewrite | Rollback block in the promotion record |
+| 13 | Rollback record | The previous generation is the rollback target; never a rewrite. A reviewed pointer-transition receipt is sufficient for an accepted, byte-identical generation; a differing target is a new generation and takes the full ceremony (section 6) | Rollback block in the promotion record |
 | 14 | Graduate to memory | Only after canonical evidence is published: stage and graduate lessons with rationale, additively | This reference and its lessons |
 
 ## 4. Rules that make it durable

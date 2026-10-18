@@ -1,8 +1,9 @@
 # Virtual versioning for oramasys (pointer)
 
-Canonical design, in orama-system docs/v2/references:
-`m1-virtual-versioning-generations-design-2026-10-18.md`. Decisions and designs live there;
-this file only points and summarizes.
+Canonical design, pending merge in
+[orama-system PR #417](https://github.com/diazMelgarejo/orama-system/blob/docs/m1-virtual-versioning-design-20261018/docs/v2/references/m1-virtual-versioning-generations-design-2026-10-18.md):
+`m1-virtual-versioning-generations-design-2026-10-18.md`. Decisions and designs live there; this
+file only points and summarizes.
 
 Summary: rollback as a move between immutable generations, modelled on browser compatibility
 modes, not a repository revert or a package downgrade.

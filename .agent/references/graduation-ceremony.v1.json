@@ -109,11 +109,13 @@
       "acceptance tests"
     ],
     "never": [
-      "alter the acceptance metric in the same experiment",
+      "alter the acceptance metric during an experiment",
+      "edit the evaluator, safety policy or acceptance tests, even between experiments",
       "mutate production topology from natural language",
       "promote itself",
       "merge"
-    ]
+    ],
+    "max_stage_until_preconditions_met": 7
   },
   "virtual_versioning": {
     "model": "generation = immutable named contract; ACTIVE pointer; consumers declare generation or edge; analogy: browser compatibility modes",
@@ -144,6 +146,6 @@
       "retired is forbidden while active or declared",
       "rollback is a reviewed pointer-transition receipt, not a state"
     ],
-    "canonical_design": "orama-system docs/v2 references: m1-virtual-versioning-generations-design-2026-10-18.md"
+    "canonical_design": "https://github.com/diazMelgarejo/orama-system/blob/docs/m1-virtual-versioning-design-20261018/docs/v2/references/m1-virtual-versioning-generations-design-2026-10-18.md"
   }
 }
