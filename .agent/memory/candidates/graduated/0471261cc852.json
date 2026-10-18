@@ -1,0 +1,43 @@
+{
+  "id": "0471261cc852",
+  "key": "manual_047126",
+  "name": "manual_047126",
+  "claim": "A production, CI, or installer consumer must explicitly declare either a fixed generation or an edge; only an edge resolves the reviewed ACTIVE pointer, and undeclared consumers refuse. Option A checks the selected generation against repeated existing pins and does not change a running environment. A running-system rollback separately switches between operator-provisioned generation-specific environments after the G4/G5 drill; Option B remains optional G2b constraints indirection for fresh installs.",
+  "conditions": [
+    "ACTIVE",
+    "G2b constraints",
+    "Option A",
+    "edge",
+    "running rollback",
+    "virtual versioning"
+  ],
+  "evidence_ids": [
+    "2026-10-18T04:10:53.078190+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T04:10:53.078190+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T04:10:53.078190+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T04:10:56.839995+00:00",
+      "action": "graduated",
+      "reviewer": "codex",
+      "notes": "Supersedes the accepted claim to separate explicit selector semantics, Option A pin-consistency validation, the operator-provisioned G4/G5 environment switch for running rollback, and optional G2b fresh-install constraints indirection.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T04:10:53.078190+00:00"
+      ],
+      "lessons_sha": "f9df01a29425"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T04:10:56.839990+00:00",
+  "reviewer": "codex",
+  "rationale": "Supersedes the accepted claim to separate explicit selector semantics, Option A pin-consistency validation, the operator-provisioned G4/G5 environment switch for running rollback, and optional G2b fresh-install constraints indirection."
+}

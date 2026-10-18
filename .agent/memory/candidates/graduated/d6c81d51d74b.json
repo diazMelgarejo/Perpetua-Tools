@@ -1,0 +1,41 @@
+{
+  "id": "d6c81d51d74b",
+  "key": "manual_d6c81d",
+  "name": "manual_d6c81d",
+  "claim": "Treat graph, prompt, node or strategy changes from an AutoResearcher or optimizer as untrusted candidates: automated graph evolution stays research-only until a versioned GraphSpec, GraphTrace corpus, locked evaluator, quality cost latency reliability metrics, candidate isolation and a promotion gate exist; the evaluator, safety policy and acceptance tests are fixed inputs the mutator cannot edit during the experiment; evaluate immutable candidates in contained runs on held-out data; promotion is an explicit operator-owned versioned decision with a rollback target, and a natural-language suggestion never mutates a production topology.",
+  "conditions": [
+    "autoresearch promotion gate",
+    "constellation auto-optimization",
+    "graph optimization",
+    "locked evaluator"
+  ],
+  "evidence_ids": [
+    "2026-10-17T21:55:54.887182+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-17T21:55:54.887182+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-17T21:55:54.887182+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-17T21:55:55.024003+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Derived from the M1 generation-2 pin promotion of 2026-10-18 and the graph-optimization gating in orama-system doc 57 section 14, the R4 plan task T8c and the operator remaining-implementation notes. Convention: .agent/references/graduation-ceremony-mutation-approvals.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-17T21:55:54.887182+00:00"
+      ],
+      "lessons_sha": "197b5f870a4c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-17T21:55:55.023993+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Derived from the M1 generation-2 pin promotion of 2026-10-18 and the graph-optimization gating in orama-system doc 57 section 14, the R4 plan task T8c and the operator remaining-implementation notes. Convention: .agent/references/graduation-ceremony-mutation-approvals.md."
+}

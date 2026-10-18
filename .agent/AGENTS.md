@@ -38,6 +38,18 @@ Workflow:
 4. `python .agent/tools/reject.py <id> --reason "..."` to reject
 5. `python .agent/tools/reopen.py <id>` to requeue
 
+## Mutation approvals (graduation ceremony)
+
+- `references/graduation-ceremony-mutation-approvals.md` (+ `graduation-ceremony.v1.json`):
+  stage route for pins, manifests, registries, policies and AutoResearcher or graph-optimizer
+  candidates. Graph optimization stays research-only behind a locked evaluator and an explicit
+  operator promotion.
+- `references/virtual-versioning-generations-design.md`: design-only. Generations, an active
+  pointer and a state machine (rollback as a move between immutable generations; pin-location
+  options A and B).
+- Recall: `python .agent/tools/recall.py "graduation ceremony mutation"` before approving any
+  oramasys mutation.
+
 ## Skills
 
 - `skills/_index.md`
