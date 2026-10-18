@@ -1,0 +1,46 @@
+{
+  "id": "eccc672953c8",
+  "key": "manual_eccc67",
+  "name": "manual_eccc67",
+  "claim": "Treat a reviewer's 'No change is required' as a conclusion reached from a proxy (usually 'correct for the documented cases'), not as a finding: restate the real question, then answer it with the method that actually tests it. For a decision core with injected ports, build a violating collaborator per documented postcondition (with the existing check unable to mask it, e.g. a matching digest), write the failing test first, and prove the tests bite by removing the guard. Decide claim by claim, since parts of the verdict can be right.",
+  "conditions": [
+    "afrp",
+    "code-review",
+    "coderabbit",
+    "defense-in-depth",
+    "mutation-test",
+    "no-change-required",
+    "port-contract",
+    "proxy",
+    "review-verdict"
+  ],
+  "evidence_ids": [
+    "2026-10-18T11:30:17.979968+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T11:30:17.979968+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T11:30:17.979968+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T11:30:18.129921+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "oramasys#63 (E1 C2 permit logic, 2026-10-18): CodeRabbit judged decide_permit needed no change. Tests written first showed two gaps the verdict missed: a wrong-grant permit whose stored digest matched the request, and an expired or abandoned permit with a future expires_at, were each returned as a valid identical retry (RED: DID NOT RAISE). Four fail-closed guards (commit 87e18be) turned them green; removing the guards failed 5 of 6 new tests while the original 5 decision tests passed, so the tests bite and the guards do not over-reject. The reviewer's != point was right and left alone. The reply called this defense in depth, not a reproduced incident: consumer-side binding checks remain a second line. Related: the deferral-verification lesson (verify an out-of-scope claim with git log) is the same habit applied to a different claim.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T11:30:17.979968+00:00"
+      ],
+      "lessons_sha": "741a480655cc"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T11:30:18.129907+00:00",
+  "reviewer": "learn.py",
+  "rationale": "oramasys#63 (E1 C2 permit logic, 2026-10-18): CodeRabbit judged decide_permit needed no change. Tests written first showed two gaps the verdict missed: a wrong-grant permit whose stored digest matched the request, and an expired or abandoned permit with a future expires_at, were each returned as a valid identical retry (RED: DID NOT RAISE). Four fail-closed guards (commit 87e18be) turned them green; removing the guards failed 5 of 6 new tests while the original 5 decision tests passed, so the tests bite and the guards do not over-reject. The reviewer's != point was right and left alone. The reply called this defense in depth, not a reproduced incident: consumer-side binding checks remain a second line. Related: the deferral-verification lesson (verify an out-of-scope claim with git log) is the same habit applied to a different claim."
+}

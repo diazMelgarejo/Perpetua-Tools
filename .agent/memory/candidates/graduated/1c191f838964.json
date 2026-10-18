@@ -1,0 +1,44 @@
+{
+  "id": "1c191f838964",
+  "key": "manual_1c191f",
+  "name": "manual_1c191f",
+  "claim": "When a commit fails with 'stale lock file: index.lock' from a hygiene hook, do not just delete the locks. Git holds index.lock for the whole pre-commit run, so an existence-based scan flags the lock of the very operation it runs inside. Make the scan age-gated (locks younger than a few minutes belong to the current operation) and test both a fresh in-flight lock (ignored) and an old one (reported).",
+  "conditions": [
+    "age-gate",
+    "false-positive",
+    "hook",
+    "index-lock",
+    "pre-commit",
+    "repo_hygiene",
+    "stale-lock"
+  ],
+  "evidence_ids": [
+    "2026-10-18T11:30:20.068566+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T11:30:20.068566+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T11:30:20.068566+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T11:30:20.213968+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama-system#421, 2026-10-18: scan_stale_git_locks in scripts/review/repo_hygiene.py reported every lock under the git directory, so every commit through the hook failed. Reproduced across three real attempts, each with a fresh PID in the next-index lock name; no live git process held them afterwards, and deleting them as the message suggested changed nothing. Fix: STALE_LOCK_AGE_SECONDS = 300 plus a regression test; three older fixtures had to age their locks past the threshold. 62 of 62 hygiene tests pass. Until that PR merges other sessions may still hit it.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T11:30:20.068566+00:00"
+      ],
+      "lessons_sha": "18693946401c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T11:30:20.213954+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama-system#421, 2026-10-18: scan_stale_git_locks in scripts/review/repo_hygiene.py reported every lock under the git directory, so every commit through the hook failed. Reproduced across three real attempts, each with a fresh PID in the next-index lock name; no live git process held them afterwards, and deleting them as the message suggested changed nothing. Fix: STALE_LOCK_AGE_SECONDS = 300 plus a regression test; three older fixtures had to age their locks past the threshold. 62 of 62 hygiene tests pass. Until that PR merges other sessions may still hit it."
+}

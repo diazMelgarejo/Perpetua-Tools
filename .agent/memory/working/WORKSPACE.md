@@ -1,5 +1,17 @@
 # WORKSPACE — current task state
 
+**Updated:** 2026-10-18 UTC (stacked-PR rescue, E1 C2 permit guards, chronicle)
+**Session record:** `memory/working/2026-10-18-stacked-pr-c2-no-change-required-chronicle.md`
+**State:** Oramasys stack #64 is linear: `main` <- #63 (E1 C2 digest and permit
+logic, head `87e18be`, clean, 15 of 15 checks) <- #62 (ruff cleanup, head `da580b9`,
+re-seated by the operator's lease-pinned push `319d447` to `da580b9`). Merge bottom-up.
+PR #22 and orama-system#421 are merged. A reviewer's "No change is required" on #63 was
+re-derived claim by claim; the `!=` digest compare stayed, and four fail-closed guards
+on the store and `issue_new` ports were added with mutation-proven tests. Ten lessons
+graduated (`lesson_eccc672953c8` and nine more). Open: a known-answer digest test,
+the `/team-onboarding` guide answers, another session's uncommitted gossip-bus files in
+orama-system, and the unexecuted Cowork VM image cleanup.
+
 **Updated:** 2026-10-12 UTC (AlphaClaw bind lesson provenance remediation)
 **Session record:** `memory/working/ALPHACLAW_BIND_HOST_PROVENANCE_2026-09-28.md`
 **State:** The accepted AlphaClaw loopback-bind lesson

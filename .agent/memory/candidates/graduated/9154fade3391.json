@@ -1,0 +1,45 @@
+{
+  "id": "9154fade3391",
+  "key": "manual_9154fa",
+  "name": "manual_9154fa",
+  "claim": "Before acting on a review finding that was pasted or relayed, fetch the original review body (gh api repos/<owner>/<repo>/pulls/<n>/reviews/<id>) and compare: a trimmed verdict changes what the finding means. Then word the 'fixed in commit' reply to match the reviewer's actual position (for example 'you judged this optional; we added it because ...') instead of implying the reviewer demanded the change. Review bodies list 'Additional comments' with no inline threads, so reply with PR-level comments, one per finding, each carrying its own SHA.",
+  "conditions": [
+    "additional-comments",
+    "attribution",
+    "coderabbit",
+    "fixed-in-commit",
+    "gh-api",
+    "pasted-text",
+    "review-body",
+    "truncated-verdict"
+  ],
+  "evidence_ids": [
+    "2026-10-18T11:30:18.218878+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T11:30:18.218878+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T11:30:18.218878+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T11:30:18.363786+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "oramasys#63, 2026-10-18: the relayed copy of CodeRabbit's finding on decide_permit had lost its closing sentence 'No change is required'. Fetching review 5562419447 exposed it before any edit. That prevented a reply that credited a reviewer mandate for what was optional hardening, and let the change be decided on its merits rather than anchored on the verdict or on its absence. One comment per finding with its own commit SHA keeps every remediation mechanically attributable to the finding that caused it (post-review micro-remediation doctrine).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T11:30:18.218878+00:00"
+      ],
+      "lessons_sha": "031bf8c0dcc3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T11:30:18.363771+00:00",
+  "reviewer": "learn.py",
+  "rationale": "oramasys#63, 2026-10-18: the relayed copy of CodeRabbit's finding on decide_permit had lost its closing sentence 'No change is required'. Fetching review 5562419447 exposed it before any edit. That prevented a reply that credited a reviewer mandate for what was optional hardening, and let the change be decided on its merits rather than anchored on the verdict or on its absence. One comment per finding with its own commit SHA keeps every remediation mechanically attributable to the finding that caused it (post-review micro-remediation doctrine)."
+}

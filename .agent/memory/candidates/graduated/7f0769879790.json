@@ -1,0 +1,46 @@
+{
+  "id": "7f0769879790",
+  "key": "manual_7f0769",
+  "name": "manual_7f0769",
+  "claim": "GitHub stacked PRs: a stack is a chain where each PR's base is the branch of the PR below it and the bottom targets trunk; it needs a fully linear history and merges bottom-up. When a lower layer changes, use a cascading rebase from the bottom and re-seat upper layers before their lease-pinned pushes. For gh stack checkout, do not rely on a bare number when a stack and pull request could share it: resolution tries a stack number first, then a pull request number, then a branch name. Use a pull request URL or explicit branch name when that distinction matters; if a safety hook blocks a push, verify locally and hand the operator the exact lease-pinned command rather than routing around the hook.",
+  "conditions": [
+    "bottom-up",
+    "checkout-ambiguity",
+    "gh-stack",
+    "hook-handoff",
+    "lease-pinned-push",
+    "linear-history",
+    "rebase",
+    "stack-number",
+    "stacked-prs"
+  ],
+  "evidence_ids": [
+    "2026-10-18T11:50:37.464683+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T11:50:37.464683+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T11:50:37.464683+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T11:50:41.777522+00:00",
+      "action": "graduated",
+      "reviewer": "Codex (CodeRabbit remediation)",
+      "notes": "CodeRabbit review 5562820487 / inline comment 4306892055 identified that lesson_979234ff54c7 wrongly treated bare checkout numbers as one shared namespace. GitHub's stacked-PR CLI reference confirms checkout accepts stack, pull-request, URL, and branch targets and falls back to a branch name; the reviewed resolver order is stack number, then PR number, then branch name. This narrower replacement preserves the valid rebase and push guidance while preventing an operator from selecting an unintended stack.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T11:50:37.464683+00:00"
+      ],
+      "lessons_sha": "804016ffb425"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T11:50:41.777506+00:00",
+  "reviewer": "Codex (CodeRabbit remediation)",
+  "rationale": "CodeRabbit review 5562820487 / inline comment 4306892055 identified that lesson_979234ff54c7 wrongly treated bare checkout numbers as one shared namespace. GitHub's stacked-PR CLI reference confirms checkout accepts stack, pull-request, URL, and branch targets and falls back to a branch name; the reviewed resolver order is stack number, then PR number, then branch name. This narrower replacement preserves the valid rebase and push guidance while preventing an operator from selecting an unintended stack."
+}
