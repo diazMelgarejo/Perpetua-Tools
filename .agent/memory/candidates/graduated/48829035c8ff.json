@@ -1,0 +1,45 @@
+{
+  "id": "48829035c8ff",
+  "key": "manual_488290",
+  "name": "manual_488290",
+  "claim": "Before characterizing GossipBus board state (stale claims, FAILED rows, 'orphaned' work), read the board's own log for a prior reconciliation and look for the work's successor tracker. Claims held by dead agents are released with heartbeat cleanup after confirming with the operator; FAILED rows with exhausted retries are often correct terminal records of superseded or malformed-dependency rows; old queue IDs may have evolved into a different tracker (consolidated-plan lanes and generations). Map old IDs to the successor and complete only what the successor shows done.",
+  "conditions": [
+    "board",
+    "failed-tasks",
+    "gossipbus",
+    "heartbeat-cleanup",
+    "orphaned-claims",
+    "queue",
+    "reconciliation",
+    "superseded"
+  ],
+  "evidence_ids": [
+    "2026-10-18T11:30:19.609649+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T11:30:19.609649+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T11:30:19.609649+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T11:30:19.752934+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-18 board pass: 71 agents, 1 live, 10 M1 claims held by dead agents. My first report told the operator three FAILED rows needed a retry-or-abandon decision; a log read then showed kimi-for-coding had terminal-closed all three on 2026-09-11 with reasons (malformed depends_on, superseded by corrected rows, PT PR #241 merged), and the board note was corrected. The 10 M1-QUALIFICATION-GROUNDWORK tasks had no code trace in the repos searched because the work had moved to cross-repo PRs tracked in a dated consolidated plan; only M1-Q4b was completed (the plan showed it done) and M1-D1 (ADR-71) was the one true orphan. Repo-only searches cannot see work tracked elsewhere.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T11:30:19.609649+00:00"
+      ],
+      "lessons_sha": "bfa21fc9e843"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T11:30:19.752920+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-18 board pass: 71 agents, 1 live, 10 M1 claims held by dead agents. My first report told the operator three FAILED rows needed a retry-or-abandon decision; a log read then showed kimi-for-coding had terminal-closed all three on 2026-09-11 with reasons (malformed depends_on, superseded by corrected rows, PT PR #241 merged), and the board note was corrected. The 10 M1-QUALIFICATION-GROUNDWORK tasks had no code trace in the repos searched because the work had moved to cross-repo PRs tracked in a dated consolidated plan; only M1-Q4b was completed (the plan showed it done) and M1-D1 (ADR-71) was the one true orphan. Repo-only searches cannot see work tracked elsewhere."
+}

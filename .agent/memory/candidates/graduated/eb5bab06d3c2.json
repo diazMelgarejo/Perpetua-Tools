@@ -1,0 +1,46 @@
+{
+  "id": "eb5bab06d3c2",
+  "key": "manual_eb5bab",
+  "name": "manual_eb5bab",
+  "claim": "When rebasing onto a base that already contains an equivalent fix, classify each conflicting hunk as 'superseded by the base' or 'genuinely additive' (keep the base side for the first, your side for the second), then re-diff every touched file against the base before continuing: non-conflicting hunks auto-merge and can silently re-add your side's version (a duplicate import). Never accept a mechanical lint auto-fix that moves an import above a sys.path guard it depends on; keep the import below the guard with a narrow noqa E402.",
+  "conditions": [
+    "auto-merge",
+    "e402",
+    "import-order",
+    "merge-conflict",
+    "noqa",
+    "rebase",
+    "ruff",
+    "superseded-by-base",
+    "sys-path"
+  ],
+  "evidence_ids": [
+    "2026-10-18T11:30:18.910098+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T11:30:18.910098+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T11:30:18.910098+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T11:30:19.054855+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "oramasys#62 rebase after PR #22 landed its own ruff commit (2026-10-18). In test_telos_network_authority.py an earlier ruff --fix of mine had hoisted 'from scripts.check_telos_network_authority import scan_tree' above the sys.path.insert that makes it importable; main kept it below with a noqa E402 (correct and behavior-preserving). After resolving the conflict block to main's side an auto-merged hunk still re-added the hoisted import, so it was imported twice; restoring the base version wholesale fixed it. In test_auth_providers.py the conflict was only whitespace next to a docstring main lacked, so my side was kept there. A single resolve-to-one-side policy would have been wrong in one of the two files.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T11:30:18.910098+00:00"
+      ],
+      "lessons_sha": "c81fc2900103"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T11:30:19.054840+00:00",
+  "reviewer": "learn.py",
+  "rationale": "oramasys#62 rebase after PR #22 landed its own ruff commit (2026-10-18). In test_telos_network_authority.py an earlier ruff --fix of mine had hoisted 'from scripts.check_telos_network_authority import scan_tree' above the sys.path.insert that makes it importable; main kept it below with a noqa E402 (correct and behavior-preserving). After resolving the conflict block to main's side an auto-merged hunk still re-added the hoisted import, so it was imported twice; restoring the base version wholesale fixed it. In test_auth_providers.py the conflict was only whitespace next to a docstring main lacked, so my side was kept there. A single resolve-to-one-side policy would have been wrong in one of the two files."
+}
