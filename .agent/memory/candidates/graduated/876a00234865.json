@@ -1,0 +1,59 @@
+{
+  "id": "876a00234865",
+  "key": "manual_876a00",
+  "name": "manual_876a00",
+  "claim": "Simulate a proposed fix against the failure it targets before offering it; a counter, or the digest of an event that already exists, cannot expose a clean snapshot rollback because the restored history is identical up to the snapshot.",
+  "conditions": [
+    "against",
+    "already",
+    "because",
+    "before",
+    "cannot",
+    "clean",
+    "counter",
+    "digest",
+    "event",
+    "exists",
+    "expose",
+    "failure",
+    "fix",
+    "history",
+    "identical",
+    "offering",
+    "proposed",
+    "restored",
+    "rollback",
+    "simulate",
+    "snapshot",
+    "targets"
+  ],
+  "evidence_ids": [
+    "2026-10-18T23:18:31.203867+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T23:18:31.203867+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T23:18:31.203867+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T23:18:31.344757+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: the digest-at-R_f fix suggested for orama-system#419 accepted the clean-rollback case in a hash-chained model; an independent side note said the same before the model did. Offering it unsimulated would have shipped a gap labelled as closed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T23:18:31.203867+00:00"
+      ],
+      "lessons_sha": "0603be1d1ce6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T23:18:31.344750+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: the digest-at-R_f fix suggested for orama-system#419 accepted the clean-rollback case in a hash-chained model; an independent side note said the same before the model did. Offering it unsimulated would have shipped a gap labelled as closed."
+}

@@ -1,0 +1,55 @@
+{
+  "id": "7839a778bb36",
+  "key": "manual_7839a7",
+  "name": "manual_7839a7",
+  "claim": "A safety hook that blocks a destructive-looking command (rm -rf under a temp path) is not bypassed: use the non-destructive equivalent (git worktree remove) and report the false positive.",
+  "conditions": [
+    "blocks",
+    "bypassed",
+    "command",
+    "destructive-looking",
+    "equivalent",
+    "false",
+    "git",
+    "hook",
+    "non-destructive",
+    "path",
+    "positive",
+    "remove",
+    "report",
+    "safety",
+    "temp",
+    "under",
+    "use",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-10-18T23:18:32.994634+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T23:18:32.994634+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T23:18:32.994634+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T23:18:33.133228+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: autoresearch dangerous-command hook blocked a scratch cleanup; worktree removal needed no bypass.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T23:18:32.994634+00:00"
+      ],
+      "lessons_sha": "d406effeed77"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T23:18:33.133215+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: autoresearch dangerous-command hook blocked a scratch cleanup; worktree removal needed no bypass."
+}

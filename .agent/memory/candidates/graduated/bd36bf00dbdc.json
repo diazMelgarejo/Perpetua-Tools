@@ -1,0 +1,56 @@
+{
+  "id": "bd36bf00dbdc",
+  "key": "manual_bd36bf",
+  "name": "manual_bd36bf",
+  "claim": "A negative test whose expected message is an alternation such as PATH|executable passes vacuously when a different error fires first; pin the exact message and mutation-check the guard.",
+  "conditions": [
+    "alternation",
+    "different",
+    "error",
+    "exact",
+    "executable",
+    "expected",
+    "fires",
+    "first",
+    "guard",
+    "message",
+    "mutation-check",
+    "negative",
+    "passes",
+    "path",
+    "pin",
+    "such",
+    "test",
+    "vacuously",
+    "whose"
+  ],
+  "evidence_ids": [
+    "2026-10-18T23:18:32.325117+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T23:18:32.325117+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T23:18:32.325117+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T23:18:32.456071+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: reviewer found the empty-PATH test passed without exercising the guard; pinned message made it fail under mutation.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T23:18:32.325117+00:00"
+      ],
+      "lessons_sha": "3a674e227418"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T23:18:32.456063+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: reviewer found the empty-PATH test passed without exercising the guard; pinned message made it fail under mutation."
+}
