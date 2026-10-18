@@ -1,5 +1,14 @@
 # WORKSPACE — current task state
 
+**Updated:** 2026-10-19 UTC (clean-rollback chain-event fix, preflight hardening)
+**Session record:** `memory/working/2026-10-19-clean-rollback-and-preflight-chronicle.md`
+**State:** The digest-at-`R_f` suggestion for orama-system#419 was disproved by a model: a
+clean snapshot restore matches it. The finalization is now a hash-chained issuer event
+(orama-system#423, `edfe65b0`), with the unseen-events residual left to the section 8.2
+witness. The same PR hardens the dispatcher preflight (PATH-only bare names, quoted and
+unset PATH, `cline` and `kimi`, drift check) and its plan doc. Two `agy` review rounds
+were folded in. Ten more lessons graduated. Open: #423 CI, spec operator decisions 1 to 7.
+
 **Updated:** 2026-10-18 UTC (stacked-PR rescue, E1 C2 permit guards, chronicle)
 **Session record:** `memory/working/2026-10-18-stacked-pr-c2-no-change-required-chronicle.md`
 **State:** Oramasys stack #64 is linear: `main` <- #63 (E1 C2 digest and permit
