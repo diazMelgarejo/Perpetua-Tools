@@ -1,0 +1,59 @@
+{
+  "id": "6676e3109515",
+  "key": "manual_6676e3",
+  "name": "manual_6676e3",
+  "claim": "When an operator asks for future actions at the head and tail of documents and board posts, put the same next-actions list in both places, because agents usually read only the start and end.",
+  "conditions": [
+    "actions",
+    "agents",
+    "asks",
+    "because",
+    "board",
+    "both",
+    "documents",
+    "end",
+    "future",
+    "head",
+    "list",
+    "next-actions",
+    "only",
+    "operator",
+    "places",
+    "posts",
+    "put",
+    "read",
+    "same",
+    "start",
+    "tail",
+    "usually"
+  ],
+  "evidence_ids": [
+    "2026-10-19T03:22:18.538721+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T03:22:18.538721+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T03:22:18.538721+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T03:22:18.673737+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: operator request; applied to the spec, the PR comment and the board notes.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T03:22:18.538721+00:00"
+      ],
+      "lessons_sha": "8e9d7a385c72"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T03:22:18.673729+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: operator request; applied to the spec, the PR comment and the board notes."
+}

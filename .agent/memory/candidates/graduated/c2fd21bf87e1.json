@@ -1,0 +1,65 @@
+{
+  "id": "c2fd21bf87e1",
+  "key": "manual_c2fd21",
+  "name": "manual_c2fd21",
+  "claim": "Enforce a single-use or uniqueness invariant with a database constraint on one shared key, not a lookup followed by a write; put competing actors (abort versus admission, retry versus original) on the same unique row so exactly one wins regardless of isolation level.",
+  "conditions": [
+    "abort",
+    "actors",
+    "admission",
+    "competing",
+    "constraint",
+    "database",
+    "enforce",
+    "exactly",
+    "followed",
+    "invariant",
+    "isolation",
+    "key",
+    "level",
+    "lookup",
+    "one",
+    "original",
+    "put",
+    "regardless",
+    "retry",
+    "row",
+    "same",
+    "shared",
+    "single-use",
+    "unique",
+    "uniqueness",
+    "versus",
+    "wins",
+    "write"
+  ],
+  "evidence_ids": [
+    "2026-10-19T03:22:16.060872+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T03:22:16.060872+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T03:22:16.060872+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T03:22:16.209592+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19 permit protocol: an abort that looked up absence and then wrote a tombstone raced a delayed admission, and code-only uniqueness let a second permit be minted after expiry; one unique attempt row removed both.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T03:22:16.060872+00:00"
+      ],
+      "lessons_sha": "fe24efa1d79b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T03:22:16.209581+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19 permit protocol: an abort that looked up absence and then wrote a tombstone raced a delayed admission, and code-only uniqueness let a second permit be minted after expiry; one unique attempt row removed both."
+}

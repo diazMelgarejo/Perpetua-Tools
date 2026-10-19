@@ -1,0 +1,56 @@
+{
+  "id": "5e3f64a7692c",
+  "key": "manual_5e3f64",
+  "name": "manual_5e3f64",
+  "claim": "Recovery operations (abort, abandon, reconciliation) must stay callable after the authority deadline without extending the authority or authorizing dispatch; a deadline that blocks recovery strands held resources forever.",
+  "conditions": [
+    "abandon",
+    "abort",
+    "after",
+    "authority",
+    "authorizing",
+    "blocks",
+    "callable",
+    "deadline",
+    "dispatch",
+    "extending",
+    "forever",
+    "held",
+    "operations",
+    "reconciliation",
+    "recovery",
+    "resources",
+    "stay",
+    "strands",
+    "without"
+  ],
+  "evidence_ids": [
+    "2026-10-19T03:22:16.976142+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T03:22:16.976142+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T03:22:16.976142+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T03:22:17.109490+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: reviewer found a single deadline doing two jobs; splitting admission and finalization from bounded recovery-call timeouts fixed the strand without weakening fail-closed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T03:22:16.976142+00:00"
+      ],
+      "lessons_sha": "10b8deaab88b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T03:22:17.109476+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: reviewer found a single deadline doing two jobs; splitting admission and finalization from bounded recovery-call timeouts fixed the strand without weakening fail-closed."
+}

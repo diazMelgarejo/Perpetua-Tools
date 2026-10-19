@@ -1,0 +1,69 @@
+{
+  "id": "f7d2c3a83789",
+  "key": "manual_f7d2c3",
+  "name": "manual_f7d2c3",
+  "claim": "After editing spec text mid-review, re-read every rule the edit touches before posting it, and review your own new text as hard as anyone else's: check each cited rule number, optional versus mandatory fields, and absolute claims such as 'no round trip'.",
+  "conditions": [
+    "absolute",
+    "after",
+    "anyone",
+    "before",
+    "check",
+    "cited",
+    "claims",
+    "each",
+    "edit",
+    "editing",
+    "else",
+    "every",
+    "fields",
+    "hard",
+    "mandatory",
+    "mid-review",
+    "new",
+    "number",
+    "optional",
+    "own",
+    "posting",
+    "re-read",
+    "review",
+    "round",
+    "rule",
+    "spec",
+    "such",
+    "text",
+    "touches",
+    "trip",
+    "versus",
+    "your"
+  ],
+  "evidence_ids": [
+    "2026-10-19T03:22:16.529353+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T03:22:16.529353+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T03:22:16.529353+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T03:22:16.659675+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: about seven review rounds each found defects the author had just introduced (a wrong rule citation, an optional field that was mandatory elsewhere, an over-strong claim, abandon versus successor contradicting itself).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T03:22:16.529353+00:00"
+      ],
+      "lessons_sha": "548dd9799a03"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T03:22:16.659667+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: about seven review rounds each found defects the author had just introduced (a wrong rule citation, an optional field that was mandatory elsewhere, an over-strong claim, abandon versus successor contradicting itself)."
+}

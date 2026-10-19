@@ -1,0 +1,58 @@
+{
+  "id": "055f0f81d60b",
+  "key": "manual_055f0f",
+  "name": "manual_055f0f",
+  "claim": "When integrating a reviewer's unpushed local commits, cherry-pick them with their authorship intact, resolve same-spot insertions as a union, re-run tests and a mutation check, and never push over their branch.",
+  "conditions": [
+    "authorship",
+    "branch",
+    "check",
+    "cherry-pick",
+    "commits",
+    "insertions",
+    "intact",
+    "integrating",
+    "local",
+    "mutation",
+    "never",
+    "over",
+    "push",
+    "re-run",
+    "resolve",
+    "reviewer",
+    "same-spot",
+    "tests",
+    "them",
+    "union",
+    "unpushed"
+  ],
+  "evidence_ids": [
+    "2026-10-19T03:22:18.316366+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T03:22:18.316366+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T03:22:18.316366+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T03:22:18.445680+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: three reviewer commits to the same PR were integrated; the only conflict was two paragraphs inserted at one spot, kept both; the guard tests still failed under mutation.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T03:22:18.316366+00:00"
+      ],
+      "lessons_sha": "e6625fc209a4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T03:22:18.445673+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: three reviewer commits to the same PR were integrated; the only conflict was two paragraphs inserted at one spot, kept both; the guard tests still failed under mutation."
+}

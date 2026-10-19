@@ -1,0 +1,66 @@
+{
+  "id": "d341f33a7714",
+  "key": "manual_d341f3",
+  "name": "manual_d341f3",
+  "claim": "Test an instruction's premise before executing it: if its literal reading removes a protection (no hard dependency dropping replay protection), or presumes state that has changed (amend a commit already on the remote), record the narrower safe reading or ask, instead of complying literally or rewriting remote history.",
+  "conditions": [
+    "already",
+    "amend",
+    "ask",
+    "before",
+    "changed",
+    "commit",
+    "complying",
+    "dependency",
+    "dropping",
+    "executing",
+    "hard",
+    "history",
+    "instead",
+    "instruction",
+    "literal",
+    "literally",
+    "narrower",
+    "premise",
+    "presumes",
+    "protection",
+    "reading",
+    "record",
+    "remote",
+    "removes",
+    "replay",
+    "rewriting",
+    "safe",
+    "state",
+    "test"
+  ],
+  "evidence_ids": [
+    "2026-10-19T03:22:17.868011+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T03:22:17.868011+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T03:22:17.868011+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T03:22:17.999285+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: the operator confirmed the scoped reading of decision 3, and for the amend request a plain new commit and a fast-forward push avoided rewriting history.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T03:22:17.868011+00:00"
+      ],
+      "lessons_sha": "950c69732e0b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T03:22:17.999277+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: the operator confirmed the scoped reading of decision 3, and for the amend request a plain new commit and a fast-forward push avoided rewriting history."
+}

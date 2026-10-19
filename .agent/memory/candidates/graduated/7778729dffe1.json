@@ -1,0 +1,63 @@
+{
+  "id": "7778729dffe1",
+  "key": "manual_777872",
+  "name": "manual_777872",
+  "claim": "Treat a signed refusal as proof only of the refused request, never of the absence of an earlier permit or intent; a retried signed artifact returns the original bytes, and a catch-up envelope stays separate, unsigned, and decided before the event is appended.",
+  "conditions": [
+    "absence",
+    "appended",
+    "artifact",
+    "before",
+    "bytes",
+    "catch-up",
+    "decided",
+    "earlier",
+    "envelope",
+    "event",
+    "intent",
+    "never",
+    "only",
+    "original",
+    "permit",
+    "proof",
+    "refusal",
+    "refused",
+    "request",
+    "retried",
+    "returns",
+    "separate",
+    "signed",
+    "stays",
+    "treat",
+    "unsigned"
+  ],
+  "evidence_ids": [
+    "2026-10-19T03:22:17.642523+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T03:22:17.642523+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T03:22:17.642523+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T03:22:17.774664+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: refusal after issuance does not free a reservation; re-signing a retry or deciding catch-up after the append breaks idempotency and the one-object guarantee.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T03:22:17.642523+00:00"
+      ],
+      "lessons_sha": "55a7691f20fc"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T03:22:17.774656+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: refusal after issuance does not free a reservation; re-signing a retry or deciding catch-up after the append breaks idempotency and the one-object guarantee."
+}
