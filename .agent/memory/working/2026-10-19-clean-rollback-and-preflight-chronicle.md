@@ -77,3 +77,94 @@ declined at the operator's direction: one PR per repository.
 - The spec's operator decisions 1 to 7 remain open for the operator.
 - The `/team-onboarding` guide still awaits its three answers; the Cowork VM image cleanup was
   not run.
+
+## Addendum: the review saga and the hybrid parallel workflow
+
+**Next actions (read first; repeated at the end).**
+
+1. Independent reviewer: a final re-review of orama-system#423 head `48fbeaef`.
+2. Operator: ratify the spec by exact commit if that is clean (decision 9 is confirmed,
+   section A5).
+3. Merge #423 once CI is green; CI on the final head was not yet known when this was written.
+4. After the merge, claim the queued oramasys and Phylax conformance task, tests failing first.
+5. Later and separate: the operator's pin promotion, only on conformance evidence.
+
+### A1. Outcomes
+
+| Item | State |
+| --- | --- |
+| orama-system#423 | Head `48fbeaef`: spec, dispatcher hardening, three reviewer commits (authorship kept) |
+| Perpetua-Tools#450 | Open; this record and 23 lessons for 2026-10-19 |
+| Operator decisions 1 to 9 | Recorded in the spec; decision 3 confirmed as the scoped reading |
+| oramasys conformance task | Queued, unclaimed; the merged helper has no `attempt_id`, sees only live permits, has no finalization or abort |
+
+### A2. The review saga
+
+| Round | Who found what | What changed |
+| --- | --- | --- |
+| 1 | A model disproved the digest at `R_f` | Finalization became a hash-chained event |
+| 2 | Reviewer: unrelated events forced permit replacement | Permit kept across a higher ack; two-grant test |
+| 3 | Spec gap: ambiguity with no `permit_id` yet | Durable `attempt_id`; four ambiguity states |
+| 4 | Reviewer: abort race; refusal proves no absence; retry identity | One unique row; claim withdrawn; retry rules pinned |
+| 5 | Reviewer: fence vs 4.3; circular release prerequisite; one deadline | Row-lock serialization; prerequisite fixed; deadlines split |
+| 6 | Three parallel analysts and `agy` passes | Lock order; abandon vs successor contradiction; retention |
+| 7 | Reviewer's three local commits | Integrated by cherry-pick; one union conflict |
+
+Round numbers are approximate groupings of about seven rounds. In every round the author's own
+new text contained defects that the next review found.
+
+### A3. The hybrid parallel workflow
+
+1. Run read-only analysts in parallel, each on a distinct lens, plus `agy` passes with the diff
+   inlined (headless `agy` is denied shell reads).
+2. Give every finding to ONE writer, who applies all edits sequentially.
+3. Lint, run the tests, then mutation-check the new guards.
+4. Push fast-forward only. Analysts report; they never edit shared files.
+5. The same pattern wrote this record: three drafting agents in parallel, one writer, then scans.
+
+### A4. Numbers
+
+| Measure | Value |
+| --- | --- |
+| Review rounds | About 7 |
+| Local tests, dispatcher and bridge | 50 passed, 1 skipped |
+| Mutation check on the PATH guard | 2 tests fail when it is broken |
+| CI on the final head | Not yet known |
+
+### A5. Decision 9 confirmation
+
+The spec recorded decision 9 (Codex coordinates Phylax release evidence, Claude reviews it
+independently, the operator approves the pin) from the reviewer's board note, which said the
+operator had decided it. The orchestrating session flagged that it had no direct confirmation and
+asked. The operator then confirmed it directly in this session. The record is now first-hand.
+This is the case that `lesson_2e745462a494` describes.
+
+### A6. Lessons graduated in this addendum
+
+| Lesson | Topic |
+| --- | --- |
+| `lesson_c2fd21bf87e1` | One unique key, not lookup then write |
+| `lesson_2c84b1ae8801` | Fake-store tests need a real-engine and terminal-history test |
+| `lesson_f7d2c3a83789` | Re-read every touched rule; review your own text hard |
+| `lesson_a765a3393eea` | No authorization that requires what it grants |
+| `lesson_5e3f64a7692c` | Recovery stays callable after the deadline, without authority |
+| `lesson_7016b327376a` | Durable attempt id before the first external call |
+| `lesson_15e5e5d7f8d0` | Compute expiry; fence and consumer share one row lock |
+| `lesson_7778729dffe1` | A signed refusal proves nothing about absence |
+| `lesson_d341f33a7714` | Test an instruction's premise; ask before rewriting history |
+| `lesson_c6f5aa0d3de1` | Parallel analysts, one writer |
+| `lesson_055f0f81d60b` | Cherry-pick a reviewer's local commits with authorship |
+| `lesson_6676e3109515` | Next actions at the head and the tail |
+| `lesson_2e745462a494` | Operator-confirmed only after the operator confirms |
+
+One drafted candidate was dropped: a push that prints "Everything up-to-date" after a
+hook-rejected commit is already covered by `lesson_18f5ca481f90`.
+
+**Next actions (repeated).**
+
+1. Independent reviewer: a final re-review of orama-system#423 head `48fbeaef`.
+2. Operator: ratify the spec by exact commit if that is clean (decision 9 is confirmed,
+   section A5).
+3. Merge #423 once CI is green; CI on the final head was not yet known when this was written.
+4. After the merge, claim the queued oramasys and Phylax conformance task, tests failing first.
+5. Later and separate: the operator's pin promotion, only on conformance evidence.
