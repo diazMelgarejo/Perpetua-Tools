@@ -1,0 +1,62 @@
+{
+  "id": "a0ffc2a1a316",
+  "key": "manual_a0ffc2",
+  "name": "manual_a0ffc2",
+  "claim": "CI status belongs to one exact head: re-check it after every push, and never carry a green result from an earlier commit or from the development machine to the new head; read the failing job log before concluding what broke.",
+  "conditions": [
+    "after",
+    "before",
+    "belongs",
+    "broke",
+    "carry",
+    "commit",
+    "concluding",
+    "development",
+    "earlier",
+    "every",
+    "exact",
+    "failing",
+    "green",
+    "head",
+    "job",
+    "log",
+    "machine",
+    "never",
+    "new",
+    "one",
+    "push",
+    "re-check",
+    "read",
+    "result",
+    "status"
+  ],
+  "evidence_ids": [
+    "2026-10-19T04:31:40.170493+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T04:31:40.170493+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T04:31:40.170493+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T04:31:40.305463+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19 orama-system#423: 26 checks were green on one head and the next head failed two tests on Linux CI; reading the log showed a case-sensitivity cause that the macOS run could not show.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T04:31:40.170493+00:00"
+      ],
+      "lessons_sha": "d901fc3a8755"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T04:31:40.305452+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19 orama-system#423: 26 checks were green on one head and the next head failed two tests on Linux CI; reading the log showed a case-sensitivity cause that the macOS run could not show."
+}

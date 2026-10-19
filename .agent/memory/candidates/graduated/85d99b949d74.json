@@ -1,0 +1,57 @@
+{
+  "id": "85d99b949d74",
+  "key": "manual_85d99b",
+  "name": "manual_85d99b",
+  "claim": "Reject a stale peer branch by trial-merging it into current main in a throwaway worktree and running the ratified tests, then remove the worktree; show the conflict and the duplicate definitions instead of opening a PR.",
+  "conditions": [
+    "branch",
+    "conflict",
+    "current",
+    "definitions",
+    "duplicate",
+    "instead",
+    "into",
+    "main",
+    "opening",
+    "peer",
+    "ratified",
+    "reject",
+    "remove",
+    "running",
+    "show",
+    "stale",
+    "tests",
+    "throwaway",
+    "trial-merging",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-10-19T07:01:35.602274+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T07:01:35.602274+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T07:01:35.602274+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T07:01:35.733339+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: a peer branch 34 commits behind conflicted in dispatcher.py and would have defined the registry twice, breaking the ratified tests at collection.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T07:01:35.602274+00:00"
+      ],
+      "lessons_sha": "4a4b6da5bf18"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T07:01:35.733331+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: a peer branch 34 commits behind conflicted in dispatcher.py and would have defined the registry twice, breaking the ratified tests at collection."
+}

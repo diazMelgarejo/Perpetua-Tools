@@ -1,0 +1,57 @@
+{
+  "id": "fad63c66c85c",
+  "key": "manual_fad63c",
+  "name": "manual_fad63c",
+  "claim": "Require a reviewer to prove each finding before posting it: run wc -l and grep -n on the exact cited line and paste both outputs, and treat behaviour the ratified specification requires as not a finding.",
+  "conditions": [
+    "before",
+    "behaviour",
+    "both",
+    "cited",
+    "each",
+    "exact",
+    "finding",
+    "grep",
+    "line",
+    "outputs",
+    "paste",
+    "posting",
+    "prove",
+    "ratified",
+    "require",
+    "requires",
+    "reviewer",
+    "run",
+    "specification",
+    "treat"
+  ],
+  "evidence_ids": [
+    "2026-10-19T07:01:35.381808+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T07:01:35.381808+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T07:01:35.381808+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T07:01:35.514344+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: one reviewer cited line 1000 of a 323-line file, claimed a field was absent when it was present, and flagged spec-mandated behaviour; after the proof rule it retracted all six findings with evidence.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T07:01:35.381808+00:00"
+      ],
+      "lessons_sha": "9cb19d1d0f77"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T07:01:35.514334+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: one reviewer cited line 1000 of a 323-line file, claimed a field was absent when it was present, and flagged spec-mandated behaviour; after the proof rule it retracted all six findings with evidence."
+}

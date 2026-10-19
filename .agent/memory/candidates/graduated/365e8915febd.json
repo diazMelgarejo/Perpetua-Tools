@@ -1,0 +1,59 @@
+{
+  "id": "365e8915febd",
+  "key": "manual_365e89",
+  "name": "manual_365e89",
+  "claim": "To make a rollback visible to a consumer, make the confirming act itself a new event in the hash-chained log: after a restore the next event takes a version the consumer already holds with a different digest, with no clocks needed.",
+  "conditions": [
+    "act",
+    "after",
+    "already",
+    "clocks",
+    "confirming",
+    "consumer",
+    "different",
+    "digest",
+    "event",
+    "hash-chained",
+    "holds",
+    "itself",
+    "log",
+    "make",
+    "needed",
+    "new",
+    "next",
+    "restore",
+    "rollback",
+    "takes",
+    "version",
+    "visible"
+  ],
+  "evidence_ids": [
+    "2026-10-18T23:18:31.431977+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T23:18:31.431977+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T23:18:31.431977+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T23:18:31.569459+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: modelled designs D0 (scalar floors), D1 (digest of existing event), D2 (finalization as chain event); only D2 refused the rollback that happens after the request and before the consumer commits.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T23:18:31.431977+00:00"
+      ],
+      "lessons_sha": "196cefd1b4b8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T23:18:31.569448+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: modelled designs D0 (scalar floors), D1 (digest of existing event), D2 (finalization as chain event); only D2 refused the rollback that happens after the request and before the consumer commits."
+}

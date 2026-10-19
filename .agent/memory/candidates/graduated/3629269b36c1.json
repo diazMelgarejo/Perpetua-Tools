@@ -1,0 +1,67 @@
+{
+  "id": "3629269b36c1",
+  "key": "manual_362926",
+  "name": "manual_362926",
+  "claim": "In Python, sqlite3.Connection as a context manager commits on success and rolls back on exception but does not close. To close without changing transaction semantics, wrap the transaction manager inside contextlib.closing (with closing(connection) as conn: with conn: ...), or use a close-always helper that commits or rolls back before closing; run new tests with ResourceWarning treated as an error.",
+  "conditions": [
+    "back",
+    "before",
+    "changing",
+    "close",
+    "close-always",
+    "closing",
+    "commits",
+    "conn",
+    "connection",
+    "context",
+    "contextlib",
+    "error",
+    "exception",
+    "helper",
+    "inside",
+    "manager",
+    "new",
+    "python",
+    "resourcewarning",
+    "rolls",
+    "run",
+    "semantics",
+    "sqlite3",
+    "success",
+    "tests",
+    "transaction",
+    "treated",
+    "use",
+    "without",
+    "wrap"
+  ],
+  "evidence_ids": [
+    "2026-10-19T08:04:24.379027+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T08:04:24.379027+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T08:04:24.379027+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T08:04:41.135634+00:00",
+      "action": "graduated",
+      "reviewer": "codex-reviewer",
+      "notes": "PR #450 review correction: preserve sqlite3 transaction semantics by making contextlib.closing the outer context or by using a close-always helper; the original candidate remains historical and this accepted lesson supersedes it.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T08:04:24.379027+00:00"
+      ],
+      "lessons_sha": "d5d2baf9396d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T08:04:41.135621+00:00",
+  "reviewer": "codex-reviewer",
+  "rationale": "PR #450 review correction: preserve sqlite3 transaction semantics by making contextlib.closing the outer context or by using a close-always helper; the original candidate remains historical and this accepted lesson supersedes it."
+}

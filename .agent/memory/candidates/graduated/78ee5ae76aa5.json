@@ -1,0 +1,59 @@
+{
+  "id": "78ee5ae76aa5",
+  "key": "manual_78ee5a",
+  "name": "manual_78ee5a",
+  "claim": "In Python the sqlite3 connection context manager commits but does not close; use contextlib.closing or a small close-always helper, and run new tests with warnings about unclosed resources treated as errors.",
+  "conditions": [
+    "about",
+    "close",
+    "close-always",
+    "closing",
+    "commits",
+    "connection",
+    "context",
+    "contextlib",
+    "errors",
+    "helper",
+    "manager",
+    "new",
+    "python",
+    "resources",
+    "run",
+    "small",
+    "sqlite3",
+    "tests",
+    "treated",
+    "unclosed",
+    "use",
+    "warnings"
+  ],
+  "evidence_ids": [
+    "2026-10-19T07:01:37.179950+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T07:01:37.179950+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T07:01:37.179950+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T07:01:37.314811+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: six new tests left about 50 ResourceWarnings in the full run; a close-always helper removed them and the new tests pass with ResourceWarning as an error.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T07:01:37.179950+00:00"
+      ],
+      "lessons_sha": "0a914fd99068"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T07:01:37.314793+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: six new tests left about 50 ResourceWarnings in the full run; a close-always helper removed them and the new tests pass with ResourceWarning as an error."
+}

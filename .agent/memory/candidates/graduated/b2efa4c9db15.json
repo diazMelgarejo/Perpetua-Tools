@@ -1,0 +1,64 @@
+{
+  "id": "b2efa4c9db15",
+  "key": "manual_b2efa4",
+  "name": "manual_b2efa4",
+  "claim": "Resolve a bare agent command on PATH only: require the hit to live in a listed PATH directory, distrust empty entries, strip quotes from entries before lookup, and fall back to the default search path when PATH is unset; Windows which() prefers the working directory.",
+  "conditions": [
+    "agent",
+    "back",
+    "bare",
+    "before",
+    "command",
+    "default",
+    "directory",
+    "distrust",
+    "empty",
+    "entries",
+    "fall",
+    "hit",
+    "listed",
+    "live",
+    "lookup",
+    "only",
+    "path",
+    "prefers",
+    "quotes",
+    "require",
+    "resolve",
+    "search",
+    "strip",
+    "unset",
+    "which",
+    "windows",
+    "working"
+  ],
+  "evidence_ids": [
+    "2026-10-18T23:18:32.102442+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T23:18:32.102442+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T23:18:32.102442+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T23:18:32.238820+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: orama-system dispatcher preflight; mutation of the guard fails the tests and the quoted-PATH end-to-end test failed without the cleaned lookup.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T23:18:32.102442+00:00"
+      ],
+      "lessons_sha": "019479b705fb"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T23:18:32.238807+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: orama-system dispatcher preflight; mutation of the guard fails the tests and the quoted-PATH end-to-end test failed without the cleaned lookup."
+}

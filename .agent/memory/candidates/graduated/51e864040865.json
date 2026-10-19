@@ -1,0 +1,57 @@
+{
+  "id": "51e864040865",
+  "key": "manual_51e864",
+  "name": "manual_51e864",
+  "claim": "When validating a persisted schema compare the normalized stored DDL text, not only column and index names; CREATE IF NOT EXISTS silently accepts a pre-existing file with weaker constraints.",
+  "conditions": [
+    "accepts",
+    "column",
+    "compare",
+    "constraints",
+    "create",
+    "ddl",
+    "exists",
+    "file",
+    "index",
+    "names",
+    "normalized",
+    "only",
+    "persisted",
+    "pre-existing",
+    "schema",
+    "silently",
+    "stored",
+    "text",
+    "validating",
+    "weaker"
+  ],
+  "evidence_ids": [
+    "2026-10-19T07:01:36.042238+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T07:01:36.042238+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T07:01:36.042238+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T07:01:36.175051+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: name-only validation would have blessed a database with the right columns but no UNIQUE or a weaker partial-index predicate.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T07:01:36.042238+00:00"
+      ],
+      "lessons_sha": "c021c59c8d86"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T07:01:36.175035+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: name-only validation would have blessed a database with the right columns but no UNIQUE or a weaker partial-index predicate."
+}

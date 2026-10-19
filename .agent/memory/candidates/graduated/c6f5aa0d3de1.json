@@ -1,0 +1,65 @@
+{
+  "id": "c6f5aa0d3de1",
+  "key": "manual_c6f5aa",
+  "name": "manual_c6f5aa",
+  "claim": "With parallel read-only analysts, give each a distinct lens and brief it fully, then let ONE writer apply every edit sequentially; analysts diversify findings, and a single writer means shared files are never written concurrently and no merge conflicts arise.",
+  "conditions": [
+    "analysts",
+    "apply",
+    "arise",
+    "brief",
+    "concurrently",
+    "conflicts",
+    "distinct",
+    "diversify",
+    "each",
+    "edit",
+    "every",
+    "files",
+    "findings",
+    "fully",
+    "give",
+    "lens",
+    "let",
+    "means",
+    "merge",
+    "never",
+    "one",
+    "parallel",
+    "read-only",
+    "sequentially",
+    "shared",
+    "single",
+    "writer",
+    "written"
+  ],
+  "evidence_ids": [
+    "2026-10-19T03:22:18.093489+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T03:22:18.093489+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T03:22:18.093489+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T03:22:18.224596+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: three analysts (concurrency, liveness, efficiency) plus inlined-diff agy passes fed one writer; their findings overlapped usefully and no file was written twice at once.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T03:22:18.093489+00:00"
+      ],
+      "lessons_sha": "32b1c44db682"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T03:22:18.224588+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: three analysts (concurrency, liveness, efficiency) plus inlined-diff agy passes fed one writer; their findings overlapped usefully and no file was written twice at once."
+}

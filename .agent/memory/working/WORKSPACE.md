@@ -1,5 +1,38 @@
 # WORKSPACE — current task state
 
+**Updated:** 2026-10-19 UTC, latest (slice 1 implemented and verified in two repositories)
+**Session record:** `memory/working/2026-10-19-clean-rollback-and-preflight-chronicle.md` (Addendum 2)
+**Next actions:** 1 operator answers D1 (push both slice-1 branches, one PR per repository), D2 (delete
+the stale remote branch on merged PR 421) and D3 (pin promotion, gated). 2 Codex finishes the consumer
+review. 3 after D1, push each branch once and open its PR. 4 serving stays off.
+**State:** Phylax issuer head `f0b73c8` and Oramasys consumer head `812e0f3`, both on current main, not
+pushed; 7 of 7 interop scenarios with real signatures; Codex APPROVE_WITH_SCOPE on the issuer slice and
+Agnes APPROVE_SCOPED on both. Eleven more lessons graduated.
+**Next actions (repeated):** D1 to D3, Codex consumer review, push once per repository, serving off.
+
+**Updated:** 2026-10-19 UTC, later (review saga, integrated head, hybrid workflow)
+**Session record:** `memory/working/2026-10-19-clean-rollback-and-preflight-chronicle.md` (addendum)
+**Next actions:** 1 reviewer's final re-review of orama-system#423 head `1481bc58`. 2 operator
+ratifies by exact commit (decision 9 is confirmed). 3 merge #423 on green CI. 4 claim the
+queued conformance task, tests failing first. 5 separate pin promotion on evidence.
+**State:** The E1 permit spec went through about seven review rounds with an independent reviewer,
+three parallel analysts and `agy` passes; #423 now carries the spec, the dispatcher hardening and
+the reviewer's three commits. Seventeen more lesson entries graduated (one supersedes another
+after a review found an overclaim); #423 CI is green on `1481bc58` after a case-sensitivity fix.
+Remaining gaps are listed in the chronicle (A8). Decision 9 was first recorded from the reviewer's
+note and is now confirmed by the operator directly.
+**Next actions (repeated):** reviewer re-review, ratification, merge on green CI, conformance
+task, separate pin promotion.
+
+**Updated:** 2026-10-19 UTC (clean-rollback chain-event fix, preflight hardening)
+**Session record:** `memory/working/2026-10-19-clean-rollback-and-preflight-chronicle.md`
+**State:** The digest-at-`R_f` suggestion for orama-system#419 was disproved by a model: a
+clean snapshot restore matches it. The finalization is now a hash-chained issuer event
+(orama-system#423, `edfe65b0`), with the unseen-events residual left to the section 8.2
+witness. The same PR hardens the dispatcher preflight (PATH-only bare names, quoted and
+unset PATH, `cline` and `kimi`, drift check) and its plan doc. Two `agy` review rounds
+were folded in. Ten more lessons graduated. Open: #423 CI, spec operator decisions 1 to 7.
+
 **Updated:** 2026-10-18 UTC (stacked-PR rescue, E1 C2 permit guards, chronicle)
 **Session record:** `memory/working/2026-10-18-stacked-pr-c2-no-change-required-chronicle.md`
 **State:** Oramasys stack #64 is linear: `main` <- #63 (E1 C2 digest and permit

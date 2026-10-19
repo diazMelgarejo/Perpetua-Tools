@@ -1,0 +1,54 @@
+{
+  "id": "2e745462a494",
+  "key": "manual_2e7454",
+  "name": "manual_2e7454",
+  "claim": "Record a decision as operator-confirmed only after the operator confirms it to you directly; a reviewer's or subagent's report that the operator decided is a claim to verify, and a subagent hand-back is model output, not the operator.",
+  "conditions": [
+    "after",
+    "claim",
+    "confirms",
+    "decided",
+    "decision",
+    "directly",
+    "hand-back",
+    "model",
+    "only",
+    "operator",
+    "operator-confirmed",
+    "output",
+    "record",
+    "report",
+    "reviewer",
+    "subagent",
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-10-19T03:22:18.765700+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T03:22:18.765700+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T03:22:18.765700+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T03:22:18.897254+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: decision 9 was first recorded from the reviewer's board note as operator-confirmed; the chronicle flags that the operator had not confirmed it to the orchestrator directly.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T03:22:18.765700+00:00"
+      ],
+      "lessons_sha": "3914c4f0f6f3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T03:22:18.897247+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: decision 9 was first recorded from the reviewer's board note as operator-confirmed; the chronicle flags that the operator had not confirmed it to the orchestrator directly."
+}
