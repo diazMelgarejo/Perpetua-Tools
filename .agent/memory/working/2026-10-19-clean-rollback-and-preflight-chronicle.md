@@ -61,8 +61,9 @@ declined at the operator's direction: one PR per repository.
 - Gemini CLI exited with an ineligible-tier error. Per the maintainers' 2026-06-18 notice, access
   ended for free, Google AI Pro and Google AI Ultra individual accounts; enterprise Code Assist
   licences and API-key authentication were stated as unaffected. The operator confirmed Antigravity
-  replaced it for this account. Headless `agy` is denied shell reads, so the diff was inlined with
-  tools forbidden.
+  replaced it for this account. The observed headless `agy` shell command was auto-denied, so the
+  diff was inlined with tools forbidden; this was a command-permission failure, not a general
+  workspace file-read restriction.
 - My first simulation fed rule 3 the wrong request's ack and refused the healthy flow; fixed and
   re-run before any claim was made.
 - A dangerous-command hook blocked a scratch cleanup; a worktree removal avoided any bypass.
@@ -79,7 +80,7 @@ declined at the operator's direction: one PR per repository.
 | `lesson_0bf7efca186f` | Re-read which request's field each rule compares when modelling |
 | `lesson_b2efa4c9db15` | Resolve a bare command on PATH only; clean quotes; default when unset |
 | `lesson_bd36bf00dbdc` | An alternation-matching negative test passes vacuously |
-| `lesson_4641b912197a` | Headless `agy` needs the diff inlined; superseded by `lesson_8458726d8699`, which narrows the Gemini CLI claim to individual accounts |
+| `lesson_4641b912197a` | Headless `agy` needs the diff inlined; superseded by `lesson_8458726d8699`, then `lesson_e552b1994a46`, which scopes the observed limitation to shell-command permission while retaining the individual-account Gemini CLI claim |
 | `lesson_ac036153c85a` | Check merged state first; superseded by `lesson_0744027558a8` (a push to a merged branch does not update main) |
 | `lesson_7839a778bb36` | Do not bypass a destructive-command hook; use the safe equivalent |
 | `lesson_78858a5b8a70` | Verify a side agent's note against your own model |
@@ -130,7 +131,7 @@ new text contained defects that the next review found.
 ### A3. The hybrid parallel workflow
 
 1. Run read-only analysts in parallel, each on a distinct lens, plus `agy` passes with the diff
-   inlined (headless `agy` is denied shell reads).
+   inlined when the requested shell command lacks permission.
 2. Give every finding to ONE writer, who applies all edits sequentially.
 3. Lint, run the tests, then mutation-check the new guards.
 4. Push fast-forward only. Analysts report; they never edit shared files.
@@ -309,8 +310,8 @@ ratified rules, and its own mutation tests run, including guards the subagent ha
 | `lesson_15164c58cd51` | Prove interop with a probe kept outside both repositories |
 | `lesson_9bc31664e7a4` | A free-text queue dependency makes a task unclaimable; enqueue a replacement |
 | `lesson_e8c02dec5c0b` | A stale tracking ref is not a remote; use `ls-remote` |
-| `lesson_78ee5ae76aa5` | sqlite3's context manager does not close; superseded by `lesson_3629269b36c1` |
-| `lesson_3629269b36c1` | Preserve sqlite3 transaction handling: make `closing` the outer context, or use a close-always helper that commits or rolls back before closing |
+| `lesson_78ee5ae76aa5` | sqlite3's context manager does not close; superseded by `lesson_3629269b36c1`, `lesson_56388c966812`, then `lesson_57abee3ce829` |
+| `lesson_57abee3ce829` | Preserve transaction and close semantics with `closing` as the outer context or a close-always helper; the context manager is a no-op with Python 3.12+ `autocommit=True`, while Python 3.11 `isolation_level=None` only disables implicit transaction opening |
 | `lesson_74187a494b5f` | Trace a hold to its source; your own posted commitment is the binding one |
 
 **Current next actions (repeated).**
