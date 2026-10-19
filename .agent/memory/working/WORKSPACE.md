@@ -2,13 +2,15 @@
 
 **Updated:** 2026-10-19 UTC, later (review saga, integrated head, hybrid workflow)
 **Session record:** `memory/working/2026-10-19-clean-rollback-and-preflight-chronicle.md` (addendum)
-**Next actions:** 1 reviewer's final re-review of orama-system#423 head `48fbeaef`. 2 operator
+**Next actions:** 1 reviewer's final re-review of orama-system#423 head `1481bc58`. 2 operator
 ratifies by exact commit (decision 9 is confirmed). 3 merge #423 on green CI. 4 claim the
 queued conformance task, tests failing first. 5 separate pin promotion on evidence.
 **State:** The E1 permit spec went through about seven review rounds with an independent reviewer,
 three parallel analysts and `agy` passes; #423 now carries the spec, the dispatcher hardening and
-the reviewer's three commits. Thirteen more lessons graduated. Decision 9 was first recorded from the
-reviewer's note and is now confirmed by the operator directly.
+the reviewer's three commits. Seventeen more lesson entries graduated (one supersedes another
+after a review found an overclaim); #423 CI is green on `1481bc58` after a case-sensitivity fix.
+Remaining gaps are listed in the chronicle (A8). Decision 9 was first recorded from the reviewer's
+note and is now confirmed by the operator directly.
 **Next actions (repeated):** reviewer re-review, ratification, merge on green CI, conformance
 task, separate pin promotion.
 

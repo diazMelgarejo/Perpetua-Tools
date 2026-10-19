@@ -73,7 +73,8 @@ declined at the operator's direction: one PR per repository.
 
 ## 6. Open items
 
-- Orama-system#423 CI was still running when this was written.
+- Orama-system#423 CI is green on `1481bc58`; the reviewer's exact-head review and the operator's
+  ratification remain.
 - The spec's operator decisions 1 to 7 remain open for the operator.
 - The `/team-onboarding` guide still awaits its three answers; the Cowork VM image cleanup was
   not run.
@@ -82,10 +83,10 @@ declined at the operator's direction: one PR per repository.
 
 **Next actions (read first; repeated at the end).**
 
-1. Independent reviewer: a final re-review of orama-system#423 head `48fbeaef`.
+1. Independent reviewer: a final re-review of orama-system#423 head `1481bc58`.
 2. Operator: ratify the spec by exact commit if that is clean (decision 9 is confirmed,
    section A5).
-3. Merge #423 once CI is green; CI on the final head was not yet known when this was written.
+3. Merge #423: CI is green on `1481bc58` (27 of 27 checks).
 4. After the merge, claim the queued oramasys and Phylax conformance task, tests failing first.
 5. Later and separate: the operator's pin promotion, only on conformance evidence.
 
@@ -93,8 +94,8 @@ declined at the operator's direction: one PR per repository.
 
 | Item | State |
 | --- | --- |
-| orama-system#423 | Head `48fbeaef`: spec, dispatcher hardening, three reviewer commits (authorship kept) |
-| Perpetua-Tools#450 | Open; this record and 23 lessons for 2026-10-19 |
+| orama-system#423 | Head `1481bc58`: spec, dispatcher hardening, three reviewer commits (authorship kept), CI fix |
+| Perpetua-Tools#450 | Open; this record and 27 lesson entries for 2026-10-19 (one supersedes another) |
 | Operator decisions 1 to 9 | Recorded in the spec; decision 3 confirmed as the scoped reading |
 | oramasys conformance task | Queued, unclaimed; the merged helper has no `attempt_id`, sees only live permits, has no finalization or abort |
 
@@ -129,7 +130,7 @@ new text contained defects that the next review found.
 | Review rounds | About 7 |
 | Local tests, dispatcher and bridge | 50 passed, 1 skipped |
 | Mutation check on the PATH guard | 2 tests fail when it is broken |
-| CI on the final head | Not yet known |
+| CI on #423 head `1481bc58` | 27 of 27 checks passed (an earlier head failed two tests, see A7) |
 
 ### A5. Decision 9 confirmation
 
@@ -138,6 +139,44 @@ independently, the operator approves the pin) from the reviewer's board note, wh
 operator had decided it. The orchestrating session flagged that it had no direct confirmation and
 asked. The operator then confirmed it directly in this session. The record is now first-hand.
 This is the case that `lesson_2e745462a494` describes.
+
+### A7. The two late events
+
+**Event 1: CI failed on #423 after a green run.** The head `48fbeaef` failed two simulated-Windows
+tests on Linux CI. They passed on macOS. Candidate file names had been built from a case-folded
+`PATHEXT`, which matches on case-insensitive filesystems and misses on case-sensitive ones. The
+independent reviewer found the same cause and committed its own local fix. The two fixes were
+combined: the reviewer's finding and intent, the orchestrator's structure (one function for the
+configured spelling that builds names, one case-folded function that only compares), a
+filesystem-independent test that records the names tried, and a reproduction on a case-sensitive
+volume where the old code failed three tests and the fix passed 51. Spec rule 5 was pinned to
+the canonical event object in the same commit (`1481bc58`, reviewer credited). Lessons:
+`lesson_fc158090bf07` (case-insensitive hosts hide case-sensitive failures) and
+`lesson_a0ffc2a1a316` (CI status belongs to one exact head).
+
+**Event 2: a review found an overclaim in one of today's lessons.** CodeRabbit's review of #450
+noted that `lesson_c6f5aa0d3de1` said a single writer means "no merge conflicts arise", while the
+same session had a cherry-pick conflict. The claim was narrowed append-only: a superseding lesson
+`lesson_90cf6d66e79f` now limits the guarantee to concurrent writes, and `LESSONS.md` strikes the
+old claim. The general lesson is `lesson_0c28899229c2`: check a lesson's generalization against
+the same day's counterexamples before graduating it.
+
+### A8. Remaining gaps
+
+- The reviewer's exact-head review of `1481bc58` and the operator's ratification by exact commit
+  are outstanding.
+- The queued conformance task's notes predate the final spec (single-row `aborted` state,
+  `attempt_id`, abandon and successor request, recovery timeouts after the deadline). Queue
+  notes cannot be edited, so implementers must follow spec section 5a and its freeze list.
+- Not yet frozen, by design: canonical bytes beyond the finalization event, field types and
+  limits, the refusal vocabulary, key selection and resource bounds.
+- Left as signed-policy values and unmeasured: the catch-up bound, the throughput ceiling, the
+  checkpoint interval and recovery-call timeouts. Decision 8 numbers are starting values.
+- CI has no Windows runner, so Windows branches are simulated; case sensitivity is now covered by
+  a host-independent test, other Windows behaviour is still unproven.
+- The command-blocking hook still false-positives on `rm -rf` of scratch paths; it was not
+  bypassed, and `lesson_7839a778bb36` records the rule.
+- Carried over, unrelated to this work: the `/team-onboarding` answers, the Cowork VM cleanup.
 
 ### A6. Lessons graduated in this addendum
 
@@ -157,14 +196,19 @@ This is the case that `lesson_2e745462a494` describes.
 | `lesson_6676e3109515` | Next actions at the head and the tail |
 | `lesson_2e745462a494` | Operator-confirmed only after the operator confirms |
 
+| `lesson_fc158090bf07` | Case-insensitive hosts hide case-sensitive failures; reproduce on a case-sensitive volume |
+| `lesson_a0ffc2a1a316` | CI status belongs to one exact head |
+| `lesson_0c28899229c2` | Check a lesson's generalization against the day's counterexamples |
+| `lesson_90cf6d66e79f` | Supersedes `lesson_c6f5aa0d3de1`: a single writer prevents concurrent writes, not merge conflicts |
+
 One drafted candidate was dropped: a push that prints "Everything up-to-date" after a
 hook-rejected commit is already covered by `lesson_18f5ca481f90`.
 
 **Next actions (repeated).**
 
-1. Independent reviewer: a final re-review of orama-system#423 head `48fbeaef`.
+1. Independent reviewer: a final re-review of orama-system#423 head `1481bc58`.
 2. Operator: ratify the spec by exact commit if that is clean (decision 9 is confirmed,
    section A5).
-3. Merge #423 once CI is green; CI on the final head was not yet known when this was written.
+3. Merge #423: CI is green on `1481bc58` (27 of 27 checks).
 4. After the merge, claim the queued oramasys and Phylax conformance task, tests failing first.
 5. Later and separate: the operator's pin promotion, only on conformance evidence.
