@@ -306,7 +306,8 @@ ratified rules, and its own mutation tests run, including guards the subagent ha
 | `lesson_15164c58cd51` | Prove interop with a probe kept outside both repositories |
 | `lesson_9bc31664e7a4` | A free-text queue dependency makes a task unclaimable; enqueue a replacement |
 | `lesson_e8c02dec5c0b` | A stale tracking ref is not a remote; use `ls-remote` |
-| `lesson_78ee5ae76aa5` | sqlite3's context manager does not close; use a close-always helper |
+| `lesson_78ee5ae76aa5` | sqlite3's context manager does not close; superseded by `lesson_3629269b36c1` |
+| `lesson_3629269b36c1` | Preserve sqlite3 transaction handling: make `closing` the outer context, or use a close-always helper that commits or rolls back before closing |
 | `lesson_74187a494b5f` | Trace a hold to its source; your own posted commitment is the binding one |
 
 **Current next actions (repeated).**
