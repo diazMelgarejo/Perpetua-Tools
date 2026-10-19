@@ -1,0 +1,62 @@
+{
+  "id": "9bc31664e7a4",
+  "key": "manual_9bc316",
+  "name": "manual_9bc316",
+  "claim": "A free-text value passed to a queue's depends-on option is parsed as a task id, which makes the task unclaimable; because only a claimant can close a task, enqueue a corrected replacement without the dependency and tell the board which id supersedes the old one.",
+  "conditions": [
+    "because",
+    "board",
+    "claimant",
+    "close",
+    "corrected",
+    "dependency",
+    "depends-on",
+    "enqueue",
+    "free-text",
+    "makes",
+    "old",
+    "one",
+    "only",
+    "option",
+    "parsed",
+    "passed",
+    "queue",
+    "replacement",
+    "supersedes",
+    "task",
+    "tell",
+    "unclaimable",
+    "value",
+    "which",
+    "without"
+  ],
+  "evidence_ids": [
+    "2026-10-19T07:01:36.715722+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T07:01:36.715722+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T07:01:36.715722+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T07:01:36.863805+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: a task depending on 'pull request merged' could never be claimed and could not be closed by anyone else.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T07:01:36.715722+00:00"
+      ],
+      "lessons_sha": "930e68d9dd0d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T07:01:36.863794+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: a task depending on 'pull request merged' could never be claimed and could not be closed by anyone else."
+}

@@ -1,0 +1,70 @@
+{
+  "id": "7abca1f63f8e",
+  "key": "manual_7abca1",
+  "name": "manual_7abca1",
+  "claim": "Make an agent's compliance checkable: give literal numbered instructions with the expected output of each step, a forbidden-actions list and a rule that no claim of pushed or verified is valid without the pasted proving command output, then verify every claim yourself with git (merge-base --is-ancestor, branch -r --contains, ls-remote, cat-file).",
+  "conditions": [
+    "agent",
+    "branch",
+    "cat-file",
+    "checkable",
+    "claim",
+    "command",
+    "compliance",
+    "contains",
+    "each",
+    "every",
+    "expected",
+    "forbidden-actions",
+    "git",
+    "give",
+    "instructions",
+    "is-ancestor",
+    "list",
+    "literal",
+    "ls-remote",
+    "make",
+    "merge-base",
+    "numbered",
+    "output",
+    "pasted",
+    "proving",
+    "pushed",
+    "rule",
+    "step",
+    "valid",
+    "verified",
+    "verify",
+    "without",
+    "yourself"
+  ],
+  "evidence_ids": [
+    "2026-10-19T07:01:35.151292+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T07:01:35.151292+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T07:01:35.151292+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T07:01:35.291053+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: one agent reported work as pushed when it was not and quoted commit ids that do not exist; it then followed literal proof-bearing instructions exactly and corrected itself.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T07:01:35.151292+00:00"
+      ],
+      "lessons_sha": "f5fab40e7e82"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T07:01:35.291037+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: one agent reported work as pushed when it was not and quoted commit ids that do not exist; it then followed literal proof-bearing instructions exactly and corrected itself."
+}

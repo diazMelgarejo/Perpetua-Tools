@@ -1,0 +1,59 @@
+{
+  "id": "91ee41fa2d80",
+  "key": "manual_91ee41",
+  "name": "manual_91ee41",
+  "claim": "In regexes that validate protocol text use [0-9] or an ASCII flag, never the digit class, and convert parser exceptions (TypeError, ValueError) into the classified wire error at the boundary on both sides of the protocol.",
+  "conditions": [
+    "ascii",
+    "both",
+    "boundary",
+    "class",
+    "classified",
+    "convert",
+    "digit",
+    "error",
+    "exceptions",
+    "flag",
+    "into",
+    "never",
+    "parser",
+    "protocol",
+    "regexes",
+    "sides",
+    "text",
+    "typeerror",
+    "use",
+    "validate",
+    "valueerror",
+    "wire"
+  ],
+  "evidence_ids": [
+    "2026-10-19T07:01:35.821880+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T07:01:35.821880+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T07:01:35.821880+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T07:01:35.952100+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: an audit found Python's digit class accepting fullwidth numerals in timestamps and raw TypeError or ValueError leaking from an unhashable kind or NaN, identically in the issuer and the consumer.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T07:01:35.821880+00:00"
+      ],
+      "lessons_sha": "dea11d465531"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T07:01:35.952092+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: an audit found Python's digit class accepting fullwidth numerals in timestamps and raw TypeError or ValueError leaking from an unhashable kind or NaN, identically in the issuer and the consumer."
+}

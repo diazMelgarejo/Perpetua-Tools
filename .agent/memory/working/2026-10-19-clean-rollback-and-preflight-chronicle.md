@@ -4,6 +4,16 @@
 `2026-10-18-stacked-pr-c2-no-change-required-chronicle.md`, which holds the 2026-10-18 detail.
 Facts were re-checked against live GitHub and git state while writing.
 
+**Current next actions (Addendum 2; read first, repeated at the end).**
+
+1. Operator: answer D1 (push both slice-1 branches and open one PR per repository), D2 (delete the
+   stale remote branch on merged PR 421) and D3 (pin promotion, still gated on evidence and
+   approval).
+2. Codex: finish its review of the Oramasys consumer; its issuer-slice verdict is already
+   APPROVE_WITH_SCOPE.
+3. Claude: after D1, push each branch once as a fast-forward and open its single PR.
+4. Nobody pushes the slice-1 branches or enables serving; `ORAMA_GRANT_SERVING` stays unset.
+
 ## 1. Achievements, last 24 hours
 
 | Item | State |
@@ -212,3 +222,100 @@ hook-rejected commit is already covered by `lesson_18f5ca481f90`.
 3. Merge #423: CI is green on `1481bc58` (27 of 27 checks).
 4. After the merge, claim the queued oramasys and Phylax conformance task, tests failing first.
 5. Later and separate: the operator's pin promotion, only on conformance evidence.
+
+## Addendum 2: the verify-everything round
+
+**Current next actions (Addendum 2; read first, repeated at the end).**
+
+1. Operator: answer D1 (push both slice-1 branches and open one PR per repository), D2 (delete the
+   stale remote branch on merged PR 421) and D3 (pin promotion, still gated on evidence and
+   approval).
+2. Codex: finish its review of the Oramasys consumer; its issuer-slice verdict is already
+   APPROVE_WITH_SCOPE.
+3. Claude: after D1, push each branch once as a fast-forward and open its single PR.
+4. Nobody pushes the slice-1 branches or enables serving; `ORAMA_GRANT_SERVING` stays unset.
+
+### A9. Outcomes
+
+| Item | State |
+| --- | --- |
+| Phylax issuer branch | `2026-10-19-e1-c2-issuer-slice1`, head `f0b73c8`, 12 commits on `origin/main`, not pushed |
+| Oramasys consumer branch | `2026-10-19-e1-c2-consumer-slice1`, head `812e0f3`, 8 commits on `origin/main`, not pushed |
+| Tests | Phylax 397 passed at 91.6 percent coverage (14 warnings, the baseline); Oramasys 171 target tests, 1622 in the whole suite minus two files that need an uninstalled package |
+| Interop with real Ed25519ph | 7 of 7 scenarios, including a validly signed permit for another ledger refused and a rolled-back issuer refused as a fork |
+| Independent verdicts | Codex APPROVE_WITH_SCOPE (issuer slice, head `fdafdbf`); Agnes APPROVE_SCOPED (both tracks); neither approves serving, T3 or a pin |
+
+Every subagent result was re-verified by the orchestrator: suites re-run, the code read against the
+ratified rules, and its own mutation tests run, including guards the subagent had not listed.
+
+### A10. What two parallel audits found, and how each was decided
+
+* **Issuer (4 minor):** adopted the permit `R_p` floor on a stored-finalization retry and DDL-text
+  schema
+  validation; declined to refuse a stored retry after key rotation (a lost-response retry must not
+  be
+  stranded) and pinned that with a test; check order left alone.
+* **Drift (2 major, 5 minor):** adopted the consumer ledger binding and a revocation port that can
+  express approval-chain and issuer revocation; persisted a rule 5 fork after the rollback (only a
+  signed finalization can reach that path); consumer lifetime caps; ASCII-only timestamps and
+  classified
+  wire errors on both sides.
+* **Cline's code review (6 findings):** none held. After a literal proof rule it checked each with
+  `wc -l` and `grep -n` and retracted all six. Across its two reviews none of its nine findings
+  identified a defect, while its mechanical jobs (withdrawal, push disable, checklist, retraction)
+  were
+  accurate once the instructions were literal.
+* **A stale peer branch** was not opened as a PR: a trial merge into current main conflicted and
+  defined
+  the registry twice.
+
+### A11. Open items and gaps
+
+* D1 to D3 await the operator. An auditor's note asked agents not to push until Codex finishes and
+  the
+  operator answers; that is advice, and it matches the commitment already posted on the board.
+* Slice 1 still omits attested abandon and successor, operator lookup and authentication, the
+  consumer
+  client rules, request-side and catch-up validators, the v2 grant parser and the revocation and
+  cascade event body shapes.
+* The manifest lists `t3-implementation` and `production-pin-promotion` as disabled; enabling them
+  is an
+  explicit operator-approved change.
+
+### A13. Warnings fixed and the interop proof moved into both repositories
+
+* The 14 baseline warnings were `ResourceWarning: unclosed database` from verification stores that
+  tests opened and dropped without `close()`. An autouse test fixture now closes them; the Phylax
+  suite is 397 passed with no warnings and product code needed no change.
+* The interop probe now lives in both repositories at `src/tests/interop/c2_interop_probe.py`
+  (byte-identical; CI compares the copies). Each repository checks the other out at a one-line pin
+  file and runs the probe with only PyNaCl; Oramasys product code stays free of any crypto import.
+* Pins are bumped as part of pin promotion, and the checklist records the step. A mutation of the
+  issuer's lifetime in a pinned clone made the probe fail, so the guard catches drift.
+
+### A12. Lessons graduated in this addendum
+
+| Lesson | Topic |
+| --- | --- |
+| `lesson_7abca1f63f8e` | Literal instructions plus a proof rule make compliance checkable; verify with git |
+| `lesson_fad63c66c85c` | A reviewer proves each finding with `wc -l` and `grep -n`; spec-required behaviour is not a finding |
+| `lesson_85d99b949d74` | Reject a stale peer branch by trial-merging it in a throwaway worktree |
+| `lesson_91ee41fa2d80` | ASCII-only regexes and classified wire errors on both sides |
+| `lesson_51e864040865` | Validate a persisted schema by its DDL text, not by names |
+| `lesson_3a8f4e9f0578` | Audit consumer-versus-issuer drift and every identity and port the consumer must bind |
+| `lesson_15164c58cd51` | Prove interop with a probe kept outside both repositories |
+| `lesson_9bc31664e7a4` | A free-text queue dependency makes a task unclaimable; enqueue a replacement |
+| `lesson_e8c02dec5c0b` | A stale tracking ref is not a remote; use `ls-remote` |
+| `lesson_78ee5ae76aa5` | sqlite3's context manager does not close; use a close-always helper |
+| `lesson_74187a494b5f` | Trace a hold to its source; your own posted commitment is the binding one |
+
+**Current next actions (repeated).**
+
+1. Operator: answer D1 (push both slice-1 branches and open one PR per repository), D2 (delete the
+   stale remote branch on merged PR 421) and D3 (pin promotion, still gated on evidence and
+   approval).
+2. Codex: finish its review of the Oramasys consumer; its issuer-slice verdict is already
+   APPROVE_WITH_SCOPE.
+3. Claude: after D1, push each branch once as a fast-forward and open its single PR.
+4. Nobody pushes the slice-1 branches or enables serving; `ORAMA_GRANT_SERVING` stays unset.
+
