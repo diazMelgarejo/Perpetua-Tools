@@ -1,0 +1,45 @@
+{
+  "id": "8458726d8699",
+  "key": "manual_845872",
+  "name": "manual_845872",
+  "claim": "Headless agy cannot read files: the shell permission is auto-denied and the run hangs or prints nothing; inline the diff in the prompt, forbid tools, run read-only under a hard timeout. Gemini CLI access ended on 2026-06-18 for free, Google AI Pro and Google AI Ultra individual accounts; enterprise Gemini Code Assist licences and API-key authentication were announced as unaffected (free-tier API-key behaviour was not stated, so verify it before relying on it). Use agy as the direct-binary reviewer for an individual-account setup, and check which account mode a gemini invocation uses before declaring the CLI unavailable.",
+  "conditions": [
+    "account",
+    "agy",
+    "api-key",
+    "enterprise",
+    "gemini",
+    "headless",
+    "individual",
+    "retired"
+  ],
+  "evidence_ids": [
+    "2026-10-19T08:32:12.186767+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T08:32:12.186767+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T08:32:12.186767+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T08:32:18.741719+00:00",
+      "action": "graduated",
+      "reviewer": "claude-fable-5",
+      "notes": "Corrects the over-broad Gemini CLI retirement claim to the verified individual-account scope (maintainer announcement, 2026-06-18); original record preserved append-only.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T08:32:12.186767+00:00"
+      ],
+      "lessons_sha": "fe9f937cc426"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T08:32:18.741713+00:00",
+  "reviewer": "claude-fable-5",
+  "rationale": "Corrects the over-broad Gemini CLI retirement claim to the verified individual-account scope (maintainer announcement, 2026-06-18); original record preserved append-only."
+}

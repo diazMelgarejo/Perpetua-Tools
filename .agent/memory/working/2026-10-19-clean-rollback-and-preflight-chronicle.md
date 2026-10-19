@@ -58,8 +58,11 @@ declined at the operator's direction: one PR per repository.
 
 ## 4. Process notes
 
-- Gemini CLI exited with an ineligible-tier error; the operator confirmed it was replaced by
-  Antigravity. Headless `agy` is denied shell reads, so the diff was inlined with tools forbidden.
+- Gemini CLI exited with an ineligible-tier error. Per the maintainers' 2026-06-18 notice, access
+  ended for free, Google AI Pro and Google AI Ultra individual accounts; enterprise Code Assist
+  licences and API-key authentication were stated as unaffected. The operator confirmed Antigravity
+  replaced it for this account. Headless `agy` is denied shell reads, so the diff was inlined with
+  tools forbidden.
 - My first simulation fed rule 3 the wrong request's ack and refused the healthy flow; fixed and
   re-run before any claim was made.
 - A dangerous-command hook blocked a scratch cleanup; a worktree removal avoided any bypass.
@@ -76,8 +79,8 @@ declined at the operator's direction: one PR per repository.
 | `lesson_0bf7efca186f` | Re-read which request's field each rule compares when modelling |
 | `lesson_b2efa4c9db15` | Resolve a bare command on PATH only; clean quotes; default when unset |
 | `lesson_bd36bf00dbdc` | An alternation-matching negative test passes vacuously |
-| `lesson_4641b912197a` | Headless `agy` needs the diff inlined; Gemini CLI is retired |
-| `lesson_ac036153c85a` | Check merged state first; extend the one open PR |
+| `lesson_4641b912197a` | Headless `agy` needs the diff inlined; superseded by `lesson_8458726d8699`, which narrows the Gemini CLI claim to individual accounts |
+| `lesson_ac036153c85a` | Check merged state first; superseded by `lesson_0744027558a8` (a push to a merged branch does not update main) |
 | `lesson_7839a778bb36` | Do not bypass a destructive-command hook; use the safe equivalent |
 | `lesson_78858a5b8a70` | Verify a side agent's note against your own model |
 
