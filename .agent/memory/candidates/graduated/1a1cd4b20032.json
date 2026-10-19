@@ -1,0 +1,44 @@
+{
+  "id": "1a1cd4b20032",
+  "key": "manual_1a1cd4",
+  "name": "manual_1a1cd4",
+  "claim": "Treat validation invocations as potentially state-changing: inspect command behavior and repository status after every check, because malformed help or wrapper arguments can create files or directories in the worktree.",
+  "conditions": [
+    "artifact",
+    "command",
+    "help",
+    "hygiene",
+    "status",
+    "validation",
+    "wrapper"
+  ],
+  "evidence_ids": [
+    "2026-10-20T00:21:44.903616+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-20T00:21:44.903616+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-20T00:21:44.903616+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-20T00:21:45.052618+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-20: an incorrect --help invocation created an untracked --help directory; status inspection caught and removed the artifact before the held-local commit was amended.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-20T00:21:44.903616+00:00"
+      ],
+      "lessons_sha": "10406581e4a5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-20T00:21:45.052609+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-20: an incorrect --help invocation created an untracked --help directory; status inspection caught and removed the artifact before the held-local commit was amended."
+}
