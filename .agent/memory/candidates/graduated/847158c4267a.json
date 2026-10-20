@@ -1,0 +1,48 @@
+{
+  "id": "847158c4267a",
+  "key": "manual_847158",
+  "name": "manual_847158",
+  "claim": "When a review bot cites a lint rule that the local hooks never fired, check the rule against the newest version of the linter before dismissing the finding as unverified. Repository hooks pin an older linter, so a local pass says nothing about rules added since. Run the single rule with a current version across every changed Markdown file of every open PR, fix real violations, and name the linter version in the reply.",
+  "conditions": [
+    "bot",
+    "changed",
+    "files",
+    "hooks",
+    "lint",
+    "markdownlint",
+    "md058",
+    "newest",
+    "pinned",
+    "unverified",
+    "version"
+  ],
+  "evidence_ids": [
+    "2026-10-20T01:28:04.730429+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-20T01:28:04.730429+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-20T01:28:04.730429+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-20T01:28:04.884916+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-20: CodeRabbit flagged MD058 (blanks around tables) on two docs and marked the finding unverified. The repo hooks bundle markdownlint 0.17.2, which predates that rule, so they passed both files; markdownlint 0.38 confirmed a real violation in one of the eight Markdown files the open PRs changed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-20T01:28:04.730429+00:00"
+      ],
+      "lessons_sha": "d06ea340fdb0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-20T01:28:04.884901+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-20: CodeRabbit flagged MD058 (blanks around tables) on two docs and marked the finding unverified. The repo hooks bundle markdownlint 0.17.2, which predates that rule, so they passed both files; markdownlint 0.38 confirmed a real violation in one of the eight Markdown files the open PRs changed."
+}
