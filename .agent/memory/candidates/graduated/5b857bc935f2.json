@@ -1,0 +1,45 @@
+{
+  "id": "5b857bc935f2",
+  "key": "manual_5b857b",
+  "name": "manual_5b857b",
+  "claim": "RFC 8785 (JSON Canonicalization Scheme / JCS) defines canonicalization by sorting object keys by UTF-16 code units and formatting numbers per ECMAScript, whereas Python json.dumps(sort_keys=True, separators=(\",\", \":\"), ensure_ascii=False, allow_nan=False) operates over Unicode code points. While byte-identical over a restricted domain of ASCII alphanumeric keys and safe integers, specifications must state the exact deterministic rule rather than claiming general RFC 8785 conformance, avoiding divergences on non-ASCII keys or negative zero.",
+  "conditions": [
+    "canonical",
+    "dumps",
+    "ecmascript",
+    "jcs",
+    "json",
+    "python",
+    "rfc8785",
+    "serialization",
+    "utf-16"
+  ],
+  "evidence_ids": [
+    "2026-10-19T23:49:38.807400+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T23:49:38.807400+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T23:49:38.807400+00:00",
+      "action": "staged",
+      "reviewer": "agnes-antigravity-claude"
+    },
+    {
+      "ts": "2026-10-19T23:49:38.807400+00:00",
+      "action": "accepted",
+      "reviewer": "learn.py",
+      "notes": "2026-10-20: Testing vectors in docs/vectors/dispatch-permit-v1.json confirmed byte-identity with rfc8785 package over our ASCII/integer domain, but key sorting diverges outside ASCII (UTF-16 code units vs code points) and on negative zero. Precise spec language avoids false conformance claims.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T23:49:38.807400+00:00"
+      ]
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T23:49:38.807400+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-20: Testing vectors in docs/vectors/dispatch-permit-v1.json confirmed byte-identity with rfc8785 package over our ASCII/integer domain, but key sorting diverges outside ASCII (UTF-16 code units vs code points) and on negative zero. Precise spec language avoids false conformance claims."
+}

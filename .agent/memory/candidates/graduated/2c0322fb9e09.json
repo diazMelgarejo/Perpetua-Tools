@@ -1,0 +1,46 @@
+{
+  "id": "2c0322fb9e09",
+  "key": "manual_2c0322",
+  "name": "manual_2c0322",
+  "claim": "In append-only event stores governed by long-term compliance mandates (such as E1 Section 13.3 seven-year retention), pruning the active hot store (e.g. issuer_events) must strictly MOVE pruned rows below the consumer acknowledgement horizon into a cold audit archive table or file. Pruned rows must never be deleted or discarded, preserving verifiable event history from genesis while bounding hot query indexes.",
+  "conditions": [
+    "archive",
+    "audit",
+    "compliance",
+    "event",
+    "hot",
+    "issuer",
+    "prune",
+    "retention",
+    "store",
+    "table"
+  ],
+  "evidence_ids": [
+    "2026-10-19T23:49:38.807400+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T23:49:38.807400+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T23:49:38.807400+00:00",
+      "action": "staged",
+      "reviewer": "agnes-antigravity-claude"
+    },
+    {
+      "ts": "2026-10-19T23:49:38.807400+00:00",
+      "action": "accepted",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: Wire lines 142-145 and E1 13.3 require seven-year chain retention. Claude review row 5256 caught draft language implying pruned events were deleted; pruning moves rows to the cold audit archive, never discarding them.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T23:49:38.807400+00:00"
+      ]
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T23:49:38.807400+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: Wire lines 142-145 and E1 13.3 require seven-year chain retention. Claude review row 5256 caught draft language implying pruned events were deleted; pruning moves rows to the cold audit archive, never discarding them."
+}

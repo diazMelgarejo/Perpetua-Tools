@@ -1,0 +1,38 @@
+{
+  "id": "287e5917e666",
+  "key": "manual_287e59",
+  "name": "manual_287e59",
+  "claim": "Recovery from a backward-clock alarm is an audited administrative action: require an authenticated operator and trusted-time evidence, append the previous and accepted timestamps to an append-only log, reset the mark to the accepted time, and mark every reservation already expired at the old mark as expired for good. The approved default skew is zero; slewing never steps backward and needs no tolerance, and any non-zero tolerance needs a policy amendment.",
+  "conditions": [
+    "clock"
+  ],
+  "evidence_ids": [
+    "2026-10-20T00:39:08.267236+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-20T00:39:08.267236+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-20T00:39:08.267236+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-20T00:39:08.417915+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: the approved clock policy was read only after a first implementation that cleared a quarantine with a name alone; it could have revived an expired reservation. Reading the policy found the gap before merge.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-20T00:39:08.267236+00:00"
+      ],
+      "lessons_sha": "f09539ac0773"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-20T00:39:08.417902+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: the approved clock policy was read only after a first implementation that cleared a quarantine with a name alone; it could have revived an expired reservation. Reading the policy found the gap before merge."
+}

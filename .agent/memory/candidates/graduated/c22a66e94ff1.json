@@ -1,0 +1,38 @@
+{
+  "id": "c22a66e94ff1",
+  "key": "manual_c22a66",
+  "name": "manual_c22a66",
+  "claim": "Verify every quotation and cited line an agent supplies before relaying it: check line counts, locations and verbatim text against the exact commit, and reject design fields whose cited lines do not contain them. Require 'verbatim, or label paraphrase', and treat a second agent's agreement as evidence, never as approval.",
+  "conditions": [
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-10-20T00:39:08.508734+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-20T00:39:08.508734+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-20T00:39:08.508734+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-20T00:39:08.656481+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-20: a peer agent's guidance cited real lines but wrapped paraphrases in quotation marks and justified three event fields (revocation_epoch, disposition_ref, cascade_version) by lines that do not mention them; checking against the exact commit caught it.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-20T00:39:08.508734+00:00"
+      ],
+      "lessons_sha": "515c10aaed0a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-20T00:39:08.656466+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-20: a peer agent's guidance cited real lines but wrapped paraphrases in quotation marks and justified three event fields (revocation_epoch, disposition_ref, cascade_version) by lines that do not mention them; checking against the exact commit caught it."
+}

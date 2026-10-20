@@ -1,0 +1,46 @@
+{
+  "id": "a3b5a992c16d",
+  "key": "manual_a3b5a9",
+  "name": "manual_a3b5a9",
+  "claim": "A safety invariant enforced by a consumer during permit ingestion (such as rejecting authority versions prior to a pruned anchor floor: R_p >= anchor_version) is a consumer-local Step 4.3 acknowledgement coverage check, NOT a shared wire grant refusal code. Cross-repository wire vocabularies require dedicated two-repo contract amendments; expressing local gate failures as wire refusal codes couples consumer retention policy to issuer grant format.",
+  "conditions": [
+    "acknowledgement",
+    "anchor",
+    "consumer",
+    "coverage",
+    "dispatch",
+    "floor",
+    "permit",
+    "refusal",
+    "vocabulary",
+    "wire"
+  ],
+  "evidence_ids": [
+    "2026-10-19T23:49:38.807400+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T23:49:38.807400+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T23:49:38.807400+00:00",
+      "action": "staged",
+      "reviewer": "agnes-antigravity-claude"
+    },
+    {
+      "ts": "2026-10-19T23:49:38.807400+00:00",
+      "action": "accepted",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: Claude review row 5256 caught an attempt to add grant.below_anchor_floor to shared refusal codes. Step 4.3 Rule 4 acknowledgement coverage enforces the invariant locally without modifying the shared Part 1 wire vocabulary.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T23:49:38.807400+00:00"
+      ]
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T23:49:38.807400+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: Claude review row 5256 caught an attempt to add grant.below_anchor_floor to shared refusal codes. Step 4.3 Rule 4 acknowledgement coverage enforces the invariant locally without modifying the shared Part 1 wire vocabulary."
+}

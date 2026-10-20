@@ -1,0 +1,38 @@
+{
+  "id": "de9f7b729355",
+  "key": "manual_de9f7b",
+  "name": "manual_de9f7b",
+  "claim": "When an automated review finding contradicts a ratified specification, verify it against the spec's own glossary before applying it. Keep the specified behaviour, reply with verbatim spec lines, document the rule in code and the contract note, and pin it with a test of the whole chain so it is not mistaken for a gap again.",
+  "conditions": [
+    "automated"
+  ],
+  "evidence_ids": [
+    "2026-10-20T00:39:07.593883+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-20T00:39:07.593883+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-20T00:39:07.593883+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-20T00:39:07.729022+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: an automated reviewer asked to refuse abandon of a finalized permit. The ratified spec glossary makes finalized nonterminal and puts safety in the consumer (fence plus single-use consumption), so the behaviour was intended; the finding was declined with verbatim spec lines.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-20T00:39:07.593883+00:00"
+      ],
+      "lessons_sha": "ffb3d60b33e3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-20T00:39:07.729014+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: an automated reviewer asked to refuse abandon of a finalized permit. The ratified spec glossary makes finalized nonterminal and puts safety in the consumer (fence plus single-use consumption), so the behaviour was intended; the finding was declined with verbatim spec lines."
+}

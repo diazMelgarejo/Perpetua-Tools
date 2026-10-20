@@ -1,0 +1,38 @@
+{
+  "id": "4b14722a0c6f",
+  "key": "manual_4b1472",
+  "name": "manual_4b1472",
+  "claim": "A published validation row must separate local results from CI and name the environment: say 'CI pending' until every check on the exact head is green, and state whether paired sibling checkouts were present. A local pass says nothing about CI cells whose environment differs, and a teammate's row is not a substitute for reading the failed CI log.",
+  "conditions": [
+    "ci"
+  ],
+  "evidence_ids": [
+    "2026-10-20T00:39:06.918533+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-20T00:39:06.918533+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-20T00:39:06.918533+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-20T00:39:07.062620+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-20: Oramasys PR 68 remediation was reported as 272 passed locally; all six offline-oracles cells then failed the manifest result gate with 'N skipped exceeds the allowance'. It was found only by reading the CI log.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-20T00:39:06.918533+00:00"
+      ],
+      "lessons_sha": "337a8134bb66"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-20T00:39:07.062607+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-20: Oramasys PR 68 remediation was reported as 272 passed locally; all six offline-oracles cells then failed the manifest result gate with 'N skipped exceeds the allowance'. It was found only by reading the CI log."
+}
