@@ -1,0 +1,38 @@
+{
+  "id": "5172a6a9a9a9",
+  "key": "manual_5172a6",
+  "name": "manual_5172a6",
+  "claim": "In a stacked-PR workflow a base change makes the host rebase the dependent branch: SHAs change but patches do not. Before calling a history change a force-push, check the committer, the patch-id of the top commits and the PR base. Pin review evidence to the head SHA read from the remote at review time, and a receiver of a handed-over SHA must verify that it resolves to the branch head.",
+  "conditions": [
+    "stacked"
+  ],
+  "evidence_ids": [
+    "2026-10-20T00:39:07.369518+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-20T00:39:07.369518+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-20T00:39:07.369518+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-20T00:39:07.510351+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-20: Oramasys PR 68 head changed from the reported commit to a different SHA; the committer was GitHub and the top commit patch-id was identical, because the host rebased the stacked PR when its base moved.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-20T00:39:07.369518+00:00"
+      ],
+      "lessons_sha": "5620d8047917"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-20T00:39:07.510335+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-20: Oramasys PR 68 head changed from the reported commit to a different SHA; the committer was GitHub and the top commit patch-id was identical, because the host rebased the stacked PR when its base moved."
+}

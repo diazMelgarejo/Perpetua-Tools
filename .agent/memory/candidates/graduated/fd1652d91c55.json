@@ -1,0 +1,38 @@
+{
+  "id": "fd1652d91c55",
+  "key": "manual_fd1652",
+  "name": "manual_fd1652",
+  "claim": "A compatibility flag that defaults to the legacy, less safe behaviour needs a structural guard, not a comment: an AST scan test that fails when product code builds the object without the explicit safe value, a documented precondition to flip the default before serving, and mutation checks of the scan itself.",
+  "conditions": [
+    "compatibility"
+  ],
+  "evidence_ids": [
+    "2026-10-20T00:39:08.038174+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-20T00:39:08.038174+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-20T00:39:08.038174+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-20T00:39:08.178749+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: the governed mode of the consumer store defaulted to off so 150 slice-1 tests and the byte-identical interop probe kept working; a side review noted a forgotten flag would silently skip the reservation check.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-20T00:39:08.038174+00:00"
+      ],
+      "lessons_sha": "0b37b52b9edf"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-20T00:39:08.178737+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: the governed mode of the consumer store defaulted to off so 150 slice-1 tests and the byte-identical interop probe kept working; a side review noted a forgotten flag would silently skip the reservation check."
+}

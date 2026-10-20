@@ -1,0 +1,38 @@
+{
+  "id": "8a491abf7644",
+  "key": "manual_8a491a",
+  "name": "manual_8a491a",
+  "claim": "Before designing a new signed object, check whether an existing signed record already carries the property: a retained anchor event is a checkpoint with no new wire object or signing domain, at the cost of a consumer floor refusing permits below the anchor. Import a community standard's invariant, not its object, when the underlying structure differs.",
+  "conditions": [
+    "checkpoint"
+  ],
+  "evidence_ids": [
+    "2026-10-20T00:39:08.741336+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-20T00:39:08.741336+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-20T00:39:08.741336+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-20T00:39:08.881392+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-20: the spec asked for an issuer-signed chain checkpoint; every issuer event was already signed and hash-linked, so the event at the prune boundary is itself a signed version-and-digest. Community checkpoint formats solve a different problem (signed Merkle tree heads).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-20T00:39:08.741336+00:00"
+      ],
+      "lessons_sha": "7299b8d6a0f5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-20T00:39:08.881384+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-20: the spec asked for an issuer-signed chain checkpoint; every issuer event was already signed and hash-linked, so the event at the prune boundary is itself a signed version-and-digest. Community checkpoint formats solve a different problem (signed Merkle tree heads)."
+}
