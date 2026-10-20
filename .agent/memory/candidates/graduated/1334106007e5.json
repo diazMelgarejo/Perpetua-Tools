@@ -1,0 +1,45 @@
+{
+  "id": "1334106007e5",
+  "key": "manual_133410",
+  "name": "manual_133410",
+  "claim": "When a change turns an optional collaborator into a required fail-closed port, every out-of-repository check written before it is stale evidence: rerun each such check from the merged main heads before citing it, and replace a failing one with a dated revision that injects the port instead of editing the original.",
+  "conditions": [
+    "evidence",
+    "fail-closed",
+    "interop",
+    "port",
+    "probe",
+    "required",
+    "rerun",
+    "stale"
+  ],
+  "evidence_ids": [
+    "2026-10-20T04:06:53.672289+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-20T04:06:53.672289+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-20T04:06:53.672289+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-20T04:06:53.824228+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The 2026-10-19 abandon interop script failed at S11 on the merged mains because slice 2 made the consumer abandon authenticator required; the product was right and the script was stale. A pass recorded before the merge said nothing about the merged code.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-20T04:06:53.672289+00:00"
+      ],
+      "lessons_sha": "35c5d1f1e5db"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-20T04:06:53.824215+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The 2026-10-19 abandon interop script failed at S11 on the merged mains because slice 2 made the consumer abandon authenticator required; the product was right and the script was stale. A pass recorded before the merge said nothing about the merged code."
+}

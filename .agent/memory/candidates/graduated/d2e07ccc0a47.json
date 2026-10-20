@@ -1,0 +1,44 @@
+{
+  "id": "d2e07ccc0a47",
+  "key": "manual_d2e07c",
+  "name": "manual_d2e07c",
+  "claim": "A byte-identity check between two repositories pins every shared file against the counterpart's pinned copy, so an edit to a shared file cannot pass until both sides move together; add new scenarios as a new file in both repositories and guard drift with a SHA-256 literal in each repository's own test.",
+  "conditions": [
+    "byte-identical",
+    "circular",
+    "cmp",
+    "pin",
+    "probe",
+    "sha256",
+    "shared"
+  ],
+  "evidence_ids": [
+    "2026-10-20T04:06:53.909153+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-20T04:06:53.909153+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-20T04:06:53.909153+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-20T04:06:54.050909+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Extending the shared C2 probe would have failed cmp against the older copy in the pinned counterpart and forced a circular pin sequence; a new file with a hash literal needs one pull request per repository.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-20T04:06:53.909153+00:00"
+      ],
+      "lessons_sha": "9d1b6dd1cc85"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-20T04:06:54.050896+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Extending the shared C2 probe would have failed cmp against the older copy in the pinned counterpart and forced a circular pin sequence; a new file with a hash literal needs one pull request per repository."
+}
