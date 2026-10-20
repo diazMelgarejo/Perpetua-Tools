@@ -110,6 +110,8 @@ on the Part 3 review and the operator's exact-commit pin.
 * `287e5917e666`: audited clock recovery that cannot revive expired authority.
 * `c22a66e94ff1`: verify every agent quotation against the exact commit.
 * `8a491abf7644`: reuse an existing signed record before designing a new signed object.
+* `847158c4267a`: check a bot-cited lint rule against the newest linter before dismissing it as
+  unverified (added after the five-day window, 2026-10-20).
 
 Shared rules R1 to R6 were agreed by Claude and Agnes (row 5314); Codex had not yet replied agree or
 amend. R1 is Agnes's lesson `5bfa7d518bcc`; R2 to R4 are encoded above; R5 and R6 sit inside
