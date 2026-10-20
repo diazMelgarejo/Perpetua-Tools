@@ -13,36 +13,35 @@ pull, prune, install, register, or modify anything while loading a skill.
 
 ## Before Use
 
-Resolve the canonical repository root, in order, using the first candidate
-whose `bin/orama-system/skills/gossip-bus/SKILL.md` exists as a file. Never hardcode a workstation path — search
-instead. Do not guess or fall back to a different repository's copy if none
-resolves.
+Resolve the canonical repository root with the shared resolver
+`scripts/resolve_orama_root.sh` (a thin wrapper over
+`scripts/git/resolve_sibling_git_repo.sh`; do not re-implement discovery here). It:
 
-1. `ORAMA_SYSTEM_ROOT` or `ORAMA_SYSTEM_PATH`, if set.
-2. `$(git rev-parse --show-toplevel 2>/dev/null)` — correct only when the
-   current working directory is already inside the canonical repo itself.
-3. A bounded, marker-based search of the current git repo's parent and
-   grandparent directories (depth 2) for a sibling checkout containing `bin/orama-system/skills/gossip-bus/SKILL.md`
-   — the same crawl `scripts/git/resolve_sibling_git_repo.sh` performs. If
-   the current directory is not inside a git repo, this step has nothing to
-   search from and is skipped.
+1. honors `ORAMA_SYSTEM_PATH`, `ORAMA_SYSTEM_ROOT` or `ORAMA_ROOT` and **fails closed** when one is set
+   but is not a valid, non-symlinked orama-system Git root (it never falls through to a crawl);
+2. otherwise crawls two levels below this repo's parent and grandparent for marker-valid,
+   non-symlinked Git roots; and
+3. errors on zero or on more than one candidate, naming every candidate it found.
+
+If the current directory is already inside the canonical repo, that repo is used (only when no override
+is set). After resolution the skill file itself must exist, so a checkout that has the orama-system marker
+but not this skill is rejected. Never hardcode a workstation path.
 
 ```bash
 ROOT=""
-for cand in "$ORAMA_SYSTEM_ROOT" "$ORAMA_SYSTEM_PATH" \
-    "$(git rev-parse --show-toplevel 2>/dev/null)"; do
-  [ -n "$cand" ] && [ -f "$cand/bin/orama-system/skills/gossip-bus/SKILL.md" ] && ROOT="$cand" && break
-done
-if [ -z "$ROOT" ] && base="$(git rev-parse --show-toplevel 2>/dev/null)"; then
-  parent="$(dirname "$base")"
-  for d in "$parent"/*/ "$(dirname "$parent")"/*/; do
-    [ -f "${d}bin/orama-system/skills/gossip-bus/SKILL.md" ] && ROOT="${d%/}" && break
-  done
+PT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+if [ -z "${ORAMA_SYSTEM_PATH:-}${ORAMA_SYSTEM_ROOT:-}${ORAMA_ROOT:-}" ] \
+    && [ -f "$PT_ROOT/bin/orama-system/skills/gossip-bus/SKILL.md" ]; then
+  ROOT="$PT_ROOT"
+elif [ -f "$PT_ROOT/scripts/resolve_orama_root.sh" ]; then
+  ROOT="$( . "$PT_ROOT/scripts/resolve_orama_root.sh" && resolve_orama_root )" || ROOT=""
 fi
+[ -f "$ROOT/bin/orama-system/skills/gossip-bus/SKILL.md" ] || ROOT=""
 ```
 
-If `$ROOT` is still empty, report the canonical skill as unavailable and ask
-for its location only if the task genuinely needs it.
+The resolver runs in a subshell, so its shell options never leak into your session. If `$ROOT` is empty,
+report the canonical skill as unavailable together with the resolver's error, and ask for its location
+only if the task genuinely needs it. Do not guess or fall back to another repository's copy.
 
 ## Load Canonical Skill
 
