@@ -1,0 +1,19 @@
+{
+  "_doc": "Reviewed, narrow allow-list for graduated records whose claim was corrected after their id was minted. An entry is honoured only if the id derives (cluster.pattern_id or sha256[:12]) from the entry's own original_claim/original_conditions, so a fabricated id cannot be added. Additions need code review. See check_memory_records.py.",
+  "entries": [
+    {
+      "id": "94cbd6e80ee2",
+      "original_claim": "When 'gh'/'git push' auth fails with 'Invalid username or token', check for a stale env var matching the CLI's exact lookup name (GITHUB_TOKEN for gh/git) before assuming the stored credential is broken -- 'gh auth status' with that var unset reveals whether a working keyring-stored token is being shadowed; scope the fix to 'env -u GITHUB_TOKEN <cmd>' per-command rather than editing the secrets file that defines it.",
+      "original_conditions": [
+        "credential-precedence",
+        "env-var-shadowing",
+        "gh-cli",
+        "git-push",
+        "github-auth"
+      ],
+      "minted_in_commit": "8d33ec3a",
+      "corrected_in_commit": "6742065b",
+      "reason": "Claim text was corrected in place after the id was minted; id still derives from the original text recorded here. Memory stays append-only: the graduated record is untouched."
+    }
+  ]
+}
