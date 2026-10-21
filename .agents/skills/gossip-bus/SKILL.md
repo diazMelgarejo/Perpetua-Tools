@@ -23,17 +23,14 @@ Resolve the canonical repository root with the shared resolver
    non-symlinked Git roots; and
 3. errors on zero or on more than one candidate, naming every candidate it found.
 
-If the current directory is already inside the canonical repo, that repo is used (only when no override
-is set). After resolution the skill file itself must exist, so a checkout that has the orama-system marker
+The wrapper never treats the current Git root as canonical merely because it contains a copied skill
+file. After resolution the skill file itself must exist, so a checkout that has the orama-system marker
 but not this skill is rejected. Never hardcode a workstation path.
 
 ```bash
 ROOT=""
 PT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
-if [ -z "${ORAMA_SYSTEM_PATH:-}${ORAMA_SYSTEM_ROOT:-}${ORAMA_ROOT:-}" ] \
-    && [ -f "$PT_ROOT/bin/orama-system/skills/gossip-bus/SKILL.md" ]; then
-  ROOT="$PT_ROOT"
-elif [ -f "$PT_ROOT/scripts/resolve_orama_root.sh" ]; then
+if [ -f "$PT_ROOT/scripts/resolve_orama_root.sh" ]; then
   ROOT="$( . "$PT_ROOT/scripts/resolve_orama_root.sh" && resolve_orama_root )" || ROOT=""
 fi
 [ -f "$ROOT/bin/orama-system/skills/gossip-bus/SKILL.md" ] || ROOT=""
@@ -45,7 +42,8 @@ only if the task genuinely needs it. Do not guess or fall back to another reposi
 
 ## Load Canonical Skill
 
-Read `$ROOT/bin/orama-system/skills/gossip-bus/SKILL.md` and follow it (`$ROOT` is the root resolved under Before Use; the path is relative to the orama-system repo root — sibling checkout `../orama-system` in this workspace layout). Do not copy behavior from this wrapper.
+Read `$ROOT/bin/orama-system/skills/gossip-bus/SKILL.md` and follow it. `$ROOT` is resolved under
+Before Use; do not infer or hardcode its location. Do not copy behavior from this wrapper.
 
 The intra-host transport this skill documents is implemented here in Perpetua-Tools: `orchestrator/gossip_bus.py` (`GossipBus` class — SQLite FTS5 event log). The inter-host LAN peer transport lives in orama-system (`src/orama_system/lan_peer_channel.py`, `lan_peer_files.py`).
 
@@ -60,7 +58,7 @@ Synchronizing the canonical repo is a separate, explicitly authorized action.
 When asked to refresh it:
 
 ```bash
-cd "$ROOT/bin/orama-system/skills/gossip-bus"
+cd "$ROOT/bin/orama-system/skills/gossip-bus" || exit 1
 git fetch origin --prune
 git status --short --branch
 ```
