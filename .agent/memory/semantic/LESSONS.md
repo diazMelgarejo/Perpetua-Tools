@@ -192,6 +192,7 @@
 - A safety latch inside a transactional attempt store must be committed to durable storage before raising a refusal; raising inside a rolled-back transaction discards the latch and permits subsequent bypass.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_a9a1b6d88cd9 -->
 - When testing cross-repository byte parity between shared probe copies, use an immutable separate probe source checkout rather than bumping the runtime dependency pin; this prevents circular dependency deadlocks and preserves frozen production pins.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_eb6269ca453c -->
 - Multi-repository remediation fixes must be batched locally and pushed exactly once per branch to avoid CI thrashing, review bot comment pollution, and intermediate broken states.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_087bbc3bd792 -->
+- A commit sha reported by a maker agent must be re-checked against git before it is cited, because a concurrent agent can amend or replace the commit  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_57bf79ae0fef -->
 
 ### 2026-09
 
