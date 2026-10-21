@@ -1,0 +1,44 @@
+{
+  "id": "0cbb6aa5fe39",
+  "key": "manual_0cbb6a",
+  "name": "manual_0cbb6a",
+  "claim": "A pre-commit gate that validates every staged file will reject a merge commit for content that main already holds. When merging main into a stale branch fails on OSSF-1 skill structure or memory-record id checks for files main itself contains, treat it as pre-existing main debt: list the failing files, never use --no-verify unless the operator explicitly approves that single commit, and either fix main's debt first or ask for the bypass.",
+  "conditions": [
+    "main",
+    "memory-records",
+    "merge",
+    "no-verify",
+    "ossf-1",
+    "pre-commit",
+    "stale-branch"
+  ],
+  "evidence_ids": [
+    "2026-10-21T19:48:38.633426+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-21T19:48:38.633426+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-21T19:48:38.633426+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-21T19:48:38.776670+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Merging main into the two model-governance branches was blocked in both repositories by gates that check main's own already-merged files (an oversized canonical SKILL.md in orama-system, a graduated lesson whose id is not derived from its claim in Perpetua-Tools).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-21T19:48:38.633426+00:00"
+      ],
+      "lessons_sha": "f4309cfeb862"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-21T19:48:38.776655+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Merging main into the two model-governance branches was blocked in both repositories by gates that check main's own already-merged files (an oversized canonical SKILL.md in orama-system, a graduated lesson whose id is not derived from its claim in Perpetua-Tools)."
+}

@@ -1,0 +1,44 @@
+{
+  "id": "4f464428376d",
+  "key": "manual_4f4644",
+  "name": "manual_4f4644",
+  "claim": "Evidence, review, ratification, pin promotion, serving, and activation are separate lifecycle states; evidence receipts must name their exact state and never infer later authority.",
+  "conditions": [
+    "activation",
+    "authority",
+    "evidence",
+    "lifecycle",
+    "promotion",
+    "ratification",
+    "receipt"
+  ],
+  "evidence_ids": [
+    "2026-10-21T19:39:07.909622+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-21T19:39:07.909622+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-21T19:39:07.909622+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-21T19:39:08.049736+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The final receipt corrected prior unsupported ratification wording while retaining tested and reviewed implementation evidence.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-21T19:39:07.909622+00:00"
+      ],
+      "lessons_sha": "1bcc76acf3f4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-21T19:39:08.049714+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The final receipt corrected prior unsupported ratification wording while retaining tested and reviewed implementation evidence."
+}
