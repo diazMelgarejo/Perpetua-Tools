@@ -8,7 +8,9 @@ Checks, in order of what actually failed in the 848da335af02 incident:
    decisions[]); known top-level fields only.
 4. Id derivation: id must match cluster.pattern_id(claim, conditions)
    (learn.py / auto-dream) or sha256(claim).hexdigest()[:12] (legacy hook
-   mint). Random hand-written ids still fail.
+   mint). Random hand-written ids still fail. A claim corrected after
+   minting is honoured only via scripts/hooks/memory_id_allowlist.json,
+   whose entry must itself prove the id derives from the original claim.
 5. Normalized-claim duplicate detection against the tracked corpus (the
    validate.py heuristic, applied at the hook).
 6. Supersedes/links must reference records that exist in the tracked
@@ -32,6 +34,7 @@ import sys
 from pathlib import Path
 
 MEMORY_ROOT = Path(".agent/memory")
+ID_ALLOWLIST = Path(__file__).with_name("memory_id_allowlist.json")
 sys.path.insert(0, str(MEMORY_ROOT))
 from cluster import pattern_id  # noqa: E402
 
@@ -89,11 +92,37 @@ def derived_candidate_ids(claim: str, conditions: list | tuple | None = None) ->
     }
 
 
+def load_id_allowlist(path: Path = ID_ALLOWLIST) -> dict[str, set[str]]:
+    """Ids whose claim was corrected after minting, keyed to provable derivations.
+
+    An entry only counts if its id derives from the entry's own recorded
+    original claim/conditions, so the list cannot launder an invented id.
+    """
+    if not path.exists():
+        return {}
+    doc = strict_json(path.read_text(encoding="utf-8"), str(path))
+    allowed: dict[str, set[str]] = {}
+    for entry in doc.get("entries", []):
+        entry_id = entry.get("id")
+        original = entry.get("original_claim")
+        if not entry_id or not original:
+            continue
+        if entry_id in derived_candidate_ids(original, entry.get("original_conditions") or []):
+            allowed.setdefault(entry_id, set()).add(entry_id)
+    return allowed
+
+
 def normalized(text: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"[^\w\s]", " ", (text or "").lower())).strip()
 
 
-def validate_candidate(path: Path, problems: list[str], tracked: dict[str, dict], tracked_claims: set[str]) -> None:
+def validate_candidate(
+    path: Path,
+    problems: list[str],
+    tracked: dict[str, dict],
+    tracked_claims: set[str],
+    id_allowlist: dict[str, set[str]] | None = None,
+) -> None:
     data = strict_json(path.read_text(encoding="utf-8-sig"), str(path))
     if not isinstance(data, dict):
         problems.append(f"{path}: top-level JSON must be an object")
@@ -104,7 +133,9 @@ def validate_candidate(path: Path, problems: list[str], tracked: dict[str, dict]
         problems.append(f"{path}: missing required fields: {missing}")
         return
     allowed_ids = derived_candidate_ids(data["claim"], data.get("conditions") or [])
-    if data["id"] not in allowed_ids:
+    if id_allowlist is None:
+        id_allowlist = load_id_allowlist()
+    if data["id"] not in allowed_ids and data["id"] not in id_allowlist:
         expected = ", ".join(sorted(allowed_ids))
         problems.append(
             f"{path}: id {data['id']!r} is not a memory-tooling derivation of "
