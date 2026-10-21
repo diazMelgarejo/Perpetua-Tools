@@ -5,18 +5,60 @@ description: "Operate the GossipBus event bus for multi-agent coordination acros
 
 # gossip-bus
 
-This is a thin wrapper. The canonical skill lives in orama-system at the path below
-(resolve the repo root at runtime — paths are never hardcoded).
+This is a thin wrapper. The canonical skill lives in the orama-system repo at
+the path below. Resolution is read-only and marker-verified — never fetch,
+pull, prune, install, register, or modify anything while loading a skill.
 
-- Canonical skill path (orama-system-relative): `bin/orama-system/skills/gossip-bus/SKILL.md`
+- Canonical skill path (repo-relative): `bin/orama-system/skills/gossip-bus/SKILL.md`
 
 ## Before Use
 
-Before relying on the canonical card, check whether the canonical repository can safely sync:
+Resolve the canonical repository root with the shared resolver
+`scripts/resolve_orama_root.sh` (a thin wrapper over
+`scripts/git/resolve_sibling_git_repo.sh`; do not re-implement discovery here). It:
+
+1. honors `ORAMA_SYSTEM_PATH`, `ORAMA_SYSTEM_ROOT` or `ORAMA_ROOT` and **fails closed** when one is set
+   but is not a valid, non-symlinked orama-system Git root (it never falls through to a crawl);
+2. otherwise crawls two levels below this repo's parent and grandparent for marker-valid,
+   non-symlinked Git roots; and
+3. errors on zero or on more than one candidate, naming every candidate it found.
+
+The wrapper never treats the current Git root as canonical merely because it contains a copied skill
+file. After resolution the skill file itself must exist, so a checkout that has the orama-system marker
+but not this skill is rejected. Never hardcode a workstation path.
 
 ```bash
-ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-cd "$ROOT/bin/orama-system/skills/gossip-bus" 2>/dev/null || cd "$ROOT/../orama-system/bin/orama-system/skills/gossip-bus"
+ROOT=""
+PT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+if [ -f "$PT_ROOT/scripts/resolve_orama_root.sh" ]; then
+  ROOT="$( . "$PT_ROOT/scripts/resolve_orama_root.sh" && resolve_orama_root )" || ROOT=""
+fi
+[ -f "$ROOT/bin/orama-system/skills/gossip-bus/SKILL.md" ] || ROOT=""
+```
+
+The resolver runs in a subshell, so its shell options never leak into your session. If `$ROOT` is empty,
+report the canonical skill as unavailable together with the resolver's error, and ask for its location
+only if the task genuinely needs it. Do not guess or fall back to another repository's copy.
+
+## Load Canonical Skill
+
+Read `$ROOT/bin/orama-system/skills/gossip-bus/SKILL.md` and follow it. `$ROOT` is resolved under
+Before Use; do not infer or hardcode its location. Do not copy behavior from this wrapper.
+
+The intra-host transport this skill documents is implemented here in Perpetua-Tools: `orchestrator/gossip_bus.py` (`GossipBus` class — SQLite FTS5 event log). The inter-host LAN peer transport lives in orama-system (`src/orama_system/lan_peer_channel.py`, `lan_peer_files.py`).
+
+## Related Skills
+
+- [`../agent-coordination-heartbeat/SKILL.md`](../agent-coordination-heartbeat/SKILL.md) — heartbeats are emitted onto this same intra-host GossipBus.
+- [`../agent-methodology/SKILL.md`](../agent-methodology/SKILL.md) — Context Immersion (stage 1) should check GossipBus/LAN peer state before assuming an agent is silent because it's dead.
+
+## Refresh (explicit maintenance only — never a side effect of loading)
+
+Synchronizing the canonical repo is a separate, explicitly authorized action.
+When asked to refresh it:
+
+```bash
+cd "$ROOT/bin/orama-system/skills/gossip-bus" || exit 1
 git fetch origin --prune
 git status --short --branch
 ```
@@ -28,17 +70,6 @@ git pull --ff-only
 ```
 
 If the worktree is dirty, the branch is not tracking origin, or fast-forward is impossible, do not overwrite local work. Report the drift and read the current canonical card with that caveat.
-
-## Load Canonical Skill
-
-Open and follow `bin/orama-system/skills/gossip-bus/SKILL.md` (relative to the orama-system repo root — sibling checkout `../orama-system` in this workspace layout). Do not copy behavior from this wrapper.
-
-The intra-host transport this skill documents is implemented here in Perpetua-Tools: `orchestrator/gossip_bus.py` (`GossipBus` class — SQLite FTS5 event log). The inter-host LAN peer transport lives in orama-system (`src/orama_system/lan_peer_channel.py`, `lan_peer_files.py`).
-
-## Related Skills
-
-- [`../agent-coordination-heartbeat/SKILL.md`](../agent-coordination-heartbeat/SKILL.md) — heartbeats are emitted onto this same intra-host GossipBus.
-- [`../agent-methodology/SKILL.md`](../agent-methodology/SKILL.md) — Context Immersion (stage 1) should check GossipBus/LAN peer state before assuming an agent is silent because it's dead.
 
 ## Windows UTF-8 Note
 
