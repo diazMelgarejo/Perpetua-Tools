@@ -82,6 +82,39 @@ Focused governance validation passed in both repositories after reconciliation:
 5. Coordination evidence needs author, current actor, bounded endorsement,
    and takeover provenance. A board note is a discoverability record, not an
    authority transfer or a completion claim for another agent.
+6. Safety latches inside transactional stores must commit atomically before
+   raising exceptions at the public boundary to prevent rollback erasure.
+7. Multi-repository fixes must be batched locally and pushed exactly once per
+   branch to prevent CI thrashing, review bot comment pollution, and broken states.
+
+## AntiGravity & Agnes Verification Chronicle
+
+1. **Historical Design Gapfill (`LOCKSTEP-20261021-AGY-RECONSTRUCTION-GAPFILL-d7858018`)**:
+   Reconciled all 14 missing hunks from reconstructed `PHYLAX-ADJUSTMENT-GRANT-DESIGN-v2.md`
+   in `references/recovered-2026-10-21/`, proving all 14 were already ratified in merged
+   codebase contracts (`docs/v2/` at `59c623fa`, `src/phylax/` at `2d45556`, and `src/orama/` at `4c67d37`).
+2. **Adversarial Runtime Review (`LOCKSTEP-20261021-AGY-RUNTIME-ADVERSARY-70345f18`)**:
+   Executed independent adversarial verification of:
+   - Oramasys R5 consumer clock race and atomic quarantine latch commit (`now < mark - skew`
+     commits `quarantined=1` in `clock_high_water` inside `_immediate()` before raising
+     `ClockQuarantined("clock_regressed")`; proved survives restart; verified with 3 mutation tests;
+     clean untracked `uv.lock` exclusion).
+   - Phylax R6 abort grant binding (verifying `grant_id` before `aborted` idempotent return;
+     verified with 2 mutation tests).
+   - R7 cross-repository probe parity (`scripts/check-permit-probe-parity.sh` and CI gate).
+   - Orama docs contract (`86947239` Part 3 proposed status with immutable 40-hex anchors).
+   Full test suites: 1878 consumer passed, 480 issuer passed (91.93% coverage). Verdict: APPROVE WITH SCOPE.
+3. **Runtime Wave Evidence (`LOCKSTEP-20261021-AGY-EVIDENCE-RUNTIME-WAVE-96f8669d`)**:
+   Verified exact-head remote CI audit (6/6 Oramasys runs + 1/1 Phylax run succeeded),
+   canonical SHA-256 (`682129b1d1f359fa04548c75f2bb362f93648e5673bddb96390453d3b4d8d878`) of
+   `c2_slice2_probe.py`, pin separation (runtime permit pin `55c1630b...` unchanged vs separate
+   probe checkouts), and 15/15 external URLs verified HTTP 200.
+4. **Batch & Push-Once Gate**:
+   Committed Oramasys consumer fix (`1227ff6df7a487ca9bddb93d1f0465ed55c56aca`) without `uv.lock`,
+   verified PR #71, PR #17, and PR #432 opened and green in CI.
+5. **Joint Runtime Receipt**:
+   Reconciled and published joint receipt (`RECEIPT-20261021-E1-C2-LOCKSTEP-CLOSEOUT`) to GossipBus
+   board across both DBs (Rows 152–157).
 
 ## Remaining Operator Decisions
 
