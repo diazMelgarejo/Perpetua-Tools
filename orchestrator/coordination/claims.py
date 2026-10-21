@@ -12,7 +12,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from orchestrator.gossip_bus import GossipBus  # noqa: E402
+from orchestrator.gossip_bus import GossipBus, resolve_gossip_db_path  # noqa: E402
+from orchestrator.coordination.board_snapshot import refresh_snapshot  # noqa: E402
 from orchestrator.heartbeat_monitor import _fetch_heartbeat_events, find_open_claims  # noqa: E402
 from orchestrator.coordination.paths import current_worktree_label  # noqa: E402
 
@@ -144,4 +145,5 @@ async def log_message(bus: GossipBus, agent_id: str, message: str) -> None:
         "heartbeat",
         {"kind": "agent_note", "agent_id": agent_id, "message": message},
     )
+    refresh_snapshot(bus.db_path, resolve_gossip_db_path())
     print("logged")
