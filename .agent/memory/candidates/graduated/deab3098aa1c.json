@@ -1,0 +1,44 @@
+{
+  "id": "deab3098aa1c",
+  "key": "manual_deab30",
+  "name": "manual_deab30",
+  "claim": "Authorization proof claims need explicit compatibility semantics: mandatory normalized launch fields always bind, while optional verifier-issued claims fail closed when present and remain compatible only under documented absent-claim behavior.",
+  "conditions": [
+    "authorization-proof",
+    "compatibility",
+    "fail-closed",
+    "governance",
+    "path",
+    "scope",
+    "verifier"
+  ],
+  "evidence_ids": [
+    "2026-10-21T19:39:07.694164+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-21T19:39:07.694164+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-21T19:39:07.694164+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-21T19:39:07.828466+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The governance reconciliation combined tuple binding with optional path and scope claims without treating policy metadata as signature or task-ownership verification.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-21T19:39:07.694164+00:00"
+      ],
+      "lessons_sha": "18db81640929"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-21T19:39:07.828458+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The governance reconciliation combined tuple binding with optional path and scope claims without treating policy metadata as signature or task-ownership verification."
+}

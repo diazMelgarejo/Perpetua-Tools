@@ -1,0 +1,42 @@
+{
+  "id": "c908d15c7c3b",
+  "key": "manual_c908d1",
+  "name": "manual_c908d1",
+  "claim": "Before replaying a cross-repository lockstep plan, verify current merge and PR-head state; a historical plan can be accurate yet unsafe to replay after its delta already landed.",
+  "conditions": [
+    "cross-repository",
+    "current-head",
+    "historical-plan",
+    "lockstep",
+    "merge-state"
+  ],
+  "evidence_ids": [
+    "2026-10-21T19:39:07.465904+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-21T19:39:07.465904+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-21T19:39:07.465904+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-21T19:39:07.612782+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The five-upload review found historical lockstep work already merged, so replay would have duplicated or conflicted with current behavior.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-21T19:39:07.465904+00:00"
+      ],
+      "lessons_sha": "d8afe94616a0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-21T19:39:07.612774+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The five-upload review found historical lockstep work already merged, so replay would have duplicated or conflicted with current behavior."
+}
