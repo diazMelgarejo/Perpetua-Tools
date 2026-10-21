@@ -188,6 +188,7 @@
 - Before replaying a cross-repository lockstep plan, verify current merge and PR-head state; a historical plan can be accurate yet unsafe to replay after its delta already landed.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_c908d15c7c3b -->
 - Authorization proof claims need explicit compatibility semantics: mandatory normalized launch fields always bind, while optional verifier-issued claims fail closed when present and remain compatible only under documented absent-claim behavior.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_deab3098aa1c -->
 - Evidence, review, ratification, pin promotion, serving, and activation are separate lifecycle states; evidence receipts must name their exact state and never infer later authority.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_4f464428376d -->
+- A pre-commit gate that validates every staged file will reject a merge commit for content that main already holds. When merging main into a stale branch fails on OSSF-1 skill structure or memory-record id checks for files main itself contains, treat it as pre-existing main debt: list the failing files, never use --no-verify unless the operator explicitly approves that single commit, and either fix main's debt first or ask for the bypass.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_0cbb6aa5fe39 -->
 
 ### 2026-09
 
