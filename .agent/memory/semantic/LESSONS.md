@@ -195,7 +195,8 @@
 - A commit sha reported by a maker agent must be re-checked against git before it is cited, because a concurrent agent can amend or replace the commit  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_57bf79ae0fef -->
 - Harness model selection is provider-agnostic: Cursor/Grok Bot defaults to grok-4.6 medium with fast off; Anthropic defaults to claude-sonnet-5-5 medium; grok-4.5 is banned; auto is editor-only; escalation needs S-AuthZ bearer plus fresh signed HITL not config flags.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_ccb7f08ea1ad -->
 - Ed25519ph and pure Ed25519 signatures are not interchangeable: the issuer events, permits and finalizations use Ed25519ph with a domain prefix, so any verifier or fixture must reproduce that exact scheme and message framing  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_90f432a33b48 -->
-- A test stand-in that replaces a production primitive must be labelled as a stand-in where it is defined, and a second test must prove the real primitive against issuer-produced vectors  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_327192b4d88a -->
+- ~~A test stand-in that replaces a production primitive must be labelled as a stand-in where it is defined, and a second test must prove the real primitive against issuer-produced vectors~~  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_327192b4d88a superseded_by=lesson_067531d8e928 -->
+- A test stand-in that replaces a production primitive must be labelled as a stand-in where it is defined; when that primitive is externally defined and authoritative producer vectors exist for it (a signature scheme, digest, codec or wire format), a second test must prove the real primitive against those vectors  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_067531d8e928 -->
 
 ### 2026-09
 
