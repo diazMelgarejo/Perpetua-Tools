@@ -1,0 +1,38 @@
+{
+  "id": "da4ea4ecfb16",
+  "key": "manual_da4ea4",
+  "name": "manual_da4ea4",
+  "claim": "A reservation must be bound to the permit it authorizes by content as well as by identifier. Immediately after the authenticity rule, require the scope's operation digest to equal the permit's request digest and the scope's artifact identity to equal the permit's artifact digest, document the mapping, and prove it with a real signed permit and a test written first.",
+  "conditions": [
+    "reservation"
+  ],
+  "evidence_ids": [
+    "2026-10-20T00:39:07.811465+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-20T00:39:07.811465+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-20T00:39:07.811465+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-20T00:39:07.948510+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: matching reservation ids (rule 1) proved the right permit was presented, but nothing tied the reserved operation and artifact to the permitted ones. A failing test written first showed a reservation for one operation authorizing a permit for another; confirmed with a real signed permit.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-20T00:39:07.811465+00:00"
+      ],
+      "lessons_sha": "86ff40396380"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-20T00:39:07.948502+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: matching reservation ids (rule 1) proved the right permit was presented, but nothing tied the reserved operation and artifact to the permitted ones. A failing test written first showed a reservation for one operation authorizing a permit for another; confirmed with a real signed permit."
+}

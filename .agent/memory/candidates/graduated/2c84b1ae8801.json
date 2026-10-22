@@ -1,0 +1,63 @@
+{
+  "id": "2c84b1ae8801",
+  "key": "manual_2c84b1",
+  "name": "manual_2c84b1",
+  "claim": "When a merged helper is tested only against a fake store, add at least one test against the real store engine and one with terminal history present; fakes that hide history or constraints let code diverge from its spec while staying green.",
+  "conditions": [
+    "add",
+    "against",
+    "code",
+    "constraints",
+    "diverge",
+    "engine",
+    "fake",
+    "fakes",
+    "green",
+    "helper",
+    "hide",
+    "history",
+    "least",
+    "let",
+    "merged",
+    "one",
+    "only",
+    "present",
+    "real",
+    "spec",
+    "staying",
+    "store",
+    "terminal",
+    "test",
+    "tested",
+    "while"
+  ],
+  "evidence_ids": [
+    "2026-10-19T03:22:16.307191+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T03:22:16.307191+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T03:22:16.307191+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T03:22:16.437759+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: the merged permit helper had fake-store tests, no production caller, and minted a second permit when terminal rows were hidden; the reviewer reproduced it in memory.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T03:22:16.307191+00:00"
+      ],
+      "lessons_sha": "2f14429870f6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T03:22:16.437751+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: the merged permit helper had fake-store tests, no production caller, and minted a second permit when terminal rows were hidden; the reviewer reproduced it in memory."
+}

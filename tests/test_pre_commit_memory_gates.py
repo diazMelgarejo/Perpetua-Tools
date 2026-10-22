@@ -41,6 +41,25 @@ def _candidate(claim: str, **extra) -> dict:
 
 
 class PreCommitMemoryGateTests(unittest.TestCase):
+    def test_provisional_graduation_keeps_the_terminal_reviewer_requirement(self) -> None:
+        """Tool-generated provisional status is valid only with a graduation review."""
+        checker = _load_check_memory_records()
+        for reviewed in (True, False):
+            with self.subTest(reviewed=reviewed), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp) / "candidates" / "graduated" / "record.json"
+                path.parent.mkdir(parents=True)
+                decision = {"action": "graduated" if reviewed else "staged",
+                            "reviewer": "reviewer-id", "provisional": True}
+                record = _candidate("Provisional graduation preserves review evidence.",
+                                    status="provisional", decisions=[decision])
+                path.write_text(json.dumps(record), encoding="utf-8")
+                problems: list[str] = []
+                checker.validate_candidate(path, problems, {}, set())
+                if reviewed:
+                    self.assertEqual(problems, [])
+                else:
+                    self.assertTrue(any("reviewer" in item for item in problems))
+
     def test_run_gates_repo_hygiene_uses_first_arg_after_shift(self) -> None:
         text = (ROOT / "scripts" / "hooks" / "run_gates.sh").read_text(encoding="utf-8")
         self.assertIn('"${1:-$ROOT}"', text)
@@ -163,3 +182,57 @@ class PreCommitMemoryGateTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LegacyIdAllowlistTests(unittest.TestCase):
+    ORIGINAL = "Original claim text before a later correction."
+
+    def _write(self, tmp: str, record: dict) -> Path:
+        path = Path(tmp) / "candidates" / "graduated" / "record.json"
+        path.parent.mkdir(parents=True)
+        path.write_text(json.dumps(record), encoding="utf-8")
+        return path
+
+    def _graduated(self, claim: str, rec_id: str) -> dict:
+        record = _candidate(claim, decisions=[{"action": "graduated", "reviewer": "r"}])
+        record["id"] = rec_id
+        return record
+
+    def test_corrected_claim_passes_with_provable_allowlist_entry(self) -> None:
+        checker = _load_check_memory_records()
+        minted = hashlib.sha256(self.ORIGINAL.encode("utf-8")).hexdigest()[:12]
+        allow = {"entries": [{"id": minted, "original_claim": self.ORIGINAL}]}
+        with tempfile.TemporaryDirectory() as tmp:
+            allow_path = Path(tmp) / "allow.json"
+            allow_path.write_text(json.dumps(allow), encoding="utf-8")
+            path = self._write(tmp, self._graduated("Corrected claim text.", minted))
+            problems: list[str] = []
+            checker.validate_candidate(path, problems, {}, set(), checker.load_id_allowlist(allow_path))
+            self.assertEqual(problems, [])
+
+    def test_corrected_claim_without_allowlist_entry_still_fails(self) -> None:
+        checker = _load_check_memory_records()
+        minted = hashlib.sha256(self.ORIGINAL.encode("utf-8")).hexdigest()[:12]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write(tmp, self._graduated("Corrected claim text.", minted))
+            problems: list[str] = []
+            checker.validate_candidate(path, problems, {}, set(), {})
+            self.assertTrue(any("memory-tooling derivation" in p for p in problems))
+
+    def test_fabricated_id_cannot_be_laundered_through_allowlist(self) -> None:
+        checker = _load_check_memory_records()
+        fake = "deadbeef0000"
+        allow = {"entries": [{"id": fake, "original_claim": self.ORIGINAL}]}
+        with tempfile.TemporaryDirectory() as tmp:
+            allow_path = Path(tmp) / "allow.json"
+            allow_path.write_text(json.dumps(allow), encoding="utf-8")
+            loaded = checker.load_id_allowlist(allow_path)
+            self.assertEqual(loaded, {})
+            path = self._write(tmp, self._graduated("Corrected claim text.", fake))
+            problems: list[str] = []
+            checker.validate_candidate(path, problems, {}, set(), loaded)
+            self.assertTrue(any("memory-tooling derivation" in p for p in problems))
+
+    def test_shipped_allowlist_covers_94cbd6e80ee2(self) -> None:
+        checker = _load_check_memory_records()
+        self.assertIn("94cbd6e80ee2", checker.load_id_allowlist())

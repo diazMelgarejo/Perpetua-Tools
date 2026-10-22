@@ -1,0 +1,69 @@
+{
+  "id": "fc158090bf07",
+  "key": "manual_fc1580",
+  "name": "manual_fc1580",
+  "claim": "Windows-simulating tests run on a case-insensitive dev filesystem can hide failures that only appear on a case-sensitive CI runner; build candidate file names from the configured spelling (PATHEXT as written), compare case-insensitively, add a test that records the names tried, and reproduce CI locally on a case-sensitive volume before trusting a green run.",
+  "conditions": [
+    "add",
+    "appear",
+    "before",
+    "build",
+    "candidate",
+    "case-insensitive",
+    "case-insensitively",
+    "case-sensitive",
+    "compare",
+    "configured",
+    "dev",
+    "failures",
+    "file",
+    "filesystem",
+    "green",
+    "hide",
+    "locally",
+    "names",
+    "only",
+    "pathext",
+    "records",
+    "reproduce",
+    "run",
+    "runner",
+    "spelling",
+    "test",
+    "tests",
+    "tried",
+    "trusting",
+    "volume",
+    "windows-simulating",
+    "written"
+  ],
+  "evidence_ids": [
+    "2026-10-19T04:30:52.279724+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T04:30:52.279724+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T04:30:52.279724+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T04:30:52.408960+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19 orama-system#423: two simulated-Windows tests passed on macOS and failed on Linux CI because names were built from a case-folded PATHEXT; the reviewer found the same cause; the failure and fix were reproduced on a case-sensitive volume.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T04:30:52.279724+00:00"
+      ],
+      "lessons_sha": "0c6d42433b10"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T04:30:52.408953+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19 orama-system#423: two simulated-Windows tests passed on macOS and failed on Linux CI because names were built from a case-folded PATHEXT; the reviewer found the same cause; the failure and fix were reproduced on a case-sensitive volume."
+}

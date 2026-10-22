@@ -1,0 +1,43 @@
+{
+  "id": "7fa7d6219657",
+  "key": "manual_7fa7d6",
+  "name": "manual_7fa7d6",
+  "claim": "When computing which commits a branch move would lose, count only independent holders: a symbolic ref such as refs/remotes/origin/HEAD is an alias of a ref that may itself be the one being moved, so it must be skipped, or an undeclared commit on origin/main is wrongly treated as safe. A commit is at risk only when no ref outside the moved set reaches it; a named branch that is legitimately ahead (an integration branch) is not a reason to refuse, a detached HEAD is.",
+  "conditions": [
+    "at-risk-commits",
+    "branch-move",
+    "gate",
+    "origin-head",
+    "reset",
+    "symbolic-ref"
+  ],
+  "evidence_ids": [
+    "2026-10-13T22:55:48.207457+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T22:55:48.207457+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T22:55:48.207457+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T22:55:48.343052+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Found 2026-10-14 (UTC 2026-10-13) applying the qualified-reset gate to the fork-main scripts in orama-system PR 404: the first implementation let an undeclared commit through because origin/HEAD counted as an independent holder; test_an_undeclared_unique_commit_on_the_remote_blocks_the_rewrite caught it. Grounded in lesson_fdb82283644f and lesson_881de77084d5.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T22:55:48.207457+00:00"
+      ],
+      "lessons_sha": "f1128eb625ce"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T22:55:48.343041+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Found 2026-10-14 (UTC 2026-10-13) applying the qualified-reset gate to the fork-main scripts in orama-system PR 404: the first implementation let an undeclared commit through because origin/HEAD counted as an independent holder; test_an_undeclared_unique_commit_on_the_remote_blocks_the_rewrite caught it. Grounded in lesson_fdb82283644f and lesson_881de77084d5."
+}

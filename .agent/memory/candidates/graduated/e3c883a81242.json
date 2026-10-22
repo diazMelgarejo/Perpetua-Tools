@@ -1,0 +1,45 @@
+{
+  "id": "e3c883a81242",
+  "key": "manual_e3c883",
+  "name": "manual_e3c883",
+  "claim": "Before committing a pinned npx or npm version (pkg@X.Y.Z), prove it exists with 'npm view <pkg> versions --json' and check its age with 'npm view <pkg> time': a pin proposed by a subagent or pasted from notes can be invented, and a non-existent pin makes npx fail for every MCP entry that uses it. When sessions disagree on a real version, the recorded PT decision wins (mcp-remote@0.1.43, DECISIONS.md 2026-08-22), so read it before choosing. Repeat the check whenever a pin crosses a handoff.",
+  "conditions": [
+    "invented-version",
+    "mcp",
+    "mcp-remote",
+    "npm-view",
+    "npx",
+    "pin",
+    "registry",
+    "supply-chain"
+  ],
+  "evidence_ids": [
+    "2026-10-18T11:30:19.142289+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T11:30:19.142289+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T11:30:19.142289+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T11:30:19.287490+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama-system#421, 2026-10-18: a reviewer-nitpick fix pinned mcp-remote@0.1.10, which is not on the registry (123 versions; 0.1.10 absent; 0.1.43, 0.14.3 and 0.15.1 exist). A parallel session independently chose 0.14.3 ('newest release at least two weeks old'); the operator's later edit set both Exa and Firecrawl entries to 0.1.43 per the PT decision. The invented string reappeared in a later relayed message. Third-party mirrors lagged the live registry, which is authoritative for what npx resolves. Complements the existing rule to pin reviewed versions and never use @latest.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T11:30:19.142289+00:00"
+      ],
+      "lessons_sha": "93957c1bfb9b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T11:30:19.287473+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama-system#421, 2026-10-18: a reviewer-nitpick fix pinned mcp-remote@0.1.10, which is not on the registry (123 versions; 0.1.10 absent; 0.1.43, 0.14.3 and 0.15.1 exist). A parallel session independently chose 0.14.3 ('newest release at least two weeks old'); the operator's later edit set both Exa and Firecrawl entries to 0.1.43 per the PT decision. The invented string reappeared in a later relayed message. Third-party mirrors lagged the live registry, which is authoritative for what npx resolves. Complements the existing rule to pin reviewed versions and never use @latest."
+}

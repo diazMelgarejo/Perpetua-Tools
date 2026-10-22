@@ -1,0 +1,40 @@
+{
+  "id": "a60a1029f3b0",
+  "key": "manual_a60a10",
+  "name": "manual_a60a10",
+  "claim": "Re-read the active PR inventory immediately before creating a follow-up, and honor the operator-named PR; consolidate additive evidence there instead of fragmenting the handoff.",
+  "conditions": [
+    "active PR",
+    "concurrent publication",
+    "memory handoff"
+  ],
+  "evidence_ids": [
+    "2026-10-09T23:44:16.530558+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-09T23:44:16.530558+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-09T23:44:16.530558+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-09T23:44:16.646979+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The current agent opened PT 433 while PT 432 had become the active R3 memory PR. The operator corrected the target. Integrating both histories into 432 preserves work while eliminating the redundant review lane.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-09T23:44:16.530558+00:00"
+      ],
+      "lessons_sha": "2079b6580e93"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-09T23:44:16.646964+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The current agent opened PT 433 while PT 432 had become the active R3 memory PR. The operator corrected the target. Integrating both histories into 432 preserves work while eliminating the redundant review lane."
+}

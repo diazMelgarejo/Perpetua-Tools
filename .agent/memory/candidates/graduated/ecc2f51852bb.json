@@ -1,0 +1,67 @@
+{
+  "id": "ecc2f51852bb",
+  "key": "manual_ecc2f5",
+  "name": "manual_ecc2f5",
+  "claim": "State a defense's scope by timing: scalar floors catch a rollback before the request, the chain event catches the window after it, and a rollback whose lost events the consumer never saw is invisible and belongs to the recovery witness; write that residual case into the spec.",
+  "conditions": [
+    "after",
+    "before",
+    "belongs",
+    "case",
+    "catch",
+    "catches",
+    "chain",
+    "consumer",
+    "defense",
+    "event",
+    "events",
+    "floors",
+    "into",
+    "invisible",
+    "lost",
+    "never",
+    "recovery",
+    "request",
+    "residual",
+    "rollback",
+    "saw",
+    "scalar",
+    "scope",
+    "spec",
+    "state",
+    "timing",
+    "whose",
+    "window",
+    "witness",
+    "write"
+  ],
+  "evidence_ids": [
+    "2026-10-18T23:18:31.653847+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T23:18:31.653847+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T23:18:31.653847+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T23:18:31.788040+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: reviewer correctly showed the first wording over-claimed that counters cannot catch clean rollbacks; the corrected table has a row per timing.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T23:18:31.653847+00:00"
+      ],
+      "lessons_sha": "a59be04a9284"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T23:18:31.788031+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: reviewer correctly showed the first wording over-claimed that counters cannot catch clean rollbacks; the corrected table has a row per timing."
+}

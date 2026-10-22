@@ -1,0 +1,38 @@
+{
+  "id": "f887450e688f",
+  "key": "manual_f88745",
+  "name": "manual_f88745",
+  "claim": "Before trusting a peer's CI root-cause diagnosis, read the failing job's own log: two PRs were diagnosed as skip-budget failures when the real cause was a missing Core gate seam that made the runner refuse before the child reached its marker.",
+  "conditions": [
+    "ci-diagnosis root-cause job-log verification peer-claim"
+  ],
+  "evidence_ids": [
+    "2026-10-14T05:38:51.746295+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-14T05:38:51.746295+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-14T05:38:51.746295+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-14T05:38:51.874344+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Job logs showed gate.core_seam_unavailable and assert None == marker; only one of three PRs was a skip-budget failure.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-14T05:38:51.746295+00:00"
+      ],
+      "lessons_sha": "698418640031"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-14T05:38:51.874334+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Job logs showed gate.core_seam_unavailable and assert None == marker; only one of three PRs was a skip-budget failure."
+}

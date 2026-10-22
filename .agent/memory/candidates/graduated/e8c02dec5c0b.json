@@ -1,0 +1,57 @@
+{
+  "id": "e8c02dec5c0b",
+  "key": "manual_e8c02d",
+  "name": "manual_e8c02d",
+  "claim": "A stale local remote-tracking ref from a remote name that no longer exists can make a branch look present on a second remote; resolve it with git remote -v and git ls-remote before concluding where a commit lives.",
+  "conditions": [
+    "before",
+    "branch",
+    "commit",
+    "concluding",
+    "exists",
+    "git",
+    "lives",
+    "local",
+    "longer",
+    "look",
+    "ls-remote",
+    "make",
+    "name",
+    "present",
+    "ref",
+    "remote",
+    "remote-tracking",
+    "resolve",
+    "second",
+    "stale"
+  ],
+  "evidence_ids": [
+    "2026-10-19T07:01:36.956713+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T07:01:36.956713+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T07:01:36.956713+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T07:01:37.091462+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: a diaz/... tracking ref made two withdrawn commits look pushed to a second remote that is not configured.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T07:01:36.956713+00:00"
+      ],
+      "lessons_sha": "9bae59609fb0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T07:01:37.091451+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: a diaz/... tracking ref made two withdrawn commits look pushed to a second remote that is not configured."
+}

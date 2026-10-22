@@ -1,0 +1,43 @@
+{
+  "id": "087bbc3bd792",
+  "key": "manual_087bbc",
+  "name": "manual_087bbc",
+  "claim": "Multi-repository remediation fixes must be batched locally and pushed exactly once per branch to avoid CI thrashing, review bot comment pollution, and intermediate broken states.",
+  "conditions": [
+    "batching",
+    "ci",
+    "git",
+    "push-once",
+    "remediation",
+    "review-discipline"
+  ],
+  "evidence_ids": [
+    "2026-10-21T20:00:07.487873+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-21T20:00:07.487873+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-21T20:00:07.487873+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-21T20:00:07.631139+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Following the Orama micro-remediation doctrine across PRs #71, #17, and #432 prevented review bot noise and allowed all CI matrices to pass green on their first run.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-21T20:00:07.487873+00:00"
+      ],
+      "lessons_sha": "d1e1a39c60ee"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-21T20:00:07.631122+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Following the Orama micro-remediation doctrine across PRs #71, #17, and #432 prevented review bot noise and allowed all CI matrices to pass green on their first run."
+}

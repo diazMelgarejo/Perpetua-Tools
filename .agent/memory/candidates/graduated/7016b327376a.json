@@ -1,0 +1,61 @@
+{
+  "id": "7016b327376a",
+  "key": "manual_7016b3",
+  "name": "manual_7016b3",
+  "claim": "Give every attempt a stable identifier created durably before its first external call, so lost-response, timeout and crash outcomes stay nameable and an identical retry can be recognized even when no server-side id exists yet.",
+  "conditions": [
+    "attempt",
+    "before",
+    "call",
+    "crash",
+    "created",
+    "durably",
+    "even",
+    "every",
+    "exists",
+    "external",
+    "first",
+    "give",
+    "identical",
+    "identifier",
+    "lost-response",
+    "nameable",
+    "outcomes",
+    "recognized",
+    "retry",
+    "server-side",
+    "stable",
+    "stay",
+    "timeout",
+    "yet"
+  ],
+  "evidence_ids": [
+    "2026-10-19T03:22:17.200984+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T03:22:17.200984+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T03:22:17.200984+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T03:22:17.328230+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: a first permit request had no permit_id to attest or retry with; a durable attempt_id reused by the finalization request gave every ambiguous outcome a name.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T03:22:17.200984+00:00"
+      ],
+      "lessons_sha": "5dade913c2ab"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T03:22:17.328223+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: a first permit request had no permit_id to attest or retry with; a durable attempt_id reused by the finalization request gave every ambiguous outcome a name."
+}

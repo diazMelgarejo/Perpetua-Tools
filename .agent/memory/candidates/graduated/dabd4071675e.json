@@ -1,0 +1,45 @@
+{
+  "id": "dabd4071675e",
+  "key": "manual_dabd40",
+  "name": "manual_dabd40",
+  "claim": "Do not place backticked code spans inside double-quoted GossipBus log payloads; pass the payload from a QUOTED heredoc delimiter (<<'EOF') or single quotes. An unquoted delimiter (<<EOF) still performs command substitution, so it is not a safe alternative.",
+  "conditions": [
+    "agent_note",
+    "backtick",
+    "command-substitution",
+    "gossip-bus",
+    "heredoc",
+    "log",
+    "quoting",
+    "shell-hygiene"
+  ],
+  "evidence_ids": [
+    "2026-10-13T11:41:08.184413+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T11:41:08.184413+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T11:41:08.184413+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T11:41:15.838189+00:00",
+      "action": "graduated",
+      "reviewer": "claude-main",
+      "notes": "CodeRabbit review on PT PR #440 found the original claim's alternative 'or a heredoc' ambiguous: an unquoted heredoc delimiter still expands command substitution. Verified empirically in bash 3.2 and zsh before correcting. Supersedes rather than edits in place because a lesson id is a hash of its claim.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T11:41:08.184413+00:00"
+      ],
+      "lessons_sha": "890026d5aefa"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T11:41:15.838183+00:00",
+  "reviewer": "claude-main",
+  "rationale": "CodeRabbit review on PT PR #440 found the original claim's alternative 'or a heredoc' ambiguous: an unquoted heredoc delimiter still expands command substitution. Verified empirically in bash 3.2 and zsh before correcting. Supersedes rather than edits in place because a lesson id is a hash of its claim."
+}

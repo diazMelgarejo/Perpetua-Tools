@@ -1,0 +1,45 @@
+{
+  "id": "5aced2b62ac3",
+  "key": "manual_5aced2",
+  "name": "manual_5aced2",
+  "claim": "When a gbrain sync fails with read-only transaction, check the Postgres default_transaction_read_only setting before suspecting gbrain itself",
+  "conditions": [
+    "default_transaction_read_only",
+    "force_writable_session",
+    "gbrain",
+    "postgres",
+    "read-only",
+    "supabase",
+    "sync",
+    "transaction"
+  ],
+  "evidence_ids": [
+    "2026-10-12T20:04:47.843985+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-12T20:04:47.843985+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-12T20:04:47.843985+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-12T20:04:47.989154+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A Supabase auto.conf or role/database default of transaction_read_only=on makes every INSERT fail regardless of gbrain state; fix with ALTER ROLE and ALTER DATABASE set default_transaction_read_only=off plus force_writable_session in config, then rerun the pinned-source sync.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-12T20:04:47.843985+00:00"
+      ],
+      "lessons_sha": "be97cd256d32"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-12T20:04:47.989142+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A Supabase auto.conf or role/database default of transaction_read_only=on makes every INSERT fail regardless of gbrain state. First confirm the read-only default is accidental: a managed provider can set it deliberately (for example when the disk is nearly full), and then fixing the cause matters more than overriding it. Only then change the narrowest scope responsible (session, then role, then database) and set force_writable_session in config; rerun the pinned-source sync."
+}

@@ -5,6 +5,10 @@
 #   check_file_deletion_guard.sh --staged
 #   check_file_deletion_guard.sh --range <revision-range>
 #
+# Exact renames (100% similarity, e.g. `git mv`) are moves, not deletions: every byte reaches the
+# new path. Anything less than exact stays a deletion, so a revised copy cannot hide a removal
+# (#349). Exactness is requested explicitly, so a user's diff.renames setting cannot change it.
+#
 # Intentional removals require BOTH:
 #   GIT_ALLOW_FILE_DELETIONS=1
 #   GIT_FILE_DELETION_JUSTIFICATION='why this removal is safe'
@@ -45,15 +49,19 @@ repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
 }
 cd "$repo_root"
 
+# Only exact renames are exempt. Git then reports a moved path as R, not D, so --diff-filter=D lists
+# real removals and any rename that also changed content (reported as D plus A at this threshold).
+rename_option="--find-renames=100%"
+
 deletions="$(mktemp)"
 trap 'rm -f "$deletions"' EXIT
 
 if [[ "$mode" == "staged" ]]; then
-  git diff --cached --no-renames --name-only --diff-filter=D >"$deletions"
+  git diff --cached "$rename_option" --name-only --diff-filter=D >"$deletions"
   review_command="git diff --cached --name-status"
   restore_command="git restore --staged --worktree -- <path>"
 else
-  git diff --no-renames --name-only --diff-filter=D "$range" >"$deletions"
+  git diff "$rename_option" --name-only --diff-filter=D "$range" >"$deletions"
   review_command="git diff --name-status $range"
   if [[ "$range" == *"..."* ]]; then
     range_left="${range%%...*}"
@@ -90,7 +98,7 @@ if [[ "${GIT_ALLOW_FILE_DELETIONS:-0}" == "1" && -n "${GIT_FILE_DELETION_JUSTIFI
 fi
 
 echo "git scope: blocked [GIT_SCOPE_E_FILE_DELETION] (exit $EXIT_FILE_DELETION) — whole-file deletion detected" >&2
-echo "  Review before committing or pushing; ordinary line removals are not blocked." >&2
+echo "  Review before committing or pushing; line removals and exact renames are not blocked." >&2
 while IFS= read -r path; do
   [[ -n "$path" ]] || continue
   echo "  D  $path" >&2

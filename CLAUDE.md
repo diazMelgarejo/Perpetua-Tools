@@ -124,8 +124,9 @@ As-built: [`../orama-system/docs/v2/`](../orama-system/docs/v2/)
 
 ## § 6 — Git Hygiene
 
-- Commit identity: `cyre <Lawrence@cyre.me>`, `cyre <diazMelgarejo@gmail.com>`, or
-  `Codex <codex@openai.com>` — `bash scripts/git/check_identity.sh`
+- Commit identity: `cyre <Lawrence@cyre.me>`, `cyre <diazMelgarejo@gmail.com>`,
+  `Codex <codex@openai.com>`, or `Claude <noreply@anthropic.com>` — `bash scripts/git/check_identity.sh`.
+  Source of truth: `scripts/git/identity-policy.json` (listed addresses only, no vendor domains)
 - **Private banned-identity list (gitignored, not on GitHub):**
   `.cursor/private/agent-lesson-git-attribution.md` — sync via
   `bash scripts/cursor/install-user-git-environment.sh`; never copy tokens into tracked docs.
@@ -341,3 +342,10 @@ in an earlier session leaves residue across clones). Confirm via
 present," it's clone noise, not a real change. **Exclude it from `git add`
 explicitly** rather than trying to "fix" it; don't let it ride into an
 unrelated commit.
+
+## Portable Sites prompt contract (v1)
+
+PT owns [SPECS.md](packages/prompt-workspace/SPECS.md); Orama consumes reviewed exact snapshots.
+See [implementation memory](.agent/memory/working/SITES_MCP_IMPLEMENTATION_2026-10-05.md) and the
+[review-fix memory](.agent/memory/working/SITES_MCP_REVIEW_FIXES_2026-10-05.md). This independent
+JavaScript adapter contract does not replace the Python runtime or import the v2 repositories.

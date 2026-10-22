@@ -1,0 +1,42 @@
+{
+  "id": "e268b391ba1d",
+  "key": "manual_e268b3",
+  "name": "manual_e268b3",
+  "claim": "For REST-only GitHub sessions use the replies and review-thread resolve routes instead of GraphQL, fetch refs one at a time because one missing ref aborts a multi-ref fetch, rebuild vanished scratch virtual environments with all test extras and print module paths, check prose line length outside tables before pushing docs, and treat rate-limit, skipped-review, own-reply and green check-suite notices as no-action.",
+  "conditions": [
+    "candidate-pin",
+    "fan-out",
+    "lockstep",
+    "registry",
+    "review"
+  ],
+  "evidence_ids": [
+    "2026-10-09T23:35:45.754549+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-09T23:35:45.754549+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-09T23:35:45.754549+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-09T23:35:45.889217+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "R3 fan-out lockstep stack, 2026-10-10; see working/R3_FANOUT_LOCKSTEP_PROCEDURES_AND_LESSONS_2026-10-10.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-09T23:35:45.754549+00:00"
+      ],
+      "lessons_sha": "d6848e1f648e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-09T23:35:45.889190+00:00",
+  "reviewer": "learn.py",
+  "rationale": "R3 fan-out lockstep stack, 2026-10-10; see working/R3_FANOUT_LOCKSTEP_PROCEDURES_AND_LESSONS_2026-10-10.md"
+}

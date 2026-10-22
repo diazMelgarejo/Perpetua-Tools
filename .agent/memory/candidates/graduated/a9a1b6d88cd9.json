@@ -1,0 +1,44 @@
+{
+  "id": "a9a1b6d88cd9",
+  "key": "manual_a9a1b6",
+  "name": "manual_a9a1b6",
+  "claim": "A safety latch inside a transactional attempt store must be committed to durable storage before raising a refusal; raising inside a rolled-back transaction discards the latch and permits subsequent bypass.",
+  "conditions": [
+    "clock",
+    "concurrency",
+    "latch",
+    "quarantine",
+    "rollback",
+    "store",
+    "transaction"
+  ],
+  "evidence_ids": [
+    "2026-10-21T19:59:02.797733+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-21T19:59:02.797733+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-21T19:59:02.797733+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-21T19:59:02.939526+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "In the R5 consumer clock race fix (Oramasys PR #71), updating clock_high_water to quarantined=1 inside BEGIN IMMEDIATE commits before authorize_dispatch raises ClockQuarantined, ensuring durable containment across restarts.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-21T19:59:02.797733+00:00"
+      ],
+      "lessons_sha": "5c52b38b6734"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-21T19:59:02.939513+00:00",
+  "reviewer": "learn.py",
+  "rationale": "In the R5 consumer clock race fix (Oramasys PR #71), updating clock_high_water to quarantined=1 inside BEGIN IMMEDIATE commits before authorize_dispatch raises ClockQuarantined, ensuring durable containment across restarts."
+}

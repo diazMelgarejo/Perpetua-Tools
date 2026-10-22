@@ -1,5 +1,115 @@
 # WORKSPACE — current task state
 
+**Updated:** 2026-10-19 UTC, latest (slice 1 implemented and verified in two repositories)
+**Session record:** `memory/working/2026-10-19-clean-rollback-and-preflight-chronicle.md` (Addendum 2)
+**Next actions:** 1 operator answers D1 (push both slice-1 branches, one PR per repository), D2 (delete
+the stale remote branch on merged PR 421) and D3 (pin promotion, gated). 2 Codex finishes the consumer
+review. 3 after D1, push each branch once and open its PR. 4 serving stays off.
+**State:** Phylax issuer head `f0b73c8` and Oramasys consumer head `812e0f3`, both on current main, not
+pushed; 7 of 7 interop scenarios with real signatures; Codex APPROVE_WITH_SCOPE on the issuer slice and
+Agnes APPROVE_SCOPED on both. Eleven more lessons graduated.
+**Next actions (repeated):** D1 to D3, Codex consumer review, push once per repository, serving off.
+
+**Updated:** 2026-10-19 UTC, later (review saga, integrated head, hybrid workflow)
+**Session record:** `memory/working/2026-10-19-clean-rollback-and-preflight-chronicle.md` (addendum)
+**Next actions:** 1 reviewer's final re-review of orama-system#423 head `1481bc58`. 2 operator
+ratifies by exact commit (decision 9 is confirmed). 3 merge #423 on green CI. 4 claim the
+queued conformance task, tests failing first. 5 separate pin promotion on evidence.
+**State:** The E1 permit spec went through about seven review rounds with an independent reviewer,
+three parallel analysts and `agy` passes; #423 now carries the spec, the dispatcher hardening and
+the reviewer's three commits. Seventeen more lesson entries graduated (one supersedes another
+after a review found an overclaim); #423 CI is green on `1481bc58` after a case-sensitivity fix.
+Remaining gaps are listed in the chronicle (A8). Decision 9 was first recorded from the reviewer's
+note and is now confirmed by the operator directly.
+**Next actions (repeated):** reviewer re-review, ratification, merge on green CI, conformance
+task, separate pin promotion.
+
+**Updated:** 2026-10-19 UTC (clean-rollback chain-event fix, preflight hardening)
+**Session record:** `memory/working/2026-10-19-clean-rollback-and-preflight-chronicle.md`
+**State:** The digest-at-`R_f` suggestion for orama-system#419 was disproved by a model: a
+clean snapshot restore matches it. The finalization is now a hash-chained issuer event
+(orama-system#423, `edfe65b0`), with the unseen-events residual left to the section 8.2
+witness. The same PR hardens the dispatcher preflight (PATH-only bare names, quoted and
+unset PATH, `cline` and `kimi`, drift check) and its plan doc. Two `agy` review rounds
+were folded in. Ten more lessons graduated. Open: #423 CI, spec operator decisions 1 to 7.
+
+**Updated:** 2026-10-18 UTC (stacked-PR rescue, E1 C2 permit guards, chronicle)
+**Session record:** `memory/working/2026-10-18-stacked-pr-c2-no-change-required-chronicle.md`
+**State:** Oramasys stack #64 is linear: `main` <- #63 (E1 C2 digest and permit
+logic, head `87e18be`, clean, 15 of 15 checks) <- #62 (ruff cleanup, head `da580b9`,
+re-seated by the operator's lease-pinned push `319d447` to `da580b9`). Merge bottom-up.
+PR #22 and orama-system#421 are merged. A reviewer's "No change is required" on #63 was
+re-derived claim by claim; the `!=` digest compare stayed, and four fail-closed guards
+on the store and `issue_new` ports were added with mutation-proven tests. Ten lessons
+graduated (`lesson_eccc672953c8` and nine more). Open: a known-answer digest test,
+the `/team-onboarding` guide answers, another session's uncommitted gossip-bus files in
+orama-system, and the unexecuted Cowork VM image cleanup.
+
+**Updated:** 2026-10-12 UTC (AlphaClaw bind lesson provenance remediation)
+**Session record:** `memory/working/ALPHACLAW_BIND_HOST_PROVENANCE_2026-09-28.md`
+**State:** The accepted AlphaClaw loopback-bind lesson
+[`lesson_1bbee93ff11e`](../semantic/LESSONS.md) retains its original September 28,
+2026 timestamps and evidence ID. The evidence ID now resolves to one explicitly
+labeled reconstructed episodic provenance record, appended during the October 12
+audit integration after direct verification of local AlphaClaw branch
+`subagent/mac-orchestrator/alphaclaw-bind-host`, commit
+`55d06572b2ebb9f9a5350eead962ba97db43d6b4`. The source branch remains local-only
+and is not contained in `main`, `origin/main`, or `upstream/main`; this is evidence
+of the implementation, not a claim that it was merged or published.
+
+**Updated:** 2026-10-10 UTC (P0 ACTIVATED — correction)
+**Source:** Orama closure PR #396 (`P0-ACTIVATED-CLOSURE-2026-10-10.md`, receipt 4);
+Oramasys #26 and #27 merged; Orama #394 and #395 merged.
+**State:** Corrects the entries below that call the P0 plan unpublished and the
+Oramasys dependency pre-R3. The P0 plan is published and executed. Oramasys `main`
+(`fa6e1e37`) pins Core `4d217f6b9e94e36554a9427198b8c2c4b7febc47`, with a manifest,
+a clean-install verifier and a result-file gate; the eight checks passed on that
+commit. Orama `main` is `792f4744` plus the closure. P0 is ACTIVATED. Still open
+for the operator: branch protection requiring the eight checks, and the action-pinning
+decision on Oramasys #27. T1 and later stay gated; the entries below are history.
+
+**Updated:** 2026-10-10 UTC (R4 documentation merged)
+**Source:** Orama PR #392 merged to main as `bccc152`; PT PR #432 merged to main as `8cdd492`.
+**State:** The R4 reference set, its T0 restoration/baseline record and the PT continuity
+memory are merged. The T0 record's restoration source `662a360b` was not resolvable
+from the remote at review; its hash table is exact only at the restoration commit
+`2fd1e0a`, and later review edits to `PLAN-R4-EXECUTION.md` and `REVIEW-RECORD.md` are not
+reflected in it. A draft P0 plan exists, unpublished, awaiting three operator decisions
+(pin target, file location, evidence record shape). The production Oramasys dependency
+remains pre-R3 Core `04759a5`; P0 is still open and gated. No pin, registry or code
+change has been made.
+
+**Updated:** 2026-10-10 UTC (R4 ratification and T0 restoration)
+**Source:** Orama PR #392, `docs/v2/references/r4-safety-compatibility-platform-2026-10-10/`
+**State:** The operator ratified D-LG-7, its named contracts and D-LG-6 (with
+Core #9 `4d217f6` and Oramasys #25 `f4dbf33` as implementation evidence). T0
+restored the full R4 reference set from Orama commit `662a360` after a browser
+publication truncated ten documents, and refreshed the canonical registry baseline.
+The production Oramasys dependency remains pre-R3 Core `04759a5`; P0 must still
+requalify and promote that pin. R3 mechanics are merged, but `ainvoke(loaded_state)`
+still begins traversal at `START`; it is not durable continuation. Durable HITL,
+foreign-provider transport and provider effects remain gated. The backward-clock
+high-water rule is fail-closed and its trusted-time recovery procedure is frozen at T0.
+
+**Updated:** 2026-10-09 UTC / 2026-10-10 Asia/Manila (R3 registry and replay review)
+**Session record:** `memory/working/R3_REGISTRY_REPLAY_REVIEW_2026-10-10.md`
+**State:** Core #9, Orama #390 and Oramasys #25 review fixes published. Core
+production pin remains `04759a5`. Two explicit candidate registry profiles qualify
+both consumer CI lanes. Durable replay, HITL, production foreign transport and
+full upstream replacement remain open; do not treat this audit as their closure.
+PT #432 remains the base memory PR, separate from merged PT #431. PT #433 merged into
+`docs/r3-lockstep-memory` on 2026-10-09 UTC; its procedures and retrospective are
+therefore part of #432's current history, not an open follow-up. No wider feature
+completion is claimed.
+
+**Updated:** 2026-10-06 (Sites saga crystallization)
+**Session record:** `memory/working/ORAMASYS_SITES_SAGA_CRYSTALLIZATION_2026-09-10_TO_2026-10-06.md`
+**State:** PT #429 remains the active leaf for canonical-memory review repairs.
+The new record links the memory-integrity incidents, v1 Sites/MCP readiness,
+authenticated-plugin evidence, review repairs and future-agent gates. It is
+append-only; historical JSONL content was not rewritten. Do not merge before
+fresh CodeRabbit/CI review and exact remote-head verification.
+
 **Updated:** 2026-10-02 (PT PR #418 and Orama PR #376 containment cycle)
 **Session record:** `memory/working/2026-10-02-containment-cross-repo-cycle.md`
 **State:** Local containment hardening is committed and validated. PT retries
@@ -220,6 +330,11 @@ Env must be User-level for scheduled tasks — `.env.local` not loaded by coord_
 
 ## Next
 
+- [x] P0 Core-pin requalification in Oramasys: ACTIVATED 2026-10-10 (see top entry).
+      Was next after the completed R4
+      ratification and T0 restoration/baseline refresh. Then take independently
+      reviewed T1/T2 and T3 slices. Approval does not waive any safety gate or
+      authorize provider effects.
 - [ ] Operator review/merge orama Hermes graft branches (Wave 0 taxonomy +
       Wave 1–2 envelope — both **done, pending review**, not released)
 - [ ] Push orama `2026-08-05-002-hermes-graft-plan-reference-fix` + open/update

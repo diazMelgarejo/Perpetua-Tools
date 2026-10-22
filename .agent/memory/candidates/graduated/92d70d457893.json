@@ -1,0 +1,40 @@
+{
+  "id": "92d70d457893",
+  "key": "manual_92d70d",
+  "name": "manual_92d70d",
+  "claim": "A missing credential on one execution surface does not establish that publication is unavailable everywhere; use an authorized authenticated surface and verify the exact tested tree and expected parent before updating a ref.",
+  "conditions": [
+    "Git publication",
+    "credential diagnosis",
+    "tree equivalence"
+  ],
+  "evidence_ids": [
+    "2026-10-09T23:44:16.848162+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-09T23:44:16.848162+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-09T23:44:16.848162+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-09T23:44:16.945227+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CLI HTTPS push lacked a credential helper, while the connected GitHub app could publish identical trees. Remote commits were fetched and compared with tested local trees; commit metadata differed without changing files. This does not diagnose an earlier VM hang.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-09T23:44:16.848162+00:00"
+      ],
+      "lessons_sha": "c2fb79967b37"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-09T23:44:16.945212+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CLI HTTPS push lacked a credential helper, while the connected GitHub app could publish identical trees. Remote commits were fetched and compared with tested local trees; commit metadata differed without changing files. This does not diagnose an earlier VM hang."
+}

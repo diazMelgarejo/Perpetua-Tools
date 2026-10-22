@@ -1,0 +1,55 @@
+{
+  "id": "a765a3393eea",
+  "key": "manual_a765a3",
+  "name": "manual_a765a3",
+  "claim": "Do not let an authorization require a step that the authorization itself grants: trace each prerequisite back to see whether it depends on the thing it gates, or the path can never be satisfied.",
+  "conditions": [
+    "authorization",
+    "back",
+    "depends",
+    "each",
+    "gates",
+    "grants",
+    "itself",
+    "let",
+    "never",
+    "path",
+    "prerequisite",
+    "require",
+    "satisfied",
+    "see",
+    "step",
+    "thing",
+    "trace",
+    "whether"
+  ],
+  "evidence_ids": [
+    "2026-10-19T03:22:16.752620+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T03:22:16.752620+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T03:22:16.752620+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T03:22:16.883603+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: an attestation that required an already-completed reservation release, while the abandon it supports is what authorizes the release, formed a circular prerequisite on the admission-won and revocation paths.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T03:22:16.752620+00:00"
+      ],
+      "lessons_sha": "13a008e3157f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T03:22:16.883594+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: an attestation that required an already-completed reservation release, while the abandon it supports is what authorizes the release, formed a circular prerequisite on the admission-won and revocation paths."
+}

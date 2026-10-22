@@ -1,0 +1,42 @@
+{
+  "id": "591e1da9056e",
+  "key": "manual_591e1d",
+  "name": "manual_591e1d",
+  "claim": "Canonicalization must never hide invalid input: drop an implied default (such as the default join) only when it is the valid sole declaration, so orphan and duplicate declarations still reach lint; and when a new observation field is added, find every site that rebuilds the type (plugin copies included) and test delivery end to end.",
+  "conditions": [
+    "candidate-pin",
+    "fan-out",
+    "lockstep",
+    "registry",
+    "review"
+  ],
+  "evidence_ids": [
+    "2026-10-09T23:35:45.106328+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-09T23:35:45.106328+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-09T23:35:45.106328+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-09T23:35:45.247405+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "R3 fan-out lockstep stack, 2026-10-10; see working/R3_FANOUT_LOCKSTEP_PROCEDURES_AND_LESSONS_2026-10-10.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-09T23:35:45.106328+00:00"
+      ],
+      "lessons_sha": "4727a71ddbab"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-09T23:35:45.247384+00:00",
+  "reviewer": "learn.py",
+  "rationale": "R3 fan-out lockstep stack, 2026-10-10; see working/R3_FANOUT_LOCKSTEP_PROCEDURES_AND_LESSONS_2026-10-10.md"
+}

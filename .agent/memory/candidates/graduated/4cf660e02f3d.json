@@ -1,0 +1,42 @@
+{
+  "id": "4cf660e02f3d",
+  "key": "manual_4cf660",
+  "name": "manual_4cf660",
+  "claim": "Isolate concurrent inputs: each fan-out branch gets its own deep copy of the snapshot, and a join that admits no branch refuses the region like every other join; document that only events after the commit carry committed state.",
+  "conditions": [
+    "candidate-pin",
+    "fan-out",
+    "lockstep",
+    "registry",
+    "review"
+  ],
+  "evidence_ids": [
+    "2026-10-09T23:35:45.315839+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-09T23:35:45.315839+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-09T23:35:45.315839+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-09T23:35:45.449404+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "R3 fan-out lockstep stack, 2026-10-10; see working/R3_FANOUT_LOCKSTEP_PROCEDURES_AND_LESSONS_2026-10-10.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-09T23:35:45.315839+00:00"
+      ],
+      "lessons_sha": "95b1a80f4149"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-09T23:35:45.449383+00:00",
+  "reviewer": "learn.py",
+  "rationale": "R3 fan-out lockstep stack, 2026-10-10; see working/R3_FANOUT_LOCKSTEP_PROCEDURES_AND_LESSONS_2026-10-10.md"
+}

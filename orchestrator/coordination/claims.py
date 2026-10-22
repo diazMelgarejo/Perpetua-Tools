@@ -12,7 +12,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from orchestrator.gossip_bus import GossipBus  # noqa: E402
+from orchestrator.gossip_bus import GossipBus, resolve_gossip_db_path  # noqa: E402
+from orchestrator.coordination.board_snapshot import refresh_snapshot  # noqa: E402
 from orchestrator.heartbeat_monitor import _fetch_heartbeat_events, find_open_claims  # noqa: E402
 from orchestrator.coordination.paths import current_worktree_label  # noqa: E402
 
@@ -133,9 +134,16 @@ async def list_claims(bus: GossipBus, task_filter: str | None) -> None:
 
 
 async def log_message(bus: GossipBus, agent_id: str, message: str) -> None:
-    """Log a note from an agent to the coordination board."""
+    """Log a note from the current actor to the coordination board.
+
+    Callers describing another agent's work must retain author, actor,
+    endorsement, and takeover facts in ``message`` or use a richer supported
+    GossipBus payload. ``agent_id`` identifies the current actor; it must never
+    be used to silently reassign authorship.
+    """
     await bus.emit(
         "heartbeat",
         {"kind": "agent_note", "agent_id": agent_id, "message": message},
     )
+    refresh_snapshot(bus.db_path, resolve_gossip_db_path())
     print("logged")

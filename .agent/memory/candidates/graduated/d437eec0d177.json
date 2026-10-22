@@ -1,0 +1,40 @@
+{
+  "id": "d437eec0d177",
+  "key": "manual_d437ee",
+  "name": "manual_d437ee",
+  "claim": "State snapshots and resume helpers are not durable replay; local atomic state commit cannot roll back foreign effects.",
+  "conditions": [
+    "HITL effects",
+    "R3 fanout",
+    "durable replay"
+  ],
+  "evidence_ids": [
+    "2026-10-09T23:33:48.672405+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-09T23:33:48.672405+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-09T23:33:48.672405+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-09T23:33:48.773177+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "R3 checkpointer records state only, ainvoke restarts at START, and resume_policy mutates scratchpad without grants or cursor recovery. Durable replay requires lineage, frontier, fencing, effect identity and reconciliation before re-execution.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-09T23:33:48.672405+00:00"
+      ],
+      "lessons_sha": "e225a8a0e091"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-09T23:33:48.773164+00:00",
+  "reviewer": "learn.py",
+  "rationale": "R3 checkpointer records state only, ainvoke restarts at START, and resume_policy mutates scratchpad without grants or cursor recovery. Durable replay requires lineage, frontier, fencing, effect identity and reconciliation before re-execution."
+}

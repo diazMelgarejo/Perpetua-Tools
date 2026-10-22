@@ -1,0 +1,44 @@
+{
+  "id": "49c7f5bdfd0f",
+  "key": "manual_49c7f5",
+  "name": "manual_49c7f5",
+  "claim": "A consumer bootstrap from issuer-signed anchor state must rehash canonical event bytes, compare the supplied digest, verify the issuer key against local trust, and atomically persist issuer, key, version, digest, and floor; only an identical repeat is idempotent, while any mismatch must refuse without resetting state.",
+  "conditions": [
+    "anchor",
+    "atomic-persistence",
+    "bootstrap",
+    "canonical-bytes",
+    "digest",
+    "idempotency",
+    "trusted-issuer"
+  ],
+  "evidence_ids": [
+    "2026-10-20T00:31:13.108765+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-20T00:31:13.108765+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-20T00:31:13.108765+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-20T00:31:13.245673+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-20 E1 C2 review: signature verification of a caller-supplied digest alone did not bind the supplied event body or prevent floor rollback. The corrected contract binds all anchor inputs and makes divergent retries fail closed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-20T00:31:13.108765+00:00"
+      ],
+      "lessons_sha": "243d381c6b8e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-20T00:31:13.245665+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-20 E1 C2 review: signature verification of a caller-supplied digest alone did not bind the supplied event body or prevent floor rollback. The corrected contract binds all anchor inputs and makes divergent retries fail closed."
+}

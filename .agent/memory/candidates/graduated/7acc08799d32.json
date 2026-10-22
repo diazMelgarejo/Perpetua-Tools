@@ -1,0 +1,38 @@
+{
+  "id": "7acc08799d32",
+  "key": "manual_7acc08",
+  "name": "manual_7acc08",
+  "claim": "git archive strips the .git directory, so tests that invoke git fail like product defects; run a with-.git control copy before classifying a failure as product or pre-existing.",
+  "conditions": [
+    "git-archive dot-git test-classification control"
+  ],
+  "evidence_ids": [
+    "2026-10-14T05:38:50.897687+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-14T05:38:50.897687+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-14T05:38:50.897687+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-14T05:38:51.028842+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "An archive copy produced six git-dependent failures that disappeared in a checkout control.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-14T05:38:50.897687+00:00"
+      ],
+      "lessons_sha": "4c3dbdd2af46"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-14T05:38:51.028834+00:00",
+  "reviewer": "learn.py",
+  "rationale": "An archive copy produced six git-dependent failures that disappeared in a checkout control."
+}

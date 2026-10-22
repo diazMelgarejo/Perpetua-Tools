@@ -1,0 +1,38 @@
+{
+  "id": "2c8055387c23",
+  "key": "manual_2c8055",
+  "name": "manual_2c8055",
+  "claim": "A verifier that proves one package's identity, such as a PEP 610 record check, is not a producer-set proof; each producer needs its own identity check.",
+  "conditions": [
+    "provenance verifier producer-set identity pep610"
+  ],
+  "evidence_ids": [
+    "2026-10-14T05:38:52.174221+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-14T05:38:52.174221+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-14T05:38:52.174221+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-14T05:38:52.302379+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The reviewed install verifier checked only the Core record.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-14T05:38:52.174221+00:00"
+      ],
+      "lessons_sha": "e029e21d4dd9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-14T05:38:52.302368+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The reviewed install verifier checked only the Core record."
+}

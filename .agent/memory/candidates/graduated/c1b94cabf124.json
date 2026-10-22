@@ -1,0 +1,44 @@
+{
+  "id": "c1b94cabf124",
+  "key": "manual_c1b94c",
+  "name": "manual_c1b94c",
+  "claim": "For a coordinated lockstep change, pin exact peer commit SHAs and contract, fixture, policy and environment digests before testing; update both repositories with implementation, tests, active references and handoff; treat candidate overlays as test-only; and promote a production dependency pin only after upstream merge and downstream full-suite plus oracle revalidation.",
+  "conditions": [
+    "candidate-overlay",
+    "cross-repository",
+    "handoff",
+    "lockstep",
+    "pinning",
+    "production-pin",
+    "promotion"
+  ],
+  "evidence_ids": [
+    "2026-10-09T20:28:30.404515+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-09T20:28:30.404515+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-09T20:28:30.404515+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-09T20:28:30.513087+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The Loop/Graph PT to Orama and Core to Oramasys work showed that a passing candidate overlay and a published branch do not prove a production pin is safe. Recording exact artifacts, paired evidence and the promotion gate prevents stale branch references, accidental cross-regime dependencies and premature production pin updates.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-09T20:28:30.404515+00:00"
+      ],
+      "lessons_sha": "5dc7db70d9f3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-09T20:28:30.513072+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The Loop/Graph PT to Orama and Core to Oramasys work showed that a passing candidate overlay and a published branch do not prove a production pin is safe. Recording exact artifacts, paired evidence and the promotion gate prevents stale branch references, accidental cross-regime dependencies and premature production pin updates."
+}

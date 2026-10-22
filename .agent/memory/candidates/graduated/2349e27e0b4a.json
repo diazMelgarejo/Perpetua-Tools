@@ -1,0 +1,38 @@
+{
+  "id": "2349e27e0b4a",
+  "key": "manual_2349e2",
+  "name": "manual_2349e2",
+  "claim": "An agent type without a shell cannot read at exact SHAs: pre-materialize read-only exact-SHA trees and confirm each agent type's tools before fan-out, and cap fan-out because a large run lost most of its agents to a session limit.",
+  "conditions": [
+    "fan-out exact-sha agent-tools capacity session-limit"
+  ],
+  "evidence_ids": [
+    "2026-10-14T05:38:53.230423+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-14T05:38:53.230423+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-14T05:38:53.230423+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-14T05:38:53.357243+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "An 18-agent run lost 15 agents; Read/Grep-only agent types could not use git show.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-14T05:38:53.230423+00:00"
+      ],
+      "lessons_sha": "5c13d20c201b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-14T05:38:53.357226+00:00",
+  "reviewer": "learn.py",
+  "rationale": "An 18-agent run lost 15 agents; Read/Grep-only agent types could not use git show."
+}

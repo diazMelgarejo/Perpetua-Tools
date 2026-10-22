@@ -1,0 +1,45 @@
+{
+  "id": "76c4a3551aac",
+  "key": "manual_76c4a3",
+  "name": "manual_76c4a3",
+  "claim": "Before adding to an established local chronicle, verify the canonical worktree, branch, base, and existing commit; if it already exists, reconcile and amend it instead of creating a duplicate worktree or record.",
+  "conditions": [
+    "amend",
+    "base",
+    "branch",
+    "chronicle",
+    "commit",
+    "duplicate",
+    "reconcile",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-10-20T00:21:44.690498+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-20T00:21:44.690498+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-20T00:21:44.690498+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-20T00:21:44.827908+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-20: Agnes had already created the requested chronicle in the suffixed canonical worktree. Confirming its branch, base, and commit avoided a duplicate worktree and duplicate memory record.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-20T00:21:44.690498+00:00"
+      ],
+      "lessons_sha": "9995daf34a83"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-20T00:21:44.827900+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-20: Agnes had already created the requested chronicle in the suffixed canonical worktree. Confirming its branch, base, and commit avoided a duplicate worktree and duplicate memory record."
+}

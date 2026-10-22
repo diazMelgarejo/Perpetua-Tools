@@ -1,0 +1,38 @@
+{
+  "id": "329984f5e9ec",
+  "key": "manual_329984",
+  "name": "manual_329984",
+  "claim": "A driver that polls a buffered text pipe with select() and then readline() can miss a line already pulled into the buffer; read child output with a reader thread feeding a queue, or with unbuffered binary reads.",
+  "conditions": [
+    "subprocess pipe select readline buffering test-harness"
+  ],
+  "evidence_ids": [
+    "2026-10-14T05:38:50.458195+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-14T05:38:50.458195+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-14T05:38:50.458195+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-14T05:38:50.600664+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Observed in a crash-window harness: a marker line that arrived in the same read as the previous line was never seen.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-14T05:38:50.458195+00:00"
+      ],
+      "lessons_sha": "f35bc00a16ae"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-14T05:38:50.600655+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Observed in a crash-window harness: a marker line that arrived in the same read as the previous line was never seen."
+}

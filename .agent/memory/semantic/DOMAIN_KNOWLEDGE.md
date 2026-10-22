@@ -556,3 +556,54 @@ Stable facts from the PR #388 incident arc:
 
 Compact publication mnemonic:
 `AUTH -> REF -> BYTES -> PARSE -> REVIEW -> MERGE -> BYTES AGAIN`.
+
+## Oramasys mutation approvals and graph optimization gating (verified 2026-10-18)
+
+Full convention: `.agent/references/graduation-ceremony-mutation-approvals.md`; stage list:
+`.agent/references/graduation-ceremony.v1.json`. Worked example: the M1 generation-2 pin
+promotion (oramasys PRs 53 and 55, orama-system PRs 414 and 416).
+
+Facts that hold for any future mutation of an oramasys graph, pin, manifest, registry or policy,
+including output from an AutoResearcher or optimizer:
+
+- Automated graph evolution is **research-only** until all exist: a versioned GraphSpec, a
+  GraphTrace corpus, a locked evaluator, quality/cost/latency/reliability metrics, candidate
+  isolation and a promotion gate (orama-system doc 57 section 14; R4 plan task T8c; ADR D-LG-7
+  non-goal "no automatic production graph optimization").
+- The mutator may not alter the acceptance metric in the same experiment. Evaluator, safety policy
+  and acceptance tests are fixed inputs held outside the mutator's write access.
+- Candidate artifacts are immutable and evaluated in contained runs on held-out and regression
+  data. Promotion is an explicit, versioned decision with a rollback target.
+- A natural-language suggestion never mutates a production topology; prose compiles to a typed,
+  validated GraphSpec or it is refused.
+- Trace-derived learning goes to governed memory and review (graduation), never into a running
+  graph. An evaluator has no merge or deploy authority; a memory page is not an endorsement.
+- A mutation record states scope; its status and capability flags are labels, not enforcement.
+  Dependency pins in the package file take effect when merged, so for pins the merge is the real
+  activation and the labels must be updated to match. Serving and T3 are separate switches. Approval binds exact digests at an exact head; any later push voids it.
+- Prior generations are archived byte for byte and tested against independent frozen identities,
+  never against the live files. A validator whose expected value comes from the file under test
+  cannot fail.
+- Merge commits keep approved SHAs reachable. A stacked PR's base branch may survive the lower PR's
+  merge, so retarget the upper PR before merging it.
+
+Virtual versioning (design-only, 2026-10-18), modelled on browser compatibility modes: a generation is
+an immutable named contract (pins, manifest, registry reference, approval, evidence, receipt);
+an ACTIVE pointer names the live one; consumers declare a generation or `edge`; rollback is a move
+between generations, not a repository revert or package downgrade. The newest engine runs and
+emulates the older contract, so state the fidelity: `declared`, `verified-installed` or
+`reproduced`. Pins decide what a fresh install gets; an installed environment keeps its packages
+until reinstalled. States: candidate, proposed, approved, evidenced, accepted, pins-merged,
+active, superseded, retired (forbidden while active or declared). A rollback is a reviewed
+pointer-transition receipt, not a state; undeclared production consumers refuse. Serving and T3 are separate switches in a `still_off`
+list. Each generation has a sunset rule so compatibility debt does not accumulate.
+Where pins live matters: in oramasys the promoted Core pin repeated in 13 files and the harness
+drift guard forbids package-file changes between consumer and harness, so a pin edit in the
+package file is always a new consumer commit. Option A performs a reviewed pointer transition
+between existing generation-specific environments; Option B is optional install-time constraints
+indirection for fresh installs. Neither path permits an undeclared consumer to follow `ACTIVE`.
+Design note:
+`.agent/references/virtual-versioning-generations-design.md`.
+
+Compact ceremony mnemonic:
+`CLAIM -> CANDIDATE -> SCOPE -> HISTORY -> CAN-FAIL -> MATRIX -> REVIEW -> FREEZE -> APPROVE -> EVIDENCE -> RECOMPUTE -> ACCEPT -> MERGE -> ROLLBACK -> GRADUATE`.

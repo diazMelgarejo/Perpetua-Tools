@@ -1,0 +1,43 @@
+{
+  "id": "5e6b4599cc0a",
+  "key": "manual_5e6b45",
+  "name": "manual_5e6b45",
+  "claim": "A per-run observer must resolve the identity of an uncertain attempt from the authoritative ledger at the moment a critical delivery fails, never from constructor strings: blank ids make UnknownDisposition reject the record and a swallowed ValueError silently loses it, and a disposition only exists if something actually persists it.",
+  "conditions": [
+    "domain-knowledge",
+    "identity",
+    "ledger",
+    "observation-delivery",
+    "silent-failure",
+    "unknown-disposition"
+  ],
+  "evidence_ids": [
+    "2026-10-13T19:05:03.001377+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T19:05:03.001377+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T19:05:03.001377+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T19:05:03.132614+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Oramasys T2: BoundedObserver took attempt, hold and epoch at construction though a run has many attempts, its failure path returned on ValueError, and StepLedger.mark_unknown had no production caller, so no durable disposition could exist by any wiring. Fixed with bind_authority reading started-and-unsettled holds (the rule recover() already uses) and persisting through the validated mark_unknown, keeping unpersisted records instead of masking the sink failure.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T19:05:03.001377+00:00"
+      ],
+      "lessons_sha": "851875676d2a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T19:05:03.132605+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Oramasys T2: BoundedObserver took attempt, hold and epoch at construction though a run has many attempts, its failure path returned on ValueError, and StepLedger.mark_unknown had no production caller, so no durable disposition could exist by any wiring. Fixed with bind_authority reading started-and-unsettled holds (the rule recover() already uses) and persisting through the validated mark_unknown, keeping unpersisted records instead of masking the sink failure."
+}

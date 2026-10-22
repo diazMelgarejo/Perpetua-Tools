@@ -1,0 +1,65 @@
+{
+  "id": "89c07b7c1e66",
+  "key": "manual_89c07b",
+  "name": "manual_89c07b",
+  "claim": "After D-LG-7 ratification, preserve the staged R4 delivery order: refresh live inventory and evidence at T0, requalify and promote the Core pin only through P0, then implement T1/T2 and T3 in independently reviewed slices; design approval never bypasses effect or release gates.",
+  "conditions": [
+    "after",
+    "approval",
+    "bypasses",
+    "core",
+    "d-lg-7",
+    "delivery",
+    "design",
+    "effect",
+    "evidence",
+    "gates",
+    "implement",
+    "independently",
+    "inventory",
+    "live",
+    "never",
+    "only",
+    "order",
+    "pin",
+    "preserve",
+    "promote",
+    "ratification",
+    "refresh",
+    "release",
+    "requalify",
+    "reviewed",
+    "slices",
+    "staged",
+    "through"
+  ],
+  "evidence_ids": [
+    "2026-10-10T02:22:45.952078+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-10T02:22:45.952078+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-10T02:22:45.952078+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-10T02:22:50.791304+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "It supersedes the earlier pre-ratification status lesson with the operator-approved delivery boundary and keeps all implementation gates explicit.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-10T02:22:45.952078+00:00"
+      ],
+      "lessons_sha": "84febef735e1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-10T02:22:50.791289+00:00",
+  "reviewer": "host-agent",
+  "rationale": "It supersedes the earlier pre-ratification status lesson with the operator-approved delivery boundary and keeps all implementation gates explicit."
+}

@@ -17,6 +17,14 @@ if [[ -x "$ROOT/scripts/git/scrub_dsstore.sh" ]]; then
   bash "$ROOT/scripts/git/scrub_dsstore.sh" || true
 fi
 
+# --- markdown gate: reject staged .md files that CI markdownlint would fail ---
+if [[ -x "$ROOT/scripts/git/check_markdown_lint.sh" ]]; then
+  bash "$ROOT/scripts/git/check_markdown_lint.sh" || {
+    echo "pre-commit: markdown lint failed; commit rejected" >&2
+    exit 1
+  }
+fi
+
 if ! command -v python3 >/dev/null 2>&1; then
   echo "error: python3 is required for the pre-commit gates" >&2
   echo "error: run 'git commit --no-verify' only if you accept the risk" >&2

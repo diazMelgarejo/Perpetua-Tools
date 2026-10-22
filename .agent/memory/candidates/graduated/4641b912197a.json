@@ -1,0 +1,64 @@
+{
+  "id": "4641b912197a",
+  "key": "manual_4641b9",
+  "name": "manual_4641b9",
+  "claim": "Headless agy cannot read files: the shell permission is auto-denied and the run hangs or prints nothing; inline the diff in the prompt, forbid tools, run read-only under a hard timeout. The Gemini CLI is retired for individuals, so agy is the direct-binary reviewer.",
+  "conditions": [
+    "agy",
+    "auto-denied",
+    "cannot",
+    "cli",
+    "diff",
+    "direct-binary",
+    "files",
+    "forbid",
+    "gemini",
+    "hangs",
+    "hard",
+    "headless",
+    "individuals",
+    "inline",
+    "nothing",
+    "permission",
+    "prints",
+    "prompt",
+    "read",
+    "read-only",
+    "retired",
+    "reviewer",
+    "run",
+    "shell",
+    "timeout",
+    "tools",
+    "under"
+  ],
+  "evidence_ids": [
+    "2026-10-18T23:18:32.543118+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T23:18:32.543118+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T23:18:32.543118+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T23:18:32.675070+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: first agy runs produced nothing until the diff was inlined; gemini exited with an ineligible-tier error and the operator confirmed it was replaced by Antigravity.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T23:18:32.543118+00:00"
+      ],
+      "lessons_sha": "5157b437b1a8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T23:18:32.675061+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: first agy runs produced nothing until the diff was inlined; gemini exited with an ineligible-tier error and the operator confirmed it was replaced by Antigravity."
+}

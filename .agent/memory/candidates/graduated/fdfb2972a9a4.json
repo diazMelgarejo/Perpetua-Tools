@@ -1,0 +1,42 @@
+{
+  "id": "fdfb2972a9a4",
+  "key": "manual_fdfb29",
+  "name": "manual_fdfb29",
+  "claim": "Candidate overlays pin an immutable commit SHA and must follow every upstream fix; re-read each PR head and its CI before claiming state or replying fixed-in-SHA, because operators and bots push and review other commits than the one in hand.",
+  "conditions": [
+    "candidate-pin",
+    "fan-out",
+    "lockstep",
+    "registry",
+    "review"
+  ],
+  "evidence_ids": [
+    "2026-10-09T23:35:45.521057+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-09T23:35:45.521057+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-09T23:35:45.521057+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-09T23:35:45.673388+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "R3 fan-out lockstep stack, 2026-10-10; see working/R3_FANOUT_LOCKSTEP_PROCEDURES_AND_LESSONS_2026-10-10.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-09T23:35:45.521057+00:00"
+      ],
+      "lessons_sha": "04f65a700304"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-09T23:35:45.673369+00:00",
+  "reviewer": "learn.py",
+  "rationale": "R3 fan-out lockstep stack, 2026-10-10; see working/R3_FANOUT_LOCKSTEP_PROCEDURES_AND_LESSONS_2026-10-10.md"
+}

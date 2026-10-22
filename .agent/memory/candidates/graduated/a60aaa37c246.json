@@ -1,0 +1,41 @@
+{
+  "id": "a60aaa37c246",
+  "key": "manual_a60aaa",
+  "name": "manual_a60aaa",
+  "claim": "Where pins live decides whether a generation pointer gives real rollback: when pins are in the package file, any pin change is a new consumer commit and takes the full ceremony because the harness drift guard forbids package-file changes between consumer and harness; a pointer that only validates repeated pins makes labels honest, while rollback without a consumer change needs the install to read a constraints file selected by the active generation, so inventory every file that repeats a pin and choose that option explicitly.",
+  "conditions": [
+    "constraints file",
+    "consumer commit",
+    "pin inventory",
+    "virtual versioning"
+  ],
+  "evidence_ids": [
+    "2026-10-17T23:22:38.198560+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-17T23:22:38.198560+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-17T23:22:38.198560+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-17T23:22:38.354517+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Inventory on oramasys main after the M1 generation-2 merge: the promoted Core pin repeated in 13 files and the consumer commit and registry ref in 8 and 9; tests, not a generator, kept them equal. Design: .agent/references/virtual-versioning-generations-design.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-17T23:22:38.198560+00:00"
+      ],
+      "lessons_sha": "55aa35887603"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-17T23:22:38.354503+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Inventory on oramasys main after the M1 generation-2 merge: the promoted Core pin repeated in 13 files and the consumer commit and registry ref in 8 and 9; tests, not a generator, kept them equal. Design: .agent/references/virtual-versioning-generations-design.md."
+}

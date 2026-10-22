@@ -1,0 +1,58 @@
+{
+  "id": "15164c58cd51",
+  "key": "manual_15164c",
+  "name": "manual_15164c",
+  "claim": "Prove cross-repository behaviour with an interop probe kept outside both repositories that runs the real issuer against the real consumer with real signature verification, so the consumer repository never imports a cryptography library.",
+  "conditions": [
+    "against",
+    "behaviour",
+    "both",
+    "consumer",
+    "cross-repository",
+    "cryptography",
+    "imports",
+    "interop",
+    "issuer",
+    "kept",
+    "library",
+    "never",
+    "outside",
+    "probe",
+    "prove",
+    "real",
+    "repositories",
+    "repository",
+    "runs",
+    "signature",
+    "verification"
+  ],
+  "evidence_ids": [
+    "2026-10-19T07:01:36.494450+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T07:01:36.494450+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T07:01:36.494450+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T07:01:36.626533+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: the probe proved seven scenarios including that an issuer restored from an older snapshot is refused as a fork, without adding a dependency to the consumer.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T07:01:36.494450+00:00"
+      ],
+      "lessons_sha": "8068ad849bb5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T07:01:36.626522+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: the probe proved seven scenarios including that an issuer restored from an older snapshot is refused as a fork, without adding a dependency to the consumer."
+}

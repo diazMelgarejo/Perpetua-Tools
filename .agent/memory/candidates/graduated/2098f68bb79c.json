@@ -1,0 +1,46 @@
+{
+  "id": "2098f68bb79c",
+  "key": "manual_2098f6",
+  "name": "manual_2098f6",
+  "claim": "In a decision core that takes injected ports (a store Protocol, an issue callback), assert each port's documented postconditions at the single point its output is trusted. Raise ValueError (a collaborator bug) before any protocol decision and keep it out of the closed refusal vocabulary, so a store bug is never reported to a requester as a protocol refusal such as permit.conflict. For oramasys decide_permit: the store must return the requested grant's nonterminal permit (grant_id matches, state issued or finalized); issue_new must return a permit for the requested grant carrying the digest it was handed.",
+  "conditions": [
+    "closed-vocabulary",
+    "contract-guard",
+    "decide_permit",
+    "fail-closed",
+    "injected-port",
+    "nonterminal-state",
+    "oramasys",
+    "replay-protection",
+    "valueerror"
+  ],
+  "evidence_ids": [
+    "2026-10-18T11:30:18.451871+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T11:30:18.451871+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T11:30:18.451871+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T11:30:18.593127+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "oramasys#63 commit 87e18be. grant_id and binding_digest are independent stored fields, so 'a wrong-grant permit passes only if the digests match' describes store integrity that decide_permit never enforced; the stored digest is the retry-identity key, so an issuer persisting a different one would silently corrupt every later comparison. Not a tautology: the guards sit across an abstraction boundary the function does not control (a SQL store's query would guarantee them, a fake or buggy store would not). Cost about 12 lines and 6 tests, and a positive test proves a live finalized permit is still returned. Apply the doctrine's tautology check before adding such a guard.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T11:30:18.451871+00:00"
+      ],
+      "lessons_sha": "038e83946ff0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T11:30:18.593109+00:00",
+  "reviewer": "learn.py",
+  "rationale": "oramasys#63 commit 87e18be. grant_id and binding_digest are independent stored fields, so 'a wrong-grant permit passes only if the digests match' describes store integrity that decide_permit never enforced; the stored digest is the retry-identity key, so an issuer persisting a different one would silently corrupt every later comparison. Not a tautology: the guards sit across an abstraction boundary the function does not control (a SQL store's query would guarantee them, a fake or buggy store would not). Cost about 12 lines and 6 tests, and a positive test proves a live finalized permit is still returned. Apply the doctrine's tautology check before adding such a guard."
+}

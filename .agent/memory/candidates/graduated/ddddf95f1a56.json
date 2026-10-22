@@ -1,0 +1,46 @@
+{
+  "id": "ddddf95f1a56",
+  "key": "manual_ddddf9",
+  "name": "manual_ddddf9",
+  "claim": "Rebuild a code-review-graph index from the shell with uvx and local Ollama embeddings rather than assuming it is MCP-only",
+  "conditions": [
+    "bge-m3",
+    "build",
+    "code-review-graph",
+    "crg",
+    "embed",
+    "mcp-only",
+    "ollama",
+    "semantic-search",
+    "uvx"
+  ],
+  "evidence_ids": [
+    "2026-10-12T20:04:48.297666+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-12T20:04:48.297666+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-12T20:04:48.297666+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-12T20:04:48.426900+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CRG exposes build and embed subcommands through uvx; point CRG_OPENAI_BASE_URL at the local Ollama bge-m3 endpoint and confirm the model is loaded, which makes graph refresh scriptable without an MCP client.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-12T20:04:48.297666+00:00"
+      ],
+      "lessons_sha": "56a2a84f84b6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-12T20:04:48.426889+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CRG exposes build and embed subcommands through uvx; point CRG_OPENAI_BASE_URL at the local Ollama bge-m3 endpoint and confirm the model is loaded, which makes graph refresh scriptable without an MCP client."
+}

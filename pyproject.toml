@@ -45,7 +45,7 @@ dependencies = [
     "uvicorn[standard]>=0.27.0",
     "websockets>=12.0",
     # Async and networking
-    "aiohttp>=3.14.3",
+    "aiohttp>=3.14.4",
     "httpx>=0.26.0",
     # agent_launcher.py's Gate 4 model-server transport uses httpcore's
     # public async network-backend interface to pin a validated TCP peer

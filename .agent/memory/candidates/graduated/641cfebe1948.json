@@ -1,0 +1,38 @@
+{
+  "id": "641cfebe1948",
+  "key": "manual_641cfe",
+  "name": "manual_641cfe",
+  "claim": "A process-lost run has no terminal receipt because only the in-process runner writes one; who records the terminal after a takeover is an explicit design decision, so recovery must state outcome unknown rather than infer one.",
+  "conditions": [
+    "process-lost terminal-receipt takeover recovery unknown-outcome"
+  ],
+  "evidence_ids": [
+    "2026-10-14T05:38:53.435859+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-14T05:38:53.435859+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-14T05:38:53.435859+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-14T05:38:53.563250+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "SIGKILL through the real runner left held attempts unknown and no terminal; recovery_accounting had no production caller.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-14T05:38:53.435859+00:00"
+      ],
+      "lessons_sha": "3d5967cdf991"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-14T05:38:53.563240+00:00",
+  "reviewer": "learn.py",
+  "rationale": "SIGKILL through the real runner left held attempts unknown and no terminal; recovery_accounting had no production caller."
+}

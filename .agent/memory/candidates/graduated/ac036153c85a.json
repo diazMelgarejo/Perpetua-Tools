@@ -1,0 +1,58 @@
+{
+  "id": "ac036153c85a",
+  "key": "manual_ac0361",
+  "name": "manual_ac0361",
+  "claim": "Check whether a PR is already merged before reviewing or fixing it; a fix pushed to a merged branch lands on main, so read the merged state from main and extend the repo's one open PR instead of opening another.",
+  "conditions": [
+    "already",
+    "another",
+    "before",
+    "branch",
+    "check",
+    "extend",
+    "fix",
+    "fixing",
+    "instead",
+    "lands",
+    "main",
+    "merged",
+    "one",
+    "open",
+    "opening",
+    "pushed",
+    "read",
+    "repo",
+    "reviewing",
+    "state",
+    "whether"
+  ],
+  "evidence_ids": [
+    "2026-10-18T23:18:32.766260+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T23:18:32.766260+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T23:18:32.766260+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T23:18:32.902768+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: orama-system#419 merged before the follow-up review, so the spec was read from main and the fix went into the open preflight PR #423 at the operator's request.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T23:18:32.766260+00:00"
+      ],
+      "lessons_sha": "f611623e4a03"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T23:18:32.902760+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: orama-system#419 merged before the follow-up review, so the spec was read from main and the fix went into the open preflight PR #423 at the operator's request."
+}

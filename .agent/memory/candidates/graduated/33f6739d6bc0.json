@@ -1,0 +1,38 @@
+{
+  "id": "33f6739d6bc0",
+  "key": "manual_33f673",
+  "name": "manual_33f673",
+  "claim": "Separate artifact defects from introspection tests with differential cells: run installed-only and source-present with identical dependencies; failures only in the installed-only cell that read source paths need a same-SHA source tree as explicit input.",
+  "conditions": [
+    "differential-cell wheel installed-only source-present introspection"
+  ],
+  "evidence_ids": [
+    "2026-10-14T05:38:51.110323+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-14T05:38:51.110323+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-14T05:38:51.110323+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-14T05:38:51.238146+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Wheel-only 721/2/10 vs source-present 725/2/6 vs checkout 741/2 isolated four introspection tests.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-14T05:38:51.110323+00:00"
+      ],
+      "lessons_sha": "71920514e576"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-14T05:38:51.238139+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Wheel-only 721/2/10 vs source-present 725/2/6 vs checkout 741/2 isolated four introspection tests."
+}

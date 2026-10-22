@@ -1,0 +1,43 @@
+{
+  "id": "600e7f50c2a5",
+  "key": "manual_600e7f",
+  "name": "manual_600e7f",
+  "claim": "R4 safety architecture remains proposed until the named D-LG-7 revision and each selected contract are ratified; before implementation, re-read live Core, Oramasys and Orama heads, retain the production Core pin until P0 requalification, and never represent START-based snapshot traversal as durable continuation or a design approval as an effect grant.",
+  "conditions": [
+    "continuation",
+    "core-pin",
+    "durable-hitl",
+    "lockstep",
+    "r4",
+    "ratification"
+  ],
+  "evidence_ids": [
+    "2026-10-10T02:03:05.162239+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-10T02:03:05.162239+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-10T02:03:05.162239+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-10T02:03:05.324342+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The R4 review refreshed Core #9, Oramasys #25 and Orama #390 merge heads, confirmed production pin 04759a5, and separated the proposed D-LG-7 contracts from shipped R3 mechanics. This prevents scope and safety claims from outrunning ratification or production evidence.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-10T02:03:05.162239+00:00"
+      ],
+      "lessons_sha": "522c425de2c3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-10T02:03:05.324324+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The R4 review refreshed Core #9, Oramasys #25 and Orama #390 merge heads, confirmed production pin 04759a5, and separated the proposed D-LG-7 contracts from shipped R3 mechanics. This prevents scope and safety claims from outrunning ratification or production evidence."
+}

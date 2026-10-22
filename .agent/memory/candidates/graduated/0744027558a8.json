@@ -1,0 +1,45 @@
+{
+  "id": "0744027558a8",
+  "key": "manual_074402",
+  "name": "manual_074402",
+  "claim": "Check whether a PR is already merged before reviewing or fixing it. A push to a branch after its PR merged does NOT update the base branch, so read the merged state from main, then extend an appropriate still-open PR or open a new PR from a fresh branch off main; do not push further commits to the merged branch expecting them to reach main.",
+  "conditions": [
+    "branch",
+    "fix",
+    "main",
+    "merged",
+    "open",
+    "pr",
+    "push",
+    "review"
+  ],
+  "evidence_ids": [
+    "2026-10-19T08:32:12.237047+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T08:32:12.237047+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T08:32:12.237047+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T08:32:18.846710+00:00",
+      "action": "graduated",
+      "reviewer": "claude-fable-5",
+      "notes": "Corrects the false claim that a push to a merged branch lands on main; preserves the accurate workflow of reading merged state from main and extending an open PR or opening a new one.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T08:32:12.237047+00:00"
+      ],
+      "lessons_sha": "e66b26727105"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T08:32:18.846705+00:00",
+  "reviewer": "claude-fable-5",
+  "rationale": "Corrects the false claim that a push to a merged branch lands on main; preserves the accurate workflow of reading merged state from main and extending an open PR or opening a new one."
+}

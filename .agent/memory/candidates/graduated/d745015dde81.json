@@ -1,0 +1,44 @@
+{
+  "id": "d745015dde81",
+  "key": "manual_d74501",
+  "name": "manual_d74501",
+  "claim": "When transferring large UTF-8 or JSONL artifacts through a capped agent tool channel, stream raw local bytes as base64 chunks whose byte size is divisible by three, concatenate only those complete base64 groups, and verify the final Git blob SHA; never rely on a tool-output buffer to carry the whole file.",
+  "conditions": [
+    "base64",
+    "byte-aligned",
+    "chatgpt-codex",
+    "chunking",
+    "large-file",
+    "sha256",
+    "transfer-integrity"
+  ],
+  "evidence_ids": [
+    "2026-10-13T20:08:04.611237+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T20:08:04.611237+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T20:08:04.611237+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T20:08:04.722050+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "ChatGPT Codex/Work, 2026-10-14: direct large base64 command output truncated memory files even though the API accepted the resulting object. Byte-aligned 120000-byte chunks avoided padding boundaries, and the matching blob SHA provided the end-to-end integrity proof.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T20:08:04.611237+00:00"
+      ],
+      "lessons_sha": "faf8e75ec32b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T20:08:04.722034+00:00",
+  "reviewer": "learn.py",
+  "rationale": "ChatGPT Codex/Work, 2026-10-14: direct large base64 command output truncated memory files even though the API accepted the resulting object. Byte-aligned 120000-byte chunks avoided padding boundaries, and the matching blob SHA provided the end-to-end integrity proof."
+}

@@ -1,0 +1,44 @@
+{
+  "id": "eb6269ca453c",
+  "key": "manual_eb6269",
+  "name": "manual_eb6269",
+  "claim": "When testing cross-repository byte parity between shared probe copies, use an immutable separate probe source checkout rather than bumping the runtime dependency pin; this prevents circular dependency deadlocks and preserves frozen production pins.",
+  "conditions": [
+    "byte-identical",
+    "checkout",
+    "cross-repository",
+    "interop",
+    "parity",
+    "pin",
+    "probe"
+  ],
+  "evidence_ids": [
+    "2026-10-21T19:59:59.972297+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-21T19:59:59.972297+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-21T19:59:59.972297+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-21T20:00:00.109344+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Both Phylax PR #17 and Oramasys PR #71 compare c2_slice2_probe.py against separate 40-hex pinned probe checkouts, maintaining probe parity without mutating older runtime permit pins.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-21T19:59:59.972297+00:00"
+      ],
+      "lessons_sha": "a0a4f5adaab0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-21T20:00:00.109334+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Both Phylax PR #17 and Oramasys PR #71 compare c2_slice2_probe.py against separate 40-hex pinned probe checkouts, maintaining probe parity without mutating older runtime permit pins."
+}

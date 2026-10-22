@@ -1,0 +1,42 @@
+{
+  "id": "bbd87fc86f96",
+  "key": "manual_bbd87f",
+  "name": "manual_bbd87f",
+  "claim": "Treat a pinned, evidenced generation as a virtual version: keep each generation immutable with its own evidence, name the live one with a single reviewed active pointer, let consumers declare a generation or follow the active one, and make rollback a move between generations instead of a repository revert or a package downgrade; always state the fidelity (declared, verified-installed or reproduced) because pins decide only what a fresh install gets and an installed environment keeps its packages until reinstalled.",
+  "conditions": [
+    "compatibility mode",
+    "generation pointer",
+    "rollback without downgrade",
+    "state machine",
+    "virtual versioning"
+  ],
+  "evidence_ids": [
+    "2026-10-17T22:13:40.742883+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-17T22:13:40.742883+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-17T22:13:40.742883+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-17T22:13:40.887794+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Operator insight after the M1 generation-2 merge, modelled on browser compatibility modes (per-site mode selection, a default when nothing is declared, emulation fidelity levels, retirement of old modes). Design: virtual-versioning generations design note. Convention: .agent/references/graduation-ceremony-mutation-approvals.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-17T22:13:40.742883+00:00"
+      ],
+      "lessons_sha": "61219a948391"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-17T22:13:40.887785+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Operator insight after the M1 generation-2 merge, modelled on browser compatibility modes (per-site mode selection, a default when nothing is declared, emulation fidelity levels, retirement of old modes). Design: virtual-versioning generations design note. Convention: .agent/references/graduation-ceremony-mutation-approvals.md."
+}

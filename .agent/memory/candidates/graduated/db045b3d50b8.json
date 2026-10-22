@@ -1,0 +1,42 @@
+{
+  "id": "db045b3d50b8",
+  "key": "manual_db045b",
+  "name": "manual_db045b",
+  "claim": "A passing order test proves input ordering only when completion ordering differs: delay the first async input, keep a serial control, and require the test to kill an as_completed mutant for concurrent limits. Dependency-free exporter stubs prove wiring; separately run pinned real upstream oracles before claiming interoperability.",
+  "conditions": [
+    "async-order",
+    "evidence",
+    "langgraph",
+    "mutation-testing",
+    "oracle"
+  ],
+  "evidence_ids": [
+    "2026-10-09T11:55:12.071672+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-09T11:55:12.071672+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-09T11:55:12.071672+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-09T11:55:12.200084+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Greptile P2 on Core #8 was valid. Its revised test rejects a completion-order mutation at None, 2 and 100 while limit 1 remains serial; the mutation harness restores methods without changing source files. Core's ConditionalEdge declared_targets/path_map repair is covered by a mandatory stub plus a real LangGraph 1.0.3 execution oracle. Fake topology evidence does not establish scheduler parity.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-09T11:55:12.071672+00:00"
+      ],
+      "lessons_sha": "59e5338222a4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-09T11:55:12.200068+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Greptile P2 on Core #8 was valid. Its revised test rejects a completion-order mutation at None, 2 and 100 while limit 1 remains serial; the mutation harness restores methods without changing source files. Core's ConditionalEdge declared_targets/path_map repair is covered by a mandatory stub plus a real LangGraph 1.0.3 execution oracle. Fake topology evidence does not establish scheduler parity."
+}

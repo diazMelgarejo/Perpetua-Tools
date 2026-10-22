@@ -1,0 +1,44 @@
+{
+  "id": "8617f2b0af10",
+  "key": "manual_8617f2",
+  "name": "manual_8617f2",
+  "claim": "Consumers must declare a generation or edge before following ACTIVE; undeclared production, CI, and installer consumers refuse. Option A switches between existing generation-specific environments through a reviewed pointer transition, while Option B is optional G2b constraints indirection for fresh installs; neither permits a silent default.",
+  "conditions": [
+    "constraints indirection",
+    "edge",
+    "fresh install",
+    "generation declaration",
+    "generation environment",
+    "rollback",
+    "virtual versioning"
+  ],
+  "evidence_ids": [
+    "2026-10-18T03:51:56.852027+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T03:51:56.852027+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T03:51:56.852027+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T03:51:59.699441+00:00",
+      "action": "graduated",
+      "reviewer": "codex",
+      "notes": "The original accepted claim incorrectly treated constraints-file indirection as the only no-consumer-change rollback path. The canonical G0 design distinguishes Option A reviewed transitions between existing generation-specific environments from optional G2b fresh-install constraints indirection, and requires explicit generation or edge declaration before ACTIVE is consumed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T03:51:56.852027+00:00"
+      ],
+      "lessons_sha": "5b9e1ea501db"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T03:51:59.699433+00:00",
+  "reviewer": "codex",
+  "rationale": "The original accepted claim incorrectly treated constraints-file indirection as the only no-consumer-change rollback path. The canonical G0 design distinguishes Option A reviewed transitions between existing generation-specific environments from optional G2b fresh-install constraints indirection, and requires explicit generation or edge declaration before ACTIVE is consumed."
+}

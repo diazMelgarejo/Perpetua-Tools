@@ -1,0 +1,40 @@
+{
+  "id": "fef71a5cff65",
+  "key": "manual_fef71a",
+  "name": "manual_fef71a",
+  "claim": "Check active pull requests again at publication time; on the current memory stack keep 432 as the base and 433 as the additive follow-up, preserving both histories and the operator-specified merge target.",
+  "conditions": [
+    "active PR",
+    "concurrent publication",
+    "memory handoff"
+  ],
+  "evidence_ids": [
+    "2026-10-09T23:47:33.488394+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-09T23:47:33.488394+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-09T23:47:33.488394+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-09T23:47:40.234665+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Correction of lesson_a60a1029f3b0: its rationale proposed consolidating into 432 and eliminating a review lane. That proposal was abandoned before any closure. Latest operator direction preserves both PRs and stacks existing 433 on docs/r3-lockstep-memory; preserve the historical row but do not apply its closure rationale.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-09T23:47:33.488394+00:00"
+      ],
+      "lessons_sha": "2dac8087d585"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-09T23:47:40.234644+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Correction of lesson_a60a1029f3b0: its rationale proposed consolidating into 432 and eliminating a review lane. That proposal was abandoned before any closure. Latest operator direction preserves both PRs and stacks existing 433 on docs/r3-lockstep-memory; preserve the historical row but do not apply its closure rationale."
+}

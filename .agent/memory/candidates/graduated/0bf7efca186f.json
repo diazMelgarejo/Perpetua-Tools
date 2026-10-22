@@ -1,0 +1,59 @@
+{
+  "id": "0bf7efca186f",
+  "key": "manual_0bf7ef",
+  "name": "manual_0bf7ef",
+  "claim": "When modelling a protocol rule, re-read which request's field each check compares (permit request ack versus finalization request ack); a mis-assigned field makes the healthy case refuse and the whole model misleading.",
+  "conditions": [
+    "ack",
+    "case",
+    "check",
+    "compares",
+    "each",
+    "field",
+    "finalization",
+    "healthy",
+    "makes",
+    "mis-assigned",
+    "misleading",
+    "model",
+    "modelling",
+    "permit",
+    "protocol",
+    "re-read",
+    "refuse",
+    "request",
+    "rule",
+    "versus",
+    "which",
+    "whole"
+  ],
+  "evidence_ids": [
+    "2026-10-18T23:18:31.877180+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T23:18:31.877180+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T23:18:31.877180+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T23:18:32.010683+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: first simulation refused the healthy flow because rule 3 was fed the finalization request's ack instead of the permit's.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T23:18:31.877180+00:00"
+      ],
+      "lessons_sha": "434190626889"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T23:18:32.010675+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: first simulation refused the healthy flow because rule 3 was fed the finalization request's ack instead of the permit's."
+}

@@ -1,0 +1,48 @@
+{
+  "id": "6e1ac33939f5",
+  "key": "manual_6e1ac3",
+  "name": "manual_6e1ac3",
+  "claim": "GitHub stacked PRs: a stack is a chain where each PR's base is the branch of the PR below it and the bottom targets trunk; it needs a fully linear history and merges bottom-up. When a lower layer changes, use a cascading local rebase from the bottom (gh stack rebase, resolve conflicts, git add, gh stack rebase --continue, gh stack push) and re-seat upper layers before their lease-pinned pushes. Avoid the server-side 'Rebase stack' action for conflict recovery: it cannot resolve textual conflicts and creates unsigned commits. Without gh-stack, use git rebase --onto <new-lower-tip> <old-base> <upper-branch> for each affected branch, then push with an explicit ref and expected remote SHA using --force-with-lease. For gh stack checkout, do not rely on a bare number when a stack and pull request could share it: resolution tries a stack number first, then a pull request number, then a branch name. Use a pull request URL or explicit branch name when that distinction matters; if a safety hook blocks a push, verify locally and hand the operator the exact lease-pinned command rather than routing around the hook.",
+  "conditions": [
+    "bottom-up",
+    "checkout-ambiguity",
+    "gh-stack",
+    "hook-handoff",
+    "lease-pinned-push",
+    "linear-history",
+    "rebase",
+    "rebase-onto",
+    "server-side-rebase",
+    "stack-number",
+    "stacked-prs"
+  ],
+  "evidence_ids": [
+    "2026-10-18T18:38:06.079741+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T18:38:06.079741+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T18:38:06.079741+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T18:38:06.193468+00:00",
+      "action": "graduated",
+      "reviewer": "codex-reviewer",
+      "notes": "Verified PR #449 review 5563109365, inline 4307133191: the replacement omitted valid server-side rebase and local recovery instructions from lesson_979234ff54c7. This additive supersession restores both while preserving the corrected checkout precedence and all remaining replacement guidance.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T18:38:06.079741+00:00"
+      ],
+      "lessons_sha": "fc1b862fd2e4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T18:38:06.193457+00:00",
+  "reviewer": "codex-reviewer",
+  "rationale": "Verified PR #449 review 5563109365, inline 4307133191: the replacement omitted valid server-side rebase and local recovery instructions from lesson_979234ff54c7. This additive supersession restores both while preserving the corrected checkout precedence and all remaining replacement guidance."
+}

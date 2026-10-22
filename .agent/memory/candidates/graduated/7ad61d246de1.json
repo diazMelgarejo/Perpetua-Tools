@@ -1,0 +1,43 @@
+{
+  "id": "7ad61d246de1",
+  "key": "manual_7ad61d",
+  "name": "manual_7ad61d",
+  "claim": "Preflight an observing delivery capability before creating a lease or other owner state; once work starts, bind authoritative identity and close the per-run delivery inside the terminal-evidence lifecycle so refusal, binding failure, normal completion, and error paths all leave an auditable result.",
+  "conditions": [
+    "capability-preflight",
+    "delivery-lifecycle",
+    "lease",
+    "ownership",
+    "shutdown",
+    "terminal-evidence"
+  ],
+  "evidence_ids": [
+    "2026-10-13T19:49:43.833916+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T19:49:43.833916+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T19:49:43.833916+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T19:49:43.978408+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Oramasys T2 PR #36 review found the Core runner was resolved only after the lease existed, authority binding was outside the guarded terminal path, and observers could outlive both clean and failed runs. The repaired lifecycle refuses unsupported transport before a lease, contains binding failures, and closes the observer on every exit path.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T19:49:43.833916+00:00"
+      ],
+      "lessons_sha": "4fc2ea52e1e3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T19:49:43.978388+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Oramasys T2 PR #36 review found the Core runner was resolved only after the lease existed, authority binding was outside the guarded terminal path, and observers could outlive both clean and failed runs. The repaired lifecycle refuses unsupported transport before a lease, contains binding failures, and closes the observer on every exit path."
+}

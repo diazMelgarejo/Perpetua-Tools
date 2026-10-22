@@ -1,0 +1,60 @@
+{
+  "id": "15e5e5d7f8d0",
+  "key": "manual_15e5e5",
+  "name": "manual_15e5e5",
+  "claim": "Compute derived state such as expiry from stored inputs instead of storing it, and make a fence or guard that must be atomic with a consuming transaction take the same row lock as that transaction, so exactly one of fence and commit wins.",
+  "conditions": [
+    "atomic",
+    "commit",
+    "compute",
+    "consuming",
+    "derived",
+    "exactly",
+    "expiry",
+    "fence",
+    "guard",
+    "inputs",
+    "instead",
+    "lock",
+    "make",
+    "one",
+    "row",
+    "same",
+    "state",
+    "stored",
+    "storing",
+    "such",
+    "take",
+    "transaction",
+    "wins"
+  ],
+  "evidence_ids": [
+    "2026-10-19T03:22:17.419071+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T03:22:17.419071+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T03:22:17.419071+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T03:22:17.549927+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: reviewer showed 4.3 could read unfenced while reconciliation fenced and released and 4.3 then committed; stored expiry also drifted from the clock rule.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T03:22:17.419071+00:00"
+      ],
+      "lessons_sha": "f5118968af12"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T03:22:17.549919+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: reviewer showed 4.3 could read unfenced while reconciliation fenced and released and 4.3 then committed; stored expiry also drifted from the clock rule."
+}

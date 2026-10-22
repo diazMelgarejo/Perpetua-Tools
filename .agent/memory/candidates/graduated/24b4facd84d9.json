@@ -1,0 +1,43 @@
+{
+  "id": "24b4facd84d9",
+  "key": "manual_24b4fa",
+  "name": "manual_24b4fa",
+  "claim": "When an open PR branch advances concurrently, do not create a catch-up merge or rebase by default: re-read the new head, reapply the verified delta directly on it, and move on; reserve merge integration for a real dependency or a later PR that must combine independent histories.",
+  "conditions": [
+    "concurrent-head",
+    "expected-head",
+    "linear-history",
+    "pr-branch",
+    "reapply",
+    "review-discipline"
+  ],
+  "evidence_ids": [
+    "2026-10-13T20:00:58.482050+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T20:00:58.482050+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T20:00:58.482050+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T20:00:58.607403+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT PR #441, 2026-10-14: the branch advanced while a verified memory update was ready. The correct response is a fresh expected-head reapply, not a redundant merge commit that adds history without combining a required dependency. This keeps shared PR branches linear and reviewable until an actual cross-PR integration is needed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T20:00:58.482050+00:00"
+      ],
+      "lessons_sha": "55f4d6206c71"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T20:00:58.607385+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT PR #441, 2026-10-14: the branch advanced while a verified memory update was ready. The correct response is a fresh expected-head reapply, not a redundant merge commit that adds history without combining a required dependency. This keeps shared PR branches linear and reviewable until an actual cross-PR integration is needed."
+}

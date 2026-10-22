@@ -1,0 +1,46 @@
+{
+  "id": "c0f079de3537",
+  "key": "manual_c0f079",
+  "name": "manual_c0f079",
+  "claim": "When a spec says a digest uses 'the manifest encoding rules' (or similar), search the codebase for the spec's own vocabulary and reuse that function instead of borrowing a convention from a nearby file. In oramasys it is compat/manifest.py canonical_digest: sort_keys, compact separators (',', ':'), ensure_ascii=False, allow_nan=False, UTF-8, SHA-256. Default json.dumps separators give different bytes and break cross-request comparisons. Determinism and format tests cannot detect that difference, so pin the convention with a known-answer test when byte-identical encoding matters.",
+  "conditions": [
+    "binding_digest",
+    "canonical_digest",
+    "digest-encoding",
+    "json-dumps",
+    "known-answer-test",
+    "manifest",
+    "separators",
+    "sort_keys",
+    "spec-vocabulary"
+  ],
+  "evidence_ids": [
+    "2026-10-18T11:30:19.380427+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T11:30:19.380427+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T11:30:19.380427+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T11:30:19.523532+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "oramasys#63 binding_digest, 2026-10-18. My brief to the subagent cited a _fingerprint helper in another module as the existing convention; the subagent reported that file did not exist in that checkout and found canonical_digest in manifest.py, the literal match for the spec's phrase. I corrected the encoding before integration; the 26 tests passed either way, so they would not have caught it. A brief's premise is itself a claim to verify (the pushback was right). A known-answer test for the digest was not added in this pass and is recorded as a follow-up.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T11:30:19.380427+00:00"
+      ],
+      "lessons_sha": "7e3b0dee67fc"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T11:30:19.523518+00:00",
+  "reviewer": "learn.py",
+  "rationale": "oramasys#63 binding_digest, 2026-10-18. My brief to the subagent cited a _fingerprint helper in another module as the existing convention; the subagent reported that file did not exist in that checkout and found canonical_digest in manifest.py, the literal match for the spec's phrase. I corrected the encoding before integration; the 26 tests passed either way, so they would not have caught it. A brief's premise is itself a claim to verify (the pushback was right). A known-answer test for the digest was not added in this pass and is recorded as a follow-up."
+}

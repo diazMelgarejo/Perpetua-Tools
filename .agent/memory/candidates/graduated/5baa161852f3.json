@@ -1,0 +1,40 @@
+{
+  "id": "5baa161852f3",
+  "key": "manual_5baa16",
+  "name": "manual_5baa16",
+  "claim": "Registry conformance must validate unique complete record and literal inventories before indexing, and check both ownership and exact producer-consumer declarations.",
+  "conditions": [
+    "cross-repo contracts",
+    "literal drift",
+    "registry conformance"
+  ],
+  "evidence_ids": [
+    "2026-10-09T23:33:48.338455+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-09T23:33:48.338455+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-09T23:33:48.338455+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-09T23:33:48.444071+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "R3 review reproduced silent duplicate collapse, wrong-record computes acceptance and untested reducer/join literal drift. Mutation regressions now reject all three failure classes in production-Core and candidate-Core profiles.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-09T23:33:48.338455+00:00"
+      ],
+      "lessons_sha": "9e61981ea7eb"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-09T23:33:48.444054+00:00",
+  "reviewer": "learn.py",
+  "rationale": "R3 review reproduced silent duplicate collapse, wrong-record computes acceptance and untested reducer/join literal drift. Mutation regressions now reject all three failure classes in production-Core and candidate-Core profiles."
+}

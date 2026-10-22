@@ -1,0 +1,40 @@
+{
+  "id": "d66fcc6c20ba",
+  "key": "manual_d66fcc",
+  "name": "manual_d66fcc",
+  "claim": "Follow the latest explicit PR stacking instruction: preserve named PRs and parent histories, retarget the existing follow-up, and do not infer authorization to close or delete it.",
+  "conditions": [
+    "history preservation",
+    "operator steering",
+    "stacked PRs"
+  ],
+  "evidence_ids": [
+    "2026-10-09T23:45:53.728687+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-09T23:45:53.728687+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-09T23:45:53.728687+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-09T23:45:53.835046+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The operator first named PT 432, then explicitly instructed keeping 433 stacked on docs/r3-lockstep-memory. No closure occurred; the additive integration uses both parent histories and reuses existing PRs.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-09T23:45:53.728687+00:00"
+      ],
+      "lessons_sha": "dc2979787850"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-09T23:45:53.835031+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The operator first named PT 432, then explicitly instructed keeping 433 stacked on docs/r3-lockstep-memory. No closure occurred; the additive integration uses both parent histories and reuses existing PRs."
+}

@@ -1,0 +1,38 @@
+{
+  "id": "f20949b625c6",
+  "key": "manual_f20949",
+  "name": "manual_f20949",
+  "claim": "Before moving or adding a test file in a capability-gated directory, read the validator that inventories that directory and run its packet tests first. A fix that satisfies a collection rule by moving a file can force edits to committed qualification evidence; prefer a fix that leaves committed evidence untouched, such as defining the test only where its capability exists.",
+  "conditions": [
+    "gated"
+  ],
+  "evidence_ids": [
+    "2026-10-20T00:39:07.144989+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-20T00:39:07.144989+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-20T00:39:07.144989+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-20T00:39:07.282702+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-20: the first fix for the skip-allowance failure moved the test into a capability-gated directory; the packet tests then failed (5), because the validator inventories every module there and the committed packet pins that inventory with zero final-cell skips. It was reverted before any push.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-20T00:39:07.144989+00:00"
+      ],
+      "lessons_sha": "104464a96bc2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-20T00:39:07.282690+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-20: the first fix for the skip-allowance failure moved the test into a capability-gated directory; the packet tests then failed (5), because the validator inventories every module there and the committed packet pins that inventory with zero final-cell skips. It was reverted before any push."
+}

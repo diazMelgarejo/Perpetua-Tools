@@ -53,9 +53,23 @@ def _engine_dir() -> Path:
 
 
 def openclaw_workspace_root(root: Path) -> Path:
+    """Return the workspace directory that holds the local-only literal registry.
+
+    The ancestor walk finds it for checkouts beneath the OpenClaw tree. A worktree kept
+    elsewhere has no such ancestor, which used to make the lookup miss the registry so
+    every local gate ran with no forbidden fragments and passed while CI, which injects
+    the registry, failed. ``OPENCLAW_ROOT`` is the exported pointer to the workspace, so
+    it is the fallback, used only when the walk finds nothing and only if the registry
+    file is really there. An ancestor, when found, still wins.
+    """
     for candidate in (root, *root.parents):
         if (candidate / "orama-system").is_dir():
             return candidate
+    configured = os.getenv("OPENCLAW_ROOT")
+    if configured:
+        workspace = Path(configured).expanduser()
+        if (workspace / ".verboten-literals.local").is_file():
+            return workspace
     return root
 
 
@@ -279,6 +293,9 @@ def is_approved_identity(
                     f"email {email!r} is an approved agent identity, but name {name!r} "
                     f"is not in its allowed_names",
                 )
+        repo_bots = policy["repo_bot_identities"].get(repo_name, [])
+        if _repo_bot_approved(email, repo_bots):
+            return ClassificationResult(True, f"approved bot identity for {repo_name}", "repo_bot")
         if _private_identity_ok(name, email, root, literals_fn, email_only=True):
             return ClassificationResult(True, "approved private owner identity", "private")
         return ClassificationResult(False, f"identity {name!r} <{email!r}> not found in policy")

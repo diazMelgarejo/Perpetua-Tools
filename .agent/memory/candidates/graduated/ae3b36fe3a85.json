@@ -1,0 +1,38 @@
+{
+  "id": "ae3b36fe3a85",
+  "key": "manual_ae3b36",
+  "name": "manual_ae3b36",
+  "claim": "Absence of board rows is not absence of work: before declaring a lane stalled or picking it up, check the owner's workspace mtimes and re-diff the live tree, and never integrate a copy made from a snapshot.",
+  "conditions": [
+    "stalled-lane pickup snapshot concurrent-agents integration"
+  ],
+  "evidence_ids": [
+    "2026-10-14T05:38:52.598378+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-14T05:38:52.598378+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-14T05:38:52.598378+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-14T05:38:52.726390+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A pickup copy made from a 10-minute-old snapshot would have removed the owner's private-file checks and reversed a deliberate no-immutable decision.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-14T05:38:52.598378+00:00"
+      ],
+      "lessons_sha": "9ef23791a17c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-14T05:38:52.726379+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A pickup copy made from a 10-minute-old snapshot would have removed the owner's private-file checks and reversed a deliberate no-immutable decision."
+}

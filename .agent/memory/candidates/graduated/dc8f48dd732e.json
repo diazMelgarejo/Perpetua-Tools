@@ -1,0 +1,40 @@
+{
+  "id": "dc8f48dd732e",
+  "key": "manual_dc8f48",
+  "name": "manual_dc8f48",
+  "claim": "Report tested, published, reviewed, CI-green, merged and production-promoted as distinct states tied to exact revisions.",
+  "conditions": [
+    "completion claims",
+    "lockstep status",
+    "review evidence"
+  ],
+  "evidence_ids": [
+    "2026-10-09T23:44:16.700420+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-09T23:44:16.700420+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-09T23:44:16.700420+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-09T23:44:16.798089+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "This saga included local unpublished fixes, historical green runs, merged-into-peer rather than main ADRs, a candidate-only overlay and pending skill-scanner. Conflating these states forced repeated status requests and could prematurely promote the runtime.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-09T23:44:16.700420+00:00"
+      ],
+      "lessons_sha": "1758cc99133e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-09T23:44:16.798076+00:00",
+  "reviewer": "learn.py",
+  "rationale": "This saga included local unpublished fixes, historical green runs, merged-into-peer rather than main ADRs, a candidate-only overlay and pending skill-scanner. Conflating these states forced repeated status requests and could prematurely promote the runtime."
+}

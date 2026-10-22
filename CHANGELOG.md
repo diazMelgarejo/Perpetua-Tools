@@ -4,7 +4,20 @@ All notable changes to Perpetua-Tools are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows [Semantic Versioning](https://semver.org/).
 
+<!-- Keep a Changelog repeats Added/Changed/Fixed under every version, so only
+     headings with the same parent count as duplicates. -->
+<!-- markdownlint-configure-file { "MD024": { "siblings_only": true } } -->
+
 ---
+
+## [Unreleased] — Portable Sites prompt contract
+
+- Added an independent v1 JavaScript prompt contract and owner-scoped D1/SQLite store with
+  immutable originals, idempotent inserts, bounded pagination and archive retention.
+- History is newest-first by `(created_at, id)` with an opaque cursor and a matching index;
+  saves enforce UTF-8 byte bounds on stored records.
+- Added contract SPECS, SQLite tests, scoped CI (no persisted checkout credentials) and additive
+  Sites implementation memory hand-offs. Historical memory records remain unchanged.
 
 ## [1.0.0-rc] - 2026-03-31 [SYNC]
 
@@ -113,13 +126,15 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ### Security
 
 - **orchestrator.py**: Rate limiting added via `slowapi` (OWASP API4) [SYNC]
-- **orchestrator.py**: Input validation — bounded `task_description` with `max_length=8000` (OWASP API3+API4) [SYNC]
+- **orchestrator.py**: Input validation — bounded `task_description` with `max_length=8000` (OWASP
+  API3+API4) [SYNC]
 - **orchestrator.py**: `ALLOWED_HOSTS` middleware support via env var [SYNC]
 - **orchestrator.py**: API key startup validation with warning log [SYNC]
 
 ### Fixed
 
-- **orchestrator.py**: Migrated `@validator` to Pydantic V2 `@field_validator` + `@classmethod` (deprecation fix) [SYNC]
+- **orchestrator.py**: Migrated `@validator` to Pydantic V2 `@field_validator` + `@classmethod`
+  (deprecation fix) [SYNC]
 
 ### Synced with orama-system
 
@@ -132,11 +147,13 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **AFRP cross-reference**: orama-system layer now documents AFRP (pre-router gate) in 4-layer architecture table [SYNC]
+- **AFRP cross-reference**: orama-system layer now documents AFRP (pre-router gate) in 4-layer
+  architecture table [SYNC]
 
 ### Fixed
 
-- **orchestrator.py**: Removed git commit message fragment appended to REDIS_HOST line (syntax error)
+- **orchestrator.py**: Removed git commit message fragment appended to REDIS_HOST line (syntax
+  error)
 - **orchestrator.py**: Replaced bare IP `<YOUR_LAN_IP>` with `OLLAMA_WINDOWS_ENDPOINT` env var
 - **orchestrator/fastapi_app.py**: Updated stale version `0.9.0.0` → `0.9.7.0`
 - **orchestrator/autoresearch_bridge.py**: Removed 3x confidential folder references
@@ -154,7 +171,8 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ### Added
 
 - **LAN Continuity**: LAN Detect & Resume for seamless multi-computer operation [SYNC]
-- **Spawn Reconciliation**: Pre-flight spawn detection and reconciliation before model spawning [SYNC]
+- **Spawn Reconciliation**: Pre-flight spawn detection and reconciliation before model spawning
+  [SYNC]
 - **Short Persistence Log**: `.state/session.log` for low-overhead session tracking
 - `orchestrator/lan_discovery.py` — LAN-wide AI model discovery
 - `orchestrator/spawn_reconciliation.py` — ECC and autoresearch spawn reconciliation registry
@@ -177,25 +195,36 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- `hardware/SKILL.md` – Hardware abstraction layer defining `mac-studio` and `win-rtx3080` profiles with role-based model assignment matrix, VRAM/RAM safety rules, and MLX/LM Studio guidance
-- `hardware/Modelfile.win-rtx3080` – Ollama Modelfile for Qwen3.5-35B-A3B on Dell RTX 3080 with Flash Attention and KV cache compression
-- `hardware/Modelfile.mac-studio` – Ollama Modelfile for Qwen3.5-9B manager agent on Apple Silicon with unified memory tuning
-- `agent_launcher.py` – Hardware detection script with graceful degradation (Mac+Windows → Mac-only → LM Studio → Cloud), outputs routing state to `.state/agents.json`
-- `setup_wizard.py` – Idempotent installation wizard that scans for existing AI software (Ollama, LM Studio, MLX) and guides tiered setup (Priority 1: easiest, Priority 2: advanced distributed)
+- `hardware/SKILL.md` – Hardware abstraction layer defining `mac-studio` and `win-rtx3080` profiles
+  with role-based model assignment matrix, VRAM/RAM safety rules, and MLX/LM Studio guidance
+- `hardware/Modelfile.win-rtx3080` – Ollama Modelfile for Qwen3.5-35B-A3B on Dell RTX 3080 with
+  Flash Attention and KV cache compression
+- `hardware/Modelfile.mac-studio` – Ollama Modelfile for Qwen3.5-9B manager agent on Apple Silicon
+  with unified memory tuning
+- `agent_launcher.py` – Hardware detection script with graceful degradation (Mac+Windows → Mac-only
+  → LM Studio → Cloud), outputs routing state to `.state/agents.json`
+- `setup_wizard.py` – Idempotent installation wizard that scans for existing AI software (Ollama, LM
+  Studio, MLX) and guides tiered setup (Priority 1: easiest, Priority 2: advanced distributed)
 
 ### Changed
 
-- Architecture: Formalized hardware-aware orchestration with modular hardware profiles as single source of truth
-- Workflow: Launcher script now auto-detects available hardware and routes coder/heavy-reasoning tasks to RTX 3080 when online, falls back to Mac for synthesis/management
-- Installation: Priority 1 path recommends LM Studio for 95% of Mac users; Priority 2 advanced path for distributed Mac+Windows setup with explicit caveats
+- Architecture: Formalized hardware-aware orchestration with modular hardware profiles as single
+  source of truth
+- Workflow: Launcher script now auto-detects available hardware and routes coder/heavy-reasoning
+  tasks to RTX 3080 when online, falls back to Mac for synthesis/management
+- Installation: Priority 1 path recommends LM Studio for 95% of Mac users; Priority 2 advanced path
+  for distributed Mac+Windows setup with explicit caveats
 
 ### Technical Notes
 
-- Qwen3.5 model updates: `frob/qwen3.5:35b-a3b-instruct-ud-q4_K_M` (35B MoE) on Windows, `qwen3.5:9b-instruct` on Mac
-- RTX 3080 tuning: `OLLAMA_FLASH_ATTENTION=1`, `OLLAMA_KV_CACHE_TYPE=q8_0`, `OLLAMA_NUM_PARALLEL=1` required for optimal performance
+- Qwen3.5 model updates: `frob/qwen3.5:35b-a3b-instruct-ud-q4_K_M` (35B MoE) on Windows,
+  `qwen3.5:9b-instruct` on Mac
+- RTX 3080 tuning: `OLLAMA_FLASH_ATTENTION=1`, `OLLAMA_KV_CACHE_TYPE=q8_0`, `OLLAMA_NUM_PARALLEL=1`
+  required for optimal performance
 - MLX path preferred on Apple Silicon (60-120+ tok/s on M2/M4 Mac Mini for 7B-8B 4-bit models)
 - Hardware detection timeout: 3 seconds to avoid blocking when remote worker offline
-- Future: `config/models.yml` and `config/routing.yml` updates to reference `profile_id` from hardware/SKILL.md (deferred to next commit)
+- Future: `config/models.yml` and `config/routing.yml` updates to reference `profile_id` from
+  hardware/SKILL.md (deferred to next commit)
 
 ---
 

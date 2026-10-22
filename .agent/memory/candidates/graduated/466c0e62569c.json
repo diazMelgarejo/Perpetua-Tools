@@ -1,0 +1,40 @@
+{
+  "id": "466c0e62569c",
+  "key": "manual_466c0e",
+  "name": "manual_466c0e",
+  "claim": "Verify Sites readiness as separate gates: exact assembled bytes, in-memory migrated schema and history query plans, isolated child runtime paths and cancellation cleanup, HTTP status before JSON parsing, owner access, deployment, plugin installation and authenticated MCP calls. A UI error repair is not an OAuth repair; preserve original prompt and memory bytes, retain migration history, and establish rollback before first publication.",
+  "conditions": [
+    "authentication boundaries",
+    "migration integrity",
+    "sites readiness"
+  ],
+  "evidence_ids": [
+    "2026-10-06T11:09:19.851179+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-06T11:09:19.851179+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-06T11:09:19.851179+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-06T11:09:19.975780+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Canonical capture of the readiness lesson documented in PT PR 428; verified by local assembly, schema, Worker acceptance and authenticated MCP evidence. Browser login and hosted two-account acceptance remain distinct and unverified. Preserve the retired docs log without adding a new renderer target.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-06T11:09:19.851179+00:00"
+      ],
+      "lessons_sha": "32db74311542"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-06T11:09:19.975762+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Canonical capture of the readiness lesson documented in PT PR 428; verified by local assembly, schema, Worker acceptance and authenticated MCP evidence. Browser login and hosted two-account acceptance remain distinct and unverified. Preserve the retired docs log without adding a new renderer target."
+}

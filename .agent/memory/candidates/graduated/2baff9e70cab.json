@@ -1,0 +1,41 @@
+{
+  "id": "2baff9e70cab",
+  "key": "manual_2baff9",
+  "name": "manual_2baff9",
+  "claim": "Route every oramasys mutation (production pin, compatibility manifest, ownership registry, policy, or an AutoResearcher or optimizer candidate) through one fixed graduation ceremony: claim, immutable exact-SHA candidate, scope record that authorizes nothing, archived prior generation, checks that can fail, full verify matrix, one batch review, freeze proposal with a rehearsed operator script, operator-run approval binding exact digests, hosted evidence, independent recompute, operator acceptance with a metadata-only receipt, pinned merge commits, rollback record, then memory graduation.",
+  "conditions": [
+    "autoresearcher candidate",
+    "graduation ceremony",
+    "oramasys mutation approval",
+    "pin promotion"
+  ],
+  "evidence_ids": [
+    "2026-10-17T21:55:54.653835+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-17T21:55:54.653835+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-17T21:55:54.653835+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-17T21:55:54.799567+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Derived from the M1 generation-2 pin promotion of 2026-10-18 and the graph-optimization gating in orama-system doc 57 section 14, the R4 plan task T8c and the operator remaining-implementation notes. Convention: .agent/references/graduation-ceremony-mutation-approvals.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-17T21:55:54.653835+00:00"
+      ],
+      "lessons_sha": "0efeaf5295e7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-17T21:55:54.799552+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Derived from the M1 generation-2 pin promotion of 2026-10-18 and the graph-optimization gating in orama-system doc 57 section 14, the R4 plan task T8c and the operator remaining-implementation notes. Convention: .agent/references/graduation-ceremony-mutation-approvals.md."
+}

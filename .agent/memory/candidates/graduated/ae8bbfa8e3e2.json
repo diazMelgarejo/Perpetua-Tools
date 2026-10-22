@@ -1,0 +1,44 @@
+{
+  "id": "ae8bbfa8e3e2",
+  "key": "manual_ae8bbf",
+  "name": "manual_ae8bbf",
+  "claim": "Parallel subagents each need their own git worktree (a worktree has one HEAD, so two agents running git checkout -b in one directory collide). Give each a disjoint file set and a frozen interface contract in both prompts, then integrate and verify yourself: read security-sensitive code line by line and re-run the combined suite instead of trusting self-reports. Verify a subagent's reported blocker directly before relaying it.",
+  "conditions": [
+    "false-alarm",
+    "frozen-contract",
+    "integration",
+    "parallel-agents",
+    "subagent",
+    "verification",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-10-18T11:30:19.839462+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-18T11:30:19.839462+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-18T11:30:19.839462+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-18T11:30:19.983762+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "oramasys#63, 2026-10-18: I first told one agent to branch inside a directory the second would also use, caught it before dispatch, and created a separate worktree. The split (pure digest module versus permit lifecycle against a frozen import contract) integrated cleanly. Review of the integrated code found the digest-encoding defect that neither self-report mentioned. A different subagent reported 'BLOCKED: worktree is not a git repository' from a stale environment banner; checking the worktree directly (git status exit 0, correct branch) showed a false alarm and the retry succeeded.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-18T11:30:19.839462+00:00"
+      ],
+      "lessons_sha": "9b9220fbcd69"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-18T11:30:19.983736+00:00",
+  "reviewer": "learn.py",
+  "rationale": "oramasys#63, 2026-10-18: I first told one agent to branch inside a directory the second would also use, caught it before dispatch, and created a separate worktree. The split (pure digest module versus permit lifecycle against a frozen import contract) integrated cleanly. Review of the integrated code found the digest-encoding defect that neither self-report mentioned. A different subagent reported 'BLOCKED: worktree is not a git repository' from a stale environment banner; checking the worktree directly (git status exit 0, correct branch) showed a false alarm and the retry succeeded."
+}

@@ -1,0 +1,59 @@
+{
+  "id": "3a8f4e9f0578",
+  "key": "manual_3a8f4e",
+  "name": "manual_3a8f4e",
+  "claim": "Audit the consumer against the issuer for drift, and audit every identity the consumer should bind to its own state, such as its ledger id; check that each injected port can express every path the rule names, such as approval-chain and issuer revocation.",
+  "conditions": [
+    "against",
+    "approval-chain",
+    "audit",
+    "bind",
+    "check",
+    "consumer",
+    "drift",
+    "each",
+    "every",
+    "express",
+    "identity",
+    "injected",
+    "issuer",
+    "ledger",
+    "names",
+    "own",
+    "path",
+    "port",
+    "revocation",
+    "rule",
+    "state",
+    "such"
+  ],
+  "evidence_ids": [
+    "2026-10-19T07:01:36.268499+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-19T07:01:36.268499+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-19T07:01:36.268499+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-19T07:01:36.405152+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-19: green suites missed that the consumer never checked the ledger id and that its revocation port could only express a grant-level revocation.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-19T07:01:36.268499+00:00"
+      ],
+      "lessons_sha": "4b98efda31b6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-19T07:01:36.405141+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-19: green suites missed that the consumer never checked the ledger id and that its revocation port could only express a grant-level revocation."
+}

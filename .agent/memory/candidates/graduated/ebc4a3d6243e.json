@@ -1,0 +1,45 @@
+{
+  "id": "ebc4a3d6243e",
+  "key": "manual_ebc4a3",
+  "name": "manual_ebc4a3",
+  "claim": "Before fast-forwarding a shared canonical checkout, preserve its state with a named recovery branch and an untracked-inclusive stash",
+  "conditions": [
+    "canonical",
+    "checkout",
+    "fast-forward",
+    "ff-only",
+    "git-safety",
+    "recovery-branch",
+    "stash",
+    "untracked"
+  ],
+  "evidence_ids": [
+    "2026-10-12T20:04:48.510086+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-12T20:04:48.510086+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-12T20:04:48.510086+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-12T20:04:48.650982+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Canonical worktrees often carry uncommitted or unrelated branch work; a reset or branch switch without a recovery ref and stash silently discards it, whereas ff-only onto a verified descendant commit plus a preserved recovery point is reversible.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-12T20:04:48.510086+00:00"
+      ],
+      "lessons_sha": "c728bfb38d9a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-12T20:04:48.650971+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Canonical worktrees often carry uncommitted or unrelated branch work; a reset or branch switch without a recovery ref and stash silently discards it, whereas ff-only onto a verified descendant commit plus a preserved recovery point is reversible."
+}

@@ -1,0 +1,42 @@
+{
+  "id": "b470dd9faf9b",
+  "key": "manual_b470dd",
+  "name": "manual_b470dd",
+  "claim": "In zsh a colon after a parameter starts a history-style modifier, so \"$sha:src/file\" is silently substituted and git show reports an ambiguous argument; brace the parameter as \"${sha}:src/file\" and, when a probe reports absent, re-run it once with a literal value before believing it.",
+  "conditions": [
+    "git-show",
+    "parameter-modifier",
+    "probe-validity",
+    "shell-hygiene",
+    "zsh"
+  ],
+  "evidence_ids": [
+    "2026-10-13T19:05:01.947530+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T19:05:01.947530+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T19:05:01.947530+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T19:05:02.076564+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A probe of three Core revisions reported run_with_plugins missing at all three, contradicting code just read at one of them. The answer was wrong because of quoting, not data, and was only trustworthy after redoing it with braces. Say the first answer was a harness error before giving the corrected one.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T19:05:01.947530+00:00"
+      ],
+      "lessons_sha": "952ab155db4c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T19:05:02.076551+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A probe of three Core revisions reported run_with_plugins missing at all three, contradicting code just read at one of them. The answer was wrong because of quoting, not data, and was only trustworthy after redoing it with braces. Say the first answer was a harness error before giving the corrected one."
+}

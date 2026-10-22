@@ -1,0 +1,71 @@
+{
+  "id": "e0e3ded5f8d5",
+  "key": "manual_e0e3de",
+  "name": "manual_e0e3de",
+  "claim": "Treat current heartbeat state as authoritative only when directly observed from the live coordination registry with a current timestamp and verified agent ownership. Workspace mtimes and historical board activity are corroborating evidence, not proof of current liveness. If heartbeat data is stale or inconsistent, report liveness as unknown and verify directly before declaring an agent active or dead.",
+  "conditions": [
+    "active",
+    "activity",
+    "agent",
+    "authoritative",
+    "before",
+    "board",
+    "coordination",
+    "corroborating",
+    "current",
+    "data",
+    "dead",
+    "declaring",
+    "directly",
+    "evidence",
+    "heartbeat",
+    "historical",
+    "inconsistent",
+    "live",
+    "liveness",
+    "mtimes",
+    "observed",
+    "only",
+    "ownership",
+    "proof",
+    "registry",
+    "report",
+    "stale",
+    "state",
+    "timestamp",
+    "treat",
+    "unknown",
+    "verified",
+    "verify",
+    "workspace"
+  ],
+  "evidence_ids": [
+    "2026-10-14T13:18:22.498816+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-14T13:18:22.498816+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-14T13:18:22.498816+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-14T13:18:26.744179+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Supersedes the incorrect use of workspace modification times and historical board rows as proof of live agent status.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-14T13:18:22.498816+00:00"
+      ],
+      "lessons_sha": "7308fbe6ab83"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-14T13:18:26.744171+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Supersedes the incorrect use of workspace modification times and historical board rows as proof of live agent status."
+}

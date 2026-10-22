@@ -1,0 +1,43 @@
+{
+  "id": "f66a1b3f7cc5",
+  "key": "manual_f66a1b",
+  "name": "manual_f66a1b",
+  "claim": "Security-first ownership for the v2 constellation: keep the record-keeper separate from the authorizer. Phylax owns admission, grant verification and provenance decisions and must stay a fail-closed decider; it must not also own coordination records (claims, handoffs, leases, acknowledgements), because that would give the verifier a write path into workflow state and collapse maker, evaluator and approver. Coordination records belong to a dedicated coordination satellite (planned; Perpetua-Tools serves it for v1 until it is migrated), composed by Oramasys, and their events are signals, never authorization: any effect they request still needs a Phylax decision, and a missing verifier means refusal. Which repo hosts lease and fencing primitives (Core mechanics versus the satellite) is not yet decided and must be settled before any wiring.",
+  "conditions": [
+    "architecture",
+    "coordination",
+    "ownership",
+    "phylax",
+    "security-first",
+    "separation-of-duties"
+  ],
+  "evidence_ids": [
+    "2026-10-16T21:04:28.800092+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-16T21:04:28.800092+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-16T21:04:28.800092+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-16T21:04:28.978046+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Derived 2026-10-17 from ADR D-LG-1 (Phylax is the admission authority), the PT unbundling lesson that lists coordination/mesh and endpoint/security as separate satellite boundaries, and the v2 map rule that a queue event is not an authorization decision. Recorded in the Oramasys architecture map owner table.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-16T21:04:28.800092+00:00"
+      ],
+      "lessons_sha": "bb7e6765fe98"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-16T21:04:28.978027+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Derived 2026-10-17 from ADR D-LG-1 (Phylax is the admission authority), the PT unbundling lesson that lists coordination/mesh and endpoint/security as separate satellite boundaries, and the v2 map rule that a queue event is not an authorization decision. Recorded in the Oramasys architecture map owner table."
+}

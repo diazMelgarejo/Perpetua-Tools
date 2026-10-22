@@ -1,0 +1,66 @@
+{
+  "id": "96ce1621ad0b",
+  "key": "manual_96ce16",
+  "name": "manual_96ce16",
+  "claim": "Capability-band comparisons must report observed pass deltas separately from collection changes. Compare exact collected test IDs before attributing a delta to added or absent tests; state only counts measured from those IDs, and do not infer a negative seam-absent count by arithmetic.",
+  "conditions": [
+    "absent",
+    "added",
+    "arithmetic",
+    "attributing",
+    "before",
+    "capability-band",
+    "changes",
+    "collected",
+    "collection",
+    "compare",
+    "comparisons",
+    "count",
+    "counts",
+    "delta",
+    "deltas",
+    "exact",
+    "ids",
+    "infer",
+    "measured",
+    "negative",
+    "observed",
+    "only",
+    "pass",
+    "report",
+    "seam-absent",
+    "separately",
+    "state",
+    "test",
+    "tests"
+  ],
+  "evidence_ids": [
+    "2026-10-14T13:18:15.979391+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-14T13:18:15.979391+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-14T13:18:15.979391+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-14T13:18:26.436139+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Supersedes the unverified negative-count wording while retaining the valid requirement to compare collected test IDs; counts must be attributed only when observed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-14T13:18:15.979391+00:00"
+      ],
+      "lessons_sha": "3b7fda70524c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-14T13:18:26.436130+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Supersedes the unverified negative-count wording while retaining the valid requirement to compare collected test IDs; counts must be attributed only when observed."
+}

@@ -1,0 +1,42 @@
+{
+  "id": "b64dc37f1a03",
+  "key": "manual_b64dc3",
+  "name": "manual_b64dc3",
+  "claim": "Treat notifier, persistence, and cleanup failures as secondary to a critical delivery failure: preserve the primary sink error, attempt the identity-valid durable disposition, suppress only the secondary exception on error paths, and record a conservative terminal when no durable attempt can be named.",
+  "conditions": [
+    "critical-delivery",
+    "error-precedence",
+    "notification-failure",
+    "persistence",
+    "terminal-evidence"
+  ],
+  "evidence_ids": [
+    "2026-10-13T19:49:44.037488+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-13T19:49:44.037488+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-13T19:49:44.037488+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-13T19:49:44.168486+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "T2 observation delivery review: a durable stop could commit and then its notifier could throw, replacing the sink failure and skipping disposition persistence. The corrected path keeps the original sink failure visible, preserves or records durable evidence where possible, and uses delivery.critical_failure at run level when no started-unsettled hold exists.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-13T19:49:44.037488+00:00"
+      ],
+      "lessons_sha": "c1369842e0fc"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-13T19:49:44.168467+00:00",
+  "reviewer": "learn.py",
+  "rationale": "T2 observation delivery review: a durable stop could commit and then its notifier could throw, replacing the sink failure and skipping disposition persistence. The corrected path keeps the original sink failure visible, preserves or records durable evidence where possible, and uses delivery.critical_failure at run level when no started-unsettled hold exists."
+}
