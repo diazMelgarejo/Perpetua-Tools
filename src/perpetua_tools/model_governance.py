@@ -34,6 +34,36 @@ class ModelGovernanceError(RuntimeError):
     """Raised when a launch violates model governance or config cannot be evaluated."""
 
 
+class _StrictSafeLoader(yaml.SafeLoader):
+    """Safe YAML loader that rejects duplicate keys instead of overwriting them."""
+
+    def construct_mapping(
+        self, node: yaml.MappingNode, deep: bool = False
+    ) -> dict[Any, Any]:
+        self.flatten_mapping(node)
+        mapping: dict[Any, Any] = {}
+        for key_node, value_node in node.value:
+            key = self.construct_object(key_node, deep=deep)
+            try:
+                duplicate = key in mapping
+            except TypeError as exc:
+                raise yaml.constructor.ConstructorError(
+                    "while constructing a mapping",
+                    node.start_mark,
+                    "found an unhashable key",
+                    key_node.start_mark,
+                ) from exc
+            if duplicate:
+                raise yaml.constructor.ConstructorError(
+                    "while constructing a mapping",
+                    node.start_mark,
+                    f"found duplicate key {key!r}",
+                    key_node.start_mark,
+                )
+            mapping[key] = self.construct_object(value_node, deep=deep)
+        return mapping
+
+
 @dataclass(frozen=True)
 class LaunchSpec:
     path: str
@@ -75,7 +105,9 @@ def load_model_governance(config_path: str | None = None) -> dict[str, Any]:
     """Load the pin YAML. Refuse a pin that drops fail-closed / default-deny."""
     path = Path(config_path) if config_path else _repo_root() / _CONFIG_REL
     try:
-        raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        raw = yaml.load(
+            path.read_text(encoding="utf-8"), Loader=_StrictSafeLoader
+        ) or {}
     except (OSError, yaml.YAMLError) as exc:
         raise ModelGovernanceError("config unavailable") from exc
     if not isinstance(raw, dict):
@@ -261,7 +293,7 @@ def _assert_cursor_launch(
         raise ModelGovernanceError(
             "fast mode requires an operator request plus a real escalation token"
         )
-    if spec.effort not in (None, "medium") and not covers():
+    if _named_effort(spec) not in (None, "medium") and not covers():
         raise ModelGovernanceError("non-medium effort requires an escalation token")
     if spec.launch_id in _ungated_cursor_ids(cfg):
         if spec.launch_id == "composer-2.5" and spec.fast is not False:

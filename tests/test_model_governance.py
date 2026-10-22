@@ -21,11 +21,11 @@ from perpetua_tools.model_governance import (
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 LIVE_GUIDANCE = (
-    Path("docs/standards/model-governance.md"),
-    Path("SKILL.md"),
-    Path("config/SKILL.md"),
-    Path("hardware/SKILL.md"),
-    Path(".cursor/commands/model-route.md"),
+    REPO_ROOT / "docs/standards/model-governance.md",
+    REPO_ROOT / "SKILL.md",
+    REPO_ROOT / "config/SKILL.md",
+    REPO_ROOT / "hardware/SKILL.md",
+    REPO_ROOT / ".cursor/commands/model-route.md",
 )
 
 
@@ -91,6 +91,35 @@ def test_composer_requires_fast_off() -> None:
     bad = LaunchSpec(path="cursor_grok_bot", launch_id="composer-2.5", fast=True)
     with pytest.raises(ModelGovernanceError, match="fast"):
         assert_launch_allowed(bad)
+
+
+def test_cursor_non_medium_reasoning_effort_requires_token() -> None:
+    spec = LaunchSpec(
+        path="cursor_grok_bot",
+        launch_id="composer-2.5",
+        reasoning_effort="high",
+        fast=False,
+    )
+    with pytest.raises(ModelGovernanceError, match="non-medium effort"):
+        assert_launch_allowed(spec)
+
+
+def test_cursor_non_medium_reasoning_effort_accepts_matching_token() -> None:
+    spec = LaunchSpec(
+        path="cursor_grok_bot",
+        launch_id="composer-2.5",
+        reasoning_effort="high",
+        fast=False,
+    )
+    proof = EscalationProof(
+        kind="offline_gpg",
+        reference="fpr:operator",
+        model_id="composer-2.5",
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        effort="high",
+        fast=False,
+    )
+    assert_launch_allowed(spec, proof=proof)
 
 
 def test_env_and_config_flags_are_not_escalation_tokens() -> None:
@@ -234,6 +263,22 @@ def test_pin_refuses_non_fail_closed_cost_gate(tmp_path: Path) -> None:
         load_model_governance(str(broken))
 
 
+def test_pin_refuses_duplicate_mapping_keys(tmp_path: Path) -> None:
+    broken = tmp_path / "model-governance.yml"
+    broken.write_text(
+        """\
+invariants:
+  cost_gate: fail_closed
+  cost_gate: fail_closed
+  cloud_escalation: default_deny
+""",
+        encoding="utf-8",
+    )
+    with pytest.raises(ModelGovernanceError, match="config unavailable") as exc_info:
+        load_model_governance(str(broken))
+    assert isinstance(exc_info.value.__cause__, yaml.constructor.ConstructorError)
+
+
 def test_models_yml_drops_banned_grok_45() -> None:
     text = (REPO_ROOT / "config" / "models.yml").read_text(encoding="utf-8")
     raw = yaml.safe_load(text)
@@ -256,16 +301,18 @@ def test_live_guidance_has_no_stale_defaults() -> None:
         assert "Opus 4.6" not in text
         assert "claude-opus-4-8" not in text
         assert "claude-4.6-sonnet" not in text
-    pointer = Path("docs/standards/model-governance.md").read_text(encoding="utf-8")
+    pointer = (REPO_ROOT / "docs/standards/model-governance.md").read_text(
+        encoding="utf-8"
+    )
     assert "grok-4.6" in pointer
     assert "claude-sonnet-5-5" in pointer
-    skill = Path("SKILL.md").read_text(encoding="utf-8")
+    skill = (REPO_ROOT / "SKILL.md").read_text(encoding="utf-8")
     assert "claude-sonnet-5-5" in skill
     assert '"model": "claude-sonnet-5"' not in skill
-    hardware = Path("hardware/SKILL.md").read_text(encoding="utf-8")
+    hardware = (REPO_ROOT / "hardware/SKILL.md").read_text(encoding="utf-8")
     assert "grok-4.6" in hardware
     assert "| cloud | grok-4.5 |" not in hardware
-    config_skill = Path("config/SKILL.md").read_text(encoding="utf-8")
+    config_skill = (REPO_ROOT / "config/SKILL.md").read_text(encoding="utf-8")
     assert "grok-4.6" in config_skill
     assert "**grok-4.5**" not in config_skill
 
