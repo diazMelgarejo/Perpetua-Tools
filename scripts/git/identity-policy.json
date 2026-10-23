@@ -20,6 +20,7 @@
   ],
   "agent_identities": [
     {"email": "codex@openai.com", "allowed_names": ["Codex"]},
+    {"email": "noreply@openai.com", "allowed_names": ["Codex"]},
     {"email": "claude@anthropic.com", "allowed_names": ["Claude"]},
     {"email": "noreply@anthropic.com", "allowed_names": []},
     {"email": "cursoragent@cursor.com", "allowed_names": ["Cursor Agent"]},
