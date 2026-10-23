@@ -269,16 +269,16 @@ models:
       source_url: "https://platform.claude.com/docs/en/about-claude/models/model-ids-and-versions"
       verified_on: "2026-10-03"
 
-  # ── ONLINE: Grok 4.6 (direct-xAI / last-resort paid tier) ─────────────────
+  # ── ONLINE: Grok 4.7 (direct-xAI / last-resort paid tier) ─────────────────
   # grok-4.5 is banned (no default, fallback, or catalog row).
   # Reasoning effort medium is set explicitly (vendor default is high).
-  - name: grok-4.6
-    api_model: grok-4.6
+  - name: grok-4.7
+    api_model: grok-4.7
     backend: xai
     device: cloud
     host: "https://api.x.ai"
     port: 443
-    context_window: 333000
+    context_window: 500000
     roles: [finance, realtime, market, top-level]
     priority: 60
     online: true
@@ -290,9 +290,9 @@ models:
     frugality_tier: 6
     provenance:
       kind: provider-api
-      source_model_id: grok-4.6
-      source_url: "https://docs.x.ai/docs/models"
-      verified_on: "2026-10-03"
+      source_model_id: grok-4.7
+      source_url: "https://docs.x.ai/developers/grok-4-7"
+      verified_on: "2026-10-23"
 
 
   # ── AUTORESEARCH: foot-soldier agents (uditgoenka/autoresearch swarm) ───────────

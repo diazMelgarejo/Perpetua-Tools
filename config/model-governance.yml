@@ -28,22 +28,20 @@ not_escalation_token:
   - cached_approval
 
 banned_launch_ids:
+  - gpt-6-astra
   - grok-4.5
+  - grok-4.6
 
 cursor_grok_bot:
   default:
-    usage_label: cursor-grok-4.6-medium
-    launch_id: grok-4.6
+    usage_label: cursor-grok-4.7-medium
+    launch_id: grok-4.7
     effort: medium
     fast: false
   allowed_ungated:
     - launch_id: composer-2.5
       fast: false
-  gated:
-    grok-4.7:
-      effort: medium
-      fast: false
-      requires: escalation_token
+  gated: {}
 
 anthropic:
   default:
@@ -63,7 +61,7 @@ anthropic:
 
 direct_xai:
   default:
-    launch_id: grok-4.6
+    launch_id: grok-4.7
     reasoning_effort: medium
 
 allowed_escalation_proof_kinds:

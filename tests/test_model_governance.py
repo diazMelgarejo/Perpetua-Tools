@@ -39,9 +39,9 @@ def test_cost_gate_and_cloud_escalation_invariants(cfg: dict) -> None:
     assert cfg["invariants"]["cloud_escalation"] == "default_deny"
 
 
-def test_cursor_default_is_grok_46_medium_fast_off() -> None:
+def test_cursor_default_is_grok_47_medium_fast_off() -> None:
     spec = default_launch("cursor_grok_bot")
-    assert spec.launch_id == "grok-4.6"
+    assert spec.launch_id == "grok-4.7"
     assert spec.effort == "medium"
     assert spec.fast is False
     assert_launch_allowed(spec)
@@ -68,10 +68,11 @@ def test_cursor_sonnet_55_follows_anthropic_gate_without_token() -> None:
     assert_launch_allowed(spec)
 
 
-def test_grok_45_banned() -> None:
+@pytest.mark.parametrize("launch_id", ["grok-4.5", "grok-4.6", "gpt-6-astra"])
+def test_superseded_and_banned_launch_ids(launch_id: str) -> None:
     spec = LaunchSpec(
         path="cursor_grok_bot",
-        launch_id="grok-4.5",
+        launch_id=launch_id,
         effort="medium",
         fast=False,
     )
@@ -183,15 +184,14 @@ def test_env_and_config_flags_are_not_escalation_tokens() -> None:
         assert_launch_allowed(spec, proof=flag_shaped)
 
 
-def test_grok_47_allowed_only_with_real_proof() -> None:
+def test_grok_47_is_default_and_enforces_its_tuple_even_with_proof() -> None:
     spec = LaunchSpec(
         path="cursor_grok_bot",
         launch_id="grok-4.7",
         effort="medium",
         fast=False,
     )
-    with pytest.raises(ModelGovernanceError, match="default-deny"):
-        assert_launch_allowed(spec)
+    assert_launch_allowed(spec)
     proof = EscalationProof(
         kind="github_verified_signoff",
         reference="abc123verified",
@@ -259,11 +259,11 @@ def test_opus_and_fable_require_token_fable_needs_cap() -> None:
 
 def test_direct_xai_requires_medium_reasoning() -> None:
     ok = default_launch("direct_xai")
-    assert ok.launch_id == "grok-4.6"
+    assert ok.launch_id == "grok-4.7"
     assert ok.reasoning_effort == "medium"
     assert_launch_allowed(ok)
     high = LaunchSpec(
-        path="direct_xai", launch_id="grok-4.6", reasoning_effort="high"
+        path="direct_xai", launch_id="grok-4.7", reasoning_effort="high"
     )
     with pytest.raises(ModelGovernanceError, match="reasoning_effort"):
         assert_launch_allowed(high)
@@ -315,7 +315,8 @@ def test_models_yml_drops_banned_grok_45() -> None:
     }
     assert "grok-4.5" not in names
     assert "grok-4.5" not in apis
-    assert "grok-4.6" in names
+    assert "grok-4.7" in names
+    assert "grok-4.6" not in names
     assert "claude-sonnet-5-5" in names
     assert "claude-sonnet-5" in names
 
@@ -331,16 +332,16 @@ def test_live_guidance_has_no_stale_defaults() -> None:
     pointer = (REPO_ROOT / "docs/standards/model-governance.md").read_text(
         encoding="utf-8"
     )
-    assert "grok-4.6" in pointer
+    assert "grok-4.7" in pointer
     assert "claude-sonnet-5-5" in pointer
     skill = (REPO_ROOT / "SKILL.md").read_text(encoding="utf-8")
     assert "claude-sonnet-5-5" in skill
     assert '"model": "claude-sonnet-5"' not in skill
     hardware = (REPO_ROOT / "hardware/SKILL.md").read_text(encoding="utf-8")
-    assert "grok-4.6" in hardware
+    assert "grok-4.7" in hardware
     assert "| cloud | grok-4.5 |" not in hardware
     config_skill = (REPO_ROOT / "config/SKILL.md").read_text(encoding="utf-8")
-    assert "grok-4.6" in config_skill
+    assert "grok-4.7" in config_skill
     assert "**grok-4.5**" not in config_skill
 
 
@@ -526,7 +527,7 @@ def test_vector_cursor_family_controls() -> None:
 
 @pytest.mark.parametrize("effort", [None, "high", "low", "medium"])
 def test_vector_direct_xai_requires_medium_effort(effort) -> None:
-    spec = LaunchSpec(path="direct_xai", launch_id="grok-4.6", reasoning_effort=effort)
+    spec = LaunchSpec(path="direct_xai", launch_id="grok-4.7", reasoning_effort=effort)
     if effort == "medium":
         assert_launch_allowed(spec)
     else:

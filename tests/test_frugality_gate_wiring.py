@@ -81,7 +81,7 @@ class TestRouteTaskOfflineNeverReturnsPaidRemote:
             "sonar-reasoning-pro",
             "claude-sonnet-5",
             "claude-sonnet-5-5",
-            "grok-4.6",
+            "grok-4.7",
         ):
             assert paid_or_remote not in names, (
                 f"{paid_or_remote} must not survive ORAMASYS_OFFLINE=1"

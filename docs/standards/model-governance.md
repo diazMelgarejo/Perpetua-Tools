@@ -19,17 +19,19 @@ They do not restate model ids.
 
 - The **harness** chooses the path. There is no Claude-only
   (or any single-provider-only) routing default for agents.
-- **Cursor / Grok Bot:** default launch is `grok-4.6` at
+- **Cursor / Grok Bot:** default launch is `grok-4.7` at
   `{effort: medium, fast: false}`
-  (usage label `cursor-grok-4.6-medium`).
+  (usage label `cursor-grok-4.7-medium`).
   `composer-2.5` is allowed with fast off.
-  `grok-4.7` needs an escalation token and still runs medium / fast off.
-  `grok-4.5` is banned.
+  `grok-4.6`, `grok-4.5`, and `gpt-6-astra` are banned launch IDs.
   `auto` / `default` is editor-only, never for agents.
 - **Anthropic:** default is `claude-sonnet-5-5` at medium
   (`claude-sonnet-5` is a legacy pin only).
   `claude-opus-5-5` (high) and `claude-fable-5-1` each need an
   escalation token; Fable also needs a hard budget cap.
+- **Effort ceiling:** `xhigh` and `max` are refused on every harness path,
+  including when matching approval metadata is supplied. Both effort fields
+  are checked before path-specific policy runs.
 - **Escalation token** means a proven control-plane (S-AuthZ) bearer
   **and** a fresh signed HITL approval (GitHub Verified signature on
   device, offline GPG/PGP, or an online signer tied to the control

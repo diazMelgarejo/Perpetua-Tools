@@ -24,7 +24,7 @@ This document outlines the model registry and device configuration for the ECC-t
 
 - **sonar-reasoning-pro**
 - **claude-sonnet-5-5** (Anthropic default, medium effort; `claude-sonnet-5` is a legacy pin)
-- **grok-4.6** (direct-xAI last-resort; medium reasoning; `grok-4.5` is banned)
+- **grok-4.7** (direct-xAI last-resort; medium reasoning; older launch IDs are banned)
 
 Harness defaults (Cursor vs Anthropic vs direct-xAI) live in
 `config/model-governance.yml`. Cite Alexandria; do not copy the standard.

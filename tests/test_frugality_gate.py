@@ -185,7 +185,7 @@ class TestLoadFrugalityTierByName:
         assert tiers["sonar-reasoning-pro"] >= 3
         assert tiers["claude-sonnet-5"] >= 3
         assert tiers["claude-sonnet-5-5"] >= 3
-        assert tiers["grok-4.6"] >= 3
+        assert tiers["grok-4.7"] >= 3
 
     def test_unknown_model_name_is_absent_not_erroring(self):
         tiers = load_frugality_tier_by_name()
