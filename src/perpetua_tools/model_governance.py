@@ -12,7 +12,7 @@ cloud escalation without a real token fail closed.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from pathlib import Path
@@ -91,6 +91,78 @@ class EscalationProof:
     scope: str | None = None
 
 
+@dataclass(frozen=True)
+class LaunchPlan:
+    """Pure selection facts; neither this value nor its approval flag authorizes dispatch."""
+
+    requested: LaunchSpec
+    effective: LaunchSpec
+    requires_human_approval: bool
+    reason: str
+    requested_mode: str = "standard"
+    effective_mode: str = "standard"
+    approval_candidate: LaunchSpec | None = None
+
+
+def plan_launch(
+    spec: LaunchSpec,
+    *,
+    task_kind: str | None = None,
+    mode: str = "standard",
+    config: Mapping[str, Any] | None = None,
+) -> LaunchPlan:
+    """Select immediate policy fallback; task_kind must come from the trusted harness.
+
+    Human authorization, budgets and execution leases belong to the dispatch
+    boundary. This function accepts no agent-supplied approval boolean or proof.
+    """
+    if task_kind not in (None, "planning", "execution"):
+        raise ModelGovernanceError("unsupported harness task kind")
+    if mode not in ("standard", "ultracode"):
+        raise ModelGovernanceError("unsupported orchestration mode")
+    if any(value in ("xhigh", "max") for value in (spec.effort, spec.reasoning_effort)):
+        raise ModelGovernanceError("effort is forbidden")
+    if spec.effort and spec.reasoning_effort and spec.effort != spec.reasoning_effort:
+        raise ModelGovernanceError("conflicting effort fields")
+    cfg = dict(config) if config is not None else load_model_governance()
+    if spec.launch_id in cfg.get("banned_launch_ids", ()):
+        raise ModelGovernanceError(f"banned launch id: {spec.launch_id}")
+    provider = "anthropic" if spec.path == "cursor_grok_bot" and spec.launch_id.startswith("claude-") else spec.path
+    if provider not in ("anthropic", "openai", "google", "cursor_grok_bot", "direct_xai"):
+        raise ModelGovernanceError("unknown harness path")
+    policy = cfg[provider]
+    planning = policy.get("planning") or {}
+    controller = policy.get("controller") or {}
+    is_planning_model = spec.launch_id == planning.get("launch_id")
+    gated = (policy.get("gated") or {}).get(spec.launch_id)
+    if is_planning_model or spec.launch_id == controller.get("launch_id"):
+        row = planning if is_planning_model else controller
+        allowed_efforts = row.get("allowed_efforts", [row.get("effort")])
+        if _named_effort(spec) not in allowed_efforts:
+            raise ModelGovernanceError("role requires an explicitly permitted effort")
+        _assert_gated_params(spec, {**row, "effort": _named_effort(spec)})
+    elif gated is not None:
+        _assert_gated_params(spec, gated)
+    elif provider in ("openai", "google"):
+        if spec.launch_id != policy["default"]["launch_id"]:
+            raise ModelGovernanceError("unlisted role model")
+        _assert_gated_params(spec, policy["default"])
+    else:
+        assert_launch_allowed(spec, config=cfg)
+    needs_approval = mode == "ultracode" or (
+        is_planning_model and task_kind != "planning"
+    ) or (gated is not None and not is_planning_model)
+    if not needs_approval:
+        return LaunchPlan(spec, spec, False, "planning" if is_planning_model else "allowed")
+    fallback = replace(default_launch(provider, config=cfg), path=spec.path)
+    candidate = spec
+    if is_planning_model and task_kind != "planning":
+        candidate = replace(spec, effort="medium", reasoning_effort=None)
+    return LaunchPlan(
+        spec, fallback, True, "human_approval_required", mode, "standard", candidate
+    )
+
+
 def _repo_root() -> Path:
     here = Path(__file__).resolve()
     for parent in here.parents:
@@ -130,13 +202,13 @@ def default_launch(path: str, *, config: Mapping[str, Any] | None = None) -> Lau
             effort=str(row["effort"]),
             fast=bool(row["fast"]),
         )
-    if path == "anthropic":
-        row = cfg["anthropic"]["default"]
+    if path in ("anthropic", "openai", "google"):
+        row = cfg[path]["default"]
         return LaunchSpec(
             path=path,
             launch_id=str(row["launch_id"]),
             effort=str(row["effort"]),
-            fast=None,
+            fast=bool(row["fast"]) if "fast" in row else None,
         )
     if path == "direct_xai":
         row = cfg["direct_xai"]["default"]
@@ -196,8 +268,11 @@ def assert_launch_allowed(
     config: Mapping[str, Any] | None = None,
     now: datetime | None = None,
     approval_scope: str | None = None,
+    task_kind: str | None = None,
 ) -> None:
     """Refuse banned, auto-for-agent, ungated-mismatch, and unproven gated launches."""
+    if task_kind not in (None, "planning", "execution"):
+        raise ModelGovernanceError("unsupported harness task kind")
     for effort in (spec.effort, spec.reasoning_effort):
         if effort in ("xhigh", "max"):
             raise ModelGovernanceError(f"effort is forbidden: {effort}")
@@ -219,6 +294,22 @@ def assert_launch_allowed(
             "model/effort/fast/path/scope mismatch"
         )
 
+    if spec.path in ("openai", "google"):
+        plan = plan_launch(spec, task_kind=task_kind, config=cfg)
+        if plan.requires_human_approval and not _token_covers(
+            spec, proof, now=now, approval_scope=approval_scope
+        ):
+            raise ModelGovernanceError("cloud escalation default-deny: escalation token required")
+        return
+    if spec.path in ("anthropic", "cursor_grok_bot"):
+        policy = cfg["anthropic"]
+        planning_id = (policy.get("planning") or {}).get("launch_id")
+        controller_id = (policy.get("controller") or {}).get("launch_id")
+        if spec.launch_id == controller_id or (
+            spec.launch_id == planning_id and task_kind == "planning"
+        ):
+            plan_launch(spec, task_kind=task_kind, config=cfg)
+            return
     if spec.path == "cursor_grok_bot":
         _assert_cursor_launch(
             spec, proof=proof, cfg=cfg, now=now, approval_scope=approval_scope
@@ -264,7 +355,9 @@ def _token_covers(
 
 def _assert_gated_params(spec: LaunchSpec, row: Mapping[str, Any]) -> None:
     wanted_effort = row.get("effort")
-    if wanted_effort is not None and _named_effort(spec) != str(wanted_effort):
+    if wanted_effort is not None and _named_effort(spec) not in row.get(
+        "allowed_efforts", [str(wanted_effort)]
+    ):
         raise ModelGovernanceError(
             f"{spec.launch_id} requires effort {wanted_effort} (set explicitly)"
         )

@@ -387,7 +387,7 @@ def test_vector_family_matrix(path, model, effort, fast, approval, budget) -> No
     if model.startswith("claude-sonnet"):
         allowed = allowed and effort == "medium"
     elif model == "claude-opus-5-5":
-        allowed = allowed and effort == "high" and fast is False
+        allowed = allowed and effort in ("medium", "high") and fast is False
         allowed = allowed and approval == "fresh"
     else:
         allowed = allowed and effort == "medium"
@@ -499,12 +499,11 @@ def test_vector_cursor_family_controls() -> None:
     opus_medium = LaunchSpec(
         path="cursor_grok_bot", launch_id="claude-opus-5-5", effort="medium", fast=False
     )
-    with pytest.raises(ModelGovernanceError, match="effort"):
-        assert_launch_allowed(
-            opus_medium,
-            proof=_vec_proof("claude-opus-5-5", "medium", False),
-            now=_VEC_NOW,
-        )
+    assert_launch_allowed(
+        opus_medium,
+        proof=_vec_proof("claude-opus-5-5", "medium", False),
+        now=_VEC_NOW,
+    )
     opus_fast = LaunchSpec(
         path="cursor_grok_bot", launch_id="claude-opus-5-5", effort="high", fast=True
     )

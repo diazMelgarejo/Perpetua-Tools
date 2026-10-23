@@ -27,8 +27,9 @@ They do not restate model ids.
   `auto` / `default` is editor-only, never for agents.
 - **Anthropic:** default is `claude-sonnet-5-5` at medium
   (`claude-sonnet-5` is a legacy pin only).
-  `claude-opus-5-5` (high) and `claude-fable-5-1` each need an
-  escalation token; Fable also needs a hard budget cap.
+  Planning Opus permits medium/high with harness classification. Non-planning
+  Opus needs a per-use approval, with medium as its approval candidate default;
+  explicit approved high remains permitted. Fable needs approval and a budget cap.
 - **Effort ceiling:** `xhigh` and `max` are refused on every harness path,
   including when matching approval metadata is supplied. Both effort fields
   are checked before path-specific policy runs.
@@ -42,3 +43,19 @@ They do not restate model ids.
   (local tiers first, paid last).
   Cost gate stays **fail-closed**.
   Cloud escalation stays **default-deny**.
+
+## Role selection contract
+
+`plan_launch` returns the requested launch, the immediately permitted launch,
+an approval candidate and a reason. It accepts a harness-supplied task kind;
+agents must not supply that classification through their own payloads.
+Planning permits Opus at medium/high and Sol at medium. Non-planning requests
+fall back immediately to Sonnet/Terra medium while human approval is pending.
+Haiku/Luna controller rows and the Gemini medium default are explicit pins.
+Ultracode always requires a human decision and otherwise selects standard mode.
+
+The result contains policy facts only. Before executing a gated candidate,
+the caller must obtain and consume authenticated Phylax authority and establish
+the durable execution lease. Neither `LaunchPlan` nor `EscalationProof` proves
+that those steps happened. `assert_launch_allowed` checks the requested policy
+tuple; it does not silently execute a returned fallback or verify signatures.
