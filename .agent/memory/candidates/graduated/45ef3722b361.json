@@ -1,0 +1,46 @@
+{
+  "id": "45ef3722b361",
+  "key": "manual_45ef37",
+  "name": "manual_45ef37",
+  "claim": "For model execution, keep Phylax as the fail-closed authority for human evidence, receipt single-use, and audit; expose executable and MCPB runtime routes only behind a transport-neutral contract owned by the runtime and orchestration layers, so both routes receive the same verified intent and produce comparable normalized evidence.",
+  "conditions": [
+    "agate",
+    "authorization",
+    "benchmark",
+    "executable",
+    "mcpb",
+    "model-launch",
+    "phylax",
+    "runtime-transport",
+    "telos"
+  ],
+  "evidence_ids": [
+    "2026-10-23T09:44:00.220581+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-23T09:44:00.220581+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-23T09:44:00.220581+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-23T09:44:00.366832+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The 2026-10-23 model-launch design separates authorization from provider execution: executable and Claude-Desktop-LLM MCPB are benchmarkable alternatives, not alternate trust roots. Agate owns placement and Telos owns endpoint policy.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-23T09:44:00.220581+00:00"
+      ],
+      "lessons_sha": "86ef5767f05b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-23T09:44:00.366814+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The 2026-10-23 model-launch design separates authorization from provider execution: executable and Claude-Desktop-LLM MCPB are benchmarkable alternatives, not alternate trust roots. Agate owns placement and Telos owns endpoint policy."
+}
