@@ -1,0 +1,78 @@
+{
+  "id": "7b8a16e1fc26",
+  "key": "manual_7b8a16",
+  "name": "manual_7b8a16",
+  "claim": "After a history rewrite, decide whether a stale branch has commits missing from main by per-commit triage, never by ahead/behind or merge-base: a read-only git merge-tree 3-way against main, line containment of the added lines in main current copy (or its relocated path), then residual classification (moved, deleted on purpose, never landed). Replay only never-landed deltas, by integrative-merge mode.",
+  "conditions": [
+    "added",
+    "after",
+    "against",
+    "ahead",
+    "behind",
+    "branch",
+    "classification",
+    "commits",
+    "containment",
+    "copy",
+    "current",
+    "decide",
+    "deleted",
+    "deltas",
+    "git",
+    "history",
+    "integrative-merge",
+    "landed",
+    "line",
+    "lines",
+    "main",
+    "merge-base",
+    "merge-tree",
+    "missing",
+    "mode",
+    "moved",
+    "never",
+    "never-landed",
+    "only",
+    "path",
+    "per-commit",
+    "purpose",
+    "read-only",
+    "relocated",
+    "replay",
+    "residual",
+    "rewrite",
+    "stale",
+    "triage",
+    "way",
+    "whether"
+  ],
+  "evidence_ids": [
+    "2026-10-23T13:37:16.835925+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-23T13:37:16.835925+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-23T13:37:16.835925+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-23T13:37:17.240498+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-23 orama audit: 13 patch-unique commits carried by 53 branches were all absorbed, relocated, or deliberately superseded, and 0 of 36 residual files were absent from main history. Another agent plan used ahead/behind figures (about 90 versus 1864 behind) that are invalid across the rewrite. Script and procedure: semantic/REANCHOR_TRIAGE_MECHANICS_2026-10-23.md.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-23T13:37:16.835925+00:00"
+      ],
+      "lessons_sha": "dc7b911a527f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-23T13:37:17.240498+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-23 orama audit: 13 patch-unique commits carried by 53 branches were all absorbed, relocated, or deliberately superseded, and 0 of 36 residual files were absent from main history. Another agent plan used ahead/behind figures (about 90 versus 1864 behind) that are invalid across the rewrite. Script and procedure: semantic/REANCHOR_TRIAGE_MECHANICS_2026-10-23.md."
+}

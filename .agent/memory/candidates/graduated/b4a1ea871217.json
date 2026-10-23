@@ -1,0 +1,63 @@
+{
+  "id": "b4a1ea871217",
+  "key": "manual_b4a1ea",
+  "name": "manual_b4a1ea",
+  "claim": "A strict read-only audit must not run the stock reanchor_scan.sh unchanged: it runs git fetch --prune origin, which updates and prunes remote-tracking refs. Run a no-fetch copy and prove nothing moved with a before and after ref snapshot.",
+  "conditions": [
+    "after",
+    "audit",
+    "before",
+    "copy",
+    "fetch",
+    "git",
+    "moved",
+    "no-fetch",
+    "nothing",
+    "origin",
+    "prove",
+    "prune",
+    "prunes",
+    "read-only",
+    "reanchor_scan",
+    "ref",
+    "refs",
+    "remote-tracking",
+    "run",
+    "runs",
+    "snapshot",
+    "stock",
+    "strict",
+    "unchanged",
+    "updates",
+    "which"
+  ],
+  "evidence_ids": [
+    "2026-10-23T13:37:19.044442+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-23T13:37:19.044442+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-23T13:37:19.044442+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-23T13:37:19.233763+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-23: a no-fetch copy of the scan was used and 117 Perpetua-Tools refs and 179 orama-system refs were identical before and after.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-23T13:37:19.044442+00:00"
+      ],
+      "lessons_sha": "28e41dbf038f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-23T13:37:19.233763+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-23: a no-fetch copy of the scan was used and 117 Perpetua-Tools refs and 179 orama-system refs were identical before and after."
+}
