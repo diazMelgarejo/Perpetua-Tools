@@ -200,6 +200,7 @@
 - Separate a short approval-receipt TTL from the execution-authority TTL: begin each authority window only in the durable dispatch-authorization transaction, never at first provider output.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_bcd29ba0e6d7 -->
 - Do not invent ad-hoc token ledgers or UUIDv4 schemes for model launches: map execution escalations to Phylax P5 approval intents and consume them atomically in SqliteP5ApprovalStore under BEGIN IMMEDIATE.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_34a8f3b70323 -->
 - Capability bearer credentials identify the control-plane proxy principal rather than individual human identity: out-of-band P5 approval evidence is strictly required for human-gated actions.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_a8b6683ca75a -->
+- Before presenting a policy or security question to the operator as an open decision, search the ratified record first (docs/v2 ADRs, off-repo references, PT DECISIONS and lessons) and cite what already decides it; a proposal that duplicates a ratified mechanism must be retracted, not offered as a choice.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_0c8afcec69bf -->
 
 ### 2026-09
 
