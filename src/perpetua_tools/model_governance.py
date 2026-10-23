@@ -198,6 +198,9 @@ def assert_launch_allowed(
     approval_scope: str | None = None,
 ) -> None:
     """Refuse banned, auto-for-agent, ungated-mismatch, and unproven gated launches."""
+    for effort in (spec.effort, spec.reasoning_effort):
+        if effort in ("xhigh", "max"):
+            raise ModelGovernanceError(f"effort is forbidden: {effort}")
     cfg = dict(config) if config is not None else load_model_governance()
     banned = {str(x) for x in cfg.get("banned_launch_ids") or []}
     if spec.launch_id in banned:

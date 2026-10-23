@@ -79,6 +79,33 @@ def test_grok_45_banned() -> None:
         assert_launch_allowed(spec)
 
 
+@pytest.mark.unit
+@pytest.mark.parametrize("effort", ["xhigh", "max"])
+@pytest.mark.parametrize("field", ["effort", "reasoning_effort"])
+def test_forbidden_effort_cannot_be_unlocked_by_approval(
+    effort: str, field: str
+) -> None:
+    """Ruling 10 rejects top-tier effort even with matching approval metadata."""
+    spec = LaunchSpec(
+        path="cursor_grok_bot", launch_id="composer-2.5", fast=False, **{field: effort}
+    )
+    proof = _vec_proof("composer-2.5", effort, False)
+    with pytest.raises(ModelGovernanceError, match="effort is forbidden"):
+        assert_launch_allowed(spec, proof=proof, now=_VEC_NOW)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("effort", ["xhigh", "max"])
+def test_forbidden_secondary_effort_is_not_hidden_by_medium(effort: str) -> None:
+    """Both effort fields are checked before a path-specific early return."""
+    spec = LaunchSpec(
+        path="anthropic", launch_id="claude-sonnet-5-5",
+        effort="medium", reasoning_effort=effort,
+    )
+    with pytest.raises(ModelGovernanceError, match="effort is forbidden"):
+        assert_launch_allowed(spec)
+
+
 def test_auto_never_for_agents() -> None:
     spec = LaunchSpec(path="cursor_grok_bot", launch_id="auto", agent=True)
     with pytest.raises(ModelGovernanceError, match="editor-only"):
