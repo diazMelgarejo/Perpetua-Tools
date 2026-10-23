@@ -198,6 +198,8 @@
 - ~~A test stand-in that replaces a production primitive must be labelled as a stand-in where it is defined, and a second test must prove the real primitive against issuer-produced vectors~~  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_327192b4d88a superseded_by=lesson_067531d8e928 -->
 - A test stand-in that replaces a production primitive must be labelled as a stand-in where it is defined; when that primitive is externally defined and authoritative producer vectors exist for it (a signature scheme, digest, codec or wire format), a second test must prove the real primitive against those vectors  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_067531d8e928 -->
 - Separate a short approval-receipt TTL from the execution-authority TTL: begin each authority window only in the durable dispatch-authorization transaction, never at first provider output.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_bcd29ba0e6d7 -->
+- Do not invent ad-hoc token ledgers or UUIDv4 schemes for model launches: map execution escalations to Phylax P5 approval intents and consume them atomically in SqliteP5ApprovalStore under BEGIN IMMEDIATE.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_34a8f3b70323 -->
+- Capability bearer credentials identify the control-plane proxy principal rather than individual human identity: out-of-band P5 approval evidence is strictly required for human-gated actions.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_a8b6683ca75a -->
 
 ### 2026-09
 
