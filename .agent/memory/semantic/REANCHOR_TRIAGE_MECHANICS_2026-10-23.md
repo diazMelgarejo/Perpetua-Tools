@@ -2,8 +2,10 @@
 
 **Author:** claude-sonnet-5-5, written 2026-10-23 UTC. Reference companion to the session
 chronicle of the same date; nothing existing is edited.
-**Status:** reference. Every step is read-only on refs, index and working trees except the two
-steps marked mutating (safety tags and the disposable worktree), which only add local refs.
+**Status:** reference. Steps 1 to 6 and 10 change nothing in any repository (they write scratch
+files outside it). Steps 7 to 9 are mutating: step 7 adds tag refs; step 8 adds a worktree and a
+branch ref and edits that branch's config; step 9 writes one commit, which updates the new
+branch ref, its index and its worktree.
 
 ## 1. When to use this
 
@@ -55,9 +57,13 @@ whether any content is actually missing from `main`. Related lessons: `00f3e0591
     done | sort | uniq -c | sort -rn | head -40
     ```
 
-5. Triage with the script in section 6. Run all three modes.
+5. Extract the script from section 6, then triage. The extraction command writes the only fenced
+   Python block of this document to the path the commands below use. Run all three modes.
 
     ```bash
+    DOC=.agent/memory/semantic/REANCHOR_TRIAGE_MECHANICS_2026-10-23.md   # path inside the repo
+    awk '/^```python$/{f=1;next} /^```$/{if(f)exit} f' "$DOC" > "$SCRATCH/reanchor_triage.py"
+    cd "$SCRATCH"
     python -I reanchor_triage.py "$REPO" classify --list "$SCRATCH/unique.txt"
     python -I reanchor_triage.py "$REPO" contain  --list "$SCRATCH/unique.txt"
     python -I reanchor_triage.py "$REPO" residual --list "$SCRATCH/unique.txt"
@@ -84,8 +90,9 @@ whether any content is actually missing from `main`. Related lessons: `00f3e0591
     git -C "$REPO" branch --unset-upstream <yyyy-mm-dd-NNN-brief-summary>
     ```
 
-9. Commit with every hook active. Put the pinned markdown linter on PATH first; the message ends
-   with the attribution line required by the organization's policy.
+9. Commit with every hook active (mutating, local only: one commit; the new branch ref, its index
+   and its worktree change). Put the pinned markdown linter on PATH first; the message ends with
+   the attribution line required by the organization's policy.
 
     ```bash
     git -C "$WORKTREE" commit -F "$SCRATCH/commit-msg.txt"
@@ -126,8 +133,19 @@ whether any content is actually missing from `main`. Related lessons: `00f3e0591
   prefix with `--ignore-scripts`; never use `--no-verify`.
 * A tree twin matches an exact snapshot only. A squash merge reads NEEDS-REANCHOR although the
   content landed (lesson `00f3e059181b`); confirm with containment before concluding anything.
-* In patch parsing, parse the file headers first. A content line that itself begins with `++`
-  (for example inside a stored patch file) must still be counted; a naive filter drops it.
+* Patch parsing must track hunk state. With `-U0` each hunk header states how many lines follow, so
+  file headers are recognised only outside a hunk. An added line whose content begins with two
+  plus signs and a space appears in the diff as a line that starts with three plus signs and a
+  space, exactly like a new-file header. A parser that treats every such line as a header
+  silently drops it and misattributes the lines after it. Version 2 of the script counts hunk
+  lines instead.
+* Fail closed. Every git call aborts the run on an unexpected status, and a path counts as absent
+  only when the target tree listing says so; otherwise an unreadable target would look like a
+  repository where nothing exists and every commit would read as unique. The target and the
+  repository's object format (SHA-1 or SHA-256) are validated up front.
+* Containment is textual. Version 2 keeps line multiplicity (each target line satisfies at most
+  one added line), but it does not keep block context: a statement that exists elsewhere in the
+  target file still counts as present. Read the PARTIAL and mostly-absorbed rows before dropping.
 * The residual mode guesses a relocated path from the first file with the same basename. Generic
   names such as `SKILL.md` collide, so resolve renames by hand (`git log --diff-filter=D --follow`
   or a search for the old skill name) before judging a SAMENAME row. A trial run found four such
@@ -136,8 +154,11 @@ whether any content is actually missing from `main`. Related lessons: `00f3e0591
 
 ## 6. Script
 
-Verified on 2026-10-23 against orama-system: it reproduced the conflict counts, containment
-percentages and the 36-file residual tally of the three earlier single-purpose scripts.
+Version 2, after review fixes. Tested on throwaway repositories (a content line shaped like a
+diff header, duplicated lines, a bad target, a SHA-256 repository, more than 14 residual rows) and
+re-run against orama-system on 2026-10-23: the `classify` output is identical to version 1, the
+`contain` percentages move by at most one point on three large commits (duplicates now consume
+target lines), and the `residual` tally is unchanged with every row printed.
 
 ```python
 #!/usr/bin/env python3
@@ -151,8 +172,12 @@ per commit, without touching any ref, index or working tree:
             `git merge-tree --write-tree` result, net effect vs main, and contamination-pattern
             hit COUNTS by label (never values).
   contain   share of each commit's non-trivial added lines already present in main's copy of
-            the same file; deletions that main still contradicts; a verdict.
+            the same file (each target line can satisfy only one added line); deletions that
+            main still contradicts; a verdict.
   residual  classifies the low-containment files: MOVED / SAMENAME / DELETED / NEVER / LOWPCT.
+
+Every git failure aborts the run (exit 2); a path counts as absent only when the target tree
+listing says so. Containment is textual: it keeps line multiplicity but not block context.
 
 Usage:  python reanchor_triage.py <repo> <classify|contain|residual> --list shas.txt
         [--target origin/main]        (needs git >= 2.38 for merge-tree --write-tree)
@@ -161,6 +186,7 @@ import argparse
 import re
 import subprocess
 import sys
+from collections import Counter, namedtuple
 
 HOME = "Us" + "ers"  # keeps the literal home-directory token out of tracked text
 PATTERNS = {
@@ -172,15 +198,43 @@ PATTERNS = {
         r"|(token|secret|password|api[_-]?key)\s*[:=]\s*['\"]?[A-Za-z0-9_\-.]{20,})"
     ),
 }
-ZERO = "0" * 40
+HUNK = re.compile(r"^@@ -\d+(?:,(\d+))? \+\d+(?:,(\d+))? @@")
+OID_WIDTH = {"sha1": 40, "sha256": 64}
+Ctx = namedtuple("Ctx", "git target zero oid_re entries")
+
+
+class GitError(RuntimeError):
+    pass
 
 
 def make_git(repo):
-    def git(*args):
-        p = subprocess.run(["git", "-C", repo, *args], capture_output=True)
+    def git(*args, ok=(0,)):
+        p = subprocess.run(["git", "-C", repo, "-c", "core.quotepath=off", *args], capture_output=True)
+        if p.returncode not in ok:
+            err = p.stderr.decode("utf-8", "replace").strip()[:200]
+            raise GitError(f"git {' '.join(args[:3])} failed (rc={p.returncode}): {err}")
         return p.returncode, p.stdout.decode("utf-8", "replace")
 
     return git
+
+
+def make_ctx(repo, target):
+    git = make_git(repo)
+    try:
+        git("rev-parse", "--verify", "--quiet", f"{target}^{{commit}}")
+    except GitError:
+        raise GitError(f"target ref not found or not a commit: {target}") from None  # fail closed
+    fmt = git("rev-parse", "--show-object-format")[1].strip()
+    if fmt not in OID_WIDTH:
+        raise GitError(f"unsupported object format: {fmt}")
+    width = OID_WIDTH[fmt]
+    entries = {}
+    for ent in git("ls-tree", "-r", "-z", target)[1].split("\0"):
+        if ent:
+            meta, path = ent.split("\t", 1)
+            _mode, kind, sha = meta.split()
+            entries[path] = (kind, sha)
+    return Ctx(git, target, "0" * width, re.compile(r"[0-9a-f]{%d}" % width), entries)
 
 
 def trivial(line):
@@ -188,38 +242,68 @@ def trivial(line):
     return len(s) < 6 or re.fullmatch(r"[-=*_#`|>\s]+", s) is not None
 
 
-def main_blob_map(git, target):
-    _, ls = git("ls-tree", "-r", "-z", target)
-    out = {}
-    for ent in ls.split("\0"):
-        if ent:
-            meta, path = ent.split("\t", 1)
-            out[path] = meta.split()[2]
-    return out
+def added_lines_by_file(ctx, c):
+    """Return ({path: [added lines]}, [deleted paths]) for commit c versus its parent.
 
-
-def added_lines_by_file(git, c):
-    """Return ({path: [added lines]}, [deleted paths]) for commit c versus its parent."""
-    _, patch = git("diff", "-U0", "--no-color", "--no-renames", f"{c}^", c)
+    File headers are recognised only outside a hunk. Inside a hunk the -U0 counts say exactly
+    how many '-' and '+' lines follow, so an added line whose content starts with '++ ' is
+    kept as content instead of being mistaken for a header.
+    """
+    _, patch = ctx.git("diff", "-U0", "--no-color", "--no-renames", f"{c}^", c)
     files, deleted, cur, old = {}, [], None, None
+    rem_old = rem_new = 0
     for ln in patch.split("\n"):
-        if ln.startswith("--- "):
-            old = ln[4:]
+        if rem_old or rem_new:
+            if ln.startswith("+"):
+                rem_new -= 1
+                if cur is not None:
+                    files[cur].append(ln[1:])
+            elif ln.startswith("-"):
+                rem_old -= 1
+            continue
+        m = HUNK.match(ln)
+        if m:
+            rem_old = int(m.group(1)) if m.group(1) is not None else 1
+            rem_new = int(m.group(2)) if m.group(2) is not None else 1
+        elif ln.startswith("--- "):
+            old = ln[4:].split("\t")[0]
         elif ln.startswith("+++ "):
-            new = ln[4:]
+            new = ln[4:].split("\t")[0]
             if new == "/dev/null":
                 deleted.append(old[2:] if old.startswith("a/") else old)
                 cur = None
             else:
                 cur = new[2:] if new.startswith("b/") else new
                 files.setdefault(cur, [])
-        elif ln.startswith("+") and cur is not None:
-            files[cur].append(ln[1:])
     return files, deleted
 
 
-def cmd_classify(git, commits, target):
-    main_map = main_blob_map(git, target)
+def target_lines(ctx, cache, path):
+    """Counter of stripped lines in the target's copy of path, or None if it is not a file there."""
+    ent = ctx.entries.get(path)
+    if ent is None or ent[0] != "blob":
+        return None
+    if path not in cache:
+        txt = ctx.git("show", f"{ctx.target}:{path}")[1]
+        cache[path] = Counter(x.strip() for x in txt.split("\n"))
+    return cache[path]
+
+
+def contained(have, adds):
+    """How many added lines are present in the target copy, each target line used once."""
+    if have is None:
+        return 0
+    avail, hit = Counter(have), 0
+    for a in adds:
+        s = a.strip()
+        if avail[s] > 0:
+            avail[s] -= 1
+            hit += 1
+    return hit
+
+
+def cmd_classify(ctx, commits):
+    git = ctx.git
     print("sha      date       files | APPLIED CLEAN NEW DELMAIN DIVERGED | merge-tree | net-vs-main | hits | subject")
     for c in commits:
         date = git("log", "-1", "--format=%ad", "--date=short", c)[1].strip()
@@ -236,9 +320,10 @@ def cmd_classify(git, commits, target):
             path = toks[i + 1]
             i += 3 if status in "RC" else 2
             n += 1
-            base = None if old_sha == ZERO else old_sha
-            post = None if new_sha == ZERO else new_sha
-            cur = main_map.get(path)
+            base = None if old_sha == ctx.zero else old_sha
+            post = None if new_sha == ctx.zero else new_sha
+            ent = ctx.entries.get(path)
+            cur = ent[1] if ent else None
             if cur == post:
                 k["APPLIED"] += 1
             elif base is None and cur is None:
@@ -249,7 +334,7 @@ def cmd_classify(git, commits, target):
                 k["CLEAN"] += 1
             else:
                 k["DIVERGED"] += 1
-        rc, out = git("merge-tree", "--write-tree", "--name-only", f"--merge-base={c}^", target, c)
+        rc, out = git("merge-tree", "--write-tree", "--name-only", f"--merge-base={c}^", ctx.target, c, ok=(0, 1))
         lines = out.split("\n")
         tree = lines[0].strip()
         conflicts = []
@@ -258,40 +343,31 @@ def cmd_classify(git, commits, target):
                 if not ln.strip():
                     break
                 conflicts.append(ln.strip())
-        mt = "clean" if rc == 0 else (f"CONFLICT x{len(conflicts)}" if rc == 1 else f"error rc={rc}")
+        mt = "clean" if rc == 0 else f"CONFLICT x{len(conflicts)}"
         net = "n/a"
-        if rc in (0, 1) and re.fullmatch(r"[0-9a-f]{40}", tree):
-            net = f"{len([x for x in git('diff', '--name-only', target, tree)[1].split(chr(10)) if x])} files"
-        files, _ = added_lines_by_file(git, c)
+        if ctx.oid_re.fullmatch(tree):
+            net = f"{len([x for x in git('diff', '--name-only', ctx.target, tree)[1].split(chr(10)) if x])} files"
+        files, _ = added_lines_by_file(ctx, c)
         added = [ln for adds in files.values() for ln in adds]
         hits = {lab: sum(1 for ln in added if rx.search(ln)) for lab, rx in PATTERNS.items()}
         hit_s = ",".join(f"{lab.split('-')[0]}={v}" for lab, v in hits.items() if v) or "none"
         print(f"{c[:8]} {date} {n:>5} | {k['APPLIED']:>7} {k['CLEAN']:>5} {k['NEW']:>3} {k['DELMAIN']:>7} {k['DIVERGED']:>8} | {mt:<14} | {net:<11} | {hit_s} | {subj}")
 
 
-def cur_lines(git, target, cache, path):
-    if path not in cache:
-        rc, txt = git("show", f"{target}:{path}")
-        cache[path] = None if rc != 0 else {ln.strip() for ln in txt.split("\n")}
-    return cache[path]
-
-
-def cmd_contain(git, commits, target):
+def cmd_contain(ctx, commits):
     cache = {}
     print("sha      added | in-main  pct | res<50% | deleted-but-in-main | verdict")
     for c in commits:
-        files, deleted = added_lines_by_file(git, c)
-        tot = hit = 0
-        resid = 0
+        files, deleted = added_lines_by_file(ctx, c)
+        tot = hit = resid = 0
         for path, adds in files.items():
             nt = [a for a in adds if not trivial(a)]
             if not nt:
                 continue
-            have = cur_lines(git, target, cache, path)
-            h = 0 if have is None else sum(1 for a in nt if a.strip() in have)
+            h = contained(target_lines(ctx, cache, path), nt)
             tot, hit = tot + len(nt), hit + h
             resid += 1 if 100 * h / len(nt) < 50 else 0
-        dim = sum(1 for p in deleted if cur_lines(git, target, cache, p) is not None)
+        dim = sum(1 for p in deleted if target_lines(ctx, cache, p) is not None)
         pct = 100 * hit / tot if tot else 100.0
         if tot == 0:
             verdict = "main-contradicts" if dim else "no-content"
@@ -302,23 +378,21 @@ def cmd_contain(git, commits, target):
         print(f"{c[:8]} {tot:>6} | {hit:>6} {pct:>4.0f}% | {resid:>7} | {dim:>19} | {verdict}")
 
 
-def cmd_residual(git, commits, target):
-    _, ls = git("ls-tree", "-r", "-z", target)
+def cmd_residual(ctx, commits):
+    git = ctx.git
     blob_path, by_base = {}, {}
-    for ent in ls.split("\0"):
-        if ent:
-            meta, p = ent.split("\t", 1)
-            blob_path.setdefault(meta.split()[2], p)
-            by_base.setdefault(p.rsplit("/", 1)[-1], []).append(p)
+    for p, (_kind, sha) in ctx.entries.items():
+        blob_path.setdefault(sha, p)
+        by_base.setdefault(p.rsplit("/", 1)[-1], []).append(p)
     cache, seen = {}, {}
     for c in commits:
-        files, _ = added_lines_by_file(git, c)
+        files, _ = added_lines_by_file(ctx, c)
         for path, adds in files.items():
             nt = [a for a in adds if not trivial(a)]
             if not nt:
                 continue
-            have = cur_lines(git, target, cache, path)
-            pct = 0 if have is None else 100 * sum(1 for a in nt if a.strip() in have) / len(nt)
+            have = target_lines(ctx, cache, path)
+            pct = 100 * contained(have, nt) / len(nt)
             if pct >= 50:
                 continue
             post = git("rev-parse", f"{c}:{path}")[1].strip()
@@ -330,8 +404,8 @@ def cmd_residual(git, commits, target):
             elif base_name in by_base:
                 cls, note = "SAMENAME", by_base[base_name][0]
             else:
-                deleted = git("log", target, "--diff-filter=D", "--format=%h", "-1", "--", path)[1].strip()
-                ever = git("log", target, "--format=%h", "-1", "--", path)[1].strip()
+                deleted = git("log", ctx.target, "--diff-filter=D", "--format=%h", "-1", "--", path)[1].strip()
+                ever = git("log", ctx.target, "--format=%h", "-1", "--", path)[1].strip()
                 if deleted:
                     cls, note = "DELETED", f"deleted@{deleted}"
                 elif ever:
@@ -341,15 +415,13 @@ def cmd_residual(git, commits, target):
             prev = seen.get(path)
             if prev is None or len(nt) > prev[1]:
                 seen[path] = (cls, len(nt), note, c[:8])
-    tally = {}
-    for v in seen.values():
-        tally[v[0]] = tally.get(v[0], 0) + 1
-    print("residual files (deduped):", len(seen), tally)
+    tally = Counter(v[0] for v in seen.values())
+    print("residual files (deduped):", len(seen), dict(tally))
     for cls in ("NEVER", "DELETED?", "DELETED", "SAMENAME", "MOVED", "LOWPCT"):
-        rows = sorted(((p, v) for p, v in seen.items() if v[0] == cls), key=lambda r: -r[1][1])
+        rows = sorted(((p, v) for p, v in seen.items() if v[0] == cls), key=lambda r: (-r[1][1], r[0]))
         if rows:
             print(f"\n== {cls} ({len(rows)})")
-            for p, v in rows[:14]:
+            for p, v in rows:
                 print(f"  {v[1]:>4} lines  {p}   [{v[2]}] <- {v[3]}")
 
 
@@ -360,11 +432,14 @@ def main():
     ap.add_argument("--list", required=True, help="file with one commit SHA per line")
     ap.add_argument("--target", default="origin/main")
     a = ap.parse_args()
-    git = make_git(a.repo)
-    shas = open(a.list, encoding="utf-8").read().split()
-    _, order = git("rev-list", "--no-walk", "--date-order", "--reverse", *shas)
-    commits = order.split()
-    {"classify": cmd_classify, "contain": cmd_contain, "residual": cmd_residual}[a.mode](git, commits, a.target)
+    try:
+        ctx = make_ctx(a.repo, a.target)
+        shas = open(a.list, encoding="utf-8").read().split()
+        commits = ctx.git("rev-list", "--no-walk", "--date-order", "--reverse", *shas)[1].split()
+        {"classify": cmd_classify, "contain": cmd_contain, "residual": cmd_residual}[a.mode](ctx, commits)
+    except GitError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

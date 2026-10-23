@@ -83,8 +83,8 @@ about 1,100 of their commits are in main by patch-id.
 | `56f24a60` | Ollama-first architecture | 49% | superseded; HITL doc is now a stub |
 | `52822d55`, `9ae3151a` | document removals | not applicable | main keeps what they delete |
 | `8fa1d184` | co-author policy and audits | 21% | superseded by wrapper scripts |
-| `87d28e8d`, `3b209f84` | merge-artifact squashes | 69-74% | PRs landed; sources moved under `src/` |
-| `4bac073d` | harmonize PR | 64% | landed; a fork patch was deleted on purpose |
+| `87d28e8d`, `3b209f84` | merge-artifact squashes | 68-74% | PRs landed; sources moved under `src/` |
+| `4bac073d` | harmonize PR | 63% | landed; a fork patch was deleted on purpose |
 | `97716dc2` | v2 docs 25 and 26 | 99% | absorbed |
 | `054722e1` | externalize private literals | 86% | mostly absorbed |
 
@@ -245,7 +245,8 @@ were not reviewed.
 | --- | --- | --- |
 | Scan changed no refs | ref snapshot before and after | 117 and 179 refs identical |
 | Backup tags correct | tag target against recorded tip | all three match |
-| Triage script faithful | rerun against earlier numbers | conflicts, percentages and the 36-file tally match |
+| Triage script faithful | version 2 (after review fixes) against version 1 on real data | classification identical; containment within one point; 36-file tally unchanged, all rows printed |
+| Triage script robust | five throwaway-repository tests | header-shaped content line, duplicates, bad target (exit 2), SHA-256 format and more than 14 rows all pass |
 | Orama record commit | hooks: markdown lint, LAN-literal check, hygiene, message guard | all passed |
 | Merge rehearsal | read-only merge simulation against `origin/main` | clean |
 | Board notes intact | read-back of all four alignment notes | complete; no secret values |
