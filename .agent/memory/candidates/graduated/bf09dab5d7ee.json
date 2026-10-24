@@ -1,0 +1,45 @@
+{
+  "id": "bf09dab5d7ee",
+  "key": "manual_bf09da",
+  "name": "manual_bf09da",
+  "claim": "Fresh isolated GitHub CLI device authorization plus read-back of an allowlisted unedited digest-bound comment is procedural human-approval evidence for a qualification or model-launch decision: it proves the local ceremony and account-owned confirmation, not an independently attested device code or MFA event. Agents may initiate or verify the flow but never perform the human login or post. The one-time code is never stored; the marker is single-use and binds exact inputs so a failed post requires a fresh login.",
+  "conditions": [
+    "device-authorization",
+    "exact-comment",
+    "github-cli",
+    "human-evidence",
+    "marker",
+    "mfa-boundary",
+    "model-launch",
+    "qualification"
+  ],
+  "evidence_ids": [
+    "2026-10-23T09:44:39.767264+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-23T09:44:39.767264+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-23T09:44:39.767264+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-23T09:44:46.288545+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Corrected full-scope formulation preserves the established isolated-login, exact-comment, one-time-marker, and agent-versus-human boundary while removing the unsupported MFA/device-code attestation claim.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-23T09:44:39.767264+00:00"
+      ],
+      "lessons_sha": "9e0839db5869"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-23T09:44:46.288533+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Corrected full-scope formulation preserves the established isolated-login, exact-comment, one-time-marker, and agent-versus-human boundary while removing the unsupported MFA/device-code attestation claim."
+}

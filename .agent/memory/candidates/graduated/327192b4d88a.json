@@ -1,0 +1,50 @@
+{
+  "id": "327192b4d88a",
+  "key": "manual_327192",
+  "name": "manual_327192",
+  "claim": "A test stand-in that replaces a production primitive must be labelled as a stand-in where it is defined, and a second test must prove the real primitive against issuer-produced vectors",
+  "conditions": [
+    "against",
+    "defined",
+    "issuer-produced",
+    "labelled",
+    "primitive",
+    "production",
+    "prove",
+    "real",
+    "replaces",
+    "second",
+    "stand-in",
+    "test",
+    "vectors"
+  ],
+  "evidence_ids": [
+    "2026-10-22T01:01:07.539875+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-22T01:01:07.539875+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-22T01:01:07.539875+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-22T01:01:07.682256+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-22: the section 3.3 model used a pure Ed25519 signer without saying so; the Ed25519ph adapter test closed the gap",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-22T01:01:07.539875+00:00"
+      ],
+      "lessons_sha": "0d7029947a56"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-22T01:01:07.682243+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-22: the section 3.3 model used a pure Ed25519 signer without saying so; the Ed25519ph adapter test closed the gap"
+}

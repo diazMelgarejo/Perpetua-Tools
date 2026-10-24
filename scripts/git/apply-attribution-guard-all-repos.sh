@@ -40,22 +40,26 @@ if [[ -d /agent/repos ]]; then
   done
 fi
 
-declare -A seen=()
 unique=()
 for r in "${raw_candidates[@]}"; do
   resolved="$(resolve_git_repo "$r" 2>/dev/null || true)"
   [[ -n "$resolved" ]] || continue
-  if [[ -n "${seen[$resolved]+x}" ]]; then
-    continue
-  fi
-  seen[$resolved]=1
+  duplicate=0
+  # The candidate set is small; exact comparisons also work on Bash 3.2.
+  for existing in "${unique[@]+"${unique[@]}"}"; do
+    if [[ "$existing" == "$resolved" ]]; then
+      duplicate=1
+      break
+    fi
+  done
+  ((duplicate)) && continue
   unique+=("$resolved")
 done
 
 # Drop nested checkouts (e.g. <repo>/~/openclaw-v1/AlphaClaw) so a bad
 # literal-tilde OPENCLAW_HOME cannot fan out sync into junk trees.
 filtered=()
-for r in "${unique[@]}"; do
+for r in "${unique[@]+"${unique[@]}"}"; do
   nested=0
   for other in "${unique[@]}"; do
     [[ "$r" == "$other" ]] && continue
@@ -72,12 +76,12 @@ for r in "${unique[@]}"; do
   fi
   filtered+=("$r")
 done
-unique=("${filtered[@]}")
+unique=("${filtered[@]+"${filtered[@]}"}")
 
 if [[ -x "$SYNC" ]]; then
   sync_failures=0
   dirty_skips=0
-  for r in "${unique[@]}"; do
+  for r in "${unique[@]+"${unique[@]}"}"; do
     [[ "$r" == "$PT_ROOT" ]] && continue
     [[ "$(basename "$r")" == "periscope" ]] && continue
     set +e
@@ -103,7 +107,7 @@ if [[ -x "$SYNC" ]]; then
   fi
 fi
 
-for r in "${unique[@]}"; do
+for r in "${unique[@]+"${unique[@]}"}"; do
   [[ "$(basename "$r")" == "periscope" ]] && continue
   bash "$DISABLE" "$r"
   if [[ -x "$INSTALL" && -x "$r/scripts/git/ensure_hooks_installed.sh" ]]; then

@@ -58,6 +58,16 @@ def test_exact_agent_identity_approved():
     assert result.matched_kind == "agent"
 
 
+@pytest.mark.parametrize("email", ["codex@openai.com", "noreply@openai.com"])
+def test_known_codex_agent_identities_approved(email: str) -> None:
+    """Approved Codex commit identities stay explicit and name-bound."""
+    result = audit_engine.is_approved_identity(
+        "Codex", email, root=Path("."), policy_path=REAL_POLICY
+    )
+    assert result.approved
+    assert result.matched_kind == "agent"
+
+
 @pytest.mark.parametrize("name,email", [
     ("Claude", "noreply@anthropic.com"),
     ("Claude Code", "noreply@anthropic.com"),

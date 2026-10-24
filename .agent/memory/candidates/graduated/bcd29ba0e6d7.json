@@ -1,0 +1,43 @@
+{
+  "id": "bcd29ba0e6d7",
+  "key": "manual_bcd29b",
+  "name": "manual_bcd29b",
+  "claim": "Separate a short approval-receipt TTL from the execution-authority TTL: begin each authority window only in the durable dispatch-authorization transaction, never at first provider output.",
+  "conditions": [
+    "dispatch authorization",
+    "expiry",
+    "grant",
+    "p5",
+    "phylax",
+    "replay"
+  ],
+  "evidence_ids": [
+    "2026-10-23T03:15:50.775752+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-23T03:15:50.775752+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-23T03:15:50.775752+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-23T03:15:50.922785+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Provider acceptance and billing can precede observable output; a durable dispatch boundary prevents ambiguous starts from extending or reusing authority.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-23T03:15:50.775752+00:00"
+      ],
+      "lessons_sha": "cb384a8d091c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-23T03:15:50.922774+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Provider acceptance and billing can precede observable output; a durable dispatch boundary prevents ambiguous starts from extending or reusing authority."
+}

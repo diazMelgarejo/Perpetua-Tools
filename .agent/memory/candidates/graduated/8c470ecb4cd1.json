@@ -1,0 +1,43 @@
+{
+  "id": "8c470ecb4cd1",
+  "key": "manual_8c470e",
+  "name": "manual_8c470e",
+  "claim": "Treat ~/.gemini as a portable, non-workspace public default config directory per official Google Antigravity and Gemini CLI documentation; referencing it as a standard generic path anchor is not workstation-path leaking or doxxing.",
+  "conditions": [
+    "antigravity",
+    "config-directory",
+    "gemini",
+    "lint-006",
+    "path-hygiene",
+    "portable-memory"
+  ],
+  "evidence_ids": [
+    "2026-10-23T22:36:34.064191+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-23T22:36:34.064191+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-23T22:36:34.064191+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-23T22:36:34.222280+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Under LINT-006 and path hygiene rules, workstation-specific absolute user paths ($HOME/...) are forbidden in tracked portable memory. However, ~/.gemini (and $HOME/.gemini) is the vendor-specified, public default configuration directory documented in official Google Antigravity specifications, analogous to ~/.config, ~/.claude, or ~/.ssh. Using ~/.gemini as a generic, non-workspace default does not expose private username segments, download trees, or local host identities.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-23T22:36:34.064191+00:00"
+      ],
+      "lessons_sha": "263671dc55c0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-23T22:36:34.222266+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Under LINT-006 and path hygiene rules, workstation-specific absolute user paths ($HOME/...) are forbidden in tracked portable memory. However, ~/.gemini (and $HOME/.gemini) is the vendor-specified, public default configuration directory documented in official Google Antigravity specifications, analogous to ~/.config, ~/.claude, or ~/.ssh. Using ~/.gemini as a generic, non-workspace default does not expose private username segments, download trees, or local host identities."
+}

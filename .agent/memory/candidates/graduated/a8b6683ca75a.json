@@ -1,0 +1,44 @@
+{
+  "id": "a8b6683ca75a",
+  "key": "manual_a8b668",
+  "name": "manual_a8b668",
+  "claim": "Capability bearer credentials identify the control-plane proxy principal rather than individual human identity: out-of-band P5 approval evidence is strictly required for human-gated actions.",
+  "conditions": [
+    "bearer",
+    "capability",
+    "control_plane",
+    "hitl",
+    "identity",
+    "p5",
+    "principal"
+  ],
+  "evidence_ids": [
+    "2026-10-23T03:19:43.619576+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-23T03:19:43.619576+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-23T03:19:43.619576+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-23T03:19:43.768241+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Shared bearer tokens in Keychain or config prove application capability possession only; treating bearer resolution as proof of human presence violates the authenticated run contract addendum.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-23T03:19:43.619576+00:00"
+      ],
+      "lessons_sha": "8f3596d2f0ae"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-23T03:19:43.768230+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Shared bearer tokens in Keychain or config prove application capability possession only; treating bearer resolution as proof of human presence violates the authenticated run contract addendum."
+}
