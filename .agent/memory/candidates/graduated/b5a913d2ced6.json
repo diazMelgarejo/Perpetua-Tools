@@ -1,0 +1,42 @@
+{
+  "id": "b5a913d2ced6",
+  "key": "manual_b5a913",
+  "name": "manual_b5a913",
+  "claim": "Change a byte-identical cross-repo probe in lockstep: implement in one repo, copy the probe and re-pin the other, then re-pin back, and verify with cmp.",
+  "conditions": [
+    "byte-identical",
+    "cross-repo",
+    "lockstep",
+    "pin",
+    "probe"
+  ],
+  "evidence_ids": [
+    "2026-10-24T01:33:06.262805+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-24T01:33:06.262805+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-24T01:33:06.262805+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-24T01:33:06.415242+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Two repos pin each other's commits, so one probe change forces a three-step pin sequence.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-24T01:33:06.262805+00:00"
+      ],
+      "lessons_sha": "85fb06340186"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-24T01:33:06.415221+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Two repos pin each other's commits, so one probe change forces a three-step pin sequence."
+}

@@ -1,0 +1,43 @@
+{
+  "id": "c36b8c958432",
+  "key": "manual_c36b8c",
+  "name": "manual_c36b8c",
+  "claim": "Concurrency test helpers must treat pending or still-alive workers as failure, judge each result against the input it submitted, and keep controlled-order cases beside the race.",
+  "conditions": [
+    "concurrency",
+    "join",
+    "race",
+    "sentinel",
+    "test",
+    "thread"
+  ],
+  "evidence_ids": [
+    "2026-10-24T01:33:05.778076+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-24T01:33:05.778076+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-24T01:33:05.778076+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-24T01:33:05.932126+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A timed join treated a stuck worker's initial None as success and results were not tied to the input sent.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-24T01:33:05.778076+00:00"
+      ],
+      "lessons_sha": "b7766f97c299"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-24T01:33:05.932106+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A timed join treated a stuck worker's initial None as success and results were not tied to the input sent."
+}

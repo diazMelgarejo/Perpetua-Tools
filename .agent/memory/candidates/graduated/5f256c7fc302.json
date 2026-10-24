@@ -1,0 +1,43 @@
+{
+  "id": "5f256c7fc302",
+  "key": "manual_5f256c",
+  "name": "manual_5f256c",
+  "claim": "Re-read the clock after any network call before spending a time-bound single-use token; scope CLI credentials to an isolated store, delete them after use, and never treat deletion as revocation.",
+  "conditions": [
+    "cli",
+    "clock",
+    "credential",
+    "insecure-storage",
+    "single-use",
+    "token"
+  ],
+  "evidence_ids": [
+    "2026-10-24T01:33:06.012472+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-24T01:33:06.012472+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-24T01:33:06.012472+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-24T01:33:06.187544+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Marker age was checked before a network call and spent after it; a config-dir variable does not isolate the OS credential store.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-24T01:33:06.012472+00:00"
+      ],
+      "lessons_sha": "2552b0c5de9b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-24T01:33:06.187522+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Marker age was checked before a network call and spent after it; a config-dir variable does not isolate the OS credential store."
+}
