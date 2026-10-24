@@ -281,6 +281,8 @@ def test_direct_xai_defaults_nonfast_and_refuses_fast_without_p5_receipt() -> No
         fast=True,
     )
     with pytest.raises(ModelGovernanceError, match="fast"):
+        plan_launch(fast)
+    with pytest.raises(ModelGovernanceError, match="fast"):
         assert_launch_allowed(fast, proof=proof)
 
 
