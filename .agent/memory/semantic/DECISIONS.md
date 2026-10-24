@@ -720,26 +720,35 @@ destructive ops (#1734). PATH must include `~/.bun/bin` for `gstack-gbrain-detec
 each repository's existing model-routing policy and never supplants it. Downstream edits refresh
 outdated model ids in place and graft the standard in as (a) the fallback when the tier logic
 cannot decide from verifiable criteria, (b) alternate paths for other harnesses, and (c) the
-gates on escalated models. Escalation approval follows two regimes, defined once in the standard
-and linked (not restated) elsewhere: **Regime 1 (interim, current)** an operator
-`AskUserQuestion` confirmation approves Opus or Fable, recorded with model, effort, fast setting,
-task and (Fable) budget cap; **Regime 2 (enforced)** the S-AuthZ bearer plus a fresh signed HITL
-approval, only when the launch gate has a production caller and the control plane verifies the
-proof. The switch is a repo change, never a flag, so an agent cannot flip it.
+gates on escalated models. Escalation approval has two regimes, defined only in Alexandria's
+"Escalation approval regimes" section (linked, not restated here). The repository-specific
+decision: moving from the interim regime to the enforced one is a repository change (a production
+caller plus a control-plane verifier), never a flag, so an agent cannot flip it.
+
+**Scope (what this ruling does and does not change):** The interim approval applies to the
+Alexandria standard and to orama-system's documentation and pin (orama-system PR #381). It does
+**not** relax Perpetua-Tools: PT's own runtime checker (`proof_is_token` in
+`src/perpetua_tools/model_governance.py`) and its pin still require the escalation token, and PT
+Opus and Fable launches stay gated by it until PT explicitly adopts the interim regime.
 
 **Rationale:** The first pass of orama-system PR #381 replaced the canonical `model-route`,
 `common-performance`, MODE 3 tiering and `cursor-agent` tiers with the Alexandria text, although
 the standard is still Proposed and the operator asked only for stale ids to be updated. The first
-wording of the transition ("once the grant mechanism exists" = "where the token is in force") was
-circular: a proof cannot be demanded where nothing can issue or verify it. Naming two checkable
-conditions removed the circularity and turned the apparent conflict with Alexandria's "refuse
-without a proof reference" rule into an interim regime, which Alexandria now records itself.
+wording of the transition was circular, because a proof cannot be demanded where nothing can
+issue or verify it; two checkable conditions removed the circularity.
 
-**Where recorded:** orama-system PR #381 (`docs/standards/model-governance.md`, "Relationship to
-existing orama routing policy" and "Escalation approval regimes"; restored policy files);
-oramasys/alexandria PR #1 (new "Relationship to repository routing policies" and "Escalation
-approval regimes" sections, `grok-4.6` default refreshed to `grok-4.7` with `grok-4.6` kept as an
-outdated row, direct-xAI pin left on `grok-4.6` until the vendor list confirms `grok-4.7`).
+**Where recorded:** orama-system PR #381 (pin doc sections "Relationship to existing orama routing
+policy" and "Escalation approval regimes"; restored policy files); oramasys/alexandria PR #1
+(sections "Relationship to repository routing policies" and "Escalation approval regimes";
+`grok-4.6` default refreshed to `grok-4.7`; direct-xAI pin left on `grok-4.6` until the vendor
+list confirms `grok-4.7`).
 
-**Open for the operator:** ratify the "Downstream decisions to ratify here" list in the
-Alexandria standard (effort ceiling, planning Opus, role selection); decide when Regime 2 starts.
+**Open items:**
+
+- Ratify the "Downstream decisions to ratify here" list in the Alexandria standard (effort ceiling,
+  planning Opus, role selection); decide when the enforced regime starts.
+- Perpetua-Tools is **not yet aligned** with its own pin: `.cursor/commands/model-route.md` still
+  names `grok-4.6` as the Cursor default, while `docs/standards/model-governance.md` and
+  `config/model-governance.yml` name `grok-4.7` and ban `grok-4.6`. This memory PR does not change
+  routing files; a separate stale-id refresh PR (ids only, policy text untouched) should fix it.
+  Whether PT adopts the interim approval regime is a separate operator decision.
