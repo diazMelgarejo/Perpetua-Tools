@@ -1,0 +1,61 @@
+{
+  "id": "9644a280b929",
+  "key": "manual_9644a2",
+  "name": "manual_9644a2",
+  "claim": "Never pass a secret as an argument to a PowerShell function whose name collides with a built-in alias (for example h for Get-History): the binding error echoes the argument. List variable names only and compare secrets by fingerprint, never by value.",
+  "conditions": [
+    "alias",
+    "argument",
+    "binding",
+    "built-in",
+    "collides",
+    "compare",
+    "echoes",
+    "error",
+    "example",
+    "fingerprint",
+    "function",
+    "get-history",
+    "list",
+    "name",
+    "names",
+    "never",
+    "only",
+    "pass",
+    "powershell",
+    "secret",
+    "secrets",
+    "value",
+    "variable",
+    "whose"
+  ],
+  "evidence_ids": [
+    "2026-10-23T13:37:19.662271+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-23T13:37:19.662271+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-23T13:37:19.662271+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-23T13:37:19.850912+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-23: an env-file grep and then an alias collision each printed secret values into a session transcript, which forced rotation guidance.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-23T13:37:19.662271+00:00"
+      ],
+      "lessons_sha": "4422006b4fa9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-23T13:37:19.850912+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-23: an env-file grep and then an alias collision each printed secret values into a session transcript, which forced rotation guidance."
+}

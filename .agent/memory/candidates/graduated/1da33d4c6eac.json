@@ -1,0 +1,43 @@
+{
+  "id": "1da33d4c6eac",
+  "key": "manual_1da33d",
+  "name": "manual_1da33d",
+  "claim": "Put a size cap on the exact object the consumer measures and define its canonical serialization, so the producer cannot emit what the consumer refuses.",
+  "conditions": [
+    "cap",
+    "consumer",
+    "issuer",
+    "limit",
+    "serialization",
+    "size"
+  ],
+  "evidence_ids": [
+    "2026-10-24T01:33:06.497004+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-24T01:33:06.497004+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-24T01:33:06.497004+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-24T01:33:06.666215+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The cap was first placed on the event body while the consumer measures the whole seven-field event.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-24T01:33:06.497004+00:00"
+      ],
+      "lessons_sha": "a358fbf27bed"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-24T01:33:06.666195+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The cap was first placed on the event body while the consumer measures the whole seven-field event."
+}

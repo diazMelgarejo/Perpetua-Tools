@@ -1,0 +1,58 @@
+{
+  "id": "ace144140192",
+  "key": "manual_ace144",
+  "name": "manual_ace144",
+  "claim": "Before replaying an old commit onto rewritten main, check whether main removed that behavior on purpose (git log -S for the symbol, git grep on main); a deliberate security removal supersedes the old commit and must not be reintroduced.",
+  "conditions": [
+    "before",
+    "behavior",
+    "check",
+    "commit",
+    "deliberate",
+    "git",
+    "grep",
+    "log",
+    "main",
+    "old",
+    "onto",
+    "purpose",
+    "reintroduced",
+    "removal",
+    "removed",
+    "replaying",
+    "rewritten",
+    "security",
+    "supersedes",
+    "symbol",
+    "whether"
+  ],
+  "evidence_ids": [
+    "2026-10-23T13:37:17.716016+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-23T13:37:17.716016+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-23T13:37:17.716016+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-23T13:37:17.905897+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-23: a pre-scrub portal commit embedded a bearer token in served HTML for loopback requests. Main removed it in the 2026-06-28 auth-hardening commit and the helper now states it never embeds bearer tokens in HTML; replaying would have reverted a security fix.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-23T13:37:17.716016+00:00"
+      ],
+      "lessons_sha": "a086d4b1d474"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-23T13:37:17.905897+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-23: a pre-scrub portal commit embedded a bearer token in served HTML for loopback requests. Main removed it in the 2026-06-28 auth-hardening commit and the helper now states it never embeds bearer tokens in HTML; replaying would have reverted a security fix."
+}
