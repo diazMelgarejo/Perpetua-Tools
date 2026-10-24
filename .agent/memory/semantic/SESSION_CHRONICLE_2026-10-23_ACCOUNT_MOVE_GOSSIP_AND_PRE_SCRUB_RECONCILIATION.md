@@ -245,8 +245,9 @@ were not reviewed.
 | --- | --- | --- |
 | Scan changed no refs | ref snapshot before and after | 117 and 179 refs identical |
 | Backup tags correct | tag target against recorded tip | all three match |
-| Triage script faithful | version 2 (after review fixes) against version 1 on real data | classification identical; containment within one point; 36-file tally unchanged, all rows printed |
-| Triage script robust | five throwaway-repository tests | header-shaped content line, duplicates, bad target (exit 2), SHA-256 format and more than 14 rows all pass |
+| Triage script faithful | version 3 (after two review rounds) against version 1 on real data | classification identical; containment within one point; 36-file tally unchanged, all rows printed |
+| Triage script robust | 14 throwaway-repository checks | header-shaped content line, duplicates, bad target (exit 2), SHA-256, more than 14 rows, root commit, empty list, temp cleanup and the object-database check (with a negative control) all pass |
+| Triage script read-only | object count of the real repository around a full `classify` run | unchanged (0 loose, 32,728 packed) |
 | Orama record commit | hooks: markdown lint, LAN-literal check, hygiene, message guard | all passed |
 | Merge rehearsal | read-only merge simulation against `origin/main` | clean |
 | Board notes intact | read-back of all four alignment notes | complete; no secret values |

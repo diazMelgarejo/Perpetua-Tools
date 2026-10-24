@@ -146,6 +146,14 @@ whether any content is actually missing from `main`. Related lessons: `00f3e0591
 * Containment is textual. Version 2 keeps line multiplicity (each target line satisfies at most
   one added line), but it does not keep block context: a statement that exists elsewhere in the
   target file still counts as present. Read the PARTIAL and mostly-absorbed rows before dropping.
+* Read-only includes the object database. `git merge-tree --write-tree` stores the merged tree as
+  new objects, so `classify` runs it in an object quarantine: a temporary object directory
+  receives the writes and the repository is attached as an alternate. Git writes objects
+  read-only, so the cleanup at exit must clear that attribute; a plain recursive delete leaves the
+  directory behind on Windows (reproduced with a 60-file merge).
+* A root commit has no parent: its base is the empty tree and its merge-tree result is reported as
+  not applicable. An empty candidate list is a valid zero-candidate result: each mode prints its
+  header and zero rows instead of failing.
 * The residual mode guesses a relocated path from the first file with the same basename. Generic
   names such as `SKILL.md` collide, so resolve renames by hand (`git log --diff-filter=D --follow`
   or a search for the old skill name) before judging a SAMENAME row. A trial run found four such
@@ -154,11 +162,14 @@ whether any content is actually missing from `main`. Related lessons: `00f3e0591
 
 ## 6. Script
 
-Version 2, after review fixes. Tested on throwaway repositories (a content line shaped like a
-diff header, duplicated lines, a bad target, a SHA-256 repository, more than 14 residual rows) and
-re-run against orama-system on 2026-10-23: the `classify` output is identical to version 1, the
-`contain` percentages move by at most one point on three large commits (duplicates now consume
-target lines), and the `residual` tally is unchanged with every row printed.
+Version 3, after two rounds of review fixes. Tested on throwaway repositories (a content line
+shaped like a diff header, duplicated lines, a bad target, a SHA-256 repository, more than 14
+residual rows, an object-database check with a negative control, temp-directory cleanup on a
+60-file merge, a root commit and an empty list) and re-run against orama-system on 2026-10-23:
+the `classify` output is identical to version 1, the `contain` percentages move by at most one
+point on three large commits (duplicates now consume target lines), and the `residual` tally is
+unchanged with every row printed. A full `classify` run left the repository's object count
+unchanged.
 
 ```python
 #!/usr/bin/env python3
@@ -166,26 +177,36 @@ target lines), and the `residual` tally is unchanged with every row printed.
 
 Why: after a history rewrite, `git cherry`, ahead/behind and merge-base cannot say whether a
 branch's commits are missing from main or merely re-created under new SHAs. This tool answers
-per commit, without touching any ref, index or working tree:
+per commit, without touching any ref, index, working tree or the repository's object database:
 
-  classify  per-file 3-way status (APPLIED / CLEAN / NEW / DELMAIN / DIVERGED), a read-only
+  classify  per-file 3-way status (APPLIED / CLEAN / NEW / DELMAIN / DIVERGED), a
             `git merge-tree --write-tree` result, net effect vs main, and contamination-pattern
-            hit COUNTS by label (never values).
+            hit COUNTS by label (never values). merge-tree writes the merged tree as new objects,
+            so it runs in an object quarantine: a temporary object directory receives the writes
+            and the repository is attached as a read-only alternate. The temporary directory is
+            deleted on exit.
   contain   share of each commit's non-trivial added lines already present in main's copy of
             the same file (each target line can satisfy only one added line); deletions that
             main still contradicts; a verdict.
   residual  classifies the low-containment files: MOVED / SAMENAME / DELETED / NEVER / LOWPCT.
 
 Every git failure aborts the run (exit 2); a path counts as absent only when the target tree
-listing says so. Containment is textual: it keeps line multiplicity but not block context.
+listing says so. A root commit is compared with the empty tree (its merge-tree result is n/a),
+and an empty commit list prints headers with zero rows. Containment is textual: it keeps line
+multiplicity but not block context.
 
 Usage:  python reanchor_triage.py <repo> <classify|contain|residual> --list shas.txt
         [--target origin/main]        (needs git >= 2.38 for merge-tree --write-tree)
 """
 import argparse
+import atexit
+import os
 import re
+import shutil
+import stat
 import subprocess
 import sys
+import tempfile
 from collections import Counter, namedtuple
 
 HOME = "Us" + "ers"  # keeps the literal home-directory token out of tracked text
@@ -200,7 +221,11 @@ PATTERNS = {
 }
 HUNK = re.compile(r"^@@ -\d+(?:,(\d+))? \+\d+(?:,(\d+))? @@")
 OID_WIDTH = {"sha1": 40, "sha256": 64}
-Ctx = namedtuple("Ctx", "git target zero oid_re entries")
+EMPTY_TREE = {  # built into git, so these resolve even though no such object is stored
+    "sha1": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+    "sha256": "6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321",
+}
+Ctx = namedtuple("Ctx", "git target zero oid_re entries empty_tree qenv")
 
 
 class GitError(RuntimeError):
@@ -208,14 +233,30 @@ class GitError(RuntimeError):
 
 
 def make_git(repo):
-    def git(*args, ok=(0,)):
-        p = subprocess.run(["git", "-C", repo, "-c", "core.quotepath=off", *args], capture_output=True)
+    def git(*args, ok=(0,), env=None):
+        p = subprocess.run(["git", "-C", repo, "-c", "core.quotepath=off", *args], capture_output=True, env=env)
         if p.returncode not in ok:
             err = p.stderr.decode("utf-8", "replace").strip()[:200]
             raise GitError(f"git {' '.join(args[:3])} failed (rc={p.returncode}): {err}")
         return p.returncode, p.stdout.decode("utf-8", "replace")
 
     return git
+
+
+def force_rmtree(path):
+    """Delete a directory tree even when it holds read-only files (git writes objects read-only)."""
+
+    def fix(func, p, *_):
+        try:
+            os.chmod(p, stat.S_IWRITE)
+            func(p)
+        except OSError:
+            pass
+
+    if sys.version_info >= (3, 12):
+        shutil.rmtree(path, onexc=fix)
+    else:
+        shutil.rmtree(path, onerror=fix)
 
 
 def make_ctx(repo, target):
@@ -234,7 +275,17 @@ def make_ctx(repo, target):
             meta, path = ent.split("\t", 1)
             _mode, kind, sha = meta.split()
             entries[path] = (kind, sha)
-    return Ctx(git, target, "0" * width, re.compile(r"[0-9a-f]{%d}" % width), entries)
+    objdir = git("rev-parse", "--path-format=absolute", "--git-path", "objects")[1].strip()
+    qdir = tempfile.mkdtemp(prefix="triage-objects-")
+    atexit.register(force_rmtree, qdir)
+    qenv = dict(os.environ, GIT_OBJECT_DIRECTORY=qdir, GIT_ALTERNATE_OBJECT_DIRECTORIES=objdir)
+    return Ctx(git, target, "0" * width, re.compile(r"[0-9a-f]{%d}" % width), entries, EMPTY_TREE[fmt], qenv)
+
+
+def base_of(ctx, c):
+    """The commit's first parent, or the empty tree for a root commit."""
+    rc, _ = ctx.git("rev-parse", "--verify", "--quiet", f"{c}^", ok=(0, 1))
+    return f"{c}^" if rc == 0 else ctx.empty_tree
 
 
 def trivial(line):
@@ -243,13 +294,13 @@ def trivial(line):
 
 
 def added_lines_by_file(ctx, c):
-    """Return ({path: [added lines]}, [deleted paths]) for commit c versus its parent.
+    """Return ({path: [added lines]}, [deleted paths]) for commit c versus its first parent.
 
     File headers are recognised only outside a hunk. Inside a hunk the -U0 counts say exactly
     how many '-' and '+' lines follow, so an added line whose content starts with '++ ' is
     kept as content instead of being mistaken for a header.
     """
-    _, patch = ctx.git("diff", "-U0", "--no-color", "--no-renames", f"{c}^", c)
+    _, patch = ctx.git("diff", "-U0", "--no-color", "--no-renames", base_of(ctx, c), c)
     files, deleted, cur, old = {}, [], None, None
     rem_old = rem_new = 0
     for ln in patch.split("\n"):
@@ -308,7 +359,8 @@ def cmd_classify(ctx, commits):
     for c in commits:
         date = git("log", "-1", "--format=%ad", "--date=short", c)[1].strip()
         subj = git("log", "-1", "--format=%s", c)[1].strip()[:44]
-        _, raw = git("diff-tree", "-r", "--no-commit-id", "--raw", "-z", f"{c}^", c)
+        base = base_of(ctx, c)
+        _, raw = git("diff-tree", "-r", "--no-commit-id", "--raw", "-z", base, c)
         toks, i, n = raw.split("\0"), 0, 0
         k = dict.fromkeys(("APPLIED", "CLEAN", "NEW", "DELMAIN", "DIVERGED"), 0)
         while i < len(toks) - 1:
@@ -320,33 +372,38 @@ def cmd_classify(ctx, commits):
             path = toks[i + 1]
             i += 3 if status in "RC" else 2
             n += 1
-            base = None if old_sha == ctx.zero else old_sha
+            b_sha = None if old_sha == ctx.zero else old_sha
             post = None if new_sha == ctx.zero else new_sha
             ent = ctx.entries.get(path)
             cur = ent[1] if ent else None
             if cur == post:
                 k["APPLIED"] += 1
-            elif base is None and cur is None:
+            elif b_sha is None and cur is None:
                 k["NEW"] += 1
             elif cur is None:
                 k["DELMAIN"] += 1
-            elif cur == base:
+            elif cur == b_sha:
                 k["CLEAN"] += 1
             else:
                 k["DIVERGED"] += 1
-        rc, out = git("merge-tree", "--write-tree", "--name-only", f"--merge-base={c}^", ctx.target, c, ok=(0, 1))
-        lines = out.split("\n")
-        tree = lines[0].strip()
-        conflicts = []
-        if rc == 1:
-            for ln in lines[1:]:
-                if not ln.strip():
-                    break
-                conflicts.append(ln.strip())
-        mt = "clean" if rc == 0 else f"CONFLICT x{len(conflicts)}"
-        net = "n/a"
-        if ctx.oid_re.fullmatch(tree):
-            net = f"{len([x for x in git('diff', '--name-only', ctx.target, tree)[1].split(chr(10)) if x])} files"
+        if base == ctx.empty_tree:
+            mt, net = "n/a (root)", "n/a"
+        else:
+            rc, out = git("merge-tree", "--write-tree", "--name-only", f"--merge-base={base}", ctx.target, c,
+                          ok=(0, 1), env=ctx.qenv)
+            lines = out.split("\n")
+            tree = lines[0].strip()
+            conflicts = []
+            if rc == 1:
+                for ln in lines[1:]:
+                    if not ln.strip():
+                        break
+                    conflicts.append(ln.strip())
+            mt = "clean" if rc == 0 else f"CONFLICT x{len(conflicts)}"
+            net = "n/a"
+            if ctx.oid_re.fullmatch(tree):
+                changed = git("diff", "--name-only", ctx.target, tree, env=ctx.qenv)[1].split("\n")
+                net = f"{len([x for x in changed if x])} files"
         files, _ = added_lines_by_file(ctx, c)
         added = [ln for adds in files.values() for ln in adds]
         hits = {lab: sum(1 for ln in added if rx.search(ln)) for lab, rx in PATTERNS.items()}
@@ -435,7 +492,8 @@ def main():
     try:
         ctx = make_ctx(a.repo, a.target)
         shas = open(a.list, encoding="utf-8").read().split()
-        commits = ctx.git("rev-list", "--no-walk", "--date-order", "--reverse", *shas)[1].split()
+        order = ctx.git("rev-list", "--no-walk", "--date-order", "--reverse", *shas)[1] if shas else ""
+        commits = order.split()
         {"classify": cmd_classify, "contain": cmd_contain, "residual": cmd_residual}[a.mode](ctx, commits)
     except GitError as exc:
         print(f"error: {exc}", file=sys.stderr)
