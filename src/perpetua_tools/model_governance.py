@@ -464,6 +464,7 @@ def _assert_anthropic_launch(
 
 
 def _assert_direct_xai_launch(spec: LaunchSpec, cfg: Mapping[str, Any]) -> None:
+    """Enforce the fixed direct-xAI default and reject fast-mode metadata bypasses."""
     row = cfg["direct_xai"]["default"]
     if spec.launch_id != str(row["launch_id"]):
         raise ModelGovernanceError(
