@@ -1,0 +1,57 @@
+{
+  "id": "90f432a33b48",
+  "key": "manual_90f432",
+  "name": "manual_90f432",
+  "claim": "Ed25519ph and pure Ed25519 signatures are not interchangeable: the issuer events, permits and finalizations use Ed25519ph with a domain prefix, so any verifier or fixture must reproduce that exact scheme and message framing",
+  "conditions": [
+    "any",
+    "domain",
+    "ed25519",
+    "ed25519ph",
+    "events",
+    "exact",
+    "finalizations",
+    "fixture",
+    "framing",
+    "interchangeable",
+    "issuer",
+    "message",
+    "permits",
+    "prefix",
+    "pure",
+    "reproduce",
+    "scheme",
+    "signatures",
+    "use",
+    "verifier"
+  ],
+  "evidence_ids": [
+    "2026-10-22T01:01:07.300747+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-22T01:01:07.300747+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-22T01:01:07.300747+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-22T01:01:07.449647+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-22: the Part 3 reference model signed with pure Ed25519 while Phylax signs Ed25519ph; the Oramasys adapter test proved the pure signature is rejected",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-22T01:01:07.300747+00:00"
+      ],
+      "lessons_sha": "166213f38d66"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-22T01:01:07.449638+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-22: the Part 3 reference model signed with pure Ed25519 while Phylax signs Ed25519ph; the Oramasys adapter test proved the pure signature is rejected"
+}

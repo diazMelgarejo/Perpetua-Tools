@@ -15,6 +15,14 @@
 
 **Selection order:** Top-level model routing follows **this `SKILL.md` → `orchestrator/model_registry.py` + `config/models.yml` / `routing.yml`** first. Subagents use **ECC-tools** defaults unless overridden. **orama-system** remains the methodology layer for reasoning execution, not a hard dependency of the YAML registry.
 
+**Harness model defaults** (provider-agnostic; the harness picks the path):
+cite [Alexandria model-governance](https://github.com/oramasys/alexandria/blob/docs/mig-pack-ingest-20260925/docs/standards/model-governance.md)
+(PR #1, tip `e7ee9db6`) and the local pin `docs/standards/model-governance.md`.
+Cursor / Grok Bot default: `grok-4.6` `{effort: medium, fast: false}`.
+Anthropic default: `claude-sonnet-5-5` medium. `grok-4.5` is banned.
+`auto` is editor-only. Agents never self-escalate.
+The local-first runtime frugality ladder below is unchanged.
+
 **Optional (code review only):** For graph-first review workflows (not dispatch), see orama-system [`bin/orama-system/skills/code-review/SKILL.md`](../orama-system/bin/orama-system/skills/code-review/SKILL.md) (CRG → gbrain → Read).
 
 ---
@@ -111,11 +119,15 @@ Task Received
 
 ## Cloud Routing Rules (< $5/month budget)
 
-### Priority 1 — Orchestration (Direct Anthropic Claude Sonnet 5)
+Paid cloud is last on the runtime ladder. Cost gate fails closed.
+Cloud escalation is default-deny without an escalation token.
+
+### Anthropic path — default Claude Sonnet 5.5 (medium)
 ```python
 CLOUD_ORCHESTRATION = {
     "provider": "anthropic",
-    "model": "claude-sonnet-5",
+    "model": "claude-sonnet-5-5",
+    "effort": "medium",
     "trigger_conditions": [
         "strategic_decision == True",
         "reasoning_steps > 200",
@@ -127,6 +139,9 @@ CLOUD_ORCHESTRATION = {
     "fallback": "qwen3-30b-critic" # Dell local
 }
 ```
+
+Cursor / Grok Bot agent launches use `grok-4.6` at medium with fast off,
+not this Anthropic block. Do not treat Claude as the only path.
 
 ### Priority 2 — Finance & Real-Time Research (Perplexity Sonar Reasoning Pro)
 ```python

@@ -22,11 +22,11 @@ from run_agent import AIAgent  # noqa: E402 — after env load
 # ── Model tier policy (matches Orama frugality chain) ──────────────────────
 STAGE_MODELS: dict[str, str] = {
     "context":      os.getenv("HERMES_CONTEXT_MODEL",     "google/gemini-3-flash-preview"),
-    "architect":    os.getenv("HERMES_ARCHITECT_MODEL",   "anthropic/claude-sonnet-4"),
-    "refiner":      os.getenv("HERMES_REFINER_MODEL",     "anthropic/claude-sonnet-4"),
-    "executor":     os.getenv("HERMES_EXECUTOR_MODEL",    "anthropic/claude-sonnet-4"),
-    "verifier":     os.getenv("HERMES_VERIFIER_MODEL",    "anthropic/claude-sonnet-4"),
-    "crystallizer": os.getenv("HERMES_CRYSTAL_MODEL",     "anthropic/claude-opus-4"),
+    "architect":    os.getenv("HERMES_ARCHITECT_MODEL",   "anthropic/claude-sonnet-5-5"),
+    "refiner":      os.getenv("HERMES_REFINER_MODEL",     "anthropic/claude-sonnet-5-5"),
+    "executor":     os.getenv("HERMES_EXECUTOR_MODEL",    "anthropic/claude-sonnet-5-5"),
+    "verifier":     os.getenv("HERMES_VERIFIER_MODEL",    "anthropic/claude-sonnet-5-5"),
+    "crystallizer": os.getenv("HERMES_CRYSTAL_MODEL",     "anthropic/claude-sonnet-5-5"),
 }
 
 # ── Soul registry (matches orama-system SOUL.md pattern) ───────────────────

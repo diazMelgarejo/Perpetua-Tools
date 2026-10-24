@@ -1,0 +1,39 @@
+{
+  "id": "d70b31b1ef1c",
+  "key": "manual_d70b31",
+  "name": "manual_d70b31",
+  "claim": "E1/C2 close-out is parked awaiting operator action: merged are Oramasys #74 and Phylax #18; open and unmerged are Oramasys #73, Phylax #19, orama #436, orama #381 and PT #422; the operator still signs the Sections 1-2 ratification record and decides the serving prerequisites and the M1 pin promotion, and agents must not merge or promote on their behalf.",
+  "conditions": [
+    "E1/C2 close-out",
+    "resuming parked work"
+  ],
+  "evidence_ids": [
+    "2026-10-24T08:36:58.192462+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-24T08:36:58.192462+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-24T08:36:58.192462+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-24T08:36:58.342555+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-24 parked state. Oramasys #73 carries the typed VerifiedDispatchGrant fix and needs its last CI check before the operator merges it. The grant type check is deliberately a type check, not cryptographic, until the composition adapter slice defines the signed v2 grant format. Resume from the operator decision checklist and the final re-review notes in the off-repo references folder, and read the Gossip board for the newest heads before acting.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-24T08:36:58.192462+00:00"
+      ],
+      "lessons_sha": "d54cf7925527"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-24T08:36:58.342546+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-24 parked state. Oramasys #73 carries the typed VerifiedDispatchGrant fix and needs its last CI check before the operator merges it. The grant type check is deliberately a type check, not cryptographic, until the composition adapter slice defines the signed v2 grant format. Resume from the operator decision checklist and the final re-review notes in the off-repo references folder, and read the Gossip board for the newest heads before acting."
+}

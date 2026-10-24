@@ -1,0 +1,43 @@
+{
+  "id": "0c8afcec69bf",
+  "key": "manual_0c8afc",
+  "name": "manual_0c8afc",
+  "claim": "Before presenting a policy or security question to the operator as an open decision, search the ratified record first (docs/v2 ADRs, off-repo references, PT DECISIONS and lessons) and cite what already decides it; a proposal that duplicates a ratified mechanism must be retracted, not offered as a choice.",
+  "conditions": [
+    "decision",
+    "escalation",
+    "ratified",
+    "recall",
+    "replay",
+    "ttl"
+  ],
+  "evidence_ids": [
+    "2026-10-23T03:35:35.062304+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-23T03:35:35.062304+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-23T03:35:35.062304+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-23T03:35:35.214012+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-23: the single-use escalation proof was framed as an open ledger-owner and TTL decision and a new jti ledger was proposed, but Phylax P5 one-use consume, the 5400/9900/900/300/60 second durations and grant single-use were already ratified. The operator had to point at the existing record. Recovering the decision cost a turn and a board retraction.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-23T03:35:35.062304+00:00"
+      ],
+      "lessons_sha": "ed1f86cff8c3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-23T03:35:35.214003+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-23: the single-use escalation proof was framed as an open ledger-owner and TTL decision and a new jti ledger was proposed, but Phylax P5 one-use consume, the 5400/9900/900/300/60 second durations and grant single-use were already ratified. The operator had to point at the existing record. Recovering the decision cost a turn and a board retraction."
+}

@@ -1,0 +1,43 @@
+{
+  "id": "34a8f3b70323",
+  "key": "manual_34a8f3",
+  "name": "manual_34a8f3",
+  "claim": "Do not invent ad-hoc token ledgers or UUIDv4 schemes for model launches: map execution escalations to Phylax P5 approval intents and consume them atomically in SqliteP5ApprovalStore under BEGIN IMMEDIATE.",
+  "conditions": [
+    "approval",
+    "model_governance",
+    "p5",
+    "replay",
+    "single_use",
+    "sqlite"
+  ],
+  "evidence_ids": [
+    "2026-10-23T03:19:36.360575+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-23T03:19:36.360575+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-23T03:19:36.360575+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-23T03:19:36.508599+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Phylax P5 already provides durable single-use domain-separated approval consumption with a 300s receipt window; creating parallel process-local ledgers or JTI schemas duplicates existing machinery.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-23T03:19:36.360575+00:00"
+      ],
+      "lessons_sha": "db6856c00297"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-23T03:19:36.508581+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Phylax P5 already provides durable single-use domain-separated approval consumption with a 300s receipt window; creating parallel process-local ledgers or JTI schemas duplicates existing machinery."
+}
