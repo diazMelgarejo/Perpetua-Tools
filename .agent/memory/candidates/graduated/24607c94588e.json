@@ -1,0 +1,39 @@
+{
+  "id": "24607c94588e",
+  "key": "manual_24607c",
+  "name": "manual_24607c",
+  "claim": "Before reusing a head-specific review verdict, fetch the live PR head: an operator-run online remediation session can push to several PRs at once without a board post, and every review taken at an older head is then stale evidence.",
+  "conditions": [
+    "head-specific verdict",
+    "multi-agent PR review"
+  ],
+  "evidence_ids": [
+    "2026-10-24T03:09:22.064689+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-24T03:09:22.064689+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-24T03:09:22.064689+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-24T03:09:22.219620+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Observed 2026-10-24: one online CodeRabbit and Greptile remediation session moved five PR heads across three repos after the reviews and an agent synthesis were taken. Re-verify at the new heads, check cross-repo pins and probe byte-identity, and fetch before any push.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-24T03:09:22.064689+00:00"
+      ],
+      "lessons_sha": "531befe66254"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-24T03:09:22.219605+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Observed 2026-10-24: one online CodeRabbit and Greptile remediation session moved five PR heads across three repos after the reviews and an agent synthesis were taken. Re-verify at the new heads, check cross-repo pins and probe byte-identity, and fetch before any push."
+}
