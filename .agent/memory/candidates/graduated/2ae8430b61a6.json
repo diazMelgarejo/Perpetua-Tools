@@ -1,0 +1,42 @@
+{
+  "id": "2ae8430b61a6",
+  "key": "manual_2ae843",
+  "name": "manual_2ae843",
+  "claim": "Check a new validation against the frozen contract grammar, not a nearby stricter helper: an ASCII-identifier check on a field the contract defines as non-blank UTF-8 breaks valid keys.",
+  "conditions": [
+    "contract",
+    "grammar",
+    "identifier",
+    "key",
+    "validation"
+  ],
+  "evidence_ids": [
+    "2026-10-24T11:05:34.941676+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-24T11:05:34.941676+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-24T11:05:34.941676+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-24T11:05:35.184320+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "issuer_key_id was validated with the ASCII identifier grammar although the contract allows non-blank UTF-8 up to 1,024 bytes; a dedicated validate_key_id restored the contract.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-24T11:05:34.941676+00:00"
+      ],
+      "lessons_sha": "5823c0193092"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-24T11:05:35.184298+00:00",
+  "reviewer": "learn.py",
+  "rationale": "issuer_key_id was validated with the ASCII identifier grammar although the contract allows non-blank UTF-8 up to 1,024 bytes; a dedicated validate_key_id restored the contract."
+}

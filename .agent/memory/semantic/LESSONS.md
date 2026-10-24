@@ -205,6 +205,10 @@
 - [PROVISIONAL] Re-read the clock after any network call before spending a time-bound single-use token; scope CLI credentials to an isolated store, delete them after use, and never treat deletion as revocation.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_5f256c7fc302 -->
 - [PROVISIONAL] Change a byte-identical cross-repo probe in lockstep: implement in one repo, copy the probe and re-pin the other, then re-pin back, and verify with cmp.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_b5a913d2ced6 -->
 - [PROVISIONAL] Put a size cap on the exact object the consumer measures and define its canonical serialization, so the producer cannot emit what the consumer refuses.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_1da33d4c6eac -->
+- [PROVISIONAL] When a reviewer proposes an inline check that duplicates logic enforced elsewhere, reuse or extract the existing helper so every entry point shares one rule.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_64787ae2ab79 -->
+- [PROVISIONAL] Check a new validation against the frozen contract grammar, not a nearby stricter helper: an ASCII-identifier check on a field the contract defines as non-blank UTF-8 breaks valid keys.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_2ae8430b61a6 -->
+- [PROVISIONAL] When two PRs pin each other's commits, merge the one whose commit is pinned with a merge commit, never a squash, so the pinned SHA stays reachable from main.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_61d2512fe564 -->
+- [PROVISIONAL] Resolve conflicts in append-only ledgers (jsonl, LESSONS.md) as a line union with exact-duplicate removal and a parse check, and take newer dependency manifests and lockfiles from main when the branch never changed them.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_5de6d003a54c -->
 
 ### 2026-09
 

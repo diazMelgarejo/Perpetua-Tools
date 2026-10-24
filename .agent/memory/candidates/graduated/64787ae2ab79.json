@@ -1,0 +1,42 @@
+{
+  "id": "64787ae2ab79",
+  "key": "manual_64787a",
+  "name": "manual_64787a",
+  "claim": "When a reviewer proposes an inline check that duplicates logic enforced elsewhere, reuse or extract the existing helper so every entry point shares one rule.",
+  "conditions": [
+    "duplicate",
+    "entry-point",
+    "helper",
+    "invariant",
+    "reviewer"
+  ],
+  "evidence_ids": [
+    "2026-10-24T11:05:34.485952+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-24T11:05:34.485952+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-24T11:05:34.485952+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-24T11:05:34.790657+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "assert_launch_allowed missed the conflicting-effort rule that plan_launch had; one shared helper plus the existing gated-parameter check fixed it without a second copy.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-24T11:05:34.485952+00:00"
+      ],
+      "lessons_sha": "9d39b69009cf"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-24T11:05:34.790620+00:00",
+  "reviewer": "learn.py",
+  "rationale": "assert_launch_allowed missed the conflicting-effort rule that plan_launch had; one shared helper plus the existing gated-parameter check fixed it without a second copy."
+}
