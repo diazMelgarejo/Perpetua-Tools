@@ -104,6 +104,16 @@ class LaunchPlan:
     approval_candidate: LaunchSpec | None = None
 
 
+def _assert_effort_aliases_consistent(spec: LaunchSpec) -> None:
+    """Refuse different values supplied through the equivalent effort aliases."""
+    if (
+        spec.effort is not None
+        and spec.reasoning_effort is not None
+        and spec.effort != spec.reasoning_effort
+    ):
+        raise ModelGovernanceError("conflicting effort fields")
+
+
 def plan_launch(
     spec: LaunchSpec,
     *,
@@ -122,8 +132,7 @@ def plan_launch(
         raise ModelGovernanceError("unsupported orchestration mode")
     if any(value in ("xhigh", "max") for value in (spec.effort, spec.reasoning_effort)):
         raise ModelGovernanceError("effort is forbidden")
-    if spec.effort and spec.reasoning_effort and spec.effort != spec.reasoning_effort:
-        raise ModelGovernanceError("conflicting effort fields")
+    _assert_effort_aliases_consistent(spec)
     cfg = dict(config) if config is not None else load_model_governance()
     if spec.launch_id in cfg.get("banned_launch_ids", ()):
         raise ModelGovernanceError(f"banned launch id: {spec.launch_id}")
@@ -216,6 +225,7 @@ def default_launch(path: str, *, config: Mapping[str, Any] | None = None) -> Lau
             path=path,
             launch_id=str(row["launch_id"]),
             reasoning_effort=str(row["reasoning_effort"]),
+            fast=bool(row.get("fast", False)),
         )
     raise ModelGovernanceError("unknown harness path")
 
@@ -276,6 +286,7 @@ def assert_launch_allowed(
     for effort in (spec.effort, spec.reasoning_effort):
         if effort in ("xhigh", "max"):
             raise ModelGovernanceError(f"effort is forbidden: {effort}")
+    _assert_effort_aliases_consistent(spec)
     cfg = dict(config) if config is not None else load_model_governance()
     banned = {str(x) for x in cfg.get("banned_launch_ids") or []}
     if spec.launch_id in banned:
@@ -457,6 +468,13 @@ def _assert_direct_xai_launch(spec: LaunchSpec, cfg: Mapping[str, Any]) -> None:
     if spec.reasoning_effort != str(row["reasoning_effort"]):
         raise ModelGovernanceError(
             "direct-xAI default is grok-4.7 with reasoning_effort medium"
+        )
+    # This metadata policy is not the trusted P5 composition boundary. A
+    # generic EscalationProof cannot establish a verified P5 receipt, so fast
+    # direct-xAI remains fail-closed until that boundary is implemented.
+    if spec.fast is True:
+        raise ModelGovernanceError(
+            "direct-xAI fast mode is fail-closed pending a verified P5 receipt"
         )
 
 

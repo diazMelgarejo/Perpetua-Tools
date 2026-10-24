@@ -16,6 +16,7 @@ from perpetua_tools.model_governance import (
     default_launch,
     evaluate_cost_gate,
     load_model_governance,
+    plan_launch,
     proof_is_token,
 )
 
@@ -257,16 +258,69 @@ def test_opus_and_fable_require_token_fable_needs_cap() -> None:
     assert_launch_allowed(cursor_fable, proof=with_cap)
 
 
-def test_direct_xai_requires_medium_reasoning() -> None:
+@pytest.mark.unit
+def test_direct_xai_defaults_nonfast_and_refuses_fast_without_p5_receipt() -> None:
     ok = default_launch("direct_xai")
     assert ok.launch_id == "grok-4.7"
     assert ok.reasoning_effort == "medium"
+    assert ok.fast is False
     assert_launch_allowed(ok)
+
+    fast = LaunchSpec(
+        path="direct_xai",
+        launch_id="grok-4.7",
+        reasoning_effort="medium",
+        fast=True,
+    )
+    proof = EscalationProof(
+        kind="offline_gpg",
+        reference="generic-proof-is-not-a-p5-receipt",
+        model_id="grok-4.7",
+        expires_at=datetime.now(timezone.utc) + timedelta(minutes=1),
+        effort="medium",
+        fast=True,
+    )
+    with pytest.raises(ModelGovernanceError, match="fast"):
+        assert_launch_allowed(fast, proof=proof)
+
+
+@pytest.mark.unit
+def test_direct_xai_requires_medium_reasoning() -> None:
+    ok = default_launch("direct_xai")
     high = LaunchSpec(
         path="direct_xai", launch_id="grok-4.7", reasoning_effort="high"
     )
     with pytest.raises(ModelGovernanceError, match="reasoning_effort"):
         assert_launch_allowed(high)
+
+
+@pytest.mark.unit
+def test_conflicting_effort_aliases_are_rejected_by_planning_and_validation() -> None:
+    spec = LaunchSpec(
+        path="cursor_grok_bot",
+        launch_id="grok-4.7",
+        effort="medium",
+        reasoning_effort="high",
+        fast=False,
+    )
+    with pytest.raises(ModelGovernanceError, match="conflicting effort fields"):
+        plan_launch(spec)
+    with pytest.raises(ModelGovernanceError, match="conflicting effort fields"):
+        assert_launch_allowed(spec)
+
+
+@pytest.mark.unit
+def test_identical_effort_aliases_remain_supported_by_planning_and_validation() -> None:
+    spec = LaunchSpec(
+        path="cursor_grok_bot",
+        launch_id="grok-4.7",
+        effort="medium",
+        reasoning_effort="medium",
+        fast=False,
+    )
+    plan = plan_launch(spec)
+    assert plan.effective == spec
+    assert_launch_allowed(spec)
 
 
 def test_cost_gate_fail_closed() -> None:

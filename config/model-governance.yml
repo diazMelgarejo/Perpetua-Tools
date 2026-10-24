@@ -73,6 +73,7 @@ direct_xai:
   default:
     launch_id: grok-4.7
     reasoning_effort: medium
+    fast: false
 
 openai:
   default:
