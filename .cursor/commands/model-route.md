@@ -20,7 +20,7 @@ Config flags and env vars are not a token.
 
 ## Routing Heuristic
 
-- **Cursor / Grok Bot:** default `grok-4.6` at medium with fast off.
+- **Cursor / Grok Bot:** default `grok-4.7` at medium with fast off.
   Allowed: `composer-2.5` with fast off. Never `auto` for agents.
   Never `grok-4.5`.
 - **Anthropic:** default `claude-sonnet-5-5` at medium.

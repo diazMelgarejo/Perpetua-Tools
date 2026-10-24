@@ -343,6 +343,13 @@ def test_live_guidance_has_no_stale_defaults() -> None:
     config_skill = (REPO_ROOT / "config/SKILL.md").read_text(encoding="utf-8")
     assert "grok-4.7" in config_skill
     assert "**grok-4.5**" not in config_skill
+    for path in (
+        REPO_ROOT / "SKILL.md",
+        REPO_ROOT / ".cursor/commands/model-route.md",
+    ):
+        text = path.read_text(encoding="utf-8")
+        assert "grok-4.7" in text
+        assert "grok-4.6" not in text
 
 
 # ---------------------------------------------------------------------------
