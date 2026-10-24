@@ -54,3 +54,17 @@ serving, signing activation or pin change happened.
 6. **Wire the gate:** call `authorize_direct_xai_fast` from the trusted dispatch composition before
    any provider invocation, then exercise the P5-to-dispatch handoff in the disabled or offline
    composition suite.
+
+## 5. Review round and what landed after the first push (additive)
+
+| Finding | Resolution |
+| --- | --- |
+| Rotation race in the dispatch signer (phylax#20) | One immutable key snapshot after `ensure_current()`; `_IssuerKey` frozen; deterministic mid-call rotation test `d2306f5` fails against the two-read pattern (mutation-checked) and passes on the snapshot. |
+| L1 concurrency | cyre's concurrent double-spend test on phylax#21 (8 threads, one receipt spent once). |
+| L2 trusted principal | phylax#21 `745d3f3`: docstring states that `caller_principal` must come from an authenticated context and `operator_principal` from the trusted approval record. |
+| Cross-repo drift | Four shared parity tests plus a 1,764-case differential with one pinned SHA-256 outcome digest, byte-identical in PT#463 and orama-system#439. |
+
+Still open, none of it ratified or merged by Claude: F3/F4 review in oramasys/oramasys#76 and
+orama-system#438; joint cryptographic evidence; orama Part 3 addendum; authenticated
+`SignedGrantLookup`; wiring `authorize_direct_xai_fast` into the dispatcher. Each waits on an
+operator merge or a design confirmation, so the handoff file lists how each would be done.

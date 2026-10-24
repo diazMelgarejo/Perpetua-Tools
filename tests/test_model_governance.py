@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
+import itertools
+import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -781,3 +784,49 @@ def test_parity_direct_xai_fast_true_refuses_at_both_entry_points(
         plan_launch(spec)
     with pytest.raises(ModelGovernanceError, match="fast mode"):
         assert_launch_allowed(spec, proof=proof, now=_PARITY_NOW)
+
+
+# --- Cross-repo differential (F1/F2): keep byte-identical in both v1 repositories. ---
+_DIFF_PATHS = (
+    ("direct_xai", "grok-4.7"),
+    ("direct_xai", "grok-4.6"),
+    ("cursor_grok_bot", "grok-4.7"),
+    ("cursor_grok_bot", "composer-2.5"),
+    ("anthropic", "claude-sonnet-5-5"),
+    ("anthropic", "claude-opus-5-5"),
+)
+_DIFF_EFFORTS = (None, "", "low", "medium", "high", "xhigh", "max")
+_DIFF_FASTS = (None, False, True)
+# SHA-256 of the sorted-key JSON outcome table below; identical in PT and orama-system.
+_DIFF_DIGEST = "6757773b8f60ed59f892e65a05cbb65f4aba50f0e783d54cce51d3fdffa0949e"
+
+
+def _diff_outcomes() -> dict[str, str]:
+    """Run both entry points over every path/alias/fast combination (1,764 cases)."""
+    outcomes: dict[str, str] = {}
+    for (path, model), effort, reasoning, fast in itertools.product(
+        _DIFF_PATHS, _DIFF_EFFORTS, _DIFF_EFFORTS, _DIFF_FASTS
+    ):
+        key = f"{path}|{model}|e={effort!r}|r={reasoning!r}|f={fast}"
+        for name, entry in (("plan", plan_launch), ("assert", assert_launch_allowed)):
+            spec = LaunchSpec(
+                path=path,
+                launch_id=model,
+                effort=effort,
+                reasoning_effort=reasoning,
+                fast=fast,
+            )
+            try:
+                entry(spec)
+                outcomes[f"{key}|{name}"] = "ALLOW"
+            except ModelGovernanceError:
+                outcomes[f"{key}|{name}"] = "REFUSE"
+    return outcomes
+
+
+def test_differential_policy_outcomes_match_across_repositories() -> None:
+    """Every case is a clean allow or refusal and the whole table matches the pinned digest."""
+    outcomes = _diff_outcomes()
+    assert len(outcomes) == 1764
+    blob = json.dumps(outcomes, sort_keys=True, separators=(",", ":")).encode()
+    assert hashlib.sha256(blob).hexdigest() == _DIFF_DIGEST
