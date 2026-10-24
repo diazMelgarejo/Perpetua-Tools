@@ -114,6 +114,13 @@ def _assert_effort_aliases_consistent(spec: LaunchSpec) -> None:
         raise ModelGovernanceError("conflicting effort fields")
 
 
+def _refuse_forbidden_effort(spec: LaunchSpec) -> None:
+    """Refuse xhigh/max on either effort field; one message for every entry point."""
+    for effort in (spec.effort, spec.reasoning_effort):
+        if effort in ("xhigh", "max"):
+            raise ModelGovernanceError(f"effort is forbidden: {effort}")
+
+
 def plan_launch(
     spec: LaunchSpec,
     *,
@@ -130,8 +137,7 @@ def plan_launch(
         raise ModelGovernanceError("unsupported harness task kind")
     if mode not in ("standard", "ultracode"):
         raise ModelGovernanceError("unsupported orchestration mode")
-    if any(value in ("xhigh", "max") for value in (spec.effort, spec.reasoning_effort)):
-        raise ModelGovernanceError("effort is forbidden")
+    _refuse_forbidden_effort(spec)
     _assert_effort_aliases_consistent(spec)
     cfg = dict(config) if config is not None else load_model_governance()
     if spec.launch_id in cfg.get("banned_launch_ids", ()):
@@ -283,9 +289,7 @@ def assert_launch_allowed(
     """Refuse banned, auto-for-agent, ungated-mismatch, and unproven gated launches."""
     if task_kind not in (None, "planning", "execution"):
         raise ModelGovernanceError("unsupported harness task kind")
-    for effort in (spec.effort, spec.reasoning_effort):
-        if effort in ("xhigh", "max"):
-            raise ModelGovernanceError(f"effort is forbidden: {effort}")
+    _refuse_forbidden_effort(spec)
     _assert_effort_aliases_consistent(spec)
     cfg = dict(config) if config is not None else load_model_governance()
     banned = {str(x) for x in cfg.get("banned_launch_ids") or []}

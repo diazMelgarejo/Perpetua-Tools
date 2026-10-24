@@ -108,6 +108,20 @@ def test_forbidden_secondary_effort_is_not_hidden_by_medium(effort: str) -> None
         assert_launch_allowed(spec)
 
 
+@pytest.mark.unit
+@pytest.mark.parametrize("field", ["effort", "reasoning_effort"])
+@pytest.mark.parametrize("effort", ["xhigh", "max"])
+def test_plan_launch_forbidden_effort_names_the_value(field: str, effort: str) -> None:
+    """plan_launch and assert_launch_allowed refuse with the same suffixed message (I4)."""
+    spec = LaunchSpec(path="anthropic", launch_id="claude-sonnet-5-5", **{field: effort})
+    expected = f"effort is forbidden: {effort}"
+    with pytest.raises(ModelGovernanceError) as planned:
+        plan_launch(spec)
+    with pytest.raises(ModelGovernanceError) as asserted:
+        assert_launch_allowed(spec)
+    assert str(planned.value) == str(asserted.value) == expected
+
+
 def test_auto_never_for_agents() -> None:
     spec = LaunchSpec(path="cursor_grok_bot", launch_id="auto", agent=True)
     with pytest.raises(ModelGovernanceError, match="editor-only"):
