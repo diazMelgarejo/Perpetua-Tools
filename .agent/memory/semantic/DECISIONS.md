@@ -721,7 +721,8 @@ each repository's existing model-routing policy and never supplants it. Downstre
 outdated model ids in place and graft the standard in as (a) the fallback when the tier logic
 cannot decide from verifiable criteria, (b) alternate paths for other harnesses, and (c) the
 gates on escalated models. Escalation approval has two regimes, defined only in Alexandria's
-"Escalation approval regimes" section (linked, not restated here). The repository-specific
+[Escalation approval regimes](https://github.com/oramasys/alexandria/blob/docs/mig-pack-ingest-20260925/docs/standards/model-governance.md#escalation-approval-regimes)
+section (linked, not restated here). The repository-specific
 decision: moving from the interim regime to the enforced one is a repository change (a production
 caller plus a control-plane verifier), never a flag, so an agent cannot flip it.
 
