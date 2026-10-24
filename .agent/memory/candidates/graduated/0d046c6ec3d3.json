@@ -1,0 +1,40 @@
+{
+  "id": "0d046c6ec3d3",
+  "key": "manual_0d046c",
+  "name": "manual_0d046c",
+  "claim": "When harmonizing a Proposed shared standard into a repo, supplement the existing routing policy (fallback, alternate paths, gates) and refresh only outdated ids; define any transition rule once with a checkable trigger and link to it, never restate it or phrase it circularly.",
+  "conditions": [
+    "escalation",
+    "model-governance",
+    "supplement"
+  ],
+  "evidence_ids": [
+    "2026-10-24T14:52:55.276938+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-24T14:52:55.276938+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-24T14:52:55.276938+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-24T14:52:55.602446+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama-system PR 381 first replaced the canonical tier policy; the operator reverted that scope, and the circular 'once the mechanism exists' wording had to be replaced by two checkable conditions (2026-10-24).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-24T14:52:55.276938+00:00"
+      ],
+      "lessons_sha": "dc693ad6d2e6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-24T14:52:55.602423+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama-system PR 381 first replaced the canonical tier policy; the operator reverted that scope, and the circular 'once the mechanism exists' wording had to be replaced by two checkable conditions (2026-10-24)."
+}

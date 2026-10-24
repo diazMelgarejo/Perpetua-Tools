@@ -713,3 +713,33 @@ destructive ops (#1734). PATH must include `~/.bun/bin` for `gstack-gbrain-detec
 **Links:** `.agent/memory/semantic/ORAMASYS_PR14_REVIEW_THREAD_CLEANUP_2026-09-17.md`
 
 ---
+
+## 2026-10-24: Model governance supplements repository routing policy; escalation approval has two regimes
+
+**Decision:** The Alexandria model-governance standard (oramasys/alexandria PR #1) **supplements**
+each repository's existing model-routing policy and never supplants it. Downstream edits refresh
+outdated model ids in place and graft the standard in as (a) the fallback when the tier logic
+cannot decide from verifiable criteria, (b) alternate paths for other harnesses, and (c) the
+gates on escalated models. Escalation approval follows two regimes, defined once in the standard
+and linked (not restated) elsewhere: **Regime 1 (interim, current)** an operator
+`AskUserQuestion` confirmation approves Opus or Fable, recorded with model, effort, fast setting,
+task and (Fable) budget cap; **Regime 2 (enforced)** the S-AuthZ bearer plus a fresh signed HITL
+approval, only when the launch gate has a production caller and the control plane verifies the
+proof. The switch is a repo change, never a flag, so an agent cannot flip it.
+
+**Rationale:** The first pass of orama-system PR #381 replaced the canonical `model-route`,
+`common-performance`, MODE 3 tiering and `cursor-agent` tiers with the Alexandria text, although
+the standard is still Proposed and the operator asked only for stale ids to be updated. The first
+wording of the transition ("once the grant mechanism exists" = "where the token is in force") was
+circular: a proof cannot be demanded where nothing can issue or verify it. Naming two checkable
+conditions removed the circularity and turned the apparent conflict with Alexandria's "refuse
+without a proof reference" rule into an interim regime, which Alexandria now records itself.
+
+**Where recorded:** orama-system PR #381 (`docs/standards/model-governance.md`, "Relationship to
+existing orama routing policy" and "Escalation approval regimes"; restored policy files);
+oramasys/alexandria PR #1 (new "Relationship to repository routing policies" and "Escalation
+approval regimes" sections, `grok-4.6` default refreshed to `grok-4.7` with `grok-4.6` kept as an
+outdated row, direct-xAI pin left on `grok-4.6` until the vendor list confirms `grok-4.7`).
+
+**Open for the operator:** ratify the "Downstream decisions to ratify here" list in the
+Alexandria standard (effort ceiling, planning Opus, role selection); decide when Regime 2 starts.
