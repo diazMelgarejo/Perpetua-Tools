@@ -1,0 +1,53 @@
+{
+  "id": "882a68969ec3",
+  "key": "manual_882a68",
+  "name": "manual_882a68",
+  "claim": "Read every field of a rotating secret from one immutable snapshot taken after the refresh, never from two reads of a mutable attribute.",
+  "conditions": [
+    "after",
+    "attribute",
+    "every",
+    "field",
+    "immutable",
+    "mutable",
+    "never",
+    "one",
+    "read",
+    "reads",
+    "refresh",
+    "rotating",
+    "secret",
+    "snapshot",
+    "taken",
+    "two"
+  ],
+  "evidence_ids": [
+    "2026-10-24T21:58:23.609939+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-24T21:58:23.609939+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-24T21:58:23.609939+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-24T21:58:23.760030+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "phylax#20: a concurrent rotate between the id check and the seed read paired the old key id with the new seed; a two-keyring test over one registry is the regression that fails when the refresh is removed.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-24T21:58:23.609939+00:00"
+      ],
+      "lessons_sha": "68a372e8f09d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-24T21:58:23.760013+00:00",
+  "reviewer": "learn.py",
+  "rationale": "phylax#20: a concurrent rotate between the id check and the seed read paired the old key id with the new seed; a two-keyring test over one registry is the regression that fails when the refresh is removed."
+}

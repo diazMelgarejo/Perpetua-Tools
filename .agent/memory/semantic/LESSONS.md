@@ -228,6 +228,9 @@
 - Before correcting a peer's citation, read the record it cites; a commit named as a ratified base is a repo state, so its unrelated merge subject does not make it wrong  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_26e03ccd31d6 -->
 - When taking over another agent's lane, announce it on the board, check file modification times, and work in your own worktree from the owner's branch tip with a co-author credit  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_53be84020599 -->
 - Run the combined tree of main plus every stacked PR head before merging any of them, and never accept an agent's claim that work is complete without checking the live heads  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_152053e6ce90 -->
+- [PROVISIONAL] A policy helper never grants an operator exception: it refuses, and the trusted dispatcher enforces the exception by spending one domain-separated P5 receipt rebuilt from its own launch fields.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_f2ab09025493 -->
+- [PROVISIONAL] Read every field of a rotating secret from one immutable snapshot taken after the refresh, never from two reads of a mutable attribute.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_882a68969ec3 -->
+- [PROVISIONAL] Before building or pushing a fix, list open PRs for the same finding and integrate into the existing PR instead of opening a duplicate.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_6feeb682a319 -->
 
 ### 2026-09
 

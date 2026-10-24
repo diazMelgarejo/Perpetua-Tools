@@ -1,0 +1,52 @@
+{
+  "id": "6feeb682a319",
+  "key": "manual_6feeb6",
+  "name": "manual_6feeb6",
+  "claim": "Before building or pushing a fix, list open PRs for the same finding and integrate into the existing PR instead of opening a duplicate.",
+  "conditions": [
+    "before",
+    "building",
+    "duplicate",
+    "existing",
+    "finding",
+    "fix",
+    "instead",
+    "integrate",
+    "into",
+    "list",
+    "open",
+    "opening",
+    "prs",
+    "pushing",
+    "same"
+  ],
+  "evidence_ids": [
+    "2026-10-24T21:58:23.834209+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-24T21:58:23.834209+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-24T21:58:23.834209+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-24T21:58:23.982585+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT #463 already fixed F1/F2 more strictly; a local duplicate branch was dropped and only its unique parity vectors were moved onto #463.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-24T21:58:23.834209+00:00"
+      ],
+      "lessons_sha": "c7731fda1946"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-24T21:58:23.982568+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT #463 already fixed F1/F2 more strictly; a local duplicate branch was dropped and only its unique parity vectors were moved onto #463."
+}
