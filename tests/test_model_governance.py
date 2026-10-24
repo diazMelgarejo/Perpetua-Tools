@@ -314,6 +314,15 @@ def test_direct_xai_requires_medium_reasoning() -> None:
 
 
 @pytest.mark.unit
+def test_direct_xai_accepts_effort_alias_without_reasoning_effort() -> None:
+    """The accepted effort alias satisfies the direct-xAI policy row."""
+    spec = LaunchSpec(path="direct_xai", launch_id="grok-4.7", effort="medium")
+
+    plan_launch(spec)
+    assert_launch_allowed(spec)
+
+
+@pytest.mark.unit
 def test_conflicting_effort_aliases_are_rejected_by_planning_and_validation() -> None:
     spec = LaunchSpec(
         path="cursor_grok_bot",
@@ -798,7 +807,7 @@ _DIFF_PATHS = (
 _DIFF_EFFORTS = (None, "", "low", "medium", "high", "xhigh", "max")
 _DIFF_FASTS = (None, False, True)
 # SHA-256 of the sorted-key JSON outcome table below; identical in PT and orama-system.
-_DIFF_DIGEST = "6757773b8f60ed59f892e65a05cbb65f4aba50f0e783d54cce51d3fdffa0949e"
+_DIFF_DIGEST = "295b8ab1496bf4e8ee63a2cf49e77bf1d444478b93ab302cb14cdac4358a072d"
 
 
 def _diff_outcomes() -> dict[str, str]:
