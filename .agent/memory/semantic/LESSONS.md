@@ -224,6 +224,10 @@
 - [PROVISIONAL] Resolve conflicts in append-only ledgers (jsonl, LESSONS.md) as a line union with exact-duplicate removal and a parse check, and take newer dependency manifests and lockfiles from main when the branch never changed them.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_5de6d003a54c -->
 - [PROVISIONAL] When a merge conflicts in the append-only memory ledgers, keep the target branch's bytes as an exact prefix including pre-existing duplicate lines, append only the branch's new rows, and regenerate LESSONS.md with render_lessons instead of merging it by hand; take newer dependency manifests and lockfiles from main when the branch never changed them.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_a2d93bca0a8e -->
 - [PROVISIONAL] When harmonizing a Proposed shared standard into a repo, supplement the existing routing policy (fallback, alternate paths, gates) and refresh only outdated ids; define any transition rule once with a checkable trigger and link to it, never restate it or phrase it circularly.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_0d046c6ec3d3 -->
+- When an operator ruling is relayed through a handoff document or a side agent, confirm the exact wording with the operator before implementing it  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_f3a22a0e02ca -->
+- Before correcting a peer's citation, read the record it cites; a commit named as a ratified base is a repo state, so its unrelated merge subject does not make it wrong  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_26e03ccd31d6 -->
+- When taking over another agent's lane, announce it on the board, check file modification times, and work in your own worktree from the owner's branch tip with a co-author credit  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_53be84020599 -->
+- Run the combined tree of main plus every stacked PR head before merging any of them, and never accept an agent's claim that work is complete without checking the live heads  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_152053e6ce90 -->
 
 ### 2026-09
 
