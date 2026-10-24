@@ -695,3 +695,75 @@ def test_vector_fable_requires_budget_cap_on_every_path(path) -> None:
         proof=_vec_proof("claude-fable-5-1", "medium", None, "max_tokens=8192"),
         now=_VEC_NOW,
     )
+
+
+# --- Cross-repo parity vectors (F1/F2): keep byte-identical in both v1 repositories. ---
+
+_PARITY_NOW = datetime(2026, 10, 25, tzinfo=timezone.utc)
+
+
+@pytest.mark.parametrize("entry", ["plan", "assert"])
+@pytest.mark.parametrize(
+    "effort,reasoning",
+    [("medium", "high"), ("high", "medium"), ("low", "medium"), ("", "medium")],
+)
+def test_parity_conflicting_effort_aliases_refuse_at_both_entry_points(
+    entry: str, effort: str, reasoning: str
+) -> None:
+    """Contradictory effort aliases refuse before any model-family branch."""
+    for path, launch_id in (
+        ("direct_xai", "grok-4.7"),
+        ("cursor_grok_bot", "grok-4.7"),
+        ("anthropic", "claude-sonnet-5-5"),
+    ):
+        spec = LaunchSpec(
+            path=path, launch_id=launch_id, effort=effort, reasoning_effort=reasoning, fast=False
+        )
+        with pytest.raises(ModelGovernanceError, match="conflicting effort"):
+            if entry == "plan":
+                plan_launch(spec)
+            else:
+                assert_launch_allowed(spec)
+
+
+@pytest.mark.parametrize("entry", ["plan", "assert"])
+def test_parity_identical_effort_aliases_behave_consistently(entry: str) -> None:
+    """Equal aliases are one effort; the intended default launch stays allowed."""
+    spec = LaunchSpec(
+        path="direct_xai", launch_id="grok-4.7", effort="medium", reasoning_effort="medium",
+        fast=False,
+    )
+    if entry == "plan":
+        plan_launch(spec)
+    else:
+        assert_launch_allowed(spec)
+
+
+@pytest.mark.parametrize("fast", [False, None])
+def test_parity_direct_xai_fast_false_or_absent_stays_allowed(fast: bool | None) -> None:
+    """Absent or false fast is the default direct-xAI launch."""
+    spec = LaunchSpec(path="direct_xai", launch_id="grok-4.7", reasoning_effort="medium", fast=fast)
+    plan_launch(spec)
+    assert_launch_allowed(spec)
+
+
+@pytest.mark.parametrize("with_metadata_proof", [False, True])
+def test_parity_direct_xai_fast_true_refuses_at_both_entry_points(
+    with_metadata_proof: bool,
+) -> None:
+    """Fast mode needs a trusted one-use P5 approval; no metadata helper can grant it."""
+    spec = LaunchSpec(path="direct_xai", launch_id="grok-4.7", reasoning_effort="medium", fast=True)
+    proof = None
+    if with_metadata_proof:
+        proof = EscalationProof(
+            kind="offline_gpg",
+            reference="synthetic-operator-reference",
+            model_id="grok-4.7",
+            effort="medium",
+            fast=True,
+            expires_at=_PARITY_NOW + timedelta(minutes=5),
+        )
+    with pytest.raises(ModelGovernanceError, match="fast mode"):
+        plan_launch(spec)
+    with pytest.raises(ModelGovernanceError, match="fast mode"):
+        assert_launch_allowed(spec, proof=proof, now=_PARITY_NOW)

@@ -470,11 +470,14 @@ def _assert_direct_xai_launch(spec: LaunchSpec, cfg: Mapping[str, Any]) -> None:
             "direct-xAI default is grok-4.7 with reasoning_effort medium"
         )
     # This metadata policy is not the trusted P5 composition boundary. A
-    # generic EscalationProof cannot establish a verified P5 receipt, so fast
-    # direct-xAI remains fail-closed until that boundary is implemented.
+    # generic EscalationProof cannot establish a verified P5 receipt, so this
+    # helper always refuses. The operator exception is a one-use P5 approval
+    # that the trusted dispatcher verifies and consumes before provider
+    # invocation (Phylax ``authorize_direct_xai_fast``).
     if spec.fast is True:
         raise ModelGovernanceError(
-            "direct-xAI fast mode is fail-closed pending a verified P5 receipt"
+            "direct-xAI fast mode is refused here; it requires a one-use P5 operator "
+            "approval enforced at the trusted dispatch boundary"
         )
 
 
