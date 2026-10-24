@@ -1,0 +1,43 @@
+{
+  "id": "02280b5074f8",
+  "key": "manual_02280b",
+  "name": "manual_02280b",
+  "claim": "A security check must not depend on a caller-optional argument: persist the binding at creation and fail closed when it is undeclared.",
+  "conditions": [
+    "argument",
+    "binding",
+    "bypass",
+    "fail-closed",
+    "optional",
+    "security"
+  ],
+  "evidence_ids": [
+    "2026-10-24T01:33:05.530453+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-24T01:33:05.530453+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-24T01:33:05.530453+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-24T01:33:05.696466+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "An optional argument gating a refusal lets omission bypass it; an undeclared binding that refuses makes omission only over-refuse.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-24T01:33:05.530453+00:00"
+      ],
+      "lessons_sha": "c835059e268b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-24T01:33:05.696445+00:00",
+  "reviewer": "learn.py",
+  "rationale": "An optional argument gating a refusal lets omission bypass it; an undeclared binding that refuses makes omission only over-refuse."
+}

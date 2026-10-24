@@ -1,0 +1,42 @@
+{
+  "id": "a928c7590b45",
+  "key": "manual_a928c7",
+  "name": "manual_a928c7",
+  "claim": "Verify an AI reviewer's claim about existing code with grep before applying its suggestion; if the premise is false, create the missing fact instead of rewording around it.",
+  "conditions": [
+    "premise",
+    "review",
+    "reviewer",
+    "suggestion",
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-10-24T01:33:05.278590+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-24T01:33:05.278590+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-24T01:33:05.278590+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-24T01:33:05.449223+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit said the consumer already stored second_approval_ref; grep showed only a docstring. Accepting the premise would have yielded a wording-only fix to a real bypass.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-24T01:33:05.278590+00:00"
+      ],
+      "lessons_sha": "bece1fdc441f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-24T01:33:05.449204+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit said the consumer already stored second_approval_ref; grep showed only a docstring. Accepting the premise would have yielded a wording-only fix to a real bypass."
+}

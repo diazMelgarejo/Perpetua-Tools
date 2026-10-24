@@ -1,0 +1,64 @@
+{
+  "id": "2748790e6f67",
+  "key": "manual_274879",
+  "name": "manual_274879",
+  "claim": "Infer LAN topology from the interface prefix length, not an assumed /24: hosts with different third octets can share one /22. Diagnose an unreachable peer by port reachability and policy (portal down, token-over-HTTP refusal by design) before blaming the subnet.",
+  "conditions": [
+    "assumed",
+    "before",
+    "blaming",
+    "design",
+    "diagnose",
+    "different",
+    "down",
+    "hosts",
+    "infer",
+    "interface",
+    "lan",
+    "length",
+    "octets",
+    "one",
+    "peer",
+    "policy",
+    "port",
+    "portal",
+    "prefix",
+    "reachability",
+    "refusal",
+    "share",
+    "subnet",
+    "third",
+    "token-over-http",
+    "topology",
+    "unreachable"
+  ],
+  "evidence_ids": [
+    "2026-10-23T13:37:20.277488+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-23T13:37:20.277488+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-23T13:37:20.277488+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-23T13:37:20.469625+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-23: a report wrongly said the Windows node and the Mac were on different subnets; both interfaces used a /22 and the real causes were a stopped portal and the deliberate SECURITY_STOP refusal.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-23T13:37:20.277488+00:00"
+      ],
+      "lessons_sha": "48ca0ca45a2c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-23T13:37:20.469625+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-23: a report wrongly said the Windows node and the Mac were on different subnets; both interfaces used a /22 and the real causes were a stopped portal and the deliberate SECURITY_STOP refusal."
+}

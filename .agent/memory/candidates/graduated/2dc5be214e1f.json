@@ -1,0 +1,66 @@
+{
+  "id": "2dc5be214e1f",
+  "key": "manual_2dc5be",
+  "name": "manual_2dc5be",
+  "claim": "In Git Bash never export MSYS_NO_PATHCONV=1 for a whole session: native Python run by repo hooks then receives slash-drive-letter paths and fails with a bogus drive-root path. Set it per single command only, for example one git show ref:path call.",
+  "conditions": [
+    "bash",
+    "bogus",
+    "call",
+    "command",
+    "drive-root",
+    "example",
+    "export",
+    "fails",
+    "git",
+    "hooks",
+    "msys_no_pathconv",
+    "native",
+    "never",
+    "one",
+    "only",
+    "path",
+    "paths",
+    "per",
+    "python",
+    "receives",
+    "ref",
+    "repo",
+    "run",
+    "session",
+    "set",
+    "show",
+    "single",
+    "slash-drive-letter",
+    "whole"
+  ],
+  "evidence_ids": [
+    "2026-10-23T13:37:18.364419+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-23T13:37:18.364419+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-23T13:37:18.364419+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-23T13:37:18.569639+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-23: two hook steps failed with a bogus drive-root path and were first misread as a repo or Windows bug; unsetting the variable made every hook pass.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-23T13:37:18.364419+00:00"
+      ],
+      "lessons_sha": "f968e952a51f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-23T13:37:18.569639+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-23: two hook steps failed with a bogus drive-root path and were first misread as a repo or Windows bug; unsetting the variable made every hook pass."
+}
