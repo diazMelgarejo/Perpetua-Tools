@@ -99,13 +99,24 @@ whether any content is actually missing from `main`. Related lessons: `00f3e0591
     ```
 
 10. Re-prove the end state: the ref diff against the snapshot shows only the intended additions,
-    the original checkout is unchanged, and a read-only merge rehearsal exits 0.
+    the original checkout is unchanged, and a merge rehearsal exits 0. The rehearsal runs in an
+    object quarantine (the same mechanism as the script) because `git merge-tree --write-tree`
+    stores the merged tree as new objects; run bare, it would write them into the repository.
 
     ```bash
     git -C "$REPO" for-each-ref --format='%(refname) %(objectname)' > "$SCRATCH/refs-after.txt"
     diff "$SCRATCH/refs-before.txt" "$SCRATCH/refs-after.txt"
-    git -C "$REPO" merge-tree --write-tree origin/main <branch>; echo "exit $?"
+    ALT=$(git -C "$REPO" rev-parse --path-format=absolute --git-path objects)   # first, see below
+    Q=$(mktemp -d)
+    GIT_OBJECT_DIRECTORY="$Q" GIT_ALTERNATE_OBJECT_DIRECTORIES="$ALT" \
+      git -C "$REPO" merge-tree --write-tree origin/main <branch>; echo "exit $?"
+    rm -rf "$Q"
     ```
+
+    Compute `ALT` before setting the variables. `git rev-parse --git-path objects` honors
+    `GIT_OBJECT_DIRECTORY`, so inside the same command line it would return the empty quarantine
+    itself, and git would then fail with "not something we can merge" because no commit is
+    readable.
 
 ## 4. Decision table
 
@@ -151,6 +162,8 @@ whether any content is actually missing from `main`. Related lessons: `00f3e0591
   receives the writes and the repository is attached as an alternate. Git writes objects
   read-only, so the cleanup at exit must clear that attribute; a plain recursive delete leaves the
   directory behind on Windows (reproduced with a 60-file merge).
+* When building the quarantine by hand, resolve the repository's object directory before exporting
+  `GIT_OBJECT_DIRECTORY` (see step 10); resolving it afterwards silently returns the quarantine.
 * A root commit has no parent: its base is the empty tree and its merge-tree result is reported as
   not applicable. An empty candidate list is a valid zero-candidate result: each mode prints its
   header and zero rows instead of failing.
