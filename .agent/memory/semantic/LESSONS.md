@@ -209,6 +209,7 @@
 - [PROVISIONAL] Check a new validation against the frozen contract grammar, not a nearby stricter helper: an ASCII-identifier check on a field the contract defines as non-blank UTF-8 breaks valid keys.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_2ae8430b61a6 -->
 - [PROVISIONAL] When two PRs pin each other's commits, merge the one whose commit is pinned with a merge commit, never a squash, so the pinned SHA stays reachable from main.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_61d2512fe564 -->
 - [PROVISIONAL] Resolve conflicts in append-only ledgers (jsonl, LESSONS.md) as a line union with exact-duplicate removal and a parse check, and take newer dependency manifests and lockfiles from main when the branch never changed them.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_5de6d003a54c -->
+- [PROVISIONAL] When a merge conflicts in the append-only memory ledgers, keep the target branch's bytes as an exact prefix including pre-existing duplicate lines, append only the branch's new rows, and regenerate LESSONS.md with render_lessons instead of merging it by hand; take newer dependency manifests and lockfiles from main when the branch never changed them.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_a2d93bca0a8e -->
 
 ### 2026-09
 

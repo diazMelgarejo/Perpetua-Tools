@@ -54,9 +54,14 @@ The earlier record ended with Part 3 Sections 1-2 open for operator decisions. S
 ## 4. Perpetua-Tools #422 conflict resolution
 
 Merging main into the PR head (no rebase, no force-push) conflicted in nine files. The branch had
-never changed the five dependency files, so main's newer pins and locks were taken whole; the CLAUDE.md
-floors (starlette, aiohttp, hono) still hold. The three memory ledgers were resolved as a line
-union with exact-duplicate removal and a per-row JSON parse; the branch's Codex identity test stayed.
+never changed the five dependency files, so main's newer pins and locks were taken whole; the
+CLAUDE.md floors (starlette, aiohttp, hono) still hold. The branch's Codex identity test stayed.
+
+The three memory ledgers were first resolved as a line union with the branch's rows ahead of main's
+and exact-duplicate removal. That failed the episodic append-only check against main ("historical
+byte prefix changed") and hand-merged `LESSONS.md`, which AGENTS.md Rule 5 forbids. The correction
+(`2a0436c`) rebuilt `AGENT_LEARNINGS.jsonl` and `lessons.jsonl` as main's bytes plus the branch-only
+rows and regenerated `LESSONS.md` with `render_lessons`; no row from either side was lost.
 The merged ledgers still contain an older lesson saying Cursor defaults to grok-4.6; append-only, so
 it is left for a supersession entry rather than edited.
 
@@ -69,6 +74,9 @@ it is left for a supersession entry rather than edited.
   for the operator.
 * A first conflict-marker check matched marker text that appears inside lesson prose; markers must be
   matched as whole lines.
+* The first version of this record taught "line union with duplicate removal" for ledger conflicts.
+  CodeRabbit (Major) pointed out that it breaks the byte-prefix rule; lesson `lesson_5de6d003a54c`
+  is superseded by `lesson_a2d93bca0a8e` through `graduate.py --supersedes`.
 
 ## 6. Open items (unchanged by this record)
 
