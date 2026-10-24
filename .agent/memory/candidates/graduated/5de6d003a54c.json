@@ -1,0 +1,42 @@
+{
+  "id": "5de6d003a54c",
+  "key": "manual_5de6d0",
+  "name": "manual_5de6d0",
+  "claim": "Resolve conflicts in append-only ledgers (jsonl, LESSONS.md) as a line union with exact-duplicate removal and a parse check, and take newer dependency manifests and lockfiles from main when the branch never changed them.",
+  "conditions": [
+    "conflict",
+    "ledger",
+    "lockfile",
+    "merge",
+    "union"
+  ],
+  "evidence_ids": [
+    "2026-10-24T11:05:35.609294+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-24T11:05:35.609294+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-24T11:05:35.609294+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-24T11:05:35.839115+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Perpetua-Tools#422 conflicted in three ledgers and five dependency files; the union kept both sides' entries and main's newer pins satisfied the recorded security floors.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-24T11:05:35.609294+00:00"
+      ],
+      "lessons_sha": "10eb22547ac8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-24T11:05:35.839091+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Perpetua-Tools#422 conflicted in three ledgers and five dependency files; the union kept both sides' entries and main's newer pins satisfied the recorded security floors."
+}

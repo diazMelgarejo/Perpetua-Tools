@@ -1,0 +1,42 @@
+{
+  "id": "61d2512fe564",
+  "key": "manual_61d251",
+  "name": "manual_61d251",
+  "claim": "When two PRs pin each other's commits, merge the one whose commit is pinned with a merge commit, never a squash, so the pinned SHA stays reachable from main.",
+  "conditions": [
+    "cross-repo",
+    "merge",
+    "pin",
+    "squash",
+    "stacked"
+  ],
+  "evidence_ids": [
+    "2026-10-24T11:05:35.290416+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-24T11:05:35.290416+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-24T11:05:35.290416+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-24T11:05:35.512509+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "oramasys#75 merged as a merge commit and phylax#19 kept pinning its first commit; a squash would have left the pin pointing at an orphaned commit.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-24T11:05:35.290416+00:00"
+      ],
+      "lessons_sha": "1107c61dd296"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-24T11:05:35.512486+00:00",
+  "reviewer": "learn.py",
+  "rationale": "oramasys#75 merged as a merge commit and phylax#19 kept pinning its first commit; a squash would have left the pin pointing at an orphaned commit."
+}

@@ -1,0 +1,43 @@
+{
+  "id": "a2d93bca0a8e",
+  "key": "manual_a2d93b",
+  "name": "manual_a2d93b",
+  "claim": "When a merge conflicts in the append-only memory ledgers, keep the target branch's bytes as an exact prefix including pre-existing duplicate lines, append only the branch's new rows, and regenerate LESSONS.md with render_lessons instead of merging it by hand; take newer dependency manifests and lockfiles from main when the branch never changed them.",
+  "conditions": [
+    "append-only",
+    "conflict",
+    "ledger",
+    "lockfile",
+    "merge",
+    "render"
+  ],
+  "evidence_ids": [
+    "2026-10-24T11:20:14.209662+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-24T11:20:14.209662+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-24T11:20:14.209662+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-24T11:20:22.003436+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Supersedes the line-union guidance: the repo's episodic append-only check requires the target branch's bytes as an exact prefix, duplicates included, and LESSONS.md is rendered from lessons.jsonl and never merged by hand.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-24T11:20:14.209662+00:00"
+      ],
+      "lessons_sha": "497371400af3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-24T11:20:22.003414+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Supersedes the line-union guidance: the repo's episodic append-only check requires the target branch's bytes as an exact prefix, duplicates included, and LESSONS.md is rendered from lessons.jsonl and never merged by hand."
+}
