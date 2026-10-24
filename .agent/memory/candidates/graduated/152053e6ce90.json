@@ -1,0 +1,43 @@
+{
+  "id": "152053e6ce90",
+  "key": "manual_152053",
+  "name": "manual_152053",
+  "claim": "Run the combined tree of main plus every stacked PR head before merging any of them, and never accept an agent's claim that work is complete without checking the live heads",
+  "conditions": [
+    "claim",
+    "combined",
+    "merge",
+    "stacked",
+    "tree",
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-10-24T17:21:20.419289+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-24T17:21:20.419289+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-24T17:21:20.419289+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-24T17:21:20.560967+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Each stacked PR passed alone while their union failed five tests, and a peer reported a complete close-out that live state contradicted.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-24T17:21:20.419289+00:00"
+      ],
+      "lessons_sha": "8189ebaa79bb"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-24T17:21:20.560955+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Each stacked PR passed alone while their union failed five tests, and a peer reported a complete close-out that live state contradicted."
+}

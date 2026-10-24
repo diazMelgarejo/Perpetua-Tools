@@ -1,0 +1,55 @@
+{
+  "id": "f2ab09025493",
+  "key": "manual_f2ab09",
+  "name": "manual_f2ab09",
+  "claim": "A policy helper never grants an operator exception: it refuses, and the trusted dispatcher enforces the exception by spending one domain-separated P5 receipt rebuilt from its own launch fields.",
+  "conditions": [
+    "dispatcher",
+    "domain-separated",
+    "enforces",
+    "exception",
+    "fields",
+    "grants",
+    "helper",
+    "launch",
+    "never",
+    "one",
+    "operator",
+    "own",
+    "policy",
+    "rebuilt",
+    "receipt",
+    "refuses",
+    "spending",
+    "trusted"
+  ],
+  "evidence_ids": [
+    "2026-10-24T21:58:23.382333+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-24T21:58:23.382333+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-24T21:58:23.382333+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-24T21:58:23.533935+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Metadata proofs cannot prove an operator decision; rebuilding the intent from dispatcher-owned fields lets the signed digest bind model, effort, fast flag, scope, expiry and request identity, and a mismatch refuses before the receipt is spent.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-24T21:58:23.382333+00:00"
+      ],
+      "lessons_sha": "f6124d1167f9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-24T21:58:23.533918+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Metadata proofs cannot prove an operator decision; rebuilding the intent from dispatcher-owned fields lets the signed digest bind model, effort, fast flag, scope, expiry and request identity, and a mismatch refuses before the receipt is spent."
+}

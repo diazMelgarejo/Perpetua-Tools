@@ -1,0 +1,42 @@
+{
+  "id": "f3a22a0e02ca",
+  "key": "manual_f3a22a",
+  "name": "manual_f3a22a",
+  "claim": "When an operator ruling is relayed through a handoff document or a side agent, confirm the exact wording with the operator before implementing it",
+  "conditions": [
+    "confirm",
+    "handoff",
+    "operator",
+    "ruling",
+    "wording"
+  ],
+  "evidence_ids": [
+    "2026-10-24T17:21:19.735526+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-24T17:21:19.735526+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-24T17:21:19.735526+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-24T17:21:19.880150+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A handoff labelled a fast-mode rule an operator decision while the live ruling was flat refusal; the two differ once an allow path exists, so repos would have diverged.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-24T17:21:19.735526+00:00"
+      ],
+      "lessons_sha": "17e44f209365"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-24T17:21:19.880139+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A handoff labelled a fast-mode rule an operator decision while the live ruling was flat refusal; the two differ once an allow path exists, so repos would have diverged."
+}
