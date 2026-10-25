@@ -163,27 +163,32 @@ def test_cloud_probe_exception_is_contained_and_cached_as_failure() -> None:
 
 
 @pytest.mark.unit
-def test_probe_local_connects_ipv4_but_reports_original_url(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_probe_local_localhost_keeps_url_and_forces_ipv4_at_transport(monkeypatch: pytest.MonkeyPatch) -> None:
     seen: Dict[str, Any] = {}
 
     class _Resp:
         status_code = 200
 
-    def fake_get(url, timeout=None, headers=None):
-        seen.update(url=url, timeout=timeout, headers=headers)
-        return _Resp()
+    class _FakeClient:
+        def __init__(self, transport=None, timeout=None, **kw):
+            seen.update(transport=transport, timeout=timeout)
 
-    monkeypatch.setattr(connectivity.httpx, "get", fake_get)
-    monkeypatch.setattr(
-        connectivity._socket,
-        "getaddrinfo",
-        lambda host, port, family, type_: [(family, type_, 6, "", ("192.0.2.77", port))],
-    )
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def get(self, url):
+            seen["url"] = url
+            return _Resp()
+
+    monkeypatch.setattr(connectivity.httpx, "Client", _FakeClient)
     orig = "http://localhost:11434/api/tags"
     res = connectivity._probe_local(orig)
     assert res == {"ok": True, "status_code": 200, "url": orig}
-    assert "192.0.2.77" in seen["url"] and "localhost" not in seen["url"]
-    assert seen["headers"] == {"Host": "localhost:11434"}
+    assert seen["url"] == orig  # never rewritten: proxy bypass and SNI keep 'localhost'
+    assert isinstance(seen["transport"], connectivity.httpx.HTTPTransport)
     assert seen["timeout"] <= 1.0
 
 
@@ -195,12 +200,76 @@ def test_probe_local_non_localhost_url_untouched(monkeypatch: pytest.MonkeyPatch
         status_code = 503
 
     monkeypatch.setattr(
-        connectivity.httpx, "get", lambda url, timeout=None, headers=None: seen.update(url=url, h=headers) or _Resp()
+        connectivity.httpx, "get", lambda url, timeout=None: seen.update(url=url) or _Resp()
     )
     url = _OLLAMA + "/api/tags"
     res = connectivity._probe_local(url)
-    assert seen == {"url": url, "h": None}
+    assert seen == {"url": url}
     assert res["ok"] is False and res["status_code"] == 503 and res["url"] == url
+
+
+@pytest.mark.unit
+def test_probe_local_respects_no_proxy_for_localhost(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HTTP_PROXY", "http://proxy.example:3128")
+    monkeypatch.setenv("NO_PROXY", "localhost")
+    client = connectivity.httpx.Client(transport=connectivity.httpx.HTTPTransport(local_address="0.0.0.0"))
+    try:
+        # The URL is passed unchanged, so the NO_PROXY=localhost decision still applies.
+        t = client._transport_for_url(connectivity.httpx.URL("http://localhost:11434/api/tags"))
+        assert t is client._transport
+    finally:
+        client.close()
+
+
+@pytest.mark.unit
+def test_stalled_cloud_probes_never_starve_local_probes(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Regression: waiters on in-flight cloud refreshes must not hold pool workers."""
+    monkeypatch.setattr(connectivity, "_HEALTH_DEADLINE_S", 0.4)
+    release = threading.Event()
+
+    def fn(name: str, host: Any) -> Dict[str, Any]:
+        if name in ("check_perplexity", "check_openrouter", "check_anthropic"):
+            release.wait(10)
+        return _ok(name)
+
+    _patch_all(monkeypatch, fn)
+    try:
+        for _ in range(4):
+            out = connectivity.backend_health_map(_OLLAMA, _LMS, _MLX)
+            for local in ("ollama", "lm_studio", "mlx"):
+                assert out[local]["ok"] is True, (local, out[local])
+            for cloud in ("perplexity", "openrouter", "anthropic"):
+                assert out[cloud]["ok"] is False and "timeout" in out[cloud]["error"]
+        # Overlapping callers too.
+        results = []
+        threads = [
+            threading.Thread(target=lambda: results.append(connectivity.backend_health_map(_OLLAMA, _LMS, _MLX)))
+            for _ in range(3)
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(5)
+        assert len(results) == 3
+        assert all(r[k]["ok"] for r in results for k in ("ollama", "lm_studio", "mlx"))
+    finally:
+        release.set()
+
+
+@pytest.mark.unit
+def test_cloud_probe_base_exception_still_resolves_waiters() -> None:
+    class _Abort(BaseException):
+        pass
+
+    def boom() -> Dict[str, Any]:
+        raise _Abort()
+
+    cached, fut, leader = connectivity._cloud_acquire("perplexity")
+    assert leader and fut is not None
+    with pytest.raises(_Abort):
+        connectivity._cloud_refresh("perplexity", boom, fut)
+    assert fut.done() and fut.result()["ok"] is False
+    assert "perplexity" not in connectivity._cloud_inflight
 
 
 # ── /health endpoint ─────────────────────────────────────────────────────────

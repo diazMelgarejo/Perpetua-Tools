@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import concurrent.futures as _futures
 import re as _re
-import socket as _socket
 from typing import Any, Callable, Dict, Optional, Tuple
-from urllib.parse import urlsplit as _urlsplit, urlunsplit as _urlunsplit
+from urllib.parse import urlsplit as _urlsplit
 
 import httpx
 
@@ -29,25 +28,27 @@ def _probe(url: str, timeout: float = 2.5) -> Dict[str, Any]:
         return {"ok": False, "status_code": None, "url": url, "error": str(exc)}
 
 
-def _ipv4_loopback_url(url: str) -> Tuple[str, Optional[str]]:
-    """Rewrite a ``localhost`` URL to an IPv4 address via an AF_INET lookup.
-
-    Returns ``(connect_url, host_header)``. On Windows ``localhost`` tries IPv6
-    first and can cost ~2 s before falling back; resolving with AF_INET avoids
-    that. Any other host (or a failed lookup) is returned unchanged.
-    """
-    parts = _urlsplit(url)
-    if (parts.hostname or "").lower() != "localhost":
-        return url, None
-    port = parts.port or (443 if parts.scheme == "https" else 80)
+def _is_localhost_url(url: str) -> bool:
     try:
-        infos = _socket.getaddrinfo("localhost", port, _socket.AF_INET, _socket.SOCK_STREAM)
-        addr = infos[0][4][0]
-    except (OSError, IndexError):
-        return url, None
-    netloc = f"{addr}:{parts.port}" if parts.port else addr
-    connect = _urlunsplit((parts.scheme, netloc, parts.path, parts.query, parts.fragment))
-    return connect, parts.netloc
+        return (_urlsplit(url).hostname or "").lower() == "localhost"
+    except ValueError:
+        return False
+
+
+def _local_get(url: str, timeout: float) -> "httpx.Response":
+    """GET a validated local URL.
+
+    The URL is never rewritten, so proxy bypass (``NO_PROXY=localhost``), SNI
+    and certificate hostname checks all keep seeing ``localhost``. For
+    ``localhost`` the connection is forced onto IPv4 at the transport level by
+    binding the IPv4 wildcard as the source address: the IPv6 candidate then
+    fails immediately instead of costing ~2 s on Windows before the fallback.
+    """
+    if not _is_localhost_url(url):
+        return httpx.get(url, timeout=timeout)
+    transport = httpx.HTTPTransport(local_address="0.0.0.0")  # noqa: S104 -- source bind, not a listener
+    with httpx.Client(transport=transport, timeout=timeout) as client:
+        return client.get(url)
 
 
 def _probe_local(url: str, timeout: float = _LOCAL_PROBE_TIMEOUT_S) -> Dict[str, Any]:
@@ -60,8 +61,8 @@ def _probe_local(url: str, timeout: float = _LOCAL_PROBE_TIMEOUT_S) -> Dict[str,
     issues a plain request -- no DNS-rebinding exposure since these are
     fixed, code-reviewed local endpoints, not caller-supplied remote URLs.
 
-    ``localhost`` URLs connect over IPv4 loopback; the original (validated) URL
-    is what gets reported and sent as the Host header.
+    ``localhost`` URLs are forced onto IPv4 at the transport level (see
+    ``_local_get``); the URL itself is passed through unchanged.
     """
     from utils.model_endpoint_url import ModelEndpointPolicyError, validate_model_endpoint_url
     try:
@@ -69,9 +70,7 @@ def _probe_local(url: str, timeout: float = _LOCAL_PROBE_TIMEOUT_S) -> Dict[str,
     except ModelEndpointPolicyError as exc:
         return {"ok": False, "status_code": None, "url": url, "error": str(exc)}
     try:
-        connect_url, host_header = _ipv4_loopback_url(url)
-        headers = {"Host": host_header} if host_header else None
-        r = httpx.get(connect_url, timeout=timeout, headers=headers)
+        r = _local_get(url, timeout)
         return {"ok": r.status_code < 400, "status_code": r.status_code, "url": url}
     except Exception as exc:
         return {"ok": False, "status_code": None, "url": url, "error": str(exc)}
@@ -191,12 +190,18 @@ def check_anthropic() -> Dict[str, Any]:
 
 
 # ── concurrent /health fan-out ────────────────────────────────────────────────
-# Module-level pool, deliberately NOT a ``with ThreadPoolExecutor`` block: its
+# Module-level pools, deliberately NOT ``with ThreadPoolExecutor`` blocks: their
 # exit waits for every thread, and DNS inside resolve_all has no timeout, so one
 # stuck probe would hold /health hostage. Late probes are abandoned and reported
-# as timeouts; their threads finish in the background. Bounded to 6 workers for
-# the 6 configured backend probes.
-_PROBE_POOL = _futures.ThreadPoolExecutor(max_workers=6, thread_name_prefix="health-probe")
+# as timeouts; their threads finish in the background.
+#
+# Local and cloud probes use SEPARATE pools so stalled cloud probes (internet
+# down, LAN up) can never starve the local ones. The cloud pool only ever runs
+# single-flight leaders (at most one per cloud backend), so 3 workers suffice;
+# callers that merely wait on an in-flight refresh wait in the request thread
+# and never occupy a pool worker.
+_LOCAL_POOL = _futures.ThreadPoolExecutor(max_workers=6, thread_name_prefix="health-local")
+_CLOUD_POOL = _futures.ThreadPoolExecutor(max_workers=3, thread_name_prefix="health-cloud")
 
 _CLOUD_OK_TTL_S = 60.0
 _CLOUD_FAIL_TTL_S = 15.0
@@ -212,33 +217,72 @@ def _reset_cloud_probe_cache_for_tests() -> None:
         _cloud_inflight.clear()
 
 
+def _failure_result(error: str) -> Dict[str, Any]:
+    return {"ok": False, "status_code": None, "url": "", "error": error}
+
+
+def _cloud_acquire(
+    name: str,
+) -> Tuple[Optional[Dict[str, Any]], Optional["_futures.Future[Dict[str, Any]]"], bool]:
+    """Non-blocking cache lookup: ``(cached_result, future, is_leader)``.
+
+    Either a fresh cached copy, or the in-flight future (``is_leader`` True when
+    the caller must run the refresh and resolve that future).
+    """
+    with _cloud_lock:
+        cached = _cloud_cache.get(name)
+        if cached is not None and cached[0] > _time.monotonic():
+            return dict(cached[1]), None, False
+        fut = _cloud_inflight.get(name)
+        if fut is not None:
+            return None, fut, False
+        fut = _futures.Future()
+        _cloud_inflight[name] = fut
+        return None, fut, True
+
+
+def _cloud_refresh(
+    name: str, fn: Callable[[], Dict[str, Any]], fut: "_futures.Future[Dict[str, Any]]"
+) -> Dict[str, Any]:
+    """Run the leader's probe and ALWAYS publish the outcome.
+
+    The cache write, in-flight removal and future resolution sit in ``finally``
+    so even a non-``Exception`` raise cannot leave waiters blocked forever.
+    """
+    result: Dict[str, Any] = _failure_result("probe did not complete")
+    try:
+        result = fn()
+    except Exception as exc:  # noqa: BLE001 -- a probe must never raise
+        result = _failure_result(str(exc))
+    except BaseException as exc:
+        result = _failure_result(f"probe aborted: {type(exc).__name__}")
+        raise
+    finally:
+        ttl = _CLOUD_OK_TTL_S if result.get("ok") else _CLOUD_FAIL_TTL_S
+        with _cloud_lock:
+            _cloud_cache[name] = (_time.monotonic() + ttl, result)
+            if _cloud_inflight.get(name) is fut:
+                _cloud_inflight.pop(name, None)
+        try:
+            fut.set_result(result)
+        except _futures.InvalidStateError:
+            pass
+    return result
+
+
 def _cached_cloud_probe(name: str, fn: Callable[[], Dict[str, Any]]) -> Dict[str, Any]:
     """Cache one cloud probe, keyed by backend name only (never request input).
 
     60 s on success, 15 s on failure. Single-flight: concurrent callers share
     one in-flight refresh. Always returns a fresh copy of the stored dict.
     """
-    with _cloud_lock:
-        cached = _cloud_cache.get(name)
-        if cached is not None and cached[0] > _time.monotonic():
-            return dict(cached[1])
-        fut = _cloud_inflight.get(name)
-        leader = fut is None
-        if leader:
-            fut = _futures.Future()
-            _cloud_inflight[name] = fut
+    cached, fut, leader = _cloud_acquire(name)
+    if cached is not None:
+        return cached
+    assert fut is not None
     if not leader:
         return dict(fut.result())
-    try:
-        result = fn()
-    except Exception as exc:  # noqa: BLE001 -- a probe must never raise
-        result = {"ok": False, "status_code": None, "url": "", "error": str(exc)}
-    ttl = _CLOUD_OK_TTL_S if result.get("ok") else _CLOUD_FAIL_TTL_S
-    with _cloud_lock:
-        _cloud_cache[name] = (_time.monotonic() + ttl, result)
-        _cloud_inflight.pop(name, None)
-    fut.set_result(result)
-    return dict(result)
+    return dict(_cloud_refresh(name, fn, fut))
 
 
 def _timeout_result(url: str) -> Dict[str, Any]:
@@ -260,37 +304,58 @@ def backend_health_map(
     The six probes run concurrently and the call returns within
     ``_HEALTH_DEADLINE_S``; a probe still running then is reported ``ok: False``
     with a timeout error. The three cloud probes are cached (see
-    ``_cached_cloud_probe``); local probes are always live.
+    ``_cloud_acquire``); local probes are always live and run on their own pool.
     """
     # check_* are resolved at call time so tests can monkeypatch them.
-    specs: Dict[str, Tuple[Callable[[], Dict[str, Any]], str]] = {
+    local_specs: Dict[str, Tuple[Callable[[], Dict[str, Any]], str]] = {
         "ollama": (lambda: check_ollama(ollama_host), f"{ollama_host.rstrip('/')}/api/tags"),
         "lm_studio": (lambda: check_lm_studio(lm_studio_host), f"{lm_studio_host.rstrip('/')}/v1/models"),
         "mlx": (lambda: check_mlx(mlx_host), f"{mlx_host.rstrip('/')}/v1/models"),
-        "perplexity": (
-            lambda: _cached_cloud_probe("perplexity", lambda: check_perplexity()),
-            "https://api.perplexity.ai",
-        ),
-        "openrouter": (
-            lambda: _cached_cloud_probe("openrouter", lambda: check_openrouter()),
-            "https://openrouter.ai/api/v1/models",
-        ),
-        "anthropic": (
-            lambda: _cached_cloud_probe("anthropic", lambda: check_anthropic()),
-            "https://api.anthropic.com",
-        ),
     }
-    futs = {name: _PROBE_POOL.submit(fn) for name, (fn, _url) in specs.items()}
-    _futures.wait(list(futs.values()), timeout=_HEALTH_DEADLINE_S)
+    cloud_specs: Dict[str, Tuple[Callable[[], Dict[str, Any]], str]] = {
+        "perplexity": (lambda: check_perplexity(), "https://api.perplexity.ai"),
+        "openrouter": (lambda: check_openrouter(), "https://openrouter.ai/api/v1/models"),
+        "anthropic": (lambda: check_anthropic(), "https://api.anthropic.com"),
+    }
+    urls = {n: u for n, (_f, u) in {**local_specs, **cloud_specs}.items()}
+    local_futs = {name: _LOCAL_POOL.submit(fn) for name, (fn, _u) in local_specs.items()}
+
+    ready: Dict[str, Dict[str, Any]] = {}
+    cloud_futs: Dict[str, "_futures.Future[Dict[str, Any]]"] = {}
+    for name, (fn, _u) in cloud_specs.items():
+        cached, fut, leader = _cloud_acquire(name)
+        if cached is not None:
+            ready[name] = cached
+            continue
+        assert fut is not None
+        cloud_futs[name] = fut
+        if leader:
+            try:
+                _CLOUD_POOL.submit(_cloud_refresh, name, fn, fut)
+            except BaseException as exc:  # noqa: BLE001 -- never leave the marker dangling
+                with _cloud_lock:
+                    if _cloud_inflight.get(name) is fut:
+                        _cloud_inflight.pop(name, None)
+                try:
+                    fut.set_result(_failure_result(f"probe not scheduled: {exc}"))
+                except _futures.InvalidStateError:
+                    pass
+
+    _futures.wait([*local_futs.values(), *cloud_futs.values()], timeout=_HEALTH_DEADLINE_S)
     out: Dict[str, Dict[str, Any]] = {}
-    for name, fut in futs.items():
-        url = specs[name][1]
+    for name in ("ollama", "lm_studio", "mlx", "perplexity", "openrouter", "anthropic"):
+        url = urls[name]
+        if name in ready:
+            out[name] = ready[name]
+            continue
+        fut = local_futs.get(name) or cloud_futs[name]
         if not fut.done():
-            fut.cancel()
+            if name in local_futs:
+                fut.cancel()  # never cancel a shared single-flight future
             out[name] = _timeout_result(url)
             continue
         try:
-            out[name] = fut.result()
+            out[name] = dict(fut.result())
         except Exception as exc:  # noqa: BLE001 -- a probe must never fail /health
             out[name] = {"ok": False, "status_code": None, "url": url, "error": str(exc)}
     return out

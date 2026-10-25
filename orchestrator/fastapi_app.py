@@ -659,16 +659,18 @@ def health() -> Dict[str, Any]:
         probe = check_lm_studio
         futs = [_HEALTH_LM_POOL.submit(probe, c) for c in validated]
         deadline = time.monotonic() + _HEALTH_LM_DEADLINE_S
-        for candidate, fut in zip(validated, futs):
-            try:
-                result = fut.result(timeout=max(0.0, deadline - time.monotonic()))
-            except Exception:  # noqa: BLE001 -- timeout or probe error == unhealthy
-                continue
-            if result.get("ok"):
-                for pending in futs:
-                    pending.cancel()
-                return candidate
-        return last
+        try:
+            for candidate, fut in zip(validated, futs):
+                try:
+                    result = fut.result(timeout=max(0.0, deadline - time.monotonic()))
+                except Exception:  # noqa: BLE001 -- timeout or probe error == unhealthy
+                    continue
+                if result.get("ok"):
+                    return candidate
+            return last
+        finally:
+            for pending in futs:
+                pending.cancel()
 
     safe_ollama = _validated(HEALTH_OLLAMA_HOST, "http://localhost:11434")
     safe_lm = _select_healthy_lm_studio_host()
