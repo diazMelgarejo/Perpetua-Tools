@@ -67,6 +67,7 @@ _LOOPBACK_V4 = str(ipaddress.IPv4Address((127 << 24) | 1))
 
 
 def _utc_after(cert: "x509.Certificate") -> datetime:
+    """The certificate's notAfter as a timezone-aware UTC datetime."""
     value = getattr(cert, "not_valid_after_utc", None)
     if value is None:
         value = cert.not_valid_after.replace(tzinfo=timezone.utc)
@@ -74,10 +75,12 @@ def _utc_after(cert: "x509.Certificate") -> datetime:
 
 
 def der_sha256(cert: "x509.Certificate") -> str:
+    """SHA-256 hex digest of the certificate's DER encoding."""
     return hashlib.sha256(cert.public_bytes(serialization.Encoding.DER)).hexdigest()
 
 
 def _safe_host(name: str) -> str:
+    """Make a host name safe for a file name; returns ``node`` when nothing is left."""
     cleaned = re.sub(r"[^A-Za-z0-9._-]", "-", name).strip(".-")
     return cleaned or "node"
 
@@ -107,6 +110,7 @@ def _write_private(path: Path, data: bytes) -> None:
 
 
 def _write_public(path: Path, data: bytes) -> None:
+    """Atomically write a public file: temp file next to ``path``, then os.replace."""
     tmp = path.with_name(f".{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
     try:
         tmp.write_bytes(data)
@@ -166,6 +170,7 @@ def _exclusive_lock(lock_path: Path):
 
 @dataclass
 class LanControlPlanePki:
+    """The Portal's local CA and leaf store: paths, CA pinning and leaf issuance under ``state_dir``."""
     state_dir: Path
     hostname: str = ""
     san_dns: tuple = ("localhost",)
@@ -184,43 +189,53 @@ class LanControlPlanePki:
     # -- paths -----------------------------------------------------------
     @property
     def private_dir(self) -> Path:
+        """Directory holding the CA and leaf private material."""
         return Path(self.state_dir) / "private"
 
     @property
     def public_dir(self) -> Path:
+        """Directory holding the public CA file and its checksum line."""
         return Path(self.state_dir) / "public"
 
     @property
     def ca_key_path(self) -> Path:
+        """Path of the CA private key."""
         return self.private_dir / "ca.key"
 
     @property
     def ca_cert_path(self) -> Path:
+        """Path of the CA certificate kept in the private directory."""
         return self.private_dir / "ca.crt"
 
     @property
     def leaf_key_path(self) -> Path:
+        """Path of the leaf private key."""
         return self.private_dir / "leaf.key"
 
     @property
     def leaf_chain_path(self) -> Path:
+        """Path of the served chain (leaf followed by the CA)."""
         return self.private_dir / "leaf.pem"
 
     @property
     def pin_path(self) -> Path:
+        """Path of the CA pin file."""
         return self.private_dir / "ca-pin.json"
 
     @property
     def ca_public_path(self) -> Path:
+        """Path of the public CA file handed to peers, named after the host."""
         host = _safe_host(self.hostname or socket.gethostname())
         return self.public_dir / f"orama-lan-ca-{host}.pem"
 
     @property
     def sums_path(self) -> Path:
+        """Path of the SHA256SUMS file for the public CA file."""
         return self.public_dir / "SHA256SUMS"
 
     # -- helpers ---------------------------------------------------------
     def _want_ips(self) -> set:
+        """The addresses the leaf must cover: refreshed from ``ip_source`` when set, plus loopback."""
         if self.ip_source is not None:
             try:
                 self.san_ips = tuple(self.ip_source())
@@ -231,6 +246,7 @@ class LanControlPlanePki:
         return ips
 
     def _want_dns(self) -> list:
+        """The DNS names the leaf must cover: localhost plus ``san_dns``, de-duplicated."""
         return list(dict.fromkeys(d for d in ("localhost",) + tuple(self.san_dns) if d))
 
     def _load_pin(self) -> Optional[str]:
@@ -252,6 +268,7 @@ class LanControlPlanePki:
         return fp
 
     def _store_pin(self, fingerprint: str) -> None:
+        """Persist the CA fingerprint pin with a UTC timestamp as a private file."""
         payload = json.dumps(
             {"ca_fingerprint": fingerprint, "pinned_at": datetime.now(timezone.utc).isoformat()},
             indent=2,
@@ -259,6 +276,7 @@ class LanControlPlanePki:
         _write_private(self.pin_path, payload)
 
     def _mismatch(self, pinned: str, current: str, why: str) -> AlphaClawCertFingerprintMismatch:
+        """Build the refusal error for a CA pin mismatch, with the migration steps."""
         return AlphaClawCertFingerprintMismatch(
             f"{self.label} CA fingerprint check failed ({why}): pinned={pinned[:16]}... "
             f"current={current[:16] or 'none'}... A CA change is an explicit two-sided "
@@ -268,6 +286,7 @@ class LanControlPlanePki:
         )
 
     def _load_ca(self):
+        """Load the CA certificate and key; None when missing, unreadable or not a matching pair."""
         try:
             cert = x509.load_pem_x509_certificate(self.ca_cert_path.read_bytes())
             key = serialization.load_pem_private_key(self.ca_key_path.read_bytes(), password=None)
@@ -281,6 +300,7 @@ class LanControlPlanePki:
             return None
 
     def _new_ca(self):
+        """Create a new self-signed CA (3072-bit RSA, path length 0) and return (cert, key)."""
         key = rsa.generate_private_key(public_exponent=65537, key_size=3072)
         host = self.hostname or socket.gethostname()
         name = x509.Name(
@@ -315,6 +335,7 @@ class LanControlPlanePki:
         return cert, key
 
     def _ensure_ca(self):
+        """Load or create the CA, enforce the pin, and check CA expiry; returns (cert, key)."""
         loaded = self._load_ca()
         pinned = self._load_pin()
         if loaded is None:
@@ -387,6 +408,7 @@ class LanControlPlanePki:
         return ""
 
     def _issue_leaf(self, ca_cert, ca_key) -> None:
+        """Issue a new leaf signed by the CA, covering the wanted names and addresses, and write its key and chain."""
         key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         dns = self._want_dns()
         cn = (self.san_dns[0] if self.san_dns else "") or self.hostname or "localhost"
@@ -439,6 +461,7 @@ class LanControlPlanePki:
         _write_private(self.leaf_chain_path, pem)
 
     def _publish(self, ca_cert) -> None:
+        """Write the public CA file and its SHA256SUMS line (only when changed) and record the file hash."""
         self.public_dir.mkdir(parents=True, exist_ok=True)
         data = ca_cert.public_bytes(serialization.Encoding.PEM)
         path = self.ca_public_path
@@ -466,6 +489,7 @@ class LanControlPlanePki:
             return self._ensure_locked()
 
     def _ensure_locked(self) -> "LanControlPlanePki":
+        """Create or reuse the CA and leaf and publish the public CA; the caller holds the lock."""
         ca_cert, ca_key = self._ensure_ca()
         problem = self._leaf_problem(ca_cert)
         if problem:
@@ -502,6 +526,7 @@ def build_pki(
     hostname: str = "",
     ip_source: Optional[Callable[[], Iterable[str]]] = None,
 ) -> LanControlPlanePki:
+    """Build a LanControlPlanePki for ``state_dir``; nothing is created until ensure()."""
     return LanControlPlanePki(
         state_dir=Path(state_dir),
         hostname=hostname,

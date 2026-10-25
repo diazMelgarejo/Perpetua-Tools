@@ -27,7 +27,9 @@ NET_A = "192.0.2.10"
 
 
 class _Health(http.server.BaseHTTPRequestHandler):
+    """Upstream stub that answers every GET with a small healthy JSON body."""
     def do_GET(self) -> None:
+        """Answer with 200 and a small JSON body."""
         body = b'{"status": "ok"}'
         self.send_response(200)
         self.send_header("Content-Length", str(len(body)))
@@ -35,11 +37,13 @@ class _Health(http.server.BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def log_message(self, *args) -> None:  # noqa: A002
+        """Silence request logging."""
         pass
 
 
 @pytest.fixture
 def upstream():
+    """Run the health stub on loopback and yield its port."""
     server = socketserver.TCPServer((LOOP, 0), _Health)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     yield server.server_address[1]
@@ -48,12 +52,14 @@ def upstream():
 
 
 def _free_port() -> int:
+    """Return a currently free loopback port."""
     with socket.socket() as s:
         s.bind((LOOP, 0))
         return s.getsockname()[1]
 
 
 def _make(tmp_path, upstream_port, ips=(LOOP,), names=("portal.example.test",)):
+    """Build a Portal proxy on loopback with its state under ``tmp_path``."""
     return portal.build_portal_proxy(
         listen_port=_free_port(),
         upstream_port=upstream_port,
@@ -65,6 +71,7 @@ def _make(tmp_path, upstream_port, ips=(LOOP,), names=("portal.example.test",)):
 
 
 def test_store_layout_public_has_only_ca_and_sums(tmp_path, upstream):
+    """The public store holds only the CA and SHA256SUMS, with a matching hash line."""
     proxy = _make(tmp_path, upstream)
     proxy.ensure_certificate()
     pki = proxy.pki
@@ -80,6 +87,7 @@ def test_store_layout_public_has_only_ca_and_sums(tmp_path, upstream):
 
 
 def test_certificate_profile(tmp_path, upstream):
+    """CA and leaf carry the documented X.509 extensions and validity periods."""
     from cryptography import x509
     from cryptography.x509.oid import ExtendedKeyUsageOID
 
@@ -108,6 +116,7 @@ def test_certificate_profile(tmp_path, upstream):
 
 
 def test_leaf_rotated_under_seven_days_ca_unchanged(tmp_path, upstream, monkeypatch, caplog):
+    """A leaf with under 7 days left is rotated while the CA stays the same."""
     from orchestrator import lan_control_plane_pki as pki_mod
 
     first = _make(tmp_path, upstream)
@@ -116,6 +125,7 @@ def test_leaf_rotated_under_seven_days_ca_unchanged(tmp_path, upstream, monkeypa
     real = pki_mod._utc_after
 
     def fake(cert):  # the leaf (not the self-signed CA) has 3 days left
+        """Report the leaf (not the self-signed CA) as having only 3 days left."""
         out = real(cert)
         return out if cert.subject == cert.issuer else out - timedelta(days=27)
 
@@ -129,6 +139,7 @@ def test_leaf_rotated_under_seven_days_ca_unchanged(tmp_path, upstream, monkeypa
 
 
 def test_verifies_with_python_strict_x509_over_live_handshake(tmp_path, upstream):
+    """A live handshake verifies with the CA alone, including strict X.509 and name checks."""
     proxy = _make(tmp_path, upstream, ips=(LOOP, NET_A))
     url = proxy.start()
     time.sleep(0.2)
@@ -149,6 +160,7 @@ def test_verifies_with_python_strict_x509_over_live_handshake(tmp_path, upstream
 
 
 def test_ca_swap_is_refused_exit_3(tmp_path, capsys):
+    """Swapping in a different CA after pinning is refused with exit code 3."""
     state = tmp_path / "state"
     assert portal.main(["--print-fingerprint", "--state-dir", str(state)]) == 0
     other = tmp_path / "other"
@@ -160,6 +172,7 @@ def test_ca_swap_is_refused_exit_3(tmp_path, capsys):
 
 
 def test_cannot_start_exit_2_when_port_is_taken(tmp_path, upstream):
+    """A taken listen port makes the CLI exit with code 2."""
     with socket.socket() as busy:
         busy.bind((LOOP, 0))
         busy.listen(1)
@@ -180,6 +193,7 @@ def _ws_upstream():
     heads: list = []
 
     def handle(c):
+        """Complete a 101 upgrade for one connection and echo bytes until it closes."""
         buf = b""
         while b"\r\n\r\n" not in buf:
             chunk = c.recv(4096)
@@ -202,6 +216,7 @@ def _ws_upstream():
             c.close()
 
     def serve():
+        """Accept connections and hand each to a handler thread until the socket closes."""
         while True:
             try:
                 conn, _ = srv.accept()
@@ -214,6 +229,7 @@ def _ws_upstream():
 
 
 def _ws_client(proxy):
+    """Open a verified TLS client to the proxy and send a WebSocket upgrade request."""
     ctx = ssl.create_default_context(cafile=str(proxy.pki.ca_public_path))
     tls = ctx.wrap_socket(socket.create_connection((LOOP, proxy.proxy_port), timeout=5),
                           server_hostname=LOOP)
@@ -224,6 +240,7 @@ def _ws_client(proxy):
 
 
 def _read_until(tls, marker):
+    """Read from ``tls`` until ``marker`` appears or the stream ends; returns the bytes."""
     buf = b""
     while marker not in buf:
         chunk = tls.recv(4096)
@@ -234,6 +251,7 @@ def _read_until(tls, marker):
 
 
 def test_websocket_upgrade_passthrough_echo(tmp_path):
+    """A WebSocket upgrade passes through and echoes bytes, with Authorization intact."""
     srv, heads = _ws_upstream()
     proxy = _make(tmp_path, srv.getsockname()[1])
     proxy.start()
@@ -253,6 +271,7 @@ def test_websocket_upgrade_passthrough_echo(tmp_path):
 
 
 def test_websocket_idle_timeout_closes_tunnel(tmp_path):
+    """An idle WebSocket tunnel is closed after ws_idle_timeout."""
     srv, _ = _ws_upstream()
     proxy = _make(tmp_path, srv.getsockname()[1])
     proxy.ws_idle_timeout = 1.5

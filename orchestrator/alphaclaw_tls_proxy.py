@@ -106,6 +106,7 @@ class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
     as-is, so Authorization is never re-sent to a host the Location names."""
 
     def redirect_request(self, req, fp, code, msg, headers, newurl):
+        """Refuse to follow any redirect (returns None), so the 3xx reaches the client."""
         return None
 
 
@@ -258,6 +259,7 @@ def _fingerprint_store_path(cert_dir: Optional[Path] = None) -> Path:
 
 
 def _load_pinned_fingerprint(cert_dir: Optional[Path] = None) -> Optional[str]:
+    """Return the pinned fingerprint from the store, or None when absent or unreadable."""
     store = _fingerprint_store_path(cert_dir)
     if not store.is_file():
         return None
@@ -269,6 +271,7 @@ def _load_pinned_fingerprint(cert_dir: Optional[Path] = None) -> Optional[str]:
 
 
 def _store_pinned_fingerprint(fingerprint: str, cert_dir: Optional[Path] = None) -> None:
+    """Write the fingerprint pin (with a UTC timestamp) to the store as a restricted file."""
     store = _fingerprint_store_path(cert_dir)
     store.parent.mkdir(parents=True, exist_ok=True)
     # Covers both a directory that predates this permissions fix (mkdir
@@ -370,17 +373,21 @@ class AlphaClawTlsProxy:
     _renew_thread: Optional[threading.Thread] = None
 
     def _dir(self) -> Path:
+        """The directory holding this proxy's certificate files."""
         return CERT_DIR if self.cert_dir is None else self.cert_dir
 
     def _want_ips(self) -> tuple:
+        """The IP addresses the leaf must cover: loopback by default, else ``san_ips``."""
         return (_LOOPBACK_V4,) if self.san_ips is None else tuple(self.san_ips)
 
     def _san_general_names(self) -> list:
+        """The SAN entries to put on the leaf: configured DNS names plus the wanted addresses."""
         names: list = [x509.DNSName(d) for d in self.san_dns]
         names += [x509.IPAddress(_ipaddress.ip_address(i)) for i in self._want_ips()]
         return names
 
     def _existing_cert_covers_sans(self, existing: "x509.Certificate") -> bool:
+        """True when ``existing`` has a SAN extension covering every wanted name and address."""
         try:
             ext = existing.extensions.get_extension_for_class(x509.SubjectAlternativeName)
         except x509.ExtensionNotFound:
@@ -558,6 +565,7 @@ class AlphaClawTlsProxy:
         cert_path, key_path = self.ensure_certificate()
 
         def _new_context(chain: Path, key: Path) -> ssl.SSLContext:
+            """Build a TLS server context (TLS 1.2 or newer) from a certificate chain and key file."""
             ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
             ctx.minimum_version = ssl.TLSVersion.TLSv1_2
             ctx.load_cert_chain(str(chain), str(key))
@@ -599,6 +607,7 @@ class AlphaClawTlsProxy:
             # own threat model is local multi-user, not just remote, so a
             # low-privileged local user opening a few slow connections is
             # in-scope.
+            """Per-connection handler: forwards requests to the upstream, or tunnels WebSockets."""
             timeout = _handler_socket_timeout
 
             def _read_request_body(self) -> Optional[bytes]:
@@ -678,6 +687,7 @@ class AlphaClawTlsProxy:
                 return data
 
             def _forward(self, method: str) -> None:
+                """Forward one request to the upstream over plain HTTP and relay the response."""
                 try:
                     body = self._read_request_body()
                 except (ValueError, OSError) as exc:
@@ -736,6 +746,7 @@ class AlphaClawTlsProxy:
                     self.wfile.write(str(exc.reason).encode("utf-8"))
 
             def _is_websocket_upgrade(self) -> bool:
+                """True when the request asks for a WebSocket upgrade (Connection and Upgrade headers)."""
                 tokens = {
                     t.strip().lower()
                     for t in (self.headers.get("Connection") or "").split(",")
@@ -776,6 +787,7 @@ class AlphaClawTlsProxy:
                 up.settimeout(write_timeout)
 
                 def pump(src, dst) -> None:
+                    """Copy bytes from ``src`` to ``dst`` until close, error or ws_idle_timeout of silence, then end the tunnel."""
                     try:
                         while not done.is_set():
                             buffered = isinstance(src, ssl.SSLSocket) and src.pending() > 0
@@ -814,21 +826,26 @@ class AlphaClawTlsProxy:
                         pass
 
             def do_GET(self) -> None:
+                """Serve GET: tunnel a WebSocket upgrade when enabled, else forward to the upstream."""
                 if ws_enabled and self._is_websocket_upgrade():
                     self._tunnel()
                     return
                 self._forward("GET")
 
             def do_POST(self) -> None:
+                """Forward a POST to the upstream."""
                 self._forward("POST")
 
             def do_PUT(self) -> None:
+                """Forward a PUT to the upstream."""
                 self._forward("PUT")
 
             def do_DELETE(self) -> None:
+                """Forward a DELETE to the upstream."""
                 self._forward("DELETE")
 
             def log_message(self, fmt: str, *args) -> None:  # noqa: A002
+                """Send handler logging to the debug log; request details are not logged at info."""
                 _log.debug("[%s-tls-proxy] " + fmt, handler_label, *args)
 
         class _TlsServer(socketserver.ThreadingTCPServer):
@@ -837,6 +854,7 @@ class AlphaClawTlsProxy:
             slow client can never stall accept() for everyone else."""
 
             def finish_request(self, request, client_address):
+                """Run the TLS handshake under a bounded timeout, then serve the request on the TLS socket."""
                 try:
                     request.settimeout(handshake_timeout)
                     tls = ctx_holder["ctx"].wrap_socket(request, server_side=True)
@@ -901,6 +919,7 @@ class AlphaClawTlsProxy:
                            self.label, exc)
 
     def stop(self) -> None:
+        """Stop the renewal thread, shut down the listener and join its thread (5 s bound)."""
         if self._renew_stop is not None:
             self._renew_stop.set()
         if self._server is not None:

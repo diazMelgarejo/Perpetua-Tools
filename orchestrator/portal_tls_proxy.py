@@ -93,6 +93,7 @@ def portal_tls_dir() -> Path:
 
 
 def _inside_checkout(path: Path) -> bool:
+    """True when ``path`` or any parent directory contains a .git entry."""
     try:
         resolved = path.resolve()
     except OSError:
@@ -101,6 +102,7 @@ def _inside_checkout(path: Path) -> bool:
 
 
 def san_names_from_env() -> tuple:
+    """The extra DNS names from PORTAL_TLS_SAN_NAMES (comma separated, blanks dropped)."""
     raw = os.environ.get("PORTAL_TLS_SAN_NAMES") or ""
     return tuple(n.strip() for n in raw.split(",") if n.strip())
 
@@ -296,6 +298,7 @@ def run_self_check(host: str, listen_port: int, upstream_port: int, state_dir: P
 
 
 def main(argv: Optional[list] = None) -> int:
+    """CLI entry point. Returns the exit code: 0 ok, 1 self-check FAIL, 2 cannot start, 3 CA pin mismatch."""
     ap = argparse.ArgumentParser(prog="python -m orchestrator.portal_tls_proxy")
     ap.add_argument("--listen-host", default="", help="bind address (default: all interfaces)")
     ap.add_argument("--listen-port", type=int, default=DEFAULT_LISTEN_PORT)

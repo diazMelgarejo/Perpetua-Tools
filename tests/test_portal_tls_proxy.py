@@ -32,9 +32,11 @@ NET_B = "198.51.100.20"
 
 
 class _Echo(http.server.BaseHTTPRequestHandler):
+    """Upstream stub that records request headers and echoes the Authorization value."""
     seen: list = []
 
     def do_GET(self) -> None:
+        """Record the headers and answer with the path-dependent JSON body."""
         type(self).seen.append(dict(self.headers.items()))
         if self.path == "/health":
             body = b'{"status": "ok"}'
@@ -47,11 +49,13 @@ class _Echo(http.server.BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def log_message(self, *args) -> None:  # noqa: A002
+        """Silence request logging."""
         pass
 
 
 @pytest.fixture
 def upstream():
+    """Run the echo stub on loopback and yield its port."""
     _Echo.seen = []
     server = socketserver.TCPServer((LOOP, 0), _Echo)
     threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -61,12 +65,14 @@ def upstream():
 
 
 def _free_port() -> int:
+    """Return a currently free loopback port."""
     with socket.socket() as s:
         s.bind((LOOP, 0))
         return s.getsockname()[1]
 
 
 def _make(tmp_path, upstream_port, ips=(LOOP,), names=("portal.example.test",)):
+    """Build a Portal proxy on loopback with its state under ``tmp_path``."""
     return portal.build_portal_proxy(
         listen_port=_free_port(),
         upstream_port=upstream_port,
@@ -78,12 +84,14 @@ def _make(tmp_path, upstream_port, ips=(LOOP,), names=("portal.example.test",)):
 
 
 def _get(url, ctx, headers=None):
+    """GET ``url`` with ``ctx``; returns (status, body)."""
     req = urllib.request.Request(url, headers=headers or {})
     with urllib.request.urlopen(req, timeout=5, context=ctx) as resp:
         return resp.status, resp.read()
 
 
 def _pinned_fingerprint_of(host, port) -> str:
+    """SHA-256 of the leaf the server presents, fetched without verification (for pin comparison only)."""
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE
@@ -93,6 +101,7 @@ def _pinned_fingerprint_of(host, port) -> str:
 
 
 def test_forwards_health_over_tls_to_http_upstream(tmp_path, upstream):
+    """HTTPS requests to the proxy reach the plain HTTP upstream's health endpoint."""
     proxy = _make(tmp_path, upstream)
     url = proxy.start()
     time.sleep(0.2)
@@ -111,6 +120,7 @@ def portal_cert(proxy):
 
 
 def test_authorization_header_reaches_upstream_unchanged(tmp_path, upstream):
+    """The Authorization header reaches the upstream unchanged."""
     proxy = _make(tmp_path, upstream)
     url = proxy.start()
     try:
@@ -124,6 +134,7 @@ def test_authorization_header_reaches_upstream_unchanged(tmp_path, upstream):
 
 
 def test_client_that_does_not_trust_the_cert_fails(tmp_path, upstream):
+    """A client that does not trust the CA fails certificate verification."""
     proxy = _make(tmp_path, upstream)
     url = proxy.start()
     try:
@@ -135,6 +146,7 @@ def test_client_that_does_not_trust_the_cert_fails(tmp_path, upstream):
 
 
 def test_client_pinned_to_fingerprint_succeeds(tmp_path, upstream):
+    """A client pinned to the leaf fingerprint connects and the fingerprint matches."""
     proxy = _make(tmp_path, upstream)
     proxy.start()
     try:
@@ -151,6 +163,7 @@ def test_client_pinned_to_fingerprint_succeeds(tmp_path, upstream):
 
 
 def test_ca_replaced_after_pin_is_refused(tmp_path, upstream):
+    """A CA replaced after pinning is refused and nothing is regenerated."""
     proxy = _make(tmp_path, upstream)
     proxy.start()
     pinned = proxy.fingerprint
@@ -166,6 +179,7 @@ def test_ca_replaced_after_pin_is_refused(tmp_path, upstream):
 
 
 def test_san_change_reissues_leaf_only_ca_stable(tmp_path, upstream, caplog):
+    """A changed address set reissues only the leaf; the CA is stable and the SANs are updated."""
     first = _make(tmp_path, upstream, ips=(LOOP, NET_A))
     first.ensure_certificate()
     fp1, leaf1 = first.fingerprint, first.pki.leaf_fingerprint
@@ -189,6 +203,7 @@ def test_san_change_reissues_leaf_only_ca_stable(tmp_path, upstream, caplog):
 
 
 def test_env_flag_default_off_and_truthy_parsing(monkeypatch):
+    """PORTAL_TLS_ENABLED defaults to off and parses the truthy values."""
     monkeypatch.delenv("PORTAL_TLS_ENABLED", raising=False)
     assert portal.portal_tls_enabled() is False
     for v in ("1", "true", "YES", " on "):
@@ -200,11 +215,13 @@ def test_env_flag_default_off_and_truthy_parsing(monkeypatch):
 
 
 def test_san_names_env_parsing(monkeypatch):
+    """PORTAL_TLS_SAN_NAMES is split on commas with blanks dropped."""
     monkeypatch.setenv("PORTAL_TLS_SAN_NAMES", " a.example.test, ,b.example.test ")
     assert portal.san_names_from_env() == ("a.example.test", "b.example.test")
 
 
 def test_portal_store_is_separate_from_alphaclaw_and_outside_checkout(monkeypatch):
+    """The default store is separate from AlphaClaw's and outside the checkout."""
     monkeypatch.delenv("PORTAL_TLS_CERT_DIR", raising=False)
     monkeypatch.delenv("PORTAL_TLS_STATE_DIR", raising=False)
     d = portal.portal_tls_dir()
@@ -225,6 +242,7 @@ def test_default_store_is_home_local_share_and_ignores_localappdata(monkeypatch,
 
 
 def test_state_dir_env_and_alias(monkeypatch, tmp_path):
+    """PORTAL_TLS_STATE_DIR wins over its alias PORTAL_TLS_CERT_DIR."""
     monkeypatch.delenv("PORTAL_TLS_STATE_DIR", raising=False)
     monkeypatch.setenv("PORTAL_TLS_CERT_DIR", str(tmp_path / "alias"))
     assert portal.portal_tls_dir() == tmp_path / "alias"
@@ -233,11 +251,13 @@ def test_state_dir_env_and_alias(monkeypatch, tmp_path):
 
 
 def test_local_ipv4_addresses_are_valid_ipv4():
+    """The local address list is non-empty and all IPv4."""
     addrs = portal.local_ipv4_addresses()
     assert addrs and all(ipaddress.ip_address(a).version == 4 for a in addrs)
 
 
 def test_alphaclaw_defaults_unchanged():
+    """AlphaClaw proxy defaults are unchanged by the generalization."""
     p = base.AlphaClawTlsProxy(upstream_port=1)
     assert p.proxy_port == base.DEFAULT_PROXY_PORT == 3345
     assert p.listen_host == "" and p.upstream_host == ""
@@ -249,6 +269,7 @@ def test_alphaclaw_defaults_unchanged():
 
 
 def test_print_fingerprint_cli(tmp_path, capsys):
+    """--print-fingerprint prints exactly the hash and public CA path lines, and the hash matches the file."""
     rc = portal.main(["--print-fingerprint", "--state-dir", str(tmp_path / "c")])
     out = capsys.readouterr().out.splitlines()
     assert rc == 0 and len(out) == 2
