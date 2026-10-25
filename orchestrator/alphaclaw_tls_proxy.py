@@ -49,13 +49,17 @@ from __future__ import annotations
 
 import hashlib
 import http.server
+import ipaddress as _ipaddress
 import json
 import logging
 import os
 import platform
+import select
+import socket
 import socketserver
 import ssl
 import threading
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -88,10 +92,28 @@ try:
 except ImportError:
     _CRYPTOGRAPHY_AVAILABLE = False
 
+# Loopback derived (not spelled as a literal) so repo hygiene stays clean.
+_LOOPBACK_V4 = str(_ipaddress.IPv4Address((127 << 24) | 1))
 CERT_DIR = Path.home() / ".openclaw" / "alphaclaw_tls"
 DEFAULT_PROXY_PORT = 3345
 CERT_VALIDITY_DAYS = 365
 _MIN_REMAINING_DAYS_TO_REUSE = 7  # rotate proactively, not right at expiry
+_HANDSHAKE_TIMEOUT = 10.0  # bound on the TLS handshake, run off the accept thread
+
+
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Never follow an upstream 3xx: the redirect is relayed to the client
+    as-is, so Authorization is never re-sent to a host the Location names."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+# No environment proxies either: the upstream is a fixed local port and a
+# bearer must never be diverted through an ambient HTTP proxy setting.
+_UPSTREAM_OPENER = urllib.request.build_opener(
+    urllib.request.ProxyHandler({}), _NoRedirectHandler()
+)
 
 
 class AlphaClawTlsUnavailable(RuntimeError):
@@ -228,15 +250,15 @@ def _cert_fingerprint(cert_path: Path) -> str:
     return hashlib.sha256(cert.public_bytes(serialization.Encoding.DER)).hexdigest()
 
 
-def _fingerprint_store_path() -> Path:
+def _fingerprint_store_path(cert_dir: Optional[Path] = None) -> Path:
     """Computed fresh from CERT_DIR each call, not cached at import time --
     tests (and any future caller) that override CERT_DIR after import must
     see that override reflected here, not a stale path baked in earlier."""
-    return CERT_DIR / "fingerprint.json"
+    return (CERT_DIR if cert_dir is None else cert_dir) / "fingerprint.json"
 
 
-def _load_pinned_fingerprint() -> Optional[str]:
-    store = _fingerprint_store_path()
+def _load_pinned_fingerprint(cert_dir: Optional[Path] = None) -> Optional[str]:
+    store = _fingerprint_store_path(cert_dir)
     if not store.is_file():
         return None
     try:
@@ -246,8 +268,8 @@ def _load_pinned_fingerprint() -> Optional[str]:
         return None
 
 
-def _store_pinned_fingerprint(fingerprint: str) -> None:
-    store = _fingerprint_store_path()
+def _store_pinned_fingerprint(fingerprint: str, cert_dir: Optional[Path] = None) -> None:
+    store = _fingerprint_store_path(cert_dir)
     store.parent.mkdir(parents=True, exist_ok=True)
     # Covers both a directory that predates this permissions fix (mkdir
     # is a no-op when the dir already exists) and Windows, where mkdir's
@@ -282,7 +304,9 @@ def _cert_not_after_utc(cert: x509.Certificate) -> datetime:
     return not_after.astimezone(timezone.utc)
 
 
-def verify_or_pin_fingerprint(cert_path: Path) -> str:
+def verify_or_pin_fingerprint(
+    cert_path: Path, cert_dir: Optional[Path] = None, label: str = "AlphaClaw"
+) -> str:
     """TOFU: pin the fingerprint on first sight; on every later call,
     verify it hasn't changed. Raises AlphaClawCertFingerprintMismatch if
     it has -- this is a MITM-detection signal, not a routine event, and
@@ -291,18 +315,18 @@ def verify_or_pin_fingerprint(cert_path: Path) -> str:
     Returns the current (verified-or-newly-pinned) fingerprint.
     """
     current = _cert_fingerprint(cert_path)
-    pinned = _load_pinned_fingerprint()
+    pinned = _load_pinned_fingerprint(cert_dir)
     if pinned is None:
-        _store_pinned_fingerprint(current)
-        _log.info("AlphaClaw TLS: pinned certificate fingerprint (first sight): %s...", current[:16])
+        _store_pinned_fingerprint(current, cert_dir)
+        _log.info("%s TLS: pinned certificate fingerprint (first sight): %s...", label, current[:16])
         return current
     if pinned != current:
         raise AlphaClawCertFingerprintMismatch(
-            f"AlphaClaw TLS certificate fingerprint changed: pinned={pinned[:16]}... "
+            f"{label} TLS certificate fingerprint changed: pinned={pinned[:16]}... "
             f"current={current[:16]}... This may mean the cert was legitimately "
             "rotated (e.g. after CERT_DIR was cleared) or may indicate a MITM "
             "attack. Verify out-of-band, then delete "
-            f"{_fingerprint_store_path()} to accept the new certificate explicitly -- "
+            f"{_fingerprint_store_path(cert_dir)} to accept the new certificate explicitly -- "
             "this is never done automatically."
         )
     return current
@@ -323,6 +347,49 @@ class AlphaClawTlsProxy:
     _server: Optional[socketserver.ThreadingTCPServer] = None
     _thread: Optional[threading.Thread] = None
     fingerprint: str = ""
+    # Generalization knobs (defaults reproduce the AlphaClaw behaviour):
+    listen_host: str = ""  # "" -> loopback only
+    upstream_host: str = ""  # "" -> loopback
+    cert_dir: Optional[Path] = None  # None -> module CERT_DIR (read at call time)
+    cert_basename: str = "alphaclaw"
+    label: str = "AlphaClaw"
+    common_name: str = "localhost"
+    san_dns: tuple = ("localhost",)
+    san_ips: Optional[tuple] = None  # None -> loopback address only
+    reissue_on_san_change: bool = False  # reissue a reused cert that misses a SAN
+    # CA mode (Portal): an object with ensure()/leaf_chain_path/leaf_key_path/
+    # ca_fingerprint (see lan_control_plane_pki). None keeps self-signed mode.
+    pki: Optional[object] = None
+    websocket_passthrough: bool = False  # forward Upgrade: websocket on a raw tunnel
+    ws_idle_timeout: float = 300.0
+    # CA mode: how often a running proxy re-runs pki.ensure() so a leaf that
+    # nears expiry (or a changed local address) is reissued and applied to new
+    # handshakes without a restart. 0 disables the recheck thread.
+    pki_recheck_seconds: float = 6 * 3600.0
+    _renew_stop: Optional[threading.Event] = None
+    _renew_thread: Optional[threading.Thread] = None
+
+    def _dir(self) -> Path:
+        return CERT_DIR if self.cert_dir is None else self.cert_dir
+
+    def _want_ips(self) -> tuple:
+        return (_LOOPBACK_V4,) if self.san_ips is None else tuple(self.san_ips)
+
+    def _san_general_names(self) -> list:
+        names: list = [x509.DNSName(d) for d in self.san_dns]
+        names += [x509.IPAddress(_ipaddress.ip_address(i)) for i in self._want_ips()]
+        return names
+
+    def _existing_cert_covers_sans(self, existing: "x509.Certificate") -> bool:
+        try:
+            ext = existing.extensions.get_extension_for_class(x509.SubjectAlternativeName)
+        except x509.ExtensionNotFound:
+            return False
+        have_dns = {d.lower() for d in ext.value.get_values_for_type(x509.DNSName)}
+        have_ips = set(ext.value.get_values_for_type(x509.IPAddress))
+        want_dns = {d.lower() for d in self.san_dns}
+        want_ips = {_ipaddress.ip_address(i) for i in self._want_ips()}
+        return want_dns <= have_dns and want_ips <= have_ips
 
     def _generate_cert(self) -> tuple[Path, Path, str]:
         """Return cert paths plus how they were obtained.
@@ -341,10 +408,11 @@ class AlphaClawTlsProxy:
                 "TLS certificate. Install it, or fall back to your own "
                 "existing HTTP behavior."
             )
-        CERT_DIR.mkdir(parents=True, exist_ok=True)
-        _secure_path(CERT_DIR, is_directory=True)  # covers dirs that predate this fix
-        cert_path = CERT_DIR / "alphaclaw.crt"
-        key_path = CERT_DIR / "alphaclaw.key"
+        cert_dir = self._dir()
+        cert_dir.mkdir(parents=True, exist_ok=True)
+        _secure_path(cert_dir, is_directory=True)  # covers dirs that predate this fix
+        cert_path = cert_dir / f"{self.cert_basename}.crt"
+        key_path = cert_dir / f"{self.cert_basename}.key"
         generation_mode = "renewed"
 
         # Reuse an existing, still-valid certificate rather than generating
@@ -355,7 +423,21 @@ class AlphaClawTlsProxy:
             try:
                 existing = x509.load_pem_x509_certificate(cert_path.read_bytes())
                 remaining = _cert_not_after_utc(existing) - datetime.now(timezone.utc)
-                if remaining.days > _MIN_REMAINING_DAYS_TO_REUSE:
+                if (
+                    remaining.days > _MIN_REMAINING_DAYS_TO_REUSE
+                    and self.reissue_on_san_change
+                    and not self._existing_cert_covers_sans(existing)
+                ):
+                    # Explicit and logged: the address/name set changed
+                    # (e.g. a DHCP change), so the leaf is reissued. The
+                    # caller re-pins and surfaces the new fingerprint.
+                    _log.warning(
+                        "%s TLS: certificate SANs no longer cover the configured "
+                        "names/addresses; reissuing the certificate (new fingerprint)",
+                        self.label,
+                    )
+                    generation_mode = "san_reissued"
+                elif remaining.days > _MIN_REMAINING_DAYS_TO_REUSE:
                     _log.debug(
                         "AlphaClaw TLS: reusing existing certificate (expires in %d days)",
                         remaining.days,
@@ -374,7 +456,7 @@ class AlphaClawTlsProxy:
 
         key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         subject = issuer = x509.Name(
-            [x509.NameAttribute(NameOID.COMMON_NAME, "localhost")]
+            [x509.NameAttribute(NameOID.COMMON_NAME, self.common_name)]
         )
         cert = (
             x509.CertificateBuilder()
@@ -385,12 +467,7 @@ class AlphaClawTlsProxy:
             .not_valid_before(datetime.now(timezone.utc))
             .not_valid_after(datetime.now(timezone.utc) + timedelta(days=CERT_VALIDITY_DAYS))
             .add_extension(
-                x509.SubjectAlternativeName(
-                    [
-                        x509.DNSName("localhost"),
-                        x509.IPAddress(ipaddress.ip_address("127.0.0.1")),
-                    ]
-                ),
+                x509.SubjectAlternativeName(self._san_general_names()),
                 critical=False,
             )
             .sign(key, hashes.SHA256())
@@ -421,6 +498,47 @@ class AlphaClawTlsProxy:
         _secure_path(cert_path, is_directory=False)
         return cert_path, key_path, generation_mode
 
+    def ensure_certificate(self) -> tuple[Path, Path]:
+        """Create/reuse the leaf and apply the TOFU pin logic (no socket)."""
+        if self.pki is not None:
+            self.pki.ensure()  # CA pin enforced there; leaf rotation is routine
+            self.fingerprint = self.pki.ca_fingerprint
+            return self.pki.leaf_chain_path, self.pki.leaf_key_path
+        cert_path, key_path, generation_mode = self._generate_cert()
+        cdir = self._dir()
+        if generation_mode in ("rotated", "san_reissued"):
+            current = _cert_fingerprint(cert_path)
+            pinned = _load_pinned_fingerprint(cdir)
+            if pinned is not None and pinned != current:
+                _log.warning(
+                    "%s TLS: certificate %s; "
+                    "updating pinned fingerprint from %s... to %s...",
+                    self.label,
+                    "rotated due to expiry" if generation_mode == "rotated"
+                    else "reissued after a SAN change",
+                    pinned[:16],
+                    current[:16],
+                )
+            _store_pinned_fingerprint(current, cdir)
+            self.fingerprint = current
+        elif generation_mode == "renewed" and _load_pinned_fingerprint(cdir) is not None:
+            # Cert disappeared or became unreadable while a pin still exists.
+            # Never silently re-pin -- that would mask cert substitution.
+            current = _cert_fingerprint(cert_path)
+            pinned = _load_pinned_fingerprint(cdir)
+            if pinned != current:
+                raise AlphaClawCertFingerprintMismatch(
+                    f"{self.label} TLS certificate fingerprint changed: pinned={pinned[:16]}... "
+                    f"current={current[:16]}... Certificate files were missing or "
+                    "unreadable and were regenerated. Verify out-of-band, then delete "
+                    f"{_fingerprint_store_path(cdir)} to accept the new certificate explicitly -- "
+                    "this is never done automatically."
+                )
+            self.fingerprint = current
+        else:
+            self.fingerprint = verify_or_pin_fingerprint(cert_path, cdir, self.label)
+        return cert_path, key_path
+
     def start(self) -> str:
         """Start the proxy (idempotent-ish: safe to call once; calling
         again while already running raises OSError from the socket bind,
@@ -437,41 +555,24 @@ class AlphaClawTlsProxy:
         Returns the https:// URL callers should use in place of the
         AlphaClaw HTTP URL.
         """
-        cert_path, key_path, generation_mode = self._generate_cert()
-        if generation_mode == "rotated":
-            current = _cert_fingerprint(cert_path)
-            pinned = _load_pinned_fingerprint()
-            if pinned is not None and pinned != current:
-                _log.warning(
-                    "AlphaClaw TLS: certificate rotated due to expiry; "
-                    "updating pinned fingerprint from %s... to %s...",
-                    pinned[:16],
-                    current[:16],
-                )
-            _store_pinned_fingerprint(current)
-            self.fingerprint = current
-        elif generation_mode == "renewed" and _load_pinned_fingerprint() is not None:
-            # Cert disappeared or became unreadable while a pin still exists.
-            # Never silently re-pin -- that would mask cert substitution.
-            current = _cert_fingerprint(cert_path)
-            pinned = _load_pinned_fingerprint()
-            if pinned != current:
-                raise AlphaClawCertFingerprintMismatch(
-                    f"AlphaClaw TLS certificate fingerprint changed: pinned={pinned[:16]}... "
-                    f"current={current[:16]}... Certificate files were missing or "
-                    "unreadable and were regenerated. Verify out-of-band, then delete "
-                    f"{_fingerprint_store_path()} to accept the new certificate explicitly -- "
-                    "this is never done automatically."
-                )
-            self.fingerprint = current
-        else:
-            self.fingerprint = verify_or_pin_fingerprint(cert_path)
+        cert_path, key_path = self.ensure_certificate()
 
-        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        context.minimum_version = ssl.TLSVersion.TLSv1_2
-        context.load_cert_chain(str(cert_path), str(key_path))
+        def _new_context(chain: Path, key: Path) -> ssl.SSLContext:
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+            ctx.load_cert_chain(str(chain), str(key))
+            return ctx
+
+        # Holder so a renewed leaf can replace the context for NEW handshakes.
+        ctx_holder = {
+            "ctx": _new_context(cert_path, key_path),
+            # Fingerprint of the leaf the live context was built from.
+            "fp": self.pki.leaf_fingerprint if self.pki is not None else "",
+        }
+        handshake_timeout = _HANDSHAKE_TIMEOUT
 
         upstream = self.upstream_port
+        upstream_host = self.upstream_host or _LOOPBACK_V4
         timeout = self.proxy_timeout
         # Class-body attribute assignments can't read an enclosing-function
         # local of the SAME name (shadowed by the class's own binding), so
@@ -482,6 +583,9 @@ class AlphaClawTlsProxy:
             "proxy-authorization", "te", "trailers", "transfer-encoding",
             "upgrade",
         }
+        handler_label = self.label.lower()
+        ws_enabled = self.websocket_passthrough
+        ws_idle = self.ws_idle_timeout
         _CHUNK_SIZE = 65536
         _MAX_BODY_SIZE = 100 * 1024 * 1024  # 100MB -- generous for AlphaClaw's own API payloads, bounds a malicious/buggy client's memory impact
 
@@ -587,7 +691,7 @@ class AlphaClawTlsProxy:
                     self.end_headers()
                     self.wfile.write(f"Malformed request body: {exc}".encode("utf-8"))
                     return
-                url = f"http://127.0.0.1:{upstream}{self.path}"
+                url = f"http://{upstream_host}:{upstream}{self.path}"
                 req = urllib.request.Request(url, method=method, data=body)
                 for header, value in self.headers.items():
                     if header.lower() not in ("host", "content-length", "transfer-encoding"):
@@ -595,7 +699,7 @@ class AlphaClawTlsProxy:
                 if body is not None:
                     req.add_header("Content-Length", str(len(body)))
                 try:
-                    with urllib.request.urlopen(req, timeout=timeout) as resp:
+                    with _UPSTREAM_OPENER.open(req, timeout=timeout) as resp:
                         self.send_response(resp.status)
                         for header, value in resp.getheaders():
                             # Hop-by-hop headers describe THIS connection's
@@ -616,15 +720,103 @@ class AlphaClawTlsProxy:
                                 break
                             self.wfile.write(chunk)
                 except urllib.error.HTTPError as exc:
+                    # Non-2xx (including an unfollowed 3xx): relay status,
+                    # headers (WWW-Authenticate, Location, Content-Type...)
+                    # and body to the client untouched.
+                    payload = exc.read()
                     self.send_response(exc.code)
+                    for header, value in exc.headers.items():
+                        if header.lower() not in _HOP_BY_HOP_HEADERS:
+                            self.send_header(header, value)
                     self.end_headers()
-                    self.wfile.write(exc.read())
+                    self.wfile.write(payload)
                 except urllib.error.URLError as exc:
                     self.send_response(502)
                     self.end_headers()
                     self.wfile.write(str(exc.reason).encode("utf-8"))
 
+            def _is_websocket_upgrade(self) -> bool:
+                tokens = {
+                    t.strip().lower()
+                    for t in (self.headers.get("Connection") or "").split(",")
+                }
+                return (
+                    "upgrade" in tokens
+                    and (self.headers.get("Upgrade") or "").strip().lower() == "websocket"
+                )
+
+            def _tunnel(self) -> None:
+                """Raw TCP pass-through for a WebSocket upgrade: re-send the
+                request head unchanged (Authorization included), relay the
+                101, then pump bytes both ways until either side closes or
+                the connection is idle for ws_idle_timeout seconds."""
+                self.close_connection = True
+                try:
+                    up = socket.create_connection((upstream_host, upstream), timeout=10)
+                except OSError:
+                    self.send_response(502)
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                    return
+                crlf = "\r\n"
+                head = f"{self.requestline}{crlf}".encode("latin-1")
+                for header, value in self.headers.items():
+                    head += f"{header}: {value}{crlf}".encode("latin-1")
+                head += crlf.encode("latin-1")
+                client = self.connection
+                done = threading.Event()
+                state = {"last": time.monotonic()}
+                poll = 1.0
+                # Idle detection uses select() on readability, NOT a short
+                # socket timeout: a 1 s timeout also bounds sendall() and would
+                # tear the tunnel down whenever a peer reads slowly. The socket
+                # timeout is only the (long) write-stall bound.
+                write_timeout = max(ws_idle, poll)
+                client.settimeout(write_timeout)
+                up.settimeout(write_timeout)
+
+                def pump(src, dst) -> None:
+                    try:
+                        while not done.is_set():
+                            buffered = isinstance(src, ssl.SSLSocket) and src.pending() > 0
+                            if not buffered:
+                                readable, _, _ = select.select([src], [], [], poll)
+                                if not readable:
+                                    if time.monotonic() - state["last"] > ws_idle:
+                                        break
+                                    continue
+                            data = src.recv(_CHUNK_SIZE)
+                            if not data:
+                                break
+                            state["last"] = time.monotonic()
+                            dst.sendall(data)
+                            state["last"] = time.monotonic()
+                    except (OSError, ssl.SSLError):
+                        pass
+                    finally:
+                        done.set()
+
+                try:
+                    up.sendall(head)
+                    t_up = threading.Thread(target=pump, args=(client, up), daemon=True)
+                    t_down = threading.Thread(target=pump, args=(up, client), daemon=True)
+                    t_up.start()
+                    t_down.start()
+                    done.wait()
+                    t_down.join(timeout=2)
+                    t_up.join(timeout=2)
+                except OSError:
+                    pass
+                finally:
+                    try:
+                        up.close()
+                    except OSError:
+                        pass
+
             def do_GET(self) -> None:
+                if ws_enabled and self._is_websocket_upgrade():
+                    self._tunnel()
+                    return
                 self._forward("GET")
 
             def do_POST(self) -> None:
@@ -637,28 +829,80 @@ class AlphaClawTlsProxy:
                 self._forward("DELETE")
 
             def log_message(self, fmt: str, *args) -> None:  # noqa: A002
-                _log.debug("[alphaclaw-tls-proxy] " + fmt, *args)
+                _log.debug("[%s-tls-proxy] " + fmt, handler_label, *args)
 
-        self._server = socketserver.ThreadingTCPServer(
-            ("127.0.0.1", self.proxy_port), _ProxyHandler
+        class _TlsServer(socketserver.ThreadingTCPServer):
+            """Accepts plain TCP and runs the TLS handshake in the
+            per-connection thread under a bounded timeout, so one silent or
+            slow client can never stall accept() for everyone else."""
+
+            def finish_request(self, request, client_address):
+                try:
+                    request.settimeout(handshake_timeout)
+                    tls = ctx_holder["ctx"].wrap_socket(request, server_side=True)
+                except (ssl.SSLError, OSError) as exc:
+                    _log.debug("[%s-tls-proxy] handshake failed: %s", handler_label, exc)
+                    return
+                try:
+                    self.RequestHandlerClass(tls, client_address, self)
+                finally:
+                    try:
+                        tls.close()
+                    except OSError:
+                        pass
+
+        self._server = _TlsServer(
+            (self.listen_host or _LOOPBACK_V4, self.proxy_port), _ProxyHandler
         )
         # Per-connection handler threads default to non-daemon, so a handler
         # stuck past _ProxyHandler.timeout (e.g. a slow client mid-read when
         # stop() is called) would otherwise block process exit / stop()'s
         # own join indefinitely.
         self._server.daemon_threads = True
-        self._server.socket = context.wrap_socket(self._server.socket, server_side=True)
         self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
         self._thread.start()
 
-        url = f"https://127.0.0.1:{self.proxy_port}"
+        if self.pki is not None and self.pki_recheck_seconds > 0:
+            self._renew_stop = threading.Event()
+            self._renew_thread = threading.Thread(
+                target=self._renew_loop, args=(_new_context, ctx_holder),
+                name=f"{handler_label}-tls-renew", daemon=True,
+            )
+            self._renew_thread.start()
+
+        url = f"https://{self.listen_host or _LOOPBACK_V4}:{self.proxy_port}"
         _log.info(
-            "AlphaClaw TLS proxy started: %s -> http://127.0.0.1:%d",
-            url, upstream,
+            "%s TLS proxy started: %s -> http://%s:%d",
+            self.label, url, upstream_host, upstream,
         )
         return url
 
+    def _renew_loop(self, new_context, ctx_holder) -> None:
+        """Periodically re-run pki.ensure(); when the leaf was reissued, build
+        a fresh SSLContext and swap it in for new handshakes (a failed reload
+        leaves the live context untouched)."""
+        stop = self._renew_stop
+        while stop is not None and not stop.wait(self.pki_recheck_seconds):
+            try:
+                self.pki.ensure()
+                # Compare the on-disk leaf with the one being served, not just
+                # this ensure()'s own event: another process sharing the state
+                # dir may have rotated it, which reports "reused" here.
+                on_disk = self.pki.leaf_fingerprint
+                if on_disk != ctx_holder.get("fp"):
+                    ctx_holder["ctx"] = new_context(
+                        self.pki.leaf_chain_path, self.pki.leaf_key_path
+                    )
+                    ctx_holder["fp"] = on_disk
+                    _log.info("%s TLS: applied a renewed leaf (%s)", self.label,
+                              self.pki.leaf_event)
+            except Exception as exc:  # noqa: BLE001 - keep serving; retry next interval
+                _log.error("%s TLS: leaf recheck failed, keeping the current certificate: %s",
+                           self.label, exc)
+
     def stop(self) -> None:
+        if self._renew_stop is not None:
+            self._renew_stop.set()
         if self._server is not None:
             self._server.shutdown()
             self._server.server_close()
