@@ -19,6 +19,20 @@ Opt-in via ``PORTAL_TLS_ENABLED`` (off by default). State directory:
 Run: ``python -m orchestrator.portal_tls_proxy --listen-port 8443
 --upstream-port 8002``; ``--print-fingerprint`` prints ``ca_sha256_file=`` and
 ``ca_public_path=`` and exits.
+
+``--self-check`` is the evidence gate a caller runs before telling peers to
+trust the endpoint. It reads only the public CA certificate from the store
+(never a private key, never creating or rotating anything), then verifies
+with that CA alone: ``check_tls_health`` (GET /health is 200),
+``check_protected_unauth`` (GET /api/peer-inbox with no Authorization header
+is 401 or 403), ``check_leaf_san`` (the presented leaf names the host),
+``check_leaf_expiry`` (more than 7 days left is PASS, fewer is WARN, expired
+is FAIL; notAfter is printed as UTC ISO-8601) and
+``check_upstream_loopback_only`` (the upstream port refuses connections on
+every non-loopback local address). Each prints ``check_<name>=PASS|WARN|FAIL
+<detail>``, followed by ``ca_sha256_file=<hex>`` and ``self_check=PASS|FAIL``.
+Exit 0 when nothing FAILs (WARN is allowed), 1 on any FAIL, 2 on a usage
+error. ``--host`` defaults to the first non-loopback local address.
 """
 from __future__ import annotations
 
@@ -27,9 +41,13 @@ import ipaddress
 import logging
 import os
 import signal
+import hashlib
+import http.client
 import socket
+import ssl
 import sys
 import threading
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable, Iterable, Optional
 
@@ -44,6 +62,10 @@ DEFAULT_UPSTREAM_PORT = 8002
 _PT_ROOT = Path(__file__).resolve().parent.parent
 _ALL_INTERFACES = str(ipaddress.IPv4Address(0))
 _TRUTHY = ("1", "true", "yes", "on")
+_NET_TIMEOUT = 5.0  # seconds, every self-check network call
+_PROBE_TIMEOUT = 1.0  # seconds, the upstream exposure connect probe
+_EXPIRY_WARN_DAYS = 7
+_PEER_INBOX_PATH = "/api/peer-inbox"
 
 
 def portal_tls_enabled() -> bool:
@@ -141,6 +163,138 @@ def build_portal_proxy(
     )
 
 
+def _default_self_check_host() -> str:
+    """First non-loopback local IPv4 address, else loopback."""
+    for addr in local_ipv4_addresses():
+        if not ipaddress.ip_address(addr).is_loopback:
+            return addr
+    return str(ipaddress.IPv4Address((127 << 24) | 1))
+
+
+def _san_covers(cert: dict, host: str) -> bool:
+    """True when the peer-cert dict's SAN lists ``host`` (IP SAN for an IP
+    literal, DNS SAN for a name)."""
+    sans = cert.get("subjectAltName", ())
+    try:
+        want = ipaddress.ip_address(host)
+    except ValueError:
+        return any(k == "DNS" and v.lower() == host.lower() for k, v in sans)
+    for kind, value in sans:
+        if kind != "IP Address":
+            continue
+        try:
+            if ipaddress.ip_address(value) == want:
+                return True
+        except ValueError:
+            continue
+    return False
+
+
+def _https_status(host: str, port: int, ctx: ssl.SSLContext, path: str):
+    """One verified GET with no Authorization header. Returns (status, leaf)
+    where ``leaf`` is the presented certificate dict."""
+    conn = http.client.HTTPSConnection(host, port, timeout=_NET_TIMEOUT, context=ctx)
+    try:
+        conn.connect()
+        leaf = conn.sock.getpeercert() or {}
+        conn.request("GET", path, headers={"Connection": "close"})
+        resp = conn.getresponse()
+        resp.read(1)
+        return resp.status, leaf
+    finally:
+        conn.close()
+
+
+def _check_upstream_loopback_only(upstream_port: int) -> tuple:
+    """(status, detail): the upstream must refuse every non-loopback local
+    address; a successful connect names the exposed address."""
+    exposed = []
+    probed = 0
+    for addr in local_ipv4_addresses():
+        if ipaddress.ip_address(addr).is_loopback:
+            continue
+        probed += 1
+        try:
+            with socket.create_connection((addr, upstream_port), timeout=_PROBE_TIMEOUT):
+                exposed.append(addr)
+        except OSError:
+            pass
+    if exposed:
+        return "FAIL", f"upstream port {upstream_port} accepts connections on {', '.join(exposed)}"
+    return "PASS", f"upstream port {upstream_port} refused on {probed} non-loopback address(es)"
+
+
+def _expiry_result(leaf: dict) -> tuple:
+    """(status, detail) for the leaf's notAfter: PASS beyond 7 days, WARN
+    within 7 days, FAIL when expired or unreadable."""
+    try:
+        expires = datetime.fromtimestamp(ssl.cert_time_to_seconds(leaf["notAfter"]),
+                                         tz=timezone.utc)
+    except (KeyError, ValueError) as exc:
+        return "FAIL", f"notAfter unreadable ({type(exc).__name__})"
+    left = expires - datetime.now(timezone.utc)
+    if left <= timedelta(0):
+        level = "FAIL"
+    elif left <= timedelta(days=_EXPIRY_WARN_DAYS):
+        level = "WARN"
+    else:
+        level = "PASS"
+    return level, f"notAfter={expires.strftime('%Y-%m-%dT%H:%M:%SZ')} ({left.days} days left)"
+
+
+def run_self_check(host: str, listen_port: int, upstream_port: int, state_dir: Path) -> tuple:
+    """Run the evidence gate. Returns (exit_code, output_lines).
+
+    Reads only the public CA file; never creates, reissues or rotates
+    anything and never reads a private key or any token."""
+    results: dict = {}
+    ca_path = build_pki(Path(state_dir), label="Portal").ca_public_path
+    ca_hash = ""
+    names = ("tls_health", "protected_unauth", "leaf_san", "leaf_expiry")
+    ctx = None
+    try:
+        ca_hash = hashlib.sha256(ca_path.read_bytes()).hexdigest()
+        ctx = ssl.create_default_context(cafile=str(ca_path))
+    except (OSError, ssl.SSLError, ValueError) as exc:
+        why = ("public CA certificate missing" if isinstance(exc, FileNotFoundError)
+               else f"public CA certificate unusable ({type(exc).__name__})")
+        for name in names:
+            results[name] = ("FAIL", f"{why} in the store; start the proxy once or run "
+                                     "--print-fingerprint to create it")
+    if ctx is not None:
+        leaf: dict = {}
+        try:
+            status, leaf = _https_status(host, listen_port, ctx, "/health")
+            results["tls_health"] = ("PASS" if status == 200 else "FAIL",
+                                     f"GET /health returned {status}")
+        except (OSError, ssl.SSLError, http.client.HTTPException) as exc:
+            results["tls_health"] = ("FAIL", "verified handshake or request failed "
+                                             f"({type(exc).__name__}: {exc})")
+        try:
+            status, _ = _https_status(host, listen_port, ctx, _PEER_INBOX_PATH)
+            results["protected_unauth"] = (
+                "PASS" if status in (401, 403) else "FAIL",
+                f"GET {_PEER_INBOX_PATH} without Authorization returned {status}")
+        except (OSError, ssl.SSLError, http.client.HTTPException) as exc:
+            results["protected_unauth"] = ("FAIL", f"request failed ({type(exc).__name__}: {exc})")
+        if leaf:
+            covered = _san_covers(leaf, host)
+            results["leaf_san"] = ("PASS" if covered else "FAIL",
+                                   f"SAN {'contains' if covered else 'does not contain'} {host}")
+            results["leaf_expiry"] = _expiry_result(leaf)
+        else:
+            results["leaf_san"] = ("FAIL", "no verified leaf certificate was presented")
+            results["leaf_expiry"] = ("FAIL", "no verified leaf certificate was presented")
+    results["upstream_loopback_only"] = _check_upstream_loopback_only(upstream_port)
+    order = names + ("upstream_loopback_only",)
+    lines = [f"check_{n}={results[n][0]} {results[n][1]}" for n in order]
+    failed = any(results[n][0] == "FAIL" for n in order)
+    if ca_hash:
+        lines.append(f"ca_sha256_file={ca_hash}")
+    lines.append(f"self_check={'FAIL' if failed else 'PASS'}")
+    return (1 if failed else 0), lines
+
+
 def main(argv: Optional[list] = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m orchestrator.portal_tls_proxy")
     ap.add_argument("--listen-host", default="", help="bind address (default: all interfaces)")
@@ -150,10 +304,20 @@ def main(argv: Optional[list] = None) -> int:
                     help="override the state directory (private/ + public/)")
     ap.add_argument("--print-fingerprint", action="store_true",
                     help="ensure the CA and leaf exist, print the public CA file hash and path, exit")
+    ap.add_argument("--self-check", action="store_true", dest="self_check",
+                    help="verify the running endpoint against the public CA only, print "
+                         "check_<name>=PASS|WARN|FAIL lines, exit 0 (no FAIL) or 1")
+    ap.add_argument("--host", default="",
+                    help="--self-check target (default: first non-loopback local address)")
     args = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
     state_dir = Path(args.state_dir) if args.state_dir else portal_tls_dir()
+    if args.self_check:
+        code, lines = run_self_check(args.host or _default_self_check_host(),
+                                     args.listen_port, args.upstream_port, state_dir)
+        print("\n".join(lines), flush=True)
+        return code
     if _inside_checkout(state_dir):
         _log.warning("portal-tls-proxy: state directory %s is inside a checkout; keys should "
                      "live outside any repository", state_dir)
