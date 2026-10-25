@@ -1,0 +1,61 @@
+{
+  "id": "0eec25ad2d50",
+  "key": "manual_0eec25",
+  "name": "manual_0eec25",
+  "claim": "A differential over every launch path in a mirrored policy pair must also compare the config files and the pin documents, because a row only one repo carries is invisible to a path list it was never added to.",
+  "conditions": [
+    "added",
+    "also",
+    "because",
+    "carries",
+    "compare",
+    "config",
+    "differential",
+    "documents",
+    "every",
+    "files",
+    "invisible",
+    "launch",
+    "list",
+    "mirrored",
+    "never",
+    "one",
+    "only",
+    "over",
+    "pair",
+    "path",
+    "pin",
+    "policy",
+    "repo",
+    "row"
+  ],
+  "evidence_ids": [
+    "2026-10-25T01:51:11.293172+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-25T01:51:11.293172+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-25T01:51:11.293172+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-25T01:51:11.448764+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT and orama-system diverged on the gpt-5.6-terra row, the Alexandria pin tip and the generic ungated-row check; the 1,764-case table matched while behavior differed. Fixed by mirroring all three and adding the Terra path to the shared differential (2,058 cases).",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-25T01:51:11.293172+00:00"
+      ],
+      "lessons_sha": "94d03b30e0f4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-25T01:51:11.448747+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT and orama-system diverged on the gpt-5.6-terra row, the Alexandria pin tip and the generic ungated-row check; the 1,764-case table matched while behavior differed. Fixed by mirroring all three and adding the Terra path to the shared differential (2,058 cases)."
+}

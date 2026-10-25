@@ -17,8 +17,9 @@
 
 **Harness model defaults** (provider-agnostic; the harness picks the path):
 cite [Alexandria model-governance](https://github.com/oramasys/alexandria/blob/docs/mig-pack-ingest-20260925/docs/standards/model-governance.md)
-(PR #1, tip `e7ee9db6`) and the local pin `docs/standards/model-governance.md`.
+(PR #1, tip `d6da6781`) and the local pin `docs/standards/model-governance.md`.
 Cursor / Grok Bot default: `grok-4.7` `{effort: medium, fast: false}`.
+Allowed alternatives: `composer-2.5`, or `gpt-5.6-terra` at medium, both with fast off.
 Anthropic default: `claude-sonnet-5-5` medium. `grok-4.5` is banned.
 `auto` is editor-only. Agents never self-escalate.
 The local-first runtime frugality ladder below is unchanged.

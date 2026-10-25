@@ -368,6 +368,17 @@ def _token_covers(
     )
 
 
+def _ungated_cursor_row(cfg: Mapping[str, Any], launch_id: str) -> Mapping[str, Any]:
+    """Return the configured row for an ungated Cursor launch id (the default or an allowed one)."""
+    default = cfg["cursor_grok_bot"]["default"]
+    if str(default["launch_id"]) == launch_id:
+        return default
+    for row in cfg["cursor_grok_bot"].get("allowed_ungated") or []:
+        if str(row["launch_id"]) == launch_id:
+            return row
+    raise ModelGovernanceError("unlisted Cursor model")
+
+
 def _assert_gated_params(spec: LaunchSpec, row: Mapping[str, Any]) -> None:
     wanted_effort = row.get("effort")
     if wanted_effort is not None and _named_effort(spec) not in row.get(
@@ -411,8 +422,7 @@ def _assert_cursor_launch(
     if _named_effort(spec) not in (None, "medium") and not covers():
         raise ModelGovernanceError("non-medium effort requires an escalation token")
     if spec.launch_id in _ungated_cursor_ids(cfg):
-        if spec.launch_id == "composer-2.5" and spec.fast is not False:
-            raise ModelGovernanceError("composer-2.5 must launch with fast off")
+        _assert_gated_params(spec, _ungated_cursor_row(cfg, spec.launch_id))
         return
     gated = cfg["cursor_grok_bot"].get("gated") or {}
     if spec.launch_id in gated:

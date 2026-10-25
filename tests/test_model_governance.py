@@ -730,6 +730,37 @@ def test_vector_fable_requires_budget_cap_on_every_path(path) -> None:
     )
 
 
+def test_gpt_5_6_terra_is_an_ungated_cursor_pick_at_medium_fast_off() -> None:
+    """The official Terra id replaces the retired Codex example without needing a token."""
+    ok = LaunchSpec(
+        path="cursor_grok_bot", launch_id="gpt-5.6-terra", effort="medium", fast=False
+    )
+    plan_launch(ok)
+    assert_launch_allowed(ok)
+
+
+@pytest.mark.parametrize(
+    "effort,fast,match",
+    [("medium", True, "fast"), ("medium", None, "fast"), ("high", False, "effort")],
+)
+def test_gpt_5_6_terra_refuses_fast_and_non_medium_effort_without_proof(
+    effort: str, fast: bool | None, match: str
+) -> None:
+    """Terra keeps the Cursor controls: fast off, and medium effort unless a token covers it."""
+    spec = LaunchSpec(
+        path="cursor_grok_bot", launch_id="gpt-5.6-terra", effort=effort, fast=fast
+    )
+    with pytest.raises(ModelGovernanceError, match=match):
+        assert_launch_allowed(spec)
+
+
+def test_gpt_5_6_terra_requires_its_configured_effort_to_be_set_explicitly() -> None:
+    """An unset effort is not medium: the ungated row holds Terra to the effort it names."""
+    spec = LaunchSpec(path="cursor_grok_bot", launch_id="gpt-5.6-terra", effort=None, fast=False)
+    with pytest.raises(ModelGovernanceError, match="requires effort medium"):
+        assert_launch_allowed(spec)
+
+
 # --- Cross-repo parity vectors (F1/F2): keep byte-identical in both v1 repositories. ---
 
 _PARITY_NOW = datetime(2026, 10, 25, tzinfo=timezone.utc)
@@ -808,17 +839,18 @@ _DIFF_PATHS = (
     ("direct_xai", "grok-4.6"),
     ("cursor_grok_bot", "grok-4.7"),
     ("cursor_grok_bot", "composer-2.5"),
+    ("cursor_grok_bot", "gpt-5.6-terra"),
     ("anthropic", "claude-sonnet-5-5"),
     ("anthropic", "claude-opus-5-5"),
 )
 _DIFF_EFFORTS = (None, "", "low", "medium", "high", "xhigh", "max")
 _DIFF_FASTS = (None, False, True)
 # SHA-256 of the sorted-key JSON outcome table below; identical in PT and orama-system.
-_DIFF_DIGEST = "295b8ab1496bf4e8ee63a2cf49e77bf1d444478b93ab302cb14cdac4358a072d"
+_DIFF_DIGEST = "1cc81a581e5308850876e167412f948beb4a6d51a4c34c108ab1af5b481500c7"
 
 
 def _diff_outcomes() -> dict[str, str]:
-    """Run both entry points over every path/alias/fast combination (1,764 cases)."""
+    """Run both entry points over every path/alias/fast combination (2,058 cases)."""
     outcomes: dict[str, str] = {}
     for (path, model), effort, reasoning, fast in itertools.product(
         _DIFF_PATHS, _DIFF_EFFORTS, _DIFF_EFFORTS, _DIFF_FASTS
@@ -843,6 +875,6 @@ def _diff_outcomes() -> dict[str, str]:
 def test_differential_policy_outcomes_match_across_repositories() -> None:
     """Every case is a clean allow or refusal and the whole table matches the pinned digest."""
     outcomes = _diff_outcomes()
-    assert len(outcomes) == 1764
+    assert len(outcomes) == 2058
     blob = json.dumps(outcomes, sort_keys=True, separators=(",", ":")).encode()
     assert hashlib.sha256(blob).hexdigest() == _DIFF_DIGEST
