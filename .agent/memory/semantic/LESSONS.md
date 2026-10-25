@@ -238,6 +238,7 @@
 - [PROVISIONAL] A test harness that extracts PowerShell functions into a child process must also extract every helper those functions call, and tests skipped on non-Windows CI must be run on a Windows host before calling the PR green  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_cbb2e003cc01 -->
 - [PROVISIONAL] When git diff --submodule=log reports a submodule as rewind, the checkout is older than the recorded gitlink; never commit it (it regresses the pin) and restore with git submodule update on that path  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_154b11aa2c63 -->
 - [PROVISIONAL] Do not treat a GGUF model id as Windows-only evidence when classifying LAN peers; LM Studio on macOS serves GGUF too, so accept an explicit Mac candidate whenever positive Mac evidence exists  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_9457a000a4f1 -->
+- [PROVISIONAL] A green serving or inert-effect groundwork suite is not release qualification: do not activate or present T3 as live until trusted effect-grant composition, final-boundary authorization, isolation evidence, and subprocess crash qualification each pass at the exact deployed pins.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_088401dddd92 -->
 
 ### 2026-09
 
