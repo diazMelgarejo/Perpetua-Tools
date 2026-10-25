@@ -18,6 +18,7 @@ import ipaddress
 import json
 import re
 import secrets
+import threading
 import time
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
@@ -97,6 +98,11 @@ def _sink_dir() -> Path:
     return Path(override) if override else _DEFAULT_SINK_DIR
 
 
+# Serializes the JSONL append: /health now probes from several threads, each
+# emitting egress events, and interleaved writes would corrupt lines.
+_SINK_LOCK = threading.Lock()
+
+
 def _sink_path(now: float | None = None) -> Path:
     day = datetime.fromtimestamp(now if now is not None else time.time(), tz=timezone.utc)
     return _sink_dir() / f"egress-events-{day:%Y-%m-%d}.jsonl"
@@ -113,8 +119,10 @@ def emit(event: EgressEvent) -> None:
         payload = event.to_redacted_dict()
         path = _sink_path()
         path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("a", encoding="utf-8") as f:
-            f.write(json.dumps(payload, sort_keys=True) + "\n")
+        line = json.dumps(payload, sort_keys=True) + "\n"
+        with _SINK_LOCK:
+            with path.open("a", encoding="utf-8") as f:
+                f.write(line)
     except Exception:  # noqa: BLE001 -- telemetry must never raise into the request path
         pass
 
