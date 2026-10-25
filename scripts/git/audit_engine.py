@@ -554,8 +554,12 @@ def _coauthor_policy_ok(repo_root: Path, body: str) -> bool:
         tmp.write(body)
         tmp_path = tmp.name
     try:
+        # Run through bash explicitly: a shebang script cannot be executed
+        # directly on Windows (CreateProcess -> WinError 193), which made the
+        # guard fail closed for every Windows push. Same launch style as
+        # _bash_banned_attribution_hit above.
         proc = subprocess.run(
-            [str(hook), tmp_path],
+            ["bash", str(hook), tmp_path],
             cwd=repo_root,
             capture_output=True,
             text=True,
