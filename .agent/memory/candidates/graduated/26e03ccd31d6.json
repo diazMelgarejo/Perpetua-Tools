@@ -1,0 +1,43 @@
+{
+  "id": "26e03ccd31d6",
+  "key": "manual_26e03c",
+  "name": "manual_26e03c",
+  "claim": "Before correcting a peer's citation, read the record it cites; a commit named as a ratified base is a repo state, so its unrelated merge subject does not make it wrong",
+  "conditions": [
+    "base",
+    "citation",
+    "commit",
+    "correction",
+    "peer",
+    "ratified"
+  ],
+  "evidence_ids": [
+    "2026-10-24T17:21:19.967669+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-24T17:21:19.967669+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-24T17:21:19.967669+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-24T17:21:20.110071+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Claude called the ratified base commit a mere Hermes merge; the ratification addendum names it as the base, so the correction itself was the error.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-24T17:21:19.967669+00:00"
+      ],
+      "lessons_sha": "90f630eab90f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-24T17:21:20.110059+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Claude called the ratified base commit a mere Hermes merge; the ratification addendum names it as the base, so the correction itself was the error."
+}
