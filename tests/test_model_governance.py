@@ -878,3 +878,55 @@ def test_differential_policy_outcomes_match_across_repositories() -> None:
     assert len(outcomes) == 2058
     blob = json.dumps(outcomes, sort_keys=True, separators=(",", ":")).encode()
     assert hashlib.sha256(blob).hexdigest() == _DIFF_DIGEST
+
+
+# --- Cross-repo config + pin parity (F1/F2): keep byte-identical in both v1 repositories. ---
+# The differential above compares launch outcomes only; these pin the governance
+# config and the shared pin-document sections so drift in either repo fails a test.
+_PARITY_CONFIG_DIGEST = "d24937d88058bf253912724ca3f6a83354a176e18795aa90870732df05de8ad5"
+_PARITY_PIN_DIGEST = "f03c1a17e78d065ca281c71f630163e149f2ac64ed49bc71ffe2a4d3fe5c08b4"
+_PARITY_PIN_SECTIONS = ("## Escalation approval regimes", "## Role selection contract")
+_PARITY_ALEXANDRIA_TIP = "d6da6781"
+
+
+def _parity_root() -> Path:
+    """Return the repository root that holds ``config/`` and ``docs/standards/``."""
+    return Path(__file__).resolve().parents[1]
+
+
+def _parity_config_digest() -> str:
+    """SHA-256 of the parsed governance config as sorted-key compact JSON."""
+    import yaml
+
+    parsed = yaml.safe_load((_parity_root() / "config" / "model-governance.yml").read_text(encoding="utf-8"))
+    blob = json.dumps(parsed, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(blob).hexdigest()
+
+
+def _parity_pin_sections() -> str:
+    """Concatenate the shared pin-document sections (LF-normalised, in fixed order)."""
+    import re
+
+    text = (_parity_root() / "docs" / "standards" / "model-governance.md").read_text(encoding="utf-8")
+    text = text.replace("\r\n", "\n")
+    sections = {p.split("\n", 1)[0].strip(): p for p in re.split(r"(?m)^(?=## )", text) if p.startswith("## ")}
+    return "".join(sections[name] for name in _PARITY_PIN_SECTIONS)
+
+
+def test_governance_config_matches_the_mirrored_repository_digest() -> None:
+    """The parsed config equals the digest pinned identically in PT and orama-system."""
+    assert _parity_config_digest() == _PARITY_CONFIG_DIGEST
+
+
+def test_shared_pin_sections_match_the_mirrored_repository_digest() -> None:
+    """The shared pin-document sections equal the digest pinned in both repositories."""
+    assert hashlib.sha256(_parity_pin_sections().encode()).hexdigest() == _PARITY_PIN_DIGEST
+
+
+def test_pin_document_and_config_name_the_same_alexandria_tip() -> None:
+    """Both the pin document and the config reference the shared Alexandria tip."""
+    root = _parity_root()
+    doc = (root / "docs" / "standards" / "model-governance.md").read_text(encoding="utf-8")
+    cfg = (root / "config" / "model-governance.yml").read_text(encoding="utf-8")
+    assert _PARITY_ALEXANDRIA_TIP in doc
+    assert _PARITY_ALEXANDRIA_TIP in cfg
