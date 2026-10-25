@@ -24,7 +24,9 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-STAMP_FILE="${SCRIPT_DIR}/.requirements.stamp"
+VENV_DIR="${PT_VENV_DIR:-${SCRIPT_DIR}/.venv}"
+VENV_PYTHON="${VENV_DIR}/bin/python"
+STAMP_FILE="${VENV_DIR}/.pt-requirements.stamp"
 LOG_DIR="${SCRIPT_DIR}/.logs"
 mkdir -p "$LOG_DIR"
 
@@ -68,7 +70,7 @@ _hash_file() {
 }
 
 _req_hash() {
-  local name file manifest=""
+  local name file manifest="source:${SCRIPT_DIR}\n"
   for name in requirements.txt pyproject.toml uv.lock; do
     file="${SCRIPT_DIR}/${name}"
     [ -f "$file" ] || continue
@@ -108,32 +110,44 @@ fi
 _info "Phase 2 — Python venv + dependencies"
 
 VENV_FRESH=0
-if [ ! -d "${SCRIPT_DIR}/.venv" ]; then
+if ! "$VENV_PYTHON" -c 'import sys; assert sys.prefix != sys.base_prefix' >/dev/null 2>&1; then
   if [ "$MODE_CHECK" -eq 0 ]; then
     _info "Creating Python venv..."
-    python3 -m venv "${SCRIPT_DIR}/.venv" >>"${LOG_DIR}/install.log" 2>&1 \
-      || { _warn "venv creation failed — see ${LOG_DIR}/install.log"; }
+    python3 -m venv "$VENV_DIR" >>"${LOG_DIR}/install.log" 2>&1 \
+      || { _err "venv creation failed — see ${LOG_DIR}/install.log"; exit 1; }
     VENV_FRESH=1
   else
-    _warn ".venv not found — run without --check to create"
+    _err "Working venv not found at PT_VENV_DIR — run without --check to create"
+    exit 1
   fi
 else
   _ok "Python venv exists"
 fi
 
-if [ -d "${SCRIPT_DIR}/.venv" ]; then
+if [ -x "$VENV_PYTHON" ]; then
   CURRENT_HASH="$(_stamp_current)"
   EXPECTED_HASH="$(_req_hash)"
   if [ "$MODE_FORCE" -eq 1 ] || [ "$VENV_FRESH" -eq 1 ] || [ "$CURRENT_HASH" != "$EXPECTED_HASH" ]; then
     if [ "$MODE_CHECK" -eq 0 ]; then
       _info "Installing Python deps (dependency contract changed)..."
-      "${SCRIPT_DIR}/.venv/bin/pip" install -q -r "${SCRIPT_DIR}/requirements.txt" \
-        >>"${LOG_DIR}/install.log" 2>&1 && {
+      _pip_ok=0
+      if "$VENV_PYTHON" -m pip --version >/dev/null 2>&1; then
+        (cd "$SCRIPT_DIR" && "$VENV_PYTHON" -m pip install -q -r requirements.txt) \
+          >>"${LOG_DIR}/install.log" 2>&1 && _pip_ok=1
+      elif command -v uv >/dev/null 2>&1; then
+        (cd "$SCRIPT_DIR" && uv pip install --python "$VENV_PYTHON" -q -r requirements.txt) \
+          >>"${LOG_DIR}/install.log" 2>&1 && _pip_ok=1
+      fi
+      if [ "$_pip_ok" -eq 1 ]; then
         _stamp_write
         _ok "Python deps installed (stamp updated)"
-      } || _warn "pip install failed — see ${LOG_DIR}/install.log"
+      else
+        _err "Dependency installation failed; use python -m ensurepip or install uv; see ${LOG_DIR}/install.log"
+        exit 1
+      fi
     else
       _warn "dependency contract hash mismatch — run without --check to update"
+      exit 1
     fi
   else
     _ok "Python deps up-to-date (stamp matches)"
@@ -174,16 +188,16 @@ if [ "$_NODE_OK" -eq 1 ]; then
 
     NODE_MODULES="${PKG_DIR}/node_modules"
     PKG_STAMP="${PKG_DIR}/.node_stamp"
-    PKG_HASH="$(sha256sum "$PKG_JSON" 2>/dev/null | cut -d' ' -f1 || echo none)"
+    PKG_HASH="$(_hash_file "$PKG_JSON")"
     STAMP_HASH="$(cat "$PKG_STAMP" 2>/dev/null || echo "")"
 
     if [ ! -d "$NODE_MODULES" ] || [ "$MODE_FORCE" -eq 1 ] || [ "$STAMP_HASH" != "$PKG_HASH" ]; then
       if [ "$MODE_CHECK" -eq 0 ]; then
         _info "${pkg_rel}: installing Node deps..."
-        (cd "$PKG_DIR" && npm install --silent >>"${LOG_DIR}/install.log" 2>&1) && {
+        (cd "$PKG_DIR" && npm install --package-lock=false --silent >>"${LOG_DIR}/install.log" 2>&1) && {
           echo "$PKG_HASH" > "$PKG_STAMP"
           _ok "${pkg_rel}: Node deps installed"
-        } || _warn "${pkg_rel}: npm install failed — see ${LOG_DIR}/install.log"
+        } || { _err "${pkg_rel}: npm install failed — see ${LOG_DIR}/install.log"; exit 1; }
       else
         [ ! -d "$NODE_MODULES" ] \
           && _warn "${pkg_rel}/node_modules missing — run without --check" \

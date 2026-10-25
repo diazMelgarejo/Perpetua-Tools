@@ -76,6 +76,9 @@ dependencies = [
     "rich>=13.7.0",
     # Security: rate limiting (OWASP API4)
     "slowapi>=0.1.9",
+    # orchestrator/alphaclaw_tls_proxy.py + lan_control_plane_pki.py (Portal/AlphaClaw TLS);
+    # >=42 for not_valid_after_utc and verify_directly_issued_by.
+    "cryptography>=42",
 ]
 
 [project.optional-dependencies]

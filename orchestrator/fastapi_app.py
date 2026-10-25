@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import collections
+import concurrent.futures as _cf
 import json
 import logging
 import re as _re
@@ -618,6 +619,14 @@ def get_user_input_status() -> Dict[str, Any]:
     }
 
 
+# LM Studio candidate probes for /health. Module-level and bounded (no ``with``
+# block, so an abandoned slow probe cannot block the request). The deadline is
+# kept below connectivity's fan-out deadline so both stages fit in the Portal's
+# 3 s timeout.
+_HEALTH_LM_POOL = _cf.ThreadPoolExecutor(max_workers=6, thread_name_prefix="health-lms")
+_HEALTH_LM_DEADLINE_S = 1.0
+
+
 @app.get("/health", tags=["system"])
 def health() -> Dict[str, Any]:
     def _validated(raw: str, default: str) -> str:
@@ -644,10 +653,24 @@ def health() -> Dict[str, Any]:
             _validated(c, "http://localhost:1234") for c in candidates
         ]
         last = validated[-1]
-        for candidate in validated:
-            if check_lm_studio(candidate).get("ok"):
-                return candidate
-        return last
+        # Probe all candidates concurrently, then pick "first healthy in
+        # order" so failover semantics are unchanged. check_lm_studio is
+        # resolved here (module global) so tests can monkeypatch it.
+        probe = check_lm_studio
+        futs = [_HEALTH_LM_POOL.submit(probe, c) for c in validated]
+        deadline = time.monotonic() + _HEALTH_LM_DEADLINE_S
+        try:
+            for candidate, fut in zip(validated, futs):
+                try:
+                    result = fut.result(timeout=max(0.0, deadline - time.monotonic()))
+                except Exception:  # noqa: BLE001 -- timeout or probe error == unhealthy
+                    continue
+                if result.get("ok"):
+                    return candidate
+            return last
+        finally:
+            for pending in futs:
+                pending.cancel()
 
     safe_ollama = _validated(HEALTH_OLLAMA_HOST, "http://localhost:11434")
     safe_lm = _select_healthy_lm_studio_host()
