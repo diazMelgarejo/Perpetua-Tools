@@ -51,11 +51,13 @@ _SALT = secrets.token_hex(16)
 
 
 def _hash(value: str) -> str:
+    """Return a salted ``sha256:`` digest of ``value``; the salt is per-process so hashes correlate in-session but are not reversible."""
     return "sha256:" + hashlib.sha256((_SALT + value).encode("utf-8")).hexdigest()
 
 
 @dataclass(frozen=True)
 class EgressEvent:
+    """One redacted egress event (validation or completion of an outbound request); raw host and IP are only ever stored hashed."""
     endpoint_class: Literal["local", "remote"]
     host: str
     port: int
@@ -71,6 +73,7 @@ class EgressEvent:
     ts: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
     def to_redacted_dict(self) -> dict:
+        """Return the event as a JSON-safe dict with host and resolved IP replaced by salted hashes."""
         event_label = "egress_validation" if self.event_kind == "validation" else "egress_request_complete"
         payload = {
             "ts": self.ts,
@@ -92,6 +95,7 @@ class EgressEvent:
 
 
 def _sink_dir() -> Path:
+    """Return the telemetry sink directory: the environment override when set, otherwise the default under the user's home."""
     import os
 
     override = os.getenv(_SINK_DIR_ENV, "").strip()
@@ -104,6 +108,7 @@ _SINK_LOCK = threading.Lock()
 
 
 def _sink_path(now: float | None = None) -> Path:
+    """Return the day-stamped (UTC) JSONL sink path for ``now`` (epoch seconds, default the current time)."""
     day = datetime.fromtimestamp(now if now is not None else time.time(), tz=timezone.utc)
     return _sink_dir() / f"egress-events-{day:%Y-%m-%d}.jsonl"
 

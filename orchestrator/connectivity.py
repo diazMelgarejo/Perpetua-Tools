@@ -1,3 +1,10 @@
+"""Backend connectivity probes and the concurrent /health fan-out.
+
+Holds the deny-by-default probe for remote vendor APIs, the allowlist probe for
+trusted local model servers, live model-online derivation, and the six-way
+concurrent ``backend_health_map`` with its cloud-result cache.
+"""
+
 from __future__ import annotations
 
 import concurrent.futures as _futures
@@ -29,6 +36,7 @@ def _probe(url: str, timeout: float = 2.5) -> Dict[str, Any]:
 
 
 def _is_localhost_url(url: str) -> bool:
+    """Return True when the URL's hostname is exactly ``localhost`` (case-insensitive); False on unparsable URLs."""
     try:
         return (_urlsplit(url).hostname or "").lower() == "localhost"
     except ValueError:
@@ -144,6 +152,7 @@ def endpoint_online(base: str, backend: str, model_id: str = "", ttl: float = _E
         return False
 
     def _norm(x: str) -> str:
+        """Strip trailing quant/format suffixes (repeatedly) so differently-tagged ids of one model compare equal."""
         # strip trailing quant/format tags (LM Studio lists the base id; the
         # registry name often carries -Q4_K_M / -4bit / -gguf / -mlx etc.)
         prev = None
@@ -178,14 +187,17 @@ def check_mlx(host: str = "http://localhost:8081") -> Dict[str, Any]:
 
 
 def check_perplexity() -> Dict[str, Any]:
+    """Probe the Perplexity API root through the deny-by-default remote transport."""
     return _probe("https://api.perplexity.ai")
 
 
 def check_openrouter() -> Dict[str, Any]:
+    """Probe the OpenRouter models endpoint through the deny-by-default remote transport."""
     return _probe("https://openrouter.ai/api/v1/models")
 
 
 def check_anthropic() -> Dict[str, Any]:
+    """Probe the Anthropic API root through the deny-by-default remote transport."""
     return _probe("https://api.anthropic.com")
 
 
@@ -218,6 +230,7 @@ def _reset_cloud_probe_cache_for_tests() -> None:
 
 
 def _failure_result(error: str) -> Dict[str, Any]:
+    """Build the standard failed-probe result dict carrying ``error`` and an empty URL."""
     return {"ok": False, "status_code": None, "url": "", "error": error}
 
 
@@ -286,6 +299,7 @@ def _cached_cloud_probe(name: str, fn: Callable[[], Dict[str, Any]]) -> Dict[str
 
 
 def _timeout_result(url: str) -> Dict[str, Any]:
+    """Build the failed-probe result for a probe that missed the health deadline, keeping the URL it was probing."""
     return {
         "ok": False,
         "status_code": None,
