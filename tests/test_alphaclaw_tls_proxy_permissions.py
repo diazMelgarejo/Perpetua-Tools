@@ -9,6 +9,7 @@ session -- see the plan doc's provenance note and the module docstring.
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -131,24 +132,44 @@ def test_secure_path_icacls_logs_warning_on_failure(caplog):
     assert any("icacls failed" in rec.message for rec in caplog.records)
 
 
+# The POSIX branch is forced on every runner. Windows filesystems keep only a
+# read-only bit, so os.chmod cannot store 0o600/0o700 there and stat() reports
+# 0o666/0o777: assert the requested mode everywhere, and the stored mode only
+# where the filesystem holds POSIX permission bits.
+_FS_HAS_POSIX_MODES = os.name != "nt"
+
+
+def _secure_path_posix(path: Path, is_directory: bool) -> int:
+    """Run the POSIX branch of _secure_path; return the mode passed to chmod."""
+    with patch.object(tls_proxy, "_IS_WINDOWS", False), \
+         patch.object(Path, "chmod", autospec=True, side_effect=Path.chmod) as spy:
+        tls_proxy._secure_path(path, is_directory=is_directory)
+    spy.assert_called_once()
+    called_path, mode = spy.call_args.args[:2]
+    assert called_path == path
+    return mode
+
+
 def test_secure_path_posix_sets_correct_mode(tmp_path):
     """POSIX path sets 0o600 for files, 0o700 for dirs."""
     test_file = tmp_path / "key.pem"
     test_file.write_text("test key")
 
-    with patch.object(tls_proxy, "_IS_WINDOWS", False):
-        tls_proxy._secure_path(test_file, is_directory=False)
+    requested = _secure_path_posix(test_file, is_directory=False)
 
-    mode = test_file.stat().st_mode & 0o777
-    assert mode == 0o600, f"Expected 0o600, got 0o{mode:o}"
+    assert requested == 0o600, f"Expected chmod 0o600, got 0o{requested:o}"
+    if _FS_HAS_POSIX_MODES:
+        mode = test_file.stat().st_mode & 0o777
+        assert mode == 0o600, f"Expected 0o600, got 0o{mode:o}"
 
 
 def test_secure_path_posix_sets_correct_mode_for_directory(tmp_path):
     test_dir = tmp_path / "certdir"
     test_dir.mkdir()
 
-    with patch.object(tls_proxy, "_IS_WINDOWS", False):
-        tls_proxy._secure_path(test_dir, is_directory=True)
+    requested = _secure_path_posix(test_dir, is_directory=True)
 
-    mode = test_dir.stat().st_mode & 0o777
-    assert mode == 0o700, f"Expected 0o700, got 0o{mode:o}"
+    assert requested == 0o700, f"Expected chmod 0o700, got 0o{requested:o}"
+    if _FS_HAS_POSIX_MODES:
+        mode = test_dir.stat().st_mode & 0o777
+        assert mode == 0o700, f"Expected 0o700, got 0o{mode:o}"
