@@ -255,3 +255,36 @@ def test_running_proxy_applies_a_renewed_leaf(tmp_path, upstream):
         assert seen == proxy.pki.leaf_fingerprint
     finally:
         proxy.stop()
+
+
+def test_running_proxy_picks_up_leaf_rotated_by_another_process(tmp_path, upstream):
+    """A second instance on the shared state dir reissues the leaf; the running
+    proxy's own ensure() then reports 'reused' but must still reload."""
+    import hashlib
+
+    proxy = _make(tmp_path, upstream)
+    proxy.pki_recheck_seconds = 0.2
+    proxy.start()
+    try:
+        before = proxy.pki.leaf_fingerprint
+        other = _make(tmp_path, upstream)
+        other.ensure_certificate()
+        other.pki.leaf_chain_path.unlink()
+        other.ensure_certificate()  # reissues the leaf on disk
+        new_fp = other.pki.leaf_fingerprint
+        assert new_fp != before
+
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        seen = None
+        deadline = time.monotonic() + 30
+        while time.monotonic() < deadline and seen != new_fp:
+            time.sleep(0.2)
+            with socket.create_connection((LOOP, proxy.proxy_port), timeout=5) as raw:
+                with ctx.wrap_socket(raw, server_hostname=LOOP) as tls:
+                    seen = hashlib.sha256(tls.getpeercert(binary_form=True)).hexdigest()
+        assert seen == new_fp
+        assert proxy.pki.leaf_fingerprint == new_fp
+    finally:
+        proxy.stop()

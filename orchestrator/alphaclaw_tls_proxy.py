@@ -564,7 +564,11 @@ class AlphaClawTlsProxy:
             return ctx
 
         # Holder so a renewed leaf can replace the context for NEW handshakes.
-        ctx_holder = {"ctx": _new_context(cert_path, key_path)}
+        ctx_holder = {
+            "ctx": _new_context(cert_path, key_path),
+            # Fingerprint of the leaf the live context was built from.
+            "fp": self.pki.leaf_fingerprint if self.pki is not None else "",
+        }
         handshake_timeout = _HANDSHAKE_TIMEOUT
 
         upstream = self.upstream_port
@@ -881,10 +885,15 @@ class AlphaClawTlsProxy:
         while stop is not None and not stop.wait(self.pki_recheck_seconds):
             try:
                 self.pki.ensure()
-                if self.pki.leaf_event != "reused":
+                # Compare the on-disk leaf with the one being served, not just
+                # this ensure()'s own event: another process sharing the state
+                # dir may have rotated it, which reports "reused" here.
+                on_disk = self.pki.leaf_fingerprint
+                if on_disk != ctx_holder.get("fp"):
                     ctx_holder["ctx"] = new_context(
                         self.pki.leaf_chain_path, self.pki.leaf_key_path
                     )
+                    ctx_holder["fp"] = on_disk
                     _log.info("%s TLS: applied a renewed leaf (%s)", self.label,
                               self.pki.leaf_event)
             except Exception as exc:  # noqa: BLE001 - keep serving; retry next interval
