@@ -212,6 +212,18 @@ def test_portal_store_is_separate_from_alphaclaw_and_outside_checkout(monkeypatc
     assert not str(d).startswith(str(portal._PT_ROOT))
 
 
+def test_default_store_is_home_local_share_and_ignores_localappdata(monkeypatch, tmp_path):
+    """One store for every launch context: AppData is redirected for processes
+    started from an MSIX-packaged app, so LOCALAPPDATA must not pick the store."""
+    monkeypatch.delenv("PORTAL_TLS_CERT_DIR", raising=False)
+    monkeypatch.delenv("PORTAL_TLS_STATE_DIR", raising=False)
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "appdata-local"))
+    monkeypatch.setattr(portal.Path, "home", classmethod(lambda cls: tmp_path / "home"))
+    assert portal.portal_tls_dir() == (
+        tmp_path / "home" / ".local" / "share" / "oramasys" / "lan-control-plane"
+    )
+
+
 def test_state_dir_env_and_alias(monkeypatch, tmp_path):
     monkeypatch.delenv("PORTAL_TLS_STATE_DIR", raising=False)
     monkeypatch.setenv("PORTAL_TLS_CERT_DIR", str(tmp_path / "alias"))

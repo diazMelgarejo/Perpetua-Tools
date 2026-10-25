@@ -41,10 +41,19 @@ both against a live handshake.
 
 ## Store layout
 
-Default location, outside any checkout: `%LOCALAPPDATA%/oramasys/lan-control-plane/`
-on Windows, `~/.local/share/oramasys/lan-control-plane/` elsewhere. Override
-with `PORTAL_TLS_STATE_DIR` (`PORTAL_TLS_CERT_DIR` is accepted as an alias).
+Default location, outside any checkout: `~/.local/share/oramasys/lan-control-plane/`
+on every OS, the same layout as the Mac peer. Override with
+`PORTAL_TLS_STATE_DIR` (`PORTAL_TLS_CERT_DIR` is accepted as an alias).
 A state directory inside a git checkout is allowed but logged as a warning.
+
+Windows does not use `%LOCALAPPDATA%`. A process started from an
+MSIX-packaged desktop app (an agent host, for example) has its AppData writes
+redirected into that package's private store. A CA created there is invisible
+to a launch from an ordinary terminal, which would then mint a second CA and
+break the trust the peer pinned. The user profile outside AppData is not
+redirected, so every launch context shares one CA. A store created at the old
+location can be moved here as a whole directory while the proxy is stopped;
+the CA, its pin and its fingerprint are unchanged by the move.
 
 ```text
 private/   ca.key  ca.crt  leaf.key  leaf.pem (leaf + CA)  ca-pin.json

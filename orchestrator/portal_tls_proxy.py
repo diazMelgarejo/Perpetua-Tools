@@ -13,8 +13,8 @@ untouched and nothing about the request is logged.
 
 Opt-in via ``PORTAL_TLS_ENABLED`` (off by default). State directory:
 ``PORTAL_TLS_STATE_DIR`` (alias ``PORTAL_TLS_CERT_DIR``), default
-``%LOCALAPPDATA%/oramasys/lan-control-plane`` on Windows and
-``~/.local/share/oramasys/lan-control-plane`` elsewhere.
+``~/.local/share/oramasys/lan-control-plane`` on every OS (see
+``portal_tls_dir`` for why Windows does not use ``%LOCALAPPDATA%``).
 
 Run: ``python -m orchestrator.portal_tls_proxy --listen-port 8443
 --upstream-port 8002``; ``--print-fingerprint`` prints ``ca_sha256_file=`` and
@@ -53,15 +53,20 @@ def portal_tls_enabled() -> bool:
 
 def portal_tls_dir() -> Path:
     """State store (private/ + public/), outside any checkout by default.
-    PORTAL_TLS_STATE_DIR wins; PORTAL_TLS_CERT_DIR is accepted as an alias."""
+    PORTAL_TLS_STATE_DIR wins; PORTAL_TLS_CERT_DIR is accepted as an alias.
+
+    The default is ``~/.local/share/oramasys/lan-control-plane`` on every OS,
+    the same layout the Mac peer uses. Windows deliberately avoids
+    ``%LOCALAPPDATA%``: a process started from an MSIX-packaged app (a desktop
+    agent host) has its AppData writes redirected into that package's private
+    store, so a CA created there is invisible to an ordinary terminal launch,
+    which would mint a second CA and break the trust the peer pinned. The
+    user profile outside AppData is not redirected, so every launch context
+    shares one CA."""
     for var in ("PORTAL_TLS_STATE_DIR", "PORTAL_TLS_CERT_DIR"):
         override = (os.environ.get(var) or "").strip()
         if override:
             return Path(override)
-    if os.name == "nt":
-        base = (os.environ.get("LOCALAPPDATA") or "").strip()
-        root = Path(base) if base else Path.home() / "AppData" / "Local"
-        return root / "oramasys" / "lan-control-plane"
     return Path.home() / ".local" / "share" / "oramasys" / "lan-control-plane"
 
 
