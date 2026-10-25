@@ -54,9 +54,11 @@ import json
 import logging
 import os
 import platform
+import socket
 import socketserver
 import ssl
 import threading
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -338,6 +340,11 @@ class AlphaClawTlsProxy:
     san_dns: tuple = ("localhost",)
     san_ips: Optional[tuple] = None  # None -> loopback address only
     reissue_on_san_change: bool = False  # reissue a reused cert that misses a SAN
+    # CA mode (Portal): an object with ensure()/leaf_chain_path/leaf_key_path/
+    # ca_fingerprint (see lan_control_plane_pki). None keeps self-signed mode.
+    pki: Optional[object] = None
+    websocket_passthrough: bool = False  # forward Upgrade: websocket on a raw tunnel
+    ws_idle_timeout: float = 300.0
 
     def _dir(self) -> Path:
         return CERT_DIR if self.cert_dir is None else self.cert_dir
@@ -470,6 +477,10 @@ class AlphaClawTlsProxy:
 
     def ensure_certificate(self) -> tuple[Path, Path]:
         """Create/reuse the leaf and apply the TOFU pin logic (no socket)."""
+        if self.pki is not None:
+            self.pki.ensure()  # CA pin enforced there; leaf rotation is routine
+            self.fingerprint = self.pki.ca_fingerprint
+            return self.pki.leaf_chain_path, self.pki.leaf_key_path
         cert_path, key_path, generation_mode = self._generate_cert()
         cdir = self._dir()
         if generation_mode in ("rotated", "san_reissued"):
@@ -540,6 +551,8 @@ class AlphaClawTlsProxy:
             "upgrade",
         }
         handler_label = self.label.lower()
+        ws_enabled = self.websocket_passthrough
+        ws_idle = self.ws_idle_timeout
         _CHUNK_SIZE = 65536
         _MAX_BODY_SIZE = 100 * 1024 * 1024  # 100MB -- generous for AlphaClaw's own API payloads, bounds a malicious/buggy client's memory impact
 
@@ -682,7 +695,79 @@ class AlphaClawTlsProxy:
                     self.end_headers()
                     self.wfile.write(str(exc.reason).encode("utf-8"))
 
+            def _is_websocket_upgrade(self) -> bool:
+                tokens = {
+                    t.strip().lower()
+                    for t in (self.headers.get("Connection") or "").split(",")
+                }
+                return (
+                    "upgrade" in tokens
+                    and (self.headers.get("Upgrade") or "").strip().lower() == "websocket"
+                )
+
+            def _tunnel(self) -> None:
+                """Raw TCP pass-through for a WebSocket upgrade: re-send the
+                request head unchanged (Authorization included), relay the
+                101, then pump bytes both ways until either side closes or
+                the connection is idle for ws_idle_timeout seconds."""
+                self.close_connection = True
+                try:
+                    up = socket.create_connection((upstream_host, upstream), timeout=10)
+                except OSError:
+                    self.send_response(502)
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                    return
+                crlf = "\r\n"
+                head = f"{self.requestline}{crlf}".encode("latin-1")
+                for header, value in self.headers.items():
+                    head += f"{header}: {value}{crlf}".encode("latin-1")
+                head += crlf.encode("latin-1")
+                client = self.connection
+                done = threading.Event()
+                state = {"last": time.monotonic()}
+                poll = 1.0
+
+                def pump(src, dst) -> None:
+                    src.settimeout(poll)
+                    try:
+                        while not done.is_set():
+                            try:
+                                data = src.recv(_CHUNK_SIZE)
+                            except (TimeoutError, socket.timeout):
+                                if time.monotonic() - state["last"] > ws_idle:
+                                    break
+                                continue
+                            if not data:
+                                break
+                            state["last"] = time.monotonic()
+                            dst.sendall(data)
+                    except (OSError, ssl.SSLError):
+                        pass
+                    finally:
+                        done.set()
+
+                try:
+                    up.sendall(head)
+                    t_up = threading.Thread(target=pump, args=(client, up), daemon=True)
+                    t_down = threading.Thread(target=pump, args=(up, client), daemon=True)
+                    t_up.start()
+                    t_down.start()
+                    done.wait()
+                    t_down.join(timeout=2)
+                    t_up.join(timeout=2)
+                except OSError:
+                    pass
+                finally:
+                    try:
+                        up.close()
+                    except OSError:
+                        pass
+
             def do_GET(self) -> None:
+                if ws_enabled and self._is_websocket_upgrade():
+                    self._tunnel()
+                    return
                 self._forward("GET")
 
             def do_POST(self) -> None:

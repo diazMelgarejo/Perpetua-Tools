@@ -15,6 +15,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 import pytest
 
@@ -105,7 +106,8 @@ def test_forwards_health_over_tls_to_http_upstream(tmp_path, upstream):
 
 
 def portal_cert(proxy):
-    return proxy._dir() / f"{proxy.cert_basename}.crt"
+    """The PUBLIC CA file a peer would be given."""
+    return proxy.pki.ca_public_path
 
 
 def test_authorization_header_reaches_upstream_unchanged(tmp_path, upstream):
@@ -137,7 +139,7 @@ def test_client_pinned_to_fingerprint_succeeds(tmp_path, upstream):
     proxy.start()
     try:
         port = proxy.proxy_port
-        assert _pinned_fingerprint_of(LOOP, port) == proxy.fingerprint
+        assert _pinned_fingerprint_of(LOOP, port) == proxy.pki.leaf_fingerprint
         # Pinned-only client: verification replaced by the pin comparison.
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
@@ -148,38 +150,39 @@ def test_client_pinned_to_fingerprint_succeeds(tmp_path, upstream):
         proxy.stop()
 
 
-def test_fingerprint_mismatch_after_regeneration_is_refused(tmp_path, upstream):
+def test_ca_replaced_after_pin_is_refused(tmp_path, upstream):
     proxy = _make(tmp_path, upstream)
     proxy.start()
     pinned = proxy.fingerprint
     proxy.stop()
-    cert_dir = proxy._dir()
-    (cert_dir / "portal.crt").unlink()
-    (cert_dir / "portal.key").unlink()
+    priv = proxy.pki.private_dir
+    (priv / "ca.crt").unlink()
+    (priv / "ca.key").unlink()
     again = _make(tmp_path, upstream)
     with pytest.raises(base.AlphaClawCertFingerprintMismatch):
         again.start()
-    assert base._load_pinned_fingerprint(cert_dir) == pinned  # never silently re-pinned
+    assert proxy.pki._load_pin() == pinned  # never silently re-pinned
+    assert not (priv / "ca.key").exists()  # and nothing regenerated behind the pin
 
 
-def test_san_change_reissues_explicitly_and_repins(tmp_path, upstream, caplog):
+def test_san_change_reissues_leaf_only_ca_stable(tmp_path, upstream, caplog):
     first = _make(tmp_path, upstream, ips=(LOOP, NET_A))
     first.ensure_certificate()
-    fp1 = first.fingerprint
+    fp1, leaf1 = first.fingerprint, first.pki.leaf_fingerprint
     same = _make(tmp_path, upstream, ips=(LOOP, NET_A))
     same.ensure_certificate()
-    assert same.fingerprint == fp1  # coverage unchanged -> reused
+    assert same.pki.leaf_fingerprint == leaf1 and same.pki.leaf_event == "reused"
 
     with caplog.at_level("WARNING"):
         moved = _make(tmp_path, upstream, ips=(LOOP, NET_B))
         moved.ensure_certificate()
-    assert moved.fingerprint != fp1
+    assert moved.pki.leaf_fingerprint != leaf1
+    assert moved.fingerprint == fp1  # CA stable across DHCP changes
     assert any("reissu" in r.getMessage() for r in caplog.records)
-    assert base._load_pinned_fingerprint(moved._dir()) == moved.fingerprint
     from cryptography import x509
 
-    cert = x509.load_pem_x509_certificate(portal_cert(moved).read_bytes())
-    san = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName).value
+    leaf = x509.load_pem_x509_certificates(moved.pki.leaf_chain_path.read_bytes())[0]
+    san = leaf.extensions.get_extension_for_class(x509.SubjectAlternativeName).value
     ips = {str(i) for i in san.get_values_for_type(x509.IPAddress)}
     assert NET_B in ips and LOOP in ips
     assert "portal.example.test" in san.get_values_for_type(x509.DNSName)
@@ -201,10 +204,20 @@ def test_san_names_env_parsing(monkeypatch):
     assert portal.san_names_from_env() == ("a.example.test", "b.example.test")
 
 
-def test_portal_store_is_separate_from_alphaclaw(monkeypatch):
+def test_portal_store_is_separate_from_alphaclaw_and_outside_checkout(monkeypatch):
     monkeypatch.delenv("PORTAL_TLS_CERT_DIR", raising=False)
-    assert portal.portal_tls_dir() != base.CERT_DIR
-    assert portal.portal_tls_dir().name == "portal_tls"
+    monkeypatch.delenv("PORTAL_TLS_STATE_DIR", raising=False)
+    d = portal.portal_tls_dir()
+    assert d != base.CERT_DIR and d.name == "lan-control-plane" and d.parent.name == "oramasys"
+    assert not str(d).startswith(str(portal._PT_ROOT))
+
+
+def test_state_dir_env_and_alias(monkeypatch, tmp_path):
+    monkeypatch.delenv("PORTAL_TLS_STATE_DIR", raising=False)
+    monkeypatch.setenv("PORTAL_TLS_CERT_DIR", str(tmp_path / "alias"))
+    assert portal.portal_tls_dir() == tmp_path / "alias"
+    monkeypatch.setenv("PORTAL_TLS_STATE_DIR", str(tmp_path / "primary"))
+    assert portal.portal_tls_dir() == tmp_path / "primary"
 
 
 def test_local_ipv4_addresses_are_valid_ipv4():
@@ -224,8 +237,12 @@ def test_alphaclaw_defaults_unchanged():
 
 
 def test_print_fingerprint_cli(tmp_path, capsys):
-    rc = portal.main(["--print-fingerprint", "--cert-dir", str(tmp_path / "c")])
-    out = capsys.readouterr().out
-    assert rc == 0
-    assert out.startswith("sha256:") and "BEGIN CERTIFICATE" in out
-    assert "PRIVATE" not in out
+    rc = portal.main(["--print-fingerprint", "--state-dir", str(tmp_path / "c")])
+    out = capsys.readouterr().out.splitlines()
+    assert rc == 0 and len(out) == 2
+    assert out[0].startswith("ca_sha256_file=") and out[1].startswith("ca_public_path=")
+    digest = out[0].split("=", 1)[1]
+    path = Path(out[1].split("=", 1)[1])
+    assert path.is_absolute() and path.is_file()
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == digest and len(digest) == 64
+    assert path.parent.name == "public"

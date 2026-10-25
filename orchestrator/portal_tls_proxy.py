@@ -3,22 +3,22 @@
 TLS front end for the orama Portal (plain HTTP on loopback), so a LAN peer
 can send authenticated requests over https to this node.
 
-This is a thin configuration layer over ``AlphaClawTlsProxy`` (the
-generalized proxy in ``alphaclaw_tls_proxy``): same certificate persistence,
-SHA-256 fingerprint TOFU pinning with hard reject on mismatch, restrictive
-key-store permissions and bounded streaming forwarder. The proxy is
-transport only: every request header, including Authorization, is forwarded
-to the Portal untouched and nothing about the request is logged.
+A thin configuration layer over ``AlphaClawTlsProxy`` using CA mode
+(``lan_control_plane_pki``): a dedicated local CA, a 30-day leaf signed by it
+(reissued automatically when it nears expiry or the host's addresses change),
+a local pin on the CA (a different CA is refused, exit 3), WebSocket upgrade
+pass-through, and a key store outside any checkout. The proxy is transport
+only: every request header, including Authorization, reaches the Portal
+untouched and nothing about the request is logged.
 
-Opt-in via ``PORTAL_TLS_ENABLED`` (off by default). The certificate covers
-``PORTAL_TLS_SAN_NAMES`` (comma list of DNS names) plus this host's current
-local IPv4 addresses. When the address set changes (for example after a DHCP
-change) the leaf is reissued, a warning is logged and the pin is updated
-explicitly, never silently; the operator then hands the new public cert and
-fingerprint to peers.
+Opt-in via ``PORTAL_TLS_ENABLED`` (off by default). State directory:
+``PORTAL_TLS_STATE_DIR`` (alias ``PORTAL_TLS_CERT_DIR``), default
+``%LOCALAPPDATA%/oramasys/lan-control-plane`` on Windows and
+``~/.local/share/oramasys/lan-control-plane`` elsewhere.
 
 Run: ``python -m orchestrator.portal_tls_proxy --listen-port 8443
---upstream-port 8002 [--print-fingerprint]``
+--upstream-port 8002``; ``--print-fingerprint`` prints ``ca_sha256_file=`` and
+``ca_public_path=`` and exits.
 """
 from __future__ import annotations
 
@@ -35,6 +35,7 @@ from typing import Callable, Iterable, Optional
 
 from orchestrator import alphaclaw_tls_proxy as _base
 from orchestrator.alphaclaw_tls_proxy import AlphaClawTlsProxy
+from orchestrator.lan_control_plane_pki import build_pki
 
 _log = logging.getLogger(__name__)
 
@@ -51,9 +52,25 @@ def portal_tls_enabled() -> bool:
 
 
 def portal_tls_dir() -> Path:
-    """Cert/pin store, separate from AlphaClaw's. Under the PT state dir."""
-    override = (os.environ.get("PORTAL_TLS_CERT_DIR") or "").strip()
-    return Path(override) if override else _PT_ROOT / ".state" / "portal_tls"
+    """State store (private/ + public/), outside any checkout by default.
+    PORTAL_TLS_STATE_DIR wins; PORTAL_TLS_CERT_DIR is accepted as an alias."""
+    for var in ("PORTAL_TLS_STATE_DIR", "PORTAL_TLS_CERT_DIR"):
+        override = (os.environ.get(var) or "").strip()
+        if override:
+            return Path(override)
+    if os.name == "nt":
+        base = (os.environ.get("LOCALAPPDATA") or "").strip()
+        root = Path(base) if base else Path.home() / "AppData" / "Local"
+        return root / "oramasys" / "lan-control-plane"
+    return Path.home() / ".local" / "share" / "oramasys" / "lan-control-plane"
+
+
+def _inside_checkout(path: Path) -> bool:
+    try:
+        resolved = path.resolve()
+    except OSError:
+        return False
+    return any((p / ".git").exists() for p in (resolved, *resolved.parents))
 
 
 def san_names_from_env() -> tuple:
@@ -91,26 +108,31 @@ def build_portal_proxy(
     cert_dir: Optional[Path] = None,
     san_names: Optional[Iterable[str]] = None,
     ip_source: Callable[[], Iterable[str]] = local_ipv4_addresses,
+    hostname: str = "",
+    ws_idle_timeout: float = 300.0,
 ) -> AlphaClawTlsProxy:
-    """Configured proxy; nothing is bound until start()."""
+    """Configured proxy; nothing is bound until start(). ``cert_dir`` is the
+    state directory (private/ + public/)."""
     names = tuple(san_names) if san_names is not None else san_names_from_env()
     dns = tuple(dict.fromkeys(("localhost",) + names))
+    ips = tuple(ip_source())
+    state_dir = cert_dir if cert_dir is not None else portal_tls_dir()
+    pki = build_pki(state_dir, san_names=dns, ips=ips, label="Portal", hostname=hostname)
     return AlphaClawTlsProxy(
         upstream_port=upstream_port,
         proxy_port=listen_port,
         listen_host=listen_host or os.environ.get("PORTAL_TLS_LISTEN_HOST", "") or _ALL_INTERFACES,
-        cert_dir=cert_dir if cert_dir is not None else portal_tls_dir(),
+        cert_dir=Path(state_dir),
         cert_basename="portal",
         label="Portal",
         common_name=names[0] if names else "localhost",
         san_dns=dns,
-        san_ips=tuple(ip_source()),
+        san_ips=ips,
         reissue_on_san_change=True,
+        pki=pki,
+        websocket_passthrough=True,
+        ws_idle_timeout=ws_idle_timeout,
     )
-
-
-def _pem_path(proxy: AlphaClawTlsProxy) -> Path:
-    return proxy._dir() / f"{proxy.cert_basename}.crt"
 
 
 def main(argv: Optional[list] = None) -> int:
@@ -118,34 +140,39 @@ def main(argv: Optional[list] = None) -> int:
     ap.add_argument("--listen-host", default="", help="bind address (default: all interfaces)")
     ap.add_argument("--listen-port", type=int, default=DEFAULT_LISTEN_PORT)
     ap.add_argument("--upstream-port", type=int, default=DEFAULT_UPSTREAM_PORT)
-    ap.add_argument("--cert-dir", default="", help="override the cert/pin store directory")
+    ap.add_argument("--state-dir", "--cert-dir", dest="state_dir", default="",
+                    help="override the state directory (private/ + public/)")
     ap.add_argument("--print-fingerprint", action="store_true",
-                    help="ensure the leaf exists, print its SHA-256 and PUBLIC cert, then exit")
+                    help="ensure the CA and leaf exist, print the public CA file hash and path, exit")
     args = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-    proxy = build_portal_proxy(
-        listen_port=args.listen_port,
-        upstream_port=args.upstream_port,
-        listen_host=args.listen_host,
-        cert_dir=Path(args.cert_dir) if args.cert_dir else None,
-    )
+    state_dir = Path(args.state_dir) if args.state_dir else portal_tls_dir()
+    if _inside_checkout(state_dir):
+        _log.warning("portal-tls-proxy: state directory %s is inside a checkout; keys should "
+                     "live outside any repository", state_dir)
     try:
+        proxy = build_portal_proxy(
+            listen_port=args.listen_port,
+            upstream_port=args.upstream_port,
+            listen_host=args.listen_host,
+            cert_dir=state_dir,
+        )
         if args.print_fingerprint:
             proxy.ensure_certificate()
-            print(f"sha256:{proxy.fingerprint}")
-            print(_pem_path(proxy).read_text(encoding="ascii"), end="")
+            print(f"ca_sha256_file={proxy.pki.ca_file_sha256}")
+            print(f"ca_public_path={proxy.pki.ca_public_path.resolve()}")
             return 0
         url = proxy.start()
     except _base.AlphaClawCertFingerprintMismatch as exc:
         _log.error("portal-tls-proxy refused to start: %s", exc)
         return 3
-    except (_base.AlphaClawTlsUnavailable, OSError) as exc:
+    except (_base.AlphaClawTlsUnavailable, OSError, ValueError) as exc:
         _log.error("portal-tls-proxy cannot start: %s", exc)
         return 2
 
-    _log.info("portal-tls-proxy pid=%d listening %s upstream_port=%d fingerprint=sha256:%s",
-              os.getpid(), url, args.upstream_port, proxy.fingerprint)
+    print(f"portal-tls-proxy pid={os.getpid()} listening {url} upstream={args.upstream_port} "
+          f"ca_sha256_file={proxy.pki.ca_file_sha256}", flush=True)
     stop = threading.Event()
     for sig in (signal.SIGINT, signal.SIGTERM):
         try:
