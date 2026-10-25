@@ -65,5 +65,5 @@
   "rejection_count": 0,
   "accepted_at": "2026-10-25T01:51:11.448747+00:00",
   "reviewer": "learn.py",
-  "rationale": "Local PT staging only: the launch-path differential grew when a previously unlisted path was added (1,764 to 2,058 cases, digest 1cc81a58). Cross-repo config/pin comparison evidence lives on superseding candidate 4a3f80d746b2 / lesson_4a3f80d746b2."
+  "rationale": "PT and orama-system diverged on the gpt-5.6-terra row, the Alexandria pin tip and the generic ungated-row check; the 1,764-case table matched while behavior differed. Fixed by mirroring all three and adding the Terra path to the shared differential (2,058 cases)."
 }

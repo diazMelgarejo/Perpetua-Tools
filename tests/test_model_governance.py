@@ -924,9 +924,15 @@ def test_shared_pin_sections_match_the_mirrored_repository_digest() -> None:
 
 
 def test_pin_document_and_config_name_the_same_alexandria_tip() -> None:
-    """Both the pin document and the config reference the shared Alexandria tip."""
+    """The document's active (preamble) tip equals the config's ``canonical.tip`` and the pinned tip."""
+    import re
+
+    import yaml
+
     root = _parity_root()
-    doc = (root / "docs" / "standards" / "model-governance.md").read_text(encoding="utf-8")
-    cfg = (root / "config" / "model-governance.yml").read_text(encoding="utf-8")
-    assert _PARITY_ALEXANDRIA_TIP in doc
-    assert _PARITY_ALEXANDRIA_TIP in cfg
+    doc = (root / "docs" / "standards" / "model-governance.md").read_text(encoding="utf-8").replace("\r\n", "\n")
+    preamble = re.split(r"(?m)^## ", doc, maxsplit=1)[0]
+    match = re.search(r"tip `([0-9a-f]{8})`", preamble)
+    assert match, "pin document preamble must state the active Alexandria tip"
+    cfg = yaml.safe_load((root / "config" / "model-governance.yml").read_text(encoding="utf-8"))
+    assert match.group(1) == cfg["canonical"]["tip"] == _PARITY_ALEXANDRIA_TIP
