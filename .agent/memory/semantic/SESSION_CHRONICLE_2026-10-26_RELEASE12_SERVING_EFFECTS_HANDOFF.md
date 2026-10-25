@@ -21,4 +21,3 @@ deployed producer/consumer pins and an operator separately authorizes activation
 PT has recorded this as portable memory only. It must not acquire a v2 runtime
 dependency or treat this note as authority to enable serving, effects, transport,
 continuation, or remote autonomy.
-
