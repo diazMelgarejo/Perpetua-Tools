@@ -68,8 +68,18 @@ that exact file; no private key is ever written there.
   is an explicit two-sided migration: verify out of band, remove the pin and
   CA files, start, then give peers the new public CA and hash.
 - The CA is not renewed automatically. A warning is logged under 60 days left.
-- The leaf is checked at process start. Restart the proxy after a network
-  change to pick up new addresses.
+- The leaf is rechecked at start and then every 6 hours while the proxy runs
+  (current local addresses are re-read each time). A reissued leaf is applied
+  to new TLS handshakes without a restart; a failed recheck is logged and the
+  current certificate keeps serving.
+- A corrupt or invalid `ca-pin.json` is refused with exit code 3 (it is never
+  treated as "no pin"). PKI state changes run under an exclusive lock in
+  `private/` with atomic file replacement, so concurrent first starts end up
+  with one CA.
+- The TLS handshake runs in the per-connection thread with a 10 second bound,
+  so an idle or slow TCP client cannot block other clients. Upstream redirects
+  are relayed to the client, never followed, and upstream error responses keep
+  their headers.
 
 ## WebSocket support
 
@@ -77,6 +87,7 @@ A request with `Connection: Upgrade` and `Upgrade: websocket` is forwarded on
 a raw TCP connection to the upstream. The request head is re-sent unchanged,
 including `Authorization`. The 101 response is relayed, then bytes are pumped
 both ways until either side closes or the connection is idle for 300 seconds.
+A slow-reading peer does not end the tunnel; only idleness or a close does.
 Other requests use the normal streaming forwarder.
 
 ## Configuration

@@ -54,6 +54,7 @@ import json
 import logging
 import os
 import platform
+import select
 import socket
 import socketserver
 import ssl
@@ -97,6 +98,22 @@ CERT_DIR = Path.home() / ".openclaw" / "alphaclaw_tls"
 DEFAULT_PROXY_PORT = 3345
 CERT_VALIDITY_DAYS = 365
 _MIN_REMAINING_DAYS_TO_REUSE = 7  # rotate proactively, not right at expiry
+_HANDSHAKE_TIMEOUT = 10.0  # bound on the TLS handshake, run off the accept thread
+
+
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Never follow an upstream 3xx: the redirect is relayed to the client
+    as-is, so Authorization is never re-sent to a host the Location names."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+# No environment proxies either: the upstream is a fixed local port and a
+# bearer must never be diverted through an ambient HTTP proxy setting.
+_UPSTREAM_OPENER = urllib.request.build_opener(
+    urllib.request.ProxyHandler({}), _NoRedirectHandler()
+)
 
 
 class AlphaClawTlsUnavailable(RuntimeError):
@@ -345,6 +362,12 @@ class AlphaClawTlsProxy:
     pki: Optional[object] = None
     websocket_passthrough: bool = False  # forward Upgrade: websocket on a raw tunnel
     ws_idle_timeout: float = 300.0
+    # CA mode: how often a running proxy re-runs pki.ensure() so a leaf that
+    # nears expiry (or a changed local address) is reissued and applied to new
+    # handshakes without a restart. 0 disables the recheck thread.
+    pki_recheck_seconds: float = 6 * 3600.0
+    _renew_stop: Optional[threading.Event] = None
+    _renew_thread: Optional[threading.Thread] = None
 
     def _dir(self) -> Path:
         return CERT_DIR if self.cert_dir is None else self.cert_dir
@@ -534,9 +557,15 @@ class AlphaClawTlsProxy:
         """
         cert_path, key_path = self.ensure_certificate()
 
-        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        context.minimum_version = ssl.TLSVersion.TLSv1_2
-        context.load_cert_chain(str(cert_path), str(key_path))
+        def _new_context(chain: Path, key: Path) -> ssl.SSLContext:
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+            ctx.load_cert_chain(str(chain), str(key))
+            return ctx
+
+        # Holder so a renewed leaf can replace the context for NEW handshakes.
+        ctx_holder = {"ctx": _new_context(cert_path, key_path)}
+        handshake_timeout = _HANDSHAKE_TIMEOUT
 
         upstream = self.upstream_port
         upstream_host = self.upstream_host or _LOOPBACK_V4
@@ -666,7 +695,7 @@ class AlphaClawTlsProxy:
                 if body is not None:
                     req.add_header("Content-Length", str(len(body)))
                 try:
-                    with urllib.request.urlopen(req, timeout=timeout) as resp:
+                    with _UPSTREAM_OPENER.open(req, timeout=timeout) as resp:
                         self.send_response(resp.status)
                         for header, value in resp.getheaders():
                             # Hop-by-hop headers describe THIS connection's
@@ -687,9 +716,16 @@ class AlphaClawTlsProxy:
                                 break
                             self.wfile.write(chunk)
                 except urllib.error.HTTPError as exc:
+                    # Non-2xx (including an unfollowed 3xx): relay status,
+                    # headers (WWW-Authenticate, Location, Content-Type...)
+                    # and body to the client untouched.
+                    payload = exc.read()
                     self.send_response(exc.code)
+                    for header, value in exc.headers.items():
+                        if header.lower() not in _HOP_BY_HOP_HEADERS:
+                            self.send_header(header, value)
                     self.end_headers()
-                    self.wfile.write(exc.read())
+                    self.wfile.write(payload)
                 except urllib.error.URLError as exc:
                     self.send_response(502)
                     self.end_headers()
@@ -727,21 +763,30 @@ class AlphaClawTlsProxy:
                 done = threading.Event()
                 state = {"last": time.monotonic()}
                 poll = 1.0
+                # Idle detection uses select() on readability, NOT a short
+                # socket timeout: a 1 s timeout also bounds sendall() and would
+                # tear the tunnel down whenever a peer reads slowly. The socket
+                # timeout is only the (long) write-stall bound.
+                write_timeout = max(ws_idle, poll)
+                client.settimeout(write_timeout)
+                up.settimeout(write_timeout)
 
                 def pump(src, dst) -> None:
-                    src.settimeout(poll)
                     try:
                         while not done.is_set():
-                            try:
-                                data = src.recv(_CHUNK_SIZE)
-                            except (TimeoutError, socket.timeout):
-                                if time.monotonic() - state["last"] > ws_idle:
-                                    break
-                                continue
+                            buffered = isinstance(src, ssl.SSLSocket) and src.pending() > 0
+                            if not buffered:
+                                readable, _, _ = select.select([src], [], [], poll)
+                                if not readable:
+                                    if time.monotonic() - state["last"] > ws_idle:
+                                        break
+                                    continue
+                            data = src.recv(_CHUNK_SIZE)
                             if not data:
                                 break
                             state["last"] = time.monotonic()
                             dst.sendall(data)
+                            state["last"] = time.monotonic()
                     except (OSError, ssl.SSLError):
                         pass
                     finally:
@@ -782,7 +827,27 @@ class AlphaClawTlsProxy:
             def log_message(self, fmt: str, *args) -> None:  # noqa: A002
                 _log.debug("[%s-tls-proxy] " + fmt, handler_label, *args)
 
-        self._server = socketserver.ThreadingTCPServer(
+        class _TlsServer(socketserver.ThreadingTCPServer):
+            """Accepts plain TCP and runs the TLS handshake in the
+            per-connection thread under a bounded timeout, so one silent or
+            slow client can never stall accept() for everyone else."""
+
+            def finish_request(self, request, client_address):
+                try:
+                    request.settimeout(handshake_timeout)
+                    tls = ctx_holder["ctx"].wrap_socket(request, server_side=True)
+                except (ssl.SSLError, OSError) as exc:
+                    _log.debug("[%s-tls-proxy] handshake failed: %s", handler_label, exc)
+                    return
+                try:
+                    self.RequestHandlerClass(tls, client_address, self)
+                finally:
+                    try:
+                        tls.close()
+                    except OSError:
+                        pass
+
+        self._server = _TlsServer(
             (self.listen_host or _LOOPBACK_V4, self.proxy_port), _ProxyHandler
         )
         # Per-connection handler threads default to non-daemon, so a handler
@@ -790,9 +855,16 @@ class AlphaClawTlsProxy:
         # stop() is called) would otherwise block process exit / stop()'s
         # own join indefinitely.
         self._server.daemon_threads = True
-        self._server.socket = context.wrap_socket(self._server.socket, server_side=True)
         self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
         self._thread.start()
+
+        if self.pki is not None and self.pki_recheck_seconds > 0:
+            self._renew_stop = threading.Event()
+            self._renew_thread = threading.Thread(
+                target=self._renew_loop, args=(_new_context, ctx_holder),
+                name=f"{handler_label}-tls-renew", daemon=True,
+            )
+            self._renew_thread.start()
 
         url = f"https://{self.listen_host or _LOOPBACK_V4}:{self.proxy_port}"
         _log.info(
@@ -801,7 +873,27 @@ class AlphaClawTlsProxy:
         )
         return url
 
+    def _renew_loop(self, new_context, ctx_holder) -> None:
+        """Periodically re-run pki.ensure(); when the leaf was reissued, build
+        a fresh SSLContext and swap it in for new handshakes (a failed reload
+        leaves the live context untouched)."""
+        stop = self._renew_stop
+        while stop is not None and not stop.wait(self.pki_recheck_seconds):
+            try:
+                self.pki.ensure()
+                if self.pki.leaf_event != "reused":
+                    ctx_holder["ctx"] = new_context(
+                        self.pki.leaf_chain_path, self.pki.leaf_key_path
+                    )
+                    _log.info("%s TLS: applied a renewed leaf (%s)", self.label,
+                              self.pki.leaf_event)
+            except Exception as exc:  # noqa: BLE001 - keep serving; retry next interval
+                _log.error("%s TLS: leaf recheck failed, keeping the current certificate: %s",
+                           self.label, exc)
+
     def stop(self) -> None:
+        if self._renew_stop is not None:
+            self._renew_stop.set()
         if self._server is not None:
             self._server.shutdown()
             self._server.server_close()

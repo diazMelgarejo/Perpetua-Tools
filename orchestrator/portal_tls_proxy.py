@@ -117,7 +117,8 @@ def build_portal_proxy(
     dns = tuple(dict.fromkeys(("localhost",) + names))
     ips = tuple(ip_source())
     state_dir = cert_dir if cert_dir is not None else portal_tls_dir()
-    pki = build_pki(state_dir, san_names=dns, ips=ips, label="Portal", hostname=hostname)
+    pki = build_pki(state_dir, san_names=dns, ips=ips, label="Portal", hostname=hostname,
+                    ip_source=ip_source)
     return AlphaClawTlsProxy(
         upstream_port=upstream_port,
         proxy_port=listen_port,

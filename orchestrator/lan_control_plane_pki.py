@@ -28,6 +28,7 @@ checksum; no private key is ever written there.
 """
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import ipaddress
 import json
@@ -35,10 +36,12 @@ import logging
 import os
 import re
 import socket
+import threading
+import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Callable, Iterable, Optional
 
 from orchestrator.alphaclaw_tls_proxy import (
     _CRYPTOGRAPHY_AVAILABLE,
@@ -79,13 +82,86 @@ def _safe_host(name: str) -> str:
     return cleaned or "node"
 
 
+_HEX64 = re.compile(r"^[0-9a-f]{64}$")
+_LOCK_WAIT_SECONDS = 60.0
+
+
 def _write_private(path: Path, data: bytes) -> None:
-    fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    """Atomic: write a private temp file next to ``path`` then os.replace it,
+    so a concurrent reader never sees a torn file."""
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
+    fd = os.open(str(tmp), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     try:
         with os.fdopen(fd, "wb") as handle:
             handle.write(data)
+        _secure_path(tmp, is_directory=False)
+        os.replace(str(tmp), str(path))
     finally:
-        _secure_path(path, is_directory=False)
+        try:
+            if tmp.exists():
+                tmp.unlink()
+        except OSError:
+            pass
+        if path.exists():
+            _secure_path(path, is_directory=False)
+
+
+def _write_public(path: Path, data: bytes) -> None:
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
+    try:
+        tmp.write_bytes(data)
+        os.replace(str(tmp), str(path))
+    finally:
+        try:
+            if tmp.exists():
+                tmp.unlink()
+        except OSError:
+            pass
+
+
+@contextlib.contextmanager
+def _exclusive_lock(lock_path: Path):
+    """Cross-process (and cross-thread) exclusive lock on ``lock_path``."""
+    fd = os.open(str(lock_path), os.O_RDWR | os.O_CREAT, 0o600)
+    locked = False
+    try:
+        if os.name == "nt":
+            import msvcrt
+
+            deadline = time.monotonic() + _LOCK_WAIT_SECONDS
+            while True:
+                try:
+                    os.lseek(fd, 0, os.SEEK_SET)
+                    msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+                    locked = True
+                    break
+                except OSError:
+                    if time.monotonic() > deadline:
+                        raise AlphaClawTlsUnavailable(
+                            "timed out waiting for the PKI state lock"
+                        ) from None
+                    time.sleep(0.05)
+        else:
+            import fcntl
+
+            fcntl.flock(fd, fcntl.LOCK_EX)
+            locked = True
+        yield
+    finally:
+        if locked:
+            try:
+                if os.name == "nt":
+                    import msvcrt
+
+                    os.lseek(fd, 0, os.SEEK_SET)
+                    msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+                else:
+                    import fcntl
+
+                    fcntl.flock(fd, fcntl.LOCK_UN)
+            except OSError:
+                pass
+        os.close(fd)
 
 
 @dataclass
@@ -95,6 +171,10 @@ class LanControlPlanePki:
     san_dns: tuple = ("localhost",)
     san_ips: tuple = ()
     label: str = "Portal"
+    # Optional callable returning the host's current IPv4 addresses; when set,
+    # every ensure() refreshes san_ips from it so a long-running proxy follows
+    # DHCP changes.
+    ip_source: Optional[Callable[[], Iterable[str]]] = None
     # Filled in by ensure():
     ca_fingerprint: str = ""
     leaf_fingerprint: str = ""
@@ -141,6 +221,11 @@ class LanControlPlanePki:
 
     # -- helpers ---------------------------------------------------------
     def _want_ips(self) -> set:
+        if self.ip_source is not None:
+            try:
+                self.san_ips = tuple(self.ip_source())
+            except OSError:
+                pass
         ips = {ipaddress.ip_address(i) for i in self.san_ips}
         ips.add(ipaddress.ip_address(_LOOPBACK_V4))
         return ips
@@ -149,10 +234,22 @@ class LanControlPlanePki:
         return list(dict.fromkeys(d for d in ("localhost",) + tuple(self.san_dns) if d))
 
     def _load_pin(self) -> Optional[str]:
+        """None only when no pin file exists. A pin file that is present but
+        unreadable or invalid fails closed (never treated as 'no pin')."""
         try:
-            return json.loads(self.pin_path.read_text(encoding="utf-8")).get("ca_fingerprint")
-        except (OSError, ValueError):
+            raw = self.pin_path.read_text(encoding="utf-8")
+        except FileNotFoundError:
             return None
+        except OSError as exc:
+            raise self._mismatch("", "", f"pin file unreadable: {exc}") from exc
+        try:
+            value = json.loads(raw)
+        except ValueError as exc:
+            raise self._mismatch("", "", "pin file is not valid JSON") from exc
+        fp = value.get("ca_fingerprint") if isinstance(value, dict) else None
+        if not isinstance(fp, str) or not _HEX64.match(fp):
+            raise self._mismatch("", "", "pin file does not hold a SHA-256 fingerprint")
+        return fp
 
     def _store_pin(self, fingerprint: str) -> None:
         payload = json.dumps(
@@ -346,11 +443,11 @@ class LanControlPlanePki:
         data = ca_cert.public_bytes(serialization.Encoding.PEM)
         path = self.ca_public_path
         if not path.is_file() or path.read_bytes() != data:
-            path.write_bytes(data)
+            _write_public(path, data)
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         sums = f"{digest}  {path.name}\n".encode("ascii")
         if not self.sums_path.is_file() or self.sums_path.read_bytes() != sums:
-            self.sums_path.write_bytes(sums)
+            _write_public(self.sums_path, sums)
         self.ca_file_sha256 = digest
 
     # -- public API ------------------------------------------------------
@@ -362,6 +459,13 @@ class LanControlPlanePki:
         Path(self.state_dir).mkdir(parents=True, exist_ok=True)
         self.private_dir.mkdir(parents=True, exist_ok=True)
         _secure_path(self.private_dir, is_directory=True)
+        # One writer at a time: concurrent first starts must not each create a
+        # CA. Everything below (including re-reading the CA and pin) runs under
+        # the lock, so the first process wins and later ones reuse its CA.
+        with _exclusive_lock(self.private_dir / ".lock"):
+            return self._ensure_locked()
+
+    def _ensure_locked(self) -> "LanControlPlanePki":
         ca_cert, ca_key = self._ensure_ca()
         problem = self._leaf_problem(ca_cert)
         if problem:
@@ -396,6 +500,7 @@ def build_pki(
     ips: Iterable[str] = (),
     label: str = "Portal",
     hostname: str = "",
+    ip_source: Optional[Callable[[], Iterable[str]]] = None,
 ) -> LanControlPlanePki:
     return LanControlPlanePki(
         state_dir=Path(state_dir),
@@ -403,4 +508,5 @@ def build_pki(
         san_dns=tuple(san_names),
         san_ips=tuple(ips),
         label=label,
+        ip_source=ip_source,
     )
