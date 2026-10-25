@@ -1,0 +1,42 @@
+{
+  "id": "cbb2e003cc01",
+  "key": "manual_cbb2e0",
+  "name": "manual_cbb2e0",
+  "claim": "A test harness that extracts PowerShell functions into a child process must also extract every helper those functions call, and tests skipped on non-Windows CI must be run on a Windows host before calling the PR green",
+  "conditions": [
+    "ci-blind-spot",
+    "powershell",
+    "skipif",
+    "test-harness",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-10-25T06:07:46.706387+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-25T06:07:46.706387+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-25T06:07:46.706387+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-25T06:07:46.871496+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-25: orama efe78b56 made Topo-WriteProbeOutput call Topo-MaskSecrets but the probe-return harness did not load it; the test fails on Windows and is skipped on Linux CI, so CI stayed green (fixed in 1f1bd8ce)",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-25T06:07:46.706387+00:00"
+      ],
+      "lessons_sha": "fc76f2c1b0dd"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-25T06:07:46.871496+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-25: orama efe78b56 made Topo-WriteProbeOutput call Topo-MaskSecrets but the probe-return harness did not load it; the test fails on Windows and is skipped on Linux CI, so CI stayed green (fixed in 1f1bd8ce)"
+}
