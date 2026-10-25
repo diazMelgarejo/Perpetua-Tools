@@ -1,0 +1,62 @@
+{
+  "id": "4a3f80d746b2",
+  "key": "manual_4a3f80",
+  "name": "manual_4a3f80",
+  "claim": "Treat a mirrored-policy check as three parts: the launch-path differential (automated, shared digest), a config-file comparison and a pin-document comparison (manual audit across both repos until a script can read both). Passing the differential alone does not show the repos agree.",
+  "conditions": [
+    "across",
+    "agree",
+    "alone",
+    "audit",
+    "automated",
+    "both",
+    "check",
+    "comparison",
+    "config-file",
+    "differential",
+    "digest",
+    "launch-path",
+    "manual",
+    "mirrored-policy",
+    "parts",
+    "passing",
+    "pin-document",
+    "read",
+    "repos",
+    "script",
+    "shared",
+    "show",
+    "three",
+    "treat",
+    "until"
+  ],
+  "evidence_ids": [
+    "2026-10-25T02:05:47.690531+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-25T02:05:47.690531+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-25T02:05:47.690531+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-25T02:05:47.848392+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Supersedes lesson_0eec25ad2d50, narrowed to what the evidence supports. Evidence: PT#465 and orama-system#440 added the gpt-5.6-terra path (1,764 to 2,058 cases, digest 1cc81a58 in both repos); the config and pin-document drift (Terra row, Alexandria tip, row-driven ungated check) was found by a manual diff of the two repos, not by the differential.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-25T02:05:47.690531+00:00"
+      ],
+      "lessons_sha": "cb53648f9adc"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-25T02:05:47.848372+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Supersedes lesson_0eec25ad2d50, narrowed to what the evidence supports. Evidence: PT#465 and orama-system#440 added the gpt-5.6-terra path (1,764 to 2,058 cases, digest 1cc81a58 in both repos); the config and pin-document drift (Terra row, Alexandria tip, row-driven ungated check) was found by a manual diff of the two repos, not by the differential."
+}

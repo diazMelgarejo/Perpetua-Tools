@@ -121,7 +121,8 @@ Task Received
 ## Cloud Routing Rules (< $5/month budget)
 
 Paid cloud is last on the runtime ladder. Cost gate fails closed.
-Cloud escalation is default-deny without an escalation token.
+Cloud escalation is default-deny without approval under the current
+[regime](docs/standards/model-governance.md#escalation-approval-regimes).
 
 ### Anthropic path — default Claude Sonnet 5.5 (medium)
 ```python

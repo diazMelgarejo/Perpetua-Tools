@@ -232,6 +232,7 @@
 - [PROVISIONAL] Read every field of a rotating secret from one immutable snapshot taken after the refresh, never from two reads of a mutable attribute.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_882a68969ec3 -->
 - [PROVISIONAL] Before building or pushing a fix, list open PRs for the same finding and integrate into the existing PR instead of opening a duplicate.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_6feeb682a319 -->
 - [PROVISIONAL] A differential over every launch path in a mirrored policy pair must also compare the config files and the pin documents, because a row only one repo carries is invisible to a path list it was never added to.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_0eec25ad2d50 -->
+- [PROVISIONAL] Treat a mirrored-policy check as three parts: the launch-path differential (automated, shared digest), a config-file comparison and a pin-document comparison (manual audit across both repos until a script can read both). Passing the differential alone does not show the repos agree.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_4a3f80d746b2 -->
 
 ### 2026-09
 
