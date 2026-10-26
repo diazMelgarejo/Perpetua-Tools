@@ -76,7 +76,8 @@ def test_strip_coauthor_hook_removes_cursor_trailers(tmp_path):
 
 def test_cursor_hooks_id_matches_workspace():
     lib = ROOT / "scripts/git/cursor-hooks-id.sh"
-    repo_abs = str(ROOT.resolve())
+    # The shell helper prints the workspace with forward slashes on every platform.
+    repo_abs = ROOT.resolve().as_posix()
     out = subprocess.check_output(
         ["bash", "-c", f'source "{lib}" && cursor_hooks_id "{ROOT}"'],
         text=True,
