@@ -44,6 +44,17 @@ class _Upstream(http.server.BaseHTTPRequestHandler):
         """Silence the default request logging."""
 
 
+class _FragmentedWebSocketUpstream(socketserver.BaseRequestHandler):
+    """Return an HTTP status split inside its three-digit code."""
+
+    def handle(self) -> None:
+        """Read the tunnel request and split the response status over two socket writes."""
+        self.request.recv(4096)
+        self.request.sendall(b"HTTP/1.1 2")
+        time.sleep(0.05)
+        self.request.sendall(b"00 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+
+
 @pytest.fixture
 def running_proxy(tmp_path):
     """A started Portal TLS proxy in front of the fake upstream; yields (proxy, ca_path)."""
@@ -165,6 +176,35 @@ def test_declined_websocket_upgrade_records_the_upstream_status_not_101(running_
     lines = _conn_lines(caplog, "outcome=served")
     assert lines, "the tunnelled request left no telemetry line"
     assert "status=200" in lines[0] and "status=101" not in lines[0]
+
+
+def test_fragmented_websocket_status_is_recorded_after_all_digits(tmp_path, caplog):
+    """A response split at ``HTTP/1.1 2`` is recorded as 200, rather than 2 or no_request."""
+    server = socketserver.TCPServer((LOOP, 0), _FragmentedWebSocketUpstream)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    with socket.socket() as s:
+        s.bind((LOOP, 0))
+        port = s.getsockname()[1]
+    proxy = portal.build_portal_proxy(
+        listen_port=port, upstream_port=server.server_address[1], listen_host=LOOP,
+        cert_dir=tmp_path / "state", san_names=("portal.example.test",), ip_source=lambda: (LOOP,),
+    )
+    proxy.start()
+    caplog.set_level(logging.INFO, logger=LOGGER)
+    ctx = ssl.create_default_context(cafile=str(proxy.pki.ca_public_path))
+    try:
+        with socket.create_connection((LOOP, proxy.proxy_port), timeout=8) as raw:
+            with ctx.wrap_socket(raw, server_hostname=LOOP) as tls:
+                tls.sendall(b"GET /ws HTTP/1.1\nHost: x\nConnection: Upgrade\nUpgrade: websocket\n\n")
+                while tls.recv(4096):
+                    pass
+        lines = _conn_lines(caplog, "outcome=served")
+        assert lines, "the fragmented tunnelled response left no telemetry line"
+        assert "status=200" in lines[0] and "status=2 " not in lines[0]
+    finally:
+        proxy.stop()
+        server.shutdown()
+        server.server_close()
 
 
 def test_rate_limit_drops_excess_lines_and_reports_the_count(caplog):

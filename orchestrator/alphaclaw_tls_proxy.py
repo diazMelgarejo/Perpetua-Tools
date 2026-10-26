@@ -54,6 +54,7 @@ import json
 import logging
 import os
 import platform
+import re
 import select
 import socket
 import socketserver
@@ -852,11 +853,10 @@ class AlphaClawTlsProxy:
                 client.settimeout(write_timeout)
                 up.settimeout(write_timeout)
 
-                def pump(src, dst, first_chunk=None) -> None:
+                def pump(src, dst, on_chunk=None) -> None:
                     """Copy bytes from ``src`` to ``dst`` until close, error or ws_idle_timeout of silence, then end the tunnel.
 
-                    ``first_chunk`` (optional) is called once with the first bytes read."""
-                    seen = first_chunk is None
+                    ``on_chunk`` (optional) observes every chunk read before it is forwarded."""
                     try:
                         while not done.is_set():
                             buffered = isinstance(src, ssl.SSLSocket) and src.pending() > 0
@@ -870,9 +870,8 @@ class AlphaClawTlsProxy:
                             if not data:
                                 break
                             state["last"] = time.monotonic()
-                            if not seen:
-                                seen = True
-                                first_chunk(data)
+                            if on_chunk is not None:
+                                on_chunk(data)
                             dst.sendall(data)
                             state["last"] = time.monotonic()
                     except (OSError, ssl.SSLError):
@@ -899,11 +898,16 @@ class AlphaClawTlsProxy:
                     except OSError:
                         pass
 
-            def _note_upstream_status(self, first_bytes: bytes) -> None:
-                """Record the status code from the upstream's first response bytes (``HTTP/x.y NNN``)."""
-                parts = first_bytes.split(b" ", 2)
-                if len(parts) >= 2 and parts[1][:3].isdigit():
-                    self._t_status = int(parts[1][:3])
+            def _note_upstream_status(self, response_bytes: bytes) -> None:
+                """Record a complete upstream ``HTTP/x.y NNN`` status across bounded socket reads."""
+                if self._t_status is not None:
+                    return
+                prefix = getattr(self, "_t_upstream_status_prefix", b"")
+                prefix = (prefix + response_bytes)[:128]
+                self._t_upstream_status_prefix = prefix
+                match = re.match(rb"HTTP/\d+(?:\.\d+)?[ \t]+(\d{3})(?!\d)", prefix)
+                if match:
+                    self._t_status = int(match.group(1))
 
             def do_GET(self) -> None:
                 """Serve GET: tunnel a WebSocket upgrade when enabled, else forward to the upstream."""
@@ -960,6 +964,9 @@ class AlphaClawTlsProxy:
                 outcome = "served"
                 try:
                     handler = self.RequestHandlerClass(tls, client_address, self)
+                except (ConnectionResetError, BrokenPipeError):
+                    # A client can reset after a completed handshake without ever sending a request.
+                    outcome = "no_request"
                 except Exception as exc:  # noqa: BLE001 - recorded, then re-raised for socketserver
                     outcome = f"handler_error:{type(exc).__name__}"
                     raise

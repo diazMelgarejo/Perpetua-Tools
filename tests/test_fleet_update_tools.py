@@ -107,6 +107,15 @@ def test_doc_only_python_directive_moved_to_another_statement_is_code() -> None:
     assert module.strip_py(base) != module.strip_py(moved)
 
 
+def test_doc_only_python_directive_move_between_identical_statements_is_code() -> None:
+    """A pragma stays associated with its statement even when the statement text is duplicated."""
+    module = _load_doc_only_diff()
+    base = b'def first():\n    return "x"  # type: ignore\n\ndef second():\n    return "x"\n'
+    moved = b'def first():\n    return "x"\n\ndef second():\n    return "x"  # type: ignore\n'
+
+    assert module.strip_py(base) != module.strip_py(moved)
+
+
 def _git(repo: Path, *args: str) -> None:
     """Run git in a temporary repository with a fixed identity."""
     subprocess.run(

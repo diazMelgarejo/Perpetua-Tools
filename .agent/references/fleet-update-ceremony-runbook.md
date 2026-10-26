@@ -126,7 +126,10 @@ Order matters; each step proves only itself.
    before transfer, then give the fingerprint to the other operator separately.
 3a. **Inbound reachability (operator step; agents never create firewall rules).** A TLS front end
    that answers locally can still be unreachable from the peer. Check read-only first:
-   `Get-NetConnectionProfile` (Public blocks unsolicited inbound by default),
+   `Get-NetConnectionProfile` (Public blocks unsolicited inbound by default). If the active
+   profile is Public, stop before creating a rule: do not change the network profile or add a
+   `Private,Domain` rule that will be inactive. Record the observed profile and obtain explicit
+   operator approval for a narrowly scoped rule assigned to the active profile before proceeding.
    `Get-NetTCPConnection -State Listen -LocalPort 8443` for the owning process ID, resolved to its
    executable path with `Get-Process -Id <pid>`, and `Get-NetFirewallRule -Direction Inbound
    -Action Allow` for candidate rules, each inspected through `Get-NetFirewallApplicationFilter`

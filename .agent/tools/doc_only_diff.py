@@ -54,15 +54,15 @@ def git_show(root: Path, rev: str, path: str):
 
 
 def py_directives(src: bytes) -> list:
-    """Return (code on the same line, comment) for each comment that carries meaning to tools.
+    """Return (location, code, comment) for each comment that carries meaning to tools.
 
-    Pairing the comment with the code it sits on means moving a line-specific ``# type: ignore``
-    or ``# noqa`` to another statement is a change, not a no-op.
+    The token location distinguishes identical statements in different scopes, so moving a
+    line-specific ``# type: ignore`` or ``# noqa`` remains a semantic change.
     """
     found = []
     for tok in tokenize.generate_tokens(io.StringIO(src.decode("utf-8-sig")).readline):
         if tok.type == tokenize.COMMENT and _PY_DIRECTIVE.search(tok.string):
-            found.append((tok.line[: tok.start[1]].strip(), tok.string.strip()))
+            found.append((tok.start, tok.line[: tok.start[1]].strip(), tok.string.strip()))
     return found
 
 
