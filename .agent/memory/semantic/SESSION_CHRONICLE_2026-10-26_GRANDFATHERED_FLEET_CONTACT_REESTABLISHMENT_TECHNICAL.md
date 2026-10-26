@@ -40,6 +40,17 @@ against the fingerprint the operator gave its operator, then send one canary; Wi
 returns filename, received-byte SHA-256 and UTC time), and a Mac-side receipt for the Windows CA
 handoff.
 
+### Addendum: reciprocal-link hold (2026-10-26)
+
+The Mac later staged the Windows public-CA handoff for local diagnostic comparison, but the file
+did not match the independently supplied fingerprint. No bearer, authenticated request, or
+Mac-to-Windows canary was sent. The existing Windows-to-Mac receipt therefore remains one-way
+evidence only, not proof of reciprocal delivery. Resumption requires a corrected fingerprint
+through an independent operator channel, followed in order by verified TLS health, an
+unauthenticated protected-endpoint rejection, one non-sensitive canary, and a receiver receipt
+that includes both byte and LF-normalised content hashes. This addendum preserves the earlier
+timeline rather than rewriting its historical statements.
+
 ## 3. Defects, root causes and fixes (technical)
 
 | Id | Root cause | Fix |

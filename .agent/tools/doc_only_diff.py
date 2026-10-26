@@ -59,25 +59,46 @@ def ps_tokens(src: bytes) -> str:
             ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", str(helper), str(f)],
             capture_output=True, text=True, encoding="utf-8", errors="replace",
         )
+        if proc.returncode != 0:
+            raise RuntimeError(f"PowerShell tokenization failed: {proc.stderr.strip()[:500]}")
         return proc.stdout
 
 
 def strip_sh(src: bytes) -> list:
-    """Return the shell lines without blank or comment-only lines."""
-    out = []
+    """Return comparable shell lines, rejecting constructs whose comments affect content."""
+    out: list[str] = []
+    heredoc = False
     for line in src.decode("utf-8-sig").splitlines():
-        s = line.strip()
-        if not s or (s.startswith("#") and not s.startswith("#!")):
+        stripped = line.strip()
+        if heredoc:
+            out.append(line.rstrip())
+            if stripped == "EOF":
+                heredoc = False
+            continue
+        if "<<" in line:
+            heredoc = True
+            out.append(line.rstrip())
+            continue
+        if not stripped or (stripped.startswith("#") and not stripped.startswith("#!")):
             continue
         out.append(line.rstrip())
+    if heredoc:
+        raise ValueError("unterminated here-document; cannot prove documentation-only shell change")
     return out
 
 
 def main(argv):
     """Compare every file changed between two revisions; exit 0 only when all changes are documentation-only."""
     root, base, head = Path(argv[0]), argv[1], argv[2]
-    names = subprocess.run(["git", "-C", str(root), "diff", "--name-only", f"{base}..{head}"],
-                           capture_output=True, text=True).stdout.split()
+    diff = subprocess.run(
+        ["git", "-C", str(root), "diff", "--name-only", f"{base}..{head}"],
+        capture_output=True,
+        text=True,
+    )
+    if diff.returncode != 0:
+        print(json.dumps({"doc_only": False, "error": diff.stderr.strip() or "git diff failed"}))
+        return 1
+    names = diff.stdout.split()
     report, ok = [], True
     for name in names:
         a, b = git_show(root, base, name), git_show(root, head, name)
@@ -89,7 +110,10 @@ def main(argv):
         elif suffix in (".ps1", ".psm1"):
             status = "doc-only" if ps_tokens(a) == ps_tokens(b) else "CODE-CHANGED"
         elif suffix == ".sh":
-            status = "doc-only" if strip_sh(a) == strip_sh(b) else "CODE-CHANGED"
+            try:
+                status = "doc-only" if strip_sh(a) == strip_sh(b) else "CODE-CHANGED"
+            except ValueError as error:
+                status = f"UNPROVABLE: {error}"
         elif suffix == ".md":
             status = "doc-only"
         else:

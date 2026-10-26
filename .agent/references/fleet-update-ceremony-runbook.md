@@ -84,7 +84,7 @@ files, board notes or inbox files.
 4. Integration run: merge every branch in stack order onto `origin/main` in a scratch worktree
    and start the real stack from it. Required: all services up, non-zero exit on a killed core
    service, logs keep growing after the launcher exits, Portal not reachable on any non-loopback
-   address, TLS health 200 against the node's own CA, unauthenticated protected request 401, a
+   address, TLS health 200 against the node's own CA, unauthenticated protected request 401 or 403, a
    no-CA negative control fails verification, PT `/health` under the Portal's 3 s budget.
 5. Run the same checks from a process launched outside any packaged agent host.
 
@@ -108,17 +108,19 @@ Order matters; each step proves only itself.
    channel than the file. Compare it to the downloaded public CA; on mismatch delete the file and
    stop. Scope trust to the client process (`PEER_CA_FILE`, never the OS store).
 2. **Verify the peer endpoint** with `python -I .agent/tools/tls_verify.py <peer-ca> <peer-ip> 8443`:
-   health 200, protected 401 with no credentials, negative control fails, leaf SAN covers the
+   health 200, protected 401 or 403 with no credentials, negative control fails, leaf SAN covers the
    address, leaf expiry. (`curl.exe` cannot check revocation for a private CA; do not weaken it.)
 3. **Stand up your own TLS front end** (`python -m orchestrator.portal_tls_proxy`, store under the
    home directory, Portal on loopback). Run `--self-check`; export only the public CA with
-   `--print-fingerprint`. Give the fingerprint to the other operator separately.
+   `--print-fingerprint`. It reports the public CA path and hash; create a public handoff record
+   before transfer, then give the fingerprint to the other operator separately.
 4. **Send the public CA** with `lan_peer_assign.py drop --peer --peer-ip <peer-ip> --portal-port
    8443 --file <public-ca-handoff.md> --assignee <role> --topic <topic>` (`PEER_CA_FILE` and
    `PEER_PORTAL_TLS_ENABLED=1` in the environment of that one process).
 5. **Canary round trip.** One unique non-sensitive file per direction. The receiver reports
-   filename, received-byte SHA-256 and UTC time (`lan_peer_assign.py receipt <name>`); the sender
-   records `delivered` only on that evidence.
+   filename, received-byte SHA-256, LF-normalised content SHA-256 and UTC time
+   (`lan_peer_assign.py receipt <name>`); the sender records `delivered` only when the normalised
+   content hash matches its local file.
 6. **Reconcile history item by item** (`outbox-status`, `outbox-resolve`, `outbox-resubmit --only
    <name>`). Never bulk-retarget; a stored destination may belong to an older topology.
 7. **Streaming gossip** is a separate gate (`probe_lan_peer.py` `ws-peer` over `wss`).

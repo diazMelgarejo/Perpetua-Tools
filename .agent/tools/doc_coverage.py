@@ -117,7 +117,10 @@ def main(argv):
             sys.exit(f"PowerShell check failed: {proc.stderr.strip()[:500]}")
         for rel, item in zip(ps_files, data):
             results.append({"file": rel, "total": item["total"], "missing": item.get("missing") or []})
-    gaps = sum(len(r.get("missing", [])) for r in results)
+    gaps = sum(
+        len(r.get("missing", [])) + (1 if r.get("status") == "absent" else 0)
+        for r in results
+    )
     total = sum(r.get("total", 0) for r in results)
     if as_json:
         print(json.dumps({"total": total, "missing": gaps, "files": results}, indent=1))

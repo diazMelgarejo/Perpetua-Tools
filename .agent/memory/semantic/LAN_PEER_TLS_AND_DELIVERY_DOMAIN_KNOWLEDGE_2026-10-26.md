@@ -9,10 +9,11 @@ identifiers or workstation paths. Repositories by public `owner/repo`, commits b
 
 ## 1. Topology and vocabulary
 
-* **Grandfathered fleet:** nodes that predate the TLS migration and authenticate with the shared
-  bearer (`ORAMA_CONTROL_PLANE_TOKEN`) over plain HTTP on port 8002. Doc 49/50 in orama
-  (`docs/v2/49-peer-mesh-auth-tls-v2-plan.md`, `50-mesh-security-migration-ladder.md`) keep that
-  bearer working during migration and add TLS first, mTLS and rotation later.
+* **Grandfathered fleet:** nodes that predate the TLS migration. Plain HTTP bearer traffic is
+  historical incident context only, never a supported transport: current peer delivery sends the
+  shared bearer only after verified TLS. Docs 49/50 in orama
+  (`docs/v2/49-peer-mesh-auth-tls-v2-plan.md`, `50-mesh-security-migration-ladder.md`) preserve
+  bearer compatibility while requiring TLS first, with mTLS and rotation deferred to later gates.
 * **Nodes:** one macOS node (Ollama, MLX, Portal behind a TLS front end) and one or more Windows
   nodes (LM Studio on :1234, an RTX GPU). Ports: PT 8000, orama 8001, Portal 8002 (loopback when
   TLS mode is on), TLS front end 8443.
@@ -68,9 +69,10 @@ record keeps its stored destination because the topology that produced it may ha
 (DHCP drift, port moved from plain HTTP to TLS).
 
 Canary protocol: one unique, non-sensitive file per direction; the receiver independently reports
-filename, received-byte SHA-256 and UTC time; only then are individual historical records
-reconciled. Duplicate protection: the destination's existing content hash is compared before any
-resubmit.
+filename, received-byte SHA-256, LF-normalised content SHA-256 and UTC time. A sender records
+`delivered` only when the receiver's normalised hash matches its local normalised hash; otherwise
+the record remains `sent` or `queued` for investigation. Duplicate protection: the destination's
+existing content hash is compared before any resubmit.
 
 ## 5. Windows service lifecycle
 
