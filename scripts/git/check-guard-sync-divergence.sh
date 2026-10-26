@@ -87,7 +87,8 @@ _git_common_dir() {
   local root="$1" common
 
   common="$(git -C "$root" rev-parse --git-common-dir 2>/dev/null)" || return 1
-  if [[ "$common" != /* ]]; then
+  # Git for Windows prints C:/... (drive letter), which is absolute too.
+  if [[ "$common" != /* && "$common" != [A-Za-z]:* ]]; then
     common="$root/$common"
   fi
   cd "$common" 2>/dev/null && pwd -P
@@ -166,7 +167,9 @@ _scan_sibling() {
   local sibling_root="$1" canon_common sibling_common
   local rel pair_rc=0
 
-  [[ "$(cd "$sibling_root" && pwd)" == "$CANON_ROOT" ]] && return 0
+  # Normalise both sides through the shell: GUARD_SYNC_CANON_ROOT may arrive in
+  # native Windows spelling (C:\...) while the scan yields MSYS-style paths.
+  [[ "$(cd "$sibling_root" && pwd)" == "$(cd "$CANON_ROOT" 2>/dev/null && pwd)" ]] && return 0
   if ! git -C "$sibling_root" rev-parse --show-toplevel >/dev/null 2>&1; then
     return 0
   fi

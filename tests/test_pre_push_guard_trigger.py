@@ -135,14 +135,20 @@ def _run_pre_push(
     env = os.environ.copy()
     env["WORKSPACE_ROOT"] = str(workspace_root)
     env["GUARD_SYNC_CANON_ROOT"] = str(canon_root)
-    return subprocess.run(
+    # Feed bytes: text-mode stdin would translate the newline to CRLF on
+    # Windows and leave a stray CR on the hook's last field (the remote oid).
+    raw = subprocess.run(
         ["bash", str(PRE_PUSH), "origin", "file://" + str(repo)],
         cwd=repo,
-        input=stdin,
+        input=stdin.encode("utf-8"),
         capture_output=True,
-        text=True,
-        encoding="utf-8",
         env=env,
+    )
+    return subprocess.CompletedProcess(
+        raw.args,
+        raw.returncode,
+        raw.stdout.decode("utf-8", errors="replace"),
+        raw.stderr.decode("utf-8", errors="replace"),
     )
 
 
