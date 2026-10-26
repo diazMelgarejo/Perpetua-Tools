@@ -218,7 +218,7 @@ def _make_stub(bin_dir: Path, name: str, body: str = "#!/usr/bin/env bash\nexit 
         Path: Path to the created stub file.
     """
     stub = bin_dir / name
-    stub.write_text(body, encoding="utf-8")
+    stub.write_bytes(body.encode("utf-8"))  # LF endings: CRLF breaks the bash shebang on Windows
     stub.chmod(stub.stat().st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)
     return stub
 
@@ -235,7 +235,7 @@ def _env_with_path(extra_bin: Path, base_env=None) -> dict:
         env (dict): A copy of the environment with "PATH" updated to begin with extra_bin.
     """
     env = dict(base_env or os.environ)
-    env["PATH"] = f"{extra_bin}:{env.get('PATH', '')}"
+    env["PATH"] = f"{extra_bin}{os.pathsep}{env.get('PATH', '')}"
     return env
 
 
@@ -279,22 +279,27 @@ class TestInstallSh:
     """Tests for the top-level install.sh script."""
 
     def test_help_long_flag_exits_zero(self):
+        """Check that help long flag exits zero."""
         result = _run_bash(INSTALL_SH, "--help")
         assert result.returncode == 0
 
     def test_help_short_flag_exits_zero(self):
+        """Check that help short flag exits zero."""
         result = _run_bash(INSTALL_SH, "-h")
         assert result.returncode == 0
 
     def test_help_output_contains_usage(self):
+        """Check that help output contains usage."""
         result = _run_bash(INSTALL_SH, "--help")
         assert "Usage" in result.stdout or "usage" in result.stdout.lower()
 
     def test_help_output_mentions_skip_mcpb(self):
+        """Check that help output mentions skip mcpb."""
         result = _run_bash(INSTALL_SH, "--help")
         assert "--skip-mcpb" in result.stdout
 
     def test_help_output_mentions_open_flag(self):
+        """Check that help output mentions open flag."""
         result = _run_bash(INSTALL_SH, "--help")
         assert "--open" in result.stdout
 
@@ -309,6 +314,7 @@ class TestInstallSh:
         assert "--skip-mcpb" in combined or "skipped" in combined.lower()
 
     def test_skip_mcpb_exits_zero(self, tmp_path):
+        """Check that skip mcpb exits zero."""
         bin_dir = tmp_path / "bin"
         bin_dir.mkdir()
         _make_stub(bin_dir, "git", "#!/usr/bin/env bash\nexit 0\n")
@@ -317,6 +323,7 @@ class TestInstallSh:
         assert result.returncode == 0
 
     def test_output_includes_perpetua_tools_header(self, tmp_path):
+        """Check that output includes perpetua tools header."""
         bin_dir = tmp_path / "bin"
         bin_dir.mkdir()
         _make_stub(bin_dir, "git", "#!/usr/bin/env bash\nexit 0\n")
@@ -325,6 +332,7 @@ class TestInstallSh:
         assert "Perpetua" in result.stdout
 
     def test_output_includes_done_message_on_success(self, tmp_path):
+        """Check that output includes done message on success."""
         bin_dir = tmp_path / "bin"
         bin_dir.mkdir()
         _make_stub(bin_dir, "git", "#!/usr/bin/env bash\nexit 0\n")
@@ -351,7 +359,12 @@ class TestInstallSh:
         result = _run_bash(INSTALL_SH, "--skip-mcpb", "--skip-desktop", env=env)
         assert result.returncode == 0
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="NTFS has no POSIX exec bit; mode 100755 is enforced in the git index",
+    )
     def test_script_is_executable(self):
+        """Check that script is executable."""
         mode = INSTALL_SH.stat().st_mode
         assert mode & stat.S_IEXEC, "install.sh must be executable (mode 100755 per PR)"
 
@@ -373,10 +386,12 @@ class TestInstallSh:
         assert "bash" in first_line
 
     def test_install_sh_mentions_submodule(self):
+        """Check that install sh mentions submodule."""
         content = INSTALL_SH.read_text(encoding="utf-8")
         assert "vendor/Claude-Desktop-LLM" in content
 
     def test_install_sh_delegates_to_subscript(self):
+        """Check that install sh delegates to subscript."""
         content = INSTALL_SH.read_text(encoding="utf-8")
         assert "install-claude-desktop-llm.sh" in content
 
@@ -389,9 +404,11 @@ class TestInstallClaudeDesktopLlm:
     """Tests for scripts/install-claude-desktop-llm.sh."""
 
     def test_script_exists(self):
+        """Check that script exists."""
         assert INSTALL_DESKTOP_SH.exists()
 
     def test_script_has_bash_shebang(self):
+        """Check that script has bash shebang."""
         first_line = INSTALL_DESKTOP_SH.read_text(encoding="utf-8").splitlines()[0]
         assert "bash" in first_line
 
@@ -405,22 +422,27 @@ class TestInstallClaudeDesktopLlm:
         assert "set -euo pipefail" in content
 
     def test_help_long_flag_exits_zero(self):
+        """Check that help long flag exits zero."""
         result = _run_bash(INSTALL_DESKTOP_SH, "--help")
         assert result.returncode == 0
 
     def test_help_short_flag_exits_zero(self):
+        """Check that help short flag exits zero."""
         result = _run_bash(INSTALL_DESKTOP_SH, "-h")
         assert result.returncode == 0
 
     def test_help_output_contains_usage(self):
+        """Check that help output contains usage."""
         result = _run_bash(INSTALL_DESKTOP_SH, "--help")
         assert "Usage" in result.stdout
 
     def test_help_output_mentions_open(self):
+        """Check that help output mentions open."""
         result = _run_bash(INSTALL_DESKTOP_SH, "--help")
         assert "--open" in result.stdout
 
     def test_help_output_mentions_skip_desktop(self):
+        """Check that help output mentions skip desktop."""
         result = _run_bash(INSTALL_DESKTOP_SH, "--help")
         assert "--skip-desktop" in result.stdout
 
@@ -443,6 +465,7 @@ class TestInstallClaudeDesktopLlm:
         )
 
     def test_write_stack_env_hint_mentions_ollama_port(self, tmp_path):
+        """Check that write stack env hint mentions ollama port."""
         stage_dir = tmp_path / "built"
         stage_dir.mkdir()
         _run_fn(_FN_WRITE_STACK_ENV_HINT, "write_stack_env_hint", setup=f'STAGE_DIR="{stage_dir}"')
@@ -450,6 +473,7 @@ class TestInstallClaudeDesktopLlm:
         assert "11434" in content
 
     def test_write_stack_env_hint_mentions_lmstudio_port(self, tmp_path):
+        """Check that write stack env hint mentions lmstudio port."""
         stage_dir = tmp_path / "built"
         stage_dir.mkdir()
         _run_fn(_FN_WRITE_STACK_ENV_HINT, "write_stack_env_hint", setup=f'STAGE_DIR="{stage_dir}"')
@@ -575,13 +599,13 @@ class TestInstallClaudeDesktopLlm:
         _make_stub(
             bin_dir,
             "mcpb",
-            f'#!/usr/bin/env bash\necho "mcpb_call:$*" >> {mcpb_log}\nexit 0\n',
+            f'#!/usr/bin/env bash\necho "mcpb_call:$*" >> {mcpb_log.as_posix()}\nexit 0\n',
         )
         env = _env_with_path(bin_dir)
         _run_fn(
             _FN_VALIDATE_BUNDLES,
             "validate_bundles",
-            setup=f'STAGE_DIR="{stage_dir}"; MCPB_CMD=("{bin_dir}/mcpb")',
+            setup=f'STAGE_DIR="{stage_dir}"; MCPB_CMD=("{bin_dir.as_posix()}/mcpb")',
             env=env,
         )
         assert mcpb_log.exists(), "mcpb stub was never called"
@@ -608,6 +632,7 @@ class TestInstallClaudeDesktopLlm:
         assert stage_dir.exists()
 
     def test_stage_bundles_copies_ollama_bundle(self, tmp_path):
+        """Check that stage bundles copies ollama bundle."""
         dist = tmp_path / "vendor" / "Claude-Desktop-LLM" / "dist"
         dist.mkdir(parents=True)
         (dist / "ollama-agent.mcpb").write_bytes(b"PK\x03\x04ollama")
@@ -621,6 +646,7 @@ class TestInstallClaudeDesktopLlm:
         assert (stage_dir / "ollama-agent.mcpb").exists()
 
     def test_stage_bundles_copies_lmstudio_bundle(self, tmp_path):
+        """Check that stage bundles copies lmstudio bundle."""
         dist = tmp_path / "vendor" / "Claude-Desktop-LLM" / "dist"
         dist.mkdir(parents=True)
         (dist / "ollama-agent.mcpb").write_bytes(b"PK\x03\x04ollama")
@@ -657,6 +683,7 @@ class TestInstallClaudeDesktopLlm:
     # ------------------------------------------------------------------ #
 
     def test_info_install_manual_mentions_settings_extensions(self, tmp_path):
+        """Check that info install manual mentions settings extensions."""
         stage_dir = tmp_path / "built"
         result = _run_fn(
             _FN_INFO_INSTALL_MANUAL,
@@ -666,6 +693,7 @@ class TestInstallClaudeDesktopLlm:
         assert "Settings" in result.stdout or "Extensions" in result.stdout
 
     def test_info_install_manual_mentions_ollama_bundle(self, tmp_path):
+        """Check that info install manual mentions ollama bundle."""
         stage_dir = tmp_path / "built"
         result = _run_fn(
             _FN_INFO_INSTALL_MANUAL,
@@ -675,6 +703,7 @@ class TestInstallClaudeDesktopLlm:
         assert "ollama-agent.mcpb" in result.stdout
 
     def test_info_install_manual_mentions_lmstudio_bundle(self, tmp_path):
+        """Check that info install manual mentions lmstudio bundle."""
         stage_dir = tmp_path / "built"
         result = _run_fn(
             _FN_INFO_INSTALL_MANUAL,
@@ -684,6 +713,7 @@ class TestInstallClaudeDesktopLlm:
         assert "lmstudio-agent.mcpb" in result.stdout
 
     def test_info_install_manual_suggests_open_flag(self, tmp_path):
+        """Check that info install manual suggests open flag."""
         stage_dir = tmp_path / "built"
         result = _run_fn(
             _FN_INFO_INSTALL_MANUAL,
@@ -839,14 +869,17 @@ class TestInstallClaudeDesktopLlm:
     # ------------------------------------------------------------------ #
 
     def test_script_references_submodule_vendor_path(self):
+        """Check that script references submodule vendor path."""
         content = INSTALL_DESKTOP_SH.read_text(encoding="utf-8")
         assert "vendor/Claude-Desktop-LLM" in content
 
     def test_script_references_anthropic_mcpb_package(self):
+        """Check that script references anthropic mcpb package."""
         content = INSTALL_DESKTOP_SH.read_text(encoding="utf-8")
         assert "@anthropic-ai/mcpb" in content
 
     def test_script_stages_to_packages_mcpb_agents_built(self):
+        """Check that script stages to packages mcpb agents built."""
         content = INSTALL_DESKTOP_SH.read_text(encoding="utf-8")
         assert "packages/mcpb-agents/built" in content
 
@@ -874,10 +907,12 @@ class TestGitignoreRules:
         return (ROOT / ".gitignore").read_text(encoding="utf-8")
 
     def test_npm_global_dir_is_ignored(self):
+        """Check that npm global dir is ignored."""
         content = self._gitignore_content()
         assert ".npm-global/" in content
 
     def test_mcpb_built_artifacts_are_ignored(self):
+        """Check that mcpb built artifacts are ignored."""
         content = self._gitignore_content()
         assert "packages/mcpb-agents/built/*.mcpb" in content
 
@@ -903,6 +938,7 @@ class TestGitignoreRules:
         assert "#" in surrounding, "Expected a comment near the .npm-global/ entry"
 
     def test_mcpb_artifacts_entry_has_comment(self):
+        """Check that mcpb artifacts entry has comment."""
         content = self._gitignore_content()
         idx = content.find("packages/mcpb-agents/built/*.mcpb")
         surrounding = content[max(0, idx - 300): idx + 100]
@@ -917,14 +953,17 @@ class TestMcpbAgentsBuiltDir:
     """Tests for the new packages/mcpb-agents/built/ staging directory."""
 
     def test_built_dir_exists(self):
+        """Check that built dir exists."""
         built = ROOT / "packages" / "mcpb-agents" / "built"
         assert built.is_dir()
 
     def test_gitkeep_exists_in_built(self):
+        """Check that gitkeep exists in built."""
         gitkeep = ROOT / "packages" / "mcpb-agents" / "built" / ".gitkeep"
         assert gitkeep.exists()
 
     def test_gitkeep_mentions_install_sh(self):
+        """Check that gitkeep mentions install sh."""
         content = (ROOT / "packages" / "mcpb-agents" / "built" / ".gitkeep").read_text(
             encoding="utf-8"
         )
@@ -940,22 +979,26 @@ class TestMcpbAgentsBuiltDir:
                 assert stripped.startswith("#"), f"unexpected active line in .gitkeep: {line!r}"
 
     def test_gitkeep_mentions_gitignored(self):
+        """Check that gitkeep mentions gitignored."""
         content = (ROOT / "packages" / "mcpb-agents" / "built" / ".gitkeep").read_text(
             encoding="utf-8"
         )
         assert "gitignored" in content.lower() or "regenerate" in content.lower()
 
     def test_stack_env_example_exists(self):
+        """Check that stack env example exists."""
         example = ROOT / "packages" / "mcpb-agents" / "built" / "stack-env.example"
         assert example.exists()
 
     def test_stack_env_example_mentions_ollama_port(self):
+        """Check that stack env example mentions ollama port."""
         content = (ROOT / "packages" / "mcpb-agents" / "built" / "stack-env.example").read_text(
             encoding="utf-8"
         )
         assert "11434" in content
 
     def test_stack_env_example_mentions_lmstudio_port(self):
+        """Check that stack env example mentions lmstudio port."""
         content = (ROOT / "packages" / "mcpb-agents" / "built" / "stack-env.example").read_text(
             encoding="utf-8"
         )
@@ -997,19 +1040,24 @@ class TestGitmodules:
         return (ROOT / ".gitmodules").read_text(encoding="utf-8")
 
     def test_claude_desktop_llm_submodule_entry_present(self):
+        """Check that claude desktop llm submodule entry present."""
         assert "Claude-Desktop-LLM" in self._content()
 
     def test_submodule_url_points_to_yayoboy(self):
+        """Check that submodule url points to yayoboy."""
         assert "yayoboy/Claude-Desktop-LLM" in self._content()
 
     def test_submodule_path_is_vendor(self):
+        """Check that submodule path is vendor."""
         assert "vendor/Claude-Desktop-LLM" in self._content()
 
     def test_submodule_section_header_correct(self):
+        """Check that submodule section header correct."""
         content = self._content()
         assert '[submodule "vendor/Claude-Desktop-LLM"]' in content
 
     def test_submodule_url_uses_github(self):
+        """Check that submodule url uses github."""
         content = self._content()
         idx = content.find("Claude-Desktop-LLM")
         section = content[max(0, idx - 50): idx + 200]
