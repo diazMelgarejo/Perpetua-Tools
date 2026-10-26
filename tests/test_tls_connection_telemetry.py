@@ -273,3 +273,67 @@ def test_rate_limit_drops_excess_lines_and_reports_the_count(caplog):
     limiter.record("test", ("203.0.113.9", 1234), "served", status=200)
     last = [r.getMessage() for r in caplog.records if "conn remote=" in r.getMessage()][-1]
     assert "suppressed_before=3" in last
+
+
+def test_relay_totals_ignore_increments_after_freeze():
+    """Once frozen, late pump increments cannot change the totals."""
+    totals = base._RelayTotals()
+    totals.add_up(3)
+    totals.add_down(5)
+    assert totals.freeze() == (3, 5)
+    totals.add_up(100)
+    totals.add_down(100)
+    assert totals.freeze() == (3, 5)
+
+
+def test_late_pump_increment_after_emit_does_not_change_logged_bytes(tmp_path, caplog, monkeypatch):
+    """A pump counting after the telemetry line is emitted leaves both line and totals unchanged."""
+    created = []
+
+    class _Spy(base._RelayTotals):
+        """Record every tunnel's totals so the test can increment them late."""
+
+        def __init__(self) -> None:
+            """Register this instance."""
+            super().__init__()
+            created.append(self)
+
+    monkeypatch.setattr(base, "_RelayTotals", _Spy)
+    server = socketserver.TCPServer((LOOP, 0), _EchoWebSocketUpstream)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    with socket.socket() as s:
+        s.bind((LOOP, 0))
+        port = s.getsockname()[1]
+    proxy = portal.build_portal_proxy(
+        listen_port=port, upstream_port=server.server_address[1], listen_host=LOOP,
+        cert_dir=tmp_path / "state", san_names=("portal.example.test",), ip_source=lambda: (LOOP,),
+    )
+    proxy.start()
+    caplog.set_level(logging.INFO, logger=LOGGER)
+    ctx = ssl.create_default_context(cafile=str(proxy.pki.ca_public_path))
+    payload = b"0123456789"
+    response = _EchoWebSocketUpstream.RESPONSE
+    try:
+        with socket.create_connection((LOOP, proxy.proxy_port), timeout=8) as raw:
+            with ctx.wrap_socket(raw, server_hostname=LOOP) as tls:
+                tls.settimeout(5)
+                tls.sendall(b"GET /ws HTTP/1.1\r\nHost: x\r\nConnection: Upgrade\r\nUpgrade: websocket\r\n\r\n")
+                received = b""
+                while len(received) < len(response):
+                    received += tls.recv(4096)
+                tls.sendall(payload)
+                echoed = b""
+                while len(echoed) < len(payload):
+                    echoed += tls.recv(4096)
+        lines = _conn_lines(caplog, "outcome=served")
+        assert lines and len(created) == 1
+        expected = (len(payload), len(response) + len(payload))
+        assert f"bytes_up={expected[0]} bytes_down={expected[1]}" in lines[0]
+        created[0].add_up(777)
+        created[0].add_down(777)
+        assert created[0].freeze() == expected
+        assert f"bytes_up={expected[0]} bytes_down={expected[1]}" in lines[0]
+    finally:
+        proxy.stop()
+        server.shutdown()
+        server.server_close()

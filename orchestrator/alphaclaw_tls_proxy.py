@@ -336,6 +336,39 @@ def verify_or_pin_fingerprint(
     return current
 
 
+class _RelayTotals:
+    """Thread-safe relayed-byte totals for one WebSocket tunnel that can be frozen once.
+
+    The pump threads add to it while the tunnel is open. ``freeze()`` returns the final
+    ``(up, down)`` snapshot and makes every later ``add_up`` / ``add_down`` a no-op, so a pump
+    that outlives the bounded join cannot change the totals after the telemetry line is built."""
+
+    def __init__(self) -> None:
+        """Start with zero totals, unfrozen."""
+        self._lock = threading.Lock()
+        self._up = 0
+        self._down = 0
+        self._frozen = False
+
+    def add_up(self, count: int) -> None:
+        """Add relayed client-to-upstream bytes unless the totals are frozen."""
+        with self._lock:
+            if not self._frozen:
+                self._up += count
+
+    def add_down(self, count: int) -> None:
+        """Add relayed upstream-to-client bytes unless the totals are frozen."""
+        with self._lock:
+            if not self._frozen:
+                self._down += count
+
+    def freeze(self) -> tuple[int, int]:
+        """Stop counting and return the final ``(up, down)`` totals."""
+        with self._lock:
+            self._frozen = True
+            return self._up, self._down
+
+
 class _ConnectionTelemetry:
     """Rate-limited, metadata-only connection log for the TLS front end.
 
@@ -853,13 +886,15 @@ class AlphaClawTlsProxy:
                 client.settimeout(write_timeout)
                 up.settimeout(write_timeout)
 
+                totals = _RelayTotals()
+
                 def count_up(data: bytes) -> None:
-                    """Add a relayed client-to-upstream chunk to the handler's upload total."""
-                    self._t_up += len(data)
+                    """Add a relayed client-to-upstream chunk to the tunnel's upload total."""
+                    totals.add_up(len(data))
 
                 def count_down(data: bytes) -> None:
-                    """Add a relayed upstream-to-client chunk to the handler's download total."""
-                    self._t_down += len(data)
+                    """Add a relayed upstream-to-client chunk to the tunnel's download total."""
+                    totals.add_down(len(data))
 
                 def pump(src, dst, on_chunk=None, on_relay=None) -> None:
                     """Copy bytes from ``src`` to ``dst`` until close, error or ws_idle_timeout of silence, then end the tunnel.
@@ -908,6 +943,11 @@ class AlphaClawTlsProxy:
                 except OSError:
                     pass
                 finally:
+                    # Freeze before the connection is reported: a pump that outlived the join
+                    # can no longer change what the telemetry line will read.
+                    frozen_up, frozen_down = totals.freeze()
+                    self._t_up += frozen_up
+                    self._t_down += frozen_down
                     try:
                         up.close()
                     except OSError:
