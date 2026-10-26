@@ -46,6 +46,7 @@ def make_bus(tmp_path):
     """Factory for temporary, freshly-initialised GossipBus instances."""
 
     async def _factory():
+        """Helper: factory."""
         db_path = str(tmp_path / "coordination_test.db")
         bus = GossipBus(db_path)
         await bus.init_db()
@@ -55,6 +56,7 @@ def make_bus(tmp_path):
 
 
 async def test_register_then_known_agent_ids(make_bus):
+    """Check that register then known agent ids."""
     bus = await make_bus()
     await _register(bus, "kimi-t1", "cli-tool", "kimi-code", "test registration")
     ids = await _known_agent_ids(bus)
@@ -62,6 +64,7 @@ async def test_register_then_known_agent_ids(make_bus):
 
 
 async def test_claim_then_release_no_longer_open(make_bus, capsys):
+    """Check that claim then release no longer open."""
     bus = await make_bus()
     await _register(bus, "agy-a1", "llm-agent", "gemini", "claim/release test")
 
@@ -74,6 +77,7 @@ async def test_claim_then_release_no_longer_open(make_bus, capsys):
 
 
 async def test_claim_without_release_shows_open(make_bus, capsys):
+    """Check that claim without release shows open."""
     bus = await make_bus()
     await _register(bus, "kimi-t2", "cli-tool", "kimi-code", "open claim test")
 
@@ -87,6 +91,7 @@ async def test_claim_without_release_shows_open(make_bus, capsys):
 
 
 async def test_two_tasks_claimed_by_two_agents(make_bus, capsys):
+    """Check that two tasks claimed by two agents."""
     bus = await make_bus()
     await _register(bus, "agent-x", "cli-tool", "model-x", "multi claim test")
     await _register(bus, "agent-y", "llm-agent", "model-y", "multi claim test")
@@ -125,6 +130,7 @@ async def test_second_claim_on_same_task_wins(make_bus, capsys):
 
 
 async def test_list_task_filter_excludes_other_tasks(make_bus, capsys):
+    """Check that list task filter excludes other tasks."""
     bus = await make_bus()
     await _register(bus, "agent-f", "cli-tool", "model-f", "filter test")
 
@@ -156,6 +162,7 @@ async def test_list_survives_heartbeat_noise_beyond_tail_window(make_bus, capsys
 
 
 async def test_agents_lists_registered_agent(make_bus, capsys):
+    """Check that agents lists registered agent."""
     bus = await make_bus()
     await _register(bus, "agent-z", "human", "model-z", "agents list test")
     await _agents(bus)
@@ -167,6 +174,7 @@ async def test_agents_lists_registered_agent(make_bus, capsys):
 
 
 async def test_log_emits_note(make_bus, capsys):
+    """Check that log emits note."""
     bus = await make_bus()
     await _log(bus, "agent-w", "hello from test")
     captured = capsys.readouterr()
@@ -180,6 +188,7 @@ async def test_log_emits_note(make_bus, capsys):
 
 
 async def test_phase_list_handles_nonnumeric_phase_names(make_bus, capsys):
+    """Check that phase list handles nonnumeric phase names."""
     bus = await make_bus()
     await _phase_start(bus, "StateTransitionManager-Integration", None, "agent-z")
     await _phase_list(bus)
@@ -193,6 +202,7 @@ async def test_phase_list_handles_nonnumeric_phase_names(make_bus, capsys):
     [agent_coordination_core, agent_coordination_legacy],
 )
 async def test_compat_phase_list_handles_nonnumeric_phase_names(module, make_bus, capsys):
+    """Check that compat phase list handles nonnumeric phase names."""
     if module is agent_coordination_legacy:
         module = importlib.reload(module)
     bus = await make_bus()
@@ -210,6 +220,7 @@ async def test_compat_phase_list_handles_nonnumeric_phase_names(module, make_bus
 async def test_compat_phase_list_orders_dotted_numbers_numerically(
     module, make_bus, capsys
 ):
+    """Check that compat phase list orders dotted numbers numerically."""
     if module is agent_coordination_legacy:
         module = importlib.reload(module)
     bus = await make_bus()
@@ -223,6 +234,7 @@ async def test_compat_phase_list_orders_dotted_numbers_numerically(
 
 
 def test_canonical_repo_root_is_git_directory():
+    """Check that canonical repo root is git directory."""
     root = canonical_repo_root()
     assert isinstance(root, Path)
     assert root.is_dir()
@@ -242,12 +254,14 @@ def test_canonical_repo_root_independent_of_pt_state_dir(monkeypatch):
 
 
 def test_canonical_db_path_looks_sane():
+    """Check that canonical db path looks sane."""
     path = canonical_db_path()
-    assert path.endswith(".state/perpetua_core.db")
+    assert Path(path).as_posix().endswith(".state/perpetua_core.db")
     assert Path(path).parent.name == ".state"
 
 
 def test_current_worktree_label_contains_cwd_or_branch():
+    """Check that current worktree label contains cwd or branch."""
     label = current_worktree_label()
     # Format: branch@cwd. Either component is enough to sanity-check.
     assert str(Path.cwd()) in label or "?" in label
@@ -262,6 +276,7 @@ def test_current_worktree_label_survives_missing_git(monkeypatch):
     import subprocess as sp
 
     def _boom(*a, **k):
+        """Helper: boom."""
         raise FileNotFoundError("git not found")
 
     monkeypatch.setattr(sp, "check_output", _boom)
