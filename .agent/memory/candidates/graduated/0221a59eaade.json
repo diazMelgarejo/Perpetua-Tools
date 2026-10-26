@@ -1,0 +1,48 @@
+{
+  "id": "0221a59eaade",
+  "key": "manual_0221a5",
+  "name": "manual_0221a5",
+  "claim": "Record a peer agent's unreproduced test claims as unreproduced and verify independently before relying on them.",
+  "conditions": [
+    "agent",
+    "before",
+    "claims",
+    "independently",
+    "peer",
+    "record",
+    "relying",
+    "test",
+    "them",
+    "unreproduced",
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-10-26T05:37:39.802242+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-26T05:37:39.802242+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-26T05:37:39.802242+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-26T05:37:40.012595+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A peer reported 274 passing tests across five branches that were never reproduced; independent reruns found real review defects in every round.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-26T05:37:39.802242+00:00"
+      ],
+      "lessons_sha": "ec7ad76c9e46"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-26T05:37:40.012595+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A peer reported 274 passing tests across five branches that were never reproduced; independent reruns found real review defects in every round."
+}

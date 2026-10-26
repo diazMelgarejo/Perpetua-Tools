@@ -1,0 +1,46 @@
+{
+  "id": "9fb795a3853f",
+  "key": "manual_9fb795",
+  "name": "manual_9fb795",
+  "claim": "Prove a documentation-only commit with a comment-stripped AST or token comparison, not by reading the diff.",
+  "conditions": [
+    "ast",
+    "comment-stripped",
+    "commit",
+    "comparison",
+    "diff",
+    "documentation-only",
+    "prove",
+    "reading",
+    "token"
+  ],
+  "evidence_ids": [
+    "2026-10-26T05:37:35.831786+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-26T05:37:35.831786+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-26T05:37:35.831786+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-26T05:37:36.049946+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A split of a one-line function body changed a token; the stripped comparison caught it and a docstring pass was proved clean across 99 launcher items.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-26T05:37:35.831786+00:00"
+      ],
+      "lessons_sha": "8fa3e8f6746c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-26T05:37:36.049946+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A split of a one-line function body changed a token; the stripped comparison caught it and a docstring pass was proved clean across 99 launcher items."
+}

@@ -1,0 +1,52 @@
+{
+  "id": "3ec84bd20f28",
+  "key": "manual_3ec84b",
+  "name": "manual_3ec84b",
+  "claim": "Verify private-CA TLS on Windows with Python ssl or an explicit chain check, not curl.exe, and never weaken verification to compensate.",
+  "conditions": [
+    "chain",
+    "check",
+    "compensate",
+    "curl",
+    "exe",
+    "explicit",
+    "never",
+    "private-ca",
+    "python",
+    "ssl",
+    "tls",
+    "verification",
+    "verify",
+    "weaken",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-10-26T05:37:33.157167+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-26T05:37:33.157167+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-26T05:37:33.157167+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-26T05:37:33.385312+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "curl.exe on Windows uses schannel revocation checks that cannot complete for a private CA, so it fails a valid chain; Python create_default_context(cafile) gave the true result.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-26T05:37:33.157167+00:00"
+      ],
+      "lessons_sha": "67741bef602e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-26T05:37:33.385312+00:00",
+  "reviewer": "learn.py",
+  "rationale": "curl.exe on Windows uses schannel revocation checks that cannot complete for a private CA, so it fails a valid chain; Python create_default_context(cafile) gave the true result."
+}

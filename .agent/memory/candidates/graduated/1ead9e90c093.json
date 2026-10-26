@@ -1,0 +1,49 @@
+{
+  "id": "1ead9e90c093",
+  "key": "manual_1ead9e",
+  "name": "manual_1ead9e",
+  "claim": "Land follow-up work as one branch and one PR per repository, and do not delete a stacked PR's base branch after merging.",
+  "conditions": [
+    "after",
+    "base",
+    "branch",
+    "delete",
+    "follow-up",
+    "land",
+    "merging",
+    "one",
+    "per",
+    "repository",
+    "stacked",
+    "work"
+  ],
+  "evidence_ids": [
+    "2026-10-26T05:37:38.351105+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-26T05:37:38.351105+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-26T05:37:38.351105+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-26T05:37:38.590024+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Deleting a merged base auto-closed the PR stacked on it and cost a re-opened PR; consolidated follow-ups removed merge-order ambiguity.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-26T05:37:38.351105+00:00"
+      ],
+      "lessons_sha": "9183d22f51ca"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-26T05:37:38.590024+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Deleting a merged base auto-closed the PR stacked on it and cost a re-opened PR; consolidated follow-ups removed merge-order ambiguity."
+}

@@ -1,0 +1,53 @@
+{
+  "id": "6209ef30170b",
+  "key": "manual_6209ef",
+  "name": "manual_6209ef",
+  "claim": "Detach Windows services with CREATE_NO_WINDOW, CREATE_NEW_PROCESS_GROUP and breakaway from the job, append logs to a file, and fail fast when the process exits before its port is up.",
+  "conditions": [
+    "append",
+    "before",
+    "breakaway",
+    "create_new_process_group",
+    "create_no_window",
+    "detach",
+    "exits",
+    "fail",
+    "fast",
+    "file",
+    "job",
+    "logs",
+    "port",
+    "process",
+    "services",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-10-26T05:37:40.511846+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-26T05:37:40.511846+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-26T05:37:40.511846+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-26T05:37:40.750292+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Output pumped inside the launcher's PowerShell stopped when it exited, and polling a dead service wasted 75 s; the venv python.exe launcher's child owns the port.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-26T05:37:40.511846+00:00"
+      ],
+      "lessons_sha": "c406ee7872db"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-26T05:37:40.750292+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Output pumped inside the launcher's PowerShell stopped when it exited, and polling a dead service wasted 75 s; the venv python.exe launcher's child owns the port."
+}

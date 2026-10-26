@@ -1,0 +1,54 @@
+{
+  "id": "035fd31304f7",
+  "key": "manual_035fd3",
+  "name": "manual_035fd3",
+  "claim": "A security self-check may report PASS only on positive evidence: count explicit connection refusals as proof, and report timeouts or an empty probe list as WARN.",
+  "conditions": [
+    "connection",
+    "count",
+    "empty",
+    "evidence",
+    "explicit",
+    "list",
+    "only",
+    "pass",
+    "positive",
+    "probe",
+    "proof",
+    "refusals",
+    "report",
+    "security",
+    "self-check",
+    "timeouts",
+    "warn"
+  ],
+  "evidence_ids": [
+    "2026-10-26T05:37:34.985622+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-26T05:37:34.985622+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-26T05:37:34.985622+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-26T05:37:35.192920+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The upstream-loopback check treated any OSError as refused and passed with zero addresses probed; a firewall that drops packets yields timeouts, not refusals.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-26T05:37:34.985622+00:00"
+      ],
+      "lessons_sha": "eafd5864c157"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-26T05:37:35.192920+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The upstream-loopback check treated any OSError as refused and passed with zero addresses probed; a firewall that drops packets yields timeouts, not refusals."
+}
