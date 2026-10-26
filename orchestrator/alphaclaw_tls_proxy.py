@@ -335,6 +335,49 @@ def verify_or_pin_fingerprint(
     return current
 
 
+class _ConnectionTelemetry:
+    """Rate-limited, metadata-only connection log for the TLS front end.
+
+    One INFO line per connection: remote host and port, outcome, handshake and total
+    duration, byte counts and the response status. Never headers, paths or bodies (so no
+    credential can reach it). A token bucket (``burst`` lines, refilled at ``per_second``)
+    keeps an open port from flooding the log; dropped lines are counted and reported on
+    the next line that is written."""
+
+    def __init__(self, burst: int = 30, per_second: float = 0.5) -> None:
+        """Create a limiter allowing ``burst`` lines at once and ``per_second`` sustained."""
+        self._burst = float(burst)
+        self._rate = per_second
+        self._tokens = float(burst)
+        self._stamp = time.monotonic()
+        self._suppressed = 0
+        self._lock = threading.Lock()
+
+    def _take(self) -> int:
+        """Return -1 when the line must be dropped, else the number of lines dropped since the last one written."""
+        with self._lock:
+            now = time.monotonic()
+            self._tokens = min(self._burst, self._tokens + (now - self._stamp) * self._rate)
+            self._stamp = now
+            if self._tokens < 1.0:
+                self._suppressed += 1
+                return -1
+            self._tokens -= 1.0
+            dropped, self._suppressed = self._suppressed, 0
+            return dropped
+
+    def record(self, label: str, client_address, outcome: str, **fields) -> None:
+        """Write one telemetry line (or count it as suppressed when over the rate limit)."""
+        dropped = self._take()
+        if dropped < 0:
+            return
+        parts = [f"{key}={value}" for key, value in fields.items() if value is not None]
+        if dropped:
+            parts.append(f"suppressed_before={dropped}")
+        remote = f"{client_address[0]}:{client_address[1]}" if client_address else "unknown"
+        _log.info("[%s-tls-proxy] conn remote=%s outcome=%s %s", label, remote, outcome, " ".join(parts))
+
+
 @dataclass
 class AlphaClawTlsProxy:
     """Local-only HTTPS reverse proxy in front of AlphaClaw's HTTP port.
@@ -609,6 +652,12 @@ class AlphaClawTlsProxy:
             # in-scope.
             """Per-connection handler: forwards requests to the upstream, or tunnels WebSockets."""
             timeout = _handler_socket_timeout
+            # Metadata for the per-connection telemetry line: method, response status and byte
+            # counts only. Never headers, the path or any body content.
+            _t_method = None
+            _t_status = None
+            _t_up = 0
+            _t_down = 0
 
             def _read_request_body(self) -> Optional[bytes]:
                 """Read the client's request body, handling both
@@ -688,9 +737,12 @@ class AlphaClawTlsProxy:
 
             def _forward(self, method: str) -> None:
                 """Forward one request to the upstream over plain HTTP and relay the response."""
+                self._t_method = method
                 try:
                     body = self._read_request_body()
+                    self._t_up = len(body) if body else 0
                 except (ValueError, OSError) as exc:
+                    self._t_status = 400
                     # Malformed framing must never propagate out of this
                     # handler -- an uncaught exception here aborts the
                     # connection via socketserver's own error handling with
@@ -710,6 +762,7 @@ class AlphaClawTlsProxy:
                     req.add_header("Content-Length", str(len(body)))
                 try:
                     with _UPSTREAM_OPENER.open(req, timeout=timeout) as resp:
+                        self._t_status = resp.status
                         self.send_response(resp.status)
                         for header, value in resp.getheaders():
                             # Hop-by-hop headers describe THIS connection's
@@ -728,12 +781,15 @@ class AlphaClawTlsProxy:
                             chunk = resp.read(_CHUNK_SIZE)
                             if not chunk:
                                 break
+                            self._t_down += len(chunk)
                             self.wfile.write(chunk)
                 except urllib.error.HTTPError as exc:
+                    self._t_status = exc.code
                     # Non-2xx (including an unfollowed 3xx): relay status,
                     # headers (WWW-Authenticate, Location, Content-Type...)
                     # and body to the client untouched.
                     payload = exc.read()
+                    self._t_down += len(payload)
                     self.send_response(exc.code)
                     for header, value in exc.headers.items():
                         if header.lower() not in _HOP_BY_HOP_HEADERS:
@@ -741,6 +797,7 @@ class AlphaClawTlsProxy:
                     self.end_headers()
                     self.wfile.write(payload)
                 except urllib.error.URLError as exc:
+                    self._t_status = 502
                     self.send_response(502)
                     self.end_headers()
                     self.wfile.write(str(exc.reason).encode("utf-8"))
@@ -762,6 +819,8 @@ class AlphaClawTlsProxy:
                 101, then pump bytes both ways until either side closes or
                 the connection is idle for ws_idle_timeout seconds."""
                 self.close_connection = True
+                self._t_method = "GET"
+                self._t_status = 101
                 try:
                     up = socket.create_connection((upstream_host, upstream), timeout=10)
                 except OSError:
@@ -848,26 +907,57 @@ class AlphaClawTlsProxy:
                 """Send handler logging to the debug log; request details are not logged at info."""
                 _log.debug("[%s-tls-proxy] " + fmt, handler_label, *args)
 
+        telemetry = _ConnectionTelemetry()
+
         class _TlsServer(socketserver.ThreadingTCPServer):
             """Accepts plain TCP and runs the TLS handshake in the
             per-connection thread under a bounded timeout, so one silent or
             slow client can never stall accept() for everyone else."""
 
             def finish_request(self, request, client_address):
-                """Run the TLS handshake under a bounded timeout, then serve the request on the TLS socket."""
+                """Run the TLS handshake under a bounded timeout, then serve the request on the TLS socket.
+
+                Every connection leaves one metadata-only INFO line (remote host and port, outcome,
+                handshake and total duration, byte counts, status): a failed or stalled handshake
+                and a client that connects but never sends a request are visible, with the
+                exception class (and the TLS alert reason) but never header, path or body content."""
+                started = time.monotonic()
                 try:
                     request.settimeout(handshake_timeout)
                     tls = ctx_holder["ctx"].wrap_socket(request, server_side=True)
                 except (ssl.SSLError, OSError) as exc:
                     _log.debug("[%s-tls-proxy] handshake failed: %s", handler_label, exc)
+                    reason = getattr(exc, "reason", None)
+                    telemetry.record(
+                        handler_label, client_address, "handshake_failed",
+                        error=type(exc).__name__, reason=reason or None,
+                        hs_ms=int((time.monotonic() - started) * 1000),
+                    )
                     return
+                handshake_ms = int((time.monotonic() - started) * 1000)
+                handler = None
+                outcome = "served"
                 try:
-                    self.RequestHandlerClass(tls, client_address, self)
+                    handler = self.RequestHandlerClass(tls, client_address, self)
+                except Exception as exc:  # noqa: BLE001 - recorded, then re-raised for socketserver
+                    outcome = f"handler_error:{type(exc).__name__}"
+                    raise
                 finally:
                     try:
                         tls.close()
                     except OSError:
                         pass
+                    status = getattr(handler, "_t_status", None)
+                    if outcome == "served" and status is None:
+                        outcome = "no_request"
+                    telemetry.record(
+                        handler_label, client_address, outcome,
+                        method=getattr(handler, "_t_method", None), status=status,
+                        bytes_up=getattr(handler, "_t_up", None),
+                        bytes_down=getattr(handler, "_t_down", None),
+                        hs_ms=handshake_ms,
+                        dur_ms=int((time.monotonic() - started) * 1000),
+                    )
 
         self._server = _TlsServer(
             (self.listen_host or _LOOPBACK_V4, self.proxy_port), _ProxyHandler
