@@ -9,6 +9,7 @@ set -euo pipefail
 readonly CURSOR_BODY_END='<!-- CURSOR_AGENT_PR_BODY_END -->'
 readonly CODERABBIT_MARKER='<!-- This is an auto-generated comment: release notes by coderabbit.ai -->'
 
+# Print the command-line synopsis and the mandatory read, backup, merge, verify workflow to stdout.
 usage() {
   cat <<'EOF'
 Usage:
@@ -28,6 +29,7 @@ Never pass body= with only the latest paragraph to ManagePullRequest update_pr.
 EOF
 }
 
+# Append a guard identifier ($1) to the file named by PR_BODY_GUARD_TRACE_FILE when set, so tests can observe which integrity guard fired; a no-op otherwise.
 guard_trace() {
   # Test-only seam: records which integrity guard was actually reached, so
   # tests can assert on runtime behaviour rather than scanning source text.
@@ -37,6 +39,7 @@ guard_trace() {
   fi
 }
 
+# Print the SHA-256 hex digest of the raw bytes of the file named by $1.
 sha256_file() {
   python3 - "$1" <<'PY'
 import hashlib
@@ -47,6 +50,7 @@ print(hashlib.sha256(Path(sys.argv[1]).read_bytes()).hexdigest())
 PY
 }
 
+# Print the SHA-256 hex digest of a saved gh pr view output file ($1) after dropping the single trailing newline gh adds; fail if that newline is missing.
 sha256_gh_view_body() {
   python3 - "$1" <<'PY'
 import hashlib
@@ -62,6 +66,9 @@ print(hashlib.sha256(content[:-1]).hexdigest())
 PY
 }
 
+# Merge an append block into a PR body, byte-safely. Args: saved remote body file, append file, output file, follow-up title.
+# The new '## <title>' section goes before the Cursor end marker, else before the CodeRabbit marker, else at the end;
+# append content containing a reserved marker, or a body with duplicate markers, is rejected.
 build_merged_body() {
   python3 - "$1" "$2" "$3" "$4" "$CURSOR_BODY_END" "$CODERABBIT_MARKER" <<'PY'
 import sys
@@ -93,6 +100,7 @@ Path(out_path).write_bytes(merged)
 PY
 }
 
+# Print the title ($1) as 'Follow-up: <text>': any existing leading 'Follow-up' prefix (with or without colon or space) and leading whitespace are stripped first, so the prefix is never doubled.
 normalize_follow_up_title() {
   local raw="${1:-}"
   local rest="$raw"
@@ -107,6 +115,8 @@ normalize_follow_up_title() {
   printf 'Follow-up: %s' "$rest"
 }
 
+# Print the absolute path of the shared pr-body-backups directory under the git common dir (the same for every worktree of the repo);
+# a relative common dir is anchored at the top level, and drive-letter paths count as absolute. Fails outside a git repository.
 resolve_git_backup_dir() {
   local git_common_dir
   if ! git_common_dir="$(git rev-parse --git-common-dir 2>/dev/null)"; then
@@ -190,6 +200,7 @@ append_tmp="$(mktemp)"
 out="$(mktemp)"
 grant_finalized=0
 grant_append_args=(--repo "$repo_slug" --pr "$pr_number" --file "$append_tmp")
+# EXIT-trap helper: unless the grant was finalized, ask the grant library to release this payload's reservation, ignoring any failure so cleanup never masks the real exit status.
 release_on_fail() {
   if [[ "$grant_finalized" -eq 1 ]]; then
     return 0

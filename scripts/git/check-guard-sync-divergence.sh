@@ -74,15 +74,19 @@ fi
 WORKSPACE_ROOT="${WORKSPACE_ROOT:-$(cd "$CANON_ROOT/.." && pwd)}"
 RC=0
 
+# Print the usage line to stderr and exit 2 (bad invocation).
 _usage() {
   echo "usage: $0 --workspace | <target-repo-path>" >&2
   exit 2
 }
 
+# Print the git blob hash of the file given as $1, the identity used to compare guard files across repos.
 _file_hash() {
   git hash-object "$1"
 }
 
+# Print the physical absolute path of the git common dir of repo root $1 (shared by all its linked worktrees); fails if $1 is not a repo.
+# A relative result is anchored at the root, and drive-letter paths count as absolute.
 _git_common_dir() {
   local root="$1" common
 
@@ -108,6 +112,9 @@ _blob_in_repo_history() {
   return 1
 }
 
+# Compare one manifest file ($2, under prefix $3, default scripts/git) between canonical and sibling root $1.
+# Passes when the files are byte-identical or the sibling copy is a blob found in canonical history (it merely lags);
+# otherwise prints FAIL and returns 1. A file missing on either side is skipped.
 _check_pair() {
   local sibling_root="$1" rel="$2" prefix="${3:-scripts/git}"
   local canon_f="$CANON_ROOT/$prefix/$rel"
@@ -138,6 +145,7 @@ _check_pair() {
   return 1
 }
 
+# Check one manifest path given as a repo-relative path with directory ($2): split it into prefix and file name and delegate to _check_pair for sibling root $1.
 _check_root_pair() {
   local sibling_root="$1" root_rel="$2"
   local prefix rel
@@ -147,6 +155,7 @@ _check_root_pair() {
   _check_pair "$sibling_root" "$rel" "$prefix"
 }
 
+# Succeed when repo root $1 opts in to .githooks sync: either the opt-in marker file exists or core.hooksPath resolves to that repo's own .githooks directory.
 _repo_uses_githooks() {
   local root="$1" hooks_path hooks_abs expected_abs
   if [[ -f "$root/.githooks/.guard-sync-opt-in" ]]; then
@@ -163,6 +172,9 @@ _repo_uses_githooks() {
   [[ "$hooks_abs" == "$expected_abs" ]]
 }
 
+# Scan one candidate repo ($1) against canonical and return non-zero if any manifest file diverges.
+# The canonical root itself, non-git directories and linked worktrees sharing canonical history are skipped;
+# an independent repo gets the per-file history check, plus the .githooks files when it opts in.
 _scan_sibling() {
   local sibling_root="$1" canon_common sibling_common
   local rel pair_rc=0
@@ -198,6 +210,8 @@ _scan_sibling() {
   return "$pair_rc"
 }
 
+# Fill the TARGETS array: with --workspace, every git repo found by a depth-2 crawl of the workspace root (excluding the root);
+# with a path, that repo's top level (exit 2 if not a git repo); with no argument, show usage.
 _collect_targets() {
   TARGETS=()
   if [[ "${1:-}" == "--workspace" ]]; then
