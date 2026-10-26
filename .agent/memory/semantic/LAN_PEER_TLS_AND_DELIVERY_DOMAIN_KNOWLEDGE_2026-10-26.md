@@ -112,6 +112,15 @@ existing content hash is compared before any resubmit.
 * NTFS directory listings can show 0 bytes for a log another process holds open.
 * `pip install -r <other repo>/requirements.txt` containing `-e .` installs the current
   directory, not the other repo.
+* Local success does not prove LAN reachability. Windows Defender Firewall matches inbound allow
+  rules by program image path (or port). A listener started detached (no console, so no "allow
+  access" prompt can appear) from a path no rule names, on a network marked Public, is silently
+  dropped for other hosts while connections from the same machine still work. A uv-managed
+  Python reports a minor-version link path (for example `...cpython-3.11-...`) that differs
+  from the patch-version path an earlier prompt created a rule for. Prefer a port-scoped rule
+  (TCP 8443, remote address `LocalSubnet`) that does not depend on the interpreter path, created
+  by the operator, then verify from the peer: health 200 with the peer's CA, protected 401/403.
+  A timeout (not a refusal) when probing a host's own LAN address is the same symptom.
 
 ## 7. Discovery rules
 
