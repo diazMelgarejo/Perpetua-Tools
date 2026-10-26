@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import re
 import subprocess
+import sys
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -40,6 +42,18 @@ _SYNC_BINDING_PATTERN = _extract_sync_binding_pattern()
 
 def _run_sync_binding_check(sync_script: Path) -> subprocess.CompletedProcess[str]:
     """Same grep as verify-guard-parity.sh SYNC BINDING check."""
+    if sys.platform == "win32":
+        # The MSYS runtime strips backslashes from Windows command lines, which
+        # turns the pattern's escaped dot into a wildcard; read it from a file.
+        with tempfile.TemporaryDirectory() as tmp:
+            pattern_file = Path(tmp) / "pattern.txt"
+            pattern_file.write_bytes(_SYNC_BINDING_PATTERN.encode("utf-8"))
+            return subprocess.run(
+                ["grep", "-Eq", "-f", str(pattern_file), str(sync_script)],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+            )
     return subprocess.run(
         ["grep", "-Eq", _SYNC_BINDING_PATTERN, str(sync_script)],
         capture_output=True,
