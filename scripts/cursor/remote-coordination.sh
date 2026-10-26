@@ -9,6 +9,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
+# Print the command-line usage and explain that this helper is status-only.
 usage() {
   cat <<'EOF'
 Usage:
@@ -20,6 +21,7 @@ supported by this helper — use PR/handoff (Mode B) or the local coordinator.
 EOF
 }
 
+# Refuse an unsupported action: print why to stderr and exit 64 (no relay exists).
 refuse_action() {
   local action="$1"
   printf '%s\n' \
@@ -30,6 +32,7 @@ refuse_action() {
   exit 64
 }
 
+# Print one JSON status object: redacted local topology and whether gossip env is set.
 emit_status() {
   local gossip_env_present=false
   if [[ -n "${GOSSIP_PEERS:-}" || -n "${GOSSIP_SHARED_SECRET:-}" ]]; then
