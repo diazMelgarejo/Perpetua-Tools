@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -86,6 +87,8 @@ def test_append_snippet_fails_closed_on_unreadable_dest(tmp_path: Path) -> None:
     since chmod 0o000 doesn't block root's own reads -- this sandbox
     happens to run as root; CI's actual runner does not, where this test
     genuinely exercises the fix."""
+    if sys.platform == "win32":
+        pytest.skip("chmod 0o000 does not make a file unreadable on Windows")
     if hasattr(os, "geteuid") and os.geteuid() == 0:
         pytest.skip("running as root -- chmod 0o000 does not block root's reads")
 

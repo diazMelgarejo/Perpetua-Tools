@@ -88,6 +88,10 @@ def test_manifest_files_exist_on_disk() -> None:
     assert not missing, f"manifest lists missing files: {missing}"
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="POSIX executable bits are not represented on Windows checkouts",
+)
 @pytest.mark.unit
 def test_cursor_executables_are_executable_in_canonical_source() -> None:
     """Cursor guard executables in the manifest are executable on disk."""

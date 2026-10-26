@@ -645,6 +645,10 @@ def test_ensure_hooks_installed_passes_when_all_hooks_present(tmp_path):
     assert proc.stderr == ""
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="POSIX executable bits are not represented on Windows checkouts",
+)
 def test_ensure_hooks_installed_fails_when_hook_not_executable(tmp_path):
     """ensure_hooks_installed.sh fails if a hook exists but is not executable."""
     _make_fake_git_repo(tmp_path, hooks_path=".githooks")
@@ -660,6 +664,10 @@ def test_ensure_hooks_installed_fails_when_hook_not_executable(tmp_path):
     assert "non-executable" in proc.stderr
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="POSIX executable bits are not represented on Windows checkouts",
+)
 def test_ensure_hooks_installed_remaps_only_nested_repo_root(tmp_path):
     """Nested REPO_ROOT under the script checkout remaps; sibling roots do not."""
     import shutil
