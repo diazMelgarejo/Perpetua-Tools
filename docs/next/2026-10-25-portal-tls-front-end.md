@@ -125,6 +125,33 @@ file bytes, equal to `Get-FileHash` or `sha256sum`) and
 Exit codes: 0 normal, 2 cannot start (bind failure, missing `cryptography`,
 unusable state), 3 CA pin mismatch.
 
+## Self-check (evidence gate)
+
+```text
+python -m orchestrator.portal_tls_proxy --self-check [--listen-port P] [--upstream-port U] [--host H]
+```
+
+Run this against the running endpoint before peers are told to trust it.
+Defaults: P 8443, U 8002, H the first non-loopback local address (loopback
+when there is none). It reads only the public CA file from the store, never a
+private key, and creates, reissues or rotates nothing; a missing store or CA
+is a FAIL. Verification uses that CA alone (no system roots, no environment
+override, hostname or address checked against H). Every network call is
+bounded to 5 seconds or less, and no token is read or sent.
+
+| Line | PASS when |
+| ---- | --------- |
+| `check_tls_health` | `GET /health` returns 200 |
+| `check_protected_unauth` | `GET /api/peer-inbox` with no `Authorization` returns 401 (403 also passes) |
+| `check_leaf_san` | the presented leaf's SAN contains H (IP SAN or DNS SAN) |
+| `check_leaf_expiry` | more than 7 days remain; WARN within 7 days; FAIL expired; notAfter printed as UTC ISO-8601 |
+| `check_upstream_loopback_only` | a 1 second TCP connect to the upstream port fails on every non-loopback local address |
+
+Each prints `check_<name>=PASS|WARN|FAIL <detail>`, followed by
+`ca_sha256_file=<hex>` and `self_check=PASS|FAIL`. Exit 0 when nothing FAILs
+(WARN allowed), 1 on any FAIL, 2 on a usage error (an older build prints
+"unrecognized arguments").
+
 ## Operator exchange
 
 1. Run `--print-fingerprint` on this node.

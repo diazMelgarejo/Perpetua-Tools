@@ -1,0 +1,42 @@
+{
+  "id": "154b11aa2c63",
+  "key": "manual_154b11",
+  "name": "manual_154b11",
+  "claim": "When git diff --submodule=log reports a submodule as rewind, the checkout is older than the recorded gitlink; never commit it (it regresses the pin) and restore with git submodule update on that path",
+  "conditions": [
+    "commit-hygiene",
+    "gitlink",
+    "rewind",
+    "submodule",
+    "vendor"
+  ],
+  "evidence_ids": [
+    "2026-10-25T06:07:47.287414+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-25T06:07:47.287414+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-25T06:07:47.287414+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-25T06:07:47.456013+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-25: PT main clone showed vendor/agentic-stack and vendor/ecc-tools modified; the log view showed rewinds of many upstream commits, not local work",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-25T06:07:47.287414+00:00"
+      ],
+      "lessons_sha": "4a7e93484374"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-25T06:07:47.456013+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-25: PT main clone showed vendor/agentic-stack and vendor/ecc-tools modified; the log view showed rewinds of many upstream commits, not local work"
+}

@@ -6,7 +6,7 @@ description: Recommend the harness default or an allowed alternative for the cur
 
 Recommend a launch that follows
 [Alexandria model-governance](https://github.com/oramasys/alexandria/blob/docs/mig-pack-ingest-20260925/docs/standards/model-governance.md)
-(PR #1, tip `e7ee9db6`). Local pin: `docs/standards/model-governance.md`.
+(PR #1, tip `d6da6781`). Local pin: `docs/standards/model-governance.md`.
 
 The harness decides the path. Do not assume Claude-only routing.
 
@@ -15,13 +15,13 @@ The harness decides the path. Do not assume Claude-only routing.
 `/model-route [task-description] [--budget low|med|high]`
 
 `--budget` never authorizes Opus, Fable, Grok 4.7, high effort, or fast mode.
-Those need an escalation token (S-AuthZ bearer + fresh signed HITL, ≤24h).
-Config flags and env vars are not a token.
+Approval rule: [Escalation approval regimes](../../docs/standards/model-governance.md#escalation-approval-regimes).
 
 ## Routing Heuristic
 
 - **Cursor / Grok Bot:** default `grok-4.7` at medium with fast off.
-  Allowed: `composer-2.5` with fast off. Never `auto` for agents.
+  Allowed: `composer-2.5` or `gpt-5.6-terra` (medium), both with fast off.
+  Never `auto` for agents.
   Never `grok-4.5`.
 - **Anthropic:** default `claude-sonnet-5-5` at medium.
   Opus 5.5 high and Fable 5.1 are escalation-only

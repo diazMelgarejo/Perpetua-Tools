@@ -1,0 +1,42 @@
+{
+  "id": "6734bdcf09d8",
+  "key": "manual_6734bd",
+  "name": "manual_6734bd",
+  "claim": "Before pushing a local fix-up to a shared PR branch, fetch and check fast-forward; if another actor moved the branch, rebase and resolve each hunk by keeping the stricter remote rule and only the still-new part of the local change, then re-test; never force-push",
+  "conditions": [
+    "concurrent-pusher",
+    "fast-forward",
+    "push",
+    "rebase",
+    "shared-branch"
+  ],
+  "evidence_ids": [
+    "2026-10-25T06:07:46.081003+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-25T06:07:46.081003+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-25T06:07:46.081003+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-25T06:07:46.251587+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-25: orama #444 and #445 both gained another actor's commits between review and push; rebasing kept remote Topo-MaskSecrets and the loopback WIN_PEER_ENDPOINT rule and carried forward only the stale-WIN_IP replacement",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-25T06:07:46.081003+00:00"
+      ],
+      "lessons_sha": "9b816c28e089"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-25T06:07:46.251587+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-25: orama #444 and #445 both gained another actor's commits between review and push; rebasing kept remote Topo-MaskSecrets and the loopback WIN_PEER_ENDPOINT rule and carried forward only the stale-WIN_IP replacement"
+}

@@ -1,3 +1,9 @@
+"""Perpetua-Tools orchestrator FastAPI application.
+
+Exposes the control-plane HTTP surface: health, runtime, agents, model routing,
+orchestration, gossip, autoresearch and the V1 supervisor job endpoints.
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -199,6 +205,7 @@ async def _resolve_routing_bg() -> None:
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
+    """App lifespan: initialize observability and the control-plane token, kick off background startup work, then shut observability down on exit."""
     observability_state = initialize_observability()
     if observability_state.enabled:
         _startup_log.info("OTel runtime initialized")
@@ -265,6 +272,7 @@ _USER_INPUT_QUEUE: collections.deque[Dict[str, Any]] = collections.deque(maxlen=
 
 
 class OrchestrateRequest(BaseModel):
+    """Request body for ``POST /orchestrate``."""
     task: str
     task_type: str = "default"
     preferred_device: Optional[str] = None
@@ -302,6 +310,7 @@ class TieredPipelineRequest(BaseModel):
     @field_validator("prompt")
     @classmethod
     def _validate_prompt(cls, v: str) -> str:
+        """Reject an empty or whitespace-only prompt; return it unchanged otherwise."""
         if not v or not v.strip():
             raise ValueError("prompt cannot be empty or whitespace only")
         return v
@@ -330,6 +339,7 @@ class PipelineApprovalRequest(BaseModel):
 
 
 class ConflictResponse(BaseModel):
+    """Response model for ``GET /agents/conflicts``."""
     conflict: bool
     message: str
     existing_agents: List[Dict[str, Any]]
@@ -350,6 +360,7 @@ DEFAULT_TIER5_DAILY_LIMIT_MICROUSD = 10_000_000
 
 
 def get_tier5_budget_ledger() -> Tier5BudgetLedger:
+    """Build the Tier-5 budget ledger from environment config; raise HTTP 500 when the daily limit is not a positive integer."""
     ledger_path = os.getenv("PT_TIER5_LEDGER_PATH", str(DEFAULT_TIER5_LEDGER_PATH))
     try:
         raw_limit = os.getenv("PT_TIER5_DAILY_LIMIT_MICROUSD", str(DEFAULT_TIER5_DAILY_LIMIT_MICROUSD))
@@ -368,11 +379,13 @@ def get_tier5_execution_service(
     ledger: Tier5BudgetLedger = Depends(get_tier5_budget_ledger),
     runner: TieredPipelineRunner = Depends(get_tiered_pipeline_runner),
 ) -> Tier5ExecutionService:
+    """Build the Tier-5 execution service from the injected ledger and runner plus the optional HMAC key from the environment."""
     hmac_key = os.getenv(HMAC_KEY_ENV)
     return Tier5ExecutionService(ledger=ledger, runner=runner, hmac_key=hmac_key)
 
 
 def _runtime_summary() -> dict[str, Any]:
+    """Summarize runtime state as availability, gateway readiness and distributed routing flags (all False when no runtime payload exists)."""
     runtime_state = load_runtime_payload()
     if runtime_state is None:
         return {"available": False, "gateway_ready": False, "distributed": False}
@@ -384,6 +397,7 @@ def _runtime_summary() -> dict[str, Any]:
 
 
 def _candidate_base_url(host: str, port: int) -> str:
+    """Build a candidate's base URL from host and port, falling back to plain host:port joining when the policy builder rejects it."""
     # Route through the shared endpoint_policy_core boundary so a malformed
     # host string (bad port syntax/range) can never raise a bare ValueError
     # here — parse_transport_identity/build_transport_url swallow ValueError
@@ -395,16 +409,19 @@ def _candidate_base_url(host: str, port: int) -> str:
 
 
 def _normalize_model_name(value: str) -> str:
+    """Lowercase, trim and map underscores to dashes so model names compare loosely."""
     return value.strip().lower().replace("_", "-")
 
 
 def _model_matches(available: str, expected: str) -> bool:
+    """Return True when two model names are equal, prefixes of one another, or substrings of one another after normalization."""
     lhs = _normalize_model_name(available)
     rhs = _normalize_model_name(expected)
     return lhs == rhs or lhs.startswith(rhs) or rhs.startswith(lhs) or rhs in lhs or lhs in rhs
 
 
 def _is_local_candidate(model: Any) -> bool:
+    """Return True for a non-cloud candidate served by a local runtime backend."""
     return getattr(model, "backend", "") in _LOCAL_RUNTIME_BACKENDS and getattr(model, "device", "") != "cloud"
 
 
@@ -415,6 +432,7 @@ async def _probe_openai_compatible(
     timeout: float,
     token: str = "",
 ) -> tuple[bool, str]:
+    """Query an OpenAI-compatible ``/v1/models`` listing; return ``(ready, detail)``, ready when the model is listed or nothing is listed to compare against."""
     headers = {"Authorization": f"Bearer {token}"} if token else {}
     async with httpx.AsyncClient(timeout=timeout) as client:
         resp = await client.get(f"{base_url}/v1/models", headers=headers)
@@ -440,6 +458,7 @@ async def _probe_ollama_model(
     *,
     timeout: float,
 ) -> tuple[bool, str]:
+    """Query Ollama ``/api/tags``; return ``(ready, detail)``, ready when the model is listed or nothing is listed to compare against."""
     async with httpx.AsyncClient(timeout=timeout) as client:
         resp = await client.get(f"{base_url}/api/tags")
         if resp.status_code >= 400:
@@ -459,6 +478,7 @@ async def _probe_ollama_model(
 
 
 async def _probe_glm_cloud_candidate(model: Any) -> tuple[bool, str]:
+    """Send a one-token generate request to the GLM cloud candidate; return ``(ready, detail)`` with rate-limit and error responses reported as not ready."""
     timeout = float(os.getenv("GLM_PROBE_TIMEOUT", "8"))
     base_url = _candidate_base_url(model.host, model.port)
     payload = {
@@ -482,6 +502,7 @@ async def _probe_glm_cloud_candidate(model: Any) -> tuple[bool, str]:
 
 
 async def _candidate_availability(model: Any) -> tuple[bool, str]:
+    """Probe one candidate by backend type; return ``(ready, detail)``. Non-local backends are not probed and count as ready, and probe errors count as not ready."""
     backend = getattr(model, "backend", "")
     name = getattr(model, "name", "")
     if backend not in _LOCAL_RUNTIME_BACKENDS:
@@ -548,11 +569,13 @@ async def _resolve_candidates(
 
 @app.get("/ecc/status", tags=["ecc"])
 def ecc_status() -> Dict[str, Any]:
+    """Report the current ECC tooling sync status."""
     return get_sync_status()
 
 
 @app.post("/ecc/sync", tags=["ecc"])
 def ecc_sync(force: bool = Query(False)) -> Dict[str, Any]:
+    """Run an ECC tooling sync (``force`` runs it even when ECC sync is disabled by configuration); failures are returned as an error payload rather than raised."""
     try:
         return sync_ecc_tools(force=force)
     except Exception as exc:  # noqa: BLE001
@@ -561,6 +584,7 @@ def ecc_sync(force: bool = Query(False)) -> Dict[str, Any]:
 
 
 class UserInputRequest(BaseModel):
+    """Request body for ``POST /user-input``: a message and its source (portal or cli)."""
     message: str = Field(..., min_length=1, max_length=4000)
     source: str = "portal"  # "portal" | "cli"
 
@@ -629,7 +653,9 @@ _HEALTH_LM_DEADLINE_S = 1.0
 
 @app.get("/health", tags=["system"])
 def health() -> Dict[str, Any]:
+    """Report orchestrator status, version, runtime summary and a concurrent probe of every backend, bounded by a short deadline so slow backends cannot stall the response."""
     def _validated(raw: str, default: str) -> str:
+        """Return the endpoint URL (falling back to ``default`` when empty) after policy validation; an invalid URL becomes HTTP 400."""
         candidate = (raw or default).strip()
         try:
             return validate_model_endpoint_url(candidate)
@@ -688,6 +714,7 @@ def health() -> Dict[str, Any]:
 
 
 class _GossipEmitRequest(BaseModel):
+    """Request body for ``POST /gossip/emit``: event type, payload and optional event UUID."""
     event_type: str
     payload: Dict[str, Any]
     uuid: Optional[str] = None
@@ -717,11 +744,13 @@ async def gossip_tail(
 
 @app.get("/budget", tags=["cost"])
 def budget() -> Dict[str, Any]:
+    """Return the current cost-guard budget snapshot."""
     return cost_guard.snapshot()
 
 
 @app.get("/runtime", tags=["runtime"])
 def runtime_state() -> Dict[str, Any]:
+    """Return the redacted runtime payload, or an unavailable marker when none exists."""
     payload = load_runtime_payload()
     if payload is None:
         return {"available": False, "runtime": None}
@@ -734,6 +763,7 @@ async def runtime_bootstrap(
     autoresearch: bool = Query(True),
     run_tag: Optional[str] = Query(None),
 ) -> Dict[str, Any]:
+    """Run the non-interactive runtime bootstrap and return its stages plus the redacted runtime payload."""
     payload = await bootstrap_runtime(
         interactive=False,
         force_gateway=force_gateway,
@@ -752,12 +782,14 @@ async def runtime_bootstrap(
 
 @app.get("/agents", tags=["agents"])
 def list_agents(status: Optional[str] = None) -> Dict[str, Any]:
+    """List tracked agents, optionally filtered by status."""
     agents = tracker.list_agents(status=status)
     return {"agents": [asdict(a) for a in agents]}
 
 
 @app.get("/agents/conflicts", tags=["agents"])
 def detect_conflicts() -> ConflictResponse:
+    """Report duplicate-role agents that would conflict with a new orchestration request."""
     conflicts = tracker.detect_conflicts()
     if conflicts:
         return ConflictResponse(
@@ -773,6 +805,7 @@ def detect_conflicts() -> ConflictResponse:
 
 @app.delete("/agents/{agent_id}", tags=["agents"])
 def destroy_agent(agent_id: str) -> Dict[str, Any]:
+    """Destroy one tracked agent by id; HTTP 404 when it does not exist."""
     ok = tracker.destroy(agent_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Agent not found")
@@ -781,12 +814,14 @@ def destroy_agent(agent_id: str) -> Dict[str, Any]:
 
 @app.delete("/agents/gc/stopped", tags=["agents"])
 def gc_stopped() -> Dict[str, Any]:
+    """Remove every stopped agent from the tracker and report the removed count."""
     removed = tracker.destroy_stopped()
     return {"removed": removed}
 
 
 @app.get("/activity", tags=["agents"])
 def get_activity(limit: int = Query(50, ge=1, le=200)) -> Dict[str, Any]:
+    """Return the newest researcher activity events (up to ``limit``), most recent first; empty when no activity log exists."""
     from json import JSONDecodeError
 
     path = Path(".state/researcher_activity.jsonl")
@@ -806,6 +841,7 @@ def get_activity(limit: int = Query(50, ge=1, le=200)) -> Dict[str, Any]:
 
 @app.get("/models", tags=["models"])
 def list_models() -> Dict[str, Any]:
+    """List every registered model."""
     return {"models": [model.__dict__ for model in registry.list_models()]}
 
 
@@ -825,6 +861,7 @@ class ModelsRouteRequest(BaseModel):
 
 
 def _normalize_preferred_device(value: Optional[str]) -> Optional[str]:
+    """Map portal device aliases (mac, windows, shared) to registry device names; auto, none, default and empty become None."""
     if value is None:
         return None
     cleaned = str(value).strip()
@@ -849,6 +886,7 @@ def _backend_hint_from_target(target: Any) -> Optional[str]:
 
 
 def _model_hint_from_target(target: Any) -> Optional[str]:
+    """Return the target's ``api_model`` or ``name`` as a string, or None when neither is set."""
     for attr in ("api_model", "name"):
         value = getattr(target, attr, None)
         if value:
@@ -909,6 +947,7 @@ def route(
     task_type: str = Query("default"),
     preferred_device: Optional[str] = Query(None),
 ) -> Dict[str, Any]:
+    """Return the fallback chain and routing hints for a task type and optional preferred device."""
     return _models_route_payload(
         task_type=task_type, preferred_device=preferred_device
     )
@@ -927,6 +966,7 @@ def route_post(req: ModelsRouteRequest) -> Dict[str, Any]:
 
 @app.post("/orchestrate", tags=["orchestrate"])
 async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
+    """Run one orchestration request: duplicate-agent conflict check, token-cliff gate, budget reservation, model-candidate resolution and agent registration, returning the routing outcome or a conflict or needs-user-action payload; the reservation is rolled back on any failure."""
     task_hash = sha256(f"{req.task_type}:{req.task}".encode()).hexdigest()
 
     existing = tracker.find_existing(role=req.task_type, task_hash=task_hash)
@@ -1299,6 +1339,7 @@ async def get_pipeline_run_status(
 
 @app.post("/autoresearch/sync", tags=["autoresearch"])
 def autoresearch_sync(run_tag: Optional[str] = Query(None)) -> Dict[str, Any]:
+    """Run the autoresearch preflight sync; HTTP 500 when the sync fails."""
     result = autoresearch_bridge.preflight(run_tag=run_tag)
     if not result["sync_ok"]:
         raise HTTPException(
@@ -1310,6 +1351,7 @@ def autoresearch_sync(run_tag: Optional[str] = Query(None)) -> Dict[str, Any]:
 
 @app.get("/autoresearch/gpu_status", tags=["autoresearch"])
 def autoresearch_gpu_status() -> Dict[str, Any]:
+    """Report whether the autoresearch GPU is idle together with the current swarm state."""
     state = autoresearch_bridge.read_swarm_state()
     return {
         "gpu_idle": state.gpu_status.upper() == "IDLE",
@@ -1394,6 +1436,7 @@ _supervisor: OrchestrationSupervisor | None = None
 
 
 def _get_supervisor() -> OrchestrationSupervisor:
+    """Return the process-wide OrchestrationSupervisor, creating it on first use."""
     global _supervisor
     if _supervisor is None:
         _supervisor = OrchestrationSupervisor()
@@ -1401,6 +1444,7 @@ def _get_supervisor() -> OrchestrationSupervisor:
 
 
 class _JobSubmitRequest(BaseModel):
+    """Request body for ``POST /v1/jobs``."""
     intent:       str = "freeform"
     prompt:       str
     backend_hint: Optional[str] = None
@@ -1421,6 +1465,7 @@ class _JobSubmitRequest(BaseModel):
 
 
 def _optional_meta_str(metadata: Dict[str, Any], key: str) -> Optional[str]:
+    """Return ``metadata[key]`` as a stripped string, or None when absent or blank."""
     value = metadata.get(key)
     if value is None:
         return None
@@ -1444,6 +1489,7 @@ async def supervisor_submit_job(req: _JobSubmitRequest, http_request: Request):
     task_type = req.task_type.strip() or str(constraints.get("task_type") or "").strip()
 
     def _field(explicit: Optional[str], key: str) -> Optional[str]:
+        """Prefer the explicit non-blank value, otherwise fall back to the same key in metadata."""
         if explicit is not None and str(explicit).strip():
             return str(explicit).strip()
         return _optional_meta_str(meta, key)

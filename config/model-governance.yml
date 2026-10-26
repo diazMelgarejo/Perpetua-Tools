@@ -1,7 +1,7 @@
 # Local pin of harness model-governance defaults for Perpetua-Tools.
 # Canonical standard (do not copy wholesale):
 # https://github.com/oramasys/alexandria/blob/docs/mig-pack-ingest-20260925/docs/standards/model-governance.md
-# alexandria PR #1, tip e7ee9db6
+# alexandria PR #1, tip d6da6781
 #
 # This file does not reorder the runtime frugality ladder (local tiers first).
 # Cost gate stays fail-closed. Cloud escalation stays default-deny.
@@ -11,7 +11,7 @@ version: 1
 canonical:
   url: https://github.com/oramasys/alexandria/blob/docs/mig-pack-ingest-20260925/docs/standards/model-governance.md
   pull_request: https://github.com/oramasys/alexandria/pull/1
-  tip: e7ee9db6
+  tip: d6da6781
 
 invariants:
   cost_gate: fail_closed
@@ -40,6 +40,11 @@ cursor_grok_bot:
     fast: false
   allowed_ungated:
     - launch_id: composer-2.5
+      fast: false
+    # Official OpenAI id (developers.openai.com/api/docs/models/gpt-5.6-terra);
+    # replaces the retired gpt-5.3-codex-low examples. Explicit operator pick.
+    - launch_id: gpt-5.6-terra
+      effort: medium
       fast: false
   gated: {}
 

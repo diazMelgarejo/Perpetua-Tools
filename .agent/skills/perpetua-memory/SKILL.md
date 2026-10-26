@@ -50,11 +50,18 @@ Anchoring lessons: `lesson_071ec367227c` (append-only supersede),
 1. **Never rewrite** an existing row in `lessons.jsonl`, `AGENT_LEARNINGS.jsonl`,
    or `candidates/graduated/*.json` to fix wording — even if the original is wrong.
 2. **Correct fix:** new record + link to the old id:
-   - `lessons.jsonl`: `graduate.py --supersedes lesson_<old_id>`
-   - `candidates/graduated/<id>.json`: add `"related_lesson_ids": ["lesson_<old_id>"]`
-     (do **not** use unsupported `supersedes` / `superseded_by` keys in graduated JSON)
-3. If rationale text mentions supersession but `related_lesson_ids` is missing,
-   the audit trail is **broken** — CodeRabbit will flag it; fix before merge.
+   - `lessons.jsonl`: `graduate.py --supersedes lesson_<old_id>` (writes
+     `"supersedes"` on the semantic lesson row)
+   - `candidates/graduated/<id>.json`: when the new lesson **retires** an old
+     one, the link must be `"supersedes": "lesson_<old_id>"`, written by
+     `graduate.py --supersedes` (validated by
+     `scripts/hooks/check_memory_records.py`). `"related_lesson_ids": [...]` is
+     an audit link only: `graduate.py` and `render_lessons.py` never retire a
+     lesson through it, so use it for multi-id cross-references, not for
+     supersession. Do **not** invent `superseded_by` on graduated JSON.
+3. If rationale text mentions supersession but neither `supersedes` nor
+   `related_lesson_ids` is present, the audit trail is **broken** — fix before
+   merge.
 4. `LESSONS.md` is **rendered** from `lessons.jsonl` — run
    `python3 .agent/memory/render_lessons.py` after semantic changes; do not hand-edit
    bullets except during migration.
@@ -78,7 +85,7 @@ Anchoring lessons: `lesson_071ec367227c` (append-only supersede),
 | Mistake | Correct fix |
 |---------|-------------|
 | Mutated `e773f6f957c2.json` via `--theirs` during conflict | Restore bytes from `main`; graduate `071ec367227c` with `--supersedes lesson_e773f6f957c2` |
-| Graduated JSON missing link | Add `"related_lesson_ids": ["lesson_e773f6f957c2"]` to `071ec367227c.json` |
+| Graduated JSON missing link | Use `graduate.py --supersedes lesson_e773f6f957c2` for retirement; `related_lesson_ids` only for audit links |
 | Wrong `git branch -f` claim in new lesson | Supersede `lesson_2546180f3d5b` → `lesson_e276758511e6` with tested behavior |
 
 ---
@@ -103,11 +110,14 @@ python3 .agent/tools/graduate.py <candidate_id> \
   --supersedes lesson_<old_id>    # when replacing prior guidance
 ```
 
-After graduation, add to the **graduated** JSON when `graduate.py` did not:
+After graduation, add to the **graduated** JSON when `graduate.py` did not
+(it writes `supersedes` on the semantic lesson row, not on the candidate file):
 
 ```json
-"related_lesson_ids": ["lesson_<old_id>"]
+"supersedes": "lesson_<old_id>"
 ```
+
+`related_lesson_ids` links several lesson ids for audit only; it never retires a lesson.
 
 ---
 
@@ -293,7 +303,7 @@ replaces the whole field and erases the original Summary/CodeRabbit tail.
 | Failure | Symptom | Fix |
 |--------|---------|-----|
 | In-place lesson edit | `git checkout --theirs` on graduated JSON | Restore + supersede (`lesson_9940e1aa6fc4`) |
-| Missing supersession link | Rationale says "supersedes" but no `related_lesson_ids` | Add field to graduated JSON |
+| Missing supersession link | Rationale says "supersedes" but no `supersedes` / `related_lesson_ids` | Re-graduate with `--supersedes` (retirement); `related_lesson_ids` is audit-only |
 | Stale-base memory union | Duplicate legacy G5 rows, post-tool noise (PT #332) | Diff-gate per row id |
 | 11-branch → 11-commit PR | Housecleaning sprawl | Mega-cleanup: one squashed commit |
 | Wrong git rollback lesson | `branch -f` described as silent no-op | Supersede (`lesson_e276758511e6`) |

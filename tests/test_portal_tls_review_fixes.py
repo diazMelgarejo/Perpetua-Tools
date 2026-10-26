@@ -30,9 +30,11 @@ NAME = "portal.example.test"
 
 
 class _Scripted(http.server.BaseHTTPRequestHandler):
+    """Upstream stub with a 401 route, a 302 route and a plain 200 route; records paths hit."""
     hits: list = []
 
     def do_GET(self) -> None:
+        """Answer by path: 401 with WWW-Authenticate, a 302, or a plain 200."""
         type(self).hits.append(self.path)
         if self.path == "/protected":
             self.send_response(401)
@@ -52,11 +54,13 @@ class _Scripted(http.server.BaseHTTPRequestHandler):
             self.wfile.write(body)
 
     def log_message(self, *args) -> None:  # noqa: A002
+        """Silence request logging."""
         pass
 
 
 @pytest.fixture
 def upstream():
+    """Run the scripted stub on loopback and yield its port."""
     _Scripted.hits = []
     server = socketserver.TCPServer((LOOP, 0), _Scripted)
     threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -66,12 +70,14 @@ def upstream():
 
 
 def _free_port() -> int:
+    """Return a currently free loopback port."""
     with socket.socket() as s:
         s.bind((LOOP, 0))
         return s.getsockname()[1]
 
 
 def _make(tmp_path, upstream_port):
+    """Build a Portal proxy on loopback with its state under ``tmp_path``."""
     return portal.build_portal_proxy(
         listen_port=_free_port(),
         upstream_port=upstream_port,
@@ -83,15 +89,19 @@ def _make(tmp_path, upstream_port):
 
 
 def _ctx(proxy):
+    """A client context that trusts only the proxy's public CA."""
     return ssl.create_default_context(cafile=str(proxy.pki.ca_public_path))
 
 
 class _NoFollow(urllib.request.HTTPRedirectHandler):
+    """Redirect handler that never follows a redirect."""
     def redirect_request(self, *args, **kwargs):
+        """Return None so the redirect is not followed."""
         return None
 
 
 def test_idle_tcp_connection_does_not_block_other_clients(tmp_path, upstream):
+    """A silent TCP client does not delay other clients' requests."""
     proxy = _make(tmp_path, upstream)
     url = proxy.start()
     try:
@@ -108,6 +118,7 @@ def test_idle_tcp_connection_does_not_block_other_clients(tmp_path, upstream):
 
 
 def test_upstream_401_headers_reach_the_client(tmp_path, upstream):
+    """An upstream 401 keeps its status, headers and body through the proxy."""
     proxy = _make(tmp_path, upstream)
     url = proxy.start()
     try:
@@ -122,6 +133,7 @@ def test_upstream_401_headers_reach_the_client(tmp_path, upstream):
 
 
 def test_upstream_redirect_is_relayed_not_followed(tmp_path, upstream):
+    """An upstream redirect is relayed to the client and its target is never contacted."""
     proxy = _make(tmp_path, upstream)
     url = proxy.start()
     try:
@@ -141,6 +153,7 @@ def test_upstream_redirect_is_relayed_not_followed(tmp_path, upstream):
 
 
 def test_websocket_tunnel_survives_a_slow_reading_client(tmp_path):
+    """A WebSocket tunnel survives a client that falls behind, with no data lost."""
     total = 16 * 1024 * 1024
     srv = socket.socket()
     srv.bind((LOOP, 0))
@@ -149,6 +162,7 @@ def test_websocket_tunnel_survives_a_slow_reading_client(tmp_path):
     sent = {"n": 0, "err": None}
 
     def serve() -> None:
+        """Accept one connection, complete the 101 upgrade, then stream the payload."""
         conn, _ = srv.accept()
         try:
             buf = b""
@@ -192,11 +206,13 @@ def test_websocket_tunnel_survives_a_slow_reading_client(tmp_path):
 
 
 def test_concurrent_first_starts_agree_on_one_ca(tmp_path):
+    """Concurrent first starts all end up with the same CA and no leftover temp files."""
     state = tmp_path / "concurrent"
     results: list = []
     errors: list = []
 
     def run() -> None:
+        """Create the certificate in one thread, recording its CA hash or any error."""
         try:
             p = portal.build_portal_proxy(
                 listen_port=1, upstream_port=1, listen_host=LOOP, cert_dir=state,
@@ -222,6 +238,7 @@ def test_concurrent_first_starts_agree_on_one_ca(tmp_path):
 
 @pytest.mark.parametrize("content", ["", "{not json", "[]", '{"ca_fingerprint": "zz"}'])
 def test_corrupt_pin_file_fails_closed(tmp_path, upstream, content):
+    """A corrupt or invalid pin file is refused and never overwritten."""
     proxy = _make(tmp_path, upstream)
     proxy.ensure_certificate()
     pin = proxy.pki.pin_path
@@ -233,6 +250,7 @@ def test_corrupt_pin_file_fails_closed(tmp_path, upstream, content):
 
 
 def test_running_proxy_applies_a_renewed_leaf(tmp_path, upstream):
+    """A running proxy serves a leaf renewed by its own periodic recheck."""
     proxy = _make(tmp_path, upstream)
     proxy.pki_recheck_seconds = 0.2
     proxy.start()

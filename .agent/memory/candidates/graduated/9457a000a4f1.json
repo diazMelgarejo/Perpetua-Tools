@@ -1,0 +1,43 @@
+{
+  "id": "9457a000a4f1",
+  "key": "manual_9457a0",
+  "name": "manual_9457a0",
+  "claim": "Do not treat a GGUF model id as Windows-only evidence when classifying LAN peers; LM Studio on macOS serves GGUF too, so accept an explicit Mac candidate whenever positive Mac evidence exists",
+  "conditions": [
+    "discover",
+    "gguf",
+    "lm-studio",
+    "mac",
+    "peer-classification",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-10-25T06:07:47.856399+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-25T06:07:47.856399+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-25T06:07:47.856399+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-25T06:07:48.020506+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-25: orama #445 pushed head refused an explicit MAC_IP whose LM Studio listed any id containing gguf and recorded it as a Windows peer; c336ba68 (pushed as 5cfdf0e6) accepts mac_evidence or no win_evidence",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-25T06:07:47.856399+00:00"
+      ],
+      "lessons_sha": "266e81267933"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-25T06:07:48.020506+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-25: orama #445 pushed head refused an explicit MAC_IP whose LM Studio listed any id containing gguf and recorded it as a Windows peer; c336ba68 (pushed as 5cfdf0e6) accepts mac_evidence or no win_evidence"
+}

@@ -1,0 +1,42 @@
+{
+  "id": "d5936e306880",
+  "key": "manual_d5936e",
+  "name": "manual_d5936e",
+  "claim": "A peer agent's stray edit that was saved aside and reverted can still land through a later amend; prove absorption by diffing the file blobs between the commits (identical churn on unrelated lines is a fingerprint) and credit the originator in the PR description and on the board",
+  "conditions": [
+    "absorption",
+    "amend",
+    "patch",
+    "peer-agent",
+    "provenance"
+  ],
+  "evidence_ids": [
+    "2026-10-25T06:07:45.226109+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-25T06:07:45.226109+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-25T06:07:45.226109+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-25T06:07:45.649130+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-10-25: orama 7104d16c absorbed win-antigravity's saved discover.py patch nearly verbatim while the board provenance note credited only 08993188; detected only by comparing blobs 08993188->7104d16c against the patch",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-25T06:07:45.226109+00:00"
+      ],
+      "lessons_sha": "a1adb0412be1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-25T06:07:45.649130+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-10-25: orama 7104d16c absorbed win-antigravity's saved discover.py patch nearly verbatim while the board provenance note credited only 08993188; detected only by comparing blobs 08993188->7104d16c against the patch"
+}

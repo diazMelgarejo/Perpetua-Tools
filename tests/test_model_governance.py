@@ -730,6 +730,37 @@ def test_vector_fable_requires_budget_cap_on_every_path(path) -> None:
     )
 
 
+def test_gpt_5_6_terra_is_an_ungated_cursor_pick_at_medium_fast_off() -> None:
+    """The official Terra id replaces the retired Codex example without needing a token."""
+    ok = LaunchSpec(
+        path="cursor_grok_bot", launch_id="gpt-5.6-terra", effort="medium", fast=False
+    )
+    plan_launch(ok)
+    assert_launch_allowed(ok)
+
+
+@pytest.mark.parametrize(
+    "effort,fast,match",
+    [("medium", True, "fast"), ("medium", None, "fast"), ("high", False, "effort")],
+)
+def test_gpt_5_6_terra_refuses_fast_and_non_medium_effort_without_proof(
+    effort: str, fast: bool | None, match: str
+) -> None:
+    """Terra keeps the Cursor controls: fast off, and medium effort unless a token covers it."""
+    spec = LaunchSpec(
+        path="cursor_grok_bot", launch_id="gpt-5.6-terra", effort=effort, fast=fast
+    )
+    with pytest.raises(ModelGovernanceError, match=match):
+        assert_launch_allowed(spec)
+
+
+def test_gpt_5_6_terra_requires_its_configured_effort_to_be_set_explicitly() -> None:
+    """An unset effort is not medium: the ungated row holds Terra to the effort it names."""
+    spec = LaunchSpec(path="cursor_grok_bot", launch_id="gpt-5.6-terra", effort=None, fast=False)
+    with pytest.raises(ModelGovernanceError, match="requires effort medium"):
+        assert_launch_allowed(spec)
+
+
 # --- Cross-repo parity vectors (F1/F2): keep byte-identical in both v1 repositories. ---
 
 _PARITY_NOW = datetime(2026, 10, 25, tzinfo=timezone.utc)
@@ -808,17 +839,18 @@ _DIFF_PATHS = (
     ("direct_xai", "grok-4.6"),
     ("cursor_grok_bot", "grok-4.7"),
     ("cursor_grok_bot", "composer-2.5"),
+    ("cursor_grok_bot", "gpt-5.6-terra"),
     ("anthropic", "claude-sonnet-5-5"),
     ("anthropic", "claude-opus-5-5"),
 )
 _DIFF_EFFORTS = (None, "", "low", "medium", "high", "xhigh", "max")
 _DIFF_FASTS = (None, False, True)
 # SHA-256 of the sorted-key JSON outcome table below; identical in PT and orama-system.
-_DIFF_DIGEST = "295b8ab1496bf4e8ee63a2cf49e77bf1d444478b93ab302cb14cdac4358a072d"
+_DIFF_DIGEST = "1cc81a581e5308850876e167412f948beb4a6d51a4c34c108ab1af5b481500c7"
 
 
 def _diff_outcomes() -> dict[str, str]:
-    """Run both entry points over every path/alias/fast combination (1,764 cases)."""
+    """Run both entry points over every path/alias/fast combination (2,058 cases)."""
     outcomes: dict[str, str] = {}
     for (path, model), effort, reasoning, fast in itertools.product(
         _DIFF_PATHS, _DIFF_EFFORTS, _DIFF_EFFORTS, _DIFF_FASTS
@@ -843,6 +875,64 @@ def _diff_outcomes() -> dict[str, str]:
 def test_differential_policy_outcomes_match_across_repositories() -> None:
     """Every case is a clean allow or refusal and the whole table matches the pinned digest."""
     outcomes = _diff_outcomes()
-    assert len(outcomes) == 1764
+    assert len(outcomes) == 2058
     blob = json.dumps(outcomes, sort_keys=True, separators=(",", ":")).encode()
     assert hashlib.sha256(blob).hexdigest() == _DIFF_DIGEST
+
+
+# --- Cross-repo config + pin parity (F1/F2): keep byte-identical in both v1 repositories. ---
+# The differential above compares launch outcomes only; these pin the governance
+# config and the shared pin-document sections so drift in either repo fails a test.
+_PARITY_CONFIG_DIGEST = "d24937d88058bf253912724ca3f6a83354a176e18795aa90870732df05de8ad5"
+_PARITY_PIN_DIGEST = "f03c1a17e78d065ca281c71f630163e149f2ac64ed49bc71ffe2a4d3fe5c08b4"
+_PARITY_PIN_SECTIONS = ("## Escalation approval regimes", "## Role selection contract")
+_PARITY_ALEXANDRIA_TIP = "d6da6781"
+
+
+def _parity_root() -> Path:
+    """Return the repository root that holds ``config/`` and ``docs/standards/``."""
+    return Path(__file__).resolve().parents[1]
+
+
+def _parity_config_digest() -> str:
+    """SHA-256 of the parsed governance config as sorted-key compact JSON."""
+    import yaml
+
+    parsed = yaml.safe_load((_parity_root() / "config" / "model-governance.yml").read_text(encoding="utf-8"))
+    blob = json.dumps(parsed, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(blob).hexdigest()
+
+
+def _parity_pin_sections() -> str:
+    """Concatenate the shared pin-document sections (LF-normalised, in fixed order)."""
+    import re
+
+    text = (_parity_root() / "docs" / "standards" / "model-governance.md").read_text(encoding="utf-8")
+    text = text.replace("\r\n", "\n")
+    sections = {p.split("\n", 1)[0].strip(): p for p in re.split(r"(?m)^(?=## )", text) if p.startswith("## ")}
+    return "".join(sections[name] for name in _PARITY_PIN_SECTIONS)
+
+
+def test_governance_config_matches_the_mirrored_repository_digest() -> None:
+    """The parsed config equals the digest pinned identically in PT and orama-system."""
+    assert _parity_config_digest() == _PARITY_CONFIG_DIGEST
+
+
+def test_shared_pin_sections_match_the_mirrored_repository_digest() -> None:
+    """The shared pin-document sections equal the digest pinned in both repositories."""
+    assert hashlib.sha256(_parity_pin_sections().encode()).hexdigest() == _PARITY_PIN_DIGEST
+
+
+def test_pin_document_and_config_name_the_same_alexandria_tip() -> None:
+    """The document's active (preamble) tip equals the config's ``canonical.tip`` and the pinned tip."""
+    import re
+
+    import yaml
+
+    root = _parity_root()
+    doc = (root / "docs" / "standards" / "model-governance.md").read_text(encoding="utf-8").replace("\r\n", "\n")
+    preamble = re.split(r"(?m)^## ", doc, maxsplit=1)[0]
+    match = re.search(r"tip `([0-9a-f]{8})`", preamble)
+    assert match, "pin document preamble must state the active Alexandria tip"
+    cfg = yaml.safe_load((root / "config" / "model-governance.yml").read_text(encoding="utf-8"))
+    assert match.group(1) == cfg["canonical"]["tip"] == _PARITY_ALEXANDRIA_TIP

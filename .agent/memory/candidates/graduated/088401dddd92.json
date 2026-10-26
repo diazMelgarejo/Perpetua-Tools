@@ -1,0 +1,42 @@
+{
+  "id": "088401dddd92",
+  "key": "manual_088401",
+  "name": "manual_088401",
+  "claim": "A green serving or inert-effect groundwork suite is not release qualification: do not activate or present T3 as live until trusted effect-grant composition, final-boundary authorization, isolation evidence, and subprocess crash qualification each pass at the exact deployed pins.",
+  "conditions": [
+    "effect-grant",
+    "qualification",
+    "release-gates",
+    "serving",
+    "t3"
+  ],
+  "evidence_ids": [
+    "2026-10-25T17:39:22.609718+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-25T17:39:22.609718+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-25T17:39:22.609718+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-25T17:39:22.755258+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Release 1\u20132 groundwork added readiness and an inert simulation seam, but the trusted production composition adapter and its independent evidence remain incomplete.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-25T17:39:22.609718+00:00"
+      ],
+      "lessons_sha": "0a90f0145814"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-25T17:39:22.755239+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Release 1\u20132 groundwork added readiness and an inert simulation seam, but the trusted production composition adapter and its independent evidence remain incomplete."
+}
