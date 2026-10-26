@@ -54,11 +54,15 @@ def git_show(root: Path, rev: str, path: str):
 
 
 def py_directives(src: bytes) -> list:
-    """Return the comments that carry meaning to tools (shebang, encoding cookie, type/lint/format pragmas)."""
+    """Return (code on the same line, comment) for each comment that carries meaning to tools.
+
+    Pairing the comment with the code it sits on means moving a line-specific ``# type: ignore``
+    or ``# noqa`` to another statement is a change, not a no-op.
+    """
     found = []
     for tok in tokenize.generate_tokens(io.StringIO(src.decode("utf-8-sig")).readline):
         if tok.type == tokenize.COMMENT and _PY_DIRECTIVE.search(tok.string):
-            found.append(tok.string.strip())
+            found.append((tok.line[: tok.start[1]].strip(), tok.string.strip()))
     return found
 
 
@@ -94,7 +98,7 @@ def strip_sh(src: bytes) -> list:
     """Return comparable shell lines; here-document bodies are data and are always kept.
 
     A here-document starts at <<WORD (or <<-WORD, <<'WORD') and ends at a line holding only WORD
-    (leading tabs allowed for <<-). The <<< here-string is not a here-document. An unterminated
+    (leading tabs allowed for <<-, no trailing blanks; body lines are compared byte for byte). The <<< here-string is not a here-document. An unterminated
     here-document raises ValueError so the change cannot be certified.
     """
     out: list[str] = []
@@ -102,8 +106,8 @@ def strip_sh(src: bytes) -> list:
     for line in src.decode("utf-8-sig").splitlines():
         if pending:
             word, dash = pending[0]
-            out.append(line.rstrip())
-            if (line.lstrip("\t") if dash else line).rstrip() == word:
+            out.append(line)
+            if (line.lstrip("\t") if dash else line) == word:
                 pending.pop(0)
             continue
         stripped = line.strip()

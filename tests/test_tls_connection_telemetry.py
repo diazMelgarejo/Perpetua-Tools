@@ -131,6 +131,42 @@ def test_handshake_without_a_request_is_recorded_as_no_request(running_proxy, ca
     assert "status=" not in lines[0]
 
 
+def test_unsupported_method_is_recorded_with_its_error_status(running_proxy, caplog):
+    """A method the handler does not implement gets a 501 from the base class; that is not no_request."""
+    proxy, ca = running_proxy
+    caplog.set_level(logging.INFO, logger=LOGGER)
+    ctx = ssl.create_default_context(cafile=str(ca))
+    with socket.create_connection((LOOP, proxy.proxy_port), timeout=8) as raw:
+        with ctx.wrap_socket(raw, server_hostname=LOOP) as tls:
+            tls.sendall(b"BREW / HTTP/1.1\nHost: x\nConnection: close\n\n")
+            while tls.recv(4096):
+                pass
+    lines = _conn_lines(caplog, "outcome=served")
+    assert lines, "a rejected request was recorded as no_request"
+    assert "status=501" in lines[0]
+
+
+def test_declined_websocket_upgrade_records_the_upstream_status_not_101(running_proxy, caplog):
+    """When the upstream answers an Upgrade request with a plain 200, the line says 200, never a fixed 101."""
+    proxy, ca = running_proxy
+    caplog.set_level(logging.INFO, logger=LOGGER)
+    ctx = ssl.create_default_context(cafile=str(ca))
+    with socket.create_connection((LOOP, proxy.proxy_port), timeout=8) as raw:
+        with ctx.wrap_socket(raw, server_hostname=LOOP) as tls:
+            tls.sendall(
+                b"GET /ws HTTP/1.1\nHost: x\nConnection: Upgrade\nUpgrade: websocket\n\n"
+            )
+            tls.settimeout(5)
+            try:
+                while tls.recv(4096):
+                    pass
+            except OSError:
+                pass
+    lines = _conn_lines(caplog, "outcome=served")
+    assert lines, "the tunnelled request left no telemetry line"
+    assert "status=200" in lines[0] and "status=101" not in lines[0]
+
+
 def test_rate_limit_drops_excess_lines_and_reports_the_count(caplog):
     """Past the burst, lines are dropped (an open port cannot flood the log); the next written line reports how many."""
     caplog.set_level(logging.INFO, logger=LOGGER)

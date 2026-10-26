@@ -659,6 +659,12 @@ class AlphaClawTlsProxy:
             _t_up = 0
             _t_down = 0
 
+            def send_response(self, code, message=None) -> None:
+                """Record the status of every response sent (including base-class error
+                replies for unsupported methods or bad request lines) for the telemetry line."""
+                self._t_status = int(code)
+                super().send_response(code, message)
+
             def _read_request_body(self) -> Optional[bytes]:
                 """Read the client's request body, handling both
                 Content-Length and Transfer-Encoding: chunked framing.
@@ -820,7 +826,8 @@ class AlphaClawTlsProxy:
                 the connection is idle for ws_idle_timeout seconds."""
                 self.close_connection = True
                 self._t_method = "GET"
-                self._t_status = 101
+                # The status is taken from the upstream's reply (below) or from the 502 sent
+                # here when it cannot be reached, never assumed to be 101.
                 try:
                     up = socket.create_connection((upstream_host, upstream), timeout=10)
                 except OSError:
@@ -845,8 +852,11 @@ class AlphaClawTlsProxy:
                 client.settimeout(write_timeout)
                 up.settimeout(write_timeout)
 
-                def pump(src, dst) -> None:
-                    """Copy bytes from ``src`` to ``dst`` until close, error or ws_idle_timeout of silence, then end the tunnel."""
+                def pump(src, dst, first_chunk=None) -> None:
+                    """Copy bytes from ``src`` to ``dst`` until close, error or ws_idle_timeout of silence, then end the tunnel.
+
+                    ``first_chunk`` (optional) is called once with the first bytes read."""
+                    seen = first_chunk is None
                     try:
                         while not done.is_set():
                             buffered = isinstance(src, ssl.SSLSocket) and src.pending() > 0
@@ -860,6 +870,9 @@ class AlphaClawTlsProxy:
                             if not data:
                                 break
                             state["last"] = time.monotonic()
+                            if not seen:
+                                seen = True
+                                first_chunk(data)
                             dst.sendall(data)
                             state["last"] = time.monotonic()
                     except (OSError, ssl.SSLError):
@@ -870,7 +883,9 @@ class AlphaClawTlsProxy:
                 try:
                     up.sendall(head)
                     t_up = threading.Thread(target=pump, args=(client, up), daemon=True)
-                    t_down = threading.Thread(target=pump, args=(up, client), daemon=True)
+                    t_down = threading.Thread(
+                        target=pump, args=(up, client, self._note_upstream_status), daemon=True
+                    )
                     t_up.start()
                     t_down.start()
                     done.wait()
@@ -883,6 +898,12 @@ class AlphaClawTlsProxy:
                         up.close()
                     except OSError:
                         pass
+
+            def _note_upstream_status(self, first_bytes: bytes) -> None:
+                """Record the status code from the upstream's first response bytes (``HTTP/x.y NNN``)."""
+                parts = first_bytes.split(b" ", 2)
+                if len(parts) >= 2 and parts[1][:3].isdigit():
+                    self._t_status = int(parts[1][:3])
 
             def do_GET(self) -> None:
                 """Serve GET: tunnel a WebSocket upgrade when enabled, else forward to the upstream."""

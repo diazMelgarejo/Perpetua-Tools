@@ -127,12 +127,15 @@ Order matters; each step proves only itself.
 3a. **Inbound reachability (operator step; agents never create firewall rules).** A TLS front end
    that answers locally can still be unreachable from the peer. Check read-only first:
    `Get-NetConnectionProfile` (Public blocks unsolicited inbound by default),
-   `Get-NetTCPConnection -State Listen -LocalPort 8443` for the owning process path, and
-   `Get-NetFirewallRule -Direction Inbound -Action Allow` for a rule that names that exact
-   program path or TCP 8443. If none matches, the operator creates a narrow port rule in an
+   `Get-NetTCPConnection -State Listen -LocalPort 8443` for the owning process ID, resolved to its
+   executable path with `Get-Process -Id <pid>`, and `Get-NetFirewallRule -Direction Inbound
+   -Action Allow` for candidate rules, each inspected through `Get-NetFirewallApplicationFilter`
+   and `Get-NetFirewallPortFilter` (the rule objects alone carry neither the program nor the
+   port). A rule matches only when one of those filters names that exact program path or TCP
+   8443. If none matches, the operator creates a narrow port rule in an
    elevated shell, for example `New-NetFirewallRule -DisplayName "Portal TLS 8443 (LAN peers)"
    -Direction Inbound -Action Allow -Protocol TCP -LocalPort 8443 -RemoteAddress LocalSubnet
-   -Profile Any`, and asks the peer to run its own verified health request. Do not open the
+   -Profile Private,Domain`, and asks the peer to run its own verified health request. Do not open the
    Portal's loopback port, and do not change the network profile without the operator.
 4. **Send the public CA** with `lan_peer_assign.py drop --peer --peer-ip <peer-ip> --portal-port
    8443 --file <public-ca-handoff.md> --assignee <role> --topic <topic>` (`PEER_CA_FILE` and

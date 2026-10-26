@@ -87,6 +87,26 @@ def test_doc_only_python_directive_comment_change_is_code() -> None:
     assert module.strip_py(base) != module.strip_py(pragma_changed)
 
 
+def test_doc_only_shell_here_document_delimiter_is_exact() -> None:
+    """A delimiter with trailing blanks does not end a here-document, and body bytes are compared."""
+    module = _load_doc_only_diff()
+    original = b"cat <<END\nEND \n# enabled=true\nEND\n"
+    payload_changed = b"cat <<END\nEND \n# enabled=false\nEND\n"
+    trailing_blank_changed = b"cat <<END\nEND\n# enabled=true\nEND\n"
+
+    assert module.strip_sh(original) != module.strip_sh(payload_changed)
+    assert module.strip_sh(original) != module.strip_sh(trailing_blank_changed)
+
+
+def test_doc_only_python_directive_moved_to_another_statement_is_code() -> None:
+    """Moving a line-specific pragma to a different statement changes behaviour, not documentation."""
+    module = _load_doc_only_diff()
+    base = b"a = 1  # type: ignore\nb = 2\n"
+    moved = b"a = 1\nb = 2  # type: ignore\n"
+
+    assert module.strip_py(base) != module.strip_py(moved)
+
+
 def _git(repo: Path, *args: str) -> None:
     """Run git in a temporary repository with a fixed identity."""
     subprocess.run(

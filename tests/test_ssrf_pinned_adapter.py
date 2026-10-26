@@ -337,16 +337,22 @@ def test_concurrent_two_pin_requests_get_isolated_pools() -> None:
     ip_by_host = {"a.example.com": "1.1.1.1", "b.example.com": "8.8.8.8"}
 
     def fake_getaddrinfo(host, port, family=0, type=0, *a, **kw):
+        """Resolve each test hostname to its fixed IP."""
         return [(2, 1, 6, "", (ip_by_host[host], port))]
 
     adapter = SSRFPinnedHTTPAdapter()
 
     def get_pool(hostname: str):
+        """Resolve one hostname's pool through the shared adapter (patch is held by the caller)."""
         req = requests.Request("GET", f"https://{hostname}/x").prepare()
-        with patch("socket.getaddrinfo", side_effect=fake_getaddrinfo):
-            return adapter.get_connection_with_tls_context(req, verify=True)
+        return adapter.get_connection_with_tls_context(req, verify=True)
 
-    with ThreadPoolExecutor(max_workers=2) as pool_exec:
+    # Patch once around both threads. Entering/exiting patch() per thread interleaves, and the
+    # last restore can reinstall a sibling's mock as the real socket.getaddrinfo for the rest of
+    # the session (it surfaced as KeyError in unrelated live-socket tests on Linux CI).
+    with patch("socket.getaddrinfo", side_effect=fake_getaddrinfo), ThreadPoolExecutor(
+        max_workers=2
+    ) as pool_exec:
         pool_a, pool_b = list(pool_exec.map(get_pool, ["a.example.com", "b.example.com"]))
 
     assert pool_a is not pool_b, "different pins must not share a connection pool"
