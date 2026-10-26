@@ -57,7 +57,7 @@ def _hash(value: str) -> str:
 
 @dataclass(frozen=True)
 class EgressEvent:
-    """One redacted egress event (validation or completion of an outbound request); raw host and IP are only ever stored hashed."""
+    """One egress event (validation or completion of an outbound request). Fields hold the raw host and resolved IP; redaction happens only in to_redacted_dict(), so serialize through that, never repr() or asdict()."""
     endpoint_class: Literal["local", "remote"]
     host: str
     port: int

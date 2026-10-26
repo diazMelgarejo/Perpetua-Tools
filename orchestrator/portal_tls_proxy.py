@@ -209,21 +209,31 @@ def _https_status(host: str, port: int, ctx: ssl.SSLContext, path: str):
 
 def _check_upstream_loopback_only(upstream_port: int) -> tuple:
     """(status, detail): the upstream must refuse every non-loopback local
-    address; a successful connect names the exposed address."""
-    exposed = []
-    probed = 0
+    address. Only an explicit refusal counts as evidence: a successful
+    connect is FAIL (naming the exposed address); a timeout or other error,
+    or having no non-loopback address to probe at all, is WARN because
+    loopback-only binding was not established either way."""
+    exposed, inconclusive = [], []
+    refused = 0
     for addr in local_ipv4_addresses():
         if ipaddress.ip_address(addr).is_loopback:
             continue
-        probed += 1
         try:
             with socket.create_connection((addr, upstream_port), timeout=_PROBE_TIMEOUT):
                 exposed.append(addr)
-        except OSError:
-            pass
+        except ConnectionRefusedError:
+            refused += 1
+        except OSError as exc:
+            inconclusive.append(f"{addr} ({type(exc).__name__})")
     if exposed:
         return "FAIL", f"upstream port {upstream_port} accepts connections on {', '.join(exposed)}"
-    return "PASS", f"upstream port {upstream_port} refused on {probed} non-loopback address(es)"
+    if inconclusive:
+        return "WARN", (f"upstream port {upstream_port} probe inconclusive on "
+                        f"{', '.join(inconclusive)}; refused on {refused}")
+    if refused == 0:
+        return "WARN", (f"upstream port {upstream_port} exposure not established: "
+                        "no non-loopback address enumerated")
+    return "PASS", f"upstream port {upstream_port} refused on {refused} non-loopback address(es)"
 
 
 def _expiry_result(leaf: dict) -> tuple:

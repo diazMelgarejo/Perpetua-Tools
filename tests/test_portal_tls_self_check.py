@@ -109,7 +109,8 @@ def _run(tmp_path, proxy, upstream_port, capsys, host=LOOP):
 
 
 def test_self_check_passes_against_a_healthy_endpoint(tmp_path, upstream, no_lan, capsys):
-    """All checks PASS, the CA hash is printed and the exit code is 0."""
+    """TLS checks PASS, the CA hash is printed and the exit code is 0; with no
+    LAN address the exposure probe establishes nothing, so it is WARN."""
     proxy = _proxy(tmp_path, upstream)
     proxy.start()
     try:
@@ -117,9 +118,9 @@ def test_self_check_passes_against_a_healthy_endpoint(tmp_path, upstream, no_lan
     finally:
         proxy.stop()
     assert rc == 0, text
-    for name in ("tls_health", "protected_unauth", "leaf_san", "leaf_expiry",
-                 "upstream_loopback_only"):
+    for name in ("tls_health", "protected_unauth", "leaf_san", "leaf_expiry"):
         assert out[f"check_{name}"].startswith("PASS"), text
+    assert out["check_upstream_loopback_only"].startswith("WARN"), text
     assert "notAfter=" in out["check_leaf_expiry"] and "Z " in out["check_leaf_expiry"]
     assert out["self_check"] == "PASS"
     assert out["ca_sha256_file"] == proxy.pki.ca_file_sha256
@@ -207,6 +208,33 @@ def test_self_check_fails_when_upstream_is_exposed_on_a_lan_address(tmp_path, ca
         server.shutdown()
         server.server_close()
     assert status == "FAIL" and lan[0] in detail
+
+
+def test_upstream_check_warns_when_nothing_non_loopback_was_probed(monkeypatch):
+    """Probing no non-loopback address establishes nothing: WARN, never PASS."""
+    monkeypatch.setattr(portal, "local_ipv4_addresses", lambda: (LOOP,))
+    status, detail = portal._check_upstream_loopback_only(1)
+    assert status == "WARN" and "not established" in detail
+
+
+def test_upstream_check_counts_only_explicit_refusal_as_safe(monkeypatch):
+    """A timeout is inconclusive (WARN); only ConnectionRefusedError is PASS."""
+    monkeypatch.setattr(portal, "local_ipv4_addresses", lambda: (LOOP, NET_A))
+
+    def timeout(*_a, **_k):
+        """Simulate a probe that never gets an answer."""
+        raise socket.timeout("timed out")
+
+    monkeypatch.setattr(socket, "create_connection", timeout)
+    status, detail = portal._check_upstream_loopback_only(1)
+    assert status == "WARN" and NET_A in detail
+
+    def refused(*_a, **_k):
+        """Simulate an explicit refusal from the probed address."""
+        raise ConnectionRefusedError()
+
+    monkeypatch.setattr(socket, "create_connection", refused)
+    assert portal._check_upstream_loopback_only(1)[0] == "PASS"
 
 
 def test_older_cli_contract_usage_error_exits_2(capsys):
