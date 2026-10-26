@@ -17,6 +17,14 @@ SCRIPT = ROOT / "scripts/git/sync-attribution-guard-scripts.sh"
 pytestmark = pytest.mark.unit
 
 
+def _symlink_or_skip(link: Path, target: Path) -> None:
+    """Create ``link`` -> ``target`` or skip when symlinks are not permitted."""
+    try:
+        link.symlink_to(target)
+    except (OSError, NotImplementedError) as exc:
+        pytest.skip(f"symlink creation not permitted on this platform: {exc}")
+
+
 def _extract_function(name: str) -> str:
     """Pull just one function's definition out of the script by brace
     matching, rather than sourcing the whole file -- the script does
@@ -133,7 +141,7 @@ def test_append_snippet_rejects_symlink_dest(tmp_path: Path) -> None:
     external = tmp_path / "external.txt"
     external.write_text("external-only\n", encoding="utf-8")
     dest = tmp_path / "symlink-dest"
-    dest.symlink_to(external)
+    _symlink_or_skip(dest, external)
     snippet = tmp_path / "snippet.txt"
     snippet.write_text("snippet\n", encoding="utf-8")
 
@@ -148,7 +156,7 @@ def test_append_snippet_rejects_symlink_dest(tmp_path: Path) -> None:
 def test_append_snippet_rejects_dangling_symlink_dest(tmp_path: Path) -> None:
     nowhere = tmp_path / "nowhere"
     dest = tmp_path / "dangling"
-    dest.symlink_to(nowhere)
+    _symlink_or_skip(dest, nowhere)
     snippet = tmp_path / "snippet.txt"
     snippet.write_text("snippet\n", encoding="utf-8")
 

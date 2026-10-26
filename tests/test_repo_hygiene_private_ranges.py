@@ -10,6 +10,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).parent.parent
 HYGIENE_PATH = ROOT / "scripts" / "review" / "repo_hygiene.py"
@@ -177,7 +179,10 @@ def test_typechange_from_symlink_is_scanned(tmp_path: Path) -> None:
     _init_hygiene_repo(repo)
     note = repo / "docs" / "note.md"
     note.parent.mkdir()
-    note.symlink_to("README.md")
+    try:
+        note.symlink_to("README.md")
+    except (OSError, NotImplementedError) as exc:
+        pytest.skip(f"symlink creation not permitted on this platform: {exc}")
     _git(repo, "add", "docs/note.md")
     _git(repo, "commit", "-m", "link")
     note.unlink()
