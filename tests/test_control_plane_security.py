@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import platform
 
 import pytest
 from fastapi.testclient import TestClient
@@ -17,24 +18,31 @@ from orchestrator.redaction import contains_secret, redact_text
 
 @pytest.fixture
 def client(monkeypatch):
+    """Helper: client."""
     monkeypatch.setenv("ORAMA_INSECURE_DEV", "0")
     monkeypatch.setenv("ORAMA_CONTROL_PLANE_TOKEN", "pt-test-token")
+    if platform.system() == "Windows":
+        # /health fails loudly on Windows when no LM Studio endpoint is configured.
+        monkeypatch.setenv("LM_STUDIO_WIN_ENDPOINTS", "http://localhost:1234")
     with TestClient(app, raise_server_exceptions=False) as test_client:
         yield test_client
 
 
 def test_health_public_when_auth_enforced(client):
+    """Check that health public when auth enforced."""
     response = client.get("/health")
     assert response.status_code == 200
 
 
 def test_models_post_requires_auth_and_is_documented():
+    """Check that models post requires auth and is documented."""
     assert pt_path_requires_auth("/models/route", "POST") is True
     assert pt_path_requires_auth("/models/route", "GET") is True
     assert mutation_path_documented_in_post_prefixes("/models/route") is True
 
 
 def test_v1_jobs_requires_bearer(client):
+    """Check that v1 jobs requires bearer."""
     denied = client.post("/v1/jobs", json={"prompt": "hello", "intent": "freeform"})
     allowed = client.post(
         "/v1/jobs",
@@ -46,6 +54,7 @@ def test_v1_jobs_requires_bearer(client):
 
 
 def test_redact_google_api_key():
+    """Check that redact google api key."""
     raw = '{"apiKey": "AIzaSy0123456789012345678901234567890"}'
     redacted = redact_text(raw)
     assert "AIzaSy" not in redacted
@@ -54,6 +63,7 @@ def test_redact_google_api_key():
 
 
 def test_classify_and_redact_strips_prompt_secrets():
+    """Check that classify and redact strips prompt secrets."""
     payload = {
         "prompt": "use key AIzaSy0123456789012345678901234567890",
         "role": "coder",
