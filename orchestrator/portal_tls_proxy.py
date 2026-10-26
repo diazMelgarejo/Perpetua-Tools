@@ -17,8 +17,11 @@ Opt-in via ``PORTAL_TLS_ENABLED`` (off by default). State directory:
 ``portal_tls_dir`` for why Windows does not use ``%LOCALAPPDATA%``).
 
 Run: ``python -m orchestrator.portal_tls_proxy --listen-port 8443
---upstream-port 8002``; ``--print-fingerprint`` prints ``ca_sha256_file=`` and
-``ca_public_path=`` and exits.
+--upstream-port 8002``; ``--print-fingerprint`` prints ``ca_sha256_der=`` (the certificate's
+SHA-256: the canonical value a peer should pin, the same wherever the certificate is copied
+and what ``openssl x509 -noout -fingerprint -sha256`` shows), ``ca_sha256_file=`` (the SHA-256
+of the exact PEM file bytes; it changes if line endings or the trailing newline change, for
+example when the PEM is pasted into a document) and ``ca_public_path=``, then exits.
 
 ``--self-check`` is the evidence gate a caller runs before telling peers to
 trust the endpoint. It reads only the public CA certificate from the store
@@ -30,7 +33,8 @@ is 401 or 403), ``check_leaf_san`` (the presented leaf names the host),
 is FAIL; notAfter is printed as UTC ISO-8601) and
 ``check_upstream_loopback_only`` (the upstream port refuses connections on
 every non-loopback local address). Each prints ``check_<name>=PASS|WARN|FAIL
-<detail>``, followed by ``ca_sha256_file=<hex>`` and ``self_check=PASS|FAIL``.
+<detail>``, followed by ``ca_sha256_der=<hex>``, ``ca_sha256_file=<hex>`` and
+``self_check=PASS|FAIL``.
 Exit 0 when nothing FAILs (WARN is allowed), 1 on any FAIL, 2 on a usage
 error. ``--host`` defaults to the first non-loopback local address.
 """
@@ -261,11 +265,13 @@ def run_self_check(host: str, listen_port: int, upstream_port: int, state_dir: P
     anything and never reads a private key or any token."""
     results: dict = {}
     ca_path = build_pki(Path(state_dir), label="Portal").ca_public_path
-    ca_hash = ""
+    ca_hash = ca_der_hash = ""
     names = ("tls_health", "protected_unauth", "leaf_san", "leaf_expiry")
     ctx = None
     try:
-        ca_hash = hashlib.sha256(ca_path.read_bytes()).hexdigest()
+        ca_bytes = ca_path.read_bytes()
+        ca_hash = hashlib.sha256(ca_bytes).hexdigest()
+        ca_der_hash = hashlib.sha256(ssl.PEM_cert_to_DER_cert(ca_bytes.decode("ascii"))).hexdigest()
         ctx = ssl.create_default_context(cafile=str(ca_path))
     except (OSError, ssl.SSLError, ValueError) as exc:
         why = ("public CA certificate missing" if isinstance(exc, FileNotFoundError)
@@ -302,6 +308,7 @@ def run_self_check(host: str, listen_port: int, upstream_port: int, state_dir: P
     lines = [f"check_{n}={results[n][0]} {results[n][1]}" for n in order]
     failed = any(results[n][0] == "FAIL" for n in order)
     if ca_hash:
+        lines.append(f"ca_sha256_der={ca_der_hash}")
         lines.append(f"ca_sha256_file={ca_hash}")
     lines.append(f"self_check={'FAIL' if failed else 'PASS'}")
     return (1 if failed else 0), lines
@@ -343,6 +350,9 @@ def main(argv: Optional[list] = None) -> int:
         )
         if args.print_fingerprint:
             proxy.ensure_certificate()
+            # ca_sha256_der is the canonical pin (the certificate itself, independent of PEM
+            # line endings or a trailing newline); ca_sha256_file only matches the exact bytes.
+            print(f"ca_sha256_der={proxy.pki.ca_fingerprint}")
             print(f"ca_sha256_file={proxy.pki.ca_file_sha256}")
             print(f"ca_public_path={proxy.pki.ca_public_path.resolve()}")
             return 0
@@ -355,6 +365,7 @@ def main(argv: Optional[list] = None) -> int:
         return 2
 
     print(f"portal-tls-proxy pid={os.getpid()} listening {url} upstream={args.upstream_port} "
+          f"ca_sha256_der={proxy.pki.ca_fingerprint} "
           f"ca_sha256_file={proxy.pki.ca_file_sha256}", flush=True)
     stop = threading.Event()
     for sig in (signal.SIGINT, signal.SIGTERM):

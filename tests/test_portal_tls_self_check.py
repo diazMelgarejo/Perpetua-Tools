@@ -124,6 +124,7 @@ def test_self_check_passes_against_a_healthy_endpoint(tmp_path, upstream, no_lan
     assert "notAfter=" in out["check_leaf_expiry"] and "Z " in out["check_leaf_expiry"]
     assert out["self_check"] == "PASS"
     assert out["ca_sha256_file"] == proxy.pki.ca_file_sha256
+    assert out["ca_sha256_der"] == proxy.pki.ca_fingerprint
     assert not any(h.get("Authorization") for h in _Upstream.seen)
     assert _Upstream.seen, "the upstream should have been reached"
 
@@ -176,7 +177,7 @@ def test_self_check_fails_when_the_ca_store_is_missing(tmp_path, upstream, no_la
     text = capsys.readouterr().out
     assert rc == 1
     assert "check_tls_health=FAIL" in text and "CA certificate missing" in text
-    assert "self_check=FAIL" in text and "ca_sha256_file=" not in text
+    assert "self_check=FAIL" in text and "ca_sha256_file=" not in text and "ca_sha256_der=" not in text
     assert not state.exists()
 
 
