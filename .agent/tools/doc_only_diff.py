@@ -54,15 +54,44 @@ def git_show(root: Path, rev: str, path: str):
 
 
 def py_directives(src: bytes) -> list:
-    """Return (location, code, comment) for each comment that carries meaning to tools.
+    """Return (statement_text, ordinal, comment) for each comment that carries meaning to tools.
 
-    The token location distinguishes identical statements in different scopes, so moving a
-    line-specific ``# type: ignore`` or ``# noqa`` remains a semantic change.
+    A directive is identified by the logical line it sits on (its token text, comments and
+    layout excluded) plus how many identical logical lines precede it. Neither depends on an
+    absolute source row, so adding a docstring or comment above an unchanged ``# type: ignore``
+    keeps it matched, while moving it to another statement, or to a duplicate of the statement
+    in another scope, still changes the result. Lines that are only string literals (docstrings)
+    are not counted as predecessors, so editing one cannot shift the ordinals.
     """
-    found = []
+    skip = (tokenize.INDENT, tokenize.DEDENT, tokenize.ENDMARKER, tokenize.ENCODING, tokenize.NL)
+    found, seen = [], {}
+    code, pending = [], []
+
+    def ordinal(text: str) -> int:
+        """Return how many identical logical lines came before, and count this one."""
+        seen[text] = seen.get(text, -1) + 1
+        return seen[text]
+
     for tok in tokenize.generate_tokens(io.StringIO(src.decode("utf-8-sig")).readline):
-        if tok.type == tokenize.COMMENT and _PY_DIRECTIVE.search(tok.string):
-            found.append((tok.start, tok.line[: tok.start[1]].strip(), tok.string.strip()))
+        if tok.type in skip:
+            continue
+        if tok.type == tokenize.COMMENT:
+            if not _PY_DIRECTIVE.search(tok.string):
+                continue
+            if code:
+                pending.append(tok.string.strip())
+            else:
+                found.append(("", ordinal(""), tok.string.strip()))
+        elif tok.type == tokenize.NEWLINE:
+            if code:
+                text = " ".join(t.string for t in code)
+                # A string-only line (docstring) keeps its directive but never counts as a
+                # predecessor, so rewording a docstring cannot renumber the lines after it.
+                index = seen.get(text, -1) + 1 if all(t.type == tokenize.STRING for t in code) else ordinal(text)
+                found.extend((text, index, comment) for comment in pending)
+            code, pending = [], []
+        else:
+            code.append(tok)
     return found
 
 

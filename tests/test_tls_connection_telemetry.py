@@ -55,6 +55,22 @@ class _FragmentedWebSocketUpstream(socketserver.BaseRequestHandler):
         self.request.sendall(b"00 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
 
 
+class _EchoWebSocketUpstream(socketserver.BaseRequestHandler):
+    """Accept the upgrade with a 101, then echo every byte the client sends."""
+
+    RESPONSE = b"HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n"
+
+    def handle(self) -> None:
+        """Read the tunnel request, answer 101, then echo until the client closes."""
+        self.request.recv(4096)
+        self.request.sendall(self.RESPONSE)
+        while True:
+            data = self.request.recv(4096)
+            if not data:
+                return
+            self.request.sendall(data)
+
+
 @pytest.fixture
 def running_proxy(tmp_path):
     """A started Portal TLS proxy in front of the fake upstream; yields (proxy, ca_path)."""
@@ -201,6 +217,44 @@ def test_fragmented_websocket_status_is_recorded_after_all_digits(tmp_path, capl
         lines = _conn_lines(caplog, "outcome=served")
         assert lines, "the fragmented tunnelled response left no telemetry line"
         assert "status=200" in lines[0] and "status=2 " not in lines[0]
+    finally:
+        proxy.stop()
+        server.shutdown()
+        server.server_close()
+
+
+def test_websocket_tunnel_counts_relayed_bytes_in_both_directions(tmp_path, caplog):
+    """The connection line reports the payload bytes actually relayed up and down, not zero."""
+    server = socketserver.TCPServer((LOOP, 0), _EchoWebSocketUpstream)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    with socket.socket() as s:
+        s.bind((LOOP, 0))
+        port = s.getsockname()[1]
+    proxy = portal.build_portal_proxy(
+        listen_port=port, upstream_port=server.server_address[1], listen_host=LOOP,
+        cert_dir=tmp_path / "state", san_names=("portal.example.test",), ip_source=lambda: (LOOP,),
+    )
+    proxy.start()
+    caplog.set_level(logging.INFO, logger=LOGGER)
+    ctx = ssl.create_default_context(cafile=str(proxy.pki.ca_public_path))
+    payload = b"0123456789"
+    response = _EchoWebSocketUpstream.RESPONSE
+    try:
+        with socket.create_connection((LOOP, proxy.proxy_port), timeout=8) as raw:
+            with ctx.wrap_socket(raw, server_hostname=LOOP) as tls:
+                tls.settimeout(5)
+                tls.sendall(b"GET /ws HTTP/1.1\r\nHost: x\r\nConnection: Upgrade\r\nUpgrade: websocket\r\n\r\n")
+                received = b""
+                while len(received) < len(response):
+                    received += tls.recv(4096)
+                tls.sendall(payload)
+                echoed = b""
+                while len(echoed) < len(payload):
+                    echoed += tls.recv(4096)
+        lines = _conn_lines(caplog, "outcome=served")
+        assert lines, "the tunnelled request left no telemetry line"
+        assert f"bytes_up={len(payload)}" in lines[0]
+        assert f"bytes_down={len(response) + len(payload)}" in lines[0]
     finally:
         proxy.stop()
         server.shutdown()

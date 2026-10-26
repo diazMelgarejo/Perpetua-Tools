@@ -853,10 +853,20 @@ class AlphaClawTlsProxy:
                 client.settimeout(write_timeout)
                 up.settimeout(write_timeout)
 
-                def pump(src, dst, on_chunk=None) -> None:
+                def count_up(data: bytes) -> None:
+                    """Add a relayed client-to-upstream chunk to the handler's upload total."""
+                    self._t_up += len(data)
+
+                def count_down(data: bytes) -> None:
+                    """Add a relayed upstream-to-client chunk to the handler's download total."""
+                    self._t_down += len(data)
+
+                def pump(src, dst, on_chunk=None, on_relay=None) -> None:
                     """Copy bytes from ``src`` to ``dst`` until close, error or ws_idle_timeout of silence, then end the tunnel.
 
-                    ``on_chunk`` (optional) observes every chunk read before it is forwarded."""
+                    ``on_chunk`` (optional) observes every chunk read before it is forwarded;
+                    ``on_relay`` (optional) observes it only after ``dst.sendall`` has accepted it,
+                    so byte totals count relayed bytes, never ones that failed to leave."""
                     try:
                         while not done.is_set():
                             buffered = isinstance(src, ssl.SSLSocket) and src.pending() > 0
@@ -873,6 +883,8 @@ class AlphaClawTlsProxy:
                             if on_chunk is not None:
                                 on_chunk(data)
                             dst.sendall(data)
+                            if on_relay is not None:
+                                on_relay(data)
                             state["last"] = time.monotonic()
                     except (OSError, ssl.SSLError):
                         pass
@@ -881,9 +893,12 @@ class AlphaClawTlsProxy:
 
                 try:
                     up.sendall(head)
-                    t_up = threading.Thread(target=pump, args=(client, up), daemon=True)
+                    t_up = threading.Thread(
+                        target=pump, args=(client, up), kwargs={"on_relay": count_up}, daemon=True
+                    )
                     t_down = threading.Thread(
-                        target=pump, args=(up, client, self._note_upstream_status), daemon=True
+                        target=pump, args=(up, client, self._note_upstream_status),
+                        kwargs={"on_relay": count_down}, daemon=True,
                     )
                     t_up.start()
                     t_down.start()

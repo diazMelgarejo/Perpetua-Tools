@@ -116,6 +116,24 @@ def test_doc_only_python_directive_move_between_identical_statements_is_code() -
     assert module.strip_py(base) != module.strip_py(moved)
 
 
+def test_doc_only_python_directive_survives_a_docstring_shifting_its_row() -> None:
+    """Adding or rewording a docstring above an unchanged pragma moves its source row but is documentation only."""
+    module = _load_doc_only_diff()
+    base = b'def f():\n    return "x"  # type: ignore\n\ndef g():\n    return "x"\n'
+    documented = (
+        b'def f():\n    """Documented."""\n    return "x"  # type: ignore\n\n'
+        b'def g():\n    """Also documented."""\n    return "x"\n'
+    )
+    reworded = documented.replace(b"Documented.", b"Documented again.")
+    moved = (
+        b'def f():\n    """Documented."""\n    return "x"\n\n'
+        b'def g():\n    """Also documented."""\n    return "x"  # type: ignore\n'
+    )
+
+    assert module.strip_py(base) == module.strip_py(documented) == module.strip_py(reworded)
+    assert module.strip_py(documented) != module.strip_py(moved)
+
+
 def _git(repo: Path, *args: str) -> None:
     """Run git in a temporary repository with a fixed identity."""
     subprocess.run(
