@@ -1,21 +1,30 @@
 """Prove a commit range changed documentation only (docstrings and comments).
 
-usage: python -I .agent/tools/doc_only_diff.py <repo_root> <base_rev> <head_rev>
+usage: python -I .agent/tools/doc_only_diff.py <repo_root> <base_rev> <head_rev> [--strict-markdown]
 
 For every file changed between base and head:
-  .py        ASTs must be equal after removing module/class/function docstrings
+  .py        ASTs must be equal after removing module/class/function docstrings, and the
+             "directive" comments (shebang, encoding cookie, type:, noqa, pragma, fmt:,
+             isort:, pylint:, mypy:, ruff:, pyright:) must be identical
   .ps1/.psm1 PowerShell token streams must be equal after dropping comment tokens
-  .sh        lines must be equal after dropping blank and comment-only lines
-Any other changed file is reported as NOT-DOC. Exit 0 only when every file is
-documentation-only.
+  .sh        lines must be equal after dropping blank and comment-only lines; text inside a
+             here-document is data and is always compared (an unterminated one is UNPROVABLE)
+  .md        listed under "markdown_unreviewed": markdown is not semantically compared (fenced
+             code and configuration snippets can carry behaviour); --strict-markdown makes any
+             markdown change fail instead
+Any other changed file is reported as NOT-DOC. A git failure (unknown revision) fails closed.
+Exit 0 only when every file is documentation-only.
 """
 from __future__ import annotations
 
 import ast
+import io
 import json
+import re
 import subprocess
 import sys
 import tempfile
+import tokenize
 from pathlib import Path
 
 PS_TOKENS = r"""
@@ -29,6 +38,14 @@ $out = foreach ($t in $tokens) {
 ($out -join "`n")
 """
 
+# Comments that carry meaning to tools: a change here is not "just documentation".
+_PY_DIRECTIVE = re.compile(
+    r"^#!|^#.*coding[:=]|#\s*(type|noqa|pragma|fmt|isort|pylint|mypy|ruff|pyright)\b",
+    re.IGNORECASE,
+)
+# <<WORD, <<-WORD, <<'WORD', <<"WORD" (but not the <<< here-string).
+_HEREDOC = re.compile(r"(?<!<)<<(?!<)(-?)\s*\\?(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\2")
+
 
 def git_show(root: Path, rev: str, path: str):
     """Return a file's bytes at a revision, or None when it does not exist there."""
@@ -36,8 +53,17 @@ def git_show(root: Path, rev: str, path: str):
     return proc.stdout if proc.returncode == 0 else None
 
 
+def py_directives(src: bytes) -> list:
+    """Return the comments that carry meaning to tools (shebang, encoding cookie, type/lint/format pragmas)."""
+    found = []
+    for tok in tokenize.generate_tokens(io.StringIO(src.decode("utf-8-sig")).readline):
+        if tok.type == tokenize.COMMENT and _PY_DIRECTIVE.search(tok.string):
+            found.append(tok.string.strip())
+    return found
+
+
 def strip_py(src: bytes) -> str:
-    """Return an AST dump with module, class and function docstrings removed."""
+    """Return an AST dump with docstrings removed, followed by the directive comments (compared verbatim)."""
     tree = ast.parse(src.decode("utf-8-sig"))
     for node in ast.walk(tree):
         if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -45,7 +71,7 @@ def strip_py(src: bytes) -> str:
             if body and isinstance(body[0], ast.Expr) and isinstance(getattr(body[0], "value", None), ast.Constant) \
                     and isinstance(body[0].value.value, str):
                 node.body = body[1:] or [ast.Pass()]
-    return ast.dump(tree, include_attributes=False)
+    return ast.dump(tree, include_attributes=False) + "\n" + repr(py_directives(src))
 
 
 def ps_tokens(src: bytes) -> str:
@@ -65,30 +91,36 @@ def ps_tokens(src: bytes) -> str:
 
 
 def strip_sh(src: bytes) -> list:
-    """Return comparable shell lines, rejecting constructs whose comments affect content."""
+    """Return comparable shell lines; here-document bodies are data and are always kept.
+
+    A here-document starts at <<WORD (or <<-WORD, <<'WORD') and ends at a line holding only WORD
+    (leading tabs allowed for <<-). The <<< here-string is not a here-document. An unterminated
+    here-document raises ValueError so the change cannot be certified.
+    """
     out: list[str] = []
-    heredoc = False
+    pending: list[tuple[str, bool]] = []
     for line in src.decode("utf-8-sig").splitlines():
+        if pending:
+            word, dash = pending[0]
+            out.append(line.rstrip())
+            if (line.lstrip("\t") if dash else line).rstrip() == word:
+                pending.pop(0)
+            continue
         stripped = line.strip()
-        if heredoc:
-            out.append(line.rstrip())
-            if stripped == "EOF":
-                heredoc = False
-            continue
-        if "<<" in line:
-            heredoc = True
-            out.append(line.rstrip())
-            continue
         if not stripped or (stripped.startswith("#") and not stripped.startswith("#!")):
             continue
         out.append(line.rstrip())
-    if heredoc:
+        for match in _HEREDOC.finditer(line):
+            pending.append((match.group(3), match.group(1) == "-"))
+    if pending:
         raise ValueError("unterminated here-document; cannot prove documentation-only shell change")
     return out
 
 
 def main(argv):
     """Compare every file changed between two revisions; exit 0 only when all changes are documentation-only."""
+    strict_md = "--strict-markdown" in argv
+    argv = [a for a in argv if a != "--strict-markdown"]
     root, base, head = Path(argv[0]), argv[1], argv[2]
     diff = subprocess.run(
         ["git", "-C", str(root), "diff", "--name-only", f"{base}..{head}"],
@@ -99,7 +131,7 @@ def main(argv):
         print(json.dumps({"doc_only": False, "error": diff.stderr.strip() or "git diff failed"}))
         return 1
     names = diff.stdout.split()
-    report, ok = [], True
+    report, ok, markdown = [], True, []
     for name in names:
         a, b = git_show(root, base, name), git_show(root, head, name)
         suffix = Path(name).suffix.lower()
@@ -115,12 +147,13 @@ def main(argv):
             except ValueError as error:
                 status = f"UNPROVABLE: {error}"
         elif suffix == ".md":
-            status = "doc-only"
+            markdown.append(name)
+            status = "UNPROVABLE: markdown is not semantically compared" if strict_md else "doc-only"
         else:
             status = "NOT-DOC"
         ok = ok and status == "doc-only"
         report.append({"file": name, "status": status})
-    print(json.dumps({"doc_only": ok, "files": report}, indent=1))
+    print(json.dumps({"doc_only": ok, "markdown_unreviewed": markdown, "files": report}, indent=1))
     return 0 if ok else 1
 
 

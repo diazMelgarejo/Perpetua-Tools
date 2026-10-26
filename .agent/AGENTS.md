@@ -62,8 +62,9 @@ Workflow:
   with proof at each step (worktrees, agents, review, merge order, restart, peer TLS trust,
   canary and receipts, board and inbox announcements). Reference:
   `memory/semantic/LAN_PEER_TLS_AND_DELIVERY_DOMAIN_KNOWLEDGE_2026-10-26.md`.
-- **Tools:** `tools/doc_coverage.py` (100% docstring check), `tools/doc_only_diff.py` (proves a
-  commit is documentation-only), `tools/tls_verify.py` (verifies a peer's TLS endpoint, no token).
+- **Tools** (run from the repository root; paths are repo-relative): `.agent/tools/doc_coverage.py`
+  (100% docstring check), `.agent/tools/doc_only_diff.py` (proves a commit is documentation-only),
+  `.agent/tools/tls_verify.py` (verifies a peer's TLS endpoint, no token).
 - **Recall:** `python .agent/tools/recall.py "peer tls delivery"` before touching the peer link.
 
 ## Fleet / OpenClaw retrofit (2026-07-26)

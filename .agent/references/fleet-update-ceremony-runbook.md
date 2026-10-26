@@ -3,14 +3,18 @@
 **Use when:** a change must reach every node and every agent in the grandfathered fleet (the Mac,
 the Windows nodes, the coding agents and the peer sessions) with proof at each step. This is the
 procedure that re-established the Windows/Mac peer link on 2026-10-25/26. Background and the
-reasons behind each rule: `memory/semantic/LAN_PEER_TLS_AND_DELIVERY_DOMAIN_KNOWLEDGE_2026-10-26.md`;
-timeline: `memory/semantic/SESSION_CHRONICLE_2026-10-26_GRANDFATHERED_FLEET_CONTACT_REESTABLISHMENT_TECHNICAL.md`.
+reasons behind each rule: `.agent/memory/semantic/LAN_PEER_TLS_AND_DELIVERY_DOMAIN_KNOWLEDGE_2026-10-26.md`;
+timeline: `.agent/memory/semantic/SESSION_CHRONICLE_2026-10-26_GRANDFATHERED_FLEET_CONTACT_REESTABLISHMENT_TECHNICAL.md`.
 **Placeholders:** `<peer-ip>`, `<peer-ca>` and `$REPO_ROOT` are filled from the operator's local
 configuration. Never write real addresses, host names, tokens or workstation paths into tracked
 files, board notes or inbox files.
 
 ## 0. Preconditions and stop rules
 
+0. **Before the first git write of any kind** (worktree creation, commit, merge, push): read
+   `.cursor/private/agent-lesson-git-attribution.md` and the identity policy, run
+   `bash scripts/git/check_identity.sh`, and keep banned attribution tokens out of tracked files,
+   commit messages, PR text and `LESSONS.md`. Commit through the repo's hooks, never around them.
 1. Read `docs/LESSONS.md`, this file and the domain-knowledge file. Run `recall.py` for the
    topic you are about to touch.
 2. Read the board (`scripts/agent_coordination.py list` or the local `gossip` table) and the
@@ -72,6 +76,12 @@ files, board notes or inbox files.
   `python -I .agent/tools/doc_only_diff.py <repo> <base> <head>` must print `"doc_only": true`
   (comment-stripped AST for Python, token stream for PowerShell, comment-free lines for shell).
   Splitting or joining a statement changes tokens and fails the proof, on purpose.
+  Limits to know: Python comments that carry meaning to tools (shebang, encoding cookie,
+  `type:`, `noqa`, `pragma`, `fmt:`, `isort:`, linter and type-checker directives) are compared
+  verbatim and count as code; shell here-document text is data and is always compared (an
+  unterminated one is `UNPROVABLE`); markdown is listed under `markdown_unreviewed` and is not
+  semantically compared, so review it by eye or pass `--strict-markdown`; a bad revision fails
+  closed. The tool proves "no code tokens changed", not that the new documentation is accurate.
 
 ## 6. Verification gates before any merge
 
@@ -144,6 +154,13 @@ Order matters; each step proves only itself.
 * PT `.agent` memory in the single PT PR: a technical chronicle with the evidence level of every
   step, lessons through `learn.py --provisional`, domain knowledge, and updates to this runbook
   when the procedure changed. Run `scripts/hooks/check_memory_records.py` and the hygiene check.
+  The record validator checks JSON and candidate rules only; it does not prove the historical
+  episodic bytes are untouched. Before declaring the PR safe, run the preservation gate against
+  the pinned PR base and the re-fetched remote head:
+  `python scripts/review/check_episodic_append_only.py --repo . --base <base-sha> --head <head-sha>`
+  (use `--worktree` instead of `--head` to check uncommitted edits). It rejects any rewrite of the
+  byte prefix of `.agent/memory/episodic/AGENT_LEARNINGS.jsonl`; fix a failure by restoring the
+  prefix and appending, never by editing history.
 * Report, do not change: owner decisions (secret rotation, names or reservations, fleet CA, MCP
   gate policy) and other-lane work (`start.sh` parity). List them by owner.
 * Retire scratch worktrees only after the consolidated PR is merged and nothing is pending.
