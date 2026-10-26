@@ -43,6 +43,7 @@ except ImportError:  # pragma: no cover - exercised on Windows only
     fcntl = None  # type: ignore[assignment]
     import msvcrt
 
+_WIN_LOCK_TIMEOUT_ERRNO = 36  # errno.EDEADLOCK: msvcrt LK_LOCK gave up after its retries
 GRANT_MARKER = "operator-grant-v2"
 GRANT_TTL_SECONDS = 8 * 3600
 DEFAULT_ACTION = "append_integrative"
@@ -366,8 +367,16 @@ def _lock_exclusive(handle: Any) -> None:
     if fcntl is not None:
         fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
         return
-    handle.seek(0)
-    msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)  # type: ignore[attr-defined]
+    # LK_LOCK gives up with EDEADLOCK after ~10 one-second retries; flock waits
+    # indefinitely, so keep waiting on contention and surface any other error.
+    while True:
+        handle.seek(0)
+        try:
+            msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)  # type: ignore[attr-defined]
+            return
+        except OSError as exc:
+            if exc.errno != _WIN_LOCK_TIMEOUT_ERRNO:
+                raise
 
 
 def _unlock(handle: Any) -> None:
@@ -386,6 +395,10 @@ def _locked_nonce_state():
     handle = open(NONCE_STATE_PATH, "a+", encoding="utf-8")
     try:
         _lock_exclusive(handle)
+    except BaseException:
+        handle.close()
+        raise
+    try:
         handle.seek(0)
         raw = handle.read()
         if raw.strip():
@@ -401,8 +414,10 @@ def _locked_nonce_state():
             state["reservations"] = {}
         yield handle, state
     finally:
-        _unlock(handle)
-        handle.close()
+        try:
+            _unlock(handle)
+        finally:
+            handle.close()
 
 
 def _write_nonce_state(handle: Any, state: dict[str, Any]) -> None:
