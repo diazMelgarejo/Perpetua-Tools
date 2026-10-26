@@ -134,6 +134,20 @@ def test_doc_only_python_directive_survives_a_docstring_shifting_its_row() -> No
     assert module.strip_py(documented) != module.strip_py(moved)
 
 
+def test_doc_only_python_directive_position_moves_are_code() -> None:
+    """A pragma moved between physical lines of one statement, own-line positions or string-only lines is code."""
+    module = _load_doc_only_diff()
+    pairs = [
+        (b"x = f(\n    a,  # type: ignore\n    b)\n", b"x = f(\n    a,\n    b)  # type: ignore\n"),
+        (b"a = 1\n# type: ignore\nb = 2\n", b"a = 1\nb = 2\n# type: ignore\n"),
+        (b"'x'  # noqa\n'x'\n", b"'x'\n'x'  # noqa\n"),
+    ]
+    for before, after in pairs:
+        assert module.strip_py(before) != module.strip_py(after), before
+    shifted = b'"""Doc."""\n# note\nx = f(\n    a,  # type: ignore\n    b)\n'
+    assert module.strip_py(b"x = f(\n    a,  # type: ignore\n    b)\n") == module.strip_py(shifted)
+
+
 def _git(repo: Path, *args: str) -> None:
     """Run git in a temporary repository with a fixed identity."""
     subprocess.run(

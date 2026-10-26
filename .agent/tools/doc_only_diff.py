@@ -54,24 +54,20 @@ def git_show(root: Path, rev: str, path: str):
 
 
 def py_directives(src: bytes) -> list:
-    """Return (statement_text, ordinal, comment) for each comment that carries meaning to tools.
+    """Return (statement_text, ordinal, row_offset, comment) for each comment that carries meaning to tools.
 
     A directive is identified by the logical line it sits on (its token text, comments and
-    layout excluded) plus how many identical logical lines precede it. Neither depends on an
-    absolute source row, so adding a docstring or comment above an unchanged ``# type: ignore``
-    keeps it matched, while moving it to another statement, or to a duplicate of the statement
-    in another scope, still changes the result. Lines that are only string literals (docstrings)
-    are not counted as predecessors, so editing one cannot shift the ordinals.
+    layout excluded), how many identical logical lines precede it, and its physical row offset
+    inside that logical line (tools apply a pragma to one physical line). None of these depends
+    on an absolute source row, so adding a docstring or comment above an unchanged
+    ``# type: ignore`` keeps it matched, while moving it to another statement, another physical
+    line of the same statement, or a look-alike statement in another scope changes the result.
+    A directive on its own line is keyed by the count of code lines before it. String-only lines
+    (docstrings) never shift the code ordinals; they are counted among themselves.
     """
     skip = (tokenize.INDENT, tokenize.DEDENT, tokenize.ENDMARKER, tokenize.ENCODING, tokenize.NL)
-    found, seen = [], {}
+    found, seen, code_lines = [], {}, 0
     code, pending = [], []
-
-    def ordinal(text: str) -> int:
-        """Return how many identical logical lines came before, and count this one."""
-        seen[text] = seen.get(text, -1) + 1
-        return seen[text]
-
     for tok in tokenize.generate_tokens(io.StringIO(src.decode("utf-8-sig")).readline):
         if tok.type in skip:
             continue
@@ -79,16 +75,19 @@ def py_directives(src: bytes) -> list:
             if not _PY_DIRECTIVE.search(tok.string):
                 continue
             if code:
-                pending.append(tok.string.strip())
+                pending.append((tok.start[0] - code[0].start[0], tok.string.strip()))
             else:
-                found.append(("", ordinal(""), tok.string.strip()))
+                found.append(("", code_lines, 0, tok.string.strip()))
         elif tok.type == tokenize.NEWLINE:
             if code:
                 text = " ".join(t.string for t in code)
-                # A string-only line (docstring) keeps its directive but never counts as a
-                # predecessor, so rewording a docstring cannot renumber the lines after it.
-                index = seen.get(text, -1) + 1 if all(t.type == tokenize.STRING for t in code) else ordinal(text)
-                found.extend((text, index, comment) for comment in pending)
+                string_only = all(t.type == tokenize.STRING for t in code)
+                key = ("str:" if string_only else "code:") + text
+                index = seen.get(key, 0)
+                seen[key] = index + 1
+                if not string_only:
+                    code_lines += 1
+                found.extend((text, index, offset, comment) for offset, comment in pending)
             code, pending = [], []
         else:
             code.append(tok)
