@@ -40,6 +40,7 @@ class _StrictSafeLoader(yaml.SafeLoader):
     def construct_mapping(
         self, node: yaml.MappingNode, deep: bool = False
     ) -> dict[Any, Any]:
+        """Build the mapping like SafeLoader but raise ConstructorError on unhashable or duplicate keys."""
         self.flatten_mapping(node)
         mapping: dict[Any, Any] = {}
         for key_node, value_node in node.value:
@@ -66,6 +67,7 @@ class _StrictSafeLoader(yaml.SafeLoader):
 
 @dataclass(frozen=True)
 class LaunchSpec:
+    """A requested harness launch: path, model id, effort aliases, fast flag and agent flag."""
     path: str
     launch_id: str
     effort: str | None = None
@@ -179,6 +181,7 @@ def plan_launch(
 
 
 def _repo_root() -> Path:
+    """Return the nearest ancestor of this file that holds the governance config; raise if none does."""
     here = Path(__file__).resolve()
     for parent in here.parents:
         candidate = parent / _CONFIG_REL
@@ -237,6 +240,7 @@ def default_launch(path: str, *, config: Mapping[str, Any] | None = None) -> Lau
 
 
 def _ungated_cursor_ids(cfg: Mapping[str, Any]) -> set[str]:
+    """Return the Cursor launch ids that need no token: the default plus the allowed_ungated rows."""
     ids = {str(cfg["cursor_grok_bot"]["default"]["launch_id"])}
     for row in cfg["cursor_grok_bot"].get("allowed_ungated") or []:
         ids.add(str(row["launch_id"]))
@@ -244,6 +248,7 @@ def _ungated_cursor_ids(cfg: Mapping[str, Any]) -> set[str]:
 
 
 def _anthropic_ungated_ids(cfg: Mapping[str, Any]) -> set[str]:
+    """Return the Anthropic launch ids that need no token: the default plus its legacy pin, if any."""
     row = cfg["anthropic"]["default"]
     ids = {str(row["launch_id"])}
     legacy = row.get("legacy_pin")
@@ -253,6 +258,7 @@ def _anthropic_ungated_ids(cfg: Mapping[str, Any]) -> set[str]:
 
 
 def _named_effort(spec: LaunchSpec) -> str | None:
+    """Return the explicit effort, falling back to reasoning_effort when effort is unset or empty."""
     return spec.effort or spec.reasoning_effort
 
 
@@ -380,6 +386,7 @@ def _ungated_cursor_row(cfg: Mapping[str, Any], launch_id: str) -> Mapping[str, 
 
 
 def _assert_gated_params(spec: LaunchSpec, row: Mapping[str, Any]) -> None:
+    """Refuse unless the spec's effort is in the row's allowed efforts and fast equals the row's fast (when the row sets them)."""
     wanted_effort = row.get("effort")
     if wanted_effort is not None and _named_effort(spec) not in row.get(
         "allowed_efforts", [str(wanted_effort)]
@@ -401,7 +408,9 @@ def _assert_cursor_launch(
     now: datetime | None,
     approval_scope: str | None = None,
 ) -> None:
+    """Enforce Cursor rules: claude ids follow the Anthropic gate, fast and non-medium effort need a covering token, gated or unlisted ids are default-deny."""
     def covers() -> bool:
+        """Return whether the escalation proof covers this spec at the enclosing call's time and approval scope."""
         return _token_covers(spec, proof, now=now, approval_scope=approval_scope)
 
     if spec.launch_id.startswith("claude-"):
@@ -447,6 +456,7 @@ def _assert_anthropic_launch(
 ) -> None:
     # R2: fast mode is not a supported escalation for this policy; refuse it
     # before any ungated-model early return.
+    """Enforce Anthropic rules: fast is refused, ungated ids need explicit medium effort, gated ids need a covering token, row params and any required budget cap."""
     if spec.fast is True:
         raise ModelGovernanceError("fast mode is unsupported for this Anthropic policy")
     if spec.launch_id in _anthropic_ungated_ids(cfg):

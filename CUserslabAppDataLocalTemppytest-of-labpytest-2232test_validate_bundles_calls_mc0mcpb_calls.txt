@@ -1,0 +1,2 @@
+mcpb_call:info C:\Users\lab\AppData\Local\Temp\pytest-of-lab\pytest-2232\test_validate_bundles_calls_mc0\built/ollama-agent.mcpb
+mcpb_call:info C:\Users\lab\AppData\Local\Temp\pytest-of-lab\pytest-2232\test_validate_bundles_calls_mc0\built/lmstudio-agent.mcpb
