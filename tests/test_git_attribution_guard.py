@@ -45,6 +45,7 @@ def _seed_home_patterns_without_session_hook(home: Path) -> None:
 
 
 def _first_banned_token() -> str:
+    """Helper for first banned token."""
     _ensure_banned_patterns()
     for line in (ROOT / ".cursor/private/banned-attribution-patterns").read_text(
         encoding="utf-8"
@@ -56,6 +57,7 @@ def _first_banned_token() -> str:
 
 
 def test_strip_coauthor_hook_removes_cursor_trailers(tmp_path):
+    """Verify strip coauthor hook removes cursor trailers."""
     legacy_domain = "bettermind" + ".ph"
     msg = tmp_path / "COMMIT_EDITMSG"
     msg.write_text(
@@ -75,6 +77,7 @@ def test_strip_coauthor_hook_removes_cursor_trailers(tmp_path):
 
 
 def test_cursor_hooks_id_matches_workspace():
+    """Verify cursor hooks id matches workspace."""
     lib = ROOT / "scripts/git/cursor-hooks-id.sh"
     # The shell helper prints the workspace with forward slashes on every platform.
     repo_abs = ROOT.resolve().as_posix()
@@ -88,6 +91,7 @@ def test_cursor_hooks_id_matches_workspace():
 
 
 def test_check_commit_message_allows_well_known_coauthors(tmp_path):
+    """Verify check commit message allows well known coauthors."""
     _ensure_banned_patterns()
     script = ROOT / "scripts/git/check_commit_message.sh"
     for body, label in (
@@ -100,6 +104,7 @@ def test_check_commit_message_allows_well_known_coauthors(tmp_path):
 
 
 def test_check_commit_message_rejects_banned_coauthor_fixture(tmp_path):
+    """Verify check commit message rejects banned coauthor fixture."""
     token = _first_banned_token()
     script = ROOT / "scripts/git/check_commit_message.sh"
     msg = tmp_path / "msg-banned-fixture"
@@ -122,6 +127,7 @@ def test_check_identity_allows_cursor_agent_at_cursor_dot_com():
     # (Previously this test expected rejection; the script was updated in
     # "fix(git-hooks): scope Cursor identity enforcement to Cursor agent commits
     # only" which added cursor.com to the well-known AI/vendor domain list.)
+    """Verify check identity allows cursor agent at cursor dot com."""
     proc = subprocess.run(
         ["bash", str(ROOT / "scripts/git/check_identity.sh")],
         cwd=ROOT,
@@ -158,6 +164,7 @@ def test_ensure_banned_patterns_prefers_ci_bootstrap(tmp_path, monkeypatch):
     monkeypatch.setattr(module, "ORAMA_WRITE", fake_root / "missing/orama-write.sh")
 
     def mock_run(args, **kwargs):
+        """Helper for mock run."""
         ran.append(list(args))
         if "ci-bootstrap-private-attribution" in str(args[1]):
             patterns_path.write_text("fixture-token\n", encoding="utf-8")
@@ -188,6 +195,7 @@ def test_verify_git_guards_github_actions_skips_hooks_json_check():
 
 
 def test_check_commit_message_rejects_unknown_gmail(tmp_path):
+    """Verify check commit message rejects unknown gmail."""
     script = ROOT / "scripts/git/check_commit_message.sh"
     msg = tmp_path / "msg-bad"
     msg.write_text(

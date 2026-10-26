@@ -49,12 +49,14 @@ def _extract_function(name: str) -> str:
 
 
 def _run_atomic_append_snippet(dest: Path, mode: str, snippet: Path) -> subprocess.CompletedProcess[str]:
+    """Helper for run atomic append snippet."""
     func_src = _extract_function("atomic_append_snippet")
     wrapper = f'set -euo pipefail\n{func_src}\natomic_append_snippet "{dest}" "{mode}" "{snippet}"\n'
     return subprocess.run(["bash", "-c", wrapper], capture_output=True, text=True)
 
 
 def test_append_snippet_creates_new_dest_when_missing(tmp_path: Path) -> None:
+    """Verify append snippet creates new dest when missing."""
     dest = tmp_path / "new-file.txt"
     snippet = tmp_path / "snippet.txt"
     snippet.write_text("snippet content\n", encoding="utf-8")
@@ -67,6 +69,7 @@ def test_append_snippet_creates_new_dest_when_missing(tmp_path: Path) -> None:
 
 
 def test_append_snippet_preserves_existing_dest_content(tmp_path: Path) -> None:
+    """Verify append snippet preserves existing dest content."""
     dest = tmp_path / "existing.txt"
     dest.write_text("original content\n", encoding="utf-8")
     snippet = tmp_path / "snippet.txt"
@@ -141,6 +144,7 @@ def test_append_snippet_fails_closed_when_dest_is_a_directory(tmp_path: Path) ->
 
 
 def test_append_snippet_rejects_symlink_dest(tmp_path: Path) -> None:
+    """Verify append snippet rejects symlink dest."""
     external = tmp_path / "external.txt"
     external.write_text("external-only\n", encoding="utf-8")
     dest = tmp_path / "symlink-dest"
@@ -157,6 +161,7 @@ def test_append_snippet_rejects_symlink_dest(tmp_path: Path) -> None:
 
 
 def test_append_snippet_rejects_dangling_symlink_dest(tmp_path: Path) -> None:
+    """Verify append snippet rejects dangling symlink dest."""
     nowhere = tmp_path / "nowhere"
     dest = tmp_path / "dangling"
     _symlink_or_skip(dest, nowhere)
