@@ -113,7 +113,7 @@ resolve_git_backup_dir() {
     echo "error: must run inside a git repository" >&2
     return 1
   fi
-  if [[ "$git_common_dir" != /* ]]; then
+  if [[ "$git_common_dir" != /* && "$git_common_dir" != [A-Za-z]:* ]]; then
     git_common_dir="$(git rev-parse --show-toplevel)/$git_common_dir"
   fi
   printf '%s/pr-body-backups' "$(cd "$git_common_dir" && pwd)"

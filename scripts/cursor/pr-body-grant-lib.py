@@ -23,7 +23,6 @@ to consume without duplicate edit when body already contains the follow-up block
 from __future__ import annotations
 
 import argparse
-import fcntl
 import hashlib
 import hmac
 import json
@@ -37,6 +36,12 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+try:  # POSIX advisory locking; absent on Windows.
+    import fcntl
+except ImportError:  # pragma: no cover - exercised on Windows only
+    fcntl = None  # type: ignore[assignment]
+    import msvcrt
 
 GRANT_MARKER = "operator-grant-v2"
 GRANT_TTL_SECONDS = 8 * 3600
@@ -54,10 +59,12 @@ class GrantError(Exception):
 
 
 def _now_utc() -> datetime:
+    """Now utc."""
     return datetime.now(timezone.utc)
 
 
 def _parse_timestamp(raw: str) -> datetime | None:
+    """Parse timestamp."""
     try:
         return datetime.fromisoformat(raw.replace("Z", "+00:00"))
     except ValueError:
@@ -87,6 +94,7 @@ def _canonical_payload(
     action: str,
     content_digest: str,
 ) -> bytes:
+    """Canonical payload."""
     return canonical_payload_bytes(
         repo, pr_number, nonce, issued_at, action, content_digest
     )
@@ -101,6 +109,7 @@ def content_digest_for_append(
     message: str | None,
     cwd: Path | None = None,
 ) -> str:
+    """Content digest for append."""
     if file_path:
         if any(ch in file_path for ch in ("\x00", "\r", "\n")):
             raise GrantError("file_path contains invalid control characters")
@@ -165,6 +174,7 @@ def _validate_body_digest(value: str, field: str) -> None:
 
 
 def _read_secret_from_keychain() -> str | None:
+    """Read secret from keychain."""
     if sys.platform != "darwin":
         return None
     try:
@@ -190,6 +200,7 @@ def _read_secret_from_keychain() -> str | None:
 
 
 def _ensure_keychain_secret() -> str:
+    """Ensure keychain secret."""
     existing = _read_secret_from_keychain()
     if existing:
         return existing
@@ -219,6 +230,7 @@ def _ensure_keychain_secret() -> str:
 
 
 def _read_fallback_secret_file() -> str | None:
+    """Read fallback secret file."""
     if not FALLBACK_SECRET_PATH.is_file():
         return None
     try:
@@ -233,6 +245,7 @@ _ACTION_RE = re.compile(r"^[a-zA-Z0-9_.-]{1,64}$")
 
 
 def _validate_repo_slug(repo: str) -> None:
+    """Validate repo slug."""
     if not isinstance(repo, str) or not _REPO_SLUG_RE.match(repo.strip()):
         raise GrantError(
             "grant repo must not contain pipe or newline characters and must match 'owner/repo'"
@@ -240,6 +253,7 @@ def _validate_repo_slug(repo: str) -> None:
 
 
 def _validate_pr_number(pr_number: str | int) -> None:
+    """Validate pr number."""
     text = str(pr_number).strip()
     if not _PR_NUMBER_RE.match(text):
         raise GrantError(
@@ -248,6 +262,7 @@ def _validate_pr_number(pr_number: str | int) -> None:
 
 
 def _validate_action(action: str) -> None:
+    """Validate action."""
     if not isinstance(action, str) or not _ACTION_RE.match(action.strip()):
         raise GrantError(
             "grant action must not contain pipe or newline characters and must match alphanumeric slug"
@@ -255,6 +270,7 @@ def _validate_action(action: str) -> None:
 
 
 def _write_private_file(path: Path, content: str) -> None:
+    """Write private file."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.unlink(missing_ok=True)
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
@@ -266,10 +282,12 @@ def _write_private_file(path: Path, content: str) -> None:
 
 
 def _write_fallback_secret_file(secret: str) -> None:
+    """Write fallback secret file."""
     _write_private_file(FALLBACK_SECRET_PATH, secret + "\n")
 
 
 def resolve_hmac_secret(allow_generate: bool = False) -> bytes:
+    """Resolve hmac secret."""
     env_val = os.environ.get(ENV_SECRET)
     if env_val:
         return env_val.encode("utf-8")
@@ -298,14 +316,17 @@ def resolve_hmac_secret(allow_generate: bool = False) -> bytes:
 
 
 def _sign(secret: bytes, payload: bytes) -> str:
+    """Sign."""
     return hmac.new(secret, payload, hashlib.sha256).hexdigest()
 
 
 def _constant_time_eq(left: str, right: str) -> bool:
+    """Constant time eq."""
     return hmac.compare_digest(left, right)
 
 
 def parse_ack_text(text: str) -> dict[str, str]:
+    """Parse ack text."""
     fields: dict[str, str] = {}
     for line in text.splitlines():
         line = line.strip()
@@ -320,6 +341,7 @@ def parse_ack_text(text: str) -> dict[str, str]:
 
 
 def read_ack_fields() -> dict[str, str]:
+    """Read ack fields."""
     if not ACK_PATH.is_file():
         return {}
     try:
@@ -329,6 +351,7 @@ def read_ack_fields() -> dict[str, str]:
 
 
 def _grant_ttl_ok(issued_raw: str) -> bool:
+    """Grant ttl ok."""
     issued = _parse_timestamp(issued_raw)
     if issued is None:
         return False
@@ -338,12 +361,31 @@ def _grant_ttl_ok(issued_raw: str) -> bool:
     return 0 <= age <= GRANT_TTL_SECONDS
 
 
+def _lock_exclusive(handle: Any) -> None:
+    """Take an exclusive lock on ``handle`` (flock on POSIX, msvcrt byte lock on Windows)."""
+    if fcntl is not None:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        return
+    handle.seek(0)
+    msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)  # type: ignore[attr-defined]
+
+
+def _unlock(handle: Any) -> None:
+    """Release the lock taken by ``_lock_exclusive``."""
+    if fcntl is not None:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        return
+    handle.seek(0)
+    msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)  # type: ignore[attr-defined]
+
+
 @contextmanager
 def _locked_nonce_state():
+    """Locked nonce state."""
     NONCE_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
     handle = open(NONCE_STATE_PATH, "a+", encoding="utf-8")
     try:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        _lock_exclusive(handle)
         handle.seek(0)
         raw = handle.read()
         if raw.strip():
@@ -359,11 +401,12 @@ def _locked_nonce_state():
             state["reservations"] = {}
         yield handle, state
     finally:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        _unlock(handle)
         handle.close()
 
 
 def _write_nonce_state(handle: Any, state: dict[str, Any]) -> None:
+    """Write nonce state."""
     handle.seek(0)
     handle.truncate()
     json.dump(state, handle)
@@ -372,6 +415,7 @@ def _write_nonce_state(handle: Any, state: dict[str, Any]) -> None:
 
 
 def _prune_nonce_state(state: dict[str, Any]) -> None:
+    """Prune nonce state."""
     nonces = state.get("nonces", {})
     reservations = state.get("reservations", {})
     cutoff = _now_utc().timestamp() - GRANT_TTL_SECONDS
@@ -397,6 +441,7 @@ def _reservation_matches(
     pr_number: str,
     content_digest: str,
 ) -> bool:
+    """Reservation matches."""
     return (
         entry.get("repo", "") == repo
         and entry.get("pr", "") == str(pr_number)
@@ -410,6 +455,7 @@ def _reservation_blocks_verify(
     pr_number: str,
     content_digest: str,
 ) -> tuple[bool, str]:
+    """Reservation blocks verify."""
     with _locked_nonce_state() as (_handle, state):
         _prune_nonce_state(state)
         entry = state.get("reservations", {}).get(nonce)
@@ -516,6 +562,7 @@ def release_nonce_reservation_atomic(nonce: str) -> None:
 
 
 def nonce_is_consumed(nonce: str) -> bool:
+    """Nonce is consumed."""
     with _locked_nonce_state() as (_handle, state):
         _prune_nonce_state(state)
         return nonce in state["nonces"]
@@ -546,6 +593,7 @@ def verify_grant_fields(
     action: str = DEFAULT_ACTION,
     check_nonce_consumed: bool = True,
 ) -> tuple[bool, str]:
+    """Verify grant fields."""
     try:
         _validate_repo_slug(repo)
         _validate_pr_number(pr_number)
@@ -623,6 +671,7 @@ def verify_grant_for_append(
     consume: bool = False,
     cwd: Path | None = None,
 ) -> tuple[bool, str]:
+    """Verify grant for append."""
     # Reject malformed grant identity before touching an operator-supplied path.
     # verify_grant_fields repeats these checks as defense in depth for callers
     # that already have a digest.
@@ -721,6 +770,7 @@ def mark_remote_applied_for_append(
     message: str | None,
     cwd: Path | None = None,
 ) -> tuple[bool, str]:
+    """Mark remote applied for append."""
     try:
         _validate_repo_slug(repo)
         _validate_pr_number(pr_number)
@@ -750,6 +800,7 @@ def release_grant_for_append(
     message: str | None,
     cwd: Path | None = None,
 ) -> tuple[bool, str]:
+    """Release grant for append."""
     try:
         _validate_repo_slug(repo)
         _validate_pr_number(pr_number)
@@ -834,6 +885,7 @@ def mint_grant(
     message: str | None,
     cwd: Path | None = None,
 ) -> Path:
+    """Mint grant."""
     _validate_repo_slug(repo)
     _validate_pr_number(pr_number)
     digest = content_digest_for_append(file_path, message, cwd=cwd)
@@ -871,6 +923,7 @@ APPEND_SEGMENT_RE = re.compile(
 
 
 def parse_append_segment(segment: str) -> tuple[str, str, str | None, str | None] | None:
+    """Parse append segment."""
     seg = segment.strip()
     if "append-pr-body.sh" not in seg:
         return None
@@ -910,6 +963,7 @@ def parse_append_segment(segment: str) -> tuple[str, str, str | None, str | None
 
 
 def _cmd_mint(args: argparse.Namespace) -> int:
+    """Cmd mint."""
     path = mint_grant(args.repo, args.pr, args.file, args.message)
     print(f"OK: grant v2 written to {path}")
     print(f"  repo={args.repo} pr={args.pr} TTL=8h single-use")
@@ -917,6 +971,7 @@ def _cmd_mint(args: argparse.Namespace) -> int:
 
 
 def _cmd_verify(args: argparse.Namespace) -> int:
+    """Cmd verify."""
     ok, err = verify_grant_for_append(
         args.repo,
         args.pr,
@@ -932,6 +987,7 @@ def _cmd_verify(args: argparse.Namespace) -> int:
 
 
 def _cmd_consume(args: argparse.Namespace) -> int:
+    """Cmd consume."""
     ok, err = verify_grant_for_append(
         args.repo,
         args.pr,
@@ -947,6 +1003,7 @@ def _cmd_consume(args: argparse.Namespace) -> int:
 
 
 def _cmd_reserve(args: argparse.Namespace) -> int:
+    """Cmd reserve."""
     ok, err = reserve_grant_for_append(
         args.repo,
         args.pr,
@@ -963,6 +1020,7 @@ def _cmd_reserve(args: argparse.Namespace) -> int:
 
 
 def _cmd_release(args: argparse.Namespace) -> int:
+    """Cmd release."""
     ok, err = release_grant_for_append(
         args.repo,
         args.pr,
@@ -977,6 +1035,7 @@ def _cmd_release(args: argparse.Namespace) -> int:
 
 
 def _cmd_mark_applied(args: argparse.Namespace) -> int:
+    """Cmd mark applied."""
     ok, err = mark_remote_applied_for_append(
         args.repo,
         args.pr,
@@ -991,6 +1050,7 @@ def _cmd_mark_applied(args: argparse.Namespace) -> int:
 
 
 def _cmd_reconcile(args: argparse.Namespace) -> int:
+    """Cmd reconcile."""
     try:
         remote_body = canonical_gh_view_body(Path(args.remote_body_file).read_bytes())
     except (OSError, GrantError) as exc:
@@ -1014,10 +1074,12 @@ def _cmd_reconcile(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Main."""
     parser = argparse.ArgumentParser(description="PR-body operator grant v2")
     sub = parser.add_subparsers(dest="command", required=True)
 
     def add_append_args(p: argparse.ArgumentParser) -> None:
+        """Add append args."""
         p.add_argument("--repo", required=True)
         p.add_argument("--pr", required=True)
         p.add_argument("--file")
