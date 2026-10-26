@@ -42,9 +42,9 @@ emit_status() {
     topo_json="$(python3 scripts/cursor/topology_probe.py 2>/dev/null || echo '{}')"
   fi
 
-  # Keep probe JSON off argv: it can contain local topology during the
+  # Keep probe JSON off argv (env var, not fd 3: native Windows python cannot inherit MSYS fds): it can contain local topology during the
   # subprocess lifetime even though the emitted payload is redacted.
-  python3 - "$gossip_env_present" 3<<<"$topo_json" <<'PY'
+  PT_TOPO_JSON="$topo_json" python3 - "$gossip_env_present" <<'PY'
 import datetime
 import json
 import os
@@ -53,7 +53,7 @@ import uuid
 
 gossip_env_present = sys.argv[1].lower() == "true"
 try:
-    topology = json.loads(os.fdopen(3).read() or "{}")
+    topology = json.loads(os.environ.get("PT_TOPO_JSON") or "{}")
 except (OSError, json.JSONDecodeError):
     topology = {}
 

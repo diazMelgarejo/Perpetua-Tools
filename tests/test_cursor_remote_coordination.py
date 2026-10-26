@@ -23,6 +23,7 @@ SCRIPT = ROOT / "scripts" / "cursor" / "remote-coordination.sh"
 
 
 def _run(*args: str, **updates: str | None) -> subprocess.CompletedProcess[str]:
+    """Helper: run."""
     env = dict(os.environ)
     env.pop("GOSSIP_PEERS", None)
     env.pop("GOSSIP_SHARED_SECRET", None)
@@ -42,6 +43,7 @@ def _run(*args: str, **updates: str | None) -> subprocess.CompletedProcess[str]:
 
 
 def test_status_exits_zero_and_prints_truthful_json() -> None:
+    """Check that status exits zero and prints truthful json."""
     result = _run("status")
 
     assert result.returncode == 0, result.stderr
@@ -74,6 +76,7 @@ def test_status_ignores_gossip_env_cosmetics() -> None:
 
 
 def test_status_embeds_advisory_topology_probe() -> None:
+    """Check that status embeds advisory topology probe."""
     result = _run("status")
 
     assert result.returncode == 0, result.stderr
@@ -96,6 +99,7 @@ def test_status_redacts_local_topology_paths() -> None:
 
 
 def test_pulse_is_refused_even_with_https_gossip_env() -> None:
+    """Check that pulse is refused even with https gossip env."""
     result = _run(
         "pulse",
         "cursor-cloud-test",
@@ -112,6 +116,7 @@ def test_pulse_is_refused_even_with_https_gossip_env() -> None:
 
 
 def test_log_is_refused() -> None:
+    """Check that log is refused."""
     result = _run("log", "cursor-cloud-test", "hello")
 
     assert result.returncode == 64
@@ -122,6 +127,7 @@ def test_log_is_refused() -> None:
 
 
 def test_queue_operations_remain_unsupported() -> None:
+    """Check that queue operations remain unsupported."""
     result = _run("queue")
 
     assert result.returncode == 64
@@ -129,6 +135,7 @@ def test_queue_operations_remain_unsupported() -> None:
 
 
 def test_bootstrap_calls_status_only_never_pulse() -> None:
+    """Check that bootstrap calls status only never pulse."""
     bootstrap = (ROOT / "scripts" / "cursor" / "cloud-bootstrap.sh").read_text(
         encoding="utf-8"
     )
@@ -138,6 +145,7 @@ def test_bootstrap_calls_status_only_never_pulse() -> None:
 
 
 def test_cursor_rule_forbids_fake_relay_and_queue_claims() -> None:
+    """Check that cursor rule forbids fake relay and queue claims."""
     rule = (ROOT / ".cursor" / "rules" / "remote-coordination.mdc").read_text(
         encoding="utf-8"
     )
@@ -154,6 +162,7 @@ def test_cursor_rule_forbids_fake_relay_and_queue_claims() -> None:
 
 
 def test_status_carries_the_doc69_tier_u_header() -> None:
+    """Check that status carries the doc69 tier u header."""
     result = _run("status")
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
@@ -183,6 +192,7 @@ def test_status_carries_the_doc69_tier_u_header() -> None:
 
 
 def test_status_header_validates_through_the_envelope_standard() -> None:
+    """Check that status header validates through the envelope standard."""
     from datetime import datetime
 
     from orchestrator.envelope_standard import validate_envelope
@@ -198,6 +208,7 @@ def test_status_header_validates_through_the_envelope_standard() -> None:
 
 
 def test_status_header_uses_an_opaque_agent_label() -> None:
+    """Check that status header uses an opaque agent label."""
     payload = json.loads(_run("status", PT_AGENT_ID="agent-label-under-test").stdout)
 
     assert payload["header"]["author"]["agent_id"] == "agent-label-under-test"
@@ -206,6 +217,7 @@ def test_status_header_uses_an_opaque_agent_label() -> None:
 
 
 def test_status_header_publishes_no_private_human_identity() -> None:
+    """Check that status header publishes no private human identity."""
     result = _run("status")
     assert result.returncode == 0, result.stderr
     stdout = result.stdout
@@ -218,6 +230,7 @@ def test_status_header_publishes_no_private_human_identity() -> None:
 
 
 def test_status_header_is_not_emitted_for_refused_actions() -> None:
+    """Check that status header is not emitted for refused actions."""
     for action in ("pulse", "log"):
         result = _run(action)
         assert result.returncode == 64
@@ -240,11 +253,12 @@ def test_status_does_not_place_probe_json_on_python_argv(tmp_path: Path) -> None
     real_python = shutil.which("python3")
     assert real_python is not None
     wrapper = bindir / "python3"
-    wrapper.write_text(
-        "#!/bin/sh\n"
-        f"printf '%s\\n' \"$@\" >> {log}\n"
-        f"exec {real_python} \"$@\"\n",
-        encoding="utf-8",
+    wrapper.write_bytes(
+        (
+            "#!/bin/sh\n"
+            f"printf '%s\\n' \"$@\" >> {log.as_posix()}\n"
+            f"exec \"{Path(real_python).as_posix()}\" \"$@\"\n"
+        ).encode("utf-8")
     )
     wrapper.chmod(0o755)
 
