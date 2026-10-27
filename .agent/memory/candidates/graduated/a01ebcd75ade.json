@@ -1,0 +1,41 @@
+{
+  "id": "a01ebcd75ade",
+  "key": "manual_a01ebc",
+  "name": "manual_a01ebc",
+  "claim": "Hermes portable brain (hermes_portable_brain.py) clones full L1 state; install_hermes_profiles.py only syncs Orama SOUL distillates from REGISTRY \u2014 use both paths intentionally, not interchangeably.",
+  "conditions": [
+    "coord-034",
+    "hermes",
+    "install_hermes_profiles",
+    "portable-brain"
+  ],
+  "evidence_ids": [
+    "2026-10-27T14:11:51.403814+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T14:11:51.403814+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T14:11:51.403814+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T14:11:51.541295+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-034 mac-orchestrator compared Mac sparse ~/.hermes vs Win 676-entry archive",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T14:11:51.403814+00:00"
+      ],
+      "lessons_sha": "721bf296d31c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T14:11:51.541287+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-034 mac-orchestrator compared Mac sparse ~/.hermes vs Win 676-entry archive"
+}

@@ -256,6 +256,7 @@
 - E1/C2 closeout SHA-256 receipts name Section 5 body bytes only—the content between the ## 5. heading line and the next ## heading, excluding the heading line—not whole-file hashes.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_57a8b6f4f847 -->
 - Oramasys dispatch qualification on Windows stops at POSIX-only private_store; Mac orchestrator ACKs Win BLOCKED receipts and schedules anchor/mutation runs on POSIX only.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7a21807aca04 -->
 - Workspace parent .env.LOCAL is not fleet SSoT — migrate keys into per-repo .env.local, User env for scheduled coord, and Keychain for cloud API keys  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_3d825e1999be -->
+- Hermes portable brain (hermes_portable_brain.py) clones full L1 state; install_hermes_profiles.py only syncs Orama SOUL distillates from REGISTRY — use both paths intentionally, not interchangeably.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_a01ebcd75ade -->
 
 ### 2026-09
 
