@@ -269,6 +269,7 @@
 - When Win cites D0 activation-readiness receipt §7, Mac must row-review the executive-map alignment table before ACK — merge state of draft PRs can lag the pulse; re-read GitHub at processing time.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_8533eabdafe2 -->
 - Pre-announce pushes to shared open PR branches on the LAN board; never force-push shared PR branches.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_123fb031e4cd -->
 - Win D2 pulse separates draft-open boundary from in-flight HITL/reconciliation/adversarial tests; Mac Tier-0 orchestrator ACKs the 11:36Z building snapshot without blocking receipt on those items.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_0d9e002ae3f7 -->
+- Mac Tier-0 win-claude pulse ACK must record D2 completion claims and re-audit all four R0-2 PR heads with gh before drop — pulse text is open-window truth, GitHub is current head.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_97d0bfe65292 -->
 
 ### 2026-09
 
