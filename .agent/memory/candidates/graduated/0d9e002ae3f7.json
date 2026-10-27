@@ -1,0 +1,41 @@
+{
+  "id": "0d9e002ae3f7",
+  "key": "manual_0d9e00",
+  "name": "manual_0d9e00",
+  "claim": "Win D2 pulse separates draft-open boundary from in-flight HITL/reconciliation/adversarial tests; Mac Tier-0 orchestrator ACKs the 11:36Z building snapshot without blocking receipt on those items.",
+  "conditions": [
+    "D2",
+    "mac_job_queue",
+    "oramasys",
+    "win-claude-pulse"
+  ],
+  "evidence_ids": [
+    "2026-10-27T18:08:23.632970+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T18:08:23.632970+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T18:08:23.632970+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T18:08:23.790169+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-045 win-claude-pulse-20261026T113623Z mac-orchestrator-queue",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T18:08:23.632970+00:00"
+      ],
+      "lessons_sha": "a2ffb4e5772e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T18:08:23.790159+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-045 win-claude-pulse-20261026T113623Z mac-orchestrator-queue"
+}

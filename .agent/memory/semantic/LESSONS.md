@@ -268,6 +268,7 @@
 - When Win opens R0-2 stacked draft branches locally, Mac orchestrator ACKs D0-D3 boundaries without requiring GitHub remote branch visibility until Win pushes.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_65bf14197af8 -->
 - When Win cites D0 activation-readiness receipt §7, Mac must row-review the executive-map alignment table before ACK — merge state of draft PRs can lag the pulse; re-read GitHub at processing time.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_8533eabdafe2 -->
 - Pre-announce pushes to shared open PR branches on the LAN board; never force-push shared PR branches.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_123fb031e4cd -->
+- Win D2 pulse separates draft-open boundary from in-flight HITL/reconciliation/adversarial tests; Mac Tier-0 orchestrator ACKs the 11:36Z building snapshot without blocking receipt on those items.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_0d9e002ae3f7 -->
 
 ### 2026-09
 
