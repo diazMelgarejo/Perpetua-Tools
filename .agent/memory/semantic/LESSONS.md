@@ -253,6 +253,7 @@
 - [PROVISIONAL] Do not import fcntl at module top in scripts that must run on Windows, and give test modules unique basenames across test directories.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_a8e335ef8ac3 -->
 - [PROVISIONAL] Record a peer agent's unreproduced test claims as unreproduced and verify independently before relying on them.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_0221a59eaade -->
 - [PROVISIONAL] Detach Windows services with CREATE_NO_WINDOW, CREATE_NEW_PROCESS_GROUP and breakaway from the job, append logs to a file, and fail fast when the process exits before its port is up.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_6209ef30170b -->
+- E1/C2 closeout SHA-256 receipts name Section 5 body bytes only—the content between the ## 5. heading line and the next ## heading, excluding the heading line—not whole-file hashes.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_57a8b6f4f847 -->
 
 ### 2026-09
 

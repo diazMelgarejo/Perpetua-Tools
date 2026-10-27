@@ -1,0 +1,38 @@
+{
+  "id": "57a8b6f4f847",
+  "key": "manual_57a8b6",
+  "name": "manual_57a8b6",
+  "claim": "E1/C2 closeout SHA-256 receipts name Section 5 body bytes only\u2014the content between the ## 5. heading line and the next ## heading, excluding the heading line\u2014not whole-file hashes.",
+  "conditions": [
+    "e1c2 closeout orama-438 section-5 sha receipt"
+  ],
+  "evidence_ids": [
+    "2026-10-27T13:11:35.991270+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T13:11:35.991270+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T13:11:35.991270+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T13:11:36.126071+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "win-2026-10-25-WIN-E1C2-EVIDENCE-receipt.md intake; prevents false mismatch when headers or trailing sections change.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T13:11:35.991270+00:00"
+      ],
+      "lessons_sha": "0f6571a964d7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T13:11:36.126063+00:00",
+  "reviewer": "learn.py",
+  "rationale": "win-2026-10-25-WIN-E1C2-EVIDENCE-receipt.md intake; prevents false mismatch when headers or trailing sections change."
+}
