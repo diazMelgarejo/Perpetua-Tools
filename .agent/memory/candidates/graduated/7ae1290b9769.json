@@ -1,0 +1,40 @@
+{
+  "id": "7ae1290b9769",
+  "key": "manual_7ae129",
+  "name": "manual_7ae129",
+  "claim": "Label TLS trust material explicitly: PEM file SHA-256 is not the certificate DER SPKI pin \u2014 never use the same field name for both.",
+  "conditions": [
+    "ca pin",
+    "lan peer tls",
+    "peer portal"
+  ],
+  "evidence_ids": [
+    "2026-10-27T16:09:57.632368+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T16:09:57.632368+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T16:09:57.632368+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T16:09:57.776545+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "win-receipt-mac-status-20261026 corrected Mac status conflation; DER pin travels operator channel only.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T16:09:57.632368+00:00"
+      ],
+      "lessons_sha": "6f0e9b01cee1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T16:09:57.776538+00:00",
+  "reviewer": "learn.py",
+  "rationale": "win-receipt-mac-status-20261026 corrected Mac status conflation; DER pin travels operator channel only."
+}
