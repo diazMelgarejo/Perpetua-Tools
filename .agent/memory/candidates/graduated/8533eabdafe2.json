@@ -1,0 +1,58 @@
+{
+  "id": "8533eabdafe2",
+  "key": "manual_8533ea",
+  "name": "manual_8533ea",
+  "claim": "When Win cites D0 activation-readiness receipt \u00a77, Mac must row-review the executive-map alignment table before ACK \u2014 merge state of draft PRs can lag the pulse; re-read GitHub at processing time.",
+  "conditions": [
+    "ack",
+    "activation-readiness",
+    "alignment",
+    "before",
+    "cites",
+    "draft",
+    "executive-map",
+    "github",
+    "lag",
+    "mac",
+    "merge",
+    "processing",
+    "prs",
+    "pulse",
+    "re-read",
+    "receipt",
+    "row-review",
+    "state",
+    "table",
+    "time",
+    "win"
+  ],
+  "evidence_ids": [
+    "2026-10-27T17:30:27.008679+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T17:30:27.008679+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T17:30:27.008679+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T17:30:27.159366+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-043 win-claude-pulse-111951Z: explicit \u00a77 review request; post-pulse operator merges of #456/#23/#8.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T17:30:27.008679+00:00"
+      ],
+      "lessons_sha": "b80c26699e6a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T17:30:27.159353+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-043 win-claude-pulse-111951Z: explicit \u00a77 review request; post-pulse operator merges of #456/#23/#8."
+}
