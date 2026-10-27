@@ -1,0 +1,43 @@
+{
+  "id": "11d43f172924",
+  "key": "manual_11d43f",
+  "name": "manual_11d43f",
+  "claim": "When coord-033 Win portal pull fails (timeout or SECURITY_STOP), verify priority inbox filenames on Mac local inbox before blocking \u2014 git or prior drops may already satisfy the pull.",
+  "conditions": [
+    "SECURITY_STOP",
+    "coord-033",
+    "lan_peer",
+    "mac_job_queue",
+    "portal",
+    "pull"
+  ],
+  "evidence_ids": [
+    "2026-10-27T14:31:24.027722+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T14:31:24.027722+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T14:31:24.027722+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T14:31:24.169649+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "mac-orchestrator pulse 2026-10-27 win-2026-07-27-mac-pull-from-win-portal.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T14:31:24.027722+00:00"
+      ],
+      "lessons_sha": "c8c36e2e3818"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T14:31:24.169635+00:00",
+  "reviewer": "learn.py",
+  "rationale": "mac-orchestrator pulse 2026-10-27 win-2026-07-27-mac-pull-from-win-portal.md"
+}
