@@ -1,0 +1,42 @@
+{
+  "id": "97d0bfe65292",
+  "key": "manual_97d0bf",
+  "name": "manual_97d0bf",
+  "claim": "Mac Tier-0 win-claude pulse ACK must record D2 completion claims and re-audit all four R0-2 PR heads with gh before drop \u2014 pulse text is open-window truth, GitHub is current head.",
+  "conditions": [
+    "R0-2",
+    "coord",
+    "gh-audit",
+    "tier-0",
+    "win-claude-pulse"
+  ],
+  "evidence_ids": [
+    "2026-10-27T18:28:51.899958+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T18:28:51.899958+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T18:28:51.899958+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T18:28:52.040198+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-046 win-claude-pulse-114156Z D2 complete + post-merge stack audit",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T18:28:51.899958+00:00"
+      ],
+      "lessons_sha": "b03e3c3337d7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T18:28:52.040191+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-046 win-claude-pulse-114156Z D2 complete + post-merge stack audit"
+}

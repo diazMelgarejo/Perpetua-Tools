@@ -1,0 +1,43 @@
+{
+  "id": "f00cb34e0026",
+  "key": "manual_f00cb3",
+  "name": "manual_f00cb3",
+  "claim": "Universal broadcast post-merge steps must not prescribe rebasing pushed D1/D2 draft branches; use GitHub retarget or merge main into drafts. Bearer rotation and telemetry proxy restart stay operator-gated beyond PT #470 merge.",
+  "conditions": [
+    "D1",
+    "D2",
+    "mac_job_queue",
+    "operator-gate",
+    "universal-broadcast",
+    "win-claude-pulse"
+  ],
+  "evidence_ids": [
+    "2026-10-27T19:28:58.040911+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T19:28:58.040911+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T19:28:58.040911+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T19:28:58.183213+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-049 win-claude-pulse-20261026T123805Z mac-orchestrator-queue",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T19:28:58.040911+00:00"
+      ],
+      "lessons_sha": "fdad2f232054"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T19:28:58.183204+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-049 win-claude-pulse-20261026T123805Z mac-orchestrator-queue"
+}

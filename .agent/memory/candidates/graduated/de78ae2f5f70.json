@@ -1,0 +1,42 @@
+{
+  "id": "de78ae2f5f70",
+  "key": "manual_de78ae",
+  "name": "manual_de78ae",
+  "claim": "Mac Tier-0 win-claude pulse ACK must verify cited synthesis receipt LF sha256 on local inbox and separate pre-merge CI heads (e.g. 1cb52bc) from post-operator merge commits on gh.",
+  "conditions": [
+    "R0-2",
+    "coord",
+    "receipt-sha256",
+    "tier-0",
+    "win-claude-pulse"
+  ],
+  "evidence_ids": [
+    "2026-10-27T18:49:12.817673+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T18:49:12.817673+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T18:49:12.817673+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T18:49:12.963992+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-047 win-claude-pulse-114658Z D2 1cb52bc + synthesis receipt verify",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T18:49:12.817673+00:00"
+      ],
+      "lessons_sha": "49ab34f52164"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T18:49:12.963984+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-047 win-claude-pulse-114658Z D2 1cb52bc + synthesis receipt verify"
+}

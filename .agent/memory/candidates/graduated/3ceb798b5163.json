@@ -1,0 +1,40 @@
+{
+  "id": "3ceb798b5163",
+  "key": "manual_3ceb79",
+  "name": "manual_3ceb79",
+  "claim": "Win durability pulse ACKs require LF sha256 match on mac-lan-durability-status plus explicit operator gates on bearer, post-merge telemetry deploy, and firewall logging \u2014 Mac orchestrator does not advance those without operator.",
+  "conditions": [
+    "lan-durability",
+    "mac_job_queue",
+    "win-claude-pulse"
+  ],
+  "evidence_ids": [
+    "2026-10-27T19:09:38.708466+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T19:09:38.708466+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T19:09:38.708466+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T19:09:38.844853+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-048 win-claude-pulse-20261026T115159Z mac-orchestrator-queue",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T19:09:38.708466+00:00"
+      ],
+      "lessons_sha": "1c161fca8c9e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T19:09:38.844845+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-048 win-claude-pulse-20261026T115159Z mac-orchestrator-queue"
+}
