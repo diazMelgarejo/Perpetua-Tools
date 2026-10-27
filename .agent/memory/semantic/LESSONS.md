@@ -255,6 +255,7 @@
 - [PROVISIONAL] Detach Windows services with CREATE_NO_WINDOW, CREATE_NEW_PROCESS_GROUP and breakaway from the job, append logs to a file, and fail fast when the process exits before its port is up.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_6209ef30170b -->
 - E1/C2 closeout SHA-256 receipts name Section 5 body bytes only—the content between the ## 5. heading line and the next ## heading, excluding the heading line—not whole-file hashes.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_57a8b6f4f847 -->
 - Oramasys dispatch qualification on Windows stops at POSIX-only private_store; Mac orchestrator ACKs Win BLOCKED receipts and schedules anchor/mutation runs on POSIX only.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7a21807aca04 -->
+- Workspace parent .env.LOCAL is not fleet SSoT — migrate keys into per-repo .env.local, User env for scheduled coord, and Keychain for cloud API keys  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_3d825e1999be -->
 
 ### 2026-09
 

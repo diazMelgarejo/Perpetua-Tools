@@ -1,0 +1,42 @@
+{
+  "id": "3d825e1999be",
+  "key": "manual_3d825e",
+  "name": "manual_3d825e",
+  "claim": "Workspace parent .env.LOCAL is not fleet SSoT \u2014 migrate keys into per-repo .env.local, User env for scheduled coord, and Keychain for cloud API keys",
+  "conditions": [
+    "SECURITY_STOP",
+    "coord_pulse",
+    "env.local",
+    "mesh-secrets",
+    "workspace"
+  ],
+  "evidence_ids": [
+    "2026-10-27T13:52:11.958846+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T13:52:11.958846+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T13:52:11.958846+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T13:52:12.097504+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "mac-orchestrator coord-032 reply to win-2026-07-27-env-local-policy-ask",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T13:52:11.958846+00:00"
+      ],
+      "lessons_sha": "3680a8ecc705"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T13:52:12.097496+00:00",
+  "reviewer": "learn.py",
+  "rationale": "mac-orchestrator coord-032 reply to win-2026-07-27-env-local-policy-ask"
+}
