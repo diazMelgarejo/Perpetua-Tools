@@ -265,6 +265,7 @@
 - Label TLS trust material explicitly: PEM file SHA-256 is not the certificate DER SPKI pin — never use the same field name for both.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7ae1290b9769 -->
 - When processing a historical WIN_PULSE that cites open PRs, always re-read merge state with gh before replying — pulses are point-in-time and may lag merged reality.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7d37a2be1feb -->
 - When a WIN_PULSE reports zero unresolved review threads with cited PR heads, Mac ACKs Win thread state from the pulse and uses gh only for merge truth—record both Win snapshot heads and merged SHAs in the reply.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_87e5fe81ab78 -->
+- When Win opens R0-2 stacked draft branches locally, Mac orchestrator ACKs D0-D3 boundaries without requiring GitHub remote branch visibility until Win pushes.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_65bf14197af8 -->
 
 ### 2026-09
 

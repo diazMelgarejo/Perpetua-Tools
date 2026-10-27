@@ -1,0 +1,41 @@
+{
+  "id": "65bf14197af8",
+  "key": "manual_65bf14",
+  "name": "manual_65bf14",
+  "claim": "When Win opens R0-2 stacked draft branches locally, Mac orchestrator ACKs D0-D3 boundaries without requiring GitHub remote branch visibility until Win pushes.",
+  "conditions": [
+    "R0-2",
+    "draft",
+    "lan_peer",
+    "mac_job_queue"
+  ],
+  "evidence_ids": [
+    "2026-10-27T17:09:17.202310+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T17:09:17.202310+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T17:09:17.202310+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T17:09:17.341678+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-042 win-claude-pulse-20261026T111449Z: gh API 404 on draft branches while pulse is authoritative",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T17:09:17.202310+00:00"
+      ],
+      "lessons_sha": "0998cb4e0a77"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T17:09:17.341668+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-042 win-claude-pulse-20261026T111449Z: gh API 404 on draft branches while pulse is authoritative"
+}
