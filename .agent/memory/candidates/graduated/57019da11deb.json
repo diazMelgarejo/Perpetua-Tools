@@ -1,0 +1,41 @@
+{
+  "id": "57019da11deb",
+  "key": "manual_57019d",
+  "name": "manual_57019d",
+  "claim": "Windows Hermes pre-v2 recovery order is native Hermes home import, then ECC against resolved HERMES_HOME, then Orama/PT local-only state; reconcile ORAMA_CONTROL_PLANE_TOKEN candidates before LAN; encrypted restore bundles are operator OOB only.",
+  "conditions": [
+    "ORAMA_CONTROL_PLANE_TOKEN",
+    "coord-035",
+    "hermes-harness",
+    "v2-recovery"
+  ],
+  "evidence_ids": [
+    "2026-10-27T14:50:56.322935+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T14:50:56.322935+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T14:50:56.322935+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T14:50:56.462043+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-035 mac-orchestrator reviewed docs/security/windows-hermes-harness-new-machine-setup-and-v2-recovery.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T14:50:56.322935+00:00"
+      ],
+      "lessons_sha": "df219e51891f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T14:50:56.462034+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-035 mac-orchestrator reviewed docs/security/windows-hermes-harness-new-machine-setup-and-v2-recovery.md"
+}
