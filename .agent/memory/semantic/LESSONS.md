@@ -264,6 +264,7 @@
 - For win-claude roundtrip canaries, mac-orchestrator-queue must publish byte+LF SHA-256, receipt UTC, and one Mac-originated unauthenticated GET /health window even when portal :8002 times out.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7543275f7d88 -->
 - Label TLS trust material explicitly: PEM file SHA-256 is not the certificate DER SPKI pin — never use the same field name for both.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7ae1290b9769 -->
 - When processing a historical WIN_PULSE that cites open PRs, always re-read merge state with gh before replying — pulses are point-in-time and may lag merged reality.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7d37a2be1feb -->
+- When a WIN_PULSE reports zero unresolved review threads with cited PR heads, Mac ACKs Win thread state from the pulse and uses gh only for merge truth—record both Win snapshot heads and merged SHAs in the reply.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_87e5fe81ab78 -->
 
 ### 2026-09
 
