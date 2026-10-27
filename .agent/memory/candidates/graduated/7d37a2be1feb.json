@@ -1,0 +1,41 @@
+{
+  "id": "7d37a2be1feb",
+  "key": "manual_7d37a2",
+  "name": "manual_7d37a2",
+  "claim": "When processing a historical WIN_PULSE that cites open PRs, always re-read merge state with gh before replying \u2014 pulses are point-in-time and may lag merged reality.",
+  "conditions": [
+    "gh",
+    "mac-orchestrator",
+    "pr-triage",
+    "win-pulse"
+  ],
+  "evidence_ids": [
+    "2026-10-27T16:29:44.879012+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T16:29:44.879012+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T16:29:44.879012+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T16:29:45.022319+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "win-claude-pulse-20261026T110259Z claimed in-flight review work; at Mac processing all four PRs were already MERGED.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T16:29:44.879012+00:00"
+      ],
+      "lessons_sha": "2c2ce63a5ef5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T16:29:45.022311+00:00",
+  "reviewer": "learn.py",
+  "rationale": "win-claude-pulse-20261026T110259Z claimed in-flight review work; at Mac processing all four PRs were already MERGED."
+}

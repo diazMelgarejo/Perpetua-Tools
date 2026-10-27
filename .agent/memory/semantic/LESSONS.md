@@ -263,6 +263,7 @@
 - Win TLS roundtrip canary receipts must include LF-normalised SHA-256 when the body has no CR; byte hash and LF hash match for the 362-byte win-mac-roundtrip-canary file.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_d6505156dc2c -->
 - For win-claude roundtrip canaries, mac-orchestrator-queue must publish byte+LF SHA-256, receipt UTC, and one Mac-originated unauthenticated GET /health window even when portal :8002 times out.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7543275f7d88 -->
 - Label TLS trust material explicitly: PEM file SHA-256 is not the certificate DER SPKI pin — never use the same field name for both.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7ae1290b9769 -->
+- When processing a historical WIN_PULSE that cites open PRs, always re-read merge state with gh before replying — pulses are point-in-time and may lag merged reality.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7d37a2be1feb -->
 
 ### 2026-09
 
