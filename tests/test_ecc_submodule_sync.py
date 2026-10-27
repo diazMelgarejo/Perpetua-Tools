@@ -17,6 +17,7 @@ pytestmark = pytest.mark.integration
 def _run(
     args: list[str], cwd: Path, *, env: dict[str, str] | None = None
 ) -> subprocess.CompletedProcess[str]:
+    """Helper: run."""
     return subprocess.run(
         args,
         cwd=cwd,
@@ -28,7 +29,13 @@ def _run(
     )
 
 
+def _write_lf(path: Path, text: str) -> None:
+    """Write ``text`` as UTF-8 with LF endings on every platform (byte-exact fixtures)."""
+    path.write_bytes(text.encode("utf-8"))
+
+
 def _configure_git(repo: Path) -> None:
+    """Helper: configure git."""
     _run(["git", "config", "user.name", "ECC overlay test"], repo)
     _run(
         ["git", "config", "user.email", "ecc-overlay-test@example.invalid"],
@@ -37,6 +44,7 @@ def _configure_git(repo: Path) -> None:
 
 
 def _init_repo(repo: Path) -> None:
+    """Helper: init repo."""
     repo.mkdir()
     _run(["git", "init", "-b", "main"], repo)
     _configure_git(repo)
@@ -54,7 +62,7 @@ def test_upgrade_restores_reviewed_overlay_from_clean_latest_checkout(
     """
     upstream = tmp_path / "upstream"
     _init_repo(upstream)
-    (upstream / ".env.example").write_text("BASE=1\n", encoding="utf-8")
+    _write_lf(upstream / ".env.example", "BASE=1\n")
     _run(["git", "add", ".env.example"], upstream)
     _run(["git", "commit", "-m", "initial ECC"], upstream)
 
@@ -81,29 +89,26 @@ def test_upgrade_restores_reviewed_overlay_from_clean_latest_checkout(
     sync_script.parent.mkdir(parents=True)
     shutil.copy2(SCRIPT, sync_script)
     manifest = sync_script.with_name("ecc-local-overlay.tsv")
-    manifest.write_text(
+    _write_lf(
+        manifest,
         "# schema=1\n"
         ".local/overlay.txt\tnew-file\tRegression overlay\n"
         ".env.example\tadditive\tRegression additive overlay\n",
-        encoding="utf-8",
     )
 
     submodule = repo / "vendor/ecc-tools"
     _run(["git", "config", "core.abbrev", "7"], submodule)
     overlay = submodule / ".local/overlay.txt"
     overlay.parent.mkdir()
-    overlay.write_text("preserved\n", encoding="utf-8")
+    _write_lf(overlay, "preserved\n")
     env_example = submodule / ".env.example"
-    env_example.write_text("BASE=1\nOVERLAY=1\n", encoding="utf-8")
+    _write_lf(env_example, "BASE=1\nOVERLAY=1\n")
     _run(["git", "add", "--intent-to-add", ".local/overlay.txt"], submodule)
     patch = _run(
         ["git", "diff", "--binary", "--full-index", "HEAD"],
         submodule,
     ).stdout
-    sync_script.with_name("ecc-local-additions.patch").write_text(
-        patch,
-        encoding="utf-8",
-    )
+    _write_lf(sync_script.with_name("ecc-local-additions.patch"), patch)
     _run(["git", "reset", "--", ".local/overlay.txt"], submodule)
     _run(["git", "checkout", "--", ".env.example"], submodule)
     overlay.unlink()

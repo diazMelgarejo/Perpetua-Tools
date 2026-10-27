@@ -18,6 +18,8 @@ import tempfile
 import time
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
@@ -224,6 +226,10 @@ def test_read_fleet_topology_missing_fields():
         assert result.cross_reachable is False  # default
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="directory chmod does not block writes on NTFS",
+)
 def test_write_fleet_topology_permission_error():
     """write_fleet_topology gracefully handles permission errors."""
     with tempfile.TemporaryDirectory() as tmpdir:

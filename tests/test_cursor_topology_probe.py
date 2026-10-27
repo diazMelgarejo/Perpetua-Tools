@@ -34,6 +34,7 @@ REQUIRED_KEYS = {
 
 
 def _load_probe_module() -> ModuleType:
+    """Helper: load probe module."""
     import importlib.util
 
     spec = importlib.util.spec_from_file_location("topology_probe", PROBE_SCRIPT)
@@ -52,6 +53,7 @@ def _git_env() -> dict[str, str]:
 
 
 def _git_init(path: Path) -> Path:
+    """Helper: git init."""
     path.mkdir(parents=True, exist_ok=True)
     subprocess.run(
         ["git", "init", "-q"],
@@ -63,6 +65,7 @@ def _git_init(path: Path) -> Path:
 
 
 def _write_board(repo: Path, payload: bytes = b"fake-perpetua-core-db") -> Path:
+    """Helper: write board."""
     state = repo / ".state"
     state.mkdir(parents=True, exist_ok=True)
     board = state / "perpetua_core.db"
@@ -71,15 +74,18 @@ def _write_board(repo: Path, payload: bytes = b"fake-perpetua-core-db") -> Path:
 
 
 def _stat_board(board: Path) -> os.stat_result:
+    """Helper: stat board."""
     return board.stat()
 
 
 @pytest.fixture
 def probe_mod() -> ModuleType:
+    """Helper: probe mod."""
     return _load_probe_module()
 
 
 def test_probe_returns_required_keys(tmp_path: Path, probe_mod: ModuleType) -> None:
+    """Check that probe returns required keys."""
     repo = _git_init(tmp_path / "repo")
     result = probe_mod.probe(repo)
 
@@ -94,6 +100,7 @@ def test_probe_returns_required_keys(tmp_path: Path, probe_mod: ModuleType) -> N
 def test_mode_a_when_full_orchestrator_identity_matches(
     tmp_path: Path, probe_mod: ModuleType
 ) -> None:
+    """Check that mode a when full orchestrator identity matches."""
     repo = _git_init(tmp_path / "coord-root")
     board = _write_board(repo)
     st = _stat_board(board)
@@ -116,6 +123,7 @@ def test_mode_a_when_full_orchestrator_identity_matches(
 
 
 def test_mode_b_when_board_missing(tmp_path: Path, probe_mod: ModuleType) -> None:
+    """Check that mode b when board missing."""
     repo = _git_init(tmp_path / "no-board")
 
     result = probe_mod.probe(repo, orchestrator_ino=12345)
@@ -130,6 +138,7 @@ def test_mode_b_when_board_missing(tmp_path: Path, probe_mod: ModuleType) -> Non
 def test_mode_b_when_orchestrator_ino_mismatches(
     tmp_path: Path, probe_mod: ModuleType
 ) -> None:
+    """Check that mode b when orchestrator ino mismatches."""
     repo = _git_init(tmp_path / "inode-mismatch")
     board = _write_board(repo)
     st = _stat_board(board)
@@ -149,6 +158,7 @@ def test_mode_b_when_orchestrator_ino_mismatches(
 def test_mode_b_when_orchestrator_device_mismatches(
     tmp_path: Path, probe_mod: ModuleType
 ) -> None:
+    """Check that mode b when orchestrator device mismatches."""
     repo = _git_init(tmp_path / "device-mismatch")
     board = _write_board(repo)
     st = _stat_board(board)
@@ -167,6 +177,7 @@ def test_mode_b_when_orchestrator_device_mismatches(
 def test_mode_b_when_orchestrator_size_mismatches(
     tmp_path: Path, probe_mod: ModuleType
 ) -> None:
+    """Check that mode b when orchestrator size mismatches."""
     repo = _git_init(tmp_path / "size-mismatch")
     board = _write_board(repo)
     st = _stat_board(board)
@@ -199,7 +210,10 @@ def test_mode_b_when_toplevel_differs_from_repo_root_via_symlink(
     nested = real / "pkgs" / "nested"
     nested.mkdir(parents=True)
     link_root = tmp_path / "via-symlink"
-    link_root.symlink_to(nested)
+    try:
+        link_root.symlink_to(nested)
+    except OSError as exc:  # Windows without the symlink privilege
+        pytest.skip(f"cannot create symlinks on this host: {exc}")
 
     result = probe_mod.probe(
         link_root,
@@ -216,6 +230,7 @@ def test_mode_b_when_toplevel_differs_from_repo_root_via_symlink(
 def test_mode_b_without_complete_orchestrator_identity_even_if_board_present(
     tmp_path: Path, probe_mod: ModuleType
 ) -> None:
+    """Check that mode b without complete orchestrator identity even if board present."""
     repo = _git_init(tmp_path / "no-orchestrator-ino")
     board = _write_board(repo)
 
@@ -272,6 +287,7 @@ def test_probe_module_does_not_import_gossip_or_coordination() -> None:
 
 
 def test_cli_prints_json_and_exits_zero(tmp_path: Path) -> None:
+    """Check that cli prints json and exits zero."""
     repo = _git_init(tmp_path / "cli-repo")
     board = _write_board(repo)
     st = _stat_board(board)
@@ -301,6 +317,7 @@ def test_cli_prints_json_and_exits_zero(tmp_path: Path) -> None:
 
 
 def test_cli_accepts_missing_orchestrator_ino_flag(tmp_path: Path) -> None:
+    """Check that cli accepts missing orchestrator ino flag."""
     repo = _git_init(tmp_path / "cli-no-ino")
 
     result = subprocess.run(
@@ -332,9 +349,11 @@ def test_mode_b_when_not_a_git_repo(tmp_path: Path) -> None:
 def test_rev_parse_timeout_classifies_mode_b(
     tmp_path: Path, probe_mod: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Check that rev parse timeout classifies mode b."""
     repo = _git_init(tmp_path / "stalled-git")
 
     def _timeout(*_args: object, **_kwargs: object) -> None:
+        """Helper: timeout."""
         raise subprocess.TimeoutExpired(cmd="git", timeout=5)
 
     monkeypatch.setattr(probe_mod.subprocess, "run", _timeout)
@@ -347,6 +366,7 @@ def test_rev_parse_timeout_classifies_mode_b(
 def test_probe_ignores_inherited_git_location(
     tmp_path: Path, probe_mod: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Check that probe ignores inherited git location."""
     repo = _git_init(tmp_path / "real-checkout")
     monkeypatch.setenv("GIT_DIR", str(tmp_path / "not-a-git"))
     monkeypatch.setenv("GIT_WORK_TREE", str(tmp_path))
@@ -357,6 +377,7 @@ def test_probe_ignores_inherited_git_location(
 def test_mode_b_when_board_path_is_a_directory(
     tmp_path: Path, probe_mod: ModuleType
 ) -> None:
+    """Check that mode b when board path is a directory."""
     repo = _git_init(tmp_path / "dir-board")
     (repo / ".state" / "perpetua_core.db").mkdir(parents=True)
     result = probe_mod.probe(

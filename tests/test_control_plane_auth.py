@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import collections
+import sys
 
 import pytest
 from fastapi import FastAPI
@@ -72,7 +73,9 @@ async def test_control_plane_auth_allows_streaming_response_cancellation(monkeyp
 
     @stream_app.get("/agents/stream")
     async def stream_agents():
+        """Helper: stream agents."""
         async def events():
+            """Helper: events."""
             yield b"data: ready\\n\\n"
             await asyncio.Event().wait()
 
@@ -83,6 +86,7 @@ async def test_control_plane_auth_allows_streaming_response_cancellation(monkeyp
     request_sent = False
 
     async def receive() -> dict:
+        """Helper: receive."""
         nonlocal request_sent
         if not request_sent:
             request_sent = True
@@ -91,6 +95,7 @@ async def test_control_plane_auth_allows_streaming_response_cancellation(monkeyp
         return {"type": "http.disconnect"}
 
     async def send(message: dict) -> None:
+        """Helper: send."""
         messages.append(message)
         if message["type"] == "http.response.body" and message.get("body"):
             first_body_sent.set()
@@ -116,6 +121,7 @@ async def test_control_plane_auth_allows_streaming_response_cancellation(monkeyp
 
 
 def test_user_input_next_requires_token_when_enforced(monkeypatch):
+    """Check that user input next requires token when enforced."""
     monkeypatch.setenv("ORAMA_INSECURE_DEV", "0")
     monkeypatch.setenv("ORAMA_CONTROL_PLANE_TOKEN", "pt-test-token")
     # Isolate _USER_INPUT_QUEUE so leaked state from other tests can't cause
@@ -140,6 +146,7 @@ def test_user_input_next_requires_token_when_enforced(monkeypatch):
 
 
 def test_user_input_requires_token_when_enforced(monkeypatch):
+    """Check that user input requires token when enforced."""
     monkeypatch.setenv("ORAMA_INSECURE_DEV", "0")
     monkeypatch.setenv("ORAMA_CONTROL_PLANE_TOKEN", "pt-test-token")
 
@@ -156,10 +163,12 @@ def test_user_input_requires_token_when_enforced(monkeypatch):
 
 
 def test_control_plane_auth_failure_helper(monkeypatch):
+    """Check that control plane auth failure helper."""
     monkeypatch.setenv("ORAMA_INSECURE_DEV", "0")
     monkeypatch.setenv("ORAMA_CONTROL_PLANE_TOKEN", "pt-test-token")
 
     class _Req:
+        """Tests/helpers: _Req."""
         headers: dict[str, str] = {}
 
     denied = control_plane_auth_failure(_Req())
@@ -205,6 +214,7 @@ def test_explicit_insecure_dev_opens_operator_routes(monkeypatch, tmp_path):
 
 
 def test_persisted_token_reused_on_restart_without_env(monkeypatch, tmp_path):
+    """Check that persisted token reused on restart without env."""
     token_path = tmp_path / "control_plane_token"
     token_path.write_text("persisted-token", encoding="utf-8")
     monkeypatch.setattr(
@@ -223,6 +233,7 @@ def test_persisted_token_reused_on_restart_without_env(monkeypatch, tmp_path):
 
 
 def test_bearer_from_persisted_file_accepted_when_enforced(monkeypatch, tmp_path):
+    """Check that bearer from persisted file accepted when enforced."""
     token_path = tmp_path / "control_plane_token"
     token_path.write_text("file-only-token", encoding="utf-8")
     monkeypatch.setattr(
@@ -242,6 +253,7 @@ def test_bearer_from_persisted_file_accepted_when_enforced(monkeypatch, tmp_path
 
 
 def test_production_mode_without_token_auto_generates_and_requires_bearer(monkeypatch, tmp_path):
+    """Check that production mode without token auto generates and requires bearer."""
     token_path = tmp_path / "control_plane_token"
     monkeypatch.setattr(
         "orchestrator.control_plane_auth.DEFAULT_TOKEN_PATH",
@@ -258,10 +270,12 @@ def test_production_mode_without_token_auto_generates_and_requires_bearer(monkey
     assert denied.status_code == 401
     assert allowed.status_code == 200
     assert token
-    assert oct(token_path.stat().st_mode & 0o777) == oct(0o600)
+    if sys.platform != "win32":  # NTFS has no POSIX permission bits
+        assert oct(token_path.stat().st_mode & 0o777) == oct(0o600)
 
 
 def test_head_on_protected_route_requires_auth_when_enforced(monkeypatch):
+    """Check that head on protected route requires auth when enforced."""
     monkeypatch.setenv("ORAMA_INSECURE_DEV", "0")
     monkeypatch.setenv("ORAMA_CONTROL_PLANE_TOKEN", "pt-test-token")
 
@@ -393,6 +407,7 @@ def test_default_no_env_returns_503_when_no_token_configured(monkeypatch, tmp_pa
 
 
 def test_redact_runtime_payload_preserves_routing_summary():
+    """Check that redact runtime payload preserves routing summary."""
     payload = {
         "credentials": {"has_api_key": True},
         "gateway": {"gateway_ready": True, "openclaw_config": {"auth": "secret"}},
@@ -413,6 +428,7 @@ def test_redact_runtime_payload_preserves_routing_summary():
 
 
 def test_redact_runtime_payload_empty():
+    """Check that redact runtime payload empty."""
     assert redact_runtime_payload(None) == {
         "available": False,
         "gateway_ready": False,
@@ -501,6 +517,7 @@ def test_verify_control_plane_auth_503_when_auth_enforced_but_no_token(
     from fastapi import HTTPException
 
     class _FakeRequest:
+        """Tests/helpers: _FakeRequest."""
         headers: dict = {}
 
     with pytest.raises(HTTPException) as exc_info:

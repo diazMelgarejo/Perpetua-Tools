@@ -1,0 +1,48 @@
+{
+  "id": "45747d5660b9",
+  "key": "manual_45747d",
+  "name": "manual_45747d",
+  "claim": "Derive the URL scheme from TLS configuration and refuse to attach a bearer to an http URL; test the guard.",
+  "conditions": [
+    "attach",
+    "bearer",
+    "configuration",
+    "derive",
+    "guard",
+    "http",
+    "refuse",
+    "scheme",
+    "test",
+    "tls",
+    "url"
+  ],
+  "evidence_ids": [
+    "2026-10-26T05:37:34.203305+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-26T05:37:34.203305+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-26T05:37:34.203305+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-26T05:37:34.470718+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A status probe hardcoded http and sent one bearer candidate in cleartext to a TLS-only peer port; fixed in orama 446 with a transport guard.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-26T05:37:34.203305+00:00"
+      ],
+      "lessons_sha": "4abcad5265e6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-26T05:37:34.470718+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A status probe hardcoded http and sent one bearer candidate in cleartext to a TLS-only peer port; fixed in orama 446 with a transport guard."
+}

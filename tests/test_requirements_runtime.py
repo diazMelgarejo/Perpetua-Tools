@@ -3,6 +3,7 @@
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -10,6 +11,10 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="bash/POSIX venv layout (venv/bin) gate; Windows uses ensure_requirements.ps1",
+)
 @pytest.mark.unit
 @pytest.mark.parametrize("install_status", [0, 7])
 def test_requirements_targets_pipless_reusable_environment(

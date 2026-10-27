@@ -89,6 +89,7 @@ REQUIRED_CHECKPOINTS: dict[str, GuardScenario] = {
 def _run(
     cmd: list[str], env: dict[str, str] | None = None
 ) -> subprocess.CompletedProcess[str]:
+    """Run."""
     merged = os.environ.copy()
     if env:
         merged.update(env)
@@ -158,10 +159,12 @@ exit 0
 
 
 def _mint_grant(gh_bin: Path, append: Path, tmp_path: Path) -> dict[str, str]:
+    """Mint grant."""
     env = {
         "PR_BODY_GRANT_HMAC_SECRET": "ledger-secret",
         "GH_BIN": str(gh_bin),
         "HOME": str(tmp_path),
+        "USERPROFILE": str(tmp_path),  # Path.home() on Windows
     }
     mint = _run(
         [

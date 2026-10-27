@@ -1,0 +1,54 @@
+{
+  "id": "906756e70dbf",
+  "key": "manual_906756",
+  "name": "manual_906756",
+  "claim": "Keep state shared between a packaged desktop agent host and ordinary terminals outside the user's AppData; verify from a process started outside the package.",
+  "conditions": [
+    "agent",
+    "appdata",
+    "between",
+    "desktop",
+    "host",
+    "keep",
+    "ordinary",
+    "outside",
+    "package",
+    "packaged",
+    "process",
+    "shared",
+    "started",
+    "state",
+    "terminals",
+    "user",
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-10-26T05:37:30.906328+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-26T05:37:30.906328+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-26T05:37:30.906328+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-26T05:37:31.110892+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "MSIX-packaged processes get AppData writes redirected into a private package store, so a CA created there was invisible to a normal launch and a second CA would have broken the peer's pin. 2026-10-25.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-26T05:37:30.906328+00:00"
+      ],
+      "lessons_sha": "944520caed3c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-26T05:37:31.110892+00:00",
+  "reviewer": "learn.py",
+  "rationale": "MSIX-packaged processes get AppData writes redirected into a private package store, so a CA created there was invisible to a normal launch and a second CA would have broken the peer's pin. 2026-10-25."
+}

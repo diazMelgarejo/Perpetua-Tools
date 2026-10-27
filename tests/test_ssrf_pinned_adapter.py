@@ -40,15 +40,18 @@ from utils.ssrf_pinned_adapter import (
     ],
 )
 def test_denied_addresses(raw: str) -> None:
+    """Loopback, private, link-local, metadata, CGNAT, multicast and unspecified addresses are all denied."""
     with pytest.raises(AddressDenied):
         default_address_allowed(raw)
 
 
 def test_public_address_ok() -> None:
+    """A public address passes the default address policy without raising."""
     default_address_allowed("1.1.1.1")
 
 
 def test_url_rejects_userinfo_and_scheme() -> None:
+    """URLs with userinfo, a non-http(s) scheme or control characters are rejected."""
     with pytest.raises(SSRFPolicyError):
         default_url_allowed("http://user:pass@example.com/")
     with pytest.raises(SSRFPolicyError):
@@ -58,6 +61,7 @@ def test_url_rejects_userinfo_and_scheme() -> None:
 
 
 def test_mixed_public_private_aaaa_fails() -> None:
+    """A hostname resolving to both a public and a metadata address is denied as a whole."""
     infos = [
         (0, 0, 0, "", ("1.1.1.1", 443)),
         (0, 0, 0, "", ("169.254.169.254", 443)),
@@ -85,12 +89,14 @@ def test_ssrf_request_refuses_redirect_to_metadata() -> None:
     from urllib3.connectionpool import HTTPConnectionPool, HTTPSConnectionPool
 
     def fake_getaddrinfo(host, port, family=0, type=0, *a, **kw):
+        """Resolve example.com to a public IP and the metadata host to its own address."""
         ip = {"example.com": "93.184.216.34", "169.254.169.254": "169.254.169.254"}[host]
         return [(2, 1, 6, "", (ip, port))]
 
     first_hop_seen = []
 
     def fake_urlopen(self, method, url, *args, **kwargs):
+        """Record the hop and answer 302 redirecting to the metadata address."""
         # Only reached if validate_resolved() already allowed this hop's
         # destination -- the metadata hop must never get here. Patched at
         # the connection-pool level (not HTTPAdapter.send) so the real
@@ -122,6 +128,7 @@ def test_ssrf_request_refuses_redirect_to_metadata() -> None:
 
 
 def test_hook_endpoint_policy() -> None:
+    """hook_endpoint_policy() selects the Layer-1 checkers: public IP allowed, loopback and bare unresolvable hostname refused."""
     # hook_endpoint_policy() itself tries `src.utils.ssrf_fetch_policy` before
     # falling back to `utils.ssrf_fetch_policy` (see its dual-try resolution).
     # Mirror that exact order here rather than picking one import path
@@ -178,9 +185,11 @@ def test_ssrf_request_restores_caller_session_max_redirects() -> None:
     assert original == 0
 
     def fake_getaddrinfo(host, port, family=0, type=0, *a, **kw):
+        """Resolve every host to a public IP."""
         return [(2, 1, 6, "", ("93.184.216.34", port))]
 
     def fake_urlopen(self, method, url, *args, **kwargs):
+        """Answer 200 with body 'ok' without touching the network."""
         return urllib3.HTTPResponse(body=io.BytesIO(b"ok"), status=200, preload_content=False)
 
     with (
@@ -237,6 +246,7 @@ def test_new_conn_uses_configured_address_checker_not_the_default(
     calls: list[str] = []
 
     def deny_everything(ip: str) -> None:
+        """Record the checked IP and always raise AddressDenied."""
         calls.append(ip)
         raise adapter_mod.AddressDenied(f"denied by test checker: {ip}")
 
@@ -278,6 +288,7 @@ def test_build_connection_pool_key_attributes_sets_host_to_the_pin() -> None:
     from utils.ssrf_pinned_adapter import SSRFPinnedHTTPAdapter
 
     def fake_getaddrinfo(host, port, family=0, type=0, *a, **kw):
+        """Resolve a.example.com and b.example.com to two distinct public IPs."""
         ip = {"a.example.com": "1.1.1.1", "b.example.com": "8.8.8.8"}[host]
         return [(2, 1, 6, "", (ip, port))]
 
@@ -308,6 +319,7 @@ def test_zero_adapter_state_mutation_across_a_request() -> None:
     from utils.ssrf_pinned_adapter import SSRFPinnedHTTPAdapter
 
     def fake_getaddrinfo(host, port, family=0, type=0, *a, **kw):
+        """Resolve every host to the public IP 1.1.1.1."""
         return [(2, 1, 6, "", ("1.1.1.1", port))]
 
     adapter = SSRFPinnedHTTPAdapter()
@@ -337,16 +349,22 @@ def test_concurrent_two_pin_requests_get_isolated_pools() -> None:
     ip_by_host = {"a.example.com": "1.1.1.1", "b.example.com": "8.8.8.8"}
 
     def fake_getaddrinfo(host, port, family=0, type=0, *a, **kw):
+        """Resolve each test hostname to its fixed IP."""
         return [(2, 1, 6, "", (ip_by_host[host], port))]
 
     adapter = SSRFPinnedHTTPAdapter()
 
     def get_pool(hostname: str):
+        """Resolve one hostname's pool through the shared adapter (patch is held by the caller)."""
         req = requests.Request("GET", f"https://{hostname}/x").prepare()
-        with patch("socket.getaddrinfo", side_effect=fake_getaddrinfo):
-            return adapter.get_connection_with_tls_context(req, verify=True)
+        return adapter.get_connection_with_tls_context(req, verify=True)
 
-    with ThreadPoolExecutor(max_workers=2) as pool_exec:
+    # Patch once around both threads. Entering/exiting patch() per thread interleaves, and the
+    # last restore can reinstall a sibling's mock as the real socket.getaddrinfo for the rest of
+    # the session (it surfaced as KeyError in unrelated live-socket tests on Linux CI).
+    with patch("socket.getaddrinfo", side_effect=fake_getaddrinfo), ThreadPoolExecutor(
+        max_workers=2
+    ) as pool_exec:
         pool_a, pool_b = list(pool_exec.map(get_pool, ["a.example.com", "b.example.com"]))
 
     assert pool_a is not pool_b, "different pins must not share a connection pool"
@@ -366,7 +384,9 @@ def test_sequential_dns_change_does_not_reuse_the_old_pin_pool() -> None:
     req = requests.Request("GET", "https://example.com/x").prepare()
 
     def resolve_to(ip: str):
+        """Return a fake resolver that answers every lookup with the given IP."""
         def fake_getaddrinfo(host, port, family=0, type=0, *a, **kw):
+            """Resolve every host to the IP captured from resolve_to()."""
             return [(2, 1, 6, "", (ip, port))]
 
         return fake_getaddrinfo
@@ -402,9 +422,11 @@ def test_multithreaded_shared_session_does_not_crash_or_cross_contaminate() -> N
     ip_by_host = {f"host{i}.example.com": f"93.184.216.{i + 1}" for i in range(8)}
 
     def fake_getaddrinfo(host, port, family=0, type=0, *a, **kw):
+        """Resolve each host{i}.example.com to its own public IP."""
         return [(2, 1, 6, "", (ip_by_host[host], port))]
 
     def fake_urlopen(self, method, url, *args, **kwargs):
+        """Answer 200 with the pool's pinned host as the body, standing in for the TCP/TLS step."""
         # Reached only after build_connection_pool_key_attributes() already
         # ran for real and selected/created this pool (self.host == the pin);
         # this only stands in for the actual TCP/TLS socket step.
@@ -421,6 +443,7 @@ def test_multithreaded_shared_session_does_not_crash_or_cross_contaminate() -> N
     before = dict(adapter.poolmanager.connection_pool_kw)
 
     def do_request(hostname: str) -> tuple[str, str]:
+        """Issue one GET through the shared session and return the Host header and body seen."""
         # socket.getaddrinfo is patched ONCE below, outside this worker --
         # unittest.mock.patch's enter/exit is not safe to race across
         # threads on the same target (concurrent __exit__ calls can restore
@@ -458,6 +481,7 @@ def test_build_pinned_httpx_client_rejects_explicit_follow_redirects_true() -> N
 
 
 def test_build_pinned_httpx_client_defaults_to_no_redirects() -> None:
+    """build_pinned_httpx_client() does not follow redirects by default."""
     from utils.ssrf_pinned_adapter import build_pinned_httpx_client
 
     client = build_pinned_httpx_client()
@@ -501,11 +525,13 @@ def test_concurrent_same_hostname_different_resolver_results_isolated_per_thread
     resolution_barrier = threading.Barrier(2)
 
     def fake_getaddrinfo(host, port, family=0, socket_type=0, *a, **kw):
+        """Resolve the shared hostname to the IP assigned to the calling thread, after a two-party barrier."""
         ip = ip_by_thread_name[threading.current_thread().name]
         resolution_barrier.wait(timeout=5)
         return [(2, 1, 6, "", (ip, port))]
 
     def get_pinned_ip(name: str) -> str:
+        """Name the worker thread, build the request and return the host pin chosen for it."""
         threading.current_thread().name = name
         req = requests.Request("GET", "https://shared-hostname.example.com/x").prepare()
         host_params, _ = adapter.build_connection_pool_key_attributes(req, verify=True)
@@ -548,9 +574,11 @@ def test_redirect_limit_telemetry_reports_scheme_correct_default_port(
     monkeypatch.setenv("PERPETUA_TELEMETRY_DIR", str(tmp_path))
 
     def fake_getaddrinfo(host, port, family=0, type=0, *a, **kw):
+        """Resolve every host to a public IP."""
         return [(2, 1, 6, "", ("93.184.216.34", port))]
 
     def fake_urlopen(self, method, url, *args, **kwargs):
+        """Answer 302 with a Location pointing back at a public http:// URL."""
         return urllib3.HTTPResponse(
             body=io.BytesIO(b""),
             status=302,
@@ -598,6 +626,7 @@ def test_build_connection_pool_key_attributes_emits_validation_not_duration_ms(
     monkeypatch.setenv("PERPETUA_TELEMETRY_DIR", str(tmp_path))
 
     def fake_getaddrinfo(host, port, family=0, type=0, *a, **kw):
+        """Resolve every host to a public IP."""
         return [(2, 1, 6, "", ("93.184.216.34", port))]
 
     with patch("socket.getaddrinfo", side_effect=fake_getaddrinfo):

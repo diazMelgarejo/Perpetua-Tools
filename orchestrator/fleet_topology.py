@@ -163,7 +163,9 @@ def write_fleet_topology(
                 return True
 
         # Write new content
-        path.write_text(json_text, encoding="utf-8")
+        # Write the exact hashed bytes: text mode would translate newlines on Windows
+        # and defeat the hash gate above.
+        path.write_bytes(json_bytes)
         return True
 
     except (OSError, EnvironmentError) as exc:

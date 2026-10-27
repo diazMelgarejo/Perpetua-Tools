@@ -1,0 +1,50 @@
+{
+  "id": "32bd56462341",
+  "key": "manual_32bd56",
+  "name": "manual_32bd56",
+  "claim": "In PowerShell, capture native command output and return a scalar from boolean helper functions; uncaptured output joins the return value.",
+  "conditions": [
+    "boolean",
+    "capture",
+    "command",
+    "functions",
+    "helper",
+    "joins",
+    "native",
+    "output",
+    "powershell",
+    "return",
+    "scalar",
+    "uncaptured",
+    "value"
+  ],
+  "evidence_ids": [
+    "2026-10-26T05:37:31.638887+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-26T05:37:31.638887+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-26T05:37:31.638887+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-26T05:37:31.845181+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Invoke-LanPeerProbe returned probe stdout plus false, a truthy array, so failed probes flushed the outbox to unreachable peers.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-26T05:37:31.638887+00:00"
+      ],
+      "lessons_sha": "f2ab3fe7a563"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-26T05:37:31.845181+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Invoke-LanPeerProbe returned probe stdout plus false, a truthy array, so failed probes flushed the outbox to unreachable peers."
+}

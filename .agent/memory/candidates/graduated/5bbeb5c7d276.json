@@ -1,0 +1,55 @@
+{
+  "id": "5bbeb5c7d276",
+  "key": "manual_5bbeb5",
+  "name": "manual_5bbeb5",
+  "claim": "Redact an append-only SQLite board record with an index-aware update (FTS5 delete with the exact old values, update, reinsert) after a backup, and post a correction note.",
+  "conditions": [
+    "after",
+    "append-only",
+    "backup",
+    "board",
+    "correction",
+    "delete",
+    "exact",
+    "fts5",
+    "index-aware",
+    "note",
+    "old",
+    "post",
+    "record",
+    "redact",
+    "reinsert",
+    "sqlite",
+    "update",
+    "values"
+  ],
+  "evidence_ids": [
+    "2026-10-26T05:37:36.633644+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-26T05:37:36.633644+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-26T05:37:36.633644+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-26T05:37:36.847821+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The gossip table has an external-content FTS index with insert and delete triggers but no update trigger, so a plain UPDATE leaves the leaked text searchable.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-26T05:37:36.633644+00:00"
+      ],
+      "lessons_sha": "a4b69a62f868"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-26T05:37:36.847821+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The gossip table has an external-content FTS index with insert and delete triggers but no update trigger, so a plain UPDATE leaves the leaked text searchable."
+}

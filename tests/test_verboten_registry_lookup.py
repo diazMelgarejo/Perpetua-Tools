@@ -90,6 +90,16 @@ def _outside_tree(base: Path) -> Path:
     return path
 
 
+def _skip_if_ancestor_checkout(path: Path) -> None:
+    """Skip when an orama-system checkout above ``path`` would win the ancestor walk."""
+    for ancestor in path.parents:
+        if (ancestor / "orama-system").is_dir():
+            pytest.skip(
+                "an orama-system checkout sits above the pytest temp dir, so the "
+                "no-ancestor lookup path cannot be exercised on this machine"
+            )
+
+
 @pytest.mark.parametrize(("label", "resolve"), IMPLEMENTATIONS)
 def test_registry_is_found_through_openclaw_root_when_there_is_no_ancestor(
     label: str, resolve: Callable[[Path], list[str]], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -97,6 +107,7 @@ def test_registry_is_found_through_openclaw_root_when_there_is_no_ancestor(
     """A checkout outside the tree still gets the real registry via the exported root."""
     workspace = _workspace(tmp_path, "workspace")
     checkout = _outside_tree(tmp_path)
+    _skip_if_ancestor_checkout(checkout)
     monkeypatch.setenv("OPENCLAW_ROOT", str(workspace))
 
     assert resolve(checkout) == [VALUE], label
@@ -110,6 +121,7 @@ def test_a_home_relative_openclaw_root_is_expanded(
     home = tmp_path / "home"
     _workspace(home, "workspace")
     checkout = _outside_tree(tmp_path)
+    _skip_if_ancestor_checkout(checkout)
     monkeypatch.setenv("HOME", str(home))
     monkeypatch.setenv("OPENCLAW_ROOT", "~/workspace")
 

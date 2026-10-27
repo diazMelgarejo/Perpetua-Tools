@@ -34,8 +34,11 @@ def _both_nodes_up() -> bool:
 
 
 _skip_unless_lan = pytest.mark.skipif(
-    not _both_nodes_up(),
-    reason=f"Windows node {_WIN_IP}:{_WIN_PORT} not reachable — LAN tests deferred",
+    not _both_nodes_up() or not os.getenv("LM_STUDIO_WIN_ENDPOINTS", "").strip(),
+    reason=(
+        f"Windows node {_WIN_IP}:{_WIN_PORT} not reachable or LM_STUDIO_WIN_ENDPOINTS "
+        "unset — LAN tests deferred"
+    ),
 )
 
 

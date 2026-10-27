@@ -269,13 +269,25 @@ def test_alphaclaw_defaults_unchanged():
 
 
 def test_print_fingerprint_cli(tmp_path, capsys):
-    """--print-fingerprint prints exactly the hash and public CA path lines, and the hash matches the file."""
+    """--print-fingerprint prints the canonical DER hash, the file hash and the public CA path, and both hashes are real."""
+    import ssl
+
     rc = portal.main(["--print-fingerprint", "--state-dir", str(tmp_path / "c")])
     out = capsys.readouterr().out.splitlines()
-    assert rc == 0 and len(out) == 2
-    assert out[0].startswith("ca_sha256_file=") and out[1].startswith("ca_public_path=")
-    digest = out[0].split("=", 1)[1]
-    path = Path(out[1].split("=", 1)[1])
+    assert rc == 0 and len(out) == 3
+    assert out[0].startswith("ca_sha256_der=") and out[1].startswith("ca_sha256_file=")
+    assert out[2].startswith("ca_public_path=")
+    der_digest = out[0].split("=", 1)[1]
+    digest = out[1].split("=", 1)[1]
+    path = Path(out[2].split("=", 1)[1])
     assert path.is_absolute() and path.is_file()
     assert hashlib.sha256(path.read_bytes()).hexdigest() == digest and len(digest) == 64
+    pem = path.read_bytes().decode("ascii")
+    assert hashlib.sha256(ssl.PEM_cert_to_DER_cert(pem)).hexdigest() == der_digest
+    # The DER hash must not change when the PEM is pasted somewhere and loses its trailing
+    # newline or gains CRLF line endings; the file hash changes, which is why it is not the pin.
+    lf, cr = chr(10), chr(13)
+    for variant in (pem.rstrip(lf), pem.replace(lf, cr + lf)):
+        assert hashlib.sha256(ssl.PEM_cert_to_DER_cert(variant)).hexdigest() == der_digest
+        assert hashlib.sha256(variant.encode("ascii")).hexdigest() != digest
     assert path.parent.name == "public"

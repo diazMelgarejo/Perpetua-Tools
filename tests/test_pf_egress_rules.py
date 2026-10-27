@@ -6,9 +6,17 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 import pytest
+
+# Git Bash resolves `uname` from /usr/bin ahead of any PATH-injected stub, so the
+# Darwin guard cannot be faked on Windows; the pf scripts themselves are macOS-only.
+requires_posix_uname_stub = pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="cannot stub `uname` ahead of MSYS /usr/bin; pf egress scripts are macOS-only",
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 INSTALL_SCRIPT = REPO_ROOT / "scripts" / "security" / "install-egress-pf-rules.sh"
@@ -55,12 +63,14 @@ class TestPFEgressScripts:
     """Test suite for install-egress-pf-rules.sh and verify-egress-pf-rules.sh."""
 
     def test_scripts_exist_and_executable(self) -> None:
+        """Check that scripts exist and executable."""
         assert INSTALL_SCRIPT.exists(), f"Missing {INSTALL_SCRIPT}"
         assert VERIFY_SCRIPT.exists(), f"Missing {VERIFY_SCRIPT}"
         assert os.access(INSTALL_SCRIPT, os.X_OK), "install script not executable"
         assert os.access(VERIFY_SCRIPT, os.X_OK), "verify script not executable"
 
     def test_installer_idempotency_and_content(self, darwin_uname_env) -> None:
+        """Check that installer idempotency and content."""
         with tempfile.TemporaryDirectory() as tmpdir:
             fake_anchor = Path(tmpdir) / "com.perpetua-tools.egress-deny"
             env = {**darwin_uname_env, "PF_ANCHOR_FILE": str(fake_anchor), "PFCTL_SKIP": "1"}
@@ -92,6 +102,7 @@ class TestPFEgressScripts:
             assert content1 == content2, "Idempotency violated: content modified on second pass"
 
     def test_verify_script_detects_missing_and_drifted_anchor(self, darwin_uname_env) -> None:
+        """Check that verify script detects missing and drifted anchor."""
         with tempfile.TemporaryDirectory() as tmpdir:
             fake_anchor = Path(tmpdir) / "com.perpetua-tools.egress-deny"
             env = {**darwin_uname_env, "PF_ANCHOR_FILE": str(fake_anchor), "PFCTL_SKIP": "1"}
@@ -179,7 +190,9 @@ class TestPFEgressScripts:
             assert rule in installer_src, f"installer missing rule: {rule}"
             assert rule in verifier_src, f"verifier missing rule: {rule}"
 
+    @requires_posix_uname_stub
     def test_installer_fails_when_pf_enablement_fails(self, darwin_uname_env, tmp_path) -> None:
+        """Check that installer fails when pf enablement fails."""
         stub_dir = tmp_path / "pfctl-stub"
         stub_dir.mkdir()
         (stub_dir / "pfctl").write_text("#!/bin/bash\nif [[ $1 == -e ]]; then echo enable failed >&2; exit 1; fi\nexit 0\n", encoding="utf-8")
@@ -198,7 +211,9 @@ class TestPFEgressScripts:
         assert result.returncode != 0
         assert "failed to enable pf" in result.stderr
 
+    @requires_posix_uname_stub
     def test_verifier_fails_when_pf_is_disabled(self, darwin_uname_env, tmp_path) -> None:
+        """Check that verifier fails when pf is disabled."""
         stub_dir = tmp_path / "pfctl-stub-disabled"
         stub_dir.mkdir()
         fake_anchor = tmp_path / "anchor"
@@ -220,7 +235,9 @@ class TestPFEgressScripts:
         assert res.returncode == 3
         assert "pf packet filtering is not enabled" in res.stderr
 
+    @requires_posix_uname_stub
     def test_verifier_fails_when_loaded_anchor_rules_mismatch(self, darwin_uname_env, tmp_path) -> None:
+        """Check that verifier fails when loaded anchor rules mismatch."""
         stub_dir = tmp_path / "pfctl-stub-mismatch"
         stub_dir.mkdir()
         fake_anchor = tmp_path / "anchor"
@@ -244,7 +261,9 @@ class TestPFEgressScripts:
         assert res.returncode == 3
         assert "loaded rules" in res.stderr
 
+    @requires_posix_uname_stub
     def test_verifier_fails_when_pass_quick_from_any_precedes_anchor(self, darwin_uname_env, tmp_path) -> None:
+        """Check that verifier fails when pass quick from any precedes anchor."""
         stub_dir = tmp_path / "pfctl-stub-ordering-from-any"
         stub_dir.mkdir()
         fake_anchor = tmp_path / "anchor"
@@ -269,7 +288,9 @@ class TestPFEgressScripts:
         assert res.returncode == 5
         assert "contains broad pass rule before anchor" in res.stderr
 
+    @requires_posix_uname_stub
     def test_verifier_fails_when_bare_pass_quick_precedes_anchor(self, darwin_uname_env, tmp_path) -> None:
+        """Check that verifier fails when bare pass quick precedes anchor."""
         stub_dir = tmp_path / "pfctl-stub-ordering-bare-quick"
         stub_dir.mkdir()
         fake_anchor = tmp_path / "anchor"
@@ -294,7 +315,9 @@ class TestPFEgressScripts:
         assert res.returncode == 5
         assert "contains broad pass rule before anchor" in res.stderr
 
+    @requires_posix_uname_stub
     def test_verifier_fails_when_broad_pass_rule_precedes_anchor(self, darwin_uname_env, tmp_path) -> None:
+        """Check that verifier fails when broad pass rule precedes anchor."""
         stub_dir = tmp_path / "pfctl-stub-ordering"
         stub_dir.mkdir()
         fake_anchor = tmp_path / "anchor"
@@ -319,7 +342,9 @@ class TestPFEgressScripts:
         assert res.returncode == 5
         assert "contains broad pass rule before anchor" in res.stderr
 
+    @requires_posix_uname_stub
     def test_verifier_succeeds_when_pfctl_loaded_and_ordered_correctly(self, darwin_uname_env, tmp_path) -> None:
+        """Check that verifier succeeds when pfctl loaded and ordered correctly."""
         stub_dir = tmp_path / "pfctl-stub-success"
         stub_dir.mkdir()
         fake_anchor = tmp_path / "anchor"

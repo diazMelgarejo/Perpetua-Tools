@@ -1,0 +1,53 @@
+{
+  "id": "e528e4bab1fb",
+  "key": "manual_e528e4",
+  "name": "manual_e528e4",
+  "claim": "Give every Windows PowerShell script that contains non-ASCII text a UTF-8 BOM, and parse every tracked .ps1 with the real 5.1 parser in a test.",
+  "conditions": [
+    "bom",
+    "contains",
+    "every",
+    "give",
+    "non-ascii",
+    "parse",
+    "parser",
+    "powershell",
+    "ps1",
+    "real",
+    "script",
+    "test",
+    "text",
+    "tracked",
+    "utf-8",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-10-26T05:37:30.179178+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-26T05:37:30.179178+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-10-26T05:37:30.179178+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-26T05:37:30.384429+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Windows PowerShell 5.1 reads BOM-less UTF-8 as ANSI; an em dash's third byte becomes a right double quote that ends the string early, so a script silently failed to parse for months. 2026-10-26 audit.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-10-26T05:37:30.179178+00:00"
+      ],
+      "lessons_sha": "ee6ea5a8cb5f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-26T05:37:30.384429+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Windows PowerShell 5.1 reads BOM-less UTF-8 as ANSI; an em dash's third byte becomes a right double quote that ends the string early, so a script silently failed to parse for months. 2026-10-26 audit."
+}

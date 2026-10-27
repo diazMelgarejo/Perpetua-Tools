@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -30,6 +31,7 @@ AUTHORIZED_HUMAN_MARKERS = (
 
 
 def _ensure_banned_patterns() -> None:
+    """Helper for ensure banned patterns."""
     subprocess.run(["bash", str(CI_BOOTSTRAP)], check=True, cwd=ROOT)
     assert (ROOT / ".cursor/private/banned-attribution-patterns").is_file()
 
@@ -44,6 +46,7 @@ def _seed_home_patterns_without_session_hook(home: Path) -> None:
 
 
 def _pattern_tokens() -> set[str]:
+    """Helper for pattern tokens."""
     _ensure_banned_patterns()
     tokens: set[str] = set()
     for raw in (ROOT / ".cursor/private/banned-attribution-patterns").read_text(
@@ -56,6 +59,7 @@ def _pattern_tokens() -> set[str]:
 
 
 def _private_owner_email_fixture(tmp_path: Path) -> tuple[Path, str]:
+    """Helper for private owner email fixture."""
     private_email = "private.owner@gmail.com"
     literals = tmp_path / "verboten.local"
     literals.write_text(
@@ -197,6 +201,7 @@ def test_check_commit_message_allows_public_authorized_human_coauthors(tmp_path,
 
 
 def test_check_commit_message_allows_private_owner_email_from_external_file(tmp_path):
+    """Verify check commit message allows private owner email from external file."""
     literals, private_email = _private_owner_email_fixture(tmp_path)
     msg = tmp_path / "COMMIT_EDITMSG"
     msg.write_text(
@@ -214,6 +219,7 @@ def test_check_commit_message_allows_private_owner_email_from_external_file(tmp_
 
 
 def test_first_banned_pattern_token_returns_first_token(tmp_path):
+    """Verify first banned pattern token returns first token."""
     private_dir = tmp_path / ".cursor/private"
     private_dir.mkdir(parents=True)
     (private_dir / "banned-attribution-patterns").write_text(
@@ -225,6 +231,7 @@ def test_first_banned_pattern_token_returns_first_token(tmp_path):
 
 
 def test_first_banned_pattern_token_skips_empty_lines(tmp_path):
+    """Verify first banned pattern token skips empty lines."""
     private_dir = tmp_path / ".cursor/private"
     private_dir.mkdir(parents=True)
     (private_dir / "banned-attribution-patterns").write_text(
@@ -236,6 +243,7 @@ def test_first_banned_pattern_token_skips_empty_lines(tmp_path):
 
 
 def test_first_banned_pattern_token_fails_on_missing_or_empty_patterns(tmp_path):
+    """Verify first banned pattern token fails on missing or empty patterns."""
     assert _call_first_banned_pattern_token(tmp_path).returncode != 0
     private_dir = tmp_path / ".cursor/private"
     private_dir.mkdir(parents=True)
@@ -244,6 +252,7 @@ def test_first_banned_pattern_token_fails_on_missing_or_empty_patterns(tmp_path)
 
 
 def test_first_banned_pattern_token_strips_inline_comments(tmp_path):
+    """Verify first banned pattern token strips inline comments."""
     private_dir = tmp_path / ".cursor/private"
     private_dir.mkdir(parents=True)
     (private_dir / "banned-attribution-patterns").write_text(
@@ -255,6 +264,7 @@ def test_first_banned_pattern_token_strips_inline_comments(tmp_path):
 
 
 def test_first_banned_pattern_token_with_real_patterns():
+    """Verify first banned pattern token with real patterns."""
     _ensure_banned_patterns()
     proc = _call_first_banned_pattern_token(ROOT)
     assert proc.returncode == 0
@@ -262,6 +272,7 @@ def test_first_banned_pattern_token_with_real_patterns():
 
 
 def test_daily_attribution_guard_requires_opt_in_for_auto_expunge():
+    """Verify daily attribution guard requires opt in for auto expunge."""
     text = (ROOT / "scripts/git/daily-attribution-guard.sh").read_text(encoding="utf-8")
     assert "ATTRIBUTION_EXPUNGE_AUTO" in text
     assert "expunge-all-workspace-repos.sh" in text
@@ -269,6 +280,7 @@ def test_daily_attribution_guard_requires_opt_in_for_auto_expunge():
 
 
 def test_cloud_bootstrap_does_not_invoke_daily_attribution_guard():
+    """Verify cloud bootstrap does not invoke daily attribution guard."""
     text = (ROOT / "scripts/cursor/cloud-bootstrap.sh").read_text(encoding="utf-8")
     assert "daily-attribution-guard.sh" not in text
 
@@ -291,11 +303,13 @@ def _run_verify_guards_in_github_actions(*, home: Path | None = None) -> tuple[s
 
 
 def test_verify_guards_github_actions_skips_cursor_session_hook_check():
+    """Verify verify guards github actions skips cursor session hook check."""
     _proc, combined = _run_verify_guards_in_github_actions()
     assert "skip user-level Cursor session hook checks" in combined
 
 
 def test_verify_guards_github_actions_does_not_print_cursor_session_hook_fail(tmp_path):
+    """Verify verify guards github actions does not print cursor session hook fail."""
     fake_home = tmp_path / "home"
     fake_home.mkdir()
     _proc, combined = _run_verify_guards_in_github_actions(home=fake_home)
@@ -304,6 +318,7 @@ def test_verify_guards_github_actions_does_not_print_cursor_session_hook_fail(tm
 
 
 def test_verify_guards_without_github_actions_checks_session_hook(tmp_path):
+    """Verify verify guards without github actions checks session hook."""
     fake_home = tmp_path / "home"
     fake_home.mkdir()
     _seed_home_patterns_without_session_hook(fake_home)
@@ -320,6 +335,7 @@ def test_verify_guards_without_github_actions_checks_session_hook(tmp_path):
 
 
 def _make_fake_git_repo(tmp_path: Path, hooks_path: str = ".githooks") -> Path:
+    """Helper for make fake git repo."""
     subprocess.run(["git", "init", str(tmp_path)], check=True, capture_output=True)
     subprocess.run(
         ["git", "-C", str(tmp_path), "config", "--local", "core.hooksPath", hooks_path],
@@ -330,6 +346,7 @@ def _make_fake_git_repo(tmp_path: Path, hooks_path: str = ".githooks") -> Path:
 
 
 def _run_ensure_hooks(repo_root: Path) -> subprocess.CompletedProcess[str]:
+    """Helper for run ensure hooks."""
     return subprocess.run(
         ["bash", str(ENSURE_HOOKS)],
         capture_output=True,
@@ -431,6 +448,7 @@ def _ensure_repo_hooks_configured(repo_root: Path) -> None:
 
 
 def test_ensure_hooks_installed_fails_when_hookspath_wrong(tmp_path):
+    """Verify ensure hooks installed fails when hookspath wrong."""
     _make_fake_git_repo(tmp_path, hooks_path=".git/hooks")
     proc = _run_ensure_hooks(tmp_path)
     assert proc.returncode != 0
@@ -438,6 +456,7 @@ def test_ensure_hooks_installed_fails_when_hookspath_wrong(tmp_path):
 
 
 def test_ensure_hooks_installed_fails_when_hook_missing(tmp_path):
+    """Verify ensure hooks installed fails when hook missing."""
     _make_fake_git_repo(tmp_path, hooks_path=".githooks")
     hooks_dir = tmp_path / ".githooks"
     hooks_dir.mkdir()
@@ -452,6 +471,7 @@ def test_ensure_hooks_installed_fails_when_hook_missing(tmp_path):
 
 
 def test_ensure_hooks_installed_passes_when_all_hooks_present(tmp_path):
+    """Verify ensure hooks installed passes when all hooks present."""
     _make_fake_git_repo(tmp_path, hooks_path=".githooks")
     hooks_dir = tmp_path / ".githooks"
     hooks_dir.mkdir()
@@ -466,7 +486,12 @@ def test_ensure_hooks_installed_passes_when_all_hooks_present(tmp_path):
     assert proc.stderr == ""
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="POSIX executable bits are not represented on Windows checkouts",
+)
 def test_ensure_hooks_installed_fails_when_hook_not_executable(tmp_path):
+    """Verify ensure hooks installed fails when hook not executable."""
     _make_fake_git_repo(tmp_path, hooks_path=".githooks")
     hooks_dir = tmp_path / ".githooks"
     hooks_dir.mkdir()
@@ -480,6 +505,10 @@ def test_ensure_hooks_installed_fails_when_hook_not_executable(tmp_path):
     assert "non-executable" in proc.stderr
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="POSIX executable bits are not represented on Windows checkouts",
+)
 def test_ensure_hooks_installed_remaps_only_nested_repo_root(tmp_path):
     """Nested REPO_ROOT under the script checkout remaps; sibling roots do not."""
     import shutil
@@ -513,4 +542,5 @@ def test_ensure_hooks_installed_remaps_only_nested_repo_root(tmp_path):
 
 
 def test_ensure_banned_patterns_succeeds_when_patterns_present():
+    """Verify ensure banned patterns succeeds when patterns present."""
     _ensure_banned_patterns()

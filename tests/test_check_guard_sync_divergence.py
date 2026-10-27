@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -48,6 +49,7 @@ def _commit_file(repo: Path, rel: str, content: str, msg: str) -> None:
 
 
 def _run_checker(workspace: Path, canon: Path) -> subprocess.CompletedProcess[str]:
+    """Helper for run checker."""
     env = os.environ.copy()
     env["WORKSPACE_ROOT"] = str(workspace)
     env["GUARD_SYNC_CANON_ROOT"] = str(canon)
@@ -62,6 +64,7 @@ def _run_checker(workspace: Path, canon: Path) -> subprocess.CompletedProcess[st
 
 
 def test_byte_identical_siblings_pass(tmp_path: Path) -> None:
+    """Verify byte identical siblings pass."""
     workspace = tmp_path / "ws"
     canon = workspace / "orama-system"
     sibling = workspace / "Perpetua-Tools"
@@ -78,6 +81,7 @@ def test_byte_identical_siblings_pass(tmp_path: Path) -> None:
 
 
 def test_sibling_lagging_canonical_history_passes(tmp_path: Path) -> None:
+    """Verify sibling lagging canonical history passes."""
     workspace = tmp_path / "ws"
     canon = workspace / "orama-system"
     sibling = workspace / "Perpetua-Tools"
@@ -126,6 +130,7 @@ def test_hook_git_environment_does_not_rebind_independent_siblings(tmp_path: Pat
 
 
 def test_sibling_ahead_of_canonical_fails_closed(tmp_path: Path) -> None:
+    """Verify sibling ahead of canonical fails closed."""
     workspace = tmp_path / "ws"
     canon = workspace / "orama-system"
     sibling = workspace / "Perpetua-Tools"
@@ -212,6 +217,7 @@ def test_githooks_with_effective_hookspath_is_scanned(tmp_path: Path) -> None:
 
 
 def test_rejects_surplus_arguments(tmp_path: Path) -> None:
+    """Verify rejects surplus arguments."""
     workspace = tmp_path / "ws"
     canon = workspace / "orama-system"
     _init_repo(canon, "Tester", "tester@example.com")
@@ -230,6 +236,7 @@ def test_rejects_surplus_arguments(tmp_path: Path) -> None:
 
 
 def test_linked_worktree_sibling_discovered(tmp_path: Path) -> None:
+    """Verify linked worktree sibling discovered."""
     workspace = tmp_path / "ws"
     canon = workspace / "orama-system"
     sibling = workspace / "Perpetua-Tools"

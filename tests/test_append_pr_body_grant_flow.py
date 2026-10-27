@@ -15,6 +15,7 @@ pytestmark = pytest.mark.integration
 
 
 def _run(cmd: list[str], env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    """Run."""
     merged = os.environ.copy()
     if env:
         merged.update(env)
@@ -30,6 +31,7 @@ def _run(cmd: list[str], env: dict[str, str] | None = None) -> subprocess.Comple
 
 @pytest.fixture()
 def fake_gh(tmp_path: Path) -> tuple[Path, Path]:
+    """Fake gh."""
     body_file = tmp_path / "pr-body.txt"
     body_file.write_text("summary\n<!-- CURSOR_AGENT_PR_BODY_END -->\n", encoding="utf-8")
     view_count_file = tmp_path / "view-count.txt"
@@ -76,10 +78,12 @@ exit 1
 
 
 def _mint_grant(gh_bin: Path, append: Path, tmp_path: Path) -> dict[str, str]:
+    """Mint grant."""
     env = {
         "PR_BODY_GRANT_HMAC_SECRET": "append-flow-secret",
         "GH_BIN": str(gh_bin),
         "HOME": str(tmp_path),
+        "USERPROFILE": str(tmp_path),  # Path.home() on Windows
     }
     mint = _run(
         [
@@ -102,6 +106,7 @@ def _mint_grant(gh_bin: Path, append: Path, tmp_path: Path) -> dict[str, str]:
 def test_append_pr_body_consumes_grant(
     fake_gh: tuple[Path, Path], tmp_path: Path
 ) -> None:
+    """Check: append pr body consumes grant."""
     gh_bin, body_file = fake_gh
     append = tmp_path / "note.md"
     append.write_text("operator note", encoding="utf-8")
@@ -217,7 +222,7 @@ def test_append_pr_body_rejects_oversized_file_before_snapshot(
 
     proc = _run(
         ["bash", str(APPEND_SH), "owner/repo", "99", "--file", str(append)],
-        env={"GH_BIN": str(gh_bin), "HOME": str(tmp_path)},
+        env={"GH_BIN": str(gh_bin), "HOME": str(tmp_path), "USERPROFILE": str(tmp_path)},
     )
 
     assert proc.returncode != 0

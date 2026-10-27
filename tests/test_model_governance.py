@@ -35,15 +35,18 @@ LIVE_GUIDANCE = (
 
 @pytest.fixture
 def cfg() -> dict:
+    """Load the parsed model-governance config."""
     return load_model_governance()
 
 
 def test_cost_gate_and_cloud_escalation_invariants(cfg: dict) -> None:
+    """The config keeps the cost gate fail-closed and cloud escalation default-deny."""
     assert cfg["invariants"]["cost_gate"] == "fail_closed"
     assert cfg["invariants"]["cloud_escalation"] == "default_deny"
 
 
 def test_cursor_default_is_grok_47_medium_fast_off() -> None:
+    """The Cursor default is grok-4.7 at medium effort with fast off, and is allowed."""
     spec = default_launch("cursor_grok_bot")
     assert spec.launch_id == "grok-4.7"
     assert spec.effort == "medium"
@@ -52,6 +55,7 @@ def test_cursor_default_is_grok_47_medium_fast_off() -> None:
 
 
 def test_anthropic_default_is_sonnet_55_medium() -> None:
+    """The Anthropic default is claude-sonnet-5-5 at medium effort, and is allowed."""
     spec = default_launch("anthropic")
     assert spec.launch_id == "claude-sonnet-5-5"
     assert spec.effort == "medium"
@@ -59,11 +63,13 @@ def test_anthropic_default_is_sonnet_55_medium() -> None:
 
 
 def test_legacy_sonnet_5_pin_allowed(cfg: dict) -> None:
+    """The legacy claude-sonnet-5 pin is allowed at medium effort."""
     spec = LaunchSpec(path="anthropic", launch_id="claude-sonnet-5", effort="medium")
     assert_launch_allowed(spec, config=cfg)
 
 
 def test_cursor_sonnet_55_follows_anthropic_gate_without_token() -> None:
+    """A Cursor launch of claude-sonnet-5-5 at medium effort needs no token."""
     spec = LaunchSpec(
         path="cursor_grok_bot",
         launch_id="claude-sonnet-5-5",
@@ -74,6 +80,7 @@ def test_cursor_sonnet_55_follows_anthropic_gate_without_token() -> None:
 
 @pytest.mark.parametrize("launch_id", ["grok-4.5", "grok-4.6", "gpt-6-astra"])
 def test_superseded_and_banned_launch_ids(launch_id: str) -> None:
+    """Superseded and banned launch ids are refused as banned."""
     spec = LaunchSpec(
         path="cursor_grok_bot",
         launch_id=launch_id,
@@ -126,12 +133,14 @@ def test_plan_launch_forbidden_effort_names_the_value(field: str, effort: str) -
 
 
 def test_auto_never_for_agents() -> None:
+    """The auto model is refused for agent launches as editor-only."""
     spec = LaunchSpec(path="cursor_grok_bot", launch_id="auto", agent=True)
     with pytest.raises(ModelGovernanceError, match="editor-only"):
         assert_launch_allowed(spec)
 
 
 def test_composer_requires_fast_off() -> None:
+    """composer-2.5 is allowed with fast off and refused with fast on."""
     ok = LaunchSpec(path="cursor_grok_bot", launch_id="composer-2.5", fast=False)
     assert_launch_allowed(ok)
     bad = LaunchSpec(path="cursor_grok_bot", launch_id="composer-2.5", fast=True)
@@ -140,6 +149,7 @@ def test_composer_requires_fast_off() -> None:
 
 
 def test_cursor_non_medium_reasoning_effort_requires_token() -> None:
+    """A non-medium reasoning_effort on Cursor is refused without an escalation token."""
     spec = LaunchSpec(
         path="cursor_grok_bot",
         launch_id="composer-2.5",
@@ -151,6 +161,7 @@ def test_cursor_non_medium_reasoning_effort_requires_token() -> None:
 
 
 def test_cursor_non_medium_reasoning_effort_accepts_matching_token() -> None:
+    """A matching escalation token allows a non-medium reasoning_effort on Cursor."""
     spec = LaunchSpec(
         path="cursor_grok_bot",
         launch_id="composer-2.5",
@@ -169,6 +180,7 @@ def test_cursor_non_medium_reasoning_effort_accepts_matching_token() -> None:
 
 
 def test_env_and_config_flags_are_not_escalation_tokens() -> None:
+    """Env-var, config-flag and cached-approval proofs are not tokens and unlock nothing."""
     env_shaped = EscalationProof(
         kind="env_var",
         reference="HUMAN_APPROVED=true",
@@ -203,6 +215,7 @@ def test_env_and_config_flags_are_not_escalation_tokens() -> None:
 
 
 def test_grok_47_is_default_and_enforces_its_tuple_even_with_proof() -> None:
+    """grok-4.7 stays allowed at its default tuple but a proof cannot unlock a different effort."""
     spec = LaunchSpec(
         path="cursor_grok_bot",
         launch_id="grok-4.7",
@@ -230,6 +243,7 @@ def test_grok_47_is_default_and_enforces_its_tuple_even_with_proof() -> None:
 
 
 def test_opus_and_fable_require_token_fable_needs_cap() -> None:
+    """Opus and Fable need a matching token, Fable also a budget cap, on anthropic and Cursor paths."""
     opus = LaunchSpec(
         path="anthropic", launch_id="claude-opus-5-5", effort="high", fast=False
     )
@@ -277,6 +291,7 @@ def test_opus_and_fable_require_token_fable_needs_cap() -> None:
 
 @pytest.mark.unit
 def test_direct_xai_defaults_nonfast_and_refuses_fast_without_p5_receipt() -> None:
+    """direct_xai defaults to non-fast medium and refuses fast even with a generic proof."""
     ok = default_launch("direct_xai")
     assert ok.launch_id == "grok-4.7"
     assert ok.reasoning_effort == "medium"
@@ -305,6 +320,7 @@ def test_direct_xai_defaults_nonfast_and_refuses_fast_without_p5_receipt() -> No
 
 @pytest.mark.unit
 def test_direct_xai_requires_medium_reasoning() -> None:
+    """direct_xai refuses a non-medium reasoning_effort."""
     ok = default_launch("direct_xai")
     high = LaunchSpec(
         path="direct_xai", launch_id="grok-4.7", reasoning_effort="high"
@@ -324,6 +340,7 @@ def test_direct_xai_accepts_effort_alias_without_reasoning_effort() -> None:
 
 @pytest.mark.unit
 def test_conflicting_effort_aliases_are_rejected_by_planning_and_validation() -> None:
+    """Conflicting effort and reasoning_effort values are refused by plan_launch and assert_launch_allowed."""
     spec = LaunchSpec(
         path="cursor_grok_bot",
         launch_id="grok-4.7",
@@ -339,6 +356,7 @@ def test_conflicting_effort_aliases_are_rejected_by_planning_and_validation() ->
 
 @pytest.mark.unit
 def test_identical_effort_aliases_remain_supported_by_planning_and_validation() -> None:
+    """Identical effort aliases are accepted by both plan_launch and assert_launch_allowed."""
     spec = LaunchSpec(
         path="cursor_grok_bot",
         launch_id="grok-4.7",
@@ -352,6 +370,7 @@ def test_identical_effort_aliases_remain_supported_by_planning_and_validation() 
 
 
 def test_cost_gate_fail_closed() -> None:
+    """The cost gate refuses when the cap is not evaluable, remaining is unknown, or the cap is hit."""
     with pytest.raises(ModelGovernanceError, match="cannot be evaluated"):
         evaluate_cost_gate(cap_evaluable=False, remaining=100)
     with pytest.raises(ModelGovernanceError, match="cannot be evaluated"):
@@ -362,6 +381,7 @@ def test_cost_gate_fail_closed() -> None:
 
 
 def test_pin_refuses_non_fail_closed_cost_gate(tmp_path: Path) -> None:
+    """Loading a pin whose cost gate is not fail-closed is refused."""
     src = yaml.safe_load(
         (REPO_ROOT / "config" / "model-governance.yml").read_text(encoding="utf-8")
     )
@@ -373,6 +393,7 @@ def test_pin_refuses_non_fail_closed_cost_gate(tmp_path: Path) -> None:
 
 
 def test_pin_refuses_duplicate_mapping_keys(tmp_path: Path) -> None:
+    """Loading a pin with duplicate mapping keys is refused with a ConstructorError cause."""
     broken = tmp_path / "model-governance.yml"
     broken.write_text(
         """\
@@ -389,6 +410,7 @@ invariants:
 
 
 def test_models_yml_drops_banned_grok_45() -> None:
+    """models.yml omits the banned grok models and lists grok-4.7 and the Sonnet 5 ids."""
     text = (REPO_ROOT / "config" / "models.yml").read_text(encoding="utf-8")
     raw = yaml.safe_load(text)
     names = {row.get("name") for row in raw.get("models") or [] if isinstance(row, dict)}
@@ -404,6 +426,7 @@ def test_models_yml_drops_banned_grok_45() -> None:
 
 
 def test_live_guidance_has_no_stale_defaults() -> None:
+    """Live guidance files contain no stale model names and name the current defaults."""
     for path in LIVE_GUIDANCE:
         text = path.read_text(encoding="utf-8")
         assert "Haiku 4.5" not in text
@@ -444,6 +467,7 @@ _VEC_NOW = datetime(2026, 10, 21, tzinfo=timezone.utc)
 
 
 def _vec_proof(model, effort, fast, budget=None, hours=1, **extra):
+    """Build a synthetic offline_gpg proof for a model, effort, fast and budget, expiring relative to the fixed vector time."""
     return EscalationProof(
         kind="offline_gpg",
         reference="synthetic-policy-fixture",
@@ -466,6 +490,7 @@ def _vec_proof(model, effort, fast, budget=None, hours=1, **extra):
 @pytest.mark.parametrize("approval", ["absent", "fresh", "expired"])
 @pytest.mark.parametrize("budget", [None, "max_tokens=8192"])
 def test_vector_family_matrix(path, model, effort, fast, approval, budget) -> None:
+    """Across the Anthropic and Cursor model, effort, fast, approval and budget matrix, only the policy-allowed combinations launch."""
     spec = LaunchSpec(path=path, launch_id=model, effort=effort, fast=fast)
     proof = None
     if approval != "absent":
@@ -504,6 +529,7 @@ def test_vector_family_matrix(path, model, effort, fast, approval, budget) -> No
 def test_vector_approval_binds_launch_tuple(
     approved_model, approved_effort, approved_fast, hours, allowed
 ) -> None:
+    """An approval only unlocks the exact model, effort and fast tuple it names, and only while unexpired."""
     spec = LaunchSpec(
         path="cursor_grok_bot", launch_id="composer-2.5", effort="high", fast=True
     )
@@ -516,6 +542,7 @@ def test_vector_approval_binds_launch_tuple(
 
 
 def test_vector_stray_mismatched_proof_refused_on_ungated_launch() -> None:
+    """A stale or mismatched proof is refused even on an ungated launch."""
     spec = LaunchSpec(path="anthropic", launch_id="claude-sonnet-5-5", effort="medium")
     stale = _vec_proof("claude-sonnet-5-5", "medium", None, hours=-1)
     with pytest.raises(ModelGovernanceError):
@@ -530,6 +557,7 @@ def test_vector_stray_mismatched_proof_refused_on_ungated_launch() -> None:
 def test_vector_nonfast_and_effort_fields_normalize(
     fast, approved_fast, reasoning_field
 ) -> None:
+    """Absent and false fast, and either effort field, are treated as equivalent when matching a proof."""
     spec = LaunchSpec(
         path="anthropic",
         launch_id="claude-fable-5-1",
@@ -542,6 +570,7 @@ def test_vector_nonfast_and_effort_fields_normalize(
 
 
 def test_vector_scope_and_path_binding() -> None:
+    """A scoped proof needs the same approval scope, and a proof bound to another path is refused."""
     spec = LaunchSpec(
         path="cursor_grok_bot", launch_id="grok-4.7", effort="medium", fast=False
     )
@@ -560,6 +589,7 @@ def test_vector_scope_and_path_binding() -> None:
 
 
 def test_vector_sonnet_fast_refused_without_proof() -> None:
+    """Sonnet with fast on is refused, while fast None or False is allowed."""
     bad = LaunchSpec(
         path="anthropic", launch_id="claude-sonnet-5-5", effort="medium", fast=True
     )
@@ -573,6 +603,7 @@ def test_vector_sonnet_fast_refused_without_proof() -> None:
 
 
 def test_vector_cursor_family_controls() -> None:
+    """Cursor applies family controls: Fable needs a cap, fast Opus is refused, Sonnet is ungated, grok high effort is refused."""
     fable = LaunchSpec(
         path="cursor_grok_bot", launch_id="claude-fable-5-1", effort="medium"
     )
@@ -615,6 +646,7 @@ def test_vector_cursor_family_controls() -> None:
 
 @pytest.mark.parametrize("effort", [None, "high", "low", "medium"])
 def test_vector_direct_xai_requires_medium_effort(effort) -> None:
+    """direct_xai allows only medium reasoning_effort."""
     spec = LaunchSpec(path="direct_xai", launch_id="grok-4.7", reasoning_effort=effort)
     if effort == "medium":
         assert_launch_allowed(spec)
@@ -624,6 +656,7 @@ def test_vector_direct_xai_requires_medium_effort(effort) -> None:
 
 
 def test_vector_approval_optionally_binds_path_and_scope() -> None:
+    """A proof's optional path and scope claims must match the launch when present."""
     spec = LaunchSpec(
         path="cursor_grok_bot", launch_id="grok-4.7", effort="medium", fast=False
     )
@@ -641,6 +674,7 @@ def test_vector_approval_optionally_binds_path_and_scope() -> None:
 
 
 def test_vector_expiry_equal_to_now_is_refused() -> None:
+    """A proof expiring exactly at the current time is refused, one second left is accepted."""
     spec = LaunchSpec(
         path="cursor_grok_bot", launch_id="grok-4.7", effort="medium", fast=False
     )
@@ -659,6 +693,7 @@ def test_vector_expiry_equal_to_now_is_refused() -> None:
 
 
 def test_vector_empty_string_scope_is_strict_equality() -> None:
+    """An empty-string scope matches only an empty approval scope, not None or another scope."""
     spec = LaunchSpec(
         path="cursor_grok_bot", launch_id="grok-4.7", effort="medium", fast=False
     )
@@ -674,6 +709,7 @@ def test_vector_empty_string_scope_is_strict_equality() -> None:
 
 
 def test_vector_unknown_proof_kind_is_not_a_token() -> None:
+    """A proof of unknown kind is not a token and unlocks nothing, gated or ungated."""
     gated = LaunchSpec(
         path="cursor_grok_bot", launch_id="grok-4.7", effort="medium", fast=False
     )
@@ -705,6 +741,7 @@ def test_vector_unknown_proof_kind_is_not_a_token() -> None:
 
 @pytest.mark.parametrize("path", ["anthropic", "cursor_grok_bot"])
 def test_vector_banned_launch_id_refused_even_with_matching_proof(path) -> None:
+    """A banned launch id is refused even with a matching proof."""
     spec = LaunchSpec(path=path, launch_id="grok-4.5", effort="medium", fast=False)
     with pytest.raises(ModelGovernanceError, match="banned"):
         assert_launch_allowed(spec)
@@ -716,6 +753,7 @@ def test_vector_banned_launch_id_refused_even_with_matching_proof(path) -> None:
 
 @pytest.mark.parametrize("path", ["anthropic", "cursor_grok_bot"])
 def test_vector_fable_requires_budget_cap_on_every_path(path) -> None:
+    """Fable needs both a token and a budget cap on every path."""
     spec = LaunchSpec(path=path, launch_id="claude-fable-5-1", effort="medium")
     with pytest.raises(ModelGovernanceError, match="budget cap"):
         assert_launch_allowed(

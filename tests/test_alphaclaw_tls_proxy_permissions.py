@@ -164,6 +164,7 @@ def test_secure_path_posix_sets_correct_mode(tmp_path):
 
 
 def test_secure_path_posix_sets_correct_mode_for_directory(tmp_path):
+    """POSIX path sets 0o700 for directories."""
     test_dir = tmp_path / "certdir"
     test_dir.mkdir()
 
