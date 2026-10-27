@@ -1,0 +1,43 @@
+{
+  "id": "7a21807aca04",
+  "key": "manual_7a2180",
+  "name": "manual_7a2180",
+  "claim": "Oramasys dispatch qualification on Windows stops at POSIX-only private_store; Mac orchestrator ACKs Win BLOCKED receipts and schedules anchor/mutation runs on POSIX only.",
+  "conditions": [
+    "E1C2",
+    "Windows",
+    "mac_job_queue",
+    "oramasys",
+    "private_store",
+    "qualification"
+  ],
+  "evidence_ids": [
+    "2026-10-27T13:32:56.256670+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T13:32:56.256670+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T13:32:56.256670+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T13:32:56.392782+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "WIN-E1C2-F3-QUAL receipt intake mac-orchestrator pulse 2026-10-27",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T13:32:56.256670+00:00"
+      ],
+      "lessons_sha": "aa51ff2334d5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T13:32:56.392769+00:00",
+  "reviewer": "learn.py",
+  "rationale": "WIN-E1C2-F3-QUAL receipt intake mac-orchestrator pulse 2026-10-27"
+}
