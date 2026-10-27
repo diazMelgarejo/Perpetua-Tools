@@ -1,0 +1,44 @@
+{
+  "id": "fee2650cf28d",
+  "key": "manual_fee265",
+  "name": "manual_fee265",
+  "claim": "When a security scanner first fails on a synthetic PR merge, compare the merge-parent delta and inspect the exact rule before changing controls; keep the enforcement intact and narrow the remediation to the verified triggering text or behavior.",
+  "conditions": [
+    "merge",
+    "provenance",
+    "remediation",
+    "rule",
+    "scanner",
+    "security",
+    "synthetic"
+  ],
+  "evidence_ids": [
+    "2026-10-27T17:33:55.779437+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T17:33:55.779437+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T17:33:55.779437+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T17:33:55.921003+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Observed while repairing the PR #459 CI failure introduced through the origin/main side of synthetic merge 50cc71f3be64eb40f69b428d6d470609c404b2ce. The credential rule matched terms across a historical document, not a live bearer leak; the durable repair kept fail-closed HTTPS enforcement and corrected only the ambiguous wire-level wording.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T17:33:55.779437+00:00"
+      ],
+      "lessons_sha": "3a5a5e54233a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T17:33:55.920989+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Observed while repairing the PR #459 CI failure introduced through the origin/main side of synthetic merge 50cc71f3be64eb40f69b428d6d470609c404b2ce. The credential rule matched terms across a historical document, not a live bearer leak; the durable repair kept fail-closed HTTPS enforcement and corrected only the ambiguous wire-level wording."
+}

@@ -267,6 +267,7 @@
 - When a WIN_PULSE reports zero unresolved review threads with cited PR heads, Mac ACKs Win thread state from the pulse and uses gh only for merge truth—record both Win snapshot heads and merged SHAs in the reply.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_87e5fe81ab78 -->
 - When Win opens R0-2 stacked draft branches locally, Mac orchestrator ACKs D0-D3 boundaries without requiring GitHub remote branch visibility until Win pushes.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_65bf14197af8 -->
 - When Win cites D0 activation-readiness receipt §7, Mac must row-review the executive-map alignment table before ACK — merge state of draft PRs can lag the pulse; re-read GitHub at processing time.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_8533eabdafe2 -->
+- When a security scanner first fails on a synthetic PR merge, compare the merge-parent delta and inspect the exact rule before changing controls; keep the enforcement intact and narrow the remediation to the verified triggering text or behavior.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_fee2650cf28d -->
 
 ### 2026-09
 
