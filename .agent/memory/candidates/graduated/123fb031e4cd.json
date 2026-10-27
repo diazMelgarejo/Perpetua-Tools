@@ -1,0 +1,40 @@
+{
+  "id": "123fb031e4cd",
+  "key": "manual_123fb0",
+  "name": "manual_123fb0",
+  "claim": "Pre-announce pushes to shared open PR branches on the LAN board; never force-push shared PR branches.",
+  "conditions": [
+    "force-push",
+    "lan peer",
+    "shared PR branch"
+  ],
+  "evidence_ids": [
+    "2026-10-27T17:49:59.856631+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T17:49:59.856631+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T17:49:59.856631+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T17:50:00.004070+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "win-claude-pulse-112453Z corrected orama #455 head after undeclared force-push; Mac orchestrator ack.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T17:49:59.856631+00:00"
+      ],
+      "lessons_sha": "b5a6154d7b5a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T17:50:00.004060+00:00",
+  "reviewer": "learn.py",
+  "rationale": "win-claude-pulse-112453Z corrected orama #455 head after undeclared force-push; Mac orchestrator ack."
+}
