@@ -1,0 +1,41 @@
+{
+  "id": "9b968c93b191",
+  "key": "manual_9b968c",
+  "name": "manual_9b968c",
+  "claim": "Do not unlock authenticated LAN peer canaries when Windows probe correlation is inconclusive; require a timestamped Windows-side sampler aligned to the probe UTC window.",
+  "conditions": [
+    "lan-peer",
+    "mac-orchestrator",
+    "probe-correlation",
+    "roundtrip-canary"
+  ],
+  "evidence_ids": [
+    "2026-10-27T15:10:26.385879+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T15:10:26.385879+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T15:10:26.385879+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T15:10:26.524527+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Win deliverable win-mac-probe-correlation-20261026T081252Z: Mac timeout alone cannot classify arrival stage; coord-036 Mac orchestrator ack.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T15:10:26.385879+00:00"
+      ],
+      "lessons_sha": "ad6ff76b908c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T15:10:26.524520+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Win deliverable win-mac-probe-correlation-20261026T081252Z: Mac timeout alone cannot classify arrival stage; coord-036 Mac orchestrator ack."
+}
