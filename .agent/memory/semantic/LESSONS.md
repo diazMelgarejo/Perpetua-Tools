@@ -272,6 +272,7 @@
 - Mac Tier-0 win-claude pulse ACK must record D2 completion claims and re-audit all four R0-2 PR heads with gh before drop — pulse text is open-window truth, GitHub is current head.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_97d0bfe65292 -->
 - Mac Tier-0 win-claude pulse ACK must verify cited synthesis receipt LF sha256 on local inbox and separate pre-merge CI heads (e.g. 1cb52bc) from post-operator merge commits on gh.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_de78ae2f5f70 -->
 - Win durability pulse ACKs require LF sha256 match on mac-lan-durability-status plus explicit operator gates on bearer, post-merge telemetry deploy, and firewall logging — Mac orchestrator does not advance those without operator.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_3ceb798b5163 -->
+- Universal broadcast post-merge steps must not prescribe rebasing pushed D1/D2 draft branches; use GitHub retarget or merge main into drafts. Bearer rotation and telemetry proxy restart stay operator-gated beyond PT #470 merge.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_f00cb34e0026 -->
 
 ### 2026-09
 
