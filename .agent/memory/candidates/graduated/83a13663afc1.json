@@ -1,0 +1,40 @@
+{
+  "id": "83a13663afc1",
+  "key": "manual_83a136",
+  "name": "manual_83a136",
+  "claim": "Mac Tier-0 ACK for win-claude 'started' R0-2 pulses must still run gh on all four draft PRs at receipt time \u2014 GitHub head reconciles later SHA follow-ups.",
+  "conditions": [
+    "R0-2",
+    "mac-orchestrator-queue",
+    "win-claude-pulse"
+  ],
+  "evidence_ids": [
+    "2026-10-27T19:50:01.199830+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T19:50:01.199830+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T19:50:01.199830+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T19:50:01.342280+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-050 125045Z: pulse promised SHAs later; merged heads at audit differ from 12:50Z draft-only claim.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T19:50:01.199830+00:00"
+      ],
+      "lessons_sha": "de31684101b3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T19:50:01.342271+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-050 125045Z: pulse promised SHAs later; merged heads at audit differ from 12:50Z draft-only claim."
+}
