@@ -260,6 +260,7 @@
 - When coord-033 Win portal pull fails (timeout or SECURITY_STOP), verify priority inbox filenames on Mac local inbox before blocking — git or prior drops may already satisfy the pull.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_11d43f172924 -->
 - Windows Hermes pre-v2 recovery order is native Hermes home import, then ECC against resolved HERMES_HOME, then Orama/PT local-only state; reconcile ORAMA_CONTROL_PLANE_TOKEN candidates before LAN; encrypted restore bundles are operator OOB only.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_57019da11deb -->
 - Do not unlock authenticated LAN peer canaries when Windows probe correlation is inconclusive; require a timestamped Windows-side sampler aligned to the probe UTC window.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_9b968c93b191 -->
+- Win TLS roundtrip canary receipts must include LF-normalised SHA-256 when the body has no CR; byte hash and LF hash match for the 362-byte win-mac-roundtrip-canary file.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_d6505156dc2c -->
 
 ### 2026-09
 

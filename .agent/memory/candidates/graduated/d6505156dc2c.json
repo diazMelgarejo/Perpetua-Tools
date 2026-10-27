@@ -1,0 +1,41 @@
+{
+  "id": "d6505156dc2c",
+  "key": "manual_d65051",
+  "name": "manual_d65051",
+  "claim": "Win TLS roundtrip canary receipts must include LF-normalised SHA-256 when the body has no CR; byte hash and LF hash match for the 362-byte win-mac-roundtrip-canary file.",
+  "conditions": [
+    "SHA-256",
+    "coord-037",
+    "lan_peer",
+    "roundtrip canary"
+  ],
+  "evidence_ids": [
+    "2026-10-27T15:30:56.090978+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T15:30:56.090978+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T15:30:56.090978+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T15:30:56.238070+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-037 mac-orchestrator pulse 2026-10-27 win-mac-roundtrip-canary-20261026T080912Z",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T15:30:56.090978+00:00"
+      ],
+      "lessons_sha": "690c7826271c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T15:30:56.238057+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-037 mac-orchestrator pulse 2026-10-27 win-mac-roundtrip-canary-20261026T080912Z"
+}
