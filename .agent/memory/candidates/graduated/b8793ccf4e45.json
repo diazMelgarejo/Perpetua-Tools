@@ -1,0 +1,43 @@
+{
+  "id": "b8793ccf4e45",
+  "key": "manual_b8793c",
+  "name": "manual_b8793c",
+  "claim": "Probe inference discovery and control-plane delivery independently: an empty model-discovery result does not prove a verified HTTPS portal is offline, and a reachable portal does not prove that inference is available or that a file was received.",
+  "conditions": [
+    "discovery",
+    "inference",
+    "portal",
+    "reachability",
+    "receipt",
+    "tls"
+  ],
+  "evidence_ids": [
+    "2026-10-27T20:17:44.542090+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T20:17:44.542090+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T20:17:44.542090+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T20:17:44.661389+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The recovery record contains both a model endpoint discovery miss and later accepted portal deliveries. Separate current probes and exact receiver receipts prevent stale discovery from blocking a working channel or a health response from becoming a completion claim.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T20:17:44.542090+00:00"
+      ],
+      "lessons_sha": "4e500af358d7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T20:17:44.661381+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The recovery record contains both a model endpoint discovery miss and later accepted portal deliveries. Separate current probes and exact receiver receipts prevent stale discovery from blocking a working channel or a health response from becoming a completion claim."
+}

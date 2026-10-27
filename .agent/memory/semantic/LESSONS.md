@@ -268,6 +268,9 @@
 - When Win opens R0-2 stacked draft branches locally, Mac orchestrator ACKs D0-D3 boundaries without requiring GitHub remote branch visibility until Win pushes.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_65bf14197af8 -->
 - When Win cites D0 activation-readiness receipt §7, Mac must row-review the executive-map alignment table before ACK — merge state of draft PRs can lag the pulse; re-read GitHub at processing time.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_8533eabdafe2 -->
 - When a security scanner first fails on a synthetic PR merge, compare the merge-parent delta and inspect the exact rule before changing controls; keep the enforcement intact and narrow the remediation to the verified triggering text or behavior.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_fee2650cf28d -->
+- A reciprocal peer-delivery claim requires a verified peer CA and a receiver receipt whose LF-normalised content hash matches the sender; a CA pin mismatch blocks every bearer-bearing retry.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_feb99d41413e -->
+- Treat a pending migration announcement as durable delivery work: retry it independently of topology changes and cached discovery returns, outside the broad discovery lock; a stable network is not evidence that a prior announcement was delivered.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_8f76dc35753a -->
+- Probe inference discovery and control-plane delivery independently: an empty model-discovery result does not prove a verified HTTPS portal is offline, and a reachable portal does not prove that inference is available or that a file was received.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_b8793ccf4e45 -->
 
 ### 2026-09
 

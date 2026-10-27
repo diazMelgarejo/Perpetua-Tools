@@ -1,0 +1,46 @@
+{
+  "id": "feb99d41413e",
+  "key": "manual_feb99d",
+  "name": "manual_feb99d",
+  "claim": "A reciprocal peer-delivery claim requires a verified peer CA and a receiver receipt whose LF-normalised content hash matches the sender; a CA pin mismatch blocks every bearer-bearing retry.",
+  "conditions": [
+    "ca",
+    "canary",
+    "hash",
+    "lan",
+    "normalized",
+    "peer",
+    "pin",
+    "receipt",
+    "tls"
+  ],
+  "evidence_ids": [
+    "2026-10-26T06:15:09.566583+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-26T06:15:09.566583+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-26T06:15:09.566583+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T18:14:05.694487+00:00",
+      "action": "graduated",
+      "reviewer": "codex-reviewer",
+      "notes": "Verified across the two-way canary recovery: authenticated delivery was withheld until a peer CA pin was independently checked, and receiver acceptance plus normalized-content receipt remained the only evidence of delivery. This preserves fail-closed bearer transport and prevents sender-only completion claims.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-26T06:15:09.566583+00:00"
+      ],
+      "lessons_sha": "db9c554087a9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T18:14:05.694472+00:00",
+  "reviewer": "codex-reviewer",
+  "rationale": "Verified across the two-way canary recovery: authenticated delivery was withheld until a peer CA pin was independently checked, and receiver acceptance plus normalized-content receipt remained the only evidence of delivery. This preserves fail-closed bearer transport and prevents sender-only completion claims."
+}
