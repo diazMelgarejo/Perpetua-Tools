@@ -1,0 +1,44 @@
+{
+  "id": "7543275f7d88",
+  "key": "manual_754327",
+  "name": "manual_754327",
+  "claim": "For win-claude roundtrip canaries, mac-orchestrator-queue must publish byte+LF SHA-256, receipt UTC, and one Mac-originated unauthenticated GET /health window even when portal :8002 times out.",
+  "conditions": [
+    "canary",
+    "health",
+    "mac_job_queue",
+    "portal",
+    "probe",
+    "receipt",
+    "roundtrip"
+  ],
+  "evidence_ids": [
+    "2026-10-27T15:49:49.616289+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T15:49:49.616289+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T15:49:49.616289+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T15:49:49.754045+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "coord-038 win-claude-roundtrip-canary-20261026T103006Z orchestrator job",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T15:49:49.616289+00:00"
+      ],
+      "lessons_sha": "a436e11b5dd0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T15:49:49.754036+00:00",
+  "reviewer": "learn.py",
+  "rationale": "coord-038 win-claude-roundtrip-canary-20261026T103006Z orchestrator job"
+}
