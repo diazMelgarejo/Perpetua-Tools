@@ -1,0 +1,43 @@
+{
+  "id": "a745249937dd",
+  "key": "manual_a74524",
+  "name": "manual_a74524",
+  "claim": "Grandfathered mesh compatibility preserves the existing bearer protocol, not plaintext transport: use current discovery and verified per-peer HTTPS for authenticated control-plane traffic; keep model-endpoint probes separate and require receiver receipts before claiming reciprocal delivery.",
+  "conditions": [
+    "bearer",
+    "discovery",
+    "grandfathered",
+    "lan",
+    "peer",
+    "tls"
+  ],
+  "evidence_ids": [
+    "2026-10-27T20:19:54.364499+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T20:19:54.364499+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T20:19:54.364499+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T20:20:03.536287+00:00",
+      "action": "graduated",
+      "reviewer": "codex-reviewer",
+      "notes": "The historical June HTTP-only deployment rule no longer describes the enforced recovery contract. PT #470 and Orama peer TLS delivery enforce verified HTTPS for bearer requests. Preserve the old record as history, retire it from current recall through this supersedes link, and do not weaken transport to restore legacy contact.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T20:19:54.364499+00:00"
+      ],
+      "lessons_sha": "30017c596128"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T20:20:03.536272+00:00",
+  "reviewer": "codex-reviewer",
+  "rationale": "The historical June HTTP-only deployment rule no longer describes the enforced recovery contract. PT #470 and Orama peer TLS delivery enforce verified HTTPS for bearer requests. Preserve the old record as history, retire it from current recall through this supersedes link, and do not weaken transport to restore legacy contact."
+}

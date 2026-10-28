@@ -1,0 +1,44 @@
+{
+  "id": "8f76dc35753a",
+  "key": "manual_8f76dc",
+  "name": "manual_8f76dc",
+  "claim": "Treat a pending migration announcement as durable delivery work: retry it independently of topology changes and cached discovery returns, outside the broad discovery lock; a stable network is not evidence that a prior announcement was delivered.",
+  "conditions": [
+    "cached",
+    "discovery",
+    "lock",
+    "migration",
+    "retry",
+    "topology",
+    "watch"
+  ],
+  "evidence_ids": [
+    "2026-10-27T18:14:05.847513+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-27T18:14:05.847513+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-27T18:14:05.847513+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-27T18:14:05.968892+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR #459 review identified that topology-driven watch polling and cached returns could leave a failed migration pending indefinitely. The repair separates migration retry from endpoint discovery and verifies both a warm cached invocation and a stable watch tick.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-27T18:14:05.847513+00:00"
+      ],
+      "lessons_sha": "4f1c64e77ad3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-27T18:14:05.968883+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR #459 review identified that topology-driven watch polling and cached returns could leave a failed migration pending indefinitely. The repair separates migration retry from endpoint discovery and verifies both a warm cached invocation and a stable watch tick."
+}
