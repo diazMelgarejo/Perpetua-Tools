@@ -966,7 +966,7 @@ def _preamble_tip(doc: str) -> str:
     import re
 
     preamble = re.split(r"(?m)^## ", doc.replace("\r\n", "\n"), maxsplit=1)[0]
-    tips = re.findall(r"tip `([0-9a-f]{8})`", preamble)
+    tips = [t.lower() for t in re.findall(r"tip `([0-9a-fA-F]{8})`", preamble)]
     assert len(tips) == 1, f"pin document preamble must cite exactly one Alexandria tip, found {tips}"
     return tips[0]
 
@@ -977,6 +977,9 @@ def test_preamble_tip_rejects_a_stale_tip_before_the_active_one() -> None:
     assert _preamble_tip(active) == "d6da6781"
     with pytest.raises(AssertionError):
         _preamble_tip("Previously tip `aaaaaaaa`.\n\n" + active)
+    with pytest.raises(AssertionError):
+        _preamble_tip("Previously tip `AAAAAAAA`.\n\n" + active)
+    assert _preamble_tip("Canonical standard (tip `D6DA6781`).\n\n## S\n") == "d6da6781"
     with pytest.raises(AssertionError):
         _preamble_tip("No citation here.\n\n## Section\n")
 
