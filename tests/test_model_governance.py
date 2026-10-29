@@ -961,16 +961,31 @@ def test_shared_pin_sections_match_the_mirrored_repository_digest() -> None:
     assert hashlib.sha256(_parity_pin_sections().encode()).hexdigest() == _PARITY_PIN_DIGEST
 
 
-def test_pin_document_and_config_name_the_same_alexandria_tip() -> None:
-    """The document's active (preamble) tip equals the config's ``canonical.tip`` and the pinned tip."""
+def _preamble_tip(doc: str) -> str:
+    """Return the single Alexandria tip cited in the pin document preamble."""
     import re
 
+    preamble = re.split(r"(?m)^## ", doc.replace("\r\n", "\n"), maxsplit=1)[0]
+    tips = re.findall(r"tip `([0-9a-f]{8})`", preamble)
+    assert len(tips) == 1, f"pin document preamble must cite exactly one Alexandria tip, found {tips}"
+    return tips[0]
+
+
+def test_preamble_tip_rejects_a_stale_tip_before_the_active_one() -> None:
+    """A previous tip ahead of the active citation is ambiguous, never silently accepted."""
+    active = "Canonical standard (PR #1, tip `d6da6781`).\n\n## Section\n"
+    assert _preamble_tip(active) == "d6da6781"
+    with pytest.raises(AssertionError):
+        _preamble_tip("Previously tip `aaaaaaaa`.\n\n" + active)
+    with pytest.raises(AssertionError):
+        _preamble_tip("No citation here.\n\n## Section\n")
+
+
+def test_pin_document_and_config_name_the_same_alexandria_tip() -> None:
+    """The document's single preamble tip equals the config's ``canonical.tip`` and the pinned tip."""
     import yaml
 
     root = _parity_root()
-    doc = (root / "docs" / "standards" / "model-governance.md").read_text(encoding="utf-8").replace("\r\n", "\n")
-    preamble = re.split(r"(?m)^## ", doc, maxsplit=1)[0]
-    match = re.search(r"tip `([0-9a-f]{8})`", preamble)
-    assert match, "pin document preamble must state the active Alexandria tip"
+    doc = (root / "docs" / "standards" / "model-governance.md").read_text(encoding="utf-8")
     cfg = yaml.safe_load((root / "config" / "model-governance.yml").read_text(encoding="utf-8"))
-    assert match.group(1) == cfg["canonical"]["tip"] == _PARITY_ALEXANDRIA_TIP
+    assert _preamble_tip(doc) == cfg["canonical"]["tip"] == _PARITY_ALEXANDRIA_TIP
