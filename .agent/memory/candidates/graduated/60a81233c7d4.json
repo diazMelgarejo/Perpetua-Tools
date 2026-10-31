@@ -1,0 +1,41 @@
+{
+  "id": "60a81233c7d4",
+  "key": "manual_60a812",
+  "name": "manual_60a812",
+  "claim": "Treat a history rewrite as cleanup, never as a safeguard: rewrite on a throwaway mirror, confirm the new tip's tree hash equals the old tip's, scan every rewritten commit, pin the push with force-with-lease to the expected SHA, and let the operator run it. Then confirm with ls-remote and request a host purge, because old SHAs stay reachable.",
+  "conditions": [
+    "force push",
+    "removing sensitive data from a repository",
+    "rewriting git history",
+    "verifying a push landed"
+  ],
+  "evidence_ids": [
+    "2026-10-31T07:42:08.480357+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-31T07:42:08.480357+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-31T07:42:08.480357+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-31T07:42:08.620748+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "agent-envelope: envelope_id=84a457b4-dbe9-445f-a60e-a424319187c9 kind=authorship agent=claude-main actor=claude-main identity_verified=false model=claude-opus-5-5 date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | GitHub's own guidance says forks, cached views and direct SHA access can survive a force-push. In this saga the operator's push attempts showed no output and ls-remote proved nothing had landed, so a pushed state must never be recorded from the command alone. As of this record the rewrite is prepared, not landed. | public-handoff=EEG-Action-Center@1f7efa6:docs/headset-log-v2/PEER-HANDOFF.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-31T07:42:08.480357+00:00"
+      ],
+      "lessons_sha": "c9f8308e3bfd"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-31T07:42:08.620739+00:00",
+  "reviewer": "learn.py",
+  "rationale": "agent-envelope: envelope_id=84a457b4-dbe9-445f-a60e-a424319187c9 kind=authorship agent=claude-main actor=claude-main identity_verified=false model=claude-opus-5-5 date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | GitHub's own guidance says forks, cached views and direct SHA access can survive a force-push. In this saga the operator's push attempts showed no output and ls-remote proved nothing had landed, so a pushed state must never be recorded from the command alone. As of this record the rewrite is prepared, not landed. | public-handoff=EEG-Action-Center@1f7efa6:docs/headset-log-v2/PEER-HANDOFF.md"
+}
