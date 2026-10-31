@@ -17,7 +17,37 @@ MCP_WRAPPER="${SCRIPT_DIR}/exa-mcp-wrapper.sh"
 SOCKET_PATH="${HOME}/.openclaw/run/exa-mcp.sock"
 PID_PATH="${HOME}/.openclaw/run/exa-mcp.pid"
 LOG_PATH="${HOME}/.openclaw/log/exa-mcp-daemon.log"
-CODEX_WRAPPER_CMD='exec "$HOME/code/OpenClaw/orama-system/scripts/exa/exa-mcp-wrapper.sh"'
+# orama-system owns the EXA runtime, and this script is mirrored byte-identical
+# into Perpetua-Tools, so resolve the orama-system checkout with whichever
+# resolver this copy sits next to; never assume a workstation layout.
+_resolve_exa_owner_root() {
+  if [[ -f "$SCRIPT_DIR/resolve-orama-root.sh" ]]; then        # orama-system copy
+    bash "$SCRIPT_DIR/resolve-orama-root.sh" 2>/dev/null
+  elif [[ -f "$SCRIPT_DIR/../resolve_orama_root.sh" ]]; then   # Perpetua-Tools mirror
+    # shellcheck source=/dev/null
+    (source "$SCRIPT_DIR/../resolve_orama_root.sh" && resolve_orama_root) 2>/dev/null
+  fi
+}
+EXA_OWNER_ROOT="$(_resolve_exa_owner_root || true)"
+CODEX_WRAPPER_CMD=""
+if [[ -n "$EXA_OWNER_ROOT" && -f "$EXA_OWNER_ROOT/scripts/exa/exa-mcp-wrapper.sh" ]]; then
+  CODEX_WRAPPER_CMD="exec \"$EXA_OWNER_ROOT/scripts/exa/exa-mcp-wrapper.sh\""
+fi
+
+# A project's own .codex/config.toml [mcp_servers.exa] overrides the global
+# registration in that checkout. Print each such file whose exa entry does not
+# use the wrapper, so setup never reports Codex ready when it is not.
+_codex_project_exa_overrides() {
+  local root cfg
+  for root in "$(cd "$SCRIPT_DIR/../.." && pwd)" "${EXA_OWNER_ROOT:-}"; do
+    cfg="$root/.codex/config.toml"
+    [[ -n "$root" && -f "$cfg" ]] || continue
+    if awk '/^\[/{s=($0=="[mcp_servers.exa]")} s' "$cfg" | grep -q . &&
+       ! awk '/^\[/{s=($0=="[mcp_servers.exa]")} s' "$cfg" | grep -q 'exa-mcp-wrapper.sh'; then
+      echo "$cfg"
+    fi
+  done | sort -u
+}
 
 mkdir -p "${HOME}/.openclaw/run" "${HOME}/.openclaw/log"
 
@@ -189,11 +219,21 @@ done
 # 6. Wire Codex CLI global MCP to the same wrapper when Codex is present.
 # Codex's HTTP MCP registration cannot resolve the OpenClaw Keychain/openclaw.json
 # secret path by itself. The stdio wrapper is the authenticated, shared path.
-if command -v codex >/dev/null 2>&1; then
+if command -v codex >/dev/null 2>&1 && [[ -z "$CODEX_WRAPPER_CMD" ]]; then
+  echo "[exa-setup] WARNING: cannot locate the orama-system checkout that owns the EXA wrapper;" >&2
+  echo "  set ORAMA_SYSTEM_ROOT and re-run to register Codex. Skipping Codex MCP registration." >&2
+elif command -v codex >/dev/null 2>&1; then
   echo "[exa-setup] Registering Exa MCP server in Codex global config..."
   codex mcp remove exa >/dev/null 2>&1 || true
   if codex mcp add exa -- bash -c "$CODEX_WRAPPER_CMD" >/dev/null; then
-    echo "[exa-setup] Codex CLI: OK (restart Codex sessions to activate tools)"
+    CODEX_OVERRIDES="$(_codex_project_exa_overrides)"
+    if [[ -z "$CODEX_OVERRIDES" ]]; then
+      echo "[exa-setup] Codex CLI: OK (restart Codex sessions to activate tools)"
+    else
+      echo "[exa-setup] Codex CLI: global registration OK, but these project configs define their own exa server," >&2
+      echo "  which overrides the wrapper when Codex runs in that checkout (point them at the wrapper to switch):" >&2
+      echo "$CODEX_OVERRIDES" | sed 's/^/    /' >&2
+    fi
   else
     echo "[exa-setup] WARNING: Codex MCP registration failed; run manually:" >&2
     echo "  codex mcp add exa -- bash -c '$CODEX_WRAPPER_CMD'" >&2

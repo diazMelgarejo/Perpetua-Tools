@@ -263,6 +263,16 @@ class ExaMuxDaemon:
                         self.proc.terminate()
                     except ProcessLookupError:
                         pass  # backend already exited (e.g. the EOF that triggered this shutdown)
+                    # Only one backend may run: confirm this one is gone before
+                    # releasing the socket and PID file a restart would claim.
+                    try:
+                        await asyncio.wait_for(self.proc.wait(), timeout=5)
+                    except asyncio.TimeoutError:
+                        try:
+                            self.proc.kill()
+                        except ProcessLookupError:
+                            pass
+                        await self.proc.wait()
                 SOCKET_PATH.unlink(missing_ok=True)
                 PID_PATH.unlink(missing_ok=True)
                 log.info("daemon shutdown complete")

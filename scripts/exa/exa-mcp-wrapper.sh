@@ -90,6 +90,12 @@ if ! _daemon_alive; then
 
   # Try to become the starter for up to ~10s, ceding to a live lock holder.
   WAITED=0
+  # The owner creates the lock dir, then writes its pid. An empty pid file is
+  # normal for that instant, so only reclaim the same lock once it has stayed
+  # empty for ~2s (LOCK_GRACE ticks); the inode tells one lock from the next.
+  LOCK_GRACE=20
+  EMPTY_TICKS=0
+  SEEN_INODE=""
   while [[ $WAITED -lt 100 ]]; do
     if mkdir "$LOCK_DIR" 2>/dev/null; then
       echo $$ > "$LOCK_DIR/pid" 2>/dev/null || true
@@ -103,9 +109,28 @@ if ! _daemon_alive; then
     # rm -rf, not rmdir — rmdir silently no-ops on a non-empty directory
     # and left unfixed, WAITED is never incremented on this path, spinning
     # forever on every restart after the first successful run.
+    LOCK_INODE=$(ls -di "$LOCK_DIR" 2>/dev/null | awk '{print $1}')
     HOLDER_PID=$(cat "$LOCK_DIR/pid" 2>/dev/null || true)
+    if [[ "$LOCK_INODE" != "$SEEN_INODE" ]]; then
+      SEEN_INODE="$LOCK_INODE"
+      EMPTY_TICKS=0
+    fi
+    if [[ -z "$HOLDER_PID" && $EMPTY_TICKS -lt $LOCK_GRACE ]]; then
+      # Owner may not have published its pid yet; give it the grace period.
+      _daemon_alive && break
+      EMPTY_TICKS=$((EMPTY_TICKS + 1))
+      sleep 0.1
+      WAITED=$((WAITED + 1))
+      continue
+    fi
     if [[ -z "$HOLDER_PID" ]] || ! kill -0 "$HOLDER_PID" 2>/dev/null; then
-      rm -rf "$LOCK_DIR" 2>/dev/null || true
+      # Remove only the lock judged stale: if its inode or pid changed since,
+      # another wrapper owns a fresh lock and must keep it.
+      if [[ "$(ls -di "$LOCK_DIR" 2>/dev/null | awk '{print $1}')" == "$LOCK_INODE" &&
+            "$(cat "$LOCK_DIR/pid" 2>/dev/null || true)" == "$HOLDER_PID" ]]; then
+        rm -rf "$LOCK_DIR" 2>/dev/null || true
+      fi
+      SEEN_INODE=""
       # Defensive: count this as a waited tick even though we expect the
       # next mkdir to succeed immediately — guards against an unexpected
       # rm -rf failure (e.g. permissions) turning this into a hard spin.
