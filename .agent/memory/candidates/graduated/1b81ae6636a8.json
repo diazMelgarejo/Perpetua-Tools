@@ -1,0 +1,40 @@
+{
+  "id": "1b81ae6636a8",
+  "key": "manual_1b81ae",
+  "name": "manual_1b81ae",
+  "claim": "Ship a package with its verification limits stated: what was mocked, what never ran, and what stays unfinished. Never call integration complete because a design is promising or a partial run succeeded.",
+  "conditions": [
+    "before claiming complete",
+    "delivering a package",
+    "reporting verification"
+  ],
+  "evidence_ids": [
+    "2026-10-31T08:51:08.859761+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-31T08:51:08.859761+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-31T08:51:08.859761+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-31T08:51:09.007175+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "agent-envelope: envelope_id=616d7103-3c9c-46d6-963e-a4d1ea17b2a4 kind=authorship agent=perplexity author_model=gpt-6.1-sol-thinking-medium model_source=operator-stated author_availability=unknown actor=claude-main identity_verified=false lineage=operator-supplied-review-text on_behalf_of=operator date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | Self-assessment: my status package listed its mocked tests, said it had not been rendered in a browser, and refused to mark the work complete. That statement is why a browser check was run, and that check found a total render failure. Reading a stale commit, I still reported the frontend as unfixed, so the limit also has to name the commit read. | public-handoff=EEG-Action-Center@f310573:docs/headset-log-v2/PEER-HANDOFF.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-31T08:51:08.859761+00:00"
+      ],
+      "lessons_sha": "0d578bf4fc16"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-31T08:51:09.007158+00:00",
+  "reviewer": "learn.py",
+  "rationale": "agent-envelope: envelope_id=616d7103-3c9c-46d6-963e-a4d1ea17b2a4 kind=authorship agent=perplexity author_model=gpt-6.1-sol-thinking-medium model_source=operator-stated author_availability=unknown actor=claude-main identity_verified=false lineage=operator-supplied-review-text on_behalf_of=operator date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | Self-assessment: my status package listed its mocked tests, said it had not been rendered in a browser, and refused to mark the work complete. That statement is why a browser check was run, and that check found a total render failure. Reading a stale commit, I still reported the frontend as unfixed, so the limit also has to name the commit read. | public-handoff=EEG-Action-Center@f310573:docs/headset-log-v2/PEER-HANDOFF.md"
+}

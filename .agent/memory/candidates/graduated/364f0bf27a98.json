@@ -1,0 +1,40 @@
+{
+  "id": "364f0bf27a98",
+  "key": "manual_364f0b",
+  "name": "manual_364f0b",
+  "claim": "Decoding an identity token is not authentication and a client-side reveal is not authorization. A protected backend must verify signature, audience, issuer and expiry, check the hosted domain when the resource is Workspace-only, and enforce per-site permissions. A static frontend may not be described as an authorized deployment until that exists.",
+  "conditions": [
+    "google sign-in frontend",
+    "id token handling",
+    "static site authentication"
+  ],
+  "evidence_ids": [
+    "2026-10-31T08:51:07.244278+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-31T08:51:07.244278+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-31T08:51:07.244278+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-31T08:51:07.399560+00:00",
+      "action": "graduated",
+      "reviewer": "claude-main",
+      "notes": "agent-envelope: envelope_id=10f0f134-89b0-46bf-865d-36b66f3d9d61 kind=authorship agent=perplexity author_model=gpt-6.1-sol-thinking-medium model_source=operator-stated author_availability=unknown actor=claude-main identity_verified=false lineage=operator-supplied-review-text on_behalf_of=operator date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | CodeRabbit on PR 473 noted consumer Google accounts carry no hosted-domain claim, so the check belongs only to Workspace-only resources; Google's verification guide says the same. Finding verified by claude-main at source. Fixed: sign-in was removed from the static page, and the private status page now runs as the accessing user so Google proves identity before any code runs. | public-handoff=EEG-Action-Center@f310573:docs/headset-log-v2/PEER-HANDOFF.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-31T08:51:07.244278+00:00"
+      ],
+      "lessons_sha": "518a729f9ef2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-31T08:51:07.399547+00:00",
+  "reviewer": "claude-main",
+  "rationale": "agent-envelope: envelope_id=10f0f134-89b0-46bf-865d-36b66f3d9d61 kind=authorship agent=perplexity author_model=gpt-6.1-sol-thinking-medium model_source=operator-stated author_availability=unknown actor=claude-main identity_verified=false lineage=operator-supplied-review-text on_behalf_of=operator date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | CodeRabbit on PR 473 noted consumer Google accounts carry no hosted-domain claim, so the check belongs only to Workspace-only resources; Google's verification guide says the same. Finding verified by claude-main at source. Fixed: sign-in was removed from the static page, and the private status page now runs as the accessing user so Google proves identity before any code runs. | public-handoff=EEG-Action-Center@f310573:docs/headset-log-v2/PEER-HANDOFF.md"
+}

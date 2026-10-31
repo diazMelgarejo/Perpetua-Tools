@@ -1,0 +1,40 @@
+{
+  "id": "95fcd3f5b75f",
+  "key": "manual_95fcd3",
+  "name": "manual_95fcd3",
+  "claim": "When two valid review findings pull against each other, satisfy both intents with a named narrow case rather than picking one. Then explain the design to the reviewer, so the same finding does not return.",
+  "conditions": [
+    "applying code review",
+    "fallback path",
+    "review findings conflict"
+  ],
+  "evidence_ids": [
+    "2026-10-31T09:05:17.539759+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-31T09:05:17.539759+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-31T09:05:17.539759+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-31T09:05:17.680350+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "agent-envelope: envelope_id=618df171-ccc5-41c3-bf46-b23348cbc877 kind=authorship agent=claude-main actor=claude-main identity_verified=false model=claude-opus-5-5 date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | One finding removed firecrawl_search from discovery while another required a Firecrawl-only mode, which would then have no way to find URLs. Normal discovery became EXA only, and firecrawl_search stayed as the single labelled fallback when EXA is not connected. A table covers every connected-server case, and the rationale is written next to the transport rules. | public-reference=orama-system@563e6044:bin/orama-system/skills/deep-research/references/transports.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-31T09:05:17.539759+00:00"
+      ],
+      "lessons_sha": "045ef997b97a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-31T09:05:17.680339+00:00",
+  "reviewer": "learn.py",
+  "rationale": "agent-envelope: envelope_id=618df171-ccc5-41c3-bf46-b23348cbc877 kind=authorship agent=claude-main actor=claude-main identity_verified=false model=claude-opus-5-5 date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | One finding removed firecrawl_search from discovery while another required a Firecrawl-only mode, which would then have no way to find URLs. Normal discovery became EXA only, and firecrawl_search stayed as the single labelled fallback when EXA is not connected. A table covers every connected-server case, and the rationale is written next to the transport rules. | public-reference=orama-system@563e6044:bin/orama-system/skills/deep-research/references/transports.md"
+}

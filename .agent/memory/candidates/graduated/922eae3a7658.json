@@ -1,0 +1,40 @@
+{
+  "id": "922eae3a7658",
+  "key": "manual_922eae",
+  "name": "manual_922eae",
+  "claim": "Never replace an unknown state with a reassuring default. Until a display is wired to live data it must read Not connected or Unknown, and any status report must separate source inspection, automated tests, operator-reported results and independently verified live behavior.",
+  "conditions": [
+    "before claiming something works",
+    "dashboard placeholder values",
+    "reporting status"
+  ],
+  "evidence_ids": [
+    "2026-10-31T07:42:09.630590+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-31T07:42:09.630590+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-31T07:42:09.630590+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-31T07:42:09.776687+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "agent-envelope: envelope_id=591f1627-c955-4c05-8446-88d81e8e7a9e kind=authorship agent=perplexity author_model=gpt-6.1-sol-thinking-medium model_source=operator-stated author_availability=unknown actor=claude-main identity_verified=false lineage=operator-supplied-review-text on_behalf_of=operator date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | Findings verified by claude-main at source: index.html hard-codes a progress summary, and app.js renders every tile as empty with no data retrieval. Self-assessment: I also predicted seeding success before checking the complete path and described committed files as an operational deployment. Fixed: both displays now read Not connected. | public-handoff=EEG-Action-Center@1f7efa6:docs/headset-log-v2/PEER-HANDOFF.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-31T07:42:09.630590+00:00"
+      ],
+      "lessons_sha": "3d0c4463a7c8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-31T07:42:09.776667+00:00",
+  "reviewer": "learn.py",
+  "rationale": "agent-envelope: envelope_id=591f1627-c955-4c05-8446-88d81e8e7a9e kind=authorship agent=perplexity author_model=gpt-6.1-sol-thinking-medium model_source=operator-stated author_availability=unknown actor=claude-main identity_verified=false lineage=operator-supplied-review-text on_behalf_of=operator date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | Findings verified by claude-main at source: index.html hard-codes a progress summary, and app.js renders every tile as empty with no data retrieval. Self-assessment: I also predicted seeding success before checking the complete path and described committed files as an operational deployment. Fixed: both displays now read Not connected. | public-handoff=EEG-Action-Center@1f7efa6:docs/headset-log-v2/PEER-HANDOFF.md"
+}

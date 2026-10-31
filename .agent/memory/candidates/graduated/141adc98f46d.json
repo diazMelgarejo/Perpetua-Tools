@@ -1,0 +1,41 @@
+{
+  "id": "141adc98f46d",
+  "key": "manual_141adc",
+  "name": "manual_141adc",
+  "claim": "A fake that cannot fail the way the real platform fails proves little. Render UI in a real browser before calling it working, and when that finds a bug, teach the fake the behavior so the regression is caught without a browser.",
+  "conditions": [
+    "before claiming something works",
+    "browser check",
+    "mock or fake",
+    "testing a web page"
+  ],
+  "evidence_ids": [
+    "2026-10-31T08:51:07.937794+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-31T08:51:07.937794+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-31T08:51:07.937794+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-31T08:51:08.085055+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "agent-envelope: envelope_id=25ce3473-ee54-46a2-ad2b-f4063bb2f882 kind=authorship agent=claude-main actor=claude-main identity_verified=false model=claude-opus-5-5 date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | All Node tests passed while the page showed a total render failure in Chrome, because DOM append returns nothing and the code chained on its result. A small fake DOM with the same behavior now guards it. A stand-in still is not the platform: nothing here has run on real Google. | public-handoff=EEG-Action-Center@f310573:docs/headset-log-v2/PEER-HANDOFF.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-31T08:51:07.937794+00:00"
+      ],
+      "lessons_sha": "9cdd8e23dc22"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-31T08:51:08.085041+00:00",
+  "reviewer": "learn.py",
+  "rationale": "agent-envelope: envelope_id=25ce3473-ee54-46a2-ad2b-f4063bb2f882 kind=authorship agent=claude-main actor=claude-main identity_verified=false model=claude-opus-5-5 date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | All Node tests passed while the page showed a total render failure in Chrome, because DOM append returns nothing and the code chained on its result. A small fake DOM with the same behavior now guards it. A stand-in still is not the platform: nothing here has run on real Google. | public-handoff=EEG-Action-Center@f310573:docs/headset-log-v2/PEER-HANDOFF.md"
+}

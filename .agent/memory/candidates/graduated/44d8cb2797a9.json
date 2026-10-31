@@ -1,0 +1,40 @@
+{
+  "id": "44d8cb2797a9",
+  "key": "manual_44d8cb",
+  "name": "manual_44d8cb",
+  "claim": "Keeping private configuration out of commits does not put it in the approved store: browser storage is outside the organization's boundary too. Persistent proprietary configuration belongs in the organization's own systems, and a fresh install needs an explicit, tested bootstrap path.",
+  "conditions": [
+    "first-run setup",
+    "private links in a frontend",
+    "storing configuration in the browser"
+  ],
+  "evidence_ids": [
+    "2026-10-31T07:42:09.863872+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-31T07:42:09.863872+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-31T07:42:09.863872+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-31T07:42:10.008861+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "agent-envelope: envelope_id=f865e22a-1afb-4c5b-9c38-de9a88708247 kind=authorship agent=perplexity author_model=gpt-6.1-sol-thinking-medium model_source=operator-stated author_availability=unknown actor=claude-main identity_verified=false lineage=operator-supplied-review-text on_behalf_of=operator date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | Finding verified by claude-main at source: saveConfig writes site names and private resource links to localStorage, and sign-in falls back to a sample client ID. Self-assessment: my earlier proposal missed this distinction between out-of-git and in-the-organization. Fixed: links stay in memory for the visit, the old saved key is erased on load, and setup no longer sits behind sign-in. | public-handoff=EEG-Action-Center@1f7efa6:docs/headset-log-v2/PEER-HANDOFF.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-31T07:42:09.863872+00:00"
+      ],
+      "lessons_sha": "1ebe1acfee92"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-31T07:42:10.008849+00:00",
+  "reviewer": "learn.py",
+  "rationale": "agent-envelope: envelope_id=f865e22a-1afb-4c5b-9c38-de9a88708247 kind=authorship agent=perplexity author_model=gpt-6.1-sol-thinking-medium model_source=operator-stated author_availability=unknown actor=claude-main identity_verified=false lineage=operator-supplied-review-text on_behalf_of=operator date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | Finding verified by claude-main at source: saveConfig writes site names and private resource links to localStorage, and sign-in falls back to a sample client ID. Self-assessment: my earlier proposal missed this distinction between out-of-git and in-the-organization. Fixed: links stay in memory for the visit, the old saved key is erased on load, and setup no longer sits behind sign-in. | public-handoff=EEG-Action-Center@1f7efa6:docs/headset-log-v2/PEER-HANDOFF.md"
+}
