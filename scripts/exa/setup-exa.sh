@@ -17,6 +17,7 @@ MCP_WRAPPER="${SCRIPT_DIR}/exa-mcp-wrapper.sh"
 SOCKET_PATH="${HOME}/.openclaw/run/exa-mcp.sock"
 PID_PATH="${HOME}/.openclaw/run/exa-mcp.pid"
 LOG_PATH="${HOME}/.openclaw/log/exa-mcp-daemon.log"
+CODEX_WRAPPER_CMD='exec "$HOME/code/OpenClaw/orama-system/scripts/exa/exa-mcp-wrapper.sh"'
 
 mkdir -p "${HOME}/.openclaw/run" "${HOME}/.openclaw/log"
 
@@ -78,6 +79,17 @@ print((d.get('env') or {}).get('EXA_API_KEY',''))
       echo "  key: ${KEY:0:8}…${KEY: -4}"
     else
       echo "  key: NOT SET — run: bash setup-exa.sh --key YOUR_KEY"
+    fi
+    echo ""
+    echo "=== Codex MCP ==="
+    if command -v codex >/dev/null 2>&1; then
+      if codex mcp get exa 2>/dev/null | grep -q 'exa-mcp-wrapper.sh'; then
+        echo "  exa:    configured via wrapper"
+      else
+        echo "  exa:    not configured via wrapper — run setup"
+      fi
+    else
+      echo "  codex:  not installed"
     fi
     echo ""
     echo "=== Log (last 5 lines) ==="
@@ -174,7 +186,23 @@ PYEOF
   fi
 done
 
-# 6. Smoke-test: start daemon and verify
+# 6. Wire Codex CLI global MCP to the same wrapper when Codex is present.
+# Codex's HTTP MCP registration cannot resolve the OpenClaw Keychain/openclaw.json
+# secret path by itself. The stdio wrapper is the authenticated, shared path.
+if command -v codex >/dev/null 2>&1; then
+  echo "[exa-setup] Registering Exa MCP server in Codex global config..."
+  codex mcp remove exa >/dev/null 2>&1 || true
+  if codex mcp add exa -- bash -c "$CODEX_WRAPPER_CMD" >/dev/null; then
+    echo "[exa-setup] Codex CLI: OK (restart Codex sessions to activate tools)"
+  else
+    echo "[exa-setup] WARNING: Codex MCP registration failed; run manually:" >&2
+    echo "  codex mcp add exa -- bash -c '$CODEX_WRAPPER_CMD'" >&2
+  fi
+else
+  echo "[exa-setup] Codex CLI not found; skipping Codex MCP registration"
+fi
+
+# 7. Smoke-test: start daemon and verify
 echo "[exa-setup] Starting daemon for smoke test..."
 export EXA_API_KEY="$API_KEY"
 NVM_NODE="${HOME}/.nvm/versions/node/v22.22.2/bin"
@@ -195,10 +223,11 @@ else
 fi
 
 echo ""
-echo "[exa-setup] Done. All 3 MCP registrations point to ONE daemon:"
+echo "[exa-setup] Done. MCP registrations point to ONE daemon:"
 echo "  Claude Desktop      → bash $MCP_WRAPPER → daemon"
 echo "  orama-system CLI    → bash $MCP_WRAPPER → daemon"
 echo "  Perpetua-Tools CLI  → bash $MCP_WRAPPER → daemon"
+echo "  Codex CLI           → bash $MCP_WRAPPER → daemon"
 echo ""
 echo "Control:"
 echo "  bash setup-exa.sh status   — check daemon + key"
@@ -207,3 +236,7 @@ echo "  bash setup-exa.sh restart  — cycle daemon"
 echo ""
 echo "Python test:"
 echo "  python3 ${SCRIPT_DIR}/exa_search.py 'orama system MCP agent'"
+echo ""
+echo "MCP smoke test:"
+echo "  codex mcp get exa"
+echo "  codex mcp list"
