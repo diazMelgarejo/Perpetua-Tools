@@ -40,9 +40,11 @@ _resolve_pt_root() {
   [[ -f "$lib" ]] && (cd "$EXA_OWNER_ROOT" && source "$lib" && resolve_pt_root) 2>/dev/null
 }
 PT_ROOT="$(_resolve_pt_root || true)"
-CODEX_WRAPPER_CMD=""
+# Codex gets the wrapper path as a plain argument (never re-parsed as shell
+# source), so a checkout path containing $ " ` or spaces is preserved.
+CODEX_WRAPPER_PATH=""
 if [[ -n "$EXA_OWNER_ROOT" && -f "$EXA_OWNER_ROOT/scripts/exa/exa-mcp-wrapper.sh" ]]; then
-  CODEX_WRAPPER_CMD="exec \"$EXA_OWNER_ROOT/scripts/exa/exa-mcp-wrapper.sh\""
+  CODEX_WRAPPER_PATH="$EXA_OWNER_ROOT/scripts/exa/exa-mcp-wrapper.sh"
 fi
 
 # A project's own .codex/config.toml [mcp_servers.exa] overrides the global
@@ -50,7 +52,7 @@ fi
 # use the wrapper, so setup never reports Codex ready when it is not.
 _codex_project_exa_overrides() {
   local root cfg
-  for root in "$(cd "$SCRIPT_DIR/../.." && pwd)" "${EXA_OWNER_ROOT:-}"; do
+  for root in "$(cd "$SCRIPT_DIR/../.." && pwd)" "${EXA_OWNER_ROOT:-}" "${PT_ROOT:-}"; do
     cfg="$root/.codex/config.toml"
     [[ -n "$root" && -f "$cfg" ]] || continue
     if awk '/^\[/{s=($0=="[mcp_servers.exa]")} s' "$cfg" | grep -q . &&
@@ -231,13 +233,13 @@ done
 # 6. Wire Codex CLI global MCP to the same wrapper when Codex is present.
 # Codex's HTTP MCP registration cannot resolve the OpenClaw Keychain/openclaw.json
 # secret path by itself. The stdio wrapper is the authenticated, shared path.
-if command -v codex >/dev/null 2>&1 && [[ -z "$CODEX_WRAPPER_CMD" ]]; then
+if command -v codex >/dev/null 2>&1 && [[ -z "$CODEX_WRAPPER_PATH" ]]; then
   echo "[exa-setup] WARNING: cannot locate the orama-system checkout that owns the EXA wrapper;" >&2
   echo "  set ORAMA_SYSTEM_ROOT and re-run to register Codex. Skipping Codex MCP registration." >&2
 elif command -v codex >/dev/null 2>&1; then
   echo "[exa-setup] Registering Exa MCP server in Codex global config..."
   codex mcp remove exa >/dev/null 2>&1 || true
-  if codex mcp add exa -- bash -c "$CODEX_WRAPPER_CMD" >/dev/null; then
+  if codex mcp add exa -- bash "$CODEX_WRAPPER_PATH" >/dev/null; then
     CODEX_OVERRIDES="$(_codex_project_exa_overrides)"
     if [[ -z "$CODEX_OVERRIDES" ]]; then
       echo "[exa-setup] Codex CLI: OK (restart Codex sessions to activate tools)"
@@ -248,7 +250,7 @@ elif command -v codex >/dev/null 2>&1; then
     fi
   else
     echo "[exa-setup] WARNING: Codex MCP registration failed; run manually:" >&2
-    echo "  codex mcp add exa -- bash -c '$CODEX_WRAPPER_CMD'" >&2
+    printf '  codex mcp add exa -- bash %q\n' "$CODEX_WRAPPER_PATH" >&2
   fi
 else
   echo "[exa-setup] Codex CLI not found; skipping Codex MCP registration"

@@ -70,6 +70,7 @@ class ExaMuxDaemon:
         self._cached_tools: dict | None = None     # tools/list result
         self._backend_lock = asyncio.Lock()
         self._stop_event: asyncio.Event = asyncio.Event()
+        self._socket_inode: int | None = None      # identity of the socket we bound
 
     # ------------------------------------------------------------------
     # Backend lifecycle
@@ -222,6 +223,25 @@ class ExaMuxDaemon:
             writer.close()
             log.info("client %d disconnected (total=%d)", client_id, len(self.clients))
 
+    def _release_runtime_files(self) -> None:
+        """Remove the socket and PID file, but only if they are still ours.
+
+        A replacement daemon may already have bound a new socket and written
+        its own PID by the time this one finishes shutting down; unlinking by
+        path alone would take its endpoint away and new MCP connections would
+        fail until the next restart.
+        """
+        try:
+            if self._socket_inode is not None and SOCKET_PATH.stat().st_ino == self._socket_inode:
+                SOCKET_PATH.unlink()
+        except FileNotFoundError:
+            pass
+        try:
+            if PID_PATH.read_text().strip() == str(os.getpid()):
+                PID_PATH.unlink()
+        except (FileNotFoundError, ValueError):
+            pass
+
     # ------------------------------------------------------------------
     # Entry point
     # ------------------------------------------------------------------
@@ -233,6 +253,7 @@ class ExaMuxDaemon:
 
         server = await asyncio.start_unix_server(self.handle_client, path=str(SOCKET_PATH))
         SOCKET_PATH.chmod(0o600)
+        self._socket_inode = SOCKET_PATH.stat().st_ino
         PID_PATH.write_text(str(os.getpid()))
         log.info("daemon ready at %s (pid=%d)", SOCKET_PATH, os.getpid())
 
@@ -273,8 +294,7 @@ class ExaMuxDaemon:
                         except ProcessLookupError:
                             pass
                         await self.proc.wait()
-                SOCKET_PATH.unlink(missing_ok=True)
-                PID_PATH.unlink(missing_ok=True)
+                self._release_runtime_files()
                 log.info("daemon shutdown complete")
 
 
