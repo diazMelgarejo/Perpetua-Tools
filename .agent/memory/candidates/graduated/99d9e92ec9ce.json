@@ -1,0 +1,42 @@
+{
+  "id": "99d9e92ec9ce",
+  "key": "manual_99d9e9",
+  "name": "manual_99d9e9",
+  "claim": "Treat a history rewrite as cleanup, never as a safeguard. If an active credential was exposed, revoke or rotate it first. Rewrite on a throwaway mirror, scan every rewritten commit, and compare trees: equal to the old tip for a content-preserving rewrite, or to an approved sanitized baseline when the tip itself changes. Pin the push with force-with-lease to the expected SHA, let the operator run it, confirm with ls-remote, then request a host purge, because old SHAs stay reachable.",
+  "conditions": [
+    "exposed credential",
+    "force push",
+    "removing sensitive data from a repository",
+    "rewriting git history",
+    "verifying a push landed"
+  ],
+  "evidence_ids": [
+    "2026-10-31T08:51:06.761031+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-31T08:51:06.761031+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-31T08:51:06.761031+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-31T08:51:06.930746+00:00",
+      "action": "graduated",
+      "reviewer": "claude-main",
+      "notes": "agent-envelope: envelope_id=e07a33fc-36f4-4e65-80a9-ed4ba4f2becf kind=authorship agent=claude-main actor=claude-main identity_verified=false model=claude-opus-5-5 date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | CodeRabbit on PR 473 found the earlier rule left a live credential usable during cleanup and required an equal tree in every case; both checked out, and GitHub's guidance agrees. The exposed values here were not credentials. As of this record the rewrite is prepared and verified twice but has not landed: the operator's attempts showed no output, and ls-remote still shows the pre-rewrite tip. | public-handoff=EEG-Action-Center@f310573:docs/headset-log-v2/PEER-HANDOFF.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-31T08:51:06.761031+00:00"
+      ],
+      "lessons_sha": "2247b6be0883"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-31T08:51:06.930727+00:00",
+  "reviewer": "claude-main",
+  "rationale": "agent-envelope: envelope_id=e07a33fc-36f4-4e65-80a9-ed4ba4f2becf kind=authorship agent=claude-main actor=claude-main identity_verified=false model=claude-opus-5-5 date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | CodeRabbit on PR 473 found the earlier rule left a live credential usable during cleanup and required an equal tree in every case; both checked out, and GitHub's guidance agrees. The exposed values here were not credentials. As of this record the rewrite is prepared and verified twice but has not landed: the operator's attempts showed no output, and ls-remote still shows the pre-rewrite tip. | public-handoff=EEG-Action-Center@f310573:docs/headset-log-v2/PEER-HANDOFF.md"
+}

@@ -2,9 +2,10 @@
 """
 exa-mcp-daemon.py — singleton Exa MCP multiplexer
 
-One backend (npx exa-mcp-server) handles all three Claude registrations.
-Clients (Claude Desktop, orama, PT) connect via Unix socket; daemon
-routes JSON-RPC through the shared backend with per-client ID remapping.
+One backend (npx exa-mcp-server) handles all local Exa MCP registrations.
+Clients (Claude Desktop, orama-system, Perpetua-Tools, Codex) connect via
+Unix socket; daemon routes JSON-RPC through the shared backend with per-client
+ID remapping.
 
 Socket:  ~/.openclaw/run/exa-mcp.sock
 PID:     ~/.openclaw/run/exa-mcp.pid
@@ -68,6 +69,8 @@ class ExaMuxDaemon:
         self._cached_caps: dict | None = None      # initialize result
         self._cached_tools: dict | None = None     # tools/list result
         self._backend_lock = asyncio.Lock()
+        self._stop_event: asyncio.Event = asyncio.Event()
+        self._socket_inode: int | None = None      # identity of the socket we bound
 
     # ------------------------------------------------------------------
     # Backend lifecycle
@@ -75,7 +78,7 @@ class ExaMuxDaemon:
     async def _start_backend(self) -> None:
         env = os.environ.copy()
         self.proc = await asyncio.create_subprocess_exec(
-            NPX, "-y", "exa-mcp-server",
+            NPX, "-y", "exa-mcp-server@3.4.2",
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
@@ -100,7 +103,7 @@ class ExaMuxDaemon:
             line = await self.proc.stdout.readline()
             if not line:
                 log.warning("backend stdout closed — daemon exiting")
-                asyncio.get_event_loop().stop()
+                self._stop_event.set()
                 return
             raw = line.strip()
             if not raw:
@@ -220,6 +223,25 @@ class ExaMuxDaemon:
             writer.close()
             log.info("client %d disconnected (total=%d)", client_id, len(self.clients))
 
+    def _release_runtime_files(self) -> None:
+        """Remove the socket and PID file, but only if they are still ours.
+
+        A replacement daemon may already have bound a new socket and written
+        its own PID by the time this one finishes shutting down; unlinking by
+        path alone would take its endpoint away and new MCP connections would
+        fail until the next restart.
+        """
+        try:
+            if self._socket_inode is not None and SOCKET_PATH.stat().st_ino == self._socket_inode:
+                SOCKET_PATH.unlink()
+        except FileNotFoundError:
+            pass
+        try:
+            if PID_PATH.read_text().strip() == str(os.getpid()):
+                PID_PATH.unlink()
+        except (FileNotFoundError, ValueError):
+            pass
+
     # ------------------------------------------------------------------
     # Entry point
     # ------------------------------------------------------------------
@@ -231,22 +253,49 @@ class ExaMuxDaemon:
 
         server = await asyncio.start_unix_server(self.handle_client, path=str(SOCKET_PATH))
         SOCKET_PATH.chmod(0o600)
+        self._socket_inode = SOCKET_PATH.stat().st_ino
         PID_PATH.write_text(str(os.getpid()))
         log.info("daemon ready at %s (pid=%d)", SOCKET_PATH, os.getpid())
 
         def _shutdown(*_: Any) -> None:
             log.info("shutdown signal received")
-            server.close()
-            if self.proc:
-                self.proc.terminate()
-            SOCKET_PATH.unlink(missing_ok=True)
-            PID_PATH.unlink(missing_ok=True)
+            self._stop_event.set()
 
         for sig in (signal.SIGTERM, signal.SIGINT):
             asyncio.get_event_loop().add_signal_handler(sig, _shutdown)
 
         async with server:
-            await server.serve_forever()
+            serve_task = asyncio.create_task(server.serve_forever())
+            stop_task = asyncio.create_task(self._stop_event.wait())
+            try:
+                await asyncio.wait(
+                    {serve_task, stop_task}, return_when=asyncio.FIRST_COMPLETED
+                )
+            finally:
+                serve_task.cancel()
+                stop_task.cancel()
+                for t in (serve_task, stop_task):
+                    try:
+                        await t
+                    except (asyncio.CancelledError, Exception):
+                        pass
+                if self.proc:
+                    try:
+                        self.proc.terminate()
+                    except ProcessLookupError:
+                        pass  # backend already exited (e.g. the EOF that triggered this shutdown)
+                    # Only one backend may run: confirm this one is gone before
+                    # releasing the socket and PID file a restart would claim.
+                    try:
+                        await asyncio.wait_for(self.proc.wait(), timeout=5)
+                    except asyncio.TimeoutError:
+                        try:
+                            self.proc.kill()
+                        except ProcessLookupError:
+                            pass
+                        await self.proc.wait()
+                self._release_runtime_files()
+                log.info("daemon shutdown complete")
 
 
 # ---------------------------------------------------------------------------

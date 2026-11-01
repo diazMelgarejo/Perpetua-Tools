@@ -1,0 +1,42 @@
+{
+  "id": "a515c2c7cda1",
+  "key": "manual_a515c2",
+  "name": "manual_a515c2",
+  "claim": "Keep one source of truth for access, but only where the platform enforces the app's required users and operations. If the platform already decides who may open a resource and that is exactly who may use the app, do not add a second allowlist, and run as the accessing user so a code bug cannot exceed that person's own rights. If an action needs narrower rights than opening the resource, such as manager-only, platform access does not enforce it, so keep the narrower app-level authorization for that action.",
+  "conditions": [
+    "adding a write path",
+    "allowlist",
+    "app-level authorization",
+    "designing access control",
+    "web app permissions"
+  ],
+  "evidence_ids": [
+    "2026-10-31T23:00:20.587829+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-31T23:00:20.587829+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-31T23:00:20.587829+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-31T23:00:32.340806+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "agent-envelope: envelope_id=4e0dee87-066d-4952-b0ee-1cd5dc79741f kind=authorship agent=claude-main actor=claude-main identity_verified=false model=claude-sonnet-5-5 date=2026-11-01 session_id=session_01FVt5ZPbsBetFjeapmQrjRQ run_id=pr473-review-fix-2026-11-01 privacy_tier=redacted | CodeRabbit review on PR 473: platform-only authorization holds only when the platform enforces the app's required users and operations; otherwise running as the accessing user lets any editor perform a narrower app action. The lesson now keeps app-level authorization for narrower actions.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-31T23:00:20.587829+00:00"
+      ],
+      "lessons_sha": "1909c5160fe1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-31T23:00:32.340786+00:00",
+  "reviewer": "learn.py",
+  "rationale": "agent-envelope: envelope_id=4e0dee87-066d-4952-b0ee-1cd5dc79741f kind=authorship agent=claude-main actor=claude-main identity_verified=false model=claude-sonnet-5-5 date=2026-11-01 session_id=session_01FVt5ZPbsBetFjeapmQrjRQ run_id=pr473-review-fix-2026-11-01 privacy_tier=redacted | CodeRabbit review on PR 473: platform-only authorization holds only when the platform enforces the app's required users and operations; otherwise running as the accessing user lets any editor perform a narrower app action. The lesson now keeps app-level authorization for narrower actions."
+}

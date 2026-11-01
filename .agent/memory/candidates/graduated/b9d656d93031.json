@@ -1,0 +1,40 @@
+{
+  "id": "b9d656d93031",
+  "key": "manual_b9d656",
+  "name": "manual_b9d656",
+  "claim": "Decoding an identity token is not authentication and a client-side reveal is not authorization. A protected backend must verify signature, audience, issuer, expiry and hosted domain, then enforce per-site permissions; a static frontend may not be described as an authorized deployment until that exists.",
+  "conditions": [
+    "google sign-in frontend",
+    "id token handling",
+    "static site authentication"
+  ],
+  "evidence_ids": [
+    "2026-10-31T07:42:09.398084+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-31T07:42:09.398084+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-31T07:42:09.398084+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-31T07:42:09.549462+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "agent-envelope: envelope_id=5746bfea-e1d3-4b91-96fb-d7d783b91d4b kind=authorship agent=perplexity author_model=gpt-6.1-sol-thinking-medium model_source=operator-stated author_availability=unknown actor=claude-main identity_verified=false lineage=operator-supplied-review-text on_behalf_of=operator date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | Finding verified by claude-main at source: the frontend decodes the token payload and reveals the dashboard with no server check (site app.js handleCredentialResponse). Drive permissions remain a separate boundary, so this does not itself show private files are exposed. Reference: Google Identity, verify the Google ID token on your server side. Fixed: the sign-in was removed from the static page, because with no server it protected nothing; add it back only with a real backend. | public-handoff=EEG-Action-Center@1f7efa6:docs/headset-log-v2/PEER-HANDOFF.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-31T07:42:09.398084+00:00"
+      ],
+      "lessons_sha": "6746bf810534"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-31T07:42:09.549447+00:00",
+  "reviewer": "learn.py",
+  "rationale": "agent-envelope: envelope_id=5746bfea-e1d3-4b91-96fb-d7d783b91d4b kind=authorship agent=perplexity author_model=gpt-6.1-sol-thinking-medium model_source=operator-stated author_availability=unknown actor=claude-main identity_verified=false lineage=operator-supplied-review-text on_behalf_of=operator date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | Finding verified by claude-main at source: the frontend decodes the token payload and reveals the dashboard with no server check (site app.js handleCredentialResponse). Drive permissions remain a separate boundary, so this does not itself show private files are exposed. Reference: Google Identity, verify the Google ID token on your server side. Fixed: the sign-in was removed from the static page, because with no server it protected nothing; add it back only with a real backend. | public-handoff=EEG-Action-Center@1f7efa6:docs/headset-log-v2/PEER-HANDOFF.md"
+}

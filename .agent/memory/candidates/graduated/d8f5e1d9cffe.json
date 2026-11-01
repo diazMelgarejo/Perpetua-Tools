@@ -1,0 +1,41 @@
+{
+  "id": "d8f5e1d9cffe",
+  "key": "manual_d8f5e1",
+  "name": "manual_d8f5e1",
+  "claim": "Give a contract shared by orama-system and Perpetua-Tools one owner. orama-system owns the search order, the deep-research skill and the EXA runtime; Perpetua-Tools mirrors the scripts byte-identically and its docs point at the policy instead of restating it. Edit the owner, then copy; never edit a mirror.",
+  "conditions": [
+    "mirrored script",
+    "orama-system and Perpetua-Tools drift",
+    "search policy",
+    "two-repo contract"
+  ],
+  "evidence_ids": [
+    "2026-10-31T09:05:17.073169+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-31T09:05:17.073169+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-31T09:05:17.073169+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-31T09:05:17.223009+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "agent-envelope: envelope_id=260d9e75-7f9f-4169-a8b4-cdf8122537da kind=authorship agent=claude-main actor=claude-main identity_verified=false model=claude-opus-5-5 date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | PT's chain line still named five tiers after orama moved to seven, and its EXA wrapper had frozen in July, missing the concurrent-start lock and the Codex wiring. PT's .mcp.json already resolved to orama's wrapper, so the stale copy was only a trap. Comparing both sides chose the winner: orama was the superset. PT's Codex project config stays hosted because its debate records no operator ruling, and it is documented as a named exception. | public-reference=orama-system@563e6044:bin/orama-system/skills/deep-research/references/transports.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-31T09:05:17.073169+00:00"
+      ],
+      "lessons_sha": "f2861a63f594"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-31T09:05:17.222997+00:00",
+  "reviewer": "learn.py",
+  "rationale": "agent-envelope: envelope_id=260d9e75-7f9f-4169-a8b4-cdf8122537da kind=authorship agent=claude-main actor=claude-main identity_verified=false model=claude-opus-5-5 date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | PT's chain line still named five tiers after orama moved to seven, and its EXA wrapper had frozen in July, missing the concurrent-start lock and the Codex wiring. PT's .mcp.json already resolved to orama's wrapper, so the stale copy was only a trap. Comparing both sides chose the winner: orama was the superset. PT's Codex project config stays hosted because its debate records no operator ruling, and it is documented as a named exception. | public-reference=orama-system@563e6044:bin/orama-system/skills/deep-research/references/transports.md"
+}

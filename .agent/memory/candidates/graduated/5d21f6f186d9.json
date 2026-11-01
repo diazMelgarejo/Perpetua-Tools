@@ -1,0 +1,41 @@
+{
+  "id": "5d21f6f186d9",
+  "key": "manual_5d21f6",
+  "name": "manual_5d21f6",
+  "claim": "Fix the data boundary and keep the agreed contract: do not make an error disappear by weakening validation or by converting a value through an assumption. A formatting tolerance is fine when it cannot accept a different value; accepting a blank is a business-rule change that needs the operator's ruling.",
+  "conditions": [
+    "changing a parser",
+    "error at a system boundary",
+    "fixing a validation error",
+    "spreadsheet date or time value"
+  ],
+  "evidence_ids": [
+    "2026-10-31T07:42:09.165350+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-31T07:42:09.165350+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-31T07:42:09.165350+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-31T07:42:09.311163+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "agent-envelope: envelope_id=9ce4a576-06e7-4520-9d29-db55c173f94a kind=authorship agent=perplexity author_model=gpt-6.1-sol-thinking-medium model_source=operator-stated author_availability=unknown actor=claude-main identity_verified=false lineage=operator-supplied-review-text on_behalf_of=operator date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | Self-assessment accepted after peer handoff: my suggested hour and minute conversion added a time-zone dependency, and my blank-tolerant comparison weakened validation. Both were replaced, the parsers now reject typed values and name the cause, and the operator's ruling on blanks is pinned by tests in both languages. | public-handoff=EEG-Action-Center@1f7efa6:docs/headset-log-v2/PEER-HANDOFF.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-31T07:42:09.165350+00:00"
+      ],
+      "lessons_sha": "d8f8e17e46f5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-31T07:42:09.311152+00:00",
+  "reviewer": "learn.py",
+  "rationale": "agent-envelope: envelope_id=9ce4a576-06e7-4520-9d29-db55c173f94a kind=authorship agent=perplexity author_model=gpt-6.1-sol-thinking-medium model_source=operator-stated author_availability=unknown actor=claude-main identity_verified=false lineage=operator-supplied-review-text on_behalf_of=operator date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | Self-assessment accepted after peer handoff: my suggested hour and minute conversion added a time-zone dependency, and my blank-tolerant comparison weakened validation. Both were replaced, the parsers now reject typed values and name the cause, and the operator's ruling on blanks is pinned by tests in both languages. | public-handoff=EEG-Action-Center@1f7efa6:docs/headset-log-v2/PEER-HANDOFF.md"
+}

@@ -10,13 +10,57 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ORAMA_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-PT_ROOT="${HOME}/code/OpenClaw/perplexity-api/Perpetua-Tools"
 DESKTOP_CFG="${HOME}/Library/Application Support/Claude/claude_desktop_config.json"
 MCP_WRAPPER="${SCRIPT_DIR}/exa-mcp-wrapper.sh"
 SOCKET_PATH="${HOME}/.openclaw/run/exa-mcp.sock"
 PID_PATH="${HOME}/.openclaw/run/exa-mcp.pid"
 LOG_PATH="${HOME}/.openclaw/log/exa-mcp-daemon.log"
+# orama-system owns the EXA runtime, and this script is mirrored byte-identical
+# into Perpetua-Tools, so resolve the orama-system checkout with whichever
+# resolver this copy sits next to; never assume a workstation layout.
+_resolve_exa_owner_root() {
+  if [[ -f "$SCRIPT_DIR/resolve-orama-root.sh" ]]; then        # orama-system copy
+    bash "$SCRIPT_DIR/resolve-orama-root.sh" 2>/dev/null
+  elif [[ -f "$SCRIPT_DIR/../resolve_orama_root.sh" ]]; then   # Perpetua-Tools mirror
+    # shellcheck source=/dev/null
+    (source "$SCRIPT_DIR/../resolve_orama_root.sh" && resolve_orama_root) 2>/dev/null
+  fi
+}
+EXA_OWNER_ROOT="$(_resolve_exa_owner_root || true)"
+
+# Perpetua-Tools is the other repo whose .mcp.json shares this wrapper.
+_resolve_pt_root() {
+  local lib
+  if [[ -f "$SCRIPT_DIR/../../orchestrator/fastapi_app.py" ]]; then   # Perpetua-Tools mirror
+    (cd "$SCRIPT_DIR/../.." && pwd)
+    return
+  fi
+  lib="${EXA_OWNER_ROOT:-}/bin/orama-system/skills/hermes-harness/scripts/resolve_perp_harness.sh"
+  # shellcheck source=/dev/null
+  [[ -f "$lib" ]] && (cd "$EXA_OWNER_ROOT" && source "$lib" && resolve_pt_root) 2>/dev/null
+}
+PT_ROOT="$(_resolve_pt_root || true)"
+# Codex gets the wrapper path as a plain argument (never re-parsed as shell
+# source), so a checkout path containing $ " ` or spaces is preserved.
+CODEX_WRAPPER_PATH=""
+if [[ -n "$EXA_OWNER_ROOT" && -f "$EXA_OWNER_ROOT/scripts/exa/exa-mcp-wrapper.sh" ]]; then
+  CODEX_WRAPPER_PATH="$EXA_OWNER_ROOT/scripts/exa/exa-mcp-wrapper.sh"
+fi
+
+# A project's own .codex/config.toml [mcp_servers.exa] overrides the global
+# registration in that checkout. Print each such file whose exa entry does not
+# use the wrapper, so setup never reports Codex ready when it is not.
+_codex_project_exa_overrides() {
+  local root cfg
+  for root in "$(cd "$SCRIPT_DIR/../.." && pwd)" "${EXA_OWNER_ROOT:-}" "${PT_ROOT:-}"; do
+    cfg="$root/.codex/config.toml"
+    [[ -n "$root" && -f "$cfg" ]] || continue
+    if awk '/^\[/{s=($0=="[mcp_servers.exa]")} s' "$cfg" | grep -q . &&
+       ! awk '/^\[/{s=($0=="[mcp_servers.exa]")} s' "$cfg" | grep -q 'exa-mcp-wrapper.sh'; then
+      echo "$cfg"
+    fi
+  done | sort -u
+}
 
 mkdir -p "${HOME}/.openclaw/run" "${HOME}/.openclaw/log"
 
@@ -78,6 +122,17 @@ print((d.get('env') or {}).get('EXA_API_KEY',''))
       echo "  key: ${KEY:0:8}…${KEY: -4}"
     else
       echo "  key: NOT SET — run: bash setup-exa.sh --key YOUR_KEY"
+    fi
+    echo ""
+    echo "=== Codex MCP ==="
+    if command -v codex >/dev/null 2>&1; then
+      if codex mcp get exa 2>/dev/null | grep -q 'exa-mcp-wrapper.sh'; then
+        echo "  exa:    configured via wrapper"
+      else
+        echo "  exa:    not configured via wrapper — run setup"
+      fi
+    else
+      echo "  codex:  not installed"
     fi
     echo ""
     echo "=== Log (last 5 lines) ==="
@@ -155,26 +210,53 @@ cfg_path.write_text(json.dumps(cfg, indent=2))
 print("[exa-setup] Claude Desktop: OK (restart app to activate)")
 PYEOF
 
-# 5. Write .mcp.json for both repos (both point to the SAME wrapper)
-for REPO_PATH in "$ORAMA_ROOT" "$PT_ROOT"; do
-  if [[ -d "$REPO_PATH" ]]; then
-    MCP_FILE="${REPO_PATH}/.mcp.json"
-    python3 - <<PYEOF
-import json, pathlib
-path = pathlib.Path("$MCP_FILE")
-data = json.loads(path.read_text()) if path.exists() else {}
-data.setdefault("mcpServers", {})["exa"] = {
-    "command": "bash",
-    "args": ["\$HOME/code/OpenClaw/orama-system/scripts/exa/exa-mcp-wrapper.sh"],
-    "env": {}
-}
-path.write_text(json.dumps(data, indent=2))
-print(f"[exa-setup] {path}: OK")
+# 5. Check .mcp.json in both repos. Each tracked file already resolves the
+# shared wrapper portably at run time, so setup only reports and never
+# rewrites a tracked file with a machine-specific path.
+for REPO_PATH in "${EXA_OWNER_ROOT:-}" "${PT_ROOT:-}"; do
+  [[ -n "$REPO_PATH" && -d "$REPO_PATH" ]] || continue
+  MCP_FILE="${REPO_PATH}/.mcp.json"
+  if python3 - "$MCP_FILE" <<'PYEOF'
+import json, pathlib, sys
+path = pathlib.Path(sys.argv[1])
+exa = json.loads(path.read_text()).get("mcpServers", {}).get("exa", {}) if path.exists() else {}
+sys.exit(0 if "exa-mcp-wrapper.sh" in " ".join([exa.get("command", "")] + exa.get("args", [])) else 1)
 PYEOF
+  then
+    echo "[exa-setup] ${MCP_FILE}: OK (uses the shared wrapper)"
+  else
+    echo "[exa-setup] WARNING: ${MCP_FILE} has no exa entry using exa-mcp-wrapper.sh; restore it from the repository" >&2
   fi
 done
+[[ -n "${PT_ROOT:-}" ]] || echo "[exa-setup] Perpetua-Tools checkout not found; skipped its .mcp.json check"
 
-# 6. Smoke-test: start daemon and verify
+# 6. Wire Codex CLI global MCP to the same wrapper when Codex is present.
+# Codex's HTTP MCP registration cannot resolve the OpenClaw Keychain/openclaw.json
+# secret path by itself. The stdio wrapper is the authenticated, shared path.
+if command -v codex >/dev/null 2>&1 && [[ -z "$CODEX_WRAPPER_PATH" ]]; then
+  echo "[exa-setup] WARNING: cannot locate the orama-system checkout that owns the EXA wrapper;" >&2
+  echo "  set ORAMA_SYSTEM_ROOT and re-run to register Codex. Skipping Codex MCP registration." >&2
+elif command -v codex >/dev/null 2>&1; then
+  echo "[exa-setup] Registering Exa MCP server in Codex global config..."
+  codex mcp remove exa >/dev/null 2>&1 || true
+  if codex mcp add exa -- bash "$CODEX_WRAPPER_PATH" >/dev/null; then
+    CODEX_OVERRIDES="$(_codex_project_exa_overrides)"
+    if [[ -z "$CODEX_OVERRIDES" ]]; then
+      echo "[exa-setup] Codex CLI: OK (restart Codex sessions to activate tools)"
+    else
+      echo "[exa-setup] Codex CLI: global registration OK, but these project configs define their own exa server," >&2
+      echo "  which overrides the wrapper when Codex runs in that checkout (point them at the wrapper to switch):" >&2
+      echo "$CODEX_OVERRIDES" | sed 's/^/    /' >&2
+    fi
+  else
+    echo "[exa-setup] WARNING: Codex MCP registration failed; run manually:" >&2
+    printf '  codex mcp add exa -- bash %q\n' "$CODEX_WRAPPER_PATH" >&2
+  fi
+else
+  echo "[exa-setup] Codex CLI not found; skipping Codex MCP registration"
+fi
+
+# 7. Smoke-test: start daemon and verify
 echo "[exa-setup] Starting daemon for smoke test..."
 export EXA_API_KEY="$API_KEY"
 NVM_NODE="${HOME}/.nvm/versions/node/v22.22.2/bin"
@@ -195,10 +277,11 @@ else
 fi
 
 echo ""
-echo "[exa-setup] Done. All 3 MCP registrations point to ONE daemon:"
+echo "[exa-setup] Done. MCP registrations point to ONE daemon:"
 echo "  Claude Desktop      → bash $MCP_WRAPPER → daemon"
 echo "  orama-system CLI    → bash $MCP_WRAPPER → daemon"
 echo "  Perpetua-Tools CLI  → bash $MCP_WRAPPER → daemon"
+echo "  Codex CLI           → bash $MCP_WRAPPER → daemon"
 echo ""
 echo "Control:"
 echo "  bash setup-exa.sh status   — check daemon + key"
@@ -207,3 +290,7 @@ echo "  bash setup-exa.sh restart  — cycle daemon"
 echo ""
 echo "Python test:"
 echo "  python3 ${SCRIPT_DIR}/exa_search.py 'orama system MCP agent'"
+echo ""
+echo "MCP smoke test:"
+echo "  codex mcp get exa"
+echo "  codex mcp list"

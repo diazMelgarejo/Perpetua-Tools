@@ -1,0 +1,40 @@
+{
+  "id": "f8a62f5345cb",
+  "key": "manual_f8a62f",
+  "name": "manual_f8a62f",
+  "claim": "A clean privacy scan is a floor, not proof: a hashed blocklist cannot see facts it has no entry for, and short numbers evade it. Scan every commit being published including other agents' commits on that branch, scan a clean export of tracked files rather than the working tree, and also read the diff as a human would.",
+  "conditions": [
+    "publishing another agent's branch",
+    "running a privacy scan",
+    "scanner reports zero findings"
+  ],
+  "evidence_ids": [
+    "2026-10-31T07:42:08.253792+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-31T07:42:08.253792+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-31T07:42:08.253792+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-31T07:42:08.393945+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "agent-envelope: envelope_id=5463fab0-e48b-41e7-b6e4-3049e22dd814 kind=authorship agent=claude-main actor=claude-main identity_verified=false model=claude-opus-5-5 date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | The scanner caught a place name in another agent's commits, but a real count in the same file stayed clean through every scan and was noticed only on reading the source. A local build cache also produced a false finding until the scan ran on a clean export. Zip files must sit inside a scanned folder, since passing a bare file scanned zero files. A generic rule for literal counts was then added to the scanner and proven against the real line; its first version missed that line, so a new rule must be tested on the case that motivated it. | public-handoff=EEG-Action-Center@1f7efa6:docs/headset-log-v2/PEER-HANDOFF.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-31T07:42:08.253792+00:00"
+      ],
+      "lessons_sha": "30851c327042"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-31T07:42:08.393934+00:00",
+  "reviewer": "learn.py",
+  "rationale": "agent-envelope: envelope_id=5463fab0-e48b-41e7-b6e4-3049e22dd814 kind=authorship agent=claude-main actor=claude-main identity_verified=false model=claude-opus-5-5 date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | The scanner caught a place name in another agent's commits, but a real count in the same file stayed clean through every scan and was noticed only on reading the source. A local build cache also produced a false finding until the scan ran on a clean export. Zip files must sit inside a scanned folder, since passing a bare file scanned zero files. A generic rule for literal counts was then added to the scanner and proven against the real line; its first version missed that line, so a new rule must be tested on the case that motivated it. | public-handoff=EEG-Action-Center@1f7efa6:docs/headset-log-v2/PEER-HANDOFF.md"
+}

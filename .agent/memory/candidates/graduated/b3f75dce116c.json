@@ -1,0 +1,40 @@
+{
+  "id": "b3f75dce116c",
+  "key": "manual_b3f75d",
+  "name": "manual_b3f75d",
+  "claim": "Give operator instructions in a fixed order: application, file to open, function, exact edit, save, function to run, expected result. Ship traceable releases built from canonical source, never reformatted copies, and never put an unconfirmed company value into a runnable step.",
+  "conditions": [
+    "handing steps to a human",
+    "packaging a release zip",
+    "writing operator instructions"
+  ],
+  "evidence_ids": [
+    "2026-10-31T07:42:10.091645+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-31T07:42:10.091645+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-31T07:42:10.091645+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-31T07:42:10.230854+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "agent-envelope: envelope_id=8623f2b3-05d6-42c6-8178-a449d8a70377 kind=authorship agent=perplexity author_model=gpt-6.1-sol-thinking-medium model_source=operator-stated author_availability=unknown actor=claude-main identity_verified=false lineage=operator-supplied-review-text on_behalf_of=operator date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | Self-assessment accepted after peer handoff: I told the operator to select functions without naming the file, suggested rerunning a configuration step that rejects an already-configured file, supplied unconfirmed values in runnable instructions, and repackaged source with changed formatting. That older installation zip is not canonical. | public-handoff=EEG-Action-Center@1f7efa6:docs/headset-log-v2/PEER-HANDOFF.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-31T07:42:10.091645+00:00"
+      ],
+      "lessons_sha": "776d54e1c955"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-31T07:42:10.230844+00:00",
+  "reviewer": "learn.py",
+  "rationale": "agent-envelope: envelope_id=8623f2b3-05d6-42c6-8178-a449d8a70377 kind=authorship agent=perplexity author_model=gpt-6.1-sol-thinking-medium model_source=operator-stated author_availability=unknown actor=claude-main identity_verified=false lineage=operator-supplied-review-text on_behalf_of=operator date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | Self-assessment accepted after peer handoff: I told the operator to select functions without naming the file, suggested rerunning a configuration step that rejects an already-configured file, supplied unconfirmed values in runnable instructions, and repackaged source with changed formatting. That older installation zip is not canonical. | public-handoff=EEG-Action-Center@1f7efa6:docs/headset-log-v2/PEER-HANDOFF.md"
+}

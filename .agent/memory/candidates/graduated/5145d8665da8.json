@@ -1,0 +1,41 @@
+{
+  "id": "5145d8665da8",
+  "key": "manual_5145d8",
+  "name": "manual_5145d8",
+  "claim": "Before publishing, walk every leak channel, not only source files: placeholders and defaults, literal counts and constants, fixtures, archives and spreadsheets, images, commit messages, branch names, full history, forks and cached views, setup helpers pasted into live scripts, browser storage, handoff notes, chat exports and agent memory itself.",
+  "conditions": [
+    "anti-doxxing review",
+    "before publishing",
+    "leak prevention checklist",
+    "writing agent memory about a leak"
+  ],
+  "evidence_ids": [
+    "2026-10-31T07:42:08.025055+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-10-31T07:42:08.025055+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-10-31T07:42:08.025055+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-10-31T07:42:08.170507+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "agent-envelope: envelope_id=d0dcfbaa-149d-48dc-999d-217ead988f98 kind=authorship agent=claude-main actor=claude-main identity_verified=false model=claude-opus-5-5 date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | Each channel carried or could have carried a private fact here. A credential scan covers only one of them. Memory counts as a channel: record the category of a leak, never the leaked value or the SHA of a commit that still holds it. | public-handoff=EEG-Action-Center@1f7efa6:docs/headset-log-v2/PEER-HANDOFF.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-10-31T07:42:08.025055+00:00"
+      ],
+      "lessons_sha": "d0e085a1e0da"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-10-31T07:42:08.170491+00:00",
+  "reviewer": "learn.py",
+  "rationale": "agent-envelope: envelope_id=d0dcfbaa-149d-48dc-999d-217ead988f98 kind=authorship agent=claude-main actor=claude-main identity_verified=false model=claude-opus-5-5 date=2026-10-31 session_id=session_01ThHx9YdUfr5mQntywvAJ7Z run_id=site-saga-2026-10-31 privacy_tier=redacted | Each channel carried or could have carried a private fact here. A credential scan covers only one of them. Memory counts as a channel: record the category of a leak, never the leaked value or the SHA of a commit that still holds it. | public-handoff=EEG-Action-Center@1f7efa6:docs/headset-log-v2/PEER-HANDOFF.md"
+}
