@@ -171,6 +171,90 @@ models:
     # frugality_tier=1 (local_oss): LM Studio on win-rtx3080, LAN-local.
     frugality_tier: 1
 
+  # ── LOCAL: Windows LM Studio — Qwen3.8-27B (dense), both Windows GPUs ─────
+  # HF: lmstudio-community/Qwen3.8-27B-GGUF (base Qwen/Qwen3.8-27B, Apache-2.0)
+  # Q4_K_M = 16.8 GB, so neither card holds it whole: partial offload on both.
+  # One routing key per GPU; both send the LM Studio wire ID qwen/qwen3.8-27b.
+  # Benchmarks are pending: run hardware/SKILL.md § Benchmark protocol on each
+  # node and record the results here before raising priority or adding roles
+  # that would displace the Qwen3.5-27B primary.
+  - name: qwen3.8-27b-rtx3080
+    api_model: qwen/qwen3.8-27b
+    backend: lm-studio
+    device: win-rtx3080
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
+    port: 1234
+    context_window: 16384
+    gpu_offload: 40          # starting point copied from the Qwen3.5-27B Q4_K_M entry; confirm by benchmark
+    roles: [coder, coding, checker, refiner, subagent, fallback]
+    priority: 18
+    online: false
+    reasoning: windows-lmstudio
+    gguf_file: Qwen3.8-27B-Q4_K_M.gguf
+    hf_repo: lmstudio-community/Qwen3.8-27B-GGUF
+    provenance:
+      kind: local-deployment
+      source_model_id: "qwen/qwen3.8-27b"
+      source_url: "https://huggingface.co/lmstudio-community/Qwen3.8-27B-GGUF"
+      verified_on: "2026-11-01"
+    benchmark:
+      status: pending        # pending | measured
+      protocol: hardware/SKILL.md#benchmark-protocol
+    # frugality_tier=1 (local_oss): LM Studio on win-rtx3080, LAN-local.
+    frugality_tier: 1
+
+  - name: qwen3.8-27b-rtx5080
+    api_model: qwen/qwen3.8-27b
+    backend: lm-studio
+    device: win-rtx5080
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
+    port: 1234
+    context_window: 16384
+    # gpu_offload: set from the benchmark; 16 GB VRAM holds more layers than the 3080.
+    roles: [coder, coding, checker, refiner, subagent, fallback]
+    priority: 17
+    online: false
+    reasoning: windows-lmstudio
+    gguf_file: Qwen3.8-27B-Q4_K_M.gguf
+    hf_repo: lmstudio-community/Qwen3.8-27B-GGUF
+    provenance:
+      kind: local-deployment
+      source_model_id: "qwen/qwen3.8-27b"
+      source_url: "https://huggingface.co/lmstudio-community/Qwen3.8-27B-GGUF"
+      verified_on: "2026-11-01"
+    benchmark:
+      status: pending
+      protocol: hardware/SKILL.md#benchmark-protocol
+    # frugality_tier=1 (local_oss): LM Studio on win-rtx5080, LAN-local.
+    frugality_tier: 1
+
+  # ── LOCAL: Windows RTX 5080 only — DiffusionGemma 26B-A4B (Gemma 4) NVFP4 ──
+  # HF: FreedomAISVR/DiffusionGemma-26B-A4B-it-NVFP4-GGUF
+  #     (base google/diffusiongemma-26B-A4B-it, Apache-2.0)
+  # Text-to-image block-diffusion MoE (26B total, 4B active), NOT a chat model:
+  # its only role is image-generation, so no text role can select it.
+  # NVFP4 targets Blackwell, so RTX 5080 only (never the 3080, Ampere).
+  # weights 14.4 GB + required vision projector 1.19 GB
+  # (mmproj-diffusiongemma-26b-a4b-f16.gguf). Upstream documents llama-server;
+  # LM Studio support is unverified. Benchmark later.
+  - name: diffusiongemma-26b-a4b-it-nvfp4
+    backend: lm-studio
+    device: win-rtx5080
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
+    port: 1234
+    roles: [image-generation]
+    priority: 90
+    online: false
+    reasoning: windows-lmstudio-diffusion
+    gguf_file: diffusiongemma-26b-a4b-it-nvfp4.gguf
+    mmproj_file: mmproj-diffusiongemma-26b-a4b-f16.gguf
+    hf_repo: FreedomAISVR/DiffusionGemma-26B-A4B-it-NVFP4-GGUF
+    benchmark:
+      status: deferred       # benchmark later, per operator
+      protocol: hardware/SKILL.md#benchmark-protocol
+    # frugality_tier=1 (local_oss): LM Studio on win-rtx5080, LAN-local.
+    frugality_tier: 1
+
    # ── LOCAL: Shared Ollama (Mac or Win or dedicated server) ─────────────────
   - name: qwen3.5:35b-a3b-q4_K_M
     backend: ollama

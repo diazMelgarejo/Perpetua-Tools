@@ -136,6 +136,14 @@ recommended_models:
     lm_studio_context: 16384
     roles: [general, coding, executor, subagent, fallback]
     notes: "Gemma 4 26B MoE (4B active params). LM Studio community build — auto-detects. Secondary to Qwen 27B."
+  - id: qwen/qwen3.8-27b
+    gguf_file: Qwen3.8-27B-Q4_K_M.gguf   # 16.8 GB
+    hf_repo: lmstudio-community/Qwen3.8-27B-GGUF
+    backend: lm-studio
+    gpu_offload: 40             # starting point (same as Qwen3.5-27B Q4_K_M); confirm by benchmark
+    lm_studio_context: 16384
+    roles: [coder, coding, checker, refiner, subagent, fallback]
+    notes: "Dense 27B, routing key qwen3.8-27b-rtx3080. Benchmark pending (see Benchmark protocol); stays below the Qwen3.5-27B primary until measured."
   - id: qwen3.5-35b-a3b-q4
     ollama_tag: frob/qwen3.5:35b-a3b-instruct-ud-q4_K_M
     backend: ollama
@@ -164,6 +172,46 @@ recommended_models:
 default_primary_model: Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2
 default_fallback_model: qwen3.5-35b-a3b-q4
 ```
+
+### Profile: win-rtx5080
+
+```yaml
+profile_id: win-rtx5080
+display_name: "Windows GPU node 2 (RTX 5080 16GB)"
+architecture: x86-64
+gpu: RTX 5080 (Blackwell)   # native NVFP4; the 3080 (Ampere) is not
+vram_gb: 16
+max_model_vram_gb: 16
+# cpu / ram_gb: record from the node; not yet captured here.
+preferred_backend: lm-studio
+cuda_available: true
+
+# LM STUDIO ENV — the endpoint is one entry of LM_STUDIO_WIN_ENDPOINTS in .env.local.
+
+recommended_models:
+  - id: gemma-4-26b-a4b-it-nvfp4
+    backend: lm-studio
+    notes: "Current primary on this node (config/devices.yml)."
+  - id: qwen/qwen3.8-27b
+    gguf_file: Qwen3.8-27B-Q4_K_M.gguf   # 16.8 GB: still a partial offload at 16 GB
+    hf_repo: lmstudio-community/Qwen3.8-27B-GGUF
+    backend: lm-studio
+    lm_studio_context: 16384
+    roles: [coder, coding, checker, refiner, subagent, fallback]
+    notes: "Routing key qwen3.8-27b-rtx5080. gpu_offload is set from the benchmark."
+  - id: diffusiongemma-26b-a4b-it-nvfp4
+    gguf_file: diffusiongemma-26b-a4b-it-nvfp4.gguf       # 14.4 GB
+    mmproj_file: mmproj-diffusiongemma-26b-a4b-f16.gguf   # 1.19 GB, required
+    hf_repo: FreedomAISVR/DiffusionGemma-26B-A4B-it-NVFP4-GGUF
+    backend: lm-studio
+    roles: [image-generation]
+    notes: "Gemma 4 block-diffusion text-to-image MoE (26B, 4B active). RTX 5080 only (NVFP4). Not a chat model. Upstream documents llama-server; LM Studio support unverified. Benchmark later."
+```
+
+Both Windows nodes currently resolve to one host through active tilting
+(`orchestrator/model_registry.py::_resolve_host`), so the registry records
+5080 placement but dispatch cannot yet pin a request to the 5080. Treat the
+`win-rtx5080` entries as placement records until per-device hosts land.
 
 ---
 
@@ -287,6 +335,45 @@ second probe is a no-op.
 
 ---
 
+## Benchmark protocol
+
+Run on the node itself, with nothing else loaded on that GPU, one model at a
+time. Record results in the model's `benchmark:` block in `config/models.yml`
+and set `status: measured`. Never record the endpoint address.
+
+1. In LM Studio, load the model with the `gpu_offload` and context from its
+   `config/models.yml` entry. Note the layers offloaded and the load time.
+2. From PowerShell on the node:
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File scripts\bench\Measure-LmStudioModel.ps1 `
+     -Model qwen/qwen3.8-27b -Device win-rtx3080 -Runs 5
+   ```
+
+   It uses the first entry of `LM_STUDIO_WIN_ENDPOINTS` unless `-Endpoint` is
+   given, discards one warm-up run, and writes a JSON file with per-run
+   generation tokens/s, time to first token, wall time, and the GPU name and
+   VRAM in use from `nvidia-smi`.
+3. Copy the medians into `benchmark:`:
+
+   ```yaml
+   benchmark:
+     status: measured
+     measured_on: "YYYY-MM-DD"
+     lm_studio_version: "x.y.z"
+     gpu_offload: 40
+     context_window: 16384
+     gen_tokens_per_s: 0.0      # median
+     ttft_s: 0.0                # median
+     vram_used_gb: 0.0
+     runs: 5
+   ```
+
+Text-to-image models (`image-generation`) need a different measure (seconds
+per image at a fixed size and step count); that method is not defined yet.
+
+---
+
 ## Synchronization Contract
 
 This file is the **single source of truth** for hardware profiles.
@@ -319,6 +406,11 @@ cite the YAML and keep examples aligned with it.
 ---
 
 ## Changelog
+
+### 2026-11-01
+- **win-rtx3080 / win-rtx5080**: Add `qwen/qwen3.8-27b` (lmstudio-community GGUF, Q4_K_M) on both nodes as separate routing keys; benchmarks pending.
+- **win-rtx5080**: Add profile; add `diffusiongemma-26b-a4b-it-nvfp4` (text-to-image, NVFP4, 5080 only); benchmark later.
+- **Benchmark protocol**: add the measurement procedure and `scripts/bench/Measure-LmStudioModel.ps1`.
 
 ### v0.9.9.8 (2026-07-08)
 - **mac-studio**: Document `ollama ps` / `GET /api/ps` as the GPU-residency
