@@ -75,6 +75,10 @@ providers:
 model_provenance:
   perplexity:
     documentation_hosts: [docs.perplexity.ai]
+  # Local LM Studio GGUF builds: the model card on Hugging Face is the source
+  # of truth for the file and wire ID (no credential, no dispatch host here).
+  lm-studio:
+    documentation_hosts: [huggingface.co]
   xai:
     documentation_hosts: [docs.x.ai]
   gemini:
