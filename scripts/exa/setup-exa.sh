@@ -10,8 +10,6 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ORAMA_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-PT_ROOT="${HOME}/code/OpenClaw/perplexity-api/Perpetua-Tools"
 DESKTOP_CFG="${HOME}/Library/Application Support/Claude/claude_desktop_config.json"
 MCP_WRAPPER="${SCRIPT_DIR}/exa-mcp-wrapper.sh"
 SOCKET_PATH="${HOME}/.openclaw/run/exa-mcp.sock"
@@ -29,6 +27,19 @@ _resolve_exa_owner_root() {
   fi
 }
 EXA_OWNER_ROOT="$(_resolve_exa_owner_root || true)"
+
+# Perpetua-Tools is the other repo whose .mcp.json shares this wrapper.
+_resolve_pt_root() {
+  local lib
+  if [[ -f "$SCRIPT_DIR/../../orchestrator/fastapi_app.py" ]]; then   # Perpetua-Tools mirror
+    (cd "$SCRIPT_DIR/../.." && pwd)
+    return
+  fi
+  lib="${EXA_OWNER_ROOT:-}/bin/orama-system/skills/hermes-harness/scripts/resolve_perp_harness.sh"
+  # shellcheck source=/dev/null
+  [[ -f "$lib" ]] && (cd "$EXA_OWNER_ROOT" && source "$lib" && resolve_pt_root) 2>/dev/null
+}
+PT_ROOT="$(_resolve_pt_root || true)"
 CODEX_WRAPPER_CMD=""
 if [[ -n "$EXA_OWNER_ROOT" && -f "$EXA_OWNER_ROOT/scripts/exa/exa-mcp-wrapper.sh" ]]; then
   CODEX_WRAPPER_CMD="exec \"$EXA_OWNER_ROOT/scripts/exa/exa-mcp-wrapper.sh\""
@@ -197,24 +208,25 @@ cfg_path.write_text(json.dumps(cfg, indent=2))
 print("[exa-setup] Claude Desktop: OK (restart app to activate)")
 PYEOF
 
-# 5. Write .mcp.json for both repos (both point to the SAME wrapper)
-for REPO_PATH in "$ORAMA_ROOT" "$PT_ROOT"; do
-  if [[ -d "$REPO_PATH" ]]; then
-    MCP_FILE="${REPO_PATH}/.mcp.json"
-    python3 - <<PYEOF
-import json, pathlib
-path = pathlib.Path("$MCP_FILE")
-data = json.loads(path.read_text()) if path.exists() else {}
-data.setdefault("mcpServers", {})["exa"] = {
-    "command": "bash",
-    "args": ["\$HOME/code/OpenClaw/orama-system/scripts/exa/exa-mcp-wrapper.sh"],
-    "env": {}
-}
-path.write_text(json.dumps(data, indent=2))
-print(f"[exa-setup] {path}: OK")
+# 5. Check .mcp.json in both repos. Each tracked file already resolves the
+# shared wrapper portably at run time, so setup only reports and never
+# rewrites a tracked file with a machine-specific path.
+for REPO_PATH in "${EXA_OWNER_ROOT:-}" "${PT_ROOT:-}"; do
+  [[ -n "$REPO_PATH" && -d "$REPO_PATH" ]] || continue
+  MCP_FILE="${REPO_PATH}/.mcp.json"
+  if python3 - "$MCP_FILE" <<'PYEOF'
+import json, pathlib, sys
+path = pathlib.Path(sys.argv[1])
+exa = json.loads(path.read_text()).get("mcpServers", {}).get("exa", {}) if path.exists() else {}
+sys.exit(0 if "exa-mcp-wrapper.sh" in " ".join([exa.get("command", "")] + exa.get("args", [])) else 1)
 PYEOF
+  then
+    echo "[exa-setup] ${MCP_FILE}: OK (uses the shared wrapper)"
+  else
+    echo "[exa-setup] WARNING: ${MCP_FILE} has no exa entry using exa-mcp-wrapper.sh; restore it from the repository" >&2
   fi
 done
+[[ -n "${PT_ROOT:-}" ]] || echo "[exa-setup] Perpetua-Tools checkout not found; skipped its .mcp.json check"
 
 # 6. Wire Codex CLI global MCP to the same wrapper when Codex is present.
 # Codex's HTTP MCP registration cannot resolve the OpenClaw Keychain/openclaw.json
