@@ -1,0 +1,40 @@
+{
+  "id": "9de5ba66b4f8",
+  "key": "manual_9de5ba",
+  "name": "manual_9de5ba",
+  "claim": "A Windows ACL fallback protecting TLS keys must refuse when the expected absolute System32 executable is absent or relative; never fall back to cwd or PATH lookup. Cross-platform dispatch tests must patch the import-time flags actually read by the function, and cannot establish real Windows ACL qualification.",
+  "conditions": [
+    "TLS key ACL",
+    "cached platform flags",
+    "icacls fallback"
+  ],
+  "evidence_ids": [
+    "2026-11-02T16:43:07.563690+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-02T16:43:07.563690+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-02T16:43:07.563690+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-02T16:43:07.654752+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "agent-envelope: author=codex-reviewer actor=codex-reviewer identity_verified=false instance_id=unavailable endorsement=none. Verified during R3 Oramasys91/Phylax30 integration and PT475 review; evidence c6da733,7cac74e,363672c4,80bdd5f1. Local tests are not independent R6 or real Windows qualification.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-02T16:43:07.563690+00:00"
+      ],
+      "lessons_sha": "ec54efaf81e3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-02T16:43:07.654744+00:00",
+  "reviewer": "learn.py",
+  "rationale": "agent-envelope: author=codex-reviewer actor=codex-reviewer identity_verified=false instance_id=unavailable endorsement=none. Verified during R3 Oramasys91/Phylax30 integration and PT475 review; evidence c6da733,7cac74e,363672c4,80bdd5f1. Local tests are not independent R6 or real Windows qualification."
+}

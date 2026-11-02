@@ -1,0 +1,40 @@
+{
+  "id": "2e60b58b53b5",
+  "key": "manual_2e60b5",
+  "name": "manual_2e60b5",
+  "claim": "A scoped pip-check health gate must require installed project metadata and distinguish a completed check reporting recognized unrelated conflicts from a failed or incomplete invocation. Missing pip, absent metadata, exceptions, unexpected output or indeterminate exit status must fail closed. Test with disposable venvs created by the fixture, not a pre-prepared ambient TEMP directory.",
+  "conditions": [
+    "isolated probe fixture",
+    "pip check failure",
+    "project metadata"
+  ],
+  "evidence_ids": [
+    "2026-11-02T16:45:57.919689+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-02T16:45:57.919689+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-02T16:45:57.919689+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-02T16:45:58.014760+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "agent-envelope: author=01a19d20-4a14-71a1-a220-482440d9c629 actor=codex-reviewer identity_verified=false endorsement=none. Orama463 implementation00954ed543898796fdecbb2355fc649b669cbcac; parent rerun29passed under macOS PowerShell7.3.4, not WindowsPowerShell5.1 qualification.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-02T16:45:57.919689+00:00"
+      ],
+      "lessons_sha": "9386c836f539"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-02T16:45:58.014752+00:00",
+  "reviewer": "learn.py",
+  "rationale": "agent-envelope: author=01a19d20-4a14-71a1-a220-482440d9c629 actor=codex-reviewer identity_verified=false endorsement=none. Orama463 implementation00954ed543898796fdecbb2355fc649b669cbcac; parent rerun29passed under macOS PowerShell7.3.4, not WindowsPowerShell5.1 qualification."
+}

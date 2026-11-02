@@ -1,0 +1,40 @@
+{
+  "id": "25b239e7b040",
+  "key": "manual_25b239",
+  "name": "manual_25b239",
+  "claim": "Authenticate and cross-check a complete bounded signed revocation feed before advancing durable freshness. Commit acknowledged denials before freshness so a crash can leave denials ahead of the cache, never the reverse. Restart unavailable until explicit refresh; missing history or rollback must refuse rather than silently resetting the durable floor.",
+  "conditions": [
+    "catch-up freshness",
+    "crash ordering",
+    "signed revocation feed"
+  ],
+  "evidence_ids": [
+    "2026-11-02T16:43:07.225685+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-02T16:43:07.225685+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-02T16:43:07.225685+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-02T16:43:07.318042+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "agent-envelope: author=codex-reviewer actor=codex-reviewer identity_verified=false instance_id=unavailable endorsement=none. Verified during R3 Oramasys91/Phylax30 integration and PT475 review; evidence c6da733,7cac74e,363672c4,80bdd5f1. Local tests are not independent R6 or real Windows qualification.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-02T16:43:07.225685+00:00"
+      ],
+      "lessons_sha": "3b94f21ba888"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-02T16:43:07.318031+00:00",
+  "reviewer": "learn.py",
+  "rationale": "agent-envelope: author=codex-reviewer actor=codex-reviewer identity_verified=false instance_id=unavailable endorsement=none. Verified during R3 Oramasys91/Phylax30 integration and PT475 review; evidence c6da733,7cac74e,363672c4,80bdd5f1. Local tests are not independent R6 or real Windows qualification."
+}
