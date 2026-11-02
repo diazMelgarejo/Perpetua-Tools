@@ -153,3 +153,11 @@ def test_main_allows_missing_sibling_only_with_explicit_local_opt_out(monkeypatc
     monkeypatch.setattr(verify_parity, "_sibling_utils_dir", lambda: None)
     monkeypatch.setenv("PARITY_ALLOW_MISSING_SIBLING", "1")
     assert verify_parity.main() == 0
+
+
+def test_files_to_check_registers_win_exec_as_byte_identical():
+    """win_exec.py (orama-canonical) is parity-checked and must be byte-identical."""
+    specs = {s.filename: s for s in verify_parity.FILES_TO_CHECK}
+    assert specs["win_exec.py"].require_identical_bytes is True
+    assert "terminate_tree" in specs["win_exec.py"].policy_functions
+    assert (verify_parity._LOCAL_UTILS_DIR / "win_exec.py").is_file()

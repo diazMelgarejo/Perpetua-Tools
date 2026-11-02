@@ -7,6 +7,8 @@ sync-drift risk:
   - model_endpoint_url.py: SSRF host-classification (ModelEndpointPolicyError)
   - endpoint_policy_core.py: transport-identity reconstruction
     (parse_transport_identity/build_transport_url), Perpetua-Tools canonical
+  - win_exec.py: partner-CLI resolution, cmd.exe argv safety and process-tree
+    kill (orama-system canonical, byte-identical mirror)
 """
 from __future__ import annotations
 
@@ -77,6 +79,11 @@ FILES_TO_CHECK: tuple[_FileSpec, ...] = (
     _FileSpec(
         "endpoint_policy_core.py",
         ("parse_transport_identity", "build_transport_url"),
+    ),
+    _FileSpec(
+        "win_exec.py",
+        ("resolve_executable", "safe_argv", "find_bare_command", "terminate_tree"),
+        require_identical_bytes=True,
     ),
 )
 
