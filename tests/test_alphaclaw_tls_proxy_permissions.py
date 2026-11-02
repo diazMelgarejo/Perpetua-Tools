@@ -187,3 +187,19 @@ def test_secure_path_posix_sets_correct_mode_for_directory(tmp_path):
     if _FS_HAS_POSIX_MODES:
         mode = test_dir.stat().st_mode & 0o777
         assert mode == 0o700, f"Expected 0o700, got 0o{mode:o}"
+
+
+def test_acl_error_is_a_tls_unavailable_error():
+    """P2: AlphaClawAclError subclasses AlphaClawTlsUnavailable so existing TLS handlers catch it."""
+    assert issubclass(tls_proxy.AlphaClawAclError, tls_proxy.AlphaClawTlsUnavailable)
+
+
+def test_secure_path_icacls_passes_timeout_and_maps_timeout_expired():
+    """P3: icacls runs with timeout=30 and a TimeoutExpired becomes AlphaClawAclError."""
+    import subprocess
+
+    with patch("subprocess.run") as mock_run, patch("getpass.getuser", return_value="testuser"):
+        mock_run.side_effect = subprocess.TimeoutExpired("icacls", 30)
+        with pytest.raises(tls_proxy.AlphaClawAclError, match="TimeoutExpired"):
+            tls_proxy._secure_path_icacls(Path("/test/key.pem"), is_directory=False)
+        assert mock_run.call_args.kwargs.get("timeout") == 30

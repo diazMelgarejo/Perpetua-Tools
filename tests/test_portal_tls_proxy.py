@@ -291,3 +291,12 @@ def test_print_fingerprint_cli(tmp_path, capsys):
         assert hashlib.sha256(ssl.PEM_cert_to_DER_cert(variant)).hexdigest() == der_digest
         assert hashlib.sha256(variant.encode("ascii")).hexdigest() != digest
     assert path.parent.name == "public"
+
+
+def test_main_exits_2_when_acl_hardening_fails(monkeypatch, tmp_path):
+    """P2: an AlphaClawAclError from start() makes main() return 2, not a traceback."""
+    def _boom(self):
+        raise base.AlphaClawAclError("icacls failed")
+
+    monkeypatch.setattr(base.AlphaClawTlsProxy, "start", _boom)
+    assert portal.main(["--state-dir", str(tmp_path / "state"), "--listen-port", "0"]) == 2

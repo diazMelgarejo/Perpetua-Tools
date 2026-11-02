@@ -118,20 +118,20 @@ _UPSTREAM_OPENER = urllib.request.build_opener(
 )
 
 
-class AlphaClawAclError(RuntimeError):
-    """Raised when owner-only permissions cannot be applied to TLS material.
-
-    The icacls fallback fails closed: a non-zero exit or a missing icacls
-    refuses the operation rather than leaving key/cert files with inherited ACLs.
-    """
-
-
 class AlphaClawTlsUnavailable(RuntimeError):
     """Raised when the proxy cannot start (missing 'cryptography', bind
     failure, etc). Callers must treat this as "HTTPS isn't available right
     now" and fall back to their own existing behavior -- never silently
     downgrade a bearer-token request to plain HTTP on this exception; the
     caller decides whether that's acceptable, this module doesn't."""
+
+
+class AlphaClawAclError(AlphaClawTlsUnavailable):
+    """Raised when owner-only permissions cannot be applied to TLS material.
+
+    The icacls fallback fails closed: a non-zero exit or a missing icacls
+    refuses the operation rather than leaving key/cert files with inherited ACLs.
+    """
 
 
 class AlphaClawCertFingerprintMismatch(RuntimeError):
@@ -254,10 +254,11 @@ def _secure_path_icacls(path: Path, is_directory: bool) -> None:
         cmd[0] = icacls_exe
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True)
-    except OSError as exc:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError) as exc:
         raise AlphaClawAclError(
-            f"cannot restrict permissions on {target}: icacls could not run ({exc}); "
+            f"cannot restrict permissions on {target}: icacls could not run "
+            f"({type(exc).__name__}: {exc}); "
             "refusing to leave TLS key material with default ACLs"
         ) from exc
     if result.returncode != 0:

@@ -174,3 +174,23 @@ def test_wrap_stops_previous_proxy_instance_before_replacing(monkeypatch, tmp_pa
     assert stopped["n"] == 1  # the first instance was stopped before the second started
 
     manager_mod._active_tls_proxy = None  # don't leak into other tests
+
+
+def test_wrap_stays_on_http_when_acl_hardening_fails(monkeypatch):
+    """P2: an ACL failure in proxy.start() is caught like other TLS-unavailable errors:
+    state.error is set and the gateway stays on plain HTTP (no exception escapes)."""
+    import orchestrator.alphaclaw_tls_proxy as tls_mod
+
+    monkeypatch.setenv("ALPHACLAW_TLS_ENABLED", "1")
+
+    def _boom(self):
+        raise tls_mod.AlphaClawAclError("icacls failed (exit 5) to restrict permissions on key.pem")
+
+    monkeypatch.setattr(tls_mod.AlphaClawTlsProxy, "start", _boom)
+    state = AlphaClawState(running=True, port=18789, gateway_url="http://127.0.0.1:18789")
+
+    result = _maybe_wrap_gateway_with_tls(state)
+
+    assert result.tls_enabled is False
+    assert result.gateway_url == "http://127.0.0.1:18789"
+    assert "AlphaClawAclError" in result.error
