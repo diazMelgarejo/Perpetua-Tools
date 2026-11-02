@@ -94,9 +94,16 @@ def _isabs(path: str) -> bool:
 
 
 def _is_bare_command(candidate: str) -> bool:
-    """True when ``candidate`` names a command to look up, not a pathname."""
+    """True when ``candidate`` names a command to look up, not a pathname.
+
+    Treat both separator spellings as a path on every host. This keeps a
+    Windows-style relative path from becoming a POSIX bare-command lookup when
+    tests or configuration are evaluated off Windows.
+    """
+    if "\\" in candidate:
+        return False
     if _win():
-        if "/" in candidate or "\\" in candidate:
+        if "/" in candidate:
             return False
         return not bool(_pathmod().splitdrive(candidate)[0])
     return "/" not in candidate

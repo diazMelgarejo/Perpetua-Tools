@@ -35,6 +35,17 @@ def test_resolve_executable_refuses_explicit_interpreter_script(
         win_exec.resolve_executable(str(script))
 
 
+@pytest.mark.parametrize("candidate", ("./tool", ".\\tool", "nested/tool"))
+def test_resolve_executable_refuses_relative_paths_on_every_host(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, candidate: str,
+) -> None:
+    """A relative path never falls through to PATH lookup, including Windows syntax on POSIX."""
+    (tmp_path / "tool").touch()
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(win_exec.WinExecError, match="absolute"):
+        win_exec.resolve_executable(candidate)
+
+
 def test_untracked_posix_termination_does_not_signal_a_pid_reused_group(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
