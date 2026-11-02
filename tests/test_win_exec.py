@@ -20,7 +20,7 @@ def test_resolve_executable_skips_interpreter_suffixes_for_bare_commands(
     monkeypatch.setattr(win_exec, "_win", lambda: True)
     monkeypatch.setattr(win_exec, "_search_path_entries", lambda allow_unc=False: (str(tmp_path),))
     monkeypatch.setenv("PATHEXT", ".VBS;.JS;.EXE")
-    assert win_exec.resolve_executable("tool") == str(exe)
+    assert Path(win_exec.resolve_executable("tool")).samefile(exe)
 
 
 def test_resolve_executable_refuses_explicit_interpreter_script(
@@ -33,6 +33,19 @@ def test_resolve_executable_refuses_explicit_interpreter_script(
     monkeypatch.setattr(win_exec, "_win", lambda: True)
     with pytest.raises(win_exec.WinExecError, match="permitted Windows extension"):
         win_exec.resolve_executable(str(script))
+
+
+def test_windows_pathext_probe_preserves_configured_suffix_spelling(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+) -> None:
+    """Windows emulation probes PATHEXT filenames in configured case and order."""
+    tried: list[str] = []
+    monkeypatch.setattr(win_exec, "_win", lambda: True)
+    monkeypatch.setattr(win_exec, "_search_path_entries", lambda allow_unc=False: (str(tmp_path),))
+    monkeypatch.setenv("PATHEXT", ".EXE;.Cmd;.VBS")
+    monkeypatch.setattr(Path, "is_file", lambda self: tried.append(self.name) or False)
+    assert win_exec.find_bare_command("tool") is None
+    assert tried == ["tool.EXE", "tool.Cmd", "tool"]
 
 
 @pytest.mark.parametrize("candidate", ("./tool", ".\\tool", "nested/tool"))

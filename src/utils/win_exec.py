@@ -159,10 +159,15 @@ def _windows_pathext() -> tuple[str, ...]:
 
 
 def _windows_executable_extensions() -> tuple[str, ...]:
-    """Return configured direct-launch suffixes, casefolded for comparison only."""
+    """Return configured direct-launch suffixes, preserving their spelling and order.
+
+    Membership is compared case-insensitively, but candidate names retain the
+    configured spelling so a POSIX host emulating Windows can probe fixtures
+    without relying on filesystem case-folding.
+    """
     p = _pathmod()
     return tuple(
-        p.normcase(e)
+        e
         for e in _windows_pathext()
         if p.normcase(e) in _WINDOWS_DIRECT_EXECUTABLE_SUFFIXES
     )
@@ -177,7 +182,7 @@ def find_bare_command(command: str, allow_unc: bool = False) -> Optional[str]:
     """
     p = _pathmod()
     pathext = _windows_executable_extensions() if _win() else ()
-    win_exts = pathext
+    win_exts = frozenset(p.normcase(ext) for ext in pathext)
     for directory in _search_path_entries(allow_unc):
         base = Path(directory) / command
         candidates: tuple[Path, ...] = (base,)
@@ -224,7 +229,9 @@ def resolve_executable(candidate: str, allow_unc: bool = False) -> str:
         raise WinExecError("executable is unavailable or not executable")
     if _win():
         _, ext = p.splitext(found)
-        if p.normcase(ext) not in _windows_executable_extensions():
+        if p.normcase(ext) not in {
+            p.normcase(allowed) for allowed in _windows_executable_extensions()
+        }:
             raise WinExecError("executable has no permitted Windows extension")
     # ``found`` is a real host-filesystem path: normalise it with the host module so
     # a Windows-emulating run on POSIX never rewrites /tmp/x into \tmp\x.
