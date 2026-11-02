@@ -45,6 +45,7 @@ def build_transport_url(host: str, port: int) -> str:
 
 
 def _write(tmp_path: Path, name: str, src: str) -> Path:
+    """Implement write."""
     p = tmp_path / name
     p.write_text(src, encoding="utf-8")
     return p
@@ -61,6 +62,7 @@ def test_files_to_check_includes_both_model_endpoint_url_and_endpoint_policy_cor
 
 
 def test_extract_policy_source_ignores_docstring_differences(tmp_path):
+    """Check: extract policy source ignores docstring differences."""
     identical_but_docstring = _MODEL_ENDPOINT_SRC.replace(
         '"""docstring differs, should not matter."""', '"""a totally different docstring."""'
     )
@@ -71,6 +73,7 @@ def test_extract_policy_source_ignores_docstring_differences(tmp_path):
 
 
 def test_extract_policy_source_detects_real_logic_drift(tmp_path):
+    """Check: extract policy source detects real logic drift."""
     drifted = _MODEL_ENDPOINT_SRC.replace('host == "localhost"', 'host != "localhost"')
     a = _write(tmp_path, "a.py", _MODEL_ENDPOINT_SRC)
     b = _write(tmp_path, "b.py", drifted)
@@ -79,6 +82,7 @@ def test_extract_policy_source_detects_real_logic_drift(tmp_path):
 
 
 def test_extract_policy_source_works_for_endpoint_policy_core_functions(tmp_path):
+    """Check: extract policy source works for endpoint policy core functions."""
     a = _write(tmp_path, "a.py", _ENDPOINT_CORE_SRC)
     funcs = ("parse_transport_identity", "build_transport_url")
     src = verify_parity._extract_policy_source(a, funcs)
@@ -87,6 +91,7 @@ def test_extract_policy_source_works_for_endpoint_policy_core_functions(tmp_path
 
 
 def test_extract_policy_source_raises_on_missing_function(tmp_path):
+    """Check: extract policy source raises on missing function."""
     incomplete = "def build_transport_url(host, port):\n    return host\n"
     a = _write(tmp_path, "a.py", incomplete)
     funcs = ("parse_transport_identity", "build_transport_url")
@@ -104,12 +109,14 @@ def test_files_to_check_model_endpoint_includes_is_loopback_host():
 
 
 def test_files_to_check_model_endpoint_requires_identical_bytes():
+    """Check: files to check model endpoint requires identical bytes."""
     specs = {s.filename: s for s in verify_parity.FILES_TO_CHECK}
     assert specs["model_endpoint_url.py"].require_identical_bytes is True
     assert specs["endpoint_policy_core.py"].require_identical_bytes is False
 
 
 def test_model_endpoint_byte_hash_detects_docstring_only_drift(tmp_path):
+    """Check: model endpoint byte hash detects docstring only drift."""
     funcs = ("_host_allowed", "validate_model_endpoint_url", "parse_model_endpoint_list", "_is_loopback_host")
     src_with_loopback = _MODEL_ENDPOINT_SRC + (
         "\n\ndef _is_loopback_host(host: str) -> bool:\n    return host == \"localhost\"\n"
@@ -150,6 +157,7 @@ def test_main_fails_closed_when_sibling_missing(monkeypatch):
 
 
 def test_main_allows_missing_sibling_only_with_explicit_local_opt_out(monkeypatch):
+    """Check: main allows missing sibling only with explicit local opt out."""
     monkeypatch.setattr(verify_parity, "_sibling_utils_dir", lambda: None)
     monkeypatch.setenv("PARITY_ALLOW_MISSING_SIBLING", "1")
     assert verify_parity.main() == 0

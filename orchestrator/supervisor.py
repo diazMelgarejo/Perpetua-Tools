@@ -100,10 +100,12 @@ class JobStatus(str, Enum):
 
 
 def _new_id_default() -> str:
+    """Implement new id default."""
     return str(uuid.uuid4())
 
 
 def _now_iso_default() -> str:
+    """Implement now iso default."""
     return datetime.now(timezone.utc).isoformat()
 
 
@@ -147,6 +149,7 @@ class JobSpec(BaseModel):
     @field_validator("depth", mode="before")
     @classmethod
     def no_sub_workers(cls, v: Any) -> int:
+        """Implement no sub workers."""
         val = int(v)
         if val != 0:
             raise ValueError(
@@ -155,6 +158,7 @@ class JobSpec(BaseModel):
         return val
 
     def to_dict(self) -> dict:
+        """Implement to dict."""
         return self.model_dump()
 
 
@@ -183,14 +187,17 @@ def caller_reported_lineage_metadata(
 
 # ── Pure persistence helpers ──────────────────────────────────────────────────
 def _new_id() -> str:
+    """Implement new id."""
     return str(uuid.uuid4())
 
 
 def _now_iso() -> str:
+    """Implement now iso."""
     return datetime.now(timezone.utc).isoformat()
 
 
 def _ensure_state_dir(state_dir: Path) -> None:
+    """Implement ensure state dir."""
     state_dir.mkdir(parents=True, exist_ok=True)
     (state_dir / "jobs").mkdir(exist_ok=True)
 
@@ -227,6 +234,7 @@ def _lock_jobs_file(fh):
         _fcntl.flock(fh.fileno(), _fcntl.LOCK_EX)
 
         def _release() -> None:
+            """Implement release."""
             try:
                 _fcntl.flock(fh.fileno(), _fcntl.LOCK_UN)
             except OSError:
@@ -240,6 +248,7 @@ def _lock_jobs_file(fh):
         _msvcrt.locking(fh.fileno(), _msvcrt.LK_LOCK, 1)
 
         def _release() -> None:
+            """Implement release."""
             try:
                 fh.seek(0)
                 _msvcrt.locking(fh.fileno(), _msvcrt.LK_UNLCK, 1)
@@ -604,6 +613,7 @@ class OrchestrationSupervisor:
         self._containment_tasks[job_id] = task
 
         def _drop(done: asyncio.Task, jid: str = job_id) -> None:
+            """Implement drop."""
             if self._containment_tasks.get(jid) is done:
                 self._containment_tasks.pop(jid, None)
 
@@ -685,6 +695,7 @@ class OrchestrationSupervisor:
         worker_done = asyncio.Event()
 
         def _mark_worker_done(_finished: asyncio.Task) -> None:
+            """Implement mark worker done."""
             worker_done.set()
 
         task.add_done_callback(_mark_worker_done)
@@ -1228,6 +1239,7 @@ class OrchestrationSupervisor:
         return None
 
     def _append_event(self, job_id: str, event: dict) -> None:
+        """Implement append event."""
         _append_event(self._jobs_file, job_id, event)
 
     def _append_lifecycle_event(
@@ -1285,6 +1297,7 @@ class OrchestrationSupervisor:
 
     @staticmethod
     def _backend_to_platform(backend_hint: str) -> str:
+        """Implement backend to platform."""
         h = backend_hint.lower()
         if "win" in h:
             return "win"

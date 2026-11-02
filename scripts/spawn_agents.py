@@ -62,10 +62,12 @@ else:
         return [codex_bin, *args] if os.path.exists(codex_bin) else None
 
     def discover_agents():  # type: ignore[override]
+        """Implement discover agents."""
         from dataclasses import dataclass
 
         @dataclass
         class _AI:
+            """Helper type ``_AI``."""
             name: str; kind: str; available: bool = False; version: str = ""; detail: str = ""
 
         argv = _codex_argv("--version")
@@ -73,6 +75,7 @@ else:
         return {"codex": _AI("Codex", "cli", ok, detail=argv[0] if argv else "codex")}
 
     async def dispatch(agent: str, task: str, model: Optional[str] = None) -> Dict[str, Any]:
+        """Implement dispatch."""
         argv = _codex_argv("--full-auto", task) if agent == "codex" else None
         if argv is not None:
             proc = await asyncio.create_subprocess_exec(
@@ -86,6 +89,7 @@ else:
         return {"ok": False, "output": f"orama-system not found at {_ORAMA_SIBLING}; only 'codex' is available in PT standalone mode."}
 
     def print_status():
+        """Implement print status."""
         agents = discover_agents()
         for k, ag in agents.items():
             print(f"  {'✓' if ag.available else '✗'}  {ag.name}  {ag.detail}")
