@@ -46,6 +46,10 @@ CONTAINMENT_SCOPE_NOTE = "(job-scoped containment; out-of-job launchers not cove
 # Characters cmd.exe interprets inside a command line, plus line breaks and NUL.
 CMD_METACHARACTERS = frozenset('%!^&|<>"\n\r\x00')
 _CMD_SUFFIXES = frozenset({".cmd", ".bat"})
+# Windows PATHEXT can include interpreter-hosted file types such as .vbs and
+# .js.  ``Popen(..., shell=False)`` cannot safely launch those by pathname;
+# accept only suffixes CreateProcess can start directly in this API.
+_WINDOWS_DIRECT_EXECUTABLE_SUFFIXES = frozenset({".com", ".exe", ".cmd", ".bat"})
 
 
 def _win() -> bool:
@@ -148,9 +152,13 @@ def _windows_pathext() -> tuple[str, ...]:
 
 
 def _windows_executable_extensions() -> tuple[str, ...]:
-    """Return casefolded PATHEXT suffixes, used for comparison only."""
+    """Return configured direct-launch suffixes, casefolded for comparison only."""
     p = _pathmod()
-    return tuple(p.normcase(e) for e in _windows_pathext())
+    return tuple(
+        p.normcase(e)
+        for e in _windows_pathext()
+        if p.normcase(e) in _WINDOWS_DIRECT_EXECUTABLE_SUFFIXES
+    )
 
 
 def find_bare_command(command: str, allow_unc: bool = False) -> Optional[str]:
@@ -161,8 +169,8 @@ def find_bare_command(command: str, allow_unc: bool = False) -> Optional[str]:
     local binary from shadowing the installed one.
     """
     p = _pathmod()
-    pathext = _windows_pathext() if _win() else ()
-    win_exts = tuple(p.normcase(e) for e in pathext)
+    pathext = _windows_executable_extensions() if _win() else ()
+    win_exts = pathext
     for directory in _search_path_entries(allow_unc):
         base = Path(directory) / command
         candidates: tuple[Path, ...] = (base,)
@@ -186,8 +194,10 @@ def resolve_executable(candidate: str, allow_unc: bool = False) -> str:
     are expanded (``~``) and must then be absolute (a relative path would reach
     the working directory and raises ``WinExecError``). UNC PATH entries are
     ignored unless ``allow_unc``. On Windows the result must carry a
-    PATHEXT extension, so ``.ps1`` and extensionless shims are refused. There is
-    no fallback to the bare name; failure raises ``WinExecError``.
+    direct-launch extension (``.com``, ``.exe``, ``.cmd`` or ``.bat``), so
+    interpreter-hosted entries such as ``.ps1``, ``.vbs`` and ``.js`` are
+    refused. There is no fallback to the bare name; failure raises
+    ``WinExecError``.
     """
     if not isinstance(candidate, str) or not candidate.strip() or "\x00" in candidate:
         raise WinExecError("invalid executable name")
@@ -207,7 +217,7 @@ def resolve_executable(candidate: str, allow_unc: bool = False) -> str:
         raise WinExecError("executable is unavailable or not executable")
     if _win():
         _, ext = p.splitext(found)
-        if p.normcase(ext) not in tuple(p.normcase(e) for e in _windows_pathext()):
+        if p.normcase(ext) not in _windows_executable_extensions():
             raise WinExecError("executable has no permitted Windows extension")
     # ``found`` is a real host-filesystem path: normalise it with the host module so
     # a Windows-emulating run on POSIX never rewrites /tmp/x into \tmp\x.
@@ -504,15 +514,8 @@ def _terminate_tree_posix(proc: "subprocess.Popen", grace: float) -> str:
     sigterm = getattr(signal, "SIGTERM", 15)
     if getattr(proc, "_win_exec_group", None) != pid:
         # Not started through launch_tree: membership is not authoritative.
-        # Clean up the process (and group only if it safely leads it) and report unknown.
-        try:
-            if os.getpgid(pid) == pid:
-                try:
-                    os.killpg(pid, sigkill)
-                except OSError:
-                    pass
-        except OSError:
-            pass
+        # A recycled PID could name an unrelated process group, so clean up
+        # only the direct child and report unknown.
         if proc.poll() is None:
             try:
                 proc.kill()
