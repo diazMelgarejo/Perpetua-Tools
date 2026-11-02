@@ -18,12 +18,6 @@
       "peer_pull": 363,
       "peer_repository": "diazMelgarejo/orama-system",
       "equivalents": ["refs/pull/363/head"]
-    },
-    "2026-11-02-001-windows-process-and-acl-hardening": {
-      "peer_ref": "2026-10-27-004-windows-process-hygiene",
-      "peer_pull": 464,
-      "peer_repository": "diazMelgarejo/orama-system",
-      "equivalents": ["refs/pull/464/head"]
     }
   }
 }
