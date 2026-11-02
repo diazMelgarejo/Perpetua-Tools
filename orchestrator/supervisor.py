@@ -45,6 +45,7 @@ CONTAINMENT_ANNOTATION_RETRY_DELAY_SECONDS = 0.05
 CONTAINMENT_VERIFIED = "verified"
 CONTAINMENT_UNRESOLVED = "unresolved"
 CONTAINMENT_NOT_APPLICABLE = "not-applicable"
+CLI_TREE_CONTAINED = "contained"  # equals utils.win_exec.CONTAINED
 WORKER_KIND_CLI = "cli"
 WORKER_KIND_IN_PROCESS = "in-process"
 
@@ -743,8 +744,10 @@ class OrchestrationSupervisor:
         """After durable cancel, terminate the direct CLI child and persist outcome.
 
         ``worker_kind`` is derived here from whether this supervisor registered a
-        child. Callers cannot supply it. ``verified`` requires ``returncode``;
-        a successful ``terminate()`` call is not enough.
+        child. Callers cannot supply it. ``verified`` requires ``returncode``
+        and a ``contained`` tree-kill status (Windows kills the whole process
+        tree; the honest status is stored as ``containment_detail``); a
+        successful ``terminate()`` call is not enough.
         """
         proc = self._children.get(job_id)
         if proc is None:
@@ -758,17 +761,17 @@ class OrchestrationSupervisor:
             )
             return
 
+        tree_status = CLI_TREE_CONTAINED
         if proc.returncode is None:
-            try:
-                proc.terminate()
-            except ProcessLookupError:
-                pass
-            except Exception:
-                pass
+            from orchestrator.cli_launch import terminate_cli_tree
+
+            tree_status = await terminate_cli_tree(proc, CONTAINMENT_TIMEOUT_SECONDS)
             await wait_process_exit(proc, CONTAINMENT_TIMEOUT_SECONDS)
+        # verified needs BOTH the direct child's returncode and a ``contained``
+        # tree status (no surviving descendants); escaped/unknown is unresolved.
         containment_state = (
             CONTAINMENT_VERIFIED
-            if proc.returncode is not None
+            if proc.returncode is not None and tree_status == CLI_TREE_CONTAINED
             else CONTAINMENT_UNRESOLVED
         )
         self._append_event(
@@ -777,6 +780,7 @@ class OrchestrationSupervisor:
                 "status": JobStatus.CANCELLED.value,
                 "worker_kind": WORKER_KIND_CLI,
                 "containment_state": containment_state,
+                "containment_detail": tree_status,
             },
         )
         # Preserve the direct-child identity until the durable annotation is

@@ -36,6 +36,18 @@ def _echo_spec(prompt: str = "hello") -> JobSpec:
     )
 
 
+@pytest.fixture(autouse=True)
+def _direct_child_containment_contract(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Pin these fake-process tests to the direct-child (POSIX) contract.
+
+    The fakes have no pid, so the Windows tree-kill path cannot apply; that path
+    is covered in tests/test_cli_launch.py.
+    """
+    from orchestrator import cli_launch
+
+    monkeypatch.setattr(cli_launch, "_is_windows", lambda: False)
+
+
 def _make_sup(tmp_path: Path) -> OrchestrationSupervisor:
     return OrchestrationSupervisor(state_dir=tmp_path)
 
