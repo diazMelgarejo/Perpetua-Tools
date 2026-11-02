@@ -245,13 +245,15 @@ def _secure_path_icacls(path: Path, is_directory: bool) -> None:
         "/grant:r", grant_admins,
     ]
 
-    # Prefer the absolute System32 binary so a planted icacls in the cwd/PATH
-    # cannot stand in for the real tool; fall back to the bare name only when
-    # the System32 copy is absent.
+    # Never let cwd/PATH select the tool responsible for protecting key material.
     system_root = os.environ.get("SystemRoot") or os.environ.get("SYSTEMROOT") or r"C:\Windows"
     icacls_exe = os.path.join(system_root, "System32", "icacls.exe")
-    if os.path.isfile(icacls_exe):
-        cmd[0] = icacls_exe
+    if not os.path.isabs(icacls_exe) or not os.path.isfile(icacls_exe):
+        raise AlphaClawAclError(
+            "absolute System32 icacls executable unavailable; "
+            "refusing to leave TLS key material with default ACLs"
+        )
+    cmd[0] = icacls_exe
 
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)

@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import traceback
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -64,12 +65,12 @@ def _sym(name: str) -> str:
 
 
 def _configure_output() -> None:
-    """Make stdout/stderr never raise on unencodable text (``errors='replace'``)."""
+    """Escape unencodable characters without losing model-ID information."""
     for stream in (sys.stdout, sys.stderr):
         reconfigure = getattr(stream, "reconfigure", None)
         if reconfigure is not None:
             try:
-                reconfigure(errors="replace")
+                reconfigure(errors="backslashreplace")
             except (ValueError, OSError):
                 pass
 
@@ -182,8 +183,19 @@ def main() -> int:
     usage errors keep argparse's own exit 2.
     """
     _configure_output()
+    p = argparse.ArgumentParser(description="Hardware model affinity helper")
+    p.add_argument("--list", action="store_true")
+    p.add_argument("--check-openclaw", action="store_true")
+    p.add_argument("--validate", nargs=2, metavar=("MODEL_ID", "PLATFORM"))
+    p.add_argument("--filter", nargs="+")
+    p.add_argument("--platform", default="mac")
+    p.add_argument(
+        "--verbose", action="store_true",
+        help="Show crash frame locations only (no messages, source or locals)",
+    )
+    args = p.parse_args()
     try:
-        return _run()
+        return _run(args, p)
     except SystemExit:
         raise
     except Exception as exc:  # noqa: BLE001 - crash must not look like a violation
@@ -193,18 +205,16 @@ def main() -> int:
             "details withheld",
             file=sys.stderr,
         )
+        if args.verbose:
+            for frame, line in traceback.walk_tb(exc.__traceback__):
+                # Do not format_exception/print_tb: source lines may contain secrets.
+                filename = Path(frame.f_code.co_filename).name
+                print(f"  {filename}:{line} in {frame.f_code.co_name!a}", file=sys.stderr)
         return EXIT_INTERNAL_ERROR
 
 
-def _run() -> int:
-    """Parse CLI flags and dispatch to the appropriate subcommand."""
-    p = argparse.ArgumentParser(description="Hardware model affinity helper")
-    p.add_argument("--list", action="store_true")
-    p.add_argument("--check-openclaw", action="store_true")
-    p.add_argument("--validate", nargs=2, metavar=("MODEL_ID", "PLATFORM"))
-    p.add_argument("--filter", nargs="+")
-    p.add_argument("--platform", default="mac")
-    args = p.parse_args()
+def _run(args: argparse.Namespace, p: argparse.ArgumentParser) -> int:
+    """Dispatch parsed CLI flags without changing policy enforcement ownership."""
     if args.list:
         return cmd_list()
     if args.check_openclaw:

@@ -1,0 +1,40 @@
+{
+  "id": "8a78cd390401",
+  "key": "manual_8a78cd",
+  "name": "manual_8a78cd",
+  "claim": "At an inert send-marker transaction, recheck current issuer-scoped public-key trust as well as the mandatory signed-grant authority; a valid earlier approval is not enough if a dispatch key disappears before send. Snapshot retained evidence before locking and keep the transactional callback bounded and free of attempt-store or network calls. Deployment trust-update ordering remains separately specified.",
+  "conditions": [
+    "approval to send race",
+    "dispatch key removal",
+    "transactional authority"
+  ],
+  "evidence_ids": [
+    "2026-11-02T16:43:07.050641+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-02T16:43:07.050641+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-02T16:43:07.050641+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-02T16:43:07.149684+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "agent-envelope: author=codex-reviewer actor=codex-reviewer identity_verified=false instance_id=unavailable endorsement=none. Verified during R3 Oramasys91/Phylax30 integration and PT475 review; evidence c6da733,7cac74e,363672c4,80bdd5f1. Local tests are not independent R6 or real Windows qualification.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-02T16:43:07.050641+00:00"
+      ],
+      "lessons_sha": "cef3b7bdb80c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-02T16:43:07.149674+00:00",
+  "reviewer": "learn.py",
+  "rationale": "agent-envelope: author=codex-reviewer actor=codex-reviewer identity_verified=false instance_id=unavailable endorsement=none. Verified during R3 Oramasys91/Phylax30 integration and PT475 review; evidence c6da733,7cac74e,363672c4,80bdd5f1. Local tests are not independent R6 or real Windows qualification."
+}
