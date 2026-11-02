@@ -43,6 +43,24 @@ else:
     import asyncio, argparse, json, shutil, subprocess, time
     from typing import Any, Dict, Optional
 
+    def _codex_argv(*args: str) -> Optional[list]:
+        """Return ``[codex_path, *args]`` or ``None`` when codex is unavailable.
+
+        Windows: PATH-only absolute resolution via ``utils.win_exec`` (never the
+        cwd, never a bare name) plus the ``.cmd`` metacharacter refusal in
+        ``safe_argv``; a refusal or unresolvable binary returns ``None``.
+        Elsewhere: ``shutil.which`` with the Homebrew fallback, as before.
+        """
+        if sys.platform == "win32":
+            sys.path.insert(0, str(_PT_ROOT / "src"))
+            from utils.win_exec import WinExecError, resolve_executable, safe_argv
+            try:
+                return safe_argv(resolve_executable("codex"), args)
+            except WinExecError:
+                return None
+        codex_bin = shutil.which("codex") or "/opt/homebrew/bin/codex"
+        return [codex_bin, *args] if os.path.exists(codex_bin) else None
+
     def discover_agents():  # type: ignore[override]
         from dataclasses import dataclass
 
@@ -50,15 +68,15 @@ else:
         class _AI:
             name: str; kind: str; available: bool = False; version: str = ""; detail: str = ""
 
-        codex_bin = shutil.which("codex") or "/opt/homebrew/bin/codex"
-        ok = os.path.exists(codex_bin) and subprocess.run([codex_bin, "--version"], capture_output=True, timeout=4).returncode == 0
-        return {"codex": _AI("Codex", "cli", ok, detail=codex_bin)}
+        argv = _codex_argv("--version")
+        ok = argv is not None and subprocess.run(argv, capture_output=True, timeout=4).returncode == 0
+        return {"codex": _AI("Codex", "cli", ok, detail=argv[0] if argv else "codex")}
 
     async def dispatch(agent: str, task: str, model: Optional[str] = None) -> Dict[str, Any]:
-        codex_bin = shutil.which("codex") or "/opt/homebrew/bin/codex"
-        if agent == "codex" and os.path.exists(codex_bin):
+        argv = _codex_argv("--full-auto", task) if agent == "codex" else None
+        if argv is not None:
             proc = await asyncio.create_subprocess_exec(
-                codex_bin, "--full-auto", task,
+                *argv,
                 stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT,
                 stdin=asyncio.subprocess.DEVNULL,  # prevent stdin inheritance hang when backgrounded
                 cwd=str(_PT_ROOT),

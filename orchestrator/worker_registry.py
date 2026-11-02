@@ -237,8 +237,9 @@ async def _run_dangerous_cli_subprocess(
     """Spawn a direct CLI child, register it with the supervisor, and collect output.
 
     ``cmd[0]`` is resolved to an absolute path and argv-checked on Windows
-    (see ``orchestrator.cli_launch``); on timeout the child's process tree is
-    killed and a non-``contained`` status is appended to the error text.
+    (see ``orchestrator.cli_launch``) and started via ``spawn_cli`` (Job Object on
+    Windows); on timeout the job is killed and the containment status (plus the
+    job-scope note on Windows) is appended to the error text.
     """
     from orchestrator.supervisor import (
         CONTAINMENT_TIMEOUT_SECONDS,
@@ -247,10 +248,10 @@ async def _run_dangerous_cli_subprocess(
     )
 
     from orchestrator.cli_launch import (
-        CONTAINED,
         WinExecError,
-        cli_spawn_kwargs,
+        containment_note,
         prepare_cli_command,
+        spawn_cli,
         terminate_cli_tree,
     )
 
@@ -264,13 +265,7 @@ async def _run_dangerous_cli_subprocess(
     # Shield creation so a cancel during create_subprocess_exec still registers
     # the direct child for supervisor containment (narrow race window).
     creation = asyncio.create_task(
-        asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            stdin=asyncio.subprocess.DEVNULL,
-            **cli_spawn_kwargs(),
-        )
+        spawn_cli(cmd)
     )
     cancelled_during_creation = False
     try:
@@ -296,8 +291,9 @@ async def _run_dangerous_cli_subprocess(
     except asyncio.TimeoutError:
         status = await terminate_cli_tree(proc, CONTAINMENT_TIMEOUT_SECONDS)
         await wait_process_exit(proc, CONTAINMENT_TIMEOUT_SECONDS)
-        note = "" if status == CONTAINED else f" (process-tree containment: {status})"
-        raise RuntimeError(f"{backend} worker timed out after {timeout}s{note}") from None
+        raise RuntimeError(
+            f"{backend} worker timed out after {timeout}s{containment_note(status)}"
+        ) from None
     finally:
         if (
             not cancelled

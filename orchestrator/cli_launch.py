@@ -12,14 +12,15 @@ import asyncio
 import contextlib
 import subprocess
 import sys
-import time
 from typing import Any, Sequence
 
 from utils.win_exec import (
     CONTAINED,
+    CONTAINMENT_SCOPE_NOTE,
     UNKNOWN,
+    LaunchError,
     WinExecError,
-    popen_tree_kwargs,
+    launch_tree,
     resolve_executable,
     safe_argv,
     terminate_tree,
@@ -27,10 +28,13 @@ from utils.win_exec import (
 
 __all__ = [
     "CONTAINED",
+    "CONTAINMENT_SCOPE_NOTE",
     "UNKNOWN",
+    "LaunchError",
     "WinExecError",
+    "containment_note",
     "prepare_cli_command",
-    "cli_spawn_kwargs",
+    "spawn_cli",
     "terminate_cli_tree",
 ]
 
@@ -57,38 +61,82 @@ def prepare_cli_command(cmd: Sequence[str]) -> list[str]:
     return safe_argv(resolve_executable(cmd[0]), cmd[1:])
 
 
-def cli_spawn_kwargs() -> dict[str, Any]:
-    """Extra spawn kwargs so a CLI child's tree can be killed (Windows only).
+class _PopenProxy:
+    """Asyncio-style facade over a ``launch_tree`` Popen (Windows Job Object child).
 
-    Returns ``{}`` on POSIX to leave process-group behaviour untouched.
+    Exposes ``pid``/``returncode``/``communicate``/``wait``/``terminate``/``kill``
+    so the supervisor and worker code treat it like an asyncio subprocess, while
+    ``popen`` keeps the real handle that ``terminate_tree`` needs.
     """
-    return popen_tree_kwargs() if _is_windows() else {}
 
+    def __init__(self, popen: subprocess.Popen) -> None:
+        """Wrap ``popen`` (started by ``launch_tree``)."""
+        self.popen = popen
+        self.pid = popen.pid
 
-class _AsyncProcAdapter:
-    """Present an ``asyncio`` subprocess through the Popen-like surface ``terminate_tree`` needs."""
+    @property
+    def returncode(self) -> int | None:
+        """Exit code, or ``None`` while the child runs (polls the Popen)."""
+        return self.popen.poll()
 
-    def __init__(self, proc: Any) -> None:
-        """Wrap ``proc`` (an ``asyncio.subprocess.Process`` or compatible)."""
-        self._proc = proc
-        self.pid = proc.pid
+    async def communicate(self) -> tuple[bytes, bytes]:
+        """Collect stdout/stderr and wait for exit without blocking the event loop."""
+        return await asyncio.to_thread(self.popen.communicate)
 
-    def poll(self) -> int | None:
-        """Return the child's exit code, or ``None`` while it runs."""
-        return self._proc.returncode
+    async def wait(self) -> int:
+        """Wait for exit without blocking the event loop."""
+        return await asyncio.to_thread(self.popen.wait)
 
-    def wait(self, timeout: float | None = None) -> int:
-        """Block (in a worker thread) until exit; raise ``subprocess.TimeoutExpired`` on timeout."""
-        deadline = None if timeout is None else time.monotonic() + timeout
-        while self._proc.returncode is None:
-            if deadline is not None and time.monotonic() >= deadline:
-                raise subprocess.TimeoutExpired("cli-child", timeout)
-            time.sleep(0.05)
-        return self._proc.returncode
+    def terminate(self) -> None:
+        """Terminate the direct child only (tree kill is ``terminate_cli_tree``)."""
+        self.popen.terminate()
 
     def kill(self) -> None:
-        """Force-kill the direct child."""
-        self._proc.kill()
+        """Force-kill the direct child only."""
+        self.popen.kill()
+
+
+async def spawn_cli(cmd: Sequence[str], **kwargs: Any) -> Any:
+    """Start ``cmd`` with stdout/stderr pipes and stdin ignored; return a process handle.
+
+    POSIX: ``asyncio.create_subprocess_exec`` exactly as before. Windows:
+    ``launch_tree`` (suspended start inside a kill-on-close Job Object, so every
+    descendant is a job member) run in a thread and wrapped in ``_PopenProxy``.
+    A ``LaunchError`` (suspended start could not complete) becomes a
+    ``RuntimeError`` like other launch failures.
+    """
+    if not _is_windows():
+        return await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            stdin=asyncio.subprocess.DEVNULL,
+            **kwargs,
+        )
+    try:
+        popen = await asyncio.to_thread(
+            launch_tree, list(cmd),
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.DEVNULL,
+            **kwargs,
+        )
+    except LaunchError as exc:
+        raise RuntimeError(f"launch failed: {exc}") from exc
+    return _PopenProxy(popen)
+
+
+def containment_note(status: str) -> str:
+    """Return a human suffix for a containment ``status`` (empty for POSIX ``contained``).
+
+    ``contained`` is stated only when the status is exactly ``contained``; on
+    Windows the job-scope caveat is always appended, and any other status is
+    spelled out.
+    """
+    parts = []
+    if status != CONTAINED:
+        parts.append(f"process-tree containment: {status}")
+    if _is_windows():
+        parts.append(CONTAINMENT_SCOPE_NOTE)
+    return f" ({'; '.join(parts)})" if parts else ""
 
 
 async def _wait_exit(proc: Any, timeout: float) -> None:
@@ -106,14 +154,15 @@ async def _wait_exit(proc: Any, timeout: float) -> None:
 
 
 async def terminate_cli_tree(proc: Any, grace: float = 5.0) -> str:
-    """Terminate a CLI child (its whole tree on Windows) and return a containment status.
+    """Terminate a CLI child (its whole job on Windows) and return a containment status.
 
-    Returns ``contained`` / ``escaped:<n>`` / ``unknown`` (see
-    ``utils.win_exec.terminate_tree``). On POSIX only the direct child is
-    signalled with ``terminate()`` as before and the result is ``contained``
-    once it has exited, else ``unknown``. On Windows the blocking tree kill runs
-    in a worker thread; any failure there degrades to ``unknown`` (never raises)
-    after a best-effort direct ``terminate()``.
+    Returns exactly ``contained`` / ``escaped:<n>`` / ``unknown`` (job-scoped on
+    Windows, see ``CONTAINMENT_SCOPE_NOTE``). On Windows ``terminate_tree`` runs
+    in a worker thread and is called even if the root already exited, so
+    orphaned descendants still die; a handle not started by ``spawn_cli`` or a
+    failure yields ``unknown`` after a best-effort ``terminate()``. On POSIX only
+    the direct child is signalled when still running (unchanged) and the result
+    is ``contained`` once it has exited, else ``unknown``.
     """
     if not _is_windows():
         if proc.returncode is None:
@@ -121,8 +170,11 @@ async def terminate_cli_tree(proc: Any, grace: float = 5.0) -> str:
                 proc.terminate()
             await _wait_exit(proc, grace)
         return CONTAINED if proc.returncode is not None else UNKNOWN
+    popen = getattr(proc, "popen", None)
     try:
-        return await asyncio.to_thread(terminate_tree, _AsyncProcAdapter(proc), grace)
+        if popen is None:
+            raise WinExecError("child was not started through launch_tree")
+        return await asyncio.to_thread(terminate_tree, popen, grace)
     except Exception:  # noqa: BLE001 - honest degradation, never a false "contained"
         with contextlib.suppress(Exception):
             proc.terminate()

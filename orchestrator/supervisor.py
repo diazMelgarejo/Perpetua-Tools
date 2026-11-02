@@ -761,14 +761,15 @@ class OrchestrationSupervisor:
             )
             return
 
-        tree_status = CLI_TREE_CONTAINED
-        if proc.returncode is None:
-            from orchestrator.cli_launch import terminate_cli_tree
+        from orchestrator.cli_launch import terminate_cli_tree
 
-            tree_status = await terminate_cli_tree(proc, CONTAINMENT_TIMEOUT_SECONDS)
+        # Always run the tree kill, even when the root already exited: its
+        # orphaned descendants may still be alive inside the job.
+        tree_status = await terminate_cli_tree(proc, CONTAINMENT_TIMEOUT_SECONDS)
+        if proc.returncode is None:
             await wait_process_exit(proc, CONTAINMENT_TIMEOUT_SECONDS)
-        # verified needs BOTH the direct child's returncode and a ``contained``
-        # tree status (no surviving descendants); escaped/unknown is unresolved.
+        # verified needs BOTH the direct child's returncode and a status that is
+        # exactly ``contained`` (job-scoped on Windows); escaped/unknown is unresolved.
         containment_state = (
             CONTAINMENT_VERIFIED
             if proc.returncode is not None and tree_status == CLI_TREE_CONTAINED

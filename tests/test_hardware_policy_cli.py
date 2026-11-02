@@ -43,6 +43,7 @@ def test_violation_exits_1_on_cp1252_console():
 def test_internal_crash_exits_with_distinct_code(monkeypatch, capsys):
     """An unexpected exception returns EXIT_INTERNAL_ERROR, never the violation code."""
     def boom(*_a, **_k):
+        """Raise to simulate an internal crash."""
         raise RuntimeError("kaboom")
 
     monkeypatch.setattr(sys, "argv", ["hardware_policy_cli.py", "--list"])
@@ -56,6 +57,7 @@ def test_internal_crash_exits_with_distinct_code(monkeypatch, capsys):
 def test_sym_falls_back_to_ascii_when_stdout_cannot_encode(monkeypatch):
     """_sym returns ASCII tags for cp1252 and emoji for utf-8 streams."""
     class _S:
+        """Fake stdout with a settable encoding."""
         encoding = "cp1252"
 
     monkeypatch.setattr(cli.sys, "stdout", _S())
