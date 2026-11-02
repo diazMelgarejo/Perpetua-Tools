@@ -113,23 +113,36 @@ def test_secure_path_icacls_builds_expected_command():
         tls_proxy._secure_path_icacls(Path("/test/certdir"), is_directory=True)
 
     cmd = mock_run.call_args.args[0]
-    assert cmd[0] == "icacls"
+    assert os.path.basename(cmd[0]).lower() in ("icacls", "icacls.exe")
     assert "/inheritance:r" in cmd
     assert "/deny" not in cmd
     assert any("testuser" in c and "(OI)(CI)(F)" in c for c in cmd)
     assert any("S-1-5-32-544" in c and "(OI)(CI)(F)" in c for c in cmd)
 
 
-def test_secure_path_icacls_logs_warning_on_failure(caplog):
-    """A non-zero icacls exit is logged as a warning, not raised or
-    silently swallowed -- operators need to know the fallback failed."""
-    with patch("subprocess.run") as mock_run, \
-         patch("getpass.getuser", return_value="testuser"):
-        mock_run.return_value = MagicMock(returncode=1, stderr="Access is denied.")
-        with caplog.at_level("WARNING"):
+def test_secure_path_icacls_fails_closed_on_nonzero_exit():
+    """H02-F1: a non-zero icacls exit raises AlphaClawAclError (no warn-only
+    fail-open), and the message names the target and icacls stderr."""
+    with patch("subprocess.run") as mock_run,          patch("getpass.getuser", return_value="testuser"):
+        mock_run.return_value = MagicMock(returncode=5, stderr="Access is denied.", stdout="")
+        with pytest.raises(tls_proxy.AlphaClawAclError, match="Access is denied") as ei:
+            tls_proxy._secure_path_icacls(Path("/test/key.pem"), is_directory=False)
+    assert "key.pem" in str(ei.value)
+
+
+def test_secure_path_icacls_fails_closed_when_icacls_cannot_run():
+    """H02-F1: icacls missing/unlaunchable (OSError) also refuses."""
+    with patch("subprocess.run", side_effect=FileNotFoundError("icacls")),          patch("getpass.getuser", return_value="testuser"):
+        with pytest.raises(tls_proxy.AlphaClawAclError, match="could not run"):
             tls_proxy._secure_path_icacls(Path("/test/key.pem"), is_directory=False)
 
-    assert any("icacls failed" in rec.message for rec in caplog.records)
+
+def test_secure_path_propagates_icacls_failure_when_pywin32_unavailable():
+    """H02-F1: the public _secure_path() surfaces the refusal on the fallback path."""
+    with patch.object(tls_proxy.platform, "system", return_value="Windows"),          patch.object(tls_proxy, "_PYWIN32_AVAILABLE", False, create=True),          patch.object(tls_proxy, "_secure_path_icacls",
+                      side_effect=tls_proxy.AlphaClawAclError("boom")):
+        with pytest.raises(tls_proxy.AlphaClawAclError):
+            tls_proxy._secure_path(Path("/test/key.pem"))
 
 
 # The POSIX branch is forced on every runner. Windows filesystems keep only a
