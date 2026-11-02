@@ -80,6 +80,15 @@ def escaped_count(status: str) -> int:
     return 0
 
 
+def _isabs(path: str) -> bool:
+    """True for an absolute path in the effective flavour.
+
+    Newer ``ntpath.isabs`` rejects a drive-less rooted path, but a POSIX host
+    emulating Windows still receives real ``/x/y`` paths, so those stay absolute.
+    """
+    return _pathmod().isabs(path) or (os.name != "nt" and posixpath.isabs(path))
+
+
 def _is_bare_command(candidate: str) -> bool:
     """True when ``candidate`` names a command to look up, not a pathname."""
     if _win():
@@ -119,7 +128,7 @@ def _search_path_entries(allow_unc: bool = False) -> tuple[str, ...]:
     p = _pathmod()
     kept = []
     for entry in _search_path().split(p.pathsep):
-        if not entry or not p.isabs(entry):
+        if not entry or not _isabs(entry):
             continue
         if _win():
             if _is_unc(entry):
@@ -186,7 +195,7 @@ def resolve_executable(candidate: str, allow_unc: bool = False) -> str:
     p = _pathmod()
     if _is_bare_command(candidate):
         found = find_bare_command(candidate, allow_unc)
-    elif not p.isabs(candidate):
+    elif not _isabs(candidate):
         raise WinExecError("executable path must be absolute")
     elif _win() and _is_unc(candidate) and not allow_unc:
         raise WinExecError("UNC executable paths are refused")

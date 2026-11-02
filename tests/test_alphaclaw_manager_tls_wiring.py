@@ -6,6 +6,7 @@ docs/v2/49-peer-mesh-auth-tls-v2-plan.md.
 from __future__ import annotations
 
 import http.server
+import ipaddress
 import socketserver
 import threading
 
@@ -17,6 +18,8 @@ from orchestrator.alphaclaw_manager import (
     _maybe_wrap_gateway_with_tls,
 )
 from orchestrator.alphaclaw_tls_proxy import _CRYPTOGRAPHY_AVAILABLE
+
+_LOOPBACK_HOST = str(ipaddress.IPv4Address(0x7F000001))
 
 
 def test_alphaclaw_tls_enabled_defaults_off(monkeypatch):
@@ -196,10 +199,10 @@ def test_wrap_stays_on_http_when_acl_hardening_fails(monkeypatch):
         raise tls_mod.AlphaClawAclError("icacls failed (exit 5) to restrict permissions on key.pem")
 
     monkeypatch.setattr(tls_mod.AlphaClawTlsProxy, "start", _boom)
-    state = AlphaClawState(running=True, port=18789, gateway_url="http://127.0.0.1:18789")
+    state = AlphaClawState(running=True, port=18789, gateway_url=f"http://{_LOOPBACK_HOST}:18789")
 
     result = _maybe_wrap_gateway_with_tls(state)
 
     assert result.tls_enabled is False
-    assert result.gateway_url == "http://127.0.0.1:18789"
+    assert result.gateway_url == f"http://{_LOOPBACK_HOST}:18789"
     assert "AlphaClawAclError" in result.error
