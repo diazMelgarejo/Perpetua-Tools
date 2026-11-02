@@ -125,18 +125,19 @@ async def spawn_cli(cmd: Sequence[str], **kwargs: Any) -> Any:
 
 
 def containment_note(status: str) -> str:
-    """Return a human suffix for a containment ``status`` (empty for POSIX ``contained``).
+    """Return a human suffix for a containment ``status``; always empty on POSIX.
 
-    ``contained`` is stated only when the status is exactly ``contained``; on
-    Windows the job-scope caveat is always appended, and any other status is
-    spelled out.
+    POSIX keeps the historical timeout wording. On Windows ``contained`` is
+    stated only when the status is exactly ``contained``, any other status is
+    spelled out, and the job-scope caveat is always appended.
     """
+    if not _is_windows():
+        return ""
     parts = []
     if status != CONTAINED:
         parts.append(f"process-tree containment: {status}")
-    if _is_windows():
-        parts.append(CONTAINMENT_SCOPE_NOTE)
-    return f" ({'; '.join(parts)})" if parts else ""
+    parts.append(CONTAINMENT_SCOPE_NOTE)
+    return f" ({'; '.join(parts)})"
 
 
 async def _wait_exit(proc: Any, timeout: float) -> None:

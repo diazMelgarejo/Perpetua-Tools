@@ -605,3 +605,33 @@ class TestSupervisorSubmitErrors:
         assert resp.status_code == 400
         assert resp.json()["detail"] == _JOB_SUBMIT_ERROR_DETAIL
         assert "depth" not in resp.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_cancel_body_passes_through_containment_detail(monkeypatch: pytest.MonkeyPatch) -> None:
+    """P3: an ``escaped:<n>`` tree-kill result is visible next to containment_state."""
+
+    class _Sup:
+        """Stub supervisor whose last status carries a containment_detail."""
+
+        async def cancel_with_terminal_state(self, job_id: str) -> tuple[bool, str]:
+            """Report a confirmed cancellation."""
+            return True, "cancelled"
+
+        async def get_status(self, job_id: str) -> dict:
+            """Return a CLI/unresolved status with an escaped tree result."""
+            return {
+                "status": "cancelled",
+                "worker_kind": "cli",
+                "containment_state": "unresolved",
+                "containment_detail": "escaped:2",
+            }
+
+        def has_registered_child(self, job_id: str) -> bool:
+            """No retained child."""
+            return False
+
+    monkeypatch.setattr(fastapi_app, "_get_supervisor", lambda: _Sup())
+    body = await fastapi_app.supervisor_cancel_job("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+    assert body["containment_state"] == "unresolved"
+    assert body["containment_detail"] == "escaped:2"

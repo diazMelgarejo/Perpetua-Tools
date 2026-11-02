@@ -90,10 +90,8 @@ async def test_terminate_cli_tree_windows_untracked_handle_is_unknown(monkeypatc
 
 def test_containment_note_wording(monkeypatch):
     """Only the exact status 'contained' is called contained; Windows adds the scope note."""
-    monkeypatch.setattr(cli_launch, "_is_windows", lambda: False)
-    assert cli_launch.containment_note("contained") == ""
-    assert "escaped:2" in cli_launch.containment_note("escaped:2")
     monkeypatch.setattr(cli_launch, "_is_windows", lambda: True)
+    assert "escaped:2" in cli_launch.containment_note("escaped:2")
     note = cli_launch.containment_note("contained")
     assert cli_launch.CONTAINMENT_SCOPE_NOTE in note
     assert "process-tree containment" not in note
@@ -221,7 +219,8 @@ async def test_run_dangerous_cli_timeout_kills_tree_and_reports_status(monkeypat
     """On timeout the tree kill runs and a non-contained status is surfaced."""
     from orchestrator import worker_registry
 
-    monkeypatch.setattr(cli_launch, "_is_windows", lambda: False)
+    monkeypatch.setattr(cli_launch, "_is_windows", lambda: True)
+    monkeypatch.setattr(cli_launch, "prepare_cli_command", lambda c: list(c))
 
     class _P:
         """Test double: P."""
@@ -245,7 +244,7 @@ async def test_run_dangerous_cli_timeout_kills_tree_and_reports_status(monkeypat
         proc.returncode = 1
         return "escaped:3"
 
-    monkeypatch.setattr(asyncio, "create_subprocess_exec", _create)
+    monkeypatch.setattr(cli_launch, "spawn_cli", lambda cmd, **kw: _create())
     monkeypatch.setattr(cli_launch, "terminate_cli_tree", _tree)
     spec = SimpleNamespace(job_id="", prompt="x", constraints={"max_seconds": 0.05})
     with pytest.raises(RuntimeError, match=r"escaped:3"):
@@ -282,3 +281,52 @@ async def test_supervisor_records_tree_status_honestly(tmp_path, monkeypatch, st
     latest = _latest_status_per_job(_load_events(sup._jobs_file))["job-x"]
     assert latest["containment_state"] == expected
     assert latest["containment_detail"] == status
+
+
+def test_containment_note_is_empty_on_posix_for_every_status(monkeypatch):
+    """P3: POSIX timeout wording is the historical one: no note for any status."""
+    monkeypatch.setattr(cli_launch, "_is_windows", lambda: False)
+    for status in ("contained", "unknown", "escaped:1"):
+        assert cli_launch.containment_note(status) == ""
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("windows,expect_note", [(False, False), (True, True)])
+async def test_timeout_message_note_only_on_windows(monkeypatch, windows, expect_note):
+    """P3: an unexited child after the grace period keeps the exact old text on POSIX."""
+    from orchestrator import worker_registry
+
+    monkeypatch.setattr(cli_launch, "_is_windows", lambda: windows)
+    monkeypatch.setattr(cli_launch, "prepare_cli_command", lambda c: list(c))
+
+    class _P:
+        """Test double: child that never exits."""
+        returncode = None
+        pid = 3
+
+        async def communicate(self):
+            """Block forever."""
+            await asyncio.Event().wait()
+
+        async def wait(self):
+            """Block forever."""
+            await asyncio.Event().wait()
+
+    async def _spawn(cmd, **kw):
+        """Return the never-exiting child."""
+        return _P()
+
+    async def _tree(proc, grace=5.0):
+        """Report an unknown containment."""
+        return "unknown"
+
+    monkeypatch.setattr(cli_launch, "spawn_cli", _spawn)
+    monkeypatch.setattr(cli_launch, "terminate_cli_tree", _tree)
+    spec = SimpleNamespace(job_id="", prompt="x", constraints={"max_seconds": 0.05})
+    with pytest.raises(RuntimeError) as ei:
+        await worker_registry._run_dangerous_cli_subprocess(spec, ["codex", "x"], "codex")
+    msg = str(ei.value)
+    if expect_note:
+        assert cli_launch.CONTAINMENT_SCOPE_NOTE in msg
+    else:
+        assert msg == "codex worker timed out after 0.05s"

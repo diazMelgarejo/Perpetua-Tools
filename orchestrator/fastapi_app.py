@@ -1596,6 +1596,9 @@ async def supervisor_cancel_job(job_id: str):
                 body["worker_kind"] = status["worker_kind"]
             if status.get("containment_state") is not None:
                 body["containment_state"] = status["containment_state"]
+            if status.get("containment_detail") is not None:
+                # Honest tree-kill result (contained|escaped:<n>|unknown).
+                body["containment_detail"] = status["containment_detail"]
         # A failed containment-event append must not look like a legacy
         # cancellation. The direct-child map is retained until that annotation
         # is durable; while it remains present, report the conservative pair
