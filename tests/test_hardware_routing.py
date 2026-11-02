@@ -21,6 +21,7 @@ os.environ["OLLAMA_HOST"] = "http://localhost"
 from orchestrator.model_registry import ModelRegistry
 from orchestrator.fastapi_app import _normalize_preferred_device, _resolve_candidates, app
 from utils.hardware_policy import HardwareAffinityError, check_affinity, filter_models_for_platform, load_policy
+from utils.dispatch_models import ollama_mac_default_model
 import utils.hardware_policy as _hw_policy_mod
 
 QWEN_PRIORITY_MODEL = "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2"
@@ -188,7 +189,7 @@ def test_load_policy_merges_windows_only_aliases():
 def test_load_policy_includes_mac_only_ollama_models():
     policy = load_policy(force_reload=True)
     mac_only = {m.lower() for m in policy.get("mac_only", [])}
-    assert "qwen3.5:9b-nvfp4" in mac_only
+    assert "qwen3.5:9b-mlx" in mac_only
     assert "bge-m3" in mac_only
 
 
@@ -279,14 +280,20 @@ def test_mac_ollama_required_models_fail_closed(monkeypatch):
     monkeypatch.setattr(
         agent_launcher,
         "MAC_REQUIRED_OLLAMA_MODELS",
-        ("qwen3.5:9b-nvfp4", "bge-m3"),
+        ("qwen3.5:9b-mlx", "bge-m3"),
     )
 
     with pytest.raises(RuntimeError, match="missing required model"):
         agent_launcher._ensure_mac_ollama_models_present(
-            ["qwen3.5:9b-nvfp4"],
+            ["qwen3.5:9b-mlx"],
             "http://localhost:11434",
         )
+
+
+def test_mac_ollama_default_uses_current_mlx_tag(monkeypatch):
+    """The Mac Ollama default names the supported installed model tag."""
+    monkeypatch.delenv("OLLAMA_MAC_MODEL", raising=False)
+    assert ollama_mac_default_model() == "qwen3.5:9b-mlx"
 
 
 def test_mac_ollama_required_models_skip_on_windows_host(monkeypatch):

@@ -32,7 +32,7 @@ def mac_lmstudio_default_model() -> str:
 
 
 def ollama_mac_default_model() -> str:
-    return os.getenv("OLLAMA_MAC_MODEL", "qwen3.5:9b-nvfp4")
+    return os.getenv("OLLAMA_MAC_MODEL", "qwen3.5:9b-mlx")
 
 
 def lmstudio_win_default_model() -> str:

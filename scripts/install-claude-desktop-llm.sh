@@ -193,7 +193,7 @@ info_install_manual() {
 }
 
 # probe_required_endpoints performs startup health checks for required model backends before installing extensions.
-# On macOS: verifies Ollama at localhost:11434 and checks for qwen3.5:9b-nvfp4 and bge-m3 models.
+# On macOS: verifies Ollama at localhost:11434 and checks for qwen3.5:9b-mlx and bge-m3 models.
 # On Windows: checks LM_STUDIO_WIN_ENDPOINTS environment variable and verifies connectivity.
 # probe_required_endpoints checks local model backends required for desktop integration and exits with status 1 if required probes fail; it skips probes on Linux, in CI, or when --skip-desktop is set.
 probe_required_endpoints() {
@@ -222,14 +222,14 @@ probe_required_endpoints() {
     models_json=$(curl -sf --max-time 5 http://localhost:11434/api/tags 2>/dev/null)
     if [[ -z "$models_json" ]]; then
       err "Ollama not reachable at http://localhost:11434 (timeout or not running)"
-      err "Mac requires Ollama with qwen3.5:9b-nvfp4 and bge-m3 models"
-      err "Install: https://ollama.ai/ then run: ollama pull qwen3.5:9b-nvfp4 && ollama pull bge-m3"
+      err "Mac requires Ollama with qwen3.5:9b-mlx and bge-m3 models"
+      err "Install: https://ollama.ai/ then run: ollama pull qwen3.5:9b-mlx && ollama pull bge-m3"
       exit 1
     fi
     local has_qwen=false
     local has_bge=false
 
-    if echo "$models_json" | grep -q "qwen3.5:9b-nvfp4"; then
+    if echo "$models_json" | grep -q "qwen3.5:9b-mlx"; then
       has_qwen=true
     fi
     if echo "$models_json" | grep -q "bge-m3"; then
@@ -238,13 +238,13 @@ probe_required_endpoints() {
 
     if [[ "$has_qwen" == false ]] || [[ "$has_bge" == false ]]; then
       err "Required Ollama models missing:"
-      [[ "$has_qwen" == false ]] && err "  - qwen3.5:9b-nvfp4"
+      [[ "$has_qwen" == false ]] && err "  - qwen3.5:9b-mlx"
       [[ "$has_bge" == false ]] && err "  - bge-m3"
-      err "Install with: ollama pull qwen3.5:9b-nvfp4 && ollama pull bge-m3"
+      err "Install with: ollama pull qwen3.5:9b-mlx && ollama pull bge-m3"
       exit 1
     fi
 
-    ok "Ollama healthy with required models (qwen3.5:9b-nvfp4, bge-m3)"
+    ok "Ollama healthy with required models (qwen3.5:9b-mlx, bge-m3)"
 
   elif [[ "$os" == "MINGW"* ]] || [[ "$os" == "MSYS"* ]] || [[ "$os" == "CYGWIN"* ]]; then
     # Windows: probe LM Studio

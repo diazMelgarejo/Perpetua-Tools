@@ -37,7 +37,7 @@
 
 # Ollama-native Mac/Linux models — NEVER dispatch to Windows LM Studio.
 mac_only:
-  - qwen3.5:9b-nvfp4                                        # Mac orchestration / inference
+  - qwen3.5:9b-mlx                                          # Mac orchestration / inference
   - bge-m3                                                  # gbrain + CRG embeddings (1024-dim)
 
 # HARD POLICY: these models MUST dispatch to lmstudio-win (<YOUR_WINDOWS_IP>:1234).
