@@ -296,6 +296,7 @@ def test_print_fingerprint_cli(tmp_path, capsys):
 def test_main_exits_2_when_acl_hardening_fails(monkeypatch, tmp_path):
     """P2: an AlphaClawAclError from start() makes main() return 2, not a traceback."""
     def _boom(self):
+        """Implement boom."""
         raise base.AlphaClawAclError("icacls failed")
 
     monkeypatch.setattr(base.AlphaClawTlsProxy, "start", _boom)

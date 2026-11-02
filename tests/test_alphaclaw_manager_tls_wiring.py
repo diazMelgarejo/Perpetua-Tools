@@ -28,6 +28,7 @@ def test_alphaclaw_tls_enabled_defaults_off(monkeypatch):
 
 @pytest.mark.parametrize("value", ["1", "true", "TRUE", "yes", "on"])
 def test_alphaclaw_tls_enabled_accepts_truthy_forms(monkeypatch, value):
+    """Check: alphaclaw tls enabled accepts truthy forms."""
     monkeypatch.setenv("ALPHACLAW_TLS_ENABLED", value)
     assert alphaclaw_tls_enabled() is True
 
@@ -72,12 +73,15 @@ def test_wrap_replaces_gateway_url_with_https_when_enabled(monkeypatch, tmp_path
     monkeypatch.setenv("ALPHACLAW_TLS_ENABLED", "1")
 
     class _FakeAlphaClaw(http.server.BaseHTTPRequestHandler):
+        """Helper type ``_FakeAlphaClaw``."""
         def do_GET(self):
+            """Implement do GET."""
             self.send_response(200)
             self.end_headers()
             self.wfile.write(b'{"ok": true}')
 
         def log_message(self, *a):
+            """Implement log message."""
             pass
 
     upstream = socketserver.TCPServer(("127.0.0.1", 0), _FakeAlphaClaw)
@@ -155,13 +159,17 @@ def test_wrap_stops_previous_proxy_instance_before_replacing(monkeypatch, tmp_pa
     stopped = {"n": 0}
 
     class _FakeProxy:
+        """Helper type ``_FakeProxy``."""
         def __init__(self, upstream_port):
+            """Initialise the instance."""
             self.fingerprint = "aabbccdd" * 8
 
         def start(self):
+            """Implement start."""
             return "https://127.0.0.1:9999"
 
         def stop(self):
+            """Implement stop."""
             stopped["n"] += 1
 
     monkeypatch.setattr(tls_mod, "AlphaClawTlsProxy", _FakeProxy)
@@ -184,6 +192,7 @@ def test_wrap_stays_on_http_when_acl_hardening_fails(monkeypatch):
     monkeypatch.setenv("ALPHACLAW_TLS_ENABLED", "1")
 
     def _boom(self):
+        """Implement boom."""
         raise tls_mod.AlphaClawAclError("icacls failed (exit 5) to restrict permissions on key.pem")
 
     monkeypatch.setattr(tls_mod.AlphaClawTlsProxy, "start", _boom)
