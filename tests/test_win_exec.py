@@ -14,7 +14,9 @@ def test_resolve_executable_skips_interpreter_suffixes_for_bare_commands(
 ) -> None:
     """A bare command skips .vbs/.js PATHEXT entries and finds a direct executable."""
     vbs = tmp_path / "tool.vbs"
-    exe = tmp_path / "tool.exe"
+    # The POSIX CI filesystem is case-sensitive; use the configured spelling
+    # while emulating Windows lookup, where the spelling is case-insensitive.
+    exe = tmp_path / "tool.EXE"
     vbs.touch()
     exe.touch()
     monkeypatch.setattr(win_exec, "_win", lambda: True)
