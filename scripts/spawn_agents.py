@@ -48,14 +48,17 @@ else:
 
         Windows: PATH-only absolute resolution via ``utils.win_exec`` (never the
         cwd, never a bare name) plus the ``.cmd`` metacharacter refusal in
-        ``safe_argv``; a refusal or unresolvable binary returns ``None``.
+        ``safe_argv``; an unresolvable binary returns ``None`` while a
+        metacharacter refusal raises ``CmdArgumentRefused`` (see ``dispatch``).
         Elsewhere: ``shutil.which`` with the Homebrew fallback, as before.
         """
         if sys.platform == "win32":
             sys.path.insert(0, str(_PT_ROOT / "src"))
-            from utils.win_exec import WinExecError, resolve_executable, safe_argv
+            from utils.win_exec import CmdArgumentRefused, WinExecError, resolve_executable, safe_argv
             try:
                 return safe_argv(resolve_executable("codex"), args)
+            except CmdArgumentRefused:
+                raise  # dispatch reports an explicit refusal, not "not found"
             except WinExecError:
                 return None
         codex_bin = shutil.which("codex") or "/opt/homebrew/bin/codex"
@@ -76,7 +79,10 @@ else:
 
     async def dispatch(agent: str, task: str, model: Optional[str] = None) -> Dict[str, Any]:
         """Implement dispatch."""
-        argv = _codex_argv("--full-auto", task) if agent == "codex" else None
+        try:
+            argv = _codex_argv("--full-auto", task) if agent == "codex" else None
+        except ValueError:  # win_exec.CmdArgumentRefused (a WinExecError/ValueError)
+            return {"ok": False, "output": "refused: cmd metacharacters in arguments"}
         if argv is not None:
             proc = await asyncio.create_subprocess_exec(
                 *argv,

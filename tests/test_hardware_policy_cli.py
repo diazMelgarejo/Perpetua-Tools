@@ -51,7 +51,9 @@ def test_internal_crash_exits_with_distinct_code(monkeypatch, capsys):
     rc = cli.main()
     assert rc == cli.EXIT_INTERNAL_ERROR
     assert rc not in (0, cli.EXIT_VIOLATION)
-    assert "internal error: RuntimeError: kaboom" in capsys.readouterr().err
+    err = capsys.readouterr().err
+    assert "internal error (RuntimeError)" in err
+    assert "kaboom" not in err
 
 
 def test_sym_falls_back_to_ascii_when_stdout_cannot_encode(monkeypatch):
@@ -72,3 +74,18 @@ def test_policy_lists_qwen38_27b_as_windows_only():
     assert "qwen/qwen3.8-27b" in policy["windows_only"]
     assert cli.check_affinity("qwen/qwen3.8-27b", "win", policy)[0] is True
     assert cli.check_affinity("qwen/qwen3.8-27b", "mac", policy)[0] is False
+
+
+def test_crash_output_never_echoes_exception_message(monkeypatch, capsys):
+    """P3: stderr names only the exception type; KeyError text (fake config) is withheld."""
+    def boom(*_a, **_k):
+        """Raise a KeyError carrying fake config text."""
+        raise KeyError("FAKE_SECRET_TOKEN=abc123 windows_only")
+
+    monkeypatch.setattr(sys, "argv", ["hardware_policy_cli.py", "--list"])
+    monkeypatch.setattr(cli, "cmd_list", boom)
+    assert cli.main() == cli.EXIT_INTERNAL_ERROR
+    captured = capsys.readouterr()
+    assert "KeyError" in captured.err
+    assert "FAKE_SECRET_TOKEN" not in captured.err + captured.out
+    assert "abc123" not in captured.err + captured.out

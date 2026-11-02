@@ -187,7 +187,12 @@ def main() -> int:
     except SystemExit:
         raise
     except Exception as exc:  # noqa: BLE001 - crash must not look like a violation
-        print(f"hardware_policy_cli: internal error: {type(exc).__name__}: {exc}", file=sys.stderr)
+        # Only the exception type: the message can carry config/policy text.
+        print(
+            f"hardware_policy_cli: internal error ({type(exc).__name__}); "
+            "details withheld",
+            file=sys.stderr,
+        )
         return EXIT_INTERNAL_ERROR
 
 
