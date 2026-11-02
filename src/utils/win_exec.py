@@ -200,16 +200,20 @@ def resolve_executable(candidate: str, allow_unc: bool = False) -> str:
         _, ext = p.splitext(found)
         if p.normcase(ext) not in tuple(p.normcase(e) for e in _windows_pathext()):
             raise WinExecError("executable has no permitted Windows extension")
-    return p.abspath(found)
+    # ``found`` is a real host-filesystem path: normalise it with the host module so
+    # a Windows-emulating run on POSIX never rewrites /tmp/x into \tmp\x.
+    return os.path.abspath(found)
 
 
 def _is_cmd_shim(path: str) -> bool:
-    """True when ``path`` is a ``.cmd``/``.bat`` file that cmd.exe would interpret."""
-    p = _pathmod()
-    name = p.split(path.replace("/", "\\") if _win() else path)[1]
-    name = name.split(":", 1)[0].rstrip(" .")  # NTFS stream suffix, trailing dots/spaces
-    _, ext = p.splitext(name)
-    return p.normcase(ext) in _CMD_SUFFIXES
+    """True when ``path`` is a ``.cmd``/``.bat`` file that cmd.exe would interpret.
+
+    Host independent on purpose: a shim is refused with the same Windows name rules
+    (case-insensitive, NTFS stream suffix, trailing dots and spaces) on every platform.
+    """
+    name = ntpath.split(path.replace("/", "\\"))[1]
+    name = name.split(":", 1)[0].rstrip(" .")
+    return ntpath.normcase(ntpath.splitext(name)[1]) in _CMD_SUFFIXES
 
 
 def safe_argv(executable: str, args: Sequence[str] = ()) -> list[str]:
