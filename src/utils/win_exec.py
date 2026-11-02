@@ -26,7 +26,9 @@ any surviving member, which is the intended bounded lifetime.
 """
 from __future__ import annotations
 
+import ntpath
 import os
+import posixpath
 import shutil
 import signal
 import subprocess
@@ -49,6 +51,11 @@ _CMD_SUFFIXES = frozenset({".cmd", ".bat"})
 def _win() -> bool:
     """True on Windows (evaluated per call so tests can patch ``sys.platform``)."""
     return sys.platform == "win32"
+
+
+def _pathmod():
+    """Return the path module matching the effective platform (ntpath for Windows, posixpath otherwise)."""
+    return ntpath if _win() else posixpath
 
 
 class WinExecError(ValueError):
@@ -75,19 +82,25 @@ def escaped_count(status: str) -> int:
 
 def _is_bare_command(candidate: str) -> bool:
     """True when ``candidate`` names a command to look up, not a pathname."""
-    if "/" in candidate or "\\" in candidate:
-        return False
-    return not (_win() and len(candidate) >= 2 and candidate[1] == ":")
+    if _win():
+        if "/" in candidate or "\\" in candidate:
+            return False
+        return not bool(_pathmod().splitdrive(candidate)[0])
+    return "/" not in candidate
 
 
 def _search_path() -> str:
     """The PATH string used for lookup, entries unquoted; unset PATH falls back to ``os.defpath``."""
-    raw = os.environ.get("PATH", os.defpath)
-    return os.pathsep.join(entry.strip().strip('"') for entry in raw.split(os.pathsep))
+    p = _pathmod()
+    default_path = p.defpath if hasattr(p, "defpath") else os.defpath
+    raw = os.environ.get("PATH", default_path)
+    return p.pathsep.join(entry.strip().strip('"') for entry in raw.split(p.pathsep))
 
 
 def _is_unc(entry: str) -> bool:
     """True for a UNC/network path (two leading separators plus host), not a local device-prefix path."""
+    if not _win():
+        return False
     norm = entry.replace("/", "\\")
     if not norm.startswith("\\\\"):
         return False
@@ -103,15 +116,16 @@ def _search_path_entries(allow_unc: bool = False) -> tuple[str, ...]:
     entries are dropped so lookup can never land in the working directory or on
     a network share. On Windows a drive-less rooted entry is dropped too.
     """
+    p = _pathmod()
     kept = []
-    for entry in _search_path().split(os.pathsep):
-        if not entry or not os.path.isabs(entry):
+    for entry in _search_path().split(p.pathsep):
+        if not entry or not p.isabs(entry):
             continue
         if _win():
             if _is_unc(entry):
                 if not allow_unc:
                     continue
-            elif not os.path.splitdrive(entry)[0]:
+            elif not p.splitdrive(entry)[0] and not (os.name != "nt" and posixpath.isabs(entry)):
                 continue
         kept.append(entry)
     return tuple(kept)
@@ -126,7 +140,8 @@ def _windows_pathext() -> tuple[str, ...]:
 
 def _windows_executable_extensions() -> tuple[str, ...]:
     """Return casefolded PATHEXT suffixes, used for comparison only."""
-    return tuple(e.casefold() for e in _windows_pathext())
+    p = _pathmod()
+    return tuple(p.normcase(e) for e in _windows_pathext())
 
 
 def find_bare_command(command: str, allow_unc: bool = False) -> Optional[str]:
@@ -136,14 +151,18 @@ def find_bare_command(command: str, allow_unc: bool = False) -> Optional[str]:
     supplied PATH; joining each approved directory ourselves keeps a planted
     local binary from shadowing the installed one.
     """
+    p = _pathmod()
+    pathext = _windows_pathext() if _win() else ()
+    win_exts = tuple(p.normcase(e) for e in pathext)
     for directory in _search_path_entries(allow_unc):
         base = Path(directory) / command
         candidates: tuple[Path, ...] = (base,)
         if _win():
             candidates = (base, *(
-                base.with_name(f"{base.name}{ext}") for ext in _windows_pathext()
+                base.with_name(f"{base.name}{ext}") for ext in pathext
             ))
-            if base.suffix.casefold() not in _windows_executable_extensions():
+            _, cur_ext = p.splitext(command)
+            if p.normcase(cur_ext) not in win_exts:
                 candidates = (*candidates[1:], base)
         for candidate in candidates:
             if candidate.is_file() and (_win() or os.access(candidate, os.X_OK)):
@@ -164,26 +183,33 @@ def resolve_executable(candidate: str, allow_unc: bool = False) -> str:
     if not isinstance(candidate, str) or not candidate.strip() or "\x00" in candidate:
         raise WinExecError("invalid executable name")
     candidate = os.path.expanduser(candidate)
+    p = _pathmod()
     if _is_bare_command(candidate):
         found = find_bare_command(candidate, allow_unc)
-    elif not os.path.isabs(candidate):
+    elif not p.isabs(candidate):
         raise WinExecError("executable path must be absolute")
     elif _win() and _is_unc(candidate) and not allow_unc:
         raise WinExecError("UNC executable paths are refused")
+    elif _win() and not p.splitdrive(candidate)[0] and not (os.name != "nt" and posixpath.isabs(candidate)):
+        raise WinExecError("executable path must be absolute")
     else:
         found = shutil.which(candidate)
     if found is None or not Path(found).is_file():
         raise WinExecError("executable is unavailable or not executable")
-    if _win() and Path(found).suffix.casefold() not in _windows_executable_extensions():
-        raise WinExecError("executable has no permitted Windows extension")
-    return os.path.abspath(found)
+    if _win():
+        _, ext = p.splitext(found)
+        if p.normcase(ext) not in tuple(p.normcase(e) for e in _windows_pathext()):
+            raise WinExecError("executable has no permitted Windows extension")
+    return p.abspath(found)
 
 
 def _is_cmd_shim(path: str) -> bool:
     """True when ``path`` is a ``.cmd``/``.bat`` file that cmd.exe would interpret."""
-    name = path.replace("\\", "/").rsplit("/", 1)[-1]
+    p = _pathmod()
+    name = p.split(path.replace("/", "\\") if _win() else path)[1]
     name = name.split(":", 1)[0].rstrip(" .")  # NTFS stream suffix, trailing dots/spaces
-    return Path(name).suffix.casefold() in _CMD_SUFFIXES
+    _, ext = p.splitext(name)
+    return p.normcase(ext) in _CMD_SUFFIXES
 
 
 def safe_argv(executable: str, args: Sequence[str] = ()) -> list[str]:
@@ -457,25 +483,34 @@ def _terminate_tree_windows(proc: "subprocess.Popen", grace: float) -> str:
 
 def _terminate_tree_posix(proc: "subprocess.Popen", grace: float) -> str:
     """POSIX tree kill via the child's own process group; verified by probing the group."""
+    cached = getattr(proc, "_win_exec_result", None)
+    if isinstance(cached, str) and cached:
+        return cached
     pid = proc.pid
-    if getattr(proc, "_win_exec_group", None) == pid:
-        own_group = True
-    else:
+    sigkill = getattr(signal, "SIGKILL", 9)
+    sigterm = getattr(signal, "SIGTERM", 15)
+    if getattr(proc, "_win_exec_group", None) != pid:
+        # Not started through launch_tree: membership is not authoritative.
+        # Clean up the process (and group only if it safely leads it) and report unknown.
         try:
-            own_group = os.getpgid(pid) == pid
+            if os.getpgid(pid) == pid:
+                try:
+                    os.killpg(pid, sigkill)
+                except OSError:
+                    pass
         except OSError:
-            own_group = False
-    if not own_group:
-        # Not a group leader (spawned without start_new_session): killing the
-        # group would hit the caller. Kill only the child and say so.
+            pass
         if proc.poll() is None:
-            proc.kill()
+            try:
+                proc.kill()
+            except OSError:
+                pass
         try:
             proc.wait(timeout=grace)
         except subprocess.TimeoutExpired:
-            pass
+            return "escaped:1"
         return UNKNOWN
-    for sig in (signal.SIGTERM, signal.SIGKILL):
+    for sig in (sigterm, sigkill):
         try:
             os.killpg(pid, sig)
         except ProcessLookupError:
@@ -483,7 +518,7 @@ def _terminate_tree_posix(proc: "subprocess.Popen", grace: float) -> str:
         except PermissionError:
             return UNKNOWN
         try:
-            proc.wait(timeout=grace if sig == signal.SIGTERM else 2)
+            proc.wait(timeout=grace if sig == sigterm else 2)
         except subprocess.TimeoutExpired:
             pass
         deadline = time.monotonic() + 1.0
@@ -491,14 +526,17 @@ def _terminate_tree_posix(proc: "subprocess.Popen", grace: float) -> str:
             try:
                 os.killpg(pid, 0)
             except ProcessLookupError:
+                proc._win_exec_result = CONTAINED  # type: ignore[attr-defined]
                 return CONTAINED
             time.sleep(0.05)
     try:
         os.killpg(pid, 0)
     except ProcessLookupError:
+        proc._win_exec_result = CONTAINED  # type: ignore[attr-defined]
         return CONTAINED
     except PermissionError:
         return UNKNOWN
+    proc._win_exec_result = "escaped:1"  # type: ignore[attr-defined]
     return "escaped:1"
 
 
@@ -513,9 +551,8 @@ def terminate_tree(proc: "subprocess.Popen", grace: float = 5.0) -> str:
 
     ``contained`` only when the job (Windows) or process group (POSIX) is empty
     afterwards; ``escaped:<n>`` with ``n`` survivors; ``unknown`` when
-    membership is not authoritative (Windows: not started via ``launch_tree``;
-    POSIX: not a group leader) or the check failed. Never raises for an
-    already-dead child.
+    membership is not authoritative (Windows or POSIX: not started via
+    ``launch_tree``) or the check failed. Never raises for an already-dead child.
     """
     if _win():
         return _terminate_tree_windows(proc, grace)
