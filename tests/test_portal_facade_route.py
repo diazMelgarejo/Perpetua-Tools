@@ -239,9 +239,9 @@ def test_models_route_payload_ignores_empty_role(monkeypatch):
     dummy = SimpleNamespace(
         backend="ollama",
         device="mac-studio",
-        name="qwen3.5:9b-nvfp4",
-        api_model="qwen3.5:9b-nvfp4",
-        __dict__={"name": "qwen3.5:9b-nvfp4", "backend": "ollama"},
+        name="qwen3.5:9b-mlx",
+        api_model="qwen3.5:9b-mlx",
+        __dict__={"name": "qwen3.5:9b-mlx", "backend": "ollama"},
     )
     monkeypatch.setattr(
         "orchestrator.fastapi_app.registry.route_task",
@@ -249,7 +249,7 @@ def test_models_route_payload_ignores_empty_role(monkeypatch):
     )
     payload = _models_route_payload(task_type="default", role=None)
     assert payload["backend_hint"] == "ollama"
-    assert payload["model_hint"] == "qwen3.5:9b-nvfp4"
+    assert payload["model_hint"] == "qwen3.5:9b-mlx"
 
 
 def test_portal_launch_metadata_hoists_onto_jobspec(client: TestClient, monkeypatch):

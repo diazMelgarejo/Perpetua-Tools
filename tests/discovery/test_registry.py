@@ -8,7 +8,7 @@ from perpetua.discovery.errors import BackendOfflineError
 @respx.mock
 async def test_autodetect_keeps_only_responsive_seeds():
     respx.get("http://localhost:11434/v1/models").mock(
-        return_value=httpx.Response(200, json={"data": [{"id": "qwen3.5:9b-nvfp4"}]}))
+        return_value=httpx.Response(200, json={"data": [{"id": "qwen3.5:9b-mlx"}]}))
     respx.get("http://localhost:1234/v1/models").mock(return_value=httpx.Response(404))
     respx.get("http://192.0.2.1:1234/v1/models").mock(
         return_value=httpx.Response(200, json={"data": [{"id": "qwen3-coder-30b"}]}))

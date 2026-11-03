@@ -72,7 +72,7 @@ describe("LocalAgentClient — module structure", () => {
   it("DEFAULTS.ollama.models has GLM-5.1:cloud as first choice", async () => {
     const { DEFAULTS } = await import("../src/client.js");
     expect(DEFAULTS.ollama.models[0]).toBe("GLM-5.1:cloud");
-    expect(DEFAULTS.ollama.models[1]).toBe("qwen3.5:9b-nvfp4");
+    expect(DEFAULTS.ollama.models[1]).toBe("qwen3.5:9b-mlx");
   });
 });
 
@@ -88,28 +88,28 @@ describe("OllamaClient", () => {
   it("resolveModel picks GLM-5.1:cloud when available", async () => {
     const client = new OllamaClient({
       baseUrl: "http://127.0.0.1:11435",
-      models: ["GLM-5.1:cloud", "qwen3.5:9b-nvfp4"],
+      models: ["GLM-5.1:cloud", "qwen3.5:9b-mlx"],
     });
 
     // Patch listModels directly
-    client.listModels = async () => ["GLM-5.1:cloud", "qwen3.5:9b-nvfp4"];
+    client.listModels = async () => ["GLM-5.1:cloud", "qwen3.5:9b-mlx"];
     const model = await client.resolveModel();
     expect(model).toBe("GLM-5.1:cloud");
   });
 
-  it("resolveModel falls back to qwen3.5:9b-nvfp4 when GLM not present", async () => {
+  it("resolveModel falls back to qwen3.5:9b-mlx when GLM not present", async () => {
     const client = new OllamaClient({
       baseUrl: "http://127.0.0.1:11435",
-      models: ["GLM-5.1:cloud", "qwen3.5:9b-nvfp4"],
+      models: ["GLM-5.1:cloud", "qwen3.5:9b-mlx"],
     });
-    client.listModels = async () => ["qwen3.5:9b-nvfp4", "llama3:latest"];
+    client.listModels = async () => ["qwen3.5:9b-mlx", "llama3:latest"];
     const model = await client.resolveModel();
-    expect(model).toBe("qwen3.5:9b-nvfp4");
+    expect(model).toBe("qwen3.5:9b-mlx");
   });
 
   it("resolveModel falls back to first available if no preferred model found", async () => {
     const client = new OllamaClient({
-      models: ["GLM-5.1:cloud", "qwen3.5:9b-nvfp4"],
+      models: ["GLM-5.1:cloud", "qwen3.5:9b-mlx"],
     });
     client.listModels = async () => ["mistral:latest"];
     const model = await client.resolveModel();

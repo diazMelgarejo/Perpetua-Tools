@@ -91,7 +91,7 @@ Refer to [hardware/SKILL.md](hardware/SKILL.md) for role matrix and VRAM constra
 
 ### Profile A — mac-studio (16GB+ Unified Memory)
 - **Primary**: `glm-5.1:cloud` via local Ollama when the live probe succeeds
-- **Local Fallback**: `Qwen3.5-9B-MLX-4bit` (LM Studio, Metal full offload, context 4096) or `qwen3.5:9b-nvfp4` via Ollama (`localhost:11434`)
+- **Local Fallback**: `Qwen3.5-9B-MLX-4bit` (LM Studio, Metal full offload, context 4096) or `qwen3.5:9b-mlx` via Ollama (`localhost:11434`)
 - **Roles**: Thin Orchestrator via GLM, local verifier/orchestrator fallback via Mac LM Studio/Ollama.
 - **VRAM**: N/A (Unified). LM Studio/Ollama handle Apple Silicon Metal natively.
 

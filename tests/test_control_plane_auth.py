@@ -414,7 +414,7 @@ def test_redact_runtime_payload_preserves_routing_summary():
         "routing": {
             "distributed": True,
             "manager_endpoint": "http://127.0.0.1:11434",
-            "manager_model": "qwen3.5:9b-nvfp4",
+            "manager_model": "qwen3.5:9b-mlx",
         },
     }
 
@@ -424,7 +424,7 @@ def test_redact_runtime_payload_preserves_routing_summary():
     assert "openclaw_config" not in redacted.get("gateway", {})
     assert redacted["distributed"] is True
     assert redacted["manager_endpoint"] == "http://127.0.0.1:11434"
-    assert redacted["routing"]["manager_model"] == "qwen3.5:9b-nvfp4"
+    assert redacted["routing"]["manager_model"] == "qwen3.5:9b-mlx"
 
 
 def test_redact_runtime_payload_empty():

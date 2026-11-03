@@ -290,14 +290,17 @@ def test_mac_ollama_required_models_fail_closed(monkeypatch):
         )
 
 
-def test_nvfp4_qwen_is_allowed_on_windows_and_mac():
-    """qwen3.5:9b-nvfp4 is no longer NEVER_WIN: it is shared, so both platforms accept it."""
+def test_retired_nvfp4_qwen_is_purged_and_not_never_win():
+    """qwen3.5:9b-nvfp4 is retired: no policy list or Mac default names it, and it is not NEVER_WIN."""
+    from orchestrator.worker_registry import ROLE_BACKEND_MAP
+
+    retired = "qwen3.5:9b-nvfp4"
     policy = load_policy(force_reload=True)
-    assert "qwen3.5:9b-nvfp4" not in {m.lower() for m in policy.get("mac_only", [])}
-    assert "qwen3.5:9b-nvfp4" in {m.lower() for m in policy.get("shared", [])}
-    for platform in ("win", "win-rtx3080", "win-rtx5080", "lmstudio-win", "mac"):
-        check_affinity("qwen3.5:9b-nvfp4", platform, policy)
-    assert filter_models_for_platform(["qwen3.5:9b-nvfp4"], "win", policy) == ["qwen3.5:9b-nvfp4"]
+    for section in ("mac_only", "windows_only", "shared"):
+        assert retired not in {m.lower() for m in policy.get(section, [])}
+    check_affinity(retired, "win", policy)
+    assert ollama_mac_default_model() != retired
+    assert retired not in {model for _, model in ROLE_BACKEND_MAP.values()}
 
 
 def test_mlx_qwen_stays_never_win():

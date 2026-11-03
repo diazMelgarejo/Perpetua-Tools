@@ -20,7 +20,7 @@ BASHES = sorted({b for b in ("/bin/bash", shutil.which("bash")) if b and os.path
 
 TAGS = (
     '{"models":[{"name":"qwen3.5:9b-mlx-bf16","model":"qwen3.5:9b-mlx-bf16"},'
-    '{"name":"bge-m3:latest","model":"bge-m3:latest"},{"name":"Qwen3.5:9B-NVFP4"}]}'
+    '{"name":"bge-m3:latest","model":"bge-m3:latest"},{"name":"Gemma-4-E4B-IT"}]}'
 )
 
 
@@ -47,8 +47,8 @@ def test_required_models_default_is_mlx_and_bge(bash):
 
 @pytest.mark.parametrize("bash", BASHES)
 def test_required_models_follow_the_configured_set(bash):
-    out = _run(bash, "mac_required_ollama_models", " qwen3.5:9b-nvfp4 , bge-m3 ,").stdout.split()
-    assert out == ["qwen3.5:9b-nvfp4", "bge-m3"]
+    out = _run(bash, "mac_required_ollama_models", " qwen3.5:9b-mlx-bf16 , bge-m3 ,").stdout.split()
+    assert out == ["qwen3.5:9b-mlx-bf16", "bge-m3"]
 
 
 @pytest.mark.parametrize("bash", BASHES)
@@ -64,7 +64,7 @@ def test_empty_configured_set_requires_nothing(bash):
         ("qwen3.5:9b-mlx", False),  # only the separate bf16 model is served
         ("qwen3.5:9b-mlx-bf16", True),
         ("bge-m3", True),  # served as bge-m3:latest
-        ("qwen3.5:9b-nvfp4", True),  # case-insensitive
+        ("gemma-4-e4b-it", True),  # case-insensitive
         ("qwen3.5", True),  # a bare name accepts any tag, as the launcher does
         ("qwen3", False),
     ],

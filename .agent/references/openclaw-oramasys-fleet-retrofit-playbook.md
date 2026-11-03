@@ -2,15 +2,19 @@
 
 > **Audience:** All future agents (OpenClaw, Cursor, Claude Code, PT host-agent).  
 > **Session:** 2026-07-23 – 2026-07-26 (Raft plans → live retrofit outside git).  
-> **Status:** Executed in operator OpenClaw state; **orama-system / Perpetua-Tools promotion pending M3 dry-run.**
+> **Status:** Executed in operator OpenClaw state; **orama-system / Perpetua-Tools promotion pending
+> M3 dry-run.**
 
 ## What we did (3-day arc)
 
-1. **Research & dedup** — EXA/Firecrawl on SOUL/VISION taxonomy; merged Raft outputs (03→06, combined-05, grounded-06).
-2. **PLAN-08** — 23-soul repo scaffold plan (orama `bin/agents/`, `.claude/agents/orama-*`) — **plan-only, not executed in git**.
+1. **Research & dedup** — EXA/Firecrawl on SOUL/VISION taxonomy; merged Raft outputs (03→06,
+   combined-05, grounded-06).
+2. **PLAN-08** — 23-soul repo scaffold plan (orama `bin/agents/`, `.claude/agents/orama-*`) —
+   **plan-only, not executed in git**.
 3. **PLAN-09** — Proposed `~/.openclaw/fleet/` hub — **rejected** in favor of retrofit.
 4. **MERGE-10** — Retrofit live OpenClaw workspaces: integrative merge, no parallel fleet tree.
-5. **EDITED-03 fold** — Raft personas (Cole, Hermes, Sage, Penn, Arthur, Nova, Rex) harmonized with pipeline agents.
+5. **EDITED-03 fold** — Raft personas (Cole, Hermes, Sage, Penn, Arthur, Nova, Rex) harmonized with
+   pipeline agents.
 6. **CROSSREF spine** — Anti-loss navigation across plans, hub, and 17 live `openclaw.json` agents.
 
 ## Core doctrine (never skip)
@@ -64,14 +68,15 @@ ln -sf "$ORAMA_SYSTEM_ROOT/VISION.md" "$HUB/VISION.md"   # or OpenClaw/orama-sys
 
 ### Phase M1 — Retrofit existing agents
 
-Per workspace: IDENTITY, GOALS, MEMORY, SECURITY (if missing), `memory/`, append SOUL overlay, insert Oramasys session contract + Fleet navigation in AGENTS.md.
+Per workspace: IDENTITY, GOALS, MEMORY, SECURITY (if missing), `memory/`, append SOUL overlay,
+insert Oramasys session contract + Fleet navigation in AGENTS.md.
 
 ### Phase M2 — Create missing pipeline agents
 
 ```bash
 for id in context-agent architect-agent refiner-agent crystallizer-agent; do
   openclaw agents add "$id" \
-    --model "ollama/qwen3.5:9b-nvfp4" \
+    --model "ollama/qwen3.5:9b-mlx" \
     --workspace "$HOME/.openclaw/agents/$id" \
     --non-interactive --json
 done
@@ -90,27 +95,36 @@ done
 
 ### Orchestrator delegation
 
-**Do:** `openclaw config set 'agents.list[<orchestrator-index>].subagents' '{"allowAgents":[...]}' --strict-json --merge`
+**Do:**
+
+```bash
+openclaw config set 'agents.list[<orchestrator-index>].subagents' '{"allowAgents":[...]}' --strict-json --merge
+```
 
 **Don't:** `openclaw config patch` on full `agents.list` — refuses to replace array.
 
-Verify index: `openclaw config get agents.list | jq 'to_entries[] | select(.value.id=="orchestrator") | .key'`
+Verify index:
+`openclaw config get agents.list | jq 'to_entries[] | select(.value.id=="orchestrator") | .key'`
 
 ### Phase M3 — Dry-run
 
-Probes in `docs/oramasys/DRY-RUN.md`. Pass criteria: each agent cites VISION, own GOALS, correct reviewer.
+Probes in `docs/oramasys/DRY-RUN.md`. Pass criteria: each agent cites VISION, own GOALS, correct
+reviewer.
 
 ## How to promote into orama-system (PLAN-08, future)
 
 Only after M3 passes:
 
-1. Copy proven GOALS/SOUL/AGENTS patterns → `orama-system/bin/agents/<stage>/` (integrative merge, never amputate).
+1. Copy proven GOALS/SOUL/AGENTS patterns → `orama-system/bin/agents/<stage>/` (integrative merge,
+   never amputate).
 2. Generate `docs/agent-souls/` from hub `REGISTRY.yml`.
 3. Sync `.claude/agents/orama-*.md` from validated OpenClaw text.
 4. Update `agent_registry.json` only where OpenClaw binding is stable.
-5. PT `.agent` lessons (this playbook + graduated lessons) inform promotion — do not duplicate fleet hub in PT orchestrator.
+5. PT `.agent` lessons (this playbook + graduated lessons) inform promotion — do not duplicate fleet
+   hub in PT orchestrator.
 
-**Boundary:** OpenClaw retrofit = operator local state. orama/PT git = canonical specs after validation.
+**Boundary:** OpenClaw retrofit = operator local state. orama/PT git = canonical specs after
+validation.
 
 ## Plan document lineage
 
@@ -125,19 +139,27 @@ references/AGENT-CROSSREF.md → plan-side index → live CROSSREF.md
 
 ## Lessons learned (highlights)
 
-1. **Main workspace path** — Not `~/.openclaw/workspace`; operator uses `${ALPHACLAW_INSTALL_DIR}/.openclaw/workspace` for `main`.
-2. **No parallel fleet/** — Central metadata in main workspace `docs/oramasys/` avoids duplicate infrastructure.
-3. **gemini-coder CORRECTION history** — Never delete Antigravity audit trail; Sage demoted to optional analyzer.
-4. **codex-agent dual role** — Vera (pipeline 4.5) on same id as Codex model; Penn persona lives on `coder`.
-5. **Scale one pillar** — Glen + Cass + one Relay agent before full adapter catalog (EDITED-03 caution).
-6. **MEMORY compounding** — Append learnings after each task; judgment in MEMORY becomes compounding soul.
-7. **Cross-ref propagation** — New agent = update REGISTRY + CROSSREF + allowAgents + AGENTS.md Fleet navigation.
+1. **Main workspace path** — Not `~/.openclaw/workspace`; operator uses
+   `${ALPHACLAW_INSTALL_DIR}/.openclaw/workspace` for `main`.
+2. **No parallel fleet/** — Central metadata in main workspace `docs/oramasys/` avoids duplicate
+   infrastructure.
+3. **gemini-coder CORRECTION history** — Never delete Antigravity audit trail; Sage demoted to
+   optional analyzer.
+4. **codex-agent dual role** — Vera (pipeline 4.5) on same id as Codex model; Penn persona lives on
+   `coder`.
+5. **Scale one pillar** — Glen + Cass + one Relay agent before full adapter catalog (EDITED-03
+   caution).
+6. **MEMORY compounding** — Append learnings after each task; judgment in MEMORY becomes compounding
+   soul.
+7. **Cross-ref propagation** — New agent = update REGISTRY + CROSSREF + allowAgents + AGENTS.md
+   Fleet navigation.
 
 ## Related PT / orama artifacts
 
 - PT: `.agent/references/openclaw-oramasys-fleet-retrofit-playbook.md` (this file)
 - PT: `.agent/memory/working/OPENCLAW_MERGE10_FLEET_RETROFIT_2026-07-26.md`
-- PT: `.agent/memory/working/2026-07-26-merge10-memory-pipeline-proof.md` (AGENTS.md compliance proof)
+- PT: `.agent/memory/working/2026-07-26-merge10-memory-pipeline-proof.md` (AGENTS.md compliance
+  proof)
 - OpenClaw: `references/raft-openclaw-MERGE-PLAN-10.md`
 - OpenClaw: `references/AGENT-CROSSREF.md`
 - orama: `VISION.md`, `bin/orama-system/config/agent_registry.json`
@@ -145,7 +167,8 @@ references/AGENT-CROSSREF.md → plan-side index → live CROSSREF.md
 
 ## How to add lessons to PT memory (AGENTS.md contract)
 
-Future agents capturing retrofit or promotion work **must** use the pipeline — not hand-edit `LESSONS.md`.
+Future agents capturing retrofit or promotion work **must** use the pipeline — not hand-edit
+`LESSONS.md`.
 
 ```bash
 cd Perpetua-Tools
@@ -166,4 +189,5 @@ python3 .agent/tools/memory_reflect.py <skill> <action> <outcome> \
 # 6. Commit .agent/** on a branch; merge via PR (main push blocked by Phase 0 hook)
 ```
 
-**Proof chain:** each `learn.py` lesson has `evidence_ids` → episodic `manual-stage:<id>` row → `graduated/<id>.json` with `decisions[]`.
+**Proof chain:** each `learn.py` lesson has `evidence_ids` → episodic `manual-stage:<id>` row →
+`graduated/<id>.json` with `decisions[]`.

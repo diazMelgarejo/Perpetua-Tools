@@ -15,7 +15,7 @@ def _online(name, url, kind, models):
 def reg():
     r = BackendRegistry()
     r._backends["ollama-local"] = _online("ollama-local", "http://localhost:11434/v1",
-                                          BackendKind.OLLAMA, ["qwen3.5:9b-nvfp4"])
+                                          BackendKind.OLLAMA, ["qwen3.5:9b-mlx"])
     r._backends["lmstudio-win"] = _online("lmstudio-win", "http://127.0.1.1:1234/v1",
                                           BackendKind.LMSTUDIO, ["qwen3-coder-30b"])
     return r
@@ -70,7 +70,7 @@ def test_mirror_excluded_even_when_only_lmstudio_online():
     """If lmstudio-win is offline, shared+coding should fall back to Ollama, never the mirror."""
     r = BackendRegistry()
     r._backends["ollama-local"] = _online("ollama-local", "http://localhost:11434/v1",
-                                          BackendKind.OLLAMA, ["qwen3.5:9b-nvfp4"])
+                                          BackendKind.OLLAMA, ["qwen3.5:9b-mlx"])
     r._backends["lmstudio-mac"] = _online("lmstudio-mac", "http://localhost:1234/v1",
                                           BackendKind.LMSTUDIO, ["heavy-model"])
     b = select_backend(r, model_hint=None, task_type="coding", target_tier="shared")
