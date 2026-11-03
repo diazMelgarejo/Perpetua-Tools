@@ -77,12 +77,12 @@ def test_github_output_writes_unquoted_peer_ref(tmp_path: Path) -> None:
 
 
 def test_windows_process_stack_selects_peer_with_shared_win_exec() -> None:
-    """PT #475 selects Orama #464 while keeping missing-file parity fail-closed."""
+    """PT #475 selects Orama #466 (win_exec mirror after #464 merged) while keeping missing-file parity fail-closed."""
     branch = "2026-11-02-001-windows-process-and-acl-hardening"
     resolution = _MODULE.resolve_orama_policy_stack(branch, pull_merged=False)
-    assert resolution.peer_ref == "2026-10-27-004-windows-process-hygiene"
+    assert resolution.peer_ref == "2026-11-03-002-win-exec-pathext-skip"
     assert resolution.declared is True
     entry = _MODULE.load_policy_stacks()["orama_system_refs"][branch]
-    assert entry["peer_pull"] == 464
-    assert entry["equivalents"] == ["refs/pull/464/head"]
+    assert entry["peer_pull"] == 466
+    assert entry["equivalents"] == ["refs/pull/466/head"]
     assert _MODULE.resolve_orama_policy_stack(branch, pull_merged=True).peer_ref == "main"

@@ -2,10 +2,10 @@
   "version": 1,
   "orama_system_refs": {
     "2026-11-02-001-windows-process-and-acl-hardening": {
-      "peer_ref": "2026-10-27-004-windows-process-hygiene",
-      "peer_pull": 464,
+      "peer_ref": "2026-11-03-002-win-exec-pathext-skip",
+      "peer_pull": 466,
       "peer_repository": "diazMelgarejo/orama-system",
-      "equivalents": ["refs/pull/464/head"]
+      "equivalents": ["refs/pull/466/head"]
     },
     "fix/pt-pipeline-endpoint-tls-20260917": {
       "peer_ref": "cursor/tiered-pipeline-runtime-fb76",
