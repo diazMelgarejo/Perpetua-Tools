@@ -24,6 +24,7 @@ _NEVER_EMPTY_MODEL_BACKENDS: frozenset[str] = frozenset({"lmstudio-mac"})
 
 
 def mac_lmstudio_default_model() -> str:
+    """Return the explicit Apple-Silicon model id for the LM Studio mirror."""
     return (
         os.getenv("MAC_LMS_MODEL")
         or os.getenv("LMS_MAC_MODEL")
@@ -32,10 +33,12 @@ def mac_lmstudio_default_model() -> str:
 
 
 def ollama_mac_default_model() -> str:
+    """Return the current MLX Ollama default, with an operator override."""
     return os.getenv("OLLAMA_MAC_MODEL", "qwen3.5:9b-mlx")
 
 
 def lmstudio_win_default_model() -> str:
+    """Return the explicit Windows LM Studio coding-model default."""
     return os.getenv(
         "WINDOWS_CODER_MODEL",
         "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2",
@@ -43,14 +46,17 @@ def lmstudio_win_default_model() -> str:
 
 
 def backend_requires_dispatch_model(backend: str) -> bool:
+    """Return whether ``backend`` sends a model field to an inference API."""
     return backend.lower().strip() in _BACKENDS_WITH_MODEL
 
 
 def backend_never_empty_model(backend: str) -> bool:
+    """Return whether ``backend`` forbids an implicit server-selected model."""
     return backend.lower().strip() in _NEVER_EMPTY_MODEL_BACKENDS
 
 
 def _normalize_backend(backend: str) -> str:
+    """Canonicalize a backend name before comparing routing policy."""
     return backend.lower().strip()
 
 
@@ -61,6 +67,7 @@ def _role_mapped_model(
     specialization: Optional[str],
     target_platform: Optional[str],
 ) -> Optional[str]:
+    """Return the role mapping only when it targets this backend and platform."""
     if not role:
         return None
     # Import here to avoid circular import (worker_registry imports this module).
