@@ -16,6 +16,10 @@ Public API:
   * ``terminate_tree``      - kill a launched process and everything in its job/group and
                               report ``contained`` | ``escaped:<n>`` | ``unknown``;
                               ``unknown`` for a process not started through ``launch_tree``.
+  * ``exited``              - has the process exited? On POSIX the root is not reaped, so
+                              its group id stays reserved until ``terminate_tree`` runs.
+  * ``run_tree``            - launch, capture output and tree-kill with every wait bounded.
+  * ``system32_tool``       - absolute path of a Windows System32 tool; never a guessed drive.
 
 Containment is job-scoped: it covers descendants created by ordinary process
 creation inside the job, not processes started through out-of-job launchers
@@ -33,10 +37,11 @@ import shutil
 import signal
 import subprocess
 import sys
+import threading
 import time
 import weakref
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import NamedTuple, Optional, Sequence
 
 CONTAINED = "contained"
 UNKNOWN = "unknown"
@@ -46,6 +51,10 @@ CONTAINMENT_SCOPE_NOTE = "(job-scoped containment; out-of-job launchers not cove
 # Characters cmd.exe interprets inside a command line, plus line breaks and NUL.
 CMD_METACHARACTERS = frozenset('%!^&|<>"\n\r\x00')
 _CMD_SUFFIXES = frozenset({".cmd", ".bat"})
+# Windows PATHEXT can include interpreter-hosted file types such as .vbs and
+# .js.  ``Popen(..., shell=False)`` cannot safely launch those by pathname;
+# accept only suffixes CreateProcess can start directly in this API.
+_WINDOWS_DIRECT_EXECUTABLE_SUFFIXES = frozenset({".com", ".exe", ".cmd", ".bat"})
 
 
 def _win() -> bool:
@@ -90,9 +99,16 @@ def _isabs(path: str) -> bool:
 
 
 def _is_bare_command(candidate: str) -> bool:
-    """True when ``candidate`` names a command to look up, not a pathname."""
+    """True when ``candidate`` names a command to look up, not a pathname.
+
+    Treat both separator spellings as a path on every host. This keeps a
+    Windows-style relative path from becoming a POSIX bare-command lookup when
+    tests or configuration are evaluated off Windows.
+    """
+    if "\\" in candidate:
+        return False
     if _win():
-        if "/" in candidate or "\\" in candidate:
+        if "/" in candidate:
             return False
         return not bool(_pathmod().splitdrive(candidate)[0])
     return "/" not in candidate
@@ -148,9 +164,18 @@ def _windows_pathext() -> tuple[str, ...]:
 
 
 def _windows_executable_extensions() -> tuple[str, ...]:
-    """Return casefolded PATHEXT suffixes, used for comparison only."""
+    """Return configured direct-launch suffixes, preserving their spelling and order.
+
+    Membership is compared case-insensitively, but candidate names retain the
+    configured spelling so a POSIX host emulating Windows can probe fixtures
+    without relying on filesystem case-folding.
+    """
     p = _pathmod()
-    return tuple(p.normcase(e) for e in _windows_pathext())
+    return tuple(
+        e
+        for e in _windows_pathext()
+        if p.normcase(e) in _WINDOWS_DIRECT_EXECUTABLE_SUFFIXES
+    )
 
 
 def find_bare_command(command: str, allow_unc: bool = False) -> Optional[str]:
@@ -161,8 +186,8 @@ def find_bare_command(command: str, allow_unc: bool = False) -> Optional[str]:
     local binary from shadowing the installed one.
     """
     p = _pathmod()
-    pathext = _windows_pathext() if _win() else ()
-    win_exts = tuple(p.normcase(e) for e in pathext)
+    pathext = _windows_executable_extensions() if _win() else ()
+    win_exts = frozenset(p.normcase(ext) for ext in pathext)
     for directory in _search_path_entries(allow_unc):
         base = Path(directory) / command
         candidates: tuple[Path, ...] = (base,)
@@ -174,8 +199,11 @@ def find_bare_command(command: str, allow_unc: bool = False) -> Optional[str]:
             if p.normcase(cur_ext) not in win_exts:
                 candidates = (*candidates[1:], base)
         for candidate in candidates:
-            if candidate.is_file() and (_win() or os.access(candidate, os.X_OK)):
-                return str(candidate)
+            if not candidate.is_file() or not (_win() or os.access(candidate, os.X_OK)):
+                continue
+            if not allow_unc and _unc_target(str(candidate)):
+                continue  # a local PATH entry that links to a network share
+            return str(candidate)
     return None
 
 
@@ -186,8 +214,10 @@ def resolve_executable(candidate: str, allow_unc: bool = False) -> str:
     are expanded (``~``) and must then be absolute (a relative path would reach
     the working directory and raises ``WinExecError``). UNC PATH entries are
     ignored unless ``allow_unc``. On Windows the result must carry a
-    PATHEXT extension, so ``.ps1`` and extensionless shims are refused. There is
-    no fallback to the bare name; failure raises ``WinExecError``.
+    direct-launch extension (``.com``, ``.exe``, ``.cmd`` or ``.bat``), so
+    interpreter-hosted entries such as ``.ps1``, ``.vbs`` and ``.js`` are
+    refused. There is no fallback to the bare name; failure raises
+    ``WinExecError``.
     """
     if not isinstance(candidate, str) or not candidate.strip() or "\x00" in candidate:
         raise WinExecError("invalid executable name")
@@ -205,13 +235,31 @@ def resolve_executable(candidate: str, allow_unc: bool = False) -> str:
         found = shutil.which(candidate)
     if found is None or not Path(found).is_file():
         raise WinExecError("executable is unavailable or not executable")
+    if not allow_unc and _unc_target(found):
+        raise WinExecError("executable resolves to a UNC path; UNC targets are refused")
     if _win():
         _, ext = p.splitext(found)
-        if p.normcase(ext) not in tuple(p.normcase(e) for e in _windows_pathext()):
+        if p.normcase(ext) not in {
+            p.normcase(allowed) for allowed in _windows_executable_extensions()
+        }:
             raise WinExecError("executable has no permitted Windows extension")
     # ``found`` is a real host-filesystem path: normalise it with the host module so
     # a Windows-emulating run on POSIX never rewrites /tmp/x into \tmp\x.
     return os.path.abspath(found)
+
+
+def _unc_target(path: str) -> bool:
+    """True on Windows when ``path`` resolves (through any link) to a UNC location.
+
+    An unresolvable path counts as UNC, so a lookup that cannot prove a local
+    target refuses it rather than trusting the unresolved spelling.
+    """
+    if not _win():
+        return False
+    try:
+        return _is_unc(os.path.realpath(path))
+    except (OSError, ValueError):
+        return True
 
 
 def _is_cmd_shim(path: str) -> bool:
@@ -438,16 +486,41 @@ def launch_tree(argv: Sequence[str], **kwargs) -> "subprocess.Popen":
 
 # --------------------------------------------------------------------------- tree kill
 
-def _system32(name: str) -> str:
-    """Absolute path of a System32 tool, derived from %SystemRoot%."""
-    root = os.environ.get("SystemRoot") or os.environ.get("SYSTEMROOT") or r"C:\Windows"
-    return os.path.join(root, "System32", name)
+def _system_directory_from_api() -> str:
+    """The System32 directory reported by GetSystemDirectoryW, or "" when unavailable."""
+    if os.name != "nt":
+        return ""
+    try:
+        import ctypes
+
+        buf = ctypes.create_unicode_buffer(260)
+        length = ctypes.windll.kernel32.GetSystemDirectoryW(buf, len(buf))
+    except (AttributeError, OSError):
+        return ""
+    return buf.value if 0 < length < len(buf) else ""
+
+
+def system32_tool(name: str) -> str:
+    """Absolute path of a Windows System32 tool such as ``taskkill.exe``.
+
+    The directory comes from GetSystemDirectoryW, else ``%SystemRoot%``. No drive
+    is ever guessed: with neither source this raises OSError, so callers report
+    that the tool cannot be launched instead of running a binary from an assumed
+    location.
+    """
+    directory = _system_directory_from_api()
+    if not directory:
+        root = os.environ.get("SystemRoot") or os.environ.get("SYSTEMROOT") or ""
+        directory = ntpath.join(root, "System32") if root else ""
+    if not directory or not ntpath.isabs(directory):
+        raise OSError("System32 directory unavailable: GetSystemDirectoryW failed and SystemRoot is unset")
+    return ntpath.join(directory, name)
 
 
 def _taskkill(args: list[str]) -> None:
     """Run System32 ``taskkill.exe`` (absolute path) quietly; ignore launch failures."""
     try:
-        subprocess.run([_system32("taskkill.exe"), *args], capture_output=True, timeout=15)
+        subprocess.run([system32_tool("taskkill.exe"), *args], capture_output=True, timeout=15)
     except (OSError, subprocess.TimeoutExpired):
         pass
 
@@ -504,15 +577,8 @@ def _terminate_tree_posix(proc: "subprocess.Popen", grace: float) -> str:
     sigterm = getattr(signal, "SIGTERM", 15)
     if getattr(proc, "_win_exec_group", None) != pid:
         # Not started through launch_tree: membership is not authoritative.
-        # Clean up the process (and group only if it safely leads it) and report unknown.
-        try:
-            if os.getpgid(pid) == pid:
-                try:
-                    os.killpg(pid, sigkill)
-                except OSError:
-                    pass
-        except OSError:
-            pass
+        # A recycled PID could name an unrelated process group, so clean up
+        # only the direct child and report unknown.
         if proc.poll() is None:
             try:
                 proc.kill()
@@ -570,3 +636,88 @@ def terminate_tree(proc: "subprocess.Popen", grace: float = 5.0) -> str:
     if _win():
         return _terminate_tree_windows(proc, grace)
     return _terminate_tree_posix(proc, grace)
+
+
+# --------------------------------------------------------------------------- bounded run
+
+class TreeRun(NamedTuple):
+    """Outcome of ``run_tree``; ``returncode`` is None when the run timed out."""
+
+    returncode: Optional[int]
+    stdout: str
+    stderr: str
+    timed_out: bool
+    containment: str
+
+
+def exited(proc: "subprocess.Popen") -> bool:
+    """True once ``proc`` has exited; on POSIX the root is left unreaped.
+
+    Reaping the root frees its PID and with it the process-group id that
+    ``terminate_tree`` signals, so the group id could be recycled before cleanup.
+    ``os.waitid(..., WNOWAIT)`` observes the exit and leaves the zombie in place
+    until ``terminate_tree`` (or ``wait``) reaps it. Windows keeps the process
+    handle open, so ``poll()`` is safe there.
+    """
+    if proc.returncode is not None:
+        return True
+    if _win() or not hasattr(os, "waitid"):
+        return proc.poll() is not None
+    try:
+        state = os.waitid(os.P_PID, proc.pid, os.WEXITED | os.WNOWAIT | os.WNOHANG)
+    except ChildProcessError:
+        return proc.poll() is not None
+    return state is not None
+
+
+def _read_all(stream, sink: list) -> None:
+    """Reader-thread body: append everything ``stream`` yields until EOF."""
+    try:
+        sink.append(stream.read())
+    except (OSError, ValueError):
+        pass
+
+
+def run_tree(argv: Sequence[str], timeout: float, grace: float = 5.0, **kwargs) -> TreeRun:
+    """Run ``argv`` through ``launch_tree``, capture its output and always clean up its tree.
+
+    Every wait is bounded. Reader threads drain stdout and stderr; ``exited``
+    observes the exit (the POSIX root stays unreaped, so its group id stays
+    reserved); the tree is then terminated whether the root finished or timed
+    out; readers get at most ``grace`` seconds after that, and a pipe still held
+    by an escaped descendant is left to its daemon reader instead of blocking the
+    caller. ``LaunchError`` and ``OSError`` from the launch propagate so the
+    caller decides how to report them. stdin defaults to DEVNULL, text to True.
+    """
+    kwargs.setdefault("stdin", subprocess.DEVNULL)
+    kwargs.setdefault("text", True)
+    kwargs["stdout"] = subprocess.PIPE
+    kwargs["stderr"] = subprocess.PIPE
+    proc = launch_tree(argv, **kwargs)
+    out: list = []
+    err: list = []
+    readers = [
+        (threading.Thread(target=_read_all, args=(proc.stdout, out), daemon=True), proc.stdout),
+        (threading.Thread(target=_read_all, args=(proc.stderr, err), daemon=True), proc.stderr),
+    ]
+    for reader, _ in readers:
+        reader.start()
+    deadline = time.monotonic() + max(0.0, timeout)
+    while not exited(proc) and time.monotonic() < deadline:
+        time.sleep(0.05)
+    timed_out = not exited(proc)
+    containment = terminate_tree(proc, grace)
+    try:
+        proc.wait(timeout=grace)
+    except subprocess.TimeoutExpired:
+        pass
+    for reader, stream in readers:
+        reader.join(timeout=grace)
+        if not reader.is_alive():
+            try:
+                stream.close()
+            except (OSError, ValueError):
+                pass
+    empty = "" if kwargs.get("text") or kwargs.get("universal_newlines") or kwargs.get("encoding") else b""
+    return TreeRun(None if timed_out else proc.returncode, empty.join(out), empty.join(err),
+                   timed_out, containment)
