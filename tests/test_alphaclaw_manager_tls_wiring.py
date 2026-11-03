@@ -6,6 +6,7 @@ docs/v2/49-peer-mesh-auth-tls-v2-plan.md.
 from __future__ import annotations
 
 import http.server
+import ipaddress
 import socketserver
 import threading
 
@@ -18,6 +19,8 @@ from orchestrator.alphaclaw_manager import (
 )
 from orchestrator.alphaclaw_tls_proxy import _CRYPTOGRAPHY_AVAILABLE
 
+_LOOPBACK_HOST = str(ipaddress.IPv4Address(0x7F000001))
+
 
 def test_alphaclaw_tls_enabled_defaults_off(monkeypatch):
     """Off by default -- new opt-in infrastructure must never change
@@ -28,6 +31,7 @@ def test_alphaclaw_tls_enabled_defaults_off(monkeypatch):
 
 @pytest.mark.parametrize("value", ["1", "true", "TRUE", "yes", "on"])
 def test_alphaclaw_tls_enabled_accepts_truthy_forms(monkeypatch, value):
+    """Check: alphaclaw tls enabled accepts truthy forms."""
     monkeypatch.setenv("ALPHACLAW_TLS_ENABLED", value)
     assert alphaclaw_tls_enabled() is True
 
@@ -72,12 +76,15 @@ def test_wrap_replaces_gateway_url_with_https_when_enabled(monkeypatch, tmp_path
     monkeypatch.setenv("ALPHACLAW_TLS_ENABLED", "1")
 
     class _FakeAlphaClaw(http.server.BaseHTTPRequestHandler):
+        """Helper type ``_FakeAlphaClaw``."""
         def do_GET(self):
+            """Implement do GET."""
             self.send_response(200)
             self.end_headers()
             self.wfile.write(b'{"ok": true}')
 
         def log_message(self, *a):
+            """Implement log message."""
             pass
 
     upstream = socketserver.TCPServer(("127.0.0.1", 0), _FakeAlphaClaw)
@@ -155,13 +162,17 @@ def test_wrap_stops_previous_proxy_instance_before_replacing(monkeypatch, tmp_pa
     stopped = {"n": 0}
 
     class _FakeProxy:
+        """Helper type ``_FakeProxy``."""
         def __init__(self, upstream_port):
+            """Initialise the instance."""
             self.fingerprint = "aabbccdd" * 8
 
         def start(self):
+            """Implement start."""
             return "https://127.0.0.1:9999"
 
         def stop(self):
+            """Implement stop."""
             stopped["n"] += 1
 
     monkeypatch.setattr(tls_mod, "AlphaClawTlsProxy", _FakeProxy)
@@ -174,3 +185,46 @@ def test_wrap_stops_previous_proxy_instance_before_replacing(monkeypatch, tmp_pa
     assert stopped["n"] == 1  # the first instance was stopped before the second started
 
     manager_mod._active_tls_proxy = None  # don't leak into other tests
+
+
+def test_wrap_stays_on_http_when_acl_hardening_fails(monkeypatch):
+    """P2: an ACL failure in proxy.start() is caught like other TLS-unavailable errors:
+    state.error is set and the gateway stays on plain HTTP (no exception escapes)."""
+    import orchestrator.alphaclaw_tls_proxy as tls_mod
+
+    monkeypatch.setenv("ALPHACLAW_TLS_ENABLED", "1")
+
+    def _boom(self):
+        """Implement boom."""
+        raise tls_mod.AlphaClawAclError("icacls failed (exit 5) to restrict permissions on key.pem")
+
+    monkeypatch.setattr(tls_mod.AlphaClawTlsProxy, "start", _boom)
+    state = AlphaClawState(running=True, port=18789, gateway_url=f"http://{_LOOPBACK_HOST}:18789")
+
+    result = _maybe_wrap_gateway_with_tls(state)
+
+    assert result.tls_enabled is False
+    assert result.gateway_url == f"http://{_LOOPBACK_HOST}:18789"
+    assert "AlphaClawAclError" in result.error
+
+
+def test_wrap_retains_an_earlier_bootstrap_error_when_tls_start_fails(monkeypatch):
+    """A TLS ACL refusal is retained alongside an existing bootstrap diagnostic."""
+    import orchestrator.alphaclaw_tls_proxy as tls_mod
+
+    monkeypatch.setenv("ALPHACLAW_TLS_ENABLED", "1")
+
+    def _boom(self):
+        """Simulate the fail-closed ACL error raised while starting the proxy."""
+        raise tls_mod.AlphaClawAclError("icacls failed")
+
+    monkeypatch.setattr(tls_mod.AlphaClawTlsProxy, "start", _boom)
+    state = AlphaClawState(
+        running=True, port=18789, error="prior bootstrap failure",
+        gateway_url=f"http://{_LOOPBACK_HOST}:18789",
+    )
+
+    result = _maybe_wrap_gateway_with_tls(state)
+
+    assert "prior bootstrap failure" in result.error
+    assert "AlphaClawAclError" in result.error

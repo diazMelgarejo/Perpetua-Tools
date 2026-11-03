@@ -234,24 +234,38 @@ async def _run_dangerous_cli_subprocess(
     cmd: list[str],
     backend: str,
 ) -> dict:
-    """Spawn a direct CLI child, register it with the supervisor, and collect output."""
+    """Spawn a direct CLI child, register it with the supervisor, and collect output.
+
+    ``cmd[0]`` is resolved to an absolute path and argv-checked on Windows
+    (see ``orchestrator.cli_launch``) and started via ``spawn_cli`` (Job Object on
+    Windows); on timeout the job is killed and the containment status (plus the
+    job-scope note on Windows) is appended to the error text.
+    """
     from orchestrator.supervisor import (
         CONTAINMENT_TIMEOUT_SECONDS,
         current_orchestration_supervisor,
         wait_process_exit,
     )
 
+    from orchestrator.cli_launch import (
+        WinExecError,
+        containment_note,
+        prepare_cli_command,
+        spawn_cli,
+        terminate_cli_tree,
+    )
+
     timeout = float(_get_constraint(spec, "max_seconds", 300))
     job_id = getattr(spec, "job_id", "")
+    try:
+        # Windows: absolute executable (never cwd/bare name) + cmd-shim arg check.
+        cmd = prepare_cli_command(cmd)
+    except WinExecError as exc:
+        raise RuntimeError(f"{backend} launch refused: {exc}") from exc
     # Shield creation so a cancel during create_subprocess_exec still registers
     # the direct child for supervisor containment (narrow race window).
     creation = asyncio.create_task(
-        asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            stdin=asyncio.subprocess.DEVNULL,
-        )
+        spawn_cli(cmd)
     )
     cancelled_during_creation = False
     try:
@@ -275,9 +289,11 @@ async def _run_dangerous_cli_subprocess(
         cancelled = True
         raise
     except asyncio.TimeoutError:
-        proc.terminate()
+        status = await terminate_cli_tree(proc, CONTAINMENT_TIMEOUT_SECONDS)
         await wait_process_exit(proc, CONTAINMENT_TIMEOUT_SECONDS)
-        raise RuntimeError(f"{backend} worker timed out after {timeout}s") from None
+        raise RuntimeError(
+            f"{backend} worker timed out after {timeout}s{containment_note(status)}"
+        ) from None
     finally:
         if (
             not cancelled

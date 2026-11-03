@@ -28,6 +28,7 @@ from orchestrator.supervisor import (
 # ── Fixtures / helpers ────────────────────────────────────────────────────────
 
 def _echo_spec(prompt: str = "hello") -> JobSpec:
+    """Implement echo spec."""
     return JobSpec(
         job_id=_new_id(),
         intent="echo",
@@ -36,11 +37,25 @@ def _echo_spec(prompt: str = "hello") -> JobSpec:
     )
 
 
+@pytest.fixture(autouse=True)
+def _direct_child_containment_contract(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Pin these fake-process tests to the direct-child (POSIX) contract.
+
+    The fakes have no pid, so the Windows tree-kill path cannot apply; that path
+    is covered in tests/test_cli_launch.py.
+    """
+    from orchestrator import cli_launch
+
+    monkeypatch.setattr(cli_launch, "_is_windows", lambda: False)
+
+
 def _make_sup(tmp_path: Path) -> OrchestrationSupervisor:
+    """Implement make sup."""
     return OrchestrationSupervisor(state_dir=tmp_path)
 
 
 async def _await_job(sup: OrchestrationSupervisor, job_id: str) -> None:
+    """Implement await job."""
     task = sup._active.get(job_id)
     assert task is not None
     await task
@@ -53,6 +68,7 @@ def test_submit_job_strips_client_win_endpoint(tmp_path):
     sup = _make_sup(tmp_path)
 
     async def _run() -> str:
+        """Implement run."""
         spec = JobSpec(
             job_id=_new_id(),
             intent="echo",
@@ -192,6 +208,7 @@ async def test_cancel_running_job(tmp_path):
     spec = _echo_spec("slow")
 
     async def _slow(s):
+        """Implement slow."""
         await asyncio.sleep(60)
         return {"output": "never"}
 
@@ -214,6 +231,7 @@ async def test_cancel_with_terminal_state_confirms_persisted_cancellation(tmp_pa
     spec = _echo_spec("slow")
 
     async def _slow(s: JobSpec) -> dict[str, str]:
+        """Implement slow."""
         await asyncio.sleep(60)
         return {"output": "never"}
 
@@ -270,6 +288,7 @@ async def test_cancel_echo_reports_in_process_not_applicable(tmp_path: Path) -> 
     spec = _echo_spec("slow echo")
 
     async def _slow(_spec: JobSpec) -> dict[str, str]:
+        """Implement slow."""
         await asyncio.sleep(60)
         return {"output": "never"}
 
@@ -293,18 +312,23 @@ async def test_cancel_cli_child_containment_verified(tmp_path: Path) -> None:
     sup = _make_sup(tmp_path)
 
     class _FakeCliProc:
+        """Helper type ``_FakeCliProc``."""
         def __init__(self) -> None:
+            """Initialise the instance."""
             self.returncode = None
 
         def terminate(self) -> None:
+            """Implement terminate."""
             self.returncode = 0
 
         async def wait(self) -> int:
+            """Implement wait."""
             return self.returncode or 0
 
     fake_proc = _FakeCliProc()
 
     async def _blocked_cli(spec: JobSpec) -> dict[str, str]:
+        """Implement blocked cli."""
         sup.note_child(spec.job_id, fake_proc)  # type: ignore[arg-type]
         while fake_proc.returncode is None:
             await asyncio.sleep(0.02)
@@ -333,18 +357,23 @@ async def test_cancel_cli_child_containment_unresolved(tmp_path: Path, monkeypat
     sup = _make_sup(tmp_path)
 
     class _StubbornProc:
+        """Helper type ``_StubbornProc``."""
         def __init__(self) -> None:
+            """Initialise the instance."""
             self.returncode = None
 
         def terminate(self) -> None:
+            """Implement terminate."""
             return
 
         async def wait(self) -> None:
+            """Implement wait."""
             await asyncio.sleep(60)
 
     fake_proc = _StubbornProc()
 
     async def _blocked_cli(spec: JobSpec) -> dict[str, str]:
+        """Implement blocked cli."""
         sup.note_child(spec.job_id, fake_proc)  # type: ignore[arg-type]
         while fake_proc.returncode is None:
             await asyncio.sleep(0.02)
@@ -374,7 +403,9 @@ async def test_note_child_does_not_replace_live_process(tmp_path: Path) -> None:
     job_id = _new_id()
 
     class _Proc:
+        """Helper type ``_Proc``."""
         def __init__(self, name: str) -> None:
+            """Initialise the instance."""
             self.name = name
             self.returncode = None
 
@@ -391,19 +422,24 @@ async def test_already_exited_child_is_verified_without_terminate(tmp_path: Path
     sup = _make_sup(tmp_path)
 
     class _Exited:
+        """Helper type ``_Exited``."""
         def __init__(self) -> None:
+            """Initialise the instance."""
             self.returncode = 0
             self.terminate_calls = 0
 
         def terminate(self) -> None:
+            """Implement terminate."""
             self.terminate_calls += 1
 
         async def wait(self) -> int:
+            """Implement wait."""
             return 0
 
     proc = _Exited()
 
     async def _dispatch(spec: JobSpec) -> dict[str, str]:
+        """Implement dispatch."""
         sup.note_child(spec.job_id, proc)  # type: ignore[arg-type]
         await asyncio.sleep(60)
         return {"output": "never"}
@@ -429,19 +465,24 @@ async def test_terminate_without_exit_stays_unresolved(tmp_path: Path, monkeypat
     sup = _make_sup(tmp_path)
 
     class _Hangs:
+        """Helper type ``_Hangs``."""
         def __init__(self) -> None:
+            """Initialise the instance."""
             self.returncode = None
             self.terminate_calls = 0
 
         def terminate(self) -> None:
+            """Implement terminate."""
             self.terminate_calls += 1
 
         async def wait(self) -> None:
+            """Implement wait."""
             await asyncio.sleep(60)
 
     proc = _Hangs()
 
     async def _dispatch(spec: JobSpec) -> dict[str, str]:
+        """Implement dispatch."""
         sup.note_child(spec.job_id, proc)  # type: ignore[arg-type]
         await asyncio.sleep(60)
         return {"output": "never"}
@@ -464,7 +505,9 @@ async def test_stale_clear_does_not_drop_replacement_child(tmp_path: Path) -> No
     job_id = _new_id()
 
     class _Proc:
+        """Helper type ``_Proc``."""
         def __init__(self) -> None:
+            """Initialise the instance."""
             self.returncode = None
 
     first = _Proc()
@@ -483,24 +526,30 @@ async def test_containment_clears_only_the_looked_up_process(tmp_path: Path) -> 
     job_holder: dict[str, str] = {}
 
     class _Replacement:
+        """Helper type ``_Replacement``."""
         returncode = None
 
     replacement = _Replacement()
 
     class _Original:
+        """Helper type ``_Original``."""
         def __init__(self) -> None:
+            """Initialise the instance."""
             self.returncode = None
 
         def terminate(self) -> None:
+            """Implement terminate."""
             self.returncode = 0
             sup.note_child(job_holder["id"], replacement)  # type: ignore[arg-type]
 
         async def wait(self) -> int:
+            """Implement wait."""
             return 0
 
     original = _Original()
 
     async def _dispatch(spec: JobSpec) -> dict[str, str]:
+        """Implement dispatch."""
         job_holder["id"] = spec.job_id
         sup.note_child(spec.job_id, original)  # type: ignore[arg-type]
         await asyncio.sleep(60)
@@ -526,20 +575,26 @@ async def test_cancel_during_subprocess_creation_still_registers_cli_child(
     release_spawn = asyncio.Event()
 
     class _FakeProc:
+        """Helper type ``_FakeProc``."""
         def __init__(self) -> None:
+            """Initialise the instance."""
             self.returncode = None
 
         def terminate(self) -> None:
+            """Implement terminate."""
             self.returncode = 0
 
         async def wait(self) -> int:
+            """Implement wait."""
             return self.returncode or 0
 
         async def communicate(self) -> tuple[bytes, bytes]:
+            """Implement communicate."""
             await asyncio.Event().wait()
             return b"", b""
 
     async def _slow_create(*_args: object, **_kwargs: object) -> _FakeProc:
+        """Implement slow create."""
         spawn_blocked.set()
         await release_spawn.wait()
         return _FakeProc()
@@ -554,6 +609,7 @@ async def test_cancel_during_subprocess_creation_still_registers_cli_child(
     )
 
     async def _cli(spec_in: JobSpec) -> dict[str, str]:
+        """Implement cli."""
         return await _run_dangerous_cli_subprocess(spec_in, ["codex", "x"], "codex")
 
     sup._dispatch = _cli
@@ -584,14 +640,18 @@ async def test_cancel_during_communicate_keeps_exited_child_registered(
     sup = _make_sup(tmp_path)
 
     class _ExitsThenCancels:
+        """Helper type ``_ExitsThenCancels``."""
         def __init__(self) -> None:
+            """Initialise the instance."""
             self.returncode = None
 
         async def communicate(self) -> tuple[bytes, bytes]:
+            """Implement communicate."""
             self.returncode = 0
             raise asyncio.CancelledError()
 
     async def _create(*_args: object, **_kwargs: object) -> _ExitsThenCancels:
+        """Implement create."""
         return _ExitsThenCancels()
 
     monkeypatch.setattr(asyncio, "create_subprocess_exec", _create)
@@ -628,6 +688,7 @@ async def test_request_cancel_during_child_termination_still_contains(
     original_await_containment = OrchestrationSupervisor._await_containment
 
     async def _await_containment_with_hook(self: OrchestrationSupervisor, job_id: str) -> None:
+        """Implement await containment with hook."""
         containment_wait_started.set()
         await original_await_containment(self, job_id)
 
@@ -638,13 +699,17 @@ async def test_request_cancel_during_child_termination_still_contains(
     )
 
     class _SlowExit:
+        """Helper type ``_SlowExit``."""
         def __init__(self) -> None:
+            """Initialise the instance."""
             self.returncode = None
 
         def terminate(self) -> None:
+            """Implement terminate."""
             termination_started.set()
 
         async def wait(self) -> int:
+            """Implement wait."""
             await release_exit.wait()
             self.returncode = 0
             return 0
@@ -652,6 +717,7 @@ async def test_request_cancel_during_child_termination_still_contains(
     fake_proc = _SlowExit()
 
     async def _blocked_cli(spec: JobSpec) -> dict[str, str]:
+        """Implement blocked cli."""
         sup.note_child(spec.job_id, fake_proc)  # type: ignore[arg-type]
         await asyncio.sleep(60)
         return {"output": "never"}
@@ -697,13 +763,17 @@ async def test_legacy_cancel_still_owns_direct_child_containment(
     release_exit = asyncio.Event()
 
     class _SlowExit:
+        """Helper type ``_SlowExit``."""
         def __init__(self) -> None:
+            """Initialise the instance."""
             self.returncode = None
 
         def terminate(self) -> None:
+            """Implement terminate."""
             termination_started.set()
 
         async def wait(self) -> int:
+            """Implement wait."""
             await release_exit.wait()
             self.returncode = 0
             return 0
@@ -711,6 +781,7 @@ async def test_legacy_cancel_still_owns_direct_child_containment(
     fake_proc = _SlowExit()
 
     async def _blocked_cli(spec: JobSpec) -> dict[str, str]:
+        """Implement blocked cli."""
         sup.note_child(spec.job_id, fake_proc)  # type: ignore[arg-type]
         await asyncio.sleep(60)
         return {"output": "never"}
@@ -752,18 +823,23 @@ async def test_legacy_cancel_retries_a_failed_cli_annotation(
     sup = _make_sup(tmp_path)
 
     class _ExitedCli:
+        """Helper type ``_ExitedCli``."""
         def __init__(self) -> None:
+            """Initialise the instance."""
             self.returncode = 0
 
         def terminate(self) -> None:
+            """Implement terminate."""
             raise AssertionError("an exited child must not be terminated")
 
         async def wait(self) -> int:
+            """Implement wait."""
             return 0
 
     child = _ExitedCli()
 
     async def _blocked_cli(spec: JobSpec) -> dict[str, str]:
+        """Implement blocked cli."""
         sup.note_child(spec.job_id, child)  # type: ignore[arg-type]
         await asyncio.sleep(60)
         return {"output": "never"}
@@ -773,6 +849,7 @@ async def test_legacy_cancel_retries_a_failed_cli_annotation(
     first_failure = asyncio.Event()
 
     def _fail_once(job_id: str, event: dict) -> None:
+        """Implement fail once."""
         nonlocal attempts
         if event.get("worker_kind") == "cli":
             attempts += 1
@@ -806,6 +883,7 @@ async def test_containment_annotation_failure_keeps_cancelled(tmp_path: Path) ->
     sup = _make_sup(tmp_path)
 
     async def _slow(_spec: JobSpec) -> dict[str, str]:
+        """Implement slow."""
         await asyncio.sleep(60)
         return {"output": "never"}
 
@@ -813,6 +891,7 @@ async def test_containment_annotation_failure_keeps_cancelled(tmp_path: Path) ->
     original = sup._append_event
 
     def _guard(job_id: str, event: dict) -> None:
+        """Implement guard."""
         if "containment_state" in event:
             raise OSError("annotation failed")
         original(job_id, event)
@@ -833,18 +912,23 @@ async def test_failed_cli_annotation_retains_child_for_containment_retry(
     sup = _make_sup(tmp_path)
 
     class _ExitedCli:
+        """Helper type ``_ExitedCli``."""
         def __init__(self) -> None:
+            """Initialise the instance."""
             self.returncode = 0
 
         def terminate(self) -> None:
+            """Implement terminate."""
             raise AssertionError("an exited child must not be terminated")
 
         async def wait(self) -> int:
+            """Implement wait."""
             return 0
 
     child = _ExitedCli()
 
     async def _blocked_cli(spec: JobSpec) -> dict[str, str]:
+        """Implement blocked cli."""
         sup.note_child(spec.job_id, child)  # type: ignore[arg-type]
         await asyncio.sleep(60)
         return {"output": "never"}
@@ -854,6 +938,7 @@ async def test_failed_cli_annotation_retains_child_for_containment_retry(
     fail_once = True
 
     def _fail_first_cli_annotation(job_id: str, event: dict) -> None:
+        """Implement fail first cli annotation."""
         nonlocal fail_once
         if event.get("worker_kind") == "cli" and fail_once:
             fail_once = False
@@ -1001,6 +1086,7 @@ async def test_dispatch_prefers_windows_coder_when_reachable(tmp_path, monkeypat
 
     async def fake_win_worker(spec):
         # Verify the dispatcher injects the pre-probed endpoint into metadata.
+        """Implement fake win worker."""
         assert spec.metadata.get("_win_endpoint") == "http://127.0.2.2:1234"
         return {"backend": "lmstudio-win", "output": "fake win result"}
 
@@ -1047,6 +1133,7 @@ async def test_submit_then_win_preempt_uses_windows_model_not_mac_default(
     captured: dict[str, str] = {}
 
     async def fake_win_worker(spec):
+        """Implement fake win worker."""
         captured["model"] = (spec.metadata or {}).get("model", "")
         return {"backend": "lmstudio-win", "output": "ok"}
 
@@ -1085,6 +1172,7 @@ async def test_dispatch_injects_win_endpoint_for_explicit_lmstudio_win(tmp_path,
     endpoint_injected = {}
 
     async def fake_win_worker(spec):
+        """Implement fake win worker."""
         endpoint_injected["value"] = spec.metadata.get("_win_endpoint")
         return {"backend": "lmstudio-win", "output": "explicit win result"}
 
@@ -1169,6 +1257,7 @@ def test_try_skill_envelope_raises_for_missing_skill_tree():
     )
 
     def _raise_resolution_error():
+        """Implement raise resolution error."""
         raise SkillResolutionError(
             "openclaw-skills folder not found (injected for test)"
         )
@@ -1186,6 +1275,7 @@ def test_get_constraint_safe_with_list_constraints():
     from orchestrator.worker_registry import _get_constraint
 
     class _FakeSpec:
+        """Helper type ``_FakeSpec``."""
         constraints = ["gpu-required", "no-streaming"]
 
     assert _get_constraint(_FakeSpec(), "max_seconds", 300) == 300
@@ -1198,6 +1288,7 @@ def test_get_constraint_reads_dict_constraints():
     from orchestrator.worker_registry import _get_constraint
 
     class _FakeSpec:
+        """Helper type ``_FakeSpec``."""
         constraints = {"max_seconds": 600, "max_tokens": 8192}
 
     assert _get_constraint(_FakeSpec(), "max_seconds", 300) == 600
@@ -1330,6 +1421,7 @@ async def test_dispatch_lmstudio_mac_empty_metadata_uses_explicit_default_not_lo
     captured: dict[str, str] = {}
 
     async def _capture_mac_worker(spec):
+        """Implement capture mac worker."""
         captured["model"] = (spec.metadata or {}).get("model", "")
         return {"backend": "lmstudio-mac", "output": "ok"}
 
@@ -1352,6 +1444,7 @@ async def test_dispatch_lmstudio_mac_empty_metadata_uses_explicit_default_not_lo
 async def test_dispatch_lmstudio_mac_rejects_windows_only_model_in_metadata(
     tmp_path, monkeypatch,
 ):
+    """Check: dispatch lmstudio mac rejects windows only model in metadata."""
     from unittest.mock import AsyncMock
 
     import orchestrator.worker_registry as reg_mod
@@ -1405,6 +1498,7 @@ async def test_dispatch_raises_affinity_error_on_mac_fallthrough_with_windows_on
     ollama_called: dict[str, bool] = {"value": False}
 
     async def _ollama_should_not_run(_spec):
+        """Implement ollama should not run."""
         ollama_called["value"] = True
         return {"backend": "ollama-mac", "output": "must not run"}
 
@@ -2085,6 +2179,7 @@ async def test_run_worker_result_cap_truncates_oversized_result(tmp_path):
     big_string = "x" * (3 * 1024 * 1024)  # 3 MiB raw characters
 
     async def _oversized_dispatch(s):
+        """Implement oversized dispatch."""
         return {"output": big_string, "backend": "echo"}
 
     sup._dispatch = _oversized_dispatch
@@ -2114,6 +2209,7 @@ async def test_run_worker_result_within_cap_written_verbatim(tmp_path):
     expected_output = "hello world"
 
     async def _small_dispatch(s):
+        """Implement small dispatch."""
         return {"output": expected_output, "backend": "echo"}
 
     sup._dispatch = _small_dispatch
@@ -2141,6 +2237,7 @@ async def test_run_worker_truncated_result_still_records_succeeded(tmp_path):
     big_string = "y" * (3 * 1024 * 1024)
 
     async def _oversized(s):
+        """Implement oversized."""
         return {"output": big_string, "backend": "echo"}
 
     sup._dispatch = _oversized
@@ -2175,6 +2272,7 @@ async def test_run_worker_result_safely_under_cap_is_preserved(tmp_path):
     small_string = "a" * payload_size
 
     async def _boundary_dispatch(s):
+        """Implement boundary dispatch."""
         return {"output": small_string, "backend": "echo"}
 
     sup._dispatch = _boundary_dispatch
@@ -2195,6 +2293,7 @@ async def test_run_worker_result_safely_under_cap_is_preserved(tmp_path):
 def test_maybe_emit_periscope_job_noop_when_emitter_disabled(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
+    """Check: maybe emit periscope job noop when emitter disabled."""
     from unittest.mock import patch
 
     monkeypatch.delenv("PERISCOPE_EMITTER_ENABLED", raising=False)
@@ -2209,6 +2308,7 @@ def test_maybe_emit_periscope_job_noop_when_emitter_disabled(
 def test_maybe_emit_periscope_job_reads_running_timestamp_and_metadata(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
+    """Check: maybe emit periscope job reads running timestamp and metadata."""
     monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "1")
     sup = _make_sup(tmp_path)
     spec = JobSpec(
@@ -2250,6 +2350,7 @@ def test_maybe_emit_periscope_job_reads_running_timestamp_and_metadata(
 async def test_run_worker_periscope_success_truncates_assistant_text_at_4000(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
+    """Check: run worker periscope success truncates assistant text at 4000."""
     monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "1")
     sup = _make_sup(tmp_path)
     spec = _echo_spec("big result")
@@ -2260,6 +2361,7 @@ async def test_run_worker_periscope_success_truncates_assistant_text_at_4000(
     )
 
     async def _big_dispatch(s):
+        """Implement big dispatch."""
         return {"output": "x" * 5000, "backend": "echo"}
 
     sup._dispatch = _big_dispatch
@@ -2273,6 +2375,7 @@ async def test_run_worker_periscope_success_truncates_assistant_text_at_4000(
 async def test_run_worker_periscope_generic_error_truncates_assistant_text_at_2000(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
+    """Check: run worker periscope generic error truncates assistant text at 2000."""
     monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "1")
     sup = _make_sup(tmp_path)
     spec = _echo_spec("error job")
@@ -2283,6 +2386,7 @@ async def test_run_worker_periscope_generic_error_truncates_assistant_text_at_20
     )
 
     async def _boom(s):
+        """Implement boom."""
         raise RuntimeError("e" * 3000)
 
     sup._dispatch = _boom
@@ -2296,6 +2400,7 @@ async def test_run_worker_periscope_generic_error_truncates_assistant_text_at_20
 async def test_run_worker_periscope_hardware_error_truncates_assistant_text_at_2000(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
+    """Check: run worker periscope hardware error truncates assistant text at 2000."""
     from utils.hardware_policy import HardwareAffinityError
 
     monkeypatch.setenv("PERISCOPE_EMITTER_ENABLED", "1")
@@ -2308,6 +2413,7 @@ async def test_run_worker_periscope_hardware_error_truncates_assistant_text_at_2
     )
 
     async def _policy_fail(s):
+        """Implement policy fail."""
         raise HardwareAffinityError("p" * 3000)
 
     sup._dispatch = _policy_fail
@@ -2333,6 +2439,7 @@ async def test_run_worker_periscope_cancelled_emits_cancelled_literal(
     )
 
     async def _slow(s):
+        """Implement slow."""
         await asyncio.sleep(60)
         return {"output": "never"}
 

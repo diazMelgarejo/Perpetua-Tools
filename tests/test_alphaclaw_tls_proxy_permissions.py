@@ -10,6 +10,7 @@ session -- see the plan doc's provenance note and the module docstring.
 from __future__ import annotations
 
 import os
+from collections.abc import Iterator
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -19,7 +20,17 @@ from orchestrator import alphaclaw_tls_proxy as tls_proxy
 
 
 @pytest.fixture
-def mock_win32():
+def trusted_icacls(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Provide an absolute system-tool path without executing a Windows binary."""
+    executable = tmp_path / "System32" / "icacls.exe"
+    executable.parent.mkdir()
+    executable.touch()
+    monkeypatch.setenv("SystemRoot", str(tmp_path))
+    return executable
+
+
+@pytest.fixture
+def mock_win32() -> Iterator[tuple[MagicMock, MagicMock]]:
     """Provide a mock win32security/win32api/ntsecuritycon module set for
     testing Windows ACL logic on non-Windows platforms."""
     mock_con = MagicMock()
@@ -47,7 +58,7 @@ def mock_win32():
         yield mock_win32, mock_acl
 
 
-def test_secure_path_win32_creates_allow_only_dacl(mock_win32):
+def test_secure_path_win32_creates_allow_only_dacl(mock_win32: tuple[MagicMock, MagicMock]) -> None:
     """Windows ACL path grants owner + Administrators only. An explicit
     DENY for Everyone must not be used -- the owner is in Everyone and
     deny ACEs take precedence over allow ACEs, which would lock the
@@ -63,7 +74,7 @@ def test_secure_path_win32_creates_allow_only_dacl(mock_win32):
     mock_sec.SetNamedSecurityInfo.assert_called_once()
 
 
-def test_secure_path_win32_directory_includes_delete_child(mock_win32):
+def test_secure_path_win32_directory_includes_delete_child(mock_win32: tuple[MagicMock, MagicMock]) -> None:
     """Directories get FILE_DELETE_CHILD folded into the access mask so
     the owner can still manage files created inside the restricted dir."""
     mock_sec, mock_acl = mock_win32
@@ -78,7 +89,7 @@ def test_secure_path_win32_directory_includes_delete_child(mock_win32):
         assert access_mask & 0x0040, "FILE_DELETE_CHILD bit missing for directory ACE"
 
 
-def test_secure_path_dispatches_to_win32_when_available(mock_win32):
+def test_secure_path_dispatches_to_win32_when_available(mock_win32: tuple[MagicMock, MagicMock]) -> None:
     """_secure_path() calls the win32 path when on Windows with pywin32
     available, not the icacls fallback."""
     with patch.object(tls_proxy, "_IS_WINDOWS", True), \
@@ -91,7 +102,7 @@ def test_secure_path_dispatches_to_win32_when_available(mock_win32):
     mock_icacls_fn.assert_not_called()
 
 
-def test_secure_path_falls_back_to_icacls_when_pywin32_unavailable():
+def test_secure_path_falls_back_to_icacls_when_pywin32_unavailable() -> None:
     """_secure_path() falls back to the icacls subprocess path when
     pywin32 failed to import, rather than raising or silently no-op'ing."""
     with patch.object(tls_proxy, "_IS_WINDOWS", True), \
@@ -104,7 +115,7 @@ def test_secure_path_falls_back_to_icacls_when_pywin32_unavailable():
     mock_win32_fn.assert_not_called()
 
 
-def test_secure_path_icacls_builds_expected_command():
+def test_secure_path_icacls_builds_expected_command(trusted_icacls: Path) -> None:
     """The icacls fallback uses allow-only grants after /inheritance:r.
     It must not /deny Everyone -- that would lock the owner out."""
     with patch("subprocess.run") as mock_run, \
@@ -113,23 +124,39 @@ def test_secure_path_icacls_builds_expected_command():
         tls_proxy._secure_path_icacls(Path("/test/certdir"), is_directory=True)
 
     cmd = mock_run.call_args.args[0]
-    assert cmd[0] == "icacls"
+    assert cmd[0] == str(trusted_icacls)
     assert "/inheritance:r" in cmd
     assert "/deny" not in cmd
     assert any("testuser" in c and "(OI)(CI)(F)" in c for c in cmd)
     assert any("S-1-5-32-544" in c and "(OI)(CI)(F)" in c for c in cmd)
 
 
-def test_secure_path_icacls_logs_warning_on_failure(caplog):
-    """A non-zero icacls exit is logged as a warning, not raised or
-    silently swallowed -- operators need to know the fallback failed."""
-    with patch("subprocess.run") as mock_run, \
-         patch("getpass.getuser", return_value="testuser"):
-        mock_run.return_value = MagicMock(returncode=1, stderr="Access is denied.")
-        with caplog.at_level("WARNING"):
+def test_secure_path_icacls_fails_closed_on_nonzero_exit(trusted_icacls: Path) -> None:
+    """H02-F1: a non-zero icacls exit raises AlphaClawAclError (no warn-only
+    fail-open), and the message names the target and icacls stderr."""
+    with patch("subprocess.run") as mock_run,          patch("getpass.getuser", return_value="testuser"):
+        mock_run.return_value = MagicMock(returncode=5, stderr="Access is denied.", stdout="")
+        with pytest.raises(tls_proxy.AlphaClawAclError, match="Access is denied") as ei:
+            tls_proxy._secure_path_icacls(Path("/test/key.pem"), is_directory=False)
+    assert "key.pem" in str(ei.value)
+
+
+def test_secure_path_icacls_fails_closed_when_icacls_cannot_run(trusted_icacls: Path) -> None:
+    """H02-F1: icacls missing/unlaunchable (OSError) also refuses."""
+    with patch("subprocess.run", side_effect=FileNotFoundError("icacls")),          patch("getpass.getuser", return_value="testuser"):
+        with pytest.raises(tls_proxy.AlphaClawAclError, match="could not run"):
             tls_proxy._secure_path_icacls(Path("/test/key.pem"), is_directory=False)
 
-    assert any("icacls failed" in rec.message for rec in caplog.records)
+
+def test_secure_path_propagates_icacls_failure_when_pywin32_unavailable() -> None:
+    """H02-F1: the public _secure_path() surfaces the refusal on the fallback path."""
+    with patch.object(tls_proxy, "_IS_WINDOWS", True), \
+         patch.object(tls_proxy, "_WIN32_AVAILABLE", False), \
+         patch.object(tls_proxy, "_secure_path_icacls",
+                      side_effect=tls_proxy.AlphaClawAclError("boom")) as fallback:
+        with pytest.raises(tls_proxy.AlphaClawAclError):
+            tls_proxy._secure_path(Path("/test/key.pem"))
+    fallback.assert_called_once()
 
 
 # The POSIX branch is forced on every runner. Windows filesystems keep only a
@@ -150,7 +177,7 @@ def _secure_path_posix(path: Path, is_directory: bool) -> int:
     return mode
 
 
-def test_secure_path_posix_sets_correct_mode(tmp_path):
+def test_secure_path_posix_sets_correct_mode(tmp_path: Path) -> None:
     """POSIX path sets 0o600 for files, 0o700 for dirs."""
     test_file = tmp_path / "key.pem"
     test_file.write_text("test key")
@@ -163,7 +190,7 @@ def test_secure_path_posix_sets_correct_mode(tmp_path):
         assert mode == 0o600, f"Expected 0o600, got 0o{mode:o}"
 
 
-def test_secure_path_posix_sets_correct_mode_for_directory(tmp_path):
+def test_secure_path_posix_sets_correct_mode_for_directory(tmp_path: Path) -> None:
     """POSIX path sets 0o700 for directories."""
     test_dir = tmp_path / "certdir"
     test_dir.mkdir()
@@ -174,3 +201,31 @@ def test_secure_path_posix_sets_correct_mode_for_directory(tmp_path):
     if _FS_HAS_POSIX_MODES:
         mode = test_dir.stat().st_mode & 0o777
         assert mode == 0o700, f"Expected 0o700, got 0o{mode:o}"
+
+
+def test_acl_error_is_a_tls_unavailable_error() -> None:
+    """P2: AlphaClawAclError subclasses AlphaClawTlsUnavailable so existing TLS handlers catch it."""
+    assert issubclass(tls_proxy.AlphaClawAclError, tls_proxy.AlphaClawTlsUnavailable)
+
+
+def test_secure_path_icacls_passes_timeout_and_maps_timeout_expired(trusted_icacls: Path) -> None:
+    """P3: icacls runs with timeout=30 and a TimeoutExpired becomes AlphaClawAclError."""
+    import subprocess
+
+    with patch("subprocess.run") as mock_run, patch("getpass.getuser", return_value="testuser"):
+        mock_run.side_effect = subprocess.TimeoutExpired("icacls", 30)
+        with pytest.raises(tls_proxy.AlphaClawAclError, match="TimeoutExpired"):
+            tls_proxy._secure_path_icacls(Path("/test/key.pem"), is_directory=False)
+        assert mock_run.call_args.kwargs.get("timeout") == 30
+
+
+@pytest.mark.parametrize("relative_root", [False, True])
+def test_secure_path_refuses_missing_or_relative_system_tool(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, relative_root: bool,
+) -> None:
+    """Never search cwd/PATH for a replacement ACL executable."""
+    monkeypatch.setenv("SystemRoot", "relative-windows" if relative_root else str(tmp_path))
+    with patch("subprocess.run") as run:
+        with pytest.raises(tls_proxy.AlphaClawAclError, match="absolute.*icacls"):
+            tls_proxy._secure_path_icacls(tmp_path / "key.pem", is_directory=False)
+    run.assert_not_called()

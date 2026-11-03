@@ -7,6 +7,8 @@ sync-drift risk:
   - model_endpoint_url.py: SSRF host-classification (ModelEndpointPolicyError)
   - endpoint_policy_core.py: transport-identity reconstruction
     (parse_transport_identity/build_transport_url), Perpetua-Tools canonical
+  - win_exec.py: partner-CLI resolution, cmd.exe argv safety and process-tree
+    kill (orama-system canonical, byte-identical mirror)
 """
 from __future__ import annotations
 
@@ -22,11 +24,13 @@ class _LevelRangeFilter(logging.Filter):
     """Route INFO to stdout and WARNING+ to stderr without duplicating lines."""
 
     def __init__(self, min_level: int, max_level: int) -> None:
+        """Initialise the instance."""
         super().__init__()
         self._min_level = min_level
         self._max_level = max_level
 
     def filter(self, record: logging.LogRecord) -> bool:
+        """Implement filter."""
         return self._min_level <= record.levelno <= self._max_level
 
 
@@ -34,10 +38,12 @@ class _CurrentStreamHandler(logging.Handler):
     """Write at emit time so pytest/capsys redirects still see the line."""
 
     def __init__(self, stream_attr: str) -> None:
+        """Initialise the instance."""
         super().__init__()
         self._stream_attr = stream_attr
 
     def emit(self, record: logging.LogRecord) -> None:
+        """Implement emit."""
         try:
             stream = getattr(sys, self._stream_attr)
             stream.write(self.format(record) + "\n")
@@ -63,6 +69,7 @@ if not _LOG.handlers:
 
 @dataclass(frozen=True)
 class _FileSpec:
+    """Helper type ``_FileSpec``."""
     filename: str
     policy_functions: tuple[str, ...]
     require_identical_bytes: bool = False
@@ -78,6 +85,11 @@ FILES_TO_CHECK: tuple[_FileSpec, ...] = (
         "endpoint_policy_core.py",
         ("parse_transport_identity", "build_transport_url"),
     ),
+    _FileSpec(
+        "win_exec.py",
+        ("resolve_executable", "safe_argv", "find_bare_command", "terminate_tree"),
+        require_identical_bytes=True,
+    ),
 )
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -85,6 +97,7 @@ _LOCAL_UTILS_DIR = _REPO_ROOT / "src" / "utils"
 
 
 def _extract_policy_source(path: Path, policy_functions: tuple[str, ...]) -> str:
+    """Implement extract policy source."""
     tree = ast.parse(path.read_text(encoding="utf-8"))
     chunks: list[str] = []
     for node in tree.body:
@@ -105,6 +118,7 @@ def _extract_policy_source(path: Path, policy_functions: tuple[str, ...]) -> str
 
 
 def _sibling_utils_dir() -> Path | None:
+    """Implement sibling utils dir."""
     env = os.getenv("ORAMA_SYSTEM_ROOT") or os.getenv("ORAMA_REPO_ROOT")
     if env:
         return Path(env) / "src" / "utils"
@@ -115,6 +129,7 @@ def _sibling_utils_dir() -> Path | None:
 
 
 def _check_one(spec: _FileSpec, local_dir: Path, peer_dir: Path) -> bool:
+    """Implement check one."""
     local_path = local_dir / spec.filename
     peer_path = peer_dir / spec.filename
     if not local_path.is_file():
@@ -174,6 +189,7 @@ def _check_one(spec: _FileSpec, local_dir: Path, peer_dir: Path) -> bool:
 
 
 def main() -> int:
+    """Implement main."""
     peer_dir = _sibling_utils_dir()
     if peer_dir is None:
         if os.getenv("PARITY_ALLOW_MISSING_SIBLING") == "1":

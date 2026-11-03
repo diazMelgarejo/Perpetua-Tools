@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import traceback
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -34,6 +35,44 @@ from utils.hardware_policy import (  # noqa: E402
 )
 
 POLICY_PATH = ROOT / "config" / "model_hardware_policy.yml"
+
+#: Exit code for a policy violation (affinity forbidden / config missing).
+EXIT_VIOLATION = 1
+#: Exit code for an internal crash (EX_SOFTWARE). Deliberately distinct from
+#: ``EXIT_VIOLATION`` so callers can tell "policy says no" from "the tool broke".
+EXIT_INTERNAL_ERROR = 70
+
+_SYMBOLS = {
+    "ok": ("✅", "[OK]"),
+    "fail": ("❌", "[FAIL]"),
+    "warn": ("⚠", "[WARN]"),
+}
+
+
+def _sym(name: str) -> str:
+    """Return the emoji for *name*, or an ASCII tag if stdout cannot encode it.
+
+    Legacy Windows consoles (cp1252) raise ``UnicodeEncodeError`` on emoji;
+    this keeps output readable there without relying on error replacement.
+    """
+    emoji, ascii_tag = _SYMBOLS[name]
+    encoding = getattr(sys.stdout, "encoding", None) or "ascii"
+    try:
+        emoji.encode(encoding)
+    except (UnicodeEncodeError, LookupError):
+        return ascii_tag
+    return emoji
+
+
+def _configure_output() -> None:
+    """Escape unencodable characters without losing model-ID information."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            try:
+                reconfigure(errors="backslashreplace")
+            except (ValueError, OSError):
+                pass
 
 
 def load_policy() -> dict[str, list[str]]:
@@ -87,7 +126,7 @@ def cmd_check_openclaw() -> int:
     policy = load_policy()
     path = Path.home() / ".openclaw" / "openclaw.json"
     if not path.exists():
-        print(f"⚠ {path} not found")
+        print(f"{_sym('warn')} {path} not found")
         return 1
     cfg = json.loads(path.read_text(encoding="utf-8"))
     violations: list[str] = []
@@ -100,11 +139,11 @@ def cmd_check_openclaw() -> int:
             if not ok:
                 violations.append(f"{pid}: {detail}")
     if violations:
-        print("❌ openclaw.json hardware policy violations:")
+        print(f"{_sym('fail')} openclaw.json hardware policy violations:")
         for v in violations:
             print(f"  {v}")
         return 1
-    print("✅ openclaw.json clean")
+    print(f"{_sym('ok')} openclaw.json clean")
     for pid in ["lmstudio-mac", "lmstudio-win"]:
         models = [m["id"] for m in cfg.get("models", {}).get("providers", {}).get(pid, {}).get("models", [])]
         print(f"  {pid}: {models}")
@@ -119,9 +158,9 @@ def cmd_validate(model_id: str, platform: str) -> int:
     """
     ok, detail = check_affinity(model_id, platform, load_policy())
     if ok:
-        print(f"✅ {model_id} → {platform}")
+        print(f"{_sym('ok')} {model_id} -> {platform}")
         return 0
-    print(f"❌ {detail}")
+    print(f"{_sym('fail')} {detail}")
     return 1
 
 
@@ -137,14 +176,45 @@ def cmd_filter(models: list[str], platform: str) -> int:
 
 
 def main() -> int:
-    """Parse CLI flags and dispatch to the appropriate subcommand."""
+    """Run the CLI with encoding-safe output and a distinct crash exit code.
+
+    Returns the subcommand's code (0 clean, 1 policy violation), or
+    ``EXIT_INTERNAL_ERROR`` (70) if an unexpected exception escapes. argparse
+    usage errors keep argparse's own exit 2.
+    """
+    _configure_output()
     p = argparse.ArgumentParser(description="Hardware model affinity helper")
     p.add_argument("--list", action="store_true")
     p.add_argument("--check-openclaw", action="store_true")
     p.add_argument("--validate", nargs=2, metavar=("MODEL_ID", "PLATFORM"))
     p.add_argument("--filter", nargs="+")
     p.add_argument("--platform", default="mac")
+    p.add_argument(
+        "--verbose", action="store_true",
+        help="Show crash frame locations only (no messages, source or locals)",
+    )
     args = p.parse_args()
+    try:
+        return _run(args, p)
+    except SystemExit:
+        raise
+    except Exception as exc:  # noqa: BLE001 - crash must not look like a violation
+        # Only the exception type: the message can carry config/policy text.
+        print(
+            f"hardware_policy_cli: internal error ({type(exc).__name__}); "
+            "details withheld",
+            file=sys.stderr,
+        )
+        if args.verbose:
+            for frame, line in traceback.walk_tb(exc.__traceback__):
+                # Do not format_exception/print_tb: source lines may contain secrets.
+                filename = Path(frame.f_code.co_filename).name
+                print(f"  {filename}:{line} in {frame.f_code.co_name!a}", file=sys.stderr)
+        return EXIT_INTERNAL_ERROR
+
+
+def _run(args: argparse.Namespace, p: argparse.ArgumentParser) -> int:
+    """Dispatch parsed CLI flags without changing policy enforcement ownership."""
     if args.list:
         return cmd_list()
     if args.check_openclaw:

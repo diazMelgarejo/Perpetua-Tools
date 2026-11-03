@@ -45,6 +45,7 @@ CONTAINMENT_ANNOTATION_RETRY_DELAY_SECONDS = 0.05
 CONTAINMENT_VERIFIED = "verified"
 CONTAINMENT_UNRESOLVED = "unresolved"
 CONTAINMENT_NOT_APPLICABLE = "not-applicable"
+CLI_TREE_CONTAINED = "contained"  # equals utils.win_exec.CONTAINED
 WORKER_KIND_CLI = "cli"
 WORKER_KIND_IN_PROCESS = "in-process"
 
@@ -99,10 +100,12 @@ class JobStatus(str, Enum):
 
 
 def _new_id_default() -> str:
+    """Implement new id default."""
     return str(uuid.uuid4())
 
 
 def _now_iso_default() -> str:
+    """Implement now iso default."""
     return datetime.now(timezone.utc).isoformat()
 
 
@@ -146,6 +149,7 @@ class JobSpec(BaseModel):
     @field_validator("depth", mode="before")
     @classmethod
     def no_sub_workers(cls, v: Any) -> int:
+        """Implement no sub workers."""
         val = int(v)
         if val != 0:
             raise ValueError(
@@ -154,6 +158,7 @@ class JobSpec(BaseModel):
         return val
 
     def to_dict(self) -> dict:
+        """Implement to dict."""
         return self.model_dump()
 
 
@@ -182,14 +187,17 @@ def caller_reported_lineage_metadata(
 
 # ── Pure persistence helpers ──────────────────────────────────────────────────
 def _new_id() -> str:
+    """Implement new id."""
     return str(uuid.uuid4())
 
 
 def _now_iso() -> str:
+    """Implement now iso."""
     return datetime.now(timezone.utc).isoformat()
 
 
 def _ensure_state_dir(state_dir: Path) -> None:
+    """Implement ensure state dir."""
     state_dir.mkdir(parents=True, exist_ok=True)
     (state_dir / "jobs").mkdir(exist_ok=True)
 
@@ -226,6 +234,7 @@ def _lock_jobs_file(fh):
         _fcntl.flock(fh.fileno(), _fcntl.LOCK_EX)
 
         def _release() -> None:
+            """Implement release."""
             try:
                 _fcntl.flock(fh.fileno(), _fcntl.LOCK_UN)
             except OSError:
@@ -239,6 +248,7 @@ def _lock_jobs_file(fh):
         _msvcrt.locking(fh.fileno(), _msvcrt.LK_LOCK, 1)
 
         def _release() -> None:
+            """Implement release."""
             try:
                 fh.seek(0)
                 _msvcrt.locking(fh.fileno(), _msvcrt.LK_UNLCK, 1)
@@ -603,6 +613,7 @@ class OrchestrationSupervisor:
         self._containment_tasks[job_id] = task
 
         def _drop(done: asyncio.Task, jid: str = job_id) -> None:
+            """Implement drop."""
             if self._containment_tasks.get(jid) is done:
                 self._containment_tasks.pop(jid, None)
 
@@ -684,6 +695,7 @@ class OrchestrationSupervisor:
         worker_done = asyncio.Event()
 
         def _mark_worker_done(_finished: asyncio.Task) -> None:
+            """Implement mark worker done."""
             worker_done.set()
 
         task.add_done_callback(_mark_worker_done)
@@ -743,8 +755,10 @@ class OrchestrationSupervisor:
         """After durable cancel, terminate the direct CLI child and persist outcome.
 
         ``worker_kind`` is derived here from whether this supervisor registered a
-        child. Callers cannot supply it. ``verified`` requires ``returncode``;
-        a successful ``terminate()`` call is not enough.
+        child. Callers cannot supply it. ``verified`` requires ``returncode``
+        and a ``contained`` tree-kill status (Windows kills the whole process
+        tree; the honest status is stored as ``containment_detail``); a
+        successful ``terminate()`` call is not enough.
         """
         proc = self._children.get(job_id)
         if proc is None:
@@ -758,17 +772,18 @@ class OrchestrationSupervisor:
             )
             return
 
+        from orchestrator.cli_launch import terminate_cli_tree
+
+        # Always run the tree kill, even when the root already exited: its
+        # orphaned descendants may still be alive inside the job.
+        tree_status = await terminate_cli_tree(proc, CONTAINMENT_TIMEOUT_SECONDS)
         if proc.returncode is None:
-            try:
-                proc.terminate()
-            except ProcessLookupError:
-                pass
-            except Exception:
-                pass
             await wait_process_exit(proc, CONTAINMENT_TIMEOUT_SECONDS)
+        # verified needs BOTH the direct child's returncode and a status that is
+        # exactly ``contained`` (job-scoped on Windows); escaped/unknown is unresolved.
         containment_state = (
             CONTAINMENT_VERIFIED
-            if proc.returncode is not None
+            if proc.returncode is not None and tree_status == CLI_TREE_CONTAINED
             else CONTAINMENT_UNRESOLVED
         )
         self._append_event(
@@ -777,6 +792,7 @@ class OrchestrationSupervisor:
                 "status": JobStatus.CANCELLED.value,
                 "worker_kind": WORKER_KIND_CLI,
                 "containment_state": containment_state,
+                "containment_detail": tree_status,
             },
         )
         # Preserve the direct-child identity until the durable annotation is
@@ -1223,6 +1239,7 @@ class OrchestrationSupervisor:
         return None
 
     def _append_event(self, job_id: str, event: dict) -> None:
+        """Implement append event."""
         _append_event(self._jobs_file, job_id, event)
 
     def _append_lifecycle_event(
@@ -1280,6 +1297,7 @@ class OrchestrationSupervisor:
 
     @staticmethod
     def _backend_to_platform(backend_hint: str) -> str:
+        """Implement backend to platform."""
         h = backend_hint.lower()
         if "win" in h:
             return "win"

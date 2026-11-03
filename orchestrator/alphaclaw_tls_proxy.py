@@ -126,6 +126,14 @@ class AlphaClawTlsUnavailable(RuntimeError):
     caller decides whether that's acceptable, this module doesn't."""
 
 
+class AlphaClawAclError(AlphaClawTlsUnavailable):
+    """Raised when owner-only permissions cannot be applied to TLS material.
+
+    The icacls fallback fails closed: a non-zero exit or a missing icacls
+    refuses the operation rather than leaving key/cert files with inherited ACLs.
+    """
+
+
 class AlphaClawCertFingerprintMismatch(RuntimeError):
     """Raised when the proxy's certificate fingerprint no longer matches
     the previously-pinned (TOFU) value. This is the MITM-detection signal
@@ -205,7 +213,8 @@ def _secure_path_win32(path: Path, is_directory: bool) -> None:
 
 def _secure_path_icacls(path: Path, is_directory: bool) -> None:
     """Windows ACL fallback via icacls subprocess, used only when pywin32
-    is unavailable.
+    is unavailable. Fails closed: any icacls failure raises
+    ``AlphaClawAclError`` instead of continuing with default ACLs.
 
     Less elegant than pywin32 but works without any external dependency.
     The subprocess race window is acceptable here because CERT_DIR is
@@ -236,11 +245,29 @@ def _secure_path_icacls(path: Path, is_directory: bool) -> None:
         "/grant:r", grant_admins,
     ]
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    # Never let cwd/PATH select the tool responsible for protecting key material.
+    system_root = os.environ.get("SystemRoot") or os.environ.get("SYSTEMROOT") or r"C:\Windows"
+    icacls_exe = os.path.join(system_root, "System32", "icacls.exe")
+    if not os.path.isabs(icacls_exe) or not os.path.isfile(icacls_exe):
+        raise AlphaClawAclError(
+            "absolute System32 icacls executable unavailable; "
+            "refusing to leave TLS key material with default ACLs"
+        )
+    cmd[0] = icacls_exe
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise AlphaClawAclError(
+            f"cannot restrict permissions on {target}: icacls could not run "
+            f"({type(exc).__name__}: {exc}); "
+            "refusing to leave TLS key material with default ACLs"
+        ) from exc
     if result.returncode != 0:
-        _log.warning(
-            "icacls failed to restrict permissions on %s: %s",
-            target, result.stderr.strip(),
+        raise AlphaClawAclError(
+            f"icacls failed (exit {result.returncode}) to restrict permissions on "
+            f"{target}: {(result.stderr or result.stdout or '').strip()}; "
+            "refusing to leave TLS key material with default ACLs"
         )
 
 

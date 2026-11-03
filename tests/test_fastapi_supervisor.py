@@ -47,6 +47,7 @@ class TestValidateJobIdUnit:
     # --- valid inputs ---
 
     def test_valid_uuid4_lowercase_passes(self):
+        """Check: valid uuid4 lowercase passes."""
         jid = "550e8400-e29b-41d4-a716-446655440000"
         # version nibble is '4', variant nibble is 'a'
         valid = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
@@ -60,6 +61,7 @@ class TestValidateJobIdUnit:
         assert result == jid
 
     def test_valid_uuid4_mixed_case_passes(self):
+        """Check: valid uuid4 mixed case passes."""
         jid = "3Fa85F64-5717-4562-b3fc-2C963f66AfA6"
         result = _validate_job_id(jid)
         assert result == jid
@@ -71,16 +73,19 @@ class TestValidateJobIdUnit:
         assert result == jid
 
     def test_valid_uuid4_variant_9_passes(self):
+        """Check: valid uuid4 variant 9 passes."""
         jid = "550e8400-e29b-4abc-9def-446655440000"
         result = _validate_job_id(jid)
         assert result == jid
 
     def test_valid_uuid4_variant_a_passes(self):
+        """Check: valid uuid4 variant a passes."""
         jid = "550e8400-e29b-4abc-adef-446655440000"
         result = _validate_job_id(jid)
         assert result == jid
 
     def test_valid_uuid4_variant_b_passes(self):
+        """Check: valid uuid4 variant b passes."""
         jid = "550e8400-e29b-4abc-bdef-446655440000"
         result = _validate_job_id(jid)
         assert result == jid
@@ -88,11 +93,13 @@ class TestValidateJobIdUnit:
     # --- invalid inputs → HTTP 400 ---
 
     def test_empty_string_raises_400(self):
+        """Check: empty string raises 400."""
         with pytest.raises(HTTPException) as exc_info:
             _validate_job_id("")
         assert exc_info.value.status_code == 400
 
     def test_plain_string_raises_400(self):
+        """Check: plain string raises 400."""
         with pytest.raises(HTTPException) as exc_info:
             _validate_job_id("not-a-uuid")
         assert exc_info.value.status_code == 400
@@ -132,11 +139,13 @@ class TestValidateJobIdUnit:
         assert exc_info.value.status_code == 400
 
     def test_path_traversal_absolute_path_rejected(self):
+        """Check: path traversal absolute path rejected."""
         with pytest.raises(HTTPException) as exc_info:
             _validate_job_id("/etc/shadow")
         assert exc_info.value.status_code == 400
 
     def test_path_traversal_with_null_byte_rejected(self):
+        """Check: path traversal with null byte rejected."""
         with pytest.raises(HTTPException) as exc_info:
             _validate_job_id("3fa85f64-5717-4562-b3fc-2c963f66afa6\x00../evil")
         assert exc_info.value.status_code == 400
@@ -148,16 +157,19 @@ class TestValidateJobIdUnit:
         assert exc_info.value.status_code == 400
 
     def test_uuid_too_short_rejected(self):
+        """Check: uuid too short rejected."""
         with pytest.raises(HTTPException) as exc_info:
             _validate_job_id("3fa85f64-5717-4562-b3fc")
         assert exc_info.value.status_code == 400
 
     def test_uuid_too_long_rejected(self):
+        """Check: uuid too long rejected."""
         with pytest.raises(HTTPException) as exc_info:
             _validate_job_id("3fa85f64-5717-4562-b3fc-2c963f66afa6-extra")
         assert exc_info.value.status_code == 400
 
     def test_uuid_with_leading_space_rejected(self):
+        """Check: uuid with leading space rejected."""
         with pytest.raises(HTTPException) as exc_info:
             _validate_job_id(" 3fa85f64-5717-4562-b3fc-2c963f66afa6")
         assert exc_info.value.status_code == 400
@@ -181,23 +193,29 @@ class TestUUID4Regex:
     """Low-level regex correctness tests."""
 
     def test_matches_canonical_uuid4(self):
+        """Check: matches canonical uuid4."""
         assert _UUID4_RE.match("3fa85f64-5717-4562-b3fc-2c963f66afa6")
 
     def test_does_not_match_partial(self):
+        """Check: does not match partial."""
         assert not _UUID4_RE.match("3fa85f64-5717-4562-b3fc")
 
     def test_does_not_match_version_1(self):
+        """Check: does not match version 1."""
         assert not _UUID4_RE.match("3fa85f64-5717-1562-b3fc-2c963f66afa6")
 
     def test_does_not_match_invalid_variant(self):
+        """Check: does not match invalid variant."""
         assert not _UUID4_RE.match("3fa85f64-5717-4562-d3fc-2c963f66afa6")
 
     def test_matches_all_valid_variants(self):
+        """Check: matches all valid variants."""
         for v in ("8", "9", "a", "b", "A", "B"):
             jid = f"3fa85f64-5717-4562-{v}3fc-2c963f66afa6"
             assert _UUID4_RE.match(jid), f"Expected match for variant nibble {v!r}"
 
     def test_does_not_match_non_hex_chars(self):
+        """Check: does not match non hex chars."""
         assert not _UUID4_RE.match("zfa85f64-5717-4562-b3fc-2c963f66afa6")
 
 
@@ -209,6 +227,7 @@ class TestGetJobEndpointValidation:
     """GET /v1/jobs/{job_id} — invalid job_id format → 400 before any DB lookup."""
 
     def test_invalid_job_id_returns_400(self):
+        """Check: invalid job id returns 400."""
         with TestClient(app, raise_server_exceptions=False) as client:
             resp = client.get("/v1/jobs/not-a-uuid")
         assert resp.status_code == 400
@@ -218,6 +237,7 @@ class TestGetJobEndpointValidation:
         # URLs like `/v1/jobs/../../etc/passwd` become `/etc/passwd` and reach
         # no registered route → 404.  Either status proves the traversal is
         # rejected without returning job data.
+        """Check: path traversal returns 400."""
         with TestClient(app, raise_server_exceptions=False) as client:
             resp = client.get("/v1/jobs/../../etc/passwd")
         assert resp.status_code in (400, 404), (
@@ -285,6 +305,7 @@ class TestCancelJobEndpointValidation:
     """POST /v1/jobs/{job_id}/cancel — invalid job_id → 400."""
 
     def test_invalid_job_id_returns_400(self):
+        """Check: invalid job id returns 400."""
         with TestClient(app, raise_server_exceptions=False) as client:
             resp = client.post("/v1/jobs/malicious-id/cancel")
         assert resp.status_code == 400
@@ -293,6 +314,7 @@ class TestCancelJobEndpointValidation:
         # Starlette normalises `../` before routing; `/v1/jobs/../admin/cancel`
         # becomes `/admin/cancel` → no route → 404.  Both 400 and 404 confirm
         # the traversal is blocked.
+        """Check: path traversal returns 400."""
         with TestClient(app, raise_server_exceptions=False) as client:
             resp = client.post("/v1/jobs/../admin/cancel")
         assert resp.status_code in (400, 404), (
@@ -314,10 +336,13 @@ class TestCancelJobEndpointValidation:
         """The cancellation endpoint distinguishes acknowledgement from terminal state."""
 
         class _ConfirmedSupervisor:
+            """Helper type ``_ConfirmedSupervisor``."""
             async def cancel_with_terminal_state(self, job_id: str) -> tuple[bool, str]:
+                """Implement cancel with terminal state."""
                 return True, "cancelled"
 
             async def get_status(self, job_id: str) -> dict:
+                """Implement get status."""
                 return {
                     "status": "cancelled",
                     "worker_kind": "cli",
@@ -355,17 +380,21 @@ class TestCancelJobEndpointValidation:
         sup = OrchestrationSupervisor(state_dir=tmp_path)
 
         class _ExitedCli:
+            """Helper type ``_ExitedCli``."""
             returncode = 0
 
             def terminate(self) -> None:
+                """Implement terminate."""
                 raise AssertionError("an exited child must not be terminated")
 
             async def wait(self) -> int:
+                """Implement wait."""
                 return 0
 
         child = _ExitedCli()
 
         async def _blocked_cli(spec: JobSpec) -> dict[str, str]:
+            """Implement blocked cli."""
             sup.note_child(spec.job_id, child)  # type: ignore[arg-type]
             await asyncio.sleep(60)
             return {"output": "never"}
@@ -374,6 +403,7 @@ class TestCancelJobEndpointValidation:
         cli_annotation_attempts = 0
 
         def _reject_cli_annotations(job_id: str, event: dict) -> None:
+            """Implement reject cli annotations."""
             nonlocal cli_annotation_attempts
             if event.get("worker_kind") == "cli":
                 cli_annotation_attempts += 1
@@ -456,6 +486,7 @@ class TestCancelJobEndpointValidation:
         assert sup.child_lookups == [jid]
 
     def test_400_detail_contains_uuid4(self):
+        """Check: 400 detail contains uuid4."""
         with TestClient(app, raise_server_exceptions=False) as client:
             resp = client.post("/v1/jobs/bad-id/cancel")
         assert "uuid4" in resp.json().get("detail", "").lower()
@@ -465,6 +496,7 @@ class TestReplayJobEndpointValidation:
     """POST /v1/jobs/{job_id}/replay — invalid job_id → 400, unknown valid → 404."""
 
     def test_invalid_job_id_returns_400(self):
+        """Check: invalid job id returns 400."""
         with TestClient(app, raise_server_exceptions=False) as client:
             resp = client.post("/v1/jobs/bad-format/replay")
         assert resp.status_code == 400
@@ -473,6 +505,7 @@ class TestReplayJobEndpointValidation:
         # Starlette normalises `../` before routing; `/v1/jobs/../../secret/replay`
         # becomes `/secret/replay` → no route → 404.  Both 400 and 404 confirm
         # the traversal is blocked without returning job data.
+        """Check: path traversal returns 400."""
         with TestClient(app, raise_server_exceptions=False) as client:
             resp = client.post("/v1/jobs/../../secret/replay")
         assert resp.status_code in (400, 404), (
@@ -507,6 +540,7 @@ class TestReplayValueErrorHttpMapping:
     """Supervisor replay errors map to distinct HTTP statuses."""
 
     def test_not_found_maps_to_404(self):
+        """Check: not found maps to 404."""
         from orchestrator.supervisor import ReplayJobNotFoundError
 
         exc = _replay_value_error_to_http(ReplayJobNotFoundError("Job abc not found"))
@@ -514,6 +548,7 @@ class TestReplayValueErrorHttpMapping:
         assert exc.detail == "Job not found"
 
     def test_not_replayable_maps_to_409(self):
+        """Check: not replayable maps to 409."""
         from orchestrator.supervisor import ReplayJobNotReplayableError
 
         exc = _replay_value_error_to_http(
@@ -523,6 +558,7 @@ class TestReplayValueErrorHttpMapping:
         assert exc.detail == "Job is not replayable"
 
     def test_missing_queued_spec_maps_to_422(self):
+        """Check: missing queued spec maps to 422."""
         from orchestrator.supervisor import ReplayNoQueuedSpecError
 
         exc = _replay_value_error_to_http(
@@ -605,3 +641,33 @@ class TestSupervisorSubmitErrors:
         assert resp.status_code == 400
         assert resp.json()["detail"] == _JOB_SUBMIT_ERROR_DETAIL
         assert "depth" not in resp.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_cancel_body_passes_through_containment_detail(monkeypatch: pytest.MonkeyPatch) -> None:
+    """P3: an ``escaped:<n>`` tree-kill result is visible next to containment_state."""
+
+    class _Sup:
+        """Stub supervisor whose last status carries a containment_detail."""
+
+        async def cancel_with_terminal_state(self, job_id: str) -> tuple[bool, str]:
+            """Report a confirmed cancellation."""
+            return True, "cancelled"
+
+        async def get_status(self, job_id: str) -> dict:
+            """Return a CLI/unresolved status with an escaped tree result."""
+            return {
+                "status": "cancelled",
+                "worker_kind": "cli",
+                "containment_state": "unresolved",
+                "containment_detail": "escaped:2",
+            }
+
+        def has_registered_child(self, job_id: str) -> bool:
+            """No retained child."""
+            return False
+
+    monkeypatch.setattr(fastapi_app, "_get_supervisor", lambda: _Sup())
+    body = await fastapi_app.supervisor_cancel_job("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+    assert body["containment_state"] == "unresolved"
+    assert body["containment_detail"] == "escaped:2"

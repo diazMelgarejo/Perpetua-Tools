@@ -1,0 +1,40 @@
+{
+  "id": "b3ca92146b8c",
+  "key": "manual_b3ca92",
+  "name": "manual_b3ca92",
+  "claim": "Keep CLI crash diagnostics safe by default. Opt-in verbose output may expose traceback frame locations and symbols, but not exception messages, source lines, local variables or full workstation paths. On legacy consoles use backslashreplace for identifiers so an unencodable model ID is recoverable rather than replaced by question marks.",
+  "conditions": [
+    "CLI exception handler",
+    "legacy console model identifier",
+    "verbose traceback"
+  ],
+  "evidence_ids": [
+    "2026-11-02T16:43:07.394991+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-02T16:43:07.394991+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-02T16:43:07.394991+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-02T16:43:07.488193+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "agent-envelope: author=codex-reviewer actor=codex-reviewer identity_verified=false instance_id=unavailable endorsement=none. Verified during R3 Oramasys91/Phylax30 integration and PT475 review; evidence c6da733,7cac74e,363672c4,80bdd5f1. Local tests are not independent R6 or real Windows qualification.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-02T16:43:07.394991+00:00"
+      ],
+      "lessons_sha": "8a07ae06e528"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-02T16:43:07.488184+00:00",
+  "reviewer": "learn.py",
+  "rationale": "agent-envelope: author=codex-reviewer actor=codex-reviewer identity_verified=false instance_id=unavailable endorsement=none. Verified during R3 Oramasys91/Phylax30 integration and PT475 review; evidence c6da733,7cac74e,363672c4,80bdd5f1. Local tests are not independent R6 or real Windows qualification."
+}
