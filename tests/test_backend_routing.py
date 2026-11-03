@@ -49,7 +49,7 @@ class TestRoleBackendMap:
     def test_context_market_research_routes_to_ollama(self):
         b, m = resolve_role_backend("context-agent", "market-research")
         assert b == "ollama"
-        assert m == "qwen3.5:9b-nvfp4"
+        assert m == "qwen3.5:9b-mlx"
 
     def test_context_ma_research_routes_to_ollama(self):
         b, _ = resolve_role_backend("context-agent", "m&a-research")
@@ -58,7 +58,7 @@ class TestRoleBackendMap:
     def test_context_default_routes_to_ollama(self):
         b, m = resolve_role_backend("context-agent")
         assert b == "ollama"
-        assert m == "qwen3.5:9b-nvfp4"
+        assert m == "qwen3.5:9b-mlx"
 
     def test_verifier_default_routes_to_win(self):
         b, _ = resolve_role_backend("verifier-agent")
@@ -67,7 +67,7 @@ class TestRoleBackendMap:
     def test_crystallizer_default_routes_to_ollama(self):
         b, m = resolve_role_backend("crystallizer-agent")
         assert b == "ollama"
-        assert m == "qwen3.5:9b-nvfp4"
+        assert m == "qwen3.5:9b-mlx"
 
     def test_architect_default_routes_to_win(self):
         b, _ = resolve_role_backend("architect-agent")

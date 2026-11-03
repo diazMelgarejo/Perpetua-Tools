@@ -241,6 +241,6 @@ class TestGPULockBehavior:
             return f"light:{model}"
 
         result_heavy = await _dispatch("Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2")
-        result_light = await _dispatch("qwen3.5:9b-nvfp4")
+        result_light = await _dispatch("qwen3.5:9b-mlx")
         assert result_heavy.startswith("heavy:")
         assert result_light.startswith("light:")

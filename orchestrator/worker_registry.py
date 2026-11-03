@@ -66,13 +66,13 @@ ROLE_BACKEND_MAP: Dict[Tuple[str, Optional[str]], Tuple[str, str]] = {
     ("executor-agent",   "python-coding"):      ("lmstudio-win",  WINDOWS_QWEN_PRIORITY_MODEL),
     ("executor-agent",   "test-writing"):       ("lmstudio-win",  WINDOWS_QWEN_PRIORITY_MODEL),
     ("executor-agent",   None):                 ("lmstudio-win",  WINDOWS_QWEN_PRIORITY_MODEL),
-    ("context-agent",    "market-research"):    ("ollama",        "qwen3.5:9b-nvfp4"),
-    ("context-agent",    "m&a-research"):       ("ollama",        "qwen3.5:9b-nvfp4"),
-    ("context-agent",    None):                 ("ollama",        "qwen3.5:9b-nvfp4"),
+    ("context-agent",    "market-research"):    ("ollama",        "qwen3.5:9b-mlx"),
+    ("context-agent",    "m&a-research"):       ("ollama",        "qwen3.5:9b-mlx"),
+    ("context-agent",    None):                 ("ollama",        "qwen3.5:9b-mlx"),
     ("verifier-agent",   None):                 ("lmstudio-win",  WINDOWS_QWEN_PRIORITY_MODEL),
-    ("crystallizer-agent", None):               ("ollama",        "qwen3.5:9b-nvfp4"),
+    ("crystallizer-agent", None):               ("ollama",        "qwen3.5:9b-mlx"),
     ("architect-agent",  None):                 ("lmstudio-win",  WINDOWS_QWEN_PRIORITY_MODEL),
-    ("refiner-agent",    None):                 ("ollama",        "qwen3.5:9b-nvfp4"),
+    ("refiner-agent",    None):                 ("ollama",        "qwen3.5:9b-mlx"),
 }
 
 

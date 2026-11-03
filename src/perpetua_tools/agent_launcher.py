@@ -442,7 +442,7 @@ MAC_LMS_MODEL = (os.getenv("MAC_LMS_MODEL")
                  or "Qwen3.5-9B-MLX-4bit")
 MAC_REQUIRED_OLLAMA_MODELS = tuple(
     m.strip()
-    for m in os.getenv("MAC_REQUIRED_OLLAMA_MODELS", "qwen3.5:9b-nvfp4,bge-m3").split(",")
+    for m in os.getenv("MAC_REQUIRED_OLLAMA_MODELS", "qwen3.5:9b-mlx,bge-m3").split(",")
     if m.strip()
 )
 
