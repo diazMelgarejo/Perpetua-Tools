@@ -291,15 +291,17 @@ def test_mac_ollama_required_models_fail_closed(monkeypatch):
 
 
 def test_retired_nvfp4_qwen_is_purged_and_not_never_win():
-    """qwen3.5:9b-nvfp4 is retired: no policy list or Mac default names it, and it is not NEVER_WIN."""
+    """qwen3.5:9b-nvfp4 is retired: Windows may run it, but no list, default or role prefers it."""
     from orchestrator.worker_registry import ROLE_BACKEND_MAP
+    from utils.dispatch_models import lmstudio_win_default_model, mac_lmstudio_default_model
 
     retired = "qwen3.5:9b-nvfp4"
     policy = load_policy(force_reload=True)
     for section in ("mac_only", "windows_only", "shared"):
         assert retired not in {m.lower() for m in policy.get(section, [])}
     check_affinity(retired, "win", policy)
-    assert ollama_mac_default_model() != retired
+    for default in (ollama_mac_default_model, mac_lmstudio_default_model, lmstudio_win_default_model):
+        assert default().lower() != retired
     assert retired not in {model for _, model in ROLE_BACKEND_MAP.values()}
 
 
