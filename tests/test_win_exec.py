@@ -25,6 +25,25 @@ def test_resolve_executable_skips_interpreter_suffixes_for_bare_commands(
     assert Path(win_exec.resolve_executable("tool")).samefile(exe)
 
 
+def test_windows_path_lookup_skips_an_earlier_extensionless_file(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+) -> None:
+    """A later directly launchable executable wins over an earlier extensionless namesake."""
+    early, late = tmp_path / "early", tmp_path / "late"
+    early.mkdir()
+    late.mkdir()
+    (early / "tool").touch()
+    executable = late / "tool.EXE"
+    executable.touch()
+    monkeypatch.setattr(win_exec, "_win", lambda: True)
+    monkeypatch.setattr(
+        win_exec, "_search_path_entries", lambda allow_unc=False: (str(early), str(late)),
+    )
+    monkeypatch.setenv("PATHEXT", ".EXE")
+
+    assert Path(win_exec.resolve_executable("tool")).samefile(executable)
+
+
 def test_resolve_executable_refuses_explicit_interpreter_script(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
 ) -> None:

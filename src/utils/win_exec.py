@@ -201,6 +201,8 @@ def find_bare_command(command: str, allow_unc: bool = False) -> Optional[str]:
         for candidate in candidates:
             if not candidate.is_file() or not (_win() or os.access(candidate, os.X_OK)):
                 continue
+            if _win() and p.normcase(p.splitext(candidate.name)[1]) not in win_exts:
+                continue  # Not directly launchable; a later PATH entry may have an executable.
             if not allow_unc and _unc_target(str(candidate)):
                 continue  # a local PATH entry that links to a network share
             return str(candidate)

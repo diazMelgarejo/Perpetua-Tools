@@ -122,6 +122,7 @@ class AlphaClawState:
 
 
 def _port_from_gateway_url(url: str) -> int:
+    """Return the port encoded by a gateway URL, or zero when it is absent or invalid."""
     if not url:
         return 0
     try:
@@ -456,7 +457,7 @@ def _maybe_wrap_gateway_with_tls(state: AlphaClawState) -> AlphaClawState:
             port=state.port,
             commandeered=state.commandeered,
             started=state.started,
-            error=state.error or tls_error,
+            error="; ".join(filter(None, [state.error, tls_error])),
             gateway_url=state.gateway_url,
             openclaw_config=state.openclaw_config,
             role_routing=state.role_routing,

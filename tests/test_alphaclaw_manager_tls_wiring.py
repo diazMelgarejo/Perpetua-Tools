@@ -206,3 +206,25 @@ def test_wrap_stays_on_http_when_acl_hardening_fails(monkeypatch):
     assert result.tls_enabled is False
     assert result.gateway_url == f"http://{_LOOPBACK_HOST}:18789"
     assert "AlphaClawAclError" in result.error
+
+
+def test_wrap_retains_an_earlier_bootstrap_error_when_tls_start_fails(monkeypatch):
+    """A TLS ACL refusal is retained alongside an existing bootstrap diagnostic."""
+    import orchestrator.alphaclaw_tls_proxy as tls_mod
+
+    monkeypatch.setenv("ALPHACLAW_TLS_ENABLED", "1")
+
+    def _boom(self):
+        """Simulate the fail-closed ACL error raised while starting the proxy."""
+        raise tls_mod.AlphaClawAclError("icacls failed")
+
+    monkeypatch.setattr(tls_mod.AlphaClawTlsProxy, "start", _boom)
+    state = AlphaClawState(
+        running=True, port=18789, error="prior bootstrap failure",
+        gateway_url=f"http://{_LOOPBACK_HOST}:18789",
+    )
+
+    result = _maybe_wrap_gateway_with_tls(state)
+
+    assert "prior bootstrap failure" in result.error
+    assert "AlphaClawAclError" in result.error
