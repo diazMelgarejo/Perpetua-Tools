@@ -290,6 +290,23 @@ def test_mac_ollama_required_models_fail_closed(monkeypatch):
         )
 
 
+def test_nvfp4_qwen_is_allowed_on_windows_and_mac():
+    """qwen3.5:9b-nvfp4 is no longer NEVER_WIN: it is shared, so both platforms accept it."""
+    policy = load_policy(force_reload=True)
+    assert "qwen3.5:9b-nvfp4" not in {m.lower() for m in policy.get("mac_only", [])}
+    assert "qwen3.5:9b-nvfp4" in {m.lower() for m in policy.get("shared", [])}
+    for platform in ("win", "win-rtx3080", "win-rtx5080", "lmstudio-win", "mac"):
+        check_affinity("qwen3.5:9b-nvfp4", platform, policy)
+    assert filter_models_for_platform(["qwen3.5:9b-nvfp4"], "win", policy) == ["qwen3.5:9b-nvfp4"]
+
+
+def test_mlx_qwen_stays_never_win():
+    """The MLX build still runs only on Apple Silicon."""
+    policy = load_policy(force_reload=True)
+    with pytest.raises(HardwareAffinityError, match="NEVER_WIN"):
+        check_affinity("qwen3.5:9b-mlx", "win", policy)
+
+
 def test_mac_ollama_default_uses_current_mlx_tag(monkeypatch):
     """The Mac Ollama default names the supported installed model tag."""
     monkeypatch.delenv("OLLAMA_MAC_MODEL", raising=False)

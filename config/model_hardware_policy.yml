@@ -52,6 +52,7 @@ windows_only:
 # These models run natively on both machines (or are small enough for either).
 shared:
   - qwen3.5-9b-mlx                                        # native: Mac MLX | proxied: Win
+  - qwen3.5:9b-nvfp4                                      # NVFP4 build: allowed on Mac and Windows (no longer NEVER_WIN)
   - gemma-4-e4b-it                                        # native: both confirmed
 
 # Case-insensitive aliases (LM Studio sometimes capitalises model IDs)

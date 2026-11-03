@@ -192,8 +192,45 @@ info_install_manual() {
   echo ""
 }
 
+# DEFAULT_MAC_REQUIRED_OLLAMA_MODELS matches the launcher default in src/perpetua_tools/agent_launcher.py.
+DEFAULT_MAC_REQUIRED_OLLAMA_MODELS="qwen3.5:9b-mlx,bge-m3"
+
+# mac_required_ollama_models prints one required Mac Ollama model per line. Like the launcher,
+# an unset MAC_REQUIRED_OLLAMA_MODELS uses the default and a set-but-empty value requires nothing.
+mac_required_ollama_models() {
+  local raw="${MAC_REQUIRED_OLLAMA_MODELS-$DEFAULT_MAC_REQUIRED_OLLAMA_MODELS}" item
+  local IFS=','
+  for item in $raw; do
+    item="$(printf '%s' "$item" | tr -d '[:space:]')"
+    [[ -n "$item" ]] && printf '%s\n' "$item"
+  done
+  return 0
+}
+
+# ollama_model_names prints each served model name from an Ollama /api/tags reply, lower-cased.
+ollama_model_names() {
+  printf '%s' "$1" | grep -o '"name"[[:space:]]*:[[:space:]]*"[^"]*"' \
+    | sed -E 's/^"name"[[:space:]]*:[[:space:]]*"//; s/"$//' \
+    | tr '[:upper:]' '[:lower:]' || true
+}
+
+# ollama_has_model succeeds when a served name equals the required name, or is that name with a tag
+# added (bge-m3 matches bge-m3:latest), the same rule as the launcher. qwen3.5:9b-mlx-bf16 does not
+# satisfy qwen3.5:9b-mlx.
+ollama_has_model() {
+  local names="$1" required name
+  required="$(printf '%s' "$2" | tr '[:upper:]' '[:lower:]')"
+  while IFS= read -r name; do
+    if [[ "$name" == "$required" || "$name" == "$required:"* ]]; then
+      return 0
+    fi
+  done <<< "$names"
+  return 1
+}
+
 # probe_required_endpoints performs startup health checks for required model backends before installing extensions.
-# On macOS: verifies Ollama at localhost:11434 and checks for qwen3.5:9b-mlx and bge-m3 models.
+# On macOS: verifies Ollama at localhost:11434 and checks every model in MAC_REQUIRED_OLLAMA_MODELS
+# (default qwen3.5:9b-mlx and bge-m3).
 # On Windows: checks LM_STUDIO_WIN_ENDPOINTS environment variable and verifies connectivity.
 # probe_required_endpoints checks local model backends required for desktop integration and exits with status 1 if required probes fail; it skips probes on Linux, in CI, or when --skip-desktop is set.
 probe_required_endpoints() {
@@ -220,31 +257,34 @@ probe_required_endpoints() {
     # Single call: check reachability and fetch model list with a 5-second timeout.
     local models_json
     models_json=$(curl -sf --max-time 5 http://localhost:11434/api/tags 2>/dev/null)
+    local required_models required_list pull_cmd model_names model
+    required_models="$(mac_required_ollama_models)"
+    required_list="$(printf '%s' "$required_models" | paste -sd, - | sed 's/,/, /g')"
+    pull_cmd="$(printf '%s' "$required_models" | sed 's/^/ollama pull /' | paste -sd'&' - | sed 's/&/ \&\& /g')"
     if [[ -z "$models_json" ]]; then
       err "Ollama not reachable at http://localhost:11434 (timeout or not running)"
-      err "Mac requires Ollama with qwen3.5:9b-mlx and bge-m3 models"
-      err "Install: https://ollama.ai/ then run: ollama pull qwen3.5:9b-mlx && ollama pull bge-m3"
+      err "Mac requires Ollama with these models: ${required_list:-none configured}"
+      [[ -n "$pull_cmd" ]] && err "Install: https://ollama.ai/ then run: $pull_cmd"
       exit 1
     fi
-    local has_qwen=false
-    local has_bge=false
 
-    if echo "$models_json" | grep -q "qwen3.5:9b-mlx"; then
-      has_qwen=true
-    fi
-    if echo "$models_json" | grep -q "bge-m3"; then
-      has_bge=true
-    fi
+    model_names="$(ollama_model_names "$models_json")"
+    local missing=()
+    while IFS= read -r model; do
+      [[ -z "$model" ]] && continue
+      ollama_has_model "$model_names" "$model" || missing+=("$model")
+    done <<< "$required_models"
 
-    if [[ "$has_qwen" == false ]] || [[ "$has_bge" == false ]]; then
+    if [[ ${#missing[@]} -gt 0 ]]; then
       err "Required Ollama models missing:"
-      [[ "$has_qwen" == false ]] && err "  - qwen3.5:9b-mlx"
-      [[ "$has_bge" == false ]] && err "  - bge-m3"
-      err "Install with: ollama pull qwen3.5:9b-mlx && ollama pull bge-m3"
+      for model in "${missing[@]}"; do
+        err "  - $model"
+      done
+      err "Install with: $(printf 'ollama pull %s\n' "${missing[@]}" | paste -sd'&' - | sed 's/&/ \&\& /g')"
       exit 1
     fi
 
-    ok "Ollama healthy with required models (qwen3.5:9b-mlx, bge-m3)"
+    ok "Ollama healthy with required models (${required_list:-none configured})"
 
   elif [[ "$os" == "MINGW"* ]] || [[ "$os" == "MSYS"* ]] || [[ "$os" == "CYGWIN"* ]]; then
     # Windows: probe LM Studio
