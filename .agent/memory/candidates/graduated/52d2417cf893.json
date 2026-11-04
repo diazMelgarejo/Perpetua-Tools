@@ -1,0 +1,42 @@
+{
+  "id": "52d2417cf893",
+  "key": "manual_52d241",
+  "name": "manual_52d241",
+  "claim": "In Windows PowerShell 5.1 a jq expression with embedded double quotes passed to gh --jq or -q loses them and fails with errors such as function not defined. Build such output in PowerShell from --json instead of a jq template, run the call from Git Bash, or put the jq program in a file; and treat a nonzero exit from a status check as unknown rather than as an answer.",
+  "conditions": [
+    "gh",
+    "jq",
+    "native-arguments",
+    "powershell",
+    "quoting"
+  ],
+  "evidence_ids": [
+    "2026-11-04T05:54:27.089225+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T05:54:27.089225+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-04T05:54:27.089225+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T05:54:27.318174+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-04: from Windows PowerShell 5.1, gh pr view with a jq expression containing double-quoted strings failed with function not defined because PowerShell strips embedded double quotes when passing arguments to native executables. The same expression worked from Git Bash.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-04T05:54:27.089225+00:00"
+      ],
+      "lessons_sha": "a604c9472b25"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T05:54:27.318174+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-04: from Windows PowerShell 5.1, gh pr view with a jq expression containing double-quoted strings failed with function not defined because PowerShell strips embedded double quotes when passing arguments to native executables. The same expression worked from Git Bash."
+}

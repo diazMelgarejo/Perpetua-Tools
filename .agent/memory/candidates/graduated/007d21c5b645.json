@@ -1,0 +1,40 @@
+{
+  "id": "007d21c5b645",
+  "key": "manual_007d21",
+  "name": "manual_007d21",
+  "claim": "After an ambiguous peer send, check the authenticated destination listing and content before retrying; skip delivered or superseded queue records, reconcile destination ownership item by item, and do not confuse shared-inbox acceptance with acknowledgement from every active agent.",
+  "conditions": [
+    "agent acknowledgement",
+    "duplicate safety",
+    "outbox reconciliation"
+  ],
+  "evidence_ids": [
+    "2026-11-04T02:57:44.143226+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T02:57:44.143226+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-04T02:57:44.143226+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T02:57:44.253102+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Codex reviewer reconciled six terminal outbox deliveries plus one directly accepted acknowledgement request against Windows seven-file arrival report on 2026-11-04. Other-node and unspecified-destination records were preserved rather than silently redirected.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-04T02:57:44.143226+00:00"
+      ],
+      "lessons_sha": "39ed75c7310e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T02:57:44.253093+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Codex reviewer reconciled six terminal outbox deliveries plus one directly accepted acknowledgement request against Windows seven-file arrival report on 2026-11-04. Other-node and unspecified-destination records were preserved rather than silently redirected."
+}

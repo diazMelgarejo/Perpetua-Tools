@@ -1,0 +1,43 @@
+{
+  "id": "2e6c39c24e18",
+  "key": "manual_2e6c39",
+  "name": "manual_2e6c39",
+  "claim": "Before pushing a Perpetua-Tools PR run scripts/review/repo_hygiene.py with --address-diff-base origin/main --address-diff-head HEAD and markdownlint-cli2 on every markdown file the diff touches. Added or moved lines must not contain loopback or private-range literals (use localhost). Touching a markdown file makes CI lint all of it, so revert a one-line edit to a heavily non-compliant doc and record the leftover instead of reflowing it.",
+  "conditions": [
+    "changed-files",
+    "ci",
+    "loopback",
+    "markdownlint",
+    "pt",
+    "repo-hygiene"
+  ],
+  "evidence_ids": [
+    "2026-11-04T09:04:05.679768+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T09:04:05.679768+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-04T09:04:05.679768+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T09:04:05.898037+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-04: Perpetua-Tools CI failed a PR on checks the local commit hooks did not run: repo_hygiene over the commit range rejected added or moved lines containing loopback literals, and markdownlint-cli2 linted every markdown file the PR touched, so a one-line rename in a far-out-of-compliance doc failed 33 rules.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-04T09:04:05.679768+00:00"
+      ],
+      "lessons_sha": "12c523a28fe2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T09:04:05.898037+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-04: Perpetua-Tools CI failed a PR on checks the local commit hooks did not run: repo_hygiene over the commit range rejected added or moved lines containing loopback literals, and markdownlint-cli2 linted every markdown file the PR touched, so a one-line rename in a far-out-of-compliance doc failed 33 rules."
+}

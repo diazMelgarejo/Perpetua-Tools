@@ -1,0 +1,42 @@
+{
+  "id": "56e02b427400",
+  "key": "manual_56e02b",
+  "name": "manual_56e02b",
+  "claim": "When a peer reports a timeout on an authenticated call, read the receiving front end's connection log (status, bytes, duration) before concluding token mismatch or proxy fault; a logged 200 with a long duration means the client gave up. Gate delivery on a fast authenticated route such as /api/peer-inbox, not the aggregate /api/status. Request paths must launch each CLI at most once per hour; only a restart or an explicit authenticated refresh relaunches sooner.",
+  "conditions": [
+    "api-status",
+    "peer",
+    "status",
+    "timeout",
+    "tls-proxy"
+  ],
+  "evidence_ids": [
+    "2026-11-04T02:55:28.456143+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T02:55:28.456143+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-04T02:55:28.456143+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T02:55:28.936087+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-04: the Mac's authenticated status check timed out; the Windows TLS front-end log showed status=200 after 10.8 s for that request. The cause was the 8-11 s /api/status (serial phases plus per-request CLI --version launches), not the token or the proxy.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-04T02:55:28.456143+00:00"
+      ],
+      "lessons_sha": "738c554d987c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T02:55:28.936087+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-04: the Mac's authenticated status check timed out; the Windows TLS front-end log showed status=200 after 10.8 s for that request. The cause was the 8-11 s /api/status (serial phases plus per-request CLI --version launches), not the token or the proxy."
+}

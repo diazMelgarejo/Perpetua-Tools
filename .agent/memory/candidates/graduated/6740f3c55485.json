@@ -1,0 +1,42 @@
+{
+  "id": "6740f3c55485",
+  "key": "manual_6740f3",
+  "name": "manual_6740f3",
+  "claim": "CodeQL recognizes a path-injection sanitizer only in the exact shape of its own example: normpath(join(base, name)) followed by a lone startswith(base + os.sep) check that raises. Do not combine it with alternatives such as 'or full_path == base'; reject the root case separately. A guard CodeQL cannot see turns every downstream file read or write into a new alert whenever those lines change.",
+  "conditions": [
+    "codeql",
+    "guard",
+    "path-injection",
+    "sanitizer",
+    "startswith"
+  ],
+  "evidence_ids": [
+    "2026-11-04T04:35:25.428953+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T04:35:25.428953+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-04T04:35:25.428953+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T04:35:25.894814+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-04: CodeQL py/path-injection kept flagging reads and writes in lan_peer_files.py although every path came from a normpath + startswith guard. The guard was written as 'full_path == base or full_path.startswith(base + os.sep)'. Replacing it with the single startswith check cleared the alerts on the next CodeQL run with no behaviour change (the filename allowlist already rejected names that resolve to the root).",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-04T04:35:25.428953+00:00"
+      ],
+      "lessons_sha": "f5307fed092e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T04:35:25.894814+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-04: CodeQL py/path-injection kept flagging reads and writes in lan_peer_files.py although every path came from a normpath + startswith guard. The guard was written as 'full_path == base or full_path.startswith(base + os.sep)'. Replacing it with the single startswith check cleared the alerts on the next CodeQL run with no behaviour change (the filename allowlist already rejected names that resolve to the root)."
+}

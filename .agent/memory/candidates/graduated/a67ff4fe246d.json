@@ -1,0 +1,43 @@
+{
+  "id": "a67ff4fe246d",
+  "key": "manual_a67ff4",
+  "name": "manual_a67ff4",
+  "claim": "On Windows, binding a service to the name localhost listens on the IPv6 loopback only, which an IPv4-loopback upstream such as the portal TLS front end cannot reach. Launch loopback services with an explicit IPv4 loopback host, restart the portal through start.ps1 --restart-portal so its TLS front end restarts with it, and after any restart confirm the listener address, not just the port.",
+  "conditions": [
+    "ipv6",
+    "localhost",
+    "loopback",
+    "portal",
+    "restart",
+    "tls-upstream"
+  ],
+  "evidence_ids": [
+    "2026-11-04T02:55:31.318914+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T02:55:31.318914+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-04T02:55:31.318914+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T02:55:31.530783+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-04: a portal was found listening on IPv6 loopback only with --host localhost; the TLS front end forwards to IPv4 loopback, so the Mac could not reach it. The portal's own restart route launches with the localhost default.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-04T02:55:31.318914+00:00"
+      ],
+      "lessons_sha": "57fe082b3758"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T02:55:31.530783+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-04: a portal was found listening on IPv6 loopback only with --host localhost; the TLS front end forwards to IPv4 loopback, so the Mac could not reach it. The portal's own restart route launches with the localhost default."
+}

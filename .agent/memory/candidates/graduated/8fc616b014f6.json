@@ -1,0 +1,46 @@
+{
+  "id": "8fc616b014f6",
+  "key": "manual_8fc616",
+  "name": "manual_8fc616",
+  "claim": "On Windows, never launch the long-lived stack (start.ps1) from an agent or app shell that sits in a job object: when breakaway is denied, spawn_detached falls back to launching inside the job, and the whole stack (PT, orama, Portal, TLS front end) dies when that app restarts. Check IsProcessInJob on the service launcher processes, not on the uvicorn children (the venv launcher holds those in its own job). Launch from outside the job (Task Scheduler at logon, a user terminal, or WMI Win32_Process.Create) and verify both peer directions after every restart, because one-way success hides a dead listener on the other side. Before each restart run git fetch origin main in each repository (remote-tracking refs only move on fetch), then move the run worktrees to origin/main so the stack runs the latest merged code, and confirm each listener's command line and bind address (Portal on IPv4 loopback, TLS front end on the LAN).",
+  "conditions": [
+    "8443",
+    "fetch",
+    "job-object",
+    "peer",
+    "portal",
+    "stale-worktree",
+    "start.ps1",
+    "tls",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-11-04T05:55:56.276729+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T05:55:56.276729+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-04T05:55:56.276729+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T05:56:02.767937+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Review follow-up on PR 477: adds the git fetch origin main step before moving run worktrees; the original graduated record is kept unchanged and superseded.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-04T05:55:56.276729+00:00"
+      ],
+      "lessons_sha": "247aa7b65d18"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T05:56:02.767937+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Review follow-up on PR 477: adds the git fetch origin main step before moving run worktrees; the original graduated record is kept unchanged and superseded."
+}

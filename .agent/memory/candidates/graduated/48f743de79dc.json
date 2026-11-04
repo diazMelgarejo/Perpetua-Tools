@@ -1,0 +1,41 @@
+{
+  "id": "48f743de79dc",
+  "key": "manual_48f743",
+  "name": "manual_48f743",
+  "claim": "Preserve peer-file bodies as the UTF-8 bytes of the decoded JSON body through source reads, inbox and outbox writes, and readback; use binary IO without automatic newline translation, BOM insertion or removal, or trailing-newline trimming, and derive metadata integrity from the same payload.",
+  "conditions": [
+    "BOM preservation",
+    "UTF-8 bytes",
+    "Windows CRLF",
+    "peer file"
+  ],
+  "evidence_ids": [
+    "2026-11-04T02:57:43.799806+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T02:57:43.799806+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-04T02:57:43.799806+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T02:57:43.915195+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Codex reviewer Orama PR469 original head 5229f621 reproduced eleven newline regressions before repair. Windows reported 905 received bytes versus 916 stored bytes from eleven CRLF expansions. The final candidate adds sidecar binary writes and writer-derived body SHA-256.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-04T02:57:43.799806+00:00"
+      ],
+      "lessons_sha": "43cd42d43130"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T02:57:43.915182+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Codex reviewer Orama PR469 original head 5229f621 reproduced eleven newline regressions before repair. Windows reported 905 received bytes versus 916 stored bytes from eleven CRLF expansions. The final candidate adds sidecar binary writes and writer-derived body SHA-256."
+}

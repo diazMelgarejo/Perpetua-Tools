@@ -1,0 +1,42 @@
+{
+  "id": "551f8328531f",
+  "key": "manual_551f83",
+  "name": "manual_551f83",
+  "claim": "Stack PRs by ancestry, not by base: keep every base on main so CI runs (check the workflow pull_request branch filter first), build each child from its parent's tip or give an existing independent branch one ancestry merge, and prove the order before announcing by merging the chain one by one and the top alone in throwaway worktrees and comparing trees. Merging a top PR also lands everything below it, so merge bottom-up and say so in the PR text.",
+  "conditions": [
+    "ancestry",
+    "base-main",
+    "ci-filter",
+    "merge-order",
+    "stacked-pr"
+  ],
+  "evidence_ids": [
+    "2026-11-04T09:04:04.842244+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T09:04:04.842244+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-04T09:04:04.842244+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T09:04:05.289547+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-04: asked to stack several PRs without rebasing or nested merges, the obvious GitHub stack (each PR based on its parent's branch) would have skipped CI, because both repositories' ci.yml only runs for pull requests targeting main, and merged branches are not auto-deleted so children would not retarget. Keeping every base on main with each upper branch containing the one below, then merging the chain in throwaway worktrees bottom-up and top-only, produced identical trees.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-04T09:04:04.842244+00:00"
+      ],
+      "lessons_sha": "5cf597622b9b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T09:04:05.289547+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-04: asked to stack several PRs without rebasing or nested merges, the obvious GitHub stack (each PR based on its parent's branch) would have skipped CI, because both repositories' ci.yml only runs for pull requests targeting main, and merged branches are not auto-deleted so children would not retarget. Keeping every base on main with each upper branch containing the one below, then merging the chain in throwaway worktrees bottom-up and top-only, produced identical trees."
+}

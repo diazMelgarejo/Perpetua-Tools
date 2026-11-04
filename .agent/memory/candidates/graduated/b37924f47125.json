@@ -1,0 +1,42 @@
+{
+  "id": "b37924f47125",
+  "key": "manual_b37924",
+  "name": "manual_b37924",
+  "claim": "In skill and reference text under bin/orama-system do not write literal dotenv file names even in a prohibition; the agent-surface scan flags them as HIGH. Say environment-variable files or local environment files, and rewrap to the 100-column markdown rule.",
+  "conditions": [
+    "CRED_021",
+    "aguara",
+    "dotenv",
+    "skill-docs",
+    "wording"
+  ],
+  "evidence_ids": [
+    "2026-11-04T09:04:06.243240+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T09:04:06.243240+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-04T09:04:06.243240+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T09:04:06.455792+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-04: the orama agent-surface scan (aguara) failed a PR with one HIGH finding, CRED_021 dotenv file exposure, on prose that merely named dotenv files in a prohibition. The same doc's existing safety table already says environment-variable files for this reason.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-04T09:04:06.243240+00:00"
+      ],
+      "lessons_sha": "3406e3d68d73"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T09:04:06.455792+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-04: the orama agent-surface scan (aguara) failed a PR with one HIGH finding, CRED_021 dotenv file exposure, on prose that merely named dotenv files in a prohibition. The same doc's existing safety table already says environment-variable files for this reason."
+}

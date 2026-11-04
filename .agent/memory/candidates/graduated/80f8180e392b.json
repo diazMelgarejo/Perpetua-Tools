@@ -1,0 +1,40 @@
+{
+  "id": "80f8180e392b",
+  "key": "manual_80f818",
+  "name": "manual_80f818",
+  "claim": "For already published disjoint PRs, preserve contributor commits with ordinary additive stack merges and explicit predecessor bases; prove contributor files are byte-unchanged and run combined tests before publication, while keeping cross-repository memory PRs separate and cross-linked.",
+  "conditions": [
+    "contribution preservation",
+    "published PR stack",
+    "regular merge"
+  ],
+  "evidence_ids": [
+    "2026-11-04T02:57:44.309980+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T02:57:44.309980+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-04T02:57:44.309980+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T02:57:44.427271+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Codex reviewer stacked Orama PR467 then PR468 then PR469 without conflicts or force-push, retaining all three contributions byte-for-byte. Combined suite passed 85 tests with four Windows-only skips. PT PR477 remains a main-based memory companion rather than a cross-repository Git stack.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-04T02:57:44.309980+00:00"
+      ],
+      "lessons_sha": "280b81914a43"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T02:57:44.427253+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Codex reviewer stacked Orama PR467 then PR468 then PR469 without conflicts or force-push, retaining all three contributions byte-for-byte. Combined suite passed 85 tests with four Windows-only skips. PT PR477 remains a main-based memory companion rather than a cross-repository Git stack."
+}
