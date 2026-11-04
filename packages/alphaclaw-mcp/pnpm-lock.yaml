@@ -16,8 +16,8 @@ importers:
         specifier: file:../alphaclaw-adapter
         version: file:../alphaclaw-adapter
       '@hono/node-server':
-        specifier: 2.0.12
-        version: 2.0.12(hono@4.13.13)
+        specifier: 2.1.6
+        version: 2.1.6(hono@4.13.13)
       '@modelcontextprotocol/sdk':
         specifier: ^1.32.1
         version: 1.32.1(zod@4.6.7)
@@ -200,11 +200,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@hono/node-server@2.0.12':
-    resolution: {integrity: sha512-eWpQYr67tqJLeaSUl0Q+TquuYfUdTibpOJlUMV2FfUP7+KqCC5TufnwnlXL6mobZBJbGAYRd7ZvEBDCbLInjhg==}
+  '@hono/node-server@2.1.6':
+    resolution: {integrity: sha512-p/KH9MnfNcsm3sR6x4lNgm5j+QN4Et8srKredl9DZfXiyZ1UQ3aQ2YVpFLbqktYN5JI+DB+VZFKM2PqE5hLKjQ==}
     engines: {node: '>=20'}
     peerDependencies:
-      hono: ^4
+      hono: ^4 || ^5.0.0-0
 
   '@modelcontextprotocol/sdk@1.32.1':
     resolution: {integrity: sha512-2DdE+SJDtzLEEWzY1ZjY7Q+VcPhcV1KisD3zI4u0XZyktsjHum1mwbMI+JaulUBi2OZk+KJAi2uPXzxichPkdw==}
@@ -690,13 +690,13 @@ snapshots:
   '@esbuild/win32-x64@0.28.1':
     optional: true
 
-  '@hono/node-server@2.0.12(hono@4.13.13)':
+  '@hono/node-server@2.1.6(hono@4.13.13)':
     dependencies:
       hono: 4.13.13
 
   '@modelcontextprotocol/sdk@1.32.1(zod@4.6.7)':
     dependencies:
-      '@hono/node-server': 2.0.12(hono@4.13.13)
+      '@hono/node-server': 2.1.6(hono@4.13.13)
       ajv: 8.20.0
       ajv-formats: 3.0.1(ajv@8.20.0)
       content-type: 1.0.5
