@@ -1,0 +1,42 @@
+{
+  "id": "9724fce46927",
+  "key": "manual_9724fc",
+  "name": "manual_9724fc",
+  "claim": "To decide whether a Windows process can launch children outside its job, test it: start a suspended child with CREATE_BREAKAWAY_FROM_JOB and check IsProcessInJob on it; limit flags of the innermost job are not enough with nested jobs. WMI Win32_Process.Create starts processes outside the caller's job and can carry the environment in Win32_ProcessStartup.EnvironmentVariables. In PowerShell pass the script path into helpers explicitly; inside a function PSCommandPath names the file that defines the function.",
+  "conditions": [
+    "PSCommandPath",
+    "breakaway",
+    "job-object",
+    "powershell",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-11-04T02:55:29.981049+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T02:55:29.981049+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-04T02:55:29.981049+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T02:55:30.196056+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-04: reading the innermost job's limit flags said breakaway was allowed while real launches stayed in the job (nested jobs). A function dot-sourced from another file saw that file in PSCommandPath and relaunched the wrong script.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-04T02:55:29.981049+00:00"
+      ],
+      "lessons_sha": "4848568fc5b8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T02:55:30.196056+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-04: reading the innermost job's limit flags said breakaway was allowed while real launches stayed in the job (nested jobs). A function dot-sourced from another file saw that file in PSCommandPath and relaunched the wrong script."
+}

@@ -1,0 +1,42 @@
+{
+  "id": "2d8daa78832b",
+  "key": "manual_2d8daa",
+  "name": "manual_2d8daa",
+  "claim": "Before asking a peer for a canary receipt, self-test the receiver through its own TLS front end with the same client the peer uses: send LF, CRLF, BOM and mixed-ending files with a per-process CA, then compare stored bytes with source bytes. A passing self-test proves the receiver independently of the sender and reduces the peer request to one canary; it does not replace the peer's receipt.",
+  "conditions": [
+    "byte-exact",
+    "canary",
+    "receiver",
+    "self-test",
+    "tls-front-end"
+  ],
+  "evidence_ids": [
+    "2026-11-04T05:54:25.477184+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T05:54:25.477184+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-04T05:54:25.477184+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T05:54:25.953038+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-04: after the orama fixes merged, the Windows receiver was proven byte-exact before the Mac sent any canary, by sending LF, CRLF, BOM and mixed-ending files through Windows' own TLS front end and comparing the stored inbox bytes with the source bytes. That separated receiver correctness from the sender and left only one peer-side request (a fresh canary) for the official receipt.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-04T05:54:25.477184+00:00"
+      ],
+      "lessons_sha": "4d3723f6ff3a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T05:54:25.953038+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-04: after the orama fixes merged, the Windows receiver was proven byte-exact before the Mac sent any canary, by sending LF, CRLF, BOM and mixed-ending files through Windows' own TLS front end and comparing the stored inbox bytes with the source bytes. That separated receiver correctness from the sender and left only one peer-side request (a fresh canary) for the official receipt."
+}

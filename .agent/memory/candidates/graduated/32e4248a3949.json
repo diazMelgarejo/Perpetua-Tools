@@ -1,0 +1,43 @@
+{
+  "id": "32e4248a3949",
+  "key": "manual_32e424",
+  "name": "manual_32e424",
+  "claim": "Stage explicit paths, not git add -A, in a worktree where tests ran, and read git status --porcelain before every commit: tools write caches into the working tree when HOME or USERPROFILE is redirected. If a stray file is pushed, remove it with a follow-up commit (the repo's deletion hook needs GIT_ALLOW_FILE_DELETIONS with a written justification), never by rewriting history, and inspect the blob before judging what it exposes.",
+  "conditions": [
+    "add",
+    "cache",
+    "git",
+    "powershell",
+    "stray-file",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-11-04T04:35:26.369297+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T04:35:26.369297+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-04T04:35:26.369297+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T04:35:26.608888+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-04: running tests with USERPROFILE and HOME redirected made Windows PowerShell write Microsoft/Windows/PowerShell/ModuleAnalysisCache into the worktree, and git add -A committed and pushed it. Removing it needed a follow-up commit with the repo's audited file-deletion override (no force-push); the blob only listed a public module's command names.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-04T04:35:26.369297+00:00"
+      ],
+      "lessons_sha": "ef4e4c8f5a9b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T04:35:26.608888+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-04: running tests with USERPROFILE and HOME redirected made Windows PowerShell write Microsoft/Windows/PowerShell/ModuleAnalysisCache into the worktree, and git add -A committed and pushed it. Removing it needed a follow-up commit with the repo's audited file-deletion override (no force-push); the blob only listed a public module's command names."
+}

@@ -1,0 +1,42 @@
+{
+  "id": "730bdf7693ba",
+  "key": "manual_730bdf",
+  "name": "manual_730bdf",
+  "claim": "During peer outages keep the safety gates: CA trust per process via PEER_CA_FILE (never system-wide, never certificate checks off, never HTTP), no token in chat, command lines, notes or logs, one targeted canary before any backlog, and stop on 401 to report credential alignment rather than retrying.",
+  "conditions": [
+    "canary",
+    "credential",
+    "peer",
+    "safety",
+    "tls"
+  ],
+  "evidence_ids": [
+    "2026-11-04T02:55:31.977294+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T02:55:31.977294+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-04T02:55:31.977294+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T02:55:32.183465+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-04: a pasted bearer, unverified TLS inspection and HTTP fallback were all available shortcuts during the outage; none was used, and delivery was restored with CA-verified HTTPS and a single canary.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-04T02:55:31.977294+00:00"
+      ],
+      "lessons_sha": "2a919f99540f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T02:55:32.183465+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-04: a pasted bearer, unverified TLS inspection and HTTP fallback were all available shortcuts during the outage; none was used, and delivery was restored with CA-verified HTTPS and a single canary."
+}

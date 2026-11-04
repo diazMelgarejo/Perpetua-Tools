@@ -1,0 +1,43 @@
+{
+  "id": "9de1acef9727",
+  "key": "manual_9de1ac",
+  "name": "manual_9de1ac",
+  "claim": "Peer-file receivers must store the received UTF-8 bytes exactly (write_bytes), never Path.write_text, which turns LF into CRLF on Windows only. Receipts report arrival UTC, stored byte count, SHA-256 and LF-normalized SHA-256. Newline handling must be tested natively on Windows; macOS and Linux CI cannot show the bug.",
+  "conditions": [
+    "bytes",
+    "crlf",
+    "peer-file",
+    "receipt",
+    "receiver",
+    "utf-8"
+  ],
+  "evidence_ids": [
+    "2026-11-04T02:55:30.633645+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T02:55:30.633645+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-04T02:55:30.633645+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T02:55:30.832079+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-04: a Mac canary of 905 bytes was stored as 916 bytes on Windows (11 LF to CRLF); the receiver used Path.write_text, which translates newlines on Windows only, so the Mac and Linux CI could not reproduce it.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-04T02:55:30.633645+00:00"
+      ],
+      "lessons_sha": "3be6c459abd2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T02:55:30.832079+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-04: a Mac canary of 905 bytes was stored as 916 bytes on Windows (11 LF to CRLF); the receiver used Path.write_text, which translates newlines on Windows only, so the Mac and Linux CI could not reproduce it."
+}

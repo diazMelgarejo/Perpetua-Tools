@@ -1,0 +1,40 @@
+{
+  "id": "5cd503b5684d",
+  "key": "manual_5cd503",
+  "name": "manual_5cd503",
+  "claim": "Keep raw SHA-256 and LF-normalized SHA-256 separately labelled: matching normalized digests can reconcile valid UTF-8 legacy CRLF versus LF records but do not establish byte identity; retain original metadata and recompute receiver receipts from actual stored bytes.",
+  "conditions": [
+    "append-only evidence",
+    "legacy newline equivalence",
+    "receipt hashing"
+  ],
+  "evidence_ids": [
+    "2026-11-04T02:57:43.974746+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T02:57:43.974746+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-04T02:57:43.974746+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T02:57:44.082100+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Codex reviewer verified that the Windows normalized digest matched the original 905-byte Mac canary while the 916-byte Windows raw digest differed. Cached sidecar hashes describe write time and cannot prove that later stored bytes are unchanged.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-04T02:57:43.974746+00:00"
+      ],
+      "lessons_sha": "08910a40353c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T02:57:44.082088+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Codex reviewer verified that the Windows normalized digest matched the original 905-byte Mac canary while the 916-byte Windows raw digest differed. Cached sidecar hashes describe write time and cannot prove that later stored bytes are unchanged."
+}
