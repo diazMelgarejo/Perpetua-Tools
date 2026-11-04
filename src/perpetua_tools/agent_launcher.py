@@ -92,7 +92,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 
 def _is_loopback_host(host: str) -> bool:
-    """Return whether *host* is localhost, ::1 or a loopback IP address."""
+    """Return whether *host* is localhost or a loopback IP address (IPv4 or IPv6)."""
     if host in ("localhost", "::1"):
         return True
     try:
