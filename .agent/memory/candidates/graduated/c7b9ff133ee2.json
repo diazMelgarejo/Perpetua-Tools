@@ -1,0 +1,42 @@
+{
+  "id": "c7b9ff133ee2",
+  "key": "manual_c7b9ff",
+  "name": "manual_c7b9ff",
+  "claim": "Check both directions of a peer link after any restart and when either side reports a failure. A connect timeout before TLS on a host whose firewall rules exist usually means no listener: confirm Get-NetTCPConnection on the port and the owning process first, then profile, firewall and ARP.",
+  "conditions": [
+    "8443",
+    "asymmetry",
+    "listener",
+    "peer",
+    "reachability"
+  ],
+  "evidence_ids": [
+    "2026-11-04T02:55:29.373431+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T02:55:29.373431+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-04T02:55:29.373431+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T02:55:29.578115+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-04: Windows-to-Mac delivery kept working while Mac-to-Windows timed out before TLS; the Windows 8443 listener was simply gone. It took a peer report to notice.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-04T02:55:29.373431+00:00"
+      ],
+      "lessons_sha": "795268e0c4b7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T02:55:29.578115+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-04: Windows-to-Mac delivery kept working while Mac-to-Windows timed out before TLS; the Windows 8443 listener was simply gone. It took a peer report to notice."
+}
