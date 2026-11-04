@@ -45,12 +45,40 @@ No host names, addresses, paths, tokens or fingerprints are recorded here.
    SHA-256, receipts report both hashes. The Mac owns the single orama PR (doc, fix, tests);
    Windows reviews it, runs the tests natively and returns a fresh canary receipt.
 
+9. **Review rounds.** Two Sonnet subagents worked disjoint files on orama 467's follow-ups: stale
+   resolver lookups cancelled and capped, the tools-refresh cache clear moved off the event loop,
+   refresh rate-limited to 2/min, a fake-clock one-hour test and a resolver-saturation recovery
+   test. The fixes were carried up the 467 -> 468 -> 469 stack with merge commits only.
+10. **CodeQL on 469.** Three py/path-injection alerts failed the check. They were first answered
+    as false positives, then fixed: the containment guard `full_path == base or startswith(...)`
+    became a single `startswith(base + os.sep)`; CodeQL then reported no new alerts. The same
+    commit accidentally carried a PowerShell module cache (only a public module's command names);
+    it was removed in a follow-up commit through the repo's audited deletion override.
+11. **469 review follow-ups.** The outbox duplicate check now accepts the exact UTF-8 size, so a
+    mixed-ending body can match its byte-exact remote copy. Guard tests for `extra` precedence
+    and BOM-preserving `drop` were proven by mutation checks.
+12. **Portal Restart route (orama 470).** Windows Portal restarts go through
+    `start.ps1 --restart-portal`; direct restarts bind the IPv4 loopback, never `localhost`.
+13. **Merged and live.** The operator merged orama 467, 468, 469 and 470. The run checkout was
+    moved to main by hand once (the old script could not self-update); an ordinary `start.ps1`
+    run from an in-job agent shell then escaped the job through WMI. All four services UP, all
+    launchers outside any job, Portal on IPv4 loopback, TLS front end on all interfaces.
+    Authenticated `/api/status` over the LAN: 2.4 s (was 10.5 s).
+14. **Fixed receiver verified.** A self-test through Windows' own 8443 stored LF, CRLF, BOM and
+    mixed-ending files byte-exact. The Mac was asked for one fresh canary so Windows can return
+    the fixed-receiver receipt.
+15. **Attribution.** Windows notes, reviews and PR comments carry the repo's core envelope
+    (`agent_id`/`executor_id: claude`, harness, host role, model).
+
 ## Still open
 
-- Review and native Windows test of the Mac's receiver PR, then the fixed-receiver receipt.
-- The Portal dashboard's restart route still launches with the `localhost` default and a plain
-  `Popen`; restart through `start.ps1 --restart-portal` until it is fixed.
-- Merges of orama 467 and 468 and of this memory PR are the operator's.
+- The fixed-receiver canary receipt for the Mac's next canary (raw SHA-256 should now equal the
+  source SHA-256).
+- Mac backlog delivery after reconciling the seven files received 02:39:08-02:39:19.
+- The second Windows node (RTX 5080) is unreachable and has no TLS front end; nothing is queued.
+- Merge of this memory PR is the operator's.
+
+See also `2026-11-04-lan-recovery-byte-contract-and-stack-chronicle.md` (the Mac/Codex view).
 
 ## Lessons recorded
 
@@ -58,4 +86,8 @@ No host names, addresses, paths, tokens or fingerprints are recorded here.
 blaming tokens; one CLI launch per hour), `lesson_c7b9ff133ee2` (check both directions; no
 listener first), `lesson_9724fce46927` (test breakaway, WMI escape, explicit script path),
 `lesson_9de1acef9727` (byte-exact peer files), `lesson_a67ff4fe246d` (localhost is IPv6-only
-on Windows), `lesson_730bdf7693ba` (keep the TLS and credential gates during outages).
+on Windows), `lesson_730bdf7693ba` (keep the TLS and credential gates during outages),
+`lesson_6740f3c55485` (CodeQL sanitizer shape), `lesson_32e4248a3949` (stage explicit paths;
+stray files removed by follow-up commit), `lesson_ba2f996e4225` (mutation-check guard tests),
+`lesson_8c587f1048f7` (revisit size and hash consumers when a storage contract changes),
+`lesson_1b7659a17ce7` (merge-commit PR stacks, launcher bootstrap, confirm GitHub writes).

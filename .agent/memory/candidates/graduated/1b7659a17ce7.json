@@ -1,0 +1,42 @@
+{
+  "id": "1b7659a17ce7",
+  "key": "manual_1b7659",
+  "name": "manual_1b7659",
+  "claim": "In a merge-commit PR stack, carry every lower-branch fix upward with merge commits only, test the top head, and disclose commits made on another agent's branch. A self-updating launcher cannot update the copy that predates the feature: move the run checkout to main by hand once, then let the script take over. Treat a GitHub reply or push as done only when it returns a URL or ls-remote shows the SHA; retry on network failure.",
+  "conditions": [
+    "bootstrap",
+    "github-api",
+    "merge",
+    "pr-stack",
+    "retry"
+  ],
+  "evidence_ids": [
+    "2026-11-04T04:35:28.459100+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T04:35:28.459100+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-04T04:35:28.459100+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T04:35:28.678497+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-04: Codex stacked PRs 467 -> 468 -> 469 by merging lower branches upward; review fixes on 467 had to be carried up with merge commits. After merge, the run worktree still held the old start.ps1, which cannot update itself, so the first move to main was manual; the next ordinary start.ps1 run then escaped the job via WMI. GitHub API calls failed intermittently and replies were only counted once a URL came back.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-04T04:35:28.459100+00:00"
+      ],
+      "lessons_sha": "71379cd9d353"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T04:35:28.678497+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-04: Codex stacked PRs 467 -> 468 -> 469 by merging lower branches upward; review fixes on 467 had to be carried up with merge commits. After merge, the run worktree still held the old start.ps1, which cannot update itself, so the first move to main was manual; the next ordinary start.ps1 run then escaped the job via WMI. GitHub API calls failed intermittently and replies were only counted once a URL came back."
+}
