@@ -69,8 +69,9 @@ No host names, addresses, paths, tokens or fingerprints are recorded here.
     the fixed-receiver receipt.
 16. **Operator restart from main.** After the operator reported all work done, a second ordinary
     `start.ps1` run escaped the job again and brought all four services up. Both run checkouts
-    already matched `origin/main` (orama with 467-470; PT unchanged), because the PT memory PR was
-    still open, so the update step had nothing to do. LAN checks repeated: `/health` 200, inbox
+    already matched `origin/main` (orama with 467-470; PT unchanged), confirmed by comparing
+    `git ls-remote` with each run checkout's HEAD, so the update step had nothing to do. The open PT
+    memory PR says nothing by itself about whether main moved. LAN checks repeated: `/health` 200, inbox
     401 unauthenticated and 200 authenticated, `/api/status` 2.4 s. A PowerShell 5.1 quoting
     failure in a status query (jq template with embedded quotes) was caught and the check redone.
 17. **Waiting on the Mac.** No fresh Mac canary had arrived by then; the inbox held only Windows'
@@ -102,8 +103,11 @@ stray files removed by follow-up commit), `lesson_ba2f996e4225` (mutation-check 
 `lesson_8c587f1048f7` (revisit size and hash consumers when a storage contract changes),
 `lesson_1b7659a17ce7` (merge-commit PR stacks, launcher bootstrap, confirm GitHub writes).
 After the operator restart: `lesson_2d8daa78832b` (self-test the receiver through its own front end),
-`lesson_887a8c7414b1` (verify remote state before a restart; an open PR means main has not moved),
+`lesson_887a8c7414b1` (verify remote state before a restart; superseded by `lesson_850cfdc65ff9`),
 `lesson_52d2417cf893` (PowerShell 5.1 strips quotes in native-exe arguments such as gh jq templates).
 Review correction: the first lesson was briefly edited in place to add a fetch step; graduated records are
 append-only, so it was restored byte-for-byte and the step now lives in `lesson_8fc616b014f6`, which supersedes
 `lesson_e93d89b467e5` (fetch `origin main` in each repository before moving run worktrees).
+Review correction 2: `lesson_887a8c7414b1` inferred that an open PR means a repository's main has not moved,
+which is false (other merges can move main). `lesson_850cfdc65ff9` supersedes it: decide a restart only from
+`git ls-remote` versus each run worktree HEAD; PR state is context, never evidence about main.
