@@ -38,12 +38,15 @@ def clear_policy_cache(monkeypatch):
 
 @pytest.fixture
 def registry():
+    """Return a ModelRegistry loaded from the repository config directory."""
     return ModelRegistry(config_dir=str(REPO_ROOT / "config"))
 
 
 @pytest.fixture
 def client():
+    """Yield a TestClient with routing-state resolution and ECC sync mocked out."""
     async def fake_resolve_routing_state():
+        """Return a fixed distributed routing state (Mac manager, Windows coder) without probing."""
         return {
             "manager_endpoint": "http://127.0.2.2:11434",
             "manager_model": "glm-5.3-flash:cloud",
@@ -124,6 +127,7 @@ def test_coder_and_priority_subagent_route_to_exact_qwen(registry):
 
 
 def test_autoresearch_prefers_windows_lmstudio(registry):
+    """The autoresearch route puts the Windows LM Studio Qwen coder first on win-rtx3080."""
     chain = registry.route_task("autoresearch", preferred_device="win-rtx3080")
     assert chain[0].name == QWEN_PRIORITY_MODEL
     assert chain[0].device == "win-rtx3080"
@@ -158,6 +162,7 @@ def test_active_tilting_ollama_win_uses_model_port_not_lmstudio(registry, monkey
 
 
 def test_hardware_policy_blocks_windows_only_on_mac():
+    """A Windows-only model is rejected on the Mac platform with a NEVER_MAC affinity error."""
     # Pass explicit policy so test is self-contained (live policy may evolve)
     policy = {
         "windows_only": ["Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2"],
@@ -169,6 +174,7 @@ def test_hardware_policy_blocks_windows_only_on_mac():
 
 
 def test_hardware_policy_blocks_mac_only_on_windows():
+    """A Mac-only model is rejected on the Windows platform with a NEVER_WIN affinity error."""
     # Pass explicit policy so test is self-contained (live policy may evolve)
     policy = {
         "windows_only": [],
@@ -180,6 +186,7 @@ def test_hardware_policy_blocks_mac_only_on_windows():
 
 
 def test_load_policy_merges_windows_only_aliases():
+    """The loaded hardware policy includes the Windows-only model aliases in windows_only."""
     policy = load_policy(force_reload=True)
     forbidden = {m.lower() for m in policy.get("windows_only", [])}
     assert "gemma-4-26b-a4b-it-q4_k_m" in forbidden
@@ -187,6 +194,7 @@ def test_load_policy_merges_windows_only_aliases():
 
 
 def test_load_policy_includes_mac_only_ollama_models():
+    """The loaded hardware policy lists the MLX and bge-m3 Ollama models as mac_only."""
     policy = load_policy(force_reload=True)
     mac_only = {m.lower() for m in policy.get("mac_only", [])}
     assert "qwen3.5:9b-mlx" in mac_only
@@ -194,12 +202,14 @@ def test_load_policy_includes_mac_only_ollama_models():
 
 
 def test_hardware_policy_blocks_gemma_quant_alias_on_mac():
+    """The Gemma quantized alias is treated as Windows-only and rejected on Mac."""
     policy = load_policy(force_reload=True)
     with pytest.raises(HardwareAffinityError, match="NEVER_MAC"):
         check_affinity("gemma-4-26B-A4B-it-Q4_K_M", "mac", policy=policy)
 
 
 def test_hardware_policy_cli_merges_aliases_and_rejects_never_mac():
+    """The policy CLI merges the Windows-only aliases and rejects NEVER_MAC models on Mac."""
     import importlib.util
 
     cli_path = REPO_ROOT / "scripts" / "hardware_policy_cli.py"
@@ -218,6 +228,7 @@ def test_hardware_policy_cli_merges_aliases_and_rejects_never_mac():
 
 
 def test_hardware_policy_filter_is_case_insensitive():
+    """Platform filtering matches model names case-insensitively and keeps unknown models."""
     # Pass explicit policy: gemma-4-26B Windows GGUF model is windows_only in this test.
     # (Live policy uses 'shared' for all models due to LM Studio proxy — tests must be isolated.)
     policy = {
@@ -237,9 +248,11 @@ def test_hardware_policy_filter_is_case_insensitive():
 
 
 def test_pick_mac_manager_checks_preferred_affinity(monkeypatch):
+    """Mac manager selection skips a preferred model that fails the Mac affinity check."""
     import perpetua_tools.agent_launcher as agent_launcher
 
     def _fake_check(model_id, platform):
+        """Raise a NEVER_MAC affinity error for the win-only model and accept all others."""
         if model_id == "win-only":
             raise HardwareAffinityError("NEVER_MAC")
 
@@ -249,6 +262,7 @@ def test_pick_mac_manager_checks_preferred_affinity(monkeypatch):
 
 
 def test_pick_mac_manager_matches_preferred_tag_prefix(monkeypatch):
+    """Mac manager selection resolves a bare preferred name to its full tagged model."""
     import perpetua_tools.agent_launcher as agent_launcher
 
     monkeypatch.setattr(
@@ -263,9 +277,11 @@ def test_pick_mac_manager_matches_preferred_tag_prefix(monkeypatch):
 
 
 def test_pick_mac_manager_raises_when_no_mac_affine_model(monkeypatch):
+    """Mac manager selection raises the affinity error when no model is allowed on Mac."""
     import perpetua_tools.agent_launcher as agent_launcher
 
     def _fake_check(model_id, platform):
+        """Reject every model as NEVER_MAC."""
         raise HardwareAffinityError("NEVER_MAC")
 
     monkeypatch.setattr("perpetua_tools.agent_launcher.check_affinity", _fake_check)
@@ -274,6 +290,7 @@ def test_pick_mac_manager_raises_when_no_mac_affine_model(monkeypatch):
         agent_launcher._pick_mac_manager(["win-only"], "win-only")
 
 def test_mac_ollama_required_models_fail_closed(monkeypatch):
+    """On a Mac host, a missing required Ollama model raises instead of continuing."""
     import perpetua_tools.agent_launcher as agent_launcher
 
     monkeypatch.setattr(agent_launcher, "RUNNING_ON_MAC", True)
@@ -319,6 +336,7 @@ def test_mac_ollama_default_uses_current_mlx_tag(monkeypatch):
 
 
 def test_mac_ollama_required_models_skip_on_windows_host(monkeypatch):
+    """Off a Mac host, the required Mac Ollama model check is skipped without error."""
     import perpetua_tools.agent_launcher as agent_launcher
 
     monkeypatch.setattr(agent_launcher, "RUNNING_ON_MAC", False)
@@ -327,6 +345,7 @@ def test_mac_ollama_required_models_skip_on_windows_host(monkeypatch):
 
 
 def test_windows_host_keeps_local_windows_backend(monkeypatch):
+    """A Windows host with only LM Studio reachable keeps windows-lmstudio as the coder backend."""
     import perpetua_tools.agent_launcher as agent_launcher
 
     monkeypatch.setattr(agent_launcher, "RUNNING_ON_WINDOWS", True)
@@ -346,6 +365,7 @@ def test_windows_host_keeps_local_windows_backend(monkeypatch):
 
 
 def test_host_has_port_handles_bracketed_ipv6():
+    """Host parsing detects an explicit port on bracketed IPv6 hosts and not otherwise."""
     from orchestrator.model_registry import _host_has_port
 
     assert _host_has_port("http://[::1]:8080") is True
@@ -359,6 +379,7 @@ def test_orchestrate_hardware_selection(monkeypatch, client):
     End-to-end check of /orchestrate selecting the right model per device.
     """
     async def always_ready(_candidate):
+        """Report every candidate as ready without probing any backend."""
         return True, "mock-ready"
 
     monkeypatch.setattr("orchestrator.fastapi_app._candidate_availability", always_ready)
@@ -387,7 +408,9 @@ def test_orchestrate_hardware_selection(monkeypatch, client):
 
 
 def test_orchestrate_falls_back_to_mac_lmstudio_when_glm_unavailable(monkeypatch, client):
+    """With the GLM cloud model unavailable, /orchestrate falls back to the Mac LM Studio model."""
     async def selective_ready(candidate):
+        """Mark only the GLM cloud candidate unavailable (rate-limited) and all others ready."""
         if candidate.name == "glm-5.3-flash:cloud":
             return False, "rate-limited"
         return True, "mock-ready"
@@ -434,7 +457,9 @@ async def test_oramasys_prefers_ready_fallback_over_unavailable_primary(
 
 
 def test_autoresearch_returns_user_action_when_no_local_backend_reachable(monkeypatch, client):
+    """Autoresearch returns needs_user_action when no local coder backend is reachable."""
     async def none_ready(candidate):
+        """Mark local backends offline and any other backend as not probed."""
         if candidate.backend in {"ollama", "lm-studio", "mlx"}:
             return False, "offline"
         return True, "not-probed"
@@ -459,6 +484,7 @@ def test_coder_routes_to_lmstudio_when_ollama_offline():
     from unittest.mock import AsyncMock, patch
 
     async def run():
+        """Run environment initialization with Windows Ollama down and LM Studio up."""
         with (
             patch("perpetua_tools.agent_launcher.check_remote_worker",   new=AsyncMock(return_value=(False, None))),
             patch("perpetua_tools.agent_launcher.check_lmstudio_worker", new=AsyncMock(return_value=(True, 0))),
@@ -483,9 +509,11 @@ def test_affinity_violation_does_not_silent_fallback():
     from unittest.mock import AsyncMock, patch
 
     async def _no_override(exc, timeout=10.0):
+        """Decline the manager affinity override without prompting."""
         return False
 
     async def run():
+        """Run environment initialization with the Mac affinity check failing and no override."""
         with (
             patch("perpetua_tools.agent_launcher.check_remote_worker", new=AsyncMock(return_value=(False, None))),
             patch("perpetua_tools.agent_launcher.check_lmstudio_worker", new=AsyncMock(return_value=(True, 0))),
@@ -606,14 +634,17 @@ def test_manager_affinity_violation_raises_when_no_override(monkeypatch):
     import perpetua_tools.agent_launcher as agent_launcher
 
     def _fake_check(model_id, platform):
+        """Raise an affinity error for Mac and allow every other platform."""
         if platform == "mac":
             raise HardwareAffinityError(f"Model {model_id} not allowed on mac")
 
     async def _lms_win_only(url, timeout=agent_launcher.DETECT_TIMEOUT, _retries=1):
+        """Report only the remote Windows LM Studio URL as reachable."""
         reachable = url == agent_launcher.REMOTE_WINDOWS_LMS_URL
         return (reachable, 0 if reachable else None)
 
     async def _no_override(exc, timeout=10.0):
+        """Decline the manager affinity override (timeout path)."""
         return False
 
     monkeypatch.setattr("perpetua_tools.agent_launcher.check_remote_worker",   AsyncMock(return_value=(False, None)))
@@ -632,14 +663,17 @@ def test_manager_affinity_violation_degrades_gracefully_with_override(monkeypatc
     import perpetua_tools.agent_launcher as agent_launcher
 
     def _fake_check(model_id, platform):
+        """Raise an affinity error for Mac and allow every other platform."""
         if platform == "mac":
             raise HardwareAffinityError(f"Model {model_id} not allowed on mac")
 
     async def _lms_win_only(url, timeout=agent_launcher.DETECT_TIMEOUT, _retries=1):
+        """Report only the remote Windows LM Studio URL as reachable."""
         reachable = url == agent_launcher.REMOTE_WINDOWS_LMS_URL
         return (reachable, 0 if reachable else None)
 
     async def _yes_override(exc, timeout=10.0):
+        """Accept the manager affinity override as the operator would."""
         return True
 
     monkeypatch.setattr("perpetua_tools.agent_launcher.check_remote_worker",   AsyncMock(return_value=(False, None)))
@@ -670,6 +704,7 @@ def test_mac_lms_url_defaults_to_localhost_on_mac(monkeypatch, request):
 
 
 def test_mac_lms_url_heals_stale_lan_env_on_mac(monkeypatch, request):
+    """A stale LAN LM Studio endpoint env var is normalized to localhost on a Mac host."""
     import importlib
     import perpetua_tools.agent_launcher as agent_launcher
 

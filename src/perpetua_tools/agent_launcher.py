@@ -92,6 +92,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 
 def _is_loopback_host(host: str) -> bool:
+    """Return whether *host* is localhost, ::1 or a loopback IP address."""
     if host in ("localhost", "::1"):
         return True
     try:
@@ -183,6 +184,7 @@ class _PinnedAsyncNetworkBackend(httpcore.AsyncNetworkBackend):
         resolved_address: str,
         delegate: httpcore.AsyncNetworkBackend | None = None,
     ) -> None:
+        """Pin connections for *hostname* to *resolved_address* via *delegate* (AnyIO backend by default)."""
         self._hostname = hostname.casefold()
         self._resolved_address = resolved_address
         self._delegate = delegate or httpcore.AnyIOBackend()
@@ -195,6 +197,7 @@ class _PinnedAsyncNetworkBackend(httpcore.AsyncNetworkBackend):
         local_address: str | None = None,
         socket_options: Iterable[httpcore.SOCKET_OPTION] | None = None,
     ) -> httpcore.AsyncNetworkStream:
+        """Connect to the pinned address after checking that the requested host is the pinned hostname."""
         if host.casefold() != self._hostname:
             raise RuntimeError("pinned transport received an unexpected hostname")
         return await self._delegate.connect_tcp(
@@ -211,6 +214,7 @@ class _PinnedAsyncNetworkBackend(httpcore.AsyncNetworkBackend):
         timeout: float | None = None,
         socket_options: Iterable[httpcore.SOCKET_OPTION] | None = None,
     ) -> httpcore.AsyncNetworkStream:
+        """Delegate Unix-socket connections to the wrapped backend."""
         return await self._delegate.connect_unix_socket(
             path,
             timeout=timeout,
@@ -218,24 +222,34 @@ class _PinnedAsyncNetworkBackend(httpcore.AsyncNetworkBackend):
         )
 
     async def sleep(self, seconds: float) -> None:
+        """Delegate sleeping to the wrapped backend."""
         await self._delegate.sleep(seconds)
 
 
 class _HttpcoreAsyncStream(Protocol):
-    def __aiter__(self) -> AsyncIterator[bytes]: ...
+    """Protocol for an httpcore response stream: async iteration over body chunks, and close."""
+    def __aiter__(self) -> AsyncIterator[bytes]:
+        """Iterate over the body chunks."""
+        ...
 
-    async def aclose(self) -> None: ...
+    async def aclose(self) -> None:
+        """Close the stream."""
+        ...
 
 
 class _HttpcoreAsyncByteStream(httpx.AsyncByteStream):
+    """Adapt an httpcore async stream to httpx's AsyncByteStream."""
     def __init__(self, stream: _HttpcoreAsyncStream) -> None:
+        """Wrap *stream*."""
         self._stream = stream
 
     async def __aiter__(self) -> AsyncIterator[bytes]:
+        """Yield the wrapped stream's chunks."""
         async for part in self._stream:
             yield part
 
     async def aclose(self) -> None:
+        """Close the wrapped stream."""
         await self._stream.aclose()
 
 
@@ -243,6 +257,7 @@ class _PinnedAsyncHTTPTransport(httpx.AsyncBaseTransport):
     """HTTPX transport that connects to a validated IP without rewriting URLs."""
 
     def __init__(self, target: _ValidatedDialTarget) -> None:
+        """Create a single-connection pool whose backend dials only the validated address."""
         self._pool = httpcore.AsyncConnectionPool(
             network_backend=_PinnedAsyncNetworkBackend(
                 hostname=target.hostname,
@@ -253,6 +268,7 @@ class _PinnedAsyncHTTPTransport(httpx.AsyncBaseTransport):
         )
 
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        """Send *request* through the pinned pool and wrap the response for httpx."""
         core_request = httpcore.Request(
             method=request.method,
             url=httpcore.URL(
@@ -275,6 +291,7 @@ class _PinnedAsyncHTTPTransport(httpx.AsyncBaseTransport):
         )
 
     async def aclose(self) -> None:
+        """Close the connection pool."""
         await self._pool.aclose()
 
 
@@ -451,6 +468,7 @@ MAC_REQUIRED_OLLAMA_MODELS = tuple(
 
 
 def _served_model_present(served: list[str], required: str) -> bool:
+    """Return whether *required* is served, matching the full name or its name:tag prefix, ignoring case."""
     required_l = required.lower()
     for model in served:
         model_l = str(model).lower()
@@ -858,6 +876,7 @@ async def check_lmstudio_worker(
 # ---------------------------------------------------------------------------
 
 def _log_backend(label: str, ok: bool, url: str) -> None:
+    """Print one backend probe line with a pass or fail mark."""
     status = "✓" if ok else "✗"
     print(f"[agent_launcher]   {status}  {label:<18} {url}")
 
@@ -879,6 +898,7 @@ async def _fetch_models(
     Falls back to an empty list on any error; callers use env-var constants.
     """
     async def _ollama_tags(url: str) -> list[str]:
+        """Return the model names an Ollama endpoint serves, or an empty list on any failure."""
         try:
             target = await asyncio.to_thread(_resolve_and_pin_dial_host, url)
             response = await _pinned_get(target, "/api/tags", timeout=DETECT_TIMEOUT)
@@ -887,6 +907,7 @@ async def _fetch_models(
             return []
 
     async def _lms_models(url: str) -> list[str]:
+        """Return the model ids an LM Studio endpoint lists, or an empty list on any failure."""
         try:
             target = await asyncio.to_thread(_resolve_and_pin_dial_host, url)
             response = await _pinned_get(
@@ -988,6 +1009,7 @@ def _build_routing_state(
     'mac-degraded' dead-end pointing at an unreachable URL.
     """
     def _first(key: str, fallback: str) -> str:
+        """Return the first model in *key*'s bucket, else *fallback*."""
         models = local_models.get(key, [])
         return models[0] if models else fallback
 
@@ -1336,6 +1358,7 @@ def _persist_detected_ips(state: dict) -> None:
 # ---------------------------------------------------------------------------
 
 def save_routing_state(state: dict) -> None:
+    """Write *state* as JSON to STATE_FILE and emit a routing observation when the adapter is available."""
     STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(STATE_FILE, "w") as f:
         json.dump(state, f, indent=2)
@@ -1353,6 +1376,7 @@ def save_routing_state(state: dict) -> None:
 
 
 def load_routing_state() -> dict | None:
+    """Return the saved routing state, or None when no state file exists."""
     if STATE_FILE.exists():
         with open(STATE_FILE) as f:
             return json.load(f)
@@ -1389,6 +1413,7 @@ def interactive_configure() -> None:
 # ---------------------------------------------------------------------------
 
 async def main(args: argparse.Namespace) -> None:
+    """Run the launcher: configure, show saved state, or detect hardware, print routing and optionally write it."""
     if args.configure:
         interactive_configure()
         return

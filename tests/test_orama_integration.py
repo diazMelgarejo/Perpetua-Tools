@@ -308,6 +308,7 @@ class TestRoutingYmlUltrathinkContract:
 
     @pytest.fixture(scope="class")
     def routing(self):
+        """Load config/routing.yml as a dict for the contract tests."""
         import yaml
         routing_yml = REPO_ROOT / "config" / "routing.yml"
         assert routing_yml.exists(), f"Missing: {routing_yml}"
@@ -315,6 +316,7 @@ class TestRoutingYmlUltrathinkContract:
             return yaml.safe_load(f)
 
     def test_deep_reasoning_has_oramasys_default_endpoint(self, routing: dict):
+        """The deep_reasoning route points at the default oramasys endpoint with a 120s timeout."""
         routes = routing["routes"]
         assert "deep_reasoning" in routes
         route = routes["deep_reasoning"]
@@ -322,6 +324,7 @@ class TestRoutingYmlUltrathinkContract:
         assert route["timeout"] == 120
 
     def test_code_analysis_has_oramasys_default_endpoint(self, routing: dict):
+        """The code_analysis route points at the default oramasys endpoint with a 120s timeout."""
         routes = routing["routes"]
         assert "code_analysis" in routes
         route = routes["code_analysis"]
@@ -338,16 +341,19 @@ class TestRoutingYmlUltrathinkContract:
         assert route.get("fallback") == "Qwen3.5-9B-MLX-4bit"
 
     def test_code_analysis_has_ultrathink_fallback(self, routing: dict):
+        """The code_analysis route names local_qwen30b as its fallback."""
         route = routing["routes"]["code_analysis"]
         assert "fallback" in route
         assert route["fallback"] == "local_qwen30b"
 
     def test_deep_reasoning_requires_orama_available(self, routing: dict):
+        """The deep_reasoning route requires orama_available."""
         route = routing["routes"]["deep_reasoning"]
         assert "requires" in route
         assert "orama_available" in route["requires"]
 
     def test_code_analysis_requires_orama_available(self, routing: dict):
+        """The code_analysis route requires orama_available."""
         route = routing["routes"]["code_analysis"]
         assert "requires" in route
         assert "orama_available" in route["requires"]

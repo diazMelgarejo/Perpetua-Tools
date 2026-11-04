@@ -1,3 +1,4 @@
+"""The repository pipeline config resolves ordered Tier-5 candidates within a bounded token budget."""
 from orchestrator.tiered_pipeline import TieredPipelineRunner, tiered_pipeline_enabled
 
 

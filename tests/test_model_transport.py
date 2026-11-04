@@ -16,6 +16,7 @@ from orchestrator.model_registry import ModelRegistry
 
 
 def test_provider_transport_fallback_safety_distinguishes_definitive_and_ambiguous_failures():
+    """ProviderTransportError reports fallback_safe only for definitive failures like 401."""
     assert ProviderTransportError("provider", status_code=401).fallback_safe is True
     assert ProviderTransportError("provider", status_code=500).fallback_safe is False
     assert ProviderTransportError("provider", status_code=502).fallback_safe is False
@@ -51,6 +52,7 @@ async def test_anthropic_configuration_is_validated_before_dispatch_is_committed
 
 @pytest.fixture
 def transport_config(tmp_path):
+    """Write temp models, providers and routing config for three Tier-5 cloud providers."""
     config_dir = tmp_path / "config"
     config_dir.mkdir()
     (config_dir / "devices.yml").write_text("devices: {}\n", encoding="utf-8")
@@ -149,6 +151,7 @@ providers:
 async def test_bigmodel_dispatch_uses_registry_target_and_openai_wire_shape(
     transport_config, monkeypatch
 ) -> None:
+    """BigModel dispatch posts to the registry target in OpenAI wire shape and parses usage."""
     config_dir, providers = transport_config
     monkeypatch.setenv("BIGMODEL_TEST_KEY", "test-key")
     route = respx.post("https://open.bigmodel.cn/api/paas/v4/chat/completions").mock(
@@ -183,6 +186,7 @@ async def test_bigmodel_dispatch_uses_registry_target_and_openai_wire_shape(
 async def test_anthropic_dispatch_uses_native_messages_and_medium_effort(
     transport_config, monkeypatch
 ) -> None:
+    """Anthropic dispatch posts native messages with medium effort and version headers."""
     config_dir, providers = transport_config
     monkeypatch.setenv("ANTHROPIC_TEST_KEY", "test-key")
     route = respx.post("https://api.anthropic.com/v1/messages").mock(
@@ -210,6 +214,7 @@ async def test_anthropic_dispatch_uses_native_messages_and_medium_effort(
 
 @pytest.mark.asyncio
 async def test_transport_rejects_unknown_or_non_tier5_models(tmp_path, monkeypatch) -> None:
+    """Dispatch rejects unknown models and models that are not Tier-5 cloud targets."""
     config_dir = tmp_path / "config_non_tier5"
     config_dir.mkdir()
     (config_dir / "devices.yml").write_text("devices: {}\n", encoding="utf-8")
@@ -259,6 +264,7 @@ async def test_transport_rejects_unknown_or_non_tier5_models(tmp_path, monkeypat
 
 
 def test_static_registry_load_does_not_trigger_active_tilting_discovery(tmp_path, monkeypatch) -> None:
+    """Loading the registry statically does not run active-tilting IP discovery."""
     monkeypatch.delenv("PT_DISABLE_LIVE_MODEL_PROBES", raising=False)
     config_dir = tmp_path / "config"
     config_dir.mkdir()
@@ -280,6 +286,7 @@ def test_static_registry_load_does_not_trigger_active_tilting_discovery(tmp_path
 
 @pytest.mark.asyncio
 async def test_transport_rejects_unallowed_host_and_unverified_provenance(tmp_path, monkeypatch) -> None:
+    """Dispatch rejects a non-allowlisted host and mismatched provider provenance."""
     config_dir = tmp_path / "config_security"
     config_dir.mkdir()
     (config_dir / "devices.yml").write_text("devices: {}\n", encoding="utf-8")
@@ -347,6 +354,7 @@ async def test_transport_rejects_unallowed_host_and_unverified_provenance(tmp_pa
 @pytest.mark.asyncio
 @respx.mock
 async def test_provider_failure_never_echoes_response_body(transport_config, monkeypatch) -> None:
+    """A provider failure error never echoes the response body or the prompt."""
     config_dir, providers = transport_config
     monkeypatch.setenv("BIGMODEL_TEST_KEY", "test-key")
     respx.post("https://open.bigmodel.cn/api/paas/v4/chat/completions").mock(
@@ -367,6 +375,7 @@ async def test_provider_failure_never_echoes_response_body(transport_config, mon
 async def test_openrouter_dispatch_uses_registry_target_and_openai_wire_shape(
     transport_config, monkeypatch
 ) -> None:
+    """OpenRouter dispatch uses the registry target, OpenAI wire shape and reported cost."""
     config_dir, providers = transport_config
     monkeypatch.setenv("OPENROUTER_TEST_KEY", "test-key")
     monkeypatch.delenv("OPENROUTER_HTTP_REFERER", raising=False)
@@ -405,6 +414,7 @@ async def test_openrouter_dispatch_uses_registry_target_and_openai_wire_shape(
 async def test_openrouter_optional_referer_and_title_only_sent_when_configured(
     transport_config, monkeypatch
 ) -> None:
+    """OpenRouter referer and title headers are sent only when their env vars are set."""
     config_dir, providers = transport_config
     monkeypatch.setenv("OPENROUTER_TEST_KEY", "test-key")
     monkeypatch.setenv("OPENROUTER_HTTP_REFERER", "https://example.com")
@@ -427,6 +437,7 @@ async def test_openrouter_optional_referer_and_title_only_sent_when_configured(
 async def test_dispatch_result_has_none_usage_when_provider_omits_it(
     transport_config, monkeypatch
 ) -> None:
+    """Dispatch result has no token or cost figures when the provider omits usage."""
     config_dir, providers = transport_config
     monkeypatch.setenv("BIGMODEL_TEST_KEY", "test-key")
     respx.post("https://open.bigmodel.cn/api/paas/v4/chat/completions").mock(
@@ -450,6 +461,7 @@ async def test_dispatch_result_has_none_usage_when_provider_omits_it(
 async def test_anthropic_usage_sums_input_and_output_tokens_no_cost(
     transport_config, monkeypatch
 ) -> None:
+    """Anthropic usage totals input plus output tokens and reports no cost."""
     config_dir, providers = transport_config
     monkeypatch.setenv("ANTHROPIC_TEST_KEY", "test-key")
     respx.post("https://api.anthropic.com/v1/messages").mock(
