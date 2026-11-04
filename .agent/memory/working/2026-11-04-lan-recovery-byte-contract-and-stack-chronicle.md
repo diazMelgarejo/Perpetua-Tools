@@ -136,3 +136,14 @@ rotate, copy, or normalize credentials while diagnosing a network failure.
 
 No claim of full-repository test coverage, native Windows execution by Mac,
 completed PR merge, or live deployment is made by this chronicle.
+
+## Publication-time concurrent-memory reconciliation
+
+Before publication, PT 477 advanced from `93ae1ed0` to Windows commit
+`e287c688b0a6d74daeb53a78bb403bb62cde9946`, adding six lessons and a Windows
+recovery chronicle. The Mac did not force-push over that contribution. A regular
+two-parent merge preserved Windows' exact JSONL byte prefixes, appended the
+nine local episodic rows and seven local lesson rows, retained all candidate
+files and both chronicles, and regenerated the shared `LESSONS.md` from the
+unified source. These were concurrent, attributed append-only edits, not data
+corruption or a reason to truncate either memory stream.
