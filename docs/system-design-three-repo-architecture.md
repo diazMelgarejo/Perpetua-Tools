@@ -354,7 +354,7 @@ perpetua-tools/local-agents/orchestrator.js
         │
         │  dispatches to best available backend
         ├──► Ollama  127.0.0.1:11435
-        │    primary: GLM-5.1:cloud
+        │    primary: glm-5.3-flash:cloud
         │    fallback: qwen3.5-local:latest
         │
         └──► LM Studio  <YOUR_LAN_IP>:1234

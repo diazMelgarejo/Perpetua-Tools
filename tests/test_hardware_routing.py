@@ -46,7 +46,7 @@ def client():
     async def fake_resolve_routing_state():
         return {
             "manager_endpoint": "http://127.0.2.2:11434",
-            "manager_model": "glm-5.1:cloud",
+            "manager_model": "glm-5.3-flash:cloud",
             "manager_backend": "mac-ollama",
             "coder_endpoint": "http://127.0.2.1:1234",
             "coder_model": QWEN_PRIORITY_MODEL,
@@ -65,7 +65,7 @@ def test_deep_reasoning_routing_by_hardware_profile(registry):
     """
     Verifies that 'deep_reasoning' includes the Mac GLM orchestrator lane.
     deep_reasoning roles: [ultrathink, strategy, top-level, fallback]
-    With preferred_device=mac-studio, glm-5.1:cloud should surface before cloud fallbacks.
+    With preferred_device=mac-studio, glm-5.3-flash:cloud should surface before cloud fallbacks.
     """
     chain = registry.route_task("deep_reasoning", preferred_device="mac-studio")
 
@@ -74,18 +74,18 @@ def test_deep_reasoning_routing_by_hardware_profile(registry):
 
     names = [m.name for m in chain]
 
-    assert "glm-5.1:cloud" in names, "glm-5.1:cloud must be in deep_reasoning chain"
+    assert "glm-5.3-flash:cloud" in names, "glm-5.3-flash:cloud must be in deep_reasoning chain"
     assert "Qwen3.5-9B-MLX-4bit" in names, "Mac LM Studio fallback must remain in chain"
 
     # mac-studio models must be present
     mac_models = [m for m in chain if m.device == "mac-studio"]
     assert len(mac_models) > 0, "Should find at least one Mac model for deep reasoning roles"
 
-    glm_idx = names.index("glm-5.1:cloud")
+    glm_idx = names.index("glm-5.3-flash:cloud")
     general_cloud = [i for i, m in enumerate(chain)
-                     if m.online and m.name not in ("glm-5.1:cloud", "claude-sonnet-5", "claude-sonnet-5-5")]
+                     if m.online and m.name not in ("glm-5.3-flash:cloud", "claude-sonnet-5", "claude-sonnet-5-5")]
     assert all(glm_idx < ci for ci in general_cloud), \
-        "glm-5.1:cloud should appear before general cloud fallbacks"
+        "glm-5.3-flash:cloud should appear before general cloud fallbacks"
 
 def test_normalize_preferred_device_maps_portal_words_before_route_task(registry):
     """Portal device words normalize to registry ids; exact ids are unchanged."""
@@ -257,9 +257,9 @@ def test_pick_mac_manager_matches_preferred_tag_prefix(monkeypatch):
     )
 
     assert agent_launcher._pick_mac_manager(
-        ["glm-5.1:cloud", "bge-m3"],
-        "glm-5.1",
-    ) == "glm-5.1:cloud"
+        ["glm-5.3-flash:cloud", "bge-m3"],
+        "glm-5.3-flash",
+    ) == "glm-5.3-flash:cloud"
 
 
 def test_pick_mac_manager_raises_when_no_mac_affine_model(monkeypatch):
@@ -383,12 +383,12 @@ def test_orchestrate_hardware_selection(monkeypatch, client):
     assert resp.status_code == 200
     data = resp.json()
     assert data["selected_model"]["device"] == "mac-studio"
-    assert data["selected_model"]["name"] == "glm-5.1:cloud"
+    assert data["selected_model"]["name"] == "glm-5.3-flash:cloud"
 
 
 def test_orchestrate_falls_back_to_mac_lmstudio_when_glm_unavailable(monkeypatch, client):
     async def selective_ready(candidate):
-        if candidate.name == "glm-5.1:cloud":
+        if candidate.name == "glm-5.3-flash:cloud":
             return False, "rate-limited"
         return True, "mock-ready"
 

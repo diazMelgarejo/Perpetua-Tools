@@ -8,7 +8,7 @@ version: "0.9.9.8"
 models:
 
   # ── Priority 1 - Top Orchestrator on Mac ──────────────────────────────────
-  - name: "glm-5.1:cloud"
+  - name: "glm-5.3-flash:cloud"
     backend: ollama
     device: mac-studio
     host: "${OLLAMA_HOST:-http://127.0.0.1}"
@@ -27,16 +27,37 @@ models:
     # frugality_tier=4 (free_proprietary): ":cloud" suffix routes through
     # Ollama's hosted cloud gateway (not local weights) -- not local_oss,
     # but no per-token paid API key is configured for it in this repo
-    # (unlike glm-5.2/anthropic/perplexity/xai below), so it is classified
+    # (unlike glm-5.3-flash/anthropic/perplexity/xai below), so it is classified
     # as proprietary-hosted rather than tier-5 paid. Judgment call -- see
     # PT survey report for the reconciliation session that landed this.
     frugality_tier: 4
 
-  # ── ONLINE: BigModel / Zhipu GLM-5.2 (cloud, OpenAI-compatible, thinking) ─
+  # ── Ollama cloud free tier: Reflection Beam ───────────────────────────────
+  - name: "beam:cloud"
+    backend: ollama
+    device: mac-studio
+    host: "${OLLAMA_HOST:-http://127.0.0.1}"
+    port: 11434
+    priority: 11
+    online: true
+    status: "🟡 Free (limited time)"
+    roles:
+      - "long_context"
+      - "general"
+      - "deep_reasoning"
+    description: "Reflection Beam via Ollama cloud — 501B MoE, 1M context"
+    # frugality_tier=4 (free_proprietary): same class as glm-5.3-flash:cloud above -- the
+    # ":cloud" suffix routes through Ollama's hosted gateway, not local weights, and no
+    # per-token key is configured for it here. Ollama announced Beam as free for a limited
+    # time; re-check its terms before relying on it. priority 11 ranks it after every current
+    # first choice (<= 10), so it only takes over when those are unavailable.
+    frugality_tier: 4
+
+  # ── ONLINE: BigModel / Zhipu glm-5.3-flash (cloud, OpenAI-compatible, thinking) ─
   # Endpoint: https://open.bigmodel.cn/api/paas/v4/chat/completions
   # Key: ${OPENCLAW_MODELS_PROVIDERS_BIGMODEL_APIKEY} (gitignored .env.local)
-  - name: "glm-5.2"
-    api_model: "glm-5.2"
+  - name: "glm-5.3-flash"
+    api_model: "glm-5.3-flash"
     backend: bigmodel
     device: cloud
     host: "https://open.bigmodel.cn"
@@ -51,11 +72,13 @@ models:
     priority: 2
     online: true
     reasoning: cloud-thinking
-    description: "GLM-5.2 cloud (BigModel/Zhipu) — thinking-enabled, 131k context"
+    description: "glm-5.3-flash cloud (BigModel/Zhipu) — thinking-enabled, 131k context"
     tier: "primary"
+    # NOTE (2026-11-04 rename glm-5.2 -> glm-5.3-flash): verified_on, context_window, max_tokens
+    # and source_url below predate the rename and were not re-verified; confirm against the provider docs.
     provenance:
       kind: provider-api
-      source_model_id: "glm-5.2"
+      source_model_id: "glm-5.3-flash"
       source_url: "https://docs.bigmodel.cn/api-reference/%E6%A8%A1%E5%9E%8B-api/%E5%AF%B9%E8%AF%9D%E8%A1%A5%E5%85%A8"
       verified_on: "2026-08-11"
     # frugality_tier=5 (paid): direct cloud API, billed per token, requires

@@ -58,7 +58,7 @@ def transport_config(tmp_path):
     (config_dir / "models.yml").write_text(
         """models:
   - name: glm-paid
-    api_model: glm-5.2
+    api_model: glm-5.3-flash
     backend: bigmodel
     device: cloud
     host: https://open.bigmodel.cn
@@ -71,7 +71,7 @@ def transport_config(tmp_path):
     frugality_tier: 5
     provenance:
       kind: provider-api
-      source_model_id: glm-5.2
+      source_model_id: glm-5.3-flash
       source_url: https://docs.bigmodel.cn/api-reference/models
       verified_on: "2026-08-11"
   - name: sonnet-paid
@@ -171,7 +171,7 @@ async def test_bigmodel_dispatch_uses_registry_target_and_openai_wire_shape(
     request = route.calls[0].request
     assert request.headers["authorization"] == "Bearer test-key"
     assert json.loads(request.content) == {
-        "model": "glm-5.2",
+        "model": "glm-5.3-flash",
         "messages": [{"role": "user", "content": "classify this"}],
         "max_tokens": 64,
         "stream": False,
@@ -287,7 +287,7 @@ async def test_transport_rejects_unallowed_host_and_unverified_provenance(tmp_pa
     (config_dir / "models.yml").write_text(
         """models:
   - name: evil-host
-    api_model: glm-5.2
+    api_model: glm-5.3-flash
     backend: bigmodel
     device: cloud
     host: https://evil.example.com
@@ -299,11 +299,11 @@ async def test_transport_rejects_unallowed_host_and_unverified_provenance(tmp_pa
     frugality_tier: 5
     provenance:
       kind: provider-api
-      source_model_id: glm-5.2
+      source_model_id: glm-5.3-flash
       source_url: https://docs.bigmodel.cn/api-reference/models
       verified_on: "2026-08-11"
   - name: mismatched-provenance
-    api_model: glm-5.2
+    api_model: glm-5.3-flash
     backend: bigmodel
     device: cloud
     host: https://open.bigmodel.cn

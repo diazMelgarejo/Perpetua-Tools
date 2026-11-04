@@ -69,9 +69,9 @@ describe("LocalAgentClient — module structure", () => {
     expect(firstCsvValue("")).toBe("");
   });
 
-  it("DEFAULTS.ollama.models has GLM-5.1:cloud as first choice", async () => {
+  it("DEFAULTS.ollama.models has glm-5.3-flash:cloud as first choice", async () => {
     const { DEFAULTS } = await import("../src/client.js");
-    expect(DEFAULTS.ollama.models[0]).toBe("GLM-5.1:cloud");
+    expect(DEFAULTS.ollama.models[0]).toBe("glm-5.3-flash:cloud");
     expect(DEFAULTS.ollama.models[1]).toBe("qwen3.5:9b-mlx");
   });
 });
@@ -85,22 +85,22 @@ describe("OllamaClient", () => {
     OllamaClient = mod.OllamaClient;
   });
 
-  it("resolveModel picks GLM-5.1:cloud when available", async () => {
+  it("resolveModel picks glm-5.3-flash:cloud when available", async () => {
     const client = new OllamaClient({
       baseUrl: "http://127.0.0.1:11435",
-      models: ["GLM-5.1:cloud", "qwen3.5:9b-mlx"],
+      models: ["glm-5.3-flash:cloud", "qwen3.5:9b-mlx"],
     });
 
     // Patch listModels directly
-    client.listModels = async () => ["GLM-5.1:cloud", "qwen3.5:9b-mlx"];
+    client.listModels = async () => ["glm-5.3-flash:cloud", "qwen3.5:9b-mlx"];
     const model = await client.resolveModel();
-    expect(model).toBe("GLM-5.1:cloud");
+    expect(model).toBe("glm-5.3-flash:cloud");
   });
 
   it("resolveModel falls back to qwen3.5:9b-mlx when GLM not present", async () => {
     const client = new OllamaClient({
       baseUrl: "http://127.0.0.1:11435",
-      models: ["GLM-5.1:cloud", "qwen3.5:9b-mlx"],
+      models: ["glm-5.3-flash:cloud", "qwen3.5:9b-mlx"],
     });
     client.listModels = async () => ["qwen3.5:9b-mlx", "llama3:latest"];
     const model = await client.resolveModel();
@@ -109,7 +109,7 @@ describe("OllamaClient", () => {
 
   it("resolveModel falls back to first available if no preferred model found", async () => {
     const client = new OllamaClient({
-      models: ["GLM-5.1:cloud", "qwen3.5:9b-mlx"],
+      models: ["glm-5.3-flash:cloud", "qwen3.5:9b-mlx"],
     });
     client.listModels = async () => ["mistral:latest"];
     const model = await client.resolveModel();
@@ -117,17 +117,17 @@ describe("OllamaClient", () => {
   });
 
   it("resolveModel throws when no models available at all", async () => {
-    const client = new OllamaClient({ models: ["GLM-5.1:cloud"] });
+    const client = new OllamaClient({ models: ["glm-5.3-flash:cloud"] });
     client.listModels = async () => [];
     await expect(client.resolveModel()).rejects.toThrow(/No preferred models/);
   });
 
   it("complete returns { ok, model, backend, text } on success", async () => {
-    const client = new OllamaClient({ models: ["GLM-5.1:cloud"] });
-    client.resolveModel = async () => "GLM-5.1:cloud";
+    const client = new OllamaClient({ models: ["glm-5.3-flash:cloud"] });
+    client.resolveModel = async () => "glm-5.3-flash:cloud";
     client.complete = async (opts) => ({
       ok: true,
-      model: "GLM-5.1:cloud",
+      model: "glm-5.3-flash:cloud",
       backend: "ollama",
       text: "This is the answer.",
     });
@@ -243,7 +243,7 @@ describe("LocalAgentClient — unified interface", () => {
 
   it("healthCheck returns status for both backends", async () => {
     const client = new LocalAgentClient();
-    client.ollama.ping   = async () => ({ ok: true,  backend: "ollama",   model: "GLM-5.1:cloud" });
+    client.ollama.ping   = async () => ({ ok: true,  backend: "ollama",   model: "glm-5.3-flash:cloud" });
     client.lmstudio.ping = async () => ({ ok: false, backend: "lmstudio", error: "not running" });
 
     const health = await client.healthCheck();
@@ -263,7 +263,7 @@ describe("LocalAgentClient — unified interface", () => {
 
   it("listAllModels preserves legacy arrays and adds callable metadata", async () => {
     const client = new LocalAgentClient();
-    client.ollama.listModels = async () => ["GLM-5.1:cloud"];
+    client.ollama.listModels = async () => ["glm-5.3-flash:cloud"];
     client.lmstudio.listModelDetails = async () => [{
       id: "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2",
       model: "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2",
@@ -275,7 +275,7 @@ describe("LocalAgentClient — unified interface", () => {
     }];
 
     const models = await client.listAllModels();
-    expect(models.ollama).toEqual(["GLM-5.1:cloud"]);
+    expect(models.ollama).toEqual(["glm-5.3-flash:cloud"]);
     expect(models.lmstudio).toEqual(["qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2"]);
     expect(models.loaded.lmstudio[0].callable).toBe(true);
     expect(models.callable.map(model => model.backend)).toEqual(["ollama", "lmstudio"]);

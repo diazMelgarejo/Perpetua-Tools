@@ -401,7 +401,7 @@ if RUNNING_ON_MAC and _p_mac.hostname and not _is_loopback_host(_p_mac.hostname)
     _ollama_mac_endpoint = _healed_mac
 LOCAL_MAC_HOST, LOCAL_MAC_PORT = _loopback_host_from_endpoint(_ollama_mac_endpoint, default_port=11434)
 LOCAL_MAC_URL = _ollama_mac_endpoint if "://" in _ollama_mac_endpoint else f"http://{LOCAL_MAC_HOST}:{LOCAL_MAC_PORT}"
-MAC_MANAGER_MODEL = os.getenv("MAC_MANAGER_MODEL", "glm-5.1:cloud")
+MAC_MANAGER_MODEL = os.getenv("MAC_MANAGER_MODEL", "glm-5.3-flash:cloud")
 
 # Mac LM Studio — locality-aware default (mirrors Ollama block above).
 _default_mac_lms_endpoint = (

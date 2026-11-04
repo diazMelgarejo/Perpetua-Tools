@@ -101,7 +101,7 @@ _startup_log = logging.getLogger("orchestrator.fastapi_app")
 # "..") outright, before it ever reaches the filesystem layer -- the second,
 # independent containment check there is defense-in-depth, not the only gate.
 _TRACE_ID_PATTERN = r"^%s$" % TRACE_ID_PATTERN
-_GLM_ORCHESTRATOR_MODEL = "glm-5.1:cloud"
+_GLM_ORCHESTRATOR_MODEL = "glm-5.3-flash:cloud"
 _AUTORESEARCH_TASK_TYPES = {"autoresearch", "autoresearch-coder", "ml-experiment"}
 _LOCAL_RUNTIME_BACKENDS = {"ollama", "lm-studio", "mlx"}
 def _resolve_health_lm_studio_candidates() -> list[str]:

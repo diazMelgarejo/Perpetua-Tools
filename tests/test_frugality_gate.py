@@ -181,7 +181,7 @@ class TestLoadFrugalityTierByName:
 
     def test_paid_cloud_models_are_classified_tier_3_or_above(self):
         tiers = load_frugality_tier_by_name()
-        assert tiers["glm-5.2"] >= 3
+        assert tiers["glm-5.3-flash"] >= 3
         assert tiers["sonar-reasoning-pro"] >= 3
         assert tiers["claude-sonnet-5"] >= 3
         assert tiers["claude-sonnet-5-5"] >= 3

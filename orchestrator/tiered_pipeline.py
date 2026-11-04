@@ -26,7 +26,7 @@ PIPELINE_TIER = 5
 # Operator-default pipeline pools include Mac-local fallbacks before paid cloud.
 _PIPELINE_NON_TIER5_ALLOWLIST = frozenset(
     {
-        "glm-5.1:cloud",
+        "glm-5.3-flash:cloud",
         "Qwen3.5-9B-MLX-4bit",
     }
 )

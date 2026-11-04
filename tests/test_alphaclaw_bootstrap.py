@@ -153,7 +153,7 @@ def test_build_openclaw_config_prefers_routing_state_for_ollama_mac(monkeypatch)
         pt={
             "manager_backend": "mac-ollama",
             "manager_endpoint": "http://localhost:11434",
-            "manager_model": "glm-5.1:cloud",
+            "manager_model": "glm-5.3-flash:cloud",
             "coder_backend": "mac-degraded",
             "mac_lmstudio_ok": False,
         }
@@ -168,7 +168,7 @@ def test_build_openclaw_config_heals_stale_lan_routing_json_on_mac(monkeypatch):
         pt={
             "manager_backend": "mac-ollama",
             "manager_endpoint": "http://127.0.9.3:11434",
-            "manager_model": "glm-5.1:cloud",
+            "manager_model": "glm-5.3-flash:cloud",
             "mac_lmstudio_endpoint": "http://127.0.9.3:1234",
             "coder_backend": "mac-degraded",
             "mac_lmstudio_ok": True,

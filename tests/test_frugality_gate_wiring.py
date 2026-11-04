@@ -77,7 +77,7 @@ class TestRouteTaskOfflineNeverReturnsPaidRemote:
         chain = registry.route_task("default")
         names = {m.name for m in chain}
         for paid_or_remote in (
-            "glm-5.2",
+            "glm-5.3-flash",
             "sonar-reasoning-pro",
             "claude-sonnet-5",
             "claude-sonnet-5-5",
@@ -95,15 +95,15 @@ class TestRouteTaskOfflineNeverReturnsPaidRemote:
         names = {m.name for m in chain}
         assert "claude-sonnet-5" not in names
         assert "claude-sonnet-5-5" not in names
-        assert "glm-5.2" not in names
-        assert "glm-5.1:cloud" not in names
+        assert "glm-5.3-flash" not in names
+        assert "glm-5.3-flash:cloud" not in names
 
     def test_default_route_unchanged_when_offline_flag_not_set(self, registry, monkeypatch):
         monkeypatch.delenv("ORAMASYS_OFFLINE", raising=False)
         chain = registry.route_task("default")
         names = {m.name for m in chain}
         # Pure superset behavior: nothing dropped when no policy is active.
-        assert "glm-5.2" in names
+        assert "glm-5.3-flash" in names
         assert "claude-sonnet-5" in names
         assert "claude-sonnet-5-5" in names
 

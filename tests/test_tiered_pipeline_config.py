@@ -11,14 +11,14 @@ def test_repository_pipeline_config_resolves_ordered_tier_five_candidates(monkey
 
     assert tiered_pipeline_enabled() is True
     assert recipe.stages[0].models == (
-        "glm-5.2",
-        "glm-5.1:cloud",
+        "glm-5.3-flash",
+        "glm-5.3-flash:cloud",
         "Qwen3.5-9B-MLX-4bit",
         "claude-sonnet-5-5",
     )
     assert recipe.stages[1].models == (
-        "glm-5.2",
-        "glm-5.1:cloud",
+        "glm-5.3-flash",
+        "glm-5.3-flash:cloud",
         "claude-sonnet-5-5",
         "Qwen3.5-9B-MLX-4bit",
     )
