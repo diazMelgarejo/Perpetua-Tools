@@ -1,0 +1,44 @@
+{
+  "id": "887a8c7414b1",
+  "key": "manual_887a8c",
+  "name": "manual_887a8c",
+  "claim": "Before a restart-from-main, compare git ls-remote origin refs/heads/main with each run worktree HEAD and read each related PR state; do not trust a done claim. If a PR is still open its repository's main has not moved, the update step has nothing to do, and the response must say so plainly and name the PR instead of reporting a refreshed stack.",
+  "conditions": [
+    "ls-remote",
+    "main",
+    "open-pr",
+    "remote",
+    "restart",
+    "state",
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-11-04T05:54:26.423124+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T05:54:26.423124+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-04T05:54:26.423124+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T05:54:26.641025+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-04: the operator said all PRs were done and asked for a restart from main, but one Perpetua-Tools PR was still open. Comparing git ls-remote origin main with each run worktree HEAD and reading the PR state showed both run worktrees already matched main, so the restart had nothing to update and the open PR had to be reported instead of assumed merged.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-04T05:54:26.423124+00:00"
+      ],
+      "lessons_sha": "376ffebb0c36"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T05:54:26.641025+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-04: the operator said all PRs were done and asked for a restart from main, but one Perpetua-Tools PR was still open. Comparing git ls-remote origin main with each run worktree HEAD and reading the PR state showed both run worktrees already matched main, so the restart had nothing to update and the open PR had to be reported instead of assumed merged."
+}

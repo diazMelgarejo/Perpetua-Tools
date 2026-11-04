@@ -67,6 +67,15 @@ No host names, addresses, paths, tokens or fingerprints are recorded here.
 14. **Fixed receiver verified.** A self-test through Windows' own 8443 stored LF, CRLF, BOM and
     mixed-ending files byte-exact. The Mac was asked for one fresh canary so Windows can return
     the fixed-receiver receipt.
+16. **Operator restart from main.** After the operator reported all work done, a second ordinary
+    `start.ps1` run escaped the job again and brought all four services up. Both run checkouts
+    already matched `origin/main` (orama with 467-470; PT unchanged), because the PT memory PR was
+    still open, so the update step had nothing to do. LAN checks repeated: `/health` 200, inbox
+    401 unauthenticated and 200 authenticated, `/api/status` 2.4 s. A PowerShell 5.1 quoting
+    failure in a status query (jq template with embedded quotes) was caught and the check redone.
+17. **Waiting on the Mac.** No fresh Mac canary had arrived by then; the inbox held only Windows'
+    own self-test files and the canary request. The receipt stays pending, and Windows does not
+    claim it from its own self-test.
 15. **Attribution.** Windows notes, reviews and PR comments carry the repo's core envelope
     (`agent_id`/`executor_id: claude`, harness, host role, model).
 
@@ -76,7 +85,8 @@ No host names, addresses, paths, tokens or fingerprints are recorded here.
   source SHA-256).
 - Mac backlog delivery after reconciling the seven files received 02:39:08-02:39:19.
 - The second Windows node (RTX 5080) is unreachable and has no TLS front end; nothing is queued.
-- Merge of this memory PR is the operator's.
+- Merge of this memory PR is the operator's; after it merges, the next `start.ps1` run moves the
+  PT run checkout to the new main by itself.
 
 See also `2026-11-04-lan-recovery-byte-contract-and-stack-chronicle.md` (the Mac/Codex view).
 
@@ -91,3 +101,6 @@ on Windows), `lesson_730bdf7693ba` (keep the TLS and credential gates during out
 stray files removed by follow-up commit), `lesson_ba2f996e4225` (mutation-check guard tests),
 `lesson_8c587f1048f7` (revisit size and hash consumers when a storage contract changes),
 `lesson_1b7659a17ce7` (merge-commit PR stacks, launcher bootstrap, confirm GitHub writes).
+After the operator restart: `lesson_2d8daa78832b` (self-test the receiver through its own front end),
+`lesson_887a8c7414b1` (verify remote state before a restart; an open PR means main has not moved),
+`lesson_52d2417cf893` (PowerShell 5.1 strips quotes in native-exe arguments such as gh jq templates).
