@@ -90,14 +90,21 @@ No host names, addresses, paths, tokens or fingerprints are recorded here.
     failures appeared that local hooks missed (PT hygiene and markdownlint, orama aguara) and were
     fixed. New memory commits on the parent PT 477 after the stack was built are not in the child;
     merge in order.
+21. **Fresh canary received.** After the patched receiver went live, the Mac's fresh canary arrived at
+    07:19:10Z: 304 bytes stored, equal to the sidecar's byte count, and the sidecar's SHA-256 equals the
+    stored file's. Raw and LF-normalized hashes match because this canary has no CRLF; byte-exact CRLF,
+    BOM and mixed endings were shown earlier by the receiver self-test. The receipt is computed but has
+    not been returned to the Mac. The companion chronicle records the Mac's outbox reconciliation (six
+    Windows-destined items terminal delivered, one direct accept, no resend).
 15. **Attribution.** Windows notes, reviews and PR comments carry the repo's core envelope
     (`agent_id`/`executor_id: claude`, harness, host role, model).
 
 ## Still open
 
-- The fixed-receiver canary receipt for the Mac's next canary (raw SHA-256 should now equal the
-  source SHA-256).
-- Mac backlog delivery after reconciling the seven files received 02:39:08-02:39:19.
+- Return the fixed-receiver receipt for the Mac's fresh canary (computed locally, not yet sent).
+- Ownership mapping for seven preserved other-node or unspecified-destination Mac records. The six
+  Windows-destined outbox records are terminal delivered and the seventh was directly accepted, so no
+  resend is required (see the companion chronicle).
 - The second Windows node (RTX 5080) is unreachable and has no TLS front end; nothing is queued.
 - Merge of this memory PR is the operator's; after it merges, the next `start.ps1` run moves the
   PT run checkout to the new main by itself.
