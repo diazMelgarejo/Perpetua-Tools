@@ -39,4 +39,5 @@ def test_beam_cloud_ranks_after_every_current_first_choice() -> None:
     assert beam["priority"] > LAST_CURRENT_FIRST_CHOICE_PRIORITY
     assert beam["priority"] > models["glm-5.3-flash:cloud"]["priority"]
     assert beam["priority"] > models["Qwen3.5-9B-MLX-4bit"]["priority"]
+    assert beam["roles"], "beam:cloud must declare at least one routing role"
     assert set(beam["roles"]) <= set(models["glm-5.3-flash:cloud"]["roles"])

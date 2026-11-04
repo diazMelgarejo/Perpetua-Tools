@@ -4,7 +4,8 @@ enabled: true
 # Tier-5 execution is approval-gated. Candidate pools are ordered, validated against
 # the canonical model registry, and tried until one real provider request
 # confirms adapter, model, endpoint, and credential readiness. Operators can
-# prepend an eligible registered model with PIPELINE_<ALIAS>_MODEL.
+# prepend an eligible registered model with PIPELINE_<ALIAS>_MODEL. Retired GLM names in an
+# override (glm-5.1, glm-5.1:cloud, glm-5.2) are mapped to glm-5.3-flash with a warning.
 models:
   fast:
     candidates:

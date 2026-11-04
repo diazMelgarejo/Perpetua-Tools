@@ -19,6 +19,7 @@ from typing import Awaitable, Callable, Mapping
 import yaml
 
 from orchestrator.gate import gate_permits, load_backend_by_name, load_frugality_tier_by_name
+from orchestrator.legacy_model_names import canonical_model_name
 
 _log = logging.getLogger(__name__)
 
@@ -471,6 +472,8 @@ class TieredPipelineRunner:
                 )
             override = os.getenv("PIPELINE_%s_MODEL" % alias.upper(), "").strip()
             if override:
+                # A retired GLM name set before the registry rename maps to its replacement.
+                override = canonical_model_name(override, "PIPELINE_%s_MODEL" % alias.upper())
                 candidates = [override] + [
                     candidate for candidate in candidates if candidate != override
                 ]

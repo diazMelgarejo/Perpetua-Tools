@@ -44,6 +44,7 @@ from utils.model_endpoint_url import (
     validate_model_endpoint_url,
 )
 from orchestrator.backend_resolver import resolve_backend_for_spec
+from orchestrator.legacy_model_names import canonical_model_name
 from orchestrator.startup_intelligence import (
     StartupScenario,
     classify_scenario,
@@ -401,7 +402,9 @@ if RUNNING_ON_MAC and _p_mac.hostname and not _is_loopback_host(_p_mac.hostname)
     _ollama_mac_endpoint = _healed_mac
 LOCAL_MAC_HOST, LOCAL_MAC_PORT = _loopback_host_from_endpoint(_ollama_mac_endpoint, default_port=11434)
 LOCAL_MAC_URL = _ollama_mac_endpoint if "://" in _ollama_mac_endpoint else f"http://{LOCAL_MAC_HOST}:{LOCAL_MAC_PORT}"
-MAC_MANAGER_MODEL = os.getenv("MAC_MANAGER_MODEL", "glm-5.3-flash:cloud")
+MAC_MANAGER_MODEL = canonical_model_name(
+    os.getenv("MAC_MANAGER_MODEL", "glm-5.3-flash:cloud"), "MAC_MANAGER_MODEL"
+)
 
 # Mac LM Studio — locality-aware default (mirrors Ollama block above).
 _default_mac_lms_endpoint = (
