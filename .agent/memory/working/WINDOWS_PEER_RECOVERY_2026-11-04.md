@@ -104,3 +104,6 @@ stray files removed by follow-up commit), `lesson_ba2f996e4225` (mutation-check 
 After the operator restart: `lesson_2d8daa78832b` (self-test the receiver through its own front end),
 `lesson_887a8c7414b1` (verify remote state before a restart; an open PR means main has not moved),
 `lesson_52d2417cf893` (PowerShell 5.1 strips quotes in native-exe arguments such as gh jq templates).
+Review correction: the first lesson was briefly edited in place to add a fetch step; graduated records are
+append-only, so it was restored byte-for-byte and the step now lives in `lesson_8fc616b014f6`, which supersedes
+`lesson_e93d89b467e5` (fetch `origin main` in each repository before moving run worktrees).
