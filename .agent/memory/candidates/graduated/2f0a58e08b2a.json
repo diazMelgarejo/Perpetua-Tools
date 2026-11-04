@@ -1,0 +1,43 @@
+{
+  "id": "2f0a58e08b2a",
+  "key": "manual_2f0a58",
+  "name": "manual_2f0a58",
+  "claim": "Port a self-improvement patch into the canonical skill and reference docs, never a managed thin wrapper, and review it against repo rules first: shared stash stack and merge-only git, existing tools and their safe defaults (for archives, hermes_portable_brain.py excludes secrets unless asked), and the OSSF-1 validator that rejects edits to a non-compliant canonical card. Leave the local wrapper to the installer refresh and say which of your own additions need human review.",
+  "conditions": [
+    "canonical",
+    "hermes",
+    "patch",
+    "review",
+    "self-improve",
+    "wrapper"
+  ],
+  "evidence_ids": [
+    "2026-11-04T09:04:06.908416+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T09:04:06.908416+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-04T09:04:06.908416+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T09:04:07.130498+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-04: a Hermes self-improvement run patched a managed thin wrapper with workflow content and a hand-picked archive list that bundled secrets by default. The installer rewrites managed wrappers (created_by agent), so the patch would be lost, and the repo already had a portable archive tool whose safe default excludes secrets.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-04T09:04:06.908416+00:00"
+      ],
+      "lessons_sha": "f20ff71e00d1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T09:04:07.130498+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-04: a Hermes self-improvement run patched a managed thin wrapper with workflow content and a hand-picked archive list that bundled secrets by default. The installer rewrites managed wrappers (created_by agent), so the patch would be lost, and the repo already had a portable archive tool whose safe default excludes secrets."
+}

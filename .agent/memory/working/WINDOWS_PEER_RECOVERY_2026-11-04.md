@@ -77,6 +77,19 @@ No host names, addresses, paths, tokens or fingerprints are recorded here.
 17. **Waiting on the Mac.** No fresh Mac canary had arrived by then; the inbox held only Windows'
     own self-test files and the canary request. The receipt stays pending, and Windows does not
     claim it from its own self-test.
+18. **GLM rename and skill migration.** The model name glm-5.1/5.2 became glm-5.3-flash across live
+    code, config, tests and docs in both repositories (PRs orama 472 and 473, PT 479), plus a
+    free-tier `beam:cloud` registry entry. Identifiers tied to secrets and installed paths,
+    free-tier model ids, and dated or append-only history were left alone. Five skills had to be
+    migrated to the OSSF-1 format before their rename could be committed.
+19. **Hermes patch port.** A self-improvement patch to a managed thin wrapper was reviewed and ported
+    into the canonical card and its docs (orama 474), corrected to the merge-only rule and the
+    portable-archive tool's safe defaults.
+20. **Stacking.** orama 472 -> 473 -> 474 and PT 477 -> 479 were stacked by ancestry with every base
+    on main (CI only runs there); the merge order was proven in throwaway worktrees. Three CI
+    failures appeared that local hooks missed (PT hygiene and markdownlint, orama aguara) and were
+    fixed. New memory commits on the parent PT 477 after the stack was built are not in the child;
+    merge in order.
 15. **Attribution.** Windows notes, reviews and PR comments carry the repo's core envelope
     (`agent_id`/`executor_id: claude`, harness, host role, model).
 
@@ -111,3 +124,6 @@ append-only, so it was restored byte-for-byte and the step now lives in `lesson_
 Review correction 2: `lesson_887a8c7414b1` inferred that an open PR means a repository's main has not moved,
 which is false (other merges can move main). `lesson_850cfdc65ff9` supersedes it: decide a restart only from
 `git ls-remote` versus each run worktree HEAD; PR state is context, never evidence about main.
+Stacking and CI gates: `lesson_551f8328531f` (stack by ancestry with bases on main), `lesson_2e6c39c24e18`
+(PT hygiene and markdownlint before pushing), `lesson_b37924f47125` (no literal dotenv names in skill docs),
+`lesson_2f0a58e08b2a` (port self-improvement patches to the canonical skill).
