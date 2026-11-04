@@ -38,8 +38,8 @@ fallback_backend: ollama       # mlx-lm via CLI is also a valid alternative
 # M4 Pro 12-core: ~3900-4000 SC | ~20000 MC | ~90k-110k Metal (+45-55% over M2 Pro)
 
 recommended_models:
-  - id: glm-5.1:cloud
-    ollama_tag: glm-5.1:cloud
+  - id: glm-5.3-flash:cloud
+    ollama_tag: glm-5.3-flash:cloud
     backend: ollama
     roles: [orchestrator, strategy, architecture, top-level]
     min_unified_memory_gb: 16
@@ -75,7 +75,7 @@ recommended_models:
     min_unified_memory_gb: 16
     notes: "Known backup fallback model. Keep documented, but do not treat as the primary Mac orchestrator."
 
-default_primary_model: glm-5.1:cloud
+default_primary_model: glm-5.3-flash:cloud
 default_fallback_model: Qwen3.5-9B-MLX-4bit
 ```
 
@@ -222,7 +222,7 @@ that exceeds the profile's VRAM/RAM ceiling.
 
 | Role | Preferred Hardware | Model | Constraint |
 |---|---|---|---|
-| `orchestrator` / `strategy` / `architecture` | mac-studio | glm-5.1:cloud via local Ollama | live probe must pass |
+| `orchestrator` / `strategy` / `architecture` | mac-studio | glm-5.3-flash:cloud via local Ollama | live probe must pass |
 | `final-validator` / `presenter` | mac-studio | Qwen3.5-9B-MLX-4bit (LM Studio) | NEVER_WIN; context≤4096 conservative |
 | `coder` / `checker` / `executor` / `verifier` / `autoresearch-coder` | win-rtx3080 | Qwen3.5-27B (LM Studio) | NEVER_MAC; gpu_offload=40, context≤16384 |
 | `refiner` / `subagent` | win-rtx3080 | Qwen3.5-27B (LM Studio) | NEVER_MAC; gpu_offload=40 |
@@ -240,7 +240,7 @@ that exceeds the profile's VRAM/RAM ceiling.
 ## Fallback Degradation Chain
 
 ```
-Ollama Mac (port 11434)    ← primary thin orchestrator: glm-5.1:cloud when probe passes
+Ollama Mac (port 11434)    ← primary thin orchestrator: glm-5.3-flash:cloud when probe passes
   ↓ GLM offline / rate-limited
 LM Studio Win (port 1234)  ← primary heavy coder: Qwen3.5-27B, gpu_offload=40, context 16384
   ↓ Win offline / LM Studio not running

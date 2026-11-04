@@ -1,3 +1,4 @@
+"""Tests for perpetua_tools.alphaclaw_bootstrap: endpoint healing, routing state, gateway."""
 from __future__ import annotations
 
 import asyncio
@@ -153,7 +154,7 @@ def test_build_openclaw_config_prefers_routing_state_for_ollama_mac(monkeypatch)
         pt={
             "manager_backend": "mac-ollama",
             "manager_endpoint": "http://localhost:11434",
-            "manager_model": "glm-5.1:cloud",
+            "manager_model": "glm-5.3-flash:cloud",
             "coder_backend": "mac-degraded",
             "mac_lmstudio_ok": False,
         }
@@ -168,7 +169,7 @@ def test_build_openclaw_config_heals_stale_lan_routing_json_on_mac(monkeypatch):
         pt={
             "manager_backend": "mac-ollama",
             "manager_endpoint": "http://127.0.9.3:11434",
-            "manager_model": "glm-5.1:cloud",
+            "manager_model": "glm-5.3-flash:cloud",
             "mac_lmstudio_endpoint": "http://127.0.9.3:1234",
             "coder_backend": "mac-degraded",
             "mac_lmstudio_ok": True,
@@ -180,6 +181,7 @@ def test_build_openclaw_config_heals_stale_lan_routing_json_on_mac(monkeypatch):
 
 
 def test_validate_pt_state_accepts_valid_routing_json():
+    """A valid routing.json dict, including unknown extra fields, is returned unchanged."""
     state = {
         "mac_lmstudio_endpoint": "http://localhost:1234",
         "manager_endpoint": "http://127.0.9.3:11434",
@@ -191,6 +193,7 @@ def test_validate_pt_state_accepts_valid_routing_json():
 
 
 def test_validate_pt_state_rejects_non_rfc1918_endpoint():
+    """A public manager_endpoint host is rejected as non-RFC-1918."""
     with pytest.raises(ValueError, match="non-RFC-1918"):
         alphaclaw_bootstrap._validate_pt_state(
             {"manager_endpoint": "http://8.8.8.8:11434"}
@@ -224,6 +227,7 @@ def test_validate_pt_state_accepts_cloud_fallback_routing(state, backend):
 
 
 def test_validate_pt_state_rejects_spoofed_cloud_coder_endpoint():
+    """A coder_endpoint on a disallowed cloud host is rejected."""
     with pytest.raises(ValueError, match="disallowed cloud host"):
         alphaclaw_bootstrap._validate_pt_state(
             {
@@ -234,6 +238,7 @@ def test_validate_pt_state_rejects_spoofed_cloud_coder_endpoint():
 
 
 def test_load_pt_state_accepts_cloud_fallback_file(tmp_path, monkeypatch):
+    """_load_pt_state accepts a routing.json file with a cloud fallback coder."""
     routing = tmp_path / "routing.json"
     routing.write_text(
         json.dumps(
@@ -252,6 +257,7 @@ def test_load_pt_state_accepts_cloud_fallback_file(tmp_path, monkeypatch):
 
 
 def test_load_pt_state_validates_file(tmp_path, monkeypatch):
+    """_load_pt_state validates the file and rejects a non-RFC-1918 endpoint."""
     routing = tmp_path / "routing.json"
     routing.write_text(
         '{"manager_endpoint": "http://8.8.8.8:11434"}', encoding="utf-8"
@@ -353,6 +359,7 @@ def test_validate_pt_state_accepts_cloud_fallback_routing(state, backend):
 
 
 def test_validate_pt_state_rejects_spoofed_cloud_coder_endpoint():
+    """A coder_endpoint on a disallowed cloud host is rejected."""
     with pytest.raises(ValueError, match="disallowed cloud host"):
         alphaclaw_bootstrap._validate_pt_state(
             {
@@ -363,6 +370,7 @@ def test_validate_pt_state_rejects_spoofed_cloud_coder_endpoint():
 
 
 def test_validate_pt_state_rejects_http_cloud_coder_endpoint():
+    """A cloud coder_endpoint using plain http is rejected for requiring https."""
     with pytest.raises(ValueError, match="must use https"):
         alphaclaw_bootstrap._validate_pt_state(
             {
@@ -373,6 +381,7 @@ def test_validate_pt_state_rejects_http_cloud_coder_endpoint():
 
 
 def test_load_pt_state_accepts_cloud_fallback_file(tmp_path, monkeypatch):
+    """_load_pt_state accepts a routing.json file with a cloud fallback coder."""
     routing = tmp_path / "routing.json"
     routing.write_text(
         json.dumps(
@@ -579,32 +588,40 @@ def test_validate_endpoint_host_rejects_ipv4_mapped_link_local():
             "manager_endpoint", "http://[::ffff:169.254.169.254]"
         )
 def test_validate_endpoint_host_rejects_missing_hostname():
+    """An endpoint URL with no hostname is rejected."""
     with pytest.raises(ValueError, match="missing a hostname"):
         alphaclaw_bootstrap._validate_endpoint_host("manager_endpoint", "http://")
 
 
 def test_start_openclaw_gateway_closes_log_handle_when_popen_fails(tmp_path, monkeypatch):
+    """The gateway starter closes its log file handle and returns None when Popen fails."""
     real_open = builtins.open
     opened = []
 
     class TrackingFile:
+        """File wrapper that records whether close() was called."""
         def __init__(self, fh):
+            """Wrap the given file handle."""
             self._fh = fh
             self.closed_by_wrapper = False
 
         def close(self):
+            """Mark the wrapper closed and close the underlying file."""
             self.closed_by_wrapper = True
             return self._fh.close()
 
         def __getattr__(self, name):
+            """Delegate attribute access to the wrapped file."""
             return getattr(self._fh, name)
 
     def tracking_open(file, *args, **kwargs):
+        """Replacement for open() that returns and records TrackingFile wrappers."""
         fh = TrackingFile(real_open(file, *args, **kwargs))
         opened.append(fh)
         return fh
 
     def fail_popen(*_args, **_kwargs):
+        """Replacement for Popen that always raises OSError."""
         raise OSError("boom")
 
     monkeypatch.setattr(alphaclaw_bootstrap.shutil, "which", lambda _name: "openclaw")
@@ -625,12 +642,15 @@ def test_start_openclaw_gateway_closes_log_handle_when_popen_fails(tmp_path, mon
 
 
 def test_gateway_port_from_url_extracts_non_default_port():
+    """The port is extracted from a gateway URL with a non-default port."""
     assert alphaclaw_bootstrap._gateway_port_from_url("http://127.0.0.1:19001") == 19001
 
 
 @pytest.mark.asyncio
 async def test_bootstrap_commandeer_sets_gateway_port(monkeypatch, tmp_path):
+    """Bootstrap adopts an already-running gateway and reports its URL and port."""
     async def _find_gateway():
+        """Stub gateway finder returning a fixed local gateway URL."""
         return "http://127.0.0.1:19001"
 
     monkeypatch.setattr(alphaclaw_bootstrap, "_find_any_gateway", _find_gateway)
@@ -652,12 +672,15 @@ async def test_bootstrap_commandeer_sets_gateway_port(monkeypatch, tmp_path):
 
 @pytest.mark.asyncio
 async def test_bootstrap_tries_bare_openclaw_before_npm_check(monkeypatch, tmp_path):
+    """Bootstrap tries bare openclaw first and never reaches the npm check when it succeeds."""
     calls: list[str] = []
 
     async def _no_gateway():
+        """Stub gateway finder that finds no running gateway."""
         return None
 
     async def _openclaw_ok(*_args, **_kwargs):
+        """Stub bare-openclaw bootstrap that records the call and reports a ready gateway."""
         calls.append("openclaw")
         return {
             "ok": True,
@@ -667,6 +690,7 @@ async def test_bootstrap_tries_bare_openclaw_before_npm_check(monkeypatch, tmp_p
         }
 
     def _no_npm(_name):
+        """Stub shutil.which that records npm lookups and finds nothing."""
         if _name == "npm":
             calls.append("npm")
         return None
@@ -684,6 +708,7 @@ async def test_bootstrap_tries_bare_openclaw_before_npm_check(monkeypatch, tmp_p
 
 
 def test_build_openclaw_config_wires_perplexity_cloud_coder(monkeypatch):
+    """A perplexity cloud coder state yields a perplexity provider and coder primary model."""
     monkeypatch.setenv("PERPLEXITY_API_KEY", "pplx-test-key-12345")
     pt = {
         "coder_backend": "perplexity",
@@ -703,6 +728,7 @@ def test_build_openclaw_config_wires_perplexity_cloud_coder(monkeypatch):
 
 
 def test_build_openclaw_config_wires_anthropic_cloud_coder(monkeypatch):
+    """An anthropic cloud coder state yields an anthropic provider and coder primary model."""
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-key-67890")
     pt = {
         "coder_backend": "anthropic",

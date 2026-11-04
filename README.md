@@ -37,7 +37,7 @@ Four interoperable, independently configurable layers:
   already exists for the same role and task, **ask the user** before creating another (or pass
   `force=true` on `POST /orchestrate` after explicit confirmation).
 - **Fallback logic**: local → online, device-preferred → shared → cloud.
-- **Per-device**: Mac (`glm-5.1:cloud` via local Ollama, with LM Studio verifier/orchestrator
+- **Per-device**: Mac (`glm-5.3-flash:cloud` via local Ollama, with LM Studio verifier/orchestrator
   fallback), Windows (LM Studio primary, Ollama fallback), or both on one shared Ollama.
 - **Cost-guarded**: daily budget cap + 80% alert threshold.
 - **Interoperable**: all four layers compatible via shared config contracts; **Perpetua-Tools**

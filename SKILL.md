@@ -90,7 +90,7 @@ Refer to [hardware/SKILL.md](hardware/SKILL.md) for role matrix and VRAM constra
 > The examples below are **known-good references from operational experience**, not defaults to hardcode. They serve as smoke-test baselines only.
 
 ### Profile A — mac-studio (16GB+ Unified Memory)
-- **Primary**: `glm-5.1:cloud` via local Ollama when the live probe succeeds
+- **Primary**: `glm-5.3-flash:cloud` via local Ollama when the live probe succeeds
 - **Local Fallback**: `Qwen3.5-9B-MLX-4bit` (LM Studio, Metal full offload, context 4096) or `qwen3.5:9b-mlx` via Ollama (`localhost:11434`)
 - **Roles**: Thin Orchestrator via GLM, local verifier/orchestrator fallback via Mac LM Studio/Ollama.
 - **VRAM**: N/A (Unified). LM Studio/Ollama handle Apple Silicon Metal natively.
@@ -182,7 +182,7 @@ Task Received
 ├─ Privacy Critical?
 │  └─ YES → ALWAYS local, skip cloud
 │     ├─ Code task → win-rtx3080: Qwen3.5-27B (LM Studio) → qwen3-coder:14b → local LM Studio fallbacks
-│     └─ Standard → mac-studio: glm-5.1:cloud probe → Qwen3.5-9B-MLX-4bit if GLM unavailable
+│     └─ Standard → mac-studio: glm-5.3-flash:cloud probe → Qwen3.5-9B-MLX-4bit if GLM unavailable
 │
 ├─ Budget exhausted OR Internet offline?
 │  └─ YES → win-rtx3080: qwen3-30b-critic (FALLBACK)
@@ -198,7 +198,7 @@ Task Received
 │  └─ 500-2000 lines → win-rtx3080: Qwen3.5-27B (LM Studio)
 │
 ├─ Quick/interactive task?
-│  └─ mac-studio: glm-5.1:cloud if reachable, else Qwen3.5-9B-MLX-4bit
+│  └─ mac-studio: glm-5.3-flash:cloud if reachable, else Qwen3.5-9B-MLX-4bit
 │
 └─ Default → mac-studio: Qwen3.5-9B-MLX-4bit (LM Studio, context 4096)
 ```
@@ -266,12 +266,12 @@ lmstudio_win: http://<YOUR_WINDOWS_IP>:1234  # Qwen3.5-27B, gpu_offload=40, cont
 # Portal dashboard
 portal: http://<YOUR_MAC_IP>:8002            # LAN status (auto-refresh 10s)
 # Ollama lanes
-ollama_mac: http://<YOUR_MAC_IP>:11434       # glm-5.1:cloud local client
+ollama_mac: http://<YOUR_MAC_IP>:11434       # glm-5.3-flash:cloud local client
 ollama_win: http://<YOUR_WINDOWS_IP>:11434   # qwen3-coder family / critic / backup (probe /api/tags)
 cloud_enabled: true
 critic_pass: true
 fallback_chain:
-  - ollama_mac_glm         # thin orchestrator when glm-5.1:cloud probe succeeds
+  - ollama_mac_glm         # thin orchestrator when glm-5.3-flash:cloud probe succeeds
   - lmstudio_win           # primary heavy coder / autoresearch executor
   - lmstudio_mac           # orchestrator + validator fallback
   - ollama_win             # qwen3-coder family / critic / backup

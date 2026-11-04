@@ -19,6 +19,7 @@ from typing import Awaitable, Callable, Mapping
 import yaml
 
 from orchestrator.gate import gate_permits, load_backend_by_name, load_frugality_tier_by_name
+from orchestrator.legacy_model_names import canonical_model_name
 
 _log = logging.getLogger(__name__)
 
@@ -26,7 +27,7 @@ PIPELINE_TIER = 5
 # Operator-default pipeline pools include Mac-local fallbacks before paid cloud.
 _PIPELINE_NON_TIER5_ALLOWLIST = frozenset(
     {
-        "glm-5.1:cloud",
+        "glm-5.3-flash:cloud",
         "Qwen3.5-9B-MLX-4bit",
     }
 )
@@ -106,6 +107,7 @@ class PipelineCandidateUnavailableError(PipelineExecutionError):
     """Raised when one configured candidate is not currently dispatchable."""
 
     def __init__(self, message: str, *, fallback_safe: bool = True) -> None:
+        """Store the message and whether the caller may fall back to the next candidate."""
         super().__init__(message)
         self.fallback_safe = fallback_safe
 
@@ -126,6 +128,7 @@ def validate_trace_id(trace_id: str) -> str:
 
 
 def _reject_unknown_keys(obj: Mapping[str, object], allowed: frozenset[str], where: str) -> None:
+    """Raise PipelineConfigError naming any key in *obj* that is not in *allowed*."""
     unknown = sorted(set(obj) - allowed)
     if unknown:
         raise PipelineConfigError("%s has unknown keys: %s" % (where, ", ".join(unknown)))
@@ -133,6 +136,7 @@ def _reject_unknown_keys(obj: Mapping[str, object], allowed: frozenset[str], whe
 
 @dataclass(frozen=True)
 class PipelineStage:
+    """One recipe stage: ordered model candidates, a token cap and optional upstream input."""
     name: str
     models: tuple[str, ...]
     max_tokens: int
@@ -147,6 +151,7 @@ class PipelineStage:
 
 @dataclass(frozen=True)
 class PipelineRecipe:
+    """A validated recipe: ordered stages plus token and cost ceilings."""
     name: str
     stages: tuple[PipelineStage, ...]
     max_total_tokens: int
@@ -181,6 +186,7 @@ class PipelineApproval:
 
 @dataclass(frozen=True)
 class PipelineResult:
+    """Outcome of a run: final and per-stage output, token and cost totals, models used."""
     recipe: str
     output: str
     stage_outputs: Mapping[str, str]
@@ -216,6 +222,7 @@ def _input_token_upper_bound(value: str) -> int:
 
 
 def _approval_dir() -> Path:
+    """Return the approval directory from the environment, else the default."""
     configured = os.getenv(APPROVAL_DIR_ENV, "").strip()
     return Path(configured) if configured else DEFAULT_APPROVAL_DIR
 
@@ -351,6 +358,7 @@ class TieredPipelineRunner:
         models_path: str | Path | None = None,
         trace_path: str | Path | None = None,
     ) -> None:
+        """Load and validate the pipeline config against the model registry and resolve the trace path."""
         self.config_path = Path(config_path) if config_path else DEFAULT_CONFIG
         self.models_path = Path(models_path) if models_path else DEFAULT_MODELS
         configured_trace_path = os.getenv(TRACE_PATH_ENV, "").strip()
@@ -471,6 +479,8 @@ class TieredPipelineRunner:
                 )
             override = os.getenv("PIPELINE_%s_MODEL" % alias.upper(), "").strip()
             if override:
+                # A retired GLM name set before the registry rename maps to its replacement.
+                override = canonical_model_name(override, "PIPELINE_%s_MODEL" % alias.upper())
                 candidates = [override] + [
                     candidate for candidate in candidates if candidate != override
                 ]
@@ -602,6 +612,7 @@ class TieredPipelineRunner:
         return models, recipes, model_backends
 
     def _candidate_backend(self, model_name: str) -> str:
+        """Return the registry backend for *model_name*, or raise PipelineConfigError if it has none."""
         backend = self._model_backends.get(model_name)
         if not backend:
             raise PipelineConfigError(
@@ -612,11 +623,13 @@ class TieredPipelineRunner:
     def _candidate_is_in_scope(
         self, model_name: str, approval: PipelineApproval
     ) -> bool:
+        """Return whether the candidate's backend is in the approval's scope (case-insensitive)."""
         backend = self._candidate_backend(model_name)
         allowed = frozenset(item.strip().lower() for item in approval.scope if item.strip())
         return backend.lower() in allowed
 
     def recipe(self, name: str) -> PipelineRecipe:
+        """Return the named recipe, or raise PipelineConfigError when it is unknown."""
         try:
             return self._recipes[name]
         except KeyError as exc:
@@ -625,6 +638,7 @@ class TieredPipelineRunner:
     def _validate_approval(
         self, approval: PipelineApproval | None, *, recipe_name: str, recipe: PipelineRecipe
     ) -> None:
+        """Raise PipelineApprovalError unless *approval* is present, not revoked, unexpired and valid for *recipe*."""
         if approval is None:
             raise PipelineApprovalError("pipeline approval is required")
         if approval.trace_id in self._load_revoked_trace_ids():
@@ -661,6 +675,7 @@ class TieredPipelineRunner:
     def _stage_prompt(
         original: str, stage: PipelineStage, outputs: Mapping[str, str]
     ) -> str:
+        """Build a stage prompt from the original request and, if the stage has one, its upstream output."""
         if stage.input_from is None:
             context = "Original request:\n%s" % original
         else:
@@ -684,6 +699,7 @@ class TieredPipelineRunner:
         tokens_used: int | None = None,
         cost_usd: float | None = None,
     ) -> None:
+        """Append one JSON trace line for a stage (model, tokens, cost, elapsed time, status) to the trace file."""
         payload = {
             "timestamp": time.time(),
             "name": "tiered_pipeline.stage",
@@ -717,6 +733,7 @@ class TieredPipelineRunner:
         override_confirmed: bool = False,
         override_reason: str | None = None,
     ) -> PipelineResult:
+        """Run *recipe_name* stage by stage after approval validation and the frugality gate, dispatching each stage."""
         if not tiered_pipeline_enabled(self.config_path):
             raise PipelineDisabledError(
                 "%s=1 is required for Tier-5 pipeline execution" % PIPELINE_FLAG

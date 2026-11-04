@@ -58,7 +58,7 @@ def _make_candidate(name="ultrathink", backend="ultrathink", device="any",
 # ---------------------------------------------------------------------------
 
 _DEEP_REASONING_CHAIN = (
-    "glm-5.1:cloud",
+    "glm-5.3-flash:cloud",
     "Qwen3.5-9B-MLX-4bit",
     "claude-sonnet-5",
 )
@@ -74,7 +74,7 @@ def client():
     """
     deep_reasoning_candidates = [
         _make_candidate(
-            name="glm-5.1:cloud",
+            name="glm-5.3-flash:cloud",
             backend="ollama",
             device="mac-studio",
             host="localhost",
@@ -122,7 +122,7 @@ def client():
                 0,
                 result={
                     "manager_endpoint": "http://127.0.1.2:11434",
-                    "manager_model": "glm-5.1:cloud",
+                    "manager_model": "glm-5.3-flash:cloud",
                     "manager_backend": "mac-ollama",
                     "coder_endpoint": "http://127.0.1.1:1234",
                     "coder_model": "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2",
@@ -171,7 +171,7 @@ class TestDeepReasoningRouting:
     """
 
     def test_deep_reasoning_selects_glm_cloud_primary(self, client: TestClient):
-        """POST /orchestrate deep_reasoning selects glm-5.1:cloud as primary.
+        """POST /orchestrate deep_reasoning selects glm-5.3-flash:cloud as primary.
 
         Replaces the earlier ultrathink-primary assertion when the Mac-first pool
         is configured ahead of the oramasys bridge candidate.
@@ -187,7 +187,7 @@ class TestDeepReasoningRouting:
         assert resp.status_code == 200, resp.text
         body = resp.json()
         assert body["status"] == "created"
-        assert body["selected_model"]["name"] == "glm-5.1:cloud"
+        assert body["selected_model"]["name"] == "glm-5.3-flash:cloud"
 
     def test_deep_reasoning_selected_model_is_mac_ollama_lane(self, client: TestClient):
         """Selected reasoning model uses Ollama on the Mac device.
@@ -308,6 +308,7 @@ class TestRoutingYmlUltrathinkContract:
 
     @pytest.fixture(scope="class")
     def routing(self):
+        """Load config/routing.yml as a dict for the contract tests."""
         import yaml
         routing_yml = REPO_ROOT / "config" / "routing.yml"
         assert routing_yml.exists(), f"Missing: {routing_yml}"
@@ -315,6 +316,7 @@ class TestRoutingYmlUltrathinkContract:
             return yaml.safe_load(f)
 
     def test_deep_reasoning_has_oramasys_default_endpoint(self, routing: dict):
+        """The deep_reasoning route points at the default oramasys endpoint with a 120s timeout."""
         routes = routing["routes"]
         assert "deep_reasoning" in routes
         route = routes["deep_reasoning"]
@@ -322,6 +324,7 @@ class TestRoutingYmlUltrathinkContract:
         assert route["timeout"] == 120
 
     def test_code_analysis_has_oramasys_default_endpoint(self, routing: dict):
+        """The code_analysis route points at the default oramasys endpoint with a 120s timeout."""
         routes = routing["routes"]
         assert "code_analysis" in routes
         route = routes["code_analysis"]
@@ -338,16 +341,19 @@ class TestRoutingYmlUltrathinkContract:
         assert route.get("fallback") == "Qwen3.5-9B-MLX-4bit"
 
     def test_code_analysis_has_ultrathink_fallback(self, routing: dict):
+        """The code_analysis route names local_qwen30b as its fallback."""
         route = routing["routes"]["code_analysis"]
         assert "fallback" in route
         assert route["fallback"] == "local_qwen30b"
 
     def test_deep_reasoning_requires_orama_available(self, routing: dict):
+        """The deep_reasoning route requires orama_available."""
         route = routing["routes"]["deep_reasoning"]
         assert "requires" in route
         assert "orama_available" in route["requires"]
 
     def test_code_analysis_requires_orama_available(self, routing: dict):
+        """The code_analysis route requires orama_available."""
         route = routing["routes"]["code_analysis"]
         assert "requires" in route
         assert "orama_available" in route["requires"]

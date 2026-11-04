@@ -41,43 +41,53 @@ def _load_orchestrator_module():
 
 
 class _FakeRedis:
+    """Async no-op Redis stub whose methods return empty/None values."""
     async def get(self, *a):
+        """Return None, as if the key were absent."""
         return None
 
     async def incr(self, *a):
+        """Accept an increment and do nothing."""
         pass
 
     async def incrbyfloat(self, *a):
+        """Accept a float increment and do nothing."""
         pass
 
     async def keys(self, *a):
+        """Return an empty key list."""
         return []
 
     async def setex(self, *a):
+        """Accept a set-with-expiry and do nothing."""
         pass
 
 
 @pytest.fixture(autouse=True)
 def _disable_live_probes(monkeypatch):
+    """Autouse fixture that disables ModelRegistry live endpoint probes for every test."""
     monkeypatch.setenv("PT_DISABLE_LIVE_MODEL_PROBES", "1")
 
 
 @pytest.fixture
 def registry():
+    """Provide a ModelRegistry built from the repository config directory."""
     from orchestrator.model_registry import ModelRegistry
 
     return ModelRegistry(config_dir=str(REPO_ROOT / "config"))
 
 
 class TestRouteTaskOfflineNeverReturnsPaidRemote:
+    """With ORAMASYS_OFFLINE=1, route_task chains contain no paid or remote cloud models."""
     def test_default_route_excludes_paid_and_remote_cloud_when_offline(
         self, registry, monkeypatch
     ):
+        """The default route drops all paid and remote cloud models when offline."""
         monkeypatch.setenv("ORAMASYS_OFFLINE", "1")
         chain = registry.route_task("default")
         names = {m.name for m in chain}
         for paid_or_remote in (
-            "glm-5.2",
+            "glm-5.3-flash",
             "sonar-reasoning-pro",
             "claude-sonnet-5",
             "claude-sonnet-5-5",
@@ -90,20 +100,22 @@ class TestRouteTaskOfflineNeverReturnsPaidRemote:
     def test_strategy_route_excludes_paid_and_remote_cloud_when_offline(
         self, registry, monkeypatch
     ):
+        """The strategy route drops claude-sonnet and glm cloud models when offline."""
         monkeypatch.setenv("ORAMASYS_OFFLINE", "1")
         chain = registry.route_task("strategy")
         names = {m.name for m in chain}
         assert "claude-sonnet-5" not in names
         assert "claude-sonnet-5-5" not in names
-        assert "glm-5.2" not in names
-        assert "glm-5.1:cloud" not in names
+        assert "glm-5.3-flash" not in names
+        assert "glm-5.3-flash:cloud" not in names
 
     def test_default_route_unchanged_when_offline_flag_not_set(self, registry, monkeypatch):
+        """Without ORAMASYS_OFFLINE the default route still includes glm and claude models."""
         monkeypatch.delenv("ORAMASYS_OFFLINE", raising=False)
         chain = registry.route_task("default")
         names = {m.name for m in chain}
         # Pure superset behavior: nothing dropped when no policy is active.
-        assert "glm-5.2" in names
+        assert "glm-5.3-flash" in names
         assert "claude-sonnet-5" in names
         assert "claude-sonnet-5-5" in names
 
@@ -111,12 +123,14 @@ class TestRouteTaskOfflineNeverReturnsPaidRemote:
         self, registry
     ):
         # Existing 2-positional-arg call form must keep working unmodified.
+        """route_task keeps its two-positional-argument call form and returns a list."""
         chain = registry.route_task("coding", "win-rtx3080")
         assert isinstance(chain, list)
         assert chain[0].name == "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2"
 
 
 class TestOrchestratorPrivacyCriticalGateWiring:
+    """The /orchestrate privacy_critical path consults the frugality gate for each hop."""
     def test_privacy_critical_never_escalates_without_override(self, monkeypatch):
         """Even if a local model's classification were bumped above the
         privacy_critical ceiling, gate_permits() must deny dispatch rather
@@ -130,10 +144,12 @@ class TestOrchestratorPrivacyCriticalGateWiring:
         calls = {"lmstudio": 0}
 
         async def _tracking_lmstudio(*a, **kw):
+            """Stub LM Studio call that counts invocations and returns a sentinel result."""
             calls["lmstudio"] += 1
             return "should not be reached"
 
         async def _none(*a, **kw):
+            """Async stub that returns None."""
             return None
 
         monkeypatch.setattr(orch_mod, "call_oramasys", _none)
@@ -164,10 +180,12 @@ class TestOrchestratorPrivacyCriticalGateWiring:
         calls = {"lmstudio": 0}
 
         async def _tracking_lmstudio(*a, **kw):
+            """Stub LM Studio call that counts invocations and returns a local result."""
             calls["lmstudio"] += 1
             return "local result"
 
         async def _none(*a, **kw):
+            """Async stub that returns None."""
             return None
 
         monkeypatch.setattr(orch_mod, "call_oramasys", _none)
@@ -198,6 +216,7 @@ class TestOrchestratorPrivacyCriticalGateWiring:
         calls = {"oramasys": 0}
 
         async def _tracking_oramasys(*a, **kw):
+            """Stub oramasys call that counts invocations and returns a sentinel result."""
             calls["oramasys"] += 1
             return "oramasys result"
 
