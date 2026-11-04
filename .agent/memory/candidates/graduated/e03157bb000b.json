@@ -1,0 +1,40 @@
+{
+  "id": "e03157bb000b",
+  "key": "manual_e03157",
+  "name": "manual_e03157",
+  "claim": "Classify peer delivery failures by boundary: TCP reachability, verified TLS, bearer authentication, endpoint latency, and independent receiver receipt are separate observations; a timeout or HTTP refusal alone does not prove a wrong token or a faulty proxy.",
+  "conditions": [
+    "LAN recovery",
+    "authenticated inbox",
+    "timeout diagnosis"
+  ],
+  "evidence_ids": [
+    "2026-11-04T02:57:43.374033+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T02:57:43.374033+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-04T02:57:43.374033+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T02:57:43.513911+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Codex reviewer 2026-11-04 LAN recovery: short aggregate-status timeouts and stale receiver processes caused unsupported diagnoses; the fast authenticated inbox later returned 200 without credential or CA changes. See .agent/memory/working/2026-11-04-lan-recovery-byte-contract-and-stack-chronicle.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-04T02:57:43.374033+00:00"
+      ],
+      "lessons_sha": "5bd5671e7e12"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T02:57:43.513897+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Codex reviewer 2026-11-04 LAN recovery: short aggregate-status timeouts and stale receiver processes caused unsupported diagnoses; the fast authenticated inbox later returned 200 without credential or CA changes. See .agent/memory/working/2026-11-04-lan-recovery-byte-contract-and-stack-chronicle.md."
+}

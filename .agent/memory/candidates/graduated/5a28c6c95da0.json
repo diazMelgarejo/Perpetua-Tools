@@ -1,0 +1,40 @@
+{
+  "id": "5a28c6c95da0",
+  "key": "manual_5a28c6",
+  "name": "manual_5a28c6",
+  "claim": "When diagnosing peer credentials, inspect only environment key presence and protected process loading; never include credential-bearing env files in broad content searches or echo token values into terminal output, board messages, handoffs, or tracked memory.",
+  "conditions": [
+    "LAN bearer",
+    "environment search",
+    "secret-safe diagnostics"
+  ],
+  "evidence_ids": [
+    "2026-11-04T02:58:06.503212+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T02:58:06.503212+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-04T02:58:06.503212+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T02:58:06.637741+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Codex reviewer recovery audit identified an earlier broad local environment search that displayed a secret-bearing line. This sanitized lesson preserves the failure mechanism, not the value; any exposure requires operator-owned credential handling rather than silent automatic rotation.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-04T02:58:06.503212+00:00"
+      ],
+      "lessons_sha": "343b16a48c15"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T02:58:06.637730+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Codex reviewer recovery audit identified an earlier broad local environment search that displayed a secret-bearing line. This sanitized lesson preserves the failure mechanism, not the value; any exposure requires operator-owned credential handling rather than silent automatic rotation."
+}

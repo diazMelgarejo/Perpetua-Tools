@@ -1,0 +1,40 @@
+{
+  "id": "4894c94af395",
+  "key": "manual_4894c9",
+  "name": "manual_4894c9",
+  "claim": "On macOS use portable filesystem inventory APIs and inspect failures instead of hiding unsupported find flags; an empty inventory is not evidence that the peer inbox contains no receipt.",
+  "conditions": [
+    "LAN inbox",
+    "macOS inventory",
+    "receipt evidence"
+  ],
+  "evidence_ids": [
+    "2026-11-04T02:57:43.582784+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-04T02:57:43.582784+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-04T02:57:43.582784+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-04T02:57:43.739997+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Codex reviewer 2026-11-04 corrected earlier no-receipt claims after Python pathlib found the Windows CA-download receipt that a suppressed find -printf failure had missed. See .agent/memory/working/2026-11-04-lan-recovery-byte-contract-and-stack-chronicle.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-04T02:57:43.582784+00:00"
+      ],
+      "lessons_sha": "befafadd6f06"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-04T02:57:43.739988+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Codex reviewer 2026-11-04 corrected earlier no-receipt claims after Python pathlib found the Windows CA-download receipt that a suppressed find -printf failure had missed. See .agent/memory/working/2026-11-04-lan-recovery-byte-contract-and-stack-chronicle.md."
+}
