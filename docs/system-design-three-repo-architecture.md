@@ -1,29 +1,32 @@
 # System Design: Three-Repo Architecture
 
-# @diazmelgarejo/alphaclaw · @diazmelgarejo/perpetua-tools · @diazmelgarejo/orama-system
+## @diazmelgarejo/alphaclaw · @diazmelgarejo/perpetua-tools · @diazmelgarejo/orama-system
 
-# Version: 0.9.9.8 (all three, post-migration)
+## Version: 0.9.9.8 (all three, post-migration)
 
-# Status: SCAFFOLDING — not committed | Branch: feature/MacOS-post-install
+## Status: SCAFFOLDING — not committed | Branch: feature/MacOS-post-install
 
-# Merges: Migration Plan 3 + Plan Review + Session decisions (2026-04-19)
+## Merges: Migration Plan 3 + Plan Review + Session decisions (2026-04-19)
 
 ---
 
 ## 1. Problem Statement
 
-AlphaClaw (`diazMelgarejo/AlphaClaw`) is a macOS ARM64 port of `chrysb/alphaclaw`. The goal is to keep it clean and upstreamable while extracting all orchestration, tooling, and intelligence into two external repos. The system must:
+AlphaClaw (`diazMelgarejo/AlphaClaw`) is a macOS ARM64 port of `chrysb/alphaclaw`. The goal is to
+keep it clean and upstreamable while extracting all orchestration, tooling, and intelligence into
+two external repos. The system must:
 
 - Allow AlphaClaw to track upstream without PT/orama interference
 - Let Claude Code, Xcode 26 mcpbridge, Ollama, and LM Studio agents co-manage AlphaClaw installations
-- Provide a portable `.agent/` memory+skills layer that works across Claude Code, Cursor, Windsurf, OpenClaw, and OpenCode
+- Provide a portable `.agent/` memory+skills layer that works across Claude Code, Cursor, Windsurf,
+  OpenClaw, and OpenCode
 - Ship as three independently published npm packages, all at `0.9.9.8` after migration
 
 ---
 
 ## 2. Repository Roles (Authoritative)
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │  LAYER 1 — Infrastructure / Managed Dependency                      │
 │  @diazmelgarejo/alphaclaw  (github: diazMelgarejo/AlphaClaw)        │
@@ -62,7 +65,9 @@ AlphaClaw (`diazMelgarejo/AlphaClaw`) is a macOS ARM64 port of `chrysb/alphaclaw
 | `docs/xcode-claude-integration.md` | `docs/xcode-claude-integration.md` | PT owns Xcode docs |
 | `tests/server/local-agent-client.test.js` | `packages/local-agents/tests/` | Travels with code |
 
-**These files must NOT be cherry-picked into pr-4-macos.** They are PT-destined scaffolding committed only to `feature/MacOS-post-install` until the move is complete and proven operational by tests.
+**These files must NOT be cherry-picked into pr-4-macos.** They are PT-destined scaffolding
+committed only to `feature/MacOS-post-install` until the move is complete and proven operational by
+tests.
 
 ---
 
@@ -79,7 +84,9 @@ node bin/alphaclaw.js --version                # version string
 
 ### 3.2 AlphaClaw HTTP API surface (PT polls/drives these)
 
-Verified via `grep` across `lib/server/routes/` on 2026-04-20. Auth column: **none** = unauthenticated, **setup** = accessible during setup via `SETUP_API_PREFIXES` (constants.js:380), **session** = requires active login session.
+Verified via `grep` across `lib/server/routes/` on 2026-04-20. Auth column: **none** =
+unauthenticated, **setup** = accessible during setup via `SETUP_API_PREFIXES` (constants.js:380),
+**session** = requires active login session.
 
 #### Control plane — PT adapter uses these
 
@@ -119,15 +126,19 @@ Verified via `grep` across `lib/server/routes/` on 2026-04-20. Auth column: **no
 
 #### Full route inventory (reference — 50+ routes across 18 route files)
 
-`agents.js` · `auth.js` · `browse/index.js` · `codex.js` · `cron.js` · `doctor.js` · `gmail.js` · `google.js` · `models.js` · `nodes.js` · `onboarding.js` · `pages.js` · `pairings.js` · `proxy.js` · `system.js` · `telegram.js` · `usage.js` · `watchdog.js` · `webhooks.js`
+`agents.js` · `auth.js` · `browse/index.js` · `codex.js` · `cron.js` · `doctor.js` · `gmail.js` ·
+`google.js` · `models.js` · `nodes.js` · `onboarding.js` · `pages.js` · `pairings.js` · `proxy.js` ·
+`system.js` · `telegram.js` · `usage.js` · `watchdog.js` · `webhooks.js`
 
-PT adapter only needs the **Control plane** and **Auth** groups above. The rest are application-level routes (Telegram, Gmail, Google OAuth, Codex, etc.) that PT does not manage.
+PT adapter only needs the **Control plane** and **Auth** groups above. The rest are
+application-level routes (Telegram, Gmail, Google OAuth, Codex, etc.) that PT does not manage.
 
-> **Living contract:** Run `grep -rn "app\.\(get\|post\|put\|delete\)" lib/server/routes/` to re-enumerate after any AlphaClaw upstream merge. Update this table when the surface changes.
+> **Living contract:** Run `grep -rn "app\.\(get\|post\|put\|delete\)" lib/server/routes/` to
+> re-enumerate after any AlphaClaw upstream merge. Update this table when the surface changes.
 
 ### 3.3 AlphaClaw config files (PT manages these)
 
-```
+```text
 .env                          SETUP_PASSWORD, PORT, any secrets
 .openclaw/openclaw.json       gateway, providers, channel config
 ~/Library/LaunchAgents/       com.alphaclaw.hourly-sync.plist (darwin only)
@@ -135,7 +146,8 @@ PT adapter only needs the **Control plane** and **Auth** groups above. The rest 
 
 ### 3.4 Log stream format (OTel target — see §6)
 
-AlphaClaw currently logs to stdout in unstructured format. PT adapter wraps the process and parses stdout → OTel spans. Target format after PT wrapping:
+AlphaClaw currently logs to stdout in unstructured format. PT adapter wraps the process and parses
+stdout → OTel spans. Target format after PT wrapping:
 
 ```json
 {"ts":"2026-04-19T10:00:00Z","level":"info","service":"alphaclaw","msg":"...","traceId":"..."}
@@ -193,12 +205,14 @@ perpetua-tools/                          @diazmelgarejo/perpetua-tools@0.9.9.8
 
 ### agentic-stack `.agent/` as the backbone
 
-The `.agent/` portable folder is the first paradigm we adopt (priority 1 from plan review). Its structure travels with the developer across all supported IDEs. PT's `.agent/` folder will:
+The `.agent/` portable folder is the first paradigm we adopt (priority 1 from plan review). Its
+structure travels with the developer across all supported IDEs. PT's `.agent/` folder will:
 
 - Store AlphaClaw adapter configuration and discovered endpoint contracts
 - Hold gstack skills symlinks/references
 - Maintain session context between Perpetua-Tools and orama-system runs
-- Follow the agentic-stack convention exactly — no invented schema, can we put this as a dependency or just copy?
+- Follow the agentic-stack convention exactly — no invented schema, can we put this as a dependency
+  or just copy?
 
 ---
 
@@ -239,9 +253,12 @@ orama-system/                            @diazmelgarejo/orama-system@0.9.9.8
 
 ## 6. Observability Stack (orama-system owns this? Plan more)
 
-Design decision: **OpenTelemetry → Prometheus** scrape. Rationale: trace-first gives causality; metrics follow from spans. AlphaClaw stdout is structured by the PT adapter's process wrapper before OTel emission. We are committed to OTel, but not to what consumes on top of it, the zip was only a sample?
+Design decision: **OpenTelemetry → Prometheus** scrape. Rationale: trace-first gives causality;
+metrics follow from spans. AlphaClaw stdout is structured by the PT adapter's process wrapper before
+OTel emission. We are committed to OTel, but not to what consumes on top of it, the zip was only a
+sample?
 
-```
+```text
 AlphaClaw process (stdout)
         │
         ▼
@@ -261,7 +278,7 @@ Tempo     Prometheus
 
 File targets (live in orama-system, not AlphaClaw):
 
-```
+```text
 orama-system/
 ├── plugins/alphaclaw_otel_emitter.py    process wrapper → OTel spans
 ├── observability/
@@ -279,7 +296,8 @@ orama-system/
 
 ## 7. Version Strategy
 
-All three packages move to `0.9.9.8` simultaneously after the migration is complete and verified. Before that point:
+All three packages move to `0.9.9.8` simultaneously after the migration is complete and verified.
+Before that point:
 
 | Package | Current | After move |
 |---|---|---|
@@ -287,7 +305,9 @@ All three packages move to `0.9.9.8` simultaneously after the migration is compl
 | `@diazmelgarejo/perpetua-tools` | does not exist yet | `0.9.9.8` (RC) |
 | `@diazmelgarejo/orama-system` | does not exist yet | `0.9.9.8` (RC) |
 
-Release strategy: "release early, release often" — `0.9.9.8` is the first public RC. Minor patch bumps (`0.9.9.9`, `0.9.9.10`...) as features land. `1.0.0` when E2E suite is green and the adapter contract is stable.
+Release strategy: "release early, release often" — `0.9.9.8` is the first public RC. Minor patch
+bumps (`0.9.9.9`, `0.9.9.10`...) as features land. `1.0.0` when E2E suite is green and the adapter
+contract is stable.
 
 npm scopes to reserve now:
 
@@ -328,7 +348,8 @@ npm scopes to reserve now:
 ### Gate 3 — orama-System First Flow
 
 - [ ] orama-system repo scaffolded with orchestrator, planner, executor stubs
-- [ ] First E2E workflow: `build-verify.ts` — triggers `npm run build:ui` via PT adapter, asserts exit 0
+- [ ] First E2E workflow: `build-verify.ts` — triggers `npm run build:ui` via PT adapter, asserts
+      exit 0
 - [ ] OTel emitter wraps AlphaClaw stdout → Tempo traces visible in Grafana
 - [ ] All AlphaClaw tests still green (no regression)
 
@@ -345,7 +366,7 @@ npm scopes to reserve now:
 
 The planning pattern — Claude as orchestrator, local agents as workers — spans PT and orama:
 
-```
+```text
 orama-system/orchestrator (planner)
         │
         │  delegates subtasks
@@ -354,27 +375,31 @@ perpetua-tools/local-agents/orchestrator.js
         │
         │  dispatches to best available backend
         ├──► Ollama  127.0.0.1:11435
-        │    primary: GLM-5.1:cloud
+        │    primary: glm-5.3-flash:cloud
         │    fallback: qwen3.5-local:latest
         │
         └──► LM Studio  <YOUR_LAN_IP>:1234
              model: whatever is loaded
 ```
 
-Contract: local agents read files and propose patches (unified diff). Claude reviews and applies. No patch is applied without Claude review. This invariant is enforced at the orchestrator level — the `proposeCodeEdit` function returns a diff; the apply step requires explicit approval.
+Contract: local agents read files and propose patches (unified diff). Claude reviews and applies. No
+patch is applied without Claude review. This invariant is enforced at the orchestrator level — the
+`proposeCodeEdit` function returns a diff; the apply step requires explicit approval.
 
 ---
 
 ## 10. gstack Integration
 
-gstack v1.3 provides the `/browse`, `/review`, `/ship`, `/qa`, `/investigate` and planning skills used across all three repos. Rules:
+gstack v1.3 provides the `/browse`, `/review`, `/ship`, `/qa`, `/investigate` and planning skills
+used across all three repos. Rules:
 
 - ALWAYS use `/browse` for web browsing — never `mcp__Claude_in_Chrome__*` directly
 - Use `/plan-eng-review` before any Gate 0→1 transition
 - Use `/ship` pre-release checklist before any `npm publish`
 - Use `/investigate` for root-cause analysis of adapter failures
 
-Install: `bash scripts/install-gstack.sh` (requires bun). See `CLAUDE.md §gstack` for full skill table. Harmonize and merge with all existing markdowns, lessons, and skills?
+Install: `bash scripts/install-gstack.sh` (requires bun). See `CLAUDE.md §gstack` for full skill
+table. Harmonize and merge with all existing markdowns, lessons, and skills?
 
 ---
 
@@ -418,20 +443,30 @@ Install: `bash scripts/install-gstack.sh` (requires bun). See `CLAUDE.md §gstac
 
 ## Final Links and instructions
 
-Read all files first. Ask me questions using AskUserQuestion before you execute. Do not guess. I will clarify.
+Read all files first. Ask me questions using AskUserQuestion before you execute. Do not guess. I
+will clarify.
 
 A. The Repo Links that will serve as example and inspiration, or we can git submodule dependency:
 
-1. <https://github.com/yayoboy/Claude-Desktop-LLM> Take a cue from handling ollama and LM-Studio models with two files:
+1. <https://github.com/yayoboy/Claude-Desktop-LLM> Take a cue from handling ollama and LM-Studio
+   models with two files:
  •  ollama-agent.mcpb reasoning and reading code for analysis
  •  lmstudio-agent.mcpb could expose the server for Claude to spawn sub-agents, this repo can be a dependency?
-2. <https://github.com/rusiaaman/wcgw> MCP could do the actual code editing recursively called by any agent
-3. <https://github.com/codejunkie99/agentic-stack> get only the pluggability here, do not ingest, converge with its logic for Portable ".agent/" folder (memory + skills + protocols) that plugs into Claude Code, Cursor, Windsurf, OpenCode, OpenClaw, Hermes, or DIY Python and keeps accumulated knowledge, we need this
+2. <https://github.com/rusiaaman/wcgw> MCP could do the actual code editing recursively called by
+   any agent
+3. <https://github.com/codejunkie99/agentic-stack> get only the pluggability here, do not ingest,
+   converge with its logic for Portable ".agent/" folder (memory + skills + protocols) that plugs
+   into Claude Code, Cursor, Windsurf, OpenCode, OpenClaw, Hermes, or DIY Python and keeps
+   accumulated knowledge, we need this
 
 B. The Repo Links we are working on (where it will land):
 
-i. <https://github.com/diazMelgarejo/AlphaClaw> the branch "feature/MacOS-post-install" will be our home to prepare the thin custom add-ons and configuration on top of it for PT & UTS use (dependency)
+i. <https://github.com/diazMelgarejo/AlphaClaw> the branch "feature/MacOS-post-install" will be our
+   home to prepare the thin custom add-ons and configuration on top of it for PT & UTS use
+   (dependency)
 
-ii. old PT = `diazMelgarejo/Perpetua-Tools` renamed → <https://github.com/diazMelgarejo/Perpetua-Tools> main
+ii. old PT = `diazMelgarejo/Perpetua-Tools` renamed →
+    <https://github.com/diazMelgarejo/Perpetua-Tools> main
 
-iii. old UTS = `diazMelgarejo/orama-system` renamed → <https://github.com/diazMelgarejo/orama-system> main
+iii. old UTS = `diazMelgarejo/orama-system` renamed →
+     <https://github.com/diazMelgarejo/orama-system> main
