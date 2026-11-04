@@ -26,8 +26,9 @@ def test_beam_cloud_is_an_ollama_cloud_free_proprietary_model() -> None:
     beam, glm = models["beam:cloud"], models["glm-5.3-flash:cloud"]
     assert beam["backend"] == "ollama"
     assert beam["frugality_tier"] == FREE_PROPRIETARY_TIER
-    for key in ("device", "host", "port"):
+    for key in ("device", "port"):
         assert beam[key] == glm[key]
+    assert beam["host"].startswith("${OLLAMA_HOST") and glm["host"].startswith("${OLLAMA_HOST")
     assert load_frugality_tier_by_name()["beam:cloud"] == FREE_PROPRIETARY_TIER
 
 

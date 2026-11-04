@@ -36,7 +36,7 @@ models:
   - name: "beam:cloud"
     backend: ollama
     device: mac-studio
-    host: "${OLLAMA_HOST:-http://127.0.0.1}"
+    host: "${OLLAMA_HOST:-http://localhost}"
     port: 11434
     priority: 11
     online: true

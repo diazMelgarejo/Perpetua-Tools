@@ -11,7 +11,7 @@ Canonical runtime summary for **Perpetua-Tools v0.9.9.7**.
 
 | Lane | Primary Model | Backend | Endpoint | Notes |
 |---|---|---|---|---|
-| Mac orchestrator | `glm-5.3-flash:cloud` | Ollama client | `http://127.0.0.1:11434` (self) / `http://<YOUR_LAN_IP>:11434` (LAN) | Preferred only when a short live probe succeeds. |
+| Mac orchestrator | `glm-5.3-flash:cloud` | Ollama client | `http://localhost:11434` (self) / `http://<YOUR_LAN_IP>:11434` (LAN) | Preferred only when a short live probe succeeds. |
 | Mac verifier / orchestrator fallback | `Qwen3.5-9B-MLX-4bit` | LM Studio | `http://localhost:1234` (self) / `http://<YOUR_LAN_IP>:1234` (LAN) | Immediate local fallback when GLM is unavailable or rate-limited. |
 | Windows heavy coder / executor / autoresearch | `Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2` | LM Studio | `http://<YOUR_LAN_IP>:1234` (DHCP — confirm via discover.py) | Canonical Windows coding lane. |
 | Windows coder fallback | `qwen3-coder:14b` | Ollama | `http://<YOUR_LAN_IP>:11434` (DHCP — confirm via discover.py) | Explicit fallback for coding and autoresearch. |
@@ -50,7 +50,7 @@ Canonical runtime summary for **Perpetua-Tools v0.9.9.7**.
 
 - `qwen3.5:35b-a3b-q4_K_M` remains a supported backup fallback model and should stay documented as such.
 - `glm-5` is obsolete here; use `glm-5.3-flash:cloud`.
-- `beam:cloud` (Reflection Beam via Ollama cloud) is registered as a tier-4 `free_proprietary` Ollama model
-  at priority 11: a fallback behind the chain above, not a default lane. Ollama announced it as free for a
-  limited time, so confirm its terms before depending on it.
+- `beam:cloud` (Reflection Beam via Ollama cloud) is registered as a tier-4 `free_proprietary`
+  Ollama model at priority 11: a fallback behind the chain above, not a default lane. Ollama
+  announced it as free for a limited time, so confirm its terms before depending on it.
 - `single_agent/SKILL.md` is not the active orama skill surface anymore; use `bin/skills/SKILL.md`.
