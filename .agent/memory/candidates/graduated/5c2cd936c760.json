@@ -1,0 +1,41 @@
+{
+  "id": "5c2cd936c760",
+  "key": "manual_5c2cd9",
+  "name": "manual_5c2cd9",
+  "claim": "A bounded Markdown taxonomy checker must ignore fenced examples, retain escaped pipes as cell content, and still reject malformed separators and row widths. Mutation-check negative tests by removing each guard separately; a passing happy path does not prove the guard is exercised.",
+  "conditions": [
+    "code-fences",
+    "escaped-pipes",
+    "markdown-parity",
+    "mutation-tests"
+  ],
+  "evidence_ids": [
+    "2026-11-05T22:34:27.006087+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-05T22:34:27.006087+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-05T22:34:27.006087+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-05T22:34:27.142848+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit review 5792983379 exposed false acceptance of fenced-only tables and rejection of valid escaped cells. Fix b6c27b699d81b29b6138122f8ff48a8e1473a39a passed17 CLI tests; removing either format guard made its new test fail. https://github.com/diazMelgarejo/orama-system/pull/475#issuecomment-6671227763",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-05T22:34:27.006087+00:00"
+      ],
+      "lessons_sha": "cd0a84d0b201"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-05T22:34:27.142829+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit review 5792983379 exposed false acceptance of fenced-only tables and rejection of valid escaped cells. Fix b6c27b699d81b29b6138122f8ff48a8e1473a39a passed17 CLI tests; removing either format guard made its new test fail. https://github.com/diazMelgarejo/orama-system/pull/475#issuecomment-6671227763"
+}

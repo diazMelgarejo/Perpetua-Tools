@@ -1,0 +1,40 @@
+{
+  "id": "7186d20f6f8f",
+  "key": "manual_7186d2",
+  "name": "manual_7186d2",
+  "claim": "Freeze the final source and workflow tree before verification; any later tracked edit invalidates earlier full-suite evidence for the published head. Re-run affected suites and read back exact-head hosted checks before calling the final candidate green.",
+  "conditions": [
+    "ci",
+    "final-tree",
+    "verification"
+  ],
+  "evidence_ids": [
+    "2026-11-05T22:34:26.509237+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-05T22:34:26.509237+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-05T22:34:26.509237+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-05T22:34:26.700772+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Observed architecture PR regression: Oramasys #93 full local tests started before the final workflow existed; checkout-role failures appeared only in hosted CI. Corrected with frozen-tree runs and exact-head readback: https://github.com/oramasys/oramasys/pull/93#issuecomment-6671131304 . Weekly source: .agent/memory/working/WEEKLY_DURABLE_FIXES_2026-11-02_TO_2026-11-05.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-05T22:34:26.509237+00:00"
+      ],
+      "lessons_sha": "d40f3ba32dc4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-05T22:34:26.700753+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Observed architecture PR regression: Oramasys #93 full local tests started before the final workflow existed; checkout-role failures appeared only in hosted CI. Corrected with frozen-tree runs and exact-head readback: https://github.com/oramasys/oramasys/pull/93#issuecomment-6671131304 . Weekly source: .agent/memory/working/WEEKLY_DURABLE_FIXES_2026-11-02_TO_2026-11-05.md"
+}

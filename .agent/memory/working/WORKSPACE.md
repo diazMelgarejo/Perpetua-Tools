@@ -347,3 +347,12 @@ Env must be User-level for scheduled tasks — `.env.local` not loaded by coord_
 - [ ] PT thin sync of Wave 0 SKILL lane tags after orama graft PR review
       (Wave 0 core work done on orama side)
 - [ ] Re-enable gbrain autopilot after embedding/timeout fix
+
+## 2026-11-05 — Weekly durable-fix reconciliation
+
+Read [the November 2–5 record](WEEKLY_DURABLE_FIXES_2026-11-02_TO_2026-11-05.md)
+before repeating legacy merge work, architecture review, R3 qualification or
+workflow pin remediation. It links exact fixes, our introduced CI regression,
+latest-head evidence, remaining host/release gates and semantic recall intents.
+Older statuses above remain historical; this entry does not activate services
+or close physical Windows, R4/R5, independent R6, operator R7 or separate R8 gates.

@@ -1,0 +1,40 @@
+{
+  "id": "110c597f11c3",
+  "key": "manual_110c59",
+  "name": "manual_110c59",
+  "claim": "Validate an environment-file instruction against the installer that creates the file and every launcher that consumes it. Bash sourcing and PowerShell literal-assignment parsing are different contracts; absent operator-local files permit a repository comparison, not claims of inspecting private contents or executing shell substitutions.",
+  "conditions": [
+    "environment-file",
+    "installer-contract",
+    "launcher-parity"
+  ],
+  "evidence_ids": [
+    "2026-11-05T22:34:27.833363+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-05T22:34:27.833363+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-05T22:34:27.833363+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-05T22:34:27.962330+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Legacy Orama #473 corrected the Hermes source filename to the actual installer output while documenting the Windows literal reader. Both private candidate files were absent in the cloud; no secrets were sourced. https://github.com/diazMelgarejo/orama-system/pull/473#discussion_r4465645712",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-05T22:34:27.833363+00:00"
+      ],
+      "lessons_sha": "03261af480b8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-05T22:34:27.962307+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Legacy Orama #473 corrected the Hermes source filename to the actual installer output while documenting the Windows literal reader. Both private candidate files were absent in the cloud; no secrets were sourced. https://github.com/diazMelgarejo/orama-system/pull/473#discussion_r4465645712"
+}

@@ -1,0 +1,40 @@
+{
+  "id": "8566e53d2fff",
+  "key": "manual_8566e5",
+  "name": "manual_8566e5",
+  "claim": "Classify workflow dependency pins by the checkout purpose, not repository identity alone. Keep documentation peers separate from qualified registry consumers, enforce every real registry pin, and reject unknown roles, duplicate fields and mutable revisions.",
+  "conditions": [
+    "checkout-role",
+    "registry-pin",
+    "workflow"
+  ],
+  "evidence_ids": [
+    "2026-11-05T22:34:26.757302+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-05T22:34:26.757302+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-05T22:34:26.757302+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-05T22:34:26.945427+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Oramasys documentation checkout was misclassified as a second production registry and broke manifests plus six oracle cells. Fix 10cfaa210427d1e31ff74772ea10eec00d8647bb preserved accepted registry bytes and production pins, with failing-first role regressions and all22 executable hosted checks passing. https://github.com/oramasys/oramasys/commit/10cfaa210427d1e31ff74772ea10eec00d8647bb",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-05T22:34:26.757302+00:00"
+      ],
+      "lessons_sha": "44c5d400397c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-05T22:34:26.945358+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Oramasys documentation checkout was misclassified as a second production registry and broke manifests plus six oracle cells. Fix 10cfaa210427d1e31ff74772ea10eec00d8647bb preserved accepted registry bytes and production pins, with failing-first role regressions and all22 executable hosted checks passing. https://github.com/oramasys/oramasys/commit/10cfaa210427d1e31ff74772ea10eec00d8647bb"
+}
