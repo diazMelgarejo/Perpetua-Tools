@@ -48,6 +48,7 @@ def disable_ecc_sync_for_tests():
 
 @pytest.fixture(autouse=True)
 def _orama_insecure_dev_for_tests(monkeypatch, tmp_path):
+    """Isolate test-only authentication from persisted operator credentials."""
     monkeypatch.setenv("ORAMA_INSECURE_DEV", "1")
     monkeypatch.delenv("ORAMA_CONTROL_PLANE_TOKEN", raising=False)
     # Redirect the persisted-token path to a fresh tmp dir so that

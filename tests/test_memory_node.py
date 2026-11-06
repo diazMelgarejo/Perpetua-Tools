@@ -24,10 +24,12 @@ def _reset_singletons():
 # ── FTS hit normalisation (GossipBus shape) ───────────────────────────────────
 
 def test_text_from_gossip_payload_prefers_prompt():
+    """Prefer the prompt field when deriving injectable gossip text."""
     assert _text_from_gossip_payload({"prompt": "find widget", "role": "coder"}) == "find widget"
 
 
 def test_normalise_fts_hits_adds_text_from_payload():
+    """Derive missing FTS text while preserving its row metadata."""
     raw = [
         {
             "row_id": 1,
@@ -65,12 +67,14 @@ async def test_retrieve_context_real_gossip_bus_fts_only(tmp_path):
 
 @pytest.mark.asyncio
 async def test_retrieve_context_empty_query_returns_empty():
+    """An empty query must not produce recall results."""
     result = await retrieve_context("")
     assert result == []
 
 
 @pytest.mark.asyncio
 async def test_retrieve_context_blank_query_returns_empty():
+    """Whitespace-only queries must not produce recall results."""
     result = await retrieve_context("   ")
     assert result == []
 
@@ -79,6 +83,7 @@ async def test_retrieve_context_blank_query_returns_empty():
 
 @pytest.mark.asyncio
 async def test_retrieve_context_fts_only():
+    """Retain useful FTS results when vector search is empty."""
     mock_bus = MagicMock()
     mock_bus.search = AsyncMock(return_value=[
         {"row_id": 1, "text": "hello world"},
@@ -104,6 +109,7 @@ async def test_retrieve_context_fts_only():
 
 @pytest.mark.asyncio
 async def test_retrieve_context_rrf_merge():
+    """Fuse independently ranked FTS and vector results."""
     mock_bus = MagicMock()
     mock_bus.search = AsyncMock(return_value=[
         {"row_id": 1, "text": "FTS hit A"},
@@ -134,6 +140,7 @@ async def test_retrieve_context_rrf_merge():
 
 @pytest.mark.asyncio
 async def test_retrieve_context_includes_gbrain_hits():
+    """Blend optional semantic recall without losing local FTS hits."""
     mock_bus = MagicMock()
     mock_bus.search = AsyncMock(return_value=[{"row_id": 1, "text": "bus hit"}])
     mock_store = MagicMock()
@@ -161,6 +168,7 @@ async def test_retrieve_context_includes_gbrain_hits():
 
 @pytest.mark.asyncio
 async def test_retrieve_context_returns_empty_when_all_backends_fail():
+    """Backend failures degrade to empty recall rather than escaping."""
     mock_bus = MagicMock()
     mock_bus.search = AsyncMock(side_effect=RuntimeError("db gone"))
     mock_store = MagicMock()
@@ -181,6 +189,7 @@ async def test_retrieve_context_returns_empty_when_all_backends_fail():
 
 @pytest.mark.asyncio
 async def test_retrieve_context_respects_top_n():
+    """Bound fused recall by the requested maximum result count."""
     hits = [{"row_id": i, "text": f"hit {i}"} for i in range(20)]
     mock_bus = MagicMock()
     mock_bus.search = AsyncMock(return_value=hits)

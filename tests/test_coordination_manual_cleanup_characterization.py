@@ -239,6 +239,7 @@ async def test_liveness_is_not_rechecked_at_release_time(
     real_find_open_claims = heartbeat_monitor.find_open_claims
 
     async def pulse_then_find(target_bus: GossipBus) -> list[dict]:
+        """Renew presence after stale classification but before claim lookup."""
         await target_bus.emit("heartbeat", {"kind": "agent_pulse", "agent_id": "late-pulser"})
         return await real_find_open_claims(target_bus)
 
@@ -259,6 +260,7 @@ async def test_partial_failure_keeps_earlier_releases_and_propagates(
     calls = {"n": 0}
 
     async def failing_second_emit(event_type: str, payload: dict, **kwargs: object) -> str:
+        """Fail the second release to expose already-persisted partial progress."""
         if payload.get("kind") == "agent_release":
             calls["n"] += 1
             if calls["n"] == 2:
@@ -308,6 +310,7 @@ async def test_queue_release_is_conditional_on_the_current_holder(
     real_snapshots = task_queue.latest_task_snapshots
 
     async def reassign_then_snapshot(target_bus: GossipBus) -> dict[str, dict]:
+        """Change the claim holder before returning the stale task snapshot."""
         async with target_bus.connect() as db:
             await db.execute(
                 "UPDATE task_claims SET agent_id = 'new-owner' WHERE task_id = ?",
@@ -328,6 +331,7 @@ async def test_queue_release_contention_is_silently_skipped(
     task_id = await _queued_task_claimed_by(bus, "dead-q", "busy-work")
 
     async def always_busy(*_args: object, **_kwargs: object) -> ReleaseResult:
+        """Return contention without releasing the retained claim."""
         return ReleaseResult.CONTENTION
 
     monkeypatch.setattr(task_queue, "release_claim_with_event", always_busy)

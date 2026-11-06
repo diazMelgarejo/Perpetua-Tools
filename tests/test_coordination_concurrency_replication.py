@@ -19,6 +19,7 @@ import random
 import sqlite3
 import time
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import aiosqlite
 import httpx
@@ -99,14 +100,65 @@ async def test_ten_async_workers_commit_exactly_one_claim(bus: GossipBus) -> Non
     assert [e["assigned_agent"] for e in events] == [winner]
 
 
-def _process_claim(db_path: str, task_id: str, agent_id: str, barrier, out) -> None:
+def _process_claim(db_path: str, task_id: str, agent_id: str, barrier: object, out: object) -> None:
     """Child process body: wait at the barrier, then attempt one atomic claim."""
-    barrier.wait()
+    barrier.wait(timeout=30)
     try:
         result = asyncio.run(try_atomic_claim(GossipBus(db_path), task_id, agent_id))
         out.put((agent_id, result.value))
     except GossipBusError as exc:  # recorded, not hidden
         out.put((agent_id, f"error:{type(exc).__name__}"))
+
+
+def _run_claim_processes(procs: list, out: object) -> dict:
+    """Collect worker results and always reap every successfully started process."""
+    started = []
+    try:
+        for proc in procs:
+            proc.start()
+            started.append(proc)
+        results = dict(out.get(timeout=120) for _ in started)
+        for proc in started:
+            proc.join(timeout=30)
+            assert proc.exitcode == 0
+        return results
+    finally:
+        for proc in started:
+            if proc.is_alive():
+                proc.terminate()
+        for proc in started:
+            proc.join(timeout=5)
+            if proc.is_alive():
+                proc.kill()
+                proc.join(timeout=5)
+        out.close()
+        out.cancel_join_thread()
+
+
+@pytest.mark.parametrize("failure", ["start", "result", "exit"])
+def test_claim_processes_cleanup_on_failure(failure: str) -> None:
+    """Started workers are terminated and reaped on each parent failure path."""
+    first, second = MagicMock(), MagicMock()
+    first.is_alive.side_effect = [True, True]
+    first.exitcode = 1 if failure == "exit" else 0
+    second.is_alive.return_value = True
+    second.exitcode = 0
+    out = MagicMock()
+    out.get.side_effect = [("a", "won"), ("b", "lost_race")]
+    if failure == "start":
+        second.start.side_effect = RuntimeError("start failed")
+    elif failure == "result":
+        out.get.side_effect = RuntimeError("result failed")
+    with pytest.raises((RuntimeError, AssertionError)):
+        _run_claim_processes([first, second], out)
+    first.terminate.assert_called_once()
+    first.kill.assert_called_once()
+    assert first.join.call_count >= 2
+    if failure != "start":
+        second.terminate.assert_called_once()
+        second.kill.assert_called_once()
+    out.close.assert_called_once()
+    out.cancel_join_thread.assert_called_once()
 
 
 def test_ten_os_processes_commit_exactly_one_claim(tmp_path: Path) -> None:
@@ -122,12 +174,7 @@ def test_ten_os_processes_commit_exactly_one_claim(tmp_path: Path) -> None:
         ctx.Process(target=_process_claim, args=(db_path, "race-10-proc", f"p-{i}", barrier, out))
         for i in range(WORKERS)
     ]
-    for proc in procs:
-        proc.start()
-    results = dict(out.get(timeout=120) for _ in procs)
-    for proc in procs:
-        proc.join(timeout=60)
-        assert proc.exitcode == 0
+    results = _run_claim_processes(procs, out)
     values = list(results.values())
     assert set(values) <= {r.value for r in _CLAIM_VOCABULARY}, values
     assert values.count(ClaimResult.WON.value) == 1
@@ -170,6 +217,7 @@ async def test_ten_cli_level_workers_report_one_success(
 def _short_timeout_connect(db_path: str, counter: dict[str, int]):
     """Return a connect() replacement with a 50 ms busy timeout that counts calls."""
     def connect():
+        """Open a short-timeout connection and count each retry."""
         counter["n"] += 1
         return aiosqlite.connect(db_path, timeout=0.05)
     return connect
@@ -204,6 +252,9 @@ async def test_release_under_held_write_lock_keeps_the_claim(
     assert await try_atomic_claim(bus, "held", "agent-a") == ClaimResult.WON
     # The claim scheduled a background embedding that also opens a connection.
     await cancel_pending_embeddings_for_current_loop()
+    async with bus.connect() as db:
+        cursor = await db.execute("SELECT * FROM gossip ORDER BY id")
+        before = await cursor.fetchall()
     counter = {"n": 0}
     monkeypatch.setattr(bus, "connect", _short_timeout_connect(bus.db_path, counter))
     blocker = sqlite3.connect(bus.db_path, timeout=0)
@@ -220,6 +271,9 @@ async def test_release_under_held_write_lock_keeps_the_claim(
     assert counter["n"] == task_queue._LOCK_RETRIES
     monkeypatch.undo()
     assert await _claim_rows(bus, "held") == ["agent-a"]
+    async with bus.connect() as db:
+        cursor = await db.execute("SELECT * FROM gossip ORDER BY id")
+        assert await cursor.fetchall() == before
 
 
 # ── Duplicate and reordered events ──────────────────────────────────────────
@@ -315,6 +369,7 @@ async def test_bridge_never_forwards_or_acknowledges_a_failed_local_write(
     await bridge.init_db()
 
     async def failing_emit(*_args: object, **_kwargs: object) -> str:
+        """Refuse source persistence before the bridge contacts any peer."""
         raise GossipBusError("injected local failure")
 
     monkeypatch.setattr(bridge.local, "emit", failing_emit)

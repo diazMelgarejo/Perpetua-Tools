@@ -121,6 +121,7 @@ def test_concurrent_creator_adopts_the_winning_identifier(tmp_path: Path) -> Non
     winner = "ptp-" + "a" * 32
 
     def racing_token() -> str:
+        """Install another creator's complete identity before this draw returns."""
         id_path.write_text(winner + "\n", encoding="utf-8")
         return "b" * 32
 
@@ -136,6 +137,7 @@ def test_concurrent_readers_never_observe_empty_or_truncated_file(tmp_path: Path
     stop = False
 
     def reader() -> None:
+        """Observe published content while concurrent creators compete."""
         while not stop:
             if id_path.exists():
                 try:
@@ -146,6 +148,7 @@ def test_concurrent_readers_never_observe_empty_or_truncated_file(tmp_path: Path
             time.sleep(0.0001)
 
     def creator() -> str:
+        """Create or adopt the stable producer identity."""
         return load_or_create_producer_id(id_path)
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=16) as ex:
@@ -224,6 +227,7 @@ def test_label_falls_back_to_placeholder_instead_of_crashing(
 ) -> None:
     """Emit paths must never crash on identity errors."""
     def boom(*_args: object, **_kwargs: object) -> str:
+        """Inject an identity failure at the emission boundary."""
         raise ProducerIdError("synthetic")
 
     monkeypatch.setattr(producer_identity, "load_or_create_producer_id", boom)

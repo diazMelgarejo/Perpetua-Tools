@@ -18,7 +18,7 @@ from this checkout.
 | # | Finding | Disposition | Evidence |
 | --- | --- | --- | --- |
 | 1 | `PHASE-0-MASTER-PLAN-2026-07-27.md` Mesh Phase D names `perpetua-core` as v2 authority (review cited :117; at base, §4 line 122 and §12.3 line 335) | **fixed** | Dated status note under the existing 2026-11-06 banner: superseded by ADR 62 (Telos endpoint/address, Phylax principal/capability). The 2026-11-06 banner from #480 covered only the coordination owner. |
-| 2 | July 17 consolidation plan: "Part 2 remains deferred to v2 oramasys" | **fixed (routed)** | Dated note: Part 2 landed in PT (`liveness.py` exists); v2 is a separate parity migration under doc 68 §1/§11 |
+| 2 | July 17 consolidation plan: "Part 2 remains deferred to v2 oramasys" | **fixed** | Dated in-file note: heartbeat/liveness extraction landed in PT; this does not close every Part 2/Phase 0F item. Current gaps link to the manual characterization; v2 is a separate protocol under doc 68 §1/§11 |
 | 3 | August 23 Part 3 draft open; no `daemon.py` | **superseded** | Existing ratification banner (#480) plus a new scope note mapping §2–§5 to master-plan items 1 and 4–7 and D1/D2 |
 | 4 | `docs/coordination/README.md` lists `liveness.py` as TODO | **fixed** | Dated note: landed. The `phases.py` LAN-gap TODO is also historical: `phases.py` builds no bus and receives `make_gossip_bus` from `cli.py`. |
 | 5 | `PHASE-0-MASTER-PLAN:201` (base) heartbeat-daemon design "DEFERRED v2" | **fixed** | Same dated note: D1 keeps PT manual; automatic release is v2 Controller only |

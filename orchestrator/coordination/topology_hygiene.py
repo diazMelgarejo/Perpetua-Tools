@@ -26,6 +26,7 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import os
 import re
 import sqlite3
 import sys
@@ -62,8 +63,17 @@ class TopologyInventoryError(Exception):
 
 
 def _topology_values(payload: dict[str, Any]) -> list[Any]:
-    """Return the values of the topology fields present in ``payload``."""
-    return [payload[name] for name in TOPOLOGY_FIELDS if name in payload]
+    """Find topology fields recursively, including legacy metadata and lists."""
+    values: list[Any] = []
+    pending: list[Any] = [payload]
+    while pending:
+        value = pending.pop()
+        if isinstance(value, dict):
+            values.extend(item for key, item in value.items() if key in TOPOLOGY_FIELDS)
+            pending.extend(value.values())
+        elif isinstance(value, list):
+            pending.extend(value)
+    return values
 
 
 def _classify_value(value: Any) -> TopologyClass:
@@ -110,18 +120,30 @@ def _legacy_fragments(payload: dict[str, Any]) -> list[str]:
 
 
 def _scrub(value: Any, fragments: list[str]) -> Any:
-    """Recursively replace legacy fragments inside strings and dictionary keys of ``value``."""
+    """Redact topology references without corrupting identifiers or map keys."""
     if isinstance(value, str):
         for fragment in fragments:
-            value = value.replace(fragment, LEGACY_REDACTED)
+            if "@" in fragment or fragment.startswith(("/", "~")) or re.match(r"^[A-Za-z]:", fragment):
+                value = value.replace(fragment, LEGACY_REDACTED)
+            elif "/" in fragment:
+                value = re.sub(
+                    rf"(?<![A-Za-z0-9/.-]){re.escape(fragment)}(?![A-Za-z0-9/.-])",
+                    LEGACY_REDACTED, value,
+                )
+            else:
+                value = re.sub(
+                    rf"(?i)(\bbranch(?:[_:=]\s*|\s+)){re.escape(fragment)}(?![\w/-])",
+                    lambda match: match[1] + LEGACY_REDACTED, value,
+                )
         return value
     if isinstance(value, dict):
-        return {
-            (_scrub(key, fragments) if isinstance(key, str) else key): _scrub(
-                item, fragments
-            )
-            for key, item in value.items()
-        }
+        result: dict[Any, Any] = {}
+        for key, item in value.items():
+            safe_key = _scrub(key, fragments) if isinstance(key, str) else key
+            if safe_key in result:
+                raise TopologyInventoryError("redaction would merge mapping keys")
+            result[safe_key] = _scrub(item, fragments)
+        return result
     if isinstance(value, list):
         return [_scrub(item, fragments) for item in value]
     return value
@@ -152,10 +174,10 @@ def sanitize_topology(payload: Any) -> Optional[dict[str, Any]]:
         return None
     result = copy.deepcopy(payload)
     if topology_class == "legacy_label":
-        result = _scrub(result, _legacy_fragments(payload))
-        for name in TOPOLOGY_FIELDS:
-            if name in result and _classify_value(payload[name]) == "legacy_label":
-                result[name] = LEGACY_REDACTED
+        try:
+            result = _scrub(result, _legacy_fragments(payload))
+        except TopologyInventoryError:
+            return None
     return result
 
 
@@ -275,6 +297,26 @@ def export_portable_events(db_path: str) -> PortableExport:
     return result
 
 
+def _write_portable_export(db_path: str, output_path: str, exported: PortableExport) -> None:
+    """Write an export only after its open descriptor is distinct from the database."""
+    with open(db_path, "rb") as source:
+        source_stat = os.fstat(source.fileno())
+        fd = os.open(output_path, os.O_WRONLY | os.O_CREAT, 0o600)
+        try:
+            output_stat = os.fstat(fd)
+            if (source_stat.st_dev, source_stat.st_ino) == (output_stat.st_dev, output_stat.st_ino):
+                raise TopologyInventoryError("export destination aliases the source database")
+            # Do not use O_TRUNC: alias checks must precede the first mutation.
+            os.ftruncate(fd, 0)
+            with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
+                fd = -1
+                for row in exported.rows:
+                    handle.write(json.dumps(row, sort_keys=True) + "\n")
+        finally:
+            if fd != -1:
+                os.close(fd)
+
+
 def main(argv: Optional[list[str]] = None) -> int:
     """Command-line entry point; prints counts or writes sanitized rows only."""
     parser = argparse.ArgumentParser(prog="topology_hygiene")
@@ -294,9 +336,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             print(json.dumps(inventory_episodic(Path(args.path)), sort_keys=True))
         else:
             exported = export_portable_events(args.db)
-            with open(args.out, "w", encoding="utf-8") as handle:
-                for row in exported.rows:
-                    handle.write(json.dumps(row, sort_keys=True) + "\n")
+            _write_portable_export(args.db, args.out, exported)
             print(json.dumps(
                 {"exported": len(exported.rows), "blocked": exported.blocked,
                  "counts": exported.counts},

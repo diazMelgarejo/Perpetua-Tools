@@ -28,6 +28,25 @@ can be confirmed by guessing. No separate mapping file is created. The
 identifier file's location is the only local link between the identifier and
 its worktree, and it has owner-only permissions.
 
+### Compatibility and caller migration
+
+The public function name, import paths, no-argument signature and string
+return type remain compatible. The string's format deliberately changes for
+privacy: consumers must treat `worktree` as an advisory label, not split it
+on `@`, infer authorization, or use it as a task's durable identity. Event
+UUIDs and task IDs retain those separate roles. The known-caller audit covers
+repository consumers, not every external installation.
+
+Previously stored labels remain unchanged in append-only history. Derived
+readers accept both formats through `classify_payload`/`sanitize_topology`:
+legacy labels are redacted, opaque identifiers are retained, and unclassified
+shapes are withheld. Existing keys must not be relabeled or correlated with
+new IDs by guessing a branch/path. A consumer that persisted old labels as
+keys must retain its legacy records and migrate explicitly using an approved
+node-local association or start a separate opaque-label namespace. That
+association must never be exported to peers. No compatibility mode restores
+workstation paths to newly emitted shared events.
+
 ## Historical rows and derived views
 
 The new identifier does not repair stored rows. Tracked append-only sources are
