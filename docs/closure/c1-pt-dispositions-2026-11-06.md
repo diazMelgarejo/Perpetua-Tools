@@ -66,7 +66,6 @@ from this checkout.
 | `docs/superpowers/plans/2026-09-03-agent-handoff-validation-v1` | implemented | **historical** | `orchestrator/handoff_validation.py` exists |
 | `docs/wiki/2026-04-20-LM-Studio-autodiscovery-PLAN` | resolved | **historical** | `orchestrator/lan_discovery.py` exists |
 
-
 ## Status notes routed here (pre-existing markdown lint debt)
 
 CI lints every changed Markdown file in full. These five historical files already fail
