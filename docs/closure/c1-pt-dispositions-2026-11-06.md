@@ -15,6 +15,23 @@ from this checkout.
 
 ## Cross-document findings
 
+### Operator confirmation and local follow-up
+
+On 2026-11-06 the operator directly confirmed all six J1 closure decisions,
+matching GossipBus rows 6308/6309, topic
+`OPERATOR_RATIFICATION_ALL_SIX_DECISIONS_AND_CLOSURE_APPROVAL_20261106`.
+The canonical decision table is the Orama master closure register. PT's
+applicable scope is sanitized derived exports with raw history node-local,
+paired canonical decision pointers, and D1 manual coordination. Legacy Core
+modules are not to be retrofitted with Doc 69. No automatic release daemon,
+runtime authority migration, serving activation or legacy-history rewrite is
+authorized by this record. Existing compatibility shims remain in place.
+
+Accepted published implementation: `ec88e63c`, preserving AGY `4987ceaf`.
+The operator now requests local logical commits only: do not push follow-up
+work until separately authorized. Ratification does not qualify the physical
+filesystems, prove native Windows behavior, or close C3d human review.
+
 | # | Finding | Disposition | Evidence |
 | --- | --- | --- | --- |
 | 1 | `PHASE-0-MASTER-PLAN-2026-07-27.md` Mesh Phase D names `perpetua-core` as v2 authority (review cited :117; at base, §4 line 122 and §12.3 line 335) | **fixed** | Dated status note under the existing 2026-11-06 banner: superseded by ADR 62 (Telos endpoint/address, Phylax principal/capability). The 2026-11-06 banner from #480 covered only the coordination owner. |
@@ -70,7 +87,10 @@ from this checkout.
 
 CI lints every changed Markdown file in full. These five historical files already fail
 markdownlint at base, so editing them in place would require reformatting preserved text.
-Their 2026-11-06 status notes are recorded here instead and apply to the named file.
+Their 2026-11-06 status notes are recorded here and apply to the named file.
+The July 17 plan was subsequently updated directly, with its historical body
+preserved and formatting corrected; its remaining entry below records baseline
+lint debt, not the current changed-file result.
 The lint debt stays explicit; it is not exempted or called verified.
 
 | File | markdownlint errors at base |
@@ -121,6 +141,8 @@ The lint debt stays explicit; it is not exempted or called verified.
 
 ## Not covered
 
-Markdown lint was not run on the changed files in this lane, so the
-formatting of the new notes is not verified. Existing formatting debt in the
-preserved plans is unchanged.
+The original documentation lane did not run Markdown lint. The subsequent
+integration at `ec88e63c` validated all changed Markdown files, including the
+direct July 17 status note, with no lint errors. Untouched historical files'
+baseline formatting debt is not claimed fixed. This ledger is documentation
+evidence, not a full deployment or product-parity receipt.
