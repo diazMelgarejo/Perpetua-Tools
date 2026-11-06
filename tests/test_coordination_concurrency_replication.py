@@ -17,6 +17,7 @@ import asyncio
 import multiprocessing
 import random
 import sqlite3
+import threading
 import time
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -102,11 +103,11 @@ async def test_ten_async_workers_commit_exactly_one_claim(bus: GossipBus) -> Non
 
 def _process_claim(db_path: str, task_id: str, agent_id: str, barrier: object, out: object) -> None:
     """Child process body: wait at the barrier, then attempt one atomic claim."""
-    barrier.wait(timeout=30)
     try:
+        barrier.wait(timeout=30)
         result = asyncio.run(try_atomic_claim(GossipBus(db_path), task_id, agent_id))
         out.put((agent_id, result.value))
-    except GossipBusError as exc:  # recorded, not hidden
+    except (GossipBusError, threading.BrokenBarrierError) as exc:  # recorded, not hidden
         out.put((agent_id, f"error:{type(exc).__name__}"))
 
 
@@ -133,6 +134,15 @@ def _run_claim_processes(procs: list, out: object) -> dict:
                 proc.join(timeout=5)
         out.close()
         out.cancel_join_thread()
+
+
+def test_process_claim_reports_broken_barrier() -> None:
+    """A broken worker barrier reports a result instead of leaving the parent waiting."""
+    barrier = MagicMock()
+    barrier.wait.side_effect = threading.BrokenBarrierError
+    out = MagicMock()
+    _process_claim("unused", "task", "agent", barrier, out)
+    out.put.assert_called_once_with(("agent", "error:BrokenBarrierError"))
 
 
 @pytest.mark.parametrize("failure", ["start", "result", "exit"])
