@@ -11,13 +11,16 @@ of Claude's review proposal after the completed K1-K3 jobs; do not duplicate
 already-fixed recommendations. Operator-only C3d still requires exact-head
 acceptance and fresh operator-performed authentication. PT stays manual.
 
-**Updated:** 2026-10-19 UTC, latest (slice 1 implemented and verified in two repositories)
+**Updated:** 2026-10-19 UTC, latest
+(slice 1 implemented and verified in two repositories)
 **Session record:** `memory/working/2026-10-19-clean-rollback-and-preflight-chronicle.md` (Addendum 2)
-**Next actions:** 1 operator answers D1 (push both slice-1 branches, one PR per repository), D2 (delete
+**Next actions:** 1 operator answers D1 (push both slice-1 branches, one PR per
+repository), D2 (delete
 the stale remote branch on merged PR 421) and D3 (pin promotion, gated). 2 Codex finishes the consumer
 review. 3 after D1, push each branch once and open its PR. 4 serving stays off.
 **State:** Phylax issuer head `f0b73c8` and Oramasys consumer head `812e0f3`, both on current main, not
-pushed; 7 of 7 interop scenarios with real signatures; Codex APPROVE_WITH_SCOPE on the issuer slice and
+pushed; 7 of 7 interop scenarios with real signatures; Codex APPROVE_WITH_SCOPE
+on the issuer slice and
 Agnes APPROVE_SCOPED on both. Eleven more lessons graduated.
 **Next actions (repeated):** D1 to D3, Codex consumer review, push once per repository, serving off.
 
