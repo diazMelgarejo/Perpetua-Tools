@@ -3,10 +3,6 @@
 > **Date:** 2026-05-31 (revised 2026-05-31, decisions **D1–D5 locked** after code verification; **A+B variants combined**)
 > **Author:** Claude (Opus 4.8) + Cursor agent (D1–D5 code-verification pass) · **Status:** active resume anchor
 > **Canonical pair:** this doc (sequenced execution + locked decisions) + [`MIGRATION.md`](MIGRATION.md) (gate ladder)
-> **2026-11-06:** No longer the active resume anchor. The Phase 0 master plan
-> records this plan as done (item #1) with #2/#3/#8 deferred to v2. Current
-> closure routing is the Orama master closure register, entered from
-> [`next/MASTER-CLOSURE-HANDOFF-2026-11-06.md`](next/MASTER-CLOSURE-HANDOFF-2026-11-06.md).
 > **Companions:** [`adapter-interface-contract.md`](adapter-interface-contract.md) ·
 > [orama LESSONS](../../orama-system/docs/LESSONS.md) · [AlphaClaw Lessons](../../AlphaClaw/docs/Lessons.MD) ·
 > [AlphaClaw Gate-2 steelman](../../AlphaClaw/docs/gate2-lib-mcp-deletion-steelman.md)

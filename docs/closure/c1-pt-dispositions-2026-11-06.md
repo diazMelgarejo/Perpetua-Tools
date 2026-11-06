@@ -18,7 +18,7 @@ from this checkout.
 | # | Finding | Disposition | Evidence |
 | --- | --- | --- | --- |
 | 1 | `PHASE-0-MASTER-PLAN-2026-07-27.md` Mesh Phase D names `perpetua-core` as v2 authority (review cited :117; at base, §4 line 122 and §12.3 line 335) | **fixed** | Dated status note under the existing 2026-11-06 banner: superseded by ADR 62 (Telos endpoint/address, Phylax principal/capability). The 2026-11-06 banner from #480 covered only the coordination owner. |
-| 2 | July 17 consolidation plan: "Part 2 remains deferred to v2 oramasys" | **fixed** | Dated note: Part 2 landed in PT (`liveness.py` exists); v2 is a separate parity migration under doc 68 §1/§11 |
+| 2 | July 17 consolidation plan: "Part 2 remains deferred to v2 oramasys" | **fixed (routed)** | Dated note: Part 2 landed in PT (`liveness.py` exists); v2 is a separate parity migration under doc 68 §1/§11 |
 | 3 | August 23 Part 3 draft open; no `daemon.py` | **superseded** | Existing ratification banner (#480) plus a new scope note mapping §2–§5 to master-plan items 1 and 4–7 and D1/D2 |
 | 4 | `docs/coordination/README.md` lists `liveness.py` as TODO | **fixed** | Dated note: landed. The `phases.py` LAN-gap TODO is also historical: `phases.py` builds no bus and receives `make_gossip_bus` from `cli.py`. |
 | 5 | `PHASE-0-MASTER-PLAN:201` (base) heartbeat-daemon design "DEFERRED v2" | **fixed** | Same dated note: D1 keeps PT manual; automatic release is v2 Controller only |
@@ -36,10 +36,10 @@ from this checkout.
 | `.agent/…/PR_BODY_ANTI_CLOBBER_ENFORCEMENT_PLAN.md` | complete | **historical** | — |
 | `.agent/…/SESSION_SYNTHESIS_ALPHACLAW_PR29…2026-08-20.md` | historical | **historical** | Session record |
 | `.agent/…/portal-facade-review-and-plan.md` | complete | **historical** | The `perplexity-api` path is a historical mention |
-| `docs/2026-05-31-tri-repo-alignment-completion-plan.md` | header "active resume anchor" | **fixed** | Dated note: not the active anchor; Phase 0 master plan (line 204 at base) records it done/deferred; points to the closure handoff |
-| `docs/next/2026-07-17-coordination-module-consolidation-plan.md` | "Part 2 → v2" stale | **fixed** | Row 2 |
+| `docs/2026-05-31-tri-repo-alignment-completion-plan.md` | header "active resume anchor" | **fixed (routed)** | Dated note: not the active anchor; Phase 0 master plan (line 204 at base) records it done/deferred; points to the closure handoff |
+| `docs/next/2026-07-17-coordination-module-consolidation-plan.md` | "Part 2 → v2" stale | **fixed (routed)** | Row 2 |
 | `docs/next/2026-07-24-plan-windows-acl-alphaclaw-tls-proxy.md` | partial | **historical** | Phase 0 master plan (line 203 at base) records it done (#278); not re-verified |
-| `docs/next/2026-07-27-coordination-phase-0f-part2-autoplan.plan.md` | likely done | **fixed** | Dated note: `liveness.py` extraction done; remaining 0F rows route to the coordination README |
+| `docs/next/2026-07-27-coordination-phase-0f-part2-autoplan.plan.md` | likely done | **fixed (routed)** | Dated note: `liveness.py` extraction done; remaining 0F rows route to the coordination README |
 | `docs/next/2026-08-23-coordination-consolidation-part3-plan.md` | open draft | **superseded** | Row 3 |
 | `phase-0/2026-07-11-STM-integration-plan` | done | **historical** | — |
 | `phase-0/2026-07-12-autoplan-final-approval-gate` | done | **historical** | — |
@@ -48,11 +48,11 @@ from this checkout.
 | `phase-0/PATTERN-MULTIAGENT-EXECUTION-PLAN` | reference | **historical** | — |
 | `phase-0/PHASE-0-MASTER-PLAN-2026-07-27` | wrong v2 owner | **fixed** | Row 1 |
 | `docs/plan-review-migration-plan-3` | historical | **historical** | — |
-| `docs/plans/2026-05-31-gate2-implementation-plan.md` | "RESOLVED" banner vs "in progress" | **fixed** | Dated note. The banner's SHA does not resolve after the history rewrite; `stopServer` exists in `packages/alphaclaw-adapter/src/index.js`. |
+| `docs/plans/2026-05-31-gate2-implementation-plan.md` | "RESOLVED" banner vs "in progress" | **fixed (routed)** | Dated note. The banner's SHA does not resolve after the history rewrite; `stopServer` exists in `packages/alphaclaw-adapter/src/index.js`. |
 | `docs/plans/2026-05-31-track-bc-claude-desktop-mcpb.md` | merge not verified | **historical** | `vendor/Claude-Desktop-LLM` is a submodule in `.gitmodules` on `main`, so the content is present; the branch merge itself was not verified |
 | `docs/plans/2026-07-12-pr206-multi-agent-remediation-completion-plan.md` | PR-scoped | **historical** | Not verified |
 | `docs/plans/2026-07-13-branch-local-pattern-remediation-card.md` | says "active" | **historical** | A reference card; "active" may still be correct. Not verified; not changed. |
-| `docs/plans/2026-07-13-pr211-lan-gossip-progress.md` | says "review-ready" | **fixed** | Dated note: bridge and tests are on `main`; the PR merge itself is not verified |
+| `docs/plans/2026-07-13-pr211-lan-gossip-progress.md` | says "review-ready" | **fixed (routed)** | Dated note: bridge and tests are on `main`; the PR merge itself is not verified |
 | `docs/plans/2026-07-14-final-remedy-primary-plan.md` | historical | **historical** | — |
 | `docs/plans/2026-07-22-rogue-commits-analysis-feedback.md` | historical | **historical** | — |
 | `docs/plans/2026-07-31-ci-workflow-consolidation-plan.md` | partial | **historical** | Self-described partial; not re-verified |
@@ -65,6 +65,60 @@ from this checkout.
 | `docs/superpowers/plans/2026-08-14-tier5-durable-budget-ledger` | implemented | **historical** | `orchestrator/tier5_budget.py` exists |
 | `docs/superpowers/plans/2026-09-03-agent-handoff-validation-v1` | implemented | **historical** | `orchestrator/handoff_validation.py` exists |
 | `docs/wiki/2026-04-20-LM-Studio-autodiscovery-PLAN` | resolved | **historical** | `orchestrator/lan_discovery.py` exists |
+
+
+## Status notes routed here (pre-existing markdown lint debt)
+
+CI lints every changed Markdown file in full. These five historical files already fail
+markdownlint at base, so editing them in place would require reformatting preserved text.
+Their 2026-11-06 status notes are recorded here instead and apply to the named file.
+The lint debt stays explicit; it is not exempted or called verified.
+
+| File | markdownlint errors at base |
+| --- | --- |
+| `docs/2026-05-31-tri-repo-alignment-completion-plan.md` | 35 |
+| `docs/next/2026-07-17-coordination-module-consolidation-plan.md` | 75 |
+| `docs/next/2026-07-27-coordination-phase-0f-part2-autoplan.plan.md` | 2 |
+| `docs/plans/2026-05-31-gate2-implementation-plan.md` | 6 |
+| `docs/plans/2026-07-13-pr211-lan-gossip-progress.md` | 5 |
+
+### `docs/2026-05-31-tri-repo-alignment-completion-plan.md`
+
+> **2026-11-06:** No longer the active resume anchor. The Phase 0 master plan
+> records this plan as done (item #1) with #2/#3/#8 deferred to v2. Current
+> closure routing is the Orama master closure register, entered from
+> [`next/MASTER-CLOSURE-HANDOFF-2026-11-06.md`](../next/MASTER-CLOSURE-HANDOFF-2026-11-06.md).
+
+### `docs/next/2026-07-17-coordination-module-consolidation-plan.md`
+
+> **2026-11-06:** "Part 2 remains deferred to v2 oramasys" is stale. The Part 2
+> module split landed in PT, including `orchestrator/coordination/liveness.py`.
+> Any v2 move is a separate parity migration, not a deferral of this plan: Orama
+> doc 68 §1 and §11 rule out replacing v1 coordination in place or importing v1
+> runtime code. Current v1 cleanup behavior is recorded in
+> [`../coordination/manual-cleanup-characterization-2026-11-06.md`](../coordination/manual-cleanup-characterization-2026-11-06.md).
+
+### `docs/next/2026-07-27-coordination-phase-0f-part2-autoplan.plan.md`
+
+> **2026-11-06 status:** The `liveness.py` extraction is done: the seven
+> heartbeat handlers live in `orchestrator/coordination/liveness.py`, and
+> `cli.py` imports them. Cleanup side effects are characterized in
+> [`../coordination/manual-cleanup-characterization-2026-11-06.md`](../coordination/manual-cleanup-characterization-2026-11-06.md).
+> Any remaining Phase 0F rows are tracked in `docs/coordination/README.md`.
+
+### `docs/plans/2026-05-31-gate2-implementation-plan.md`
+
+> **2026-11-06:** The "in progress" status above is stale; the resolution
+> banner at the top applies. The cited SHA predates the history rewrite and does
+> not resolve on current `main`, but `stopServer` exists in
+> `packages/alphaclaw-adapter/src/index.js`.
+
+### `docs/plans/2026-07-13-pr211-lan-gossip-progress.md`
+
+> **2026-11-06:** The `review-ready` front-matter status is historical. The LAN
+> gossip bridge (`orchestrator/lan_gossip_bridge.py`) and its tests are on
+> `main`. Whether PR #211 itself merged was not verified, because the history
+> rewrite changed commit identities.
 
 ## Not covered
 

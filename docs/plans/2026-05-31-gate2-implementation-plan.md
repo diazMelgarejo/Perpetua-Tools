@@ -3,10 +3,6 @@
 # Gate 2 Implementation Plan — Work Items #4, #6, #7
 
 > **Date:** 2026-05-31 · **Status:** in progress on `main`
-> **2026-11-06:** The "in progress" status above is stale; the resolution
-> banner at the top applies. The cited SHA predates the history rewrite and does
-> not resolve on current `main`, but `stopServer` exists in
-> `packages/alphaclaw-adapter/src/index.js`.
 > **Parent:** [`docs/2026-05-31-tri-repo-alignment-completion-plan.md`](../2026-05-31-tri-repo-alignment-completion-plan.md)
 > **Gate ladder:** [`docs/MIGRATION.md`](../MIGRATION.md)
 

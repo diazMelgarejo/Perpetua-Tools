@@ -8,11 +8,6 @@ branch: kimi-lan-peer-job-board
 
 # PR211 LAN Gossip Bridge Remediation Progress
 
-> **2026-11-06:** The `review-ready` front-matter status is historical. The LAN
-> gossip bridge (`orchestrator/lan_gossip_bridge.py`) and its tests are on
-> `main`. Whether PR #211 itself merged was not verified, because the history
-> rewrite changed commit identities.
-
 This document tracks the final CodeRabbit remediation pass for PR #211.
 
 ## Scope

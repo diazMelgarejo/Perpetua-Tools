@@ -7,12 +7,6 @@ STM master plan work
 **Canonical repo:** Perpetua-Tools (orama: pointer docs only)  
 **Autoplan intake:** run `/autoplan` against this file on PT `main`
 
-> **2026-11-06 status:** The `liveness.py` extraction is done: the seven
-> heartbeat handlers live in `orchestrator/coordination/liveness.py`, and
-> `cli.py` imports them. Cleanup side effects are characterized in
-> [`../coordination/manual-cleanup-characterization-2026-11-06.md`](../coordination/manual-cleanup-characterization-2026-11-06.md).
-> Any remaining Phase 0F rows are tracked in `docs/coordination/README.md`.
-
 ## Summary
 
 Canonicalize **coordination Phase 0F** (CLI contract freeze) separately from **STM
