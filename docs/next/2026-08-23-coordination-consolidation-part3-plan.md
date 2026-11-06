@@ -1,5 +1,12 @@
 # Coordination Consolidation Part 3: Operational & Daemon Integration Plan
 
+> **2026-11-06 closure review:** The revised executable scope and pending
+> ratification decisions are routed through [the master handoff](MASTER-CLOSURE-HANDOFF-2026-11-06.md).
+> The API and identifier examples below remain the original proposal; do not
+> implement them verbatim. No decision is marked ratified while answers are pending.
+
+---
+
 > **2026-11-06 reconciliation:** This remains a v1 draft, not authorization to
 > add claim-release behavior or implement the v2 controller. Reconcile its
 > proposed daemon behavior with the current master plan and Orama doc 68 first.
