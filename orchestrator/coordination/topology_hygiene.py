@@ -123,6 +123,8 @@ def _scrub(value: Any, fragments: list[str]) -> Any:
     """Redact topology references without corrupting identifiers or map keys."""
     if isinstance(value, str):
         for fragment in fragments:
+            if "@" not in fragment and not fragment.strip("/\\~"):
+                continue
             if "@" in fragment or fragment.startswith(("/", "~")) or re.match(r"^[A-Za-z]:", fragment):
                 value = value.replace(fragment, LEGACY_REDACTED)
             elif "/" in fragment:

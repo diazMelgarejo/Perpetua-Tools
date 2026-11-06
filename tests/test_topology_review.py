@@ -48,6 +48,18 @@ def test_common_branch_name_preserves_unrelated_values() -> None:
     assert safe["notes"] == f"an agent handles agent_claim; branch={LEGACY_REDACTED}"
 
 
+@pytest.mark.parametrize("anchor", ["/", "~", "/\\~"])
+def test_bare_anchor_does_not_corrupt_unrelated_values(anchor: str) -> None:
+    """Bare anchors are not replaced inside unrelated strings or keys."""
+    label = f"agent@{anchor}"
+    payload = {"worktree": label, "note": f"label={label}; path=/safe/~/name", "/safe/key": "ok"}
+    safe = portable_payload(payload)
+    assert safe is not None
+    assert safe["worktree"] == LEGACY_REDACTED
+    assert safe["note"] == f"label={LEGACY_REDACTED}; path=/safe/~/name"
+    assert safe["/safe/key"] == "ok"
+
+
 def test_redacted_key_collision_is_withheld() -> None:
     """Redaction must not silently discard one of two colliding map entries."""
     payload = {"worktree": f"topic/private@{PRIVATE}", PRIVATE: 1, LEGACY_REDACTED: 2}
