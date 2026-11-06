@@ -106,6 +106,14 @@ do not qualify a design twice or infer Windows success from Mac evidence.
 
 ## Source records
 
+Exa/Firecrawl primary-source research adds a WAL prerequisite: the inspected
+Python runtime links SQLite3.45.3, not a WAL-reset-patched build. Official fixes
+include3.51.3 and backports3.44.6/3.50.7. Do not enable WAL or change durability
+before build qualification. WAL still permits one writer, and busy timeouts do
+not fix a cross-lock cycle. Prioritize bounded authenticated work outside the
+write lock while preserving durable observations and snapshot-commit-last.
+Research report: `2026-11-06-c6-sqlite-primary-source-research.md` (off-repo).
+
 Gossip topics: `CLOSURE_K1_K3_TERRA61_DISPATCH_20261106`,
 `CLOSURE_FINAL_CI_OPTIONAL_DEPENDENCY_CORRECTION_20261106`,
 `CLOSURE_ORAMASYS95_CORRECTIVE_PUSH_AUTHORIZED_PUBLISHED_20261106`.
