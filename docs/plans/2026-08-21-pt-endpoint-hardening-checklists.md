@@ -7,6 +7,11 @@ Layer 3 = IMDS / egress (operator, not Python)
 
 Fail closed. No UI toggle. Env override only, reviewed.
 
+> **2026-11-06:** The unticked boxes below were not re-verified item by item and
+> are not a current backlog. `src/utils/ssrf_pinned_adapter.py` and
+> `src/utils/ssrf_fetch_policy.py` exist. This checklist is v1/PT-only: Orama
+> ADR 62 gives v2 endpoint/address authority to Telos.
+
 ---
 
 ## PR-P1 — Pre-flight validator

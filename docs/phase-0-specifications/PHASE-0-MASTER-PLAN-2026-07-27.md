@@ -4,6 +4,15 @@
 > below predate Orama doc 68: the planned v2 job-claim controller's definitive
 > home is an internal Oramasys module, with a standalone repository only through
 > the documented admission gate. PT remains responsible for v1 coordination.
+>
+> **2026-11-06 status note:** The "Mesh Phase D strict cutover" rows (§4 and
+> §12.3) name `perpetua-core` as the v2 authority. That is superseded by Orama
+> ADR 62: Telos owns v2 endpoint/address authority and Phylax owns
+> principal/capability admission, with no PT/v2 imports either way. PT keeps its
+> v1 mesh and endpoint policy. Under ratified D1, the heartbeat-daemon design in
+> §5 stays unbuilt in PT; automatic stale-claim release belongs to the v2
+> Controller only. Coordination Part 2 (`liveness.py`) has landed. See
+> [`../coordination/manual-cleanup-characterization-2026-11-06.md`](../coordination/manual-cleanup-characterization-2026-11-06.md).
 
 <!-- markdownlint-disable MD013 MD040 MD056 -->
 <!--
