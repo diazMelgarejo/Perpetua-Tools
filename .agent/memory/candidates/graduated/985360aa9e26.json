@@ -1,0 +1,41 @@
+{
+  "id": "985360aa9e26",
+  "key": "manual_985360",
+  "name": "manual_985360",
+  "claim": "Failure-path test harnesses must terminate deterministically: report broken process barriers through the result queue, stop reader loops in finally when creator futures fail, and distinguish an expected not-running worker signal from unexpected runtime failure. Assert specific refusal codes and audited denial state.",
+  "conditions": [
+    "broken barrier",
+    "reader cleanup",
+    "test lifecycle",
+    "worker failure"
+  ],
+  "evidence_ids": [
+    "2026-11-06T14:59:10.300816+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-06T14:59:10.300816+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-06T14:59:10.300816+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-06T14:59:10.446060+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Closure PT481 2eb26264 and 57eb3412 prevent test hangs; Oramasys95 b23a678 prevents phantom-running expiry workers; malformed failure classes now produce audited envelope.invalid rather than uncaught TypeError.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-06T14:59:10.300816+00:00"
+      ],
+      "lessons_sha": "34e49540f361"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-06T14:59:10.446047+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Closure PT481 2eb26264 and 57eb3412 prevent test hangs; Oramasys95 b23a678 prevents phantom-running expiry workers; malformed failure classes now produce audited envelope.invalid rather than uncaught TypeError."
+}

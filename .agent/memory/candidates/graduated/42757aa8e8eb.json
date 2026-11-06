@@ -1,0 +1,41 @@
+{
+  "id": "42757aa8e8eb",
+  "key": "manual_42757a",
+  "name": "manual_42757a",
+  "claim": "Keep operator authentication, exact-head acceptance, independent-review policy, platform qualification and activation as separate evidence. A fresh operator-performed GitHub login proves procedural account control, not review quality; operator-only C3d does not waive the distinct Release R6 gate or authorize serving.",
+  "conditions": [
+    "activation boundary",
+    "fresh GitHub login",
+    "operator C3d",
+    "review provenance"
+  ],
+  "evidence_ids": [
+    "2026-11-06T14:59:10.561723+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-06T14:59:10.561723+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-06T14:59:10.561723+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-06T14:59:10.702975+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Direct November6 operator decisions allow operator-only C3d and future configurable independent review while retaining exact-final-head acceptance, separate Windows qualification and dark-by-default serving.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-06T14:59:10.561723+00:00"
+      ],
+      "lessons_sha": "2781275c5f7f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-06T14:59:10.702962+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Direct November6 operator decisions allow operator-only C3d and future configurable independent review while retaining exact-final-head acceptance, separate Windows qualification and dark-by-default serving."
+}

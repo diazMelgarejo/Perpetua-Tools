@@ -1,5 +1,16 @@
 # WORKSPACE — current task state
 
+**Updated:** 2026-11-06 (closure K1-K3 complete; C6 follow-up separately gated)
+**Session record:** `memory/working/2026-11-06-closure-k1-k4-chronicle.md`.
+**State:** Orama477 `cf87c340`, PT481 `66c4af6d`, Oramasys95 `89da844c` are
+published and their hosted checks passed at fresh closeout. No merge/activation.
+The Mac C6 results supplied by Claude miss budgets; they are not qualification.
+**Next:** K4 is a separate branch/worktree from89da844c, with no commit until
+all security and three operator-run C6 gates pass. K5 queues a delta-only reread
+of Claude's review proposal after the completed K1-K3 jobs; do not duplicate
+already-fixed recommendations. Operator-only C3d still requires exact-head
+acceptance and fresh operator-performed authentication. PT stays manual.
+
 **Updated:** 2026-10-19 UTC, latest (slice 1 implemented and verified in two repositories)
 **Session record:** `memory/working/2026-10-19-clean-rollback-and-preflight-chronicle.md` (Addendum 2)
 **Next actions:** 1 operator answers D1 (push both slice-1 branches, one PR per repository), D2 (delete

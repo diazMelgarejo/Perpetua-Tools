@@ -1,0 +1,41 @@
+{
+  "id": "df4a50e26d56",
+  "key": "manual_df4a50",
+  "name": "manual_df4a50",
+  "claim": "Performance qualification must distinguish the approved workload from smoke tests and historical results. Use refresh-off and single-sender controls, scheduled-time latency, explicit failure accounting and statistical error bounds; a timeout denial is not evidence of fail-open or a reason to weaken authority checks.",
+  "conditions": [
+    "C6 performance",
+    "coordinated omission",
+    "qualification",
+    "refresh contention"
+  ],
+  "evidence_ids": [
+    "2026-11-06T14:58:54.475629+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-06T14:58:54.475629+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-06T14:58:54.475629+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-06T14:58:54.624383+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "C6 Mac controls at 89da844c isolated refresh interference: no-refresh 800 sends passed while one-sender refresh still failed. Triple verification inside nested write locks was profiled; target budgets remain unmet and a 2400-send zero-error sample cannot prove a 0.1 percent upper bound.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-06T14:58:54.475629+00:00"
+      ],
+      "lessons_sha": "519d3ff4cea6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-06T14:58:54.624372+00:00",
+  "reviewer": "learn.py",
+  "rationale": "C6 Mac controls at 89da844c isolated refresh interference: no-refresh 800 sends passed while one-sender refresh still failed. Triple verification inside nested write locks was profiled; target budgets remain unmet and a 2400-send zero-error sample cannot prove a 0.1 percent upper bound."
+}

@@ -1,0 +1,41 @@
+{
+  "id": "0b0835f06107",
+  "key": "manual_0b0835",
+  "name": "manual_0b0835",
+  "claim": "Detected trust changes or genuine resolver outages must refuse the current security-sensitive operation even if a subsequent lookup recovers. Bind verification reuse to exact bytes, key identifiers and sampled public-key trust; preserve not-found semantics separately from resolver failures.",
+  "conditions": [
+    "fail closed",
+    "resolver failure",
+    "revocation trust",
+    "verification memo"
+  ],
+  "evidence_ids": [
+    "2026-11-06T14:58:54.203120+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-06T14:58:54.203120+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-06T14:58:54.203120+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-06T14:58:54.353637+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Closure K1 real-signature regressions reproduced transient prewarm, warm-cache and refresh recovery into allow; d79182a and 7cb054f preserve specific unavailable refusals.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-06T14:58:54.203120+00:00"
+      ],
+      "lessons_sha": "284643ae3410"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-06T14:58:54.353626+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Closure K1 real-signature regressions reproduced transient prewarm, warm-cache and refresh recovery into allow; d79182a and 7cb054f preserve specific unavailable refusals."
+}
