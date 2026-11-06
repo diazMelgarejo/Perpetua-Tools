@@ -129,6 +129,30 @@ def test_concurrent_creator_adopts_the_winning_identifier(tmp_path: Path) -> Non
     assert load_or_create_producer_id(id_path) == winner
 
 
+def test_reader_threads_stop_when_creator_fails(tmp_path: Path) -> None:
+    """A creator exception cannot strand reader threads in executor shutdown."""
+    script = """
+import runpy
+import sys
+from pathlib import Path
+from unittest.mock import patch
+module = runpy.run_path(sys.argv[1])
+test = module['test_concurrent_readers_never_observe_empty_or_truncated_file']
+with patch.dict(test.__globals__, {'load_or_create_producer_id': lambda *a, **k: (_ for _ in ()).throw(RuntimeError('creator failed'))}):
+    try:
+        test(Path(sys.argv[2]))
+    except RuntimeError as exc:
+        assert str(exc) == 'creator failed'
+    else:
+        raise AssertionError('creator failure was not propagated')
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script, __file__, str(tmp_path)],
+        capture_output=True, text=True, timeout=5, check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
 def test_concurrent_readers_never_observe_empty_or_truncated_file(tmp_path: Path) -> None:
     """Finding P3: Concurrent readers never see a 0-byte or truncated id file."""
     id_path = tmp_path / "concurrent" / "pt-producer-id"
@@ -153,9 +177,11 @@ def test_concurrent_readers_never_observe_empty_or_truncated_file(tmp_path: Path
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=16) as ex:
         reader_futs = [ex.submit(reader) for _ in range(8)]
-        creator_futs = [ex.submit(creator) for _ in range(8)]
-        results = [f.result() for f in creator_futs]
-        stop = True
+        try:
+            creator_futs = [ex.submit(creator) for _ in range(8)]
+            results = [f.result() for f in creator_futs]
+        finally:
+            stop = True
         for f in reader_futs:
             f.result()
 
