@@ -1,0 +1,40 @@
+{
+  "id": "a5f35c666a3b",
+  "key": "manual_a5f35c",
+  "name": "manual_a5f35c",
+  "claim": "Distinguish existing Oramasys execution run-lease epoch fencing from planned Controller job-claim leases. Do not infer that the job-claim controller is implemented merely because execution leases already exist.",
+  "conditions": [
+    "architecture",
+    "job-claim",
+    "run-lease"
+  ],
+  "evidence_ids": [
+    "2026-11-06T01:27:51.716970+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-06T01:27:51.716970+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-06T01:27:51.716970+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-06T01:28:07.807441+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "execution_guard.py implements run-lease fencing while doc 68 job-claim controller remains design only.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-06T01:27:51.716970+00:00"
+      ],
+      "lessons_sha": "0ee3aa96d1c8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-06T01:28:07.807420+00:00",
+  "reviewer": "host-agent",
+  "rationale": "execution_guard.py implements run-lease fencing while doc 68 job-claim controller remains design only."
+}

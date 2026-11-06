@@ -1,0 +1,40 @@
+{
+  "id": "ae7945721cbb",
+  "key": "manual_ae7945",
+  "name": "manual_ae7945",
+  "claim": "For persisted anti-rollback clocks, sample an aware current time after acquiring the write lock; a request-time sample can appear older than another valid writer without actual rollback. Recheck registry freshness, key trust and expiry at the nonce-consumption boundary while keeping real rollback refusals.",
+  "conditions": [
+    "clock-rollback",
+    "commit-time",
+    "nonce-lock"
+  ],
+  "evidence_ids": [
+    "2026-11-05T22:34:27.209557+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-05T22:34:27.209557+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-05T22:34:27.209557+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-05T22:34:27.343027+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The reviewed operator assertion repair and Phylax #31 recheck current validity under the consuming write lock; source-level regressions distinguish valid interleaving from real rollback and refuse without consuming a nonce. https://github.com/oramasys/phylax/pull/31 ; https://github.com/oramasys/phylax/pull/30#pullrequestreview-5743182823",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-05T22:34:27.209557+00:00"
+      ],
+      "lessons_sha": "77fc5a116201"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-05T22:34:27.343009+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The reviewed operator assertion repair and Phylax #31 recheck current validity under the consuming write lock; source-level regressions distinguish valid interleaving from real rollback and refuse without consuming a nonce. https://github.com/oramasys/phylax/pull/31 ; https://github.com/oramasys/phylax/pull/30#pullrequestreview-5743182823"
+}

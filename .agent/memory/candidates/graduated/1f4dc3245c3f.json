@@ -1,0 +1,42 @@
+{
+  "id": "1f4dc3245c3f",
+  "key": "manual_1f4dc3",
+  "name": "manual_1f4dc3",
+  "claim": "A coordination handoff is a release followed by a claim with preserved lineage. Notification or inherited authorship alone neither transfers ownership nor grants the receiving actor authority.",
+  "conditions": [
+    "claim",
+    "coordination",
+    "handoff",
+    "lineage",
+    "release"
+  ],
+  "evidence_ids": [
+    "2026-11-06T02:29:42.868539+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-06T02:29:42.868539+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-06T02:29:42.868539+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-06T02:29:43.052434+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Restore the unaffected handoff rule from superseded lesson_0361f3955fb0; review5794657371. The controller remains the authoritative writer and each new claim must satisfy its own authority checks.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-06T02:29:42.868539+00:00"
+      ],
+      "lessons_sha": "c4887ff63ba2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-06T02:29:43.052415+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Restore the unaffected handoff rule from superseded lesson_0361f3955fb0; review5794657371. The controller remains the authoritative writer and each new claim must satisfy its own authority checks."
+}

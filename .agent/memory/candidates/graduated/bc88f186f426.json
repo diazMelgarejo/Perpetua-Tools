@@ -1,0 +1,40 @@
+{
+  "id": "bc88f186f426",
+  "key": "manual_bc88f1",
+  "name": "manual_bc88f1",
+  "claim": "A frozen allowlisted topology projection is not proof of the configuration a running service consumes. Bind installed artifacts, actual loader and policy inputs, service identity and process to the evidence generation; exclude secrets and low-entropy values from public bare hashes, and leave host qualification open until measured.",
+  "conditions": [
+    "config-binding",
+    "loaded-identity",
+    "qualification"
+  ],
+  "evidence_ids": [
+    "2026-11-05T22:34:27.614499+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-05T22:34:27.614499+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-05T22:34:27.614499+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-05T22:34:27.750027+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The bounded load_with_identity slice observes return-time values, but its mutable effective result is not bound to later service consumption. This is an explicit remaining deployment gate, not a failed implementation to hide. https://github.com/oramasys/oramasys/blob/f89f82c6c8e256378fac0f9b072738f0f28480f1/docs/adr/loaded-deployment-identity.md",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-05T22:34:27.614499+00:00"
+      ],
+      "lessons_sha": "58e605c77d9e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-05T22:34:27.750008+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The bounded load_with_identity slice observes return-time values, but its mutable effective result is not bound to later service consumption. This is an explicit remaining deployment gate, not a failed implementation to hide. https://github.com/oramasys/oramasys/blob/f89f82c6c8e256378fac0f9b072738f0f28480f1/docs/adr/loaded-deployment-identity.md"
+}

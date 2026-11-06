@@ -1,5 +1,17 @@
 # Coordination Consolidation Part 3: Operational & Daemon Integration Plan
 
+> **2026-11-06 ratification:** Automatic expiry/release is approved for v2 only,
+> with expiry and fencing rules; PT stays manual. Retain compatibility shims,
+> and qualify both platforms before promotion. See
+> [the master handoff](MASTER-CLOSURE-HANDOFF-2026-11-06.md).
+> The original v1 daemon and identifier examples below are superseded proposals.
+
+---
+
+> **2026-11-06 reconciliation:** This remains a v1 draft, not authorization to
+> add claim-release behavior or implement the v2 controller. Reconcile its
+> proposed daemon behavior with the current master plan and Orama doc 68 first.
+
 **Date:** 2026-08-23  
 **Status:** Planning / Architecture Draft  
 **Author:** Agnes (Antigravity-Claude)  

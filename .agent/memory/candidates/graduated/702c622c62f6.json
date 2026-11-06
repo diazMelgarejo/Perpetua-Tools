@@ -1,0 +1,41 @@
+{
+  "id": "702c622c62f6",
+  "key": "manual_702c62",
+  "name": "manual_702c62",
+  "claim": "Coordination events are observations or signals, never authorization to perform an effect. Every consequential action still requires its owning authority decision, and a missing required verifier must refuse rather than treating an event as permission.",
+  "conditions": [
+    "authorization",
+    "coordination",
+    "events",
+    "missing-verifier"
+  ],
+  "evidence_ids": [
+    "2026-11-06T02:29:42.619984+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-06T02:29:42.619984+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-06T02:29:42.619984+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-06T02:29:42.806486+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Restore unaffected rules omitted when superseding lesson_f66a1b3f7cc5 and lesson_0361f3955fb0; review5794657371. Supersession relationships and original source bytes remain preserved.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-06T02:29:42.619984+00:00"
+      ],
+      "lessons_sha": "206ac8747948"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-06T02:29:42.806468+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Restore unaffected rules omitted when superseding lesson_f66a1b3f7cc5 and lesson_0361f3955fb0; review5794657371. Supersession relationships and original source bytes remain preserved."
+}

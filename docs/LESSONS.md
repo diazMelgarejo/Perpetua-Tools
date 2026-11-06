@@ -1,5 +1,15 @@
 # Lessons — Perpetua-Tools
 
+## 2026-11-05 — Durable fixes, final-tree verification and scoped dependency pins
+
+The additive [weekly portable-brain record](../.agent/memory/working/WEEKLY_DURABLE_FIXES_2026-11-02_TO_2026-11-05.md)
+reconciles November 2–5 work across PT, legacy Orama, Oramasys and Phylax.
+It records exact commits, the introduced architecture-workflow regression and
+its correction, parser regressions, legacy synchronization and unclosed host/release
+gates. Reusable rules are graduated through the native `.agent/tools/learn.py`
+pipeline; generated semantic `LESSONS.md` is not hand-edited. No runtime contract,
+production pin, policy, package version or test baseline changes in this memory PR.
+
 > **Cross-repo companion:** [`orama-system/docs/LESSONS.md`](../../orama-system/docs/LESSONS.md) — read both at session start for joint context.
 > **Architecture authority:** [`orama-system/docs/2026-05-14--UNIFIED-ABSORPTION-PLAN.md`](../../orama-system/docs/2026-05-14--UNIFIED-ABSORPTION-PLAN.md)
 > **Navigation hub:** [`CLAUDE-instru.md`](../../../CLAUDE-instru.md)
