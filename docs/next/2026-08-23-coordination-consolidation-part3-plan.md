@@ -5,6 +5,16 @@
 > and qualify both platforms before promotion. See
 > [the master handoff](MASTER-CLOSURE-HANDOFF-2026-11-06.md).
 > The original v1 daemon and identifier examples below are superseded proposals.
+>
+> **2026-11-06 scope note:** The Orama master closure plan ("Part 3 review and
+> revised scope", items 1 and 4–7) supersedes these implementation details: §2
+> (no PT daemon; `heartbeat.py` and `heartbeat_cleanup(...)` do not exist),
+> §3 (assert one committed race winner and a valid outcome vocabulary, not nine
+> fixed codes; test the reorder buffer's real contract instead of N=1000; label
+> simulated and live evidence separately), §4 (retain shims per D2; a repository
+> search lists known callers only) and §5 (random opaque identifier, not a
+> path/name hash). PT's current manual behavior is in
+> [`../coordination/manual-cleanup-characterization-2026-11-06.md`](../coordination/manual-cleanup-characterization-2026-11-06.md).
 
 ---
 

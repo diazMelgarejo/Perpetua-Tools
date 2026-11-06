@@ -42,6 +42,16 @@ pytest tests/test_agent_coordination_cli_contract.py -q
 
 ## Part 2 (extraction — in progress)
 
+> **2026-11-06:** `liveness.py` has landed: the seven heartbeat handlers live
+> there, and `cli.py` imports them. The `liveness.py` TODO row below is historical.
+> The Phase 0F "state/side-effect characterization (cleanup, races)" row is
+> covered for cleanup by
+> [`manual-cleanup-characterization-2026-11-06.md`](manual-cleanup-characterization-2026-11-06.md).
+> `phases.py` builds no bus of its own. It receives the `make_gossip_bus` bus
+> from `cli.py`, as do the shim entrypoints, so the `phases.py` LAN-gap row is
+> also historical. The other open rows are not re-verified here. PT cleanup stays manual (D1);
+> v2 work is a separate parity migration under Orama doc 68.
+
 | Module | Status |
 | --- | --- |
 | `paths.py`, `claims.py`, `types.py`, `reorder_buffer.py`, `task_queue.py`, `phases.py` | **DONE** on `main` |
