@@ -56,10 +56,15 @@ def _git_path(flag: str) -> Optional[Path]:
 def producer_id_path() -> Path:
     """Return the per-worktree identifier file location.
 
-    Inside git this is ``$(git rev-parse --git-dir)/pt-producer-id``, which is
-    distinct per linked worktree and never part of the working tree. Outside
-    git it falls back to the runtime state directory.
+    ``PT_PRODUCER_ID_FILE``, when set, names the file explicitly (tests and
+    packaged deployments). Otherwise, inside git this is
+    ``$(git rev-parse --git-dir)/pt-producer-id``, which is distinct per linked
+    worktree and never part of the working tree. Outside git it falls back to
+    the runtime state directory.
     """
+    explicit = os.environ.get("PT_PRODUCER_ID_FILE", "").strip()
+    if explicit:
+        return Path(explicit)
     git_dir = _git_path("--git-dir")
     if git_dir is not None:
         return git_dir / ID_FILE_NAME

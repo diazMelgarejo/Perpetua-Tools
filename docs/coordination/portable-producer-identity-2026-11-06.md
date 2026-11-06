@@ -14,6 +14,8 @@ and revised scope", item 4, and the C4 paragraph). Tests:
 - Created once per worktree with `O_CREAT | O_EXCL` and mode 0600, in
   `$(git rev-parse --git-dir)/pt-producer-id`. That directory is per worktree
   and never tracked. Outside git, the file goes in the runtime state directory.
+  `PT_PRODUCER_ID_FILE` names the file explicitly; the test suite uses it to
+  keep test runs out of the developer's git metadata.
 - The same identifier is reused across restarts. Concurrent first use converges
   on whichever file was created first.
 - A candidate already used by a sibling worktree's file is drawn again. After

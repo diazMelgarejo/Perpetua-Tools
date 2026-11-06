@@ -71,6 +71,7 @@ def _label_in_subprocess(cwd: Path) -> str:
     """Return current_worktree_label() from a fresh interpreter (a restart)."""
     env = {**os.environ, "PYTHONPATH": str(REPO_ROOT)}
     env.pop("PT_STATE_DIR", None)
+    env.pop("PT_PRODUCER_ID_FILE", None)  # exercise the real git-dir location
     return subprocess.check_output(
         [sys.executable, "-c",
          "from orchestrator.coordination.paths import current_worktree_label as f;"
@@ -157,6 +158,18 @@ def test_malformed_identifier_file_is_refused_not_rotated(tmp_path: Path) -> Non
     with pytest.raises(ProducerIdError):
         load_or_create_producer_id(id_path)
     assert id_path.read_text(encoding="utf-8") == _LEGACY_LABEL
+
+
+def test_explicit_identifier_file_override(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """PT_PRODUCER_ID_FILE names the identifier file explicitly."""
+    target = tmp_path / "custom" / "id"
+    monkeypatch.setenv("PT_PRODUCER_ID_FILE", str(target))
+    assert producer_identity.producer_id_path() == target
+    label = producer_identity.current_producer_id()
+    assert is_opaque_producer_id(label)
+    assert target.read_text(encoding="utf-8").strip() == label
 
 
 def test_label_falls_back_to_placeholder_instead_of_crashing(
