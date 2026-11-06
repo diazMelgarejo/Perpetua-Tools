@@ -1,5 +1,10 @@
 # Phase 0 Master Plan & Pre-v2 Checklist (2026-07-27)
 
+> **2026-11-06 ownership correction:** Older coordination-owner references
+> below predate Orama doc 68: the planned v2 job-claim controller's definitive
+> home is an internal Oramasys module, with a standalone repository only through
+> the documented admission gate. PT remains responsible for v1 coordination.
+
 <!-- markdownlint-disable MD013 MD040 MD056 -->
 <!--
   This is a preserved historical master record with legacy long evidence lines,

@@ -428,3 +428,25 @@ Read with:
 - `MINIGRAPH_MUTATION_OBSERVER_FINALIZATION_2026-08-28.md`;
 - `MINIGRAPH_RESUMABILITY_FRAMING_2026-08-28.md`;
 - `lesson_230c6d2c5a7e` and its related MiniGraph lessons.
+
+## 2026-11-06 additive ownership reconciliation
+
+The earlier proposed satellite names and GraphSpec placement are historical.
+Orama D-LG-1/5 assigns structural GraphSpec and lint to Perpetua Core; ADR 62
+assigns v2 endpoint/address authority to Telos and principal/capability admission
+to Phylax. The planned v2 job-claim controller is an internal Oramasys module,
+with a standalone repository only through doc 68's admission gate. PT remains
+the v1 runtime and coordination owner. Existing Core policy modules and
+Oramasys execution run leases remain facts to reconcile, not proof that every
+planned migration or job-claim controller has shipped.
+
+The July 17 consolidation plan and July 27 Part 2 autoplan describe v1 parity
+and consolidation work. Their historical deferral wording does not move all
+Part 2 work into v2. Reconcile each item against current code and receipts; do
+not import the PT queue as the planned controller's implementation. The August
+23 Part 3 daemon proposal remains draft and requires its own scope decision.
+
+Read with Orama `docs/v2/architecture-status-2026-11-06.md` on the companion
+architecture PR, plus accepted lessons `lesson_3cfe09c6fa49`,
+`lesson_95f44dab941d` and `lesson_a5f35c666a3b`. This note is additive and
+does not authorize deployment, promotion, activation or history rewriting.
