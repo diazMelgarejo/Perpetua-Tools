@@ -52,6 +52,8 @@
 - For v2 job claims, the planned Orchestrator Controller is an internal Oramasys module; a standalone repository remains a later option only through the documented admission gate. Perpetua-Tools remains the v1 coordination owner; Phylax remains the separate admission authority.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_3cfe09c6fa49 -->
 - Distinguish existing Oramasys execution run-lease epoch fencing from planned Controller job-claim leases. Do not infer that the job-claim controller is implemented merely because execution leases already exist.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_a5f35c666a3b -->
 - The planned v2 Orchestrator Controller owns job claims and leases as an internal Oramasys boot module; a standalone repository is possible only through its admission gate. The top orchestrator is a capability-bearing client, not the state writer; spawn order grants no authority. PT remains the v1 owner; handoffs retain lineage, and Phylax admission remains separate. Oramasys already implements execution run-lease fencing.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_95f44dab941d -->
+- Coordination events are observations or signals, never authorization to perform an effect. Every consequential action still requires its owning authority decision, and a missing required verifier must refuse rather than treating an event as permission.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_702c622c62f6 -->
+- A coordination handoff is a release followed by a claim with preserved lineage. Notification or inherited authorship alone neither transfers ownership nor grants the receiving actor authority.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_1f4dc3245c3f -->
 
 ### 2026-10
 
