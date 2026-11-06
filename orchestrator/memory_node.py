@@ -67,15 +67,29 @@ def _normalise_fts_hits(hits: list[dict]) -> list[dict]:
     """
     Normalize GossipBus FTS search rows into recall hit dictionaries that include a usable `text` field.
     
+    Payload topology is sanitized first: legacy worktree labels are removed and
+    hits with unclassified topology are dropped (closure row C4).
+
     Scans each element in `hits`, derives a human-readable text value (preferring an existing `text` string, falling back to a representation extracted from `payload`), omits entries without resolvable text, and preserves other fields.
     
     Returns:
         normalized_hits (list[dict]): List of hit dictionaries with a guaranteed `text` string; entries without resolvable text are omitted.
     """
+    from orchestrator.coordination.topology_hygiene import (  # noqa: PLC0415
+        sanitize_topology,
+    )
+
     out: list[dict] = []
     for hit in hits:
         if not isinstance(hit, dict):
             continue
+        if isinstance(hit.get("payload"), dict):
+            # Closure C4: legacy ``<branch>@<path>`` labels are scrubbed and
+            # unclassified topology is withheld before recall text is built.
+            safe_payload = sanitize_topology(hit["payload"])
+            if safe_payload is None:
+                continue
+            hit = {**hit, "payload": safe_payload}
         text = hit.get("text")
         if not (isinstance(text, str) and text.strip()):
             text = _text_from_gossip_payload(hit.get("payload"))

@@ -261,10 +261,18 @@ def test_canonical_db_path_looks_sane():
 
 
 def test_current_worktree_label_contains_cwd_or_branch():
-    """Check that current worktree label contains cwd or branch."""
+    """Check that current worktree label contains cwd or branch.
+
+    Superseded 2026-11-06 (closure C4): the label is now a random opaque
+    producer id, so it must contain neither the cwd nor the branch. The
+    historical test name is kept so its history stays traceable.
+    """
+    from orchestrator.coordination.producer_identity import is_opaque_producer_id
+
     label = current_worktree_label()
-    # Format: branch@cwd. Either component is enough to sanity-check.
-    assert str(Path.cwd()) in label or "?" in label
+    assert is_opaque_producer_id(label)
+    assert str(Path.cwd()) not in label
+    assert "@" not in label
 
 
 def test_current_worktree_label_survives_missing_git(monkeypatch):
@@ -281,7 +289,8 @@ def test_current_worktree_label_survives_missing_git(monkeypatch):
 
     monkeypatch.setattr(sp, "check_output", _boom)
     label = current_worktree_label()
-    assert label.startswith("?@")
+    # 2026-11-06 (C4): no "?@<cwd>" fallback any more; still never raises.
+    assert "@" not in label and str(Path.cwd()) not in label
 
 
 async def test_known_agent_ids_survives_noise_beyond_old_limit(monkeypatch, tmp_path):

@@ -58,3 +58,18 @@ def _orama_insecure_dev_for_tests(monkeypatch, tmp_path):
         "orchestrator.control_plane_auth.DEFAULT_TOKEN_PATH",
         tmp_path / "control_plane_token",
     )
+
+
+@pytest.fixture(autouse=True)
+def _isolated_producer_id_file(monkeypatch, tmp_path):
+    """Keep in-process producer ids out of the checkout's git directory.
+
+    ``current_worktree_label()`` creates a per-worktree id file on first use
+    (closure C4). In-process tests write it under ``tmp_path`` instead, so a
+    test run never adds files to the developer's real git metadata. Tests that
+    exercise the real location do so in throwaway repositories via subprocess.
+    """
+    monkeypatch.setattr(
+        "orchestrator.coordination.producer_identity.producer_id_path",
+        lambda: tmp_path / "pt-producer-id",
+    )
