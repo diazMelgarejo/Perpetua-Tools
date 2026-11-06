@@ -11,11 +11,13 @@ workstation paths.
 """
 from __future__ import annotations
 
+import concurrent.futures
 import json
 import os
 import stat
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -126,6 +128,51 @@ def test_concurrent_creator_adopts_the_winning_identifier(tmp_path: Path) -> Non
     assert load_or_create_producer_id(id_path) == winner
 
 
+def test_concurrent_readers_never_observe_empty_or_truncated_file(tmp_path: Path) -> None:
+    """Finding P3: Concurrent readers never see a 0-byte or truncated id file."""
+    id_path = tmp_path / "concurrent" / "pt-producer-id"
+    reader_observations: list[str] = []
+    errors: list[Exception] = []
+    stop = False
+
+    def reader() -> None:
+        while not stop:
+            if id_path.exists():
+                try:
+                    txt = id_path.read_text(encoding="utf-8")
+                    reader_observations.append(txt)
+                except Exception as exc:
+                    errors.append(exc)
+            time.sleep(0.0001)
+
+    def creator() -> str:
+        return load_or_create_producer_id(id_path)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=16) as ex:
+        reader_futs = [ex.submit(reader) for _ in range(8)]
+        creator_futs = [ex.submit(creator) for _ in range(8)]
+        results = [f.result() for f in creator_futs]
+        stop = True
+        for f in reader_futs:
+            f.result()
+
+    assert not errors, f"readers encountered unexpected errors: {errors}"
+    assert len(set(results)) == 1, f"creators converged on multiple winners: {results}"
+    winning_id = results[0]
+    assert is_opaque_producer_id(winning_id)
+
+    # Verify that every single read observed by any reader thread was valid and non-empty
+    assert len(reader_observations) > 0, "expected at least one reader observation while file existed"
+    for obs in reader_observations:
+        stripped = obs.strip()
+        assert stripped == winning_id, f"reader observed unexpected or empty content: {obs!r}"
+        assert is_opaque_producer_id(stripped)
+
+    # Verify no dangling temporary files remain
+    tmp_files = list(id_path.parent.glob(".*.tmp"))
+    assert tmp_files == [], f"dangling temporary files left behind: {tmp_files}"
+
+
 def test_sibling_collision_is_regenerated(tmp_path: Path) -> None:
     """A candidate already used by a sibling worktree is rejected and redrawn."""
     id_path = tmp_path / "pt-producer-id"
@@ -224,6 +271,65 @@ def test_portable_payload_blocks_unclassified_and_residual_private_paths() -> No
     assert portable_payload({"kind": "agent_note", "message": f"at {_PRIVATE_DIR}"}) is None
     opaque = {"kind": "agent_pulse", "worktree": "ptp-" + "1" * 32}
     assert portable_payload(opaque) == opaque
+
+
+def test_portable_payload_scrubs_nested_dictionary_keys() -> None:
+    """Finding P2: Dictionary keys containing legacy fragments are scrubbed."""
+    payload = {
+        "worktree": _LEGACY_LABEL,
+        f"status_{_PRIVATE_DIR}": "active",
+        "nested": {
+            f"branch_{_SECRET_BRANCH}": "merged",
+            "safe_key": "safe_val",
+        },
+    }
+    result = portable_payload(payload)
+    assert result is not None
+    assert result["worktree"] == LEGACY_REDACTED
+    assert f"status_{LEGACY_REDACTED}" in result
+    assert f"branch_{LEGACY_REDACTED}" in result["nested"]
+    assert result["nested"]["safe_key"] == "safe_val"
+
+    dumped = json.dumps(result)
+    for forbidden in _FORBIDDEN:
+        assert forbidden not in dumped
+
+
+def test_portable_payload_blocks_private_dictionary_keys() -> None:
+    """Finding P2: Dictionary keys containing un-scrubbed private paths fail closed."""
+    # Key containing POSIX private path
+    assert portable_payload({f"{_PRIVATE_DIR}/status": "ok"}) is None
+    # Key containing Windows private path
+    assert portable_payload({"C:\\" + "\\".join(["Users", "alice", "config"]): 1}) is None
+    # Nested key containing private path
+    assert portable_payload({"nested": {f"{_PRIVATE_DIR}/file": True}}) is None
+
+
+def test_portable_payload_blocks_home_relative_private_paths_and_keys() -> None:
+    """Finding P2: Private user home fragments fail closed in values and keys."""
+    # User-relative home path in value
+    assert portable_payload({"kind": "agent_note", "path": "~" + "alice/repo"}) is None
+    # User-relative home path in key
+    assert portable_payload({"kind": "agent_note", "~" + "alice/repo": "present"}) is None
+    # User-relative home path inside nested dict
+    assert portable_payload({"data": {"~" + "bob/secret": 123}}) is None
+    # Home path with slash Users under tilde
+    assert portable_payload({"kind": "agent_note", "path": "~/" + "/".join(["Users", "alice", "repo"])}) is None
+
+
+def test_portable_payload_allows_approved_generic_anchors() -> None:
+    """Finding P2: Approved generic anchors (e.g. generic tilde) are preserved."""
+    safe_payload = {
+        "kind": "agent_note",
+        "path": "~/.gstack/projects/foo",
+        "file": "~/repo/README.md",
+        "~/repo/config.json": "present",
+        "nested": {
+            "~/shared/anchor": 42,
+        },
+    }
+    result = portable_payload(safe_payload)
+    assert result == safe_payload
 
 
 async def _seed_legacy_bus(tmp_path: Path) -> GossipBus:

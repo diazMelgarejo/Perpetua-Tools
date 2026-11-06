@@ -277,3 +277,157 @@ def test_get_default_bus_singleton_is_cached(tmp_path, monkeypatch):
     bus2 = _get_default_bus()
     assert bus1 is bus2
     reset_singletons()
+
+
+# ── Finding P1: Vector recall topology sanitization ──────────────────────────
+
+@pytest.mark.asyncio
+async def test_retrieve_context_vector_only_sanitizes_legacy_labels():
+    """Vector recall hits derived from gossip payloads must sanitize legacy labels."""
+    import json
+
+    private_dir = "/" + "/".join(["home", "alice", "worktree"])
+    legacy_label = f"feature/branch@{private_dir}"
+    mock_bus = MagicMock()
+    mock_bus.search = AsyncMock(return_value=[])
+    mock_store = MagicMock()
+    mock_store.search = AsyncMock(return_value=[
+        {
+            "row_id": 42,
+            "payload": {
+                "worktree": legacy_label,
+                "prompt": "Q3 forecasts for project",
+                "notes": f"derived from {legacy_label}",
+            },
+        }
+    ])
+
+    with (
+        patch("orchestrator.memory_store.lancedb_available", return_value=True),
+        patch("orchestrator.memory_embed.get_embedding", AsyncMock(return_value=[0.1] * 1024)),
+    ):
+        result = await retrieve_context(
+            "forecasts",
+            top_n=5,
+            use_gbrain=False,
+            gossip_bus=mock_bus,
+            lance_store=mock_store,
+        )
+
+    assert len(result) == 1
+    hit = result[0]
+    assert hit["row_id"] == 42
+    assert hit["payload"]["worktree"] == "legacy-redacted"
+    assert "legacy-redacted" in hit["payload"]["notes"]
+    assert "alice" not in json.dumps(hit)
+    assert "feature/branch" not in json.dumps(hit)
+    assert hit["text"] == "Q3 forecasts for project"
+
+
+@pytest.mark.asyncio
+async def test_retrieve_context_vector_only_serialized_json_sanitizes_legacy_labels():
+    """Vector hits with serialized JSON text must sanitize topology and extract text."""
+    import json
+
+    bob_dir = "/" + "/".join(["Users", "bob", "code", "pt"])
+    legacy_label = f"secret-fix@{bob_dir}"
+    mock_bus = MagicMock()
+    mock_bus.search = AsyncMock(return_value=[])
+    mock_store = MagicMock()
+    mock_store.search = AsyncMock(return_value=[
+        {
+            "row_id": 43,
+            "text": json.dumps({
+                "worktree": legacy_label,
+                "message": "fix deployed to staging",
+            }),
+        }
+    ])
+
+    with (
+        patch("orchestrator.memory_store.lancedb_available", return_value=True),
+        patch("orchestrator.memory_embed.get_embedding", AsyncMock(return_value=[0.1] * 1024)),
+    ):
+        result = await retrieve_context(
+            "staging",
+            top_n=5,
+            use_gbrain=False,
+            gossip_bus=mock_bus,
+            lance_store=mock_store,
+        )
+
+    assert len(result) == 1
+    hit = result[0]
+    assert hit["payload"]["worktree"] == "legacy-redacted"
+    assert hit["text"] == "fix deployed to staging"
+    assert "bob" not in json.dumps(hit)
+    assert ("/" + "/".join(["Users", "bob"])) not in json.dumps(hit)
+
+
+@pytest.mark.asyncio
+async def test_retrieve_context_vector_only_withholds_unclassified_gossip_projection():
+    """Vector hits with unclassifiable gossip projections must be withheld."""
+    mock_bus = MagicMock()
+    mock_bus.search = AsyncMock(return_value=[])
+    mock_store = MagicMock()
+    mock_store.search = AsyncMock(return_value=[
+        {
+            "row_id": 44,
+            "payload": {
+                "worktree": "unclassifiable:broken:topology",
+                "prompt": "confidential leak",
+            },
+        }
+    ])
+
+    with (
+        patch("orchestrator.memory_store.lancedb_available", return_value=True),
+        patch("orchestrator.memory_embed.get_embedding", AsyncMock(return_value=[0.1] * 1024)),
+    ):
+        result = await retrieve_context(
+            "confidential",
+            top_n=5,
+            use_gbrain=False,
+            gossip_bus=mock_bus,
+            lance_store=mock_store,
+        )
+
+    assert result == [], "unclassifiable gossip projection must be withheld"
+
+
+@pytest.mark.asyncio
+async def test_retrieve_context_vector_fallback_sanitizes_when_rrf_fails():
+    """Vector fallback path must return sanitized hits even if RRF fails."""
+    import json
+
+    alice_dev = "/" + "/".join(["Users", "alice", "dev"])
+    legacy_label = f"patch@{alice_dev}"
+    mock_bus = MagicMock()
+    mock_bus.search = AsyncMock(return_value=[])
+    mock_store = MagicMock()
+    mock_store.search = AsyncMock(return_value=[
+        {
+            "row_id": 45,
+            "payload": {
+                "worktree": legacy_label,
+                "prompt": "fallback test",
+            },
+        }
+    ])
+
+    with (
+        patch("orchestrator.memory_store.lancedb_available", return_value=True),
+        patch("orchestrator.memory_embed.get_embedding", AsyncMock(return_value=[0.1] * 1024)),
+        patch("orchestrator.memory_rrf.rrf_merge", side_effect=RuntimeError("rrf broken")),
+    ):
+        result = await retrieve_context(
+            "fallback",
+            top_n=5,
+            use_gbrain=False,
+            gossip_bus=mock_bus,
+            lance_store=mock_store,
+        )
+
+    assert len(result) == 1
+    assert result[0]["payload"]["worktree"] == "legacy-redacted"
+    assert ("/" + "/".join(["Users", "alice"])) not in json.dumps(result)

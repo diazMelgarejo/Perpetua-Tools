@@ -76,6 +76,8 @@ def _normalise_fts_hits(hits: list[dict]) -> list[dict]:
         normalized_hits (list[dict]): List of hit dictionaries with a guaranteed `text` string; entries without resolvable text are omitted.
     """
     from orchestrator.coordination.topology_hygiene import (  # noqa: PLC0415
+        _legacy_fragments,
+        _scrub,
         sanitize_topology,
     )
 
@@ -86,10 +88,15 @@ def _normalise_fts_hits(hits: list[dict]) -> list[dict]:
         if isinstance(hit.get("payload"), dict):
             # Closure C4: legacy ``<branch>@<path>`` labels are scrubbed and
             # unclassified topology is withheld before recall text is built.
-            safe_payload = sanitize_topology(hit["payload"])
+            payload = hit["payload"]
+            safe_payload = sanitize_topology(payload)
             if safe_payload is None:
                 continue
             hit = {**hit, "payload": safe_payload}
+            if isinstance(hit.get("text"), str) and hit["text"].strip():
+                fragments = _legacy_fragments(payload)
+                if fragments:
+                    hit = {**hit, "text": _scrub(hit["text"], fragments)}
         text = hit.get("text")
         if not (isinstance(text, str) and text.strip()):
             text = _text_from_gossip_payload(hit.get("payload"))
@@ -97,6 +104,68 @@ def _normalise_fts_hits(hits: list[dict]) -> list[dict]:
             continue
         normalised = {**hit, "text": text}
         out.append(normalised)
+    return out
+
+
+def _normalise_vector_hits(hits: list[dict]) -> list[dict]:
+    """
+    Normalize vector search rows into recall hit dictionaries with sanitized topology.
+
+    Vector recall results derived from gossip payloads must pass through
+    `sanitize_topology` before fusion or fallback return. Unclassifiable gossip
+    projections are withheld rather than exposed raw (closure row C4).
+    """
+    from orchestrator.coordination.topology_hygiene import (  # noqa: PLC0415
+        _legacy_fragments,
+        _scrub,
+        sanitize_topology,
+    )
+
+    out: list[dict] = []
+    for hit in hits:
+        if not isinstance(hit, dict):
+            continue
+        payload = hit.get("payload")
+        raw_text = hit.get("text")
+        is_gossip_projection = False
+
+        if isinstance(payload, dict):
+            is_gossip_projection = True
+        elif isinstance(raw_text, str):
+            stripped = raw_text.strip()
+            if stripped.startswith("{") and stripped.endswith("}"):
+                try:
+                    parsed = json.loads(stripped)
+                    if isinstance(parsed, dict):
+                        payload = parsed
+                        is_gossip_projection = True
+                except (TypeError, ValueError):
+                    pass
+
+        if is_gossip_projection and isinstance(payload, dict):
+            safe_payload = sanitize_topology(payload)
+            if safe_payload is None:
+                # Withhold unclassifiable gossip projections
+                continue
+            hit = {**hit, "payload": safe_payload}
+            if isinstance(raw_text, str) and raw_text.strip():
+                if raw_text.strip().startswith("{") and raw_text.strip().endswith("}"):
+                    text = _text_from_gossip_payload(safe_payload)
+                else:
+                    fragments = _legacy_fragments(payload)
+                    text = _scrub(raw_text, fragments) if fragments else raw_text
+            else:
+                text = _text_from_gossip_payload(safe_payload)
+            if not text:
+                continue
+            normalised = {**hit, "text": text}
+            out.append(normalised)
+        else:
+            text = hit.get("text")
+            if not (isinstance(text, str) and text.strip()):
+                continue
+            normalised = {**hit, "text": text}
+            out.append(normalised)
     return out
 
 
@@ -168,7 +237,9 @@ async def retrieve_context(
 
             embedding = await get_embedding(query)
             if embedding:
-                vec_hits = await store.search(embedding, limit=top_n * 2)
+                vec_hits = _normalise_vector_hits(
+                    await store.search(embedding, limit=top_n * 2)
+                )
     except Exception as exc:
         _log.debug("memory_node: vector search error — %s", exc)
 

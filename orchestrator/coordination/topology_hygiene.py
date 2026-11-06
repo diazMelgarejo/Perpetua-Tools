@@ -47,9 +47,12 @@ _PLACEHOLDERS = frozenset({"", "?", "-", UNAVAILABLE_PRODUCER_ID, LEGACY_REDACTE
 _LEGACY_LABEL_RE = re.compile(r"^(?P<branch>[^@\s]*)@(?P<path>(?:/|~|[A-Za-z]:[\\/]).*)$")
 # Absolute POSIX roots must start a path (not follow a word, dot or tilde), so
 # repository-relative paths such as ``.cursor/private/...`` are not flagged.
+# Private home-path fragments with user identifiers (e.g. ``~user/...``) are flagged,
+# while approved generic anchors (e.g. ``~/...``) are respected.
 _PRIVATE_PATH_RE = re.compile(
-    r"(?:(?<![\w.~-])/(?:home|Users|root)/|(?<![\w.~-])/(?:private/)?(?:tmp|var/folders)/"
-    r"|[A-Za-z]:\\Users\\|[A-Za-z]:/Users/)",
+    r"(?:(?<![\w.-])/(?:home|Users|root)/|(?<![\w.-])/(?:private/)?(?:tmp|var/folders)/"
+    r"|[A-Za-z]:[\\/]Users[\\/]|(?<![\w.-])\\\\Users\\\\"
+    r"|(?<![\w.~-])~[a-zA-Z0-9_-]+(?:[/\\:]|$))",
     re.IGNORECASE,
 )
 
@@ -107,24 +110,32 @@ def _legacy_fragments(payload: dict[str, Any]) -> list[str]:
 
 
 def _scrub(value: Any, fragments: list[str]) -> Any:
-    """Recursively replace legacy fragments inside strings of ``value``."""
+    """Recursively replace legacy fragments inside strings and dictionary keys of ``value``."""
     if isinstance(value, str):
         for fragment in fragments:
             value = value.replace(fragment, LEGACY_REDACTED)
         return value
     if isinstance(value, dict):
-        return {key: _scrub(item, fragments) for key, item in value.items()}
+        return {
+            (_scrub(key, fragments) if isinstance(key, str) else key): _scrub(
+                item, fragments
+            )
+            for key, item in value.items()
+        }
     if isinstance(value, list):
         return [_scrub(item, fragments) for item in value]
     return value
 
 
 def _contains_private_path(value: Any) -> bool:
-    """Return True when any string inside ``value`` looks like a private path."""
+    """Return True when any string inside ``value`` (including dict keys) looks like a private path."""
     if isinstance(value, str):
         return bool(_PRIVATE_PATH_RE.search(value))
     if isinstance(value, dict):
-        return any(_contains_private_path(v) for v in value.values())
+        return any(
+            _contains_private_path(k) or _contains_private_path(v)
+            for k, v in value.items()
+        )
     if isinstance(value, list):
         return any(_contains_private_path(v) for v in value)
     return False

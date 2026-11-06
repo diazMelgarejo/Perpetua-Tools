@@ -17,6 +17,7 @@ import os
 import re
 import secrets
 import subprocess
+import uuid
 from pathlib import Path
 from typing import Callable, FrozenSet, Optional
 
@@ -107,6 +108,47 @@ def _read_existing(id_path: Path) -> str:
     return value
 
 
+def _write_producer_id_file(id_path: Path, candidate: str) -> bool:
+    """Write candidate to a private temporary file, flush/fsync, and atomically publish.
+
+    Returns True if this process successfully published the file, or False if another
+    process won the race (FileExistsError). Never leaves an empty or partial file at
+    id_path.
+    """
+    tmp_path = id_path.with_name(f".{id_path.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp")
+    fd = os.open(str(tmp_path), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    try:
+        try:
+            os.write(fd, (candidate + "\n").encode("utf-8"))
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+        if os.name == "posix":
+            os.chmod(tmp_path, 0o600)
+        try:
+            os.link(str(tmp_path), str(id_path))
+        except FileExistsError:
+            return False
+        except (AttributeError, NotImplementedError, OSError):
+            if id_path.exists():
+                return False
+            try:
+                if os.name == "nt":
+                    os.rename(str(tmp_path), str(id_path))
+                else:
+                    if id_path.exists():
+                        return False
+                    os.replace(str(tmp_path), str(id_path))
+            except FileExistsError:
+                return False
+        return True
+    finally:
+        try:
+            tmp_path.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
 def load_or_create_producer_id(
     id_path: Path,
     *,
@@ -115,11 +157,13 @@ def load_or_create_producer_id(
 ) -> str:
     """Return the identifier stored at ``id_path``, creating it once if absent.
 
-    Creation uses ``O_CREAT | O_EXCL`` with mode 0600, so two processes racing
-    on first use converge on whichever file landed first. Candidates that are
-    malformed or already used by a sibling worktree are redrawn up to a small
-    bound; after that the call fails closed with ``ProducerIdError``. An
-    existing malformed file is reported, never overwritten.
+    Creation writes to a private temporary file first, flushes and fsyncs, then
+    atomically publishes so concurrent readers never observe an empty or
+    truncated file. Two processes racing on first use converge on whichever file
+    landed first. Candidates that are malformed or already used by a sibling
+    worktree are redrawn up to a small bound; after that the call fails closed
+    with ``ProducerIdError``. An existing malformed file is reported, never
+    overwritten.
     """
     id_path = Path(id_path)
     if id_path.exists():
@@ -130,17 +174,9 @@ def load_or_create_producer_id(
         candidate = ID_PREFIX + token_hex()
         if not is_opaque_producer_id(candidate) or candidate in taken:
             continue
-        try:
-            fd = os.open(str(id_path), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-        except FileExistsError:
-            return _read_existing(id_path)
-        try:
-            os.write(fd, (candidate + "\n").encode("utf-8"))
-        finally:
-            os.close(fd)
-        if os.name == "posix":
-            os.chmod(id_path, 0o600)
-        return candidate
+        if _write_producer_id_file(id_path, candidate):
+            return candidate
+        return _read_existing(id_path)
     raise ProducerIdError("could not draw a unique producer id")
 
 
