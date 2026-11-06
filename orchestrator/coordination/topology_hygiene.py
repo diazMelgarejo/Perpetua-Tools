@@ -31,6 +31,7 @@ import re
 import sqlite3
 import sys
 from dataclasses import dataclass, field
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, Literal, Optional
 
@@ -205,7 +206,7 @@ def _connect_read_only(db_path: str) -> sqlite3.Connection:
         raise TopologyInventoryError(f"cannot open coordination database: {exc}") from exc
 
 
-def _iter_rows(db_path: str):
+def _iter_rows(db_path: str) -> Iterator[tuple[Any, Any, Any, Any]]:
     """Yield ``(event_uuid, ts, event_type, payload)`` in row order."""
     conn = _connect_read_only(db_path)
     try:

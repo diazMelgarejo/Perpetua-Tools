@@ -19,6 +19,7 @@ import random
 import sqlite3
 import threading
 import time
+from collections.abc import Callable
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -224,9 +225,9 @@ async def test_ten_cli_level_workers_report_one_success(
 # ── Bounded lock handling ───────────────────────────────────────────────────
 
 
-def _short_timeout_connect(db_path: str, counter: dict[str, int]):
+def _short_timeout_connect(db_path: str, counter: dict[str, int]) -> Callable[[], aiosqlite.Connection]:
     """Return a connect() replacement with a 50 ms busy timeout that counts calls."""
-    def connect():
+    def connect() -> aiosqlite.Connection:
         """Open a short-timeout connection and count each retry."""
         counter["n"] += 1
         return aiosqlite.connect(db_path, timeout=0.05)
