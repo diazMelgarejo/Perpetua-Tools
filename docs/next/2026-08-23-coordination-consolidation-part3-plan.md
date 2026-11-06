@@ -1,9 +1,10 @@
 # Coordination Consolidation Part 3: Operational & Daemon Integration Plan
 
-> **2026-11-06 closure review:** The revised executable scope and pending
-> ratification decisions are routed through [the master handoff](MASTER-CLOSURE-HANDOFF-2026-11-06.md).
-> The API and identifier examples below remain the original proposal; do not
-> implement them verbatim. No decision is marked ratified while answers are pending.
+> **2026-11-06 ratification:** Automatic expiry/release is approved for v2 only,
+> with expiry and fencing rules; PT stays manual. Retain compatibility shims,
+> and qualify both platforms before promotion. See
+> [the master handoff](MASTER-CLOSURE-HANDOFF-2026-11-06.md).
+> The original v1 daemon and identifier examples below are superseded proposals.
 
 ---
 

@@ -8,8 +8,9 @@ do not create a second checklist or interpret draft recommendations as ratified.
 Publication is held until the user confirms existing PRs merged and releases
 the push hold. Reconcile the local plan commits with actual merged content first.
 
-PT owns C2–C5: characterize current cleanup and CLI semantics, then implement
-only the ratified maintenance, identity and concurrency scope. Entry points:
+PT owns manual compatibility characterization in C2 and privacy/concurrency
+work in C4/C5. D1 explicitly keeps PT manual: do not add a scheduled cleanup or
+maintenance daemon. Automatic expiry/release is owned by Oramasys v2. Entry points:
 `orchestrator/coordination/liveness.py`, `claims.py`, `task_queue.py`, `paths.py`
 and `cli.py`. The August draft's `heartbeat.py` API is not an existing API.
 
@@ -17,6 +18,7 @@ The draft path/name/hash identifier leaks topology. Prefer random identifiers
 with a protected local mapping. Retain compatibility shims until their removal
 is explicitly decided; a repository search cannot enumerate external callers.
 
-Current decision state: D1 daemon authority, D2 deprecation/removal and D3 target
-platform remain pending user answers. Existing manual behavior is not changed
-by this planning commit. Preserve native episodic/semantic memory source bytes.
+Ratified 2026-11-06: D1 v2-only automatic expiry/release with fencing; PT stays
+manual. D2 retain shims and decide removal later. D3 qualify both POSIX and
+native Windows before promotion. Preserve native memory source bytes. The
+merge barrier and push hold still apply.
