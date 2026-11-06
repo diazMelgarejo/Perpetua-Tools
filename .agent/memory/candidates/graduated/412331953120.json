@@ -1,0 +1,41 @@
+{
+  "id": "412331953120",
+  "key": "manual_412331",
+  "name": "manual_412331",
+  "claim": "When a Markdown validator uses paragraph context to detect indented code, Setext heading underlines must end the paragraph before indentation is classified. Test code-only examples and examples beside real content for both equals and hyphen underlines, then advance every pinned consumer of the canonical checker.",
+  "conditions": [
+    "indented-code",
+    "markdown-parity",
+    "pinned-consumer",
+    "setext-heading"
+  ],
+  "evidence_ids": [
+    "2026-11-06T02:56:57.848888+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-06T02:56:57.848888+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-06T02:56:57.848888+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-06T02:56:58.074596+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Oramasys review5795133654 exposed false acceptance and duplicate-table errors in the checker pinned by architecture CI. Six failing Setext subcases reproduced the issue; the corrected canonical checker passes22 CLI tests. The handoff also now explicitly orders C8 host evidence before C9/R6 review, C10/R7 promotion and C11/R8 activation. https://github.com/oramasys/oramasys/pull/94#pullrequestreview-5795133654",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-06T02:56:57.848888+00:00"
+      ],
+      "lessons_sha": "e6b456387b7e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-06T02:56:58.074575+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Oramasys review5795133654 exposed false acceptance and duplicate-table errors in the checker pinned by architecture CI. Six failing Setext subcases reproduced the issue; the corrected canonical checker passes22 CLI tests. The handoff also now explicitly orders C8 host evidence before C9/R6 review, C10/R7 promotion and C11/R8 activation. https://github.com/oramasys/oramasys/pull/94#pullrequestreview-5795133654"
+}
