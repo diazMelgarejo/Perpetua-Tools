@@ -1,0 +1,61 @@
+{
+  "id": "ead739c8b1e2",
+  "key": "manual_ead739",
+  "name": "manual_ead739",
+  "claim": "On 64-bit Windows, Win32 APIs returning handles or pointers (like kernel32.GetCurrentProcess) require explicit restype=wintypes.HANDLE; default ctypes 32-bit truncation causes ERROR_INVALID_HANDLE in downstream security token calls.",
+  "conditions": [
+    "apis",
+    "bit",
+    "calls",
+    "causes",
+    "ctypes",
+    "default",
+    "downstream",
+    "error_invalid_handle",
+    "explicit",
+    "getcurrentprocess",
+    "handle",
+    "handles",
+    "kernel32",
+    "like",
+    "pointers",
+    "require",
+    "restype",
+    "returning",
+    "security",
+    "token",
+    "truncation",
+    "win32",
+    "windows",
+    "wintypes"
+  ],
+  "evidence_ids": [
+    "2026-11-07T21:38:03.295158+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-07T21:38:03.295158+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-07T21:38:03.295158+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-07T21:38:03.486458+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Discovered during Windows C6 private_store qualification on Windows 11 64-bit Build 26200 where OpenProcessToken failed with WinError 6.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-07T21:38:03.295158+00:00"
+      ],
+      "lessons_sha": "07a292cf2088"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-07T21:38:03.486448+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Discovered during Windows C6 private_store qualification on Windows 11 64-bit Build 26200 where OpenProcessToken failed with WinError 6."
+}

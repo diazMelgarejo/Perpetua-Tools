@@ -69,6 +69,10 @@
 - Bind CI evidence to its tested checkout and tree: record merge, base and PR-head revisions and require equality with the operator-accepted head tree or rerun that exact head.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_64abeaf88a4f -->
 - When exporting a candidate tree for tests that inspect repository identity, initialize a scratch Git repository and record the exported tree before interpreting failures.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_4c5caf9ba844 -->
 - Bind latency budgets to explicit populations: scheduled arrivals and successful calls are distinct; retain both measurements and record dated operator threshold amendments without rewriting historical results.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_fe2edf12886b -->
+- On 64-bit Windows, Win32 APIs returning handles or pointers (like kernel32.GetCurrentProcess) require explicit restype=wintypes.HANDLE; default ctypes 32-bit truncation causes ERROR_INVALID_HANDLE in downstream security token calls.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_ead739c8b1e2 -->
+- Atomic file replacements on Windows NTFS under active antivirus filter drivers encounter transient sharing violations; bounded exponential jittered backoff resolves contention deterministically without corruption.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_abdc1664bb9d -->
+- Cross-fleet filesystem tests must pass raising=False when mocking os.path.isjunction on Python 3.11 runtimes where the attribute is absent.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_cfe54bda1894 -->
+- Integrative merge of root lifecycle agents (MERGE-10) enriches the role overlay with pre-router idempotency and org vision while preserving baseline core truths, boundaries, and continuity without parallel sprawl.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_88a59b9cdcad -->
 
 ### 2026-10
 
