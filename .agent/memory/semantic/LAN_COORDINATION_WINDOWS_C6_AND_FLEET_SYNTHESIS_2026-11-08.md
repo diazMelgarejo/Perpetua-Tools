@@ -30,13 +30,14 @@ PR remediation, and agent lifecycle synthesis across macOS Darwin ARM64 and Wind
 
 ### C. Cross-Platform Windows C6 Implementation & Certification (`oramasys/oramasys` PR #98)
 
-- **64-bit Win32 ctypes Handle Truncation:** On 64-bit Windows, `kernel32.GetCurrentProcess()`
-  returns pseudo-handle `(HANDLE)-1` (`0xFFFFFFFFFFFFFFFF`). Without an explicit
-  `GetCurrentProcess.restype = wintypes.HANDLE`, ctypes truncated the return value to a 32-bit
-  integer (`0xFFFFFFFF`), causing `advapi32.OpenProcessToken` to fail with WinError 6
-  (`ERROR_INVALID_HANDLE`). Resolved by declaring complete 64-bit `argtypes` and `restype`
-  signatures across all Win32 security APIs (`OpenProcessToken`, `GetTokenInformation`,
-  `GetNamedSecurityInfoW`, `EqualSid`).
+- **64-bit Win32 ctypes Handle Signatures:** On 64-bit Windows, `kernel32.GetCurrentProcess()`
+  returns pseudo-handle `(HANDLE)-1` (`0xFFFFFFFFFFFFFFFF`). Without explicit
+  `GetCurrentProcess.restype = wintypes.HANDLE`, ctypes defaults to 32-bit `c_int` returning Python
+  `-1`. Passing Python `-1` into consumer APIs like `advapi32.OpenProcessToken` without explicit
+  `argtypes = [wintypes.HANDLE, ...]` passes a 32-bit integer, and handles in high 64-bit address
+  space suffer truncation, triggering WinError 6 (`ERROR_INVALID_HANDLE`). Resolved by declaring
+  complete 64-bit `argtypes` and `restype` signatures across all Win32 security APIs
+  (`OpenProcessToken`, `GetTokenInformation`, `GetNamedSecurityInfoW`, `EqualSid`).
 - **Junction & Reparse Point Refusal on NTFS:** Implemented NTFS reparse point refusal via
   `FILE_ATTRIBUTE_REPARSE_POINT` (`0x0400`) and `os.path.isjunction`, providing symlink/junction
   traversal protection on Windows without POSIX `O_NOFOLLOW`.
@@ -44,8 +45,9 @@ PR remediation, and agent lifecycle synthesis across macOS Darwin ARM64 and Wind
   `replace_file`) under real-world Microsoft Defender antivirus filter driver contention. In a
   100-cycle stress test on native Windows 11 NTFS, 72 transient WinError 32
   (`ERROR_SHARING_VIOLATION`) and WinError 5 (`ERROR_ACCESS_DENIED`) locks occurred during rapid
-  file swaps. All 72 resolved cleanly within 2 exponential backoff retries (maximum resolution
-  latency 25ms) with zero file corruption.
+  file swaps. All 72 resolved within 2 exponential backoff retries (maximum resolution latency 25ms)
+  without file corruption. Note that while bounded backoff handles transient contention, exhaustion
+  handling remains required if external locks persist beyond the retry budget.
 - **Cross-Process Advisory Locking:** Replaced POSIX `fcntl.flock` with Win32
   `msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)` and `msvcrt.LK_UNLCK` in `grant_lib.py`,
   validated under multi-process concurrency on Windows.
@@ -88,9 +90,8 @@ PR remediation, and agent lifecycle synthesis across macOS Darwin ARM64 and Wind
 
 - Recalled canonical PT `.agent` memory regarding Atlas (`perpetua.lifecycle`, OpenClaw ID `main`).
 - Transcluded and deduplicated its Pre-Router Idempotency Gatekeeper role, Org Vision & Policy
-  Gate, Anti-Loss Navigation Spine, and Compounding Memory into
-  `${HOME}/.alphaclaw/.openclaw/workspace/SOUL.md` and canonical staging
-  `bin/agents/lifecycle/SOUL.md`.
+  Gate, Anti-Loss Navigation Spine, and Compounding Memory into the root OpenClaw workspace
+  `SOUL.md` and canonical staging `bin/agents/lifecycle/SOUL.md`.
 - Preserved all OpenClaw Core Truths, Boundaries, and Vibe under the MERGE-10 doctrine
   ("Synthesize, never amputate").
 
@@ -100,16 +101,18 @@ PR remediation, and agent lifecycle synthesis across macOS Darwin ARM64 and Wind
 
 1. **Explicit Ctypes Signatures on 64-bit Windows:**
    On 64-bit Windows platforms, APIs returning handles or pointers (such as
-   `kernel32.GetCurrentProcess()`) must have explicit `restype = wintypes.HANDLE`. Default ctypes
-   return type is 32-bit `c_int`, which truncates `(HANDLE)-1` (`0xFFFFFFFFFFFFFFFF`) to
-   `0xFFFFFFFF`, causing downstream security calls (`OpenProcessToken`, `GetTokenInformation`) to
-   fail with WinError 6 (`ERROR_INVALID_HANDLE`).
+   `kernel32.GetCurrentProcess()`) default to 32-bit `c_int` unless declared with explicit
+   `restype = wintypes.HANDLE`. Consumer functions (such as `OpenProcessToken`) similarly require
+   explicit `argtypes = [wintypes.HANDLE, ...]` to avoid 32-bit truncation of high-memory pointers
+   or improper conversion of pseudo-handles. Robust Win32 interop requires declaring both
+   producer `restype` and consumer `argtypes`.
 
 2. **Real-World Antivirus Contention on NTFS File Replacements:**
    Atomic file replacement (`os.replace`) on Windows NTFS is subject to transient filter driver
-   locking by active endpoint security (e.g. Microsoft Defender). Implementing bounded exponential
-   jittered backoff (1ms to 20ms over up to 10 retries) resolves 100% of transient sharing
-   violations without data corruption or race conditions.
+   locking by active endpoint security (e.g. Microsoft Defender). In empirical testing, bounded
+   exponential jittered backoff (1ms to 20ms over up to 10 retries) resolved 72/72 transient
+   contention events without data corruption; callers must nevertheless maintain failure paths for
+   cases where locks outlast the retry budget.
 
 3. **Heterogeneous Fleet Python Compatibility:**
    `os.path.isjunction` is available only in Python 3.12+. When mocking or testing filesystem
@@ -117,14 +120,14 @@ PR remediation, and agent lifecycle synthesis across macOS Darwin ARM64 and Wind
    must specify `raising=False` on `monkeypatch.setattr(os.path, "isjunction", ...)`.
 
 4. **Review Remediation Push Discipline:**
-   Batching all review and CI fixes locally, executing full local verification suites, and pushing
-   exactly once avoids PR comment thrashing, prevents duplicate automated review scans (CodeRabbit,
-   Greptile), and guarantees reproducible, clean commit histories.
+   Batching review and CI fixes locally, executing full local verification suites, and reviewing
+   branch commits prior to a single clean push avoids comment thrashing, prevents duplicate
+   automated review scans (CodeRabbit, Greptile), and guarantees a clean, verified commit history.
 
 5. **Integrative Retrofit Over Parallel Sprawl (MERGE-10):**
-   Retrofitting existing workspace roots (`${HOME}/.alphaclaw/.openclaw/workspace`) and enriching
-   the Oramasys role overlay preserves operational continuity, audit logs, and tool integrations
-   while preventing parallel directory clutter (`~/.openclaw/fleet/`).
+   Retrofitting the root OpenClaw workspace and enriching the Oramasys role overlay preserves
+   operational continuity, audit logs, and tool integrations while preventing parallel fleet
+   subdirectory clutter.
 
 ---
 
@@ -134,5 +137,5 @@ PR remediation, and agent lifecycle synthesis across macOS Darwin ARM64 and Wind
   is strictly OFF.
 - **Windows Qualification Gate:** Windows status remains **UNQUALIFIED**; release R6 remains OPEN
   pending operator review and authorization.
-- **PR Single-Instance Policy:** Exactly 1 PR per repository maintained across `oramasys/oramasys`
-  (PR #98), `orama-system` (PR #481), `oramasys/phylax` (0 open PRs), and `Perpetua-Tools`.
+- **PR Single-Instance Policy:** At most 1 active PR per repository (0 or 1, strictly no multiple
+  open PRs per repo); phylax currently maintains 0 open PRs (`main` clean).

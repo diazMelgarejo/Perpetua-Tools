@@ -34,7 +34,7 @@
   "cluster_size": 1,
   "canonical_salience": 8.0,
   "staged_at": "2026-11-07T21:38:08.573942+00:00",
-  "status": "accepted",
+  "status": "provisional",
   "decisions": [
     {
       "ts": "2026-11-07T21:38:08.573942+00:00",
