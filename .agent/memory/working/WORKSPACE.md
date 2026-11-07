@@ -6,9 +6,12 @@ and `memory/semantic/C6_SQLITE_AND_VERIFIED_FEED_DOMAIN_KNOWLEDGE_2026-11-07.md`
 **Scope:** reuse PT #481 and orama-system #477; one final push each after
 validation, then inline fixing-SHA replies and Gossip closeout. Publication
 SHAs are recorded in that subsequent closeout, not guessed here.
-**C6:** K8 re-froze the candidate as
-`5f35692ad7af891965e85e5b0bd0bce8b66ebc6d` after two documentation-only
-changes, superseding `ef6d27c165626cb36900369b7a924bdc641c9435`.
+**C6:** K8 re-froze the candidate after two documentation-only changes;
+K5 then corrected two remaining ledger-documentation inaccuracies.
+Final tree `c63581c508a92675b01d8e441b13fa993b1482c6` supersedes
+intermediate `5f35692ad7af891965e85e5b0bd0bce8b66ebc6d` and original
+`ef6d27c165626cb36900369b7a924bdc641c9435`. Executable AST is unchanged;
+35 ledger tests and complete changed-module docstring coverage passed.
 The operator re-ratified both scheduled and successful-call p95 at 60 ms
 on 2026-11-07; p99 and all other budgets stay unchanged. The prior tree
 passed full local suites and one Codex diagnostic/control series; Claude's

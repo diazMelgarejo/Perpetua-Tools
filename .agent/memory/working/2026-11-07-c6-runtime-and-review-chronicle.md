@@ -163,6 +163,18 @@ no commit, push, qualification or activation follows from K8 completion.
 
 ### Publication Batch
 
+Before operator passes, Franklin's read-only K5 delta audit found two
+remaining documentation inaccuracies: holds were described as keyed by
+`run_id` rather than integer-keyed and tagged by `run_id`; the JSONL
+ledger's lock was described as process-wide rather than per instance.
+Codex claimed K5, corrected the disposition row and source documentation,
+and proved the executable AST unchanged. All 35 ledger tests passed;
+changed-module docstrings were 9/9 and Markdown/whitespace checks passed.
+The final staged C6 tree is `c63581c508a92675b01d8e441b13fa993b1482c6`,
+superseding the intermediate K8 tree above. No operator pass, C6 commit
+or publication is claimed. K9 remained absent from the canonical search
+and queue; clarification was requested rather than inventing ownership.
+
 The operator requested consolidation into one existing PR per repository,
 one final push each, inline fixing-SHA replies, and a Gossip closeout.
 
