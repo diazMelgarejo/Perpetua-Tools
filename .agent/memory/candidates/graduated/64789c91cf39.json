@@ -1,0 +1,41 @@
+{
+  "id": "64789c91cf39",
+  "key": "manual_64789c",
+  "name": "manual_64789c",
+  "claim": "Cross-repository pointer checks must use the actual paired immutable peer revision when branches have different names. Keep one canonical generator, support linked worktrees, and refuse explicit-peer checkout failure instead of falling back to unrelated main. Separate publish order from the approved merge order.",
+  "conditions": [
+    "cross repo parity",
+    "immutable peer",
+    "linked worktree",
+    "merge order"
+  ],
+  "evidence_ids": [
+    "2026-11-06T14:59:09.998635+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-06T14:59:09.998635+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-06T14:59:09.998635+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-06T14:59:10.180243+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Orama477 cf87c340 explicitly pins PT481 66c4af6d; wrapper regression 8ddd9144 proves linked-worktree checks and drift refusal. Two-line formatting was operator-allowed, not a reason to hand-edit pointers.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-06T14:59:09.998635+00:00"
+      ],
+      "lessons_sha": "d60514f47747"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-06T14:59:10.180231+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Orama477 cf87c340 explicitly pins PT481 66c4af6d; wrapper regression 8ddd9144 proves linked-worktree checks and drift refusal. Two-line formatting was operator-allowed, not a reason to hand-edit pointers."
+}

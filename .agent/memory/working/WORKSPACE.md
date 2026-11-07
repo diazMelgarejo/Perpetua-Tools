@@ -1,12 +1,70 @@
 # WORKSPACE — current task state
 
-**Updated:** 2026-10-19 UTC, latest (slice 1 implemented and verified in two repositories)
-**Session record:** `memory/working/2026-10-19-clean-rollback-and-preflight-chronicle.md` (Addendum 2)
-**Next actions:** 1 operator answers D1 (push both slice-1 branches, one PR per repository), D2 (delete
-the stale remote branch on merged PR 421) and D3 (pin promotion, gated). 2 Codex finishes the consumer
+**Updated:** 2026-11-07 (operator accepts Mac receipt; local commits only).
+**Current C6:** local Oramasys head
+`9dc38569d22745d54b3e09718f254ad8889e2e37`; final committed tree
+`30ec3c74b87d2fcc6797c1c9905072a59278b7ae` equals the measured tree.
+The operator accepted receipt
+`606cecf7a8a693241378adead2a31f6f2a679e7d9251d04b0a147b4dfdc9ec9f`
+for measured Mac budgets and authorized local logical commits only.
+Both controls and three consecutive trials passed; all 7,200 trial sends
+had zero first-attempt or final failures. Final-head producer suite:
+3,214 passed; Phylax-free suite 3,087 passed, each with two explicit
+deployment skips; focused 143 passed.
+**Still separate:** Windows native qualification, longer-run statistical
+confidence, fresh-auth exact-new-head C3d, publication and activation.
+No C6 push; PR #95 remains at `89da844c`. Claude owns K10 on existing
+Orama #478. K6 memory follows verification locally on existing PT #481,
+with two new incident lessons staged for recurrence review, not graduated:
+`73d79fbe6645` and `02c827dbcb5f`. Earlier entries below are history.
+
+**Updated:** 2026-11-07 (review remediation and verified-local C6 memory).
+**Read first:** `memory/working/2026-11-07-c6-runtime-and-review-chronicle.md`
+and `memory/semantic/C6_SQLITE_AND_VERIFIED_FEED_DOMAIN_KNOWLEDGE_2026-11-07.md`.
+**Scope:** reuse PT #481 and orama-system #477; one final push each after
+validation, then inline fixing-SHA replies and Gossip closeout. Publication
+SHAs are recorded in that subsequent closeout, not guessed here.
+**C6:** K8 re-froze the candidate after two documentation-only changes;
+K5 then corrected two remaining ledger-documentation inaccuracies.
+Final tree `c63581c508a92675b01d8e441b13fa993b1482c6` supersedes
+intermediate `5f35692ad7af891965e85e5b0bd0bce8b66ebc6d` and original
+`ef6d27c165626cb36900369b7a924bdc641c9435`. Executable AST is unchanged;
+35 ledger tests and complete changed-module docstring coverage passed.
+The operator re-ratified both scheduled and successful-call p95 at 60 ms
+on 2026-11-07; p99 and all other budgets stay unchanged. The prior tree
+passed full local suites and one Codex diagnostic/control series; Claude's
+independent repetition missed the historical 50 ms targets but meets 60 ms.
+Qualification remains open: THREE operator passes on the new frozen tree
+and later exact-head C3d are still required.
+No C6 commit/push/activation; memory publication does not renew acceptance.
+**K6:** verified-local chronicle/domain/lessons are added at operator request;
+the original dependency still gates a future qualification addendum. Do not
+mark K4 or K6 qualified from these agent measurements.
+
+**Updated:** 2026-11-06 (closure K1-K3 complete; C6 follow-up separately gated)
+**Session record:** `memory/working/2026-11-06-closure-k1-k4-chronicle.md`.
+**State:** Orama477 `cf87c340`, PT481 `66c4af6d`, Oramasys95 `89da844c` are
+published and their hosted checks passed at fresh closeout. No merge/activation.
+The Mac C6 results supplied by Claude miss budgets; they are not qualification.
+**Next:** K4 is a separate branch/worktree from89da844c, with no commit until
+all security and three operator-run C6 gates pass. K5 queues a delta-only reread
+of Claude's review proposal after the completed K1-K3 jobs; do not duplicate
+already-fixed recommendations. Operator-only C3d still requires exact-head
+acceptance and fresh operator-performed authentication. PT stays manual.
+
+**Updated:** 2026-10-19 UTC, latest
+(slice 1 implemented and verified in two repositories)
+**Session record:**
+`memory/working/2026-10-19-clean-rollback-and-preflight-chronicle.md` (Addendum 2)
+**Next actions:** 1 operator answers D1 (push both slice-1 branches, one PR per
+repository), D2 (delete
+the stale remote branch on merged PR 421) and D3 (pin promotion, gated).
+2 Codex finishes the consumer
 review. 3 after D1, push each branch once and open its PR. 4 serving stays off.
-**State:** Phylax issuer head `f0b73c8` and Oramasys consumer head `812e0f3`, both on current main, not
-pushed; 7 of 7 interop scenarios with real signatures; Codex APPROVE_WITH_SCOPE on the issuer slice and
+**State:** Phylax issuer head `f0b73c8` and Oramasys consumer head `812e0f3`,
+both on current main, not
+pushed; 7 of 7 interop scenarios with real signatures; Codex APPROVE_WITH_SCOPE
+on the issuer slice and
 Agnes APPROVE_SCOPED on both. Eleven more lessons graduated.
 **Next actions (repeated):** D1 to D3, Codex consumer review, push once per repository, serving off.
 

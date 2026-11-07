@@ -7,6 +7,7 @@ reorder_buffer,task_queue,phases}.py target layout).
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 from typing import Optional
@@ -17,6 +18,7 @@ from orchestrator.coordination.types import ClaimSequence, ReorderBuffer
 
 
 def _error(message: str) -> bool:
+    """Report an operator-facing failure without publishing a claim."""
     import sys
 
     print(f"ERROR: {message}", file=sys.stderr)
@@ -96,7 +98,7 @@ async def claim_with_seq(
         task=task,
         timestamp=time.time(),
         notes=notes,
-        worktree=current_worktree_label(),
+        worktree=await asyncio.to_thread(current_worktree_label),
     )
 
     # Emit to bus

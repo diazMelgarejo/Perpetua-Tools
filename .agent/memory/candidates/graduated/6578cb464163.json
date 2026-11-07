@@ -1,0 +1,40 @@
+{
+  "id": "6578cb464163",
+  "key": "manual_6578cb",
+  "name": "manual_6578cb",
+  "claim": "Offload complete producer identity discovery and collision checks for each asynchronous coordination emission; never substitute a global cached identity that skips fresh validation.",
+  "conditions": [
+    "async identity",
+    "event loop",
+    "sibling collision"
+  ],
+  "evidence_ids": [
+    "2026-11-06T22:10:54.076827+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-06T22:10:54.076827+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-06T22:10:54.076827+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-06T22:10:54.208833+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT481 async regressions require worker-thread resolution for register, claim, release, sequence and queue-presence paths, while preserving the synchronous compatibility API.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-06T22:10:54.076827+00:00"
+      ],
+      "lessons_sha": "ac058ae2aaf4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-06T22:10:54.208825+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT481 async regressions require worker-thread resolution for register, claim, release, sequence and queue-presence paths, while preserving the synchronous compatibility API."
+}

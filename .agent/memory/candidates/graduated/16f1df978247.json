@@ -1,0 +1,40 @@
+{
+  "id": "16f1df978247",
+  "key": "manual_16f1df",
+  "name": "manual_16f1df",
+  "claim": "Opaque topology fields do not sanitize the rest of a payload: redact complete known branch tokens and withhold residual legacy labels in every nested value and mapping key before derived recall or export.",
+  "conditions": [
+    "branch tokens",
+    "portable memory",
+    "residual labels"
+  ],
+  "evidence_ids": [
+    "2026-11-06T22:10:53.845065+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-06T22:10:53.845065+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-06T22:10:53.845065+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-06T22:10:53.970930+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT481 regressions exposed bare branch/ref tokens and labels outside topology fields, including paths outside the home<local-tmp-dir> regex; raw history is preserved.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-06T22:10:53.845065+00:00"
+      ],
+      "lessons_sha": "954582d6a164"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-06T22:10:53.970920+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT481 regressions exposed bare branch/ref tokens and labels outside topology fields, including paths outside the home<local-tmp-dir> regex; raw history is preserved."
+}

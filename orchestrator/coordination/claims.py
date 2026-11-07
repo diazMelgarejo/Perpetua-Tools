@@ -7,6 +7,7 @@ but have distinct semantics.
 """
 from __future__ import annotations
 
+import asyncio
 import sys
 from pathlib import Path
 
@@ -21,6 +22,7 @@ _AGENT_REGISTER_KINDS = ("agent_register",)
 
 
 async def _known_agent_ids(bus: GossipBus) -> set[str]:
+    """Read registered identifiers without resolving local filesystem identity."""
     events = await _fetch_heartbeat_events(bus, _AGENT_REGISTER_KINDS)
     return {
         ev["payload"]["agent_id"]
@@ -44,7 +46,7 @@ async def register_agent(
             "agent_id": agent_id,
             "agent_type": agent_type,
             "model": model,
-            "worktree": current_worktree_label(),
+            "worktree": await asyncio.to_thread(current_worktree_label),
             "notes": notes,
         },
     )
@@ -93,11 +95,12 @@ async def claim_task(
             "kind": "agent_claim",
             "agent_id": agent_id,
             "task": task,
-            "worktree": current_worktree_label(),
+            "worktree": await asyncio.to_thread(current_worktree_label),
             "notes": notes,
         },
     )
-    print(f"claimed: {task} by {agent_id} ({current_worktree_label()})")
+    label = await asyncio.to_thread(current_worktree_label)
+    print(f"claimed: {task} by {agent_id} ({label})")
 
 
 async def release_task(bus: GossipBus, agent_id: str, task: str) -> None:
@@ -108,7 +111,7 @@ async def release_task(bus: GossipBus, agent_id: str, task: str) -> None:
             "kind": "agent_release",
             "agent_id": agent_id,
             "task": task,
-            "worktree": current_worktree_label(),
+            "worktree": await asyncio.to_thread(current_worktree_label),
         },
     )
     print(f"released: {task} by {agent_id}")

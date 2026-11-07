@@ -1,0 +1,40 @@
+{
+  "id": "8c6d41c0759b",
+  "key": "manual_8c6d41",
+  "name": "manual_8c6d41",
+  "claim": "For prepared event verification, resolve only the current event key inside the write lock and retain complete trust sampling at preparation and publication boundaries; do not introduce N-times-K resolver work.",
+  "conditions": [
+    "locked work",
+    "multi-key trust",
+    "prepared verifier"
+  ],
+  "evidence_ids": [
+    "2026-11-06T22:10:53.311014+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-06T22:10:53.311014+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-06T22:10:53.311014+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-06T22:10:53.458266+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "C6 independent review reproduced 256 resolver reads for 16 events and 16 keys; the regression now requires 16 per-event reads.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-06T22:10:53.311014+00:00"
+      ],
+      "lessons_sha": "a3943d4fe2e2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-06T22:10:53.458250+00:00",
+  "reviewer": "learn.py",
+  "rationale": "C6 independent review reproduced 256 resolver reads for 16 events and 16 keys; the regression now requires 16 per-event reads."
+}

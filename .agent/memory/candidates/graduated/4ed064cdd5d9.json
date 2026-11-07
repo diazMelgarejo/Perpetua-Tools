@@ -1,0 +1,40 @@
+{
+  "id": "4ed064cdd5d9",
+  "key": "manual_4ed064",
+  "name": "manual_4ed064",
+  "claim": "Retain prewarm authentication failures until an under-lock durable clock observation commits, then refuse without retrying verification; deferring only errors raised inside the transaction leaves an observation gap.",
+  "conditions": [
+    "antirollback",
+    "durable clock",
+    "prewarm refusal"
+  ],
+  "evidence_ids": [
+    "2026-11-06T22:10:53.612369+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-06T22:10:53.612369+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-06T22:10:53.612369+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-06T22:10:53.740393+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The C6 prewarm once-raising resolver regression initially left the clock unchanged; the fix records forward time and preserves the refusal.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-06T22:10:53.612369+00:00"
+      ],
+      "lessons_sha": "52b03855ca87"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-06T22:10:53.740378+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The C6 prewarm once-raising resolver regression initially left the clock unchanged; the fix records forward time and preserves the refusal."
+}

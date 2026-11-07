@@ -1,0 +1,25 @@
+{
+  "id": "0992c6e96410",
+  "key": "manual_0992c6",
+  "name": "manual_0992c6",
+  "claim": "Use isolated test ports and state rather than assuming default service ports are free; a live production listener can make startup negative tests falsely succeed.",
+  "conditions": [
+    "launcher tests",
+    "live listener interference"
+  ],
+  "evidence_ids": [
+    "2026-11-07T06:36:25.591694+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-07T06:36:25.591694+00:00",
+  "status": "staged",
+  "decisions": [
+    {
+      "ts": "2026-11-07T06:36:25.591694+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    }
+  ],
+  "rejection_count": 0
+}

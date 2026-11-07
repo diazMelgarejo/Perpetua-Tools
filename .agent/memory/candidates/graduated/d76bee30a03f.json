@@ -1,0 +1,41 @@
+{
+  "id": "d76bee30a03f",
+  "key": "manual_d76bee",
+  "name": "manual_d76bee",
+  "claim": "Optional producer integration tests belong in the established optional or required interop lane, not the Phylax-free production test directory. Before publication test both modes, and assert that a missing required producer still fails rather than silently skipping.",
+  "conditions": [
+    "CI matrix",
+    "Phylax-free base",
+    "interop tests",
+    "optional dependencies"
+  ],
+  "evidence_ids": [
+    "2026-11-06T14:58:53.908028+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-06T14:58:53.908028+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-06T14:58:53.908028+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-06T14:58:54.079743+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Closure Oramasys95: rich local suite passed while base CI found seven missing-Phylax fixture errors; 89da844c corrected test placement without adding production dependencies or weakening required-R3 collection.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-06T14:58:53.908028+00:00"
+      ],
+      "lessons_sha": "06493aa96e50"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-06T14:58:54.079731+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Closure Oramasys95: rich local suite passed while base CI found seven missing-Phylax fixture errors; 89da844c corrected test placement without adding production dependencies or weakening required-R3 collection."
+}

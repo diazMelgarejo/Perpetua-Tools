@@ -48,6 +48,7 @@ def disable_ecc_sync_for_tests():
 
 @pytest.fixture(autouse=True)
 def _orama_insecure_dev_for_tests(monkeypatch, tmp_path):
+    """Isolate test-only authentication from persisted operator credentials."""
     monkeypatch.setenv("ORAMA_INSECURE_DEV", "1")
     monkeypatch.delenv("ORAMA_CONTROL_PLANE_TOKEN", raising=False)
     # Redirect the persisted-token path to a fresh tmp dir so that
@@ -58,3 +59,24 @@ def _orama_insecure_dev_for_tests(monkeypatch, tmp_path):
         "orchestrator.control_plane_auth.DEFAULT_TOKEN_PATH",
         tmp_path / "control_plane_token",
     )
+
+
+@pytest.fixture(autouse=True)
+def _isolated_producer_id_file(tmp_path):
+    """Keep in-process producer ids out of the checkout's git directory.
+
+    ``current_worktree_label()`` creates a per-worktree id file on first use
+    (closure C4). Tests, and CLI subprocesses that inherit the environment, write
+    it under ``tmp_path`` instead, so a test run never adds files to the
+    developer's real git metadata. Tests that exercise the real location unset
+    the variable and run in throwaway repositories.
+    """
+    # Set directly rather than via monkeypatch: several tests call
+    # monkeypatch.undo() mid-test, which would otherwise drop the isolation.
+    previous = os.environ.get("PT_PRODUCER_ID_FILE")
+    os.environ["PT_PRODUCER_ID_FILE"] = str(tmp_path / "pt-producer-id")
+    yield
+    if previous is None:
+        os.environ.pop("PT_PRODUCER_ID_FILE", None)
+    else:
+        os.environ["PT_PRODUCER_ID_FILE"] = previous

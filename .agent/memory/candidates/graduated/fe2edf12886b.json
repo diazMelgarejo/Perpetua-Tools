@@ -1,0 +1,40 @@
+{
+  "id": "fe2edf12886b",
+  "key": "manual_fe2edf",
+  "name": "manual_fe2edf",
+  "claim": "Bind latency budgets to explicit populations: scheduled arrivals and successful calls are distinct; retain both measurements and record dated operator threshold amendments without rewriting historical results.",
+  "conditions": [
+    "latency-budgets",
+    "metric-populations",
+    "operator-ratification"
+  ],
+  "evidence_ids": [
+    "2026-11-07T04:59:43.651865+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-07T04:59:43.651865+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-07T04:59:43.651865+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-07T04:59:43.780932+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Claude independent C6 diagnostic measured scheduled p95 57.7ms and successful-call p95 53.3ms. Both missed the historical 50ms limit. Operator directly amended both to 60ms on 2026-11-07; neither agent diagnostic substitutes for three operator passes.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-07T04:59:43.651865+00:00"
+      ],
+      "lessons_sha": "861a951dabcd"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-07T04:59:43.780923+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Claude independent C6 diagnostic measured scheduled p95 57.7ms and successful-call p95 53.3ms. Both missed the historical 50ms limit. Operator directly amended both to 60ms on 2026-11-07; neither agent diagnostic substitutes for three operator passes."
+}

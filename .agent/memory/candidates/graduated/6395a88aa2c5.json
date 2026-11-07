@@ -1,0 +1,41 @@
+{
+  "id": "6395a88aa2c5",
+  "key": "manual_6395a8",
+  "name": "manual_6395a8",
+  "claim": "Before enabling SQLite WAL as a contention optimization, verify the actual linked library and relevant corruption fixes, not merely the Python or CLI version. WAL still permits one writer, busy handlers can be bypassed for deadlock avoidance, and weakening synchronous durability is not a neutral performance change.",
+  "conditions": [
+    "SQLite WAL",
+    "busy timeout",
+    "durable clock",
+    "linked runtime version"
+  ],
+  "evidence_ids": [
+    "2026-11-06T15:07:26.863760+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-06T15:07:26.863760+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-06T15:07:26.863760+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-06T15:07:27.023668+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Exa and Firecrawl verified official SQLite transaction, busy-handler, WAL and release guidance. The measured runtime links SQLite3.45.3; WAL-reset fixes include3.51.3 and backports3.44.6/3.50.7. C6 controls support shortening refresh write-lock work before tuning settings.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-06T15:07:26.863760+00:00"
+      ],
+      "lessons_sha": "80e14406e84e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-06T15:07:27.023658+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Exa and Firecrawl verified official SQLite transaction, busy-handler, WAL and release guidance. The measured runtime links SQLite3.45.3; WAL-reset fixes include3.51.3 and backports3.44.6/3.50.7. C6 controls support shortening refresh write-lock work before tuning settings."
+}
