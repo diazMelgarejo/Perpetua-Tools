@@ -18,6 +18,7 @@ Usage (same as orama version):
 from __future__ import annotations
 import os
 import sys
+import contextvars
 from pathlib import Path
 
 _HERE = Path(__file__).resolve()
@@ -34,9 +35,34 @@ if _ORAMA_SPAWN.exists():
     _spec.loader.exec_module(_mod)  # type: ignore[union-attr]
     # Re-export public API
     discover_agents = _mod.discover_agents  # type: ignore[attr-defined]
-    dispatch = _mod.dispatch  # type: ignore[attr-defined]
+    _sibling_dispatch = _mod.dispatch
+    if getattr(_mod, "PT_RUNTIME_DISPATCH_GUARD", None) == 1:
+        dispatch = _mod.dispatch  # type: ignore[attr-defined]
+    else:
+        _legacy_scope = contextvars.ContextVar("legacy_dispatch_scope", default=None)
+        async def dispatch(agent: str, task: str, model: str | None = None, *, scope: str | None = None) -> dict:
+            """Guard older sibling implementations that predate PT runtime enforcement."""
+            for path in (_PT_ROOT, _PT_ROOT / "src"):
+                if str(path) not in sys.path:
+                    sys.path.insert(0, str(path))
+            from orchestrator.dispatch_guard import DispatchGuard, DispatchRequest
+            from orchestrator.gossip_bus import resolve_default_state_dir
+
+            provider = agent.lower().strip()
+            if provider in {"codex", "gemini", "gemini-review", "cursor"} and model is not None:
+                raise ValueError("CLI model override is not supported by this worker")
+            effective_scope = scope or _legacy_scope.get() or str(_PT_ROOT)
+            request = DispatchRequest(effective_scope, provider, model or "provider-default", "spawn-agent", task)
+            token = _legacy_scope.set(effective_scope)
+            try:
+                return await DispatchGuard(resolve_default_state_dir()).execute(request, lambda: _sibling_dispatch(agent, task, model))
+            finally:
+                _legacy_scope.reset(token)
+        _mod.dispatch = dispatch
     print_status = _mod.print_status  # type: ignore[attr-defined]
     if __name__ == "__main__":
+        # Older sibling main() calls its own unguarded dispatch symbol.
+        _mod.dispatch = dispatch
         _mod.main()
 else:
     # Fallback: self-contained stub (orama not present — typical in CI)
@@ -77,7 +103,22 @@ else:
         ok = argv is not None and subprocess.run(argv, capture_output=True, timeout=4).returncode == 0
         return {"codex": _AI("Codex", "cli", ok, detail=argv[0] if argv else "codex")}
 
-    async def dispatch(agent: str, task: str, model: Optional[str] = None) -> Dict[str, Any]:
+    async def dispatch(agent: str, task: str, model: Optional[str] = None, *, scope: Optional[str] = None) -> Dict[str, Any]:
+        """Delegate pre-effect authorization and durable identity to PT."""
+        if agent.lower().strip() == "codex" and model is not None:
+            raise ValueError("CLI model override is not supported by this worker")
+        for path in (_PT_ROOT, _PT_ROOT / "src"):
+            if str(path) not in sys.path:
+                sys.path.insert(0, str(path))
+        from orchestrator.dispatch_guard import DispatchGuard, DispatchRequest
+        from orchestrator.gossip_bus import resolve_default_state_dir
+
+        request = DispatchRequest(scope or str(_PT_ROOT), agent, model or "provider-default", "spawn-agent", task)
+        return await DispatchGuard(resolve_default_state_dir()).execute(
+            request, lambda: _dispatch_unchecked(agent, task, model)
+        )
+
+    async def _dispatch_unchecked(agent: str, task: str, model: Optional[str] = None) -> Dict[str, Any]:
         """Implement dispatch."""
         try:
             argv = _codex_argv("--full-auto", task) if agent == "codex" else None

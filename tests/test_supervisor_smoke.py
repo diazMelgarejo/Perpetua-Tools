@@ -981,7 +981,9 @@ async def test_replay_creates_new_job(tmp_path):
         {"status": JobStatus.FAILED.value, "error": "injected"},
     )
 
-    new_id = await sup.replay(original_id)
+    # Replaying the same goal cannot infer that an earlier effect did not run.
+    # An explicit scope identifies the operator's intentional independent run.
+    new_id = await sup.replay(original_id, {"metadata": {"dispatch_scope": "intentional-replay"}})
     assert new_id != original_id
     await _await_job(sup, new_id)
 

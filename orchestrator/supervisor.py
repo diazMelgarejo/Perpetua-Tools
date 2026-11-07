@@ -28,6 +28,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from utils.dispatch_models import backend_requires_dispatch_model
 from utils.hardware_policy import HardwareAffinityError, check_affinity
+from orchestrator.dispatch_guard import DispatchGuard, DispatchRequest, PolicyEvaluator, ApprovalVerifier
 
 
 # ── Constants ─────────────────────────────────────────────────────────────────
@@ -398,7 +399,7 @@ class OrchestrationSupervisor:
     MAX_DEPTH   = MAX_DEPTH
     MAX_THREADS = MAX_THREADS
 
-    def __init__(self, state_dir: Path | str = STATE_DIR):
+    def __init__(self, state_dir: Path | str = STATE_DIR, *, dispatch_policy: PolicyEvaluator | None = None, approval_verifier: ApprovalVerifier | None = None) -> None:
         """
         Initialize the OrchestrationSupervisor and prepare on-disk state and runtime caches.
         
@@ -436,6 +437,7 @@ class OrchestrationSupervisor:
         # failures drop back to DEBUG to avoid log spam.
         self._gossip_warned = False
         _ensure_state_dir(self._state_dir)
+        self._dispatch_guard = DispatchGuard(self._state_dir, policy=dispatch_policy, approval_verifier=approval_verifier)
         # Process-global PT_STATE_DIR mutation — load-bearing for memory_node's
         # module-level `_default_bus` singleton. memory_node._get_default_bus()
         # is called from request paths that don't have a supervisor handle and
@@ -1074,6 +1076,7 @@ class OrchestrationSupervisor:
         """
         import logging
         _log = logging.getLogger(__name__)
+        original_spec = spec
 
         # 0. Memory context injection — enriches prompt before any routing decision.
         #    Degrades silently: empty store, missing dependencies → original spec unchanged.
@@ -1124,7 +1127,7 @@ class OrchestrationSupervisor:
                         }
                     }
                 )
-                result = await worker_fn(spec_for_win)
+                result = await self._guarded_worker(original_spec, spec_for_win, "lmstudio-win", worker_fn)
                 if backend in _MAC_LOCAL_BACKENDS:
                     # Mac-local preempted by Windows — flag for callers/tests.
                     return {**result, "routed_to_windows": True, "windows_endpoint": win_url}
@@ -1137,7 +1140,33 @@ class OrchestrationSupervisor:
         worker_fn = WORKER_REGISTRY.get(backend, WORKER_REGISTRY["echo"])
         if backend_requires_dispatch_model(backend):
             spec = self._prepare_spec_for_inference(spec, backend)
-        return await worker_fn(spec)
+        return await self._guarded_worker(original_spec, spec, backend, worker_fn)
+
+    async def _guarded_worker(self, original: JobSpec, routed: JobSpec, backend: str, worker: Any) -> dict:
+        """Enforce policy after routing, rejecting unsupported CLI model/effort/fast overrides.
+
+        CLI defaults remain unattested; even explicit false ``fast`` is rejected
+        because these workers do not pass any of these options to the process.
+        """
+        metadata = routed.metadata or {}
+        if backend in {"codex", "gemini", "agy"} and any(
+            metadata.get(key) is not None for key in ("model", "effort", "fast")
+        ):
+            raise ValueError("CLI model, effort and fast overrides are not supported by this worker")
+        request = DispatchRequest(
+            scope=str((original.metadata or {}).get("dispatch_scope") or Path(__file__).resolve().parent.parent),
+            provider=backend,
+            model=str(metadata.get("model") or ("echo" if backend == "echo" else "provider-default")),
+            goal=original.intent,
+            prompt=original.prompt,
+            role=original.role or "",
+            constraints=json.dumps(original.constraints, sort_keys=True),
+            task_type=original.task_type or "reasoning",
+            privacy_critical=bool(metadata.get("privacy_critical", False)),
+            effort=metadata.get("effort"),
+            fast=metadata.get("fast"),
+        )
+        return await self._dispatch_guard.execute(request, lambda: worker(routed))
 
     @staticmethod
     def _try_skill_envelope(spec: "JobSpec"):
