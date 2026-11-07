@@ -77,7 +77,7 @@ def test_existing_and_winner_permissions_are_repaired(
 
     if not concurrent:
         token()
-    assert identity.load_or_create_producer_id(path, token_hex=token) == FIRST
+    assert identity.load_or_create_producer_id(path, token_hex=token, sibling_ids=frozenset()) == FIRST
     if os.name == "posix":
         assert stat.S_IMODE(path.stat().st_mode) == 0o600
 
@@ -99,7 +99,7 @@ def test_symlink_identity_is_refused_without_touching_target(
             pytest.skip("symlink creation requires Windows account privileges")
         raise
     with pytest.raises((identity.ProducerIdError, OSError)):
-        identity.load_or_create_producer_id(path)
+        identity.load_or_create_producer_id(path, sibling_ids=frozenset())
     assert path.is_symlink()
     if not dangling:
         assert target.read_text(encoding="utf-8") == FIRST
@@ -168,8 +168,10 @@ def test_synchronized_creators_converge(tmp_path: Path, monkeypatch: pytest.Monk
 
     monkeypatch.setattr(identity.os, "link", link)
     with ThreadPoolExecutor(max_workers=2) as pool:
-        futures = [pool.submit(identity.load_or_create_producer_id, path, token_hex=lambda: "a" * 32),
-                   pool.submit(identity.load_or_create_producer_id, path, token_hex=lambda: "b" * 32)]
+        futures = [pool.submit(identity.load_or_create_producer_id, path, token_hex=lambda: "a" * 32,
+                               sibling_ids=frozenset()),
+                   pool.submit(identity.load_or_create_producer_id, path, token_hex=lambda: "b" * 32,
+                               sibling_ids=frozenset())]
         results = [future.result(timeout=15) for future in futures]
     assert results[0] == results[1] == path.read_text(encoding="utf-8").strip()
     assert not list(tmp_path.glob(".*.tmp"))
@@ -191,7 +193,7 @@ def test_unsupported_link_fails_closed_without_replace(
 
     monkeypatch.setattr(identity.os, "link", unsupported)
     with pytest.raises((identity.ProducerIdError, OSError)):
-        identity.load_or_create_producer_id(path)
+        identity.load_or_create_producer_id(path, sibling_ids=frozenset())
     assert path.read_text(encoding="utf-8") == FIRST if winner else not path.exists()
     assert not list(tmp_path.glob(".*.tmp"))
 
@@ -206,7 +208,7 @@ def test_partial_writes_are_completed(tmp_path: Path, monkeypatch: pytest.Monkey
         return real_write(fd, data[:3])
 
     monkeypatch.setattr(identity.os, "write", short_write)
-    result = identity.load_or_create_producer_id(path)
+    result = identity.load_or_create_producer_id(path, sibling_ids=frozenset())
     assert path.read_text(encoding="utf-8") == result + "\n"
     assert not list(tmp_path.glob(".*.tmp"))
 
@@ -226,6 +228,6 @@ def test_failed_write_or_fsync_cleans_up(
 
     monkeypatch.setattr(identity.os, "fsync" if failure == "fsync" else "write", fail)
     with pytest.raises((identity.ProducerIdError, OSError)):
-        identity.load_or_create_producer_id(path)
+        identity.load_or_create_producer_id(path, sibling_ids=frozenset())
     assert not path.exists()
     assert not list(tmp_path.glob(".*.tmp"))

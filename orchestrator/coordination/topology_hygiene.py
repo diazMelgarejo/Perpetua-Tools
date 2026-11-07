@@ -47,6 +47,7 @@ LEGACY_REDACTED = "legacy-redacted"
 _PLACEHOLDERS = frozenset({"", "?", "-", UNAVAILABLE_PRODUCER_ID, LEGACY_REDACTED})
 # ``<branch or ?>@<absolute POSIX path | drive path | home-relative path>``.
 _LEGACY_LABEL_RE = re.compile(r"^(?P<branch>[^@\s]*)@(?P<path>(?:/|~|[A-Za-z]:[\\/]).*)$")
+_LEGACY_MENTION_RE = re.compile(r"@(?:/|~|[A-Za-z]:[\\/]|\\\\)")
 # Absolute POSIX roots must start a path (not follow a word, dot or tilde), so
 # repository-relative paths such as ``.cursor/private/...`` are not flagged.
 # Private home-path fragments with user identifiers (e.g. ``~user/...``) are flagged,
@@ -128,15 +129,14 @@ def _scrub(value: Any, fragments: list[str]) -> Any:
                 continue
             if "@" in fragment or fragment.startswith(("/", "~")) or re.match(r"^[A-Za-z]:", fragment):
                 value = value.replace(fragment, LEGACY_REDACTED)
-            elif "/" in fragment:
-                value = re.sub(
-                    rf"(?<![A-Za-z0-9/.-]){re.escape(fragment)}(?![A-Za-z0-9/.-])",
-                    LEGACY_REDACTED, value,
-                )
             else:
                 value = re.sub(
-                    rf"(?i)(\bbranch(?:[_:=]\s*|\s+)){re.escape(fragment)}(?![\w/-])",
+                    rf"(?i)(\b(?:branch|ref)(?:[_:=]\s*|\s+)){re.escape(fragment)}(?![\w/.-])",
                     lambda match: match[1] + LEGACY_REDACTED, value,
+                )
+                value = re.sub(
+                    rf"(?<![\w/.-]){re.escape(fragment)}(?![\w/.-])",
+                    LEGACY_REDACTED, value,
                 )
         return value
     if isinstance(value, dict):
@@ -152,18 +152,23 @@ def _scrub(value: Any, fragments: list[str]) -> Any:
     return value
 
 
-def _contains_private_path(value: Any) -> bool:
-    """Return True when any string inside ``value`` (including dict keys) looks like a private path."""
+def _contains_pattern(value: Any, pattern: re.Pattern[str]) -> bool:
+    """Inspect all strings and mapping keys without treating field names as authority."""
     if isinstance(value, str):
-        return bool(_PRIVATE_PATH_RE.search(value))
+        return bool(pattern.search(value))
     if isinstance(value, dict):
         return any(
-            _contains_private_path(k) or _contains_private_path(v)
+            _contains_pattern(k, pattern) or _contains_pattern(v, pattern)
             for k, v in value.items()
         )
     if isinstance(value, list):
-        return any(_contains_private_path(v) for v in value)
+        return any(_contains_pattern(v, pattern) for v in value)
     return False
+
+
+def _contains_private_path(value: Any) -> bool:
+    """Return whether any value or mapping key still contains a private-looking path."""
+    return _contains_pattern(value, _PRIVATE_PATH_RE)
 
 
 def sanitize_topology(payload: Any) -> Optional[dict[str, Any]]:
@@ -181,6 +186,8 @@ def sanitize_topology(payload: Any) -> Optional[dict[str, Any]]:
             result = _scrub(result, _legacy_fragments(payload))
         except TopologyInventoryError:
             return None
+    if _contains_pattern(result, _LEGACY_MENTION_RE):
+        return None
     return result
 
 

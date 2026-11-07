@@ -28,6 +28,7 @@ from orchestrator.coordination.types import (
 
 
 def _error(message: str) -> bool:
+    """Report a failed manual queue operation without mutating ownership."""
     import sys
 
     print(f"ERROR: {message}", file=sys.stderr)
@@ -100,7 +101,7 @@ def _validate_queue_add_args(
 
 async def _queue_add_impl(
     bus: GossipBus,
-    db,
+    db: aiosqlite.Connection,
     task_name: str,
     phase: str,
     priority: str,
@@ -230,6 +231,7 @@ _LOCK_RETRY_SECONDS = 0.05
 
 
 async def ensure_claims_table(bus: GossipBus) -> None:
+    """Create the existing manual queue-ownership table when needed."""
     async with bus.connect() as db:
         await db.execute(_CREATE_CLAIMS_TABLE)
         await db.commit()
@@ -279,7 +281,7 @@ async def try_atomic_claim(
         "task_id": task_id,
         "assigned_agent": agent_id,
         "status": QueuedTaskState.CLAIMED.value,
-        "worktree": current_worktree_label(),
+        "worktree": await asyncio.to_thread(current_worktree_label),
     }
     for attempt in range(_LOCK_RETRIES):
         async with bus.connect() as db:
@@ -384,6 +386,7 @@ async def release_claim_with_event(
 
 
 async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | None:
+    """Claim a dependency-ready task and publish the successful actor's presence."""
     snapshots = await latest_task_snapshots(bus)
     task_state = snapshots.get(task_id)
     if not task_state:
@@ -478,7 +481,7 @@ async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | Non
         "agent_id": agent_id,
         "assigned_agent": agent_id,
         "status": QueuedTaskState.CLAIMED.value,
-        "worktree": current_worktree_label(),
+        "worktree": await asyncio.to_thread(current_worktree_label),
     }
     claim_result = await try_atomic_claim(bus, task_id, agent_id, payload)
     if claim_result == ClaimResult.LOST_RACE:
@@ -495,11 +498,12 @@ async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | Non
     # real, verifiable unit of dispatch activity from a genuinely live
     # agent -- post presence explicitly rather than relying on the agent
     # to separately remember an out-of-band pulse call.
-    await bus.emit("heartbeat", _presence_pulse_payload(agent_id))
+    await bus.emit("heartbeat", await asyncio.to_thread(_presence_pulse_payload, agent_id))
     print(f"claimed: {task_id} by {agent_id}")
 
 
 async def queue_complete(bus: GossipBus, task_id: str, agent_id: str, notes: str) -> bool | None:
+    """Complete a still-owned task without synthesizing another agent's presence."""
     snapshots = await latest_task_snapshots(bus)
     task_state = snapshots.get(task_id)
     if not task_state:
@@ -553,11 +557,12 @@ async def queue_complete(bus: GossipBus, task_id: str, agent_id: str, notes: str
     # (unlike cleanup_stale_queue_claims's release, which acts on behalf of
     # an already-DEAD agent and must never post presence). Post it here,
     # not inside release_claim_with_event, so the two paths stay distinct.
-    await bus.emit("heartbeat", _presence_pulse_payload(agent_id))
+    await bus.emit("heartbeat", await asyncio.to_thread(_presence_pulse_payload, agent_id))
     print(f"completed: {task_id}")
 
 
 async def queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) -> bool | None:
+    """Release or abandon a failed owned task and record its actor's activity."""
     snapshots = await latest_task_snapshots(bus)
     task_state = snapshots.get(task_id)
     if not task_state:
@@ -613,7 +618,7 @@ async def queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) ->
         # Same reasoning as queue_complete: a live agent reporting its own
         # failure is genuine dispatch activity, distinct from the
         # dead-agent cleanup path -- post presence here explicitly.
-        await bus.emit("heartbeat", _presence_pulse_payload(agent_id))
+        await bus.emit("heartbeat", await asyncio.to_thread(_presence_pulse_payload, agent_id))
         print(f"failed: {task_id}, retry {retry_count}/{max_retries}")
         return
 
@@ -643,7 +648,7 @@ async def queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) ->
             f"{task_id} could not be abandoned; coordination database remained "
             "busy. Retry safely."
         )
-    await bus.emit("heartbeat", _presence_pulse_payload(agent_id))
+    await bus.emit("heartbeat", await asyncio.to_thread(_presence_pulse_payload, agent_id))
     print(f"abandoned: {task_id} (max retries exceeded)")
 
 

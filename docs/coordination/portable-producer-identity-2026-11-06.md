@@ -55,10 +55,17 @@ views only:
 
 | Class | Meaning | Memory recall | Portable export |
 | --- | --- | --- | --- |
-| `opaque` | Topology fields hold `ptp-` identifiers | Unchanged | Unchanged |
-| `no_topology` | No topology field, or a placeholder (`?`, `None`) | Unchanged | Blocked if a private-looking path remains |
+| `opaque` | Topology fields hold `ptp-` identifiers | Retained only if no residual legacy label remains elsewhere | Same, with private-path checks |
+| `no_topology` | No topology field, or a placeholder (`?`, `None`) | Withheld if a legacy label remains elsewhere | Also blocked if a private-looking path remains |
 | `legacy_label` | `<branch>@<absolute path>` | Label, branch and path replaced with `legacy-redacted` | Same, then blocked if a private-looking path remains |
 | `unclassified` | Any other topology shape | Withheld | Blocked |
+
+Known branch fragments are redacted as complete tokens, including bare prose
+and branch/ref values; larger identifiers are preserved. A known token is
+conservatively redacted even when it also looks like an ordinary word.
+Structured `branch_`/`ref_` references remain covered. Every nested string and
+mapping key receives the residual-label check, regardless of topology-field
+classification. Derived recall and export never rewrite the raw history.
 
 Memory recall (`orchestrator/memory_node.py`) sanitizes gossip hits before it
 builds recall text. Portable export

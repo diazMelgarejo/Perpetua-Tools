@@ -1,5 +1,7 @@
+"""Asynchronous liveness views and events for manual coordination."""
 from __future__ import annotations
 
+import asyncio
 import time
 
 from orchestrator.gossip_bus import GossipBus
@@ -12,6 +14,7 @@ from orchestrator.coordination.paths import current_worktree_label
 
 
 def _format_age(seconds: int) -> str:
+    """Render elapsed seconds compactly for the operator dashboard."""
     if seconds < 60:
         return f"{seconds}s"
     if seconds < 3600:
@@ -20,6 +23,7 @@ def _format_age(seconds: int) -> str:
 
 
 async def _heartbeat_list(bus: GossipBus) -> None:
+    """Print the current folded heartbeat state."""
     agents = await find_agent_heartbeats(bus)
     if not agents:
         print("no agents tracked yet")
@@ -36,6 +40,7 @@ async def _heartbeat_list(bus: GossipBus) -> None:
 
 
 async def _heartbeat_check(bus: GossipBus, agent_id: str) -> None:
+    """Print one agent's latest registration and liveness evidence."""
     agents = await find_agent_heartbeats(bus, agent_id)
     data = agents.get(agent_id)
     if not data:
@@ -53,6 +58,7 @@ async def _heartbeat_check(bus: GossipBus, agent_id: str) -> None:
 
 
 async def _heartbeat_dashboard(bus: GossipBus) -> None:
+    """Summarize current agents and unresolved manual claims."""
     agents = await find_agent_heartbeats(bus)
     if not agents:
         print("no agents tracked yet")
@@ -68,12 +74,13 @@ async def _heartbeat_dashboard(bus: GossipBus) -> None:
 
 
 async def _heartbeat_pulse(bus: GossipBus, agent_id: str) -> None:
+    """Publish presence after resolving local identity off the event loop."""
     await bus.emit(
         "heartbeat",
         {
             "kind": "agent_pulse",
             "agent_id": agent_id,
-            "worktree": current_worktree_label(),
+            "worktree": await asyncio.to_thread(current_worktree_label),
             "timestamp": time.time(),
         },
     )
@@ -81,12 +88,13 @@ async def _heartbeat_pulse(bus: GossipBus, agent_id: str) -> None:
 
 
 async def _heartbeat_kill(bus: GossipBus, agent_id: str, reason: str) -> None:
+    """Record a manual liveness transition without blocking on Git discovery."""
     await bus.emit(
         "heartbeat",
         {
             "kind": "agent_killed",
             "agent_id": agent_id,
-            "worktree": current_worktree_label(),
+            "worktree": await asyncio.to_thread(current_worktree_label),
             "reason": reason,
             "timestamp": time.time(),
         },
@@ -102,6 +110,7 @@ _TIMELINE_STATUS_LABELS = {
 
 
 async def _heartbeat_timeline(bus: GossipBus, agent_id: str, hours: int) -> None:
+    """Render the retained liveness events for one agent and time range."""
     cutoff = time.time() - hours * 3600
     events = await bus.tail(limit=1000, event_type="heartbeat")
     print(f"Timeline for {agent_id}:")
@@ -118,5 +127,6 @@ async def _heartbeat_timeline(bus: GossipBus, agent_id: str, hours: int) -> None
 
 
 async def _heartbeat_cleanup(bus: GossipBus) -> None:
+    """Run the existing explicit cleanup operation, never an automatic sweeper."""
     released = await cleanup_stale_claims(bus)
     print("released: " + ", ".join(released) if released else "no stale claims released")

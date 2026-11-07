@@ -125,8 +125,8 @@ def test_concurrent_creator_adopts_the_winning_identifier(tmp_path: Path) -> Non
         id_path.write_text(winner + "\n", encoding="utf-8")
         return "b" * 32
 
-    assert load_or_create_producer_id(id_path, token_hex=racing_token) == winner
-    assert load_or_create_producer_id(id_path) == winner
+    assert load_or_create_producer_id(id_path, token_hex=racing_token, sibling_ids=frozenset()) == winner
+    assert load_or_create_producer_id(id_path, sibling_ids=frozenset()) == winner
 
 
 def test_reader_threads_stop_when_creator_fails(tmp_path: Path) -> None:
@@ -148,7 +148,10 @@ with patch.dict(test.__globals__, {'load_or_create_producer_id': lambda *a, **k:
 """
     result = subprocess.run(
         [sys.executable, "-c", script, __file__, str(tmp_path)],
-        capture_output=True, text=True, timeout=5, check=False,
+        cwd=REPO_ROOT,
+        env={**os.environ, "PYTHONPATH": os.pathsep.join(
+            part for part in (str(REPO_ROOT), os.environ.get("PYTHONPATH", "")) if part)},
+        capture_output=True, text=True, timeout=30, check=False,
     )
     assert result.returncode == 0, result.stderr
 
@@ -173,7 +176,7 @@ def test_concurrent_readers_never_observe_empty_or_truncated_file(tmp_path: Path
 
     def creator() -> str:
         """Create or adopt the stable producer identity."""
-        return load_or_create_producer_id(id_path)
+        return load_or_create_producer_id(id_path, sibling_ids=frozenset())
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=16) as ex:
         reader_futs = [ex.submit(reader) for _ in range(8)]
@@ -232,7 +235,7 @@ def test_malformed_identifier_file_is_refused_not_rotated(tmp_path: Path) -> Non
     id_path = tmp_path / "pt-producer-id"
     id_path.write_text(_LEGACY_LABEL, encoding="utf-8")
     with pytest.raises(ProducerIdError):
-        load_or_create_producer_id(id_path)
+        load_or_create_producer_id(id_path, sibling_ids=frozenset())
     assert id_path.read_text(encoding="utf-8") == _LEGACY_LABEL
 
 
