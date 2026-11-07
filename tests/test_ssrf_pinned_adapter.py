@@ -111,7 +111,10 @@ def test_ssrf_request_refuses_redirect_to_metadata() -> None:
             preload_content=False,
         )
 
+    sess = ssrf_session()
+    sess.trust_env = False
     with (
+        sess,
         patch("socket.getaddrinfo", side_effect=fake_getaddrinfo),
         patch.object(HTTPConnectionPool, "urlopen", fake_urlopen),
         patch.object(HTTPSConnectionPool, "urlopen", fake_urlopen),
@@ -121,6 +124,7 @@ def test_ssrf_request_refuses_redirect_to_metadata() -> None:
             "GET",
             "https://example.com/out",
             allow_redirects=True,
+            session=sess,
         )
     # The first hop (public example.com) was allowed through to the
     # (mocked) transport; the metadata redirect target must never reach it.
@@ -181,6 +185,7 @@ def test_ssrf_request_restores_caller_session_max_redirects() -> None:
     from urllib3.connectionpool import HTTPConnectionPool, HTTPSConnectionPool
 
     sess = ssrf_session()
+    sess.trust_env = False
     original = sess.max_redirects
     assert original == 0
 
@@ -437,6 +442,7 @@ def test_multithreaded_shared_session_does_not_crash_or_cross_contaminate() -> N
         )
 
     session = requests.Session()
+    session.trust_env = False
     adapter = SSRFPinnedHTTPAdapter()
     session.mount("http://", adapter)
     session.mount("https://", adapter)
@@ -586,7 +592,10 @@ def test_redirect_limit_telemetry_reports_scheme_correct_default_port(
             preload_content=False,
         )
 
+    sess = ssrf_session()
+    sess.trust_env = False
     with (
+        sess,
         patch("socket.getaddrinfo", side_effect=fake_getaddrinfo),
         patch.object(HTTPConnectionPool, "urlopen", fake_urlopen),
         pytest.raises(RedirectDenied, match="redirect limit"),
@@ -596,6 +605,7 @@ def test_redirect_limit_telemetry_reports_scheme_correct_default_port(
             "http://example.com/start",
             allow_redirects=True,
             max_redirects=2,
+            session=sess,
         )
 
     from src.utils.egress_telemetry import _sink_path
