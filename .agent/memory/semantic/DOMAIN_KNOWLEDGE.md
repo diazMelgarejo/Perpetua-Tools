@@ -607,3 +607,12 @@ Design note:
 
 Compact ceremony mnemonic:
 `CLAIM -> CANDIDATE -> SCOPE -> HISTORY -> CAN-FAIL -> MATRIX -> REVIEW -> FREEZE -> APPROVE -> EVIDENCE -> RECOMPUTE -> ACCEPT -> MERGE -> ROLLBACK -> GRADUATE`.
+
+## SQLite and verified-feed qualification (2026-11-07)
+
+See [the C6 domain reference](C6_SQLITE_AND_VERIFIED_FEED_DOMAIN_KNOWLEDGE_2026-11-07.md)
+for embedded-library versus CLI identity, WAL-reset safety floors, exact-tuple
+verification reuse, durable clocks, scheduled workload accounting and the
+separation of agent diagnostics from operator/native-host qualification.
+The corresponding dated working chronicle preserves attribution and evidence;
+it does not rewrite earlier records or authorize serving.

@@ -1,0 +1,40 @@
+{
+  "id": "64abeaf88a4f",
+  "key": "manual_64abea",
+  "name": "manual_64abea",
+  "claim": "Bind CI evidence to its tested checkout and tree: record merge, base and PR-head revisions and require equality with the operator-accepted head tree or rerun that exact head.",
+  "conditions": [
+    "CI tree binding",
+    "operator acceptance",
+    "synthetic merge"
+  ],
+  "evidence_ids": [
+    "2026-11-06T22:10:54.314620+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-06T22:10:54.314620+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-06T22:10:54.314620+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-06T22:10:54.442262+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Orama477 review found synthetic merge CI described as exact-head evidence without a tree binding; the review procedure now requires the comparison and retains the merge barrier.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-06T22:10:54.314620+00:00"
+      ],
+      "lessons_sha": "a20b239682f8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-06T22:10:54.442252+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Orama477 review found synthetic merge CI described as exact-head evidence without a tree binding; the review procedure now requires the comparison and retains the merge barrier."
+}

@@ -1,0 +1,40 @@
+{
+  "id": "4c5caf9ba844",
+  "key": "manual_4c5caf",
+  "name": "manual_4c5caf",
+  "claim": "When exporting a candidate tree for tests that inspect repository identity, initialize a scratch Git repository and record the exported tree before interpreting failures.",
+  "conditions": [
+    "candidate-export",
+    "git-preconditions",
+    "qualification"
+  ],
+  "evidence_ids": [
+    "2026-11-07T04:59:43.410923+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-07T04:59:43.410923+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-07T04:59:43.410923+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-07T04:59:43.549019+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Claude reported 25 false failures in an export without Git metadata; restoring that precondition reproduced the 3214 producer and 3087 producer-free passing suites. Gossip event 30b4b2a1f3fd43c7b43a82cc3e7044be; attributed independent evidence, not a new operator run.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-07T04:59:43.410923+00:00"
+      ],
+      "lessons_sha": "e65d1c0768ce"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-07T04:59:43.549008+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Claude reported 25 false failures in an export without Git metadata; restoring that precondition reproduced the 3214 producer and 3087 producer-free passing suites. Gossip event 30b4b2a1f3fd43c7b43a82cc3e7044be; attributed independent evidence, not a new operator run."
+}

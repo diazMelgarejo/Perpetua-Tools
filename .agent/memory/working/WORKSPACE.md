@@ -1,5 +1,25 @@
 # WORKSPACE — current task state
 
+**Updated:** 2026-11-07 (review remediation and verified-local C6 memory).
+**Read first:** `memory/working/2026-11-07-c6-runtime-and-review-chronicle.md`
+and `memory/semantic/C6_SQLITE_AND_VERIFIED_FEED_DOMAIN_KNOWLEDGE_2026-11-07.md`.
+**Scope:** reuse PT #481 and orama-system #477; one final push each after
+validation, then inline fixing-SHA replies and Gossip closeout. Publication
+SHAs are recorded in that subsequent closeout, not guessed here.
+**C6:** K8 re-froze the candidate as
+`5f35692ad7af891965e85e5b0bd0bce8b66ebc6d` after two documentation-only
+changes, superseding `ef6d27c165626cb36900369b7a924bdc641c9435`.
+The operator re-ratified both scheduled and successful-call p95 at 60 ms
+on 2026-11-07; p99 and all other budgets stay unchanged. The prior tree
+passed full local suites and one Codex diagnostic/control series; Claude's
+independent repetition missed the historical 50 ms targets but meets 60 ms.
+Qualification remains open: THREE operator passes on the new frozen tree
+and later exact-head C3d are still required.
+No C6 commit/push/activation; memory publication does not renew acceptance.
+**K6:** verified-local chronicle/domain/lessons are added at operator request;
+the original dependency still gates a future qualification addendum. Do not
+mark K4 or K6 qualified from these agent measurements.
+
 **Updated:** 2026-11-06 (closure K1-K3 complete; C6 follow-up separately gated)
 **Session record:** `memory/working/2026-11-06-closure-k1-k4-chronicle.md`.
 **State:** Orama477 `cf87c340`, PT481 `66c4af6d`, Oramasys95 `89da844c` are
