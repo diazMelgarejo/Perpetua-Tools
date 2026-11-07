@@ -1,0 +1,26 @@
+{
+  "id": "73d79fbe6645",
+  "key": "manual_73d79f",
+  "name": "manual_73d79f",
+  "claim": "Inventory a measured Python environment without changing it: pip may intentionally be absent, so use a read-only inventory tool targeting that exact interpreter rather than installing pip mid-qualification.",
+  "conditions": [
+    "dependency-inventory",
+    "measured-runtime",
+    "pip-free"
+  ],
+  "evidence_ids": [
+    "2026-11-07T05:44:13.482004+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-07T05:44:13.482004+00:00",
+  "status": "staged",
+  "decisions": [
+    {
+      "ts": "2026-11-07T05:44:13.482004+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    }
+  ],
+  "rejection_count": 0
+}

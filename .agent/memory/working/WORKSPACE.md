@@ -1,5 +1,23 @@
 # WORKSPACE — current task state
 
+**Updated:** 2026-11-07 (operator accepts Mac receipt; local commits only).
+**Current C6:** local Oramasys head
+`9dc38569d22745d54b3e09718f254ad8889e2e37`; final committed tree
+`30ec3c74b87d2fcc6797c1c9905072a59278b7ae` equals the measured tree.
+The operator accepted receipt
+`606cecf7a8a693241378adead2a31f6f2a679e7d9251d04b0a147b4dfdc9ec9f`
+for measured Mac budgets and authorized local logical commits only.
+Both controls and three consecutive trials passed; all 7,200 trial sends
+had zero first-attempt or final failures. Final-head producer suite:
+3,214 passed; Phylax-free suite 3,087 passed, each with two explicit
+deployment skips; focused 143 passed.
+**Still separate:** Windows native qualification, longer-run statistical
+confidence, fresh-auth exact-new-head C3d, publication and activation.
+No C6 push; PR #95 remains at `89da844c`. Claude owns K10 on existing
+Orama #478. K6 memory follows verification locally on existing PT #481,
+with two new incident lessons staged for recurrence review, not graduated:
+`73d79fbe6645` and `02c827dbcb5f`. Earlier entries below are history.
+
 **Updated:** 2026-11-07 (review remediation and verified-local C6 memory).
 **Read first:** `memory/working/2026-11-07-c6-runtime-and-review-chronicle.md`
 and `memory/semantic/C6_SQLITE_AND_VERIFIED_FEED_DOMAIN_KNOWLEDGE_2026-11-07.md`.

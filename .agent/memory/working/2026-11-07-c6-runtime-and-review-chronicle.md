@@ -1,5 +1,10 @@
 # C6 Runtime, Verified-Feed and Review Chronicle (2026-11-07)
 
+**Latest outcome:** the operator accepted the Mac receipt and local logical
+commits; see the closing addendum. Earlier pending states below are retained
+history, not the current qualification status. Windows and new-head C3d
+remain separate; no C6 publication or activation is claimed.
+
 ## Scope and Attribution
 
 Author/actor: codex-reviewer, self-reported identity. Claude authored the
@@ -218,3 +223,60 @@ the batch to its self-reported actor without rewriting historical rows.
 - Local evidence uses the configurable `$REFERENCE_ROOT` directory and dated
   C6 plan, review, execution ledger, computed verification receipt and raw
   diagnostic artifacts; concrete workstation mappings remain node-local.
+
+## Operator-Directed Runs, Acceptance and Local Commits
+
+K9 added Claude's Windows handoff to the same C6 candidate. Its final frozen
+tree was `30ec3c74b87d2fcc6797c1c9905072a59278b7ae`, superseding all
+intermediate tree identifiers above. The operator explicitly allowed Codex
+execution while retaining explicit receipt acceptance as a separate step.
+
+The runner preflight first stopped before any benchmark cell because the
+selected uv environment had no pip. Its files were preserved. Offline uv
+freeze targeting the explicit interpreter produced a byte-identical inventory
+without installing or changing anything. Seven helper preflight tests passed.
+The helper creates exclusive 0700 evidence/temp directories, rejects receipt
+collisions, counts failed receipt writes, uses the selected interpreter for
+judging, records helper digests and checks the tree at completion. The old
+shared 0755 temporary directory was not changed or reused.
+
+| Cell | Sends | Scheduled p95 ms | Successful-call p95 ms | Scheduled p99 ms | Refresh p95 ms |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| No-refresh control | 800 | 37.09 | 31.20 | 57.37 | N/A |
+| One-sender control | 600 | 16.74 | 11.93 | 209.08 | 645.79 |
+| Trial 1 | 2,400 | 51.26 | 42.60 | 143.59 | 633.21 |
+| Trial 2 | 2,400 | 45.83 | 38.76 | 219.64 | 654.47 |
+| Trial 3 | 2,400 | 40.98 | 35.29 | 146.40 | 685.09 |
+
+All cells had zero first-attempt unavailability, zero final errors and zero
+refresh failures. An independent raw audit checked 8,600 unique sends,
+absolute pacing, monotonic samples, outcome accounting, raw percentiles,
+refresh stages including the control, runtime/dependency identity, APFS,
+private permissions, code/helper digests and the frozen tree. It did not
+pool controls and trials into an unsupported long-run guarantee. Per-trial
+zero/2,400 still has an approximately 0.1247% upper 95% binomial bound.
+
+The operator directly answered: "Accept Mac receipt; make local logical
+commits only." The accepted raw receipt SHA-256 is
+`606cecf7a8a693241378adead2a31f6f2a679e7d9251d04b0a147b4dfdc9ec9f`.
+Acceptance was saved separately; the original pending receipt was not edited.
+Four local Oramasys commits preserve dependency order and self-reported agent
+trailers: `078823a1` runtime, `22194657` harness, `22c62db5` adapter and
+`9dc38569d22745d54b3e09718f254ad8889e2e37` documentation. The final committed
+tree exactly equals the measured tree and the worktree is clean. Standard
+Git commits were used because this repository has no commit wrapper; no
+hooks were bypassed. Post-commit real-producer suite: 3,214 passed;
+Phylax-free suite: 3,087 passed, each with two explicit deployment skips.
+Focused safety/ledger: 143 passed. Changed-file
+docstrings: 195/195; Ruff and Markdown checks passed.
+
+K4's local implementation/measurement scope is complete. Native Windows,
+longer confidence runs, fresh-auth exact-new-head C3d, publication, merge,
+deployment and serving activation remain separate. PR #95 was independently
+verified unchanged at `89da844c`. Claude retains K10 on existing Orama #478.
+
+K6 now follows its completed K4 dependency locally on the existing PT #481
+line; no additional push is authorized. New single-incident candidates
+`73d79fbe6645` (pip-free inventory) and `02c827dbcb5f` (runner integrity)
+are staged through native tools for later recurrence review, not falsely
+graduated. Existing accepted lessons and episodic history are preserved.

@@ -1,0 +1,26 @@
+{
+  "id": "02c827dbcb5f",
+  "key": "manual_02c827",
+  "name": "manual_02c827",
+  "claim": "Qualification runners should exclusively create private evidence and temporary directories, reject reused receipt paths, count receipt-write failures and recheck the frozen tree after measurement.",
+  "conditions": [
+    "evidence-integrity",
+    "private-temporary-files",
+    "qualification-runner"
+  ],
+  "evidence_ids": [
+    "2026-11-07T05:44:13.604047+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-07T05:44:13.604047+00:00",
+  "status": "staged",
+  "decisions": [
+    {
+      "ts": "2026-11-07T05:44:13.604047+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    }
+  ],
+  "rejection_count": 0
+}

@@ -68,6 +68,29 @@ Sources: [WAL and its reset fix](https://www.sqlite.org/wal.html#the_wal_reset_b
   and activation are separate evidence states. Fresh GitHub login establishes
   procedural account control, not independent review or a second-factor proof.
 
+## Qualification Tooling and Delegated Execution
+
+- A measured virtual environment may intentionally have no pip. Inventory it
+  read-only with a tool targeting the exact interpreter; installing pip during
+  qualification changes the dependency fingerprint unnecessarily. The observed
+  offline uv inventory byte-matched the earlier receipt without installation.
+- `umask` governs new entries, not existing directory permissions. Use fresh,
+  exclusive private evidence and temporary directories, reject receipt reuse
+  and treat failed receipt writes as failures. Do not silently overwrite an
+  earlier stopped or failed attempt.
+- Bind the helper and judge as well as the benchmark/runtime digests. Check
+  the frozen tree before and after measurement; later logical commits must
+  preserve that exact tree. A new commit SHA still needs its own C3d review.
+- An operator can explicitly delegate benchmark execution while retaining
+  separate receipt acceptance. Preserve the original pending receipt and add
+  an acceptance record; execution success alone is not operator approval.
+- The generic control judge skipped refresh-count/latency expectations. The
+  independent audit therefore checked the refreshing one-sender control too.
+  An optional control flag must not erase a control's intended observation.
+- The 2026-11-07 operator accepted measured Mac budgets only. This is not
+  native Windows qualification, a long-run statistical guarantee, a service
+  configuration change, or publication/activation authority.
+
 ## Derived Memory and Async Identity
 
 - An opaque topology field does not classify every other string in a payload.
