@@ -1,5 +1,9 @@
 # 48-Hour LAN Coordination, Windows Native C6 Verification, and Agent Fleet Synthesis
 
+Historical chronicle: the dated review correction at the end qualifies the identity,
+causality, retry, certification and dispatch-enforcement claims below. Earlier reports
+are preserved as evidence, not promoted to independently verified facts.
+
 Author/actor: Agnes / mac-antigravity; identity_verified: true. Takeover: none.
 Scope: verified cross-fleet synchronization, empirical Windows NTFS qualification evidence,
 PR remediation, and agent lifecycle synthesis across macOS Darwin ARM64 and Windows 11 Pro 64-bit.
@@ -139,3 +143,62 @@ PR remediation, and agent lifecycle synthesis across macOS Darwin ARM64 and Wind
   pending operator review and authorization.
 - **PR Single-Instance Policy:** At most 1 active PR per repository (0 or 1, strictly no multiple
   open PRs per repo); phylax currently maintains 0 open PRs (`main` clean).
+
+## 4. Review correction — 2026-11-07 UTC
+
+- **Identity and evidence:** The author's `identity_verified: true` above is an assertion.
+  No independent authentication receipt was available to this reviewer. Named fleet receipts,
+  observed machine details and the 100-cycle experiment remain attributed reports unless the
+  exact source, runtime, procedure and receiver evidence are inspected. No new host run occurred
+  during this correction. Source CI is not fleet certification or R4–R8 qualification.
+- **Win32 causality:** Correctly typed consumer `HANDLE` arguments reconstruct Python `-1`
+  as the all-ones pseudo-handle. That case is distinct from truncating a real high pointer.
+  Both producer `restype` and consumer `argtypes` matter, but the reported WinError 6 cause
+  remains unassigned without the actual failing-call evidence. Do not infer it from a fix.
+- **Merged retry behavior:** Oramasys `f6295a13` uses deterministic default sleeps of 2, 4,
+  8, 16 and 32 ms: 62 ms total, with no jitter. Only explicit WinError 5/32 candidates retry.
+  The earlier 1–20 ms / ten-retry description is not that implementation. Locks may outlast
+  any bounded budget; exhaustion propagates. Retries prove neither race prevention nor
+  corruption immunity, and do not authorize changing antivirus or ACL configuration.
+- **Structured memory:** Append-only corrective snapshots restore the filesystem claim under
+  `lesson_cfe54bda1894` and lifecycle claim under `lesson_88a59b9cdcad`. The Win32 and retry
+  topics are separately qualified. All four remain provisional; original rows and candidate
+  snapshots are unchanged. The four accidentally imported legacy duplicates are withdrawn
+  through appended retracted snapshots, not deleted. `LESSONS.md` is regenerated from JSONL.
+- **Push and history:** One planned push batches publication; it does not prove clean history,
+  correct scope or successful review. Inspect every branch commit and the final tree before
+  publication. Preserve signed history; do not force-push to hide WIP or improve badges.
+- **Runtime authority:** An agent card does not enforce idempotency or policy. The user's
+  subsequent runtime-dispatch request belongs to PT's actual execution boundary, with tests
+  for races, direct callers and configured approval requirements. Operator approval is not
+  universally required for ordinary allowed tasks, but it cannot be forged by a persona.
+- **Closure:** Existing Windows ACL/reparse and elevated-sidecar limitations remain in the
+  Oramasys Windows handoff. Keep serving off; full deployment qualification, independent
+  release review, promotion and activation retain their separate evidence gates.
+
+The append-only operation is `.agent/tools/correct_lesson.py`: it records an audit before
+publishing the correction, cannot promote to accepted status, and retries a failed derived
+render without duplicating historical rows. Candidate snapshots remain original evidence;
+the correction record explicitly identifies the previous semantic snapshot by digest.
+
+### Review disposition and retained limits
+
+The review is [PR #484, review 5815172506](https://github.com/diazMelgarejo/Perpetua-Tools/pull/484#pullrequestreview-5815172506).
+Nested follow-ups are part of the disposition, even if the original root is resolved.
+
+| Finding | Disposition in this follow-up |
+| --- | --- |
+| Consumer `argtypes` / pseudo-handle causality (4503882038, 4503882061; follow-ups 4503947789, 4503947761) | Append a qualified provisional Win32 snapshot; preserve original candidate and historical claims. Do not assign an unobserved failing call. |
+| Wrong topics and unsupported accepted guidance (4503882043; follow-up 4503947486) | Restore filesystem and lifecycle topics under their original IDs with appended provisional snapshots; withdraw the four imported legacy duplicates without deleting them. |
+| Retry budget and guarantees (4503882068; follow-up 4503947887) | Separate the attributed experiment from merged deterministic behavior; explicitly retain exhaustion and race limits. |
+| Tracked path hygiene (4503882056) | Retain the earlier published sanitization; do not claim it was an append-only change in that earlier revision. This correction preserves the current published prefix. |
+| Push/history guarantees (4503882071; follow-up 4503947659) | Qualify the historical narrative above; inspect scoped commits and the final tree. A single publication is not proof of clean history. |
+| PR cardinality (4503882079) | Retain the earlier correction: at most one, including zero, not exactly one per repository regardless of need. |
+| Review queue refresh (4503882084; follow-up 4503949830) | Finding withdrawn: `review_state.write_review_queue_summary` already exists. Rebuild the derived summary with it; no duplicate refresh API is introduced. |
+
+The subsequent user-authorized runtime implementation is documented separately in
+[`docs/coordination/runtime-dispatch-guard.md`](../../../docs/coordination/runtime-dispatch-guard.md).
+It does not turn the historical lifecycle candidate into evidence of enforcement.
+The correction command refuses malformed JSONL and accepted supersession lineages
+that could otherwise resurrect an older claim. Recovering torn history requires a
+separate preservation procedure; no failed append is silently skipped or truncated.
