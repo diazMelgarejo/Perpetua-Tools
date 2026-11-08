@@ -921,7 +921,7 @@ def test_differential_policy_outcomes_match_across_repositories() -> None:
 # --- Cross-repo config + pin parity (F1/F2): keep byte-identical in both v1 repositories. ---
 # The differential above compares launch outcomes only; these pin the governance
 # config and the shared pin-document sections so drift in either repo fails a test.
-_PARITY_CONFIG_DIGEST = "94d8641a2fc9bc1291f7e8b00a451bf3465a26babbba7e8b65c63e631ddd7bf7"
+_PARITY_CONFIG_DIGEST = "52310413e3ce88fddd357b41bfd160684d8383e7de0c0efedf5d0e73427e92df"
 _PARITY_PIN_DIGEST = "f03c1a17e78d065ca281c71f630163e149f2ac64ed49bc71ffe2a4d3fe5c08b4"
 _PARITY_PIN_SECTIONS = ("## Escalation approval regimes", "## Role selection contract")
 _PARITY_ALEXANDRIA_TIP = "d6da6781"
@@ -1016,6 +1016,30 @@ def test_cline_pass_muse_spark_1_3_contributor_is_allowed_ungated() -> None:
         fast=False,
     )
     assert_launch_allowed(spec)
+
+
+def test_cline_pass_glm_5_3_flash_is_allowed_ungated_at_medium() -> None:
+    """The operator-added GLM 5.3 Flash row launches at medium without a token."""
+    spec = LaunchSpec(
+        path="cline_pass",
+        launch_id="glm-5.3-flash",
+        effort="medium",
+        fast=False,
+    )
+    assert_launch_allowed(spec)
+
+
+@pytest.mark.parametrize("effort", ["low", "high", "xhigh", "max"])
+def test_cline_pass_glm_5_3_flash_refuses_efforts_other_than_medium(effort: str) -> None:
+    """Only the pinned medium effort is listed for GLM 5.3 Flash."""
+    spec = LaunchSpec(
+        path="cline_pass",
+        launch_id="glm-5.3-flash",
+        effort=effort,
+        fast=False,
+    )
+    with pytest.raises(ModelGovernanceError):
+        assert_launch_allowed(spec)
 
 
 def test_cline_pass_refuses_a_listed_id_at_an_unlisted_effort() -> None:
