@@ -258,15 +258,17 @@ for name, prov in cfg['models']['providers'].items():
 
 | Agent ID | Model (exact ID) | Node | Turn time | Fallback |
 |----------|------------------|------|-----------|---------|
-| `main` *(default)* | `lmstudio-mac/qwen3.5-9b-mlx` | Mac MLX | ~105–308s | gemini-3-flash |
-| `mac-researcher` | `lmstudio-mac/qwen3.5-9b-mlx` | Mac MLX | ~105s | gemini-3-flash |
-| `orchestrator` | `lmstudio-mac/qwen3.5-9b-mlx` | Mac MLX | ~102s | gemini-3-flash |
-| `win-researcher` | `lmstudio-win/qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2` | Win RTX | ~130s | gemini-3-flash |
-| `coder` | `lmstudio-win/qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2` | Win RTX | ~107s | gemini-3-flash |
-| `autoresearcher` | `lmstudio-win/qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2` | Win RTX | ~116s | gemini-3-flash |
+| `main` *(default)* | `lmstudio-mac/qwen3.5-9b-mlx` | Mac MLX | ~105–308s | gemini-3.8-flash |
+| `mac-researcher` | `lmstudio-mac/qwen3.5-9b-mlx` | Mac MLX | ~105s | gemini-3.8-flash |
+| `orchestrator` | `lmstudio-mac/qwen3.5-9b-mlx` | Mac MLX | ~102s | gemini-3.8-flash |
+| `win-researcher` | `lmstudio-win/qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2` | Win RTX | ~130s | gemini-3.8-flash |
+| `coder` | `lmstudio-win/qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2` | Win RTX | ~107s | gemini-3.8-flash |
+| `autoresearcher` | `lmstudio-win/qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2` | Win RTX | ~116s | gemini-3.8-flash |
 
-**Fallback chain** (primary fails → fallback): `gemini-3.1-pro-preview` (429 rate limit) →
-`gemini-3-flash-preview` (✅ succeeds on free tier).
+**Fallback chain** (primary fails → fallback): the catalog carries a single Google
+tier as of 2026-11-03, `gemini-3.8-flash` (medium). The former
+`gemini-3.1-pro-preview` (429 rate limit) → `gemini-3-flash-preview` (free-tier
+success) pairing was retired along with those ids.
 
 **Both models are extended thinking/reasoning models.** They generate `reasoning_content`
 before visible output. `text` field is often empty; actual reply is in `reasoning_content`.

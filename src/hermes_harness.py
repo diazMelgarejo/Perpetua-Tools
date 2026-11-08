@@ -21,7 +21,7 @@ from run_agent import AIAgent  # noqa: E402 — after env load
 
 # ── Model tier policy (matches Orama frugality chain) ──────────────────────
 STAGE_MODELS: dict[str, str] = {
-    "context":      os.getenv("HERMES_CONTEXT_MODEL",     "google/gemini-3-flash-preview"),
+    "context":      os.getenv("HERMES_CONTEXT_MODEL",     "google/gemini-3.8-flash"),
     "architect":    os.getenv("HERMES_ARCHITECT_MODEL",   "anthropic/claude-sonnet-5-5"),
     "refiner":      os.getenv("HERMES_REFINER_MODEL",     "anthropic/claude-sonnet-5-5"),
     "executor":     os.getenv("HERMES_EXECUTOR_MODEL",    "anthropic/claude-sonnet-5-5"),
