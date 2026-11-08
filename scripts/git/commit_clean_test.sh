@@ -67,6 +67,11 @@ else
 fi
 
 git -C "$tmp" add README.md
+if run_in_repo "$tmp" env GIT_AUTHOR_NAME=Cline GIT_AUTHOR_EMAIL=cline@local.invalid bash "$SCRIPT_DIR/commit-clean.sh" --dry-run -m "cline test" >/dev/null 2>&1; then
+  pass "commit-clean accepts the approved Cline identity"
+else
+  fail "commit-clean must accept the approved Cline identity"
+fi
 if ! run_in_repo "$tmp" bash "$SCRIPT_DIR/verify-staged-for-commit.sh" >/dev/null 2>&1; then
   fail "verify-staged must accept staged delta"
 else

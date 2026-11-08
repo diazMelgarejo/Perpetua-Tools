@@ -142,6 +142,8 @@ def plan_launch(
     _refuse_forbidden_effort(spec)
     _assert_effort_aliases_consistent(spec)
     cfg = dict(config) if config is not None else load_model_governance()
+    if spec.path == "cline_pass":
+        _validate_cline_pass_config(cfg)
     if spec.launch_id in cfg.get("banned_launch_ids", ()):
         raise ModelGovernanceError(f"banned launch id: {spec.launch_id}")
     provider = "anthropic" if spec.path == "cursor_grok_bot" and spec.launch_id.startswith("claude-") else spec.path
@@ -219,6 +221,8 @@ def load_model_governance(config_path: str | None = None) -> dict[str, Any]:
 def default_launch(path: str, *, config: Mapping[str, Any] | None = None) -> LaunchSpec:
     """Return the ungated default LaunchSpec for a harness path."""
     cfg = dict(config) if config is not None else load_model_governance()
+    if path == "cline_pass":
+        _validate_cline_pass_config(cfg)
     if path == "cursor_grok_bot":
         row = cfg["cursor_grok_bot"]["default"]
         return LaunchSpec(
@@ -305,6 +309,8 @@ def assert_launch_allowed(
     _refuse_forbidden_effort(spec)
     _assert_effort_aliases_consistent(spec)
     cfg = dict(config) if config is not None else load_model_governance()
+    if spec.path == "cline_pass":
+        _validate_cline_pass_config(cfg)
     banned = {str(x) for x in cfg.get("banned_launch_ids") or []}
     if spec.launch_id in banned:
         raise ModelGovernanceError(f"banned launch id: {spec.launch_id}")
@@ -410,6 +416,21 @@ def _assert_gated_params(spec: LaunchSpec, row: Mapping[str, Any]) -> None:
         )
 
 
+def _validate_cline_pass_config(cfg: Mapping[str, Any]) -> None:
+    """Reject malformed ClinePass policy and unsupported role or gated rows."""
+    policy = cfg.get("cline_pass")
+    if not isinstance(policy, Mapping):
+        raise ModelGovernanceError("config unavailable: invalid ClinePass policy")
+    default = policy.get("default")
+    rows = policy.get("allowed_ungated", [])
+    if (not isinstance(default, Mapping) or not default.get("launch_id")
+            or not default.get("effort") or not isinstance(rows, list)
+            or any(not isinstance(row, Mapping) or not row.get("launch_id") for row in rows)
+            or policy.get("gated") not in (None, {})
+            or policy.get("planning") is not None or policy.get("controller") is not None):
+        raise ModelGovernanceError("config unavailable: invalid ClinePass policy")
+
+
 def _assert_cline_pass_launch(spec: LaunchSpec, *, cfg: Mapping[str, Any]) -> None:
     """ClinePass: the pinned default plus the explicitly listed ids, nothing else.
 
@@ -422,12 +443,10 @@ def _assert_cline_pass_launch(spec: LaunchSpec, *, cfg: Mapping[str, Any]) -> No
     if spec.launch_id == str(default["launch_id"]):
         _assert_gated_params(spec, default)
         return
-    if spec.fast is True:
-        raise ModelGovernanceError(
-            "fast mode requires an operator request plus a real escalation token"
-        )
     for row in policy.get("allowed_ungated") or []:
         if str(row["launch_id"]) == spec.launch_id:
+            if spec.fast is True:
+                raise ModelGovernanceError("fast mode is unsupported for non-default ClinePass models")
             _assert_gated_params(spec, row)
             return
     raise ModelGovernanceError("unlisted ClinePass model")
