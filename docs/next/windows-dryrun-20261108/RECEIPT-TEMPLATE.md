@@ -16,7 +16,8 @@ protected local location.
 - Benchmark interpreter and comparison fingerprint; harness, judge and experiment digests; pre/post
   tree match: PENDING
 - Serving runtime gate result and receipt reference: PENDING
-- Three NTFS stdlib locking experiments and outputs: PENDING
+- Three experimental, unreviewed NTFS preflights, receipts and child stderr: PENDING
+- Required separately reviewed stdlib locking experiment and review evidence: OPEN / PENDING
 - Native security test outputs and skips, non-elevated and separately authorized elevated: PENDING
 - Foreign-owner fixture, real second-account parent/database/WAL/SHM denial, trusted ancestors,
   junction/handle, WAL create/reopen and process lock serialization: PENDING

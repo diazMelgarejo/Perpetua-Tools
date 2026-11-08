@@ -258,7 +258,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest tests/ -v --tb=short
+          pytest tests/ docs/next/windows-dryrun-20261108/test_sqlite_lock_preflight.py -v --tb=short
         env:
           ORAMA_ENDPOINT: http://localhost:8001/orama
           ORAMA_TIMEOUT: "120"

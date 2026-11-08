@@ -202,3 +202,9 @@ It does not turn the historical lifecycle candidate into evidence of enforcement
 The correction command refuses malformed JSONL and accepted supersession lineages
 that could otherwise resurrect an older claim. Recovering torn history requires a
 separate preservation procedure; no failed append is silently skipped or truncated.
+
+### 2026-11-08 review correction: publication stop
+
+If inspection finds undesired branch commits, STOP publication until an approved method
+addresses them while preserving signed history. Do not force-push or rewrite history
+without explicit authorization. Inspection alone does not make those commits acceptable.

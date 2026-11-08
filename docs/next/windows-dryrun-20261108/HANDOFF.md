@@ -23,11 +23,22 @@ weakening containment assertions. Preserve this limitation and require fresh
 native host results. Touched Python source/test files have complete docstrings.
 
 Before native workload measurement, run the Phylax candidate's actual platform
-and producer tests from its checkout, under the selected test interpreter:
+and producer tests from its checkout, under a selected test interpreter. Set `$TestPython` to its
+verified absolute executable path; stop if it cannot be established:
 
 ```powershell
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+if ($TestPython -notmatch '^(?:[A-Za-z]:\\|\\\\[^\\]+\\[^\\]+\\)' -or
+    -not (Test-Path -LiteralPath $TestPython -PathType Leaf)) {
+    throw 'Test interpreter must be a fully qualified executable path'
+}
+$TestResolved = Resolve-Path -LiteralPath $TestPython
+if ($TestResolved.Provider.Name -ne 'FileSystem') { throw 'Expected filesystem executable' }
+$TestPython = $TestResolved.ProviderPath
 $env:PYTHONPATH = 'src'
-python -m pytest src/tests/test_platform_fs.py src/tests/test_publication_portability.py src/tests/test_revocation_publication.py src/tests/test_dispatch_retention.py --no-cov -v
+& $TestPython -m pytest src/tests/test_platform_fs.py src/tests/test_publication_portability.py `
+    src/tests/test_revocation_publication.py src/tests/test_dispatch_retention.py --no-cov -v
 if ($LASTEXITCODE -ne 0) { throw 'Producer portability failed; do not proceed' }
 ```
 
@@ -100,9 +111,23 @@ exact comparison fingerprint are different requirements.
 ## Native entrypoints and evidence
 
 From the reviewed Oramasys checkout, use the executable actually configured for serving, not a
-separately installed SQLite CLI or an arbitrary benchmark environment:
+separately installed SQLite CLI or an arbitrary benchmark environment. Inspect the actual service
+manager configuration and resolve its executable using the deployment's documented launch method.
+Do not invent a service name or configuration to probe. If the configured interpreter cannot be
+established, STOP and record NOT RUN. Set `$ServingPython` to that verified absolute executable path;
+confirm it matches the service configuration and preserve the evidence privately before running:
 
 ```powershell
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+if ($ServingPython -notmatch '^(?:[A-Za-z]:\\|\\\\[^\\]+\\[^\\]+\\)' -or
+    -not (Test-Path -LiteralPath $ServingPython -PathType Leaf)) {
+    throw 'Serving interpreter must be a fully qualified executable path'
+}
+$ServingResolved = Resolve-Path -LiteralPath $ServingPython
+if ($ServingResolved.Provider.Name -ne 'FileSystem') { throw 'Expected filesystem executable' }
+$ServingPython = $ServingResolved.ProviderPath
+# Confirm this resolved path matches the actual service configuration before proceeding.
 & $ServingPython -I scripts/c6_runtime.py
 if ($LASTEXITCODE -ne 0) { throw 'SQLite serving-runtime qualification failed' }
 ```
@@ -121,8 +146,9 @@ creates a fresh directory, tests a real subprocess writer conflict, kills the ho
 WAL reopening and integrity. It does not test power-loss durability, service-account isolation or
 the complete adapter. Its receipt and database stay local. Run from this package directory with
 `$ServingPython` set to the chosen interpreter and `$ApprovedParent` set to an existing protected
-local NTFS directory. Choose three new names; it refuses an existing output directory and never
-repairs ACLs:
+local NTFS directory. Keep strict mode and stop-on-error enabled for the entire session and validate
+the interpreter as above before each new shell. Choose three new names; it refuses an existing output
+directory and never repairs ACLs:
 
 ```powershell
 Get-FileHash -Algorithm SHA256 .\sqlite_lock_preflight.py
@@ -136,19 +162,23 @@ if ($LASTEXITCODE -ne 0) { throw 'Preflight 2 failed; preserve its output' }
 if ($LASTEXITCODE -ne 0) { throw 'Preflight 3 failed; preserve its output' }
 ```
 
-Save the digest and each private `receipt.json`. Review this substitute and obtain the
+Save the digest and each private `receipt.json`. Preserve `holder.stderr` when created, including
+on timeout or failure; failures before opening it cannot produce that file. A receipt can report
+an unconfirmed holder exit; resolve that condition under the approved local procedure before reuse.
+Review this substitute and obtain the
 runbook-required reviewed experiment before treating that specific requirement as satisfied. The
 included self-test passed on isolated POSIX here; Windows execution remains pending.
 
 After source portability review, run the following runbook entrypoints under the actual non-elevated
 service account and then in a separately authorized elevated test shell, in a disposable checkout.
-Use the selected interpreter in place of `python` if necessary:
+The elevated fixture requires explicit separate authorization and does not authorize grant serving.
+Use the verified interpreter and repeat the strict-mode and path validation above in each shell:
 
 ```powershell
 $env:PYTHONPATH = 'src'
-python -m pytest -q tests/windows/test_private_store_native.py
+& $ServingPython -m pytest -q tests/windows/test_private_store_native.py
 if ($LASTEXITCODE -ne 0) { throw 'Native security verification failed' }
-python -m pytest -q src/tests/test_private_store.py -k 'safe_replace or nonce_lock_failure'
+& $ServingPython -m pytest -q src/tests/test_private_store.py -k 'safe_replace or nonce_lock_failure'
 if ($LASTEXITCODE -ne 0) { throw 'Replacement/lock verification failed' }
 ```
 
@@ -204,7 +234,7 @@ Sources:
 [master closure register](https://github.com/diazMelgarejo/orama-system/blob/4f6c7bd39e0ec0d4a7c0374ba1c95ac0da6f5fe5/docs/v2/MASTER-CLOSURE-AND-IMPLEMENTATION-PLAN-2026-11-06.md),
 [Windows handoff](https://github.com/oramasys/oramasys/blob/f6295a13ef02666d89f64f1f6e9834bc0bde884c/docs/closure/c6-windows-handoff.md),
 [C6 qualification](https://github.com/oramasys/oramasys/blob/f6295a13ef02666d89f64f1f6e9834bc0bde884c/docs/closure/c6-qualification-runbook.md),
-[PT C6 chronicle](https://github.com/diazMelgarejo/Perpetua-Tools/blob/3a8a9c5ad28561d03202c5071cd8cb6a4fb436fc/.agent/memory/working/2026-11-07-c6-runtime-and-review-chronicle.md),
-[review correction](https://github.com/diazMelgarejo/Perpetua-Tools/blob/3a8a9c5ad28561d03202c5071cd8cb6a4fb436fc/.agent/memory/semantic/LAN_COORDINATION_WINDOWS_C6_AND_FLEET_SYNTHESIS_2026-11-08.md),
+[PT C6 chronicle](https://github.com/diazMelgarejo/Perpetua-Tools/blob/96c9ddb59ea0f47e04472d1115a4880e5d16d151/.agent/memory/working/2026-11-07-c6-runtime-and-review-chronicle.md),
+[review correction](https://github.com/diazMelgarejo/Perpetua-Tools/blob/96c9ddb59ea0f47e04472d1115a4880e5d16d151/.agent/memory/semantic/LAN_COORDINATION_WINDOWS_C6_AND_FLEET_SYNTHESIS_2026-11-08.md),
 and
 [activation runbook](https://github.com/oramasys/oramasys/blob/f6295a13ef02666d89f64f1f6e9834bc0bde884c/docs/serving-activation-runbook.md).

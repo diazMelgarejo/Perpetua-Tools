@@ -18,6 +18,24 @@ def hold(db_path: str) -> None:
         time.sleep(60)
 
 
+def stop_holder(process: subprocess.Popen, result: dict) -> bool:
+    """Request termination and independently wait; record an unconfirmed exit."""
+    result['holder_pid'] = process.pid
+    try:
+        process.kill()
+        result['holder_kill'] = 'requested'
+    except Exception as exc:
+        result['holder_kill'] = f'{type(exc).__name__}: {exc}'
+    try:
+        process.communicate(timeout=10)
+        result['holder_wait'] = 'exited'
+        result['holder_death_exit_code'] = process.returncode
+    except Exception as exc:
+        result['holder_wait'] = 'unconfirmed'
+        result['holder_wait_error'] = f'{type(exc).__name__}: {exc}'
+    return result['holder_kill'] == 'requested' and result['holder_wait'] == 'exited'
+
+
 def run(output: Path) -> int:
     """Run the disposable experiment and exclusively create a local receipt."""
     output.mkdir(mode=0o700)  # exclusive: never reuse an existing directory
@@ -26,6 +44,7 @@ def run(output: Path) -> int:
               'platform': platform.platform(), 'machine': platform.machine(),
               'sqlite_version': sqlite3.sqlite_version}
     process = None
+    child_stderr = None
     try:
         with closing(sqlite3.connect(db_path)) as db, db:
             result['sqlite_source_id'] = db.execute('SELECT sqlite_source_id()').fetchone()[0]
@@ -36,8 +55,9 @@ def run(output: Path) -> int:
             db.execute('PRAGMA synchronous=FULL')
             db.execute('CREATE TABLE checks (value TEXT NOT NULL)')
             db.execute("INSERT INTO checks VALUES ('before')")
+        child_stderr = (output / 'holder.stderr').open('x', encoding='utf-8')
         process = subprocess.Popen([sys.executable, '-I', str(Path(__file__).resolve()), '--holder', str(db_path)],
-                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                                   stdout=subprocess.PIPE, stderr=child_stderr, text=True)
         # Bounded wait: child prints only after the exclusive writer lock is acquired.
         # Poll a small signal file-free handshake with a timeout via a daemon reader.
         import queue
@@ -59,10 +79,10 @@ def run(output: Path) -> int:
             result['concurrent_writer_refused_busy'] = True
         else:
             raise RuntimeError('concurrent writer unexpectedly acquired lock')
-        process.kill()
-        process.communicate(timeout=10)
-        result['holder_death_exit_code'] = process.returncode
+        stopped = stop_holder(process, result)
         process = None
+        if not stopped:
+            raise RuntimeError('holder termination or wait failed')
         with closing(sqlite3.connect(db_path, timeout=5)) as reopened, reopened:
             reopened.execute('PRAGMA synchronous=FULL')
             reopened.execute('BEGIN IMMEDIATE')
@@ -80,8 +100,14 @@ def run(output: Path) -> int:
         result['error'] = str(exc)
     finally:
         if process is not None:
-            process.kill()
-            process.communicate(timeout=10)
+            if not stop_holder(process, result):
+                result['status'] = 'FAIL'
+        if child_stderr is not None:
+            try:
+                child_stderr.close()
+            except Exception as exc:
+                result['status'] = 'FAIL'
+                result['stderr_close_error'] = f'{type(exc).__name__}: {exc}'
         with (output / 'receipt.json').open('x', encoding='utf-8') as receipt:
             json.dump(result, receipt, indent=2)
             receipt.write('\n')
