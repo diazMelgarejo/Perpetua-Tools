@@ -122,6 +122,23 @@ class PreflightTests(unittest.TestCase):
             self.assertEqual(result['status'], 'FAIL')
             self.assertIn('stderr_close_error', result)
 
+    def test_receipt_open_failure_returns_nonzero(self) -> None:
+        """A failure to write receipt.json ensures a nonzero returncode."""
+        spec = importlib.util.spec_from_file_location('preflight_receipt', SCRIPT)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        real_open = Path.open
+
+        def open_with_receipt_failure(path: Path, *args: Any, **kwargs: Any) -> Any:
+            if path.name == 'receipt.json':
+                raise OSError('disk full')
+            return real_open(path, *args, **kwargs)
+
+        with tempfile.TemporaryDirectory() as parent:
+            output = Path(parent) / 'receipt-failure'
+            with mock.patch.object(Path, 'open', open_with_receipt_failure):
+                self.assertEqual(module.run(output), 1)
+
 
 if __name__ == '__main__':
     unittest.main()

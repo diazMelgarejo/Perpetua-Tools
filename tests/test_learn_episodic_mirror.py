@@ -134,3 +134,20 @@ def test_stage_fails_closed_when_mirror_write_errors(monkeypatch, tmp_path):
     assert list(candidates_dir.glob("*.json")) == []
     assert list(candidates_dir.glob("*.tmp")) == []
     assert _read_episodic(base) == []
+
+
+def test_append_jsonl_survives_malformed_history_lines(tmp_path):
+    """Malformed history lines in JSONL do not prevent recording new events."""
+    sys.path.insert(0, str(Path(__file__).parent.parent / ".agent" / "harness" / "hooks"))
+    from _episodic_io import append_jsonl
+
+    jsonl_file = tmp_path / "test.jsonl"
+    jsonl_file.write_text("{\"valid\": 1}\nNOT VALID JSON\n{\"valid\": 2}\n", encoding="utf-8")
+
+    entry = {"new": "entry"}
+    result = append_jsonl(str(jsonl_file), entry)
+    assert result == entry
+
+    lines = jsonl_file.read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 4
+    assert json.loads(lines[-1]) == entry

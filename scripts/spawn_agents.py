@@ -47,6 +47,7 @@ if _ORAMA_SPAWN.exists():
                 return await _sibling_dispatch(agent, task, model, scope=effective_scope)
             finally:
                 _delegated_scope.reset(token)
+        _mod.dispatch = dispatch
     else:
         _legacy_scope = contextvars.ContextVar("legacy_dispatch_scope", default=None)
         _legacy_active = contextvars.ContextVar("legacy_dispatch_active", default=None)

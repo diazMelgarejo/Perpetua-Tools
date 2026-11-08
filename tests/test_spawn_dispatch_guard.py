@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import runpy
 import shutil
 import subprocess
@@ -29,7 +30,14 @@ sys.path.insert(0, sys.argv[2] + "/src")
 module = runpy.run_path(sys.argv[1])
 asyncio.run(module["dispatch"]("unavailable", "test"))
 '''
-    result = subprocess.run([sys.executable, "-c", code, str(script), str(Path(__file__).resolve().parents[1])], cwd=tmp_path, capture_output=True, text=True)
+    env = {**os.environ, "PT_STATE_DIR": str(tmp_path / "state")}
+    result = subprocess.run(
+        [sys.executable, "-c", code, str(script), str(Path(__file__).resolve().parents[1])],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
     assert result.returncode == 0, result.stderr
 
 
@@ -90,7 +98,7 @@ def test_old_sibling_nested_dispatch_is_guarded_on_import(tmp_path: Path, monkey
     assert module["_mod"].effects == ["review code"]
 
 
-def test_marked_sibling_inherits_pt_default_scope(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_marked_sibling_inherits_pt_default_scope(tmp_path: Path) -> None:
     """Upgrading a sibling must not change the default PT claim scope."""
     pt_script = tmp_path / "pt" / "scripts" / "spawn_agents.py"
     pt_script.parent.mkdir(parents=True)
@@ -129,7 +137,6 @@ def test_marked_sibling_nested_dispatch_inherits_explicit_scope(tmp_path: Path) 
         encoding="utf-8",
     )
     module = runpy.run_path(str(pt_script))
-    module["_mod"].dispatch = module["dispatch"]
     assert asyncio.run(module["dispatch"]("all", "task", scope="chosen"))["scope"] == "chosen"
 
 

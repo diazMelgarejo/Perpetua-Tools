@@ -190,8 +190,10 @@ def test_default_resolution_converges_across_worktrees(
     default-resolved db path must be identical, not one-per-worktree."""
     repo, worktree = bare_repo_with_worktree
     monkeypatch.chdir(repo)
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", repo)
     path_from_repo = resolve_gossip_db_path()
     monkeypatch.chdir(worktree)
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", worktree)
     path_from_worktree = resolve_gossip_db_path()
     assert path_from_repo == path_from_worktree
     assert path_from_repo == str((repo / ".state" / "perpetua_core.db").resolve())
@@ -204,6 +206,7 @@ def test_default_resolution_anchors_bare_repo_state_at_common_dir(
     bare_repo = tmp_path / "bare-repo"
     subprocess.run(["git", "init", "--bare", "-q", str(bare_repo)], check=True)
     monkeypatch.chdir(bare_repo)
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", bare_repo)
 
     assert resolve_gossip_db_path() == str(
         (bare_repo / ".state" / "perpetua_core.db").resolve()
@@ -219,10 +222,32 @@ def test_default_resolution_anchors_external_git_dir_at_common_dir(
         ["git", "init", "--bare", "-q", str(external_git_dir)], check=True
     )
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", tmp_path)
     monkeypatch.setenv("GIT_DIR", str(external_git_dir))
 
     assert resolve_gossip_db_path() == str(
         (external_git_dir / ".state" / "perpetua_core.db").resolve()
+    )
+
+
+def test_default_resolution_installed_package_guard(isolated_env, tmp_path):
+    """Installed packages under site-packages or dist-packages return None."""
+    site_pkg_dir = tmp_path / "lib" / "python3.13" / "site-packages" / "orchestrator"
+    site_pkg_dir.mkdir(parents=True)
+    fake_file = site_pkg_dir / "state_dir.py"
+    fake_file.touch()
+
+    assert _canonical_repo_state_dir(fake_file.parent.parent) is None
+
+
+def test_default_resolution_bare_repo_named_dot_git(isolated_env, monkeypatch, tmp_path):
+    """A bare repository named .git is anchored directly, not to its parent."""
+    bare_repo = tmp_path / ".git"
+    subprocess.run(["git", "init", "--bare", "-q", str(bare_repo)], check=True)
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", bare_repo)
+
+    assert resolve_gossip_db_path() == str(
+        (bare_repo / ".state" / "perpetua_core.db").resolve()
     )
 
 
@@ -236,11 +261,12 @@ def test_default_resolution_decodes_git_common_dir_as_utf8(
 
     def fake_check_output(command, **kwargs):
         """Check the Git invocation and return a non-ASCII path."""
-        assert command == ["git", "rev-parse", "--git-common-dir"]
+        assert command == ["git", "-C", str(checkout), "rev-parse", "--git-common-dir", "--is-bare-repository"]
         assert kwargs["text"] is True
         assert kwargs["encoding"] == "utf-8"
-        return str(common_dir)
+        return f"{common_dir}\nfalse"
 
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", checkout)
     monkeypatch.setattr("orchestrator.state_dir.subprocess.check_output", fake_check_output)
 
     assert resolve_gossip_db_path() == str(
@@ -276,8 +302,29 @@ def test_default_resolution_falls_back_outside_git_repo(isolated_env, tmp_path, 
     non_repo = tmp_path / "not-a-repo"
     non_repo.mkdir()
     monkeypatch.chdir(non_repo)
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", non_repo)
     result = resolve_gossip_db_path()
     assert result == str((non_repo / ".state" / "perpetua_core.db").resolve())
+
+
+def test_foreign_checkout_cwd_does_not_split_the_ledger(
+    isolated_env, bare_repo_with_worktree, monkeypatch, tmp_path
+):
+    """A caller in an unrelated checkout must still write to this repo's .state.
+
+    Regression for the split-ledger defect: resolving from the caller's cwd let
+    a process started in another Git checkout create a second event store.
+    """
+    repo, worktree = bare_repo_with_worktree
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", repo)
+    unrelated = tmp_path / "unrelated-checkout"
+    unrelated.mkdir()
+    monkeypatch.chdir(unrelated)
+
+    assert resolve_gossip_db_path() == str(
+        (repo / ".state" / "perpetua_core.db").resolve()
+    )
+    assert not (unrelated / ".state").exists()
 
 
 def test_supervisor_default_state_converges_with_fastapi_gossip_bus(
@@ -289,6 +336,7 @@ def test_supervisor_default_state_converges_with_fastapi_gossip_bus(
 
     repo, worktree = bare_repo_with_worktree
     monkeypatch.chdir(worktree)
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", worktree)
     fastapi_startup_path = resolve_gossip_db_path()
     supervisor = OrchestrationSupervisor()
     supervisor_gossip_path = resolve_gossip_db_path(supervisor._state_dir)

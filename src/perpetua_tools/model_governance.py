@@ -145,7 +145,14 @@ def plan_launch(
     if spec.launch_id in cfg.get("banned_launch_ids", ()):
         raise ModelGovernanceError(f"banned launch id: {spec.launch_id}")
     provider = "anthropic" if spec.path == "cursor_grok_bot" and spec.launch_id.startswith("claude-") else spec.path
-    if provider not in ("anthropic", "openai", "google", "cursor_grok_bot", "direct_xai"):
+    if provider not in (
+        "anthropic",
+        "openai",
+        "google",
+        "cursor_grok_bot",
+        "direct_xai",
+        "cline_pass",
+    ):
         raise ModelGovernanceError("unknown harness path")
     policy = cfg[provider]
     planning = policy.get("planning") or {}
@@ -220,7 +227,7 @@ def default_launch(path: str, *, config: Mapping[str, Any] | None = None) -> Lau
             effort=str(row["effort"]),
             fast=bool(row["fast"]),
         )
-    if path in ("anthropic", "openai", "google"):
+    if path in ("anthropic", "openai", "google", "cline_pass"):
         row = cfg[path]["default"]
         return LaunchSpec(
             path=path,
@@ -341,6 +348,9 @@ def assert_launch_allowed(
             spec, proof=proof, cfg=cfg, now=now, approval_scope=approval_scope
         )
         return
+    if spec.path == "cline_pass":
+        _assert_cline_pass_launch(spec, cfg=cfg)
+        return
     if spec.path == "direct_xai":
         _assert_direct_xai_launch(spec, cfg=cfg)
         return
@@ -398,6 +408,29 @@ def _assert_gated_params(spec: LaunchSpec, row: Mapping[str, Any]) -> None:
         raise ModelGovernanceError(
             f"{spec.launch_id} requires fast={row['fast']}"
         )
+
+
+def _assert_cline_pass_launch(spec: LaunchSpec, *, cfg: Mapping[str, Any]) -> None:
+    """ClinePass: the pinned default plus the explicitly listed ids, nothing else.
+
+    An unlisted id is refused outright instead of being deferred to a gated
+    table, and a proof never lifts this path. That keeps ``gated: {}`` in config
+    an enforced fact rather than a comment.
+    """
+    policy = cfg["cline_pass"]
+    default = policy["default"]
+    if spec.launch_id == str(default["launch_id"]):
+        _assert_gated_params(spec, default)
+        return
+    if spec.fast is True:
+        raise ModelGovernanceError(
+            "fast mode requires an operator request plus a real escalation token"
+        )
+    for row in policy.get("allowed_ungated") or []:
+        if str(row["launch_id"]) == spec.launch_id:
+            _assert_gated_params(spec, row)
+            return
+    raise ModelGovernanceError("unlisted ClinePass model")
 
 
 def _assert_cursor_launch(

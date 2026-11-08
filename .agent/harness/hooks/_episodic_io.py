@@ -99,7 +99,10 @@ def append_jsonl(path: str, entry: dict) -> dict:
             history = stream.read()
             for line in history.splitlines():
                 if line.strip():
-                    json.loads(line)
+                    try:
+                        json.loads(line)
+                    except Exception:
+                        pass
             if history and not history.endswith(b"\n"):
                 stream.write(b"\n")
             stream.write(payload)

@@ -18,22 +18,26 @@ def hold(db_path: str) -> None:
         time.sleep(60)
 
 
-def stop_holder(process: subprocess.Popen, result: dict) -> bool:
+def stop_holder(process: subprocess.Popen, result: dict, *, is_retry: bool = False) -> bool:
     """Request termination and independently wait; record an unconfirmed exit."""
     result['holder_pid'] = process.pid
+    kill_key = 'holder_kill_retry' if is_retry else 'holder_kill'
+    wait_key = 'holder_wait_retry' if is_retry else 'holder_wait'
+    wait_err_key = 'holder_wait_error_retry' if is_retry else 'holder_wait_error'
+    exit_code_key = 'holder_death_exit_code_retry' if is_retry else 'holder_death_exit_code'
     try:
         process.kill()
-        result['holder_kill'] = 'requested'
+        result[kill_key] = 'requested'
     except Exception as exc:
-        result['holder_kill'] = f'{type(exc).__name__}: {exc}'
+        result[kill_key] = f'{type(exc).__name__}: {exc}'
     try:
         process.communicate(timeout=10)
-        result['holder_wait'] = 'exited'
-        result['holder_death_exit_code'] = process.returncode
+        result[wait_key] = 'exited'
+        result[exit_code_key] = process.returncode
     except Exception as exc:
-        result['holder_wait'] = 'unconfirmed'
-        result['holder_wait_error'] = f'{type(exc).__name__}: {exc}'
-    return result['holder_kill'] == 'requested' and result['holder_wait'] == 'exited'
+        result[wait_key] = 'unconfirmed'
+        result[wait_err_key] = f'{type(exc).__name__}: {exc}'
+    return result.get(kill_key) == 'requested' and result.get(wait_key) == 'exited'
 
 
 def run(output: Path) -> int:
@@ -45,6 +49,7 @@ def run(output: Path) -> int:
               'sqlite_version': sqlite3.sqlite_version}
     process = None
     child_stderr = None
+    termination_attempted = False
     try:
         with closing(sqlite3.connect(db_path)) as db, db:
             result['sqlite_source_id'] = db.execute('SELECT sqlite_source_id()').fetchone()[0]
@@ -80,8 +85,10 @@ def run(output: Path) -> int:
         else:
             raise RuntimeError('concurrent writer unexpectedly acquired lock')
         stopped = stop_holder(process, result)
-        process = None
-        if not stopped:
+        termination_attempted = True
+        if stopped:
+            process = None
+        else:
             raise RuntimeError('holder termination or wait failed')
         with closing(sqlite3.connect(db_path, timeout=5)) as reopened, reopened:
             reopened.execute('PRAGMA synchronous=FULL')
@@ -100,7 +107,7 @@ def run(output: Path) -> int:
         result['error'] = str(exc)
     finally:
         if process is not None:
-            if not stop_holder(process, result):
+            if not stop_holder(process, result, is_retry=termination_attempted):
                 result['status'] = 'FAIL'
         if child_stderr is not None:
             try:
@@ -108,11 +115,18 @@ def run(output: Path) -> int:
             except Exception as exc:
                 result['status'] = 'FAIL'
                 result['stderr_close_error'] = f'{type(exc).__name__}: {exc}'
-        with (output / 'receipt.json').open('x', encoding='utf-8') as receipt:
-            json.dump(result, receipt, indent=2)
-            receipt.write('\n')
-    print(result['status'])
-    return 0 if result['status'] == 'PASS' else 1
+        receipt_written = False
+        try:
+            with (output / 'receipt.json').open('x', encoding='utf-8') as receipt:
+                json.dump(result, receipt, indent=2)
+                receipt.write('\n')
+            receipt_written = True
+        except Exception as exc:
+            print(f'preflight receipt write failed: {exc}', file=sys.stderr)
+            result['status'] = 'FAIL'
+            result['receipt_write_error'] = f'{type(exc).__name__}: {exc}'
+    print(result.get('status'))
+    return 0 if (result.get('status') == 'PASS' and receipt_written) else 1
 
 
 def main() -> int:

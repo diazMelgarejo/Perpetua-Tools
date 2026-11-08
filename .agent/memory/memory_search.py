@@ -115,13 +115,33 @@ def _read_jsonl(path: Path) -> str:
 def _current_lesson_texts(path: Path) -> list[str]:
     """Return latest structured lesson claims with their explicit lifecycle state."""
     latest: dict[str, dict] = {}
-    for raw in path.read_text(encoding="utf-8").splitlines():
+    for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
         if raw.strip():
-            entry = json.loads(raw)
+            try:
+                entry = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
             if isinstance(entry, dict) and entry.get("id"):
                 latest[entry["id"]] = entry
     return [f"[{str(row.get('status', 'unknown')).upper()}] {row.get('claim', '')}"
             for row in latest.values()]
+
+
+def _make_snippet(text: str, query: str, window: int = 150) -> str:
+    """Return a bounded snippet around the first matching term."""
+    lower = text.casefold()
+    pos = -1
+    for term in query.casefold().split():
+        p = lower.find(term)
+        if p != -1 and (pos == -1 or p < pos):
+            pos = p
+    if pos == -1:
+        return text[:window] + "..." if len(text) > window else text
+    start = max(0, pos - 40)
+    end = min(len(text), pos + window)
+    prefix = "..." if start > 0 else ""
+    suffix = "..." if end < len(text) else ""
+    return f"{prefix}{text[start:end].strip()}{suffix}"
 
 
 def _lesson_preamble(path: Path) -> str:
@@ -145,13 +165,19 @@ def build_index() -> int:
             try:
                 if path.relative_to(MEMORY_DIR).as_posix() == "semantic/LESSONS.md":
                     source = path.with_name("lessons.jsonl")
-                    if source.exists():
+                    lesson_texts = _current_lesson_texts(source) if source.exists() else []
+                    if lesson_texts:
                         preamble = _lesson_preamble(path)
-                        for content in [preamble, *_current_lesson_texts(source)]:
-                            conn.execute("INSERT INTO memories VALUES (?, ?)",
-                                         (str(path.relative_to(MEMORY_DIR)), content))
-                        indexed += 1
-                        continue
+                        try:
+                            with conn:
+                                for content in [preamble, *lesson_texts]:
+                                    conn.execute("INSERT INTO memories VALUES (?, ?)",
+                                                 (str(path.relative_to(MEMORY_DIR)), content))
+                            indexed += 1
+                            continue
+                        except Exception as exc:
+                            print(f"warning: failed to index {path}: {exc}", file=sys.stderr)
+                            continue
                 content = (
                     path.read_text(encoding="utf-8", errors="replace")
                     if path.suffix == ".md" else _read_jsonl(path)
@@ -175,21 +201,35 @@ def search_fts5(query: str):
     with sqlite3.connect(INDEX_PATH) as conn:
         try:
             rows = conn.execute(
-                "SELECT filename, CASE WHEN filename = 'semantic/LESSONS.md' "
+                "SELECT filename, CASE WHEN filename = 'semantic/LESSONS.md' AND substr(content, 1, 1) = '[' "
                 "THEN content ELSE snippet(memories, 1, '>>>', '<<<', '...', 30) END "
                 "FROM memories WHERE memories MATCH ? ORDER BY rank",
                 (query,),
             ).fetchall()
         except sqlite3.OperationalError:
-            rows = conn.execute(
-                "SELECT filename, substr(content, 1, 300) FROM memories WHERE content LIKE ?",
-                (f"%{query}%",),
-            ).fetchall()
+            terms = query.split()
+            if terms:
+                where_clause = " AND ".join(["content LIKE ?" for _ in terms])
+                params = [f"%{t}%" for t in terms]
+                rows = conn.execute(
+                    f"SELECT filename, CASE WHEN filename = 'semantic/LESSONS.md' AND substr(content, 1, 1) = '[' "
+                    f"THEN content ELSE substr(content, 1, 300) END FROM memories WHERE {where_clause}",
+                    params,
+                ).fetchall()
+            else:
+                rows = []
         if not rows and CJK_RE.search(query):
-            rows = conn.execute(
-                "SELECT filename, substr(content, 1, 300) FROM memories WHERE content LIKE ?",
-                (f"%{query}%",),
-            ).fetchall()
+            terms = query.split()
+            if terms:
+                where_clause = " AND ".join(["content LIKE ?" for _ in terms])
+                params = [f"%{t}%" for t in terms]
+                rows = conn.execute(
+                    f"SELECT filename, CASE WHEN filename = 'semantic/LESSONS.md' AND substr(content, 1, 1) = '[' "
+                    f"THEN content ELSE substr(content, 1, 300) END FROM memories WHERE {where_clause}",
+                    params,
+                ).fetchall()
+            else:
+                rows = []
     return rows
 
 
@@ -213,36 +253,43 @@ def search_fallback(query: str):
     semantic = MEMORY_DIR / "semantic"
     source = semantic / "lessons.jsonl"
     markdown = semantic / "LESSONS.md"
-    structured = source.exists() and markdown.exists()
+    lesson_texts = _current_lesson_texts(source) if (source.exists() and markdown.exists()) else []
+    structured = bool(lesson_texts)
     targets = [str(path) for path in _memory_files()
                if not (structured and path in (source, markdown))]
     rows = []
-    if structured:
+    query_terms = [t for t in query.casefold().split() if t]
+    if structured and query_terms:
         preamble = _lesson_preamble(markdown)
-        if query.casefold() in preamble.casefold():
-            rows.append((Path("semantic/LESSONS.md"), preamble))
+        if all(term in preamble.casefold() for term in query_terms):
+            rows.append((Path("semantic/LESSONS.md"), _make_snippet(preamble, query)))
         rows.extend((Path("semantic/LESSONS.md"), content)
-                    for content in _current_lesson_texts(source)
-                    if query.casefold() in content.casefold())
-    if not targets:
+                    for content in lesson_texts
+                    if all(term in content.casefold() for term in query_terms))
+    if not targets or not query_terms:
         return rows
-    command, _ = _fallback_command(query, targets)
-    if not command:
-        return rows
-    try:
-        result = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=FALLBACK_TIMEOUT_SECONDS,
-            check=False,
-        )
-    except subprocess.TimeoutExpired:
-        return rows
-    files = [line for line in result.stdout.splitlines() if line]
-    for filename in files:
+    current_targets = list(targets)
+    for term in query_terms:
+        command, _ = _fallback_command(term, current_targets)
+        if not command:
+            return rows
+        try:
+            result = subprocess.run(
+                command,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=FALLBACK_TIMEOUT_SECONDS,
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            return rows
+        matching = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+        if not matching:
+            return rows
+        current_targets = matching
+    for filename in current_targets:
         try:
             relative = Path(filename).relative_to(MEMORY_DIR)
         except ValueError:
@@ -276,7 +323,7 @@ def cmd_status():
         print("Mode: FTS5 (index not built yet — auto-builds on first search)")
         return
     with sqlite3.connect(INDEX_PATH) as conn:
-        count = conn.execute("SELECT COUNT(*) FROM memories").fetchone()[0]
+        count = conn.execute("SELECT COUNT(DISTINCT filename) FROM memories").fetchone()[0]
     print("Mode: FTS5")
     print(f"Index: {count} files indexed ({INDEX_PATH.stat().st_size // 1024} KB)")
     print(f"Location: {INDEX_PATH}")

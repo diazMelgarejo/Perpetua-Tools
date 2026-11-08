@@ -921,7 +921,7 @@ def test_differential_policy_outcomes_match_across_repositories() -> None:
 # --- Cross-repo config + pin parity (F1/F2): keep byte-identical in both v1 repositories. ---
 # The differential above compares launch outcomes only; these pin the governance
 # config and the shared pin-document sections so drift in either repo fails a test.
-_PARITY_CONFIG_DIGEST = "d24937d88058bf253912724ca3f6a83354a176e18795aa90870732df05de8ad5"
+_PARITY_CONFIG_DIGEST = "94d8641a2fc9bc1291f7e8b00a451bf3465a26babbba7e8b65c63e631ddd7bf7"
 _PARITY_PIN_DIGEST = "f03c1a17e78d065ca281c71f630163e149f2ac64ed49bc71ffe2a4d3fe5c08b4"
 _PARITY_PIN_SECTIONS = ("## Escalation approval regimes", "## Role selection contract")
 _PARITY_ALEXANDRIA_TIP = "d6da6781"
@@ -992,3 +992,56 @@ def test_pin_document_and_config_name_the_same_alexandria_tip() -> None:
     doc = (root / "docs" / "standards" / "model-governance.md").read_text(encoding="utf-8")
     cfg = yaml.safe_load((root / "config" / "model-governance.yml").read_text(encoding="utf-8"))
     assert _preamble_tip(doc) == cfg["canonical"]["tip"] == _PARITY_ALEXANDRIA_TIP
+
+
+def test_cline_pass_default_is_deepseek_v4_1_flash_1017_at_a_documented_effort() -> None:
+    """ClinePass pins the 1017 build; medium is not a level Cline offers for it."""
+    spec = default_launch("cline_pass")
+    assert spec.launch_id == "deepseek-v4.1-flash-1017"
+    assert spec.effort == "low"
+    assert spec.fast is False
+
+
+def test_cline_pass_default_needs_no_approval() -> None:
+    plan = plan_launch(default_launch("cline_pass"))
+    assert plan.requires_human_approval is False
+    assert plan.effective == plan.requested
+
+
+def test_cline_pass_muse_spark_1_3_contributor_is_allowed_ungated() -> None:
+    spec = LaunchSpec(
+        path="cline_pass",
+        launch_id="muse-spark-1.3-contributor",
+        effort="medium",
+        fast=False,
+    )
+    assert_launch_allowed(spec)
+
+
+def test_cline_pass_refuses_a_listed_id_at_an_unlisted_effort() -> None:
+    spec = LaunchSpec(
+        path="cline_pass",
+        launch_id="deepseek-v4.1-flash-1017",
+        effort="medium",
+        fast=False,
+    )
+    with pytest.raises(ModelGovernanceError):
+        assert_launch_allowed(spec)
+
+
+def test_cline_pass_refuses_an_unlisted_model() -> None:
+    """The ClinePass lineup is closed: an id without a row is not launched."""
+    spec = LaunchSpec(path="cline_pass", launch_id="glm-5.3", effort="medium", fast=False)
+    with pytest.raises(ModelGovernanceError):
+        assert_launch_allowed(spec)
+
+
+def test_cline_pass_refuses_fast_mode_without_escalation() -> None:
+    spec = LaunchSpec(
+        path="cline_pass",
+        launch_id="muse-spark-1.3-contributor",
+        effort="medium",
+        fast=True,
+    )
+    with pytest.raises(ModelGovernanceError):
+        assert_launch_allowed(spec)

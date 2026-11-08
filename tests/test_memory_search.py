@@ -112,3 +112,92 @@ def test_fallback_search_uses_current_structured_lessons(monkeypatch, tmp_path):
     (semantic / "LESSONS.md").write_text("old nebula")
     assert any("[RETRACTED]" in snippet for _, snippet in mod.search_fallback("quasar"))
     assert not mod.search_fallback("nebula")
+
+
+def test_current_lesson_texts_handles_invalid_utf8_and_malformed_json(monkeypatch, tmp_path):
+    """Invalid UTF-8 bytes are decoded with replacement and malformed JSON lines are skipped."""
+    mod, memory = _load_module(monkeypatch, tmp_path)
+    semantic = memory / "semantic"
+    semantic.mkdir()
+    lessons_file = semantic / "lessons.jsonl"
+    valid_row = json.dumps({"id": "l1", "status": "accepted", "claim": "valid lesson claim"}).encode("utf-8")
+    malformed_json = b"NOT VALID JSON\n"
+    invalid_utf8 = b'{"id": "l2", "status": "accepted", "claim": "broken \xff\xfe byte"}\n'
+    lessons_file.write_bytes(valid_row + b"\n" + malformed_json + invalid_utf8)
+
+    texts = mod._current_lesson_texts(lessons_file)
+    assert len(texts) == 2
+    assert any("valid lesson claim" in t for t in texts)
+    assert any("broken \ufffd\ufffd byte" in t for t in texts)
+
+
+def test_fallback_to_legacy_bullets_when_lessons_jsonl_empty(monkeypatch, tmp_path):
+    """When lessons.jsonl exists but is empty, search indexes LESSONS.md legacy bullets."""
+    mod, memory = _load_module(monkeypatch, tmp_path)
+    semantic = memory / "semantic"
+    semantic.mkdir()
+    (semantic / "lessons.jsonl").write_text("", encoding="utf-8")
+    (semantic / "LESSONS.md").write_text("- legacy guidance about starlight\n- legacy rule about photons\n", encoding="utf-8")
+
+    mod.build_index()
+    fts_results = mod.search_fts5("starlight")
+    assert any("starlight" in snippet for _, snippet in fts_results)
+
+    fallback_results = mod.search_fallback("photons")
+    assert any("photons" in snippet or "LESSONS.md" in str(fn) for fn, snippet in fallback_results)
+
+
+def test_status_counts_distinct_filenames(monkeypatch, tmp_path, capsys):
+    """--status reports COUNT(DISTINCT filename), not total row count."""
+    mod, memory = _load_module(monkeypatch, tmp_path)
+    semantic = memory / "semantic"
+    semantic.mkdir()
+    rows = [
+        {"id": "l1", "status": "accepted", "claim": "first lesson"},
+        {"id": "l2", "status": "accepted", "claim": "second lesson"},
+        {"id": "l3", "status": "accepted", "claim": "third lesson"},
+    ]
+    (semantic / "lessons.jsonl").write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+    (semantic / "LESSONS.md").write_text("## Auto-promoted entries will be appended below\n", encoding="utf-8")
+    (memory / "other.md").write_text("other text", encoding="utf-8")
+
+    mod.build_index()
+    monkeypatch.setattr(mod, "feature_enabled", lambda: True)
+    mod.cmd_status()
+    captured = capsys.readouterr()
+    assert "Index: 3 files indexed" in captured.out
+
+
+def test_preamble_matches_return_snippet_and_structured_rows_return_full_claim(monkeypatch, tmp_path):
+    """Preamble matches yield a snippet; structured lesson matches yield the full claim."""
+    mod, memory = _load_module(monkeypatch, tmp_path)
+    semantic = memory / "semantic"
+    semantic.mkdir()
+    long_preamble = "Preamble intro with special secret galaxy term: " + ("padding " * 50) + "\n## Auto-promoted entries will be appended below\n"
+    rows = [
+        {"id": "l1", "status": "accepted", "claim": "Claim with special secret galaxy term and " + ("claim details " * 20)},
+    ]
+    (semantic / "lessons.jsonl").write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+    (semantic / "LESSONS.md").write_text(long_preamble, encoding="utf-8")
+
+    mod.build_index()
+    results = mod.search_fts5("galaxy")
+    preamble_res = [snippet for fn, snippet in results if not snippet.startswith("[ACCEPTED]")]
+    structured_res = [snippet for fn, snippet in results if snippet.startswith("[ACCEPTED]")]
+    assert len(structured_res) == 1
+    assert "claim details claim details" in structured_res[0]
+
+
+def test_fallback_search_matches_non_adjacent_terms(monkeypatch, tmp_path):
+    """Fallback search finds content where query terms are non-adjacent."""
+    mod, memory = _load_module(monkeypatch, tmp_path)
+    semantic = memory / "semantic"
+    semantic.mkdir()
+    rows = [
+        {"id": "l1", "status": "accepted", "claim": "quantum telemetry requires orbital alignment"},
+    ]
+    (semantic / "lessons.jsonl").write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+    (semantic / "LESSONS.md").write_text("quantum before\n## Auto-promoted entries will be appended below\n", encoding="utf-8")
+
+    results = mod.search_fallback("quantum orbital")
+    assert any("[ACCEPTED]" in snippet and "alignment" in snippet for _, snippet in results)

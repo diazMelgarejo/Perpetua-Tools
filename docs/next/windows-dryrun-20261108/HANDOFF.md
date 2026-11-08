@@ -172,14 +172,18 @@ included self-test passed on isolated POSIX here; Windows execution remains pend
 After source portability review, run the following runbook entrypoints under the actual non-elevated
 service account and then in a separately authorized elevated test shell, in a disposable checkout.
 The elevated fixture requires explicit separate authorization and does not authorize grant serving.
-Use the verified interpreter and repeat the strict-mode and path validation above in each shell:
+Change directory to the reviewed Oramasys checkout root before running pytest, use the verified
+interpreter, and repeat the strict-mode and path validation above in each shell:
 
 ```powershell
+Set-Location $ReviewedOramasysRoot
 $env:PYTHONPATH = 'src'
 & $ServingPython -m pytest -q tests/windows/test_private_store_native.py
 if ($LASTEXITCODE -ne 0) { throw 'Native security verification failed' }
-& $ServingPython -m pytest -q src/tests/test_private_store.py -k 'safe_replace or nonce_lock_failure'
-if ($LASTEXITCODE -ne 0) { throw 'Replacement/lock verification failed' }
+& $ServingPython -m pytest -q src/tests/test_private_store.py -k 'safe_replace'
+if ($LASTEXITCODE -ne 0) { throw 'safe_replace verification failed' }
+& $ServingPython -m pytest -q src/tests/test_private_store.py -k 'nonce_lock_failure'
+if ($LASTEXITCODE -ne 0) { throw 'nonce_lock_failure verification failed' }
 ```
 
 With an approved second principal, create a disposable foreign-owned fixture and set
@@ -235,6 +239,6 @@ Sources:
 [Windows handoff](https://github.com/oramasys/oramasys/blob/f6295a13ef02666d89f64f1f6e9834bc0bde884c/docs/closure/c6-windows-handoff.md),
 [C6 qualification](https://github.com/oramasys/oramasys/blob/f6295a13ef02666d89f64f1f6e9834bc0bde884c/docs/closure/c6-qualification-runbook.md),
 [PT C6 chronicle](https://github.com/diazMelgarejo/Perpetua-Tools/blob/96c9ddb59ea0f47e04472d1115a4880e5d16d151/.agent/memory/working/2026-11-07-c6-runtime-and-review-chronicle.md),
-[review correction](https://github.com/diazMelgarejo/Perpetua-Tools/blob/96c9ddb59ea0f47e04472d1115a4880e5d16d151/.agent/memory/semantic/LAN_COORDINATION_WINDOWS_C6_AND_FLEET_SYNTHESIS_2026-11-08.md),
+[review correction](https://github.com/diazMelgarejo/Perpetua-Tools/blob/5021324850e20a04f016635b0fba5e52725f9ede/.agent/memory/semantic/LAN_COORDINATION_WINDOWS_C6_AND_FLEET_SYNTHESIS_2026-11-08.md),
 and
 [activation runbook](https://github.com/oramasys/oramasys/blob/f6295a13ef02666d89f64f1f6e9834bc0bde884c/docs/serving-activation-runbook.md).
