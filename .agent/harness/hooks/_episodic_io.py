@@ -95,15 +95,11 @@ def append_jsonl(path: str, entry: dict) -> dict:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with episodic_lock(path, exclusive=True):
         with open(path, "a+b") as stream:
-            stream.seek(0)
-            history = stream.read()
-            for line in history.splitlines():
-                if line.strip():
-                    try:
-                        json.loads(line)
-                    except Exception:
-                        pass
-            if history and not history.endswith(b"\n"):
+            stream.seek(0, os.SEEK_END)
+            length = stream.tell()
+            if length:
+                stream.seek(-1, os.SEEK_END)
+            if length and stream.read(1) != b"\n":
                 stream.write(b"\n")
             stream.write(payload)
             stream.flush()

@@ -3,6 +3,7 @@
 import importlib.util
 import json
 import sqlite3
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -87,6 +88,8 @@ def test_needs_rebuild_true_when_filesystem_file_never_indexed(monkeypatch, tmp_
 def test_search_marks_current_retracted_lesson_and_ignores_old_claim(monkeypatch, tmp_path):
     """Search labels retractions from current JSONL even when markdown is stale."""
     mod, memory = _load_module(monkeypatch, tmp_path)
+    if not mod.check_fts5():
+        pytest.skip("SQLite FTS5 unavailable")
     semantic = memory / "semantic"
     semantic.mkdir()
     rows = [
@@ -139,17 +142,29 @@ def test_fallback_to_legacy_bullets_when_lessons_jsonl_empty(monkeypatch, tmp_pa
     (semantic / "lessons.jsonl").write_text("", encoding="utf-8")
     (semantic / "LESSONS.md").write_text("- legacy guidance about starlight\n- legacy rule about photons\n", encoding="utf-8")
 
-    mod.build_index()
-    fts_results = mod.search_fts5("starlight")
-    assert any("starlight" in snippet for _, snippet in fts_results)
-
+    if not (shutil.which("rg") or shutil.which("grep")):
+        pytest.skip("fallback search tool unavailable")
     fallback_results = mod.search_fallback("photons")
     assert any("photons" in snippet or "LESSONS.md" in str(fn) for fn, snippet in fallback_results)
+
+
+def test_fts_indexes_legacy_bullets_when_lessons_jsonl_empty(monkeypatch, tmp_path):
+    """Verify fts indexes legacy bullets when lessons jsonl empty."""
+    mod, memory = _load_module(monkeypatch, tmp_path)
+    if not mod.check_fts5():
+        pytest.skip("SQLite FTS5 unavailable")
+    semantic = memory / "semantic"
+    semantic.mkdir()
+    (semantic / "lessons.jsonl").write_text("", encoding="utf-8")
+    (semantic / "LESSONS.md").write_text("- legacy guidance about starlight\n", encoding="utf-8")
+    assert any("starlight" in snippet for _, snippet in mod.search_fts5("starlight"))
 
 
 def test_status_counts_distinct_filenames(monkeypatch, tmp_path, capsys):
     """--status reports COUNT(DISTINCT filename), not total row count."""
     mod, memory = _load_module(monkeypatch, tmp_path)
+    if not mod.check_fts5():
+        pytest.skip("SQLite FTS5 unavailable")
     semantic = memory / "semantic"
     semantic.mkdir()
     rows = [
@@ -171,6 +186,8 @@ def test_status_counts_distinct_filenames(monkeypatch, tmp_path, capsys):
 def test_preamble_matches_return_snippet_and_structured_rows_return_full_claim(monkeypatch, tmp_path):
     """Preamble matches yield a snippet; structured lesson matches yield the full claim."""
     mod, memory = _load_module(monkeypatch, tmp_path)
+    if not mod.check_fts5():
+        pytest.skip("SQLite FTS5 unavailable")
     semantic = memory / "semantic"
     semantic.mkdir()
     long_preamble = "Preamble intro with special secret galaxy term: " + ("padding " * 50) + "\n## Auto-promoted entries will be appended below\n"
@@ -182,10 +199,62 @@ def test_preamble_matches_return_snippet_and_structured_rows_return_full_claim(m
 
     mod.build_index()
     results = mod.search_fts5("galaxy")
-    preamble_res = [snippet for fn, snippet in results if not snippet.startswith("[ACCEPTED]")]
+    preamble_res = [snippet for fn, snippet in results if fn == "semantic/LESSONS.md" and not snippet.startswith("[ACCEPTED]")]
     structured_res = [snippet for fn, snippet in results if snippet.startswith("[ACCEPTED]")]
     assert len(structured_res) == 1
-    assert "claim details claim details" in structured_res[0]
+    assert len(preamble_res) == 1
+    assert len(preamble_res[0]) < len(long_preamble.split("## Auto-promoted")[0])
+    assert structured_res[0] == "[ACCEPTED] " + rows[0]["claim"]
+
+
+def test_search_handles_unhashable_ids_and_superseded_lessons(monkeypatch, tmp_path):
+    """Verify search handles unhashable ids and superseded lessons."""
+    mod, memory = _load_module(monkeypatch, tmp_path)
+    semantic = memory / "semantic"
+    semantic.mkdir()
+    rows = [{"id": ["bad"], "claim": "bad"},
+            {"id": "old", "status": "accepted", "claim": "old nebula"},
+            {"id": "new", "status": "accepted", "claim": "new nebula", "supersedes": "old"}]
+    (semantic / "lessons.jsonl").write_text("\n".join(map(json.dumps, rows)), encoding="utf-8")
+    (semantic / "LESSONS.md").write_text("", encoding="utf-8")
+    assert any("[SUPERSEDED] old nebula" == s for _, s in mod.search_fallback("nebula"))
+    if mod.check_fts5():
+        assert any("[SUPERSEDED] old nebula" == s for _, s in mod.search_fts5("nebula"))
+
+
+def test_snippet_maps_casefold_expansion(monkeypatch, tmp_path):
+    """Verify snippet maps casefold expansion."""
+    mod, _ = _load_module(monkeypatch, tmp_path)
+    assert "needle" in mod._make_snippet("ß" * 400 + " needle", "needle")
+
+
+def test_fallback_preserves_original_unicode_search_term(monkeypatch, tmp_path):
+    """Verify fallback preserves original unicode search term."""
+    mod, memory = _load_module(monkeypatch, tmp_path)
+    if not (shutil.which("rg") or shutil.which("grep")):
+        pytest.skip("fallback search tool unavailable")
+    (memory / "document.md").write_text("Straße", encoding="utf-8")
+    assert any(str(fn) == "document.md" for fn, _ in mod.search_fallback("Straße"))
+
+
+def test_bad_lesson_insert_preserves_previous_document(monkeypatch, tmp_path):
+    """Verify bad lesson insert preserves previous document."""
+    mod, memory = _load_module(monkeypatch, tmp_path)
+    if not mod.check_fts5():
+        pytest.skip("SQLite FTS5 unavailable")
+    doc = memory / "first.md"
+    doc.write_text("first unique", encoding="utf-8")
+    semantic = memory / "semantic"
+    semantic.mkdir()
+    lessons = semantic / "lessons.jsonl"
+    lessons.write_text(json.dumps({"id": "a", "claim": "\ud800"}), encoding="utf-8")
+    markdown = semantic / "LESSONS.md"
+    markdown.write_text("", encoding="utf-8")
+    monkeypatch.setattr(mod, "_memory_files", lambda: iter([doc, markdown, lessons]))
+    assert mod.build_index() == 2
+    with sqlite3.connect(mod.INDEX_PATH) as conn:
+        assert conn.execute("SELECT filename FROM memories WHERE filename = 'first.md'").fetchone()
+        assert not conn.execute("SELECT filename FROM memories WHERE filename = 'semantic/LESSONS.md'").fetchone()
 
 
 def test_fallback_search_matches_non_adjacent_terms(monkeypatch, tmp_path):

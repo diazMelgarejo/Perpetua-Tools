@@ -42,7 +42,7 @@ FEATURES_PATH = MEMORY_DIR / ".features.json"
 MEMORY_SUFFIXES = (".md", ".jsonl")
 CJK_RE = re.compile(r"[\u3400-\u9fff]")
 FALLBACK_TIMEOUT_SECONDS = 10
-INDEX_VERSION = 2
+INDEX_VERSION = 3
 
 
 def feature_enabled() -> bool:
@@ -121,10 +121,19 @@ def _current_lesson_texts(path: Path) -> list[str]:
                 entry = json.loads(raw)
             except json.JSONDecodeError:
                 continue
-            if isinstance(entry, dict) and entry.get("id"):
+            if isinstance(entry, dict) and isinstance(entry.get("id"), str) and entry["id"]:
                 latest[entry["id"]] = entry
-    return [f"[{str(row.get('status', 'unknown')).upper()}] {row.get('claim', '')}"
-            for row in latest.values()]
+    superseded = {
+        row["supersedes"] for row in latest.values()
+        if row.get("status") == "accepted" and isinstance(row.get("supersedes"), str)
+    }
+    texts = []
+    for key, row in latest.items():
+        status = str(row.get("status", "unknown"))
+        if status == "accepted" and key in superseded:
+            status = "superseded"
+        texts.append(f"[{status.upper()}] {row.get('claim', '')}")
+    return texts
 
 
 def _make_snippet(text: str, query: str, window: int = 150) -> str:
@@ -137,6 +146,12 @@ def _make_snippet(text: str, query: str, window: int = 150) -> str:
             pos = p
     if pos == -1:
         return text[:window] + "..." if len(text) > window else text
+    folded_offset = 0
+    for original_offset, char in enumerate(text):
+        folded_offset += len(char.casefold())
+        if folded_offset > pos:
+            pos = original_offset
+            break
     start = max(0, pos - 40)
     end = min(len(text), pos + window)
     prefix = "..." if start > 0 else ""
@@ -169,10 +184,16 @@ def build_index() -> int:
                     if lesson_texts:
                         preamble = _lesson_preamble(path)
                         try:
-                            with conn:
+                            conn.execute("SAVEPOINT lesson_file")
+                            try:
                                 for content in [preamble, *lesson_texts]:
                                     conn.execute("INSERT INTO memories VALUES (?, ?)",
                                                  (str(path.relative_to(MEMORY_DIR)), content))
+                            except BaseException:
+                                conn.execute("ROLLBACK TO SAVEPOINT lesson_file")
+                                raise
+                            finally:
+                                conn.execute("RELEASE SAVEPOINT lesson_file")
                             indexed += 1
                             continue
                         except Exception as exc:
@@ -258,7 +279,8 @@ def search_fallback(query: str):
     targets = [str(path) for path in _memory_files()
                if not (structured and path in (source, markdown))]
     rows = []
-    query_terms = [t for t in query.casefold().split() if t]
+    original_terms = query.split()
+    query_terms = [t.casefold() for t in original_terms]
     if structured and query_terms:
         preamble = _lesson_preamble(markdown)
         if all(term in preamble.casefold() for term in query_terms):
@@ -269,7 +291,7 @@ def search_fallback(query: str):
     if not targets or not query_terms:
         return rows
     current_targets = list(targets)
-    for term in query_terms:
+    for term in original_terms:
         command, _ = _fallback_command(term, current_targets)
         if not command:
             return rows

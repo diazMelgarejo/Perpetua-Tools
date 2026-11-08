@@ -16,14 +16,17 @@ from typing import Any
 
 
 def sha256(value: Any) -> str:
+    """Return the SHA-256 hex digest of the stringified value."""
     return hashlib.sha256(str(value).encode("utf-8")).hexdigest()
 
 
 def now_iso() -> str:
+    """Return the current UTC time as an ISO timestamp."""
     return dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def parse_time(value: Any) -> dt.datetime | None:
+    """Parse an ISO timestamp as UTC, returning None for invalid values."""
     if not value:
         return None
     text = str(value).strip()
@@ -39,11 +42,13 @@ def parse_time(value: Any) -> dt.datetime | None:
 
 
 def iso(value: Any) -> str | None:
+    """Normalize a timestamp to ISO format, or return None."""
     parsed = parse_time(value)
     return parsed.isoformat().replace("+00:00", "Z") if parsed else None
 
 
 def safe_num(value: Any) -> float | None:
+    """Convert a value to a number, or return None when unavailable."""
     if value in (None, ""):
         return None
     try:
@@ -54,6 +59,7 @@ def safe_num(value: Any) -> float | None:
 
 
 def slug(value: Any, fallback: str = "unknown") -> str:
+    """Normalize a value to a bounded identifier."""
     text = str(value or "").strip().lower()
     out: list[str] = []
     last_sep = False
@@ -69,6 +75,7 @@ def slug(value: Any, fallback: str = "unknown") -> str:
 
 
 def as_list(value: Any) -> list[Any]:
+    """Return a list containing the supplied value or values."""
     if isinstance(value, list):
         return value
     if value in (None, ""):
@@ -77,6 +84,7 @@ def as_list(value: Any) -> list[Any]:
 
 
 def unique_strings(values: list[Any]) -> list[str]:
+    """Return nonempty, unique strings in their original order."""
     seen = set()
     out = []
     for value in values:
@@ -89,20 +97,21 @@ def unique_strings(values: list[Any]) -> list[str]:
 
 
 def read_jsonl(path: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Read JSON objects and report missing or malformed input lines."""
     quality = {"missing": False, "malformed_lines": 0}
     if not path.exists():
         quality["missing"] = True
         return [], quality
 
     records: list[dict[str, Any]] = []
-    with path.open("r", encoding="utf-8") as f:
+    with path.open("rb") as f:
         for raw in f:
             line = raw.strip()
             if not line:
                 continue
             try:
                 parsed = json.loads(line)
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, UnicodeDecodeError):
                 quality["malformed_lines"] += 1
                 continue
             if isinstance(parsed, dict):
@@ -113,34 +122,41 @@ def read_jsonl(path: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
 
 
 def write_jsonl(path: Path, records: list[dict[str, Any]]) -> None:
+    """Write records as UTF-8 JSON lines."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("".join(json.dumps(record, separators=(",", ":")) + "\n" for record in records), encoding="utf-8")
 
 
 def write_json(path: Path, data: Any) -> None:
+    """Write a value as formatted UTF-8 JSON."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
 
 def write_text(path: Path, text: str) -> None:
+    """Write UTF-8 text, creating parent directories as needed."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
 
 
 def review_status(record: dict[str, Any]) -> str:
+    """Return the recorded human review status."""
     review = record.get("human_review") if isinstance(record.get("human_review"), dict) else {}
     return str(record.get("human_review_status") or review.get("status") or "unknown")
 
 
 def redaction_passed(record: dict[str, Any]) -> bool:
+    """Return whether the record passed redaction review."""
     return str(record.get("redaction_status") or "needs_review") == "passed"
 
 
 def is_human_approved(record: dict[str, Any]) -> bool:
+    """Return whether human review accepted or edited the record."""
     return review_status(record) in {"accepted", "edited"}
 
 
 def is_trainable(record: dict[str, Any]) -> bool:
+    """Check whether a run meets the training eligibility conditions."""
     requested = record.get("trainable", True)
     if requested is False:
         return False
@@ -152,6 +168,7 @@ def is_trainable(record: dict[str, Any]) -> bool:
 
 
 def normalized_run(record: dict[str, Any], idx: int, project: str) -> dict[str, Any]:
+    """Normalize a raw run for export."""
     created_at = iso(record.get("created_at") or record.get("timestamp")) or now_iso()
     domain = slug(record.get("domain"), "general")
     workflow = slug(record.get("workflow"), "general")
@@ -174,6 +191,7 @@ def normalized_run(record: dict[str, Any], idx: int, project: str) -> dict[str, 
 
 
 def trace_record(run: dict[str, Any]) -> dict[str, Any]:
+    """Build an exportable trace from a normalized run."""
     trace_id = str(run.get("trace_id") or f"trace_{sha256(run['id'])[:16]}")
     input_redacted = str(run.get("input_redacted") or "")
     human_review = run.get("human_review") if isinstance(run.get("human_review"), dict) else {}
@@ -210,6 +228,7 @@ def trace_record(run: dict[str, Any]) -> dict[str, Any]:
 
 
 def training_example(run: dict[str, Any], trace: dict[str, Any]) -> dict[str, Any] | None:
+    """Build a training example for an eligible run."""
     if not run["trainable"]:
         return None
     return {
@@ -231,6 +250,7 @@ def training_example(run: dict[str, Any], trace: dict[str, Any]) -> dict[str, An
 
 
 def eval_case(run: dict[str, Any], trace: dict[str, Any]) -> dict[str, Any] | None:
+    """Build an evaluation case for an approved, redacted run."""
     if not is_human_approved(run) or not redaction_passed(run):
         return None
     return {
@@ -252,6 +272,7 @@ def eval_case(run: dict[str, Any], trace: dict[str, Any]) -> dict[str, Any] | No
 
 
 def grouped_runs(runs: list[dict[str, Any]]) -> dict[tuple[str, str], list[dict[str, Any]]]:
+    """Group runs by domain and workflow."""
     groups: dict[tuple[str, str], list[dict[str, Any]]] = {}
     for run in runs:
         groups.setdefault((run["domain"], run["workflow"]), []).append(run)
@@ -259,6 +280,7 @@ def grouped_runs(runs: list[dict[str, Any]]) -> dict[tuple[str, str], list[dict[
 
 
 def context_card(domain: str, workflow: str, runs: list[dict[str, Any]], eval_refs: list[str]) -> dict[str, Any]:
+    """Build a workflow context card from its runs."""
     stable_rules = unique_strings([rule for run in runs for rule in as_list(run.get("stable_rules"))])
     tool_contracts = unique_strings([contract for run in runs for contract in as_list(run.get("tool_contracts"))])
     approval_gates = unique_strings([gate for run in runs for gate in as_list(run.get("human_approval_required_for"))])
@@ -283,7 +305,9 @@ def context_card(domain: str, workflow: str, runs: list[dict[str, Any]], eval_re
 
 
 def context_card_md(card: dict[str, Any]) -> str:
+    """Render a context card as Markdown."""
     def bullets(values: list[Any]) -> str:
+        """Render values as Markdown bullets."""
         return "\n".join(f"- {value}" for value in values) if values else "- none yet"
 
     return f"""# {card['domain']} / {card['workflow']} Context Card
@@ -316,6 +340,7 @@ Source traces: `{card['source_trace_count']}`
 
 
 def workflow_metrics(runs: list[dict[str, Any]], eval_count: int) -> dict[str, Any]:
+    """Summarize review and training metrics for a workflow."""
     accepted = sum(1 for run in runs if run["human_review_status"] == "accepted")
     edited = sum(1 for run in runs if run["human_review_status"] == "edited")
     rejected = sum(1 for run in runs if run["human_review_status"] == "rejected")
@@ -336,6 +361,7 @@ def workflow_metrics(runs: list[dict[str, Any]], eval_count: int) -> dict[str, A
 
 
 def build_metrics(runs: list[dict[str, Any]], eval_cases: list[dict[str, Any]]) -> dict[str, Any]:
+    """Summarize run and evaluation metrics for export."""
     total = len(runs)
     accepted = sum(1 for run in runs if run["human_review_status"] == "accepted")
     edited = sum(1 for run in runs if run["human_review_status"] == "edited")
@@ -377,6 +403,7 @@ def build_metrics(runs: list[dict[str, Any]], eval_cases: list[dict[str, Any]]) 
 
 
 def export(args: argparse.Namespace) -> Path:
+    """Build the local export artifacts and return their directory."""
     agent_root = Path(args.agent_root).resolve()
     flywheel_dir = agent_root / "flywheel"
     input_path = Path(args.approved_runs) if args.approved_runs else flywheel_dir / "approved-runs.jsonl"
@@ -432,6 +459,7 @@ moving any artifact outside `.agent/flywheel/`.
 
 
 def main() -> int:
+    """Parse command-line arguments and run the export."""
     parser = argparse.ArgumentParser(description="Export approved runs into local data-flywheel artifacts.")
     parser.add_argument("--agent-root", default=".agent")
     parser.add_argument("--approved-runs", default="")
