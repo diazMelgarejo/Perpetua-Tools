@@ -241,6 +241,6 @@ Sources:
 [Windows handoff](https://github.com/oramasys/oramasys/blob/f6295a13ef02666d89f64f1f6e9834bc0bde884c/docs/closure/c6-windows-handoff.md),
 [C6 qualification](https://github.com/oramasys/oramasys/blob/f6295a13ef02666d89f64f1f6e9834bc0bde884c/docs/closure/c6-qualification-runbook.md),
 [PT C6 chronicle](https://github.com/diazMelgarejo/Perpetua-Tools/blob/96c9ddb59ea0f47e04472d1115a4880e5d16d151/.agent/memory/working/2026-11-07-c6-runtime-and-review-chronicle.md),
-[review correction](https://github.com/diazMelgarejo/Perpetua-Tools/blob/5021324850e20a04f016635b0fba5e52725f9ede/.agent/memory/semantic/LAN_COORDINATION_WINDOWS_C6_AND_FLEET_SYNTHESIS_2026-11-08.md),
+[review correction](https://github.com/diazMelgarejo/Perpetua-Tools/blob/020c8e31035603d5f03c510f3c242f81a0d10791/.agent/memory/semantic/LAN_COORDINATION_WINDOWS_C6_AND_FLEET_SYNTHESIS_2026-11-08.md),
 and
 [activation runbook](https://github.com/oramasys/oramasys/blob/f6295a13ef02666d89f64f1f6e9834bc0bde884c/docs/serving-activation-runbook.md).
