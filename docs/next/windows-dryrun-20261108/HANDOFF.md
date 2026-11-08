@@ -188,6 +188,10 @@ if ($LASTEXITCODE -ne 0) { throw 'safe_replace verification failed' }
 if ($LASTEXITCODE -ne 0) { throw 'nonce_lock_failure verification failed' }
 ```
 
+Inspect each command's test summary independently. Record a group as passed only
+when its intended tests were collected and passed without skips; a zero exit code
+alone does not establish that the native checks ran.
+
 With an approved second principal, create a disposable foreign-owned fixture and set
 `ORAMA_TEST_FOREIGN_OWNER_FILE` locally; rerun the native suite. Without it, record the
 negative-owner test as skipped. Test actual second-account read/write denials on parent, database,
