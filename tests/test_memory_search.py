@@ -10,6 +10,16 @@ from pathlib import Path
 import pytest
 
 
+def _has_fts5():
+    """Detect SQLite FTS5 independently of the search module."""
+    try:
+        with sqlite3.connect(":memory:") as conn:
+            conn.execute("CREATE VIRTUAL TABLE test USING fts5(content)")
+        return True
+    except sqlite3.OperationalError:
+        return False
+
+
 def _load_module(monkeypatch, tmp_path):
     """Load memory_search.py fresh with MEMORY_DIR/INDEX_PATH pointed at tmp_path.
 
@@ -84,6 +94,7 @@ def test_needs_rebuild_true_when_filesystem_file_never_indexed(monkeypatch, tmp_
     assert mod.needs_rebuild() is True
 
 
+@pytest.mark.skipif(not _has_fts5(), reason="SQLite FTS5 unavailable")
 def test_search_marks_current_retracted_lesson_and_ignores_old_claim(monkeypatch, tmp_path):
     """Search labels retractions from current JSONL even when markdown is stale."""
     mod, memory = _load_module(monkeypatch, tmp_path)
@@ -144,11 +155,20 @@ def test_fallback_to_legacy_bullets_when_lessons_jsonl_empty(monkeypatch, tmp_pa
     fallback_results = mod.search_fallback("photons")
     assert any("photons" in snippet or "LESSONS.md" in str(fn) for fn, snippet in fallback_results)
 
-    if mod.check_fts5():
-        mod.build_index()
-        assert any("starlight" in snippet for _, snippet in mod.search_fts5("starlight"))
+
+@pytest.mark.skipif(not _has_fts5(), reason="SQLite FTS5 unavailable")
+def test_index_uses_legacy_bullets_when_lessons_jsonl_empty(monkeypatch, tmp_path):
+    """FTS indexes the legacy Markdown when no structured lessons exist."""
+    mod, memory = _load_module(monkeypatch, tmp_path)
+    semantic = memory / "semantic"
+    semantic.mkdir()
+    (semantic / "lessons.jsonl").write_text("", encoding="utf-8")
+    (semantic / "LESSONS.md").write_text("- legacy guidance about starlight\n", encoding="utf-8")
+    mod.build_index()
+    assert any("starlight" in snippet for _, snippet in mod.search_fts5("starlight"))
 
 
+@pytest.mark.skipif(not _has_fts5(), reason="SQLite FTS5 unavailable")
 def test_status_counts_distinct_filenames(monkeypatch, tmp_path, capsys):
     """--status reports COUNT(DISTINCT filename), not total row count."""
     mod, memory = _load_module(monkeypatch, tmp_path)
@@ -170,6 +190,7 @@ def test_status_counts_distinct_filenames(monkeypatch, tmp_path, capsys):
     assert "Index: 3 files indexed" in captured.out
 
 
+@pytest.mark.skipif(not _has_fts5(), reason="SQLite FTS5 unavailable")
 def test_preamble_matches_return_snippet_and_structured_rows_return_full_claim(monkeypatch, tmp_path):
     """Preamble matches yield a snippet; structured lesson matches yield the full claim."""
     mod, memory = _load_module(monkeypatch, tmp_path)

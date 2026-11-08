@@ -58,6 +58,17 @@ def test_exact_agent_identity_approved():
     assert result.matched_kind == "agent"
 
 
+@pytest.mark.parametrize("name", ["Cline", "Another Cline Agent"])
+@pytest.mark.parametrize("profile", ["configured", "strict"])
+def test_cline_identity_in_real_policy(name: str, profile: str) -> None:
+    """The explicitly listed Cline email is an agent in both identity profiles."""
+    result = audit_engine.is_approved_identity(
+        name, "cline@local.invalid", root=Path("."), policy_path=REAL_POLICY, profile=profile
+    )
+    assert result.approved
+    assert result.matched_kind == "agent"
+
+
 @pytest.mark.parametrize("email", ["codex@openai.com", "noreply@openai.com"])
 def test_known_codex_agent_identities_approved(email: str) -> None:
     """Approved Codex commit identities stay explicit and name-bound."""
