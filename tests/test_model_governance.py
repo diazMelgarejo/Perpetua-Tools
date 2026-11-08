@@ -1020,6 +1020,30 @@ def test_cline_pass_muse_spark_1_3_contributor_is_allowed_ungated() -> None:
     assert_launch_allowed(spec)
 
 
+def test_cline_pass_glm_5_3_flash_is_allowed_ungated_at_medium() -> None:
+    """The operator-added GLM 5.3 Flash row launches at medium without a token."""
+    spec = LaunchSpec(
+        path="cline_pass",
+        launch_id="glm-5.3-flash",
+        effort="medium",
+        fast=False,
+    )
+    assert_launch_allowed(spec)
+
+
+@pytest.mark.parametrize("effort", ["low", "high", "xhigh", "max"])
+def test_cline_pass_glm_5_3_flash_refuses_efforts_other_than_medium(effort: str) -> None:
+    """Only the pinned medium effort is listed for GLM 5.3 Flash."""
+    spec = LaunchSpec(
+        path="cline_pass",
+        launch_id="glm-5.3-flash",
+        effort=effort,
+        fast=False,
+    )
+    with pytest.raises(ModelGovernanceError):
+        assert_launch_allowed(spec)
+
+
 def test_cline_pass_refuses_a_listed_id_at_an_unlisted_effort() -> None:
     """Verify cline pass refuses a listed id at an unlisted effort."""
     spec = LaunchSpec(
