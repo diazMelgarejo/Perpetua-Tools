@@ -50,6 +50,32 @@ def test_public_address_ok() -> None:
     default_address_allowed("1.1.1.1")
 
 
+def test_default_session_reaches_mocked_public_transport() -> None:
+    """Exercise default session construction without ambient proxy discovery."""
+    import io
+
+    import urllib3
+    from urllib3.connectionpool import HTTPSConnectionPool
+
+    requests_seen: list[str] = []
+
+    def public_transport(pool: object, method: str, url: str, *args: object, **kwargs: object) -> urllib3.HTTPResponse:
+        """Record only traffic that passed the real pinned adapter validation."""
+        requests_seen.append(url)
+        return urllib3.HTTPResponse(body=io.BytesIO(b"public response"), status=200, preload_content=False)
+
+    with (
+        patch("requests.sessions.get_environ_proxies", return_value={}),
+        patch("socket.getaddrinfo", return_value=[(2, 1, 6, "", ("93.184.216.34", 443))]),
+        patch.object(HTTPSConnectionPool, "urlopen", public_transport),
+    ):
+        response = ssrf_request("GET", "https://example.com/public")
+        assert response.status_code == 200
+        assert response.content == b"public response"
+        response.close()
+    assert requests_seen == ["/public"]
+
+
 def test_url_rejects_userinfo_and_scheme() -> None:
     """URLs with userinfo, a non-http(s) scheme or control characters are rejected."""
     with pytest.raises(SSRFPolicyError):
