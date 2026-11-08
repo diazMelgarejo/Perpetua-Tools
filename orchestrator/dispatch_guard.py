@@ -87,7 +87,7 @@ class DispatchGuard:
 
     def _authorize(self, request: DispatchRequest) -> None:
         """Reuse canonical frugality/model rules and fail closed on evaluation errors."""
-        from orchestrator.gate import gate_permits, load_frugality_tier_by_name
+        from .gate import gate_permits, load_frugality_tier_by_name
         from perpetua_tools.model_governance import LaunchSpec, load_model_governance, plan_launch
 
         allowed, reason = gate_permits(
@@ -100,7 +100,7 @@ class DispatchGuard:
         config = load_model_governance()
         if request.model in config.get("banned_launch_ids", ()):
             raise PermissionError("banned launch id")
-        path = {"codex": "openai", "gemini": "google", "gemini-review": "google", "cursor": "cursor_grok_bot", "claude": "anthropic"}.get(request.provider)
+        path = {"codex": "openai", "openai": "openai", "gemini": "google", "gemini-review": "google", "google": "google", "cursor": "cursor_grok_bot", "cursor_grok_bot": "cursor_grok_bot", "claude": "anthropic", "anthropic": "anthropic"}.get(request.provider)
         approval_required = False
         if path is not None and request.model != "provider-default":
             plan = plan_launch(LaunchSpec(path, request.model, effort=request.effort, fast=request.fast))
@@ -118,14 +118,35 @@ class DispatchGuard:
 
     def _connect(self) -> sqlite3.Connection:
         """Open private durable state, refusing symlinks and unsafe database files."""
-        from stat import S_ISDIR, S_ISREG, S_ISVTX
+        from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISVTX
 
         if self.state_dir.is_symlink():
             raise PermissionError("dispatch state directory cannot be a symlink")
         self.state_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
         if os.name != "nt":
-            for ancestor in self.state_dir.absolute().parents:
+            ancestors = list(self.state_dir.absolute().parents)
+            visited: set[Path] = set()
+            link_count = 0
+            while ancestors:
+                ancestor = ancestors.pop()
+                if ancestor in visited:
+                    continue
+                visited.add(ancestor)
                 info = ancestor.lstat()
+                if S_ISLNK(info.st_mode):
+                    if info.st_uid not in {0, os.getuid()}:
+                        raise PermissionError("dispatch state ancestor symlink must be trusted")
+                    link_count += 1
+                    if link_count > 40:
+                        raise PermissionError("dispatch state ancestor symlink chain is too long")
+                    target = Path(os.readlink(ancestor))
+                    if ".." in target.parts:
+                        raise PermissionError("dispatch state ancestor symlink target is not attestable")
+                    if not target.is_absolute():
+                        target = ancestor.parent / target
+                    ancestors.append(target)
+                    ancestors.extend(target.parents)
+                    continue
                 # Root-owned sticky temporary directories protect user-owned
                 # descendants from renaming by other unprivileged users.
                 sticky_root = info.st_uid == 0 and bool(info.st_mode & S_ISVTX)
@@ -137,7 +158,7 @@ class DispatchGuard:
         if os.name != "nt" and (directory_info.st_uid != os.getuid() or directory_info.st_mode & 0o022):
             raise PermissionError("dispatch state directory must be user-owned and not writable by others")
         if os.name == "nt":
-            from orchestrator.alphaclaw_tls_proxy import _secure_path
+            from .alphaclaw_tls_proxy import _secure_path
 
             _secure_path(self.state_dir, is_directory=True)
         path = self.state_dir / "dispatch_claims.sqlite3"

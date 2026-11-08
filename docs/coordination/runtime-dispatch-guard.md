@@ -38,11 +38,35 @@ sandbox or protection against a hostile same-user process. Native Windows ACL
 qualification remains a separate gate.
 
 An implicit provider CLI model remains `provider-default`, not an attested model
-selection. Unclassified model tiers retain the existing frugality gate's
-no-opinion behavior. Unsupported explicit CLI model/effort/fast overrides are
+selection. The planner cannot detect model-specific approval requirements for that
+unknown default. Before dispatch, operators must independently verify the effective
+CLI model and any applicable approval. Unclassified model tiers retain the existing
+frugality gate's no-opinion behavior. Unsupported explicit CLI model/effort/fast overrides are
 rejected before any claim or effect; recording an ignored override would give
 the same effect multiple identities. These bounds must remain visible in rollout
 decisions.
+
+## Reconciled work and compatibility
+
+After reconciling an earlier effect, the spawn CLI accepts `--scope NEW_SCOPE`.
+Authenticated `POST /v1/jobs/{job_id}/replay` accepts an optional JSON body
+`{"dispatch_scope": "NEW_SCOPE"}`. Omitting it inherits the existing scope and
+therefore does not silently authorize another provider effect. Never clear claims
+as a substitute for reconciliation.
+
+The marked, current Orama adapter supports guarded fan-out. Unmarked older
+siblings retain guarded direct dispatch, but opaque `all` / `race` is refused with
+an upgrade diagnostic: a wrapper cannot attest arbitrary private provider calls.
+This is deliberate fail-closed compatibility, not a claim that every historical
+private helper is a supported execution API. Missing/empty effective model settings
+are refused rather than authorized under an invented default. Cursor's fixed CLI
+selector is now visible to the canonical planner; an unsupported selector is
+refused, not silently allowed as `provider-default`. No model-policy pins change.
+
+State discovery has no async-gossip dependency. Orama loads PT authority from the
+configured producer even when a local persona package named `orchestrator` is
+already cached, without deleting that package's module state. Test/release/local
+setup must still provide the immutable producer; missing authority is not a pass.
 
 ## Verification and rollout
 

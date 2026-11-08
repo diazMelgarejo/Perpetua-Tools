@@ -822,6 +822,9 @@ class OrchestrationSupervisor:
             raise ReplayNoQueuedSpecError(f"Job {job_id} has no queued specification")
 
         spec_dict = {**queued_spec, **(overrides or {})}
+        metadata = dict(spec_dict.get("metadata") or {})
+        if overrides and overrides.get("dispatch_scope") is not None:
+            metadata["dispatch_scope"] = overrides["dispatch_scope"]
         session_id = spec_dict.get("session_id")
         parent_orchestrator_id = spec_dict.get("parent_orchestrator_id")
         new_spec = JobSpec(
@@ -831,7 +834,7 @@ class OrchestrationSupervisor:
             backend_hint=spec_dict.get("backend_hint"),
             constraints=spec_dict.get("constraints", {}),
             metadata=caller_reported_lineage_metadata(
-                spec_dict.get("metadata"),
+                metadata,
                 session_id=session_id,
                 parent_orchestrator_id=parent_orchestrator_id,
             ),

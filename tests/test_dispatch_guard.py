@@ -85,6 +85,87 @@ async def _identity(spec: object) -> object:
     return spec
 
 
+@pytest.mark.parametrize("field", ["job_id", "session_id"])
+def test_generated_ids_do_not_change_dispatch_identity(tmp_path: Path, field: str) -> None:
+    """Changing either correlation id alone must not authorize a second effect."""
+    from orchestrator.dispatch_guard import DuplicateDispatch
+    from orchestrator.supervisor import JobSpec, OrchestrationSupervisor
+
+    effects: list[str] = []
+
+    async def effect(spec: JobSpec) -> dict:
+        """Record the provider boundary without external I/O."""
+        effects.append(spec.prompt)
+        return {"ok": True}
+
+    first = JobSpec(job_id="job-a", session_id="session-a", prompt="review")
+    second = first.model_copy(update={field: "different"})
+    supervisor = OrchestrationSupervisor(tmp_path)
+    asyncio.run(supervisor._guarded_worker(first, first, "echo", effect))
+    with pytest.raises(DuplicateDispatch):
+        asyncio.run(supervisor._guarded_worker(second, second, "echo", effect))
+    assert effects == ["review"]
+
+
+def test_openai_provider_uses_model_planner(tmp_path: Path) -> None:
+    """Direct provider names cannot bypass canonical approval requirements."""
+    from orchestrator.dispatch_guard import DispatchGuard, DispatchRequest
+
+    async def effect() -> dict:
+        """Fail if an unapproved model reaches its provider."""
+        pytest.fail("unapproved model reached provider")
+
+    with pytest.raises((PermissionError, ValueError)):
+        asyncio.run(DispatchGuard(tmp_path).execute(
+            DispatchRequest("a", "openai", "gpt-6.1-sol", "review", "code", effort="medium", fast=False), effect
+        ))
+
+
+@pytest.mark.skipif(__import__("os").name == "nt", reason="POSIX symlink ownership")
+def test_trusted_symlink_ancestor_is_accepted(tmp_path: Path) -> None:
+    """A root or user owned symlink to a trusted ancestor permits dispatch."""
+    from orchestrator.dispatch_guard import DispatchGuard, DispatchRequest
+
+    target = tmp_path / "target"
+    target.mkdir()
+    link = tmp_path / "link"
+    link.symlink_to(target, target_is_directory=True)
+
+    async def effect() -> dict:
+        """Return a successful result without external I/O."""
+        return {"ok": True}
+
+    assert asyncio.run(DispatchGuard(link / "state").execute(
+        DispatchRequest("a", "echo", "echo", "review", "code"), effect
+    )) == {"ok": True}
+
+
+@pytest.mark.skipif(__import__("os").name == "nt", reason="POSIX symlink ownership")
+def test_symlink_chain_through_writable_parent_is_refused(tmp_path: Path) -> None:
+    """A trusted outer link must not conceal an attacker-writable target parent."""
+    from orchestrator.dispatch_guard import DispatchGuard, DispatchRequest
+
+    target = tmp_path / "target"
+    target.mkdir()
+    (target / "state").mkdir()
+    unsafe = tmp_path / "unsafe"
+    unsafe.mkdir()
+    unsafe.chmod(0o777)
+    (unsafe / "bridge").symlink_to(target, target_is_directory=True)
+    outer = tmp_path / "outer"
+    outer.symlink_to(unsafe / "bridge", target_is_directory=True)
+
+    async def effect() -> dict:
+        """Fail if unsafe storage permits a provider effect."""
+        pytest.fail("unsafe symlink chain reached provider")
+
+    with pytest.raises(PermissionError, match="ancestor"):
+        asyncio.run(DispatchGuard(outer / "state").execute(
+            DispatchRequest("a", "echo", "echo", "review", "code"), effect
+        ))
+    assert not (target / "state" / "dispatch_claims.sqlite3").exists()
+
+
 @pytest.mark.parametrize("provider", ["codex", "gemini", "agy"])
 @pytest.mark.parametrize("options", [{"model": "unattested-model"}, {"effort": "high"}, {"fast": False}])
 def test_unattested_cli_model_override_cannot_authorize_effect(tmp_path: Path, provider: str, options: dict) -> None:

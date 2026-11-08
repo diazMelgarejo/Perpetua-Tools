@@ -32,6 +32,7 @@ from orchestrator.gossip_bus import (
 
 @pytest.fixture
 async def bus(tmp_path):
+    """Create an initialized temporary event bus."""
     db = str(tmp_path / "test.db")
     b = GossipBus(db)
     await b.init_db()
@@ -43,25 +44,30 @@ async def bus(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_sanitize_strips_quotes():
+    """Quoted input cannot inject FTS phrase operators."""
     assert '"hello"' not in _sanitize_fts_query('"hello world"')
 
 
 def test_sanitize_strips_colon():
+    """Column-selection punctuation is removed from queries."""
     result = _sanitize_fts_query("event_type:dispatch")
     assert ":" not in result
 
 
 def test_sanitize_lowercases_fts_keywords():
+    """Boolean FTS keywords become ordinary search terms."""
     result = _sanitize_fts_query("hello AND world")
     assert "and" in result
     assert "AND" not in result
 
 
 def test_sanitize_empty_returns_empty():
+    """An empty query remains empty."""
     assert _sanitize_fts_query("") == ""
 
 
 def test_sanitize_preserves_plain_terms():
+    """Ordinary search terms survive sanitization."""
     result = _sanitize_fts_query("blue widget quarterly report")
     assert "blue" in result
     assert "widget" in result
@@ -73,6 +79,7 @@ def test_sanitize_preserves_plain_terms():
 
 @pytest.mark.asyncio
 async def test_search_empty_query_returns_empty(bus):
+    """An empty search does not return stored events."""
     await bus.emit("dispatch", {"prompt": "hello world"})
     result = await bus.search("")
     assert result == []
@@ -80,6 +87,7 @@ async def test_search_empty_query_returns_empty(bus):
 
 @pytest.mark.asyncio
 async def test_search_finds_exact_payload_keyword(bus):
+    """Indexed payload terms find the matching event."""
     # Use non-sensitive keys — prompts are redacted before durable FTS store.
     await bus.emit("dispatch", {"intent": "find the blue widget"})
     await bus.emit("route", {"intent": "unrelated thing"})
@@ -91,6 +99,7 @@ async def test_search_finds_exact_payload_keyword(bus):
 
 @pytest.mark.asyncio
 async def test_search_filters_by_event_type(bus):
+    """Search results respect the requested event type."""
     await bus.emit("dispatch", {"intent": "run the calculation"})
     await bus.emit("error", {"detail": "run the calculation", "error": "timeout"})
     hits = await bus.search("run the calculation", event_type="error")
@@ -101,6 +110,7 @@ async def test_search_filters_by_event_type(bus):
 
 @pytest.mark.asyncio
 async def test_search_returns_empty_for_no_match(bus):
+    """Unmatched terms return no events."""
     await bus.emit("dispatch", {"prompt": "completely different content"})
     hits = await bus.search("xyzzy_no_match_ever")
     assert hits == []
@@ -190,6 +200,7 @@ def test_default_resolution_converges_across_worktrees(
 def test_default_resolution_anchors_bare_repo_state_at_common_dir(
     isolated_env, monkeypatch, tmp_path
 ):
+    """A bare repository stores shared state at its common Git directory."""
     bare_repo = tmp_path / "bare-repo"
     subprocess.run(["git", "init", "--bare", "-q", str(bare_repo)], check=True)
     monkeypatch.chdir(bare_repo)
@@ -202,6 +213,7 @@ def test_default_resolution_anchors_bare_repo_state_at_common_dir(
 def test_default_resolution_anchors_external_git_dir_at_common_dir(
     isolated_env, monkeypatch, tmp_path
 ):
+    """An external Git directory anchors the shared state path."""
     external_git_dir = tmp_path / "external-git-dir"
     subprocess.run(
         ["git", "init", "--bare", "-q", str(external_git_dir)], check=True
@@ -217,17 +229,19 @@ def test_default_resolution_anchors_external_git_dir_at_common_dir(
 def test_default_resolution_decodes_git_common_dir_as_utf8(
     isolated_env, monkeypatch, tmp_path
 ):
+    """Git common-directory output is decoded as UTF-8."""
     checkout = tmp_path / "r\u00e9sum\u00e9"
     common_dir = checkout / ".git"
     common_dir.mkdir(parents=True)
 
     def fake_check_output(command, **kwargs):
+        """Check the Git invocation and return a non-ASCII path."""
         assert command == ["git", "rev-parse", "--git-common-dir"]
         assert kwargs["text"] is True
         assert kwargs["encoding"] == "utf-8"
         return str(common_dir)
 
-    monkeypatch.setattr("orchestrator.gossip_bus.subprocess.check_output", fake_check_output)
+    monkeypatch.setattr("orchestrator.state_dir.subprocess.check_output", fake_check_output)
 
     assert resolve_gossip_db_path() == str(
         (checkout / ".state" / "perpetua_core.db").resolve()
@@ -300,6 +314,7 @@ async def test_embed_failure_marks_row_failed(tmp_path):
     await bus.init_db()
 
     async def _fail_embed(text: str):
+        """Simulate an unavailable embedding service."""
         raise ConnectionError("Ollama unreachable")
 
     with patch("orchestrator.memory_embed.get_embedding", side_effect=_fail_embed):
@@ -337,6 +352,7 @@ async def test_pending_embeds_set_prevents_gc(tmp_path):
     _pending_embeds.clear()
 
     async def slow_embed(self, row_id, payload):
+        """Keep the embedding task alive long enough to observe it."""
         await asyncio.sleep(0.1)
 
     with patch.object(gossip_mod.GossipBus, "_embed_and_store", slow_embed):
@@ -358,6 +374,7 @@ async def test_cli_shutdown_cancels_and_drains_its_pending_embeddings(tmp_path):
     started = asyncio.Event()
 
     async def blocked_embed(self, row_id, payload):
+        """Hold an embedding open until shutdown cancels it."""
         started.set()
         await asyncio.Event().wait()
 
@@ -384,18 +401,23 @@ async def test_init_db_reraises_non_duplicate_column_operational_error(tmp_path,
     original_connect = bus.connect
 
     class FailingConnection:
+        """Wrap a real connection and inject a migration I/O error."""
         def __init__(self, inner):
+            """Retain the wrapped connection and injection state."""
             self._inner = inner
             self._alter_seen = False
 
         async def __aenter__(self):
+            """Enter the underlying database context."""
             self._db = await self._inner.__aenter__()
             return self
 
         async def __aexit__(self, *args):
+            """Exit the underlying database context."""
             return await self._inner.__aexit__(*args)
 
         async def execute(self, sql, *args):
+            """Fail the first migration and forward other SQL."""
             if sql.startswith("ALTER TABLE gossip ADD COLUMN event_uuid") and not self._alter_seen:
                 self._alter_seen = True
                 import sqlite3
@@ -403,6 +425,7 @@ async def test_init_db_reraises_non_duplicate_column_operational_error(tmp_path,
             return await self._db.execute(sql, *args)
 
         async def commit(self):
+            """Commit through the wrapped connection."""
             return await self._db.commit()
 
     monkeypatch.setattr(bus, "connect", lambda: FailingConnection(original_connect()))
@@ -454,6 +477,7 @@ async def test_insert_event_duplicate_returns_sanitized_legacy_payload(tmp_path)
 
 @pytest.mark.asyncio
 async def test_tail_returns_recent_events_newest_first(bus):
+    """Tail orders the most recently emitted event first."""
     await bus.emit("dispatch", {"prompt": "first"})
     await bus.emit("route", {"intent": "second"})
     rows = await bus.tail(limit=5)

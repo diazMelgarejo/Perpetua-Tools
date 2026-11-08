@@ -1613,8 +1613,14 @@ async def supervisor_cancel_job(job_id: str):
     return body
 
 
+class _ReplayRequest(BaseModel):
+    """Optional fresh dispatch scope for a reconciled replay."""
+
+    dispatch_scope: str | None = Field(default=None, min_length=1, pattern=r".*\S.*")
+
+
 @app.post("/v1/jobs/{job_id}/replay", tags=["supervisor"])
-async def supervisor_replay_job(job_id: str, http_request: Request):
+async def supervisor_replay_job(job_id: str, http_request: Request, body: _ReplayRequest | None = None):
     """
     Replay a completed, failed, or cancelled job by creating a new job with a fresh job_id.
     
@@ -1643,6 +1649,7 @@ async def supervisor_replay_job(job_id: str, http_request: Request):
             job_id,
             overrides={
                 "authenticated_lane": authenticated_control_plane_lane(http_request),
+                **({"dispatch_scope": body.dispatch_scope} if body and body.dispatch_scope is not None else {}),
             },
         )
         return {"original_job_id": job_id, "new_job_id": new_id, "state": JobStatus.QUEUED.value}

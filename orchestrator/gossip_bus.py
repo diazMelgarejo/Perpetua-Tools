@@ -6,46 +6,12 @@ import json
 import os
 import re
 import sqlite3
-import subprocess
 import uuid
 from pathlib import Path
 from typing import Literal, Optional
 
 import aiosqlite
-
-
-def _canonical_repo_state_dir() -> Optional[Path]:
-    """Resolve ``.state`` relative to the repo root shared by every worktree.
-
-    ``git rev-parse --git-common-dir`` returns the same path regardless of
-    which worktree of a repo you're standing in, so every worktree converges
-    on one ``.state/`` instead of each growing its own fragmented copy. A
-    conventional checkout uses ``<repo>/.git`` as that common directory, but
-    bare and external Git directories are themselves the state anchor.
-    Returns None outside a git repo (e.g. a packaged deployment), where the
-    caller falls back to a plain cwd-relative path.
-    """
-    try:
-        common_dir = subprocess.check_output(
-            ["git", "rev-parse", "--git-common-dir"],
-            text=True,
-            encoding="utf-8",
-            stderr=subprocess.DEVNULL,
-            timeout=5,
-        ).strip()
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
-        return None
-    common_path = Path(common_dir).resolve()
-    state_anchor = common_path.parent if common_path.name == ".git" else common_path
-    return state_anchor / ".state"
-
-
-def resolve_default_state_dir() -> Path:
-    """Return the shared runtime state directory for this repo/worktree layout."""
-    env_dir = os.environ.get("PT_STATE_DIR", "").strip()
-    if env_dir:
-        return Path(env_dir)
-    return _canonical_repo_state_dir() or Path(".state")
+from orchestrator.state_dir import _canonical_repo_state_dir, resolve_default_state_dir
 
 
 def is_default_state_dir_arg(state_dir: Path | str) -> bool:
@@ -66,6 +32,7 @@ class GossipBusError(Exception):
 
 
 def resolve_gossip_db_path(state_dir: Path | str | None = None) -> str:
+    """Choose the explicit gossip database or the shared runtime default."""
     explicit = os.environ.get("GOSSIP_DB_PATH", "").strip()
     if explicit:
         return explicit
@@ -143,6 +110,7 @@ _FTS5_KEYWORDS = {"AND", "OR", "NOT", "NEAR"}
 
 
 def _sanitize_fts_query(query: str) -> str:
+    """Remove FTS operators and neutralize uppercase query keywords."""
     if not query:
         return ""
     cleaned = _FTS5_OPERATOR_RE.sub(" ", query)
@@ -178,6 +146,7 @@ class GossipBus:
     """
 
     def __init__(self, db_path: str | None = None):
+        """Bind the selected database path for lazy initialization."""
         self._db_path = db_path if db_path is not None else resolve_gossip_db_path()
         self._initialized = False
 
@@ -191,6 +160,7 @@ class GossipBus:
         return aiosqlite.connect(self._db_path)
 
     async def init_db(self) -> None:
+        """Create or migrate the event and search schema idempotently."""
         try:
             async with self.connect() as db:
                 await db.execute(_CREATE_TABLE)
@@ -372,6 +342,7 @@ class GossipBus:
     async def tail(
         self, limit: int = 20, event_type: Optional[str] = None
     ) -> list[dict]:
+        """Return recent events, optionally filtered by event type."""
         await self._ensure_initialized()
         try:
             async with self.connect() as db:
@@ -410,6 +381,7 @@ class GossipBus:
         limit: int = 10,
         event_type: Optional[str] = None,
     ) -> list[dict]:
+        """Search indexed event payloads using a sanitized query."""
         await self._ensure_initialized()
         safe_query = _sanitize_fts_query(query)
         if not safe_query:
@@ -449,6 +421,7 @@ class GossipBus:
             return []
 
     async def _embed_and_store(self, row_id: int, payload: dict) -> None:
+        """Embed an event and record whether its vector was stored."""
         try:
             from orchestrator.memory_embed import get_embedding
             from orchestrator.memory_store import get_lance_store
@@ -462,6 +435,7 @@ class GossipBus:
             await self._update_embed_status(row_id, "failed")
 
     async def _update_embed_status(self, row_id: int, status: str) -> None:
+        """Persist the embedding status for one event."""
         async with self.connect() as db:
             await db.execute(
                 "UPDATE gossip SET embed_status = ? WHERE id = ?",

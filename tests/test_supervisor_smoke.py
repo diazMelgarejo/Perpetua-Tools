@@ -1326,6 +1326,27 @@ def test_try_skill_envelope_returns_none_when_no_task_type():
 # ── replay() preserves task_type ─────────────────────────────────────────────
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("new_scope,expected", [(None, "original"), ("reconciled", "reconciled")])
+async def test_replay_scope_is_preserved_or_replaced(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, new_scope: str | None, expected: str) -> None:
+    """Replay persists the original claim scope unless an operator supplies another."""
+    sup = _make_sup(tmp_path)
+    spec = JobSpec(job_id=_new_id(), prompt="review", metadata={"dispatch_scope": "original", "other": "kept"})
+    _append_event(tmp_path / "jobs.jsonl", spec.job_id, {"status": JobStatus.QUEUED.value, "spec": spec.model_dump()})
+    _append_event(tmp_path / "jobs.jsonl", spec.job_id, {"status": JobStatus.FAILED.value})
+    captured = []
+
+    async def submit(replayed: JobSpec) -> str:
+        """Capture the actual replay specification before execution."""
+        captured.append(replayed)
+        return replayed.job_id
+
+    monkeypatch.setattr(sup, "submit_job", submit)
+    overrides = {"dispatch_scope": new_scope} if new_scope is not None else None
+    await sup.replay(spec.job_id, overrides)
+    assert captured[0].metadata["dispatch_scope"] == expected
+    assert captured[0].metadata["other"] == "kept"
+
+@pytest.mark.asyncio
 async def test_replay_preserves_task_type(tmp_path):
     """replay() must carry task_type forward so retried skill-mapped jobs route correctly."""
     sup = _make_sup(tmp_path)
