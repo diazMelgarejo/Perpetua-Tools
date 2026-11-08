@@ -99,6 +99,30 @@ google:
     launch_id: gemini-3.8-flash
     effort: medium
     fast: false
+  controller:
+    launch_id: gemini-3.5-flash-lite
+    effort: medium
+    fast: false
+  fallback:
+    launch_id: gemini-flash-latest
+    effort: medium
+    fast: false
+  planning:
+    launch_id: gemini-pro-latest
+    effort: medium
+    allowed_efforts: [medium, high]
+    fast: false
+  gated:
+    gemini-pro-latest:
+      effort: medium
+      allowed_efforts: [medium, high]
+      fast: false
+      requires: escalation_token
+    gemini-4-argon:
+      effort: medium
+      requires:
+        - escalation_token
+        - budget_cap
 
 # ClinePass subscription provider (harness path: cline_pass).
 # Official lineup and model ids: https://docs.cline.bot/getting-started/clinepass
