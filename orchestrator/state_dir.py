@@ -20,6 +20,7 @@ def _canonical_repo_state_dir(root: Path | None = None) -> Path | None:
     repo_root = root if root is not None else PT_ROOT
     if _is_installed_package(Path(__file__).resolve()) or _is_installed_package(repo_root):
         return None
+    git_env = {key: value for key, value in os.environ.items() if not key.upper().startswith("GIT_")}
     try:
         output = subprocess.check_output(
             ["git", "-C", str(repo_root), "rev-parse", "--git-common-dir", "--is-bare-repository"],
@@ -27,6 +28,7 @@ def _canonical_repo_state_dir(root: Path | None = None) -> Path | None:
             encoding="utf-8",
             stderr=subprocess.DEVNULL,
             timeout=5,
+            env=git_env,
         ).splitlines()
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
         return None
@@ -39,7 +41,13 @@ def _canonical_repo_state_dir(root: Path | None = None) -> Path | None:
         common_path = (repo_root / common_path).resolve()
     else:
         common_path = common_path.resolve()
-    state_anchor = common_path if is_bare else common_path.parent
+    if is_bare:
+        state_anchor = common_path
+    elif common_path.name == ".git":
+        state_anchor = common_path.parent
+    else:
+        # A separate Git directory has no reliable backlink to its main checkout.
+        state_anchor = common_path
     return state_anchor / ".state"
 
 

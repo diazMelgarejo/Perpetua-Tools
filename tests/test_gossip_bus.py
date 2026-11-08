@@ -213,21 +213,32 @@ def test_default_resolution_anchors_bare_repo_state_at_common_dir(
     )
 
 
-def test_default_resolution_anchors_external_git_dir_at_common_dir(
+@pytest.mark.parametrize("variable", ["GIT_DIR", "GIT_COMMON_DIR", "GIT_WORK_TREE"])
+def test_inherited_git_location_cannot_redirect_state(
+    isolated_env, bare_repo_with_worktree, monkeypatch, tmp_path, variable
+):
+    """Foreign Git context cannot split the dispatch and gossip ledgers."""
+    repo, worktree = bare_repo_with_worktree
+    foreign = tmp_path / "foreign"
+    subprocess.run(["git", "init", "-q", str(foreign)], check=True)
+    value = foreign / ".git" if variable != "GIT_WORK_TREE" else foreign
+    monkeypatch.setenv(variable, str(value))
+    for root in (repo, worktree):
+        monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", root)
+        assert resolve_gossip_db_path() == str((repo / ".state" / "perpetua_core.db").resolve())
+
+
+def test_separate_git_directory_shares_state_across_worktrees(
     isolated_env, monkeypatch, tmp_path
 ):
-    """An external Git directory anchors the shared state path."""
-    external_git_dir = tmp_path / "external-git-dir"
-    subprocess.run(
-        ["git", "init", "--bare", "-q", str(external_git_dir)], check=True
-    )
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", tmp_path)
-    monkeypatch.setenv("GIT_DIR", str(external_git_dir))
-
-    assert resolve_gossip_db_path() == str(
-        (external_git_dir / ".state" / "perpetua_core.db").resolve()
-    )
+    """A separate Git directory is a stable anchor shared by its worktrees."""
+    repo, git_dir, worktree = (tmp_path / name for name in ("repo", "metadata", "linked"))
+    subprocess.run(["git", "init", "-q", "--separate-git-dir", str(git_dir), str(repo)], check=True)
+    subprocess.run(["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@t.test", "commit", "-q", "--allow-empty", "-m", "init"], check=True)
+    subprocess.run(["git", "-C", str(repo), "worktree", "add", "-q", "-b", "linked", str(worktree)], check=True)
+    for root in (repo, worktree):
+        monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", root)
+        assert resolve_gossip_db_path() == str((git_dir / ".state" / "perpetua_core.db").resolve())
 
 
 def test_default_resolution_installed_package_guard(isolated_env, tmp_path):
