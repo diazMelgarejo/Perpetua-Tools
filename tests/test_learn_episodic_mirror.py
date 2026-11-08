@@ -172,3 +172,18 @@ def test_torn_utf8_history_preserved_and_new_event_exported(tmp_path):
     records, quality = module.read_jsonl(path)
     assert records == [{"new": "event"}]
     assert quality["malformed_lines"] == 1
+
+
+def test_failure_hook_preserves_and_skips_damaged_and_non_object_history(monkeypatch, tmp_path):
+    """Failure hooks continue after torn bytes and valid non-object JSON rows."""
+    sys.path.insert(0, str(Path(__file__).parent.parent / ".agent" / "harness"))
+    from hooks import on_failure as hook
+
+    path = tmp_path / "events.jsonl"
+    original = b'[]\nnull\n{"torn":"\xe2\x82'
+    path.write_bytes(original)
+    monkeypatch.setattr(hook, "EPISODIC", str(path))
+    result = hook.on_failure("review", "check", "failed")
+    data = path.read_bytes()
+    assert data.startswith(original + b"\n")
+    assert json.loads(data.splitlines()[-1])["result"] == result["result"] == "failure"
