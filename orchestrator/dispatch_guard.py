@@ -28,6 +28,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Awaitable, Callable
 
+from perpetua_tools.model_governance import EscalationProof
+
 
 class DuplicateDispatch(RuntimeError):
     """An equivalent dispatch already started, including an unknown outcome."""
@@ -67,7 +69,7 @@ class DispatchPolicy:
 
 
 PolicyEvaluator = Callable[[DispatchRequest], DispatchPolicy]
-ApprovalVerifier = Callable[[DispatchRequest], bool]
+ApprovalVerifier = Callable[[DispatchRequest], bool | EscalationProof]
 
 
 class DispatchGuard:
@@ -88,7 +90,9 @@ class DispatchGuard:
     def _authorize(self, request: DispatchRequest) -> None:
         """Reuse canonical frugality/model rules and fail closed on evaluation errors."""
         from .gate import gate_permits, load_frugality_tier_by_name
-        from perpetua_tools.model_governance import LaunchSpec, load_model_governance, plan_launch
+        from perpetua_tools.model_governance import (
+            LaunchSpec, assert_launch_allowed, load_model_governance, plan_launch,
+        )
 
         allowed, reason = gate_permits(
             load_frugality_tier_by_name().get(request.model),
@@ -102,9 +106,15 @@ class DispatchGuard:
             raise PermissionError("banned launch id")
         path = {"codex": "openai", "openai": "openai", "gemini": "google", "gemini-review": "google", "google": "google", "cursor": "cursor_grok_bot", "cursor_grok_bot": "cursor_grok_bot", "claude": "anthropic", "anthropic": "anthropic"}.get(request.provider)
         approval_required = False
+        spec = None
+        budget_required = False
         if path is not None and request.model != "provider-default":
-            plan = plan_launch(LaunchSpec(path, request.model, effort=request.effort, fast=request.fast))
+            spec = LaunchSpec(path, request.model, effort=request.effort, fast=request.fast)
+            plan = plan_launch(spec, config=config)
             approval_required = plan.requires_human_approval
+            row = (config[path].get("gated") or {}).get(request.model) or {}
+            requirements = row.get("requires") or []
+            budget_required = "budget_cap" in ([requirements] if isinstance(requirements, str) else requirements)
         if self.policy is not None:
             decision = self.policy(request)
             if not isinstance(decision, DispatchPolicy):
@@ -113,8 +123,17 @@ class DispatchGuard:
                 raise PermissionError(decision.reason or "runtime dispatch policy denied")
             approval_required = approval_required or decision.requires_operator_approval
         if approval_required:
-            if self.approval_verifier is None or self.approval_verifier(request) is not True:
+            if self.approval_verifier is None:
                 raise PermissionError("operator approval requires a trusted verifier")
+            verified = self.approval_verifier(request)
+            if isinstance(verified, EscalationProof):
+                if spec is None:
+                    raise PermissionError("structured approval requires a known governance path")
+                assert_launch_allowed(spec, proof=verified, config=config, approval_scope=request.scope)
+            elif verified is not True:
+                raise PermissionError("operator approval requires a trusted verifier")
+            elif budget_required:
+                raise PermissionError("approved budget requires a trusted structured proof")
 
     def _connect(self) -> sqlite3.Connection:
         """Open private durable state, refusing symlinks and unsafe database files."""

@@ -157,6 +157,7 @@ def plan_launch(
     policy = cfg[provider]
     planning = policy.get("planning") or {}
     controller = policy.get("controller") or {}
+    stable_fallback = (policy.get("fallback") or {}) if provider == "google" else {}
     is_planning_model = spec.launch_id == planning.get("launch_id")
     gated = (policy.get("gated") or {}).get(spec.launch_id)
     if is_planning_model or spec.launch_id == controller.get("launch_id"):
@@ -167,6 +168,8 @@ def plan_launch(
         _assert_gated_params(spec, {**row, "effort": _named_effort(spec)})
     elif gated is not None:
         _assert_gated_params(spec, gated)
+    elif stable_fallback and spec.launch_id == stable_fallback.get("launch_id"):
+        _assert_gated_params(spec, stable_fallback)
     elif provider in ("openai", "google"):
         if spec.launch_id != policy["default"]["launch_id"]:
             raise ModelGovernanceError("unlisted role model")
@@ -175,7 +178,7 @@ def plan_launch(
         assert_launch_allowed(spec, config=cfg)
     needs_approval = mode == "ultracode" or (
         is_planning_model and task_kind != "planning"
-    ) or (gated is not None and not is_planning_model)
+    ) or (gated is not None and (provider == "google" or not is_planning_model))
     if not needs_approval:
         return LaunchPlan(spec, spec, False, "planning" if is_planning_model else "allowed")
     fallback = replace(default_launch(provider, config=cfg), path=spec.path)
@@ -328,6 +331,14 @@ def assert_launch_allowed(
             spec, proof, now=now, approval_scope=approval_scope
         ):
             raise ModelGovernanceError("cloud escalation default-deny: escalation token required")
+        row = (cfg[spec.path].get("gated") or {}).get(spec.launch_id) or {}
+        requirements = row.get("requires") or []
+        if isinstance(requirements, str):
+            requirements = [requirements]
+        if "budget_cap" in requirements and not (
+            proof and isinstance(proof.budget_cap, str) and proof.budget_cap.strip()
+        ):
+            raise ModelGovernanceError("cloud escalation default-deny: approved budget cap required")
         return
     if spec.path in ("anthropic", "cursor_grok_bot"):
         policy = cfg["anthropic"]
@@ -422,12 +433,12 @@ def _assert_cline_pass_launch(spec: LaunchSpec, *, cfg: Mapping[str, Any]) -> No
     if spec.launch_id == str(default["launch_id"]):
         _assert_gated_params(spec, default)
         return
-    if spec.fast is True:
-        raise ModelGovernanceError(
-            "fast mode requires an operator request plus a real escalation token"
-        )
     for row in policy.get("allowed_ungated") or []:
         if str(row["launch_id"]) == spec.launch_id:
+            if spec.fast is True:
+                raise ModelGovernanceError(
+                    "fast mode is unsupported for non-default ClinePass models"
+                )
             _assert_gated_params(spec, row)
             return
     raise ModelGovernanceError("unlisted ClinePass model")

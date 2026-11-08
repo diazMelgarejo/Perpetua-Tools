@@ -27,7 +27,7 @@ pytestmark = pytest.mark.unit
         ("openai", "gpt-6-luna", "medium", "execution", "gpt-6-luna", False),
         ("google", "gemini-3.8-flash", "medium", "execution", "gemini-3.8-flash", False),
         ("google", "gemini-3.5-flash-lite", "medium", "execution", "gemini-3.5-flash-lite", False),
-        ("google", "gemini-pro-latest", "medium", "planning", "gemini-pro-latest", False),
+        ("google", "gemini-pro-latest", "medium", "planning", "gemini-3.8-flash", True),
         ("google", "gemini-pro-latest", "medium", "execution", "gemini-3.8-flash", True),
         ("google", "gemini-4-argon", "medium", "execution", "gemini-3.8-flash", True),
         ("anthropic", "claude-haiku-5-5", "medium", "execution", "claude-haiku-5-5", False),

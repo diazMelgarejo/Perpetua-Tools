@@ -94,6 +94,8 @@ openai:
     effort: medium
     fast: false
 
+# Pro planning still requires verified human approval. The vendor policy does
+# not select a transport: dynamic aliases are direct Google, Argon is OpenRouter.
 google:
   default:
     launch_id: gemini-3.8-flash
