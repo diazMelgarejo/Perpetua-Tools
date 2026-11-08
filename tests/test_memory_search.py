@@ -1,6 +1,7 @@
 """Tests for .agent/memory/memory_search.py's index-staleness detection."""
 
 import importlib.util
+import json
 import sqlite3
 import sys
 import time
@@ -38,11 +39,13 @@ def _build_index(mod, filenames):
     """Write a minimal memories table listing exactly `filenames`."""
     with sqlite3.connect(mod.INDEX_PATH) as conn:
         conn.execute("CREATE TABLE memories (filename TEXT, content TEXT)")
+        conn.execute(f"PRAGMA user_version = {mod.INDEX_VERSION}")
         for f in filenames:
             conn.execute("INSERT INTO memories VALUES (?, ?)", (f, ""))
 
 
 def test_needs_rebuild_false_when_index_matches_filesystem(monkeypatch, tmp_path):
+    """An up-to-date index with the same files needs no rebuild."""
     mod, memory_dir = _load_module(monkeypatch, tmp_path)
     (memory_dir / "a.md").write_text("hello", encoding="utf-8")
     _build_index(mod, ["a.md"])
@@ -79,3 +82,33 @@ def test_needs_rebuild_true_when_filesystem_file_never_indexed(monkeypatch, tmp_
     time.sleep(0.01)
     mod.INDEX_PATH.touch()
     assert mod.needs_rebuild() is True
+
+
+def test_search_marks_current_retracted_lesson_and_ignores_old_claim(monkeypatch, tmp_path):
+    """Search labels retractions from current JSONL even when markdown is stale."""
+    mod, memory = _load_module(monkeypatch, tmp_path)
+    semantic = memory / "semantic"
+    semantic.mkdir()
+    rows = [
+        {"id": "lesson_x", "status": "accepted", "claim": "old obsolete guidance nebula"},
+        {"id": "lesson_x", "status": "retracted", "claim": " ".join(["word"] * 50) + " current guidance quasar"},
+    ]
+    (semantic / "lessons.jsonl").write_text("\n".join(json.dumps(row) for row in rows) + "\n")
+    (semantic / "LESSONS.md").write_text("- old obsolete guidance nebula\n- " + rows[-1]["claim"])
+    mod.build_index()
+    results = mod.search_fts5("quasar")
+    assert any("[RETRACTED]" in snippet and "quasar" in snippet for _, snippet in results)
+    assert not mod.search_fts5("nebula")
+
+
+def test_fallback_search_uses_current_structured_lessons(monkeypatch, tmp_path):
+    """Fallback search also labels retracted results and excludes stale markdown."""
+    mod, memory = _load_module(monkeypatch, tmp_path)
+    semantic = memory / "semantic"
+    semantic.mkdir()
+    (semantic / "lessons.jsonl").write_text(
+        json.dumps({"id": "x", "status": "retracted", "claim": "current quasar"}) + "\n"
+    )
+    (semantic / "LESSONS.md").write_text("old nebula")
+    assert any("[RETRACTED]" in snippet for _, snippet in mod.search_fallback("quasar"))
+    assert not mod.search_fallback("nebula")

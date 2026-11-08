@@ -25,8 +25,9 @@ from path_hygiene import sanitize_tracked_path_leaks
 from render_lessons import _append_lesson_unlocked, _locked_jsonl, render_lessons
 
 
-def _audit(path: Path, action: str, detail: str, reviewer: str) -> dict[str, Any]:
+def _audit(path: Path, action: str, detail: str, reviewer: str, *, require_existing: bool = False) -> dict[str, Any]:
     """Reuse a completed audit append if semantic publication previously failed."""
+    match = None
     with episodic_lock(str(path), exclusive=False):
         if path.exists():
             with path.open(encoding="utf-8") as stream:
@@ -35,7 +36,11 @@ def _audit(path: Path, action: str, detail: str, reviewer: str) -> dict[str, Any
                         continue
                     row = json.loads(line)
                     if row.get("action") == action:
-                        return row
+                        match = row
+    if match is not None:
+        return match
+    if require_existing:
+        raise ValueError("correction audit record is missing")
     timestamp = datetime.now(timezone.utc).isoformat()
     return append_jsonl(str(path), {
         "timestamp": timestamp, "skill": "perpetua-memory", "action": action,
@@ -80,6 +85,7 @@ def correct_lesson(
                      and latest.get("rationale") == rationale and latest.get("reviewer") == reviewer
                      and bool(latest.get("correction")))
         if identical:
+            _audit(episodic_path, latest["correction"]["action"], "", reviewer, require_existing=True)
             updated = latest
         else:
             if latest.get("status") not in {"accepted", "provisional", "legacy"}:

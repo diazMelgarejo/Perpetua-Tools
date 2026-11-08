@@ -178,3 +178,61 @@ def test_torn_history_is_preserved_and_refuses_correction(tmp_path: Path, damage
         _correct(semantic, audit)
     assert (semantic / "lessons.jsonl").read_bytes() == semantic_bytes
     assert audit.read_bytes() == audit_bytes
+
+
+def test_matching_audit_followed_by_torn_row_refuses_retry(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A matching audit cannot hide malformed later history on a semantic retry."""
+    semantic, audit, _ = _fixture(tmp_path)
+    module = importlib.import_module("correct_lesson")
+    original = module._append_lesson_unlocked
+
+    def refuse(*args: Any, **kwargs: Any) -> None:
+        """Interrupt after the audit append."""
+        raise OSError("interrupted")
+
+    monkeypatch.setattr(module, "_append_lesson_unlocked", refuse)
+    with pytest.raises(OSError):
+        _correct(semantic, audit)
+    monkeypatch.setattr(module, "_append_lesson_unlocked", original)
+    audit.write_bytes(audit.read_bytes() + b'{"torn":')
+    before = (semantic / "lessons.jsonl").read_bytes(), audit.read_bytes()
+    with pytest.raises(json.JSONDecodeError):
+        _correct(semantic, audit)
+    assert before == ((semantic / "lessons.jsonl").read_bytes(), audit.read_bytes())
+
+
+def test_identical_retry_validates_audit_before_render(tmp_path: Path) -> None:
+    """A retry cannot publish a derived view from a damaged audit history."""
+    semantic, audit, _ = _fixture(tmp_path)
+    _correct(semantic, audit)
+    audit.write_bytes(audit.read_bytes() + b'{"torn":')
+    view = semantic / "LESSONS.md"
+    view.write_text("stale view", encoding="utf-8")
+    with pytest.raises(json.JSONDecodeError):
+        _correct(semantic, audit)
+    assert view.read_text() == "stale view"
+
+
+def test_correction_separates_complete_unterminated_rows(tmp_path: Path) -> None:
+    """Both native appenders preserve the old prefix and separate complete records."""
+    semantic, audit, _ = _fixture(tmp_path)
+    lesson = semantic / "lessons.jsonl"
+    lesson.write_bytes(lesson.read_bytes().rstrip(b"\n"))
+    audit.write_bytes(audit.read_bytes().rstrip(b"\n"))
+    prefixes = lesson.read_bytes(), audit.read_bytes()
+    _correct(semantic, audit)
+    for path, prefix in zip((lesson, audit), prefixes):
+        assert path.read_bytes().startswith(prefix + b"\n")
+        assert len([json.loads(line) for line in path.read_text().splitlines()]) == 2
+
+
+def test_retraction_and_retry_remain_visibly_retracted(tmp_path: Path) -> None:
+    """Retraction remains latest and visible after an identical retry."""
+    semantic, audit, _ = _fixture(tmp_path, "accepted")
+    first = _correct(semantic, audit, status="retracted")
+    semantic_bytes, audit_bytes = (semantic / "lessons.jsonl").read_bytes(), audit.read_bytes()
+    assert _correct(semantic, audit, status="retracted") == first
+    assert (semantic / "lessons.jsonl").read_bytes() == semantic_bytes
+    assert audit.read_bytes() == audit_bytes
+    assert json.loads(semantic_bytes.splitlines()[-1])["status"] == "retracted"
+    assert "~~[RETRACTED]" in (semantic / "LESSONS.md").read_text()

@@ -42,6 +42,7 @@ FEATURES_PATH = MEMORY_DIR / ".features.json"
 MEMORY_SUFFIXES = (".md", ".jsonl")
 CJK_RE = re.compile(r"[\u3400-\u9fff]")
 FALLBACK_TIMEOUT_SECONDS = 10
+INDEX_VERSION = 2
 
 
 def feature_enabled() -> bool:
@@ -80,6 +81,8 @@ def needs_rebuild() -> bool:
         current.add(str(path.relative_to(MEMORY_DIR)))
     try:
         with sqlite3.connect(INDEX_PATH) as conn:
+            if conn.execute("PRAGMA user_version").fetchone()[0] != INDEX_VERSION:
+                return True
             indexed = {row[0] for row in conn.execute("SELECT filename FROM memories")}
     except sqlite3.OperationalError:
         return True
@@ -109,6 +112,25 @@ def _read_jsonl(path: Path) -> str:
     return "\n".join(lines)
 
 
+def _current_lesson_texts(path: Path) -> list[str]:
+    """Return latest structured lesson claims with their explicit lifecycle state."""
+    latest: dict[str, dict] = {}
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        if raw.strip():
+            entry = json.loads(raw)
+            if isinstance(entry, dict) and entry.get("id"):
+                latest[entry["id"]] = entry
+    return [f"[{str(row.get('status', 'unknown')).upper()}] {row.get('claim', '')}"
+            for row in latest.values()]
+
+
+def _lesson_preamble(path: Path) -> str:
+    """Return the hand-curated section preceding the generated lesson view."""
+    content = path.read_text(encoding="utf-8", errors="replace")
+    sentinel = "## Auto-promoted entries will be appended below"
+    return content.split(sentinel, 1)[0] if sentinel in content else ""
+
+
 def build_index() -> int:
     """Rebuild the FTS index and report per-file failures to stderr."""
     INDEX_DIR.mkdir(exist_ok=True)
@@ -121,6 +143,15 @@ def build_index() -> int:
         indexed = 0
         for path in _memory_files():
             try:
+                if path.relative_to(MEMORY_DIR).as_posix() == "semantic/LESSONS.md":
+                    source = path.with_name("lessons.jsonl")
+                    if source.exists():
+                        preamble = _lesson_preamble(path)
+                        for content in [preamble, *_current_lesson_texts(source)]:
+                            conn.execute("INSERT INTO memories VALUES (?, ?)",
+                                         (str(path.relative_to(MEMORY_DIR)), content))
+                        indexed += 1
+                        continue
                 content = (
                     path.read_text(encoding="utf-8", errors="replace")
                     if path.suffix == ".md" else _read_jsonl(path)
@@ -132,6 +163,7 @@ def build_index() -> int:
                 indexed += 1
             except Exception as exc:
                 print(f"warning: failed to index {path}: {exc}", file=sys.stderr)
+        conn.execute(f"PRAGMA user_version = {INDEX_VERSION}")
         conn.commit()
     return indexed
 
@@ -143,7 +175,8 @@ def search_fts5(query: str):
     with sqlite3.connect(INDEX_PATH) as conn:
         try:
             rows = conn.execute(
-                "SELECT filename, snippet(memories, 1, '>>>', '<<<', '...', 30) "
+                "SELECT filename, CASE WHEN filename = 'semantic/LESSONS.md' "
+                "THEN content ELSE snippet(memories, 1, '>>>', '<<<', '...', 30) END "
                 "FROM memories WHERE memories MATCH ? ORDER BY rank",
                 (query,),
             ).fetchall()
@@ -177,12 +210,25 @@ def fallback_tool():
 
 def search_fallback(query: str):
     """Run bounded rg/grep search and degrade to an empty result on timeout."""
-    targets = [str(path) for path in _memory_files()]
+    semantic = MEMORY_DIR / "semantic"
+    source = semantic / "lessons.jsonl"
+    markdown = semantic / "LESSONS.md"
+    structured = source.exists() and markdown.exists()
+    targets = [str(path) for path in _memory_files()
+               if not (structured and path in (source, markdown))]
+    rows = []
+    if structured:
+        preamble = _lesson_preamble(markdown)
+        if query.casefold() in preamble.casefold():
+            rows.append((Path("semantic/LESSONS.md"), preamble))
+        rows.extend((Path("semantic/LESSONS.md"), content)
+                    for content in _current_lesson_texts(source)
+                    if query.casefold() in content.casefold())
     if not targets:
-        return []
+        return rows
     command, _ = _fallback_command(query, targets)
     if not command:
-        return []
+        return rows
     try:
         result = subprocess.run(
             command,
@@ -194,9 +240,8 @@ def search_fallback(query: str):
             check=False,
         )
     except subprocess.TimeoutExpired:
-        return []
+        return rows
     files = [line for line in result.stdout.splitlines() if line]
-    rows = []
     for filename in files:
         try:
             relative = Path(filename).relative_to(MEMORY_DIR)
@@ -239,6 +284,7 @@ def cmd_status():
 
 
 def _refuse_disabled():
+    """Explain the opt-in requirement and exit unsuccessfully."""
     print(
         "memory_search [BETA] is disabled — opt-in only.\n"
         "Enable via onboarding: agentic-stack <harness> --reconfigure",

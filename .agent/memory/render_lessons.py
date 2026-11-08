@@ -84,7 +84,14 @@ def _append_lesson_unlocked(f, lesson):
     Seeks to end first because 'a+' mode tracks position across reads
     and the caller may have read from the head.
     """
+    f.seek(0)
+    history = f.read()
+    for line in history.splitlines():
+        if line.strip():
+            json.loads(line)
     f.seek(0, os.SEEK_END)
+    if history and not history.endswith("\n"):
+        f.write("\n")
     f.write(json.dumps(lesson) + "\n")
     f.flush()
 
@@ -99,6 +106,7 @@ def append_lesson(lesson, semantic_dir):
 
 
 def load_lessons(semantic_dir):
+    """Load valid structured lesson rows from the semantic directory."""
     path = os.path.join(semantic_dir, LESSONS_JSONL)
     if not os.path.exists(path):
         return []
@@ -118,6 +126,7 @@ def load_lessons(semantic_dir):
 
 
 def _bullet_for(lesson, superseded_by):
+    """Render one lesson with its lifecycle and supersession annotations."""
     # A JSON claim may carry paragraph breaks. Markdown bullets and the legacy
     # migration parser are line-oriented, so emitting it verbatim can leave
     # strikethrough delimiters unclosed on the first line and re-import a
@@ -169,6 +178,7 @@ def superseded_by_map(lessons):
 
 
 def _build_auto_section(lessons):
+    """Group structured lessons by month into generated Markdown."""
     superseded_by = superseded_by_map(lessons)
 
     groups = defaultdict(list)
@@ -333,6 +343,7 @@ def render_lessons(semantic_dir):
 
 
 def render_lessons_as_text(semantic_dir):
+    """Render the Markdown file and return its complete text."""
     with open(render_lessons(semantic_dir), encoding="utf-8") as f:
         return f.read()
 

@@ -28,6 +28,7 @@ except ImportError:  # POSIX
 
 
 def _lock_path(path: str) -> str:
+    """Return the stable sidecar lock path for an episodic log."""
     return f"{path}.lock"
 
 
@@ -93,7 +94,14 @@ def append_jsonl(path: str, entry: dict) -> dict:
     payload = (json.dumps(entry) + "\n").encode("utf-8")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with episodic_lock(path, exclusive=True):
-        with open(path, "ab") as stream:
+        with open(path, "a+b") as stream:
+            stream.seek(0)
+            history = stream.read()
+            for line in history.splitlines():
+                if line.strip():
+                    json.loads(line)
+            if history and not history.endswith(b"\n"):
+                stream.write(b"\n")
             stream.write(payload)
             stream.flush()
             os.fsync(stream.fileno())
