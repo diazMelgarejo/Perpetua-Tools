@@ -67,8 +67,9 @@ append-only, provisional/retracted and separate from approval.
    no unauthorized amend, rebase, force-push or publication hiding the problem.
 6. Publish each repository once for this batch, PT first so its immutable object is
    reachable before Orama CI. Reuse the two PRs. Reply in every bot inline thread
-   with `@BotName we fixed this in commit FULL_SHA`, plus evidence and any bounded
-   disagreement. Report review-level nitpicks separately when no inline root exists.
+   with the verified disposition: identify the fixing commit for a fix, or explain
+   why a finding was withdrawn, already fixed, or deferred. Include evidence and any
+   bounded disagreement. Report review-level nitpicks separately when no inline root exists.
 7. Recheck exact-head CI and new review feedback. Do not merge red or pending work.
    Source success does not activate serving or close host qualification.
 

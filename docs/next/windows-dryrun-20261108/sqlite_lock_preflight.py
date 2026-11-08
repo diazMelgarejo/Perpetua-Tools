@@ -125,6 +125,7 @@ def run(output: Path) -> int:
             print(f'preflight receipt write failed: {exc}', file=sys.stderr)
             result['status'] = 'FAIL'
             result['receipt_write_error'] = f'{type(exc).__name__}: {exc}'
+            print(json.dumps(result, ensure_ascii=True, sort_keys=True), file=sys.stderr)
     print(result.get('status'))
     return 0 if (result.get('status') == 'PASS' and receipt_written) else 1
 

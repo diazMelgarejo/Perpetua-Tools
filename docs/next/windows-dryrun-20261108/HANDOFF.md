@@ -176,7 +176,9 @@ Change directory to the reviewed Oramasys checkout root before running pytest, u
 interpreter, and repeat the strict-mode and path validation above in each shell:
 
 ```powershell
-Set-Location $ReviewedOramasysRoot
+$ReviewedOramasysRoot = Read-Host 'Reviewed Oramasys checkout root'
+if (-not (Test-Path -LiteralPath $ReviewedOramasysRoot -PathType Container)) { throw 'Invalid reviewed checkout root' }
+Set-Location -LiteralPath $ReviewedOramasysRoot
 $env:PYTHONPATH = 'src'
 & $ServingPython -m pytest -q tests/windows/test_private_store_native.py
 if ($LASTEXITCODE -ne 0) { throw 'Native security verification failed' }

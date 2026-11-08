@@ -1,6 +1,7 @@
 """Self-tests for the experimental preflight using disposable temporary paths."""
 import importlib.util
 import io
+from contextlib import redirect_stderr, redirect_stdout
 import json
 from pathlib import Path
 import subprocess
@@ -136,8 +137,12 @@ class PreflightTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as parent:
             output = Path(parent) / 'receipt-failure'
-            with mock.patch.object(Path, 'open', open_with_receipt_failure):
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with mock.patch.object(Path, 'open', open_with_receipt_failure), redirect_stdout(stdout), redirect_stderr(stderr):
                 self.assertEqual(module.run(output), 1)
+            self.assertIn('FAIL', stdout.getvalue())
+            self.assertIn('disk full', stderr.getvalue())
+            self.assertIn('"receipt_write_error"', stderr.getvalue())
 
 
 if __name__ == '__main__':
