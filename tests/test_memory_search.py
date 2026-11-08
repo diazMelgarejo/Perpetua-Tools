@@ -139,12 +139,14 @@ def test_fallback_to_legacy_bullets_when_lessons_jsonl_empty(monkeypatch, tmp_pa
     (semantic / "lessons.jsonl").write_text("", encoding="utf-8")
     (semantic / "LESSONS.md").write_text("- legacy guidance about starlight\n- legacy rule about photons\n", encoding="utf-8")
 
-    mod.build_index()
-    fts_results = mod.search_fts5("starlight")
-    assert any("starlight" in snippet for _, snippet in fts_results)
-
+    monkeypatch.setattr(mod, "_fallback_command", lambda query, targets: (["fake-search", query, *targets], "stub"))
+    monkeypatch.setattr(mod.subprocess, "run", lambda command, **kwargs: type("Result", (), {"stdout": str(semantic / "LESSONS.md")})())
     fallback_results = mod.search_fallback("photons")
     assert any("photons" in snippet or "LESSONS.md" in str(fn) for fn, snippet in fallback_results)
+
+    if mod.check_fts5():
+        mod.build_index()
+        assert any("starlight" in snippet for _, snippet in mod.search_fts5("starlight"))
 
 
 def test_status_counts_distinct_filenames(monkeypatch, tmp_path, capsys):
@@ -185,7 +187,55 @@ def test_preamble_matches_return_snippet_and_structured_rows_return_full_claim(m
     preamble_res = [snippet for fn, snippet in results if not snippet.startswith("[ACCEPTED]")]
     structured_res = [snippet for fn, snippet in results if snippet.startswith("[ACCEPTED]")]
     assert len(structured_res) == 1
-    assert "claim details claim details" in structured_res[0]
+    assert structured_res[0] == "[ACCEPTED] " + rows[0]["claim"]
+    assert len(preamble_res) == 1 and "galaxy" in preamble_res[0]
+    assert len(preamble_res[0]) < len(long_preamble.split("## Auto-promoted")[0])
+
+
+def test_malformed_ids_and_superseded_lessons(monkeypatch, tmp_path):
+    """Malformed identifiers are skipped and accepted replacements label prior claims."""
+    mod, memory = _load_module(monkeypatch, tmp_path)
+    semantic = memory / "semantic"
+    semantic.mkdir()
+    rows = [{"id": [], "claim": "bad"}, {"id": {"bad": 1}, "claim": "bad"},
+            {"id": "old", "status": "accepted", "claim": "older quasar"},
+            {"id": "new", "status": "accepted", "claim": "newer quasar", "supersedes": "old"}]
+    (semantic / "lessons.jsonl").write_text("\n".join(map(json.dumps, rows)), encoding="utf-8")
+    (semantic / "LESSONS.md").write_text("## Auto-promoted entries will be appended below\n", encoding="utf-8")
+    assert {text for _, text in mod.search_fallback("quasar")} == {"[SUPERSEDED] older quasar", "[ACCEPTED] newer quasar"}
+    if mod.check_fts5():
+        mod.build_index()
+        assert {text for _, text in mod.search_fts5("quasar")} == {"[SUPERSEDED] older quasar", "[ACCEPTED] newer quasar"}
+
+
+def test_unicode_fallback_preserves_query_and_snippet_offsets(monkeypatch, tmp_path):
+    """Search commands receive original terms and snippets account for casefold expansion."""
+    mod, memory = _load_module(monkeypatch, tmp_path)
+    (memory / "other.md").write_text("Straße", encoding="utf-8")
+    captured = []
+    monkeypatch.setattr(mod, "_fallback_command", lambda query, targets: (captured.append(query) or ["fake"], "stub"))
+    monkeypatch.setattr(mod.subprocess, "run", lambda *args, **kwargs: type("Result", (), {"stdout": str(memory / "other.md")})())
+    assert mod.search_fallback("Straße")
+    assert captured == ["Straße"]
+    assert "needle" in mod._make_snippet("ß" * 300 + "needle", "needle", window=50)
+
+
+def test_bad_lesson_insert_does_not_rollback_prior_documents(monkeypatch, tmp_path):
+    """A bad lesson row cannot roll back unrelated indexed files."""
+    mod, memory = _load_module(monkeypatch, tmp_path)
+    if not mod.check_fts5():
+        pytest.skip("SQLite FTS5 unavailable")
+    other = memory / "other.md"
+    other.write_text("independent comet", encoding="utf-8")
+    semantic = memory / "semantic"
+    semantic.mkdir()
+    lessons = semantic / "LESSONS.md"
+    lessons.write_text("preamble", encoding="utf-8")
+    (semantic / "lessons.jsonl").write_text(json.dumps({"id": "bad", "claim": "\ud800"}), encoding="utf-8")
+    monkeypatch.setattr(mod, "_memory_files", lambda: iter([other, lessons]))
+    assert mod.build_index() == 1
+    with sqlite3.connect(mod.INDEX_PATH) as conn:
+        assert conn.execute("SELECT filename FROM memories").fetchall() == [("other.md",)]
 
 
 def test_fallback_search_matches_non_adjacent_terms(monkeypatch, tmp_path):

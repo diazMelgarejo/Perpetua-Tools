@@ -143,11 +143,32 @@ def test_append_jsonl_survives_malformed_history_lines(tmp_path):
 
     jsonl_file = tmp_path / "test.jsonl"
     jsonl_file.write_text("{\"valid\": 1}\nNOT VALID JSON\n{\"valid\": 2}\n", encoding="utf-8")
+    original = jsonl_file.read_bytes()
 
     entry = {"new": "entry"}
     result = append_jsonl(str(jsonl_file), entry)
     assert result == entry
+    assert jsonl_file.read_bytes().startswith(original)
 
     lines = jsonl_file.read_text(encoding="utf-8").splitlines()
     assert len(lines) == 4
     assert json.loads(lines[-1]) == entry
+
+
+def test_torn_utf8_history_preserved_and_new_event_exported(tmp_path):
+    """Export skips damaged lines while append preserves the original bytes."""
+    sys.path.insert(0, str(Path(__file__).parent.parent / ".agent" / "harness" / "hooks"))
+    from _episodic_io import append_jsonl
+
+    path = tmp_path / "events.jsonl"
+    original = b'{"old": "\xe2\x82'
+    path.write_bytes(original)
+    append_jsonl(str(path), {"new": "event"})
+    assert path.read_bytes().startswith(original + b"\n")
+    module_path = Path(__file__).parent.parent / ".agent" / "tools" / "data_layer_export.py"
+    spec = importlib.util.spec_from_file_location("data_layer_export_test", module_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    records, quality = module.read_jsonl(path)
+    assert records == [{"new": "event"}]
+    assert quality["malformed_lines"] == 1

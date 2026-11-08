@@ -133,14 +133,14 @@ def read_jsonl(path: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         return [], quality
 
     records: list[dict[str, Any]] = []
-    with path.open("r", encoding="utf-8") as f:
+    with path.open("rb") as f:
         for raw in f:
             line = raw.strip()
             if not line:
                 continue
             try:
                 parsed = json.loads(line)
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, UnicodeDecodeError):
                 quality["malformed_lines"] += 1
                 continue
             if isinstance(parsed, dict):
