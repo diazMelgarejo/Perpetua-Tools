@@ -18,14 +18,22 @@ def _is_installed_package(path: Path | None = None) -> bool:
 def _canonical_repo_state_dir(root: Path | None = None) -> Path | None:
     """Find shared Git-worktree state; stop old processes before upgrading.
 
-    Separate-Git-directory layouts keep an existing legacy state directory,
-    use the isolated location for a fresh layout, and refuse ambiguous state.
+    Separate-Git-directory layouts refuse unowned legacy state and use an
+    isolated location only when no legacy directory exists.
     Mixed-version processes cannot safely negotiate a location concurrently.
     """
     repo_root = root if root is not None else PT_ROOT
     if _is_installed_package(Path(__file__).resolve()) or _is_installed_package(repo_root):
         return None
+    if not repo_root.is_dir():
+        raise RuntimeError("state authority: source root is unavailable; set PT_STATE_DIR explicitly")
+    has_checkout = (repo_root / ".git").exists() or (repo_root / ".git").is_symlink()
+    has_bare_markers = (repo_root / "HEAD").exists() and (repo_root / "objects").is_dir()
+    if not has_checkout and not has_bare_markers:
+        return None  # Source archive, not a Git checkout.
     git_env = {key: value for key, value in os.environ.items() if not key.upper().startswith("GIT_")}
+    git_env["GIT_CONFIG_NOSYSTEM"] = "1"
+    git_env["GIT_CONFIG_GLOBAL"] = os.devnull
     try:
         output = subprocess.check_output(
             ["git", "-C", str(repo_root), "rev-parse", "--git-common-dir", "--is-bare-repository"],
@@ -35,12 +43,23 @@ def _canonical_repo_state_dir(root: Path | None = None) -> Path | None:
             timeout=5,
             env=git_env,
         ).splitlines()
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
-        return None
-    if len(output) < 2:
-        return None
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+        raise RuntimeError("state authority: Git discovery failed; set PT_STATE_DIR explicitly") from exc
+    if len(output) != 2 or not output[0].strip() or output[1].strip() not in ("true", "false"):
+        raise RuntimeError("state authority: malformed Git discovery; set PT_STATE_DIR explicitly")
     common_dir = output[0].strip()
     is_bare = output[1].strip().lower() == "true"
+    if not is_bare:
+        try:
+            top = subprocess.check_output(
+                ["git", "-C", str(repo_root), "rev-parse", "--show-toplevel"],
+                text=True, encoding="utf-8", stderr=subprocess.DEVNULL,
+                timeout=5, env=git_env,
+            ).strip()
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+            raise RuntimeError("state authority: Git root discovery failed; set PT_STATE_DIR explicitly") from exc
+        if not top or Path(top).resolve() != repo_root.resolve():
+            raise RuntimeError("state authority: Git root mismatch; set PT_STATE_DIR explicitly")
     common_path = Path(common_dir)
     if not common_path.is_absolute():
         common_path = (repo_root / common_path).resolve()
@@ -52,13 +71,11 @@ def _canonical_repo_state_dir(root: Path | None = None) -> Path | None:
         return common_path.parent / ".state"
     legacy_state = common_path.parent / ".state"
     isolated_state = common_path / ".state"
-    if legacy_state.exists():
-        if isolated_state.exists():
-            raise RuntimeError(
-                "ambiguous separate-Git-directory state: both legacy and isolated "
-                "directories exist; stop and reconcile them before dispatch"
-            )
-        return legacy_state
+    if legacy_state.exists() or legacy_state.is_symlink():
+        raise RuntimeError(
+            "ambiguous separate-Git-directory state: legacy ownership is unverified; "
+            "stop dispatch, review the ledgers, and set PT_STATE_DIR explicitly"
+        )
     return isolated_state
 
 

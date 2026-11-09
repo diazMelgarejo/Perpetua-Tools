@@ -282,7 +282,7 @@ def test_default_resolution_ignores_inherited_git_common_dir(
     )
 
 
-def test_separate_git_dir_retains_legacy_ledger_across_worktrees(
+def test_separate_git_dir_requires_authority_for_legacy_ledger(
     isolated_env, monkeypatch, tmp_path
 ):
     """A separate Git directory must not silently abandon an existing ledger."""
@@ -296,9 +296,39 @@ def test_separate_git_dir_retains_legacy_ledger_across_worktrees(
     legacy_state = git_dir.parent / ".state"
     legacy_state.mkdir()
     monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", checkout)
-    assert resolve_gossip_db_path() == str((legacy_state / "perpetua_core.db").resolve())
+    with pytest.raises(RuntimeError, match="legacy ownership is unverified"):
+        resolve_gossip_db_path()
     monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", linked)
+    with pytest.raises(RuntimeError, match="legacy ownership is unverified"):
+        resolve_gossip_db_path()
+    monkeypatch.setenv("PT_STATE_DIR", str(legacy_state))
     assert resolve_gossip_db_path() == str((legacy_state / "perpetua_core.db").resolve())
+
+
+def test_failed_real_git_discovery_never_falls_back(isolated_env, monkeypatch, tmp_path):
+    """A damaged Git pointer cannot create a checkout-local second ledger."""
+    checkout = tmp_path / "checkout"
+    checkout.mkdir()
+    (checkout / ".git").write_text("gitdir: /nonexistent-invalid-pt-gitdir\n")
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", checkout)
+    with pytest.raises(RuntimeError, match="Git discovery failed"):
+        resolve_gossip_db_path()
+    assert not (checkout / ".state").exists()
+
+
+def test_sibling_external_git_dirs_refuse_foreign_legacy(isolated_env, monkeypatch, tmp_path):
+    """A shared parent ledger cannot establish either sibling's ownership."""
+    metadata = tmp_path / "metadata"
+    metadata.mkdir()
+    (metadata / ".state").mkdir()
+    for name in ("one", "two"):
+        checkout = tmp_path / name
+        git_dir = metadata / name
+        subprocess.run(["git", "init", "-q", "--separate-git-dir", str(git_dir), str(checkout)], check=True)
+        monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", checkout)
+        with pytest.raises(RuntimeError, match="legacy ownership is unverified"):
+            resolve_gossip_db_path()
+        assert not (git_dir / ".state").exists()
 
 
 def test_separate_git_dir_uses_isolated_state_without_legacy(
@@ -359,9 +389,12 @@ def test_default_resolution_decodes_git_common_dir_as_utf8(
 
     def fake_check_output(command, **kwargs):
         """Check the Git invocation and return a non-ASCII path."""
-        assert command == ["git", "-C", str(checkout), "rev-parse", "--git-common-dir", "--is-bare-repository"]
+        assert command[:4] == ["git", "-C", str(checkout), "rev-parse"]
         assert kwargs["text"] is True
         assert kwargs["encoding"] == "utf-8"
+        if command[4:] == ["--show-toplevel"]:
+            return str(checkout)
+        assert command[4:] == ["--git-common-dir", "--is-bare-repository"]
         return f"{common_dir}\nfalse"
 
     monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", checkout)
