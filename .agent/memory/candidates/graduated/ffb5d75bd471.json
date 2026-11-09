@@ -1,0 +1,38 @@
+{
+  "id": "ffb5d75bd471",
+  "key": "manual_ffb5d7",
+  "name": "manual_ffb5d7",
+  "claim": "A Haiku inbox-messenger's 'new files' report is only as good as the known-names snapshot it is given: build the snapshot with the same filter the tool lists with (include already-read files), or it reports old files as new. Treat messenger output as data, verify against the inbox before acting. Also keep three W2 labels distinct in peer messages: W2-plan (retained authority and verified composition), W2-phylax-lock (Windows file-lock layer for Phylax, already on Phylax main), W2-backend-lock (single-owner lock for the local model backend used by the autoresearcher script).",
+  "conditions": [
+    "messenger inbox snapshot false-positive w2 labels"
+  ],
+  "evidence_ids": [
+    "2026-11-09T21:26:57.389485+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T21:26:57.389485+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-09T21:26:57.389485+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T21:26:57.497914+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-10: a snapshot filter mismatch produced a false '2 new messages'; the W2 label mix-up caused a duplicate design scope until disambiguated.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-09T21:26:57.389485+00:00"
+      ],
+      "lessons_sha": "2b75b9f0f1ff"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T21:26:57.497908+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-10: a snapshot filter mismatch produced a false '2 new messages'; the W2 label mix-up caused a duplicate design scope until disambiguated."
+}

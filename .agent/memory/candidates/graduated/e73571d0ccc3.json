@@ -1,0 +1,38 @@
+{
+  "id": "e73571d0ccc3",
+  "key": "manual_e73571",
+  "name": "manual_e73571",
+  "claim": "On a Mac with nvm, the Cline CLI can live under a non-default Node version tree and be absent from PATH, so a shell-based 'which cline' wrongly reports it uninstalled (this session wrongly told a peer it was not installed). Check ps and the nvm versions trees before claiming absence; fix by symlinking the binary into ~/.local/bin, which both PATH and the controller's discovery check. scripts/cline_autoresearcher.py _find_cline does not search nvm trees, so before the symlink the Mac ClinePass fallback failed closed as 'Cline unavailable'.",
+  "conditions": [
+    "cline nvm PATH symlink discovery not-installed"
+  ],
+  "evidence_ids": [
+    "2026-11-09T21:26:56.838198+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T21:26:56.838198+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-09T21:26:56.838198+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T21:26:56.946247+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Observed 2026-11-10: binary under Node v24 tree, default Node v22; cline_available() False before the symlink, True after.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-09T21:26:56.838198+00:00"
+      ],
+      "lessons_sha": "3a5ae8e753e1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T21:26:56.946242+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Observed 2026-11-10: binary under Node v24 tree, default Node v22; cline_available() False before the symlink, True after."
+}

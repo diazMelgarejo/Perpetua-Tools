@@ -1,0 +1,42 @@
+{
+  "id": "2888c40b9639",
+  "key": "manual_2888c4",
+  "name": "manual_2888c4",
+  "claim": "CORRECTION 2026-11-10 (refines lesson_89a0c586318d): the CURRENT ClinePass default coding model is cline-pass/glm-5.3-flash (GLM-5.3-Flash, 1M context), live-probed with provider id cline-pass; cline-pass/glm-5.2 and cline-pass/deepseek-v4-flash are retired. cline-pass/deepseek-v4.1-flash-1017 also works but is the separate DeepSeek fan-out lane, not the default. Always pass -P cline-pass (the clinepass id is disabled in the CLI).",
+  "conditions": [
+    "cline",
+    "cline-pass",
+    "default",
+    "glm-5.3-flash",
+    "slug"
+  ],
+  "evidence_ids": [
+    "2026-11-09T21:25:38.168263+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T21:25:38.168263+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-09T21:25:38.168263+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T21:25:38.279000+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Operator named GLM 5.3 Flash as current; live probe 2026-11-10 on CLI 3.0.74 returned PROBE-OK from GLM-5.3-Flash, totalCost 0; deepseek-v4.1-flash-1017 probe also passed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-09T21:25:38.168263+00:00"
+      ],
+      "lessons_sha": "80e4ee5c0b50"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T21:25:38.278995+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Operator named GLM 5.3 Flash as current; live probe 2026-11-10 on CLI 3.0.74 returned PROBE-OK from GLM-5.3-Flash, totalCost 0; deepseek-v4.1-flash-1017 probe also passed."
+}

@@ -1,0 +1,38 @@
+{
+  "id": "00a9e37e5957",
+  "key": "manual_00a9e3",
+  "name": "manual_00a9e3",
+  "claim": "ClinePass model roster as of 2026-11-10 (live-probed, CLI 3.0.74, provider id cline-pass): CURRENT default coding model cline-pass/glm-5.3-flash; separate DeepSeek fan-out lane cline-pass/deepseek-v4.1-flash-1017; RETIRED (model not found): cline-pass/glm-5.2, cline-pass/deepseek-v4-flash, and per the orama clinepass-deepseek-flash card Kimi K2.6 and Kimi K2.7 Code. The provider id clinepass is disabled in the CLI; use cline-pass. Re-probe before trusting any slug from memory, since slugs rotate.",
+  "conditions": [
+    "cline clinepass roster slug model retired"
+  ],
+  "evidence_ids": [
+    "2026-11-09T21:26:56.654905+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T21:26:56.654905+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-09T21:26:56.654905+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T21:26:56.762918+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Both working slugs returned PROBE-OK at totalCost 0; glm-5.2 returned model not found on the same day.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-09T21:26:56.654905+00:00"
+      ],
+      "lessons_sha": "aa8ddf7eebfc"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T21:26:56.762904+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Both working slugs returned PROBE-OK at totalCost 0; glm-5.2 returned model not found on the same day."
+}
