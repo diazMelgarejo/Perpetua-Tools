@@ -148,18 +148,19 @@ def read_jsonl(path: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     records: list[dict[str, Any]] = []
     with path.open("rb") as f:
         for raw in f:
-            line = raw.strip()
-            if not line:
-                continue
-            try:
-                parsed = json.loads(line)
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                quality["malformed_lines"] += 1
-                continue
-            if isinstance(parsed, dict):
-                records.append(parsed)
-            else:
-                quality["malformed_lines"] += 1
+            for line in raw.split(b"\r"):
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    parsed = json.loads(line.decode("utf-8"))
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    quality["malformed_lines"] += 1
+                    continue
+                if isinstance(parsed, dict):
+                    records.append(parsed)
+                else:
+                    quality["malformed_lines"] += 1
     return records, quality
 
 
@@ -340,7 +341,7 @@ def infer_workflow(action: str, skill: str) -> str:
 
 
 def as_list(value: Any) -> list[Any]:
-    """Return a list containing the supplied value or values."""
+    """Return the value if it is a list, or an empty list otherwise."""
     return value if isinstance(value, list) else []
 
 

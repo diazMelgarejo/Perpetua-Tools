@@ -67,9 +67,10 @@ append-only, provisional/retracted and separate from approval.
    no unauthorized amend, rebase, force-push or publication hiding the problem.
 6. Publish each repository once for this batch, PT first so its immutable object is
    reachable before Orama CI. Reuse the two PRs. Reply in every bot inline thread
-   with its disposition and evidence: for a fixed finding, cite the actual fixing
+   with its verified disposition and evidence: for a fixed finding, cite the actual fixing
    commit as `@BotName we fixed this in commit FULL_SHA`; for a withdrawn, already
    correct, or unresolved finding, explain the disposition without claiming a fix.
+   Include any bounded disagreement.
    Report review-level nitpicks separately when no inline root exists.
 7. Recheck exact-head CI and new review feedback. Do not merge red or pending work.
    Source success does not activate serving or close host qualification.
@@ -82,6 +83,34 @@ compatibility shims remain. The experimental SQLite preflight is not the require
 reviewed locking experiment, and GitHub-hosted Windows CI is not service-identity
 or power-loss qualification. Record final results and fixing SHAs in PR follow-ups
 and the downloadable handoff; never silently overwrite this dated plan as evidence.
+
+Stop old and new dispatch processes before changing state authority; mixed-version
+processes cannot safely negotiate a location. An existing parent `.state` does not
+prove ownership. A linked worktree or separate Git directory requires either an
+explicit operator-selected `PT_STATE_DIR` or `PT_STATE_AUTHORITY_FILE`. Never
+create, copy, migrate, or reconcile ledgers merely to satisfy this requirement.
+
+The optional authority file is a private operator-created JSON object with exactly
+`schema_version` (integer 1), `owner` (the decimal current POSIX UID as a string),
+`git_common_dir`, `git_device`, `git_inode`, `ledger_dir`, `ledger_device`, and
+`ledger_inode`, `db_device`, and `db_inode`. Paths are absolute canonical paths;
+device and inode values come from the corresponding existing directories and database.
+The ledger directory must already contain a private, user-owned regular
+`perpetua_core.db` and must be user-owned and not writable by group or others.
+The record and its containing directory must
+be owned by the current user and inaccessible to group and others; symlinked record
+path components are rejected. Git discovery is fail-closed and does not grant Git
+safe-directory trust. POSIX ownership and permissions verification is not a Windows
+ACL qualification: Windows record use is rejected until a native verifier is qualified.
+Direct non-symlink checkout `.git` directories and explicit `PT_STATE_DIR` retain
+their existing behavior. The operator must independently establish ownership and
+select or reconcile any existing ledger before writing a record.
+Record reads are bounded to 16 KiB; FIFO, symlink and hardlinked records are
+refused. Database replacement invalidates the binding and requires a newly
+reviewed record. This verifies protected local configuration, not human presence:
+a process with the same user privileges can change it. Trusted filesystem
+ancestors and same-user processes remain operational assumptions. Startup never
+writes an authority record or repairs permissions on the operator's behalf.
 
 ## Local verification receipt — 2026-11-08 UTC
 

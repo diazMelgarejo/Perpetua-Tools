@@ -146,11 +146,12 @@ def _make_snippet(text: str, query: str, window: int = 150) -> str:
             pos = p
     if pos == -1:
         return text[:window] + "..." if len(text) > window else text
-    folded_offset = 0
-    for original_offset, char in enumerate(text):
-        folded_offset += len(char.casefold())
-        if folded_offset > pos:
-            pos = original_offset
+    # A casefolded character may expand to multiple code points (e.g. ß).
+    offset = 0
+    for original_pos, char in enumerate(text):
+        offset += len(char.casefold())
+        if offset > pos:
+            pos = original_pos
             break
     start = max(0, pos - 40)
     end = min(len(text), pos + window)
@@ -177,6 +178,7 @@ def build_index() -> int:
         )
         indexed = 0
         for path in _memory_files():
+            rollback_failed = False
             try:
                 if path.relative_to(MEMORY_DIR).as_posix() == "semantic/LESSONS.md":
                     source = path.with_name("lessons.jsonl")
@@ -189,15 +191,23 @@ def build_index() -> int:
                                 for content in [preamble, *lesson_texts]:
                                     conn.execute("INSERT INTO memories VALUES (?, ?)",
                                                  (str(path.relative_to(MEMORY_DIR)), content))
-                            except BaseException:
-                                conn.execute("ROLLBACK TO SAVEPOINT lesson_file")
+                            except BaseException as insert_error:
+                                try:
+                                    conn.execute("ROLLBACK TO SAVEPOINT lesson_file")
+                                except Exception as rollback_error:
+                                    rollback_failed = True
+                                    print(f"warning: failed to roll back {path}: {rollback_error}", file=sys.stderr)
+                                    raise insert_error from rollback_error
                                 raise
                             finally:
-                                conn.execute("RELEASE SAVEPOINT lesson_file")
+                                if not rollback_failed:
+                                    conn.execute("RELEASE SAVEPOINT lesson_file")
                             indexed += 1
                             continue
                         except Exception as exc:
                             print(f"warning: failed to index {path}: {exc}", file=sys.stderr)
+                            if rollback_failed:
+                                raise
                             continue
                 content = (
                     path.read_text(encoding="utf-8", errors="replace")
@@ -209,6 +219,8 @@ def build_index() -> int:
                 )
                 indexed += 1
             except Exception as exc:
+                if rollback_failed:
+                    raise
                 print(f"warning: failed to index {path}: {exc}", file=sys.stderr)
         conn.execute(f"PRAGMA user_version = {INDEX_VERSION}")
         conn.commit()

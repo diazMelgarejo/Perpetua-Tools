@@ -42,6 +42,8 @@ def _count_recent_failures(skill_name):
                     entry = json.loads(line)
                 except json.JSONDecodeError:
                     continue
+                if not isinstance(entry, dict):
+                    continue
                 if entry.get("skill") != skill_name or entry.get("result") != "failure":
                     continue
                 try:

@@ -11,6 +11,16 @@ from pathlib import Path
 import pytest
 
 
+def _has_fts5():
+    """Detect SQLite FTS5 independently of the search module."""
+    try:
+        with sqlite3.connect(":memory:") as conn:
+            conn.execute("CREATE VIRTUAL TABLE test USING fts5(content)")
+        return True
+    except sqlite3.OperationalError:
+        return False
+
+
 def _load_module(monkeypatch, tmp_path):
     """Load memory_search.py fresh with MEMORY_DIR/INDEX_PATH pointed at tmp_path.
 
@@ -43,6 +53,29 @@ def _build_index(mod, filenames):
         conn.execute(f"PRAGMA user_version = {mod.INDEX_VERSION}")
         for f in filenames:
             conn.execute("INSERT INTO memories VALUES (?, ?)", (f, ""))
+
+
+def test_lesson_rollback_failure_reports_original_and_aborts_index(monkeypatch, tmp_path, capsys):
+    """Abort indexing and retain the insert error if savepoint rollback fails."""
+    mod, memory = _load_module(monkeypatch, tmp_path)
+    semantic = memory / "semantic"
+    semantic.mkdir()
+    (semantic / "LESSONS.md").write_text("preamble")
+    (semantic / "lessons.jsonl").write_text(json.dumps({"id": "x", "claim": "\ud800"}))
+    real_connect = sqlite3.connect
+
+    class BrokenRollback(sqlite3.Connection):
+        """Simulate a connection that cannot roll back its savepoint."""
+        def execute(self, sql, parameters=()):
+            """Fail rollback while delegating other operations to SQLite."""
+            if sql.startswith("ROLLBACK TO SAVEPOINT"):
+                raise sqlite3.OperationalError("rollback failed")
+            return super().execute(sql, parameters)
+
+    monkeypatch.setattr(mod.sqlite3, "connect", lambda *args, **kwargs: real_connect(*args, factory=BrokenRollback, **kwargs))
+    with pytest.raises(UnicodeEncodeError):
+        mod.build_index()
+    assert "rollback failed" in capsys.readouterr().err
 
 
 def test_needs_rebuild_false_when_index_matches_filesystem(monkeypatch, tmp_path):
@@ -85,6 +118,7 @@ def test_needs_rebuild_true_when_filesystem_file_never_indexed(monkeypatch, tmp_
     assert mod.needs_rebuild() is True
 
 
+@pytest.mark.skipif(not _has_fts5(), reason="SQLite FTS5 unavailable")
 def test_search_marks_current_retracted_lesson_and_ignores_old_claim(monkeypatch, tmp_path):
     """Search labels retractions from current JSONL even when markdown is stale."""
     mod, memory = _load_module(monkeypatch, tmp_path)
@@ -142,24 +176,25 @@ def test_fallback_to_legacy_bullets_when_lessons_jsonl_empty(monkeypatch, tmp_pa
     (semantic / "lessons.jsonl").write_text("", encoding="utf-8")
     (semantic / "LESSONS.md").write_text("- legacy guidance about starlight\n- legacy rule about photons\n", encoding="utf-8")
 
-    if not (shutil.which("rg") or shutil.which("grep")):
-        pytest.skip("fallback search tool unavailable")
+    monkeypatch.setattr(mod, "_fallback_command", lambda query, targets: (["fake-search", query, *targets], "stub"))
+    monkeypatch.setattr(mod.subprocess, "run", lambda command, **kwargs: type("Result", (), {"stdout": str(semantic / "LESSONS.md")})())
     fallback_results = mod.search_fallback("photons")
     assert any("photons" in snippet or "LESSONS.md" in str(fn) for fn, snippet in fallback_results)
 
 
-def test_fts_indexes_legacy_bullets_when_lessons_jsonl_empty(monkeypatch, tmp_path):
-    """Verify fts indexes legacy bullets when lessons jsonl empty."""
+@pytest.mark.skipif(not _has_fts5(), reason="SQLite FTS5 unavailable")
+def test_index_uses_legacy_bullets_when_lessons_jsonl_empty(monkeypatch, tmp_path):
+    """FTS indexes the legacy Markdown when no structured lessons exist."""
     mod, memory = _load_module(monkeypatch, tmp_path)
-    if not mod.check_fts5():
-        pytest.skip("SQLite FTS5 unavailable")
     semantic = memory / "semantic"
     semantic.mkdir()
     (semantic / "lessons.jsonl").write_text("", encoding="utf-8")
     (semantic / "LESSONS.md").write_text("- legacy guidance about starlight\n", encoding="utf-8")
+    mod.build_index()
     assert any("starlight" in snippet for _, snippet in mod.search_fts5("starlight"))
 
 
+@pytest.mark.skipif(not _has_fts5(), reason="SQLite FTS5 unavailable")
 def test_status_counts_distinct_filenames(monkeypatch, tmp_path, capsys):
     """--status reports COUNT(DISTINCT filename), not total row count."""
     mod, memory = _load_module(monkeypatch, tmp_path)
@@ -183,6 +218,7 @@ def test_status_counts_distinct_filenames(monkeypatch, tmp_path, capsys):
     assert "Index: 3 files indexed" in captured.out
 
 
+@pytest.mark.skipif(not _has_fts5(), reason="SQLite FTS5 unavailable")
 def test_preamble_matches_return_snippet_and_structured_rows_return_full_claim(monkeypatch, tmp_path):
     """Preamble matches yield a snippet; structured lesson matches yield the full claim."""
     mod, memory = _load_module(monkeypatch, tmp_path)
@@ -202,9 +238,55 @@ def test_preamble_matches_return_snippet_and_structured_rows_return_full_claim(m
     preamble_res = [snippet for fn, snippet in results if fn == "semantic/LESSONS.md" and not snippet.startswith("[ACCEPTED]")]
     structured_res = [snippet for fn, snippet in results if snippet.startswith("[ACCEPTED]")]
     assert len(structured_res) == 1
-    assert len(preamble_res) == 1
-    assert len(preamble_res[0]) < len(long_preamble.split("## Auto-promoted")[0])
     assert structured_res[0] == "[ACCEPTED] " + rows[0]["claim"]
+    assert len(preamble_res) == 1 and "galaxy" in preamble_res[0]
+    assert len(preamble_res[0]) < len(long_preamble.split("## Auto-promoted")[0])
+
+
+def test_malformed_ids_and_superseded_lessons(monkeypatch, tmp_path):
+    """Malformed identifiers are skipped and accepted replacements label prior claims."""
+    mod, memory = _load_module(monkeypatch, tmp_path)
+    semantic = memory / "semantic"
+    semantic.mkdir()
+    rows = [{"id": [], "claim": "bad"}, {"id": {"bad": 1}, "claim": "bad"},
+            {"id": "old", "status": "accepted", "claim": "older quasar"},
+            {"id": "new", "status": "accepted", "claim": "newer quasar", "supersedes": "old"}]
+    (semantic / "lessons.jsonl").write_text("\n".join(map(json.dumps, rows)), encoding="utf-8")
+    (semantic / "LESSONS.md").write_text("## Auto-promoted entries will be appended below\n", encoding="utf-8")
+    assert {text for _, text in mod.search_fallback("quasar")} == {"[SUPERSEDED] older quasar", "[ACCEPTED] newer quasar"}
+    if mod.check_fts5():
+        mod.build_index()
+        assert {text for _, text in mod.search_fts5("quasar")} == {"[SUPERSEDED] older quasar", "[ACCEPTED] newer quasar"}
+
+
+def test_unicode_fallback_preserves_query_and_snippet_offsets(monkeypatch, tmp_path):
+    """Search commands receive original terms and snippets account for casefold expansion."""
+    mod, memory = _load_module(monkeypatch, tmp_path)
+    (memory / "other.md").write_text("Straße", encoding="utf-8")
+    captured = []
+    monkeypatch.setattr(mod, "_fallback_command", lambda query, targets: (captured.append(query) or ["fake"], "stub"))
+    monkeypatch.setattr(mod.subprocess, "run", lambda *args, **kwargs: type("Result", (), {"stdout": str(memory / "other.md")})())
+    assert mod.search_fallback("Straße")
+    assert captured == ["Straße"]
+    assert "needle" in mod._make_snippet("ß" * 300 + "needle", "needle", window=50)
+
+
+def test_bad_lesson_insert_does_not_rollback_prior_documents(monkeypatch, tmp_path):
+    """A bad lesson row cannot roll back unrelated indexed files."""
+    mod, memory = _load_module(monkeypatch, tmp_path)
+    if not mod.check_fts5():
+        pytest.skip("SQLite FTS5 unavailable")
+    other = memory / "other.md"
+    other.write_text("independent comet", encoding="utf-8")
+    semantic = memory / "semantic"
+    semantic.mkdir()
+    lessons = semantic / "LESSONS.md"
+    lessons.write_text("preamble", encoding="utf-8")
+    (semantic / "lessons.jsonl").write_text(json.dumps({"id": "bad", "claim": "\ud800"}), encoding="utf-8")
+    monkeypatch.setattr(mod, "_memory_files", lambda: iter([other, lessons]))
+    assert mod.build_index() == 1
+    with sqlite3.connect(mod.INDEX_PATH) as conn:
+        assert conn.execute("SELECT filename FROM memories").fetchall() == [("other.md",)]
 
 
 def test_search_handles_unhashable_ids_and_superseded_lessons(monkeypatch, tmp_path):

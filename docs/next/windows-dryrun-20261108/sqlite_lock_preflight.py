@@ -127,8 +127,11 @@ def run(output: Path) -> int:
             try:
                 print(json.dumps(result, indent=2), file=sys.stderr)
             except Exception:
-                # Reporting must not replace the failure exit if stderr also fails.
-                pass
+                try:
+                    print(json.dumps(result, indent=2), file=sys.stdout)
+                except Exception:
+                    # Reporting must not replace the failure exit if both streams fail.
+                    pass
     print(result.get('status'))
     return 0 if (result.get('status') == 'PASS' and receipt_written) else 1
 

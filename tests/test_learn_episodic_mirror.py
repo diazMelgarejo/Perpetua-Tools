@@ -147,16 +147,69 @@ def test_append_jsonl_survives_malformed_history_lines(tmp_path):
 
     jsonl_file = tmp_path / "test.jsonl"
     jsonl_file.write_text("{\"valid\": 1}\nNOT VALID JSON\n{\"valid\": 2}\n", encoding="utf-8")
-    history = jsonl_file.read_bytes()
+    original = jsonl_file.read_bytes()
 
     entry = {"new": "entry"}
     result = append_jsonl(str(jsonl_file), entry)
     assert result == entry
-    assert jsonl_file.read_bytes().startswith(history)
+    assert jsonl_file.read_bytes().startswith(original)
 
     lines = jsonl_file.read_text(encoding="utf-8").splitlines()
     assert len(lines) == 4
     assert json.loads(lines[-1]) == entry
+
+
+def test_torn_utf8_history_preserved_and_new_event_exported(tmp_path):
+    """Export skips damaged lines while append preserves the original bytes."""
+    sys.path.insert(0, str(Path(__file__).parent.parent / ".agent" / "harness" / "hooks"))
+    from _episodic_io import append_jsonl
+
+    path = tmp_path / "events.jsonl"
+    original = b'{"old": "\xe2\x82'
+    path.write_bytes(original)
+    append_jsonl(str(path), {"new": "event"})
+    assert path.read_bytes().startswith(original + b"\n")
+    module_path = Path(__file__).parent.parent / ".agent" / "tools" / "data_layer_export.py"
+    spec = importlib.util.spec_from_file_location("data_layer_export_test", module_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    records, quality = module.read_jsonl(path)
+    assert records == [{"new": "event"}]
+    assert quality["malformed_lines"] == 1
+
+
+def test_failure_hook_preserves_and_skips_damaged_and_non_object_history(monkeypatch, tmp_path):
+    """Failure hooks continue after torn bytes and valid non-object JSON rows."""
+    sys.path.insert(0, str(Path(__file__).parent.parent / ".agent" / "harness"))
+    from hooks import on_failure as hook
+
+    path = tmp_path / "events.jsonl"
+    original = b'[]\nnull\n{"torn":"\xe2\x82'
+    path.write_bytes(original)
+    monkeypatch.setattr(hook, "EPISODIC", str(path))
+    result = hook.on_failure("review", "check", "failed")
+    data = path.read_bytes()
+    assert data.startswith(original + b"\n")
+    assert json.loads(data.splitlines()[-1])["result"] == result["result"] == "failure"
+def test_append_jsonl_accepts_write_only_log(tmp_path, monkeypatch):
+    """Append safely when existing history cannot be opened for reading."""
+    import builtins
+
+    sys.path.insert(0, str(Path(__file__).parent.parent / ".agent" / "harness" / "hooks"))
+    from _episodic_io import append_jsonl
+
+    path = tmp_path / "events.jsonl"
+    path.write_bytes(b'{"old":1}')
+    real_open = builtins.open
+
+    def deny_read(target, mode="r", *args, **kwargs):
+        if str(target) == str(path) and "+" in mode:
+            raise PermissionError("write-only log")
+        return real_open(target, mode, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "open", deny_read)
+    append_jsonl(str(path), {"new": 2})
+    assert path.read_bytes() == b'{"old":1}\n{"new": 2}\n'
 
 
 @pytest.mark.parametrize("module_name", ["data_layer_export", "data_flywheel_export"])
@@ -172,3 +225,23 @@ def test_event_export_skips_undecodable_row_and_keeps_following_event(tmp_path, 
     rows, quality = module.read_jsonl(path)
     assert rows == [{"action": "recorded"}]
     assert quality["malformed_lines"] == 1
+
+
+@pytest.mark.parametrize("module_name", ["data_layer_export", "data_flywheel_export"])
+@pytest.mark.parametrize("payload,expected,malformed", [
+    ('{"action":"utf16"}'.encode("utf-16"), [], 1),
+    (b'{"action":"one"}\r\xff\r{"action":"two"}\r',
+     [{"action": "one"}, {"action": "two"}], 1),
+])
+def test_event_export_rejects_non_utf8_and_reads_cr_records(tmp_path, module_name, payload, expected, malformed):
+    """Keep CR-delimited UTF-8 events while counting invalid records."""
+    module_path = Path(__file__).parent.parent / ".agent" / "tools" / (module_name + ".py")
+    spec = importlib.util.spec_from_file_location(module_name, module_path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    path = tmp_path / "events.jsonl"
+    path.write_bytes(payload)
+    rows, quality = module.read_jsonl(path)
+    assert rows == expected
+    assert quality["malformed_lines"] == malformed

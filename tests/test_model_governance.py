@@ -994,8 +994,8 @@ def test_pin_document_and_config_name_the_same_alexandria_tip() -> None:
     assert _preamble_tip(doc) == cfg["canonical"]["tip"] == _PARITY_ALEXANDRIA_TIP
 
 
-def test_cline_pass_default_is_deepseek_v4_1_flash_1017_at_a_documented_effort() -> None:
-    """ClinePass pins the 1017 build at the operator-approved medium default."""
+def test_cline_pass_default_is_deepseek_v4_1_flash_1017_at_medium() -> None:
+    """ClinePass pins the operator-approved medium default."""
     spec = default_launch("cline_pass")
     assert spec.launch_id == "deepseek-v4.1-flash-1017"
     assert spec.effort == "medium"
@@ -1044,16 +1044,23 @@ def test_cline_pass_glm_5_3_flash_refuses_efforts_other_than_medium(effort: str)
         assert_launch_allowed(spec)
 
 
-def test_cline_pass_refuses_a_listed_id_at_an_unlisted_effort() -> None:
-    """An installed CLI capability does not admit an unapproved reasoning level."""
+@pytest.mark.parametrize("effort", ["high", "xhigh"])
+def test_cline_pass_refuses_a_listed_id_at_an_unlisted_effort(effort: str) -> None:
+    """Verify cline pass refuses a listed id at an unlisted effort."""
     spec = LaunchSpec(
         path="cline_pass",
         launch_id="deepseek-v4.1-flash-1017",
-        effort="xhigh",
+        effort=effort,
         fast=False,
     )
     with pytest.raises(ModelGovernanceError):
         assert_launch_allowed(spec)
+
+
+@pytest.mark.parametrize("effort", ["low", "medium"])
+def test_cline_pass_deepseek_approved_efforts(effort) -> None:
+    """Both explicitly approved DeepSeek effort levels remain usable."""
+    assert_launch_allowed(LaunchSpec(path="cline_pass", launch_id="deepseek-v4.1-flash-1017", effort=effort, fast=False))
 
 
 def test_cline_pass_refuses_an_unlisted_model() -> None:
@@ -1079,6 +1086,7 @@ def test_cline_pass_refuses_fast_mode_without_escalation() -> None:
 @pytest.mark.parametrize("policy", [
     {},
     {"default": {"launch_id": "test", "effort": "medium"}, "allowed_ungated": [{}]},
+    {"default": {"launch_id": "test", "effort": "medium"}, "allowed_ungated": [{"launch_id": "other"}]},
     {"default": {"launch_id": "test", "effort": "medium"}, "gated": {"test": {}}},
     {"default": {"launch_id": "test", "effort": "medium"}, "planning": {"launch_id": "test", "effort": "medium"}},
     {"default": {"launch_id": "test", "effort": "medium"}, "controller": {"launch_id": "test", "effort": "medium"}},

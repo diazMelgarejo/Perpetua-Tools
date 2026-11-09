@@ -164,8 +164,9 @@ if ($LASTEXITCODE -ne 0) { throw 'Preflight 3 failed; preserve its output' }
 
 Save the digest and each private `receipt.json`. Preserve `holder.stderr` when created, including
 on timeout or failure; failures before opening it cannot produce that file. If receipt writing
-fails, the preflight attempts to print the accumulated result and write error to stderr; preserve
-that output privately as it can contain local details. Stderr itself may be unavailable. A receipt
+fails, the preflight attempts to print the accumulated result and write error to stderr, or stdout
+if stderr fails; preserve either output privately as it can contain local details. Both streams may
+be unavailable. A receipt
 can report an unconfirmed holder exit; resolve that condition under the approved local procedure
 before reuse.
 Review this substitute and obtain the
@@ -180,18 +181,27 @@ there before running pytest, use the verified interpreter, and repeat the strict
 validation above in each shell:
 
 ```powershell
+$ReviewedOramasysRoot = Read-Host 'Reviewed Oramasys checkout root'
+if (-not (Test-Path -LiteralPath $ReviewedOramasysRoot -PathType Container)) { throw 'Invalid reviewed checkout root' }
 Set-Location -LiteralPath $ReviewedOramasysRoot
 $env:PYTHONPATH = 'src'
 & $ServingPython -m pytest -q tests/windows/test_private_store_native.py
 if ($LASTEXITCODE -ne 0) { throw 'Native security verification failed' }
-& $ServingPython -m pytest -q src/tests/test_private_store.py -k 'safe_replace'
+& $ServingPython -m pytest -v --collect-only src/tests/test_private_store.py -k 'safe_replace'
+if ($LASTEXITCODE -ne 0) { throw 'safe_replace collection failed' }
+& $ServingPython -m pytest -v src/tests/test_private_store.py -k 'safe_replace'
 if ($LASTEXITCODE -ne 0) { throw 'safe_replace verification failed' }
-& $ServingPython -m pytest -q src/tests/test_private_store.py -k 'nonce_lock_failure'
+& $ServingPython -m pytest -v --collect-only src/tests/test_private_store.py -k 'nonce_lock_failure'
+if ($LASTEXITCODE -ne 0) { throw 'nonce_lock_failure collection failed' }
+& $ServingPython -m pytest -v src/tests/test_private_store.py -k 'nonce_lock_failure'
 if ($LASTEXITCODE -ne 0) { throw 'nonce_lock_failure verification failed' }
 ```
 
-Record PASS for each `safe_replace` and `nonce_lock_failure` group only when that separate
-invocation reports at least one passed test and zero skips. Preserve each group's output.
+Before running, identify the required test IDs (including every parameter variant) from the approved
+candidate. Capture collection and verbose execution output for each group, and compare both against
+that required list. Record PASS only if every required ID was collected and passed, with zero skips,
+deselections of required cases, failures or errors. Otherwise record the group as not passed and
+investigate. Preserve the required list and both outputs for each group.
 
 With an approved second principal, create a disposable foreign-owned fixture and set
 `ORAMA_TEST_FOREIGN_OWNER_FILE` locally; rerun the native suite. Without it, record the
@@ -246,6 +256,6 @@ Sources:
 [Windows handoff](https://github.com/oramasys/oramasys/blob/f6295a13ef02666d89f64f1f6e9834bc0bde884c/docs/closure/c6-windows-handoff.md),
 [C6 qualification](https://github.com/oramasys/oramasys/blob/f6295a13ef02666d89f64f1f6e9834bc0bde884c/docs/closure/c6-qualification-runbook.md),
 [PT C6 chronicle](https://github.com/diazMelgarejo/Perpetua-Tools/blob/96c9ddb59ea0f47e04472d1115a4880e5d16d151/.agent/memory/working/2026-11-07-c6-runtime-and-review-chronicle.md),
-[review correction](https://github.com/diazMelgarejo/Perpetua-Tools/blob/5021324850e20a04f016635b0fba5e52725f9ede/.agent/memory/semantic/LAN_COORDINATION_WINDOWS_C6_AND_FLEET_SYNTHESIS_2026-11-08.md),
+[review correction](https://github.com/diazMelgarejo/Perpetua-Tools/blob/020c8e31035603d5f03c510f3c242f81a0d10791/.agent/memory/semantic/LAN_COORDINATION_WINDOWS_C6_AND_FLEET_SYNTHESIS_2026-11-08.md),
 and
 [activation runbook](https://github.com/oramasys/oramasys/blob/f6295a13ef02666d89f64f1f6e9834bc0bde884c/docs/serving-activation-runbook.md).

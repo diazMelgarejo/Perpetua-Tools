@@ -1,6 +1,7 @@
 """Self-tests for the experimental preflight using disposable temporary paths."""
 import importlib.util
 import io
+from contextlib import redirect_stderr, redirect_stdout
 import json
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
@@ -156,13 +157,14 @@ class PreflightTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as parent:
             output = Path(parent) / 'receipt-failure'
             stdout, stderr = io.StringIO(), io.StringIO()
-            with mock.patch.object(Path, 'open', open_with_receipt_failure), \
+            with mock.patch.object(module.subprocess, 'Popen', side_effect=OSError('holder unavailable')), \
+                    mock.patch.object(Path, 'open', open_with_receipt_failure), \
                     redirect_stdout(stdout), redirect_stderr(stderr):
                 self.assertEqual(module.run(output), 1)
             self.assertEqual(stdout.getvalue().strip(), 'FAIL')
             self.assertIn('disk full', stderr.getvalue())
             self.assertIn('receipt_write_error', stderr.getvalue())
-            self.assertIn('concurrent_writer_refused_busy', stderr.getvalue())
+            self.assertIn('holder unavailable', stderr.getvalue())
 
             class BrokenStderr:
                 """Simulate an unavailable fallback diagnostic stream."""
@@ -171,10 +173,14 @@ class PreflightTests(unittest.TestCase):
                     """Reject diagnostic output as a broken stream would."""
                     raise OSError('stderr unavailable')
 
-            with mock.patch.object(Path, 'open', open_with_receipt_failure), \
+            with mock.patch.object(module.subprocess, 'Popen', side_effect=OSError('holder unavailable')), \
+                    mock.patch.object(Path, 'open', open_with_receipt_failure), \
                     mock.patch.object(module.sys, 'stderr', BrokenStderr()), \
-                    redirect_stdout(io.StringIO()):
+                    redirect_stdout(stdout := io.StringIO()):
                 self.assertEqual(module.run(Path(parent) / 'stderr-failure'), 1)
+            fallback = json.loads(stdout.getvalue().rsplit('\nFAIL', 1)[0])
+            self.assertEqual(fallback['status'], 'FAIL')
+            self.assertIn('disk full', fallback['receipt_write_error'])
 
 
 if __name__ == '__main__':
