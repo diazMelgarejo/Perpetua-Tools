@@ -159,10 +159,13 @@ def plan_launch(
     policy = cfg[provider]
     planning = policy.get("planning") or {}
     controller = policy.get("controller") or {}
+    fallback_row = policy.get("fallback") or {}
     is_planning_model = spec.launch_id == planning.get("launch_id")
+    is_controller_model = spec.launch_id == controller.get("launch_id")
+    is_fallback_model = spec.launch_id == fallback_row.get("launch_id")
     gated = (policy.get("gated") or {}).get(spec.launch_id)
-    if is_planning_model or spec.launch_id == controller.get("launch_id"):
-        row = planning if is_planning_model else controller
+    if is_planning_model or is_controller_model or is_fallback_model:
+        row = planning if is_planning_model else (controller if is_controller_model else fallback_row)
         allowed_efforts = row.get("allowed_efforts", [row.get("effort")])
         if _named_effort(spec) not in allowed_efforts:
             raise ModelGovernanceError("role requires an explicitly permitted effort")
@@ -334,6 +337,15 @@ def assert_launch_allowed(
             spec, proof, now=now, approval_scope=approval_scope
         ):
             raise ModelGovernanceError("cloud escalation default-deny: escalation token required")
+        gated_row = (cfg[spec.path].get("gated") or {}).get(spec.launch_id)
+        if gated_row is not None:
+            requires = gated_row.get("requires") or []
+            if isinstance(requires, str):
+                requires = [requires]
+            if "budget_cap" in requires and not (proof and proof.budget_cap):
+                raise ModelGovernanceError(
+                    f"{spec.launch_id} requires a hard budget cap on the escalation approval"
+                )
         return
     if spec.path in ("anthropic", "cursor_grok_bot"):
         policy = cfg["anthropic"]

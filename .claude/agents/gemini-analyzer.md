@@ -90,16 +90,16 @@ crash when used with Gemini endpoints. This is a known issue documented in
 
 ## Model Selection Guide
 
-| Task | Model |
-|------|-------|
-| Quick summaries, standard analysis | `google/gemini-3.8-flash` |
-| Deep design review, large repo synthesis | `google/gemini-3.8-flash` |
-| Cost-sensitive bulk reads | `google/gemini-3.8-flash` |
+| Role / Task | Model | Effort | Gating / Requirements |
+|-------------|-------|--------|-----------------------|
+| Default Execution / standard analysis | `google/gemini-3.8-flash` | medium | Ungated default |
+| Controller / Subagents / bulk reads | `google/gemini-3.5-flash-lite` | medium | Ungated controller role |
+| Fallback Resolver | `google/gemini-flash-latest` | medium | Ungated fallback role |
+| Planning / Deep architecture review | `google/gemini-pro-latest` | medium, high | Planning task kind (or escalation token) |
+| Frontier Reasoning | `google/gemini-4-argon` | medium | Gated: escalation token + budget cap |
 
-There is one Google tier in the catalog as of 2026-11-03: Gemini 3.8 Flash at
-medium effort. The former per-task split — `gemini-3.1-pro-preview` for deep
-review and `gemini-2.5-flash-lite` for bulk reads — is gone; those ids were
-retired.
+The legacy per-task IDs (`gemini-3.1-pro-preview` and `gemini-2.5-flash-lite`) are
+retired and replaced by this structured hierarchy in `config/model-governance.yml`.
 
 ---
 
@@ -116,8 +116,9 @@ Always return structured output:
 
 ## Notes
 
-- Gemini 3.8 Flash (medium) is the single registered Google tier; the former
-  Pro / Flash Lite cost-vs-depth trade-off no longer exists
+- Gemini 3.8 Flash (medium) is the primary registered default execution tier;
+  lightweight tasks route to Gemini 3.5 Flash Lite, and deep planning routes to
+  Gemini Pro Latest (or Gemini 4 Argon with budget cap).
 - For Gemini 3.x models: confirm they're available in your `gemini-main`
   provider before using
 - The `OPENCLAW_MODELS_PROVIDERS_GEMINI_MAIN_APIKEY` env var must be set for

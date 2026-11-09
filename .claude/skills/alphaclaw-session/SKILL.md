@@ -265,8 +265,9 @@ for name, prov in cfg['models']['providers'].items():
 | `coder` | `lmstudio-win/qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2` | Win RTX | ~107s | gemini-3.8-flash |
 | `autoresearcher` | `lmstudio-win/qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2` | Win RTX | ~116s | gemini-3.8-flash |
 
-**Fallback chain** (primary fails → fallback): the catalog carries a single Google
-tier as of 2026-11-03, `gemini-3.8-flash` (medium). The former
+**Fallback chain** (primary fails → fallback): Google endpoints default to
+`gemini-3.8-flash` (medium) execution, with `gemini-flash-latest` fallback role
+and `gemini-3.5-flash-lite` controller role. The former
 `gemini-3.1-pro-preview` (429 rate limit) → `gemini-3-flash-preview` (free-tier
 success) pairing was retired along with those ids.
 
