@@ -107,6 +107,35 @@ def test_generated_ids_do_not_change_dispatch_identity(tmp_path: Path, field: st
     assert effects == ["review"]
 
 
+@pytest.mark.parametrize("model", ["glm-5.3", "provider-default"])
+def test_cline_pass_unlisted_model_cannot_reach_effect(tmp_path: Path, model: str) -> None:
+    """Direct ClinePass dispatch must enforce the model allowlist."""
+    from orchestrator.dispatch_guard import DispatchGuard, DispatchRequest
+    from perpetua_tools.model_governance import ModelGovernanceError
+
+    async def effect() -> dict:
+        """Fail if an unauthorized dispatch reaches its effect."""
+        pytest.fail("unlisted model reached provider")
+
+    with pytest.raises(ModelGovernanceError, match="unlisted ClinePass model"):
+        asyncio.run(DispatchGuard(tmp_path).execute(
+            DispatchRequest("a", "cline_pass", model, "review", "code", effort="medium"), effect
+        ))
+
+
+def test_cline_pass_listed_model_reaches_effect(tmp_path: Path) -> None:
+    """A pinned ClinePass model remains dispatchable at its configured effort."""
+    from orchestrator.dispatch_guard import DispatchGuard, DispatchRequest
+
+    async def effect() -> dict:
+        """Return the authorized provider result."""
+        return {"ok": True}
+
+    assert asyncio.run(DispatchGuard(tmp_path).execute(
+        DispatchRequest("a", "cline_pass", "muse-spark-1.3-contributor", "review", "code", effort="medium", fast=False), effect
+    )) == {"ok": True}
+
+
 def test_openai_provider_uses_model_planner(tmp_path: Path) -> None:
     """Direct provider names cannot bypass canonical approval requirements."""
     from orchestrator.dispatch_guard import DispatchGuard, DispatchRequest
