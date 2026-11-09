@@ -265,10 +265,12 @@ for name, prov in cfg['models']['providers'].items():
 | `coder` | `lmstudio-win/qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2` | Win RTX | ~107s | gemini-3.8-flash |
 | `autoresearcher` | `lmstudio-win/qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2` | Win RTX | ~116s | gemini-3.8-flash |
 
-**Fallback chain** (primary fails → fallback): the catalog carries a single Google
-tier as of 2026-11-03, `gemini-3.8-flash` (medium). The former
-`gemini-3.1-pro-preview` (429 rate limit) → `gemini-3-flash-preview` (free-tier
-success) pairing was retired along with those ids.
+**Current policy (2026-11-08):** the historical matrix above is not current
+fleet qualification. Gemini 3.8 Flash is the general default; Gemini 3.5
+Flash-Lite is the economy/subagent tier. Only direct Google's
+`gemini-flash-latest` is an automatic Google fallback. Pro and OpenRouter
+Argon require verified human escalation, even for planning; Argon also needs
+an approved budget cap. An available catalog entry is not launch authority.
 
 **Both models are extended thinking/reasoning models.** They generate `reasoning_content`
 before visible output. `text` field is often empty; actual reply is in `reasoning_content`.
