@@ -28,7 +28,8 @@
     {"email": "kimi-agent@kimi.ai", "allowed_names": ["Kimi Agent"]},
     {"email": "cloud-kimi-agent@kimi.ai", "allowed_names": ["Cloud Kimi Agent"]},
     {"email": "noreply@coderabbit.ai", "allowed_names": ["CodeRabbit"]},
-    {"email": "cline@local.invalid", "allowed_names": []}
+    {"email": "cline@local.invalid", "allowed_names": []},
+    {"email": "noreply@cline.bot", "allowed_names": ["Cline"]}
   ],
   "repo_bot_identities": {
     "orama-system": [

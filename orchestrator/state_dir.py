@@ -27,7 +27,6 @@ def _canonical_repo_state_dir(root: Path | None = None) -> Path | None:
             encoding="utf-8",
             stderr=subprocess.DEVNULL,
             timeout=5,
-            env={key: value for key, value in os.environ.items() if not key.startswith("GIT_")},
         ).splitlines()
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
         return None
@@ -40,10 +39,7 @@ def _canonical_repo_state_dir(root: Path | None = None) -> Path | None:
         common_path = (repo_root / common_path).resolve()
     else:
         common_path = common_path.resolve()
-    # A separate Git directory has no reliable reverse pointer to its primary
-    # checkout. Preserve the existing shared anchor rather than relocate a
-    # potentially populated ledger and split authority between worktrees.
-    state_anchor = common_path if is_bare else common_path.parent
+    state_anchor = common_path if (is_bare or common_path.name != ".git") else common_path.parent
     return state_anchor / ".state"
 
 
@@ -52,4 +48,4 @@ def resolve_default_state_dir() -> Path:
     env_dir = os.environ.get("PT_STATE_DIR", "").strip()
     if env_dir:
         return Path(env_dir)
-    return _canonical_repo_state_dir() or Path(".state")
+    return _canonical_repo_state_dir() or (PT_ROOT / ".state")
