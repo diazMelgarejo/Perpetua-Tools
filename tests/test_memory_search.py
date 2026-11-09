@@ -45,6 +45,29 @@ def _build_index(mod, filenames):
             conn.execute("INSERT INTO memories VALUES (?, ?)", (f, ""))
 
 
+def test_lesson_rollback_failure_reports_original_and_aborts_index(monkeypatch, tmp_path, capsys):
+    """Abort indexing and retain the insert error if savepoint rollback fails."""
+    mod, memory = _load_module(monkeypatch, tmp_path)
+    semantic = memory / "semantic"
+    semantic.mkdir()
+    (semantic / "LESSONS.md").write_text("preamble")
+    (semantic / "lessons.jsonl").write_text(json.dumps({"id": "x", "claim": "\ud800"}))
+    real_connect = sqlite3.connect
+
+    class BrokenRollback(sqlite3.Connection):
+        """Simulate a connection that cannot roll back its savepoint."""
+        def execute(self, sql, parameters=()):
+            """Fail rollback while delegating other operations to SQLite."""
+            if sql.startswith("ROLLBACK TO SAVEPOINT"):
+                raise sqlite3.OperationalError("rollback failed")
+            return super().execute(sql, parameters)
+
+    monkeypatch.setattr(mod.sqlite3, "connect", lambda *args, **kwargs: real_connect(*args, factory=BrokenRollback, **kwargs))
+    with pytest.raises(UnicodeEncodeError):
+        mod.build_index()
+    assert "rollback failed" in capsys.readouterr().err
+
+
 def test_needs_rebuild_false_when_index_matches_filesystem(monkeypatch, tmp_path):
     """An up-to-date index with the same files needs no rebuild."""
     mod, memory_dir = _load_module(monkeypatch, tmp_path)
