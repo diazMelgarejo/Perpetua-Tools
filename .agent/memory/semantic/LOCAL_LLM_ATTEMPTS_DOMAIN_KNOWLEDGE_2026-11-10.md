@@ -145,6 +145,35 @@ Pass an absolute bundle path to a stdio driver that also sets `cwd` to that path
 doubles up and the child dies at initialize with `OSError: [Errno 22]` on stdin flush). `python3` on
 this host is a Store stub.
 
+### 5.5 Follow-up trials (queue task CLINE-PICKUP-06, same host, V)
+
+Five more synthesis trials per configuration, chat endpoint, thinking on, 120 s deadline, no
+retries, trial numbers 11 to 15 (small prompts; the 8192-token context was never the limit):
+
+| Configuration | Exact contract | Seconds (each trial) |
+| --- | --- | --- |
+| temperature 0.6, top_p 0.95, top_k 20 | 4 of 5 (one failed; its text was not saved) | 33.5, 39.5, 25.1, 25.6, 26.0 |
+| temperature 0.7, top_p 0.8, top_k 20, presence_penalty 1.5 | 5 of 5 | 82.1, 44.2, 36.8, 37.5, 18.5 |
+
+Combined with section 3.2 the temperature 0.6 setting is now 7 of 8 exact, not 3 of 3: the earlier
+"temperature did not matter" reading is weakened, a failure can occur on this contract, and the
+validator must stay in front of the model. Latency is wide: 18.5 s to 82.1 s for the same prompt
+shape.
+
+presence_penalty probe (temperature 0, "write the word apple 40 times"): penalty 0 returned 43
+words, all the same word, in 70.4 s; penalty 2.0 hit the 120 s deadline with no answer. A penalty
+that changes behaviour this much suggests LM Studio does apply it, but this is indirect evidence
+from one pair of calls (U).
+
+One multi-step review task (three questions about a 7-line classifier, JSON answer, temperature
+0.6): valid JSON with the three requested keys and correct answers (an unknown state fails closed;
+an empty record is safe only while no writer holds the lock), 105.5 s, 763 completion tokens with
+about 2800 characters of reasoning. Heavy tasks are therefore feasible inside 8192 tokens at roughly
+100 s, but not fast.
+
+The MCPB chat-tool outlier (62.9 s) was not re-measured separately; the 18.5 s to 82.1 s spread
+above shows that a single slow call is normal for this model, so it is not evidence of a tool fault.
+
 ## 6. Controller and validator pattern that held up
 
 - Delegate read-only analysis to cheap controller agents (Haiku medium); treat every document they
