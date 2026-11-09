@@ -10,6 +10,7 @@ Covers acceptance gates G1, G2, G3, G5 from:
 from __future__ import annotations
 
 import asyncio
+import os
 import pytest
 
 import subprocess
@@ -157,9 +158,12 @@ async def test_emit_creates_pending_row(bus):
 
 @pytest.fixture
 def isolated_env(monkeypatch):
-    """Strip the env vars that would otherwise override default resolution."""
+    """Isolate Git setup and default state resolution from the runner's environment."""
     monkeypatch.delenv("GOSSIP_DB_PATH", raising=False)
     monkeypatch.delenv("PT_STATE_DIR", raising=False)
+    for key in list(os.environ):
+        if key.startswith("GIT_"):
+            monkeypatch.delenv(key, raising=False)
 
 
 @pytest.fixture
@@ -249,6 +253,7 @@ def test_default_resolution_ignores_inherited_git_dir(
     )
     checkout = tmp_path / "checkout"
     subprocess.run(["git", "init", "-q", str(checkout)], check=True)
+    assert (checkout / ".git").is_dir()
     monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", checkout)
     monkeypatch.setenv("GIT_DIR", str(external_git_dir))
 

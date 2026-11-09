@@ -90,6 +90,12 @@ retained; a fresh layout uses the Git common directory. If both locations exist,
 dispatch refuses until an operator reconciles the ledgers. Do not copy, delete,
 or select between competing claims without an approved reconciliation procedure.
 Mixed-version processes cannot coordinate location selection safely.
+An existing legacy parent `.state` can also be shared by independent separate
+Git directories under that parent; it does not identify its owning repository.
+Keep dispatch stopped until an operator has established ownership and explicitly
+selected or reconciled the ledger. Git discovery failures and parent-repository
+discovery remain open authority-resolution risks; passing inherited Git settings
+through without validation is not a safe substitute for an explicit design.
 
 ## Local verification receipt — 2026-11-08 UTC
 

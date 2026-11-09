@@ -191,6 +191,27 @@ def test_failure_hook_preserves_and_skips_damaged_and_non_object_history(monkeyp
     data = path.read_bytes()
     assert data.startswith(original + b"\n")
     assert json.loads(data.splitlines()[-1])["result"] == result["result"] == "failure"
+def test_append_jsonl_accepts_write_only_log(tmp_path, monkeypatch):
+    """Append safely when existing history cannot be opened for reading."""
+    import builtins
+
+    sys.path.insert(0, str(Path(__file__).parent.parent / ".agent" / "harness" / "hooks"))
+    from _episodic_io import append_jsonl
+
+    path = tmp_path / "events.jsonl"
+    path.write_bytes(b'{"old":1}')
+    real_open = builtins.open
+
+    def deny_read(target, mode="r", *args, **kwargs):
+        if str(target) == str(path) and "+" in mode:
+            raise PermissionError("write-only log")
+        return real_open(target, mode, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "open", deny_read)
+    append_jsonl(str(path), {"new": 2})
+    assert path.read_bytes() == b'{"old":1}\n{"new": 2}\n'
+
+
 @pytest.mark.parametrize("module_name", ["data_layer_export", "data_flywheel_export"])
 def test_event_export_skips_undecodable_row_and_keeps_following_event(tmp_path, module_name):
     """Verify event export skips undecodable row and keeps following event."""
@@ -204,3 +225,23 @@ def test_event_export_skips_undecodable_row_and_keeps_following_event(tmp_path, 
     rows, quality = module.read_jsonl(path)
     assert rows == [{"action": "recorded"}]
     assert quality["malformed_lines"] == 1
+
+
+@pytest.mark.parametrize("module_name", ["data_layer_export", "data_flywheel_export"])
+@pytest.mark.parametrize("payload,expected,malformed", [
+    ('{"action":"utf16"}'.encode("utf-16"), [], 1),
+    (b'{"action":"one"}\r\xff\r{"action":"two"}\r',
+     [{"action": "one"}, {"action": "two"}], 1),
+])
+def test_event_export_rejects_non_utf8_and_reads_cr_records(tmp_path, module_name, payload, expected, malformed):
+    """Keep CR-delimited UTF-8 events while counting invalid records."""
+    module_path = Path(__file__).parent.parent / ".agent" / "tools" / (module_name + ".py")
+    spec = importlib.util.spec_from_file_location(module_name, module_path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    path = tmp_path / "events.jsonl"
+    path.write_bytes(payload)
+    rows, quality = module.read_jsonl(path)
+    assert rows == expected
+    assert quality["malformed_lines"] == malformed

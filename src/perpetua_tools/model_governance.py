@@ -425,7 +425,8 @@ def _validate_cline_pass_config(cfg: Mapping[str, Any]) -> None:
     rows = policy.get("allowed_ungated", [])
     if (not isinstance(default, Mapping) or not default.get("launch_id")
             or not default.get("effort") or not isinstance(rows, list)
-            or any(not isinstance(row, Mapping) or not row.get("launch_id") for row in rows)
+            or any(not isinstance(row, Mapping) or not row.get("launch_id")
+                   or not row.get("effort") for row in rows)
             or policy.get("gated") not in (None, {})
             or policy.get("planning") is not None or policy.get("controller") is not None):
         raise ModelGovernanceError("config unavailable: invalid ClinePass policy")

@@ -1055,6 +1055,7 @@ def test_cline_pass_refuses_fast_mode_without_escalation() -> None:
 @pytest.mark.parametrize("policy", [
     {},
     {"default": {"launch_id": "test", "effort": "medium"}, "allowed_ungated": [{}]},
+    {"default": {"launch_id": "test", "effort": "medium"}, "allowed_ungated": [{"launch_id": "other"}]},
     {"default": {"launch_id": "test", "effort": "medium"}, "gated": {"test": {}}},
     {"default": {"launch_id": "test", "effort": "medium"}, "planning": {"launch_id": "test", "effort": "medium"}},
     {"default": {"launch_id": "test", "effort": "medium"}, "controller": {"launch_id": "test", "effort": "medium"}},

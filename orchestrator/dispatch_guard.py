@@ -8,7 +8,8 @@ Policy/verifier callbacks are trusted runtime configuration, never task metadata
 The identity is an exact goal envelope, not semantic similarity: automatically
 generated job/session IDs are deliberately excluded. Explicit scopes distinguish
 intentional independent work. Known model policy is enforced; implicit CLI model
-configuration (``provider-default``) is not attested by this layer. Unknown model
+configuration (``provider-default``) is not attested by this layer and is refused
+for ClinePass, whose policy requires an explicit model. Unknown model
 tiers retain the canonical frugality gate's no-opinion behavior.
 
 POSIX state directories must be user-owned and not writable by other users. The
@@ -100,9 +101,9 @@ class DispatchGuard:
         config = load_model_governance()
         if request.model in config.get("banned_launch_ids", ()):
             raise PermissionError("banned launch id")
-        path = {"codex": "openai", "openai": "openai", "gemini": "google", "gemini-review": "google", "google": "google", "cursor": "cursor_grok_bot", "cursor_grok_bot": "cursor_grok_bot", "claude": "anthropic", "anthropic": "anthropic"}.get(request.provider)
+        path = {"codex": "openai", "openai": "openai", "gemini": "google", "gemini-review": "google", "google": "google", "cursor": "cursor_grok_bot", "cursor_grok_bot": "cursor_grok_bot", "claude": "anthropic", "anthropic": "anthropic", "cline_pass": "cline_pass"}.get(request.provider)
         approval_required = False
-        if path is not None and request.model != "provider-default":
+        if path is not None and (request.model != "provider-default" or path == "cline_pass"):
             plan = plan_launch(LaunchSpec(path, request.model, effort=request.effort, fast=request.fast))
             approval_required = plan.requires_human_approval
         if self.policy is not None:
