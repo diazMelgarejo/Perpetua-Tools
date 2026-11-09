@@ -102,3 +102,40 @@ exact-head C3d acceptance, publication and activation remain separate gates.
 These references record provenance, not fleet-wide acknowledgement. Remaining
 merge conflicts, security triage and operator decisions must be reconciled
 before the current batch can be described as complete.
+
+## Subsequent Local Remediation
+
+The operator selected protected, operator-created local ownership records.
+The implementation now verifies a versioned record binding canonical Git
+metadata, ledger directory and existing database device/inode identities.
+Linked and external Git layouts do not infer ownership from a `.git` basename
+or `git worktree list`. Discovery errors fail closed without changing Git trust.
+Record creation, permission repair and data migration are never startup actions.
+
+Independent review added bounded nonblocking reads, FIFO/hardlink refusals and
+private database checks. The authority/Gossip suite passed 67 tests. Windows
+record verification is explicitly unsupported; tests do not substitute POSIX
+permissions for native ACL evidence. Explicit reviewed `PT_STATE_DIR` remains
+the existing configuration path. Same-user processes and trusted filesystem
+ancestors remain stated operational assumptions, not human-presence guarantees.
+
+Wider testing identified a repository helper that incorrectly derived source
+identity from ledger location; it now uses the source module root independently.
+The local harness also lacked declared dependencies. Temporary test dependencies
+were supplied separately from the accepted Python/SQLite runtime; missing
+packages were not hidden by adding skips.
+
+A denied process-group observation after a successful signal reproduced an
+uncaught exception. The shared containment helper now returns `unknown`, never
+`contained`, on that path; the new deterministic regression failed before the
+fix and passed afterward. Real descendant/process-group host qualification
+remains separate from this mocked refusal test.
+
+The counted Markdown integration tests require the pinned Node linter in each
+CI test job. The workflow now provisions it and runs on stacked PR bases. A
+mocked HTTP peer-probe fixture was isolated from persisted local credentials
+instead of weakening production bearer-over-HTTPS enforcement.
+
+These are local implementation and test facts. They supersede earlier design
+blockers, not the remaining exact-head CI, native Windows, deployment, operator
+record enrollment or receipt requirements.
