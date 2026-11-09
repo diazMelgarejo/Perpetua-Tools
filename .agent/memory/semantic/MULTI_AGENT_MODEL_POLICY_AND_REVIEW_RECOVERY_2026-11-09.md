@@ -139,3 +139,37 @@ instead of weakening production bearer-over-HTTPS enforcement.
 These are local implementation and test facts. They supersede earlier design
 blockers, not the remaining exact-head CI, native Windows, deployment, operator
 record enrollment or receipt requirements.
+
+## Reviewed CI And Containment Follow-Up
+
+Hosted CI exposed a mistyped immutable Node action reference and a second full
+test workflow missing the pinned Markdown linter. The repair verifies the exact
+upstream action commit, checks every corrected job independently, provisions
+the real integration dependency, and includes stacked PR bases. The workflow
+regressions passed on Python 3.11, 3.12 and 3.13; this is not full matrix or
+native Windows qualification. Every workflow invoking a dependent test scope
+must provision that dependency; one green workflow does not validate another.
+
+Both directions of the cross-repository parity check need explicit reviewed
+peers. A same-named-branch lookup with main fallback compared unmatched source
+trees and failed correctly. Pin reviewed code snapshots rather than weakening
+byte equality. Source snapshots can precede later pin-only commits, avoiding
+circular commit hashes while preserving the same reviewed implementation.
+
+The native containment investigation distinguished Darwin's inconclusive
+permission-denied observation from actual group absence. The reviewed repair
+at Orama `e38098e57915d59d5adda65315396b99a9c0e14f` retains the unreaped leader
+through all group signals, synchronizes with cooperating Popen waiters, and
+uses only read-only group probes after reaping. EPERM alone proves neither
+absence nor permission to restore; a later independent ESRCH can prove absence.
+An inconclusive intermediate probe must not suppress bounded escalation after
+ownership is revalidated. Missing, partial, or runtime-unsupported wait APIs
+fall back to bounded direct-child-only cleanup with an unknown tree result.
+
+Two deterministic identity regressions failed against the preceding published
+implementation. The reviewed Orama containment/canary subset passed 88 tests
+with 12 platform skips. The new native resistance test uses an owned root;
+existing orphan and inherited-pipe coverage remains. Tests must not introduce
+their own unverified descendant-PID cleanup race. Callers must not bypass
+Popen ownership by independently reaping its child through raw wait syscalls.
+Actual Windows execution, deployment and exact-head CI remain separate gates.

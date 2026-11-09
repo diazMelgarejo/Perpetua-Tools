@@ -93,7 +93,7 @@ def test_memory_review_stack_pins_reviewed_orama_peer() -> None:
     branch = "2026-11-08-001-memory-48h-lan-c6-fleet-synthesis"
     resolution = _MODULE.resolve_orama_policy_stack(branch, pull_merged=False)
     assert resolution.declared is True
-    assert resolution.peer_ref == "af004f3b72a27ca93a28d2395312933e80537c9c"
+    assert resolution.peer_ref == "e38098e57915d59d5adda65315396b99a9c0e14f"
     entry = _MODULE.load_policy_stacks()["orama_system_refs"][branch]
     assert entry["peer_pull"] == 481
     assert _MODULE.resolve_orama_policy_stack(branch, pull_merged=True).peer_ref == "main"
@@ -104,7 +104,7 @@ def test_gemini_review_stack_pins_reviewed_orama_peer() -> None:
     branch = "feat/gemini-3.8-flash-governance"
     resolution = _MODULE.resolve_orama_policy_stack(branch, pull_merged=False)
     assert resolution.declared is True
-    assert resolution.peer_ref == "6b2085e9edd5dfd5b6ef38fd78a4f99c72663ce3"
+    assert resolution.peer_ref == "6d7cc3b0092cefa3bb20d477986d1b46d0997160"
     entry = _MODULE.load_policy_stacks()["orama_system_refs"][branch]
     assert entry["peer_pull"] == 482
     assert _MODULE.resolve_orama_policy_stack(branch, pull_merged=True).peer_ref == "main"
