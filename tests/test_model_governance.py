@@ -921,7 +921,7 @@ def test_differential_policy_outcomes_match_across_repositories() -> None:
 # --- Cross-repo config + pin parity (F1/F2): keep byte-identical in both v1 repositories. ---
 # The differential above compares launch outcomes only; these pin the governance
 # config and the shared pin-document sections so drift in either repo fails a test.
-_PARITY_CONFIG_DIGEST = "52310413e3ce88fddd357b41bfd160684d8383e7de0c0efedf5d0e73427e92df"
+_PARITY_CONFIG_DIGEST = "5be826c820ef3b2a60c3693e05fa0a4dffa00a16fa34a463c52b6e81a8f1f6f5"
 _PARITY_PIN_DIGEST = "f03c1a17e78d065ca281c71f630163e149f2ac64ed49bc71ffe2a4d3fe5c08b4"
 _PARITY_PIN_SECTIONS = ("## Escalation approval regimes", "## Role selection contract")
 _PARITY_ALEXANDRIA_TIP = "d6da6781"
@@ -994,11 +994,11 @@ def test_pin_document_and_config_name_the_same_alexandria_tip() -> None:
     assert _preamble_tip(doc) == cfg["canonical"]["tip"] == _PARITY_ALEXANDRIA_TIP
 
 
-def test_cline_pass_default_is_deepseek_v4_1_flash_1017_at_a_documented_effort() -> None:
-    """ClinePass pins the 1017 build; medium is not a level Cline offers for it."""
+def test_cline_pass_default_is_deepseek_v4_1_flash_1017_at_medium() -> None:
+    """ClinePass pins the operator-approved medium default."""
     spec = default_launch("cline_pass")
     assert spec.launch_id == "deepseek-v4.1-flash-1017"
-    assert spec.effort == "low"
+    assert spec.effort == "medium"
     assert spec.fast is False
 
 
@@ -1020,16 +1020,23 @@ def test_cline_pass_muse_spark_1_3_contributor_is_allowed_ungated() -> None:
     assert_launch_allowed(spec)
 
 
-def test_cline_pass_refuses_a_listed_id_at_an_unlisted_effort() -> None:
+@pytest.mark.parametrize("effort", ["high", "xhigh"])
+def test_cline_pass_refuses_a_listed_id_at_an_unlisted_effort(effort) -> None:
     """Verify cline pass refuses a listed id at an unlisted effort."""
     spec = LaunchSpec(
         path="cline_pass",
         launch_id="deepseek-v4.1-flash-1017",
-        effort="medium",
+        effort=effort,
         fast=False,
     )
     with pytest.raises(ModelGovernanceError):
         assert_launch_allowed(spec)
+
+
+@pytest.mark.parametrize("effort", ["low", "medium"])
+def test_cline_pass_deepseek_approved_efforts(effort) -> None:
+    """Both explicitly approved DeepSeek effort levels remain usable."""
+    assert_launch_allowed(LaunchSpec(path="cline_pass", launch_id="deepseek-v4.1-flash-1017", effort=effort, fast=False))
 
 
 def test_cline_pass_refuses_an_unlisted_model() -> None:
