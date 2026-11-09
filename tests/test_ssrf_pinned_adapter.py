@@ -50,6 +50,32 @@ def test_public_address_ok() -> None:
     default_address_allowed("1.1.1.1")
 
 
+def test_default_session_reaches_mocked_public_transport() -> None:
+    """Exercise default session construction without ambient proxy discovery."""
+    import io
+
+    import urllib3
+    from urllib3.connectionpool import HTTPSConnectionPool
+
+    requests_seen: list[str] = []
+
+    def public_transport(pool: object, method: str, url: str, *args: object, **kwargs: object) -> urllib3.HTTPResponse:
+        """Record only traffic that passed the real pinned adapter validation."""
+        requests_seen.append(url)
+        return urllib3.HTTPResponse(body=io.BytesIO(b"public response"), status=200, preload_content=False)
+
+    with (
+        patch("requests.sessions.get_environ_proxies", return_value={}),
+        patch("socket.getaddrinfo", return_value=[(2, 1, 6, "", ("93.184.216.34", 443))]),
+        patch.object(HTTPSConnectionPool, "urlopen", public_transport),
+    ):
+        response = ssrf_request("GET", "https://example.com/public")
+        assert response.status_code == 200
+        assert response.content == b"public response"
+        response.close()
+    assert requests_seen == ["/public"]
+
+
 def test_url_rejects_userinfo_and_scheme() -> None:
     """URLs with userinfo, a non-http(s) scheme or control characters are rejected."""
     with pytest.raises(SSRFPolicyError):
@@ -111,7 +137,10 @@ def test_ssrf_request_refuses_redirect_to_metadata() -> None:
             preload_content=False,
         )
 
+    sess = ssrf_session()
+    sess.trust_env = False
     with (
+        sess,
         patch("socket.getaddrinfo", side_effect=fake_getaddrinfo),
         patch.object(HTTPConnectionPool, "urlopen", fake_urlopen),
         patch.object(HTTPSConnectionPool, "urlopen", fake_urlopen),
@@ -121,6 +150,7 @@ def test_ssrf_request_refuses_redirect_to_metadata() -> None:
             "GET",
             "https://example.com/out",
             allow_redirects=True,
+            session=sess,
         )
     # The first hop (public example.com) was allowed through to the
     # (mocked) transport; the metadata redirect target must never reach it.
@@ -181,6 +211,7 @@ def test_ssrf_request_restores_caller_session_max_redirects() -> None:
     from urllib3.connectionpool import HTTPConnectionPool, HTTPSConnectionPool
 
     sess = ssrf_session()
+    sess.trust_env = False
     original = sess.max_redirects
     assert original == 0
 
@@ -437,6 +468,7 @@ def test_multithreaded_shared_session_does_not_crash_or_cross_contaminate() -> N
         )
 
     session = requests.Session()
+    session.trust_env = False
     adapter = SSRFPinnedHTTPAdapter()
     session.mount("http://", adapter)
     session.mount("https://", adapter)
@@ -586,7 +618,10 @@ def test_redirect_limit_telemetry_reports_scheme_correct_default_port(
             preload_content=False,
         )
 
+    sess = ssrf_session()
+    sess.trust_env = False
     with (
+        sess,
         patch("socket.getaddrinfo", side_effect=fake_getaddrinfo),
         patch.object(HTTPConnectionPool, "urlopen", fake_urlopen),
         pytest.raises(RedirectDenied, match="redirect limit"),
@@ -596,6 +631,7 @@ def test_redirect_limit_telemetry_reports_scheme_correct_default_port(
             "http://example.com/start",
             allow_redirects=True,
             max_redirects=2,
+            session=sess,
         )
 
     from src.utils.egress_telemetry import _sink_path

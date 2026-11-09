@@ -10,6 +10,8 @@ Covers acceptance gates G1, G2, G3, G5 from:
 from __future__ import annotations
 
 import asyncio
+import json
+import os
 import pytest
 
 import subprocess
@@ -32,6 +34,7 @@ from orchestrator.gossip_bus import (
 
 @pytest.fixture
 async def bus(tmp_path):
+    """Create an initialized temporary event bus."""
     db = str(tmp_path / "test.db")
     b = GossipBus(db)
     await b.init_db()
@@ -43,25 +46,30 @@ async def bus(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_sanitize_strips_quotes():
+    """Quoted input cannot inject FTS phrase operators."""
     assert '"hello"' not in _sanitize_fts_query('"hello world"')
 
 
 def test_sanitize_strips_colon():
+    """Column-selection punctuation is removed from queries."""
     result = _sanitize_fts_query("event_type:dispatch")
     assert ":" not in result
 
 
 def test_sanitize_lowercases_fts_keywords():
+    """Boolean FTS keywords become ordinary search terms."""
     result = _sanitize_fts_query("hello AND world")
     assert "and" in result
     assert "AND" not in result
 
 
 def test_sanitize_empty_returns_empty():
+    """An empty query remains empty."""
     assert _sanitize_fts_query("") == ""
 
 
 def test_sanitize_preserves_plain_terms():
+    """Ordinary search terms survive sanitization."""
     result = _sanitize_fts_query("blue widget quarterly report")
     assert "blue" in result
     assert "widget" in result
@@ -73,6 +81,7 @@ def test_sanitize_preserves_plain_terms():
 
 @pytest.mark.asyncio
 async def test_search_empty_query_returns_empty(bus):
+    """An empty search does not return stored events."""
     await bus.emit("dispatch", {"prompt": "hello world"})
     result = await bus.search("")
     assert result == []
@@ -80,6 +89,7 @@ async def test_search_empty_query_returns_empty(bus):
 
 @pytest.mark.asyncio
 async def test_search_finds_exact_payload_keyword(bus):
+    """Indexed payload terms find the matching event."""
     # Use non-sensitive keys — prompts are redacted before durable FTS store.
     await bus.emit("dispatch", {"intent": "find the blue widget"})
     await bus.emit("route", {"intent": "unrelated thing"})
@@ -91,6 +101,7 @@ async def test_search_finds_exact_payload_keyword(bus):
 
 @pytest.mark.asyncio
 async def test_search_filters_by_event_type(bus):
+    """Search results respect the requested event type."""
     await bus.emit("dispatch", {"intent": "run the calculation"})
     await bus.emit("error", {"detail": "run the calculation", "error": "timeout"})
     hits = await bus.search("run the calculation", event_type="error")
@@ -101,6 +112,7 @@ async def test_search_filters_by_event_type(bus):
 
 @pytest.mark.asyncio
 async def test_search_returns_empty_for_no_match(bus):
+    """Unmatched terms return no events."""
     await bus.emit("dispatch", {"prompt": "completely different content"})
     hits = await bus.search("xyzzy_no_match_ever")
     assert hits == []
@@ -147,9 +159,33 @@ async def test_emit_creates_pending_row(bus):
 
 @pytest.fixture
 def isolated_env(monkeypatch):
-    """Strip the env vars that would otherwise override default resolution."""
+    """Isolate Git setup and default state resolution from the runner's environment."""
     monkeypatch.delenv("GOSSIP_DB_PATH", raising=False)
     monkeypatch.delenv("PT_STATE_DIR", raising=False)
+    monkeypatch.delenv("PT_STATE_AUTHORITY_FILE", raising=False)
+    for key in list(os.environ):
+        if key.startswith("GIT_"):
+            monkeypatch.delenv(key, raising=False)
+
+
+def _set_authority(monkeypatch: pytest.MonkeyPatch, common: Path, ledger: Path) -> None:
+    """Install a test-only private record for an existing ledger."""
+    if os.name != "posix":
+        pytest.skip("Protected ownership records require POSIX verification; Windows ACL qualification is separate")
+    ledger.mkdir(exist_ok=True)
+    ledger.chmod(0o700)
+    (ledger / "perpetua_core.db").touch()
+    (ledger / "perpetua_core.db").chmod(0o600)
+    directory = ledger.parent / "authority-test"
+    directory.mkdir(mode=0o700, exist_ok=True)
+    record = directory / "record.json"
+    cs, ls, ds = common.stat(), ledger.stat(), (ledger / "perpetua_core.db").stat()
+    record.write_text(json.dumps({"schema_version": 1, "owner": str(os.getuid()),
+        "git_common_dir": str(common.resolve()), "git_device": cs.st_dev, "git_inode": cs.st_ino,
+        "ledger_dir": str(ledger.resolve()), "ledger_device": ls.st_dev, "ledger_inode": ls.st_ino,
+        "db_device": ds.st_dev, "db_inode": ds.st_ino}))
+    record.chmod(0o600)
+    monkeypatch.setenv("PT_STATE_AUTHORITY_FILE", str(record))
 
 
 @pytest.fixture
@@ -180,8 +216,11 @@ def test_default_resolution_converges_across_worktrees(
     default-resolved db path must be identical, not one-per-worktree."""
     repo, worktree = bare_repo_with_worktree
     monkeypatch.chdir(repo)
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", repo)
     path_from_repo = resolve_gossip_db_path()
+    _set_authority(monkeypatch, repo / ".git", repo / ".state")
     monkeypatch.chdir(worktree)
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", worktree)
     path_from_worktree = resolve_gossip_db_path()
     assert path_from_repo == path_from_worktree
     assert path_from_repo == str((repo / ".state" / "perpetua_core.db").resolve())
@@ -190,44 +229,218 @@ def test_default_resolution_converges_across_worktrees(
 def test_default_resolution_anchors_bare_repo_state_at_common_dir(
     isolated_env, monkeypatch, tmp_path
 ):
+    """A bare repository stores shared state at its common Git directory."""
     bare_repo = tmp_path / "bare-repo"
     subprocess.run(["git", "init", "--bare", "-q", str(bare_repo)], check=True)
     monkeypatch.chdir(bare_repo)
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", bare_repo)
 
     assert resolve_gossip_db_path() == str(
         (bare_repo / ".state" / "perpetua_core.db").resolve()
     )
 
 
-def test_default_resolution_anchors_external_git_dir_at_common_dir(
+@pytest.mark.parametrize("variable", ["GIT_DIR", "GIT_COMMON_DIR", "GIT_WORK_TREE"])
+def test_inherited_git_location_cannot_redirect_state(
+    isolated_env, bare_repo_with_worktree, monkeypatch, tmp_path, variable
+):
+    """Foreign Git context cannot split the dispatch and gossip ledgers."""
+    repo, worktree = bare_repo_with_worktree
+    foreign = tmp_path / "foreign"
+    subprocess.run(["git", "init", "-q", str(foreign)], check=True)
+    value = foreign / ".git" if variable != "GIT_WORK_TREE" else foreign
+    monkeypatch.setenv(variable, str(value))
+    _set_authority(monkeypatch, repo / ".git", repo / ".state")
+    for root in (repo, worktree):
+        monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", root)
+        assert resolve_gossip_db_path() == str((repo / ".state" / "perpetua_core.db").resolve())
+
+
+def test_separate_git_directory_shares_state_across_worktrees(
     isolated_env, monkeypatch, tmp_path
 ):
+    """A separate Git directory is a stable anchor shared by its worktrees."""
+    repo, git_dir, worktree = (tmp_path / name for name in ("repo", "metadata", "linked"))
+    subprocess.run(["git", "init", "-q", "--separate-git-dir", str(git_dir), str(repo)], check=True)
+    subprocess.run(["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@t.test", "commit", "-q", "--allow-empty", "-m", "init"], check=True)
+    subprocess.run(["git", "-C", str(repo), "worktree", "add", "-q", "-b", "linked", str(worktree)], check=True)
+    _set_authority(monkeypatch, git_dir, git_dir / ".state")
+    for root in (repo, worktree):
+        monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", root)
+        assert resolve_gossip_db_path() == str((git_dir / ".state" / "perpetua_core.db").resolve())
+def test_default_resolution_ignores_inherited_git_dir(
+    isolated_env, monkeypatch, tmp_path
+):
+    """An inherited Git directory cannot redirect the dispatch ledger."""
     external_git_dir = tmp_path / "external-git-dir"
     subprocess.run(
         ["git", "init", "--bare", "-q", str(external_git_dir)], check=True
     )
-    monkeypatch.chdir(tmp_path)
+    checkout = tmp_path / "checkout"
+    subprocess.run(["git", "init", "-q", str(checkout)], check=True)
+    assert (checkout / ".git").is_dir()
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", checkout)
     monkeypatch.setenv("GIT_DIR", str(external_git_dir))
 
     assert resolve_gossip_db_path() == str(
-        (external_git_dir / ".state" / "perpetua_core.db").resolve()
+        (checkout / ".state" / "perpetua_core.db").resolve()
+    )
+
+
+def test_default_resolution_ignores_inherited_git_common_dir(
+    isolated_env, monkeypatch, tmp_path
+):
+    """An inherited common directory cannot redirect the dispatch ledger."""
+    external_common_dir = tmp_path / "external-common-dir"
+    subprocess.run(
+        ["git", "init", "--bare", "-q", str(external_common_dir)], check=True
+    )
+    checkout = tmp_path / "checkout"
+    checkout.mkdir()
+    subprocess.run(["git", "init", "-q", str(checkout)], check=True)
+    monkeypatch.chdir(checkout)
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", checkout)
+    monkeypatch.setenv("GIT_COMMON_DIR", str(external_common_dir))
+
+    assert resolve_gossip_db_path() == str(
+        (checkout / ".state" / "perpetua_core.db").resolve()
+    )
+
+
+def test_separate_git_dir_requires_authority_for_legacy_ledger(
+    isolated_env, monkeypatch, tmp_path
+):
+    """A separate Git directory must not silently abandon an existing ledger."""
+    checkout = tmp_path / "checkout"
+    git_dir = tmp_path / "external" / "gitdir"
+    git_dir.parent.mkdir()
+    subprocess.run(["git", "init", "-q", "--separate-git-dir", str(git_dir), str(checkout)], check=True)
+    subprocess.run(["git", "-C", str(checkout), "-c", "user.name=t", "-c", "user.email=t@t.test", "commit", "--allow-empty", "-qm", "init"], check=True)
+    linked = tmp_path / "linked"
+    subprocess.run(["git", "-C", str(checkout), "worktree", "add", "-qb", "linked", str(linked)], check=True)
+    legacy_state = git_dir.parent / ".state"
+    legacy_state.mkdir()
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", checkout)
+    with pytest.raises(RuntimeError, match="requires a verified"):
+        resolve_gossip_db_path()
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", linked)
+    with pytest.raises(RuntimeError, match="requires a verified"):
+        resolve_gossip_db_path()
+    monkeypatch.setenv("PT_STATE_DIR", str(legacy_state))
+    assert resolve_gossip_db_path() == str((legacy_state / "perpetua_core.db").resolve())
+
+
+def test_failed_real_git_discovery_never_falls_back(isolated_env, monkeypatch, tmp_path):
+    """A damaged Git pointer cannot create a checkout-local second ledger."""
+    checkout = tmp_path / "checkout"
+    checkout.mkdir()
+    (checkout / ".git").write_text("gitdir: /nonexistent-invalid-pt-gitdir\n")
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", checkout)
+    with pytest.raises(RuntimeError, match="Git discovery failed"):
+        resolve_gossip_db_path()
+    assert not (checkout / ".state").exists()
+
+
+def test_sibling_external_git_dirs_refuse_foreign_legacy(isolated_env, monkeypatch, tmp_path):
+    """A shared parent ledger cannot establish either sibling's ownership."""
+    metadata = tmp_path / "metadata"
+    metadata.mkdir()
+    (metadata / ".state").mkdir()
+    for name in ("one", "two"):
+        checkout = tmp_path / name
+        git_dir = metadata / name
+        subprocess.run(["git", "init", "-q", "--separate-git-dir", str(git_dir), str(checkout)], check=True)
+        monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", checkout)
+        with pytest.raises(RuntimeError, match="requires a verified"):
+            resolve_gossip_db_path()
+        assert not (git_dir / ".state").exists()
+
+
+def test_external_git_dir_named_dot_git_does_not_claim_parent(isolated_env, monkeypatch, tmp_path):
+    """A separate metadata directory named .git is not a main checkout."""
+    checkout = tmp_path / "checkout"
+    parent = tmp_path / "metadata"
+    parent.mkdir()
+    git_dir = parent / ".git"
+    subprocess.run(["git", "init", "-q", "--separate-git-dir", str(git_dir), str(checkout)], check=True)
+    (parent / ".state").mkdir()
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", checkout)
+    with pytest.raises(RuntimeError, match="requires a verified"):
+        resolve_gossip_db_path()
+    assert not (git_dir / ".state").exists()
+
+
+def test_separate_git_dir_uses_isolated_state_without_legacy(
+    isolated_env, monkeypatch, tmp_path
+):
+    """A new separate Git directory uses its isolated shared state."""
+    checkout = tmp_path / "checkout"
+    git_dir = tmp_path / "external" / "gitdir"
+    git_dir.parent.mkdir()
+    subprocess.run(["git", "init", "-q", "--separate-git-dir", str(git_dir), str(checkout)], check=True)
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", checkout)
+    with pytest.raises(RuntimeError, match="requires a verified"):
+        resolve_gossip_db_path()
+
+
+def test_separate_git_dir_refuses_ambiguous_existing_state(
+    isolated_env, monkeypatch, tmp_path
+):
+    """Never silently select one of two potentially authoritative ledgers."""
+    checkout = tmp_path / "checkout"
+    git_dir = tmp_path / "external" / "gitdir"
+    git_dir.parent.mkdir()
+    subprocess.run(["git", "init", "-q", "--separate-git-dir", str(git_dir), str(checkout)], check=True)
+    (git_dir.parent / ".state").mkdir()
+    (git_dir / ".state").mkdir()
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", checkout)
+    with pytest.raises(RuntimeError, match="requires a verified"):
+        resolve_gossip_db_path()
+
+
+def test_default_resolution_installed_package_guard(isolated_env, tmp_path):
+    """Installed packages under site-packages or dist-packages return None."""
+    site_pkg_dir = tmp_path / "lib" / "python3.13" / "site-packages" / "orchestrator"
+    site_pkg_dir.mkdir(parents=True)
+    fake_file = site_pkg_dir / "state_dir.py"
+    fake_file.touch()
+
+    assert _canonical_repo_state_dir(fake_file.parent.parent) is None
+
+
+def test_default_resolution_bare_repo_named_dot_git(isolated_env, monkeypatch, tmp_path):
+    """A bare repository named .git is anchored directly, not to its parent."""
+    bare_repo = tmp_path / ".git"
+    subprocess.run(["git", "init", "--bare", "-q", str(bare_repo)], check=True)
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", bare_repo)
+
+    assert resolve_gossip_db_path() == str(
+        (bare_repo / ".state" / "perpetua_core.db").resolve()
     )
 
 
 def test_default_resolution_decodes_git_common_dir_as_utf8(
     isolated_env, monkeypatch, tmp_path
 ):
+    """Git common-directory output is decoded as UTF-8."""
     checkout = tmp_path / "r\u00e9sum\u00e9"
     common_dir = checkout / ".git"
     common_dir.mkdir(parents=True)
 
     def fake_check_output(command, **kwargs):
-        assert command == ["git", "rev-parse", "--git-common-dir"]
+        """Check the Git invocation and return a non-ASCII path."""
+        if command[3:] == ["worktree", "list", "--porcelain", "-z"]:
+            return f"worktree {checkout}\0HEAD deadbeef\0\0"
+        assert command[:4] == ["git", "-C", str(checkout), "rev-parse"]
         assert kwargs["text"] is True
         assert kwargs["encoding"] == "utf-8"
-        return str(common_dir)
+        if command[4:] == ["--show-toplevel"]:
+            return str(checkout)
+        assert command[4:] == ["--git-common-dir", "--is-bare-repository"]
+        return f"{common_dir}\nfalse"
 
-    monkeypatch.setattr("orchestrator.gossip_bus.subprocess.check_output", fake_check_output)
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", checkout)
+    monkeypatch.setattr("orchestrator.state_dir.subprocess.check_output", fake_check_output)
 
     assert resolve_gossip_db_path() == str(
         (checkout / ".state" / "perpetua_core.db").resolve()
@@ -262,8 +475,29 @@ def test_default_resolution_falls_back_outside_git_repo(isolated_env, tmp_path, 
     non_repo = tmp_path / "not-a-repo"
     non_repo.mkdir()
     monkeypatch.chdir(non_repo)
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", non_repo)
     result = resolve_gossip_db_path()
     assert result == str((non_repo / ".state" / "perpetua_core.db").resolve())
+
+
+def test_foreign_checkout_cwd_does_not_split_the_ledger(
+    isolated_env, bare_repo_with_worktree, monkeypatch, tmp_path
+):
+    """A caller in an unrelated checkout must still write to this repo's .state.
+
+    Regression for the split-ledger defect: resolving from the caller's cwd let
+    a process started in another Git checkout create a second event store.
+    """
+    repo, worktree = bare_repo_with_worktree
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", repo)
+    unrelated = tmp_path / "unrelated-checkout"
+    unrelated.mkdir()
+    monkeypatch.chdir(unrelated)
+
+    assert resolve_gossip_db_path() == str(
+        (repo / ".state" / "perpetua_core.db").resolve()
+    )
+    assert not (unrelated / ".state").exists()
 
 
 def test_supervisor_default_state_converges_with_fastapi_gossip_bus(
@@ -275,6 +509,8 @@ def test_supervisor_default_state_converges_with_fastapi_gossip_bus(
 
     repo, worktree = bare_repo_with_worktree
     monkeypatch.chdir(worktree)
+    _set_authority(monkeypatch, repo / ".git", repo / ".state")
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", worktree)
     fastapi_startup_path = resolve_gossip_db_path()
     supervisor = OrchestrationSupervisor()
     supervisor_gossip_path = resolve_gossip_db_path(supervisor._state_dir)
@@ -300,6 +536,7 @@ async def test_embed_failure_marks_row_failed(tmp_path):
     await bus.init_db()
 
     async def _fail_embed(text: str):
+        """Simulate an unavailable embedding service."""
         raise ConnectionError("Ollama unreachable")
 
     with patch("orchestrator.memory_embed.get_embedding", side_effect=_fail_embed):
@@ -337,6 +574,7 @@ async def test_pending_embeds_set_prevents_gc(tmp_path):
     _pending_embeds.clear()
 
     async def slow_embed(self, row_id, payload):
+        """Keep the embedding task alive long enough to observe it."""
         await asyncio.sleep(0.1)
 
     with patch.object(gossip_mod.GossipBus, "_embed_and_store", slow_embed):
@@ -358,6 +596,7 @@ async def test_cli_shutdown_cancels_and_drains_its_pending_embeddings(tmp_path):
     started = asyncio.Event()
 
     async def blocked_embed(self, row_id, payload):
+        """Hold an embedding open until shutdown cancels it."""
         started.set()
         await asyncio.Event().wait()
 
@@ -384,18 +623,23 @@ async def test_init_db_reraises_non_duplicate_column_operational_error(tmp_path,
     original_connect = bus.connect
 
     class FailingConnection:
+        """Wrap a real connection and inject a migration I/O error."""
         def __init__(self, inner):
+            """Retain the wrapped connection and injection state."""
             self._inner = inner
             self._alter_seen = False
 
         async def __aenter__(self):
+            """Enter the underlying database context."""
             self._db = await self._inner.__aenter__()
             return self
 
         async def __aexit__(self, *args):
+            """Exit the underlying database context."""
             return await self._inner.__aexit__(*args)
 
         async def execute(self, sql, *args):
+            """Fail the first migration and forward other SQL."""
             if sql.startswith("ALTER TABLE gossip ADD COLUMN event_uuid") and not self._alter_seen:
                 self._alter_seen = True
                 import sqlite3
@@ -403,6 +647,7 @@ async def test_init_db_reraises_non_duplicate_column_operational_error(tmp_path,
             return await self._db.execute(sql, *args)
 
         async def commit(self):
+            """Commit through the wrapped connection."""
             return await self._db.commit()
 
     monkeypatch.setattr(bus, "connect", lambda: FailingConnection(original_connect()))
@@ -454,6 +699,7 @@ async def test_insert_event_duplicate_returns_sanitized_legacy_payload(tmp_path)
 
 @pytest.mark.asyncio
 async def test_tail_returns_recent_events_newest_first(bus):
+    """Tail orders the most recently emitted event first."""
     await bus.emit("dispatch", {"prompt": "first"})
     await bus.emit("route", {"intent": "second"})
     rows = await bus.tail(limit=5)
@@ -500,10 +746,12 @@ def test_resolve_gossip_db_path_uses_pt_state_dir_env(tmp_path, monkeypatch):
     assert result == str((tmp_path / "perpetua_core.db").resolve())
 
 
-def test_resolve_gossip_db_path_defaults_to_canonical_repo_state(isolated_env):
+def test_resolve_gossip_db_path_defaults_to_canonical_repo_state(isolated_env, monkeypatch, bare_repo_with_worktree):
     """When no env vars and no state_dir are set, defaults to canonical repo .state."""
     from orchestrator.gossip_bus import resolve_gossip_db_path
 
+    repo, _ = bare_repo_with_worktree
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", repo)
     expected = str((_canonical_repo_state_dir() / "perpetua_core.db").resolve())
     assert resolve_gossip_db_path() == expected
 

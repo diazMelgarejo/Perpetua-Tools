@@ -89,7 +89,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from orchestrator.gossip_bus import (  # noqa: E402
     GossipBus,
     GossipBusError,
-    _canonical_repo_state_dir,
     cancel_pending_embeddings_for_current_loop,
 )
 from orchestrator.handoff_validation import (  # noqa: E402
@@ -170,16 +169,19 @@ from orchestrator.coordination.task_queue import (  # noqa: E402
 
 
 def _error(message: str) -> bool:
+    """Print an error to stderr and return a failure result."""
     print(f"ERROR: {message}", file=sys.stderr)
     return False
 
 
 def _warning(message: str) -> bool:
+    """Print a warning to stderr and return a failure result."""
     print(f"WARNING: {message}", file=sys.stderr)
     return False
 
 
 def _exit_code(result: object) -> int:
+    """Map an explicit false result to failure and other results to success."""
     return 1 if result is False else 0
 
 
@@ -327,22 +329,19 @@ async def queue_add_from_handoff(
 
 
 def canonical_repo_root() -> Path:
-    """Resolve the shared repo root common to every worktree of this repo.
+    """Return this module's source root without inferring it from ledger authority.
 
-    Deliberately independent of resolve_default_state_dir() and PT_STATE_DIR
-    -- runtime state location is a configurable override (multiple
-    instances, tests, custom layouts); repository identity is not, and must
-    never be influenced by where state happens to be pointed. Falls back to
-    cwd only when git resolution itself fails (not in a repo).
+    A reviewed ledger may live outside the checkout. Repository identity must
+    not follow that path, and reading source identity must not select a ledger.
     """
-    state = _canonical_repo_state_dir()
-    return state.parent if state is not None else Path.cwd()
+    return Path(__file__).resolve().parents[2]
 
 
 
 
 
 async def _amain(args: argparse.Namespace) -> int:
+    """Execute the selected coordination command and return its exit code."""
     if args.cmd == "handoff":
         try:
             packet = load_handoff_packet(args.packet)
@@ -626,6 +625,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 async def _run_cli(args: argparse.Namespace) -> int:
+    """Run the command, report bus errors, and cancel pending embeddings."""
     try:
         return await _amain(args)
     except GossipBusError as exc:
@@ -636,6 +636,7 @@ async def _run_cli(args: argparse.Namespace) -> int:
 
 
 def main() -> int:
+    """Parse command-line arguments and run the asynchronous CLI."""
     ap = build_parser()
     args = ap.parse_args()
     return asyncio.run(_run_cli(args))

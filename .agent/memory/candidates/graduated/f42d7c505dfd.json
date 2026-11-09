@@ -1,0 +1,68 @@
+{
+  "id": "f42d7c505dfd",
+  "key": "manual_f42d7c",
+  "name": "manual_f42d7c",
+  "claim": "Review closure requires checking review-level nitpicks and nested follow-ups against the current source, and verifying claim-ID provenance across candidate snapshots, semantic state, generated views and episodic corrections; a resolved thread count or green syntax gate alone is not that evidence.",
+  "conditions": [
+    "across",
+    "against",
+    "alone",
+    "candidate",
+    "checking",
+    "claim-id",
+    "closure",
+    "corrections",
+    "count",
+    "current",
+    "episodic",
+    "evidence",
+    "follow-ups",
+    "gate",
+    "generated",
+    "green",
+    "nested",
+    "nitpicks",
+    "provenance",
+    "requires",
+    "resolved",
+    "review",
+    "review-level",
+    "semantic",
+    "snapshots",
+    "source",
+    "state",
+    "syntax",
+    "thread",
+    "verifying",
+    "views"
+  ],
+  "evidence_ids": [
+    "2026-11-07T22:47:01.385006+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-07T22:47:01.385006+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-07T22:47:01.385006+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-07T22:47:01.539686+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PT484 and Orama481 residual review: two topic IDs carried copied claims, pseudo-handle causality remained unsupported, and default-port branches lost coverage despite resolved inline threads. Native append-only corrections and mutation-tested fallbacks provide bounded evidence, not host qualification.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-07T22:47:01.385006+00:00"
+      ],
+      "lessons_sha": "39df00ee8482"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-07T22:47:01.539664+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PT484 and Orama481 residual review: two topic IDs carried copied claims, pseudo-handle causality remained unsupported, and default-port branches lost coverage despite resolved inline threads. Native append-only corrections and mutation-tested fallbacks provide bounded evidence, not host qualification."
+}

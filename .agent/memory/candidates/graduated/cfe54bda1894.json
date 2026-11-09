@@ -1,0 +1,50 @@
+{
+  "id": "cfe54bda1894",
+  "key": "manual_cfe54b",
+  "name": "manual_cfe54b",
+  "claim": "Cross-fleet filesystem tests must pass raising=False when mocking os.path.isjunction on Python 3.11 runtimes where the attribute is absent.",
+  "conditions": [
+    "absent",
+    "attribute",
+    "cross-fleet",
+    "false",
+    "filesystem",
+    "isjunction",
+    "mocking",
+    "pass",
+    "path",
+    "python",
+    "raising",
+    "runtimes",
+    "tests"
+  ],
+  "evidence_ids": [
+    "2026-11-07T21:38:13.948244+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-07T21:38:13.948244+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-07T21:38:13.948244+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-07T21:38:14.140720+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Python 3.11 Windows runtime lacks os.path.isjunction (introduced in 3.12); test_private_store.py required raising=False to avoid AttributeError.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-07T21:38:13.948244+00:00"
+      ],
+      "lessons_sha": "8edfc9753071"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-07T21:38:14.140707+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Python 3.11 Windows runtime lacks os.path.isjunction (introduced in 3.12); test_private_store.py required raising=False to avoid AttributeError."
+}

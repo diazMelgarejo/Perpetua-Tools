@@ -30,6 +30,7 @@ any surviving member, which is the intended bounded lifetime.
 """
 from __future__ import annotations
 
+import errno
 import ntpath
 import os
 import posixpath
@@ -591,34 +592,97 @@ def _terminate_tree_posix(proc: "subprocess.Popen", grace: float) -> str:
         except subprocess.TimeoutExpired:
             return "escaped:1"
         return UNKNOWN
-    for sig in (sigterm, sigkill):
+    # WNOWAIT keeps the leader's PID reserved until all group signals finish.
+    # Popen's wait lock also serializes its poll/wait against each group signal.
+    # Callers must not independently reap this child with os.waitpid/waitid.
+    wait_lock = getattr(proc, "_waitpid_lock", None)
+
+    def owns_leader() -> str:
+        """Classify ownership without consuming the leader's exit status."""
+        if proc.returncode is not None or not all(
+            hasattr(os, name) for name in ("waitid", "P_PID", "WEXITED", "WNOWAIT", "WNOHANG")
+        ):
+            return "lost"
         try:
-            os.killpg(pid, sig)
-        except ProcessLookupError:
-            break
-        except PermissionError:
-            return UNKNOWN
+            os.waitid(os.P_PID, pid, os.WEXITED | os.WNOWAIT | os.WNOHANG)
+            return "owned"
+        except OSError as exc:
+            return "unsupported" if exc.errno in (errno.ENOSYS, errno.EINVAL) else "lost"
+
+    def cleanup_direct_child() -> str:
+        """Bound direct-child cleanup without asserting tree containment."""
+        # Without a stable group identity, only Popen's direct-child signal is
+        # available; use Popen's own child-status handling for that signal.
         try:
-            proc.wait(timeout=grace if sig == sigterm else 2)
+            if proc.poll() is None:
+                proc.kill()
+        except OSError:
+            pass
+        try:
+            proc.wait(timeout=2.0)
         except subprocess.TimeoutExpired:
             pass
-        deadline = time.monotonic() + 1.0
+        return UNKNOWN
+
+    if wait_lock is None or not all(
+        hasattr(os, name) for name in ("waitid", "P_PID", "WEXITED", "WNOWAIT", "WNOHANG")
+    ):
+        return cleanup_direct_child()
+
+    identity_lost = False
+    unsupported = False
+    for sig in (sigterm, sigkill):
+        with wait_lock:
+            ownership = owns_leader()
+            if ownership != "owned":
+                unsupported = ownership == "unsupported"
+                identity_lost = True
+                break
+            try:
+                os.killpg(pid, sig)
+            except (ProcessLookupError, PermissionError):
+                break
+        deadline = time.monotonic() + (max(0.0, grace) if sig == sigterm else 1.0)
+        continue_escalation = False
         while time.monotonic() < deadline:
             try:
                 os.killpg(pid, 0)
             except ProcessLookupError:
-                proc._win_exec_result = CONTAINED  # type: ignore[attr-defined]
-                return CONTAINED
+                break
+            except PermissionError:
+                # Membership is inconclusive, so revalidate before escalation.
+                continue_escalation = True
+                break
             time.sleep(0.05)
+        else:
+            continue
+        if continue_escalation:
+            continue
+        break
+
+    if unsupported:
+        return cleanup_direct_child()
     try:
-        os.killpg(pid, 0)
-    except ProcessLookupError:
-        proc._win_exec_result = CONTAINED  # type: ignore[attr-defined]
-        return CONTAINED
-    except PermissionError:
+        proc.wait(timeout=2.0)
+    except subprocess.TimeoutExpired:
         return UNKNOWN
-    proc._win_exec_result = "escaped:1"  # type: ignore[attr-defined]
-    return "escaped:1"
+    if identity_lost:
+        return UNKNOWN
+
+    # A read-only probe after reaping can prove absence, never authorize another
+    # signal. Darwin can return EPERM while a zombie remains in the group.
+    deadline = time.monotonic() + 1.0
+    while True:
+        try:
+            os.killpg(pid, 0)
+        except ProcessLookupError:
+            proc._win_exec_result = CONTAINED  # type: ignore[attr-defined]
+            return CONTAINED
+        except PermissionError:
+            pass
+        if time.monotonic() >= deadline:
+            return UNKNOWN
+        time.sleep(0.05)
 
 
 def terminate_tree(proc: "subprocess.Popen", grace: float = 5.0) -> str:
@@ -658,17 +722,24 @@ def exited(proc: "subprocess.Popen") -> bool:
     Reaping the root frees its PID and with it the process-group id that
     ``terminate_tree`` signals, so the group id could be recycled before cleanup.
     ``os.waitid(..., WNOWAIT)`` observes the exit and leaves the zombie in place
-    until ``terminate_tree`` (or ``wait``) reaps it. Windows keeps the process
-    handle open, so ``poll()`` is safe there.
+    until ``terminate_tree`` (or ``wait``) reaps it. If WNOWAIT is unavailable,
+    ``poll()`` may reap it and later POSIX containment remains unknown. Windows
+    keeps the process handle open, so ``poll()`` is safe there.
     """
     if proc.returncode is not None:
         return True
-    if _win() or not hasattr(os, "waitid"):
+    if _win() or not all(
+        hasattr(os, name) for name in ("waitid", "P_PID", "WEXITED", "WNOWAIT", "WNOHANG")
+    ):
         return proc.poll() is not None
     try:
         state = os.waitid(os.P_PID, proc.pid, os.WEXITED | os.WNOWAIT | os.WNOHANG)
     except ChildProcessError:
         return proc.poll() is not None
+    except OSError as exc:
+        if exc.errno in (errno.ENOSYS, errno.EINVAL):
+            return proc.poll() is not None
+        raise
     return state is not None
 
 

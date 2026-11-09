@@ -1,0 +1,26 @@
+{
+  "id": "75e0f7fa40ee",
+  "key": "manual_75e0f7",
+  "name": "manual_75e0f7",
+  "claim": "Treat provider wire IDs, CLI capabilities, governance permission and verified launch authority as separate contracts; a supported medium flag cannot authorize a gated model or attest a required budget.",
+  "conditions": [
+    "model policy",
+    "provider namespaces",
+    "structured approval"
+  ],
+  "evidence_ids": [
+    "2026-11-09T02:18:55.828347+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T02:18:55.828347+00:00",
+  "status": "staged",
+  "decisions": [
+    {
+      "ts": "2026-11-09T02:18:55.828347+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    }
+  ],
+  "rejection_count": 0
+}

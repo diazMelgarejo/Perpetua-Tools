@@ -1,0 +1,60 @@
+{
+  "id": "88a59b9cdcad",
+  "key": "manual_88a59b",
+  "name": "manual_88a59b",
+  "claim": "Integrative merge of root lifecycle agents (MERGE-10) enriches the role overlay with pre-router idempotency and org vision while preserving baseline core truths, boundaries, and continuity without parallel sprawl.",
+  "conditions": [
+    "agents",
+    "baseline",
+    "boundaries",
+    "continuity",
+    "core",
+    "enriches",
+    "idempotency",
+    "integrative",
+    "lifecycle",
+    "merge",
+    "merge-10",
+    "org",
+    "overlay",
+    "parallel",
+    "pre-router",
+    "preserving",
+    "role",
+    "root",
+    "sprawl",
+    "truths",
+    "vision",
+    "while",
+    "without"
+  ],
+  "evidence_ids": [
+    "2026-11-07T21:38:18.989618+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-07T21:38:18.989618+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-07T21:38:18.989618+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-07T21:38:19.166833+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Transclusion and harmonization of Atlas lifecycle agent into main OpenClaw workspace preserved all generic OpenClaw truths while codifying full calling and mission.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-07T21:38:18.989618+00:00"
+      ],
+      "lessons_sha": "cc4107699133"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-07T21:38:19.166817+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Transclusion and harmonization of Atlas lifecycle agent into main OpenClaw workspace preserved all generic OpenClaw truths while codifying full calling and mission."
+}

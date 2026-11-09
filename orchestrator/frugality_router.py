@@ -39,7 +39,7 @@ __all__ = [
 ]
 
 try:
-    from orchestrator.backend_resolver import PolicyUnavailable, resolve_backend_for_spec
+    from .backend_resolver import PolicyUnavailable, resolve_backend_for_spec
 except ImportError:  # pragma: no cover - optional during partial installs
     PolicyUnavailable = RuntimeError  # type: ignore[misc, assignment]
     resolve_backend_for_spec = None  # type: ignore[assignment]
@@ -92,6 +92,7 @@ def max_allowed_tier(spec: ToolCallSpec) -> int:
 
 
 def _enforce_tier_policy(tier: int, spec: ToolCallSpec) -> None:
+    """Reject tiers disallowed by offline or privacy restrictions."""
     if is_offline_mode() and tier >= 3:
         raise FrugalityPolicyError(
             f"ORAMASYS_OFFLINE=1 rejects tier >= 3 (requested tier {tier})"
@@ -121,12 +122,14 @@ def _validate_tier1_local_backend(spec: ToolCallSpec, backend: Any) -> None:
 
 
 def _probe_tier_0(spec: ToolCallSpec) -> Optional[ResolvedRoute]:
+    """Resolve work that can be satisfied from the current context."""
     if spec.in_context or spec.task_type == "in_context":
         return ResolvedRoute(tier=0, backend="in_context", model=None, est_cost_usd=0.0)
     return None
 
 
 def _probe_tier_1(spec: ToolCallSpec, registry: Any) -> Optional[ResolvedRoute]:
+    """Resolve an available local backend subject to egress policy."""
     if registry is None or resolve_backend_for_spec is None:
         return None
     launch_spec = {
@@ -154,6 +157,7 @@ def _probe_tier_1(spec: ToolCallSpec, registry: Any) -> Optional[ResolvedRoute]:
 
 
 def _probe_tier_2(spec: ToolCallSpec) -> Optional[ResolvedRoute]:
+    """Resolve supported local index and code-graph tasks."""
     if spec.task_type not in _LOCAL_INDEX_TASK_TYPES:
         return None
     backend = "gbrain" if spec.task_type in {"gbrain", "semantic_search"} else "crg"
@@ -167,6 +171,7 @@ def _probe_tier_2(spec: ToolCallSpec) -> Optional[ResolvedRoute]:
 
 
 def _escalation_route(spec: ToolCallSpec, tier: int) -> ResolvedRoute:
+    """Build an authorized higher-tier route with an estimated cost."""
     if tier >= 3 and not spec.escalation_reason:
         raise FrugalityPolicyError(
             "escalation_reason is required when tier >= 3"
@@ -190,6 +195,7 @@ def _escalation_route(spec: ToolCallSpec, tier: int) -> ResolvedRoute:
 
 
 def _emit_trace(route: ResolvedRoute, spec: ToolCallSpec, trace_path: Path | None) -> None:
+    """Append a routing trace when a trace path is configured."""
     span: Dict[str, Any] = {
         "timestamp": time.time(),
         "name": "frugality_router.resolve_route",

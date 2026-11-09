@@ -1,0 +1,210 @@
+# 48-Hour LAN Coordination, Windows Native C6 Verification, and Agent Fleet Synthesis
+
+Historical chronicle: the dated review correction at the end qualifies the identity,
+causality, retry, certification and dispatch-enforcement claims below. Earlier reports
+are preserved as evidence, not promoted to independently verified facts.
+
+Author/actor: Agnes / mac-antigravity; identity_verified: true. Takeover: none.
+Scope: verified cross-fleet synchronization, empirical Windows NTFS qualification evidence,
+PR remediation, and agent lifecycle synthesis across macOS Darwin ARM64 and Windows 11 Pro 64-bit.
+
+---
+
+## 1. Verified 48-Hour Chronicle (2026-11-06 to 2026-11-08)
+
+### A. LAN Reachability & TLS Reverse Proxy Recovery
+
+- **Host Port Binding & Firewall:** Diagnosed Mac listener state on port 8443. Resolved loopback
+  binding by configuring Caddy to listen on `:8443` and reverse proxy to the local Portal port 8002.
+  Unblocked Caddy binary in macOS Application Firewall (`socketfilterfw --unblockapp`).
+- **Service Lifetime:** Verified persistent service lifetime under user launchd job
+  `gui/$(id -u)/com.orama.v1-launcher`, ensuring listeners remain active after tool-runner process
+  reaping. Local CA-verified HTTPS `health: 200`, unauthenticated `inbox: 401`, and authenticated
+  `inbox: 200` passed.
+
+### B. C3 Delivery Tracking & Exact LF Hash Verification
+
+- **Source Packet Delivery:** Tracked delivery of canonical packet
+  `2026-11-07-c3abc-full-source-packet.md` (116,116 bytes).
+- **Cryptographic Invariant:** Verified exact LF-normalized SHA-256 match across both Mac and
+  Windows fleet nodes:
+  `aa19a7b6829df2aea2890706f70b65ca12830370fe88372800456c08f630e668`.
+- Ingested Windows read receipt `2026-11-07-windows-read-receipt-for-mac.md` confirming delivery
+  receipt without packet corruption or unreviewed mutations.
+
+### C. Cross-Platform Windows C6 Implementation & Certification (`oramasys/oramasys` PR #98)
+
+- **64-bit Win32 ctypes Handle Signatures:** On 64-bit Windows, `kernel32.GetCurrentProcess()`
+  returns pseudo-handle `(HANDLE)-1` (`0xFFFFFFFFFFFFFFFF`). Without explicit
+  `GetCurrentProcess.restype = wintypes.HANDLE`, ctypes defaults to 32-bit `c_int` returning Python
+  `-1`. Passing Python `-1` into consumer APIs like `advapi32.OpenProcessToken` without explicit
+  `argtypes = [wintypes.HANDLE, ...]` passes a 32-bit integer, and handles in high 64-bit address
+  space suffer truncation, triggering WinError 6 (`ERROR_INVALID_HANDLE`). Resolved by declaring
+  complete 64-bit `argtypes` and `restype` signatures across all Win32 security APIs
+  (`OpenProcessToken`, `GetTokenInformation`, `GetNamedSecurityInfoW`, `EqualSid`).
+- **Junction & Reparse Point Refusal on NTFS:** Implemented NTFS reparse point refusal via
+  `FILE_ATTRIBUTE_REPARSE_POINT` (`0x0400`) and `os.path.isjunction`, providing symlink/junction
+  traversal protection on Windows without POSIX `O_NOFOLLOW`.
+- **Active Defender Filter Driver Contention Resilience:** Verified `safe_replace` (alias
+  `replace_file`) under real-world Microsoft Defender antivirus filter driver contention. In a
+  100-cycle stress test on native Windows 11 NTFS, 72 transient WinError 32
+  (`ERROR_SHARING_VIOLATION`) and WinError 5 (`ERROR_ACCESS_DENIED`) locks occurred during rapid
+  file swaps. All 72 resolved within 2 exponential backoff retries (maximum resolution latency 25ms)
+  without file corruption. Note that while bounded backoff handles transient contention, exhaustion
+  handling remains required if external locks persist beyond the retry budget.
+- **Cross-Process Advisory Locking:** Replaced POSIX `fcntl.flock` with Win32
+  `msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)` and `msvcrt.LK_UNLCK` in `grant_lib.py`,
+  validated under multi-process concurrency on Windows.
+- **Platform Separation & Test Isolation:**
+  - Separated `_prepare_private_store_posix` and `_prepare_private_store_windows`.
+  - Guarded non-elevated symlink creation (`WinError 1314` skipped when Developer Mode is absent).
+  - Skipped legacy octal mode assertions (`0700`/`0600`) on NTFS where access is governed by DACLs.
+  - Added `raising=False` to `monkeypatch.setattr(os.path, "isjunction", ...)` for Python 3.11 runtimes.
+- **Fleet Certification:**
+  - GitHub Actions CI: **22 / 22 checks PASSED** (Python 3.11 & 3.12 matrices, manifest schema,
+    effect grants).
+  - Windows 11 Pro 64-bit Build 26200 NTFS (Python 3.11.15): **15 passed, 18 skipped in 0.16s,
+    0 failures, 0 errors**.
+  - macOS Darwin ARM64 (Python 3.13): **33 / 33 passed in 0.39s (81% statement coverage)**.
+  - Windows fleet delivered formal qualification receipts
+    (`2026-11-07-windows-c6-qualification-certification-pr98.md` and
+    `2026-11-07-windows-receipt-fleet-certification.md`).
+
+### D. Standing 120s LAN Peer Pulse & Clean Lifecycle Pause
+
+- Maintained a standing 120-second heartbeat and ping loop via cron between macOS fleet peer
+  (:8443) and Windows fleet peer (:8443).
+- Outbox queue reached clean delivery: `queued: 0, sent: 0, delivered: 74, superseded: 5`.
+- Emitted GossipBus heartbeats and notes for fleet tracking.
+- Paused the background cron task cleanly per operator instruction once final Windows receipt was
+  ingested.
+
+### E. Code Quality & CI Hygiene on `orama-system` PR #481
+
+- **Markdownlint Remediation:** Fixed 13 line-length and blank-line lint errors across five agent
+  cards (`autoresearcher`, `coder`, `lifecycle`, `mac-researcher`, `win-researcher`), achieving 0
+  issues across all changed files.
+- **Test Port Bleed Elimination:** Eliminated test failures in `tests/test_start_sh_peer_tls.py`
+  where host Caddy daemon on port 8443 and admin port 2019 collided with test assertions. Dynamic
+  port allocation via `_free_port()` restored 24/24 passing tests.
+- **Single-Push Review Policy:** Batched all fixes locally, verified 100% locally, and pushed
+  exactly once to `2026-11-07-003-canonical-agent-cards`. All 27 GitHub Actions checks passed green.
+
+### F. Atlas Lifecycle Agent Calling, Mission & Culmination Synthesis
+
+- Recalled canonical PT `.agent` memory regarding Atlas (`perpetua.lifecycle`, OpenClaw ID `main`).
+- Transcluded and deduplicated its Pre-Router Idempotency Gatekeeper role, Org Vision & Policy
+  Gate, Anti-Loss Navigation Spine, and Compounding Memory into the root OpenClaw workspace
+  `SOUL.md` and canonical staging `bin/agents/lifecycle/SOUL.md`.
+- Preserved all OpenClaw Core Truths, Boundaries, and Vibe under the MERGE-10 doctrine
+  ("Synthesize, never amputate").
+
+---
+
+## 2. Reusable Domain Knowledge & Architectural Lessons
+
+1. **Explicit Ctypes Signatures on 64-bit Windows:**
+   On 64-bit Windows platforms, APIs returning handles or pointers (such as
+   `kernel32.GetCurrentProcess()`) default to 32-bit `c_int` unless declared with explicit
+   `restype = wintypes.HANDLE`. Consumer functions (such as `OpenProcessToken`) similarly require
+   explicit `argtypes = [wintypes.HANDLE, ...]` to avoid 32-bit truncation of high-memory pointers
+   or improper conversion of pseudo-handles. Robust Win32 interop requires declaring both
+   producer `restype` and consumer `argtypes`.
+
+2. **Real-World Antivirus Contention on NTFS File Replacements:**
+   Atomic file replacement (`os.replace`) on Windows NTFS is subject to transient filter driver
+   locking by active endpoint security (e.g. Microsoft Defender). In empirical testing, bounded
+   exponential jittered backoff (1ms to 20ms over up to 10 retries) resolved 72/72 transient
+   contention events without data corruption; callers must nevertheless maintain failure paths for
+   cases where locks outlast the retry budget.
+
+3. **Heterogeneous Fleet Python Compatibility:**
+   `os.path.isjunction` is available only in Python 3.12+. When mocking or testing filesystem
+   primitives across fleets with Python 3.11 runtimes (e.g. Windows serving nodes), test fixtures
+   must specify `raising=False` on `monkeypatch.setattr(os.path, "isjunction", ...)`.
+
+4. **Review Remediation Push Discipline:**
+   Batching review and CI fixes locally, executing full local verification suites, and reviewing
+   branch commits prior to a single clean push avoids comment thrashing, prevents duplicate
+   automated review scans (CodeRabbit, Greptile), and guarantees a clean, verified commit history.
+
+5. **Integrative Retrofit Over Parallel Sprawl (MERGE-10):**
+   Retrofitting the root OpenClaw workspace and enriching the Oramasys role overlay preserves
+   operational continuity, audit logs, and tool integrations while preventing parallel fleet
+   subdirectory clutter.
+
+---
+
+## 3. Standing Governance Boundaries
+
+- **Serving Status:** `ORAMA_GRANT_SERVING` remains strictly **unset** (`governed=False`). Serving
+  is strictly OFF.
+- **Windows Qualification Gate:** Windows status remains **UNQUALIFIED**; release R6 remains OPEN
+  pending operator review and authorization.
+- **PR Single-Instance Policy:** At most 1 active PR per repository (0 or 1, strictly no multiple
+  open PRs per repo); phylax currently maintains 0 open PRs (`main` clean).
+
+## 4. Review correction — 2026-11-07 UTC
+
+- **Identity and evidence:** The author's `identity_verified: true` above is an assertion.
+  No independent authentication receipt was available to this reviewer. Named fleet receipts,
+  observed machine details and the 100-cycle experiment remain attributed reports unless the
+  exact source, runtime, procedure and receiver evidence are inspected. No new host run occurred
+  during this correction. Source CI is not fleet certification or R4–R8 qualification.
+- **Win32 causality:** Correctly typed consumer `HANDLE` arguments reconstruct Python `-1`
+  as the all-ones pseudo-handle. That case is distinct from truncating a real high pointer.
+  Both producer `restype` and consumer `argtypes` matter, but the reported WinError 6 cause
+  remains unassigned without the actual failing-call evidence. Do not infer it from a fix.
+- **Merged retry behavior:** Oramasys `f6295a13` uses deterministic default sleeps of 2, 4,
+  8, 16 and 32 ms: 62 ms total, with no jitter. Only explicit WinError 5/32 candidates retry.
+  The earlier 1–20 ms / ten-retry description is not that implementation. Locks may outlast
+  any bounded budget; exhaustion propagates. Retries prove neither race prevention nor
+  corruption immunity, and do not authorize changing antivirus or ACL configuration.
+- **Structured memory:** Append-only corrective snapshots restore the filesystem claim under
+  `lesson_cfe54bda1894` and lifecycle claim under `lesson_88a59b9cdcad`. The Win32 and retry
+  topics are separately qualified. All four remain provisional; original rows and candidate
+  snapshots are unchanged. The four accidentally imported legacy duplicates are withdrawn
+  through appended retracted snapshots, not deleted. `LESSONS.md` is regenerated from JSONL.
+- **Push and history:** One planned push batches publication; it does not prove clean history,
+  correct scope or successful review. Inspect every branch commit and the final tree before
+  publication. Preserve signed history; do not force-push to hide WIP or improve badges.
+- **Runtime authority:** An agent card does not enforce idempotency or policy. The user's
+  subsequent runtime-dispatch request belongs to PT's actual execution boundary, with tests
+  for races, direct callers and configured approval requirements. Operator approval is not
+  universally required for ordinary allowed tasks, but it cannot be forged by a persona.
+- **Closure:** Existing Windows ACL/reparse and elevated-sidecar limitations remain in the
+  Oramasys Windows handoff. Keep serving off; full deployment qualification, independent
+  release review, promotion and activation retain their separate evidence gates.
+
+The append-only operation is `.agent/tools/correct_lesson.py`: it records an audit before
+publishing the correction, cannot promote to accepted status, and retries a failed derived
+render without duplicating historical rows. Candidate snapshots remain original evidence;
+the correction record explicitly identifies the previous semantic snapshot by digest.
+
+### Review disposition and retained limits
+
+The review is [PR #484, review 5815172506](https://github.com/diazMelgarejo/Perpetua-Tools/pull/484#pullrequestreview-5815172506).
+Nested follow-ups are part of the disposition, even if the original root is resolved.
+
+| Finding | Disposition in this follow-up |
+| --- | --- |
+| Consumer `argtypes` / pseudo-handle causality (4503882038, 4503882061; follow-ups 4503947789, 4503947761) | Append a qualified provisional Win32 snapshot; preserve original candidate and historical claims. Do not assign an unobserved failing call. |
+| Wrong topics and unsupported accepted guidance (4503882043; follow-up 4503947486) | Restore filesystem and lifecycle topics under their original IDs with appended provisional snapshots; withdraw the four imported legacy duplicates without deleting them. |
+| Retry budget and guarantees (4503882068; follow-up 4503947887) | Separate the attributed experiment from merged deterministic behavior; explicitly retain exhaustion and race limits. |
+| Tracked path hygiene (4503882056) | Retain the earlier published sanitization; do not claim it was an append-only change in that earlier revision. This correction preserves the current published prefix. |
+| Push/history guarantees (4503882071; follow-up 4503947659) | Qualify the historical narrative above; inspect scoped commits and the final tree. A single publication is not proof of clean history. |
+| PR cardinality (4503882079) | Retain the earlier correction: at most one, including zero, not exactly one per repository regardless of need. |
+| Review queue refresh (4503882084; follow-up 4503949830) | Finding withdrawn: `review_state.write_review_queue_summary` already exists. Rebuild the derived summary with it; no duplicate refresh API is introduced. |
+
+The subsequent user-authorized runtime implementation is documented separately in
+[`docs/coordination/runtime-dispatch-guard.md`](../../../docs/coordination/runtime-dispatch-guard.md).
+It does not turn the historical lifecycle candidate into evidence of enforcement.
+The correction command refuses malformed JSONL and accepted supersession lineages
+that could otherwise resurrect an older claim. Recovering torn history requires a
+separate preservation procedure; no failed append is silently skipped or truncated.
+
+### 2026-11-08 review correction: publication stop
+
+If inspection finds undesired branch commits, STOP publication until an approved method
+addresses them while preserving signed history. Do not force-push or rewrite history
+without explicit authorization. Inspection alone does not make those commits acceptable.

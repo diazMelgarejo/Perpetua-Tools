@@ -921,7 +921,7 @@ def test_differential_policy_outcomes_match_across_repositories() -> None:
 # --- Cross-repo config + pin parity (F1/F2): keep byte-identical in both v1 repositories. ---
 # The differential above compares launch outcomes only; these pin the governance
 # config and the shared pin-document sections so drift in either repo fails a test.
-_PARITY_CONFIG_DIGEST = "d24937d88058bf253912724ca3f6a83354a176e18795aa90870732df05de8ad5"
+_PARITY_CONFIG_DIGEST = "136ff256e212dbd8f393a47a8f4c6106f3d52fbf90916614444b7197abfcf1dd"
 _PARITY_PIN_DIGEST = "f03c1a17e78d065ca281c71f630163e149f2ac64ed49bc71ffe2a4d3fe5c08b4"
 _PARITY_PIN_SECTIONS = ("## Escalation approval regimes", "## Role selection contract")
 _PARITY_ALEXANDRIA_TIP = "d6da6781"
@@ -992,3 +992,133 @@ def test_pin_document_and_config_name_the_same_alexandria_tip() -> None:
     doc = (root / "docs" / "standards" / "model-governance.md").read_text(encoding="utf-8")
     cfg = yaml.safe_load((root / "config" / "model-governance.yml").read_text(encoding="utf-8"))
     assert _preamble_tip(doc) == cfg["canonical"]["tip"] == _PARITY_ALEXANDRIA_TIP
+
+
+def test_cline_pass_default_is_deepseek_v4_1_flash_1017_at_medium() -> None:
+    """ClinePass pins the operator-approved medium default."""
+    spec = default_launch("cline_pass")
+    assert spec.launch_id == "deepseek-v4.1-flash-1017"
+    assert spec.effort == "medium"
+    assert spec.fast is False
+
+
+def test_cline_pass_default_needs_no_approval() -> None:
+    """Verify cline pass default needs no approval."""
+    plan = plan_launch(default_launch("cline_pass"))
+    assert plan.requires_human_approval is False
+    assert plan.effective == plan.requested
+
+
+def test_cline_pass_muse_spark_1_3_contributor_is_allowed_ungated() -> None:
+    """Verify cline pass muse spark 1 3 contributor is allowed ungated."""
+    spec = LaunchSpec(
+        path="cline_pass",
+        launch_id="muse-spark-1.3-contributor",
+        effort="medium",
+        fast=False,
+    )
+    assert_launch_allowed(spec)
+
+
+def test_cline_pass_glm_5_3_flash_is_allowed_ungated_at_medium() -> None:
+    """The operator-added GLM 5.3 Flash row launches at medium without a token."""
+    spec = LaunchSpec(
+        path="cline_pass",
+        launch_id="glm-5.3-flash",
+        effort="medium",
+        fast=False,
+    )
+    assert_launch_allowed(spec)
+
+
+@pytest.mark.parametrize("effort", ["low", "high", "xhigh", "max"])
+def test_cline_pass_glm_5_3_flash_refuses_efforts_other_than_medium(effort: str) -> None:
+    """Only the pinned medium effort is listed for GLM 5.3 Flash."""
+    spec = LaunchSpec(
+        path="cline_pass",
+        launch_id="glm-5.3-flash",
+        effort=effort,
+        fast=False,
+    )
+    with pytest.raises(ModelGovernanceError):
+        assert_launch_allowed(spec)
+
+
+@pytest.mark.parametrize("effort", ["high", "xhigh"])
+def test_cline_pass_refuses_a_listed_id_at_an_unlisted_effort(effort: str) -> None:
+    """Verify cline pass refuses a listed id at an unlisted effort."""
+    spec = LaunchSpec(
+        path="cline_pass",
+        launch_id="deepseek-v4.1-flash-1017",
+        effort=effort,
+        fast=False,
+    )
+    with pytest.raises(ModelGovernanceError):
+        assert_launch_allowed(spec)
+
+
+@pytest.mark.parametrize("effort", ["low", "medium"])
+def test_cline_pass_deepseek_approved_efforts(effort) -> None:
+    """Both explicitly approved DeepSeek effort levels remain usable."""
+    assert_launch_allowed(LaunchSpec(path="cline_pass", launch_id="deepseek-v4.1-flash-1017", effort=effort, fast=False))
+
+
+def test_cline_pass_refuses_an_unlisted_model() -> None:
+    """The ClinePass lineup is closed: an id without a row is not launched."""
+    spec = LaunchSpec(path="cline_pass", launch_id="glm-5.3", effort="medium", fast=False)
+    with pytest.raises(ModelGovernanceError):
+        assert_launch_allowed(spec)
+
+
+def test_cline_pass_refuses_fast_mode_without_escalation() -> None:
+    """Verify cline pass refuses fast mode without escalation."""
+    spec = LaunchSpec(
+        path="cline_pass",
+        launch_id="muse-spark-1.3-contributor",
+        effort="medium",
+        fast=True,
+    )
+    with pytest.raises(ModelGovernanceError):
+        assert_launch_allowed(spec)
+
+
+@pytest.mark.parametrize("operation", [plan_launch, assert_launch_allowed])
+@pytest.mark.parametrize("policy", [
+    {},
+    {"default": {"launch_id": "test", "effort": "medium"}, "allowed_ungated": [{}]},
+    {"default": {"launch_id": "test", "effort": "medium"}, "allowed_ungated": [{"launch_id": "other"}]},
+    {"default": {"launch_id": "test", "effort": "medium"}, "gated": {"test": {}}},
+    {"default": {"launch_id": "test", "effort": "medium"}, "planning": {"launch_id": "test", "effort": "medium"}},
+    {"default": {"launch_id": "test", "effort": "medium"}, "controller": {"launch_id": "test", "effort": "medium"}},
+])
+def test_cline_pass_malformed_or_gated_policy_fails_closed(operation, policy) -> None:
+    """Verify cline pass malformed or gated policy fails closed."""
+    spec = LaunchSpec(path="cline_pass", launch_id="test", effort="medium")
+    with pytest.raises(ModelGovernanceError, match="config unavailable"):
+        operation(spec, config={"cline_pass": policy})
+
+
+@pytest.mark.parametrize(("model", "reason"), [
+    ("muse-spark-1.3-contributor", "fast mode is unsupported"),
+    ("unlisted-model", "unlisted ClinePass model"),
+])
+def test_cline_pass_fast_refusal_identifies_actual_policy(model, reason) -> None:
+    """Verify cline pass fast refusal identifies actual policy."""
+    spec = LaunchSpec(path="cline_pass", launch_id=model, effort="medium", fast=True)
+    with pytest.raises(ModelGovernanceError, match=reason):
+        assert_launch_allowed(spec)
+
+
+def test_cline_pass_fast_refusal_is_not_lifted_by_matching_proof() -> None:
+    """Verify cline pass fast refusal is not lifted by matching proof."""
+    spec = LaunchSpec(path="cline_pass", launch_id="fast-listed", effort="medium", fast=True)
+    config = {"cline_pass": {"default": {"launch_id": "default", "effort": "low"},
+                             "allowed_ungated": [{"launch_id": "fast-listed", "effort": "medium", "fast": True}]}}
+    proof = EscalationProof(
+        kind="github_verified_signoff", reference="approval", model_id=spec.launch_id,
+        effort="medium", fast=True, expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+    )
+    with pytest.raises(ModelGovernanceError, match="fast mode is unsupported"):
+        assert_launch_allowed(spec, config=config)
+    with pytest.raises(ModelGovernanceError, match="fast mode is unsupported"):
+        assert_launch_allowed(spec, config=config, proof=proof)

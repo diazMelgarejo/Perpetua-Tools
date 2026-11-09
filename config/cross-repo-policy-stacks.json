@@ -1,23 +1,47 @@
 {
   "version": 1,
   "orama_system_refs": {
+    "2026-11-08-001-memory-48h-lan-c6-fleet-synthesis": {
+      "peer_ref": "e38098e57915d59d5adda65315396b99a9c0e14f",
+      "peer_pull": 481,
+      "peer_repository": "diazMelgarejo/orama-system",
+      "equivalents": [
+        "refs/pull/481/head",
+        "2026-11-07-003-canonical-agent-cards"
+      ]
+    },
+    "feat/gemini-3.8-flash-governance": {
+      "peer_ref": "6d7cc3b0092cefa3bb20d477986d1b46d0997160",
+      "peer_pull": 482,
+      "peer_repository": "diazMelgarejo/orama-system",
+      "equivalents": [
+        "refs/pull/482/head",
+        "feat/gemini-3.8-flash-orchestrator-routing"
+      ]
+    },
     "2026-11-02-001-windows-process-and-acl-hardening": {
       "peer_ref": "2026-11-03-002-win-exec-pathext-skip",
       "peer_pull": 466,
       "peer_repository": "diazMelgarejo/orama-system",
-      "equivalents": ["refs/pull/466/head"]
+      "equivalents": [
+        "refs/pull/466/head"
+      ]
     },
     "fix/pt-pipeline-endpoint-tls-20260917": {
       "peer_ref": "cursor/tiered-pipeline-runtime-fb76",
       "peer_pull": 363,
       "peer_repository": "diazMelgarejo/orama-system",
-      "equivalents": ["refs/pull/363/head"]
+      "equivalents": [
+        "refs/pull/363/head"
+      ]
     },
     "fix/pipeline-lockstep-heal-20260919": {
       "peer_ref": "cursor/tiered-pipeline-runtime-fb76",
       "peer_pull": 363,
       "peer_repository": "diazMelgarejo/orama-system",
-      "equivalents": ["refs/pull/363/head"]
+      "equivalents": [
+        "refs/pull/363/head"
+      ]
     }
   }
 }

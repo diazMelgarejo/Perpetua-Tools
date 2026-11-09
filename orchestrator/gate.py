@@ -63,7 +63,7 @@ from typing import Any, Dict, Optional, Sequence
 
 import yaml
 
-from orchestrator.frugality_router import (
+from .frugality_router import (
     FrugalityPolicyError,
     ResolvedRoute,
     ToolCallSpec,
@@ -119,6 +119,7 @@ def _ceiling_for(
 
 
 def _override_required_reason(tier: int, ceiling: int, *, offline: bool) -> str:
+    """Explain why a tier exceeding the policy ceiling was refused."""
     if offline:
         return (
             f"tier {tier} exceeds the ORAMASYS_OFFLINE=1 ceiling (tier {ceiling}); "
@@ -142,6 +143,7 @@ def _consult_by_known_tier(
     override_confirmed: bool,
     override_reason: Optional[str],
 ) -> GateDecision:
+    """Evaluate a known model tier against the effective policy ceiling."""
     ceiling = _ceiling_for(
         spec, override_confirmed=override_confirmed, override_reason=override_reason
     )
@@ -167,6 +169,7 @@ def _consult_by_resolve_route(
     override_reason: Optional[str],
     trace_path: Optional[str],
 ) -> GateDecision:
+    """Resolve an unknown tier while enforcing escalation requirements."""
     default_ceiling = max_allowed_tier(spec)
     wants_escalation_past_ceiling = (
         escalation_tier is not None and escalation_tier > default_ceiling

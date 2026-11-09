@@ -86,3 +86,25 @@ def test_windows_process_stack_selects_peer_with_shared_win_exec() -> None:
     assert entry["peer_pull"] == 466
     assert entry["equivalents"] == ["refs/pull/466/head"]
     assert _MODULE.resolve_orama_policy_stack(branch, pull_merged=True).peer_ref == "main"
+
+
+def test_memory_review_stack_pins_reviewed_orama_peer() -> None:
+    """The parent review pairs with its exact Orama tree, never main fallback."""
+    branch = "2026-11-08-001-memory-48h-lan-c6-fleet-synthesis"
+    resolution = _MODULE.resolve_orama_policy_stack(branch, pull_merged=False)
+    assert resolution.declared is True
+    assert resolution.peer_ref == "e38098e57915d59d5adda65315396b99a9c0e14f"
+    entry = _MODULE.load_policy_stacks()["orama_system_refs"][branch]
+    assert entry["peer_pull"] == 481
+    assert _MODULE.resolve_orama_policy_stack(branch, pull_merged=True).peer_ref == "main"
+
+
+def test_gemini_review_stack_pins_reviewed_orama_peer() -> None:
+    """The child policy pairs with the matching reviewed Google policy tree."""
+    branch = "feat/gemini-3.8-flash-governance"
+    resolution = _MODULE.resolve_orama_policy_stack(branch, pull_merged=False)
+    assert resolution.declared is True
+    assert resolution.peer_ref == "6d7cc3b0092cefa3bb20d477986d1b46d0997160"
+    entry = _MODULE.load_policy_stacks()["orama_system_refs"][branch]
+    assert entry["peer_pull"] == 482
+    assert _MODULE.resolve_orama_policy_stack(branch, pull_merged=True).peer_ref == "main"

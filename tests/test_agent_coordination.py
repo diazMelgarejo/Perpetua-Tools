@@ -253,11 +253,18 @@ def test_canonical_repo_root_independent_of_pt_state_dir(monkeypatch):
     assert "totally-unrelated-scratch-dir" not in str(root_with_override)
 
 
-def test_canonical_db_path_looks_sane():
-    """Check that canonical db path looks sane."""
-    path = canonical_db_path()
-    assert Path(path).as_posix().endswith(".state/perpetua_core.db")
-    assert Path(path).parent.name == ".state"
+def test_source_root_does_not_consult_ledger_authority(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Source identity remains readable without granting an ambiguous ledger ownership."""
+    real_root = canonical_repo_root()
+    monkeypatch.setenv("PT_STATE_AUTHORITY_FILE", "/nonexistent-unreviewed-authority.json")
+    assert canonical_repo_root() == real_root
+
+
+def test_canonical_db_path_looks_sane(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Delegate to the reviewed state resolver without imposing a directory name."""
+    expected = str(tmp_path / "operator-selected-ledger" / "perpetua_core.db")
+    monkeypatch.setitem(canonical_db_path.__globals__, "resolve_gossip_db_path", lambda: expected)
+    assert canonical_db_path() == expected
 
 
 def test_current_worktree_label_contains_cwd_or_branch():

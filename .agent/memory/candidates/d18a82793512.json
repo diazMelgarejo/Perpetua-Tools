@@ -1,0 +1,26 @@
+{
+  "id": "d18a82793512",
+  "key": "manual_d18a82",
+  "name": "manual_d18a82",
+  "claim": "After an interrupted multi-agent run, re-read Gossip and live PR heads, preserve independently published validation and every actor contribution, then validate the semantic union before a single coordinated push; green baselines and skipped reviews are not security approval.",
+  "conditions": [
+    "interrupted integration",
+    "moving PR heads",
+    "security baseline"
+  ],
+  "evidence_ids": [
+    "2026-11-09T02:18:55.918198+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T02:18:55.918198+00:00",
+  "status": "staged",
+  "decisions": [
+    {
+      "ts": "2026-11-09T02:18:55.918198+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    }
+  ],
+  "rejection_count": 0
+}

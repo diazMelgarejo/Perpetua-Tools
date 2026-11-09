@@ -26,6 +26,11 @@ pytestmark = pytest.mark.unit
         ("openai", "gpt-6.1-sol", "medium", "execution", "gpt-5.6-terra", True),
         ("openai", "gpt-6-luna", "medium", "execution", "gpt-6-luna", False),
         ("google", "gemini-3.8-flash", "medium", "execution", "gemini-3.8-flash", False),
+        ("google", "gemini-3.5-flash-lite", "medium", "execution", "gemini-3.5-flash-lite", False),
+        ("google", "gemini-flash-latest", "medium", "execution", "gemini-flash-latest", False),
+        ("google", "gemini-pro-latest", "medium", "planning", "gemini-3.8-flash", True),
+        ("google", "gemini-pro-latest", "medium", "execution", "gemini-3.8-flash", True),
+        ("google", "gemini-4-argon", "medium", "execution", "gemini-3.8-flash", True),
         ("anthropic", "claude-haiku-5-5", "medium", "execution", "claude-haiku-5-5", False),
     ],
 )
@@ -33,6 +38,7 @@ def test_role_selection(
     path: str, model: str, effort: str, task_kind: str | None,
     effective: str, approval: bool,
 ) -> None:
+    """Select the approved role without turning a planning label into Google approval."""
     requested = LaunchSpec(path=path, launch_id=model, effort=effort, fast=False)
     plan = plan_launch(requested, task_kind=task_kind)
     assert plan.requested == requested
@@ -42,6 +48,7 @@ def test_role_selection(
 
 
 def test_automation_cannot_start_ultracode_even_for_planning() -> None:
+    """A planning role cannot automatically enter the separately approved mode."""
     requested = LaunchSpec(
         path="anthropic", launch_id="claude-opus-5-5", effort="high", fast=False
     )
@@ -55,11 +62,13 @@ def test_automation_cannot_start_ultracode_even_for_planning() -> None:
 
 @pytest.mark.parametrize("effort", ["xhigh", "max"])
 def test_role_fallback_does_not_mask_forbidden_effort(effort: str) -> None:
+    """Reject forbidden effort before selecting a cheaper fallback."""
     with pytest.raises(ModelGovernanceError, match="forbidden"):
         plan_launch(LaunchSpec("anthropic", "claude-opus-5-5", effort, False))
 
 
 def test_cursor_opus_falls_back_to_sonnet_on_the_same_harness() -> None:
+    """Preserve the requested transport while lowering the unapproved model."""
     plan = plan_launch(LaunchSpec("cursor_grok_bot", "claude-opus-5-5", "high", False))
     assert plan.effective.path == "cursor_grok_bot"
     assert plan.effective.launch_id == "claude-sonnet-5-5"
@@ -67,6 +76,7 @@ def test_cursor_opus_falls_back_to_sonnet_on_the_same_harness() -> None:
 
 
 def test_unknown_model_and_invalid_classification_are_not_rerouted() -> None:
+    """Unknown identifiers and untrusted classifications fail closed."""
     with pytest.raises(ModelGovernanceError):
         plan_launch(LaunchSpec("anthropic", "unknown-model", "medium", False))
     with pytest.raises(ModelGovernanceError, match="task kind"):
@@ -80,6 +90,7 @@ def test_unknown_model_and_invalid_classification_are_not_rerouted() -> None:
 def test_strict_validator_uses_harness_planning_classification(
     path: str, model: str, effort: str
 ) -> None:
+    """Retain the existing non-Google trusted-harness planning contract."""
     spec = LaunchSpec(path, model, effort, False)
     assert_launch_allowed(spec, task_kind="planning")
     with pytest.raises(ModelGovernanceError, match="escalation token"):
@@ -87,6 +98,7 @@ def test_strict_validator_uses_harness_planning_classification(
 
 
 def test_approval_candidate_does_not_implicitly_raise_nonplanning_effort() -> None:
+    """Require the eventual proof to cover the exact lowered-effort candidate."""
     plan = plan_launch(LaunchSpec("anthropic", "claude-opus-5-5", "high", False))
     assert plan.approval_candidate is not None
     assert plan.approval_candidate.effort == "medium"
@@ -99,3 +111,23 @@ def test_approval_candidate_does_not_implicitly_raise_nonplanning_effort() -> No
     assert_launch_allowed(
         plan.approval_candidate, proof=proof, task_kind="execution", now=now
     )
+
+
+def test_google_gemini_4_argon_requires_budget_cap() -> None:
+    """Frontier approval requires budget evidence as well as a matching token."""
+    now = datetime.now(timezone.utc)
+    spec = LaunchSpec("google", "gemini-4-argon", "medium", False)
+    proof_no_cap = EscalationProof(
+        kind="control_plane_online_signer", reference="sig-1",
+        model_id="gemini-4-argon", expires_at=now + timedelta(minutes=1),
+        effort="medium", fast=False, budget_cap=None,
+    )
+    with pytest.raises(ModelGovernanceError, match="budget cap"):
+        assert_launch_allowed(spec, proof=proof_no_cap, now=now)
+
+    proof_with_cap = EscalationProof(
+        kind="control_plane_online_signer", reference="sig-1",
+        model_id="gemini-4-argon", expires_at=now + timedelta(minutes=1),
+        effort="medium", fast=False, budget_cap="max_spend_usd=10.00",
+    )
+    assert_launch_allowed(spec, proof=proof_with_cap, now=now)

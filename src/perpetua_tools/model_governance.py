@@ -142,18 +142,30 @@ def plan_launch(
     _refuse_forbidden_effort(spec)
     _assert_effort_aliases_consistent(spec)
     cfg = dict(config) if config is not None else load_model_governance()
+    if spec.path == "cline_pass":
+        _validate_cline_pass_config(cfg)
     if spec.launch_id in cfg.get("banned_launch_ids", ()):
         raise ModelGovernanceError(f"banned launch id: {spec.launch_id}")
     provider = "anthropic" if spec.path == "cursor_grok_bot" and spec.launch_id.startswith("claude-") else spec.path
-    if provider not in ("anthropic", "openai", "google", "cursor_grok_bot", "direct_xai"):
+    if provider not in (
+        "anthropic",
+        "openai",
+        "google",
+        "cursor_grok_bot",
+        "direct_xai",
+        "cline_pass",
+    ):
         raise ModelGovernanceError("unknown harness path")
     policy = cfg[provider]
     planning = policy.get("planning") or {}
     controller = policy.get("controller") or {}
+    fallback_row = policy.get("fallback") or {}
     is_planning_model = spec.launch_id == planning.get("launch_id")
+    is_controller_model = spec.launch_id == controller.get("launch_id")
+    is_fallback_model = spec.launch_id == fallback_row.get("launch_id")
     gated = (policy.get("gated") or {}).get(spec.launch_id)
-    if is_planning_model or spec.launch_id == controller.get("launch_id"):
-        row = planning if is_planning_model else controller
+    if is_planning_model or is_controller_model or is_fallback_model:
+        row = planning if is_planning_model else (controller if is_controller_model else fallback_row)
         allowed_efforts = row.get("allowed_efforts", [row.get("effort")])
         if _named_effort(spec) not in allowed_efforts:
             raise ModelGovernanceError("role requires an explicitly permitted effort")
@@ -168,7 +180,7 @@ def plan_launch(
         assert_launch_allowed(spec, config=cfg)
     needs_approval = mode == "ultracode" or (
         is_planning_model and task_kind != "planning"
-    ) or (gated is not None and not is_planning_model)
+    ) or (gated is not None and (provider == "google" or not is_planning_model))
     if not needs_approval:
         return LaunchPlan(spec, spec, False, "planning" if is_planning_model else "allowed")
     fallback = replace(default_launch(provider, config=cfg), path=spec.path)
@@ -212,6 +224,8 @@ def load_model_governance(config_path: str | None = None) -> dict[str, Any]:
 def default_launch(path: str, *, config: Mapping[str, Any] | None = None) -> LaunchSpec:
     """Return the ungated default LaunchSpec for a harness path."""
     cfg = dict(config) if config is not None else load_model_governance()
+    if path == "cline_pass":
+        _validate_cline_pass_config(cfg)
     if path == "cursor_grok_bot":
         row = cfg["cursor_grok_bot"]["default"]
         return LaunchSpec(
@@ -220,7 +234,7 @@ def default_launch(path: str, *, config: Mapping[str, Any] | None = None) -> Lau
             effort=str(row["effort"]),
             fast=bool(row["fast"]),
         )
-    if path in ("anthropic", "openai", "google"):
+    if path in ("anthropic", "openai", "google", "cline_pass"):
         row = cfg[path]["default"]
         return LaunchSpec(
             path=path,
@@ -298,6 +312,8 @@ def assert_launch_allowed(
     _refuse_forbidden_effort(spec)
     _assert_effort_aliases_consistent(spec)
     cfg = dict(config) if config is not None else load_model_governance()
+    if spec.path == "cline_pass":
+        _validate_cline_pass_config(cfg)
     banned = {str(x) for x in cfg.get("banned_launch_ids") or []}
     if spec.launch_id in banned:
         raise ModelGovernanceError(f"banned launch id: {spec.launch_id}")
@@ -321,6 +337,14 @@ def assert_launch_allowed(
             spec, proof, now=now, approval_scope=approval_scope
         ):
             raise ModelGovernanceError("cloud escalation default-deny: escalation token required")
+        row = (cfg[spec.path].get("gated") or {}).get(spec.launch_id) or {}
+        requirements = row.get("requires") or []
+        if isinstance(requirements, str):
+            requirements = [requirements]
+        if "budget_cap" in requirements and not (
+            proof and isinstance(proof.budget_cap, str) and proof.budget_cap.strip()
+        ):
+            raise ModelGovernanceError("cloud escalation default-deny: approved budget cap required")
         return
     if spec.path in ("anthropic", "cursor_grok_bot"):
         policy = cfg["anthropic"]
@@ -340,6 +364,9 @@ def assert_launch_allowed(
         _assert_anthropic_launch(
             spec, proof=proof, cfg=cfg, now=now, approval_scope=approval_scope
         )
+        return
+    if spec.path == "cline_pass":
+        _assert_cline_pass_launch(spec, cfg=cfg)
         return
     if spec.path == "direct_xai":
         _assert_direct_xai_launch(spec, cfg=cfg)
@@ -398,6 +425,45 @@ def _assert_gated_params(spec: LaunchSpec, row: Mapping[str, Any]) -> None:
         raise ModelGovernanceError(
             f"{spec.launch_id} requires fast={row['fast']}"
         )
+
+
+def _validate_cline_pass_config(cfg: Mapping[str, Any]) -> None:
+    """Reject malformed ClinePass policy and unsupported role or gated rows."""
+    policy = cfg.get("cline_pass")
+    if not isinstance(policy, Mapping):
+        raise ModelGovernanceError("config unavailable: invalid ClinePass policy")
+    default = policy.get("default")
+    rows = policy.get("allowed_ungated", [])
+    if (not isinstance(default, Mapping) or not default.get("launch_id")
+            or not default.get("effort") or not isinstance(rows, list)
+            or any(not isinstance(row, Mapping) or not row.get("launch_id")
+                   or not row.get("effort") for row in rows)
+            or policy.get("gated") not in (None, {})
+            or policy.get("planning") is not None or policy.get("controller") is not None):
+        raise ModelGovernanceError("config unavailable: invalid ClinePass policy")
+
+
+def _assert_cline_pass_launch(spec: LaunchSpec, *, cfg: Mapping[str, Any]) -> None:
+    """ClinePass: the pinned default plus the explicitly listed ids, nothing else.
+
+    An unlisted id is refused outright instead of being deferred to a gated
+    table, and a proof never lifts this path. That keeps ``gated: {}`` in config
+    an enforced fact rather than a comment.
+    """
+    policy = cfg["cline_pass"]
+    default = policy["default"]
+    if spec.launch_id == str(default["launch_id"]):
+        _assert_gated_params(spec, default)
+        return
+    for row in policy.get("allowed_ungated") or []:
+        if str(row["launch_id"]) == spec.launch_id:
+            if spec.fast is True:
+                raise ModelGovernanceError(
+                    "fast mode is unsupported for non-default ClinePass models"
+                )
+            _assert_gated_params(spec, row)
+            return
+    raise ModelGovernanceError("unlisted ClinePass model")
 
 
 def _assert_cursor_launch(

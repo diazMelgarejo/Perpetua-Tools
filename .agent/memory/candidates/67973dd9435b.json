@@ -1,0 +1,26 @@
+{
+  "id": "67973dd9435b",
+  "key": "manual_67973d",
+  "name": "manual_67973d",
+  "claim": "Provision external test tools in every CI workflow that collects dependent tests, validate immutable action references against upstream commits, and check each job independently; declared immutable cross-repository peers prevent main fallback from comparing unmatched implementations.",
+  "conditions": [
+    "CI dependency provisioning",
+    "action pin verification",
+    "cross-repo parity"
+  ],
+  "evidence_ids": [
+    "2026-11-09T07:51:56.775529+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T07:51:56.775529+00:00",
+  "status": "staged",
+  "decisions": [
+    {
+      "ts": "2026-11-09T07:51:56.775529+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    }
+  ],
+  "rejection_count": 0
+}

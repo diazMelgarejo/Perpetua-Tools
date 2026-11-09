@@ -38,6 +38,21 @@ _CANCEL_RESPONSE_KEYS = {
 _PROCESS_INTERNALS = ("pid", "argv", "cmdline", "env", "cwd", "stdout", "stderr")
 
 
+def test_replay_http_forwards_new_scope(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A reconciled replay must carry its fresh scope through the HTTP boundary."""
+    class Supervisor:
+        """Capture the replay request at the supervisor boundary."""
+        async def replay(self, job_id: str, overrides: dict | None = None) -> str:
+            """Require the caller's explicit scope and return a job id."""
+            assert overrides is not None and overrides["dispatch_scope"] == "reconciled"
+            return str(uuid.uuid4())
+
+    monkeypatch.setattr(fastapi_app, "_get_supervisor", lambda: Supervisor())
+    with TestClient(app) as client:
+        response = client.post(f"/v1/jobs/{uuid.uuid4()}/replay", json={"dispatch_scope": "reconciled"})
+    assert response.status_code == 200
+
+
 # ── _validate_job_id unit tests ───────────────────────────────────────────────
 
 

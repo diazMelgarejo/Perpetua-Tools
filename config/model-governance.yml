@@ -94,11 +94,64 @@ openai:
     effort: medium
     fast: false
 
+# Pro planning still requires verified human approval. The vendor policy does
+# not select a transport: dynamic aliases are direct Google, Argon is OpenRouter.
 google:
   default:
     launch_id: gemini-3.8-flash
     effort: medium
     fast: false
+  controller:
+    launch_id: gemini-3.5-flash-lite
+    effort: medium
+    fast: false
+  fallback:
+    launch_id: gemini-flash-latest
+    effort: medium
+    fast: false
+  planning:
+    launch_id: gemini-pro-latest
+    effort: medium
+    allowed_efforts: [medium, high]
+    fast: false
+  gated:
+    gemini-pro-latest:
+      effort: medium
+      allowed_efforts: [medium, high]
+      fast: false
+      requires: escalation_token
+    gemini-4-argon:
+      effort: medium
+      requires:
+        - escalation_token
+        - budget_cap
+
+# ClinePass subscription provider (harness path: cline_pass).
+# Official lineup and model ids: https://docs.cline.bot/getting-started/clinepass
+# The wire id is cline-pass/<launch_id>; this file pins the bare launch id.
+# Registering the provider does not loosen the cost gate: `gated` stays empty,
+# so nothing on this path is reachable except the rows written out below.
+cline_pass:
+  default:
+    launch_id: deepseek-v4.1-flash-1017
+    # Operator-approved medium default, verified against the installed CLI.
+    # Retain the previous low effort without implicitly admitting other levels.
+    effort: medium
+    allowed_efforts: [low, medium]
+    fast: false
+  allowed_ungated:
+    - launch_id: muse-spark-1.3-contributor
+      # Cline documents the id but publishes no per-model effort table for it;
+      # medium is the repo-standard default and stays open to operator review.
+      effort: medium
+      fast: false
+    - launch_id: glm-5.3-flash
+      # Operator pick (2026-11-03): ClinePass lists GLM 5.3 Flash and the
+      # cline-openclaw-agent skill prefers it; medium is the repo-standard
+      # effort. Other efforts stay unlisted until the operator adds them.
+      effort: medium
+      fast: false
+  gated: {}
 
 allowed_escalation_proof_kinds:
   - github_verified_signoff

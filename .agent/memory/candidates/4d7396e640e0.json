@@ -1,0 +1,26 @@
+{
+  "id": "4d7396e640e0",
+  "key": "manual_4d7396",
+  "name": "manual_4d7396",
+  "claim": "Retain an unreaped POSIX child identity through every effectful group signal, revalidate before escalation after inconclusive probes, and never signal the group after reaping; persistent EPERM is unknown, while later ESRCH can prove absence. Unsupported wait APIs permit only bounded direct-child cleanup, not fabricated tree containment.",
+  "conditions": [
+    "POSIX containment",
+    "process identity",
+    "waitid capability"
+  ],
+  "evidence_ids": [
+    "2026-11-09T07:51:56.862569+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T07:51:56.862569+00:00",
+  "status": "staged",
+  "decisions": [
+    {
+      "ts": "2026-11-09T07:51:56.862569+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    }
+  ],
+  "rejection_count": 0
+}
