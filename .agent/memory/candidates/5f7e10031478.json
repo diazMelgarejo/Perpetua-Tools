@@ -1,0 +1,26 @@
+{
+  "id": "5f7e10031478",
+  "key": "manual_5f7e10",
+  "name": "manual_5f7e10",
+  "claim": "Containment must return unknown when permission to observe process-group membership is denied, even after a termination signal succeeds; a denied observation is neither an empty group nor proof of cleanup.",
+  "conditions": [
+    "permission denied",
+    "process containment",
+    "verification"
+  ],
+  "evidence_ids": [
+    "2026-11-09T03:02:50.072714+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T03:02:50.072714+00:00",
+  "status": "staged",
+  "decisions": [
+    {
+      "ts": "2026-11-09T03:02:50.072714+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    }
+  ],
+  "rejection_count": 0
+}

@@ -1,0 +1,26 @@
+{
+  "id": "9991c28c75b9",
+  "key": "manual_9991c2",
+  "name": "manual_9991c2",
+  "claim": "A protected local ownership record must bind canonical repository metadata and an existing ledger database by identity, reject unsafe permissions and substituted files, and never be minted or migrated by startup; local file ownership is configuration authority, not proof of human presence or Windows ACL qualification.",
+  "conditions": [
+    "fail closed",
+    "ledger ownership",
+    "protected local record"
+  ],
+  "evidence_ids": [
+    "2026-11-09T03:02:49.961324+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T03:02:49.961324+00:00",
+  "status": "staged",
+  "decisions": [
+    {
+      "ts": "2026-11-09T03:02:49.961324+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    }
+  ],
+  "rejection_count": 0
+}

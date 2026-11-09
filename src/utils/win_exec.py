@@ -609,6 +609,8 @@ def _terminate_tree_posix(proc: "subprocess.Popen", grace: float) -> str:
             except ProcessLookupError:
                 proc._win_exec_result = CONTAINED  # type: ignore[attr-defined]
                 return CONTAINED
+            except PermissionError:
+                return UNKNOWN
             time.sleep(0.05)
     try:
         os.killpg(pid, 0)
