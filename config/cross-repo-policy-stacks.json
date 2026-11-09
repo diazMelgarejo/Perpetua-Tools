@@ -1,6 +1,18 @@
 {
   "version": 1,
   "orama_system_refs": {
+    "2026-11-08-001-memory-48h-lan-c6-fleet-synthesis": {
+      "peer_ref": "af004f3b72a27ca93a28d2395312933e80537c9c",
+      "peer_pull": 481,
+      "peer_repository": "diazMelgarejo/orama-system",
+      "equivalents": ["refs/pull/481/head", "2026-11-07-003-canonical-agent-cards"]
+    },
+    "feat/gemini-3.8-flash-governance": {
+      "peer_ref": "6b2085e9edd5dfd5b6ef38fd78a4f99c72663ce3",
+      "peer_pull": 482,
+      "peer_repository": "diazMelgarejo/orama-system",
+      "equivalents": ["refs/pull/482/head", "feat/gemini-3.8-flash-orchestrator-routing"]
+    },
     "2026-11-02-001-windows-process-and-acl-hardening": {
       "peer_ref": "2026-11-03-002-win-exec-pathext-skip",
       "peer_pull": 466,
