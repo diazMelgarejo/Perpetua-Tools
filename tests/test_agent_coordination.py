@@ -253,6 +253,13 @@ def test_canonical_repo_root_independent_of_pt_state_dir(monkeypatch):
     assert "totally-unrelated-scratch-dir" not in str(root_with_override)
 
 
+def test_source_root_does_not_consult_ledger_authority(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Source identity remains readable without granting an ambiguous ledger ownership."""
+    real_root = canonical_repo_root()
+    monkeypatch.setenv("PT_STATE_AUTHORITY_FILE", "/nonexistent-unreviewed-authority.json")
+    assert canonical_repo_root() == real_root
+
+
 def test_canonical_db_path_looks_sane():
     """Check that canonical db path looks sane."""
     path = canonical_db_path()
