@@ -190,3 +190,26 @@ without docstrings, beyond the newly changed functions. Repairs add accurate
 docstrings only, with docstring-stripped AST equivalence checked independently.
 Report the complete audited file set rather than presenting selected-function
 coverage as whole-PR coverage.
+
+## Final Local Rehearsal Receipt
+
+- PT broad source run at `f91bfd325e353a3ab3391b85c7b0e83b27b936fd`:
+  3,443 passed, 13 skipped, 15 warnings. Later CLI docstrings and memory notes
+  are separate; focused memory and CLI checks passed 81 tests afterward.
+- Orama broad integration run started at
+  `87189c5eb44b8f05e3d686bab5cbbcdac4422146`: 3,564 passed, 53 skipped,
+  three warnings. Later documentation, capability qualifications and fixture
+  hardening received focused rechecks; this is not an assertion that the broad
+  run measured a later publication head.
+- The final complete PR-file audit, including local newly added Python files,
+  documented all 691 function/class definitions across 32 Orama files and all
+  1,096 definitions across 43 PT files. Selected-function coverage was not
+  substituted for this full scope. Docstring-only edits passed stripped-AST
+  equivalence checks.
+- A follow-up isolated run found four legacy lesson-capture tests depending on
+  an existing real home log. The test module now supplies a private home and
+  clears configured legacy paths; production legacy discovery is unchanged.
+  The final lesson, topology and security subset passed 35 tests.
+- Warnings, platform skips, native Windows qualification and exact-head hosted
+  CI remain explicitly separate. No merge, service activation, trust change or
+  live model dispatch follows from these local results.
