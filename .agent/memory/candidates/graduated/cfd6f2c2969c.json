@@ -1,0 +1,66 @@
+{
+  "id": "cfd6f2c2969c",
+  "key": "manual_cfd6f2",
+  "name": "manual_cfd6f2",
+  "claim": "Before writing code around an external CLI or API, run its --version and --help and record the version and the defaults that act or spend; the Cline controller was built for months without ever reading Cline's help, which shows a bare prompt starts in act mode with tool auto-approval ON.",
+  "conditions": [
+    "act",
+    "api",
+    "around",
+    "auto-approval",
+    "bare",
+    "before",
+    "built",
+    "cli",
+    "cline",
+    "code",
+    "controller",
+    "defaults",
+    "ever",
+    "external",
+    "help",
+    "mode",
+    "months",
+    "prompt",
+    "reading",
+    "record",
+    "run",
+    "shows",
+    "spend",
+    "starts",
+    "tool",
+    "version",
+    "which",
+    "without",
+    "writing"
+  ],
+  "evidence_ids": [
+    "2026-11-09T22:46:32.298525+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T22:46:32.298525+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-09T22:46:32.298525+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T22:46:32.705304+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-10: help text read only after installing Cline 3.0.74; controller fixed in orama PR 487 commit e35d950c (plan mode, auto-approve off unless CLINE_ALLOW_ACT=1).",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-09T22:46:32.298525+00:00"
+      ],
+      "lessons_sha": "cd022f3116c3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T22:46:32.705304+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-10: help text read only after installing Cline 3.0.74; controller fixed in orama PR 487 commit e35d950c (plan mode, auto-approve off unless CLINE_ALLOW_ACT=1)."
+}

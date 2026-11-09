@@ -636,3 +636,13 @@ Dated evidence from one Windows host (LM Studio, `qwen/qwen3.8-27b`, 8192-token 
 - Best-performing practical setting used afterwards: chat endpoint, thinking on, temperature 0.6, top_p 0.95, top_k 20, min_p 0.
 - Validate model JSON outside the model (types, duplicate keys, nonstandard constants, extra keys, fences, enums); an unknown
   outcome after a request was written is never auto-retried.
+
+## Verify before claiming: catalogue of our own hand-waving (2026-11-10)
+
+Ten dated misses from the Cline controller work (an unread `--help` that hid an act-mode, auto-approve default; a dormant
+`cline task` call; a reviewer reply that said done for a bundle; a one-wording negative search; a probe against a real
+append-only board; a text-marker merge of jsonl; a cmd shim; 3-of-3 read as no effect; flat peer statements) are in
+`HANDWAVING_CATALOGUE_AND_AVOIDANCE_2026-11-10.md` (same directory). The operating checklist is
+`.agent/protocols/verify-before-claiming.md`: first-contact check, default-danger scan, exercise dormant paths, findings
+ledger, search twice, cite proof for "not installed", never probe append-only state, validate after mechanical merges,
+every rate carries n.

@@ -1,0 +1,66 @@
+{
+  "id": "bf33320f09b1",
+  "key": "manual_bf3332",
+  "name": "manual_bf3332",
+  "claim": "Never pass a prompt or user text through a .cmd or .bat shim on Windows: the npm install of Cline ships cline.cmd and cmd.exe re-parses metacharacters in arguments; launch node plus the package entry script directly and refuse a shim whose entry cannot be resolved.",
+  "conditions": [
+    "arguments",
+    "bat",
+    "cannot",
+    "cline",
+    "cmd",
+    "directly",
+    "entry",
+    "exe",
+    "install",
+    "launch",
+    "metacharacters",
+    "never",
+    "node",
+    "npm",
+    "package",
+    "pass",
+    "plus",
+    "prompt",
+    "re-parses",
+    "refuse",
+    "resolved",
+    "script",
+    "shim",
+    "ships",
+    "text",
+    "through",
+    "user",
+    "whose",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-11-09T22:46:36.733122+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T22:46:36.733122+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-09T22:46:36.733122+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T22:46:36.954147+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-10 live install of Cline 3.0.74; fixed in orama PR 487 commit ca6895ca with tests.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-09T22:46:36.733122+00:00"
+      ],
+      "lessons_sha": "ef0bfffd1185"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T22:46:36.954147+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-10 live install of Cline 3.0.74; fixed in orama PR 487 commit ca6895ca with tests."
+}

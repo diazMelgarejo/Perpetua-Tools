@@ -1,0 +1,69 @@
+{
+  "id": "483d82e0d449",
+  "key": "manual_483d82",
+  "name": "manual_483d82",
+  "claim": "After any mechanical merge of append-only files, parse every row and check git diff --name-only --diff-filter=U: a union of text conflict markers glued two JSON rows when one file lacked a trailing newline; merge jsonl by row (ours then theirs-only) and rerun the renderers.",
+  "conditions": [
+    "after",
+    "any",
+    "append-only",
+    "check",
+    "conflict",
+    "diff",
+    "diff-filter",
+    "every",
+    "file",
+    "files",
+    "git",
+    "glued",
+    "json",
+    "jsonl",
+    "lacked",
+    "markers",
+    "mechanical",
+    "merge",
+    "name-only",
+    "newline",
+    "one",
+    "ours",
+    "parse",
+    "renderers",
+    "rerun",
+    "row",
+    "rows",
+    "text",
+    "theirs-only",
+    "trailing",
+    "two",
+    "union"
+  ],
+  "evidence_ids": [
+    "2026-11-09T22:46:36.035175+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T22:46:36.035175+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-09T22:46:36.035175+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T22:46:36.282362+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-10 stacking of PT PRs 487 and 488; the row-parse check caught the corrupt line before commit.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-09T22:46:36.035175+00:00"
+      ],
+      "lessons_sha": "9c353667bebe"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T22:46:36.282362+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-10 stacking of PT PRs 487 and 488; the row-parse check caught the corrupt line before commit."
+}
