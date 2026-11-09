@@ -203,6 +203,7 @@ def test_append_jsonl_accepts_write_only_log(tmp_path, monkeypatch):
     real_open = builtins.open
 
     def deny_read(target, mode="r", *args, **kwargs):
+        """Simulate a writable log whose existing bytes cannot be reopened for reading."""
         if str(target) == str(path) and "+" in mode:
             raise PermissionError("write-only log")
         return real_open(target, mode, *args, **kwargs)
