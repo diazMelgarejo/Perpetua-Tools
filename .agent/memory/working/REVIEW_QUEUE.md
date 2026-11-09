@@ -12,7 +12,7 @@ Run `python .agent/tools/list_candidates.py` for detail, then:
 
 ## Priority order (top 10)
 
-- **35de991f1652** (priority=8.00, size=1, rejections=0) — Verify service lifetime after its command runner exits; disable scheduler instal
-- **73d79fbe6645** (priority=8.00, size=1, rejections=0) — Inventory a measured Python environment without changing it: pip may intentional
-- **0992c6e96410** (priority=8.00, size=1, rejections=0) — Use isolated test ports and state rather than assuming default service ports are
-- **02c827dbcb5f** (priority=8.00, size=1, rejections=0) — Qualification runners should exclusively create private evidence and temporary d
+- **0992c6e96410** (priority=9.14, size=1, rejections=0) — Use isolated test ports and state rather than assuming default service ports are
+- **73d79fbe6645** (priority=9.14, size=1, rejections=0) — Inventory a measured Python environment without changing it: pip may intentional
+- **35de991f1652** (priority=9.14, size=1, rejections=0) — Verify service lifetime after its command runner exits; disable scheduler instal
+- **02c827dbcb5f** (priority=9.14, size=1, rejections=0) — Qualification runners should exclusively create private evidence and temporary d
