@@ -134,10 +134,10 @@ google:
 cline_pass:
   default:
     launch_id: deepseek-v4.1-flash-1017
-    # The official Cline client offers off/low/high/max for DeepSeek V4.1
-    # Flash (not medium), and `max` is forbidden by this repo's policy, so the
-    # pinned default is the nearest permitted documented level.
-    effort: low
+    # Operator-approved medium default, verified against the installed CLI.
+    # Retain the previous low effort without implicitly admitting other levels.
+    effort: medium
+    allowed_efforts: [low, medium]
     fast: false
   allowed_ungated:
     - launch_id: muse-spark-1.3-contributor

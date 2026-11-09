@@ -995,10 +995,10 @@ def test_pin_document_and_config_name_the_same_alexandria_tip() -> None:
 
 
 def test_cline_pass_default_is_deepseek_v4_1_flash_1017_at_a_documented_effort() -> None:
-    """ClinePass pins the 1017 build; medium is not a level Cline offers for it."""
+    """ClinePass pins the 1017 build at the operator-approved medium default."""
     spec = default_launch("cline_pass")
     assert spec.launch_id == "deepseek-v4.1-flash-1017"
-    assert spec.effort == "low"
+    assert spec.effort == "medium"
     assert spec.fast is False
 
 
@@ -1043,10 +1043,11 @@ def test_cline_pass_glm_5_3_flash_refuses_efforts_other_than_medium(effort: str)
 
 
 def test_cline_pass_refuses_a_listed_id_at_an_unlisted_effort() -> None:
+    """An installed CLI capability does not admit an unapproved reasoning level."""
     spec = LaunchSpec(
         path="cline_pass",
         launch_id="deepseek-v4.1-flash-1017",
-        effort="medium",
+        effort="xhigh",
         fast=False,
     )
     with pytest.raises(ModelGovernanceError):

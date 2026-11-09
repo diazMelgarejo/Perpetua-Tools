@@ -9,7 +9,15 @@ from perpetua_tools.model_governance import (
     LaunchSpec,
     ModelGovernanceError,
     assert_launch_allowed,
+    default_launch,
 )
+
+
+@pytest.mark.parametrize("effort", ["low", "medium"])
+def test_deepseek_default_preserves_low_and_admits_medium(effort: str) -> None:
+    """The medium default retains the prior low option without widening other models."""
+    assert default_launch("cline_pass").effort == "medium"
+    assert_launch_allowed(LaunchSpec("cline_pass", "deepseek-v4.1-flash-1017", effort=effort, fast=False))
 
 
 @pytest.mark.parametrize("with_proof", [False, True])
