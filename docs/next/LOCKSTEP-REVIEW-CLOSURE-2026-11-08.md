@@ -84,18 +84,25 @@ reviewed locking experiment, and GitHub-hosted Windows CI is not service-identit
 or power-loss qualification. Record final results and fixing SHAs in PR follow-ups
 and the downloadable handoff; never silently overwrite this dated plan as evidence.
 
-For separate Git directories, stop all old and new dispatch processes before
-upgrading or changing `PT_STATE_DIR`. An existing legacy `.state` location is
-retained; a fresh layout uses the Git common directory. If both locations exist,
-dispatch refuses until an operator reconciles the ledgers. Do not copy, delete,
-or select between competing claims without an approved reconciliation procedure.
-Mixed-version processes cannot coordinate location selection safely.
-An existing legacy parent `.state` can also be shared by independent separate
-Git directories under that parent; it does not identify its owning repository.
-Keep dispatch stopped until an operator has established ownership and explicitly
-selected or reconciled the ledger. Git discovery failures and parent-repository
-discovery remain open authority-resolution risks; passing inherited Git settings
-through without validation is not a safe substitute for an explicit design.
+Stop old and new dispatch processes before changing state authority; mixed-version
+processes cannot safely negotiate a location. An existing parent `.state` does not
+prove ownership. A linked worktree or separate Git directory requires either an
+explicit operator-selected `PT_STATE_DIR` or `PT_STATE_AUTHORITY_FILE`. Never
+create, copy, migrate, or reconcile ledgers merely to satisfy this requirement.
+
+The optional authority file is a private operator-created JSON object with exactly
+`schema_version` (integer 1), `owner` (the decimal current POSIX UID as a string),
+`git_common_dir`, `git_device`, `git_inode`, `ledger_dir`, `ledger_device`, and
+`ledger_inode`. Paths are absolute canonical paths; device and inode values come
+from the corresponding existing directories. The ledger directory must already
+contain a regular `perpetua_core.db`. The record and its containing directory must
+be owned by the current user and inaccessible to group and others; symlinked record
+path components are rejected. Git discovery is fail-closed and does not grant Git
+safe-directory trust. POSIX ownership and permissions verification is not a Windows
+ACL qualification: Windows record use is rejected until a native verifier is qualified.
+Direct non-symlink checkout `.git` directories and explicit `PT_STATE_DIR` retain
+their existing behavior. The operator must independently establish ownership and
+select or reconcile any existing ledger before writing a record.
 
 ## Local verification receipt — 2026-11-08 UTC
 
