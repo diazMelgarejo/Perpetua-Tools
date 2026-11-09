@@ -114,6 +114,14 @@ prompt is under about 1500 tokens and set `max_tokens` to at most (context minus
 margin); do not paste whole test files plus specifications into one request; or raise the loaded
 context in LM Studio (an operator setting, not an agent action).
 
+Follow-up attempt (code generation): the lock module was then requested in four pieces with prompts
+of 790 to 1000 tokens and `max_tokens` 5600. Every piece ended with `finish_reason=length`, all 5600
+completion tokens spent on reasoning, empty content, at 760 to 870 s per piece (about 55 minutes in
+total, zero code). Prompts of this size are not enough: for code generation on this model either
+raise the loaded context and the output budget, or write the code directly and use the model only
+for short, bounded advisory questions. The module was then written by hand (see the AR-WIN-1
+change); it passed its tests on the first full run after one fix.
+
 ### 5.2 Sampling guidance (secondary sources, U)
 
 Model-card values repeated by guides: thinking mode temperature 1.0 (0.6 suggested for precise
