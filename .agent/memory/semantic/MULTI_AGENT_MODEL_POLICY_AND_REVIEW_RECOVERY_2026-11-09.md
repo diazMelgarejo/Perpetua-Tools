@@ -173,3 +173,20 @@ existing orphan and inherited-pipe coverage remains. Tests must not introduce
 their own unverified descendant-PID cleanup race. Callers must not bypass
 Popen ownership by independently reaping its child through raw wait syscalls.
 Actual Windows execution, deployment and exact-head CI remain separate gates.
+
+Supplemental macOS testing found that the installed Python 3.11 and 3.12
+distributions lack `os.waitid`, despite exposing the associated constants.
+Both passed 74 targeted tests with 17 explicitly reported skips after native
+group-ownership cases were capability-qualified. The fallback cases still ran
+and checked the real owned root's forced-exit status; they did not claim tree
+containment. The selected WAL-fixed Python 3.13 runtime retains native group
+coverage and passed the 98-test final containment/workflow subset with 12
+platform skips. Runtime capabilities, not the Python version label, determine
+which ownership evidence is available. These supplemental runs did not open
+SQLite ledgers or qualify the older distributions for database workloads.
+
+The complete existing-PR Python-file audit also found historical definitions
+without docstrings, beyond the newly changed functions. Repairs add accurate
+docstrings only, with docstring-stripped AST equivalence checked independently.
+Report the complete audited file set rather than presenting selected-function
+coverage as whole-PR coverage.
