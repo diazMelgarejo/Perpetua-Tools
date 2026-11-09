@@ -1,0 +1,64 @@
+{
+  "id": "2a0bc5603394",
+  "key": "manual_2a0bc5",
+  "name": "manual_2a0bc5",
+  "claim": "LM Studio ignored chat_template_kwargs enable_thinking=false for qwen3.8-27b: reasoning of about 1000 characters was still produced and latency did not drop, so do not rely on a thinking-off request; Ollama CLI --think=false was fast (1.4 s) but failed the contract and once advised retrying an ambiguous delivery.",
+  "conditions": [
+    "about",
+    "advised",
+    "ambiguous",
+    "characters",
+    "chat_template_kwargs",
+    "cli",
+    "contract",
+    "delivery",
+    "drop",
+    "enable_thinking",
+    "failed",
+    "false",
+    "fast",
+    "ignored",
+    "latency",
+    "ollama",
+    "once",
+    "produced",
+    "qwen3",
+    "reasoning",
+    "rely",
+    "request",
+    "retrying",
+    "still",
+    "studio",
+    "think",
+    "thinking-off"
+  ],
+  "evidence_ids": [
+    "2026-11-09T19:43:03.177111+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T19:43:03.177111+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-09T19:43:03.177111+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T19:43:03.506160+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Windows rerun 2026-11-10 (three trials) and the Mac peer's thinking-disabled control; the unsafe retry advice is the reason the setting was not promoted.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-09T19:43:03.177111+00:00"
+      ],
+      "lessons_sha": "7bb826a96dc7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T19:43:03.506160+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Windows rerun 2026-11-10 (three trials) and the Mac peer's thinking-disabled control; the unsafe retry advice is the reason the setting was not promoted."
+}

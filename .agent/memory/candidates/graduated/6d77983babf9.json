@@ -1,0 +1,58 @@
+{
+  "id": "6d77983babf9",
+  "key": "manual_6d7798",
+  "name": "manual_6d7798",
+  "claim": "For structured JSON from a local LM Studio model, use the chat completions endpoint, not raw /v1/completions: 9 of 9 exact-contract passes on chat at temperatures 0, 0.6 and 0.7 versus 0 of 3 on raw completions (empty text, commentary before the JSON, a leaked think preamble).",
+  "conditions": [
+    "before",
+    "chat",
+    "commentary",
+    "completions",
+    "empty",
+    "endpoint",
+    "exact-contract",
+    "json",
+    "leaked",
+    "local",
+    "model",
+    "passes",
+    "preamble",
+    "raw",
+    "structured",
+    "studio",
+    "temperatures",
+    "text",
+    "think",
+    "use",
+    "versus"
+  ],
+  "evidence_ids": [
+    "2026-11-09T19:43:01.102155+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T19:43:01.102155+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-09T19:43:01.102155+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T19:43:01.692916+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-10 Windows benchmark, qwen/qwen3.8-27b, 12 sequential calls, strict JSON equality; tiny samples.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-09T19:43:01.102155+00:00"
+      ],
+      "lessons_sha": "653ba9c44247"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T19:43:01.692916+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-10 Windows benchmark, qwen/qwen3.8-27b, 12 sequential calls, strict JSON equality; tiny samples."
+}

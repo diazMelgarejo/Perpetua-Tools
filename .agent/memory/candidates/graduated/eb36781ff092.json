@@ -1,0 +1,62 @@
+{
+  "id": "eb36781ff092",
+  "key": "manual_eb3678",
+  "name": "manual_eb3678",
+  "claim": "The Claude-Desktop-LLM v2.2.1 lmstudio-agent local_llm_query tool calls raw /v1/completions at temperature 0.7 and 2048 tokens; use local_llm_chat for anything that needs structured output (3 of 3 exact versus 0 of 2 for query), and never read its fast tiny-prompt time as transport speed.",
+  "conditions": [
+    "anything",
+    "calls",
+    "claude-desktop-llm",
+    "completions",
+    "exact",
+    "fast",
+    "lmstudio-agent",
+    "local_llm_chat",
+    "local_llm_query",
+    "needs",
+    "never",
+    "output",
+    "query",
+    "raw",
+    "read",
+    "speed",
+    "structured",
+    "temperature",
+    "time",
+    "tiny-prompt",
+    "tokens",
+    "tool",
+    "transport",
+    "use",
+    "versus"
+  ],
+  "evidence_ids": [
+    "2026-11-09T19:43:02.296382+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T19:43:02.296382+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-09T19:43:02.296382+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T19:43:02.619605+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Bundle source read plus two Windows MCPB test runs on 2026-11-10; the 75 percent faster tiny-prompt result came from the missing chat template and reasoning.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-09T19:43:02.296382+00:00"
+      ],
+      "lessons_sha": "7ebfad7bb999"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T19:43:02.619605+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Bundle source read plus two Windows MCPB test runs on 2026-11-10; the 75 percent faster tiny-prompt result came from the missing chat template and reasoning."
+}
