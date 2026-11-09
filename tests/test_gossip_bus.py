@@ -170,6 +170,8 @@ def isolated_env(monkeypatch):
 
 def _set_authority(monkeypatch: pytest.MonkeyPatch, common: Path, ledger: Path) -> None:
     """Install a test-only private record for an existing ledger."""
+    if os.name != "posix":
+        pytest.skip("Protected ownership records require POSIX verification; Windows ACL qualification is separate")
     ledger.mkdir(exist_ok=True)
     ledger.chmod(0o700)
     (ledger / "perpetua_core.db").touch()
