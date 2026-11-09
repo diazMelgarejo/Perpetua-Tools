@@ -205,8 +205,6 @@ def build_index() -> int:
                             indexed += 1
                             continue
                         except Exception as exc:
-                            conn.execute("ROLLBACK TO lessons_file")
-                            conn.execute("RELEASE lessons_file")
                             print(f"warning: failed to index {path}: {exc}", file=sys.stderr)
                             if rollback_failed:
                                 raise
