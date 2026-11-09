@@ -275,7 +275,7 @@ else
   pass "octopus first parent is HEAD"
 fi
 
-# End-to-end Cline attribution test: audit_relaxed accepts a nonempty range containing a Cline commit
+# Exercise the same nonempty Cline-authored range as the paired PT repository.
 cline_tmp="$(mktemp -d)"
 git -C "$cline_tmp" init -q
 git -C "$cline_tmp" config user.name "cyre"
@@ -292,7 +292,6 @@ git -C "$cline_tmp" add cline.txt
 GIT_AUTHOR_NAME="cline-session-20260907" GIT_AUTHOR_EMAIL="agent@oramasys.local" \
   GIT_COMMITTER_NAME="cyre" GIT_COMMITTER_EMAIL="Lawrence@cyre.me" \
   git -C "$cline_tmp" commit -q -m "feat: cline session contribution"
-
 if python3 "$SCRIPT_DIR/audit_engine.py" audit --repo "$cline_tmp" --range HEAD~1..HEAD >/dev/null 2>&1; then
   pass "audit_relaxed accepts valid Cline-authored commit in range"
 else
