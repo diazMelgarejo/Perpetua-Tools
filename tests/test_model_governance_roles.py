@@ -27,6 +27,7 @@ pytestmark = pytest.mark.unit
         ("openai", "gpt-6-luna", "medium", "execution", "gpt-6-luna", False),
         ("google", "gemini-3.8-flash", "medium", "execution", "gemini-3.8-flash", False),
         ("google", "gemini-3.5-flash-lite", "medium", "execution", "gemini-3.5-flash-lite", False),
+        ("google", "gemini-flash-latest", "medium", "execution", "gemini-flash-latest", False),
         ("google", "gemini-pro-latest", "medium", "planning", "gemini-3.8-flash", True),
         ("google", "gemini-pro-latest", "medium", "execution", "gemini-3.8-flash", True),
         ("google", "gemini-4-argon", "medium", "execution", "gemini-3.8-flash", True),
@@ -103,3 +104,22 @@ def test_approval_candidate_does_not_implicitly_raise_nonplanning_effort() -> No
     assert_launch_allowed(
         plan.approval_candidate, proof=proof, task_kind="execution", now=now
     )
+
+
+def test_google_gemini_4_argon_requires_budget_cap() -> None:
+    now = datetime.now(timezone.utc)
+    spec = LaunchSpec("google", "gemini-4-argon", "medium", False)
+    proof_no_cap = EscalationProof(
+        kind="control_plane_online_signer", reference="sig-1",
+        model_id="gemini-4-argon", expires_at=now + timedelta(minutes=1),
+        effort="medium", fast=False, budget_cap=None,
+    )
+    with pytest.raises(ModelGovernanceError, match="budget cap"):
+        assert_launch_allowed(spec, proof=proof_no_cap, now=now)
+
+    proof_with_cap = EscalationProof(
+        kind="control_plane_online_signer", reference="sig-1",
+        model_id="gemini-4-argon", expires_at=now + timedelta(minutes=1),
+        effort="medium", fast=False, budget_cap="max_spend_usd=10.00",
+    )
+    assert_launch_allowed(spec, proof=proof_with_cap, now=now)

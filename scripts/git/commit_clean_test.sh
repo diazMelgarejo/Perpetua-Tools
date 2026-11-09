@@ -270,6 +270,31 @@ else
   pass "octopus first parent is HEAD"
 fi
 
+# End-to-end Cline attribution test: audit_relaxed accepts a nonempty range containing a Cline commit
+cline_tmp="$(mktemp -d)"
+git -C "$cline_tmp" init -q
+git -C "$cline_tmp" config user.name "cyre"
+git -C "$cline_tmp" config user.email "Lawrence@cyre.me"
+mkdir -p "$cline_tmp/scripts/git"
+for helper in commit-clean.sh verify-staged-for-commit.sh banned_attribution_lib.sh check_commit_message.sh audit_engine.py identity-policy.json; do
+  install -m 0755 "$SCRIPT_DIR/$helper" "$cline_tmp/scripts/git/$helper"
+done
+printf 'base\n' >"$cline_tmp/base.txt"
+git -C "$cline_tmp" add base.txt
+git -C "$cline_tmp" commit -q -m "init"
+printf 'cline\n' >"$cline_tmp/cline.txt"
+git -C "$cline_tmp" add cline.txt
+GIT_AUTHOR_NAME="cline-session-20260907" GIT_AUTHOR_EMAIL="agent@oramasys.local" \
+  GIT_COMMITTER_NAME="cyre" GIT_COMMITTER_EMAIL="Lawrence@cyre.me" \
+  git -C "$cline_tmp" commit -q -m "feat: cline session contribution"
+
+if python3 "$SCRIPT_DIR/audit_engine.py" audit --repo "$cline_tmp" --range HEAD~1..HEAD >/dev/null 2>&1; then
+  pass "audit_relaxed accepts valid Cline-authored commit in range"
+else
+  fail "audit_relaxed must accept valid Cline-authored commit"
+fi
+rm -rf "$cline_tmp"
+
 if [[ "$failures" -gt 0 ]]; then
   echo "commit_clean_test: $failures failure(s)" >&2
   exit 1

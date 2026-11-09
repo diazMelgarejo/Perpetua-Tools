@@ -43,6 +43,7 @@ def _load_module(monkeypatch, tmp_path):
 
 
 def _read_episodic(base):
+    """Read episodic records from the test workspace."""
     path = base / "memory" / "episodic" / "AGENT_LEARNINGS.jsonl"
     if not path.exists():
         return []
@@ -51,6 +52,7 @@ def _read_episodic(base):
 
 
 def test_stage_writes_episodic_mirror(monkeypatch, tmp_path):
+    """Verify stage writes episodic mirror."""
     mod, base = _load_module(monkeypatch, tmp_path)
     cid, path = mod.stage(
         "Always serialize timestamps in UTC to avoid comparison bugs",
@@ -93,6 +95,7 @@ def test_stage_routes_episodic_mirror_through_append_jsonl(monkeypatch, tmp_path
     captured = []
 
     def _capture(path, entry):
+        """Capture the supplied episodic entry."""
         captured.append((path, dict(entry)))
         episodic = base / "memory" / "episodic" / "AGENT_LEARNINGS.jsonl"
         episodic.parent.mkdir(parents=True, exist_ok=True)
@@ -120,6 +123,7 @@ def test_stage_fails_closed_when_mirror_write_errors(monkeypatch, tmp_path):
     mod, base = _load_module(monkeypatch, tmp_path)
 
     def _boom(*_args, **_kwargs):
+        """Raise the simulated mirror-write failure."""
         raise OSError("forced mirror-write failure")
 
     monkeypatch.setattr(mod, "_append_episodic_mirror", _boom)
@@ -143,11 +147,28 @@ def test_append_jsonl_survives_malformed_history_lines(tmp_path):
 
     jsonl_file = tmp_path / "test.jsonl"
     jsonl_file.write_text("{\"valid\": 1}\nNOT VALID JSON\n{\"valid\": 2}\n", encoding="utf-8")
+    history = jsonl_file.read_bytes()
 
     entry = {"new": "entry"}
     result = append_jsonl(str(jsonl_file), entry)
     assert result == entry
+    assert jsonl_file.read_bytes().startswith(history)
 
     lines = jsonl_file.read_text(encoding="utf-8").splitlines()
     assert len(lines) == 4
     assert json.loads(lines[-1]) == entry
+
+
+@pytest.mark.parametrize("module_name", ["data_layer_export", "data_flywheel_export"])
+def test_event_export_skips_undecodable_row_and_keeps_following_event(tmp_path, module_name):
+    """Verify event export skips undecodable row and keeps following event."""
+    module_path = Path(__file__).parent.parent / ".agent" / "tools" / (module_name + ".py")
+    spec = importlib.util.spec_from_file_location(module_name, module_path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    path = tmp_path / "events.jsonl"
+    path.write_bytes(b'{"torn":"\xc3\n{"action":"recorded"}\n')
+    rows, quality = module.read_jsonl(path)
+    assert rows == [{"action": "recorded"}]
+    assert quality["malformed_lines"] == 1

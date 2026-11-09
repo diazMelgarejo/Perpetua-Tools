@@ -2,6 +2,7 @@
 import importlib.util
 import io
 import json
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 import subprocess
 import sys
@@ -86,6 +87,23 @@ class PreflightTests(unittest.TestCase):
                 self.assertIn('holder_kill', result)
                 self.assertIn('holder diagnostic', (output / 'holder.stderr').read_text())
 
+            real_open = Path.open
+
+            def fail_receipt(path: Path, *args: Any, **kwargs: Any) -> Any:
+                """Simulate a full disk only when the receipt is opened."""
+                if path.name == 'receipt.json':
+                    raise OSError('disk full')
+                return real_open(path, *args, **kwargs)
+
+            stderr = io.StringIO()
+            with mock.patch.object(module.subprocess, 'Popen', TimedOutChild), \
+                    mock.patch.object(Path, 'open', fail_receipt), \
+                    redirect_stderr(stderr):
+                self.assertEqual(module.run(Path(parent) / 'failed-receipt'), 1)
+            fallback = json.loads(stderr.getvalue())
+            self.assertEqual(fallback['holder_wait'], 'unconfirmed')
+            self.assertIn('disk full', fallback['receipt_write_error'])
+
     def test_stderr_close_failure_still_writes_receipt(self) -> None:
         """A diagnostic file close failure cannot suppress a FAIL receipt."""
         spec = importlib.util.spec_from_file_location('preflight_close', SCRIPT)
@@ -130,14 +148,33 @@ class PreflightTests(unittest.TestCase):
         real_open = Path.open
 
         def open_with_receipt_failure(path: Path, *args: Any, **kwargs: Any) -> Any:
+            """Fail receipt creation while allowing other files to open."""
             if path.name == 'receipt.json':
                 raise OSError('disk full')
             return real_open(path, *args, **kwargs)
 
         with tempfile.TemporaryDirectory() as parent:
             output = Path(parent) / 'receipt-failure'
-            with mock.patch.object(Path, 'open', open_with_receipt_failure):
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with mock.patch.object(Path, 'open', open_with_receipt_failure), \
+                    redirect_stdout(stdout), redirect_stderr(stderr):
                 self.assertEqual(module.run(output), 1)
+            self.assertEqual(stdout.getvalue().strip(), 'FAIL')
+            self.assertIn('disk full', stderr.getvalue())
+            self.assertIn('receipt_write_error', stderr.getvalue())
+            self.assertIn('concurrent_writer_refused_busy', stderr.getvalue())
+
+            class BrokenStderr:
+                """Simulate an unavailable fallback diagnostic stream."""
+
+                def write(self, value: str) -> None:
+                    """Reject diagnostic output as a broken stream would."""
+                    raise OSError('stderr unavailable')
+
+            with mock.patch.object(Path, 'open', open_with_receipt_failure), \
+                    mock.patch.object(module.sys, 'stderr', BrokenStderr()), \
+                    redirect_stdout(io.StringIO()):
+                self.assertEqual(module.run(Path(parent) / 'stderr-failure'), 1)
 
 
 if __name__ == '__main__':

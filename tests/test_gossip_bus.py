@@ -230,6 +230,26 @@ def test_default_resolution_anchors_external_git_dir_at_common_dir(
     )
 
 
+def test_default_resolution_anchors_external_git_common_dir(
+    isolated_env, monkeypatch, tmp_path
+):
+    """An external Git common directory independently anchors the shared state path."""
+    external_common_dir = tmp_path / "external-common-dir"
+    subprocess.run(
+        ["git", "init", "--bare", "-q", str(external_common_dir)], check=True
+    )
+    checkout = tmp_path / "checkout"
+    checkout.mkdir()
+    subprocess.run(["git", "init", "-q", str(checkout)], check=True)
+    monkeypatch.chdir(checkout)
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", checkout)
+    monkeypatch.setenv("GIT_COMMON_DIR", str(external_common_dir))
+
+    assert resolve_gossip_db_path() == str(
+        (external_common_dir / ".state" / "perpetua_core.db").resolve()
+    )
+
+
 def test_default_resolution_installed_package_guard(isolated_env, tmp_path):
     """Installed packages under site-packages or dist-packages return None."""
     site_pkg_dir = tmp_path / "lib" / "python3.13" / "site-packages" / "orchestrator"

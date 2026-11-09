@@ -39,7 +39,7 @@ def _canonical_repo_state_dir(root: Path | None = None) -> Path | None:
         common_path = (repo_root / common_path).resolve()
     else:
         common_path = common_path.resolve()
-    state_anchor = common_path if is_bare else common_path.parent
+    state_anchor = common_path if (is_bare or common_path.name != ".git") else common_path.parent
     return state_anchor / ".state"
 
 
@@ -48,4 +48,4 @@ def resolve_default_state_dir() -> Path:
     env_dir = os.environ.get("PT_STATE_DIR", "").strip()
     if env_dir:
         return Path(env_dir)
-    return _canonical_repo_state_dir() or Path(".state")
+    return _canonical_repo_state_dir() or (PT_ROOT / ".state")
