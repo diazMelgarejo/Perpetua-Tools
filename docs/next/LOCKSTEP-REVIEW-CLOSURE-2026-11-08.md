@@ -83,6 +83,13 @@ reviewed locking experiment, and GitHub-hosted Windows CI is not service-identit
 or power-loss qualification. Record final results and fixing SHAs in PR follow-ups
 and the downloadable handoff; never silently overwrite this dated plan as evidence.
 
+For separate Git directories, stop all old and new dispatch processes before
+upgrading or changing `PT_STATE_DIR`. An existing legacy `.state` location is
+retained; a fresh layout uses the Git common directory. If both locations exist,
+dispatch refuses until an operator reconciles the ledgers. Do not copy, delete,
+or select between competing claims without an approved reconciliation procedure.
+Mixed-version processes cannot coordinate location selection safely.
+
 ## Local verification receipt — 2026-11-08 UTC
 
 - PT, Python 3.12.14: `python -m pytest -q tests/`

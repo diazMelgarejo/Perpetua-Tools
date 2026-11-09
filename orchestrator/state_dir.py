@@ -16,7 +16,12 @@ def _is_installed_package(path: Path | None = None) -> bool:
 
 
 def _canonical_repo_state_dir(root: Path | None = None) -> Path | None:
-    """Find the shared Git-worktree state directory, or None outside Git."""
+    """Find shared Git-worktree state; stop old processes before upgrading.
+
+    Separate-Git-directory layouts keep an existing legacy state directory,
+    use the isolated location for a fresh layout, and refuse ambiguous state.
+    Mixed-version processes cannot safely negotiate a location concurrently.
+    """
     repo_root = root if root is not None else PT_ROOT
     if _is_installed_package(Path(__file__).resolve()) or _is_installed_package(repo_root):
         return None
@@ -27,6 +32,7 @@ def _canonical_repo_state_dir(root: Path | None = None) -> Path | None:
             encoding="utf-8",
             stderr=subprocess.DEVNULL,
             timeout=5,
+            env={key: value for key, value in os.environ.items() if not key.startswith("GIT_")},
         ).splitlines()
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
         return None
@@ -39,8 +45,20 @@ def _canonical_repo_state_dir(root: Path | None = None) -> Path | None:
         common_path = (repo_root / common_path).resolve()
     else:
         common_path = common_path.resolve()
-    state_anchor = common_path if (is_bare or common_path.name != ".git") else common_path.parent
-    return state_anchor / ".state"
+    if is_bare:
+        return common_path / ".state"
+    if common_path.name == ".git":
+        return common_path.parent / ".state"
+    legacy_state = common_path.parent / ".state"
+    isolated_state = common_path / ".state"
+    if legacy_state.exists():
+        if isolated_state.exists():
+            raise RuntimeError(
+                "ambiguous separate-Git-directory state: both legacy and isolated "
+                "directories exist; stop and reconcile them before dispatch"
+            )
+        return legacy_state
+    return isolated_state
 
 
 def resolve_default_state_dir() -> Path:

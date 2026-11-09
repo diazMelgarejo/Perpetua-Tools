@@ -213,27 +213,28 @@ def test_default_resolution_anchors_bare_repo_state_at_common_dir(
     )
 
 
-def test_default_resolution_anchors_external_git_dir_at_common_dir(
+def test_default_resolution_ignores_inherited_git_dir(
     isolated_env, monkeypatch, tmp_path
 ):
-    """An external Git directory anchors the shared state path."""
+    """An inherited Git directory cannot redirect the dispatch ledger."""
     external_git_dir = tmp_path / "external-git-dir"
     subprocess.run(
         ["git", "init", "--bare", "-q", str(external_git_dir)], check=True
     )
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", tmp_path)
+    checkout = tmp_path / "checkout"
+    subprocess.run(["git", "init", "-q", str(checkout)], check=True)
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", checkout)
     monkeypatch.setenv("GIT_DIR", str(external_git_dir))
 
     assert resolve_gossip_db_path() == str(
-        (external_git_dir / ".state" / "perpetua_core.db").resolve()
+        (checkout / ".state" / "perpetua_core.db").resolve()
     )
 
 
-def test_default_resolution_anchors_external_git_common_dir(
+def test_default_resolution_ignores_inherited_git_common_dir(
     isolated_env, monkeypatch, tmp_path
 ):
-    """An external Git common directory independently anchors the shared state path."""
+    """An inherited common directory cannot redirect the dispatch ledger."""
     external_common_dir = tmp_path / "external-common-dir"
     subprocess.run(
         ["git", "init", "--bare", "-q", str(external_common_dir)], check=True
@@ -246,8 +247,54 @@ def test_default_resolution_anchors_external_git_common_dir(
     monkeypatch.setenv("GIT_COMMON_DIR", str(external_common_dir))
 
     assert resolve_gossip_db_path() == str(
-        (external_common_dir / ".state" / "perpetua_core.db").resolve()
+        (checkout / ".state" / "perpetua_core.db").resolve()
     )
+
+
+def test_separate_git_dir_retains_legacy_ledger_across_worktrees(
+    isolated_env, monkeypatch, tmp_path
+):
+    """A separate Git directory must not silently abandon an existing ledger."""
+    checkout = tmp_path / "checkout"
+    git_dir = tmp_path / "external" / "gitdir"
+    git_dir.parent.mkdir()
+    subprocess.run(["git", "init", "-q", "--separate-git-dir", str(git_dir), str(checkout)], check=True)
+    subprocess.run(["git", "-C", str(checkout), "-c", "user.name=t", "-c", "user.email=t@t.test", "commit", "--allow-empty", "-qm", "init"], check=True)
+    linked = tmp_path / "linked"
+    subprocess.run(["git", "-C", str(checkout), "worktree", "add", "-qb", "linked", str(linked)], check=True)
+    legacy_state = git_dir.parent / ".state"
+    legacy_state.mkdir()
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", checkout)
+    assert resolve_gossip_db_path() == str((legacy_state / "perpetua_core.db").resolve())
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", linked)
+    assert resolve_gossip_db_path() == str((legacy_state / "perpetua_core.db").resolve())
+
+
+def test_separate_git_dir_uses_isolated_state_without_legacy(
+    isolated_env, monkeypatch, tmp_path
+):
+    """A new separate Git directory uses its isolated shared state."""
+    checkout = tmp_path / "checkout"
+    git_dir = tmp_path / "external" / "gitdir"
+    git_dir.parent.mkdir()
+    subprocess.run(["git", "init", "-q", "--separate-git-dir", str(git_dir), str(checkout)], check=True)
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", checkout)
+    assert resolve_gossip_db_path() == str((git_dir / ".state" / "perpetua_core.db").resolve())
+
+
+def test_separate_git_dir_refuses_ambiguous_existing_state(
+    isolated_env, monkeypatch, tmp_path
+):
+    """Never silently select one of two potentially authoritative ledgers."""
+    checkout = tmp_path / "checkout"
+    git_dir = tmp_path / "external" / "gitdir"
+    git_dir.parent.mkdir()
+    subprocess.run(["git", "init", "-q", "--separate-git-dir", str(git_dir), str(checkout)], check=True)
+    (git_dir.parent / ".state").mkdir()
+    (git_dir / ".state").mkdir()
+    monkeypatch.setattr("orchestrator.state_dir.PT_ROOT", checkout)
+    with pytest.raises(RuntimeError, match="ambiguous separate-Git-directory state"):
+        resolve_gossip_db_path()
 
 
 def test_default_resolution_installed_package_guard(isolated_env, tmp_path):
