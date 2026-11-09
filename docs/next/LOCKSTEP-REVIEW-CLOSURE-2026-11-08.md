@@ -93,8 +93,9 @@ create, copy, migrate, or reconcile ledgers merely to satisfy this requirement.
 The optional authority file is a private operator-created JSON object with exactly
 `schema_version` (integer 1), `owner` (the decimal current POSIX UID as a string),
 `git_common_dir`, `git_device`, `git_inode`, `ledger_dir`, `ledger_device`, and
-`ledger_inode`. Paths are absolute canonical paths; device and inode values come
-from the corresponding existing directories. The ledger directory must already
+`ledger_inode`, `db_device`, and `db_inode`. Paths are absolute canonical paths;
+device and inode values come from the corresponding existing directories and database.
+The ledger directory must already
 contain a regular `perpetua_core.db`. The record and its containing directory must
 be owned by the current user and inaccessible to group and others; symlinked record
 path components are rejected. Git discovery is fail-closed and does not grant Git

@@ -175,10 +175,11 @@ def _set_authority(monkeypatch, common, ledger):
     directory = ledger.parent / "authority-test"
     directory.mkdir(mode=0o700, exist_ok=True)
     record = directory / "record.json"
-    cs, ls = common.stat(), ledger.stat()
+    cs, ls, ds = common.stat(), ledger.stat(), (ledger / "perpetua_core.db").stat()
     record.write_text(json.dumps({"schema_version": 1, "owner": str(os.getuid()),
         "git_common_dir": str(common.resolve()), "git_device": cs.st_dev, "git_inode": cs.st_ino,
-        "ledger_dir": str(ledger.resolve()), "ledger_device": ls.st_dev, "ledger_inode": ls.st_ino}))
+        "ledger_dir": str(ledger.resolve()), "ledger_device": ls.st_dev, "ledger_inode": ls.st_ino,
+        "db_device": ds.st_dev, "db_inode": ds.st_ino}))
     record.chmod(0o600)
     monkeypatch.setenv("PT_STATE_AUTHORITY_FILE", str(record))
 

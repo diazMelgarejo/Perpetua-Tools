@@ -47,11 +47,11 @@ def _verified_authority_file(path: str, common_path: Path) -> Path:
             raise ValueError("record is too large")
         with os.fdopen(os.dup(fd), "r", encoding="utf-8") as stream:
             record = json.load(stream, object_pairs_hook=_unique_record_fields)
-        if not isinstance(record, dict) or set(record) != {"schema_version", "owner", "git_common_dir", "git_device", "git_inode", "ledger_dir", "ledger_device", "ledger_inode"}:
+        if not isinstance(record, dict) or set(record) != {"schema_version", "owner", "git_common_dir", "git_device", "git_inode", "ledger_dir", "ledger_device", "ledger_inode", "db_device", "db_inode"}:
             raise ValueError("invalid record schema")
         if type(record["schema_version"]) is not int or record["schema_version"] != 1 or record["owner"] != str(os.getuid()):
             raise ValueError("invalid record version or owner")
-        if any(type(record[key]) is not int for key in ("git_device", "git_inode", "ledger_device", "ledger_inode")):
+        if any(type(record[key]) is not int for key in ("git_device", "git_inode", "ledger_device", "ledger_inode", "db_device", "db_inode")):
             raise ValueError("invalid record identity types")
         ledger = Path(record["ledger_dir"])
         if not ledger.is_absolute() or str(ledger.resolve(strict=True)) != record["ledger_dir"]:
@@ -65,8 +65,8 @@ def _verified_authority_file(path: str, common_path: Path) -> Path:
             raise ValueError("record identity mismatch")
         db = ledger / "perpetua_core.db"
         db_stat = db.lstat()
-        if not stat.S_ISREG(db_stat.st_mode):
-            raise ValueError("existing ledger database must be a regular file")
+        if not stat.S_ISREG(db_stat.st_mode) or (record["db_device"], record["db_inode"]) != (db_stat.st_dev, db_stat.st_ino):
+            raise ValueError("existing ledger database identity mismatch")
         return ledger
     except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
         raise RuntimeError("state authority: invalid or unprotected operator record") from exc

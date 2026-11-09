@@ -27,10 +27,11 @@ def authority(tmp_path, monkeypatch):
     record = private / "record.json"
     metadata_stat = common.stat()
     ledger_stat = ledger.stat()
+    db_stat = (ledger / "perpetua_core.db").stat()
     data = {"schema_version": 1, "owner": str(os.getuid()), "git_common_dir": str(common.resolve()),
             "git_device": metadata_stat.st_dev, "git_inode": metadata_stat.st_ino,
             "ledger_dir": str(ledger.resolve()), "ledger_device": ledger_stat.st_dev,
-            "ledger_inode": ledger_stat.st_ino}
+            "ledger_inode": ledger_stat.st_ino, "db_device": db_stat.st_dev, "db_inode": db_stat.st_ino}
     record.write_text(json.dumps(data), encoding="utf-8")
     record.chmod(0o600)
     monkeypatch.setenv("PT_STATE_AUTHORITY_FILE", str(record))
@@ -46,7 +47,7 @@ def test_valid_record_is_read_only(authority):
 
 
 @pytest.mark.parametrize("field,value", [("owner", "forged"), ("git_inode", -1),
-                                       ("ledger_inode", -1), ("git_common_dir", "/wrong"),
+                                       ("ledger_inode", -1), ("db_inode", -1), ("git_common_dir", "/wrong"),
                                        ("schema_version", 2)])
 def test_tampered_record_refused(authority, field, value):
     """An incorrect identity or schema cannot authorize a ledger."""
