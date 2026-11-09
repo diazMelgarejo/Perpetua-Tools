@@ -1,0 +1,63 @@
+{
+  "id": "8d7f70cde8a7",
+  "key": "manual_8d7f70",
+  "name": "manual_8d7f70",
+  "claim": "On orama main 2537cefa with PT main b728015f, local dispatch through spawn_agents.py needs PERPETUA_TOOLS_PATH and, in a linked git worktree, an explicit PT_STATE_DIR outside the repositories; without it the state-authority guard raises and the failure looks like a model timeout.",
+  "conditions": [
+    "b728015f",
+    "cefa",
+    "dispatch",
+    "explicit",
+    "failure",
+    "git",
+    "guard",
+    "like",
+    "linked",
+    "local",
+    "looks",
+    "main",
+    "model",
+    "needs",
+    "orama",
+    "outside",
+    "perpetua_tools_path",
+    "pt_state_dir",
+    "raises",
+    "repositories",
+    "spawn_agents",
+    "state-authority",
+    "through",
+    "timeout",
+    "without",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-11-09T19:43:07.568182+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T19:43:07.568182+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-09T19:43:07.568182+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T19:43:07.891698+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-10 pilot: failed twice with state-authority errors, then succeeded in 36.5 s once both variables were set.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-09T19:43:07.568182+00:00"
+      ],
+      "lessons_sha": "a435af610c16"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T19:43:07.891698+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-10 pilot: failed twice with state-authority errors, then succeeded in 36.5 s once both variables were set."
+}

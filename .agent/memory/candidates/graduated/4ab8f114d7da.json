@@ -1,0 +1,72 @@
+{
+  "id": "4ab8f114d7da",
+  "key": "manual_4ab8f1",
+  "name": "manual_4ab8f1",
+  "claim": "Score model JSON outside the model with a strict validator (actual types, exact key set, enums, no duplicate keys, no nonstandard constants, no fences): dict equality accepts 0 for false. A malformed or non-conforming answer is unusable advice, and an unknown outcome after a request was written is held for reconciliation, never auto-retried.",
+  "conditions": [
+    "accepts",
+    "actual",
+    "advice",
+    "after",
+    "answer",
+    "auto-retried",
+    "constants",
+    "dict",
+    "duplicate",
+    "enums",
+    "equality",
+    "exact",
+    "false",
+    "fences",
+    "held",
+    "json",
+    "key",
+    "keys",
+    "malformed",
+    "model",
+    "never",
+    "non-conforming",
+    "nonstandard",
+    "outcome",
+    "outside",
+    "reconciliation",
+    "request",
+    "score",
+    "set",
+    "strict",
+    "types",
+    "unknown",
+    "unusable",
+    "validator",
+    "written"
+  ],
+  "evidence_ids": [
+    "2026-11-09T19:43:05.868003+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T19:43:05.868003+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-09T19:43:05.868003+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T19:43:06.118857+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Mac controller errata 2026-11-10 and the Windows design review of cline_autoresearcher.py, whose Tier-2 retry after any failure violated this rule.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-09T19:43:05.868003+00:00"
+      ],
+      "lessons_sha": "dcbb300e9153"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T19:43:06.118857+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Mac controller errata 2026-11-10 and the Windows design review of cline_autoresearcher.py, whose Tier-2 retry after any failure violated this rule."
+}
