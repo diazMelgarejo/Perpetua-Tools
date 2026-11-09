@@ -8,9 +8,11 @@ import pytest
 
 from orchestrator.state_dir import _canonical_repo_state_dir
 
+Authority = tuple[Path, Path, Path, Path, dict[str, object]]
+
 
 @pytest.fixture
-def authority(tmp_path, monkeypatch):
+def authority(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Authority:
     """Prepare an external Git directory and a private reviewed record."""
     if os.name != "posix":
         pytest.skip("POSIX ownership and mode test")
@@ -20,8 +22,9 @@ def authority(tmp_path, monkeypatch):
     common.parent.mkdir()
     subprocess.run(["git", "init", "-q", "--separate-git-dir", str(common), str(checkout)], check=True)
     ledger = tmp_path / "ledger"
-    ledger.mkdir()
+    ledger.mkdir(mode=0o700)
     (ledger / "perpetua_core.db").write_bytes(b"existing")
+    (ledger / "perpetua_core.db").chmod(0o600)
     private = tmp_path / "authority"
     private.mkdir(mode=0o700)
     record = private / "record.json"
@@ -38,7 +41,7 @@ def authority(tmp_path, monkeypatch):
     return checkout, common, ledger, record, data
 
 
-def test_valid_record_is_read_only(authority):
+def test_valid_record_is_read_only(authority: Authority) -> None:
     """Resolution does not create or mutate the record or the existing ledger."""
     checkout, _, ledger, record, _ = authority
     before = (record.read_bytes(), (ledger / "perpetua_core.db").read_bytes())
@@ -49,7 +52,7 @@ def test_valid_record_is_read_only(authority):
 @pytest.mark.parametrize("field,value", [("owner", "forged"), ("git_inode", -1),
                                        ("ledger_inode", -1), ("db_inode", -1), ("git_common_dir", "/wrong"),
                                        ("schema_version", 2)])
-def test_tampered_record_refused(authority, field, value):
+def test_tampered_record_refused(authority: Authority, field: str, value: object) -> None:
     """An incorrect identity or schema cannot authorize a ledger."""
     checkout, _, _, record, data = authority
     data[field] = value
@@ -59,7 +62,7 @@ def test_tampered_record_refused(authority, field, value):
 
 
 @pytest.mark.parametrize("target", ["record", "directory"])
-def test_insecure_mode_refused(authority, target):
+def test_insecure_mode_refused(authority: Authority, target: str) -> None:
     """The record and its containing directory must both be private."""
     checkout, _, _, record, _ = authority
     (record if target == "record" else record.parent).chmod(0o755)
@@ -67,7 +70,7 @@ def test_insecure_mode_refused(authority, target):
         _canonical_repo_state_dir(checkout)
 
 
-def test_symlink_record_refused(authority):
+def test_symlink_record_refused(authority: Authority) -> None:
     """A record symlink is never followed."""
     checkout, _, _, record, _ = authority
     target = record.parent / "actual"
@@ -77,7 +80,7 @@ def test_symlink_record_refused(authority):
         _canonical_repo_state_dir(checkout)
 
 
-def test_missing_authority_refuses_external_checkout(authority, monkeypatch):
+def test_missing_authority_refuses_external_checkout(authority: Authority, monkeypatch: pytest.MonkeyPatch) -> None:
     """No record means no inferred ownership of an external .git directory."""
     checkout, _, _, _, _ = authority
     monkeypatch.delenv("PT_STATE_AUTHORITY_FILE")
@@ -85,7 +88,7 @@ def test_missing_authority_refuses_external_checkout(authority, monkeypatch):
         _canonical_repo_state_dir(checkout)
 
 
-def test_missing_ledger_refused(authority):
+def test_missing_ledger_refused(authority: Authority) -> None:
     """A record cannot bootstrap a new ledger."""
     checkout, _, ledger, _, _ = authority
     (ledger / "perpetua_core.db").unlink()
@@ -93,7 +96,7 @@ def test_missing_ledger_refused(authority):
         _canonical_repo_state_dir(checkout)
 
 
-def test_duplicate_record_keys_refused(authority):
+def test_duplicate_record_keys_refused(authority: Authority) -> None:
     """Ambiguous duplicate keys cannot authorize a ledger."""
     checkout, _, _, record, _ = authority
     record.write_text('{"schema_version": 1, "schema_version": 1}')
@@ -101,7 +104,7 @@ def test_duplicate_record_keys_refused(authority):
         _canonical_repo_state_dir(checkout)
 
 
-def test_symlink_authority_directory_refused(authority, monkeypatch, tmp_path):
+def test_symlink_authority_directory_refused(authority: Authority, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Symlinks in ancestor components are not followed."""
     checkout, _, _, record, _ = authority
     alias = tmp_path / "alias"
@@ -111,7 +114,7 @@ def test_symlink_authority_directory_refused(authority, monkeypatch, tmp_path):
         _canonical_repo_state_dir(checkout)
 
 
-def test_non_posix_record_verification_refused(authority, monkeypatch):
+def test_non_posix_record_verification_refused(authority: Authority, monkeypatch: pytest.MonkeyPatch) -> None:
     """Windows does not inherit a POSIX ownership claim."""
     from orchestrator.state_dir import _verified_authority_file
 
@@ -120,3 +123,37 @@ def test_non_posix_record_verification_refused(authority, monkeypatch):
         context.setattr(os, "name", "nt")
         with pytest.raises(RuntimeError, match="unavailable"):
             _verified_authority_file(str(record), common)
+
+
+@pytest.mark.parametrize("target,mode", [("directory", 0o777), ("database", 0o644)])
+def test_unprotected_ledger_refused(authority: Authority, target: str, mode: int) -> None:
+    """An authority record cannot make writable or disclosed ledger storage safe."""
+    checkout, _, ledger, _, _ = authority
+    (ledger if target == "directory" else ledger / "perpetua_core.db").chmod(mode)
+    with pytest.raises(RuntimeError, match="invalid or unprotected"):
+        _canonical_repo_state_dir(checkout)
+
+
+def test_fifo_record_refused_without_waiting(authority: Authority) -> None:
+    """A non-regular record must be rejected before any blocking read or open."""
+    checkout, _, _, record, _ = authority
+    record.unlink()
+    os.mkfifo(record, 0o600)
+    with pytest.raises(RuntimeError, match="invalid or unprotected"):
+        _canonical_repo_state_dir(checkout)
+
+
+def test_hardlinked_record_refused(authority: Authority) -> None:
+    """An extra name cannot silently retain authority after record retirement."""
+    checkout, _, _, record, _ = authority
+    os.link(record, record.parent / "alias.json")
+    with pytest.raises(RuntimeError, match="invalid or unprotected"):
+        _canonical_repo_state_dir(checkout)
+
+
+def test_oversized_record_refused(authority: Authority) -> None:
+    """A protected record remains subject to a bounded parser input size."""
+    checkout, _, _, record, _ = authority
+    record.write_bytes(b" " * 16385)
+    with pytest.raises(RuntimeError, match="invalid or unprotected"):
+        _canonical_repo_state_dir(checkout)

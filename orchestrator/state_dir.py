@@ -38,15 +38,18 @@ def _verified_authority_file(path: str, common_path: Path) -> Path:
         parent = os.fstat(directory)
         if parent.st_uid != os.getuid() or stat.S_IMODE(parent.st_mode) & 0o077:
             raise ValueError("record directory is not private and owned by the current user")
-        fd = os.open(record_path.name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory)
+        fd = os.open(record_path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory)
         descriptors.append(fd)
         info = os.fstat(fd)
-        if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or stat.S_IMODE(info.st_mode) & 0o077:
+        if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()
+                or stat.S_IMODE(info.st_mode) & 0o077 or info.st_nlink != 1):
             raise ValueError("record is not a private regular file owned by the current user")
         if info.st_size > 16384:
             raise ValueError("record is too large")
-        with os.fdopen(os.dup(fd), "r", encoding="utf-8") as stream:
-            record = json.load(stream, object_pairs_hook=_unique_record_fields)
+        content = os.read(fd, 16385)
+        if len(content) > 16384:
+            raise ValueError("record is too large")
+        record = json.loads(content.decode("utf-8"), object_pairs_hook=_unique_record_fields)
         if not isinstance(record, dict) or set(record) != {"schema_version", "owner", "git_common_dir", "git_device", "git_inode", "ledger_dir", "ledger_device", "ledger_inode", "db_device", "db_inode"}:
             raise ValueError("invalid record schema")
         if type(record["schema_version"]) is not int or record["schema_version"] != 1 or record["owner"] != str(os.getuid()):
@@ -63,12 +66,16 @@ def _verified_authority_file(path: str, common_path: Path) -> Path:
                 (record["ledger_device"], record["ledger_inode"]) != (ledger_stat.st_dev, ledger_stat.st_ino) or
                 not stat.S_ISDIR(ledger_stat.st_mode)):
             raise ValueError("record identity mismatch")
+        if ledger_stat.st_uid != os.getuid() or stat.S_IMODE(ledger_stat.st_mode) & 0o022:
+            raise ValueError("ledger directory is not protected and owned by the current user")
         db = ledger / "perpetua_core.db"
         db_stat = db.lstat()
-        if not stat.S_ISREG(db_stat.st_mode) or (record["db_device"], record["db_inode"]) != (db_stat.st_dev, db_stat.st_ino):
+        if (not stat.S_ISREG(db_stat.st_mode) or db_stat.st_uid != os.getuid()
+                or stat.S_IMODE(db_stat.st_mode) & 0o077
+                or (record["db_device"], record["db_inode"]) != (db_stat.st_dev, db_stat.st_ino)):
             raise ValueError("existing ledger database identity mismatch")
         return ledger
-    except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
+    except (OSError, ValueError, TypeError, KeyError, RecursionError) as exc:
         raise RuntimeError("state authority: invalid or unprotected operator record") from exc
     finally:
         for descriptor in reversed(descriptors):

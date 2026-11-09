@@ -95,8 +95,9 @@ The optional authority file is a private operator-created JSON object with exact
 `git_common_dir`, `git_device`, `git_inode`, `ledger_dir`, `ledger_device`, and
 `ledger_inode`, `db_device`, and `db_inode`. Paths are absolute canonical paths;
 device and inode values come from the corresponding existing directories and database.
-The ledger directory must already
-contain a regular `perpetua_core.db`. The record and its containing directory must
+The ledger directory must already contain a private, user-owned regular
+`perpetua_core.db` and must be user-owned and not writable by group or others.
+The record and its containing directory must
 be owned by the current user and inaccessible to group and others; symlinked record
 path components are rejected. Git discovery is fail-closed and does not grant Git
 safe-directory trust. POSIX ownership and permissions verification is not a Windows
@@ -104,6 +105,12 @@ ACL qualification: Windows record use is rejected until a native verifier is qua
 Direct non-symlink checkout `.git` directories and explicit `PT_STATE_DIR` retain
 their existing behavior. The operator must independently establish ownership and
 select or reconcile any existing ledger before writing a record.
+Record reads are bounded to 16 KiB; FIFO, symlink and hardlinked records are
+refused. Database replacement invalidates the binding and requires a newly
+reviewed record. This verifies protected local configuration, not human presence:
+a process with the same user privileges can change it. Trusted filesystem
+ancestors and same-user processes remain operational assumptions. Startup never
+writes an authority record or repairs permissions on the operator's behalf.
 
 ## Local verification receipt — 2026-11-08 UTC
 
