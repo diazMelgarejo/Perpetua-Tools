@@ -168,10 +168,12 @@ def isolated_env(monkeypatch):
             monkeypatch.delenv(key, raising=False)
 
 
-def _set_authority(monkeypatch, common, ledger):
+def _set_authority(monkeypatch: pytest.MonkeyPatch, common: Path, ledger: Path) -> None:
     """Install a test-only private record for an existing ledger."""
     ledger.mkdir(exist_ok=True)
+    ledger.chmod(0o700)
     (ledger / "perpetua_core.db").touch()
+    (ledger / "perpetua_core.db").chmod(0o600)
     directory = ledger.parent / "authority-test"
     directory.mkdir(mode=0o700, exist_ok=True)
     record = directory / "record.json"
