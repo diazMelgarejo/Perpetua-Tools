@@ -41,10 +41,12 @@ VALID_LOOP_DECISIONS = {"APPROVE", "ESCALATE", "MALFORMED"}
 
 
 def _e(*codes: int) -> str:
+    """Build an ANSI escape sequence from style codes."""
     return f"\x1b[{';'.join(map(str, codes))}m"
 
 
 def _hex(value: str) -> str:
+    """Convert a hexadecimal color to an ANSI foreground escape sequence."""
     value = value.lstrip("#")
     r, g, b = int(value[:2], 16), int(value[2:4], 16), int(value[4:6], 16)
     return f"\x1b[38;2;{r};{g};{b}m"
@@ -62,28 +64,34 @@ WHITE = _hex("#F5F5F7")
 
 
 def paint(text: Any, color: str, enabled: bool) -> str:
+    """Apply terminal color when enabled."""
     return f"{color}{text}{RESET}" if enabled else str(text)
 
 
 def colored_stdout_enabled() -> bool:
+    """Return whether the NO_COLOR environment variable permits color."""
     return not os.environ.get("NO_COLOR")
 
 
 def rail(color: bool = False) -> str:
+    """Return the terminal dashboard rail."""
     return paint("│", MUTED, color)
 
 
 def sha256(value: Any) -> str:
+    """Return the SHA-256 hex digest of the stringified value."""
     return hashlib.sha256(str(value).encode("utf-8")).hexdigest()
 
 
 def hash_id(value: Any) -> str | None:
+    """Hash a value for use as an exported identifier."""
     if value in (None, ""):
         return None
     return f"sha256:{sha256(value)}"
 
 
 def parse_time(value: Any) -> dt.datetime | None:
+    """Parse an ISO timestamp as UTC, returning None for invalid values."""
     if not value:
         return None
     text = str(value).strip()
@@ -99,6 +107,7 @@ def parse_time(value: Any) -> dt.datetime | None:
 
 
 def iso(value: Any) -> str | None:
+    """Normalize a timestamp to ISO format, or return None."""
     parsed = parse_time(value)
     if not parsed:
         return None
@@ -106,10 +115,12 @@ def iso(value: Any) -> str | None:
 
 
 def now_iso() -> str:
+    """Return the current UTC time as an ISO timestamp."""
     return dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def safe_num(value: Any) -> float | None:
+    """Convert a value to a number, or return None when unavailable."""
     if value in (None, ""):
         return None
     try:
@@ -122,11 +133,13 @@ def safe_num(value: Any) -> float | None:
 
 
 def safe_int(value: Any) -> int | None:
+    """Convert a numeric value to a rounded integer when available."""
     n = safe_num(value)
     return None if n is None else int(round(n))
 
 
 def read_jsonl(path: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Read JSON objects and report missing or malformed input lines."""
     quality = {"missing": False, "malformed_lines": 0}
     if not path.exists():
         quality["missing"] = True
@@ -151,6 +164,7 @@ def read_jsonl(path: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
 
 
 def read_json(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Read a JSON object and report input quality."""
     quality = {"missing": False, "malformed": False}
     if not path.exists():
         quality["missing"] = True
@@ -164,6 +178,7 @@ def read_json(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
 
 
 def cutoff_for(window: str) -> dt.datetime | None:
+    """Return the cutoff timestamp for a reporting window."""
     if window == "all":
         return None
     days = int(window[:-1])
@@ -171,6 +186,7 @@ def cutoff_for(window: str) -> dt.datetime | None:
 
 
 def nearest_window(days: int) -> str:
+    """Select the smallest supported window covering the requested days."""
     if days <= 7:
         return "7d"
     if days <= 30:
@@ -181,6 +197,7 @@ def nearest_window(days: int) -> str:
 
 
 def parse_natural_language_request(text: str) -> dict[str, str]:
+    """Extract reporting options from a natural-language request."""
     request = " ".join(text.split())
     if not request:
         return {}
@@ -233,10 +250,12 @@ def parse_natural_language_request(text: str) -> dict[str, str]:
 
 
 def flag_was_provided(argv: list[str], flag: str) -> bool:
+    """Check whether a command-line flag was provided."""
     return any(token == flag or token.startswith(f"{flag}=") for token in argv)
 
 
 def apply_natural_language_request(args: argparse.Namespace, argv: list[str]) -> None:
+    """Apply requested reporting options unless explicitly overridden."""
     request_text = " ".join(args.request).strip()
     args.request_text = " ".join(request_text.split())
     parsed = parse_natural_language_request(args.request_text)
@@ -247,6 +266,7 @@ def apply_natural_language_request(args: argparse.Namespace, argv: list[str]) ->
 
 
 def inside_window(record: dict[str, Any], cutoff: dt.datetime | None) -> bool:
+    """Return whether a record falls within the reporting window."""
     if cutoff is None:
         return True
     ts = parse_time(record.get("timestamp") or record.get("created_at") or record.get("started_at"))
@@ -254,6 +274,7 @@ def inside_window(record: dict[str, Any], cutoff: dt.datetime | None) -> bool:
 
 
 def slug(value: Any, fallback: str = "unknown") -> str:
+    """Normalize a value to a bounded identifier."""
     text = str(value or "").strip().lower()
     out = []
     last_sep = False
@@ -269,6 +290,7 @@ def slug(value: Any, fallback: str = "unknown") -> str:
 
 
 def normalize_harness(value: Any) -> str:
+    """Normalize a harness name."""
     key = slug(value)
     if "claude" in key:
         return "claude-code"
@@ -292,6 +314,7 @@ def normalize_harness(value: Any) -> str:
 
 
 def infer_phase(action: str, skill: str) -> str:
+    """Infer the workflow phase from record fields."""
     key = f"{action} {skill}".lower()
     if any(term in key for term in ("plan", "design", "spec")):
         return "plan"
@@ -309,6 +332,7 @@ def infer_phase(action: str, skill: str) -> str:
 
 
 def infer_workflow(action: str, skill: str) -> str:
+    """Infer a workflow name from record fields."""
     phase = infer_phase(action, skill)
     if phase in {"plan", "review", "qa", "ship", "debug", "memory"}:
         return phase
@@ -316,10 +340,12 @@ def infer_workflow(action: str, skill: str) -> str:
 
 
 def as_list(value: Any) -> list[Any]:
+    """Return a list containing the supplied value or values."""
     return value if isinstance(value, list) else []
 
 
 def load_category_rules(config: dict[str, Any]) -> dict[str, Any]:
+    """Load category rules from the supplied configuration."""
     rules = []
     for raw in as_list(config.get("rules")):
         if not isinstance(raw, dict) or not raw.get("category"):
@@ -344,6 +370,7 @@ def load_category_rules(config: dict[str, Any]) -> dict[str, Any]:
 
 
 def resolve_category(record: dict[str, Any], rules: dict[str, Any]) -> str:
+    """Resolve a category using the configured rules."""
     explicit = slug(record.get("category"), "")
     if explicit:
         return explicit
@@ -365,6 +392,7 @@ def resolve_category(record: dict[str, Any], rules: dict[str, Any]) -> str:
 
 
 def normalize_agent_event(entry: dict[str, Any], idx: int, args: argparse.Namespace, rules: dict[str, Any]) -> dict[str, Any]:
+    """Normalize an agent event for export."""
     source = entry.get("source") if isinstance(entry.get("source"), dict) else {}
     started = iso(entry.get("timestamp")) or now_iso()
     skill = str(entry.get("skill") or source.get("skill") or "unknown")
@@ -409,6 +437,7 @@ def normalize_agent_event(entry: dict[str, Any], idx: int, args: argparse.Namesp
 
 
 def _allowed_or_unknown(value: Any, allowed: set[str]) -> str:
+    """Return an allowed value or an unknown placeholder."""
     text = str(value) if value is not None else ""
     return text if text in allowed else "unknown"
 
@@ -440,6 +469,7 @@ def normalize_loop_event(entry: dict[str, Any]) -> dict[str, Any]:
 
 
 def normalize_cron_run(entry: dict[str, Any], idx: int, args: argparse.Namespace, rules: dict[str, Any]) -> dict[str, Any]:
+    """Normalize a scheduled run for export."""
     started = iso(entry.get("started_at") or entry.get("timestamp") or entry.get("created_at")) or now_iso()
     finished = iso(entry.get("finished_at") or entry.get("ended_at"))
     start_dt = parse_time(started)
@@ -478,6 +508,7 @@ def normalize_cron_run(entry: dict[str, Any], idx: int, args: argparse.Namespace
 
 
 def bucket_start(value: str, bucket: str) -> str:
+    """Return the start of the requested time bucket."""
     parsed = parse_time(value)
     if not parsed:
         return "unknown"
@@ -493,10 +524,12 @@ def bucket_start(value: str, bucket: str) -> str:
 
 
 def build_activity_series(agent_events: list[dict[str, Any]], cron_runs: list[dict[str, Any]], bucket: str) -> list[dict[str, Any]]:
+    """Aggregate agent events and scheduled runs into time buckets."""
     rows: dict[str, dict[str, Any]] = {}
     active: dict[str, set[str]] = {}
 
     def row_for(ts: str) -> dict[str, Any]:
+        """Return the aggregate row for a time bucket."""
         key = bucket_start(ts, bucket)
         rows.setdefault(
             key,
@@ -540,6 +573,7 @@ def build_activity_series(agent_events: list[dict[str, Any]], cron_runs: list[di
 
 
 def count_by(records: list[dict[str, Any]], field: str) -> dict[str, int]:
+    """Count records grouped by a field."""
     counts: dict[str, int] = {}
     for record in records:
         key = str(record.get(field) or "unknown")
@@ -548,10 +582,12 @@ def count_by(records: list[dict[str, Any]], field: str) -> dict[str, int]:
 
 
 def sum_field(records: list[dict[str, Any]], field: str) -> float:
+    """Sum numeric values for a record field."""
     return sum((safe_num(record.get(field)) or 0) for record in records)
 
 
 def median(values: list[float]) -> float | None:
+    """Return the median of available numeric values."""
     clean = sorted(v for v in values if v is not None)
     if not clean:
         return None
@@ -562,6 +598,7 @@ def median(values: list[float]) -> float | None:
 
 
 def observed_days(records: list[dict[str, Any]]) -> int:
+    """Count distinct observed days, with a minimum of one."""
     days = set()
     for record in records:
         parsed = parse_time(record.get("started_at") or record.get("created_at"))
@@ -571,6 +608,7 @@ def observed_days(records: list[dict[str, Any]]) -> int:
 
 
 def category_summary(agent_events: list[dict[str, Any]], cron_runs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Summarize activity by category."""
     rows: dict[str, dict[str, Any]] = {}
     for record in agent_events + cron_runs:
         category = str(record.get("category") or "uncategorized")
@@ -600,6 +638,7 @@ def category_summary(agent_events: list[dict[str, Any]], cron_runs: list[dict[st
 
 
 def harness_summary(agent_events: list[dict[str, Any]], cron_runs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Summarize activity by harness."""
     rows: dict[str, dict[str, Any]] = {}
     for record in agent_events + cron_runs:
         harness = str(record.get("harness") or "unknown")
@@ -639,6 +678,7 @@ def harness_summary(agent_events: list[dict[str, Any]], cron_runs: list[dict[str
 
 
 def workflow_summary(agent_events: list[dict[str, Any]], cron_runs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Summarize activity and outcomes by workflow."""
     rows: dict[str, dict[str, Any]] = {}
     for record in agent_events + cron_runs:
         workflow = str(record.get("workflow") or "unknown")
@@ -673,6 +713,7 @@ def workflow_summary(agent_events: list[dict[str, Any]], cron_runs: list[dict[st
 
 
 def build_cron_timeline(cron_runs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Build timeline rows for scheduled runs."""
     parsed_runs = []
     for idx, run in enumerate(cron_runs):
         start = parse_time(run.get("started_at"))
@@ -718,6 +759,7 @@ def build_cron_timeline(cron_runs: list[dict[str, Any]]) -> list[dict[str, Any]]
 
 
 def build_kpi_summary(agent_events: list[dict[str, Any]], cron_runs: list[dict[str, Any]], categories: list[dict[str, Any]], harnesses: list[dict[str, Any]], workflows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Build KPI rows from the activity summaries."""
     all_records = agent_events + cron_runs
     total_runs = len(all_records)
     successes = sum(1 for record in all_records if record.get("status") == "success" or record.get("result") == "success")
@@ -751,14 +793,17 @@ def build_kpi_summary(agent_events: list[dict[str, Any]], cron_runs: list[dict[s
 
 
 def write_jsonl(path: Path, records: list[dict[str, Any]]) -> None:
+    """Write records as UTF-8 JSON lines."""
     path.write_text("".join(json.dumps(record, separators=(",", ":")) + "\n" for record in records), encoding="utf-8")
 
 
 def write_json(path: Path, data: Any) -> None:
+    """Write a value as formatted UTF-8 JSON."""
     path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
 
 def write_csv(path: Path, records: list[dict[str, Any]], fields: list[str]) -> None:
+    """Write records to a UTF-8 CSV file."""
     with path.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
         writer.writeheader()
@@ -767,6 +812,7 @@ def write_csv(path: Path, records: list[dict[str, Any]], fields: list[str]) -> N
 
 
 def bar_rows(rows: list[dict[str, Any]], label: str, value: str, color: str = "#2563eb") -> str:
+    """Render HTML bar rows for a data series."""
     max_value = max([safe_num(row.get(value)) or 0 for row in rows] + [1])
     out = []
     for row in rows:
@@ -782,6 +828,7 @@ def bar_rows(rows: list[dict[str, Any]], label: str, value: str, color: str = "#
 
 
 def table_html(headers: list[str], rows: list[dict[str, Any]], fields: list[str]) -> str:
+    """Render records as an HTML table."""
     head = "".join(f"<th>{html.escape(h)}</th>" for h in headers)
     body_rows = []
     for row in rows[:50]:
@@ -791,6 +838,7 @@ def table_html(headers: list[str], rows: list[dict[str, Any]], fields: list[str]
 
 
 def timeline_html(rows: list[dict[str, Any]]) -> str:
+    """Render scheduled-run timeline rows as HTML."""
     if not rows:
         return "<p>No cron timeline data yet.</p>"
     out = []
@@ -811,6 +859,7 @@ def timeline_html(rows: list[dict[str, Any]]) -> str:
 
 
 def write_dashboard(path: Path, summary: dict[str, Any], activity: list[dict[str, Any]], categories: list[dict[str, Any]], harnesses: list[dict[str, Any]], workflows: list[dict[str, Any]], cron_runs: list[dict[str, Any]], cron_timeline: list[dict[str, Any]], kpis: list[dict[str, Any]]) -> None:
+    """Write the HTML dashboard from exported summaries."""
     css = """
 body{margin:0;background:#f7f9fb;color:#172033;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 header{background:#fff;border-bottom:1px solid #d9e0e8;padding:28px 32px}
@@ -867,6 +916,7 @@ th{color:#657286}.scroll{overflow-x:auto}.footer{font-size:12px;color:#657286}
 
 
 def build_summary(args: argparse.Namespace, quality: dict[str, Any], agent_events: list[dict[str, Any]], cron_runs: list[dict[str, Any]], categories: list[dict[str, Any]], harnesses: list[dict[str, Any]]) -> dict[str, Any]:
+    """Build the dashboard summary from exported activity."""
     active_agents = len({record.get("agent_id_hash") for record in agent_events + cron_runs if record.get("agent_id_hash")})
     return {
         "generated_at": now_iso(),
@@ -913,6 +963,7 @@ def build_summary(args: argparse.Namespace, quality: dict[str, Any], agent_event
 
 
 def build_dashboard_report(args: argparse.Namespace, summary: dict[str, Any]) -> dict[str, Any]:
+    """Build metadata for the dashboard report."""
     return {
         "id": f"daily_agent_resource_report_{args.date}",
         "cadence": "daily",
@@ -945,6 +996,7 @@ def build_dashboard_report(args: argparse.Namespace, summary: dict[str, Any]) ->
 
 
 def write_daily_report(path: Path, summary: dict[str, Any]) -> None:
+    """Write the daily Markdown report."""
     path.write_text(
         f"""# Daily agentic-stack Resource Report
 
@@ -973,6 +1025,7 @@ only through an explicitly user-approved channel.
 
 
 def compact_value(value: Any, prefix: str = "", suffix: str = "") -> str:
+    """Format a numeric value for compact display."""
     n = safe_num(value)
     if n is None:
         return "n/a"
@@ -988,6 +1041,7 @@ def compact_value(value: Any, prefix: str = "", suffix: str = "") -> str:
 
 
 def plain_bar(value: Any, max_value: float, width: int = 18) -> str:
+    """Render a bounded text bar for a value."""
     n = safe_num(value) or 0
     filled = 0 if max_value <= 0 else int(round(n / max_value * width))
     filled = max(0, min(width, filled))
@@ -995,6 +1049,7 @@ def plain_bar(value: Any, max_value: float, width: int = 18) -> str:
 
 
 def top_table(rows: list[dict[str, Any]], label_field: str, value_field: str, secondary_value_field: str = "", limit: int = 5, color: bool = False) -> list[str]:
+    """Render a ranked terminal table."""
     if not rows:
         return [f"{rail(color)}  {paint('no data yet', MUTED, color)}"]
     top = rows[:limit]
@@ -1015,6 +1070,7 @@ def top_table(rows: list[dict[str, Any]], label_field: str, value_field: str, se
 
 
 def metric_line(label: str, value: str, color: bool = False) -> str:
+    """Render a terminal metric line."""
     return (
         f"{paint('◆', PURPLE, color)}  {paint(label.ljust(14), DIM, color)} "
         f"{paint('...', MUTED, color)} {paint(value, f'{BOLD}{WHITE}', color)}"
@@ -1022,10 +1078,12 @@ def metric_line(label: str, value: str, color: bool = False) -> str:
 
 
 def section_line(title: str, color: bool = False) -> str:
+    """Render a terminal section heading."""
     return f"{rail(color)}  {paint(title, f'{BOLD}{ORANGE}', color)}"
 
 
 def render_terminal_dashboard(out_dir: Path, color: bool = False) -> str:
+    """Render the terminal dashboard from exported data."""
     summary = json.loads((out_dir / "dashboard-summary.json").read_text(encoding="utf-8"))
     activity = json.loads((out_dir / "activity-series.json").read_text(encoding="utf-8"))
     categories = json.loads((out_dir / "category-summary.json").read_text(encoding="utf-8"))
@@ -1076,6 +1134,7 @@ def render_terminal_dashboard(out_dir: Path, color: bool = False) -> str:
 
 
 def export(args: argparse.Namespace) -> Path:
+    """Build the local export artifacts and return their directory."""
     agent_root = Path(args.agent_root).resolve()
     data_dir = agent_root / "data-layer"
     episodic_path = Path(args.episodic) if args.episodic else agent_root / "memory" / "episodic" / "AGENT_LEARNINGS.jsonl"
@@ -1163,6 +1222,7 @@ def export(args: argparse.Namespace) -> Path:
 
 
 def main() -> int:
+    """Parse command-line arguments and run the export."""
     parser = argparse.ArgumentParser(description="Export local agentic-stack activity into dashboard-ready data.")
     parser.add_argument("--agent-root", default=".agent")
     parser.add_argument("--episodic", default="")

@@ -122,10 +122,13 @@ def run(output: Path) -> int:
                 receipt.write('\n')
             receipt_written = True
         except Exception as exc:
-            print(f'preflight receipt write failed: {exc}', file=sys.stderr)
             result['status'] = 'FAIL'
             result['receipt_write_error'] = f'{type(exc).__name__}: {exc}'
-            print(json.dumps(result, ensure_ascii=True, sort_keys=True), file=sys.stderr)
+            try:
+                print(json.dumps(result, indent=2), file=sys.stderr)
+            except Exception:
+                # Reporting must not replace the failure exit if stderr also fails.
+                pass
     print(result.get('status'))
     return 0 if (result.get('status') == 'PASS' and receipt_written) else 1
 

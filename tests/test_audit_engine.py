@@ -27,6 +27,7 @@ def test_real_policy_file_loads_and_validates():
 
 
 def test_exact_human_identity_approved():
+    """Verify exact human identity approved."""
     result = audit_engine.is_approved_identity(
         "cyre", "lawrence@cyre.me", root=Path("."), policy_path=REAL_POLICY
     )
@@ -35,6 +36,7 @@ def test_exact_human_identity_approved():
 
 
 def test_explicit_gmail_alias_approved():
+    """Verify explicit gmail alias approved."""
     result = audit_engine.is_approved_identity(
         "cyre", "lawrence.melgarejo@gmail.com", root=Path("."), policy_path=REAL_POLICY
     )
@@ -51,6 +53,7 @@ def test_wrong_name_with_approved_email_rejected():
 
 
 def test_exact_agent_identity_approved():
+    """Verify exact agent identity approved."""
     result = audit_engine.is_approved_identity(
         "Codex", "codex@openai.com", root=Path("."), policy_path=REAL_POLICY
     )
@@ -97,6 +100,7 @@ def test_known_anthropic_agent_identities_approved(name: str, email: str) -> Non
     "209825114+claude[bot]@users.noreply.github.com",  # GitHub numeric-ID form, same bot
 ])
 def test_claude_github_app_bot_approved_in_both_repos(repo: str, email: str) -> None:
+    """Verify claude github app bot approved in both repos."""
     result = audit_engine.is_approved_identity(
         "claude[bot]", email, root=Path("."), repo_name=repo, policy_path=REAL_POLICY
     )
@@ -111,6 +115,7 @@ def test_claude_github_app_bot_approved_in_both_repos(repo: str, email: str) -> 
     ("x", "123+claude[bot]@evil.example", "orama-system"),
 ])
 def test_claude_bot_approval_does_not_broaden(name: str, email: str, repo: str) -> None:
+    """Verify claude bot approval does not broaden."""
     result = audit_engine.is_approved_identity(
         name, email, root=Path("."), repo_name=repo, policy_path=REAL_POLICY
     )
@@ -118,6 +123,7 @@ def test_claude_bot_approval_does_not_broaden(name: str, email: str, repo: str) 
 
 
 def test_unlisted_anthropic_address_rejected() -> None:
+    """Verify unlisted anthropic address rejected."""
     result = audit_engine.is_approved_identity(
         "Someone", "someone@anthropic.com", root=Path("."), policy_path=REAL_POLICY
     )
@@ -125,6 +131,7 @@ def test_unlisted_anthropic_address_rejected() -> None:
 
 
 def test_disallowed_agent_name_rejected():
+    """Verify disallowed agent name rejected."""
     result = audit_engine.is_approved_identity(
         "Not Codex", "codex@openai.com", root=Path("."), policy_path=REAL_POLICY
     )
@@ -132,6 +139,7 @@ def test_disallowed_agent_name_rejected():
 
 
 def test_repo_scoped_bot_approved_in_correct_repo():
+    """Verify repo scoped bot approved in correct repo."""
     result = audit_engine.is_approved_identity(
         "cursor[bot]", "cursor[bot]@users.noreply.github.com",
         root=Path("."), repo_name="orama-system", policy_path=REAL_POLICY,
@@ -180,7 +188,9 @@ def test_vendor_domain_address_rejected():
 
 
 def test_private_owner_email_approved_via_injected_resolver(tmp_path):
+    """Verify private owner email approved via injected resolver."""
     def fake_private_literal_values(root, key):
+        """Supply a private owner identity for the isolated test."""
         if key == "owner_gmail":
             return ["synthetic.private.owner@example.invalid"]
         if key == "owner_name":
@@ -207,6 +217,7 @@ def test_private_identities_never_appear_in_tracked_policy():
 
 
 def test_malformed_config_fails_closed(tmp_path):
+    """Verify malformed config fails closed."""
     bad = tmp_path / "bad.json"
     bad.write_text("{not valid json")
     with pytest.raises(audit_engine.IdentityPolicyError):
@@ -214,6 +225,7 @@ def test_malformed_config_fails_closed(tmp_path):
 
 
 def test_unsupported_version_fails_closed(tmp_path):
+    """Verify unsupported version fails closed."""
     bad = tmp_path / "bad.json"
     bad.write_text(json.dumps({
         "version": 999, "human_identities": [], "agent_identities": [],
@@ -224,6 +236,7 @@ def test_unsupported_version_fails_closed(tmp_path):
 
 
 def test_missing_policy_file_fails_closed(tmp_path):
+    """Verify missing policy file fails closed."""
     with pytest.raises(audit_engine.IdentityPolicyError):
         audit_engine.load_policy(tmp_path / "does-not-exist.json")
 
@@ -241,6 +254,7 @@ def test_bash_attribution_helper_raises_on_execution_failure(tmp_path, monkeypat
 
 
 def test_missing_required_key_fails_closed(tmp_path):
+    """Verify missing required key fails closed."""
     bad = tmp_path / "bad.json"
     bad.write_text(json.dumps({"version": 1, "human_identities": []}))
     with pytest.raises(audit_engine.IdentityPolicyError):
@@ -305,6 +319,7 @@ def test_malformed_nested_entries_fail_closed(tmp_path: Path) -> None:
 
 
 def test_agent_name_casefold_approved():
+    """Verify agent name casefold approved."""
     result = audit_engine.is_approved_identity(
         "codex", "codex@openai.com", root=Path("."), policy_path=REAL_POLICY
     )
@@ -313,11 +328,23 @@ def test_agent_name_casefold_approved():
 
 
 def test_configured_profile_allows_human_email_without_name_binding():
+    """Verify configured profile allows human email without name binding."""
     result = audit_engine.is_approved_identity(
         "any display name", "lawrence@cyre.me",
         root=Path("."), policy_path=REAL_POLICY, profile="configured",
     )
     assert result.approved
+
+
+@pytest.mark.parametrize("profile", ["configured", "strict"])
+@pytest.mark.parametrize("name", ["Cline", "another display name"])
+def test_cline_identity_is_approved_agent(profile, name):
+    """Verify cline identity is approved agent."""
+    result = audit_engine.is_approved_identity(
+        name, "cline@local.invalid", root=Path("."), policy_path=REAL_POLICY, profile=profile,
+    )
+    assert result.approved
+    assert result.matched_kind == "agent"
 
 
 @pytest.mark.parametrize("repo,approved", [
@@ -326,6 +353,7 @@ def test_configured_profile_allows_human_email_without_name_binding():
     ("some-other-repo", False),  # bots are per repo
 ])
 def test_configured_profile_accepts_repo_scoped_bot(repo: str, approved: bool) -> None:
+    """Verify configured profile accepts repo scoped bot."""
     result = audit_engine.is_approved_identity(
         "claude[bot]", "claude[bot]@users.noreply.github.com",
         root=Path("."), repo_name=repo, policy_path=REAL_POLICY, profile="configured",
@@ -334,6 +362,7 @@ def test_configured_profile_accepts_repo_scoped_bot(repo: str, approved: bool) -
 
 
 def test_audit_relaxed_profile_allows_human_email_only():
+    """Verify audit relaxed profile allows human email only."""
     result = audit_engine.is_approved_identity(
         "not cyre", "lawrence@cyre.me",
         root=Path("."), policy_path=REAL_POLICY, profile="audit_relaxed",
@@ -342,6 +371,7 @@ def test_audit_relaxed_profile_allows_human_email_only():
 
 
 def test_vendor_domains_key_rejected_in_policy(tmp_path):
+    """Verify vendor domains key rejected in policy."""
     bad = tmp_path / "bad.json"
     bad.write_text(json.dumps({
         "version": 1,
@@ -355,6 +385,7 @@ def test_vendor_domains_key_rejected_in_policy(tmp_path):
 
 
 def test_wildcard_bot_in_policy_rejected(tmp_path):
+    """Verify wildcard bot in policy rejected."""
     bad = tmp_path / "bad.json"
     bad.write_text(json.dumps({
         "version": 1,
@@ -386,6 +417,7 @@ def test_same_bot_approved_across_multiple_repos(tmp_path):
 
 
 def test_duplicate_bot_within_same_repo_rejected(tmp_path):
+    """Verify duplicate bot within same repo rejected."""
     bad = tmp_path / "bad.json"
     bad.write_text(json.dumps({
         "version": 1,
@@ -403,6 +435,7 @@ def test_duplicate_bot_within_same_repo_rejected(tmp_path):
 
 
 def test_check_configured_identity_passes_non_cursor(tmp_path, monkeypatch):
+    """Verify check configured identity passes non cursor."""
     monkeypatch.delenv("CURSOR_AGENT", raising=False)
     monkeypatch.delenv("CURSOR_TRACE_ID", raising=False)
     monkeypatch.delenv("CURSOR_SESSION_ID", raising=False)
@@ -414,6 +447,7 @@ def test_check_configured_identity_passes_non_cursor(tmp_path, monkeypatch):
 
 
 def test_audit_attribution_wrapper_is_shell_valid():
+    """Verify audit attribution wrapper is shell valid."""
     import subprocess
     root = Path(__file__).resolve().parent.parent
     bash = os.environ.get("HERMES_GIT_BASH_PATH", "bash")
@@ -421,6 +455,7 @@ def test_audit_attribution_wrapper_is_shell_valid():
 
 
 def test_check_identity_wrapper_is_shell_valid():
+    """Verify check identity wrapper is shell valid."""
     import subprocess
     root = Path(__file__).resolve().parent.parent
     bash = os.environ.get("HERMES_GIT_BASH_PATH", "bash")
@@ -428,6 +463,7 @@ def test_check_identity_wrapper_is_shell_valid():
 
 
 def test_case_and_whitespace_normalized():
+    """Verify case and whitespace normalized."""
     result = audit_engine.is_approved_identity(
         "  CYRE  ", "  LAWRENCE@CYRE.ME  ", root=Path("."), policy_path=REAL_POLICY
     )

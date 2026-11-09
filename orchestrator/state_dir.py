@@ -16,7 +16,12 @@ def _is_installed_package(path: Path | None = None) -> bool:
 
 
 def _canonical_repo_state_dir(root: Path | None = None) -> Path | None:
-    """Find the shared Git-worktree state directory, or None outside Git."""
+    """Find shared Git-worktree state; stop old processes before upgrading.
+
+    Separate-Git-directory layouts keep an existing legacy state directory,
+    use the isolated location for a fresh layout, and refuse ambiguous state.
+    Mixed-version processes cannot safely negotiate a location concurrently.
+    """
     repo_root = root if root is not None else PT_ROOT
     if _is_installed_package(Path(__file__).resolve()) or _is_installed_package(repo_root):
         return None
@@ -42,13 +47,19 @@ def _canonical_repo_state_dir(root: Path | None = None) -> Path | None:
     else:
         common_path = common_path.resolve()
     if is_bare:
-        state_anchor = common_path
-    elif common_path.name == ".git":
-        state_anchor = common_path.parent
-    else:
-        # A separate Git directory has no reliable backlink to its main checkout.
-        state_anchor = common_path
-    return state_anchor / ".state"
+        return common_path / ".state"
+    if common_path.name == ".git":
+        return common_path.parent / ".state"
+    legacy_state = common_path.parent / ".state"
+    isolated_state = common_path / ".state"
+    if legacy_state.exists():
+        if isolated_state.exists():
+            raise RuntimeError(
+                "ambiguous separate-Git-directory state: both legacy and isolated "
+                "directories exist; stop and reconcile them before dispatch"
+            )
+        return legacy_state
+    return isolated_state
 
 
 def resolve_default_state_dir() -> Path:
@@ -56,4 +67,4 @@ def resolve_default_state_dir() -> Path:
     env_dir = os.environ.get("PT_STATE_DIR", "").strip()
     if env_dir:
         return Path(env_dir)
-    return _canonical_repo_state_dir() or Path(".state")
+    return _canonical_repo_state_dir() or (PT_ROOT / ".state")

@@ -123,10 +123,17 @@ def _current_lesson_texts(path: Path) -> list[str]:
                 continue
             if isinstance(entry, dict) and isinstance(entry.get("id"), str) and entry["id"]:
                 latest[entry["id"]] = entry
-    superseded = {row.get("supersedes") for row in latest.values()
-                  if row.get("status") == "accepted" and isinstance(row.get("supersedes"), str)}
-    return [f"[{'SUPERSEDED' if key in superseded else str(row.get('status', 'unknown')).upper()}] {row.get('claim', '')}"
-            for key, row in latest.items()]
+    superseded = {
+        row["supersedes"] for row in latest.values()
+        if row.get("status") == "accepted" and isinstance(row.get("supersedes"), str)
+    }
+    texts = []
+    for key, row in latest.items():
+        status = str(row.get("status", "unknown"))
+        if status == "accepted" and key in superseded:
+            status = "superseded"
+        texts.append(f"[{status.upper()}] {row.get('claim', '')}")
+    return texts
 
 
 def _make_snippet(text: str, query: str, window: int = 150) -> str:
@@ -178,11 +185,16 @@ def build_index() -> int:
                     if lesson_texts:
                         preamble = _lesson_preamble(path)
                         try:
-                            conn.execute("SAVEPOINT lessons_file")
-                            for content in [preamble, *lesson_texts]:
-                                conn.execute("INSERT INTO memories VALUES (?, ?)",
-                                             (str(path.relative_to(MEMORY_DIR)), content))
-                            conn.execute("RELEASE lessons_file")
+                            conn.execute("SAVEPOINT lesson_file")
+                            try:
+                                for content in [preamble, *lesson_texts]:
+                                    conn.execute("INSERT INTO memories VALUES (?, ?)",
+                                                 (str(path.relative_to(MEMORY_DIR)), content))
+                            except BaseException:
+                                conn.execute("ROLLBACK TO SAVEPOINT lesson_file")
+                                raise
+                            finally:
+                                conn.execute("RELEASE SAVEPOINT lesson_file")
                             indexed += 1
                             continue
                         except Exception as exc:

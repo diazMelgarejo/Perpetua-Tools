@@ -95,7 +95,7 @@ author_domain_ok() {
   return 1
 }
 case "$author_email_lc" in
-  diazmelgarejo@gmail.com|lawrence@cyre.me|codex@openai.com)
+  diazmelgarejo@gmail.com|lawrence@cyre.me|codex@openai.com|cline@local.invalid)
     ;;
   *)
     if ! private_owner_email_ok "$author_email_lc" "$repo_root" && ! author_domain_ok "$author_email_lc"; then

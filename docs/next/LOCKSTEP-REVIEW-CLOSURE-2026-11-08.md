@@ -67,9 +67,11 @@ append-only, provisional/retracted and separate from approval.
    no unauthorized amend, rebase, force-push or publication hiding the problem.
 6. Publish each repository once for this batch, PT first so its immutable object is
    reachable before Orama CI. Reuse the two PRs. Reply in every bot inline thread
-   with the verified disposition: identify the fixing commit for a fix, or explain
-   why a finding was withdrawn, already fixed, or deferred. Include evidence and any
-   bounded disagreement. Report review-level nitpicks separately when no inline root exists.
+   with its verified disposition and evidence: for a fixed finding, cite the actual fixing
+   commit as `@BotName we fixed this in commit FULL_SHA`; for a withdrawn, already
+   correct, or unresolved finding, explain the disposition without claiming a fix.
+   Include any bounded disagreement.
+   Report review-level nitpicks separately when no inline root exists.
 7. Recheck exact-head CI and new review feedback. Do not merge red or pending work.
    Source success does not activate serving or close host qualification.
 
@@ -81,6 +83,13 @@ compatibility shims remain. The experimental SQLite preflight is not the require
 reviewed locking experiment, and GitHub-hosted Windows CI is not service-identity
 or power-loss qualification. Record final results and fixing SHAs in PR follow-ups
 and the downloadable handoff; never silently overwrite this dated plan as evidence.
+
+For separate Git directories, stop all old and new dispatch processes before
+upgrading or changing `PT_STATE_DIR`. An existing legacy `.state` location is
+retained; a fresh layout uses the Git common directory. If both locations exist,
+dispatch refuses until an operator reconciles the ledgers. Do not copy, delete,
+or select between competing claims without an approved reconciliation procedure.
+Mixed-version processes cannot coordinate location selection safely.
 
 ## Local verification receipt — 2026-11-08 UTC
 

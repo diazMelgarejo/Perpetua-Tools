@@ -119,6 +119,12 @@ cline_pass:
       # medium is the repo-standard default and stays open to operator review.
       effort: medium
       fast: false
+    - launch_id: glm-5.3-flash
+      # Operator pick (2026-11-03): ClinePass lists GLM 5.3 Flash and the
+      # cline-openclaw-agent skill prefers it; medium is the repo-standard
+      # effort. Other efforts stay unlisted until the operator adds them.
+      effort: medium
+      fast: false
   gated: {}
 
 allowed_escalation_proof_kinds:

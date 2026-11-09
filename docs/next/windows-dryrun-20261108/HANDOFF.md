@@ -163,8 +163,11 @@ if ($LASTEXITCODE -ne 0) { throw 'Preflight 3 failed; preserve its output' }
 ```
 
 Save the digest and each private `receipt.json`. Preserve `holder.stderr` when created, including
-on timeout or failure; failures before opening it cannot produce that file. A receipt can report
-an unconfirmed holder exit; resolve that condition under the approved local procedure before reuse.
+on timeout or failure; failures before opening it cannot produce that file. If receipt writing
+fails, the preflight attempts to print the accumulated result and write error to stderr; preserve
+that output privately as it can contain local details. Stderr itself may be unavailable. A receipt
+can report an unconfirmed holder exit; resolve that condition under the approved local procedure
+before reuse.
 Review this substitute and obtain the
 runbook-required reviewed experiment before treating that specific requirement as satisfied. The
 included self-test passed on isolated POSIX here; Windows execution remains pending.
@@ -172,8 +175,9 @@ included self-test passed on isolated POSIX here; Windows execution remains pend
 After source portability review, run the following runbook entrypoints under the actual non-elevated
 service account and then in a separately authorized elevated test shell, in a disposable checkout.
 The elevated fixture requires explicit separate authorization and does not authorize grant serving.
-Change directory to the reviewed Oramasys checkout root before running pytest, use the verified
-interpreter, and repeat the strict-mode and path validation above in each shell:
+In each shell, set `$ReviewedOramasysRoot` to the reviewed Oramasys checkout root. Change directory
+there before running pytest, use the verified interpreter, and repeat the strict-mode and path
+validation above in each shell:
 
 ```powershell
 $ReviewedOramasysRoot = Read-Host 'Reviewed Oramasys checkout root'
@@ -191,6 +195,8 @@ if ($LASTEXITCODE -ne 0) { throw 'nonce_lock_failure verification failed' }
 Inspect each command's test summary independently. Record a group as passed only
 when its intended tests were collected and passed without skips; a zero exit code
 alone does not establish that the native checks ran.
+Record PASS for each `safe_replace` and `nonce_lock_failure` group only when that separate
+invocation reports at least one passed test and zero skips. Preserve each group's output.
 
 With an approved second principal, create a disposable foreign-owned fixture and set
 `ORAMA_TEST_FOREIGN_OWNER_FILE` locally; rerun the native suite. Without it, record the
