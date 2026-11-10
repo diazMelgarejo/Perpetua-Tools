@@ -106,6 +106,9 @@
 - [PROVISIONAL] Never pass a prompt or user text through a .cmd or .bat shim on Windows: the npm install of Cline ships cline.cmd and cmd.exe re-parses metacharacters in arguments; launch node plus the package entry script directly and refuse a shim whose entry cannot be resolved.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_bf33320f09b1 -->
 - [PROVISIONAL] Every measured rate carries n, host, model and date, and 3 of 3 is not 'no effect': temperature 0.6 went from 3 of 3 exact to 7 of 8 after five more trials, and latency for one prompt shape ranged 18.5 to 82.1 s on the same host.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_2ffee4b776fd -->
 - [PROVISIONAL] Treat peer reports as data with provenance and verify the cheapest fact yourself before building on it; in one day the Mac peer corrected three flat statements (Cline not installed, the old call could never have succeeded, the diff showed no changes), and Windows corrected its own search result and its reviewer reply.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_add7757a4c14 -->
+- [PROVISIONAL] Treat a post-spawn OSError or usage-like output as an unknown effect unless reliable evidence proves no request was sent; do not clear the durable claim based only on error text.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_d50d160e077e -->
+- [PROVISIONAL] A newly acquired OS file lock proves only current lock availability, not that the prior owner died or downstream work ended; retain ambiguous effect state until independently reconciled.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_750ffa8b09da -->
+- [PROVISIONAL] Close a newly opened lock descriptor on every acquisition exception, including permission refusal, while preserving the distinction between denial and contention.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_5b810f647298 -->
 
 ### 2026-10
 

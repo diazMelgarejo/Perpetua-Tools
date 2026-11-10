@@ -1,0 +1,39 @@
+{
+  "id": "5b810f647298",
+  "key": "manual_5b810f",
+  "name": "manual_5b810f",
+  "claim": "Close a newly opened lock descriptor on every acquisition exception, including permission refusal, while preserving the distinction between denial and contention.",
+  "conditions": [
+    "lock descriptor",
+    "permission refusal"
+  ],
+  "evidence_ids": [
+    "2026-11-10T00:50:58.106309+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T00:50:58.106309+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-10T00:50:58.106309+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T00:50:58.273525+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Synthetic fault injection against Orama 71ab3560 reproduced an open descriptor on PermissionError; see MAC_POSIX_EVIDENCE_AND_LOCK_BOUNDARIES_2026-11-10.md. Later fixes are not assessed.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-10T00:50:58.106309+00:00"
+      ],
+      "lessons_sha": "ac3ad5c13489"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T00:50:58.273511+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Synthetic fault injection against Orama 71ab3560 reproduced an open descriptor on PermissionError; see MAC_POSIX_EVIDENCE_AND_LOCK_BOUNDARIES_2026-11-10.md. Later fixes are not assessed."
+}

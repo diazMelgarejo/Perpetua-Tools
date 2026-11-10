@@ -1,0 +1,39 @@
+{
+  "id": "d50d160e077e",
+  "key": "manual_d50d16",
+  "name": "manual_d50d16",
+  "claim": "Treat a post-spawn OSError or usage-like output as an unknown effect unless reliable evidence proves no request was sent; do not clear the durable claim based only on error text.",
+  "conditions": [
+    "dispatch outcome",
+    "post-spawn ambiguity"
+  ],
+  "evidence_ids": [
+    "2026-11-10T00:50:46.472724+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T00:50:46.472724+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-10T00:50:46.472724+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T00:50:46.642312+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Provisional correction to the broad reading of lesson_3413c1a3ed12: synthetic fault injection at Orama 71ab3560 showed post-send text and post-spawn I/O can be misclassified; see MAC_POSIX_EVIDENCE_AND_LOCK_BOUNDARIES_2026-11-10.md.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-10T00:50:46.472724+00:00"
+      ],
+      "lessons_sha": "caaae3298ac9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T00:50:46.642290+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Provisional correction to the broad reading of lesson_3413c1a3ed12: synthetic fault injection at Orama 71ab3560 showed post-send text and post-spawn I/O can be misclassified; see MAC_POSIX_EVIDENCE_AND_LOCK_BOUNDARIES_2026-11-10.md."
+}

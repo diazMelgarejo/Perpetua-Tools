@@ -1,0 +1,39 @@
+{
+  "id": "750ffa8b09da",
+  "key": "manual_750ffa",
+  "name": "manual_750ffa",
+  "claim": "A newly acquired OS file lock proves only current lock availability, not that the prior owner died or downstream work ended; retain ambiguous effect state until independently reconciled.",
+  "conditions": [
+    "file lock ownership",
+    "unknown effect"
+  ],
+  "evidence_ids": [
+    "2026-11-10T00:50:52.243814+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T00:50:52.243814+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-10T00:50:52.243814+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T00:50:52.404441+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "On macOS 27.2 arm64 with Python 3.13.18, a second process acquired flock after the first explicitly unlocked while still alive; see MAC_POSIX_EVIDENCE_AND_LOCK_BOUNDARIES_2026-11-10.md.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-10T00:50:52.243814+00:00"
+      ],
+      "lessons_sha": "bc7f5fcbfe39"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T00:50:52.404432+00:00",
+  "reviewer": "learn.py",
+  "rationale": "On macOS 27.2 arm64 with Python 3.13.18, a second process acquired flock after the first explicitly unlocked while still alive; see MAC_POSIX_EVIDENCE_AND_LOCK_BOUNDARIES_2026-11-10.md."
+}
