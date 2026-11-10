@@ -128,16 +128,21 @@ Model-card values repeated by guides: thinking mode temperature 1.0 (0.6 suggest
 coding), top_p 0.95, top_k 20, min_p 0, presence_penalty 0; non-thinking temperature 0.7, top_p 0.8,
 top_k 20, presence_penalty 1.5. Guides also say the model "thinks too much" and that LM Studio picks
 the chat template automatically. Our data (3.2) shows correct output at temperatures 0, 0.6 and 0.7
-on this prompt, so the choice did not matter for this contract. Best-performing practical setting
-used afterwards: chat endpoint, thinking on, temperature 0.6, top_p 0.95, top_k 20, min_p 0.
+on this prompt, so the choice did not matter in those first three trials per setting (the follow-up
+in 5.5 later saw one failure at 0.6, 7 of 8 overall). Best-performing practical setting used
+afterwards: chat endpoint, thinking on, temperature 0.6, top_p 0.95, top_k 20, min_p 0.
 
 ### 5.3 Dispatch guard (V)
 
 On orama main 2537cefa with PT main b728015f, `spawn_agents.py` needs the PT checkout path in the
 environment and, when the checkout is a linked git worktree, an explicit PT state directory; without
 it the state-authority guard raises `linked or separate Git layout requires a verified
-PT_STATE_AUTHORITY_FILE or explicit PT_STATE_DIR`. Use a dedicated state directory outside the
-repositories. The Windows PowerShell JSON redirect writes a BOM: read result files with `utf-8-sig`.
+PT_STATE_AUTHORITY_FILE or explicit PT_STATE_DIR`. A verified PT_STATE_AUTHORITY_FILE also satisfies
+the guard on supported POSIX systems, and PT_STATE_DIR overrides it. A fresh external PT_STATE_DIR
+creates a separate dispatch-claims ledger from the checkout's existing `.state`, so same-scope
+requests can dispatch again: to keep one ledger, point PT_STATE_DIR at the existing state directory.
+The Windows pilot used a dedicated external directory only for throwaway pilot claims. The Windows
+PowerShell JSON redirect writes a BOM: read result files with `utf-8-sig`.
 
 ### 5.4 Driver pitfalls (V)
 
