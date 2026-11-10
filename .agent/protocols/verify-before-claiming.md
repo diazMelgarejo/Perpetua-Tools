@@ -6,8 +6,10 @@ done. Evidence and dated examples:
 
 ## 1. First contact with a tool or API
 
-- Run `--version` and `--help` (or read the official reference) before writing the first line of
-  code.
+- Read the tool's documentation or entry point first, then run `--version` and `--help` if it
+  supports them. A script can ignore both flags and run its normal, possibly mutating action: when
+  flag support is unknown, treat the invocation as a real run and control its effects (scratch
+  directory, dry-run flag, throwaway target).
 
 - Record the version and the flags that matter in the design or the PR body.
 
@@ -46,8 +48,16 @@ done. Evidence and dated examples:
 - Learn syntax from `--help` or a throwaway target. Never probe the real append-only board, queue,
   outbox or log.
 
-- After a mechanical merge or generated file: parse every row or file, check for conflict markers
-  with `git diff --name-only --diff-filter=U`, and rerun the renderer.
+- After a mechanical merge or generated file: parse every row or file, rerun the renderer, and check
+  for conflict markers in the staged content as well as the unmerged list: `git diff --cached
+  --check` and `git grep -n -E '^(<<<<<<<|=======|>>>>>>>)' -- <path>` (a file staged as resolved
+  can still hold markers, and `git diff --name-only --diff-filter=U` lists only unmerged files).
+
+- Append-only episodic logs: the previous PR's complete byte stream must stay an exact prefix
+  (order, duplicates, line endings). Build a stacked branch as the prior tip's bytes followed by
+  your own appended bytes, verbatim; never union by row order. Run
+  `scripts/review/check_episodic_append_only.py --base <pinned base> --head <head>` before
+  publishing and again on the fetched remote head.
 
 ## 6. Numbers and scope
 
