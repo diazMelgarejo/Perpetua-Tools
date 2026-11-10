@@ -623,8 +623,9 @@ Full tables, source facts and open items: `LOCAL_LLM_ATTEMPTS_DOMAIN_KNOWLEDGE_2
 Dated evidence from one Windows host (LM Studio, `qwen/qwen3.8-27b`, 8192-token loaded context) and one Mac peer
 (Ollama, `qwen3.5:9b-mlx`); tiny samples, no variance study, not a model-quality claim.
 
-- A structured-output contract (one JSON object with a safety-critical boolean) passed 9 of 9 on the chat endpoint at
-  temperatures 0, 0.6 and 0.7, and 0 of 3 on the raw completions endpoint. The public Claude-Desktop-LLM v2.2.1
+- A structured-output contract (one JSON object with a safety-critical boolean) passed 9 of 9 on the chat endpoint in the first
+  round (temperatures 0, 0.6 and 0.7; one prompt, `qwen/qwen3.8-27b`; a later follow-up at 0.6 had one failure, 7 of 8
+  overall) and 0 of 3 on the raw completions endpoint. The public Claude-Desktop-LLM v2.2.1
   `local_llm_query` for LM Studio calls the raw endpoint (temperature 0.7, 2048 tokens); its `local_llm_chat` tool uses the chat
   endpoint and passed 3 of 3. Its apparent speed advantage on tiny prompts is the missing chat template and reasoning,
   not transport speed.
@@ -632,7 +633,8 @@ Dated evidence from one Windows host (LM Studio, `qwen/qwen3.8-27b`, 8192-token 
   was still produced. Thinking tokens share the context budget with the answer: a 5900-token prompt in an 8192-token
   context ended with empty content and `finish_reason=length`.
 - Warm latency: 3.5 to 4.9 s for a one-word answer, 20 to 28 s for a one-line JSON answer, about 6 to 9 completion tokens per second.
-  Cold start and a missing PT state directory (linked worktrees need an explicit `PT_STATE_DIR` plus the PT checkout path) explained earlier timeouts.
+  Cold start and a missing PT state directory (linked worktrees need a verified `PT_STATE_AUTHORITY_FILE` or an explicit `PT_STATE_DIR`, plus the PT checkout path; a fresh
+  `PT_STATE_DIR` is a separate claims ledger) explained earlier timeouts.
 - Best-performing practical setting used afterwards: chat endpoint, thinking on, temperature 0.6, top_p 0.95, top_k 20, min_p 0.
 - Validate model JSON outside the model (types, duplicate keys, nonstandard constants, extra keys, fences, enums); an unknown
   outcome after a request was written is never auto-retried.
@@ -646,3 +648,18 @@ append-only board; a text-marker merge of jsonl; a cmd shim; 3-of-3 read as no e
 `.agent/protocols/verify-before-claiming.md`: first-contact check, default-danger scan, exercise dormant paths, findings
 ledger, search twice, cite proof for "not installed", never probe append-only state, validate after mechanical merges,
 every rate carries n.
+
+## Native POSIX evidence and effect ambiguity (2026-11-10)
+
+See `MAC_POSIX_EVIDENCE_AND_LOCK_BOUNDARIES_2026-11-10.md` for attributed Mac
+receipts, exact source heads, artifact hashes, ownership-integrity remediation
+and qualification limits. The companion Orama PR487 guide records the combined
+Windows/Mac contract: successful process launch followed by any nonzero exit
+remains unknown; output shape and timing are not proof of no effects. Cleanup
+must preserve changed owner evidence. Normalized hashes diagnose line-ending
+differences but do not establish exact-byte delivery. Source parity, native
+tests, service-account qualification, acceptance and activation are separate.
+
+The earlier local-model observations remain host/prompt-specific. Unmatched
+template/settings and tiny samples do not establish a transport or model
+winner, nor prove a single causal explanation for measured latency differences.
