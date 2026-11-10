@@ -56,10 +56,21 @@ scope of the `ee9c65d6` fixed row; it does not erase those historical reports.
   short stderr and a fast exit do not prove not-sent. Prior snapshots remain.
 - PT #489 incorporates both Windows' catalogue/corrections and the Mac's four
   provisional lessons plus the dated POSIX record. Divergent JSONL streams
-  were parsed structurally, preserving this lane's exact first-parent prefix
-  and every full peer record; correction snapshots intentionally repeat IDs.
+  were parsed structurally, preserving the reviewed upstream stack as an exact
+  byte prefix and every full local/peer record; corrections intentionally repeat IDs.
   `LESSONS.md` was regenerated with the canonical renderer, never hand-merged.
 - Mac software execution is complete for this scope; final-head Windows
   qualification, L4 real-run investigation after operator authentication,
   preflight-doctor design, other agents' claims and operator decisions remain
   distinct. No paid Cline run or automatic claim release was performed.
+
+Later Windows messages `win-hold-ack-shas-and-cline-fix` and
+`win-correction-after-fetch` were integrity-checked against their inbox metadata.
+Windows independently fetched `69cb2ea7` and confirmed all its commits remain;
+its final-head native run is still unreported. Windows reports a successful
+isolated plan-mode ClinePass probe, so authentication for that provider is no
+longer its reported blocker. Repository-hook/config causality for L4 remains
+unproven; do not silently relabel the successful isolated probe as an L4 fix.
+The local-only Cline `be3da96` discovery fallback is a separate proposal: the
+Mac has not received its exact diff/test and did not merge an unseen branch.
+Request its scoped patch for a reviewed follow-up; `CLINE_BIN` remains supported.

@@ -151,3 +151,12 @@ ownership-sensitive cleanup rule without modifying the earlier lessons.
 Final-head clean-worktree test receipts, hosted CI and Windows native results
 must each name their own source; neither the baseline nor the earlier
 185-pass working-tree receipt silently qualifies these later changes.
+
+Final stack-layout clarification: the earlier exact-prefix observation applied
+to the initial local batch. Windows subsequently republished its memory stack
+with a different valid row order and audited corrections. Final integration
+retains all of reviewed upstream `c225f488` as the exact JSONL prefix, then
+appends the four new local lessons and the audited current-rule correction.
+All original full records from both streams remain present, with no raw-row
+rewrites or ID-based loss of intentional correction snapshots. This preserves
+the PT487 -> PT488 -> PT489 episodic prefix contract, not just conflict freedom.
