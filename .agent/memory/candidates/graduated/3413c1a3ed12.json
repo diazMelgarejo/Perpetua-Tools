@@ -1,0 +1,38 @@
+{
+  "id": "3413c1a3ed12",
+  "key": "manual_3413c1",
+  "name": "manual_3413c1",
+  "claim": "A Cline usage error (bad command line, auth failure) exits nonzero before any request is sent; a dispatcher that treats every nonzero exit after launch as an unknown outcome will wedge its single-owner lock on a harmless mistake. Distinguish not-sent (usage error, missing binary, failed auth before any request) from unknown (timeout, or failure after work started), and cover both with tests. Observed against real Cline 3.0.74 in the AR-WIN-1 dry run.",
+  "conditions": [
+    "dispatcher lock unknown not-sent usage error cline exit"
+  ],
+  "evidence_ids": [
+    "2026-11-09T21:33:49.705779+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T21:33:49.705779+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-09T21:33:49.705779+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T21:33:49.813106+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "AR-WIN-1 real-Cline dry run 2026-11-10: one usage error left the lock ambiguous until an operator reconcile.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-09T21:33:49.705779+00:00"
+      ],
+      "lessons_sha": "5dcc6f8be8ec"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T21:33:49.813101+00:00",
+  "reviewer": "learn.py",
+  "rationale": "AR-WIN-1 real-Cline dry run 2026-11-10: one usage error left the lock ambiguous until an operator reconcile."
+}

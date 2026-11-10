@@ -1,0 +1,64 @@
+{
+  "id": "1fd9e4a5651a",
+  "key": "manual_1fd9e4",
+  "name": "manual_1fd9e4",
+  "claim": "A benchmark of local-model routes must hold endpoint, temperature, template and thinking mode equal before attributing a difference to transport; the Windows MCPB-versus-direct comparison differed in all four and the Mac's 30.2 percent figure was withdrawn as a basis for preferring a route.",
+  "conditions": [
+    "all",
+    "attributing",
+    "basis",
+    "before",
+    "benchmark",
+    "comparison",
+    "differed",
+    "difference",
+    "endpoint",
+    "equal",
+    "figure",
+    "four",
+    "hold",
+    "local-model",
+    "mac",
+    "mcpb-versus-direct",
+    "mode",
+    "percent",
+    "preferring",
+    "route",
+    "routes",
+    "temperature",
+    "template",
+    "thinking",
+    "transport",
+    "windows",
+    "withdrawn"
+  ],
+  "evidence_ids": [
+    "2026-11-09T19:43:04.984639+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T19:43:04.984639+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-09T19:43:04.984639+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T19:43:05.278695+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Windows partial benchmark and source reading 2026-11-10; Mac errata on rubric weaknesses; sample sizes of 2 to 3.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-09T19:43:04.984639+00:00"
+      ],
+      "lessons_sha": "7faba0782fe9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T19:43:05.278695+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Windows partial benchmark and source reading 2026-11-10; Mac errata on rubric weaknesses; sample sizes of 2 to 3."
+}

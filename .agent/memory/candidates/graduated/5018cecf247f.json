@@ -1,0 +1,62 @@
+{
+  "id": "5018cecf247f",
+  "key": "manual_5018ce",
+  "name": "manual_5018ce",
+  "claim": "A misleading error can hide the real one: Cline printed a hook-dispatch error before model not found. Reproduce in a clean scratch context, pin the model, and withdraw a hypothesis as soon as a reproduction contradicts it. History: the repository-hooks guess was withdrawn.",
+  "conditions": [
+    "before",
+    "clean",
+    "cline",
+    "context",
+    "contradicts",
+    "error",
+    "found",
+    "guess",
+    "hide",
+    "history",
+    "hook-dispatch",
+    "hypothesis",
+    "misleading",
+    "model",
+    "one",
+    "pin",
+    "printed",
+    "real",
+    "repository-hooks",
+    "reproduce",
+    "reproduction",
+    "scratch",
+    "soon",
+    "withdraw",
+    "withdrawn"
+  ],
+  "evidence_ids": [
+    "2026-11-10T02:01:26.856675+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T02:01:26.856675+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-10T02:01:26.856675+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T02:01:27.102239+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Windows session 2026-11-10; see NATIVE_EVIDENCE_REAL_CLINE_AND_QUALIFICATION_2026-11-10.md",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-10T02:01:26.856675+00:00"
+      ],
+      "lessons_sha": "7e6b54f10f22"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T02:01:27.102239+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Windows session 2026-11-10; see NATIVE_EVIDENCE_REAL_CLINE_AND_QUALIFICATION_2026-11-10.md"
+}

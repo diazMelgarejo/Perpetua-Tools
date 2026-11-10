@@ -1,0 +1,66 @@
+{
+  "id": "336a15aae5a0",
+  "key": "manual_336a15",
+  "name": "manual_336a15",
+  "claim": "Code on a rare path (a fallback or recovery) is dormant until proven: the controller's 'cline task <prompt>' call, invalid on Cline 3.0.49 and later, survived unnoticed because the fallback only fires when the gateway is down; run such a path once for real or label it UNTESTED and queue the task.",
+  "conditions": [
+    "because",
+    "call",
+    "cline",
+    "code",
+    "controller",
+    "dormant",
+    "down",
+    "fallback",
+    "fires",
+    "gateway",
+    "invalid",
+    "label",
+    "later",
+    "once",
+    "only",
+    "path",
+    "prompt",
+    "proven",
+    "queue",
+    "rare",
+    "real",
+    "recovery",
+    "run",
+    "such",
+    "survived",
+    "task",
+    "unnoticed",
+    "untested",
+    "until"
+  ],
+  "evidence_ids": [
+    "2026-11-09T22:46:33.193879+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T22:46:33.193879+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-09T22:46:33.193879+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T22:46:33.416715+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Found only by the Mac's real dry run on 2026-11-10 (exit in 0.8 s); Windows had kept the call through its first lock commit.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-09T22:46:33.193879+00:00"
+      ],
+      "lessons_sha": "1e07a94f0910"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T22:46:33.416715+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Found only by the Mac's real dry run on 2026-11-10 (exit in 0.8 s); Windows had kept the call through its first lock commit."
+}

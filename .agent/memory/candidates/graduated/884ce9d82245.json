@@ -1,0 +1,61 @@
+{
+  "id": "884ce9d82245",
+  "key": "manual_884ce9",
+  "name": "manual_884ce9",
+  "claim": "Never probe the syntax of a command against a real append-only target (claim board, queue, outbox, log): a test enqueue created a permanent 'TEST ENTRY' that could only be claimed and closed; learn syntax from --help or a throwaway target.",
+  "conditions": [
+    "against",
+    "append-only",
+    "board",
+    "claim",
+    "claimed",
+    "closed",
+    "command",
+    "created",
+    "enqueue",
+    "entry",
+    "help",
+    "learn",
+    "log",
+    "never",
+    "only",
+    "outbox",
+    "permanent",
+    "probe",
+    "queue",
+    "real",
+    "syntax",
+    "target",
+    "test",
+    "throwaway"
+  ],
+  "evidence_ids": [
+    "2026-11-09T22:46:35.338418+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T22:46:35.338418+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-09T22:46:35.338418+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T22:46:35.561324+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-10 queue add against the live board; closed at the operator's instruction with an honest note.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-09T22:46:35.338418+00:00"
+      ],
+      "lessons_sha": "ae94b9db583d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T22:46:35.561324+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-10 queue add against the live board; closed at the operator's instruction with an honest note."
+}

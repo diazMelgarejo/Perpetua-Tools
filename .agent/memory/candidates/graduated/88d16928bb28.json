@@ -1,0 +1,38 @@
+{
+  "id": "88d16928bb28",
+  "key": "manual_88d169",
+  "name": "manual_88d169",
+  "claim": "When a tool's old instruction stops working, qualify the claim by version before writing it down: say 'worked on version A, fails on version B (verified), boundary unknown' rather than 'never worked'. Keep historical instructions in place, labelled HISTORY with their version and date, and write the live instruction next to them labelled LIVE with the version it was verified on. Do not delete the history and do not leave the old form as the only form. In this session I first wrote that the old Cline call 'likely never succeeded', which the July records contradict.",
+  "conditions": [
+    "version qualify history live claim cli drift overclaim"
+  ],
+  "evidence_ids": [
+    "2026-11-09T21:33:49.521181+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T21:33:49.521181+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-09T21:33:49.521181+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T21:33:49.630277+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Correction made 2026-11-10 after the operator asked for claims to be qualified against the actual 3.0.74 CLI.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-09T21:33:49.521181+00:00"
+      ],
+      "lessons_sha": "75675a29030d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T21:33:49.630271+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Correction made 2026-11-10 after the operator asked for claims to be qualified against the actual 3.0.74 CLI."
+}

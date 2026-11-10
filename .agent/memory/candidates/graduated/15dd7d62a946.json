@@ -1,0 +1,38 @@
+{
+  "id": "15dd7d62a946",
+  "key": "manual_15dd7d",
+  "name": "manual_15dd7d",
+  "claim": "Never print a whole provider/settings JSON when inspecting an agent CLI's config (for example Cline providers.json): its auth block holds live access and refresh tokens. Read only named non-secret keys such as model and provider, or print key names only. A leaked token in a transcript means the operator should consider re-authenticating.",
+  "conditions": [
+    "secret token providers.json cline config print redact"
+  ],
+  "evidence_ids": [
+    "2026-11-09T21:26:57.021105+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T21:26:57.021105+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-09T21:26:57.021105+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T21:26:57.130501+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "This session's inspection script printed the cline-pass auth block into the transcript by a conditional-expression slip.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-09T21:26:57.021105+00:00"
+      ],
+      "lessons_sha": "c53255362032"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T21:26:57.130491+00:00",
+  "reviewer": "learn.py",
+  "rationale": "This session's inspection script printed the cline-pass auth block into the transcript by a conditional-expression slip."
+}

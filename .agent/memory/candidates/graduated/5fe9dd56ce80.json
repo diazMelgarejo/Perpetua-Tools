@@ -1,0 +1,60 @@
+{
+  "id": "5fe9dd56ce80",
+  "key": "manual_5fe9dd",
+  "name": "manual_5fe9dd",
+  "claim": "A negative search result needs two differently worded searches with the patterns named before it is reported: 'query string' found nothing, the source said 'query token', and 'I could not find it' went to a peer and had to be corrected.",
+  "conditions": [
+    "before",
+    "corrected",
+    "differently",
+    "find",
+    "found",
+    "named",
+    "needs",
+    "negative",
+    "nothing",
+    "patterns",
+    "peer",
+    "query",
+    "reported",
+    "result",
+    "said",
+    "search",
+    "searches",
+    "source",
+    "string",
+    "token",
+    "two",
+    "went",
+    "worded"
+  ],
+  "evidence_ids": [
+    "2026-11-09T22:46:34.604384+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T22:46:34.604384+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-09T22:46:34.604384+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T22:46:34.825453+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-10 token-in-URL question about a 2026-10-27 Mac note.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-09T22:46:34.604384+00:00"
+      ],
+      "lessons_sha": "496163a82323"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T22:46:34.825453+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-10 token-in-URL question about a 2026-10-27 Mac note."
+}

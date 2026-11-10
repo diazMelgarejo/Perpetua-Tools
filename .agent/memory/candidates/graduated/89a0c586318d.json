@@ -1,0 +1,43 @@
+{
+  "id": "89a0c586318d",
+  "key": "manual_89a0c5",
+  "name": "manual_89a0c5",
+  "claim": "CORRECTION 2026-11-10: cline-pass/glm-5.2 and cline-pass/deepseek-v4-flash are RETIRED ClinePass slugs (retired 2026-11-03) and return 'model not found'. The working native-CLI route is provider id cline-pass (not the stale clinepass id) with model cline-pass/deepseek-v4.1-flash-1017, probe: cline -p -P cline-pass -m cline-pass/deepseek-v4.1-flash-1017 --thinking medium --auto-approve false --json -t 120. Supersedes the glm-5.2 slug in lesson_6e96f366006c and lesson_5153cfe93386; BigModel GLM-5.2 (open.bigmodel.cn, plain API key) is a separate path and is unaffected. Cline lives under the Node v24 tree, symlinked at ~/.local/bin/cline.",
+  "conditions": [
+    "cline",
+    "cline-pass",
+    "clinepass",
+    "glm-5.2",
+    "model",
+    "slug"
+  ],
+  "evidence_ids": [
+    "2026-11-09T21:22:52.662274+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T21:22:52.662274+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-09T21:22:52.662274+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T21:22:52.777769+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Live-verified 2026-11-10 on CLI 3.0.74: glm-5.2 gave 'model not found'; the deepseek-v4.1-flash-1017 probe returned PROBE-OK, totalCost 0.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-09T21:22:52.662274+00:00"
+      ],
+      "lessons_sha": "0ff5d37f8cb2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T21:22:52.777763+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Live-verified 2026-11-10 on CLI 3.0.74: glm-5.2 gave 'model not found'; the deepseek-v4.1-flash-1017 probe returned PROBE-OK, totalCost 0."
+}

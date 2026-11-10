@@ -1,0 +1,58 @@
+{
+  "id": "2ffee4b776fd",
+  "key": "manual_2ffee4",
+  "name": "manual_2ffee4",
+  "claim": "Every measured rate carries n, host, model and date, and 3 of 3 is not 'no effect': temperature 0.6 went from 3 of 3 exact to 7 of 8 after five more trials, and latency for one prompt shape ranged 18.5 to 82.1 s on the same host.",
+  "conditions": [
+    "after",
+    "carries",
+    "date",
+    "effect",
+    "every",
+    "exact",
+    "five",
+    "host",
+    "latency",
+    "measured",
+    "model",
+    "more",
+    "one",
+    "prompt",
+    "ranged",
+    "rate",
+    "same",
+    "shape",
+    "temperature",
+    "trials",
+    "went"
+  ],
+  "evidence_ids": [
+    "2026-11-09T22:46:37.409051+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T22:46:37.409051+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-09T22:46:37.409051+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T22:46:37.633352+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-10 local LLM follow-up trials (queue task CLINE-PICKUP-06).",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-09T22:46:37.409051+00:00"
+      ],
+      "lessons_sha": "73383eab685f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T22:46:37.633352+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-10 local LLM follow-up trials (queue task CLINE-PICKUP-06)."
+}

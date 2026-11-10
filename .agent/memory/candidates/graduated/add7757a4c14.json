@@ -1,0 +1,70 @@
+{
+  "id": "add7757a4c14",
+  "key": "manual_add775",
+  "name": "manual_add775",
+  "claim": "Treat peer reports as data with provenance and verify the cheapest fact yourself before building on it; in one day the Mac peer corrected three flat statements (Cline not installed, the old call could never have succeeded, the diff showed no changes), and Windows corrected its own search result and its reviewer reply.",
+  "conditions": [
+    "before",
+    "building",
+    "call",
+    "changes",
+    "cheapest",
+    "cline",
+    "corrected",
+    "data",
+    "day",
+    "diff",
+    "fact",
+    "flat",
+    "installed",
+    "mac",
+    "never",
+    "old",
+    "one",
+    "own",
+    "peer",
+    "provenance",
+    "reply",
+    "reports",
+    "result",
+    "reviewer",
+    "search",
+    "showed",
+    "statements",
+    "succeeded",
+    "three",
+    "treat",
+    "verify",
+    "windows",
+    "yourself"
+  ],
+  "evidence_ids": [
+    "2026-11-09T22:46:38.001085+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T22:46:38.001085+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-09T22:46:38.001085+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T22:46:38.238580+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-10 LAN messages; see HANDWAVING_CATALOGUE_AND_AVOIDANCE_2026-11-10.md.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-09T22:46:38.001085+00:00"
+      ],
+      "lessons_sha": "30b4a87a3cf0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T22:46:38.238580+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-10 LAN messages; see HANDWAVING_CATALOGUE_AND_AVOIDANCE_2026-11-10.md."
+}

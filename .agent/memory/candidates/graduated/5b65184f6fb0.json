@@ -1,0 +1,77 @@
+{
+  "id": "5b65184f6fb0",
+  "key": "manual_5b6518",
+  "name": "manual_5b6518",
+  "claim": "Local qwen3.8-27b on LM Studio (8192-token context, about 6 to 9 tokens per second) is not usable for code generation: four small pieces (prompts under 1000 tokens, max_tokens 5600) each ended finish_reason=length with all tokens spent on reasoning and no code in 13 minutes per piece; write code directly and keep the model for short bounded advisory questions unless the loaded context and output budget are raised.",
+  "conditions": [
+    "about",
+    "advisory",
+    "all",
+    "bounded",
+    "budget",
+    "code",
+    "context",
+    "directly",
+    "each",
+    "ended",
+    "finish_reason",
+    "four",
+    "generation",
+    "keep",
+    "length",
+    "loaded",
+    "local",
+    "max_tokens",
+    "minutes",
+    "model",
+    "output",
+    "per",
+    "piece",
+    "pieces",
+    "prompts",
+    "questions",
+    "qwen3",
+    "raised",
+    "reasoning",
+    "second",
+    "short",
+    "small",
+    "spent",
+    "studio",
+    "token",
+    "tokens",
+    "under",
+    "unless",
+    "usable",
+    "write"
+  ],
+  "evidence_ids": [
+    "2026-11-09T20:34:40.247194+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T20:34:40.247194+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-09T20:34:40.247194+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T20:34:40.455820+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-10 AR-WIN-1 attempt: round 1 (5900-token prompt) and round 2 (four pieces) produced zero code; the hand-written module passed 60 tests.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-09T20:34:40.247194+00:00"
+      ],
+      "lessons_sha": "fb2fc24f5465"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T20:34:40.455820+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-10 AR-WIN-1 attempt: round 1 (5900-token prompt) and round 2 (four pieces) produced zero code; the hand-written module passed 60 tests."
+}

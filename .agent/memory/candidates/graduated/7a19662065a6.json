@@ -1,0 +1,70 @@
+{
+  "id": "7a19662065a6",
+  "key": "manual_7a1966",
+  "name": "manual_7a1966",
+  "claim": "Thinking tokens share the context budget with the answer: with an 8192-token loaded context a 5900-token prompt left 2292 tokens, all spent reasoning, and the reply was empty with finish_reason=length. Keep local-model prompts under about 1500 tokens, set max_tokens to context minus prompt minus margin, and split large generation jobs into small pieces.",
+  "conditions": [
+    "about",
+    "all",
+    "answer",
+    "budget",
+    "context",
+    "empty",
+    "finish_reason",
+    "generation",
+    "into",
+    "jobs",
+    "keep",
+    "large",
+    "left",
+    "length",
+    "loaded",
+    "local-model",
+    "margin",
+    "max_tokens",
+    "minus",
+    "pieces",
+    "prompt",
+    "prompts",
+    "reasoning",
+    "reply",
+    "set",
+    "share",
+    "small",
+    "spent",
+    "split",
+    "thinking",
+    "token",
+    "tokens",
+    "under"
+  ],
+  "evidence_ids": [
+    "2026-11-09T19:43:04.128380+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T19:43:04.128380+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-09T19:43:04.128380+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T19:43:04.394814+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-10 attempt to have qwen3.8 write a whole module from a 5900-token specification; generation ran about 6 to 9 tokens per second.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-09T19:43:04.128380+00:00"
+      ],
+      "lessons_sha": "16567e1327be"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T19:43:04.394814+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-10 attempt to have qwen3.8 write a whole module from a 5900-token specification; generation ran about 6 to 9 tokens per second."
+}

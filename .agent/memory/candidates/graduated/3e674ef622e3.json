@@ -1,0 +1,39 @@
+{
+  "id": "3e674ef622e3",
+  "key": "manual_3e674e",
+  "name": "manual_3e674e",
+  "claim": "Treat lock cleanup as an ownership-sensitive write: if the nonce or state no longer belongs to the caller, close its descriptor without replacing the changed record or clearing ambiguity.",
+  "conditions": [
+    "effect boundary",
+    "ownership integrity"
+  ],
+  "evidence_ids": [
+    "2026-11-10T01:00:55.489376+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T01:00:55.489376+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-10T01:00:55.489376+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T01:00:55.645949+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Final independent review of Orama PR487 found recheck refusal followed by not-sent release could erase changed owner evidence; regression and remediation recorded in the paired dated POSIX domain record.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-10T01:00:55.489376+00:00"
+      ],
+      "lessons_sha": "fdeb9e949e8c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T01:00:55.645936+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Final independent review of Orama PR487 found recheck refusal followed by not-sent release could erase changed owner evidence; regression and remediation recorded in the paired dated POSIX domain record."
+}

@@ -1,0 +1,72 @@
+{
+  "id": "220f0d834eb3",
+  "key": "manual_220f0d",
+  "name": "manual_220f0d",
+  "claim": "Answer a reviewer finding by finding: copy the list into a checklist, reply done, not done or disagree with the commit that proves each, and diff the reply against the original list before sending; a reply that says done for a bundle hides gaps (the Mac asked for a plan flag, a pinned route and a scratch directory and Windows reported only the last two).",
+  "conditions": [
+    "against",
+    "answer",
+    "asked",
+    "before",
+    "bundle",
+    "checklist",
+    "commit",
+    "copy",
+    "diff",
+    "directory",
+    "disagree",
+    "done",
+    "each",
+    "finding",
+    "flag",
+    "gaps",
+    "hides",
+    "into",
+    "last",
+    "list",
+    "mac",
+    "only",
+    "original",
+    "pinned",
+    "plan",
+    "proves",
+    "reply",
+    "reported",
+    "reviewer",
+    "route",
+    "says",
+    "scratch",
+    "sending",
+    "two",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-11-09T22:46:33.900497+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T22:46:33.900497+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-09T22:46:33.900497+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T22:46:34.131238+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-10 AR-WIN-1 review round; the missing plan flag was found a day later by reading Cline's own help.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-09T22:46:33.900497+00:00"
+      ],
+      "lessons_sha": "e575a302ccf2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T22:46:34.131238+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-10 AR-WIN-1 review round; the missing plan flag was found a day later by reading Cline's own help."
+}

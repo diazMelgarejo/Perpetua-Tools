@@ -1,0 +1,73 @@
+{
+  "id": "1f35abec78a3",
+  "key": "manual_1f35ab",
+  "name": "manual_1f35ab",
+  "claim": "Delegate read-only analysis of untrusted documents to cheap controller agents (Haiku, medium effort) but treat every output as claims: verify a sample against source before relaying. The 2026-11-10 spot checks confirmed lock-design line references and explained a 50 versus 60 ms p95 conflict, and showed one controller finding was real but historical.",
+  "conditions": [
+    "against",
+    "agents",
+    "analysis",
+    "before",
+    "cheap",
+    "checks",
+    "claims",
+    "confirmed",
+    "conflict",
+    "controller",
+    "delegate",
+    "documents",
+    "effort",
+    "every",
+    "explained",
+    "finding",
+    "haiku",
+    "historical",
+    "line",
+    "lock-design",
+    "medium",
+    "one",
+    "output",
+    "p95",
+    "read-only",
+    "real",
+    "references",
+    "relaying",
+    "sample",
+    "showed",
+    "source",
+    "spot",
+    "treat",
+    "untrusted",
+    "verify",
+    "versus"
+  ],
+  "evidence_ids": [
+    "2026-11-09T19:43:06.703273+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-09T19:43:06.703273+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-09T19:43:06.703273+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-09T19:43:06.948043+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Five background controllers on 2026-11-10 read 39 plan documents and drafted two designs; orchestrator sent all LAN replies.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-09T19:43:06.703273+00:00"
+      ],
+      "lessons_sha": "b705009382d0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-09T19:43:06.948043+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Five background controllers on 2026-11-10 read 39 plan documents and drafted two designs; orchestrator sent all LAN replies."
+}
