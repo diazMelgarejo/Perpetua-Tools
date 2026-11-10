@@ -1,0 +1,48 @@
+{
+  "id": "6f73a4ad744f",
+  "key": "manual_6f73a4",
+  "name": "manual_6f73a4",
+  "claim": "When a commit hook rejects the first of several commits, everything stays staged and the next commit lands all of it as one. After a multi-batch commit sequence, check that the log shows one commit per batch; split an unpushed commit with reset --soft and recommit before pushing.",
+  "conditions": [
+    "batch",
+    "commit",
+    "commits",
+    "git",
+    "hook",
+    "logical",
+    "rejected",
+    "reset",
+    "soft",
+    "split",
+    "staged"
+  ],
+  "evidence_ids": [
+    "2026-11-10T03:43:40.398779+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T03:43:40.398779+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-10T03:43:40.398779+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T03:43:40.553354+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Five files meant for two logical commits landed as one after a hook rejection; it was split locally before the push.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-10T03:43:40.398779+00:00"
+      ],
+      "lessons_sha": "0c90f131c872"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T03:43:40.553338+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Five files meant for two logical commits landed as one after a hook rejection; it was split locally before the push."
+}

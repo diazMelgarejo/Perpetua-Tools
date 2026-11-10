@@ -1,0 +1,47 @@
+{
+  "id": "fb2fd0b4f2bd",
+  "key": "manual_fb2fd0",
+  "name": "manual_fb2fd0",
+  "claim": "When a receipt names a test run without listing its files, reconstruct the set from per-file counts at the exact head and match both the passed and the skipped totals to a named board row; label the result reconstructed, not confirmed, and say that the original record does not list the files.",
+  "conditions": [
+    "arithmetic",
+    "board",
+    "files",
+    "passed",
+    "receipt",
+    "reconstruct",
+    "row",
+    "skipped",
+    "test",
+    "unconfirmed"
+  ],
+  "evidence_ids": [
+    "2026-11-10T03:43:41.113722+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T03:43:41.113722+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-10T03:43:41.113722+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T03:43:41.268881+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A ten-file receipt of 199 passed and 13 skipped was matched exactly by eight known files plus two named in a board row; the earlier nine-file run could not be reconstructed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-10T03:43:41.113722+00:00"
+      ],
+      "lessons_sha": "9d37740bd89f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T03:43:41.268870+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A ten-file receipt of 199 passed and 13 skipped was matched exactly by eight known files plus two named in a board row; the earlier nine-file run could not be reconstructed."
+}

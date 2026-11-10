@@ -1,0 +1,50 @@
+{
+  "id": "3819a14265c7",
+  "key": "manual_3819a1",
+  "name": "manual_3819a1",
+  "claim": "Until orama PR 491 is merged and deployed, a bare lan_peer_assign drop --peer can select the plain portal port and queue the send on the wrong port when only the HTTPS front end is reachable: pass the TLS port explicitly. lan_peer_send.py is part of the same PR, so it exists only on that branch until the merge. After the fix is deployed the default follows the TLS configuration (peer TLS enabled and a CA or pins configured) and an explicit port still wins. Check which version is deployed before relying on the default.",
+  "conditions": [
+    "8002",
+    "8443",
+    "availability",
+    "default",
+    "deployed",
+    "drop",
+    "lan_peer_send",
+    "outbox",
+    "peer",
+    "portal-port",
+    "pr-491",
+    "queued",
+    "tls"
+  ],
+  "evidence_ids": [
+    "2026-11-10T04:29:07.853598+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T04:29:07.853598+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-10T04:29:07.853598+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T04:29:17.220750+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Accepted per review of PT PR 492: the TLS-aware default applies only after orama PR 491 is deployed; the explicit TLS-port workaround stays, and lan_peer_send.py availability is qualified.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-10T04:29:07.853598+00:00"
+      ],
+      "lessons_sha": "dc5a171d2dc9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T04:29:17.220741+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Accepted per review of PT PR 492: the TLS-aware default applies only after orama PR 491 is deployed; the explicit TLS-port workaround stays, and lan_peer_send.py availability is qualified."
+}

@@ -1,0 +1,50 @@
+{
+  "id": "11da587f5748",
+  "key": "manual_11da58",
+  "name": "manual_11da58",
+  "claim": "Adding an automatic start of an exposure path (a TLS front end, a listener) to a code path that skipped the exposure preflight bypasses its authentication checks. Apply the same preconditions before starting (insecure dev mode off, a strong control-plane token), never generate credentials after dependent services have started, and state what is not checked (a portal already running before the launch).",
+  "conditions": [
+    "authentication",
+    "autostart",
+    "dev",
+    "end",
+    "exposure",
+    "front",
+    "insecure",
+    "launch",
+    "listener",
+    "plain",
+    "preflight",
+    "review",
+    "token"
+  ],
+  "evidence_ids": [
+    "2026-11-10T04:12:13.611739+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T04:12:13.611739+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-10T04:12:13.611739+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T04:12:13.766109+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A review caught that the plain-launch autostart skipped the LAN auth preflight; the gate and tests were added in orama PR 491.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-10T04:12:13.611739+00:00"
+      ],
+      "lessons_sha": "84b98d24645f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T04:12:13.766092+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A review caught that the plain-launch autostart skipped the LAN auth preflight; the gate and tests were added in orama PR 491."
+}

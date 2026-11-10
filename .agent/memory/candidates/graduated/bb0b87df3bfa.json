@@ -1,0 +1,43 @@
+{
+  "id": "bb0b87df3bfa",
+  "key": "manual_bb0b87",
+  "name": "manual_bb0b87",
+  "claim": "Retire a stale queued outbox record for a file that was delivered by another route with outbox-resolve --only <file> and the delivery evidence, never by flushing the whole outbox: a flush also sends every other queued item, including unreviewed broadcasts.",
+  "conditions": [
+    "flush",
+    "lan-peer",
+    "outbox-resolve",
+    "queued",
+    "record",
+    "stale"
+  ],
+  "evidence_ids": [
+    "2026-11-10T03:43:39.204609+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T03:43:39.204609+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-10T03:43:39.204609+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T03:43:39.356743+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A failed first drop left a queued record; the later successful drop did not clear it; outbox-resolve for that one file did, with no network call.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-10T03:43:39.204609+00:00"
+      ],
+      "lessons_sha": "b2d48e7a8881"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T03:43:39.356733+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A failed first drop left a queued record; the later successful drop did not clear it; outbox-resolve for that one file did, with no network call."
+}

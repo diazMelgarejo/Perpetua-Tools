@@ -1,0 +1,45 @@
+{
+  "id": "b9933c2a76ed",
+  "key": "manual_b9933c",
+  "name": "manual_b9933c",
+  "claim": "A bare lan_peer_assign drop --peer defaulted to the plain portal port whatever the TLS settings were: it timed out when only the HTTPS front end was reachable and left a queued record stored on the wrong port. Pass the TLS port explicitly or use lan_peer_send.py; the default now follows the TLS configuration (orama PR 491).",
+  "conditions": [
+    "8002",
+    "8443",
+    "drop",
+    "outbox",
+    "peer",
+    "portal-port",
+    "queued",
+    "tls"
+  ],
+  "evidence_ids": [
+    "2026-11-10T03:43:38.728555+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T03:43:38.728555+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-10T03:43:38.728555+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T03:43:38.884664+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Two sends failed the same way on 2026-11-10 (a broadcast and a manual report); the fix and its tests are in orama PR 491.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-10T03:43:38.728555+00:00"
+      ],
+      "lessons_sha": "b3326cf19150"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T03:43:38.884654+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Two sends failed the same way on 2026-11-10 (a broadcast and a manual report); the fix and its tests are in orama PR 491."
+}

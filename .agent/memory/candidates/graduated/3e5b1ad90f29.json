@@ -1,0 +1,54 @@
+{
+  "id": "3e5b1ad90f29",
+  "key": "manual_3e5b1a",
+  "name": "manual_3e5b1a",
+  "claim": "Judge a LAN send in two steps. Direct-drop success is the drop's own JSON: ok true, a received_at and a byte count equal to the file size; that proves the receiving front end accepted that many bytes, not that the content is identical. For a reciprocal claim of delivery, require a verified peer CA on the channel and a receiver receipt whose hash, recomputed by the receiver from its stored bytes (LF-normalised when text may have been line-ending translated), equals the sender's hash. A queued record is not delivery, and a count of queued sidecars counts files, not peers: read the per-item sidecar before stating how many peers a send reached.",
+  "conditions": [
+    "CA",
+    "byte",
+    "bytes",
+    "count",
+    "delivery",
+    "evidence",
+    "hash",
+    "identity",
+    "lan-peer",
+    "line-ending",
+    "outbox",
+    "peers",
+    "receipt",
+    "receiver",
+    "sidecar",
+    "stored",
+    "verified"
+  ],
+  "evidence_ids": [
+    "2026-11-10T04:29:07.790961+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T04:29:07.790961+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-10T04:29:07.790961+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T04:29:17.024696+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Accepted per review of PT PR 492: byte counts show the front end accepted bytes, not identical content; reciprocal delivery needs a verified peer CA and a receiver receipt hash recomputed from stored bytes. Supersedes the earlier delivery-evidence lesson while keeping its drop-JSON and sidecar guidance.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-10T04:29:07.790961+00:00"
+      ],
+      "lessons_sha": "cba22030d729"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T04:29:17.024688+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Accepted per review of PT PR 492: byte counts show the front end accepted bytes, not identical content; reciprocal delivery needs a verified peer CA and a receiver receipt hash recomputed from stored bytes. Supersedes the earlier delivery-evidence lesson while keeping its drop-JSON and sidecar guidance."
+}

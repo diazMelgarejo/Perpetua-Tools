@@ -1,0 +1,50 @@
+{
+  "id": "b19ea42b5dcb",
+  "key": "manual_b19ea4",
+  "name": "manual_b19ea4",
+  "claim": "In a PR security-scan log, N new findings counts findings absent from the baseline and can be large on main too; before attributing a failure, read the same job on main and reproduce the scan locally with the same baseline. Here 167 of 168 new findings existed on main, which passed, and one error-level finding in the PR's own file caused the failure.",
+  "conditions": [
+    "aguara",
+    "attribution",
+    "baseline",
+    "ci",
+    "compare",
+    "failure",
+    "findings",
+    "locally",
+    "main",
+    "new",
+    "reproduce",
+    "scan",
+    "security"
+  ],
+  "evidence_ids": [
+    "2026-11-10T04:12:13.122823+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T04:12:13.122823+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-10T04:12:13.122823+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T04:12:13.278842+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Orama PR 491 failed the agent-surface scan; main printed the same new-findings count and passed; the local diff against main was exactly one finding.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-10T04:12:13.122823+00:00"
+      ],
+      "lessons_sha": "1fbaa9081c12"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T04:12:13.278827+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Orama PR 491 failed the agent-surface scan; main printed the same new-findings count and passed; the local diff against main was exactly one finding."
+}

@@ -1,0 +1,45 @@
+{
+  "id": "72b17d951823",
+  "key": "manual_72b17d",
+  "name": "manual_72b17d",
+  "claim": "A helper that lives only in a session scratchpad is lost when the scratchpad is cleared. When a script has been used for a recurring task more than once, promote it into the repository with tests and docs and name it in the skill that owns the task (here lan_peer_send.py, orama PR 491).",
+  "conditions": [
+    "canonical",
+    "docs",
+    "helper",
+    "promote",
+    "scratchpad",
+    "script",
+    "skill",
+    "tests"
+  ],
+  "evidence_ids": [
+    "2026-11-10T03:43:39.677694+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T03:43:39.677694+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-10T03:43:39.677694+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T03:43:39.830756+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The ad hoc send helper vanished with the scratchpad mid-session and had to be rebuilt.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-10T03:43:39.677694+00:00"
+      ],
+      "lessons_sha": "f5cfaddfd892"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T03:43:39.830746+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The ad hoc send helper vanished with the scratchpad mid-session and had to be rebuilt."
+}
