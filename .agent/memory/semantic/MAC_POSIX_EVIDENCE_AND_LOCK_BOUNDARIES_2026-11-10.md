@@ -132,3 +132,22 @@ stack relationship, rechecking live heads/mergeability first. User authorized
 one publication per existing Orama487/PT489 after local verification; no
 merge, deployment, credentials, pin promotion or activation was authorized.
 Windows reviews/runs the final Orama head natively before platform acceptance.
+
+## Final-review ownership hardening
+
+A further independent review found that releasing after a changed-owner
+recheck refusal could overwrite the very evidence that caused refusal.
+Orama fix `03effcc8ae1ebc1fbf231f8d79f7cb8ebb44b013` verifies the expected
+complete owner record and held-file identity before marking or releasing.
+Unverifiable, foreign or changed records are preserved while descriptors and
+OS locks are closed. Five regressions failed before the fix. This protects
+cooperating writers, not an attacker able to race arbitrary file writes.
+HTTP localhost also retains IPv6-only reachability via a second literal
+loopback attempt; no DNS rewrite or HTTPS identity change is introduced.
+Windows docs through `9ba89cb9` were integrated without rewriting their history.
+
+Canonical writer follow-up: provisional `lesson_3e674ef622e3` adds the
+ownership-sensitive cleanup rule without modifying the earlier lessons.
+Final-head clean-worktree test receipts, hosted CI and Windows native results
+must each name their own source; neither the baseline nor the earlier
+185-pass working-tree receipt silently qualifies these later changes.

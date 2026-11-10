@@ -109,6 +109,7 @@
 - [PROVISIONAL] Treat a post-spawn OSError or usage-like output as an unknown effect unless reliable evidence proves no request was sent; do not clear the durable claim based only on error text.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_d50d160e077e -->
 - [PROVISIONAL] A newly acquired OS file lock proves only current lock availability, not that the prior owner died or downstream work ended; retain ambiguous effect state until independently reconciled.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_750ffa8b09da -->
 - [PROVISIONAL] Close a newly opened lock descriptor on every acquisition exception, including permission refusal, while preserving the distinction between denial and contention.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_5b810f647298 -->
+- [PROVISIONAL] Treat lock cleanup as an ownership-sensitive write: if the nonce or state no longer belongs to the caller, close its descriptor without replacing the changed record or clearing ambiguity.  <!-- status=provisional confidence=0.6 evidence=1 id=lesson_3e674ef622e3 -->
 
 ### 2026-10
 
