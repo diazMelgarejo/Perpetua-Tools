@@ -1,0 +1,45 @@
+{
+  "id": "f4798b424c1b",
+  "key": "manual_f4798b",
+  "name": "manual_f4798b",
+  "claim": "Blanket output masking can hide the property under test: masking every address turned loopback listeners into an apparent LAN exposure and produced a false security finding. Mask by category (loopback, non-loopback) instead of a generic placeholder, re-check a finding against categorised output before reporting it, and retract it openly if it was wrong.",
+  "conditions": [
+    "diagnosis",
+    "false-positive",
+    "finding",
+    "loopback",
+    "masking",
+    "redaction",
+    "retract",
+    "security"
+  ],
+  "evidence_ids": [
+    "2026-11-10T03:43:39.440113+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T03:43:39.440113+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-10T03:43:39.440113+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T03:43:39.594110+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A plain portal listener was reported as exposed on the LAN address; it listened on loopback only. The mask erased the difference.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-10T03:43:39.440113+00:00"
+      ],
+      "lessons_sha": "9bc44c62cc96"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T03:43:39.594099+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A plain portal listener was reported as exposed on the LAN address; it listened on loopback only. The mask erased the difference."
+}

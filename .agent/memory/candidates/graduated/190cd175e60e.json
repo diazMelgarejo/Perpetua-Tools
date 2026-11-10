@@ -1,0 +1,46 @@
+{
+  "id": "190cd175e60e",
+  "key": "manual_190cd1",
+  "name": "manual_190cd1",
+  "claim": "Tests that touch a default well-known port collide with the real service on the development machine: a test of the front end step saw the real listener on 8443 and reported already listening. Use a free port or an explicit setting in every test that touches a default port.",
+  "conditions": [
+    "8443",
+    "collision",
+    "default",
+    "free-port",
+    "isolation",
+    "port",
+    "real",
+    "service",
+    "test"
+  ],
+  "evidence_ids": [
+    "2026-11-10T03:43:39.917422+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T03:43:39.917422+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-10T03:43:39.917422+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T03:43:40.074155+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "One new test failed only because the real front end was running; passing a free port isolated it.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-10T03:43:39.917422+00:00"
+      ],
+      "lessons_sha": "bd96f7f341fe"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T03:43:40.074144+00:00",
+  "reviewer": "learn.py",
+  "rationale": "One new test failed only because the real front end was running; passing a free port isolated it."
+}

@@ -1,0 +1,45 @@
+{
+  "id": "d59651c53b00",
+  "key": "manual_d59651",
+  "name": "manual_d59651",
+  "claim": "A tracked test may not contain address literals (loopback or private ranges): the repository hygiene hook blocks the commit. Build the address at runtime, for example by joining its octets, and keep real addresses out of messages, notes and fixtures.",
+  "conditions": [
+    "address",
+    "fixtures",
+    "hook",
+    "hygiene",
+    "literal",
+    "loopback",
+    "private",
+    "test"
+  ],
+  "evidence_ids": [
+    "2026-11-10T03:43:40.159366+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T03:43:40.159366+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-10T03:43:40.159366+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T03:43:40.315508+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Two commit attempts were rejected by the hygiene hook for literal addresses in new tests.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-10T03:43:40.159366+00:00"
+      ],
+      "lessons_sha": "bf9b1b13cd3e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T03:43:40.315497+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Two commit attempts were rejected by the hygiene hook for literal addresses in new tests."
+}

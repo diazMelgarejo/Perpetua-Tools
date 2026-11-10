@@ -1,0 +1,46 @@
+{
+  "id": "92144c40f970",
+  "key": "manual_92144c",
+  "name": "manual_92144c",
+  "claim": "Before reloading a scheduled job as part of a restart, search the board for a pause instruction on it; a restart is not authority to restore a paused job. Record who authorized any reload.",
+  "conditions": [
+    "authority",
+    "board",
+    "coord-pulse",
+    "job",
+    "launchd",
+    "pause",
+    "reload",
+    "restart",
+    "scheduled"
+  ],
+  "evidence_ids": [
+    "2026-11-10T03:43:40.877288+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T03:43:40.877288+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-10T03:43:40.877288+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T03:43:41.028459+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A coordination pulse was reloaded after an explicit pause note said not to restore it; it was found unloaded again afterwards.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-10T03:43:40.877288+00:00"
+      ],
+      "lessons_sha": "353096d7084c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T03:43:41.028450+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A coordination pulse was reloaded after an explicit pause note said not to restore it; it was found unloaded again afterwards."
+}

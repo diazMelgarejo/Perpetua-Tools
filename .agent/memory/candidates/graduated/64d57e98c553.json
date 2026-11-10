@@ -1,0 +1,45 @@
+{
+  "id": "64d57e98c553",
+  "key": "manual_64d57e",
+  "name": "manual_64d57e",
+  "claim": "After a Mac stack restart, a plain ./start.sh left the peer HTTPS front end (Caddy on 8443) down because that step ran only under --lan-peer; health URLs on 8000, 8001 and 8002 returning 200 do not cover it. Verify the TLS port is LISTENING before reporting the stack healthy, and restart with the launcher's peer mode (add the no-flush and no-pulse options when queued items or a paused job must not move). Autostart fix: orama PR 491.",
+  "conditions": [
+    "8443",
+    "caddy",
+    "front-end",
+    "health",
+    "lan-peer",
+    "restart",
+    "start.sh",
+    "tls"
+  ],
+  "evidence_ids": [
+    "2026-11-10T03:43:38.478787+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T03:43:38.478787+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-10T03:43:38.478787+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T03:43:38.640468+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Windows peers were refused after a restart: no Caddy process, valid config and certificate, no port conflict. Root cause inferred (the log was unreadable), so provisional.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-10T03:43:38.478787+00:00"
+      ],
+      "lessons_sha": "9cd3b6b29a7b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T03:43:38.640453+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Windows peers were refused after a restart: no Caddy process, valid config and certificate, no port conflict. Root cause inferred (the log was unreadable), so provisional."
+}

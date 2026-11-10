@@ -1,0 +1,47 @@
+{
+  "id": "1cb507a9d210",
+  "key": "manual_1cb507",
+  "name": "manual_1cb507",
+  "claim": "A reply that says fixed in commit X goes stale when a later commit supersedes X's approach. Check the code at the current tip, not only that X exists and is an ancestor; post a follow-up reply citing the final fixing commit and leave the earlier reply untouched.",
+  "conditions": [
+    "ancestry",
+    "check",
+    "coderabbit",
+    "commit",
+    "content",
+    "reply",
+    "review",
+    "sha",
+    "stale",
+    "superseded"
+  ],
+  "evidence_ids": [
+    "2026-11-10T03:43:40.640226+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T03:43:40.640226+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-10T03:43:40.640226+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T03:43:40.793981+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Two review replies cited a commit whose approach was later removed; the final fixes were in a later commit.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-10T03:43:40.640226+00:00"
+      ],
+      "lessons_sha": "ec739cab4748"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T03:43:40.793969+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Two review replies cited a commit whose approach was later removed; the final fixes were in a later commit."
+}

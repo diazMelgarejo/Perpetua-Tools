@@ -1,0 +1,46 @@
+{
+  "id": "ed3b14704d2e",
+  "key": "manual_ed3b14",
+  "name": "manual_ed3b14",
+  "claim": "Judge a LAN send only by the drop's own JSON: ok true, a received_at, and a byte count equal to the file size. A queued record is not delivery, and a count of queued sidecars counts files, not peers: one broadcast file for one assignee was reported as queued to three peers. Read the per-item sidecar before stating how many peers a send reached.",
+  "conditions": [
+    "bytes",
+    "count",
+    "delivery",
+    "evidence",
+    "lan-peer",
+    "outbox",
+    "peers",
+    "received_at",
+    "sidecar"
+  ],
+  "evidence_ids": [
+    "2026-11-10T03:43:38.967862+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T03:43:38.967862+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-10T03:43:38.967862+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T03:43:39.120234+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "An agent report claimed three peers from an outbox count of three queued files; the sidecar showed one file, one assignee.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-10T03:43:38.967862+00:00"
+      ],
+      "lessons_sha": "2d1079e8bc1b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T03:43:39.120224+00:00",
+  "reviewer": "learn.py",
+  "rationale": "An agent report claimed three peers from an outbox count of three queued files; the sidecar showed one file, one assignee."
+}
