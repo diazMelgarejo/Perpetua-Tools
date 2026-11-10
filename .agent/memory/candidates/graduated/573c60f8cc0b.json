@@ -1,0 +1,55 @@
+{
+  "id": "573c60f8cc0b",
+  "key": "manual_573c60",
+  "name": "manual_573c60",
+  "claim": "An agent release event does not clear an atomic queue claim row; release a stuck claim through the claimant-path fail-and-requeue under documented operator authorization, then complete with evidence.",
+  "conditions": [
+    "agent",
+    "atomic",
+    "authorization",
+    "claim",
+    "claimant-path",
+    "clear",
+    "complete",
+    "documented",
+    "event",
+    "evidence",
+    "fail-and-requeue",
+    "operator",
+    "queue",
+    "release",
+    "row",
+    "stuck",
+    "through",
+    "under"
+  ],
+  "evidence_ids": [
+    "2026-11-10T05:03:58.004064+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T05:03:58.004064+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-10T05:03:58.004064+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T05:03:58.656198+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Staged by the local Cline session (agent win-cline-bench-20261110), deduped against merged PT 490 and PT 492 by the Windows session. A release event left the task claimed; the sanctioned fail path requeued it (retry one of three) and the replacement claimant completed it with the qualification evidence.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-10T05:03:58.004064+00:00"
+      ],
+      "lessons_sha": "e0a1b1b6573d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T05:03:58.656198+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Staged by the local Cline session (agent win-cline-bench-20261110), deduped against merged PT 490 and PT 492 by the Windows session. A release event left the task claimed; the sanctioned fail path requeued it (retry one of three) and the replacement claimant completed it with the qualification evidence."
+}

@@ -1,0 +1,57 @@
+{
+  "id": "23258ffb7de8",
+  "key": "manual_23258f",
+  "name": "manual_23258f",
+  "claim": "Verify pinned versions against actuals before trusting reference docs: a CLI reference pinned an older version than the installed binary, which the binary confirmed three independent ways.",
+  "conditions": [
+    "actuals",
+    "against",
+    "before",
+    "binary",
+    "cli",
+    "confirmed",
+    "docs",
+    "independent",
+    "installed",
+    "older",
+    "pinned",
+    "reference",
+    "than",
+    "three",
+    "trusting",
+    "verify",
+    "version",
+    "versions",
+    "ways",
+    "which"
+  ],
+  "evidence_ids": [
+    "2026-11-10T05:04:00.020006+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T05:04:00.020006+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-10T05:04:00.020006+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T05:04:00.318599+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Staged by the local Cline session (agent win-cline-bench-20261110), deduped against merged PT 490 and PT 492 by the Windows session. The cline reference documented 3.0.34 while version, version command and doctor all reported 3.0.74 on this host.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-10T05:04:00.020006+00:00"
+      ],
+      "lessons_sha": "3a5abd6be38f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T05:04:00.318599+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Staged by the local Cline session (agent win-cline-bench-20261110), deduped against merged PT 490 and PT 492 by the Windows session. The cline reference documented 3.0.34 while version, version command and doctor all reported 3.0.74 on this host."
+}
