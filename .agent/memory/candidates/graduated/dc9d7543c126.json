@@ -1,0 +1,58 @@
+{
+  "id": "dc9d7543c126",
+  "key": "manual_dc9d75",
+  "name": "manual_dc9d75",
+  "claim": "Qualify now is not a code action: qualification is a register of physical, human-only and account or trust gates. Do the native bounded parts, keep an honest status table, and hand the rest to the operator.",
+  "conditions": [
+    "account",
+    "action",
+    "bounded",
+    "code",
+    "gates",
+    "hand",
+    "honest",
+    "human-only",
+    "keep",
+    "native",
+    "now",
+    "operator",
+    "parts",
+    "physical",
+    "qualification",
+    "qualify",
+    "register",
+    "rest",
+    "status",
+    "table",
+    "trust"
+  ],
+  "evidence_ids": [
+    "2026-11-10T02:01:29.814517+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T02:01:29.814517+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-10T02:01:29.814517+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T02:01:30.072141+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Windows session 2026-11-10; see NATIVE_EVIDENCE_REAL_CLINE_AND_QUALIFICATION_2026-11-10.md",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-10T02:01:29.814517+00:00"
+      ],
+      "lessons_sha": "a5c2c2c666d7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T02:01:30.072141+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Windows session 2026-11-10; see NATIVE_EVIDENCE_REAL_CLINE_AND_QUALIFICATION_2026-11-10.md"
+}

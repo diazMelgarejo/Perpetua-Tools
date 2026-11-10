@@ -1,0 +1,55 @@
+{
+  "id": "93ae857ef342",
+  "key": "manual_93ae85",
+  "name": "manual_93ae85",
+  "claim": "The peer-send sanitizer refuses long token-like strings, including long file names: describe a file instead of quoting its name, and quote hashes only in a receipt line.",
+  "conditions": [
+    "describe",
+    "file",
+    "hashes",
+    "including",
+    "instead",
+    "line",
+    "long",
+    "name",
+    "names",
+    "only",
+    "peer-send",
+    "quote",
+    "quoting",
+    "receipt",
+    "refuses",
+    "sanitizer",
+    "strings",
+    "token-like"
+  ],
+  "evidence_ids": [
+    "2026-11-10T02:01:28.397983+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T02:01:28.397983+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-10T02:01:28.397983+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T02:01:28.656499+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Windows session 2026-11-10; see NATIVE_EVIDENCE_REAL_CLINE_AND_QUALIFICATION_2026-11-10.md",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-10T02:01:28.397983+00:00"
+      ],
+      "lessons_sha": "7f7eef583e30"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T02:01:28.656499+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Windows session 2026-11-10; see NATIVE_EVIDENCE_REAL_CLINE_AND_QUALIFICATION_2026-11-10.md"
+}

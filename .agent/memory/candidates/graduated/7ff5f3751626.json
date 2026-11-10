@@ -1,0 +1,66 @@
+{
+  "id": "7ff5f3751626",
+  "key": "manual_7ff5f3",
+  "name": "manual_7ff5f3",
+  "claim": "A test counts as evidence only if it fails when the code is broken: run a mutation check (break the code, expect red) before citing a test as proof. A Cline discovery regression test passed with and without its fix; the native Windows lock and process tests fail under mutation.",
+  "conditions": [
+    "before",
+    "break",
+    "broken",
+    "check",
+    "citing",
+    "cline",
+    "code",
+    "counts",
+    "discovery",
+    "evidence",
+    "expect",
+    "fail",
+    "fails",
+    "fix",
+    "lock",
+    "mutation",
+    "native",
+    "only",
+    "passed",
+    "process",
+    "proof",
+    "red",
+    "regression",
+    "run",
+    "test",
+    "tests",
+    "under",
+    "windows",
+    "without"
+  ],
+  "evidence_ids": [
+    "2026-11-10T02:01:25.657812+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T02:01:25.657812+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-10T02:01:25.657812+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T02:01:26.324166+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Windows session 2026-11-10; see NATIVE_EVIDENCE_REAL_CLINE_AND_QUALIFICATION_2026-11-10.md",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-10T02:01:25.657812+00:00"
+      ],
+      "lessons_sha": "562da4a8c64c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T02:01:26.324166+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Windows session 2026-11-10; see NATIVE_EVIDENCE_REAL_CLINE_AND_QUALIFICATION_2026-11-10.md"
+}

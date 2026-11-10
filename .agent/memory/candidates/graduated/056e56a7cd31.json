@@ -1,0 +1,70 @@
+{
+  "id": "056e56a7cd31",
+  "key": "manual_056e56",
+  "name": "manual_056e56",
+  "claim": "To assign work to a local Cline session, queue a board item with a written brief that states hard limits (no pushes to held branches, plan mode unless act mode is authorised, report through the send script), then verify its evidence yourself by hash, rerun and mutation before relaying it.",
+  "conditions": [
+    "act",
+    "assign",
+    "authorised",
+    "before",
+    "board",
+    "branches",
+    "brief",
+    "cline",
+    "evidence",
+    "hard",
+    "hash",
+    "held",
+    "item",
+    "limits",
+    "local",
+    "mode",
+    "mutation",
+    "plan",
+    "pushes",
+    "queue",
+    "relaying",
+    "report",
+    "rerun",
+    "script",
+    "send",
+    "session",
+    "states",
+    "through",
+    "unless",
+    "verify",
+    "work",
+    "written",
+    "yourself"
+  ],
+  "evidence_ids": [
+    "2026-11-10T02:01:31.994612+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T02:01:31.994612+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-10T02:01:31.994612+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T02:01:32.239738+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Windows session 2026-11-10; see NATIVE_EVIDENCE_REAL_CLINE_AND_QUALIFICATION_2026-11-10.md",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-10T02:01:31.994612+00:00"
+      ],
+      "lessons_sha": "fc9146a82ff2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T02:01:32.239738+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Windows session 2026-11-10; see NATIVE_EVIDENCE_REAL_CLINE_AND_QUALIFICATION_2026-11-10.md"
+}

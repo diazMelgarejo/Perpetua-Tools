@@ -1,0 +1,68 @@
+{
+  "id": "781db1755ed9",
+  "key": "manual_781db1",
+  "name": "manual_781db1",
+  "claim": "Verify a silent tool failure before acting on its result: a patch step run with the Windows Store python stub did nothing and an unrevised draft reached a peer. Read an edit back before sending; if a stale message goes out, send a correction that names what it supersedes.",
+  "conditions": [
+    "acting",
+    "back",
+    "before",
+    "correction",
+    "draft",
+    "edit",
+    "failure",
+    "goes",
+    "message",
+    "names",
+    "nothing",
+    "out",
+    "patch",
+    "peer",
+    "python",
+    "reached",
+    "read",
+    "result",
+    "run",
+    "send",
+    "sending",
+    "silent",
+    "stale",
+    "step",
+    "store",
+    "stub",
+    "supersedes",
+    "tool",
+    "unrevised",
+    "verify",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-11-10T02:01:27.603198+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T02:01:27.603198+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-10T02:01:27.603198+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T02:01:27.848551+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Windows session 2026-11-10; see NATIVE_EVIDENCE_REAL_CLINE_AND_QUALIFICATION_2026-11-10.md",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-10T02:01:27.603198+00:00"
+      ],
+      "lessons_sha": "de4bfe382ef5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T02:01:27.848551+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Windows session 2026-11-10; see NATIVE_EVIDENCE_REAL_CLINE_AND_QUALIFICATION_2026-11-10.md"
+}
