@@ -30,14 +30,15 @@ would have exposed it takes seconds (`--help`, one live call, a second search).
 
 ## Live working code now (history above is kept as written)
 
-- Cline command line, plan mode default, safe Windows launch, outcome classification: `scripts/cline_autoresearcher.py`
-  (`_cline_argv`, `_cline_launcher`, `dispatch_cline`, `_is_pre_send_usage_error`, `dispatch_autoresearcher`) in
-  orama-system PR 487.
-- Single-owner backend lock: `scripts/autoresearcher_lock.py` (`BackendLock`, `inspect`, `reconcile`) in orama-system
-  PR 487.
-- Watcher autostart and stop: the AutoResearcher block in `platform/windows/start.ps1` in orama-system PR 488.
-- Mac and Cline communication helpers (workspace folder, not in git): `tasks/cline-mac-comms/send_to_mac.ps1` and
-  `read_mac_inbox.py`.
+- Cline command line, plan mode default, safe Windows launch and outcome classification:
+  `scripts/cline_autoresearcher.py` (`_cline_argv`, `_cline_launcher`, `dispatch_cline`,
+  `_is_pre_send_usage_error`, `dispatch_autoresearcher`) in orama-system PR 487.
+- Single-owner backend lock: `scripts/autoresearcher_lock.py` (`BackendLock`, `inspect`,
+  `reconcile`) in orama-system PR 487.
+- Watcher autostart and stop: the AutoResearcher block in `platform/windows/start.ps1` in
+  orama-system PR 488.
+- Mac and Cline communication helpers (workspace folder, not in git):
+  `tasks/cline-mac-comms/send_to_mac.ps1` and `read_mac_inbox.py`.
 
 ## Pattern across the misses
 
