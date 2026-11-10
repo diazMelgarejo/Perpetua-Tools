@@ -53,3 +53,6 @@ and lessons; it is not an approval, a qualification or a merge.
    limits (no pushes to held branches, plan mode unless act mode is authorised, report through the
    send
    script), then verify its evidence yourself (hash, rerun, mutation) before relaying it.
+   Plan mode alone does not prevent mutations: a direct CLI launch in plan mode must also pass
+   `--auto-approve false`, and an existing session's approval setting must be checked before assigning
+   work to it.
