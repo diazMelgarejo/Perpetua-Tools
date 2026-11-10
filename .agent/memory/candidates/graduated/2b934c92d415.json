@@ -1,0 +1,52 @@
+{
+  "id": "2b934c92d415",
+  "key": "manual_2b934c",
+  "name": "manual_2b934c",
+  "claim": "An agent-surface security scan fails a skills script that opens a credential file (error-level SC-EX-001). Do not baseline, obfuscate or disable the rule: remove the behavior. Read settings from the process environment, forward only an allowlist to the child process, and document how the operator exports them.",
+  "conditions": [
+    "aguara",
+    "allowlist",
+    "baseline",
+    "behavior",
+    "credential",
+    "env",
+    "file",
+    "file",
+    "not",
+    "read",
+    "remove",
+    "scan",
+    "script",
+    "security",
+    "skills"
+  ],
+  "evidence_ids": [
+    "2026-11-10T04:12:13.367906+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T04:12:13.367906+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-10T04:12:13.367906+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T04:12:13.525454+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "lan_peer_send.py loaded an env file itself and failed the PR; reading the environment only, with an allowlist for the child, cleared it with zero new findings against main.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-10T04:12:13.367906+00:00"
+      ],
+      "lessons_sha": "2c7241fe5be9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T04:12:13.525445+00:00",
+  "reviewer": "learn.py",
+  "rationale": "lan_peer_send.py loaded an env file itself and failed the PR; reading the environment only, with an allowlist for the child, cleared it with zero new findings against main."
+}
