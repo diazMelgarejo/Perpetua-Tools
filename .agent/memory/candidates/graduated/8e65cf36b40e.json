@@ -1,0 +1,49 @@
+{
+  "id": "8e65cf36b40e",
+  "key": "manual_8e65cf",
+  "name": "manual_8e65cf",
+  "claim": "Treat a text sanitizer as a specification: long token-like strings are refused outside receipt or commit context, so keep scenario names short and attach labelled byte counts and hashes; matching hashes on both sides then prove integrity.",
+  "conditions": [
+    "hash",
+    "integrity",
+    "labelled",
+    "long",
+    "match",
+    "names",
+    "receipt",
+    "refused",
+    "rewrote",
+    "sanitizer",
+    "short",
+    "token"
+  ],
+  "evidence_ids": [
+    "2026-11-10T03:52:59.494784+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T03:52:59.494784+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-10T03:52:59.494784+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T03:52:59.667235+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Two report drafts were refused for long test names and a long filename; the rewritten draft passed and its file hashes matched the receiver table byte-for-byte.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-10T03:52:59.494784+00:00"
+      ],
+      "lessons_sha": "9a98b8780fa9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T03:52:59.667235+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Two report drafts were refused for long test names and a long filename; the rewritten draft passed and its file hashes matched the receiver table byte-for-byte."
+}

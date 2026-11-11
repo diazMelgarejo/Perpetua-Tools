@@ -1,0 +1,46 @@
+{
+  "id": "1f701f2e08d0",
+  "key": "manual_1f701f",
+  "name": "manual_1f701f",
+  "claim": "One host can carry two coordination boards: read every board before claiming or reconciling, and reconcile across boards before acting, or two lanes will duplicate the same task.",
+  "conditions": [
+    "boards",
+    "clone",
+    "cross-read",
+    "duplicate",
+    "host",
+    "inventory",
+    "lane",
+    "reconcile",
+    "two"
+  ],
+  "evidence_ids": [
+    "2026-11-11T02:25:33.599483+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-11T02:25:33.599483+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-11T02:25:33.599483+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-11T02:25:33.803722+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Two clones of the same repository on one host each kept a live board; the orchestrator lane and this session both executed the same audit and repair tasks before the boards were cross-read.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-11T02:25:33.599483+00:00"
+      ],
+      "lessons_sha": "8d895fbeda0a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-11T02:25:33.803722+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Two clones of the same repository on one host each kept a live board; the orchestrator lane and this session both executed the same audit and repair tasks before the boards were cross-read."
+}

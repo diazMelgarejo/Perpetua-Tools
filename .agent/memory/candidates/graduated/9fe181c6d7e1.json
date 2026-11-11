@@ -1,0 +1,47 @@
+{
+  "id": "9fe181c6d7e1",
+  "key": "manual_9fe181",
+  "name": "manual_9fe181",
+  "claim": "Only operator-confirmed decisions may be recorded as decided: a document that calls unratified gates ratified must be corrected before publication, and the correction travels with the record.",
+  "conditions": [
+    "confirmed",
+    "corrected",
+    "decision",
+    "document",
+    "gate",
+    "operator",
+    "proposed",
+    "ratified",
+    "record",
+    "status"
+  ],
+  "evidence_ids": [
+    "2026-11-11T02:25:14.876505+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-11T02:25:14.876505+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-11T02:25:14.876505+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-11T02:25:15.081599+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A D-0 decision record marked every gate accepted based on an over-broad reading of an operator directive; the operator-confirmed gate record showed only one gate plus the slice premise decided, and the record was corrected the same day.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-11T02:25:14.876505+00:00"
+      ],
+      "lessons_sha": "219b87bbd752"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-11T02:25:15.081599+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A D-0 decision record marked every gate accepted based on an over-broad reading of an operator directive; the operator-confirmed gate record showed only one gate plus the slice premise decided, and the record was corrected the same day."
+}

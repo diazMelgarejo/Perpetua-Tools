@@ -1,0 +1,49 @@
+{
+  "id": "28f3557dc390",
+  "key": "manual_28f355",
+  "name": "manual_28f355",
+  "claim": "On shared coordination files, append and merge; never rewrite the whole file. Read the current file immediately before writing, add your change as a new dated section or merged row, note what you superseded instead of deleting it, and re-read and re-apply if a write lands after a concurrent change.",
+  "conditions": [
+    "append",
+    "concurrent",
+    "file",
+    "lost",
+    "merge",
+    "protocol",
+    "read",
+    "rewrite",
+    "shared",
+    "tracker",
+    "update",
+    "writer"
+  ],
+  "evidence_ids": [
+    "2026-11-11T02:25:14.013702+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-11T02:25:14.013702+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-11T02:25:14.013702+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-11T02:25:14.455397+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "An appended progress section in the shared execution tracker was lost when a concurrent writer rewrote the whole file; the content was recovered from the append-only board log, and the protocol request was sent to all agents on both hosts.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-11T02:25:14.013702+00:00"
+      ],
+      "lessons_sha": "e74867ec1381"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-11T02:25:14.455397+00:00",
+  "reviewer": "learn.py",
+  "rationale": "An appended progress section in the shared execution tracker was lost when a concurrent writer rewrote the whole file; the content was recovered from the append-only board log, and the protocol request was sent to all agents on both hosts."
+}

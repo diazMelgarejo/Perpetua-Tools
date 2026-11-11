@@ -1,0 +1,48 @@
+{
+  "id": "382756e8ac2d",
+  "key": "manual_382756",
+  "name": "manual_382756",
+  "claim": "When two implementations of the same task exist, reconcile by pinned tests: synthesize the canonical version from the one that passes every pinned test, mark the other superseded without reverting it, and re-derive stacked work on the synthesized base.",
+  "conditions": [
+    "base",
+    "compare",
+    "duplicate",
+    "failing",
+    "implementation",
+    "pinned",
+    "reconcile",
+    "stacked",
+    "superseded",
+    "synthesize",
+    "tests"
+  ],
+  "evidence_ids": [
+    "2026-11-11T02:25:15.458902+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-11T02:25:15.458902+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-11T02:25:15.458902+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-11T02:25:15.658504+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Two interim cleanup-fence implementations were compared: one failed a pinned retry-count behaviour test and carried out-of-scope additions with stacked work inheriting the failure; the other passed thirty-six tests including the pinned characterization.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-11T02:25:15.458902+00:00"
+      ],
+      "lessons_sha": "f4f5fe644f11"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-11T02:25:15.658504+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Two interim cleanup-fence implementations were compared: one failed a pinned retry-count behaviour test and carried out-of-scope additions with stacked work inheriting the failure; the other passed thirty-six tests including the pinned characterization."
+}
