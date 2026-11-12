@@ -1,0 +1,43 @@
+{
+  "id": "68de10239f53",
+  "key": "manual_68de10",
+  "name": "manual_68de10",
+  "claim": "Receiver acceptance is not content-identity proof: ok, received_at and a matching byte count establish that a receiver accepted a transfer, not that the receiver holds the intended bytes. Treat delivery as content-verified only when the receiver reports or independently verifies a matching cryptographic digest; otherwise report accepted delivery with the content-identity limitation.",
+  "conditions": [
+    "acceptance",
+    "content",
+    "delivery",
+    "digest",
+    "identity",
+    "receipt"
+  ],
+  "evidence_ids": [
+    "2026-11-12T03:20:41.030953+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-12T03:20:41.030953+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-12T03:20:41.030953+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-12T03:22:09.798233+00:00",
+      "action": "graduated",
+      "reviewer": "cline-gemini-3.8-sweep-20261103",
+      "notes": "CodeRabbit PR 495 review found lesson_2e9ff8e7b1f4 conflated receiver acceptance and byte count with content identity; preserve the acceptance distinction while requiring digest evidence for verified content.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-12T03:20:41.030953+00:00"
+      ],
+      "lessons_sha": "a4fbf0d2dbe0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-12T03:22:09.798220+00:00",
+  "reviewer": "cline-gemini-3.8-sweep-20261103",
+  "rationale": "CodeRabbit PR 495 review found lesson_2e9ff8e7b1f4 conflated receiver acceptance and byte count with content identity; preserve the acceptance distinction while requiring digest evidence for verified content."
+}
