@@ -1,0 +1,45 @@
+{
+  "id": "7db1ec37e5d8",
+  "key": "manual_7db1ec",
+  "name": "manual_7db1ec",
+  "claim": "Receiver acceptance is not content-identity proof: ok, received_at and a matching byte count establish that a receiver accepted a transfer, not that the receiver holds the intended bytes. Treat delivery as content-verified only when the receiver reports or independently verifies a matching cryptographic digest. For reciprocal delivery claims require a verified peer CA on the connection and a receipt hash that the receiver recomputes from its stored bytes \u2014 with LF normalisation applied when text content may have undergone line-ending translation \u2014 and confirms equal to the sender's hash; otherwise report accepted delivery with the content-identity limitation.",
+  "conditions": [
+    "delivery",
+    "hash",
+    "lf-normalisation",
+    "peer-ca",
+    "receipt",
+    "receiver",
+    "reciprocal",
+    "stored-bytes"
+  ],
+  "evidence_ids": [
+    "2026-11-12T23:00:05.644309+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-12T23:00:05.644309+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-12T23:00:05.644309+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-12T23:00:05.836908+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit PR #495 review (lessons.jsonl thread): lesson_6b2f17b9f640 omits the detail that the receiver must recompute the hash from stored bytes with LF normalisation when applicable, and confirm it equals the sender's hash. lesson_3e5b1ad90f29 retains that guidance. Supersedes lesson_6b2f17b9f640 to close the gap.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-12T23:00:05.644309+00:00"
+      ],
+      "lessons_sha": "235d13854894"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-12T23:00:05.836894+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit PR #495 review (lessons.jsonl thread): lesson_6b2f17b9f640 omits the detail that the receiver must recompute the hash from stored bytes with LF normalisation when applicable, and confirm it equals the sender's hash. lesson_3e5b1ad90f29 retains that guidance. Supersedes lesson_6b2f17b9f640 to close the gap."
+}
