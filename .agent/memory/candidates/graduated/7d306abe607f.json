@@ -1,0 +1,47 @@
+{
+  "id": "7d306abe607f",
+  "key": "manual_7d306a",
+  "name": "manual_7d306a",
+  "claim": "Reasoning-effort support is verified live, never assumed: ask for medium, else high, else low (never xhigh or max) and always send the level explicitly. The checked-in template value (the last live-verified level) applies on every provider switch; the medium-high-low walk is only a periodic, reviewed re-check during repository updates, not a per-switch billed cost.",
+  "conditions": [
+    "cline",
+    "effort",
+    "high",
+    "low",
+    "medium",
+    "provider",
+    "reasoning",
+    "switch",
+    "template",
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-11-12T02:21:52.758688+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-12T02:21:52.758688+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-12T02:21:52.758688+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-12T02:21:52.950481+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-12 live probes: W&B DeepSeek V4.1 models rejected medium with HTTP 400 and accepted high; BigModel GLM-5.3-Flash defaults to max when effort is omitted and rejects medium. Per-switch billed probes are not acceptable cost, so the walk runs opt-in during reviewed updates with a live model list, effort probes and one tool task in a throwaway Cline config directory. Balance, auth or rate-limit errors mean could not verify, never rejected.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-12T02:21:52.758688+00:00"
+      ],
+      "lessons_sha": "3cdc1fdb25a9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-12T02:21:52.950469+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-12 live probes: W&B DeepSeek V4.1 models rejected medium with HTTP 400 and accepted high; BigModel GLM-5.3-Flash defaults to max when effort is omitted and rejects medium. Per-switch billed probes are not acceptable cost, so the walk runs opt-in during reviewed updates with a live model list, effort probes and one tool task in a throwaway Cline config directory. Balance, auth or rate-limit errors mean could not verify, never rejected."
+}
