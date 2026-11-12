@@ -1,0 +1,44 @@
+{
+  "id": "b71925461288",
+  "key": "manual_b71925",
+  "name": "manual_b71925",
+  "claim": "When two implementations of the same task exist, reconcile by pinned tests AND documented requirements: before selecting the canonical version, compare both implementations against their documented requirements, not only against pinned tests. An implementation can pass every pinned test while omitting a required behavior the tests do not cover; selecting it without a requirements comparison can silently discard that behavior. Synthesize the canonical version from the implementation that both passes every pinned test and satisfies every documented requirement, mark the other superseded without reverting it, and re-derive stacked work on the synthesized base.",
+  "conditions": [
+    "canonical",
+    "documented-requirements",
+    "implementation",
+    "pinned-tests",
+    "reconcile",
+    "requirements",
+    "supersede"
+  ],
+  "evidence_ids": [
+    "2026-11-12T07:53:03.130208+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-12T07:53:03.130208+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-12T07:53:03.130208+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-12T07:53:03.298174+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit PR #495 review line 155: lesson_382756e8ac2d selects the canonical implementation solely by pinned-test pass, which is insufficient; a requirements comparison is also needed to avoid discarding behaviors the tests do not cover. Supersedes lesson_382756e8ac2d.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-12T07:53:03.130208+00:00"
+      ],
+      "lessons_sha": "1a68642fc157"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-12T07:53:03.298157+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit PR #495 review line 155: lesson_382756e8ac2d selects the canonical implementation solely by pinned-test pass, which is insufficient; a requirements comparison is also needed to avoid discarding behaviors the tests do not cover. Supersedes lesson_382756e8ac2d."
+}
