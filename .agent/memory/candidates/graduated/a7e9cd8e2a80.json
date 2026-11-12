@@ -1,0 +1,50 @@
+{
+  "id": "a7e9cd8e2a80",
+  "key": "manual_a7e9cd",
+  "name": "manual_a7e9cd",
+  "claim": "Treat a handoff as data to verify, not as a script: re-read every claimed PR head from the forge, compare the staged files with the stated set, run each required gate separately and record its own exit code (a backgrounded or piped run can hide a gate's result), commit once, confirm the remote head is still the claimed base, then push once with a normal push.",
+  "conditions": [
+    "base",
+    "code",
+    "exit",
+    "fetch",
+    "gates",
+    "handoff",
+    "head",
+    "pr",
+    "push",
+    "remote",
+    "single",
+    "staged",
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-11-12T03:34:47.126237+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-12T03:34:47.126237+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-12T03:34:47.126237+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-12T03:34:47.301078+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-12 PR-remediation handoff: claimed heads for three PRs matched the forge; the staged set was exactly five memory files; five gates (diff check, memory records, episodic append-only, repo hygiene, 14 focused tests) each returned 0 when run on their own; the remote head was fetched and equalled the claimed base before the single normal push, which fast-forwarded. A first combined run had returned output without per-gate results, so the gates were re-run one by one.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-12T03:34:47.126237+00:00"
+      ],
+      "lessons_sha": "0d0d3ad37fdf"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-12T03:34:47.301063+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-12 PR-remediation handoff: claimed heads for three PRs matched the forge; the staged set was exactly five memory files; five gates (diff check, memory records, episodic append-only, repo hygiene, 14 focused tests) each returned 0 when run on their own; the remote head was fetched and equalled the claimed base before the single normal push, which fast-forwarded. A first combined run had returned output without per-gate results, so the gates were re-run one by one."
+}
