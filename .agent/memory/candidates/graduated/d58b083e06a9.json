@@ -1,0 +1,49 @@
+{
+  "id": "d58b083e06a9",
+  "key": "manual_d58b08",
+  "name": "manual_d58b08",
+  "claim": "A release event never clears an atomic queue claim, but an operator-authorized recovery must not impersonate an absent claimant or blindly fail and requeue. First establish continuing quiescence for affected workers, automatic restarts and queue mutations; then use only the live claimant path with claimant ownership, current task state and retry budget verified in the same recovery decision. Do not run global cleanup unless every affected claimant is proven dead under that window and the operator has authorized every affected claim individually. Global cleanup requeues queue claims even when retries are exhausted, so do not run it when an exhausted or otherwise unsafe claim would be requeued; hold such claims for separately reviewed authorized recovery. Requeue retains required_agent_id: preserve reservations and use documented, reservation-aware, operator-authorized recovery for handoffs.",
+  "conditions": [
+    "authorization",
+    "claim",
+    "claimant",
+    "cleanup",
+    "exhausted",
+    "global",
+    "operator",
+    "quiescence",
+    "requeue",
+    "reservation",
+    "reserved",
+    "retry"
+  ],
+  "evidence_ids": [
+    "2026-11-12T04:57:29.208928+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-12T04:57:29.208928+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-12T04:57:29.208928+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-12T04:57:29.446773+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Carries the per-claim operator authorization and no-requeue-of-exhausted-or-reserved-claims guards into the queue-recovery lesson; the superseded record is preserved.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-12T04:57:29.208928+00:00"
+      ],
+      "lessons_sha": "5a7be1938d58"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-12T04:57:29.446767+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Carries the per-claim operator authorization and no-requeue-of-exhausted-or-reserved-claims guards into the queue-recovery lesson; the superseded record is preserved."
+}
