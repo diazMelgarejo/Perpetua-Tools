@@ -1,0 +1,41 @@
+{
+  "id": "77b9e25def9a",
+  "key": "manual_77b9e2",
+  "name": "manual_77b9e2",
+  "claim": "Discovery endpoints describe model-server endpoints, not peer control-plane or TLS addresses. Treat port 1234 only as the reader default when a discovery snapshot omits port; valid snapshots may specify another port in range. Read the endpoint field meaning and its supplied port before inferring a peer route, certificate identity or reachability result.",
+  "conditions": [
+    "default",
+    "discovery",
+    "endpoints",
+    "port"
+  ],
+  "evidence_ids": [
+    "2026-11-13T04:20:43.207249+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-13T04:20:43.207249+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-13T04:20:43.207249+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-13T04:20:50.333110+00:00",
+      "action": "graduated",
+      "reviewer": "cursor-composer-steelman-20261113",
+      "notes": "CodeRabbit PR 497: port 1234 is the missing-port default only, not a discovery-record invariant.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-13T04:20:43.207249+00:00"
+      ],
+      "lessons_sha": "c0a0bb627814"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-13T04:20:50.333097+00:00",
+  "reviewer": "cursor-composer-steelman-20261113",
+  "rationale": "CodeRabbit PR 497: port 1234 is the missing-port default only, not a discovery-record invariant."
+}
