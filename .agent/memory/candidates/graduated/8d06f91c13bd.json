@@ -1,0 +1,47 @@
+{
+  "id": "8d06f91c13bd",
+  "key": "manual_8d06f9",
+  "name": "manual_8d06f9",
+  "claim": "On shared coordination files, append and merge; never rewrite the whole file. A read immediately before writing does not make the write safe: two writers can read the same version and the second overwrite the first's addition, and a later re-read cannot recover text that no longer exists anywhere. Hold one shared lock across the read-modify-write, or use a compare-and-swap check (version, hash or modification time) that rejects a stale write, then re-read and re-apply; note what you superseded instead of deleting it.",
+  "conditions": [
+    "append",
+    "compare-and-swap",
+    "concurrent",
+    "coordination",
+    "file",
+    "lock",
+    "merge",
+    "shared",
+    "stale",
+    "write"
+  ],
+  "evidence_ids": [
+    "2026-11-12T04:37:49.503010+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-12T04:37:49.503010+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-12T04:37:49.503010+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-12T04:37:50.037803+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Supersedes the read-immediately-before-editing guidance with a lock or compare-and-swap requirement so concurrent writers cannot silently overwrite each other; the original record is preserved.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-12T04:37:49.503010+00:00"
+      ],
+      "lessons_sha": "2d344f4ef98e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-12T04:37:50.037789+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Supersedes the read-immediately-before-editing guidance with a lock or compare-and-swap requirement so concurrent writers cannot silently overwrite each other; the original record is preserved."
+}

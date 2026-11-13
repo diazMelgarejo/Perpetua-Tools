@@ -1,5 +1,15 @@
 # OpenClaw ↔ Oramasys Fleet Retrofit Playbook (MERGE-10)
 
+<!-- wandb-inference-working-config -->
+## W&B inference, not the Cline CLI
+
+When this guidance mentions Cline and the call is W&B inference,
+use the OpenAI client and Weave setup in
+[wandb-inference-working-config.md](wandb-inference-working-config.md).
+The Cline CLI returns `invalid model ID` for the model that client
+completes. Do not send a CoreWeave team/project string. Shell-source
+the operator W&B env file before reading `DEEPSEEK_V4_FLASH_WANDB`.
+
 > **Audience:** All future agents (OpenClaw, Cursor, Claude Code, PT host-agent).  
 > **Session:** 2026-07-23 – 2026-07-26 (Raft plans → live retrofit outside git).  
 > **Status:** Executed in operator OpenClaw state; **orama-system / Perpetua-Tools promotion pending

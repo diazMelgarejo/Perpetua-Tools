@@ -1,0 +1,44 @@
+{
+  "id": "d6d55663025f",
+  "key": "manual_d6d556",
+  "name": "manual_d6d556",
+  "claim": "A release event never clears an atomic queue claim, but an operator-authorized recovery must not impersonate an absent claimant or blindly fail and requeue. First establish continuing quiescence for affected workers, automatic restarts and queue mutations; then use only the live claimant path with claimant ownership, current task state and retry budget verified in the same recovery decision. Do not run global cleanup unless every affected claimant is proven dead under that window; preserve required_agent_id reservations and use separately reviewed, reservation-aware recovery for handoffs or exhausted claims.",
+  "conditions": [
+    "evidence",
+    "ownership",
+    "queue",
+    "quiescence",
+    "recovery",
+    "reservation",
+    "retry"
+  ],
+  "evidence_ids": [
+    "2026-11-12T03:20:08.536247+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-12T03:20:08.536247+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-12T03:20:08.536247+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-12T03:20:40.943069+00:00",
+      "action": "graduated",
+      "reviewer": "cline-gemini-3.8-sweep-20261103",
+      "notes": "CodeRabbit PR 495 review found lesson_9d1cb866e827 still active without the ownership, retry, reservation and continuing-quiescence safeguards preserved by later corrective evidence.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-12T03:20:08.536247+00:00"
+      ],
+      "lessons_sha": "c6ba08463f9d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-12T03:20:40.943058+00:00",
+  "reviewer": "cline-gemini-3.8-sweep-20261103",
+  "rationale": "CodeRabbit PR 495 review found lesson_9d1cb866e827 still active without the ownership, retry, reservation and continuing-quiescence safeguards preserved by later corrective evidence."
+}

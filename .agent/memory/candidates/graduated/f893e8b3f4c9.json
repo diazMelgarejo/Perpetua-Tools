@@ -1,0 +1,44 @@
+{
+  "id": "f893e8b3f4c9",
+  "key": "manual_f893e8",
+  "name": "manual_f893e8",
+  "claim": "On shared coordination files, append and merge; never rewrite the whole file. A read immediately before writing does not make the write safe: two writers can read the same version and the second overwrite the first addition, and a later re-read cannot recover text that no longer exists. Hold one shared lock across the read-modify-write, or use a compare-and-swap check against a collision-resistant content hash or monotonic revision that rejects a stale write, then re-read and re-apply; never treat filesystem modification time alone as a safe stale-write token. Note what you superseded instead of deleting it.",
+  "conditions": [
+    "append-merge",
+    "cas",
+    "coordination",
+    "hash",
+    "lock",
+    "revision"
+  ],
+  "evidence_ids": [
+    "2026-11-13T04:18:08.530034+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-13T04:18:08.530034+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-13T04:18:08.530034+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-13T04:18:22.275368+00:00",
+      "action": "graduated",
+      "reviewer": "cursor-composer-steelman-20261113",
+      "notes": "CodeRabbit PT#495 thread 4557491086: mtime-only CAS is unsafe; require shared lock or content-hash/revision CAS.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-13T04:18:08.530034+00:00"
+      ],
+      "lessons_sha": "031f3568474c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-13T04:18:22.275354+00:00",
+  "reviewer": "cursor-composer-steelman-20261113",
+  "rationale": "CodeRabbit PT#495 thread 4557491086: mtime-only CAS is unsafe; require shared lock or content-hash/revision CAS.",
+  "supersedes": "lesson_8d06f91c13bd"
+}

@@ -1,0 +1,47 @@
+{
+  "id": "e87d639b567c",
+  "key": "manual_e87d63",
+  "name": "manual_e87d63",
+  "claim": "Verify pinned versions against actuals before trusting reference docs: a CLI reference pinned an older version than the installed binary, which the binary confirmed three independent ways.",
+  "conditions": [
+    "actual",
+    "binary",
+    "confirm",
+    "docs",
+    "drift",
+    "pinned",
+    "reference",
+    "three",
+    "verify",
+    "version"
+  ],
+  "evidence_ids": [
+    "2026-11-10T03:53:01.039691+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T03:53:01.039691+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-10T03:53:01.039691+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T03:53:01.205288+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The cline reference documented 3.0.34 while version, version command and doctor all reported 3.0.74 on this host.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-10T03:53:01.039691+00:00"
+      ],
+      "lessons_sha": "36aa400a5a32"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T03:53:01.205288+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The cline reference documented 3.0.34 while version, version command and doctor all reported 3.0.74 on this host."
+}

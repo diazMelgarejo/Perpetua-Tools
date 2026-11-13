@@ -1,0 +1,49 @@
+{
+  "id": "b0ac2c328a5b",
+  "key": "manual_b0ac2c",
+  "name": "manual_b0ac2c",
+  "claim": "Free-tier model lists rot: verify every fallback id against the router's public live model list, choose replacements per role from live ids by context, tool and reasoning support and vendor diversity, then confirm each with one plain and one tool-call request; skip candidates that are rate limited upstream (429, inconclusive) or restricted to agentic harnesses (403).",
+  "conditions": [
+    "call",
+    "fallback",
+    "free",
+    "limited",
+    "list",
+    "live",
+    "openrouter",
+    "probe",
+    "rate",
+    "replacement",
+    "tier",
+    "tool"
+  ],
+  "evidence_ids": [
+    "2026-11-12T02:52:01.323841+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-12T02:52:01.323841+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-12T02:52:01.323841+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-12T02:52:01.488562+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-12: six of the seven OpenRouter free ids in the free-tier stack were absent from the live list; thirteen free ids were live; ten candidates were probed free of charge; two Gemma models returned 429, one model returned 403 for non-agentic use, and six answered both requests. One chosen model states prompts may be retained, so send sanitized data only. A static test now fails if a dead id re-enters live code or config.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-12T02:52:01.323841+00:00"
+      ],
+      "lessons_sha": "03615b9b261e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-12T02:52:01.488551+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-12: six of the seven OpenRouter free ids in the free-tier stack were absent from the live list; thirteen free ids were live; ten candidates were probed free of charge; two Gemma models returned 429, one model returned 403 for non-agentic use, and six answered both requests. One chosen model states prompts may be retained, so send sanitized data only. A static test now fails if a dead id re-enters live code or config."
+}

@@ -15,7 +15,7 @@ import os
 import re
 import time
 import uuid
-from typing import Optional
+from typing import Any, Optional
 
 from orchestrator.gossip_bus import GossipBus, GossipBusError
 from orchestrator.coordination.paths import current_worktree_label
@@ -318,12 +318,44 @@ async def try_atomic_claim(
     return ClaimResult.CONTENTION
 
 
+async def _agent_alive_in_txn(
+    bus: GossipBus, db: Any, agent_id: str, liveness_floor_ts: float
+) -> bool:
+    """Return True when the L-1a fence must hold ``agent_id``'s claim.
+
+    Reads lifecycle events on ``db`` -- the caller's open ``BEGIN IMMEDIATE``
+    connection -- so the decision and the DELETE share one transaction.
+    """
+    from orchestrator.heartbeat_monitor import (
+        _AGENT_LIVENESS_KINDS,
+        _fetch_heartbeat_events,
+        fold_agent_liveness,
+        is_live_activity,
+    )
+
+    events = await _fetch_heartbeat_events(
+        bus, _AGENT_LIVENESS_KINDS, agent_id, connection=db
+    )
+    if not events:
+        return False
+    record = fold_agent_liveness(events, agent_id).get(agent_id)
+    if record is not None and record["status"] != "DEAD":
+        return True
+    return any(
+        is_live_activity(ev["payload"]) and ev["ts"] > liveness_floor_ts
+        for ev in events
+    )
+
+
 async def release_claim_with_event(
     bus: GossipBus,
     task_id: str,
     event_type: str,
     payload: dict,
     expected_agent_id: Optional[str] = None,
+    *,
+    expected_claimed_at: Optional[float] = None,
+    liveness_floor_ts: Optional[float] = None,
 ) -> ReleaseResult:
     """Atomically free ownership and record why, mirroring try_atomic_claim's
     guarantee for the release side.
@@ -345,13 +377,71 @@ async def release_claim_with_event(
     delete the NEW claimant's row and emit a terminal event out from under
     them. Conditioning on `agent_id` and checking rowcount == 1 turns that
     race into a clean LOST_RACE rather than silent data corruption.
+
+    L-1a interim fence (queue-fencing plan sections 4.3 and 7): the two
+    keyword-only fences below require expected_agent_id and are evaluated
+    inside the same BEGIN IMMEDIATE transaction as the DELETE, so no
+    concurrent writer can slip between the recheck and the release.
+
+    expected_claimed_at, when given, refuses (LOST_RACE) unless the row's
+    claimed_at still equals the value the caller captured earlier -- a
+    re-claim or owner swap between capture and release is detected instead
+    of being deleted silently.
+
+    liveness_floor_ts, when given, refuses (REFUSED) in two cases, both read
+    from the heartbeat events on the same connection and transaction as the
+    DELETE (no liveness signal is consulted across connections):
+
+    1. The agent is no longer DEAD under the canonical liveness fold
+       (``heartbeat_monitor.fold_agent_liveness``). This catches a worker
+       that restarted after its DEAD classification but *before* capture,
+       whose pulse is older than the capture floor and would otherwise
+       escape the fence.
+    2. The agent has live activity newer than the floor -- a restart after
+       capture. Only the agent's own activity counts: ``agent_killed`` and
+       cleanup's ``auto_released`` agent_release events are records *about*
+       a dead agent, not evidence it is alive (``is_live_activity``), and an
+       explicit kill keeps the agent DEAD until a later register or pulse.
+       An agent with no lifecycle events at all has no evidence of life and
+       is not refused on liveness grounds. A REFUSED outcome holds the
+    claim in place (no event is emitted); under continuing quiescence a
+    refused release is re-decided only through authorized recovery.
     """
+    if (expected_claimed_at is not None or liveness_floor_ts is not None) and (
+        expected_agent_id is None
+    ):
+        raise ValueError(
+            "expected_claimed_at and liveness_floor_ts require expected_agent_id"
+        )
     for attempt in range(_LOCK_RETRIES):
         async with bus.connect() as db:
             try:
                 await db.execute("BEGIN IMMEDIATE")
                 await db.execute(_CREATE_CLAIMS_TABLE)
                 if expected_agent_id is not None:
+                    if (
+                        expected_claimed_at is not None or liveness_floor_ts is not None
+                    ):
+                        cursor = await db.execute(
+                            "SELECT agent_id, claimed_at FROM task_claims "
+                            "WHERE task_id = ?",
+                            (task_id,),
+                        )
+                        row = await cursor.fetchone()
+                        if row is None or row[0] != expected_agent_id:
+                            await db.rollback()
+                            return ReleaseResult.LOST_RACE
+                        if (
+                            expected_claimed_at is not None
+                            and row[1] != expected_claimed_at
+                        ):
+                            await db.rollback()
+                            return ReleaseResult.LOST_RACE
+                        if liveness_floor_ts is not None and await _agent_alive_in_txn(
+                            bus, db, expected_agent_id, liveness_floor_ts
+                        ):
+                            await db.rollback()
+                            return ReleaseResult.REFUSED
                     cursor = await db.execute(
                         "DELETE FROM task_claims WHERE task_id = ? AND agent_id = ?",
                         (task_id, expected_agent_id),
@@ -702,33 +792,72 @@ async def queue_list(bus: GossipBus, phase_filter: Optional[str], priority_filte
         print("no tasks match the given filters")
 
 
-async def cleanup_stale_queue_claims(
-    bus: GossipBus, dead_agent_ids: set[str]
-) -> list[str]:
-    """Re-queue tasks whose atomic ``task_claims`` row is held by dead agents.
+async def capture_stale_queue_claims(
+    bus: GossipBus,
+    dead_agent_ids: set[str],
+    *,
+    liveness_floor_by_agent: Optional[dict[str, float]] = None,
+) -> list[dict]:
+    """Capture (phase 1) the queue-claim rows held by dead agents.
 
-    ``heartbeat cleanup`` already auto-releases legacy ``agent_claim`` rows,
-    but the distributed queue's exclusion gate lives in ``task_claims``. A
-    dead claimant leaves that row behind forever unless we delete it and emit a
-    requeue event, which otherwise blocks every future ``queue claim``.
+    Returns one record per row: ``task_id``, ``agent_id``, the row's
+    ``claimed_at`` at capture time, ``captured_at`` (barrier stamp), and
+    ``liveness_floor_ts`` -- the floor the caller must pass back to
+    ``release_captured_queue_claims``. Prefer ``liveness_floor_by_agent``
+    from the DEAD classification (``last_heartbeat_ts`` at decision time)
+    so a restart pulse between classification and capture still refuses
+    release; when omitted, ``captured_at`` is the floor. The capture is
+    read-only; nothing is released or emitted here.
     """
     if not dead_agent_ids:
         return []
-
+    captured_at = time.time()
+    floors = liveness_floor_by_agent or {}
     placeholders = ",".join("?" for _ in dead_agent_ids)
     async with bus.connect() as db:
         await db.execute(_CREATE_CLAIMS_TABLE)
         cursor = await db.execute(
-            f"SELECT task_id, agent_id FROM task_claims "
+            f"SELECT task_id, agent_id, claimed_at FROM task_claims "
             f"WHERE agent_id IN ({placeholders})",
             tuple(sorted(dead_agent_ids)),
         )
         rows = await cursor.fetchall()
+    return [
+        {
+            "task_id": task_id,
+            "agent_id": agent_id,
+            "claimed_at": claimed_at,
+            "captured_at": captured_at,
+            "liveness_floor_ts": floors.get(agent_id, captured_at),
+        }
+        for task_id, agent_id, claimed_at in rows
+    ]
 
+
+async def release_captured_queue_claims(
+    bus: GossipBus, captured: list[dict]
+) -> list[str]:
+    """Release (phase 2) captured stale queue-claim rows under the L-1a fence.
+
+    Each release is fenced with the captured ``claimed_at`` and the row's
+    ``liveness_floor_ts`` (classification boundary, else capture instant): a
+    worker that restarted and pulsed after that floor keeps its claim
+    (REFUSED), a row that changed owner or claimed_at yields LOST_RACE, and
+    a row whose task has no folded snapshot is held (legacy-unverified,
+    uncertain effects). Only rows actually released are returned; refused,
+    lost and held rows are left untouched and no event is emitted for them.
+    """
+    if not captured:
+        # Nothing captured: skip the full task-history fold entirely.
+        return []
     released: list[str] = []
     snapshots = await latest_task_snapshots(bus)
-    for task_id, agent_id in rows:
-        task_state = snapshots.get(task_id, {})
+    for row in captured:
+        task_id = row["task_id"]
+        task_state = snapshots.get(task_id)
+        if not task_state:
+            continue
+        floor = row.get("liveness_floor_ts", row["captured_at"])
         result = await release_claim_with_event(
             bus,
             task_id,
@@ -741,14 +870,49 @@ async def cleanup_stale_queue_claims(
                 "status": QueuedTaskState.QUEUED.value,
                 "assigned_agent": None,
                 "notes": (
-                    f"Auto-released: agent {agent_id} dead; task returned to queue"
+                    f"Auto-released: agent {row['agent_id']} dead; task returned to queue"
                 ),
             },
-            expected_agent_id=agent_id,
+            expected_agent_id=row["agent_id"],
+            expected_claimed_at=row["claimed_at"],
+            liveness_floor_ts=floor,
         )
         if result == ReleaseResult.RELEASED:
             released.append(task_id)
     return released
+
+
+async def cleanup_stale_queue_claims(
+    bus: GossipBus,
+    dead_agent_ids: set[str],
+    *,
+    liveness_floor_by_agent: Optional[dict[str, float]] = None,
+) -> list[str]:
+    """Re-queue tasks whose atomic ``task_claims`` row is held by dead agents.
+
+    ``heartbeat cleanup`` already auto-releases legacy ``agent_claim`` rows,
+    but the distributed queue's exclusion gate lives in ``task_claims``. A
+    dead claimant leaves that row behind forever unless we delete it and emit a
+    requeue event, which otherwise blocks every future ``queue claim``.
+
+    L-1a fence: this one-shot wrapper runs the capture and release phases
+    back to back. Prefer the DEAD-classification ``last_heartbeat_ts`` as the
+    liveness floor (via ``liveness_floor_by_agent``) so a worker that restarts
+    after classification but before capture keeps its claim; when omitted the
+    capture instant is the floor. The release transaction also rechecks
+    canonical liveness. Unknown-task rows are held. An empty capture returns
+    without folding task history. Callers that need a maintenance-window
+    barrier (plan section 7) call ``capture_stale_queue_claims`` and
+    ``release_captured_queue_claims`` separately around the window.
+    """
+    captured = await capture_stale_queue_claims(
+        bus,
+        dead_agent_ids,
+        liveness_floor_by_agent=liveness_floor_by_agent,
+    )
+    if not captured:
+        return []
+    return await release_captured_queue_claims(bus, captured)
 
 
 async def queue_status(bus: GossipBus, agent_filter: Optional[str]) -> None:

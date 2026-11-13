@@ -1,0 +1,47 @@
+{
+  "id": "bcc84ffe3f89",
+  "key": "manual_bcc84f",
+  "name": "manual_bcc84f",
+  "claim": "Probe in three states, never two: accepted (200), rejected (400, 404 or 422 validation) and inconclusive (401, 402, 429, 5xx, network). An inconclusive result such as an empty account balance must report could not verify and leave the config unchanged; it must never be read as rejected, and when an account cannot be called, cite the vendor's official documentation (translated) and label it official-docs-only.",
+  "conditions": [
+    "429",
+    "balance",
+    "bigmodel",
+    "docs",
+    "inconclusive",
+    "official",
+    "probe",
+    "translated",
+    "tri-state",
+    "unchanged"
+  ],
+  "evidence_ids": [
+    "2026-11-12T02:52:01.028009+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-12T02:52:01.028009+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-12T02:52:01.028009+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-12T02:52:01.195290+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-12: BigModel returned 400 for medium (parameter error, valid rejection) but 429 account-in-arrears for every other call; treating 429 as rejected would have chosen a wrong effort. Official Chinese pages, translated, gave the effort set (low, high, max; default max), 1M context, default and maximum output, price and error codes, and matched the live 400 and 429 bodies.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-12T02:52:01.028009+00:00"
+      ],
+      "lessons_sha": "4eb2c280d2eb"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-12T02:52:01.195280+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-12: BigModel returned 400 for medium (parameter error, valid rejection) but 429 account-in-arrears for every other call; treating 429 as rejected would have chosen a wrong effort. Official Chinese pages, translated, gave the effort set (low, high, max; default max), 1M context, default and maximum output, price and error codes, and matched the live 400 and 429 bodies."
+}

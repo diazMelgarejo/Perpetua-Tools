@@ -1,0 +1,49 @@
+{
+  "id": "3daf5f95b42c",
+  "key": "manual_3daf5f",
+  "name": "manual_3daf5f",
+  "claim": "When a sweep finds stale references: update the live code, config and docs, classify dated records as historical in a ledger instead of rewriting them, keep load-bearing legacy identifiers, and respect repo gates (markdown lint on whole files, the TDD gate for web source, the whole-file-deletion guard) through their documented, justified overrides only; publishing stays on hold until the operator says otherwise, and each task gets its own worktree and branch.",
+  "conditions": [
+    "deletion",
+    "gate",
+    "guard",
+    "historical",
+    "hold",
+    "ledger",
+    "lint",
+    "override",
+    "publish",
+    "stale",
+    "tdd",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-11-12T02:52:01.620583+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-12T02:52:01.620583+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-12T02:52:01.620583+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-12T02:52:01.787730+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-12: fourteen dated records carried old lint debt that blocked any commit touching them, and reflowing history is noise, so a ledger replaced banners; the web UI mock labels needed an adjacent test so they were left for their own change; a justified override recorded the operator-approved template rename; everything was committed locally on separate worktrees and branches, and the one push happened only after the operator ran it.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-12T02:52:01.620583+00:00"
+      ],
+      "lessons_sha": "a56f37ad3adf"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-12T02:52:01.787717+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-12: fourteen dated records carried old lint debt that blocked any commit touching them, and reflowing history is noise, so a ledger replaced banners; the web UI mock labels needed an adjacent test so they were left for their own change; a justified override recorded the operator-approved template rename; everything was committed locally on separate worktrees and branches, and the one push happened only after the operator ran it."
+}

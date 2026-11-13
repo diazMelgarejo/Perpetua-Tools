@@ -1,0 +1,48 @@
+{
+  "id": "6b2f17b9f640",
+  "key": "manual_6b2f17",
+  "name": "manual_6b2f17",
+  "claim": "Receiver acceptance is not content-identity proof: ok, received_at and a matching byte count establish that a receiver accepted a transfer, not that the receiver holds the intended bytes. Treat delivery as content-verified only when the receiver reports or independently verifies a matching cryptographic digest. For reciprocal delivery claims also require a verified peer CA on the connection and a receipt hash computed by the receiver itself; otherwise report accepted delivery with the content-identity limitation.",
+  "conditions": [
+    "acceptance",
+    "ca",
+    "content",
+    "delivery",
+    "digest",
+    "hash",
+    "identity",
+    "peer",
+    "receipt",
+    "receiver",
+    "reciprocal"
+  ],
+  "evidence_ids": [
+    "2026-11-12T04:37:49.827632+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-12T04:37:49.827632+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-12T04:37:49.827632+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-12T04:37:50.237545+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Adds the verified peer CA and receiver-computed receipt hash requirement for reciprocal delivery claims while preserving the acceptance versus content-identity distinction; the earlier record is preserved.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-12T04:37:49.827632+00:00"
+      ],
+      "lessons_sha": "c35e218559d2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-12T04:37:50.237527+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Adds the verified peer CA and receiver-computed receipt hash requirement for reciprocal delivery claims while preserving the acceptance versus content-identity distinction; the earlier record is preserved."
+}

@@ -1,0 +1,26 @@
+{
+  "status": "INTEGRATED ON PR #499: feb99d provisional applied; mtime CAS already resolved by lesson_f893e8b3f4c9; parallel discovery lineage ids appended and bridged by lesson_b3a3b58a38e6",
+  "base_head": "f38634a65188feec55737af95aab4d1a0f0baf55",
+  "applied_natively": [
+    {
+      "lesson": "lesson_feb99d41413e",
+      "tool": ".agent/tools/correct_lesson.py --status provisional",
+      "evidence": "https://github.com/diazMelgarejo/Perpetua-Tools/pull/495#discussion_r4557491096"
+    }
+  ],
+  "already_resolved_at_base": [
+    {
+      "lesson": "lesson_d58b083e06a9",
+      "note": "Accepted text at f38634a6 (commit 65a353cf) already carries quiescence, claimant-path and no-requeue guards.",
+      "evidence": "https://github.com/diazMelgarejo/Perpetua-Tools/pull/495#discussion_r4557522556"
+    },
+    {
+      "lesson": "lesson_8d06f91c13bd",
+      "note": "Superseded on this tip by lesson_f893e8b3f4c9 (de325709 lineage): mtime alone is not a safe stale-write token.",
+      "evidence": "https://github.com/diazMelgarejo/Perpetua-Tools/pull/495#discussion_r4557491086"
+    }
+  ],
+  "pending_review": [],
+  "integrated_onto": "2026-11-13-001-provider-lessons-stacked-on-497 (PR #499)",
+  "base_head_at_integration": "a24f03dc4c0df76588952590046e8abc727da2f2"
+}

@@ -1,0 +1,49 @@
+{
+  "id": "fdf1306b9d73",
+  "key": "manual_fdf130",
+  "name": "manual_fdf130",
+  "claim": "Record the resolved model identifier of every dispatch: an un-pinned run resolved a different provider default than the roster slug, and only the run result exposed it.",
+  "conditions": [
+    "default",
+    "dispatch",
+    "drift",
+    "exposed",
+    "identifier",
+    "model",
+    "provider",
+    "record",
+    "resolved",
+    "roster",
+    "run",
+    "slug"
+  ],
+  "evidence_ids": [
+    "2026-11-10T03:53:00.566291+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T03:53:00.566291+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-10T03:53:00.566291+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T03:53:00.724429+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The benchmark dispatch without a model flag resolved kimi-k3.1-pro while the roster named a glm slug; the run result field carried the truth.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-10T03:53:00.566291+00:00"
+      ],
+      "lessons_sha": "4e0c3d871ed2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T03:53:00.724429+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The benchmark dispatch without a model flag resolved kimi-k3.1-pro while the roster named a glm slug; the run result field carried the truth."
+}

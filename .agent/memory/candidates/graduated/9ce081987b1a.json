@@ -1,0 +1,49 @@
+{
+  "id": "9ce081987b1a",
+  "key": "manual_9ce081",
+  "name": "manual_9ce081",
+  "claim": "A bare peer drop authenticates only when the launch environment is present: without the TLS enable flag the drop correctly fails closed over the plain portal port, and with the flag but a fingerprint-only CA the Python helper still cannot resolve the certificate file - the launcher must export what the child needs.",
+  "conditions": [
+    "bare",
+    "ca",
+    "child",
+    "drop",
+    "environment",
+    "export",
+    "fail",
+    "fingerprint",
+    "launcher",
+    "port",
+    "portal",
+    "tls"
+  ],
+  "evidence_ids": [
+    "2026-11-11T02:25:34.757457+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-11T02:25:34.757457+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-11T02:25:34.757457+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-11T02:25:34.953560+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Bare drops from a merged-fix worktree fail-closed correctly without the launcher environment, and queued on the plain portal port even with the enable flag set because the Python helper does not resolve the pinned CA by fingerprint the way the launcher does.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-11T02:25:34.757457+00:00"
+      ],
+      "lessons_sha": "9a300988b038"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-11T02:25:34.953560+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Bare drops from a merged-fix worktree fail-closed correctly without the launcher environment, and queued on the plain portal port even with the enable flag set because the Python helper does not resolve the pinned CA by fingerprint the way the launcher does."
+}

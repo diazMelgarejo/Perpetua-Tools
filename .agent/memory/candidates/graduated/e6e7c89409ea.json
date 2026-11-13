@@ -1,0 +1,44 @@
+{
+  "id": "e6e7c89409ea",
+  "key": "manual_e6e7c8",
+  "name": "manual_e6e7c8",
+  "claim": "For W&B inference, shell-source the operator env file before reading DEEPSEEK_V4_FLASH_WANDB. A raw parse of that file is a different value and returns 401. Use the OpenAI client at https://api.inference.wandb.ai/v1 with that sourced key and project set to DEEPSEEK_V4_FLASH_WANDB_PROJECT. deepseek-ai/DeepSeek-V4.1-Flash-1017 returns text, as do deepseek-ai/DeepSeek-V4.1-Flash and deepseek-ai/DeepSeek-V4-Flash-0731. deepseek-ai/DeepSeek-V4-Flash is 404. A CoreWeave team/project string is 401 on chat and permission denied on weave.init. The Cline CLI returns invalid model ID for the same key and model the OpenAI client completes, so use the OpenAI client and weave.init on DEEPSEEK_V4_FLASH_WANDB_PROJECT.",
+  "conditions": [
+    "cline",
+    "env-source",
+    "inference",
+    "model-id",
+    "openai",
+    "wandb",
+    "weave"
+  ],
+  "evidence_ids": [
+    "2026-11-13T06:07:37.016915+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-13T06:07:37.016915+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-13T06:07:37.016915+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-13T06:07:37.222112+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Live chat completions on 2026-11-13. Shell-sourced key plus the stored project variable returned PING for DeepSeek-V4.1-Flash-1017. The unsuffixed V4-Flash id was 404. The CoreWeave project string was 401 and weave.init was permission denied. Cline CLI still reported invalid model ID after the OpenAI client succeeded. GossipBus note 485cda77bc0e4dcebe949d52e850af7f.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-13T06:07:37.016915+00:00"
+      ],
+      "lessons_sha": "b862a575f797"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-13T06:07:37.222100+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Live chat completions on 2026-11-13. Shell-sourced key plus the stored project variable returned PING for DeepSeek-V4.1-Flash-1017. The unsuffixed V4-Flash id was 404. The CoreWeave project string was 401 and weave.init was permission denied. Cline CLI still reported invalid model ID after the OpenAI client succeeded. GossipBus note 485cda77bc0e4dcebe949d52e850af7f."
+}

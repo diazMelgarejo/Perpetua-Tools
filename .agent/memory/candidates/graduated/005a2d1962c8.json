@@ -1,0 +1,47 @@
+{
+  "id": "005a2d1962c8",
+  "key": "manual_005a2d",
+  "name": "manual_005a2d",
+  "claim": "After a peer stack restart, verify the peer TLS port is actually listening before treating service health endpoints as proof of the front end; retry the documented lane and report the exact error when it still fails.",
+  "conditions": [
+    "8443",
+    "caddy",
+    "health",
+    "listening",
+    "outage",
+    "peer",
+    "restart",
+    "retry",
+    "stack",
+    "tls"
+  ],
+  "evidence_ids": [
+    "2026-11-10T03:53:01.578587+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T03:53:01.578587+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-10T03:53:01.578587+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T03:53:01.748561+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The Mac outage file showed 8443 dead after a plain restart while 8000/8001/8002 answered; the Windows retry confirmed the TLS portal lane delivered after the Caddy restart.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-10T03:53:01.578587+00:00"
+      ],
+      "lessons_sha": "4d2ccd2fd381"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T03:53:01.748561+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The Mac outage file showed 8443 dead after a plain restart while 8000/8001/8002 answered; the Windows retry confirmed the TLS portal lane delivered after the Caddy restart."
+}

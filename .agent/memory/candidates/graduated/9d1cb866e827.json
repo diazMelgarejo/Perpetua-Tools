@@ -1,0 +1,49 @@
+{
+  "id": "9d1cb866e827",
+  "key": "manual_9d1cb8",
+  "name": "manual_9d1cb8",
+  "claim": "An agent release event does not clear an atomic queue claim row; release a stuck claim through the claimant-path fail-and-requeue under documented operator authorization, then complete with evidence.",
+  "conditions": [
+    "atomic",
+    "authorization",
+    "claim",
+    "claimant",
+    "event",
+    "operator",
+    "queue",
+    "release",
+    "requeue",
+    "row",
+    "sanctioned",
+    "stuck"
+  ],
+  "evidence_ids": [
+    "2026-11-10T03:53:00.041173+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-10T03:53:00.041173+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-10T03:53:00.041173+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-10T03:53:00.226222+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A release event left the task claimed; the sanctioned fail path requeued it (retry one of three) and the replacement claimant completed it with the qualification evidence.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-10T03:53:00.041173+00:00"
+      ],
+      "lessons_sha": "1cde3a831340"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-10T03:53:00.226222+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A release event left the task claimed; the sanctioned fail path requeued it (retry one of three) and the replacement claimant completed it with the qualification evidence."
+}

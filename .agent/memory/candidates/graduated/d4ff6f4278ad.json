@@ -1,0 +1,50 @@
+{
+  "id": "d4ff6f4278ad",
+  "key": "manual_d4ff6f",
+  "name": "manual_d4ff6f",
+  "claim": "Verify model ids against the provider's live model list before templating them, and treat a model-id churn as the first suspect for an old unexplained failure: W&B dropped the bare DeepSeek-V4-Flash id (404) and rejects reasoning_effort medium on the V4.1 models (HTTP 400 Invalid request, the old bare Bad Request) while accepting high and low.",
+  "conditions": [
+    "404",
+    "bad",
+    "deepseek",
+    "id",
+    "list",
+    "live",
+    "medium",
+    "model",
+    "negative",
+    "reasoning_effort",
+    "request",
+    "result",
+    "wandb"
+  ],
+  "evidence_ids": [
+    "2026-11-12T02:52:00.724980+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-12T02:52:00.724980+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-12T02:52:00.724980+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-12T02:52:00.894308+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Verifiable steps, 2026-11-12: free GET of the model list listed V4.1-Flash-1017, V4.1-Flash, V4-Flash-0731, V4-Pro-0813 and no bare V4-Flash; the bare id returned 404; effort probes per model returned 200 or 400 deterministically; the reasoning_content pass-back hypothesis for the old failure was tested on tool turns and NOT reproduced, so a negative result is recorded instead of kept as a cause.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-12T02:52:00.724980+00:00"
+      ],
+      "lessons_sha": "4ed5161add75"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-12T02:52:00.894295+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Verifiable steps, 2026-11-12: free GET of the model list listed V4.1-Flash-1017, V4.1-Flash, V4-Flash-0731, V4-Pro-0813 and no bare V4-Flash; the bare id returned 404; effort probes per model returned 200 or 400 deterministically; the reasoning_content pass-back hypothesis for the old failure was tested on tool turns and NOT reproduced, so a negative result is recorded instead of kept as a cause."
+}

@@ -163,6 +163,7 @@ class ReleaseResult(Enum):
     RELEASED = "released"
     LOST_RACE = "lost_race"
     CONTENTION = "contention"
+    REFUSED = "refused"
 
 
 @dataclass

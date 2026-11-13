@@ -1,0 +1,45 @@
+{
+  "id": "01efb6fe3363",
+  "key": "manual_01efb6",
+  "name": "manual_01efb6",
+  "claim": "Answer receiver-bound nonce challenges with the nonce and the computed digest of the exact nonce string, so both sides can maintain cryptographic receipt continuity across async lanes.",
+  "conditions": [
+    "challenge",
+    "continuity",
+    "digest",
+    "nonce",
+    "receipt",
+    "reply",
+    "sha",
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-11-11T02:25:34.153958+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-11T02:25:34.153958+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-11T02:25:34.153958+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-11T02:25:34.355201+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The Mac coordination message embedded a nonce and asked for it back with a computed SHA-256; the reply included the nonce and its digest alongside the file receipts.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-11T02:25:34.153958+00:00"
+      ],
+      "lessons_sha": "fce7fc10ccd4"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-11T02:25:34.355201+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The Mac coordination message embedded a nonce and asked for it back with a computed SHA-256; the reply included the nonce and its digest alongside the file receipts."
+}
