@@ -1,0 +1,45 @@
+{
+  "id": "4c43736af62b",
+  "key": "manual_4c4373",
+  "name": "manual_4c4373",
+  "claim": "Discovery endpoints describe model-server endpoints, not peer control-plane or TLS addresses. Treat port 1234 only as the reader default when a discovery snapshot omits port; valid snapshots may specify another port in range. Read the endpoint field meaning and its supplied port before inferring a peer route, certificate identity or reachability result.",
+  "conditions": [
+    "certificate",
+    "default",
+    "discovery",
+    "endpoint",
+    "model-server",
+    "peer",
+    "port",
+    "tls"
+  ],
+  "evidence_ids": [
+    "2026-11-12T03:25:58.221296+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-12T03:25:58.221296+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-12T03:25:58.221296+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-12T03:27:13.138114+00:00",
+      "action": "graduated",
+      "reviewer": "cline-gemini-3.8-sweep-20261103",
+      "notes": "CodeRabbit PR 497 review found lesson_a37dc1716537 described port 1234 as an invariant although lan_discovery.py uses it only as the missing-port default and accepts valid supplied ports.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-12T03:25:58.221296+00:00"
+      ],
+      "lessons_sha": "fb74269e3103"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-12T03:27:13.138101+00:00",
+  "reviewer": "cline-gemini-3.8-sweep-20261103",
+  "rationale": "CodeRabbit PR 497 review found lesson_a37dc1716537 described port 1234 as an invariant although lan_discovery.py uses it only as the missing-port default and accepts valid supplied ports."
+}
