@@ -1,0 +1,40 @@
+{
+  "id": "ebeedf5b8f6d",
+  "key": "manual_ebeedf",
+  "name": "manual_ebeedf",
+  "claim": "lesson_fba38c2c3860 is an unlinked duplicate of the discovery-endpoint correction. The active rule is lesson_d5e1340cd7fd, which supersedes lesson_77b9e25def9a. Port 1234 is only the omitted-port default. Host addresses come from that host interfaces, peer addresses from the peer record, and a finding built on the wrong field is retracted. The episodic predecessor is lesson_a37dc1716537 at 2026-11-11T07:06:33Z.",
+  "conditions": [
+    "discovery",
+    "duplicate",
+    "retire"
+  ],
+  "evidence_ids": [
+    "2026-11-13T06:50:20.077476+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-13T06:50:20.077476+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-13T06:50:20.077476+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-13T06:50:20.391802+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Retires the unlinked duplicate lesson_fba38c2c3860 in favor of lesson_d5e1340cd7fd.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-13T06:50:20.077476+00:00"
+      ],
+      "lessons_sha": "c1d48fe1269e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-13T06:50:20.391793+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Retires the unlinked duplicate lesson_fba38c2c3860 in favor of lesson_d5e1340cd7fd."
+}
