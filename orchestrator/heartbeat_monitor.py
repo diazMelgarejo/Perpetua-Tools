@@ -242,9 +242,20 @@ async def cleanup_stale_claims(bus: GossipBus, max_age_seconds: int = 1800) -> l
         released_tasks.append(claim["task"])
 
     # Queue claims use task_claims rows as the atomic gate; legacy cleanup
-    # above only handles agent_claim/agent_release heartbeats.
+    # above only handles agent_claim/agent_release heartbeats. Pass each
+    # DEAD agent's last scored heartbeat as the L-1a liveness floor so a
+    # restart between classification and capture still refuses release.
     from orchestrator.coordination.task_queue import cleanup_stale_queue_claims
 
-    released_tasks.extend(await cleanup_stale_queue_claims(bus, dead_agents))
+    floors = {
+        aid: float(data["last_heartbeat_ts"])
+        for aid, data in agents.items()
+        if aid in dead_agents and data.get("last_heartbeat_ts") is not None
+    }
+    released_tasks.extend(
+        await cleanup_stale_queue_claims(
+            bus, dead_agents, liveness_floor_by_agent=floors
+        )
+    )
 
     return released_tasks

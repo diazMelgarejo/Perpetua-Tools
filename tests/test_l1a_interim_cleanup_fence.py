@@ -238,6 +238,51 @@ async def test_cleanup_still_releases_truly_dead_claim(
     assert state.get("retry_count", 0) == 0
 
 
+async def test_cleanup_refuses_when_pulse_after_classification_before_capture(
+    bus: GossipBus, fake_clock: dict
+) -> None:
+    """Classification-boundary floor: a presence pulse after DEAD scoring but
+    before capture must refuse release (captured_at alone would miss this)."""
+    t_class = 1005.0
+    task_id = await _claimed_task(bus, fake_clock)
+    await _agent_pulse(bus, fake_clock, "w", t_class + 1.0)
+    fake_clock["now"] = T_CAPTURE
+    captured = await capture_stale_queue_claims(
+        bus, {"w"}, liveness_floor_by_agent={"w": t_class}
+    )
+    assert captured[0]["liveness_floor_ts"] == t_class
+    released = await release_captured_queue_claims(bus, captured)
+    assert task_id not in released
+    assert await _claim_row(bus, task_id) == ("w", T_CLAIM)
+    assert await _task_event_count(bus, task_id, "task_failed") == 0
+
+
+async def test_agent_killed_after_capture_does_not_refuse_release(
+    bus: GossipBus, fake_clock: dict
+) -> None:
+    """agent_killed is death evidence, not renewed liveness: it must not trip
+    the presence floor and block a legitimate dead-claim release."""
+    task_id = await _claimed_task(bus, fake_clock)
+    fake_clock["now"] = T_CAPTURE
+    captured = await capture_stale_queue_claims(bus, {"w"})
+    fake_clock["now"] = T_PULSE
+    await bus.emit(
+        "heartbeat",
+        {"kind": "agent_killed", "agent_id": "w", "reason": "operator"},
+    )
+    released = await release_captured_queue_claims(bus, captured)
+    assert task_id in released
+    assert await _claim_row(bus, task_id) is None
+
+
+async def test_cleanup_returns_immediately_when_capture_empty(
+    bus: GossipBus, fake_clock: dict
+) -> None:
+    """Empty dead set / empty capture must not fold the full task history."""
+    assert await cleanup_stale_queue_claims(bus, set()) == []
+    assert await release_captured_queue_claims(bus, []) == []
+
+
 async def test_release_contention_keeps_row_intact(
     bus: GossipBus, fake_clock: dict, tmp_path: Path
 ) -> None:

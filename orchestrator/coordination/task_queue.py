@@ -360,13 +360,17 @@ async def release_claim_with_event(
     of being deleted silently.
 
     liveness_floor_ts, when given, refuses (REFUSED) when the agent has any
-    heartbeat event newer than that instant: the agent was classified dead
-    at capture time, so a pulse after the capture floor proves the worker
-    restarted and must keep its claim. The fence reads the heartbeat events
-    on the same connection and transaction as the DELETE; no liveness
-    signal is consulted across connections. A REFUSED outcome holds the
-    claim in place (no event is emitted); under continuing quiescence a
-    refused release is re-decided only through authorized recovery.
+    *presence* heartbeat newer than that instant (``agent_register``,
+    ``agent_pulse``, ``agent_claim``, ``agent_release``). ``agent_killed`` is
+    deliberately excluded: it marks death, not renewed liveness, and must not
+    block cleanup. Prefer the dead-classification boundary (last scored
+    heartbeat at DEAD decision time) as the floor so a worker that restarts
+    after classification but before capture still keeps its claim. The fence
+    reads those events on the same connection and transaction as the DELETE;
+    no liveness signal is consulted across connections. A REFUSED outcome
+    holds the claim in place (no event is emitted); under continuing
+    quiescence a refused release is re-decided only through authorized
+    recovery.
     """
     if (expected_claimed_at is not None or liveness_floor_ts is not None) and (
         expected_agent_id is None
@@ -402,7 +406,10 @@ async def release_claim_with_event(
                             live = await db.execute(
                                 "SELECT MAX(ts) FROM gossip "
                                 "WHERE event_type = 'heartbeat' "
-                                "AND json_extract(payload_json, '$.agent_id') = ?",
+                                "AND json_extract(payload_json, '$.agent_id') = ? "
+                                "AND json_extract(payload_json, '$.kind') IN "
+                                "('agent_register', 'agent_pulse', "
+                                "'agent_claim', 'agent_release')",
                                 (expected_agent_id,),
                             )
                             (max_pulse_ts,) = await live.fetchone()
@@ -763,19 +770,26 @@ async def queue_list(bus: GossipBus, phase_filter: Optional[str], priority_filte
 
 
 async def capture_stale_queue_claims(
-    bus: GossipBus, dead_agent_ids: set[str]
+    bus: GossipBus,
+    dead_agent_ids: set[str],
+    *,
+    liveness_floor_by_agent: Optional[dict[str, float]] = None,
 ) -> list[dict]:
     """Capture (phase 1) the queue-claim rows held by dead agents.
 
     Returns one record per row: ``task_id``, ``agent_id``, the row's
-    ``claimed_at`` at capture time, and ``captured_at`` -- the fence instant
-    the caller must pass back to ``release_captured_queue_claims``. The
-    capture is read-only; nothing is released or emitted here, so a worker
-    that restarts between capture and release is fenced by the release side.
+    ``claimed_at`` at capture time, ``captured_at`` (barrier stamp), and
+    ``liveness_floor_ts`` -- the floor the caller must pass back to
+    ``release_captured_queue_claims``. Prefer ``liveness_floor_by_agent``
+    from the DEAD classification (``last_heartbeat_ts`` at decision time)
+    so a restart pulse between classification and capture still refuses
+    release; when omitted, ``captured_at`` is the floor. The capture is
+    read-only; nothing is released or emitted here.
     """
     if not dead_agent_ids:
         return []
     captured_at = time.time()
+    floors = liveness_floor_by_agent or {}
     placeholders = ",".join("?" for _ in dead_agent_ids)
     async with bus.connect() as db:
         await db.execute(_CREATE_CLAIMS_TABLE)
@@ -791,6 +805,7 @@ async def capture_stale_queue_claims(
             "agent_id": agent_id,
             "claimed_at": claimed_at,
             "captured_at": captured_at,
+            "liveness_floor_ts": floors.get(agent_id, captured_at),
         }
         for task_id, agent_id, claimed_at in rows
     ]
@@ -801,14 +816,16 @@ async def release_captured_queue_claims(
 ) -> list[str]:
     """Release (phase 2) captured stale queue-claim rows under the L-1a fence.
 
-    Each release is fenced with the captured ``claimed_at`` and the capture
-    instant as the liveness floor: a worker that restarted and pulsed after
-    the capture keeps its claim (REFUSED), a row that changed owner or
-    claimed_at yields LOST_RACE, and a row whose task has no folded snapshot
-    is held (legacy-unverified, uncertain effects). Only rows actually
-    released are returned; refused, lost and held rows are left untouched
-    and no event is emitted for them.
+    Each release is fenced with the captured ``claimed_at`` and the row's
+    ``liveness_floor_ts`` (classification boundary, else capture instant): a
+    worker that restarted and pulsed after that floor keeps its claim
+    (REFUSED), a row that changed owner or claimed_at yields LOST_RACE, and
+    a row whose task has no folded snapshot is held (legacy-unverified,
+    uncertain effects). Only rows actually released are returned; refused,
+    lost and held rows are left untouched and no event is emitted for them.
     """
+    if not captured:
+        return []
     released: list[str] = []
     snapshots = await latest_task_snapshots(bus)
     for row in captured:
@@ -816,6 +833,7 @@ async def release_captured_queue_claims(
         task_state = snapshots.get(task_id)
         if not task_state:
             continue
+        floor = row.get("liveness_floor_ts", row["captured_at"])
         result = await release_claim_with_event(
             bus,
             task_id,
@@ -833,7 +851,7 @@ async def release_captured_queue_claims(
             },
             expected_agent_id=row["agent_id"],
             expected_claimed_at=row["claimed_at"],
-            liveness_floor_ts=row["captured_at"],
+            liveness_floor_ts=floor,
         )
         if result == ReleaseResult.RELEASED:
             released.append(task_id)
@@ -841,7 +859,10 @@ async def release_captured_queue_claims(
 
 
 async def cleanup_stale_queue_claims(
-    bus: GossipBus, dead_agent_ids: set[str]
+    bus: GossipBus,
+    dead_agent_ids: set[str],
+    *,
+    liveness_floor_by_agent: Optional[dict[str, float]] = None,
 ) -> list[str]:
     """Re-queue tasks whose atomic ``task_claims`` row is held by dead agents.
 
@@ -851,14 +872,21 @@ async def cleanup_stale_queue_claims(
     requeue event, which otherwise blocks every future ``queue claim``.
 
     L-1a fence: this one-shot wrapper runs the capture and release phases
-    back to back. The capture instant seeds the liveness floor, so a worker
-    that restarts after its DEAD classification but before (or during) the
-    release keeps its claim, and unknown-task rows are held. Callers that
+    back to back. Prefer the DEAD-classification ``last_heartbeat_ts`` as the
+    liveness floor (via ``liveness_floor_by_agent``) so a worker that restarts
+    after classification but before capture keeps its claim; when omitted the
+    capture instant is the floor. Unknown-task rows are held. Callers that
     need a maintenance-window barrier (plan section 7) call
     ``capture_stale_queue_claims`` and ``release_captured_queue_claims``
     separately around the window.
     """
-    captured = await capture_stale_queue_claims(bus, dead_agent_ids)
+    captured = await capture_stale_queue_claims(
+        bus,
+        dead_agent_ids,
+        liveness_floor_by_agent=liveness_floor_by_agent,
+    )
+    if not captured:
+        return []
     return await release_captured_queue_claims(bus, captured)
 
 
