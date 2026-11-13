@@ -1,0 +1,43 @@
+{
+  "id": "26dc6dcc9c35",
+  "key": "manual_26dc6d",
+  "name": "manual_26dc6d",
+  "claim": "Treat a text sanitizer as a specification: long token-like strings are refused outside receipt or commit context, so keep scenario names short and attach labelled byte counts and hashes. Matching hashes alone do not prove the receiver holds the intended stored bytes; for reciprocal delivery claims follow lesson_2488f7523384 (receiver-computed digest with digest form stated: raw-byte match is byte identity, LF-normalized match is normalized equivalence only).",
+  "conditions": [
+    "integrity-limit",
+    "labelled-hashes",
+    "reciprocal-delivery",
+    "sanitizer",
+    "short-names"
+  ],
+  "evidence_ids": [
+    "2026-11-13T05:53:04.713281+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-13T05:53:04.713281+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-13T05:53:04.713281+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-13T05:53:22.019743+00:00",
+      "action": "graduated",
+      "reviewer": "cursor-inline-comment-fixes-pr495",
+      "notes": "CodeRabbit PT#495 thread 4560113026: narrow lesson_8e65cf36b40e so matching hashes are not integrity proof; keep sanitizer guidance; point reciprocal delivery to lesson_2488f7523384.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-13T05:53:04.713281+00:00"
+      ],
+      "lessons_sha": "245c48178902"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-13T05:53:22.019717+00:00",
+  "reviewer": "cursor-inline-comment-fixes-pr495",
+  "rationale": "CodeRabbit PT#495 thread 4560113026: narrow lesson_8e65cf36b40e so matching hashes are not integrity proof; keep sanitizer guidance; point reciprocal delivery to lesson_2488f7523384.",
+  "supersedes": "lesson_8e65cf36b40e"
+}
