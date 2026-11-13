@@ -1,0 +1,43 @@
+{
+  "id": "fba38c2c3860",
+  "key": "manual_fba38c",
+  "name": "manual_fba38c",
+  "claim": "Discovery endpoints describe model-server endpoints, not peer control-plane or TLS addresses. Treat port 1234 only as the reader default when a discovery snapshot omits the port, not as a fixed port. Valid snapshots may specify another port. Take each host address from that host own interfaces and the peer address from the peer own record. Read the endpoint field meaning before reporting an address, certificate, or reachability mismatch. Retract a finding built on the wrong field. This correction names lesson_a37dc1716537, the episodic stage at 2026-11-11T07:06:33Z, and keeps the address-source and retraction guidance that lesson_77b9e25def9a dropped when it replaced lesson_5ca2698f33b2.",
+  "conditions": [
+    "default",
+    "discovery",
+    "endpoint",
+    "peer-record",
+    "port",
+    "retract"
+  ],
+  "evidence_ids": [
+    "2026-11-13T06:49:19.775350+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-13T06:49:19.775350+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-13T06:49:19.775350+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-13T06:49:19.983597+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "CodeRabbit PT#497 discussion r4559588446 and the follow-up on r4546272809: the episodic correction must name its predecessor, and structured recall must keep the interface, peer-record, and retraction rules.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-13T06:49:19.775350+00:00"
+      ],
+      "lessons_sha": "802ee3eba4a7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-13T06:49:19.983588+00:00",
+  "reviewer": "learn.py",
+  "rationale": "CodeRabbit PT#497 discussion r4559588446 and the follow-up on r4546272809: the episodic correction must name its predecessor, and structured recall must keep the interface, peer-record, and retraction rules."
+}

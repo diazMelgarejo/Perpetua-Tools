@@ -12,10 +12,10 @@ Run `python .agent/tools/list_candidates.py` for detail, then:
 
 ## Priority order (top 10)
 
-- **0992c6e96410** (priority=10.86, size=1, rejections=0) — Use isolated test ports and state rather than assuming default service ports are
-- **73d79fbe6645** (priority=10.86, size=1, rejections=0) — Inventory a measured Python environment without changing it: pip may intentional
-- **35de991f1652** (priority=10.86, size=1, rejections=0) — Verify service lifetime after its command runner exits; disable scheduler instal
-- **02c827dbcb5f** (priority=10.86, size=1, rejections=0) — Qualification runners should exclusively create private evidence and temporary d
+- **0992c6e96410** (priority=11.43, size=1, rejections=0) — Use isolated test ports and state rather than assuming default service ports are
+- **73d79fbe6645** (priority=11.43, size=1, rejections=0) — Inventory a measured Python environment without changing it: pip may intentional
+- **35de991f1652** (priority=11.43, size=1, rejections=0) — Verify service lifetime after its command runner exits; disable scheduler instal
+- **02c827dbcb5f** (priority=11.43, size=1, rejections=0) — Qualification runners should exclusively create private evidence and temporary d
 - **d18a82793512** (priority=10.29, size=1, rejections=0) — After an interrupted multi-agent run, re-read Gossip and live PR heads, preserve
 - **75e0f7fa40ee** (priority=10.29, size=1, rejections=0) — Treat provider wire IDs, CLI capabilities, governance permission and verified la
 - **9991c28c75b9** (priority=10.29, size=1, rejections=0) — A protected local ownership record must bind canonical repository metadata and a
