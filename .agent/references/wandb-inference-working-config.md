@@ -52,8 +52,10 @@ extra project argument, returned text and logged the call.
   that string is permission denied for this key.
 - Model id `deepseek-ai/DeepSeek-V4-Flash`. This endpoint returns 404.
 - The Cline CLI (`-P openai-compatible` with
-  `deepseek-ai/DeepSeek-V4.1-Flash-1017`). It returns `invalid model ID`
-  for the same key and model the OpenAI client completes.
+  `deepseek-ai/DeepSeek-V4.1-Flash-1017`) after the provider entry passes
+  the 3.0.74 `tokenSource` / `updatedAt` check in lesson_8e02c7fd391d.
+  If that check passes and Cline still returns `invalid model ID` for the
+  same key and model the OpenAI client completes, use the OpenAI client.
 - A raw parse of the env file. Only the shell-sourced value authenticates.
 
 ## Stick to this
