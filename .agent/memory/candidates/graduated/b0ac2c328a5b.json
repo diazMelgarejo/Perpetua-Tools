@@ -34,7 +34,7 @@
       "ts": "2026-11-12T02:52:01.488562+00:00",
       "action": "graduated",
       "reviewer": "learn.py",
-      "notes": "2026-11-12: six of the seven OpenRouter free ids in the free-tier stack were absent from the live list; thirteen free ids were live; ten candidates were probed free of charge; two Gemma models returned 429, one model returned 403 for non-agentic use, and six answered both requests. One chosen model states prompts may be retained, so send sanitized data only. A static test now fails if a dead id re-enters live code or config.",
+      "notes": "2026-11-12: six of the seven OpenRouter free ids in the free-tier stack were absent from the live list; thirteen free ids were live; ten candidates were probed free of charge; two Gemma models returned 429, one model returned 403 for non-agentic use, and six answered both requests. One chosen model states prompts may be retained, so send sanitized data only.",
       "provisional": false,
       "evidence_snapshot": [
         "2026-11-12T02:52:01.323841+00:00"
@@ -45,5 +45,5 @@
   "rejection_count": 0,
   "accepted_at": "2026-11-12T02:52:01.488551+00:00",
   "reviewer": "learn.py",
-  "rationale": "2026-11-12: six of the seven OpenRouter free ids in the free-tier stack were absent from the live list; thirteen free ids were live; ten candidates were probed free of charge; two Gemma models returned 429, one model returned 403 for non-agentic use, and six answered both requests. One chosen model states prompts may be retained, so send sanitized data only. A static test now fails if a dead id re-enters live code or config."
+  "rationale": "2026-11-12: six of the seven OpenRouter free ids in the free-tier stack were absent from the live list; thirteen free ids were live; ten candidates were probed free of charge; two Gemma models returned 429, one model returned 403 for non-agentic use, and six answered both requests. One chosen model states prompts may be retained, so send sanitized data only."
 }

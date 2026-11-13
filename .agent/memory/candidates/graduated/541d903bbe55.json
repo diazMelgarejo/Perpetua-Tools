@@ -1,0 +1,41 @@
+{
+  "id": "541d903bbe55",
+  "key": "manual_541d90",
+  "name": "manual_541d90",
+  "claim": "The active rule for discovery endpoint field meaning and port defaults is lesson_d5e1340cd7fd, which supersedes lesson_77b9e25def9a. lesson_b3a3b58a38e6 named lesson_77b9e25def9a and is retired. Port 1234 remains only the omitted-port default.",
+  "conditions": [
+    "canonical",
+    "discovery",
+    "endpoint",
+    "port"
+  ],
+  "evidence_ids": [
+    "2026-11-13T12:03:15.395618+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-13T12:03:15.395618+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-13T12:03:15.395618+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-13T12:03:27.831020+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "CodeRabbit on PR 499: lesson_b3a3b58a38e6 still names lesson_77b9e25def9a after lesson_d5e1340cd7fd became the accepted discovery rule.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-13T12:03:15.395618+00:00"
+      ],
+      "lessons_sha": "cadab8cfc676"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-13T12:03:27.831009+00:00",
+  "reviewer": "host-agent",
+  "rationale": "CodeRabbit on PR 499: lesson_b3a3b58a38e6 still names lesson_77b9e25def9a after lesson_d5e1340cd7fd became the accepted discovery rule."
+}
