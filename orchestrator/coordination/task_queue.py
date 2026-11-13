@@ -15,7 +15,7 @@ import os
 import re
 import time
 import uuid
-from typing import Optional
+from typing import Any, Optional
 
 from orchestrator.gossip_bus import GossipBus, GossipBusError
 from orchestrator.coordination.paths import current_worktree_label
@@ -318,6 +318,35 @@ async def try_atomic_claim(
     return ClaimResult.CONTENTION
 
 
+async def _agent_alive_in_txn(
+    bus: GossipBus, db: Any, agent_id: str, liveness_floor_ts: float
+) -> bool:
+    """Return True when the L-1a fence must hold ``agent_id``'s claim.
+
+    Reads lifecycle events on ``db`` -- the caller's open ``BEGIN IMMEDIATE``
+    connection -- so the decision and the DELETE share one transaction.
+    """
+    from orchestrator.heartbeat_monitor import (
+        _AGENT_LIVENESS_KINDS,
+        _fetch_heartbeat_events,
+        fold_agent_liveness,
+        is_live_activity,
+    )
+
+    events = await _fetch_heartbeat_events(
+        bus, _AGENT_LIVENESS_KINDS, agent_id, connection=db
+    )
+    if not events:
+        return False
+    record = fold_agent_liveness(events, agent_id).get(agent_id)
+    if record is not None and record["status"] != "DEAD":
+        return True
+    return any(
+        is_live_activity(ev["payload"]) and ev["ts"] > liveness_floor_ts
+        for ev in events
+    )
+
+
 async def release_claim_with_event(
     bus: GossipBus,
     task_id: str,
@@ -359,18 +388,24 @@ async def release_claim_with_event(
     re-claim or owner swap between capture and release is detected instead
     of being deleted silently.
 
-    liveness_floor_ts, when given, refuses (REFUSED) when the agent has any
-    *presence* heartbeat newer than that instant (``agent_register``,
-    ``agent_pulse``, ``agent_claim``, ``agent_release``). ``agent_killed`` is
-    deliberately excluded: it marks death, not renewed liveness, and must not
-    block cleanup. Prefer the dead-classification boundary (last scored
-    heartbeat at DEAD decision time) as the floor so a worker that restarts
-    after classification but before capture still keeps its claim. The fence
-    reads those events on the same connection and transaction as the DELETE;
-    no liveness signal is consulted across connections. A REFUSED outcome
-    holds the claim in place (no event is emitted); under continuing
-    quiescence a refused release is re-decided only through authorized
-    recovery.
+    liveness_floor_ts, when given, refuses (REFUSED) in two cases, both read
+    from the heartbeat events on the same connection and transaction as the
+    DELETE (no liveness signal is consulted across connections):
+
+    1. The agent is no longer DEAD under the canonical liveness fold
+       (``heartbeat_monitor.fold_agent_liveness``). This catches a worker
+       that restarted after its DEAD classification but *before* capture,
+       whose pulse is older than the capture floor and would otherwise
+       escape the fence.
+    2. The agent has live activity newer than the floor -- a restart after
+       capture. Only the agent's own activity counts: ``agent_killed`` and
+       cleanup's ``auto_released`` agent_release events are records *about*
+       a dead agent, not evidence it is alive (``is_live_activity``), and an
+       explicit kill keeps the agent DEAD until a later register or pulse.
+       An agent with no lifecycle events at all has no evidence of life and
+       is not refused on liveness grounds. A REFUSED outcome holds the
+    claim in place (no event is emitted); under continuing quiescence a
+    refused release is re-decided only through authorized recovery.
     """
     if (expected_claimed_at is not None or liveness_floor_ts is not None) and (
         expected_agent_id is None
@@ -402,23 +437,11 @@ async def release_claim_with_event(
                         ):
                             await db.rollback()
                             return ReleaseResult.LOST_RACE
-                        if liveness_floor_ts is not None:
-                            live = await db.execute(
-                                "SELECT MAX(ts) FROM gossip "
-                                "WHERE event_type = 'heartbeat' "
-                                "AND json_extract(payload_json, '$.agent_id') = ? "
-                                "AND json_extract(payload_json, '$.kind') IN "
-                                "('agent_register', 'agent_pulse', "
-                                "'agent_claim', 'agent_release')",
-                                (expected_agent_id,),
-                            )
-                            (max_pulse_ts,) = await live.fetchone()
-                            if (
-                                max_pulse_ts is not None
-                                and max_pulse_ts > liveness_floor_ts
-                            ):
-                                await db.rollback()
-                                return ReleaseResult.REFUSED
+                        if liveness_floor_ts is not None and await _agent_alive_in_txn(
+                            bus, db, expected_agent_id, liveness_floor_ts
+                        ):
+                            await db.rollback()
+                            return ReleaseResult.REFUSED
                     cursor = await db.execute(
                         "DELETE FROM task_claims WHERE task_id = ? AND agent_id = ?",
                         (task_id, expected_agent_id),
@@ -825,6 +848,7 @@ async def release_captured_queue_claims(
     lost and held rows are left untouched and no event is emitted for them.
     """
     if not captured:
+        # Nothing captured: skip the full task-history fold entirely.
         return []
     released: list[str] = []
     snapshots = await latest_task_snapshots(bus)
@@ -875,10 +899,11 @@ async def cleanup_stale_queue_claims(
     back to back. Prefer the DEAD-classification ``last_heartbeat_ts`` as the
     liveness floor (via ``liveness_floor_by_agent``) so a worker that restarts
     after classification but before capture keeps its claim; when omitted the
-    capture instant is the floor. Unknown-task rows are held. Callers that
-    need a maintenance-window barrier (plan section 7) call
-    ``capture_stale_queue_claims`` and ``release_captured_queue_claims``
-    separately around the window.
+    capture instant is the floor. The release transaction also rechecks
+    canonical liveness. Unknown-task rows are held. An empty capture returns
+    without folding task history. Callers that need a maintenance-window
+    barrier (plan section 7) call ``capture_stale_queue_claims`` and
+    ``release_captured_queue_claims`` separately around the window.
     """
     captured = await capture_stale_queue_claims(
         bus,
