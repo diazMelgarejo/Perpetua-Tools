@@ -1,0 +1,52 @@
+{
+  "id": "0867cf0ce768",
+  "key": "manual_0867cf",
+  "name": "manual_0867cf",
+  "claim": "Free-tier model lists rot: verify every fallback id against the router's public live model list, choose replacements per role from live ids by context, tool and reasoning support and vendor diversity, then confirm each with one plain and one tool-call request; skip candidates that are rate limited upstream (429, inconclusive) or restricted to agentic harnesses (403). There is no checked-in static test that fails when a dead free-tier id re-enters live code or config; the earlier claim in lesson_b0ac2c328a5b that such a guard exists is incorrect.",
+  "conditions": [
+    "call",
+    "dead-id",
+    "fallback",
+    "free",
+    "guard",
+    "limited",
+    "list",
+    "live",
+    "openrouter",
+    "probe",
+    "rate",
+    "replacement",
+    "static",
+    "tier",
+    "tool"
+  ],
+  "evidence_ids": [
+    "2026-11-13T12:08:44.576390+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-13T12:08:44.576390+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-13T12:08:44.576390+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-13T12:08:52.160853+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "CodeRabbit on PR 499: lesson_b0ac2c328a5b notes and rationale claimed a dead-id static test that does not exist. An earlier tip edit removed the sentence in place; restore the historical record and supersede instead per lesson_e773f6f957c2.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-13T12:08:44.576390+00:00"
+      ],
+      "lessons_sha": "c5d95df5f212"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-13T12:08:52.160840+00:00",
+  "reviewer": "host-agent",
+  "rationale": "CodeRabbit on PR 499: lesson_b0ac2c328a5b notes and rationale claimed a dead-id static test that does not exist. An earlier tip edit removed the sentence in place; restore the historical record and supersede instead per lesson_e773f6f957c2."
+}
