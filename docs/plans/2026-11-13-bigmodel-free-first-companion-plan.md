@@ -1,5 +1,15 @@
 # PLAN: PT companion for BigModel free-first qualification
 
+<!-- wandb-inference-working-config -->
+## W&B inference, not the Cline CLI
+
+When this guidance mentions Cline and the call is W&B inference,
+use the OpenAI client and Weave setup in
+[../../.agent/references/wandb-inference-working-config.md](../../.agent/references/wandb-inference-working-config.md).
+The Cline CLI returns `invalid model ID` for the model that client
+completes. Do not send a CoreWeave team/project string. Shell-source
+the operator W&B env file before reading `DEEPSEEK_V4_FLASH_WANDB`.
+
 Date: 2026-11-13
 Status: proposed; additive documentation only.
 Policy ID: bigmodel-free-first-2026-11-13-v1
