@@ -39,5 +39,6 @@
   "rejection_count": 0,
   "accepted_at": "2026-11-13T04:18:22.275354+00:00",
   "reviewer": "cursor-composer-steelman-20261113",
-  "rationale": "CodeRabbit PT#495 thread 4557491086: mtime-only CAS is unsafe; require shared lock or content-hash/revision CAS."
+  "rationale": "CodeRabbit PT#495 thread 4557491086: mtime-only CAS is unsafe; require shared lock or content-hash/revision CAS.",
+  "supersedes": "lesson_8d06f91c13bd"
 }
