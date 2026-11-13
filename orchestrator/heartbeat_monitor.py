@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Optional
+from typing import Any, Optional
 
 from orchestrator.gossip_bus import GossipBus
 
@@ -37,10 +37,28 @@ _AGENT_LIVENESS_KINDS = (
 _AGENT_CLAIM_KINDS = ("agent_claim", "agent_release")
 
 
+def is_live_activity(payload: dict) -> bool:
+    """Return True when a lifecycle event is evidence that the agent is alive.
+
+    ``agent_killed`` is a terminal transition recorded *about* the agent, and
+    an ``agent_release`` with ``auto_released`` set is emitted by cleanup on a
+    dead agent's behalf. Neither is activity by the agent itself, so neither
+    may refresh its last-activity time or fence a stale-claim release.
+    """
+    kind = payload.get("kind")
+    if kind in ("agent_register", "agent_claim", "agent_pulse"):
+        return True
+    if kind == "agent_release":
+        return not payload.get("auto_released")
+    return False
+
+
 async def _fetch_heartbeat_events(
     bus: GossipBus,
     kinds: tuple[str, ...],
     agent_id: Optional[str] = None,
+    *,
+    connection: Optional[Any] = None,
 ) -> list[dict]:
     """Fetch agent-lifecycle heartbeat events via SQL, not a bounded tail().
 
@@ -48,6 +66,10 @@ async def _fetch_heartbeat_events(
     agents' pulses) can push an agent's registration or latest pulse out of a
     size-bounded tail window, making live agents disappear from monitoring or
     open claims vanish from dashboards/cleanup.
+
+    ``connection``, when given, is an open aiosqlite connection whose current
+    transaction must observe the events (the L-1a release fence reads inside
+    its own ``BEGIN IMMEDIATE``); no second connection is opened.
     """
     kind_placeholders = ",".join("?" for _ in kinds)
     query = (
@@ -60,8 +82,12 @@ async def _fetch_heartbeat_events(
         query += " AND json_extract(payload_json, '$.agent_id') = ?"
         params.append(agent_id)
     query += " ORDER BY id ASC"
-    async with bus.connect() as db:
-        cursor = await db.execute(query, params)
+    if connection is None:
+        async with bus.connect() as db:
+            cursor = await db.execute(query, params)
+            rows = await cursor.fetchall()
+    else:
+        cursor = await connection.execute(query, params)
         rows = await cursor.fetchall()
     return [
         {
@@ -101,32 +127,14 @@ def liveness_status(last_activity_ts: float) -> tuple[str, int]:
         return "DEAD", int(seconds_since)
 
 
-async def find_agent_heartbeats(
-    bus: GossipBus, agent_id: Optional[str] = None
+def fold_agent_liveness(
+    events: list[dict], agent_id: Optional[str] = None
 ) -> dict[str, dict]:
-    """Collect latest heartbeat for each agent (or specific agent if agent_id given).
+    """Fold ordered lifecycle events into per-agent liveness records.
 
-    Registration begins a new liveness epoch. In particular, a fresh
-    ``agent_register`` clears any prior explicit kill marker so a restarted
-    process is assessed from its current events rather than remaining DEAD
-    forever because of historical state.
-
-    Returns dict mapping agent_id -> {
-        'last_heartbeat_ts': float,
-        'status': str,  # ACTIVE/IDLE/STALLED/DEAD
-        'work_in_progress': str|None,
-        'uptime_seconds': int,
-        'last_registration': dict,  # latest register event (historical snapshot)
-        'current_worktree': str|None,  # worktree from the MOST RECENT event
-            # that carried one (register or pulse) -- do not read
-            # last_registration['worktree'] for display purposes, it freezes
-            # at whatever worktree was active on first registration and never
-            # updates if the agent later moves without re-registering. See
-            # docs/next/2026-07-19-heartbeat-daemon-design.md Problem 1.
-    }
+    Pure function shared by ``find_agent_heartbeats`` and the in-transaction
+    L-1a release fence, so both apply one canonical definition of DEAD.
     """
-    events = await _fetch_heartbeat_events(bus, _AGENT_LIVENESS_KINDS, agent_id)
-
     agent_data: dict[str, dict] = {}
     last_ts_per_agent: dict[str, float] = {}
 
@@ -147,12 +155,17 @@ async def find_agent_heartbeats(
                 'registration_ts': None,
                 'killed_reason': None,
                 'current_worktree': None,
+                'last_event_ts': None,
             }
 
-        # Update last_heartbeat_ts (track most recent for each agent).
-        # Events are iterated oldest-first, so every later event for the same
-        # agent supersedes the previous timestamp.
-        last_ts_per_agent[agent] = ev["ts"]
+        agent_data[agent]['last_event_ts'] = ev["ts"]
+
+        # Update last_heartbeat_ts from the agent's own activity only.
+        # Events are iterated oldest-first, so every later live event for the
+        # same agent supersedes the previous timestamp. Kill markers and
+        # cleanup's auto-releases are not activity (see is_live_activity).
+        if is_live_activity(p):
+            last_ts_per_agent[agent] = ev["ts"]
 
         # Track current_worktree from ANY event that carries one (register
         # or pulse), independent of last_registration -- this is the fresh
@@ -182,7 +195,11 @@ async def find_agent_heartbeats(
             agent_data[agent]['killed_reason'] = None
 
     for agent, data in agent_data.items():
-        last_ts = last_ts_per_agent.get(agent, time.time())
+        last_ts = last_ts_per_agent.get(agent)
+        if last_ts is None:
+            # Only non-activity events exist (e.g. a bare kill marker): fall
+            # back to the newest event so the field stays a timestamp.
+            last_ts = data['last_event_ts']
         status, _ = liveness_status(last_ts)
         if data.get('killed_reason') is not None:
             status = "DEAD"
@@ -192,6 +209,39 @@ async def find_agent_heartbeats(
         data['uptime_seconds'] = int(time.time() - reg_ts) if reg_ts else 0
 
     return agent_data
+
+
+async def find_agent_heartbeats(
+    bus: GossipBus,
+    agent_id: Optional[str] = None,
+    *,
+    connection: Optional[Any] = None,
+) -> dict[str, dict]:
+    """Collect latest heartbeat for each agent (or specific agent if agent_id given).
+
+    Registration begins a new liveness epoch. In particular, a fresh
+    ``agent_register`` clears any prior explicit kill marker so a restarted
+    process is assessed from its current events rather than remaining DEAD
+    forever because of historical state.
+
+    Returns dict mapping agent_id -> {
+        'last_heartbeat_ts': float,
+        'status': str,  # ACTIVE/IDLE/STALLED/DEAD
+        'work_in_progress': str|None,
+        'uptime_seconds': int,
+        'last_registration': dict,  # latest register event (historical snapshot)
+        'current_worktree': str|None,  # worktree from the MOST RECENT event
+            # that carried one (register or pulse) -- do not read
+            # last_registration['worktree'] for display purposes, it freezes
+            # at whatever worktree was active on first registration and never
+            # updates if the agent later moves without re-registering. See
+            # docs/next/2026-07-19-heartbeat-daemon-design.md Problem 1.
+    }
+    """
+    events = await _fetch_heartbeat_events(
+        bus, _AGENT_LIVENESS_KINDS, agent_id, connection=connection
+    )
+    return fold_agent_liveness(events, agent_id)
 
 
 async def find_open_claims(bus: GossipBus) -> list[dict]:
