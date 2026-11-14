@@ -39,7 +39,7 @@ The dry-run plan records these bounds:
 
 - mechanism: bi-level, the default
 - tri-level: optional, and not started
-- MetaResearcher: a draft outside this bridge
+- MetaResearcher: seats adopted in orama, not started by this bridge
 - v2 migration: pending
 - serving grant: off
 

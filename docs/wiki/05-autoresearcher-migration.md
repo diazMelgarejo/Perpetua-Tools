@@ -143,7 +143,7 @@ It does not start a runner, and it does not call a v2 repository.
         "upstream_secondary": str,
         "mechanism": "bilevel",
         "tri_level": "optional-not-started",
-        "metaresearcher": "draft-outside-bridge",
+        "metaresearcher": "adopted-not-started",
         "v2_migration": "pending",
         "serving_grant": False,
     },

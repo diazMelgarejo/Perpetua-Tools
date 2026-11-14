@@ -104,7 +104,7 @@ AUTORESEARCH_UPSTREAM_SECONDARY_PIN: str = "c92bee55ebc339e8b1501f6b5c9cfb54835a
 # Biafra bounds recorded by the dry-run plan. v2 migration stays pending.
 MECHANISM_DEFAULT: str = "bilevel"
 TRI_LEVEL_STATUS: str = "optional-not-started"
-METARESEARCHER_STATUS: str = "draft-outside-bridge"
+METARESEARCHER_STATUS: str = "adopted-not-started"
 V2_MIGRATION_STATUS: str = "pending"
 
 SSH_TIMEOUT: int = int(os.environ.get("SSH_TIMEOUT", "90"))
@@ -319,6 +319,8 @@ def plan_autoresearch_goal(
     if orama_enabled:
         notes.append("orama-system may refine methodology after this Perpetua state+goal plan")
     notes.append("bi-level is the default; tri-level does not start in this plan")
+    notes.append("the outer seat is dual-mode and this bridge starts neither mode")
+    notes.append("a rewrite of the outer seat starts only after the operator gate")
     notes.append("v2 migration, including POST /autoresearch/plan, remains pending")
     notes.append("no serving grant and no new bilevel or tri-level runner")
     return AutoresearchPlan(
