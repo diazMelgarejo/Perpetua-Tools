@@ -381,6 +381,7 @@ class TestAutoplanDryRun:
         assert result["plan"]["tri_level"] == "optional-not-started"
         assert result["plan"]["metaresearcher"] == "adopted-not-started"
         assert any("starts neither mode" in note for note in result["plan"]["notes"])
+        assert any("does not call the launcher" in note for note in result["plan"]["notes"])
         assert result["plan"]["v2_migration"] == "pending"
         assert result["plan"]["serving_grant"] is False
         plugin.assert_not_called()
