@@ -1,0 +1,8 @@
+---
+description: Let a running agent finish before a later instruction applies
+alwaysApply: true
+---
+
+New instructions are not retroactive. Let every running agent finish the task it was given.
+Queue a later instruction until that agent finishes. Stop or redirect a running agent only when
+the user explicitly says to stop that agent or to change its current task.
