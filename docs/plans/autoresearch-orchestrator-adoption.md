@@ -33,6 +33,9 @@ seat. That role is agent-neutral and is drafted at
 (`bin/agents/autoresearcher`) has no model id on its soul card. Its operating doctrine prefers the
 Claude Code plugin, and a dry-run must not call a paid model.
 
+This branch is the documentation of that split. It does not add a bilevel runner, a tri-level
+runner, or a serving grant. The plugin bridge and the single-track loop stay as they are.
+
 ## Adoption Mode
 
 Adopt both forms, like ECC:
