@@ -278,6 +278,22 @@ async def cleanup_stale_claims(bus: GossipBus, max_age_seconds: int = 1800) -> l
 
     released_tasks = []
     for claim in stale:
+        # Recheck after the snapshot: a worker can restart (or replace the
+        # claim) between classification and emit. The task_claims path already
+        # refuses that race; skip unless this exact claim is still held by an
+        # agent that is still DEAD.
+        live_agents = await find_agent_heartbeats(bus)
+        live_claims = await find_open_claims(bus)
+        current = live_agents.get(claim["agent_id"])
+        still_dead = current is not None and current.get("status") == "DEAD"
+        same_claim = any(
+            c.get("task") == claim["task"]
+            and c.get("agent_id") == claim["agent_id"]
+            and c.get("claim_ts") == claim["claim_ts"]
+            for c in live_claims
+        )
+        if not still_dead or not same_claim:
+            continue
         await bus.emit(
             "heartbeat",
             {
