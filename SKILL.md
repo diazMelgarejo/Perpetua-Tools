@@ -497,3 +497,9 @@ echo "OMNIROUTE: $_OMNIROUTE"
 - Add OmniRoute to `start.sh`, `setup_macos.py`, or any bootstrap path
 - Fail, warn, or degrade visibly when OmniRoute is absent or rate-limited
 - Retry more than once per session if start fails
+
+## Lesson supersession
+
+A narrow supersession hides every claim in the old lesson, not only the claim
+it corrects. Read the old lesson before treating the new row as the whole rule.
+Copy forward every claim that should remain visible.
