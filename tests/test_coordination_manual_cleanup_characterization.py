@@ -225,28 +225,35 @@ async def test_pulse_after_kill_revives_and_prevents_release(bus: GossipBus) -> 
     assert await cleanup_stale_claims(bus) == []
 
 
-async def test_liveness_is_not_rechecked_at_release_time(
+async def test_legacy_cleanup_rechecks_liveness_before_emit(
     bus: GossipBus, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Known gap: a pulse landing after classification does not stop release.
-
-    Liveness is read once; the legacy release is a plain append with no
-    conditional check against the holder's latest heartbeat. D1 assigns
-    expiry/fencing checks inside an authoritative transaction to v2 only.
-    """
+    """Per-claim recheck must refuse auto-release when the holder revived."""
     await _legacy_claim(bus, "late-pulser", "task-late")
     _advance_past_dead_threshold(monkeypatch)
-    real_find_open_claims = heartbeat_monitor.find_open_claims
+    real_heartbeats = heartbeat_monitor.find_agent_heartbeats
+    hb_calls = {"n": 0}
 
-    async def pulse_then_find(target_bus: GossipBus) -> list[dict]:
-        """Renew presence after stale classification but before claim lookup."""
-        await target_bus.emit("heartbeat", {"kind": "agent_pulse", "agent_id": "late-pulser"})
-        return await real_find_open_claims(target_bus)
+    async def pulse_before_second_heartbeat(
+        target_bus: GossipBus,
+        agent_id: str | None = None,
+        *,
+        connection: object | None = None,
+    ) -> dict[str, dict]:
+        """Renew presence after initial classification, before release emit."""
+        hb_calls["n"] += 1
+        if hb_calls["n"] >= 2:
+            await target_bus.emit(
+                "heartbeat",
+                {"kind": "agent_pulse", "agent_id": "late-pulser"},
+            )
+        return await real_heartbeats(target_bus, agent_id, connection=connection)
 
-    monkeypatch.setattr(heartbeat_monitor, "find_open_claims", pulse_then_find)
-    assert await cleanup_stale_claims(bus) == ["task-late"]
+    monkeypatch.setattr(heartbeat_monitor, "find_agent_heartbeats", pulse_before_second_heartbeat)
+    assert await cleanup_stale_claims(bus) == []
     agents = await find_agent_heartbeats(bus, "late-pulser")
     assert agents["late-pulser"]["status"] == "ACTIVE"
+    assert [c["task"] for c in await find_open_claims(bus)] == ["task-late"]
 
 
 async def test_partial_failure_keeps_earlier_releases_and_propagates(

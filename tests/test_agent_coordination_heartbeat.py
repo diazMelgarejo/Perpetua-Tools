@@ -9,6 +9,7 @@ import asyncio
 import pytest
 import time
 
+from orchestrator import heartbeat_monitor
 from orchestrator.heartbeat_monitor import (
     liveness_status,
     find_agent_heartbeats,
@@ -444,6 +445,67 @@ async def test_cleanup_stale_claims_dead_agent(bus):
     # by checking that recent claims don't get released
     released = await cleanup_stale_claims(bus)
     assert released == []  # Recently claimed, not dead yet
+
+
+@pytest.mark.asyncio
+async def test_cleanup_stale_claims_skips_restart_before_release(bus, monkeypatch):
+    """Do not auto-release when the holder restarts between snapshot and emit."""
+    agent_id = "restarted-agent"
+    task = "task-restart"
+    now = time.time()
+    dead_agents = {
+        agent_id: {
+            "status": "DEAD",
+            "last_heartbeat_ts": now - (LIVENESS_STALLED_SEC + 10),
+        }
+    }
+    alive_agents = {
+        agent_id: {
+            "status": "ACTIVE",
+            "last_heartbeat_ts": now,
+        }
+    }
+    snapshot_claim = {
+        "agent_id": agent_id,
+        "task": task,
+        "claim_ts": 1000.0,
+        "worktree": "main@/path",
+        "notes": "",
+    }
+    replacement_claim = {
+        **snapshot_claim,
+        "claim_ts": 2000.0,
+    }
+    hb_calls = {"n": 0}
+    claim_calls = {"n": 0}
+
+    async def fake_heartbeats(_bus, _agent_id=None, *, connection=None):
+        hb_calls["n"] += 1
+        if hb_calls["n"] == 1:
+            return dead_agents
+        return alive_agents
+
+    async def fake_claims(_bus):
+        claim_calls["n"] += 1
+        if claim_calls["n"] == 1:
+            return [snapshot_claim]
+        return [replacement_claim]
+
+    monkeypatch.setattr(heartbeat_monitor, "find_agent_heartbeats", fake_heartbeats)
+    monkeypatch.setattr(heartbeat_monitor, "find_open_claims", fake_claims)
+
+    released = await cleanup_stale_claims(bus)
+    assert released == []
+    assert hb_calls["n"] >= 2
+    assert claim_calls["n"] >= 2
+
+    events = await heartbeat_monitor._fetch_heartbeat_events(bus, ("agent_release",))
+    auto_released = [
+        ev
+        for ev in events
+        if ev["payload"].get("auto_released") and ev["payload"].get("task") == task
+    ]
+    assert auto_released == []
 
 
 @pytest.mark.asyncio

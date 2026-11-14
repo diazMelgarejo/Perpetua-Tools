@@ -1,0 +1,62 @@
+{
+  "id": "19c9c0ff2f74",
+  "key": "manual_19c9c0",
+  "name": "manual_19c9c0",
+  "claim": "Orama tests/test_cline_provider_templates.py test_live_code_and_config_hold_no_dead_deepseek_ids guards dead DeepSeek ids as of 2026-11-15. lesson_0867cf0ce768 stays true for Perpetua-Tools, which still has no such checked-in guard. The BigModel free-first chain remains a proposed plan, not a runtime policy.",
+  "conditions": [
+    "bigmodel",
+    "chain",
+    "checked-in",
+    "dead",
+    "deepseek",
+    "free-first",
+    "guard",
+    "guards",
+    "ids",
+    "lesson_0867cf0ce768",
+    "orama",
+    "perpetua-tools",
+    "plan",
+    "policy",
+    "proposed",
+    "remains",
+    "runtime",
+    "stays",
+    "still",
+    "such",
+    "test_cline_provider_templates",
+    "test_live_code_and_config_hold_no_dead_deepseek_ids",
+    "tests",
+    "true",
+    "which"
+  ],
+  "evidence_ids": [
+    "2026-11-14T21:41:05.533523+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-14T21:41:05.533523+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-14T21:41:05.533523+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-14T21:41:10.218894+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Scoped correction after the 2026-11-15 provider review. Orama now has tests/test_cline_provider_templates.py::test_live_code_and_config_hold_no_dead_deepseek_ids. That guard is Orama-only. Perpetua-Tools still has none. The BigModel free-first chain remains the proposed plan, not a checked-in runtime policy.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-14T21:41:05.533523+00:00"
+      ],
+      "lessons_sha": "69e3325dc8db"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-14T21:41:10.218884+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Scoped correction after the 2026-11-15 provider review. Orama now has tests/test_cline_provider_templates.py::test_live_code_and_config_hold_no_dead_deepseek_ids. That guard is Orama-only. Perpetua-Tools still has none. The BigModel free-first chain remains the proposed plan, not a checked-in runtime policy."
+}
