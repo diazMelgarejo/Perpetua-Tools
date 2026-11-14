@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "policy_id": "bigmodel-free-first-2026-11-13-v1",
+  "status": "unimplemented",
+  "implementation_status": "unimplemented",
+  "reviewed_at": "2026-11-13",
+  "note": "Loading this file does not authorize spend, fallback, or a profile switch.",
+  "applicable_endpoint": {
+    "description": "BigModel OpenAI-compatible chat completions host as documented",
+    "base_url": "https://open.bigmodel.cn/api/paas/v4",
+    "parser_rule": "Do not invent a second URL parser. Unrecognized endpoint overrides fail closed and do not inherit free status."
+  },
+  "financial_mode": "free_only",
+  "paid_fallback_default": false,
+  "sources_retrieved_at": "2026-11-13",
+  "source_urls": [
+    "https://docs.bigmodel.cn/cn/guide/start/pricing",
+    "https://docs.bigmodel.cn/cn/guide/start/model-overview",
+    "https://docs.bigmodel.cn/cn/guide/models/free/glm-4.7-flash",
+    "https://docs.bigmodel.cn/cn/guide/models/free/glm-z1-flash",
+    "https://docs.bigmodel.cn/cn/guide/models/text/glm-4.5",
+    "https://docs.bigmodel.cn/api-reference/模型-api/对话补全",
+    "https://docs.cline.bot/cline-cli/overview"
+  ],
+  "ordered_candidates": [
+    {
+      "order": 1,
+      "model_id": "glm-4.7-flash",
+      "pricing_status": "free",
+      "role": "primary coding/text",
+      "reasoning": {
+        "control": "thinking.type",
+        "reasoning_effort": "not_applicable"
+      },
+      "qualification_status": "unqualified"
+    },
+    {
+      "order": 2,
+      "model_id": "glm-4.5-flash",
+      "pricing_status": "free",
+      "role": "secondary text",
+      "reasoning": {
+        "control": "thinking.type",
+        "reasoning_effort": "not_applicable"
+      },
+      "qualification_status": "unqualified"
+    },
+    {
+      "order": 3,
+      "model_id": "glm-4-flash-250414",
+      "pricing_status": "free",
+      "role": "basic text",
+      "reasoning": {
+        "reasoning_effort": "not_applicable"
+      },
+      "qualification_status": "unqualified"
+    },
+    {
+      "order": 4,
+      "model_id": "glm-5.3-flash",
+      "pricing_status": "paid",
+      "role": "paid_last_resort",
+      "reasoning": {
+        "explicit": "high",
+        "else_after_reviewed_qualification": "low",
+        "never": ["medium", "omit", "max", "xhigh"],
+        "documented_default": "max",
+        "omit_rule": "Never omit reasoning_effort; the documented default is max."
+      },
+      "paid_gate_required": true,
+      "qualification_status": "unqualified"
+    }
+  ],
+  "retired_models": {
+    "models": ["glm-z1-flash"],
+    "note": "FlashX variants, glm-4.7 (non-flash), and generic aliases are excluded."
+  },
+  "pricing": {
+    "unknown_is_never_zero": true,
+    "cache_storage": "Cache storage is temporarily free and must not be treated as a permanent free inference grant.",
+    "invalidation": "An expired temporary offer never converts free_only traffic into paid traffic. Stale pricing freezes promotion until a reviewed refresh that does not spend on inference."
+  },
+  "eligibility_requirements": [
+    "Eligible means active, price-verified, policy-compatible, within context and output limits, and qualified for required tools and modality on the exact execution lane.",
+    "Unknown terms or capability are not free exhausted; block or qualify first.",
+    "A skipped ineligible candidate needs an evidence-backed reason, not an attempt.",
+    "Do not silently truncate a larger-context task onto a smaller-context fallback."
+  ],
+  "context_output_limits": "Unknown context or output limits block eligibility. Do not silently truncate a task to fit a smaller fallback.",
+  "modality": "This ordered list is text and coding only. Vision models are not members of this list and are not automatic text fallbacks.",
+  "lane_qualification": {
+    "status": "blocked",
+    "note": "No lane is qualified. Direct API, Cline, and PT SDK results stay separate and are not recorded here."
+  },
+  "error_classes": [
+    {
+      "id": "success",
+      "rule": "Valid completion and required task checks pass. Stop the chain."
+    },
+    {
+      "id": "model_unavailable",
+      "rule": "Verified model retired or unavailable. Skip to the next eligible free candidate."
+    },
+    {
+      "id": "capability_ineligible",
+      "rule": "Proven required capability absent. Record it and continue to the next eligible free candidate."
+    },
+    {
+      "id": "rejected",
+      "rule": "Definitive non-executing model-specific rejection. Correct a known schema or continue to the next free candidate."
+    },
+    {
+      "id": "billing_or_entitlement_blocked",
+      "http_status": 429,
+      "provider_code": "1113",
+      "rule": "HTTP 429 code 1113 means insufficient balance or no usable package. No retry and no paid escalation."
+    },
+    {
+      "id": "credentials_blocked",
+      "rule": "Authentication or permission error. Halt the task."
+    },
+    {
+      "id": "throttled",
+      "rule": "Ordinary documented rate limit. Bounded backoff only. No account cycling."
+    },
+    {
+      "id": "request_invalid_or_unknown",
+      "rule": "Generic 400. Inspect it and do not infer effort incompatibility."
+    },
+    {
+      "id": "outcome_unknown",
+      "rule": "Timeout, network interruption, or 5xx. Contain and reconcile. No blind replay."
+    },
+    {
+      "id": "recovery_required",
+      "rule": "Partial stream, tool effects, or unknown cancellation. Stop automatic fallback."
+    },
+    {
+      "id": "safety_blocked",
+      "rule": "Safety or policy rejection. Do not evade it by switching models."
+    },
+    {
+      "id": "evaluation_failed",
+      "rule": "Deterministic failure on a clean evaluation fixture. Next free candidate only under an approved policy."
+    }
+  ],
+  "retry": {
+    "qualification_inference_retries": 0,
+    "documented_throttle_retries_max": 1,
+    "account_cycling": false,
+    "note": "Zero inference retries during qualification; at most one documented throttle retry later. No account cycling."
+  },
+  "tool_billing": {
+    "free_only_disabled": [
+      "provider-hosted web search",
+      "paid retrieval",
+      "knowledge services"
+    ],
+    "note": "Provider-hosted web search, paid retrieval, and knowledge services are disabled in free_only."
+  },
+  "paid_gate": [
+    "Explicit per-run operator authorization for glm-5.3-flash and this endpoint.",
+    "Positive finite CNY budget, token/request limits and task deadline.",
+    "Complete free-candidate ledger or approved ineligibility exclusions.",
+    "Account entitlement resolved; unresolved 1113 blocks paid dispatch.",
+    "Fresh applicable rates and a conservative token-cost reservation.",
+    "No outstanding ambiguous request consuming an unaccounted reservation."
+  ],
+  "interfaces_not_implemented": {
+    "select_next_candidate": "Choose the next eligible candidate from this ordered list using task requirements and the evidence ledger, without contacting a provider.",
+    "classify_provider_result": "Map an HTTP status, structured provider code, and execution state to one error class in this policy.",
+    "authorize_paid_candidate": "Allow glm-5.3-flash only after every paid_gate string in this policy is satisfied for that run.",
+    "build_provider_request": "Build one provider request that follows the selected candidate's reasoning rules and never sends max or xhigh."
+  }
+}
