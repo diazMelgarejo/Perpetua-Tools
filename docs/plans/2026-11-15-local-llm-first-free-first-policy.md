@@ -187,5 +187,7 @@ by this file.
 implement the selector. `route_task` keeps the local chain, appends the
 automatic free chain, and ends at `openrouter/free`. Tier 5 stays out unless
 `paid_authorization` is a per-run human approval with a positive finite
-budget. Qualification lanes stay blocked. Classifying every model and refusing
-a gate "no opinion" is still not done.
+budget. Qualification lanes stay blocked. Every `config/models.yml` model
+now has a frugality tier, and `route_task` drops a model with no tier.
+`consult_gate` still has no opinion for a missing tier so the oramasys hop
+keeps its historical fall-through.
