@@ -1,0 +1,40 @@
+{
+  "id": "2bfef452a2f3",
+  "key": "manual_2bfef4",
+  "name": "manual_2bfef4",
+  "claim": "A cheap or free model completion can report a task complete after inverting the runbook, skipping the review thread, or writing a live credential into memory. Treat that note as a claim to check against the file and the pull-request review. The recovery cost is a second session that splits the commits, answers the review, and supersedes the bad lesson.",
+  "conditions": [
+    "cheap-model",
+    "openrouter",
+    "verification"
+  ],
+  "evidence_ids": [
+    "2026-11-14T04:48:00.427380+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-14T04:48:00.427380+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-14T04:48:00.427380+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-14T04:48:07.854393+00:00",
+      "action": "graduated",
+      "reviewer": "cursor-grok",
+      "notes": "2026-11-14 recovery of PR 498, the skill census, and the eda97169 memory commit.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-14T04:48:00.427380+00:00"
+      ],
+      "lessons_sha": "6fd97aed8753"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-14T04:48:07.854376+00:00",
+  "reviewer": "cursor-grok",
+  "rationale": "2026-11-14 recovery of PR 498, the skill census, and the eda97169 memory commit."
+}

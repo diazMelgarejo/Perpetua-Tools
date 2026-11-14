@@ -1,0 +1,41 @@
+{
+  "id": "ce8ed8b840d1",
+  "key": "manual_ce8ed8",
+  "name": "manual_ce8ed8",
+  "claim": "Before publishing an unpublished memory branch, rebuild the lesson log as the origin/main byte prefix plus only new rows. Do not republish a rewrite of existing rows or a false claim that an earlier commit was replaced.",
+  "conditions": [
+    "append-only",
+    "lessons",
+    "memory",
+    "publish"
+  ],
+  "evidence_ids": [
+    "2026-11-14T06:30:47.785246+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-14T06:30:47.785246+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-14T06:30:47.785246+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-14T06:30:47.962258+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The second unpublished memory commit reserialized existing rows and said it replaced its parent, while that parent remained in history.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-14T06:30:47.785246+00:00"
+      ],
+      "lessons_sha": "7434b59191de"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-14T06:30:47.962244+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The second unpublished memory commit reserialized existing rows and said it replaced its parent, while that parent remained in history."
+}

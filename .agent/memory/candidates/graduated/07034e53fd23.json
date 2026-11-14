@@ -1,0 +1,40 @@
+{
+  "id": "07034e53fd23",
+  "key": "manual_07034e",
+  "name": "manual_07034e",
+  "claim": "Pre-Biafra AutoResearch work is the inner loop: Karpathy keep-or-discard, the uditgoenka plugin bridge, Scout's two modes, doc 25's plan-test-build-review cycle, and the ClinePass controller. Biafra is the outer seat. She reads that loop's trace and rewrites the search rules, then reverts the rewrite if the metric drops. That is Level 2 mechanism research in Qu and Lu arXiv 2603.23420, and organizational meta-learning in Visser's sense. It is not Bateson's deutero-learning, and it is not gradient meta-learning.",
+  "conditions": [
+    "biafra",
+    "inner-loop",
+    "metaresearcher"
+  ],
+  "evidence_ids": [
+    "2026-11-14T04:29:13.164274+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-14T04:29:13.164274+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-14T04:29:13.164274+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-14T04:29:13.350993+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-14 classification after reading Qu and Lu arXiv 2603.23420 and Visser 2007. Pre-Biafra AutoResearch stays the task loop. Biafra rewrites that loop's search rules.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-14T04:29:13.164274+00:00"
+      ],
+      "lessons_sha": "d01183c3dcb7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-14T04:29:13.350984+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-14 classification after reading Qu and Lu arXiv 2603.23420 and Visser 2007. Pre-Biafra AutoResearch stays the task loop. Biafra rewrites that loop's search rules."
+}

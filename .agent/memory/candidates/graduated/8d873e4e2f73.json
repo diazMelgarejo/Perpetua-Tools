@@ -1,0 +1,40 @@
+{
+  "id": "8d873e4e2f73",
+  "key": "manual_8d873e",
+  "name": "manual_8d873e",
+  "claim": "For W&B DeepSeek, summon Cline with launch_cline_wandb.py. A second switch is not a no-op when tokenSource is a custom label or updatedAt is not millisecond UTC with a trailing Z. ClinePass DeepSeek stays on its own wrapper and must not be sent through that launcher. On one identical-prompt probe, Cline answered four tasks and was faster on each. Wanda matched the format on three and returned a second_largest function that stopped mid-line.",
+  "conditions": [
+    "cline",
+    "launcher",
+    "wandb"
+  ],
+  "evidence_ids": [
+    "2026-11-14T04:29:13.774238+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-14T04:29:13.774238+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-14T04:29:13.774238+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-14T04:29:13.948679+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-13 launcher fix and identical-prompt probe on orama-system pull request 496 commit a28138c0.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-14T04:29:13.774238+00:00"
+      ],
+      "lessons_sha": "d76ef53b52db"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-14T04:29:13.948664+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-13 launcher fix and identical-prompt probe on orama-system pull request 496 commit a28138c0."
+}
