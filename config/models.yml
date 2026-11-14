@@ -421,3 +421,139 @@ models:
     notes: "Evaluator + Orchestrator agents for autoresearch swarm. Reads log.txt, writes swarm_state.md."
     # frugality_tier=1 (local_oss): Ollama on win-rtx3080, LAN-local.
     frugality_tier: 1
+
+  # ── LOCAL: hardware-policy ids that models.yml had not registered ─────────
+  # 5080, 3080, qwen*, gemma*, and diffusion* are on-machine Windows or macOS
+  # LLMs (tier 1). Role local-classified is not on any route, so route_task
+  # does not gain a new dispatch candidate. The id is here so a tier lookup
+  # is not empty.
+  - name: "qwen3.5:9b-mlx"
+    backend: ollama
+    device: mac-studio
+    host: "http://127.0.0.1"
+    port: 11434
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: mac-local
+    frugality_tier: 1
+  - name: qwen3.5-9b-mlx-4bit
+    backend: mlx
+    device: mac-studio
+    host: "http://127.0.0.1"
+    port: 8081
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: mac-local
+    frugality_tier: 1
+  - name: qwen3-30b-a3b-mlx
+    backend: mlx
+    device: mac-studio
+    host: "http://127.0.0.1"
+    port: 8081
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: mac-local
+    frugality_tier: 1
+  - name: gemma-4-e4b-it
+    backend: ollama
+    device: mac-studio
+    host: "http://127.0.0.1"
+    port: 11434
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: mac-local
+    frugality_tier: 1
+  - name: gemma-4-26b-a4b-it
+    backend: lm-studio
+    device: win-rtx3080
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
+    port: 1234
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: windows-lmstudio-gemma4
+    frugality_tier: 1
+  - name: gemma-4-26b-a4b-it-nvfp4
+    backend: lm-studio
+    device: win-rtx5080
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
+    port: 1234
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: windows-lmstudio-gemma4
+    frugality_tier: 1
+  - name: "qwen/qwen3.8-27b"
+    backend: lm-studio
+    device: win-rtx3080
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
+    port: 1234
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: windows-lmstudio
+    frugality_tier: 1
+  - name: Qwen3.8-27B
+    backend: lm-studio
+    device: win-rtx3080
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
+    port: 1234
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: windows-lmstudio
+    frugality_tier: 1
+  - name: Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2
+    backend: lm-studio
+    device: win-rtx3080
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
+    port: 1234
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: windows-lmstudio
+    frugality_tier: 1
+  - name: text-embedding-qwen3-embedding-8b-i1-gguf-q6-k
+    backend: lm-studio
+    device: win-rtx3080
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
+    port: 1234
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: windows-lmstudio-embedding
+    frugality_tier: 1
+  - name: qwen3.5-35b-a3b-q4
+    backend: ollama
+    device: win-rtx3080
+    host: "${WIN_OLLAMA_ENDPOINT:-http://localhost:11434}"
+    port: 11434
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: windows-local
+    frugality_tier: 1
+  - name: "qwen3-coder:14b"
+    backend: ollama
+    device: win-rtx3080
+    host: "${WIN_OLLAMA_ENDPOINT:-http://localhost:11434}"
+    port: 11434
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: windows-local
+    frugality_tier: 1
+  - name: qwen3-30b-critic
+    backend: ollama
+    device: win-rtx3080
+    host: "${WIN_OLLAMA_ENDPOINT:-http://localhost:11434}"
+    port: 11434
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: windows-local
+    frugality_tier: 1

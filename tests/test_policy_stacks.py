@@ -1,9 +1,11 @@
 """Offline tests for the local-first and free-first stacks."""
 
+import re
 from pathlib import Path
 
 import yaml
 
+from orchestrator.gate import load_frugality_tier_by_name
 from orchestrator.model_registry import ModelRegistry, ModelTarget
 from orchestrator.policy_stacks import (
     authorize_paid_candidate,
@@ -65,6 +67,35 @@ def test_1113_is_not_a_throttle_and_paid_needs_a_human_budget():
         {"budget_cny": float("inf")},
         paid,
     ) is False
+
+
+_LOCAL_MACHINE = re.compile(r"qwen|gemma|diffusion|3080|5080", re.IGNORECASE)
+
+
+def test_hardware_policy_local_names_are_tier_1():
+    """5080, 3080, qwen, gemma, and diffusion ids are on-machine LLMs."""
+    root = Path(__file__).resolve().parents[1]
+    policy = yaml.safe_load((root / "config" / "model_hardware_policy.yml").read_text())
+    tiers = load_frugality_tier_by_name(str(root / "config"))
+    names = []
+    for key in (
+        "mac_only",
+        "windows_only",
+        "shared",
+        "shared_aliases",
+        "windows_only_aliases",
+    ):
+        names.extend(policy.get(key) or [])
+    for name in (
+        "qwen3-30b-a3b-mlx",
+        "qwen3.5-35b-a3b-q4",
+        "qwen3-coder:14b",
+        "qwen3-30b-critic",
+        "gemma-4-26b-a4b-it-nvfp4",
+    ):
+        names.append(name)
+    missing = [name for name in names if _LOCAL_MACHINE.search(name) and tiers.get(name) != 1]
+    assert missing == []
 
 
 def test_every_configured_model_has_a_frugality_tier():
