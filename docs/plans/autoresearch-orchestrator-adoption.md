@@ -33,8 +33,10 @@ seat. That role is agent-neutral and is drafted at
 (`bin/agents/autoresearcher`) has no model id on its soul card. Its operating doctrine prefers the
 Claude Code plugin, and a dry-run must not call a paid model.
 
-This branch is the documentation of that split. It does not add a bilevel runner, a tri-level
-runner, or a serving grant. The plugin bridge and the single-track loop stay as they are.
+The dry-run plan records bi-level as the default, tri-level as optional and not
+started, MetaResearcher as a draft outside this bridge, and v2 migration as
+pending. It does not add a bilevel runner, a tri-level runner, or a serving
+grant. The plugin bridge and the single-track loop stay as they are.
 
 ## Adoption Mode
 
@@ -191,5 +193,6 @@ Later work may add:
 - Richer orama methodology modulation.
 - Automated upstream diff audit against uditgoenka primary and karpathy secondary.
 
-These are follow-up architecture tasks. They should not block the minimal dry-run/autoplan adoption
-path.
+These are follow-up architecture tasks. v2 migration and adoption remain
+pending and in progress. This stack does not add `POST /autoresearch/plan`.
+The follow-up must not block the dry-run plan that already records those bounds.

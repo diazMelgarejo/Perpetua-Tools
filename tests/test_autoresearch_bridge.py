@@ -377,6 +377,11 @@ class TestAutoplanDryRun:
         assert result["plan"]["orama_methodology"] == "optional"
         assert result["plan"]["plugin_execution"] == "skipped in dry-run"
         assert result["plan"]["gpu_execution"] == "skipped in dry-run"
+        assert result["plan"]["mechanism"] == "bilevel"
+        assert result["plan"]["tri_level"] == "optional-not-started"
+        assert result["plan"]["metaresearcher"] == "draft-outside-bridge"
+        assert result["plan"]["v2_migration"] == "pending"
+        assert result["plan"]["serving_grant"] is False
         plugin.assert_not_called()
         bootstrap.assert_not_called()
         probe.assert_not_called()

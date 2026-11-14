@@ -101,6 +101,11 @@ AUTORESEARCH_UPSTREAM_PRIMARY: str = "https://github.com/uditgoenka/autoresearch
 AUTORESEARCH_UPSTREAM_PRIMARY_PIN: str = "9f51f726e513be4e899b6afeed9f9c55fc1f51f3"
 AUTORESEARCH_UPSTREAM_SECONDARY: str = "https://github.com/karpathy/autoresearch"
 AUTORESEARCH_UPSTREAM_SECONDARY_PIN: str = "c92bee55ebc339e8b1501f6b5c9cfb54835a9de8"
+# Biafra bounds recorded by the dry-run plan. v2 migration stays pending.
+MECHANISM_DEFAULT: str = "bilevel"
+TRI_LEVEL_STATUS: str = "optional-not-started"
+METARESEARCHER_STATUS: str = "draft-outside-bridge"
+V2_MIGRATION_STATUS: str = "pending"
 
 SSH_TIMEOUT: int = int(os.environ.get("SSH_TIMEOUT", "90"))
 DEFAULT_MAX_CYCLES: int = int(os.environ.get("AUTORESEARCH_MAX_CYCLES", "50"))
@@ -197,6 +202,11 @@ class AutoresearchPlan:
     orama_methodology: str
     upstream_primary: str
     upstream_secondary: str
+    mechanism: str
+    tri_level: str
+    metaresearcher: str
+    v2_migration: str
+    serving_grant: bool
     notes: list[str]
     swarm_state: dict[str, object]
 
@@ -308,6 +318,9 @@ def plan_autoresearch_goal(
         notes.append("GPU verify substrate requires swarm_state.md GPU: IDLE before execution")
     if orama_enabled:
         notes.append("orama-system may refine methodology after this Perpetua state+goal plan")
+    notes.append("bi-level is the default; tri-level does not start in this plan")
+    notes.append("v2 migration, including POST /autoresearch/plan, remains pending")
+    notes.append("no serving grant and no new bilevel or tri-level runner")
     return AutoresearchPlan(
         goal=clean_goal,
         task_type=task_type,
@@ -324,6 +337,11 @@ def plan_autoresearch_goal(
         orama_methodology="optional" if orama_enabled else "not requested",
         upstream_primary=f"{AUTORESEARCH_UPSTREAM_PRIMARY}@{AUTORESEARCH_UPSTREAM_PRIMARY_PIN}",
         upstream_secondary=f"{AUTORESEARCH_UPSTREAM_SECONDARY}@{AUTORESEARCH_UPSTREAM_SECONDARY_PIN}",
+        mechanism=MECHANISM_DEFAULT,
+        tri_level=TRI_LEVEL_STATUS,
+        metaresearcher=METARESEARCHER_STATUS,
+        v2_migration=V2_MIGRATION_STATUS,
+        serving_grant=False,
         notes=notes,
         swarm_state=asdict(state),
     )
