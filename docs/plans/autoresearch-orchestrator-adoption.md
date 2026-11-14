@@ -33,10 +33,19 @@ seat. That role is agent-neutral and is drafted at
 (`bin/agents/autoresearcher`) has no model id on its soul card. Its operating doctrine prefers the
 Claude Code plugin, and a dry-run must not call a paid model.
 
-The dry-run plan records bi-level as the default, tri-level as optional and not
-started, MetaResearcher as a draft outside this bridge, and v2 migration as
-pending. It does not add a bilevel runner, a tri-level runner, or a serving
-grant. The plugin bridge and the single-track loop stay as they are.
+The v1 stage of this plan is executed on this branch.
+The submodule pin, the bridge, and the dry-run tests are in place.
+The dry-run plan records these bounds:
+
+- mechanism: bi-level, the default
+- tri-level: optional, and not started
+- MetaResearcher: a draft outside this bridge
+- v2 migration: pending
+- serving grant: off
+
+This execution adds no bilevel runner, no tri-level runner, and no serving grant.
+The plugin bridge and the single-track loop stay as they are.
+v2 repositories stay deferred.
 
 ## Adoption Mode
 
@@ -177,12 +186,14 @@ compute deterministically.
 
 ## Minimal Implementation Stage
 
-Current main should contain:
+Executed on this branch:
 
-1. `.gitmodules` entry and gitlink for `vendor/autoresearch`.
-2. `orchestrator/autoresearch_bridge.py` dry-run/autoplan support.
-3. Tests proving dry-run skips plugin/sync/LM Studio/GPU work.
-4. Cross-links from wiki, `CLAUDE.md`, `SKILL.md`, and orama AutoResearcher docs.
+1. `.gitmodules` and the `vendor/autoresearch` gitlink.
+   Pin `9f51f726e513be4e899b6afeed9f9c55fc1f51f3`.
+2. `orchestrator/autoresearch_bridge.py` dry-run plan, including the bilevel bounds.
+3. Tests that dry-run skips plugin, sync, LM Studio, and GPU work, and that the bounds are set.
+4. Cross-links from this plan, the migration wiki, and `SKILL.md`.
+   The orama card carries the same v1 contract.
 
 ## Follow-Up Architecture
 

@@ -1,12 +1,16 @@
 # 05. AutoResearcher Migration - uditgoenka Plugin, Submodule, and Dry-Run
 
-**TL;DR:** Primary mode is `uditgoenka/autoresearch`. Perpetua adopts it in two forms: a tracked source mirror at `vendor/autoresearch` and the Claude Code plugin runtime. GPU runner remains secondary and is only a Verify substrate for ML experiments. Long-running goals must start with `preflight(dry_run=True)`.
+**TL;DR:** Primary mode is `uditgoenka/autoresearch`.
+Perpetua adopts it as a source mirror at `vendor/autoresearch` and as the Claude Code plugin.
+The GPU runner stays a secondary Verify substrate for ML experiments.
+Long-running goals start with `preflight(dry_run=True)`.
 
 ---
 
 ## Current Canonical Plan
 
-See [`../plans/autoresearch-orchestrator-adoption.md`](../plans/autoresearch-orchestrator-adoption.md).
+See the adoption plan:
+[`../plans/autoresearch-orchestrator-adoption.md`](../plans/autoresearch-orchestrator-adoption.md).
 
 That plan is the source of truth for:
 
@@ -21,14 +25,16 @@ That plan is the source of truth for:
 
 ## What Changed
 
-The autoresearch loop migrated from a hardcoded Python script cloned to a GPU runner into a goal-directed Claude Code plugin and Perpetua bridge workflow.
+The autoresearch loop moved from a hardcoded GPU-runner script to the Claude Code plugin
+and the Perpetua bridge.
 
 The current architecture is:
 
-1. Source/reference mirror: `vendor/autoresearch` tracks `https://github.com/uditgoenka/autoresearch.git` on `master`.
-2. Runtime plugin: `claude plugin marketplace add uditgoenka/autoresearch` plus `claude plugin install autoresearch@autoresearch`.
-3. Perpetua bridge: `orchestrator/autoresearch_bridge.py` handles idempotent plugin install, local/GPU sync, preflight, GPU guard, and dry-run autoplan.
-4. Optional orama modulation: orama receives state + goal + archetype + safety gates and may apply methodology, but must not execute plugin/GPU work during dry-run.
+1. Source mirror: `vendor/autoresearch` tracks uditgoenka/autoresearch on `master`.
+2. Runtime plugin: marketplace add, then `claude plugin install autoresearch@autoresearch`.
+3. Bridge: `orchestrator/autoresearch_bridge.py` owns install, sync, preflight, and dry-run.
+4. Optional orama modulation receives state, goal, archetype, and safety gates.
+   It does not run plugin or GPU work in a dry-run.
 
 ---
 
@@ -42,7 +48,7 @@ LOCAL_AUTORESEARCH_PATH=~/autoresearch
 GPU_REPO_PATH=autoresearch
 ```
 
-`AUTORESEARCH_BRANCH` remains configurable, but the default is `master` because the primary upstream currently uses `master`.
+`AUTORESEARCH_BRANCH` stays configurable. The default is `master`, the primary upstream branch.
 
 ---
 
@@ -119,7 +125,9 @@ GET $LM_STUDIO_BASE_URL/v1/models
 
 ## `preflight()` Return Shape
 
-Normal execution returns plugin/sync/GPU-local fields. Dry-run returns the same envelope plus a `plan` object:
+Normal execution returns plugin, sync, and GPU-local fields. Dry-run adds a `plan` object.
+That v1 plan records the bilevel bounds.
+It does not start a runner, and it does not call a v2 repository.
 
 ```python
 {
@@ -133,6 +141,11 @@ Normal execution returns plugin/sync/GPU-local fields. Dry-run returns the same 
         "max_cycles": int,
         "upstream_primary": str,
         "upstream_secondary": str,
+        "mechanism": "bilevel",
+        "tri_level": "optional-not-started",
+        "metaresearcher": "draft-outside-bridge",
+        "v2_migration": "pending",
+        "serving_grant": False,
     },
     "plugin_ok": None,
     "sync_ok": None,
