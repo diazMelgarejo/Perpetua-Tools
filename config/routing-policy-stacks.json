@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "canonical_policy": "config/bigmodel-free-first-policy.json",
+  "note": "Stack order only. The candidate list lives in the canonical policy file.",
+  "stacks": [
+    {
+      "id": "local-llm-first",
+      "axis": "runtime",
+      "order": 1,
+      "stops_chain_on_success": true
+    },
+    {
+      "id": "free-first",
+      "axis": "financial",
+      "order": 2,
+      "default_mode": "free_only",
+      "last_resort": "openrouter/free"
+    },
+    {
+      "id": "paid-hitl",
+      "axis": "financial",
+      "order": 3,
+      "automatic": false
+    }
+  ]
+}

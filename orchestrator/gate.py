@@ -59,7 +59,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, Mapping, Optional, Sequence
 
 import yaml
 
@@ -385,4 +385,35 @@ def load_frugality_tier_by_name(config_dir: Optional[str] = None) -> Dict[str, O
         item["name"]: item.get("frugality_tier")
         for item in raw.get("models", [])
         if "name" in item
+    }
+
+
+def resolve_policy_stacks(
+    task_requirements: Optional[Mapping[str, Any]] = None,
+    evidence_ledger: Optional[Sequence[Mapping[str, Any]]] = None,
+    authorization: Optional[Mapping[str, Any]] = None,
+    budget_state: Optional[Mapping[str, Any]] = None,
+) -> dict[str, Any]:
+    """Compose the runtime stack and the financial stack.
+
+    Local success is the caller's job: this returns the next automatic free
+    candidate only. Paid approval is reported separately and never implies a
+    dispatch. The historical no-opinion contract of ``consult_gate`` is unchanged.
+    """
+    from orchestrator.policy_stacks import (
+        authorize_paid_candidate,
+        load_policy,
+        load_stacks,
+        select_next_candidate,
+    )
+
+    policy = load_policy()
+    return {
+        "stacks": load_stacks().get("stacks", []),
+        "next_free": select_next_candidate(policy, task_requirements, evidence_ledger),
+        "paid_authorized": authorize_paid_candidate(
+            authorization,
+            budget_state,
+            {"model_id": (authorization or {}).get("model_id")},
+        ),
     }

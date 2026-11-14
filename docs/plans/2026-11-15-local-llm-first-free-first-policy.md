@@ -180,3 +180,12 @@ These are queued work, not done by this patch:
 
 No runtime code, credentials, provider profiles, or paid inference are changed
 by this file.
+
+## Selector
+
+`config/bigmodel-free-first-policy.json` and `orchestrator/policy_stacks.py`
+implement the selector. `route_task` keeps the local chain, appends the
+automatic free chain, and ends at `openrouter/free`. Tier 5 stays out unless
+`paid_authorization` is a per-run human approval with a positive finite
+budget. Qualification lanes stay blocked. Classifying every model and refusing
+a gate "no opinion" is still not done.

@@ -109,15 +109,34 @@ class TestRouteTaskOfflineNeverReturnsPaidRemote:
         assert "glm-5.3-flash" not in names
         assert "glm-5.3-flash:cloud" not in names
 
-    def test_default_route_unchanged_when_offline_flag_not_set(self, registry, monkeypatch):
-        """Without ORAMASYS_OFFLINE the default route still includes glm and claude models."""
+    def test_default_route_withholds_paid_and_ends_at_openrouter_free(
+        self, registry, monkeypatch
+    ):
+        """Online default keeps local models, withholds tier 5, and ends on the free autorouter."""
         monkeypatch.delenv("ORAMASYS_OFFLINE", raising=False)
         chain = registry.route_task("default")
-        names = {m.name for m in chain}
-        # Pure superset behavior: nothing dropped when no policy is active.
+        names = [m.name for m in chain]
+        assert "glm-5.3-flash" not in names
+        assert "claude-sonnet-5" not in names
+        assert "claude-sonnet-5-5" not in names
+        assert names[-1] == "openrouter/free"
+        assert "glm-4.7-flash" in names
+
+    def test_paid_model_returns_only_with_human_budget(self, registry, monkeypatch):
+        """Tier 5 stays out until this run names that model and a finite budget."""
+        monkeypatch.delenv("ORAMASYS_OFFLINE", raising=False)
+        chain = registry.route_task(
+            "default",
+            paid_authorization={
+                "human_approved": True,
+                "per_run": True,
+                "model_id": "glm-5.3-flash",
+            },
+            paid_budget={"budget_cny": 1},
+        )
+        names = [m.name for m in chain]
         assert "glm-5.3-flash" in names
-        assert "claude-sonnet-5" in names
-        assert "claude-sonnet-5-5" in names
+        assert "claude-sonnet-5" not in names
 
     def test_route_task_signature_and_return_type_unchanged_for_existing_callers(
         self, registry

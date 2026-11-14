@@ -1,11 +1,14 @@
 # Cross-Repo Documentation & Plans Index
 
-**Purpose:** Canonical mapping of all plans, task lists, specifications, and ADRs across Perpetua-Tools (L2) and orama-system (L3). Prevents confusion and duplicate work.
+**Purpose:** Canonical mapping of plans, task lists, specifications, and ADRs
+across Perpetua-Tools (L2) and orama-system (L3). Prevents confusion and
+duplicate work.
 
 **Last updated:** 2026-11-15  
 **Maintain by:** updating both repos when adding new plans/specs
 
-**Note on paths:** All canonical locations use relative paths from repo root. Use `git rev-parse --show-toplevel` to resolve to actual disk location.
+**Note on paths:** Canonical locations are relative to the repo root. Resolve
+the root with `git rev-parse --show-toplevel`.
 
 ---
 
@@ -59,7 +62,9 @@ PT/docs/phase-0-specifications/
 | `~/.gstack/projects/diazMelgarejo-orama-system/` | gstack cache; stale copies of Phase 0 specs (2–6 hours behind disk) | PT `docs/phase-0-specifications/` (current working tree) |
 | Legacy iCloud symlink trees | Outdated copies from prior iCloud epoch | Use current working tree only; verify with `git status` |
 
-**Golden rule:** Before editing specs, verify location with `git rev-parse --show-toplevel && git status`. Never edit from cache or backup trees.
+**Golden rule:** Before editing specs, verify the location with
+`git rev-parse --show-toplevel` and `git status`. Never edit from cache or
+backup trees.
 
 ---
 
@@ -68,11 +73,14 @@ PT/docs/phase-0-specifications/
 **Status:** Awaiting decision (ADR to be written to orama-system/docs/v2/41-alexandria-repository.md)
 
 **Problem:** Phase 0 specifications, threat models, and design decisions are scattered:
+
 - PT owns runtime code; specs live in `docs/phase-0-specifications/` (correct, runtime-adjacent)
 - orama-system owns architecture ADRs; design should live in `docs/v2/` (not yet migrated)
 - Interim: gstack cache has stale copies, causing navigation confusion
 
-**Solution target state after migration:** Create `oramasys/alexandria` as documentation-only, zero-code repository. Until that migration is complete, the Phase 0 specifications listed above remain canonical in PT.
+**Solution target state after migration:** Create `oramasys/alexandria` as a
+documentation-only, zero-code repository. Until that migration is complete,
+the Phase 0 specifications listed above remain canonical in PT.
 
 | Repo | Purpose | Contents | Excludes |
 |---|---|---|---|
