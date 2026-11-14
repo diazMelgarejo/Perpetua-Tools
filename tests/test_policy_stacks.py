@@ -138,7 +138,7 @@ def test_route_task_drops_an_unclassified_model(monkeypatch):
                 name="unclassified-probe",
                 backend="ollama",
                 device="mac-studio",
-                host="http://localhost",
+                host="http://example.invalid",
                 port=11434,
                 context_window=None,
                 roles=["general"],
