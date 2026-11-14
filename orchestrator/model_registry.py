@@ -9,7 +9,13 @@ from typing import Any, Dict, List, Mapping, Optional
 import yaml
 
 from orchestrator.connectivity import endpoint_online as _endpoint_online
+from orchestrator.frugality_router import is_offline_mode
 from orchestrator.gate import filter_chain_by_gate
+from orchestrator.policy_stacks import (
+    automatic_free_candidates,
+    drop_ungated_paid,
+    load_policy,
+)
 from utils.endpoint_policy_core import build_transport_url
 
 _DISABLE_LIVE_PROBES = {"1", "true", "yes", "on"}
@@ -87,6 +93,43 @@ class ModelTarget:
     def __post_init__(self) -> None:
         if not self.api_model:
             self.api_model = self.name
+
+
+def _free_policy_target(model_id: str) -> ModelTarget:
+    """A financial-stack fallback that is not already in models.yml.
+
+    Host and path are the documented provider endpoints. This does not probe
+    them and does not treat the model as qualified.
+    """
+    if model_id == "openrouter/free":
+        return ModelTarget(
+            name=model_id,
+            backend="openrouter",
+            device="cloud",
+            host="https://openrouter.ai",
+            port=443,
+            api_path="/api/v1/chat/completions",
+            context_window=None,
+            roles=["fallback"],
+            priority=90,
+            online=True,
+            reasoning="free-autorouter",
+            frugality_tier=3,
+        )
+    return ModelTarget(
+        name=model_id,
+        backend="bigmodel",
+        device="cloud",
+        host="https://open.bigmodel.cn",
+        port=443,
+        api_path="/api/paas/v4/chat/completions",
+        context_window=None,
+        roles=["fallback"],
+        priority=80,
+        online=True,
+        reasoning="free-first",
+        frugality_tier=3,
+    )
 
 
 class ModelRegistry:
@@ -233,6 +276,8 @@ class ModelRegistry:
         privacy_critical: bool = False,
         override_confirmed: bool = False,
         override_reason: Optional[str] = None,
+        paid_authorization: Optional[Mapping[str, Any]] = None,
+        paid_budget: Optional[Mapping[str, Any]] = None,
     ) -> List[ModelTarget]:
         """
         Returns ordered fallback chain for a task_type.
@@ -253,6 +298,14 @@ class ModelRegistry:
         `privacy_critical`/`override_confirmed`/`override_reason` are
         additive keyword-only args -- existing positional-arg callers
         (`route_task(task_type, preferred_device)`) are unaffected.
+
+        After the runtime gate, tier 5 models are withheld unless
+        `paid_authorization` is an explicit per-run human approval for that
+        model and `paid_budget` carries a positive finite `budget_cny`.
+        When the process is online and the task is not privacy-critical, the
+        automatic free chain from the canonical policy is appended, ending at
+        `openrouter/free`. Offline and privacy-critical chains do not gain
+        that remote tail.
         """
         routes = self.routing_cfg.get("routes", {})
         route = routes.get(task_type, routes.get("default", {}))
@@ -267,13 +320,24 @@ class ModelRegistry:
                     ordered.append(candidate)
                     seen.add(key)
 
-        return filter_chain_by_gate(
+        gated = filter_chain_by_gate(
             ordered,
             task_type=task_type,
             privacy_critical=privacy_critical,
             override_confirmed=override_confirmed,
             override_reason=override_reason,
         )
+        kept = drop_ungated_paid(gated, paid_authorization, paid_budget)
+        if is_offline_mode() or privacy_critical:
+            return kept
+        present = {item.name for item in kept}
+        for candidate in automatic_free_candidates(load_policy()):
+            model_id = candidate.get("model_id")
+            if not model_id or model_id in present:
+                continue
+            kept.append(_free_policy_target(model_id))
+            present.add(model_id)
+        return kept
 
     def device_info(self, device_name: str) -> Dict[str, Any]:
         return self.devices.get("devices", {}).get(device_name, {})

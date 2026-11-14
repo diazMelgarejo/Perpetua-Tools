@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "policy_id": "bigmodel-free-first-2026-11-13-v1",
-  "status": "unimplemented",
-  "implementation_status": "unimplemented",
+  "status": "selector_implemented",
+  "implementation_status": "selector_implemented",
   "reviewed_at": "2026-11-13",
-  "note": "Loading this file does not authorize spend, fallback, or a profile switch.",
+  "note": "The selector enforces this file. Loading it still does not authorize spend. Paid models stay behind a per-run human approval. Qualification lanes remain blocked.",
   "applicable_endpoint": {
     "description": "BigModel OpenAI-compatible chat completions host as documented",
     "base_url": "https://open.bigmodel.cn/api/paas/v4",
@@ -57,9 +57,24 @@
     },
     {
       "order": 4,
+      "model_id": "openrouter/free",
+      "pricing_status": "free",
+      "role": "last_free_resort",
+      "provider": "openrouter",
+      "reasoning": {
+        "reasoning_effort": "not_applicable"
+      },
+      "qualification_status": "unqualified",
+      "note": "OpenRouter free autorouter. Automatic last free resort. It does not qualify any other lane."
+    }
+  ],
+  "paid_candidates": [
+    {
       "model_id": "glm-5.3-flash",
       "pricing_status": "paid",
       "role": "paid_last_resort",
+      "automatic": false,
+      "human_gate": "hitl",
       "reasoning": {
         "explicit": "high",
         "else_after_reviewed_qualification": "low",
@@ -69,6 +84,28 @@
       },
       "paid_gate_required": true,
       "qualification_status": "unqualified"
+    }
+  ],
+  "stacks": [
+    {
+      "id": "local-llm-first",
+      "axis": "runtime",
+      "order": 1,
+      "stops_chain_on_success": true,
+      "owner": "orchestrator/gate.py"
+    },
+    {
+      "id": "free-first",
+      "axis": "financial",
+      "order": 2,
+      "default_mode": "free_only",
+      "last_resort": "openrouter/free"
+    },
+    {
+      "id": "paid-hitl",
+      "axis": "financial",
+      "order": 3,
+      "automatic": false
     }
   ],
   "retired_models": {
