@@ -320,6 +320,7 @@ def plan_autoresearch_goal(
         notes.append("orama-system may refine methodology after this Perpetua state+goal plan")
     notes.append("bi-level is the default; tri-level does not start in this plan")
     notes.append("the outer seat is dual-mode and this bridge starts neither mode")
+    notes.append("inner and outer programs stay in orama; this bridge does not call the launcher")
     notes.append("a rewrite of the outer seat starts only after the operator gate")
     notes.append("v2 migration, including POST /autoresearch/plan, remains pending")
     notes.append("no serving grant and no new bilevel or tri-level runner")
