@@ -98,6 +98,24 @@ def test_hardware_policy_local_names_are_tier_1():
     assert missing == []
 
 
+def test_sorted_model_list_puts_qwen_first_and_openrouter_free_last():
+    """Sorted means classified. It does not mean the model is available."""
+    raw = yaml.safe_load(
+        (Path(__file__).resolve().parents[1] / "config" / "models.yml").read_text()
+    )
+    names = [item["name"] for item in raw["models"]]
+    assert names[0] == "oramasys"
+    assert raw["models"][0]["frugality_tier"] == 0
+    assert raw["models"][0]["online"] is False
+    qwen_span = [name for name in names[1:] if "qwen" in name.lower()]
+    assert names[1: 1 + len(qwen_span)] == qwen_span
+    assert names[-1] == "openrouter/free"
+    tiers = {item["name"]: item["frugality_tier"] for item in raw["models"]}
+    assert tiers["bge-m3"] == 1
+    for name in ("glm-4.7-flash", "glm-4.5-flash", "glm-4-flash-250414", "openrouter/free"):
+        assert tiers[name] == 3
+
+
 def test_every_configured_model_has_a_frugality_tier():
     raw = yaml.safe_load(
         (Path(__file__).resolve().parents[1] / "config" / "models.yml").read_text()

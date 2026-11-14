@@ -225,12 +225,10 @@ class TestOrchestratorPrivacyCriticalGateWiring:
         assert not any("Frugality gate denied" in line for line in resp.routing_log)
 
     def test_privacy_critical_oramasys_step_always_permitted_no_tier_entry(self, monkeypatch):
-        """oramasys has no config/models.yml entry -> tier=None -> gate has
-        no opinion -> the primary local-orchestrator hop is always tried,
-        matching pre-gate behavior exactly."""
+        """oramasys is tier 0 local inference and keeps its own call path."""
         orch_mod = _load_orchestrator_module()
 
-        assert orch_mod._FRUGALITY_TIER_BY_MODEL.get("oramasys") is None
+        assert orch_mod._FRUGALITY_TIER_BY_MODEL.get("oramasys") == 0
 
         calls = {"oramasys": 0}
 
