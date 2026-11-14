@@ -11,7 +11,7 @@ models:
   - name: oramasys
     backend: local
     device: mac-studio
-    host: "http://127.0.0.1"
+    host: "http://localhost"
     port: 9
     roles: [meta-orchestrator]
     priority: 0
@@ -127,7 +127,7 @@ models:
   - name: qwen3.5:35b-a3b-q4_K_M
     backend: ollama
     device: shared-ollama
-    host: "${OLLAMA_HOST:-http://127.0.0.1}"
+    host: "${OLLAMA_HOST:-http://localhost}"
     port: 11434
     context_window: 32768
     roles: [general, critic, refiner, fallback, subagent]
@@ -141,7 +141,7 @@ models:
   - name: qwen3.5-9b-mlx
     backend: mlx
     device: mac-studio
-    host: "http://127.0.0.1"
+    host: "http://localhost"
     port: 8081
     context_window: 32768
     roles: [general, top-level, coding, subagent]
@@ -174,7 +174,7 @@ models:
   - name: "qwen3.5:9b-mlx"
     backend: ollama
     device: mac-studio
-    host: "http://127.0.0.1"
+    host: "http://localhost"
     port: 11434
     roles: [local-classified]
     priority: 80
@@ -182,9 +182,9 @@ models:
     reasoning: mac-local
     frugality_tier: 1
   - name: qwen3.5-9b-mlx-4bit
-    backend: mlx
+    backend: lm-studio
     device: mac-studio
-    host: "http://127.0.0.1"
+    host: "${LM_STUDIO_MAC_ENDPOINT:-http://localhost:1234}"
     port: 8081
     roles: [local-classified]
     priority: 80
@@ -194,7 +194,7 @@ models:
   - name: qwen3-30b-a3b-mlx
     backend: mlx
     device: mac-studio
-    host: "http://127.0.0.1"
+    host: "http://localhost"
     port: 8081
     roles: [local-classified]
     priority: 80
@@ -317,7 +317,7 @@ models:
   - name: gemma-4-e4b-it
     backend: ollama
     device: mac-studio
-    host: "http://127.0.0.1"
+    host: "http://localhost"
     port: 11434
     roles: [local-classified]
     priority: 80
@@ -348,7 +348,7 @@ models:
   - name: bge-m3
     backend: ollama
     device: mac-studio
-    host: "http://127.0.0.1"
+    host: "http://localhost"
     port: 11434
     roles: [local-classified]
     priority: 80
@@ -361,7 +361,7 @@ models:
   - name: "glm-5.3-flash:cloud"
     backend: ollama
     device: mac-studio
-    host: "${OLLAMA_HOST:-http://127.0.0.1}"
+    host: "${OLLAMA_HOST:-http://localhost}"
     port: 11434
     priority: 1
     online: true
