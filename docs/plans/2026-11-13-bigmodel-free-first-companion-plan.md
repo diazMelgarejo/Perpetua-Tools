@@ -147,9 +147,9 @@ an unavailable or paid model as the default free route.
 No runtime code, provider settings, memory log, subscriptions or credentials are
 changed by this patch. No paid inference or repository write has been performed.
 
-## Next: policy artifact, still unimplemented
+## Next: selector exists, lanes still unqualified
 
-The single candidate list is config/bigmodel-free-first-policy.json.
-This handoff still must not copy that list.
-Runtime dispatch, budget reservation, and lessons are the following
-implementation steps and are not done.
+The single candidate list is config/bigmodel-free-first-policy.json on this
+repository's main blob once merged. This handoff still must not copy that list.
+`orchestrator/policy_stacks.py` selects the next free candidate and refuses
+paid dispatch without a per-run human budget. Qualification lanes are not done.
