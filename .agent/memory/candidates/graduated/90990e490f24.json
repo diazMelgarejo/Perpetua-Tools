@@ -1,0 +1,41 @@
+{
+  "id": "90990e490f24",
+  "key": "manual_90990e",
+  "name": "manual_90990e",
+  "claim": "Never paste a credential, token, API key, or secret into any repository, lesson, commit, review, or board note. No lesson from this branch has been published. A later redaction is not removal, because the patch still contains the value. Replace the unpublished commits so the value is absent before anyone publishes them.",
+  "conditions": [
+    "credential",
+    "lesson",
+    "repository",
+    "unpublished history"
+  ],
+  "evidence_ids": [
+    "2026-11-14T04:59:25.883935+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-14T04:59:25.883935+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-14T04:59:25.883935+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-14T04:59:28.853602+00:00",
+      "action": "graduated",
+      "reviewer": "cursor-grok",
+      "notes": "An unpublished memory lesson stored a live credential. The branch had no upstream. The redaction commit still showed the value in its patch, so both unpublished commits had to be replaced by one commit before publication.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-14T04:59:25.883935+00:00"
+      ],
+      "lessons_sha": "f5fbef17fb3b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-14T04:59:28.853587+00:00",
+  "reviewer": "cursor-grok",
+  "rationale": "An unpublished memory lesson stored a live credential. The branch had no upstream. The redaction commit still showed the value in its patch, so both unpublished commits had to be replaced by one commit before publication."
+}

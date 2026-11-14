@@ -1,0 +1,41 @@
+{
+  "id": "4f0b0b8c6eaf",
+  "key": "manual_4f0b0b",
+  "name": "manual_4f0b0b",
+  "claim": "A glm fallback installer that runs as a child process cannot export the key into the calling shell. Print Activated only after the installer exits 0, its log contains the healthy endpoint line, and the parent shell has the key. start.sh loads the installer-written environment file when that file is present and otherwise prints the setup command. start.ps1 skips Bash substitutions, so it still needs the key in its process environment. Do not put a dotenv filename in skill prose, and never paste a live credential into a lesson.",
+  "conditions": [
+    "CRED_021",
+    "activation",
+    "calling-shell",
+    "glm-fallback"
+  ],
+  "evidence_ids": [
+    "2026-11-14T04:48:00.086025+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-14T04:48:00.086025+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-14T04:48:00.086025+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-14T04:48:06.979363+00:00",
+      "action": "graduated",
+      "reviewer": "cursor-grok",
+      "notes": "CodeRabbit review 5897745645 and commit bdb64c25. The earlier lesson inverted start.sh and pasted a credential.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-14T04:48:00.086025+00:00"
+      ],
+      "lessons_sha": "5dfb81cb89c1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-14T04:48:06.979353+00:00",
+  "reviewer": "cursor-grok",
+  "rationale": "CodeRabbit review 5897745645 and commit bdb64c25. The earlier lesson inverted start.sh and pasted a credential."
+}

@@ -1,0 +1,40 @@
+{
+  "id": "d25737d43531",
+  "key": "manual_d25737",
+  "name": "manual_d25737",
+  "claim": "A loop that rewrites the MetaResearcher seat is purely optional. It starts only after a human approval at the top-level orchestrator gate. It never starts automatically. The experimental tri-level report found no reliable task gain over bi-level, so bi-level remains the default.",
+  "conditions": [
+    "hitl",
+    "optional",
+    "tri-level"
+  ],
+  "evidence_ids": [
+    "2026-11-14T04:29:13.480165+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-14T04:29:13.480165+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-14T04:29:13.480165+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-14T04:29:13.653601+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Operator rule 2026-11-14. The tri-level report found no reliable gain, and a self-starting rewrite of the outer seat is refused.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-14T04:29:13.480165+00:00"
+      ],
+      "lessons_sha": "9499ab9ce7c2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-14T04:29:13.653591+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Operator rule 2026-11-14. The tri-level report found no reliable gain, and a self-starting rewrite of the outer seat is refused."
+}

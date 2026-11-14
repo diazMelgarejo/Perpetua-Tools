@@ -6,9 +6,12 @@ Secondary audit reference: `karpathy/autoresearch` only.
 
 ## Goal
 
-Adopt AutoResearch as a real, operational research substrate without creating a parallel orchestration path.
+Adopt AutoResearch as a real, operational research substrate without creating a parallel
+orchestration path.
 
-Perpetua-Tools remains the runtime/state authority. orama-system remains optional methodology and planning refinement. AutoResearch supplies an upstream goal-directed research loop that Perpetua can plan, dry-run, install, sync, and dispatch safely.
+Perpetua-Tools remains the runtime/state authority. orama-system remains optional methodology and
+planning refinement. AutoResearch supplies an upstream goal-directed research loop that Perpetua can
+plan, dry-run, install, sync, and dispatch safely.
 
 ## Upstream Sources
 
@@ -16,17 +19,45 @@ Perpetua-Tools remains the runtime/state authority. orama-system remains optiona
 | --- | --- | --- |
 | `https://github.com/uditgoenka/autoresearch` | Primary orchestrator/plugin/submodule source | `9f51f726e513be4e899b6afeed9f9c55fc1f51f3` |
 | `https://github.com/karpathy/autoresearch` | Secondary catch-all audit reference for the original ML experiment loop | `c92bee55ebc339e8b1501f6b5c9cfb54835a9de8` |
+| [arXiv:2603.23420](https://arxiv.org/abs/2603.23420) | Bilevel mechanism paper (Qu and Lu). Same model on the inner and outer loops. Level 2 writes Python and reverts a failed import. | paper, not a git pin |
+| `https://github.com/EdwardOptimization/Bilevel-Autoresearch` branch `experimental/tri-level-pr2` | Optional Level 3. The branch report says tri-level did not beat bi-level. | experimental, not the default |
 
-Use uditgoenka for command semantics, archetypes, `--dry-run`, and autonomous orchestrator behavior. Use karpathy only when checking original ML-loop expectations such as `prepare.py`, `train.py`, `program.md`, single-GPU assumptions, `log.txt`, and `val_bpb`.
+Use uditgoenka for command semantics, archetypes, `--dry-run`, and autonomous orchestrator behavior.
+Use karpathy only when checking original ML-loop expectations such as `prepare.py`, `train.py`,
+`program.md`, single-GPU assumptions, `log.txt`, and `val_bpb`. Use the bilevel paper when the
+question is an outer loop that changes the search mechanism. Do not treat tri-level as required.
+
+Renewed 2026-11-14. This plan still owns the plugin bridge. It does not define the MetaResearcher
+seat. That role is agent-neutral and is drafted at
+`OpenClaw/references/2026-11-14-metaresearcher-role-plan-DRAFT.md`. Scout
+(`bin/agents/autoresearcher`) has no model id on its soul card. Its operating doctrine prefers the
+Claude Code plugin, and a dry-run must not call a paid model.
+
+The v1 stage of this plan is executed on this branch.
+The submodule pin, the bridge, and the dry-run tests are in place.
+The dry-run plan records these bounds:
+
+- mechanism: bi-level, the default
+- tri-level: optional, and not started
+- MetaResearcher: seats adopted in orama, not started by this bridge
+- v2 migration: pending
+- serving grant: off
+
+This execution adds no bilevel runner, no tri-level runner, and no serving grant.
+The plugin bridge and the single-track loop stay as they are.
+v2 repositories stay deferred.
 
 ## Adoption Mode
 
 Adopt both forms, like ECC:
 
 1. Real submodule mirror: `vendor/autoresearch` tracks uditgoenka/autoresearch `master`.
-2. Runtime plugin mode: `claude plugin marketplace add uditgoenka/autoresearch` and `claude plugin install autoresearch@autoresearch` remain idempotent runtime install steps.
+2. Runtime plugin mode: `claude plugin marketplace add uditgoenka/autoresearch` and `claude plugin
+install autoresearch@autoresearch` remain idempotent runtime install steps.
 
-The submodule is reference/source parity. Runtime still uses the existing bridge and plugin install path. Do not fork a new AutoResearch runner when `orchestrator/autoresearch_bridge.py` already owns that responsibility.
+The submodule is reference/source parity. Runtime still uses the existing bridge and plugin install
+path. Do not fork a new AutoResearch runner when `orchestrator/autoresearch_bridge.py` already owns
+that responsibility.
 
 ## Existing Paths To Reuse
 
@@ -80,7 +111,8 @@ Dry-run must not call:
 - git sync/bootstrap
 - paid/cloud model APIs
 
-Dry-run may read local `swarm_state.md` and may run deterministic, local, cheapest-first classification.
+Dry-run may read local `swarm_state.md` and may run deterministic, local, cheapest-first
+classification.
 
 Future v2 API candidate:
 
@@ -88,7 +120,8 @@ Future v2 API candidate:
 POST /autoresearch/plan
 ```
 
-The v2 endpoint must preserve the same dry-run rule: planning returns state, goal, archetype, pipeline, predicate, and safety gates only.
+The v2 endpoint must preserve the same dry-run rule: planning returns state, goal, archetype,
+pipeline, predicate, and safety gates only.
 
 ## Goal Archetypes
 
@@ -124,7 +157,9 @@ orama owns, when available:
 - CIDF/orama reasoning framing
 - optional multi-agent review of the Perpetua plan
 
-Perpetua should pass only state, goal, archetype, predicate, pipeline, and safety gates to orama. orama must not reach directly into Perpetua runtime internals or execute plugin/GPU actions during dry-run.
+Perpetua should pass only state, goal, archetype, predicate, pipeline, and safety gates to orama.
+orama must not reach directly into Perpetua runtime internals or execute plugin/GPU actions during
+dry-run.
 
 ## Efficiency And Cost Rule
 
@@ -135,7 +170,8 @@ Use cheapest-first execution:
 3. Free or already-configured online tools if local evidence is insufficient.
 4. Paid/cloud LLM escalation only when necessary and explicitly justified.
 
-Do not spend expensive reasoning on classification that `orchestrator/autoresearch_bridge.py` can compute deterministically.
+Do not spend expensive reasoning on classification that `orchestrator/autoresearch_bridge.py` can
+compute deterministically.
 
 ## Idempotency And Non-Regression Rules
 
@@ -143,18 +179,21 @@ Do not spend expensive reasoning on classification that `orchestrator/autoresear
 - Preserve local and GPU sync idempotency.
 - Preserve `uv sync --dev` bootstrap behavior.
 - Preserve GPU guard: no dispatch while `swarm_state.md` reports `GPU: BUSY`.
-- Preserve user-controlled env overrides: `AUTORESEARCH_REMOTE`, `AUTORESEARCH_BRANCH`, `LOCAL_AUTORESEARCH_PATH`, `GPU_BOX`, and `GPU_REPO_PATH`.
+- Preserve user-controlled env overrides: `AUTORESEARCH_REMOTE`, `AUTORESEARCH_BRANCH`,
+`LOCAL_AUTORESEARCH_PATH`, `GPU_BOX`, and `GPU_REPO_PATH`.
 - Do not regress to a hardcoded GPU-only, script-only, or karpathy-primary model.
 - Do not create a new pathway where the existing bridge can be upskilled.
 
 ## Minimal Implementation Stage
 
-Current main should contain:
+Executed on this branch:
 
-1. `.gitmodules` entry and gitlink for `vendor/autoresearch`.
-2. `orchestrator/autoresearch_bridge.py` dry-run/autoplan support.
-3. Tests proving dry-run skips plugin/sync/LM Studio/GPU work.
-4. Cross-links from wiki, `CLAUDE.md`, `SKILL.md`, and orama AutoResearcher docs.
+1. `.gitmodules` and the `vendor/autoresearch` gitlink.
+   Pin `9f51f726e513be4e899b6afeed9f9c55fc1f51f3`.
+2. `orchestrator/autoresearch_bridge.py` dry-run plan, including the bilevel bounds.
+3. Tests that dry-run skips plugin, sync, LM Studio, and GPU work, and that the bounds are set.
+4. Cross-links from this plan, the migration wiki, and `SKILL.md`.
+   The orama card carries the same v1 contract.
 
 ## Follow-Up Architecture
 
@@ -165,4 +204,6 @@ Later work may add:
 - Richer orama methodology modulation.
 - Automated upstream diff audit against uditgoenka primary and karpathy secondary.
 
-These are follow-up architecture tasks. They should not block the minimal dry-run/autoplan adoption path.
+These are follow-up architecture tasks. v2 migration and adoption remain
+pending and in progress. This stack does not add `POST /autoresearch/plan`.
+The follow-up must not block the dry-run plan that already records those bounds.

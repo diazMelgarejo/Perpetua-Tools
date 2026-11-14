@@ -1,0 +1,41 @@
+{
+  "id": "179b0bb19499",
+  "key": "manual_179b0b",
+  "name": "manual_179b0b",
+  "claim": "A Phase 1 skill census is one row per card: summon, keep, or shrink. A blanket KEEP of every orama skill and SUMMON 0 is not a census. The archive directory is not a card; its nested council card has front matter and is a superseded redirect. The antigravity card is a live agy fan-out contract with Boundaries and has no upstream counterpart, so it stays. The other cards were not reviewed.",
+  "conditions": [
+    "antigravity",
+    "archive",
+    "census",
+    "steipete"
+  ],
+  "evidence_ids": [
+    "2026-11-14T04:48:00.161249+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-14T04:48:00.161249+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-14T04:48:00.161249+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-14T04:48:07.206688+00:00",
+      "action": "graduated",
+      "reviewer": "cursor-grok",
+      "notes": "Row 6840 claimed KEEP everything and said archive had no front matter. Both claims failed a direct read.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-14T04:48:00.161249+00:00"
+      ],
+      "lessons_sha": "bbf14aefcc75"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-14T04:48:07.206671+00:00",
+  "reviewer": "cursor-grok",
+  "rationale": "Row 6840 claimed KEEP everything and said archive had no front matter. Both claims failed a direct read."
+}

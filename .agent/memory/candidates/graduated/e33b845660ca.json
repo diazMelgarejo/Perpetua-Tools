@@ -1,0 +1,40 @@
+{
+  "id": "e33b845660ca",
+  "key": "manual_e33b84",
+  "name": "manual_e33b84",
+  "claim": "The autoresearch dry-run plan keeps bi-level as the default. Tri-level stays optional and does not start by itself. MetaResearcher stays a draft outside the bridge. v2 migration and adoption, including POST /autoresearch/plan, remain pending. This plan adds no bilevel runner, no tri-level runner, and no serving grant.",
+  "conditions": [
+    "autoresearch",
+    "bilevel",
+    "v2-migration-pending"
+  ],
+  "evidence_ids": [
+    "2026-11-14T13:10:00.000000+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-14T13:10:00.000000+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-14T13:10:00.000000+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-14T13:10:00.000000+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-14 stack on the autoresearch adoption plan. The dry-run object records the Biafra bounds. v2 migration stays pending.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-14T13:10:00.000000+00:00"
+      ],
+      "lessons_sha": "e33b845660ca"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-14T13:10:00.000000+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-14 stack on the autoresearch adoption plan. The dry-run object records the Biafra bounds. v2 migration stays pending."
+}

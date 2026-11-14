@@ -1,0 +1,40 @@
+{
+  "id": "80a63aa61ffc",
+  "key": "manual_80a63a",
+  "name": "manual_80a63a",
+  "claim": "The actor who prepares integration commits does not push them. The named reviewer reviews and performs one push per repository.",
+  "conditions": [
+    "push",
+    "review",
+    "single-push"
+  ],
+  "evidence_ids": [
+    "2026-11-14T06:30:48.091152+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-14T06:30:48.091152+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-14T06:30:48.091152+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-14T06:30:48.269446+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The operator authorized the integration and assigned the push to cursor-grok after review.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-14T06:30:48.091152+00:00"
+      ],
+      "lessons_sha": "2e2d4045d80d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-14T06:30:48.269436+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The operator authorized the integration and assigned the push to cursor-grok after review."
+}

@@ -1,0 +1,41 @@
+{
+  "id": "1c76a193a125",
+  "key": "manual_1c76a1",
+  "name": "manual_1c76a1",
+  "claim": "Keep the three C6 execution-checklist commits unsquashed. They fast-forward main, the later commits withdraw overclaims in the first, and the checklist is not a qualification or a serving grant.",
+  "conditions": [
+    "c6",
+    "checklist",
+    "serving",
+    "squash"
+  ],
+  "evidence_ids": [
+    "2026-11-14T06:30:47.156122+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-14T06:30:47.156122+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-14T06:30:47.156122+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-14T06:30:47.349440+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Squashing would erase the record that the serving and baseline gates were reopened after the first draft.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-14T06:30:47.156122+00:00"
+      ],
+      "lessons_sha": "63914eef1b0a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-14T06:30:47.349428+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Squashing would erase the record that the serving and baseline gates were reopened after the first draft."
+}

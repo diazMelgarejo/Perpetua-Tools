@@ -1,0 +1,40 @@
+{
+  "id": "69483ff9dc0e",
+  "key": "manual_69483f",
+  "name": "manual_69483f",
+  "claim": "PR 498 doc repair did not end at 119fcd73. CodeRabbit review 5897745645 was still open. The calling-shell activation fix is bdb64c25, pushed once to both the PR head ref and the pr498 ref. A board note that calls the earlier tip complete is stale.",
+  "conditions": [
+    "bdb64c25",
+    "coderabbit",
+    "pr498"
+  ],
+  "evidence_ids": [
+    "2026-11-14T04:48:00.234892+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-14T04:48:00.234892+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-14T04:48:00.234892+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-14T04:48:07.426010+00:00",
+      "action": "graduated",
+      "reviewer": "cursor-grok",
+      "notes": "Row 6832 and the earlier push-state lesson called 119fcd73 finished before the review was answered.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-14T04:48:00.234892+00:00"
+      ],
+      "lessons_sha": "0a08873c8b46"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-14T04:48:07.425995+00:00",
+  "reviewer": "cursor-grok",
+  "rationale": "Row 6832 and the earlier push-state lesson called 119fcd73 finished before the review was answered."
+}

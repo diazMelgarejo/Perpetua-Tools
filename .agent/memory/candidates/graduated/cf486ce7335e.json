@@ -1,0 +1,40 @@
+{
+  "id": "cf486ce7335e",
+  "key": "manual_cf486c",
+  "name": "manual_cf486c",
+  "claim": "Do not commit an untracked lockfile or hook log from a checkout whose HEAD already matches origin/main. Those files are local artifacts, not source.",
+  "conditions": [
+    "hook-log",
+    "lockfile",
+    "preserve"
+  ],
+  "evidence_ids": [
+    "2026-11-14T06:30:47.477609+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-14T06:30:47.477609+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-14T06:30:47.477609+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-14T06:30:47.653151+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The phylax preserve matched origin/main. The lockfile would add an unrequested pin, and the hook log carries a local path.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-14T06:30:47.477609+00:00"
+      ],
+      "lessons_sha": "a5e33d0c4323"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-14T06:30:47.653140+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The phylax preserve matched origin/main. The lockfile would add an unrequested pin, and the hook log carries a local path."
+}
