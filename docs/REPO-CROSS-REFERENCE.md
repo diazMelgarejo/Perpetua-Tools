@@ -2,7 +2,7 @@
 
 **Purpose:** Canonical mapping of all plans, task lists, specifications, and ADRs across Perpetua-Tools (L2) and orama-system (L3). Prevents confusion and duplicate work.
 
-**Last updated:** 2026-07-10  
+**Last updated:** 2026-11-15  
 **Maintain by:** updating both repos when adding new plans/specs
 
 **Note on paths:** All canonical locations use relative paths from repo root. Use `git rev-parse --show-toplevel` to resolve to actual disk location.
@@ -23,6 +23,8 @@
 | RC_CHECKLIST.md | Release-candidate checklist | `docs/` | ✅ YES | Pre-ship validation |
 | autoresearch-orchestrator-adoption.md | AutoResearcher integration plan | `docs/plans/` | ✅ YES | Fable 5 integration |
 | 2026-05-31-track-bc-claude-desktop-mcpb.md | Claude Desktop MCP bridge tracking | `docs/plans/` | ✅ YES | V1 deferred |
+| 2026-11-13-bigmodel-free-first-companion-plan.md | PT companion for BigModel free-first (checklist only) | `docs/plans/` | ✅ YES | Proposed; not a live selector |
+| 2026-11-15-local-llm-first-free-first-policy.md | Stacked local-LLM-first + free-first policy with GitHub cross-links | `docs/plans/` | ✅ YES | **unimplemented** until JSON + gate wiring exist |
 | LESSONS.md | Session-by-session learning log | `docs/` | ✅ YES | Updated 2026-07-10 with 6 new lessons |
 
 ### Phase 0 Specifications Hierarchy
@@ -44,6 +46,8 @@ PT/docs/phase-0-specifications/
 |---|---|---|---|---|
 | docs/v2/ | ADRs 0–17+ | `docs/v2/` | ✅ YES | Architectural decisions registry |
 | 2026-05-14--UNIFIED-ABSORPTION-PLAN.md | Three-tier architecture | `docs/` | ✅ YES | Master plan; all projects inherit this |
+| 2026-11-13-bigmodel-free-first-plan.md | Free-first candidate order, `free_only`, paid gate | `docs/plans/` | ✅ YES | Orama SSoT; still proposed / unimplemented |
+| 2026-05-29-03-v1.1-definitive.md | Frugality tiers 0–6 | `docs/plans/` | ✅ YES | Local-first ladder specification |
 | LESSONS.md | Cross-repo learning log | `docs/` | ✅ YES | Companion to PT LESSONS.md |
 
 ---
