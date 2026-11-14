@@ -1,0 +1,40 @@
+{
+  "id": "197c8781da7c",
+  "key": "manual_197c87",
+  "name": "manual_197c87",
+  "claim": "Do not commit an incidental lockfile or hook log created by preserve recovery. HEAD matching origin/main does not decide whether an intentional dependency lockfile belongs in source control.",
+  "conditions": [
+    "hook-log",
+    "lockfile",
+    "preserve"
+  ],
+  "evidence_ids": [
+    "2026-11-14T07:47:00.931368+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-14T07:47:00.931368+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-14T07:47:00.931368+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-14T07:47:01.101555+00:00",
+      "action": "graduated",
+      "reviewer": "cursor-grok",
+      "notes": "HEAD matching origin/main does not classify an untracked lockfile. The prohibition covers incidental preserve-recovery artifacts, not an intentional dependency lockfile.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-14T07:47:00.931368+00:00"
+      ],
+      "lessons_sha": "ca5059b1e92a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-14T07:47:01.101542+00:00",
+  "reviewer": "cursor-grok",
+  "rationale": "HEAD matching origin/main does not classify an untracked lockfile. The prohibition covers incidental preserve-recovery artifacts, not an intentional dependency lockfile."
+}
