@@ -29,3 +29,15 @@ Verified reference facts from the PT #514 enforcement work, the oramasys #100 AC
 - Process bytes must never pass PowerShell redirection (re-encoded UTF-16LE, 10 true bytes became 22) or Out-File -Encoding utf8 (BOM plus CRLF, 10 became 16). Raw byte capture must bypass PowerShell entirely.
 
 Operational tools remain canonical: native lesson graduation, GossipBus emission, and the repo verify gates. This card is evidence, not operator approval.
+
+
+## Designated concrete exemplar (operator earmark, 2026-11-15)
+
+The operator has earmarked **oramasys PR #516** (the CI pip-install retry synthesis: one shared
+env-tunable `pip_install_retry()` helper applied to all 8 call sites, both sides strengths
+amalgamated, #509/#511 retired with absorption credit, 31/31 CI checks green) as a solid concrete
+example of what a real elegant synthesis looks like. The generalized method is canonicalized at
+`orama-system/bin/orama-system/skills/oramasys-method/references/fragment-synthesis.md` (registered
+in the method SKILL.md references table), with PR #516 embedded as the worked example. Reference
+cards updated in the same pass: docs/wiki/02 (retry census), 09 (fail-secure snapshot), 17 (PS 5.1
+byte fidelity) — branch `docs/metabolize-48h-lessons`.
