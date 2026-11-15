@@ -1,0 +1,42 @@
+{
+  "id": "2c5be21c7ecf",
+  "key": "manual_2c5be2",
+  "name": "manual_2c5be2",
+  "claim": "Windows LAN discovery order is discover, save, try, then mark stale. Save a live probe with reachable true. The next run tries that saved address. If the try is offline, keep the address and set reachable false. An unchanged address hash must not refresh the old record as reachable. The Mac model endpoint is Ollama port 11434. Windows stays LM Studio port 1234. Expand the interface prefix instead of assuming a /24, and probe both ports.",
+  "conditions": [
+    "discovery",
+    "ollama",
+    "prefix",
+    "stale",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-11-15T10:57:23.879923+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-15T10:57:23.879923+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T10:57:23.879923+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T10:57:24.167619+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A missing netifaces install collapsed the scan to one /24, the Mac scan only tried LM Studio port 1234, and a matching address hash rewrote the saved discovery record with reachable true after the probe failed. orama-system commit a4f4200 on pull request 508 saves the address, tries it, and marks it stale when that try is offline. The same session already recorded the startup fixes as lessons e84373806767 (LM Studio npm and npx path), 950bfe87d1a3 (run npm.cmd through cmd /c), 33ee404ee11f (peer TLS pin, discovered Mac address, delivery proof), and 448113dae177 (ensurepip and strict-mode script variables).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T10:57:23.879923+00:00"
+      ],
+      "lessons_sha": "8bec7c65a37f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T10:57:24.167619+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A missing netifaces install collapsed the scan to one /24, the Mac scan only tried LM Studio port 1234, and a matching address hash rewrote the saved discovery record with reachable true after the probe failed. orama-system commit a4f4200 on pull request 508 saves the address, tries it, and marks it stale when that try is offline. The same session already recorded the startup fixes as lessons e84373806767 (LM Studio npm and npx path), 950bfe87d1a3 (run npm.cmd through cmd /c), 33ee404ee11f (peer TLS pin, discovered Mac address, delivery proof), and 448113dae177 (ensurepip and strict-mode script variables)."
+}
