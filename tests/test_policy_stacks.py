@@ -73,6 +73,11 @@ def test_terminal_outcomes_stop_the_free_chain():
         }],
         [{
             "model_id": "glm-4.7-flash",
+            "outcome": "model_unavailable",
+            "execution_state": "partial",
+        }],
+        [{
+            "model_id": "glm-4.7-flash",
             "outcome": "rejected",
             "http_status": 429,
             "code": "1113",
