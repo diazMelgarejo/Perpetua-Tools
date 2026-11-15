@@ -148,10 +148,10 @@ def _client():
 
     async def fake_resolve_routing_state():
         return {
-            "manager_endpoint": "http://127.0.2.2:11434",
+            "manager_endpoint": "http://manager.example.invalid:11434",
             "manager_model": "glm-5.3-flash:cloud",
             "manager_backend": "mac-ollama",
-            "coder_endpoint": "http://127.0.2.1:1234",
+            "coder_endpoint": "http://coder.example.invalid:1234",
             "coder_model": "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2",
             "coder_backend": "windows-lmstudio",
             "distributed": True,
