@@ -99,8 +99,15 @@ class LanGossipBridge:
             The globally unique event_uuid of the locally persisted event.
         """
         event_uuid = await self.local.emit(event_type, payload)
-        if not self.peers:
-            return event_uuid
+        await self.forward_committed(event_type, payload, event_uuid)
+        return event_uuid
+
+    async def forward_committed(
+        self, event_type: EventType, payload: dict, event_uuid: str
+    ) -> None:
+        """Forward an event that is already stored locally. Does not insert again."""
+        if not self.peers or not event_uuid:
+            return
         event_value = getattr(event_type, "value", event_type)
         headers = _gossip_auth_headers()
         forwarded_payload = dict(payload)
@@ -125,7 +132,6 @@ class LanGossipBridge:
         for peer, result in zip(self.peers, results):
             if isinstance(result, Exception):
                 logger.debug("LAN gossip emit to peer %s failed: %r", peer, result)
-        return event_uuid
 
     async def tail(
         self, limit: int = 20, event_type: Optional[str] = None

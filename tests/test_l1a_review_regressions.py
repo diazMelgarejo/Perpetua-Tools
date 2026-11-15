@@ -169,6 +169,28 @@ def test_live_activity_classification() -> None:
     assert not is_live_activity({"kind": "task_failed"})
 
 
+async def test_outer_dead_snapshot_does_not_release_a_live_worker(
+    bus: GossipBus, clock: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A restart that is visible inside the release transaction keeps the claim."""
+    await _emit(bus, clock, T0, {"kind": "agent_pulse", "agent_id": "w"})
+    await _emit(bus, clock, T0, {"kind": "agent_claim", "agent_id": "w", "task": "legacy"})
+    clock["now"] = T0 + 10
+    original = find_agent_heartbeats
+
+    async def _outer_claims_dead(target, agent_id=None, *, connection=None):
+        found = await original(target, agent_id, connection=connection)
+        if connection is None and "w" in found:
+            found = dict(found)
+            found["w"] = {**found["w"], "status": "DEAD"}
+        return found
+
+    monkeypatch.setattr(
+        "orchestrator.heartbeat_monitor.find_agent_heartbeats", _outer_claims_dead
+    )
+    assert "legacy" not in await cleanup_stale_claims(bus)
+
+
 async def test_end_to_end_cleanup_releases_genuinely_dead_queue_claim(
     bus: GossipBus, clock: dict
 ) -> None:

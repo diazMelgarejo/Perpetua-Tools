@@ -13,6 +13,7 @@ from orchestrator.frugality_router import is_offline_mode
 from orchestrator.gate import filter_chain_by_gate
 from orchestrator.policy_stacks import (
     automatic_free_candidates,
+    chain_stage,
     drop_ungated_paid,
     load_policy,
 )
@@ -112,7 +113,7 @@ def _free_policy_target(model_id: str) -> ModelTarget:
             context_window=None,
             roles=["fallback"],
             priority=90,
-            online=True,
+            online=False,
             reasoning="free-autorouter",
             frugality_tier=3,
         )
@@ -126,7 +127,7 @@ def _free_policy_target(model_id: str) -> ModelTarget:
         context_window=None,
         roles=["fallback"],
         priority=80,
-        online=True,
+        online=False,
         reasoning="free-first",
         frugality_tier=3,
     )
@@ -299,12 +300,16 @@ class ModelRegistry:
         additive keyword-only args -- existing positional-arg callers
         (`route_task(task_type, preferred_device)`) are unaffected.
 
-        After the runtime gate, tier 5 models are withheld unless
-        `paid_authorization` is an explicit per-run human approval for that
-        model and `paid_budget` carries a positive finite `budget_cny`.
-        When the process is online and the task is not privacy-critical, the
-        automatic free chain from the canonical policy is appended, ending at
-        `openrouter/free`. Offline and privacy-critical chains do not gain
+        After the runtime gate, paid and last-resort tiers (5 and 6) are
+        withheld unless `paid_authorization` is an explicit per-run human
+        approval for that model and `paid_budget` carries a positive finite
+        `budget_cny`. The returned chain is ordered by stage: local tiers,
+        then free tiers, then any authorized paid model. When the process is
+        online and the task is not privacy-critical, the free-first catalog
+        is inserted at the end of the free stage, with `glm-4.7-flash` first
+        and `openrouter/free` last. Those catalog entries stay offline while
+        the lane is unqualified; `select_next_candidate` decides whether a
+        call is allowed. Offline and privacy-critical chains do not gain
         that remote tail.
         """
         routes = self.routing_cfg.get("routes", {})
@@ -323,6 +328,13 @@ class ModelRegistry:
         # returns no opinion for a missing tier so the oramasys meta hop can
         # keep its historical fall-through. A model in this chain cannot.
         ordered = [candidate for candidate in ordered if candidate.frugality_tier is not None]
+        ordered.sort(
+            key=lambda candidate: (
+                chain_stage(candidate.frugality_tier) or 0,
+                0 if preferred_device and candidate.device == preferred_device else 1,
+                candidate.priority,
+            )
+        )
 
         gated = filter_chain_by_gate(
             ordered,
@@ -334,14 +346,17 @@ class ModelRegistry:
         kept = drop_ungated_paid(gated, paid_authorization, paid_budget)
         if is_offline_mode() or privacy_critical:
             return kept
+        body = [item for item in kept if chain_stage(item.frugality_tier) != 2]
+        paid = [item for item in kept if chain_stage(item.frugality_tier) == 2]
         present = {item.name for item in kept}
+        tail: List[ModelTarget] = []
         for candidate in automatic_free_candidates(load_policy()):
             model_id = candidate.get("model_id")
             if not model_id or model_id in present:
                 continue
-            kept.append(_free_policy_target(model_id))
+            tail.append(_free_policy_target(model_id))
             present.add(model_id)
-        return kept
+        return body + tail + paid
 
     def device_info(self, device_name: str) -> Dict[str, Any]:
         return self.devices.get("devices", {}).get(device_name, {})
