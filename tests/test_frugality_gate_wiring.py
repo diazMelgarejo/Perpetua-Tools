@@ -119,8 +119,13 @@ class TestRouteTaskOfflineNeverReturnsPaidRemote:
         assert "glm-5.3-flash" not in names
         assert "claude-sonnet-5" not in names
         assert "claude-sonnet-5-5" not in names
+        assert "grok-4.7" not in names
         assert names[-1] == "openrouter/free"
-        assert "glm-4.7-flash" in names
+        assert names.index("glm-4.7-flash") < names.index("openrouter/free")
+        assert names.index("glm-4.7-flash") < names.index("glm-4.5-flash")
+        cloud_at = names.index("glm-5.3-flash:cloud")
+        assert any(item.frugality_tier <= 2 for item in chain[:cloud_at])
+        assert chain[names.index("glm-4.7-flash")].online is False
 
     def test_paid_model_returns_only_with_human_budget(self, registry, monkeypatch):
         """Tier 5 stays out until this run names that model and a finite budget."""
@@ -136,7 +141,9 @@ class TestRouteTaskOfflineNeverReturnsPaidRemote:
         )
         names = [m.name for m in chain]
         assert "glm-5.3-flash" in names
+        assert names.index("openrouter/free") < names.index("glm-5.3-flash")
         assert "claude-sonnet-5" not in names
+        assert "grok-4.7" not in names
 
     def test_route_task_signature_and_return_type_unchanged_for_existing_callers(
         self, registry
