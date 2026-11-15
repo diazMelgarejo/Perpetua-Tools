@@ -1,0 +1,42 @@
+{
+  "id": "0a7eacd47c3a",
+  "key": "0a7eacd47c3a",
+  "name": "0a7eacd47c3a",
+  "claim": "fleet_topology.cross_reachable=false blocks all LAN peer flushes across subnets; a queued file is not delivery until the peer runs start.ps1 --lan-peer on the same LAN.",
+  "conditions": [
+    "cross_subnet",
+    "fleet_topology",
+    "lan_peer",
+    "windows",
+    "macos"
+  ],
+  "evidence_ids": [
+    "2026-11-15T09:56:41Z"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 9.0,
+  "staged_at": "2026-11-15T09:56:41Z",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T09:56:41Z",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T09:56:41Z",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "All nine queued Mac-to-Win items timed out against the recorded peer address because cross_reachable=false.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T09:56:41Z"
+      ],
+      "lessons_sha": "0a7eacd47c3a_v1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T09:56:41Z",
+  "reviewer": "learn.py",
+  "rationale": "Windows is unreachable from Mac until both hosts run start.ps1 --lan-peer on the same LAN."
+}

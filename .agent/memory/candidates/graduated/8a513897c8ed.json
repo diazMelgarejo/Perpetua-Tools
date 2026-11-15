@@ -1,0 +1,41 @@
+{
+  "id": "8a513897c8ed",
+  "key": "8a513897c8ed",
+  "name": "8a513897c8ed",
+  "claim": "PEER_CA_SHA256 must be the SHA-256 of the DER-encoded certificate, not the SHA-256 of the PEM file bytes; peer_tls.py hashes the DER bytes extracted from the CERTIFICATE block.",
+  "conditions": [
+    "certificate",
+    "peer_tls",
+    "sha256",
+    "der"
+  ],
+  "evidence_ids": [
+    "2026-11-15T09:56:41Z"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 9.0,
+  "staged_at": "2026-11-15T09:56:41Z",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T09:56:41Z",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T09:56:41Z",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Using the raw-file SHA-256 fails _verified_ca_der; the DER SHA-256 loads the context and verifies the peer chain.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T09:56:41Z"
+      ],
+      "lessons_sha": "8a513897c8ed_v1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T09:56:41Z",
+  "reviewer": "learn.py",
+  "rationale": "The .env.local PEER_CA_SHA256 was correct as a DER SHA-256; the earlier confusion (raw file vs DER) caused a false stale-fingerprint diagnosis."
+}

@@ -1,0 +1,41 @@
+{
+  "id": "502191a8d937",
+  "key": "502191a8d937",
+  "name": "502191a8d937",
+  "claim": "lm_link.json stays in mode solo-local with peer_up=false and a rising consecutive_peer_failures counter even when the peer portal is reachable on 8443.",
+  "conditions": [
+    "link_state",
+    "solo_local",
+    "auto_recovery",
+    "lan_peer"
+  ],
+  "evidence_ids": [
+    "2026-11-15T09:56:41Z"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.5,
+  "staged_at": "2026-11-15T09:56:41Z",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T09:56:41Z",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T09:56:41Z",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "lm_link.json showed mode=solo-local, peer_up=false, high consecutive_peer_failures while the Windows probe reached the Mac portal on 8443; the link does not self-heal.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T09:56:41Z"
+      ],
+      "lessons_sha": "502191a8d937_v1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T09:56:41Z",
+  "reviewer": "learn.py",
+  "rationale": "Reachability alone does not flip the link out of solo-local; recovery needs an explicit link change, not just a successful probe."
+}

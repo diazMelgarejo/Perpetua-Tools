@@ -1,0 +1,41 @@
+{
+  "id": "d8adbeebda53",
+  "key": "d8adbeebda53",
+  "name": "d8adbeebda53",
+  "claim": "GossipBus is intra-machine coordination backed by the git-common-dir-relative .state/perpetua_core.db; cross-machine coordination is file drops in the lan_peer inbox with .meta.json receipts.",
+  "conditions": [
+    "gossip_bus",
+    "lan_peer",
+    "coordination",
+    "receipts"
+  ],
+  "evidence_ids": [
+    "2026-11-15T09:56:41Z"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-15T09:56:41Z",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T09:56:41Z",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T09:56:41Z",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "GossipBus tail returned local rows only; cross-machine delivery required the lan_peer inbox drop plus meta receipt.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T09:56:41Z"
+      ],
+      "lessons_sha": "d8adbeebda53_v1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T09:56:41Z",
+  "reviewer": "learn.py",
+  "rationale": "Know which channel carries which scope; do not treat a comment or snapshot as a live cross-machine delivery."
+}
