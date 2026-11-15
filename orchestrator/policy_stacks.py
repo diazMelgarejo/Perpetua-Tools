@@ -15,6 +15,11 @@ from typing import Any, Mapping, Sequence
 POLICY_FILENAME = "bigmodel-free-first-policy.json"
 STACKS_FILENAME = "routing-policy-stacks.json"
 PAID_TIER = 5
+LOCAL_TIER_MAX = 2
+FREE_TIER_MAX = 4
+_CONTINUABLE_OUTCOMES = frozenset(
+    {"model_unavailable", "capability_ineligible", "rejected"}
+)
 
 
 def _config_dir() -> Path:
@@ -113,31 +118,94 @@ def authorize_paid_candidate(
     return True
 
 
+def chain_stage(tier: Any) -> int | None:
+    """Map a frugality tier onto local, free, or paid. None stays unclassified."""
+    if isinstance(tier, bool) or not isinstance(tier, int):
+        return None
+    if tier <= LOCAL_TIER_MAX:
+        return 0
+    if tier <= FREE_TIER_MAX:
+        return 1
+    return 2
+
+
+def requires_paid_gate(tier: Any) -> bool:
+    """Paid and last-resort tiers need a human gate. Tier 4 stays free."""
+    return isinstance(tier, int) and not isinstance(tier, bool) and tier >= PAID_TIER
+
+
+def ledger_outcome(row: Mapping[str, Any]) -> str:
+    """Read a ledger class. A bare model id is not evidence the task may continue."""
+    named = row.get("outcome")
+    if isinstance(named, str) and named:
+        return named
+    if any(key in row for key in ("http_status", "code", "execution_state")):
+        return classify_provider_result(
+            row.get("http_status"),
+            row.get("code"),
+            row.get("execution_state"),
+        )
+    return ""
+
+
+def candidate_dispatch_allowed(
+    policy: Mapping[str, Any],
+    candidate: Mapping[str, Any],
+    task_requirements: Mapping[str, Any] | None,
+) -> bool:
+    """Catalog membership is not permission to call the model.
+
+    Ordinary dispatch requires an open lane and a qualified free candidate.
+    ``dispatch_mode=qualification_probe`` may walk unqualified free ids, and
+    route assembly does not use that mode.
+    """
+    if candidate.get("pricing_status") != "free":
+        return False
+    requirements = task_requirements or {}
+    if requirements.get("dispatch_mode") == "qualification_probe":
+        return True
+    lane = policy.get("lane_qualification") or {}
+    if not isinstance(lane, Mapping) or lane.get("status") == "blocked":
+        return False
+    if candidate.get("qualification_status") != "qualified":
+        return False
+    needed = requirements.get("min_context_tokens")
+    if needed is not None:
+        window = candidate.get("context_window")
+        if isinstance(window, bool) or not isinstance(window, int) or window < needed:
+            return False
+    return True
+
+
 def select_next_candidate(
     policy: Mapping[str, Any],
     task_requirements: Mapping[str, Any] | None,
     evidence_ledger: Sequence[Mapping[str, Any]] | None,
 ) -> dict[str, Any] | None:
-    """Return the next automatic free candidate, or None when the free chain ends.
+    """Return the next free candidate the task may call, or None to stop.
 
-    Vision tasks and retired ids are not members of this chain. A recorded
-    outcome for a model, including an unknown outcome, removes it. Paid models
-    are never returned.
+    Success, billing, credentials, safety, throttle, and unknown or partial
+    execution stop the chain. Only a proven model-specific miss moves on.
+    Vision tasks and retired ids are not members of this chain. Paid models
+    are never returned. While the lane is blocked, only an explicit
+    qualification probe may see an unqualified candidate.
     """
     requirements = task_requirements or {}
     if requirements.get("modality") == "vision":
         return None
+    settled: set[Any] = set()
+    for row in evidence_ledger or []:
+        if not isinstance(row, Mapping) or not row.get("model_id"):
+            continue
+        if ledger_outcome(row) not in _CONTINUABLE_OUTCOMES:
+            return None
+        settled.add(row.get("model_id"))
     retired = set((policy.get("retired_models") or {}).get("models") or [])
-    settled = {
-        row.get("model_id")
-        for row in (evidence_ledger or [])
-        if isinstance(row, Mapping) and row.get("model_id")
-    }
     for candidate in automatic_free_candidates(policy):
         model_id = candidate.get("model_id")
         if not model_id or model_id in retired or model_id in settled:
             continue
-        if candidate.get("pricing_status") != "free":
+        if not candidate_dispatch_allowed(policy, candidate, requirements):
             continue
         return candidate
     return None
@@ -148,11 +216,11 @@ def drop_ungated_paid(
     authorization: Mapping[str, Any] | None,
     budget_state: Mapping[str, Any] | None,
 ) -> list[Any]:
-    """Drop tier-5 models unless this run's human gate names that model."""
+    """Drop paid and last-resort tiers unless this run's human gate names that model."""
     kept: list[Any] = []
     for item in chain:
         tier = getattr(item, "frugality_tier", None)
-        if tier == PAID_TIER:
+        if requires_paid_gate(tier):
             candidate = {"model_id": getattr(item, "name", None)}
             if authorize_paid_candidate(authorization, budget_state, candidate):
                 kept.append(item)

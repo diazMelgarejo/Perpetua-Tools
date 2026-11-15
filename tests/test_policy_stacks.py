@@ -11,6 +11,7 @@ from orchestrator.policy_stacks import (
     authorize_paid_candidate,
     automatic_free_candidates,
     classify_provider_result,
+    drop_ungated_paid,
     load_policy,
     load_stacks,
     select_next_candidate,
@@ -39,16 +40,55 @@ def test_free_chain_ends_at_openrouter_and_excludes_paid():
 
 def test_select_next_skips_settled_and_stops_before_paid():
     policy = load_policy()
-    first = select_next_candidate(policy, {}, [])
+    probe = {"dispatch_mode": "qualification_probe", "modality": "text"}
+    first = select_next_candidate(policy, probe, [])
     assert first["model_id"] == "glm-4.7-flash"
+    assert select_next_candidate(policy, {}, []) is None
     ledger = [
         {"model_id": "glm-4.7-flash", "outcome": "model_unavailable"},
         {"model_id": "glm-4.5-flash", "outcome": "capability_ineligible"},
         {"model_id": "glm-4-flash-250414", "outcome": "rejected"},
     ]
-    nxt = select_next_candidate(policy, {"modality": "text"}, ledger)
+    nxt = select_next_candidate(policy, probe, ledger)
     assert nxt["model_id"] == "openrouter/free"
     assert select_next_candidate(policy, {"modality": "vision"}, []) is None
+
+
+def test_terminal_outcomes_stop_the_free_chain():
+    policy = load_policy()
+    probe = {"dispatch_mode": "qualification_probe"}
+    for ledger in (
+        [{"model_id": "glm-4.7-flash", "outcome": "success"}],
+        [{"model_id": "glm-4.7-flash", "http_status": 429, "code": "1113"}],
+        [{"model_id": "glm-4.7-flash", "http_status": 401}],
+        [{"model_id": "glm-4.7-flash", "execution_state": "partial"}],
+        [{"model_id": "glm-4.7-flash", "http_status": 429}],
+        [{"model_id": "glm-4.7-flash"}],
+    ):
+        assert select_next_candidate(policy, probe, ledger) is None
+
+
+def test_tier_6_paid_model_needs_the_same_human_gate():
+    grok = ModelTarget(
+        name="grok-4.7",
+        backend="xai",
+        device="cloud",
+        host="https://example.invalid",
+        port=443,
+        context_window=1,
+        roles=["top-level"],
+        priority=60,
+        online=False,
+        reasoning="last-resort",
+        frugality_tier=6,
+    )
+    assert drop_ungated_paid([grok], None, None) == []
+    kept = drop_ungated_paid(
+        [grok],
+        {"human_approved": True, "per_run": True, "model_id": "grok-4.7"},
+        {"budget_cny": 1},
+    )
+    assert kept == [grok]
 
 
 def test_1113_is_not_a_throttle_and_paid_needs_a_human_budget():
@@ -173,4 +213,6 @@ def test_exhausted_free_chain_does_not_select_paid():
         {"model_id": row["model_id"], "outcome": "rejected"}
         for row in automatic_free_candidates(policy)
     ]
-    assert select_next_candidate(policy, {"modality": "text"}, ledger) is None
+    assert select_next_candidate(
+        policy, {"dispatch_mode": "qualification_probe", "modality": "text"}, ledger
+    ) is None
