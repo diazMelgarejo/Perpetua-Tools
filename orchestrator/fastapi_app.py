@@ -54,6 +54,10 @@ from orchestrator.cost_guard import (
 )
 from orchestrator.ecc_tools_sync import ecc_sync_enabled, get_sync_status, sync_ecc_tools
 from orchestrator.model_registry import ModelRegistry
+from orchestrator.policy_stacks import (
+    candidate_dispatch_allowed,
+    load_policy as load_free_first_policy,
+)
 from orchestrator.model_transport import (
     ProviderConfigError,
     ProviderTransportError,
@@ -501,6 +505,58 @@ async def _probe_glm_cloud_candidate(model: Any) -> tuple[bool, str]:
         return False, "empty-response"
 
 
+def _load_policy_snapshot() -> tuple[dict[str, Any] | None, str]:
+    """Load ONE validated free-first policy snapshot for this request.
+
+    Returns ``(policy, "")`` on success or ``(None, reason)`` when the
+    snapshot cannot be obtained. The caller must fail secure on ``None``:
+    unavailable security configuration must not become permission, so the
+    handler refuses policy-dependent dispatch instead of disabling the gate.
+    """
+    try:
+        policy = load_free_first_policy()
+    except (OSError, ValueError) as exc:
+        logging.error("free-first policy unavailable (%s); refusing dispatch", exc)
+        return None, f"{type(exc).__name__}: {exc}"
+    if not isinstance(policy, dict):
+        logging.error("free-first policy is not a JSON object; refusing dispatch")
+        return None, "policy document is not a JSON object"
+    return policy, ""
+
+
+def _dispatch_allowed_by_qualification(policy: dict[str, Any] | None, candidate: Any) -> bool:
+    """Consult the free-first qualification gate for a production candidate.
+
+    Catalog membership is not permission to call the model. A candidate the
+    catalog knows about must pass ``candidate_dispatch_allowed`` and must not
+    be marked ``online: false`` in the catalog before the production path may
+    resolve it or fall back to it. Candidates absent from the catalog are not
+    free-first chain members and stay under the registry's own trust rules,
+    so local-model behavior is unchanged.
+
+    ``policy=None`` is a legacy direct-caller contract (no catalog configured);
+    the /orchestrate handler never reaches this helper without a validated
+    snapshot -- it fails secure with 503 first.
+    """
+    if not policy:
+        return True
+    # NOTE: the registry ModelTarget.online flag is a live-derived reachability
+    # signal, not a qualification verdict -- reachability stays the probe's
+    # job (and the probe-failure fallback exists for it). Only the catalog
+    # row's explicit online flag is a dispatch kill switch here.
+    name = getattr(candidate, "name", None)
+    rows = policy.get("ordered_candidates") or []
+    row = next(
+        (r for r in rows if isinstance(r, dict) and r.get("model_id") == name),
+        None,
+    )
+    if row is None:
+        return True
+    if row.get("online") is False:
+        return False
+    return candidate_dispatch_allowed(policy, row, {})
+
+
 async def _candidate_availability(model: Any) -> tuple[bool, str]:
     """Probe one candidate by backend type; return ``(ready, detail)``. Non-local backends are not probed and count as ready, and probe errors count as not ready."""
     backend = getattr(model, "backend", "")
@@ -530,26 +586,53 @@ async def _candidate_availability(model: Any) -> tuple[bool, str]:
 async def _resolve_candidates(
     candidates: List[Any],
     task_type: str,
+    policy: dict[str, Any] | None = None,
 ) -> tuple[list[Any], dict[str, dict[str, Any]]]:
-    """Return reachable candidates in registry order and their probe results.
+    """Return dispatchable candidates in registry order and their probe results.
 
-    Autoresearch requires reachable local candidates; other tasks retain the
-    configured chain when every probe fails.
+    A candidate is dispatchable only when the free-first qualification gate
+    allows it (catalog membership is not permission) and its availability
+    probe passes. Autoresearch requires reachable local candidates; other
+    tasks retain the configured chain of *dispatchable* candidates when every
+    probe fails -- gate-blocked candidates are never executable fallbacks.
     """
     resolved: list[Any] = []
     availability: dict[str, dict[str, Any]] = {}
+    allowed: dict[str, bool] = {}
 
     for candidate in candidates:
-        ready, detail = await _candidate_availability(candidate)
         key = f"{getattr(candidate, 'name', 'unknown')}@{getattr(candidate, 'device', 'unknown')}"
+        allowed[key] = _dispatch_allowed_by_qualification(policy, candidate)
+        if not allowed[key]:
+            # Gate-denied: record the blocked entry and skip the probe
+            # entirely -- a denied candidate must not touch its backend
+            # (a denied Ollama-backed GLM cloud candidate would otherwise
+            # reach the one-shot cloud probe).
+            availability[key] = {
+                "ready": False,
+                "detail": "qualification-gate-blocked",
+                "backend": getattr(candidate, "backend", ""),
+                "device": getattr(candidate, "device", ""),
+                "dispatch_allowed": False,
+            }
+            continue
+        ready, detail = await _candidate_availability(candidate)
         availability[key] = {
             "ready": ready,
             "detail": detail,
             "backend": getattr(candidate, "backend", ""),
             "device": getattr(candidate, "device", ""),
+            "dispatch_allowed": True,
         }
         if ready:
             resolved.append(candidate)
+
+    def _fallback() -> list[Any]:
+        # Probe-failure fallback retains only candidates the qualification
+        # gate allows: a blocked catalog entry can never become an executable
+        # fallback just because the probe path would have kept the chain.
+        return [c for c in candidates if allowed.get(
+            f"{getattr(c, 'name', 'unknown')}@{getattr(c, 'device', 'unknown')}")]
 
     if task_type in _AUTORESEARCH_TASK_TYPES:
         local_ready = [candidate for candidate in resolved if _is_local_candidate(candidate)]
@@ -557,14 +640,10 @@ async def _resolve_candidates(
             return [], availability
         return local_ready, availability
 
-    # Preserve registry order among reachable candidates. If every probe fails,
-    # retain the configured chain so callers can still report or attempt their
-    # declared fallbacks rather than treating an unavailable probe as a route
-    # configuration error.
     if task_type in _ORAMASYS_TASK_TYPES:
-        return resolved or candidates, availability
+        return resolved or _fallback(), availability
 
-    return resolved or candidates, availability
+    return resolved or _fallback(), availability
 
 
 @app.get("/ecc/status", tags=["ecc"])
@@ -1029,14 +1108,31 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
                 f"{budget_state['daily_budget']:.2f} (>=80%)"
             )
 
-        route_candidates = registry.route_task(req.task_type, preferred_device=req.preferred_device)
+        policy, policy_error = _load_policy_snapshot()
+        if policy is None:
+            # Fail-secure: unavailable security configuration must not become
+            # permission. Route assembly reads the same catalog, so a snapshot
+            # failure refuses dispatch instead of silently disabling the gate.
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    f"Qualification policy unavailable ({policy_error}); "
+                    "refusing model dispatch."
+                ),
+            )
+
+        route_candidates = registry.route_task(
+            req.task_type, preferred_device=req.preferred_device, policy=policy
+        )
         if not route_candidates:
             raise HTTPException(
                 status_code=404,
                 detail=f"No model candidates found for task_type='{req.task_type}'",
             )
 
-        candidates, availability = await _resolve_candidates(route_candidates, req.task_type)
+        candidates, availability = await _resolve_candidates(
+            route_candidates, req.task_type, policy=policy
+        )
         if req.task_type in _AUTORESEARCH_TASK_TYPES and not candidates:
             return {
                 "status": "needs_user_action",
@@ -1048,6 +1144,14 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
                 "runtime": _runtime_summary(),
                 "availability": availability,
             }
+        if not candidates:
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    f"No qualified candidate available for task_type='{req.task_type}': "
+                    "the free-first qualification gate refused every candidate."
+                ),
+            )
 
         selected = candidates[0]
         route_cfg = registry.routing_cfg.get("routes", {}).get(req.task_type, {})
@@ -1098,6 +1202,9 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
             "online": selected.online,
             "reasoning": selected.reasoning,
         },
+        # Response fallback_chain must mirror the gated executable chain:
+        # gate-denied catalog entries are never advertised as fallbacks even
+        # though they remain in route_candidates for availability reporting.
         "fallback_chain": [
             {
                 "priority": index + 2,
@@ -1107,7 +1214,16 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
                 "online": model.online,
             }
             for index, model in enumerate(
-                [model for model in route_candidates if model is not selected][:5]
+                [
+                    model
+                    for model in route_candidates
+                    if model is not selected
+                    and availability.get(
+                        f"{getattr(model, 'name', 'unknown')}@"
+                        f"{getattr(model, 'device', 'unknown')}",
+                        {},
+                    ).get("dispatch_allowed", False)
+                ][:5]
             )
         ],
         "runtime": _runtime_summary(),

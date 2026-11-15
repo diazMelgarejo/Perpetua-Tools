@@ -97,7 +97,12 @@ def client():
         device="win-rtx3080",
     )
 
-    def route_task(task_type: str, *, preferred_device: str | None = None):
+    def route_task(
+        task_type: str,
+        *,
+        preferred_device: str | None = None,
+        policy=None,  # production passes its validated snapshot; unused here
+    ):
         """Return offline coding or reasoning candidates according to the requested route."""
         if task_type == "code_analysis" or preferred_device == "win-rtx3080":
             return [code_analysis_candidate]
@@ -357,3 +362,35 @@ class TestRoutingYmlUltrathinkContract:
         route = routing["routes"]["code_analysis"]
         assert "requires" in route
         assert "orama_available" in route["requires"]
+
+@pytest.fixture(autouse=True)
+def _isolate_from_operator_free_first_policy(monkeypatch):
+    """Route-mechanics tests own their policy state: nothing is catalog-gated.
+
+    The operator's real bigmodel-free-first-policy.json legitimately carries a
+    blocked lane and unqualified rows pending live provider qualification;
+    routing tests must not depend on that operator state, so the free-first
+    catalog is emptied here. Qualification-gate behavior is covered by
+    tests/test_production_qualification_gate.py.
+    """
+    monkeypatch.setattr(
+        "orchestrator.fastapi_app.load_free_first_policy",
+        lambda: {
+            "lane_qualification": {"status": "open"},
+            # Route-mechanics tests run against a QUALIFIED catalog: the
+            # same rows the operator will publish after live provider
+            # qualification, so the free-first tail behaves as it will in
+            # production while qualification-gate behavior stays covered by
+            # tests/test_production_qualification_gate.py.
+            "ordered_candidates": [
+                {"model_id": "glm-4.7-flash", "pricing_status": "free",
+                 "qualification_status": "qualified", "context_window": 131072},
+                {"model_id": "glm-4.5-flash", "pricing_status": "free",
+                 "qualification_status": "qualified", "context_window": 131072},
+                {"model_id": "glm-4-flash-250414", "pricing_status": "free",
+                 "qualification_status": "qualified", "context_window": 131072},
+                {"model_id": "openrouter/free", "pricing_status": "free",
+                 "qualification_status": "qualified", "context_window": 131072},
+            ],
+        },
+    )

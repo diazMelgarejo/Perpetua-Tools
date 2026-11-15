@@ -33,6 +33,16 @@ def load_policy(path: Path | None = None) -> dict[str, Any]:
         payload = json.load(handle)
     if not isinstance(payload, dict):
         raise ValueError("free-first policy must be a JSON object")
+    rows = payload.get("ordered_candidates")
+    if not isinstance(rows, list) or not rows:
+        raise ValueError("free-first policy requires a non-empty ordered_candidates list")
+    if any(
+        not isinstance(row, dict)
+        or not isinstance(row.get("model_id"), str)
+        or not row["model_id"].strip()
+        for row in rows
+    ):
+        raise ValueError("free-first policy ordered_candidates require non-empty model_id strings")
     return payload
 
 
