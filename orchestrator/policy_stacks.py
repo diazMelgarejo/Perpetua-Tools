@@ -135,17 +135,26 @@ def requires_paid_gate(tier: Any) -> bool:
 
 
 def ledger_outcome(row: Mapping[str, Any]) -> str:
-    """Read a ledger class. A bare model id is not evidence the task may continue."""
-    named = row.get("outcome")
-    if isinstance(named, str) and named:
-        return named
+    """Read a ledger class. A terminal signal beats a continuable label.
+
+    Partial execution, billing code 1113, credentials, and unknown execution
+    stop even when the row also says ``rejected``. An explicit outcome is
+    used only when no terminal signal is present. A bare model id, 404, or
+    422 is not evidence the task may continue.
+    """
+    structural = ""
     if any(key in row for key in ("http_status", "code", "execution_state")):
-        return classify_provider_result(
+        structural = classify_provider_result(
             row.get("http_status"),
             row.get("code"),
             row.get("execution_state"),
         )
-    return ""
+    if structural and structural not in _CONTINUABLE_OUTCOMES:
+        return structural
+    named = row.get("outcome")
+    if isinstance(named, str) and named:
+        return named
+    return structural
 
 
 def candidate_dispatch_allowed(
@@ -197,7 +206,13 @@ def select_next_candidate(
     for row in evidence_ledger or []:
         if not isinstance(row, Mapping) or not row.get("model_id"):
             continue
-        if ledger_outcome(row) not in _CONTINUABLE_OUTCOMES:
+        explicit = row.get("outcome")
+        proven_miss = (
+            isinstance(explicit, str)
+            and explicit in _CONTINUABLE_OUTCOMES
+            and ledger_outcome(row) in _CONTINUABLE_OUTCOMES
+        )
+        if not proven_miss:
             return None
         settled.add(row.get("model_id"))
     retired = set((policy.get("retired_models") or {}).get("models") or [])

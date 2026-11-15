@@ -64,6 +64,19 @@ def test_terminal_outcomes_stop_the_free_chain():
         [{"model_id": "glm-4.7-flash", "execution_state": "partial"}],
         [{"model_id": "glm-4.7-flash", "http_status": 429}],
         [{"model_id": "glm-4.7-flash"}],
+        [{"model_id": "glm-4.7-flash", "http_status": 404}],
+        [{"model_id": "glm-4.7-flash", "http_status": 422}],
+        [{
+            "model_id": "glm-4.7-flash",
+            "outcome": "rejected",
+            "execution_state": "partial",
+        }],
+        [{
+            "model_id": "glm-4.7-flash",
+            "outcome": "rejected",
+            "http_status": 429,
+            "code": "1113",
+        }],
     ):
         assert select_next_candidate(policy, probe, ledger) is None
 
