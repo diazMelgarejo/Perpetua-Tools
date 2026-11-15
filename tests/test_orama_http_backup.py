@@ -127,5 +127,22 @@ def _isolate_from_operator_free_first_policy(monkeypatch):
     """
     monkeypatch.setattr(
         "orchestrator.fastapi_app.load_free_first_policy",
-        lambda: {"lane_qualification": {"status": "open"}, "ordered_candidates": []},
+        lambda: {
+            "lane_qualification": {"status": "open"},
+            # Route-mechanics tests run against a QUALIFIED catalog: the
+            # same rows the operator will publish after live provider
+            # qualification, so the free-first tail behaves as it will in
+            # production while qualification-gate behavior stays covered by
+            # tests/test_production_qualification_gate.py.
+            "ordered_candidates": [
+                {"model_id": "glm-4.7-flash", "pricing_status": "free",
+                 "qualification_status": "qualified", "context_window": 131072},
+                {"model_id": "glm-4.5-flash", "pricing_status": "free",
+                 "qualification_status": "qualified", "context_window": 131072},
+                {"model_id": "glm-4-flash-250414", "pricing_status": "free",
+                 "qualification_status": "qualified", "context_window": 131072},
+                {"model_id": "openrouter/free", "pricing_status": "free",
+                 "qualification_status": "qualified", "context_window": 131072},
+            ],
+        },
     )
