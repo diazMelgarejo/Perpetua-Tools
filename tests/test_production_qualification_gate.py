@@ -22,9 +22,10 @@ def _candidate(name: str, backend: str = "openrouter") -> SimpleNamespace:
         name=name,
         backend=backend,
         device="cloud" if backend not in fa._LOCAL_RUNTIME_BACKENDS else "local",
-        host=None,
-        port=None,
+        host="https://example.invalid",
+        port=443,
         online=True,
+        reasoning=False,
     )
 
 
@@ -264,3 +265,47 @@ def test_single_policy_snapshot_shared_with_route_assembly(monkeypatch):
     assert calls["loader"] == 1, "the handler must load the policy exactly once"
     assert calls["registry_loader"] == 0, "route assembly must reuse the snapshot, not re-read"
     assert captured.get("policy") is policy
+
+
+def test_orchestrate_fallback_chain_excludes_gate_denied(monkeypatch):
+    """Response fallback_chain must not advertise qualification-blocked models.
+
+    CodeRabbit outside-diff nit: /orchestrate built fallback_chain from the
+    ungated route_candidates list, so a catalog-denied sibling could appear in
+    the response even though the executable resolver already excluded it.
+    """
+    rows = [
+        {"model_id": "glm-4.7-flash", "pricing_status": "free",
+         "qualification_status": "qualified"},
+        {"model_id": "openrouter/free", "pricing_status": "free",
+         "qualification_status": "unqualified"},
+    ]
+    policy = _policy(rows)
+    monkeypatch.setattr(fa, "load_free_first_policy", lambda: policy)
+
+    qualified = _candidate("glm-4.7-flash")
+    denied = _candidate("openrouter/free")
+
+    monkeypatch.setattr(
+        fa.registry,
+        "route_task",
+        lambda task_type, preferred_device=None, **kwargs: [qualified, denied],
+    )
+
+    async def always_ready(_model):
+        return True, "mock-ready"
+
+    monkeypatch.setattr(fa, "_candidate_availability", always_ready)
+
+    with _client() as client:
+        resp = client.post(
+            "/orchestrate",
+            json={"task": "fallback-chain gate check", "task_type": "default", "force": True},
+        )
+
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["selected_model"]["name"] == "glm-4.7-flash"
+    fallback_names = [entry["name"] for entry in body["fallback_chain"]]
+    assert "openrouter/free" not in fallback_names
+    assert body["availability"]["openrouter/free@cloud"]["dispatch_allowed"] is False

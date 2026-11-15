@@ -1202,6 +1202,9 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
             "online": selected.online,
             "reasoning": selected.reasoning,
         },
+        # Response fallback_chain must mirror the gated executable chain:
+        # gate-denied catalog entries are never advertised as fallbacks even
+        # though they remain in route_candidates for availability reporting.
         "fallback_chain": [
             {
                 "priority": index + 2,
@@ -1211,7 +1214,16 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
                 "online": model.online,
             }
             for index, model in enumerate(
-                [model for model in route_candidates if model is not selected][:5]
+                [
+                    model
+                    for model in route_candidates
+                    if model is not selected
+                    and availability.get(
+                        f"{getattr(model, 'name', 'unknown')}@"
+                        f"{getattr(model, 'device', 'unknown')}",
+                        {},
+                    ).get("dispatch_allowed", False)
+                ][:5]
             )
         ],
         "runtime": _runtime_summary(),
