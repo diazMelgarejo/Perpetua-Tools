@@ -1,0 +1,42 @@
+{
+  "id": "a9944f9833cc",
+  "key": "manual_a9944f",
+  "name": "manual_a9944f",
+  "claim": "Windows startup with --lan-peer must bring up Perpetua-Tools, orama, the loopback portal, and the TLS front end before it reports ready. A portal left on plain HTTP leaves peers timing out on that TLS port, and their queued files are not stored on this host. If an older portal is bound to the LAN, restart it on loopback before opening the TLS front end.",
+  "conditions": [
+    "discovery",
+    "portal",
+    "startup",
+    "tls",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-11-15T11:26:59.655551+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-15T11:26:59.655551+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T11:26:59.655551+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T11:27:00.140348+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Tonight the other host's outbox stayed at 78 delivered, 6 superseded, and 9 queued. The error on those nine was an HTTPS timeout, not a bad fingerprint, because nothing was listening on the TLS port. After startup opened the front end, the local TLS self-check passed: health returned 200 and an unauthenticated inbox request returned 401. The plain portal stayed on loopback.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T11:26:59.655551+00:00"
+      ],
+      "lessons_sha": "a0e484dbbeb9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T11:27:00.140348+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Tonight the other host's outbox stayed at 78 delivered, 6 superseded, and 9 queued. The error on those nine was an HTTPS timeout, not a bad fingerprint, because nothing was listening on the TLS port. After startup opened the front end, the local TLS self-check passed: health returned 200 and an unauthenticated inbox request returned 401. The plain portal stayed on loopback."
+}
