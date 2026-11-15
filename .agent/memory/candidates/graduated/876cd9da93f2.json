@@ -1,0 +1,42 @@
+{
+  "id": "876cd9da93f2",
+  "key": "876cd9da93f2",
+  "name": "876cd9da93f2",
+  "claim": "Queued outbox items deliver once the peer TLS front end becomes reachable: --remap-peer-ip overrides the stale stored peer address, --remap-port 8002:8443 maps the plain portal port onto TLS, and a drop counts as delivered only with ok true, received_at and a matching byte count; the drained queue then shows zero queued rows.",
+  "conditions": [
+    "flush_outbox",
+    "remap_peer_ip",
+    "tls",
+    "delivery",
+    "lan_peer"
+  ],
+  "evidence_ids": [
+    "2026-11-15T11:05:00Z"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 9.0,
+  "staged_at": "2026-11-15T11:05:00Z",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T11:05:00Z",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T11:05:00Z",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "First flush after the peer TLS endpoint came up on 8443 delivered every queued item; a verification flush then reported delivered 0, still queued 0 and outbox-status showed zero queued rows.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T11:05:00Z"
+      ],
+      "lessons_sha": "876cd9da93f2_v1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T11:05:00Z",
+  "reviewer": "learn.py",
+  "rationale": "Delivery gate is reachability of the peer TLS endpoint plus correct remap flags; success is verified from ok true, received_at and byte counts, not from absence of errors."
+}

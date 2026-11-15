@@ -229,6 +229,7 @@
 - lm_link.json stays in mode solo-local with peer_up=false and a rising consecutive_peer_failures counter even when the peer portal is reachable on 8443.  <!-- status=accepted confidence=0.9 evidence=1 id=502191a8d937 -->
 - GossipBus is intra-machine coordination backed by the git-common-dir-relative .state/perpetua_core.db; cross-machine coordination is file drops in the lan_peer inbox with .meta.json receipts.  <!-- status=accepted confidence=0.9 evidence=1 id=d8adbeebda53 -->
 - windows-peer-ca.pem is byte-identical to the Mac orama-lan-ca-PHLab-H2LGBV3.pem (DER SHA-256 364490e8, valid Oct 2026 to Oct 2028); the 8443 portal serves a distinct self-signed CN=orama-mac.local (SHA-256 53c1ef1f, valid Nov 2026 to Dec 2026). Each direction must pin the correct peer cert, not assume one shared CA.  <!-- status=accepted confidence=0.9 evidence=1 id=1ccc10f04d46 -->
+- Queued outbox items deliver once the peer TLS front end becomes reachable: --remap-peer-ip overrides the stale stored peer address, --remap-port 8002:8443 maps the plain portal port onto TLS, and a drop counts as delivered only with ok true, received_at and a matching byte count; the drained queue then shows zero queued rows.  <!-- status=accepted confidence=0.9 evidence=1 id=876cd9da93f2 -->
 
 ### 2026-10
 
