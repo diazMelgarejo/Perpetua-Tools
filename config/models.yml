@@ -7,11 +7,361 @@ version: "0.9.9.8"
 
 models:
 
+  # ── Tier 0: oramasys keeps its own call path. Sorted is not available. ──
+  - name: oramasys
+    backend: local
+    device: mac-studio
+    host: "http://localhost"
+    port: 9
+    roles: [meta-orchestrator]
+    priority: 0
+    online: false
+    reasoning: oramasys-own-logic
+    notes: "Tier 0 local inference. The privacy-critical hop calls this process itself and does not treat it as a models.yml dispatch candidate."
+    frugality_tier: 0
+
+  # ── Known local models, qwen first. Order is classification, not availability.
+  - name: "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2"
+    backend: lm-studio
+    device: win-rtx3080
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
+    port: 1234
+    context_window: 16384
+    gpu_offload: 40
+    roles: [coder, coding, checker, refiner, executor, verifier, subagent, priority-subagent, autoresearch-coder, autoresearch, fallback]
+    priority: 5
+    online: false
+    reasoning: windows-lmstudio
+    gguf_file: Qwen3.5-27B.Q4_K_M.gguf
+    hf_repo: Jackrong/Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF
+    description: "Primary Logic, Heavy Coder, Critic, Evaluator"
+    tier: "primary"
+    # frugality_tier=1 (local_oss): LM Studio on win-rtx3080, LAN-local.
+    frugality_tier: 1
+
+  # ── Priority 10 - LOCAL: Mac LM Studio (v1.0 RC canonical) ────────────────
+  # Qwen3.5-9B MLX-4bit — Metal full GPU offload, Context=4096 (conservative M2 16GB)
+  # HF: mlx-community/Qwen3.5-9B-MLX-4bit
+  # Same weights loadable in Ollama (mlx-lm backend)
+  - name: Qwen3.5-9B-MLX-4bit
+    backend: lm-studio
+    device: mac-studio
+    host: "${LM_STUDIO_MAC_ENDPOINT:-http://localhost:1234}"
+    port: 1234
+    context_window: 4096
+    gpu_offload: full
+    roles: [mac_orchestrator, refiner, verifier, final-validator, presenter, top-level, deep_reasoning]
+    priority: 10
+    status: "🔵 Preferred Fallback"
+    online: false
+    reasoning: mac-lmstudio
+    hf_repo: mlx-community/Qwen3.5-9B-MLX-4bit
+    description: "Mac Orchestrator, Refiner, Verifier"
+    tier: "preferred_fallback"
+    # frugality_tier=1 (local_oss): LM Studio on mac-studio, local Metal.
+    frugality_tier: 1
+ 
+  # ── LOCAL: Windows LM Studio — Gemma 4 26B A4B (MoE) ─────────────────────
+  # lmstudio-community/gemma-4-26B-A4B-it-GGUF Q4_K_M ≈ 16.8 GB
+  # MoE: 4B active params — lower VRAM pressure than dense 26B
+  # XPS 8950 + RTX 3080 10GB: gpu_offload=35 → ~9.5 GB VRAM, rest on 32 GB CPU RAM
+  - name: qwen3.8-27b-rtx3080
+    api_model: qwen/qwen3.8-27b
+    backend: lm-studio
+    device: win-rtx3080
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
+    port: 1234
+    context_window: 16384
+    gpu_offload: 40          # starting point copied from the Qwen3.5-27B Q4_K_M entry; confirm by benchmark
+    roles: [coder, coding, checker, refiner, subagent, fallback]
+    priority: 18
+    online: false
+    reasoning: windows-lmstudio
+    gguf_file: Qwen3.8-27B-Q4_K_M.gguf
+    hf_repo: lmstudio-community/Qwen3.8-27B-GGUF
+    provenance:
+      kind: local-deployment
+      source_model_id: "qwen/qwen3.8-27b"
+      source_url: "https://huggingface.co/lmstudio-community/Qwen3.8-27B-GGUF"
+      verified_on: "2026-11-01"
+    benchmark:
+      status: pending        # pending | measured
+      protocol: hardware/SKILL.md#benchmark-protocol
+    # frugality_tier=1 (local_oss): LM Studio on win-rtx3080, LAN-local.
+    frugality_tier: 1
+
+  - name: qwen3.8-27b-rtx5080
+    api_model: qwen/qwen3.8-27b
+    backend: lm-studio
+    device: win-rtx5080
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
+    port: 1234
+    context_window: 16384
+    # gpu_offload: set from the benchmark; 16 GB VRAM holds more layers than the 3080.
+    roles: [coder, coding, checker, refiner, subagent, fallback]
+    priority: 17
+    online: false
+    reasoning: windows-lmstudio
+    gguf_file: Qwen3.8-27B-Q4_K_M.gguf
+    hf_repo: lmstudio-community/Qwen3.8-27B-GGUF
+    provenance:
+      kind: local-deployment
+      source_model_id: "qwen/qwen3.8-27b"
+      source_url: "https://huggingface.co/lmstudio-community/Qwen3.8-27B-GGUF"
+      verified_on: "2026-11-01"
+    benchmark:
+      status: pending
+      protocol: hardware/SKILL.md#benchmark-protocol
+    # frugality_tier=1 (local_oss): LM Studio on win-rtx5080, LAN-local.
+    frugality_tier: 1
+
+  # ── LOCAL: Windows RTX 5080 only — DiffusionGemma 26B-A4B (Gemma 4) NVFP4 ──
+  # HF: FreedomAISVR/DiffusionGemma-26B-A4B-it-NVFP4-GGUF
+  #     (base google/diffusiongemma-26B-A4B-it, Apache-2.0)
+  # Text-to-image block-diffusion MoE (26B total, 4B active), NOT a chat model:
+  # its only role is image-generation, so no text role can select it.
+  # NVFP4 targets Blackwell, so RTX 5080 only (never the 3080, Ampere).
+  # weights 14.4 GB + required vision projector 1.19 GB
+  # (mmproj-diffusiongemma-26b-a4b-f16.gguf). Upstream documents llama-server;
+  # LM Studio support is unverified. Benchmark later.
+  - name: qwen3.5:35b-a3b-q4_K_M
+    backend: ollama
+    device: shared-ollama
+    host: "${OLLAMA_HOST:-http://localhost}"
+    port: 11434
+    context_window: 32768
+    roles: [general, critic, refiner, fallback, subagent]
+    priority: 10
+    online: false
+    reasoning: local-default
+    # frugality_tier=1 (local_oss): shared Ollama host, LAN-local (Mac/Win).
+    frugality_tier: 1
+
+  # ── LOCAL: Mac MLX ────────────────────────────────────────────────────────
+  - name: qwen3.5-9b-mlx
+    backend: mlx
+    device: mac-studio
+    host: "http://localhost"
+    port: 8081
+    context_window: 32768
+    roles: [general, top-level, coding, subagent]
+    priority: 20
+    online: false
+    reasoning: mac-local
+    # frugality_tier=1 (local_oss): Mac MLX, localhost:8081.
+    frugality_tier: 1
+
+ # ── ONLINE: Perplexity sonar-reasoning-pro ───────────────────────────────
+  - name: qwen3-30b-autoresearch-critic
+    backend: ollama
+    device: win-rtx3080
+    host: "${WIN_OLLAMA_ENDPOINT:-http://localhost:11434}"
+    port: 11434
+    context_window: 32768
+    roles: [autoresearch-critic, critic, refiner, fallback]
+    priority: 15
+    online: false
+    reasoning: windows-local-critic
+    notes: "Evaluator + Orchestrator agents for autoresearch swarm. Reads log.txt, writes swarm_state.md."
+    # frugality_tier=1 (local_oss): Ollama on win-rtx3080, LAN-local.
+    frugality_tier: 1
+
+  # ── LOCAL: hardware-policy ids that models.yml had not registered ─────────
+  # 5080, 3080, qwen*, gemma*, and diffusion* are on-machine Windows or macOS
+  # LLMs (tier 1). Role local-classified is not on any route, so route_task
+  # does not gain a new dispatch candidate. The id is here so a tier lookup
+  # is not empty.
+  - name: "qwen3.5:9b-mlx"
+    backend: ollama
+    device: mac-studio
+    host: "http://localhost"
+    port: 11434
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: mac-local
+    frugality_tier: 1
+  - name: qwen3.5-9b-mlx-4bit
+    backend: lm-studio
+    device: mac-studio
+    host: "${LM_STUDIO_MAC_ENDPOINT:-http://localhost:1234}"
+    port: 8081
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: mac-local
+    frugality_tier: 1
+  - name: qwen3-30b-a3b-mlx
+    backend: mlx
+    device: mac-studio
+    host: "http://localhost"
+    port: 8081
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: mac-local
+    frugality_tier: 1
+  - name: "qwen/qwen3.8-27b"
+    backend: lm-studio
+    device: win-rtx3080
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
+    port: 1234
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: windows-lmstudio
+    frugality_tier: 1
+  - name: Qwen3.8-27B
+    backend: lm-studio
+    device: win-rtx3080
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
+    port: 1234
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: windows-lmstudio
+    frugality_tier: 1
+  - name: Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2
+    backend: lm-studio
+    device: win-rtx3080
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
+    port: 1234
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: windows-lmstudio
+    frugality_tier: 1
+  - name: text-embedding-qwen3-embedding-8b-i1-gguf-q6-k
+    backend: lm-studio
+    device: win-rtx3080
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
+    port: 1234
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: windows-lmstudio-embedding
+    frugality_tier: 1
+  - name: qwen3.5-35b-a3b-q4
+    backend: ollama
+    device: win-rtx3080
+    host: "${WIN_OLLAMA_ENDPOINT:-http://localhost:11434}"
+    port: 11434
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: windows-local
+    frugality_tier: 1
+  - name: "qwen3-coder:14b"
+    backend: ollama
+    device: win-rtx3080
+    host: "${WIN_OLLAMA_ENDPOINT:-http://localhost:11434}"
+    port: 11434
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: windows-local
+    frugality_tier: 1
+  - name: qwen3-30b-critic
+    backend: ollama
+    device: win-rtx3080
+    host: "${WIN_OLLAMA_ENDPOINT:-http://localhost:11434}"
+    port: 11434
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: windows-local
+    frugality_tier: 1
+  - name: gemma-4-26B-A4B-it-Q4_K_M
+    backend: lm-studio
+    device: win-rtx3080
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
+    port: 1234
+    context_window: 16384
+    gpu_offload: 35
+    roles: [general, coding, executor, subagent, fallback, autoresearch-coder]
+    priority: 16
+    online: false
+    reasoning: windows-lmstudio-gemma4
+    gguf_file: gemma-4-26B-A4B-it-Q4_K_M.gguf
+    hf_repo: lmstudio-community/gemma-4-26B-A4B-it-GGUF
+    notes: "LM Studio community build — optimized for LM Studio, seamless load."
+    # frugality_tier=1 (local_oss): LM Studio on win-rtx3080, LAN-local.
+    frugality_tier: 1
+
+  # ── LOCAL: Windows LM Studio — Qwen3.8-27B (dense), both Windows GPUs ─────
+  # HF: lmstudio-community/Qwen3.8-27B-GGUF (base Qwen/Qwen3.8-27B, Apache-2.0)
+  # Q4_K_M = 16.8 GB, so neither card holds it whole: partial offload on both.
+  # One routing key per GPU; both send the LM Studio wire ID qwen/qwen3.8-27b.
+  # Benchmarks are pending: run hardware/SKILL.md § Benchmark protocol on each
+  # node and record the results here before raising priority or adding roles
+  # that would displace the Qwen3.5-27B primary.
+  - name: diffusiongemma-26b-a4b-it-nvfp4
+    backend: lm-studio
+    device: win-rtx5080
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
+    port: 1234
+    roles: [image-generation]
+    priority: 90
+    online: false
+    reasoning: windows-lmstudio-diffusion
+    gguf_file: diffusiongemma-26b-a4b-it-nvfp4.gguf
+    mmproj_file: mmproj-diffusiongemma-26b-a4b-f16.gguf
+    hf_repo: FreedomAISVR/DiffusionGemma-26B-A4B-it-NVFP4-GGUF
+    benchmark:
+      status: deferred       # benchmark later, per operator
+      protocol: hardware/SKILL.md#benchmark-protocol
+    # frugality_tier=1 (local_oss): LM Studio on win-rtx5080, LAN-local.
+    frugality_tier: 1
+
+   # ── LOCAL: Shared Ollama (Mac or Win or dedicated server) ─────────────────
+  - name: gemma-4-e4b-it
+    backend: ollama
+    device: mac-studio
+    host: "http://localhost"
+    port: 11434
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: mac-local
+    frugality_tier: 1
+  - name: gemma-4-26b-a4b-it
+    backend: lm-studio
+    device: win-rtx3080
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
+    port: 1234
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: windows-lmstudio-gemma4
+    frugality_tier: 1
+  - name: gemma-4-26b-a4b-it-nvfp4
+    backend: lm-studio
+    device: win-rtx5080
+    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
+    port: 1234
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: windows-lmstudio-gemma4
+    frugality_tier: 1
+
+  - name: bge-m3
+    backend: ollama
+    device: mac-studio
+    host: "http://localhost"
+    port: 11434
+    roles: [local-classified]
+    priority: 80
+    online: false
+    reasoning: mac-local
+    notes: "Local embedding model on the Mac. Tier 1 local inference. Not on a route."
+    frugality_tier: 1
+
   # ── Priority 1 - Top Orchestrator on Mac ──────────────────────────────────
   - name: "glm-5.3-flash:cloud"
     backend: ollama
     device: mac-studio
-    host: "${OLLAMA_HOST:-http://127.0.0.1}"
+    host: "${OLLAMA_HOST:-http://localhost}"
     port: 11434
     priority: 1
     online: true
@@ -133,180 +483,6 @@ models:
   # Qwen3.5-27B Q4_K_M — GPU Offload=40, Context=16384
   # HF: Jackrong/Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF
   # Same .gguf loadable in Ollama, koboldcpp, llama.cpp — backend-agnostic
-  - name: "qwen3.5-27b-claude-4.6-opus-reasoning-distilled-v2"
-    backend: lm-studio
-    device: win-rtx3080
-    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
-    port: 1234
-    context_window: 16384
-    gpu_offload: 40
-    roles: [coder, coding, checker, refiner, executor, verifier, subagent, priority-subagent, autoresearch-coder, autoresearch, fallback]
-    priority: 5
-    online: false
-    reasoning: windows-lmstudio
-    gguf_file: Qwen3.5-27B.Q4_K_M.gguf
-    hf_repo: Jackrong/Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF
-    description: "Primary Logic, Heavy Coder, Critic, Evaluator"
-    tier: "primary"
-    # frugality_tier=1 (local_oss): LM Studio on win-rtx3080, LAN-local.
-    frugality_tier: 1
-
-  # ── Priority 10 - LOCAL: Mac LM Studio (v1.0 RC canonical) ────────────────
-  # Qwen3.5-9B MLX-4bit — Metal full GPU offload, Context=4096 (conservative M2 16GB)
-  # HF: mlx-community/Qwen3.5-9B-MLX-4bit
-  # Same weights loadable in Ollama (mlx-lm backend)
-  - name: Qwen3.5-9B-MLX-4bit
-    backend: lm-studio
-    device: mac-studio
-    host: "${LM_STUDIO_MAC_ENDPOINT:-http://localhost:1234}"
-    port: 1234
-    context_window: 4096
-    gpu_offload: full
-    roles: [mac_orchestrator, refiner, verifier, final-validator, presenter, top-level, deep_reasoning]
-    priority: 10
-    status: "🔵 Preferred Fallback"
-    online: false
-    reasoning: mac-lmstudio
-    hf_repo: mlx-community/Qwen3.5-9B-MLX-4bit
-    description: "Mac Orchestrator, Refiner, Verifier"
-    tier: "preferred_fallback"
-    # frugality_tier=1 (local_oss): LM Studio on mac-studio, local Metal.
-    frugality_tier: 1
- 
-  # ── LOCAL: Windows LM Studio — Gemma 4 26B A4B (MoE) ─────────────────────
-  # lmstudio-community/gemma-4-26B-A4B-it-GGUF Q4_K_M ≈ 16.8 GB
-  # MoE: 4B active params — lower VRAM pressure than dense 26B
-  # XPS 8950 + RTX 3080 10GB: gpu_offload=35 → ~9.5 GB VRAM, rest on 32 GB CPU RAM
-  - name: gemma-4-26B-A4B-it-Q4_K_M
-    backend: lm-studio
-    device: win-rtx3080
-    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
-    port: 1234
-    context_window: 16384
-    gpu_offload: 35
-    roles: [general, coding, executor, subagent, fallback, autoresearch-coder]
-    priority: 16
-    online: false
-    reasoning: windows-lmstudio-gemma4
-    gguf_file: gemma-4-26B-A4B-it-Q4_K_M.gguf
-    hf_repo: lmstudio-community/gemma-4-26B-A4B-it-GGUF
-    notes: "LM Studio community build — optimized for LM Studio, seamless load."
-    # frugality_tier=1 (local_oss): LM Studio on win-rtx3080, LAN-local.
-    frugality_tier: 1
-
-  # ── LOCAL: Windows LM Studio — Qwen3.8-27B (dense), both Windows GPUs ─────
-  # HF: lmstudio-community/Qwen3.8-27B-GGUF (base Qwen/Qwen3.8-27B, Apache-2.0)
-  # Q4_K_M = 16.8 GB, so neither card holds it whole: partial offload on both.
-  # One routing key per GPU; both send the LM Studio wire ID qwen/qwen3.8-27b.
-  # Benchmarks are pending: run hardware/SKILL.md § Benchmark protocol on each
-  # node and record the results here before raising priority or adding roles
-  # that would displace the Qwen3.5-27B primary.
-  - name: qwen3.8-27b-rtx3080
-    api_model: qwen/qwen3.8-27b
-    backend: lm-studio
-    device: win-rtx3080
-    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
-    port: 1234
-    context_window: 16384
-    gpu_offload: 40          # starting point copied from the Qwen3.5-27B Q4_K_M entry; confirm by benchmark
-    roles: [coder, coding, checker, refiner, subagent, fallback]
-    priority: 18
-    online: false
-    reasoning: windows-lmstudio
-    gguf_file: Qwen3.8-27B-Q4_K_M.gguf
-    hf_repo: lmstudio-community/Qwen3.8-27B-GGUF
-    provenance:
-      kind: local-deployment
-      source_model_id: "qwen/qwen3.8-27b"
-      source_url: "https://huggingface.co/lmstudio-community/Qwen3.8-27B-GGUF"
-      verified_on: "2026-11-01"
-    benchmark:
-      status: pending        # pending | measured
-      protocol: hardware/SKILL.md#benchmark-protocol
-    # frugality_tier=1 (local_oss): LM Studio on win-rtx3080, LAN-local.
-    frugality_tier: 1
-
-  - name: qwen3.8-27b-rtx5080
-    api_model: qwen/qwen3.8-27b
-    backend: lm-studio
-    device: win-rtx5080
-    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
-    port: 1234
-    context_window: 16384
-    # gpu_offload: set from the benchmark; 16 GB VRAM holds more layers than the 3080.
-    roles: [coder, coding, checker, refiner, subagent, fallback]
-    priority: 17
-    online: false
-    reasoning: windows-lmstudio
-    gguf_file: Qwen3.8-27B-Q4_K_M.gguf
-    hf_repo: lmstudio-community/Qwen3.8-27B-GGUF
-    provenance:
-      kind: local-deployment
-      source_model_id: "qwen/qwen3.8-27b"
-      source_url: "https://huggingface.co/lmstudio-community/Qwen3.8-27B-GGUF"
-      verified_on: "2026-11-01"
-    benchmark:
-      status: pending
-      protocol: hardware/SKILL.md#benchmark-protocol
-    # frugality_tier=1 (local_oss): LM Studio on win-rtx5080, LAN-local.
-    frugality_tier: 1
-
-  # ── LOCAL: Windows RTX 5080 only — DiffusionGemma 26B-A4B (Gemma 4) NVFP4 ──
-  # HF: FreedomAISVR/DiffusionGemma-26B-A4B-it-NVFP4-GGUF
-  #     (base google/diffusiongemma-26B-A4B-it, Apache-2.0)
-  # Text-to-image block-diffusion MoE (26B total, 4B active), NOT a chat model:
-  # its only role is image-generation, so no text role can select it.
-  # NVFP4 targets Blackwell, so RTX 5080 only (never the 3080, Ampere).
-  # weights 14.4 GB + required vision projector 1.19 GB
-  # (mmproj-diffusiongemma-26b-a4b-f16.gguf). Upstream documents llama-server;
-  # LM Studio support is unverified. Benchmark later.
-  - name: diffusiongemma-26b-a4b-it-nvfp4
-    backend: lm-studio
-    device: win-rtx5080
-    host: "${LM_STUDIO_WIN_ENDPOINT:-http://localhost:1234}"
-    port: 1234
-    roles: [image-generation]
-    priority: 90
-    online: false
-    reasoning: windows-lmstudio-diffusion
-    gguf_file: diffusiongemma-26b-a4b-it-nvfp4.gguf
-    mmproj_file: mmproj-diffusiongemma-26b-a4b-f16.gguf
-    hf_repo: FreedomAISVR/DiffusionGemma-26B-A4B-it-NVFP4-GGUF
-    benchmark:
-      status: deferred       # benchmark later, per operator
-      protocol: hardware/SKILL.md#benchmark-protocol
-    # frugality_tier=1 (local_oss): LM Studio on win-rtx5080, LAN-local.
-    frugality_tier: 1
-
-   # ── LOCAL: Shared Ollama (Mac or Win or dedicated server) ─────────────────
-  - name: qwen3.5:35b-a3b-q4_K_M
-    backend: ollama
-    device: shared-ollama
-    host: "${OLLAMA_HOST:-http://127.0.0.1}"
-    port: 11434
-    context_window: 32768
-    roles: [general, critic, refiner, fallback, subagent]
-    priority: 10
-    online: false
-    reasoning: local-default
-    # frugality_tier=1 (local_oss): shared Ollama host, LAN-local (Mac/Win).
-    frugality_tier: 1
-
-  # ── LOCAL: Mac MLX ────────────────────────────────────────────────────────
-  - name: qwen3.5-9b-mlx
-    backend: mlx
-    device: mac-studio
-    host: "http://127.0.0.1"
-    port: 8081
-    context_window: 32768
-    roles: [general, top-level, coding, subagent]
-    priority: 20
-    online: false
-    reasoning: mac-local
-    # frugality_tier=1 (local_oss): Mac MLX, localhost:8081.
-    frugality_tier: 1
-
- # ── ONLINE: Perplexity sonar-reasoning-pro ───────────────────────────────
   - name: sonar-reasoning-pro
     api_model: sonar-reasoning-pro
     backend: perplexity
@@ -408,16 +584,54 @@ models:
   # autoresearch-critic: Qwen3-30B on Dell (evaluator + orchestrator reasoning)
   # Both are LOCAL-only; never route autoresearch tasks to cloud without explicit override.
 
-  - name: qwen3-30b-autoresearch-critic
-    backend: ollama
-    device: win-rtx3080
-    host: "${WIN_OLLAMA_ENDPOINT:-http://localhost:11434}"
-    port: 11434
-    context_window: 32768
-    roles: [autoresearch-critic, critic, refiner, fallback]
-    priority: 15
+
+  # ── Tier 3 free remote. openrouter/free is the bottom of this list. ──
+  - name: glm-4.7-flash
+    api_model: glm-4.7-flash
+    backend: bigmodel
+    device: cloud
+    host: "https://open.bigmodel.cn"
+    port: 443
+    api_path: "/api/paas/v4/chat/completions"
+    roles: [free-first-fallback]
+    priority: 80
     online: false
-    reasoning: windows-local-critic
-    notes: "Evaluator + Orchestrator agents for autoresearch swarm. Reads log.txt, writes swarm_state.md."
-    # frugality_tier=1 (local_oss): Ollama on win-rtx3080, LAN-local.
-    frugality_tier: 1
+    reasoning: free-first
+    frugality_tier: 3
+  - name: glm-4.5-flash
+    api_model: glm-4.5-flash
+    backend: bigmodel
+    device: cloud
+    host: "https://open.bigmodel.cn"
+    port: 443
+    api_path: "/api/paas/v4/chat/completions"
+    roles: [free-first-fallback]
+    priority: 81
+    online: false
+    reasoning: free-first
+    frugality_tier: 3
+  - name: glm-4-flash-250414
+    api_model: glm-4-flash-250414
+    backend: bigmodel
+    device: cloud
+    host: "https://open.bigmodel.cn"
+    port: 443
+    api_path: "/api/paas/v4/chat/completions"
+    roles: [free-first-fallback]
+    priority: 82
+    online: false
+    reasoning: free-first
+    frugality_tier: 3
+  - name: openrouter/free
+    api_model: openrouter/free
+    backend: openrouter
+    device: cloud
+    host: "https://openrouter.ai"
+    port: 443
+    api_path: "/api/v1/chat/completions"
+    roles: [free-first-fallback]
+    priority: 90
+    online: false
+    reasoning: free-autorouter
+    notes: "Tier 3 and the last entry in the sorted list. Sorted is not availability."
+    frugality_tier: 3

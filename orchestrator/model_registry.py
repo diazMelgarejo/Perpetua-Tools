@@ -319,6 +319,10 @@ class ModelRegistry:
                 if key not in seen:
                     ordered.append(candidate)
                     seen.add(key)
+        # Production refuses an unclassified model. consult_gate() still
+        # returns no opinion for a missing tier so the oramasys meta hop can
+        # keep its historical fall-through. A model in this chain cannot.
+        ordered = [candidate for candidate in ordered if candidate.frugality_tier is not None]
 
         gated = filter_chain_by_gate(
             ordered,
