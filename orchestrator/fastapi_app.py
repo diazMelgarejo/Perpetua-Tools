@@ -505,21 +505,23 @@ async def _probe_glm_cloud_candidate(model: Any) -> tuple[bool, str]:
         return False, "empty-response"
 
 
-def _free_first_policy() -> dict[str, Any] | None:
-    """Load the free-first policy catalog, or None when it is not configured.
+def _load_policy_snapshot() -> tuple[dict[str, Any] | None, str]:
+    """Load ONE validated free-first policy snapshot for this request.
 
-    A missing or malformed policy file leaves the production resolver on the
-    registry's own trust rules; when the policy exists, its qualification
-    verdicts are enforced fail-closed per catalog row.
+    Returns ``(policy, "")`` on success or ``(None, reason)`` when the
+    snapshot cannot be obtained. The caller must fail secure on ``None``:
+    unavailable security configuration must not become permission, so the
+    handler refuses policy-dependent dispatch instead of disabling the gate.
     """
     try:
         policy = load_free_first_policy()
     except (OSError, ValueError) as exc:
-        logging.warning(
-            "free-first policy unavailable (%s); qualification gate not applied", exc
-        )
-        return None
-    return policy if isinstance(policy, dict) else None
+        logging.error("free-first policy unavailable (%s); refusing dispatch", exc)
+        return None, f"{type(exc).__name__}: {exc}"
+    if not isinstance(policy, dict):
+        logging.error("free-first policy is not a JSON object; refusing dispatch")
+        return None, "policy document is not a JSON object"
+    return policy, ""
 
 
 def _dispatch_allowed_by_qualification(policy: dict[str, Any] | None, candidate: Any) -> bool:
@@ -527,10 +529,14 @@ def _dispatch_allowed_by_qualification(policy: dict[str, Any] | None, candidate:
 
     Catalog membership is not permission to call the model. A candidate the
     catalog knows about must pass ``candidate_dispatch_allowed`` and must not
-    be marked ``online: false`` (registry or catalog) before the production
-    path may resolve it or fall back to it. Candidates absent from the catalog
-    are not free-first chain members and stay under the registry's own trust
-    rules, so local-model behavior is unchanged.
+    be marked ``online: false`` in the catalog before the production path may
+    resolve it or fall back to it. Candidates absent from the catalog are not
+    free-first chain members and stay under the registry's own trust rules,
+    so local-model behavior is unchanged.
+
+    ``policy=None`` is a legacy direct-caller contract (no catalog configured);
+    the /orchestrate handler never reaches this helper without a validated
+    snapshot -- it fails secure with 503 first.
     """
     if not policy:
         return True
@@ -597,15 +603,28 @@ async def _resolve_candidates(
     for candidate in candidates:
         key = f"{getattr(candidate, 'name', 'unknown')}@{getattr(candidate, 'device', 'unknown')}"
         allowed[key] = _dispatch_allowed_by_qualification(policy, candidate)
+        if not allowed[key]:
+            # Gate-denied: record the blocked entry and skip the probe
+            # entirely -- a denied candidate must not touch its backend
+            # (a denied Ollama-backed GLM cloud candidate would otherwise
+            # reach the one-shot cloud probe).
+            availability[key] = {
+                "ready": False,
+                "detail": "qualification-gate-blocked",
+                "backend": getattr(candidate, "backend", ""),
+                "device": getattr(candidate, "device", ""),
+                "dispatch_allowed": False,
+            }
+            continue
         ready, detail = await _candidate_availability(candidate)
         availability[key] = {
-            "ready": ready and allowed[key],
-            "detail": detail if allowed[key] else "qualification-gate-blocked",
+            "ready": ready,
+            "detail": detail,
             "backend": getattr(candidate, "backend", ""),
             "device": getattr(candidate, "device", ""),
-            "dispatch_allowed": allowed[key],
+            "dispatch_allowed": True,
         }
-        if ready and allowed[key]:
+        if ready:
             resolved.append(candidate)
 
     def _fallback() -> list[Any]:
@@ -1089,7 +1108,22 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
                 f"{budget_state['daily_budget']:.2f} (>=80%)"
             )
 
-        route_candidates = registry.route_task(req.task_type, preferred_device=req.preferred_device)
+        policy, policy_error = _load_policy_snapshot()
+        if policy is None:
+            # Fail-secure: unavailable security configuration must not become
+            # permission. Route assembly reads the same catalog, so a snapshot
+            # failure refuses dispatch instead of silently disabling the gate.
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    f"Qualification policy unavailable ({policy_error}); "
+                    "refusing model dispatch."
+                ),
+            )
+
+        route_candidates = registry.route_task(
+            req.task_type, preferred_device=req.preferred_device, policy=policy
+        )
         if not route_candidates:
             raise HTTPException(
                 status_code=404,
@@ -1097,7 +1131,7 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
             )
 
         candidates, availability = await _resolve_candidates(
-            route_candidates, req.task_type, policy=_free_first_policy()
+            route_candidates, req.task_type, policy=policy
         )
         if req.task_type in _AUTORESEARCH_TASK_TYPES and not candidates:
             return {

@@ -279,6 +279,7 @@ class ModelRegistry:
         override_reason: Optional[str] = None,
         paid_authorization: Optional[Mapping[str, Any]] = None,
         paid_budget: Optional[Mapping[str, Any]] = None,
+        policy: Optional[Mapping[str, Any]] = None,
     ) -> List[ModelTarget]:
         """
         Returns ordered fallback chain for a task_type.
@@ -350,7 +351,12 @@ class ModelRegistry:
         paid = [item for item in kept if chain_stage(item.frugality_tier) == 2]
         present = {item.name for item in kept}
         tail: List[ModelTarget] = []
-        for candidate in automatic_free_candidates(load_policy()):
+        # ``policy`` is a caller-validated snapshot: production passes the
+        # same document it qualified candidates against, so route assembly
+        # and the dispatch gate cannot observe two different policy reads.
+        for candidate in automatic_free_candidates(
+            policy if policy is not None else load_policy()
+        ):
             model_id = candidate.get("model_id")
             if not model_id or model_id in present:
                 continue
