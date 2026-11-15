@@ -1,0 +1,26 @@
+{
+  "id": "58d9facdf1cc",
+  "key": "manual_58d9fa",
+  "name": "manual_58d9fa",
+  "claim": "Gate-denied candidates skip their availability probe entirely: record the blocked entry and continue, so a denied candidate never reaches its backend (including one-shot cloud probes).",
+  "conditions": [
+    "probe-skip",
+    "qualification-gate",
+    "denied-candidate"
+  ],
+  "evidence_ids": [
+    "2026-11-15T23:12:49.074190+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-15T23:12:49.074190+00:00",
+  "status": "staged",
+  "decisions": [
+    {
+      "ts": "2026-11-15T23:12:49.074190+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    }
+  ],
+  "rejection_count": 0
+}
