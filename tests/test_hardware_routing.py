@@ -395,7 +395,8 @@ def test_orchestrate_hardware_selection(monkeypatch, client):
     assert data["selected_model"]["device"] == "win-rtx3080"
     assert data["selected_model"]["name"] == QWEN_PRIORITY_MODEL
 
-    # Task type 'default' on mac-studio
+    # Task type 'default' on mac-studio. Local tier 1 comes before the
+    # hosted cloud model even when that cloud entry has a lower priority number.
     resp = client.post("/orchestrate", json={
         "task": "What is the capital of France?",
         "task_type": "default",
@@ -404,7 +405,7 @@ def test_orchestrate_hardware_selection(monkeypatch, client):
     assert resp.status_code == 200
     data = resp.json()
     assert data["selected_model"]["device"] == "mac-studio"
-    assert data["selected_model"]["name"] == "glm-5.3-flash:cloud"
+    assert data["selected_model"]["name"] == "Qwen3.5-9B-MLX-4bit"
 
 
 def test_orchestrate_falls_back_to_mac_lmstudio_when_glm_unavailable(monkeypatch, client):
