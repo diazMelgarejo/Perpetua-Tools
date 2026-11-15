@@ -1,0 +1,42 @@
+{
+  "id": "38790094a86b",
+  "key": "manual_387900",
+  "name": "manual_387900",
+  "claim": "LAN file-inbox memento, 2026-06-28 through 2026-11-15, scrubbed for a future v2 agent. The drawer is the audit trail. On 2026-06-28 the peer-file POST first returned 200 and the fleet tested three claims: a markdown drop beats a websocket stream for fan-out, joint auth survives repeated drops without a 401, and a Windows local model can finish a coding loop after the file round-trip. Early July probes passed on portal health, portal status, the model server, and the peer socket, and queues were empty. On 2026-07-23 the operator paused scheduled coordination monitors and told peers to unload them without deleting them. On 2026-07-27 one fleet ceremony remained: harmonize the mesh secret on the coordination hub first, then the other nodes, and never put that secret in chat or git. August left two local notes, one with its push deferred and one uncommitted; September has no inbox file. On 2026-10-23 resumption named about four months and about two thousand commits of drift, and repeated that the monitors were still paused. Late October became review and canary work: open pull requests stayed unmerged for the operator, a budget handoff gave Windows peers a resume order, and a canary day ended with the TLS front end listening again. On 2026-11-07 the peer launcher was back on the three plain ports plus the TLS port, with automatic flush still disabled, and asked for one named receipt rather than a bulk flush. On 2026-11-10 a plain stack restart left the application ports answering and the TLS port with no listener; health checks that ignore the TLS port report a lie. An orphan portal had also written files into a scratch inbox; those files were recovered byte for byte. On 2026-11-15 this host repeated that failure: the peer outbox stayed queued because nothing listened on the TLS port, so those files were not stored here. Startup is ready only when the TLS front end is up with the other services. A saved peer address is discovered, saved, tried, and marked stale when the try is offline. Acceptance is ok plus received_at plus a matching byte count. Content-verified delivery also needs a matching receiver digest. Local gossip agrees: the pause note, the June peer-file note, and the TLS proof are indexed as board evidence, not as authority.",
+  "conditions": [
+    "discovery",
+    "gossip",
+    "inbox",
+    "memento",
+    "tls"
+  ],
+  "evidence_ids": [
+    "2026-11-15T12:11:32.778190+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-15T12:11:32.778190+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T12:11:32.778190+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T12:11:32.978260+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Combined from the LAN peer inbox and the local gossip board. No host address, token, or workstation path belongs in this record. The durable lesson is the failure class, not a one-time restart: the TLS listener is part of startup, the inbox remains the audit trail when the mesh is down, and a gossip event never grants authority.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T12:11:32.778190+00:00"
+      ],
+      "lessons_sha": "a041ae5e09e7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T12:11:32.978260+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Combined from the LAN peer inbox and the local gossip board. No host address, token, or workstation path belongs in this record. The durable lesson is the failure class, not a one-time restart: the TLS listener is part of startup, the inbox remains the audit trail when the mesh is down, and a gossip event never grants authority."
+}

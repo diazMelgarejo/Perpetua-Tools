@@ -1,0 +1,42 @@
+{
+  "id": "e06e7c99b887",
+  "key": "manual_e06e7c",
+  "name": "manual_e06e7c",
+  "claim": "A remote agent call that supplements the file inbox is a v2 effect, not a new transport and not a wrapper around a v1 CLI. Perpetua-core owns only the neutral envelope header and local emit. The oramasys application module owns the controller transaction: claim, lease, idempotency, and the redacted outbox commit together. Telos owns the pinned TLS transport. Phylax admits the caller. Agate may place hardware and cannot authorize. GossipMesh replicates the post-commit event and cannot claim, renew, complete, or release work. The call body is a digest plus an inbox filename; the markdown stays in the file inbox. Bearer tokens travel only over the pinned TLS front end. The plain portal stays on loopback. If the mesh is off, the inbox drop is the whole call. Discover, save, try, and mark the saved endpoint stale when the try is offline.",
+  "conditions": [
+    "controller",
+    "envelope",
+    "mesh",
+    "phylax",
+    "telos"
+  ],
+  "evidence_ids": [
+    "2026-11-15T12:11:33.349830+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-15T12:11:33.349830+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T12:11:33.349830+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T12:11:33.570038+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Docs 43, 47, 49, 50, 68, and 69, plus the unbundling map: mesh is a satellite, not the kernel. Tonight showed why the inbox must remain when the TLS port is down, and why a health check of the plain ports is not a mesh health check.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T12:11:33.349830+00:00"
+      ],
+      "lessons_sha": "45d941d1c916"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T12:11:33.570038+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Docs 43, 47, 49, 50, 68, and 69, plus the unbundling map: mesh is a satellite, not the kernel. Tonight showed why the inbox must remain when the TLS port is down, and why a health check of the plain ports is not a mesh health check."
+}
