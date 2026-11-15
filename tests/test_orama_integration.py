@@ -357,3 +357,18 @@ class TestRoutingYmlUltrathinkContract:
         route = routing["routes"]["code_analysis"]
         assert "requires" in route
         assert "orama_available" in route["requires"]
+
+@pytest.fixture(autouse=True)
+def _isolate_from_operator_free_first_policy(monkeypatch):
+    """Route-mechanics tests own their policy state: nothing is catalog-gated.
+
+    The operator's real bigmodel-free-first-policy.json legitimately carries a
+    blocked lane and unqualified rows pending live provider qualification;
+    routing tests must not depend on that operator state, so the free-first
+    catalog is emptied here. Qualification-gate behavior is covered by
+    tests/test_production_qualification_gate.py.
+    """
+    monkeypatch.setattr(
+        "orchestrator.fastapi_app.load_free_first_policy",
+        lambda: {"lane_qualification": {"status": "open"}, "ordered_candidates": []},
+    )

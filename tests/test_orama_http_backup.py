@@ -5,6 +5,7 @@ fail to parse it.
 """
 
 from __future__ import annotations
+import pytest
 
 import sys
 from pathlib import Path
@@ -114,3 +115,17 @@ def test_orchestrate_calls_oramasys_bridge_with_mapped_depth(monkeypatch):
     assert body["oramasys_bridge"]["request"]["reasoning_depth"] == "ultra"
     assert body["oramasys_bridge"]["response"]["reasoning_depth"] == "ultra"
 
+@pytest.fixture(autouse=True)
+def _isolate_from_operator_free_first_policy(monkeypatch):
+    """Route-mechanics tests own their policy state: nothing is catalog-gated.
+
+    The operator's real bigmodel-free-first-policy.json legitimately carries a
+    blocked lane and unqualified rows pending live provider qualification;
+    routing tests must not depend on that operator state, so the free-first
+    catalog is emptied here. Qualification-gate behavior is covered by
+    tests/test_production_qualification_gate.py.
+    """
+    monkeypatch.setattr(
+        "orchestrator.fastapi_app.load_free_first_policy",
+        lambda: {"lane_qualification": {"status": "open"}, "ordered_candidates": []},
+    )
