@@ -16,10 +16,13 @@ Stale claims from DEAD agents are automatically released to unblock other agents
 from __future__ import annotations
 
 import json
+import sqlite3
 import time
 from typing import Any, Optional
 
-from orchestrator.gossip_bus import GossipBus
+import aiosqlite
+
+from orchestrator.gossip_bus import GossipBus, GossipBusError
 
 
 # Liveness thresholds (in seconds)
@@ -292,7 +295,7 @@ async def _release_legacy_claim_atomically(bus: GossipBus, claim: dict) -> bool:
     here and the claim stays held. A restart that starts during this
     transaction waits until the decision is committed.
     """
-    await bus._ensure_initialized()
+    await bus.init_db()
     payload = {
         "kind": "agent_release",
         "agent_id": claim["agent_id"],
@@ -311,15 +314,24 @@ async def _release_legacy_claim_atomically(bus: GossipBus, claim: dict) -> bool:
             if not still_dead or not _same_open_claim(live_claims, claim):
                 await db.rollback()
                 return False
-            row_id, _event_uuid, durable, inserted = await bus.insert_event(
+            row_id, event_uuid, durable, inserted = await bus.insert_event(
                 db, "heartbeat", payload
             )
             await db.commit()
-        except Exception:
+        except Exception as exc:
             await db.rollback()
+            if isinstance(exc, GossipBusError):
+                raise
+            if isinstance(exc, (aiosqlite.Error, sqlite3.Error, OSError)):
+                raise GossipBusError(
+                    f"failed to write legacy claim release: {exc}"
+                ) from exc
             raise
     if inserted:
         bus.schedule_embedding(row_id, durable)
+        forward = getattr(bus, "forward_committed", None)
+        if forward is not None:
+            await forward("heartbeat", payload, event_uuid)
     return True
 
 
