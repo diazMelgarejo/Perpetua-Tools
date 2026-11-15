@@ -228,31 +228,26 @@ async def test_pulse_after_kill_revives_and_prevents_release(bus: GossipBus) -> 
 async def test_legacy_cleanup_rechecks_liveness_before_emit(
     bus: GossipBus, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Per-claim recheck must refuse auto-release when the holder revived."""
+    """The release transaction keeps the claim when its own read sees a live holder."""
     await _legacy_claim(bus, "late-pulser", "task-late")
     _advance_past_dead_threshold(monkeypatch)
     real_heartbeats = heartbeat_monitor.find_agent_heartbeats
-    hb_calls = {"n": 0}
 
-    async def pulse_before_second_heartbeat(
+    async def live_inside_transaction(
         target_bus: GossipBus,
         agent_id: str | None = None,
         *,
         connection: object | None = None,
     ) -> dict[str, dict]:
-        """Renew presence after initial classification, before release emit."""
-        hb_calls["n"] += 1
-        if hb_calls["n"] >= 2:
-            await target_bus.emit(
-                "heartbeat",
-                {"kind": "agent_pulse", "agent_id": "late-pulser"},
-            )
-        return await real_heartbeats(target_bus, agent_id, connection=connection)
+        """Outer classification stays DEAD. The locked read sees the revival."""
+        found = await real_heartbeats(target_bus, agent_id, connection=connection)
+        if connection is not None and "late-pulser" in found:
+            found = dict(found)
+            found["late-pulser"] = {**found["late-pulser"], "status": "ACTIVE"}
+        return found
 
-    monkeypatch.setattr(heartbeat_monitor, "find_agent_heartbeats", pulse_before_second_heartbeat)
+    monkeypatch.setattr(heartbeat_monitor, "find_agent_heartbeats", live_inside_transaction)
     assert await cleanup_stale_claims(bus) == []
-    agents = await find_agent_heartbeats(bus, "late-pulser")
-    assert agents["late-pulser"]["status"] == "ACTIVE"
     assert [c["task"] for c in await find_open_claims(bus)] == ["task-late"]
 
 
@@ -263,18 +258,18 @@ async def test_partial_failure_keeps_earlier_releases_and_propagates(
     await _legacy_claim(bus, "dead-a", "task-1")
     await _legacy_claim(bus, "dead-b", "task-2")
     _advance_past_dead_threshold(monkeypatch)
-    real_emit = bus.emit
+    real_insert = bus.insert_event
     calls = {"n": 0}
 
-    async def failing_second_emit(event_type: str, payload: dict, **kwargs: object) -> str:
+    async def failing_second_insert(db, event_type: str, payload: dict, **kwargs: object):
         """Fail the second release to expose already-persisted partial progress."""
         if payload.get("kind") == "agent_release":
             calls["n"] += 1
             if calls["n"] == 2:
                 raise GossipBusError("injected write failure")
-        return await real_emit(event_type, payload, **kwargs)
+        return await real_insert(db, event_type, payload, **kwargs)
 
-    monkeypatch.setattr(bus, "emit", failing_second_emit)
+    monkeypatch.setattr(bus, "insert_event", failing_second_insert)
     with pytest.raises(GossipBusError):
         await cleanup_stale_claims(bus)
     assert [c["task"] for c in await find_open_claims(bus)] == ["task-2"]

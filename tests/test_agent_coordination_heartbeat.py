@@ -485,9 +485,9 @@ async def test_cleanup_stale_claims_skips_restart_before_release(bus, monkeypatc
             return dead_agents
         return alive_agents
 
-    async def fake_claims(_bus):
+    async def fake_claims(_bus, *, connection=None):
         claim_calls["n"] += 1
-        if claim_calls["n"] == 1:
+        if connection is None:
             return [snapshot_claim]
         return [replacement_claim]
 

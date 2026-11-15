@@ -244,9 +244,15 @@ async def find_agent_heartbeats(
     return fold_agent_liveness(events, agent_id)
 
 
-async def find_open_claims(bus: GossipBus) -> list[dict]:
-    """Find all open (unclosed) task claims."""
-    events = await _fetch_heartbeat_events(bus, _AGENT_CLAIM_KINDS)
+async def find_open_claims(
+    bus: GossipBus, *, connection: Optional[Any] = None
+) -> list[dict]:
+    """Find all open (unclosed) task claims.
+
+    ``connection``, when given, is the caller's open transaction. The claim
+    read then shares that snapshot with the liveness read and the release.
+    """
+    events = await _fetch_heartbeat_events(bus, _AGENT_CLAIM_KINDS, connection=connection)
     state: dict[str, dict] = {}
 
     for ev in events:
@@ -268,6 +274,55 @@ async def find_open_claims(bus: GossipBus) -> list[dict]:
     return list(state.values())
 
 
+def _same_open_claim(claims: list[dict], claim: dict) -> bool:
+    """True when this exact claim identity is still open."""
+    return any(
+        item.get("task") == claim.get("task")
+        and item.get("agent_id") == claim.get("agent_id")
+        and item.get("claim_ts") == claim.get("claim_ts")
+        for item in claims
+    )
+
+
+async def _release_legacy_claim_atomically(bus: GossipBus, claim: dict) -> bool:
+    """Emit ``agent_release`` only while the same claim is still held by a DEAD agent.
+
+    The liveness read, the claim read, and the insert share one
+    ``BEGIN IMMEDIATE`` transaction. A restart that commits first is visible
+    here and the claim stays held. A restart that starts during this
+    transaction waits until the decision is committed.
+    """
+    await bus._ensure_initialized()
+    payload = {
+        "kind": "agent_release",
+        "agent_id": claim["agent_id"],
+        "task": claim["task"],
+        "worktree": claim.get("worktree", "?"),
+        "auto_released": True,
+        "reason": "agent dead for 30+ min",
+    }
+    async with bus.connect() as db:
+        try:
+            await db.execute("BEGIN IMMEDIATE")
+            live_agents = await find_agent_heartbeats(bus, connection=db)
+            live_claims = await find_open_claims(bus, connection=db)
+            current = live_agents.get(claim["agent_id"])
+            still_dead = current is not None and current.get("status") == "DEAD"
+            if not still_dead or not _same_open_claim(live_claims, claim):
+                await db.rollback()
+                return False
+            row_id, _event_uuid, durable, inserted = await bus.insert_event(
+                db, "heartbeat", payload
+            )
+            await db.commit()
+        except Exception:
+            await db.rollback()
+            raise
+    if inserted:
+        bus.schedule_embedding(row_id, durable)
+    return True
+
+
 async def cleanup_stale_claims(bus: GossipBus, max_age_seconds: int = 1800) -> list[str]:
     """Auto-release claims held by DEAD agents."""
     agents = await find_agent_heartbeats(bus)
@@ -278,34 +333,8 @@ async def cleanup_stale_claims(bus: GossipBus, max_age_seconds: int = 1800) -> l
 
     released_tasks = []
     for claim in stale:
-        # Recheck after the snapshot: a worker can restart (or replace the
-        # claim) between classification and emit. The task_claims path already
-        # refuses that race; skip unless this exact claim is still held by an
-        # agent that is still DEAD.
-        live_agents = await find_agent_heartbeats(bus)
-        live_claims = await find_open_claims(bus)
-        current = live_agents.get(claim["agent_id"])
-        still_dead = current is not None and current.get("status") == "DEAD"
-        same_claim = any(
-            c.get("task") == claim["task"]
-            and c.get("agent_id") == claim["agent_id"]
-            and c.get("claim_ts") == claim["claim_ts"]
-            for c in live_claims
-        )
-        if not still_dead or not same_claim:
-            continue
-        await bus.emit(
-            "heartbeat",
-            {
-                "kind": "agent_release",
-                "agent_id": claim["agent_id"],
-                "task": claim["task"],
-                "worktree": claim.get("worktree", "?"),
-                "auto_released": True,
-                "reason": "agent dead for 30+ min",
-            },
-        )
-        released_tasks.append(claim["task"])
+        if await _release_legacy_claim_atomically(bus, claim):
+            released_tasks.append(claim["task"])
 
     # Queue claims use task_claims rows as the atomic gate; legacy cleanup
     # above only handles agent_claim/agent_release heartbeats. Pass each
