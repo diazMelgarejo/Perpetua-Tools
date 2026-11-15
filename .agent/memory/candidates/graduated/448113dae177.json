@@ -1,0 +1,42 @@
+{
+  "id": "448113dae177",
+  "key": "manual_448113",
+  "name": "manual_448113",
+  "claim": "A Windows checkout .venv can import its packages and still have no pip module when it was built by uv. Seed pip with that interpreter's ensurepip before calling install.ps1. Do not read an unset script-scoped PowerShell variable under strict mode; test Get-Variable first.",
+  "conditions": [
+    "ensurepip",
+    "mode",
+    "strict",
+    "venv",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-11-15T09:22:03.736640+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-15T09:22:03.736640+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T09:22:03.736640+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T09:22:04.020240+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "start.ps1 treated a pip-less but otherwise healthy orama venv as a failed install, then crashed by reading script:UsPythonAdopted before it was assigned.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T09:22:03.736640+00:00"
+      ],
+      "lessons_sha": "d22ce1774bf3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T09:22:04.020240+00:00",
+  "reviewer": "learn.py",
+  "rationale": "start.ps1 treated a pip-less but otherwise healthy orama venv as a failed install, then crashed by reading script:UsPythonAdopted before it was assigned."
+}

@@ -1,0 +1,42 @@
+{
+  "id": "125ccc1ddcbb",
+  "key": "manual_125ccc",
+  "name": "manual_125ccc",
+  "claim": "Windows LAN discovery must expand the interface prefix, not assume a /24. A /22 that contains both 192.168.8 and 192.168.9 is one subnet. The Mac endpoint is Ollama port 11434. Do not preserve a last-good Mac address as reachable after this run failed to contact it. A subnet scan that only probes LM Studio port 1234 cannot see a Mac whose Ollama port is the one that is open.",
+  "conditions": [
+    "discovery",
+    "last-good",
+    "ollama",
+    "subnet",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-11-15T10:44:41.744313+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-15T10:44:41.744313+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T10:44:41.744313+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T10:44:42.015239+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Discovery kept the previous last-good address because netifaces was missing, the scan collapsed to one octet, and last-good was copied back with reachable true. The live Mac was another host on that same prefix, answering Ollama on port 11434.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T10:44:41.744313+00:00"
+      ],
+      "lessons_sha": "2dd8a9c3d092"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T10:44:42.015239+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Discovery kept the previous last-good address because netifaces was missing, the scan collapsed to one octet, and last-good was copied back with reachable true. The live Mac was another host on that same prefix, answering Ollama on port 11434."
+}

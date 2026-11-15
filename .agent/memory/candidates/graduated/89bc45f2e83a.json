@@ -1,0 +1,40 @@
+{
+  "id": "89bc45f2e83a",
+  "key": "manual_89bc45",
+  "name": "manual_89bc45",
+  "claim": "An inbox sidecar with received_at and a matching byte count is this host's store record. It is not a sender result. A drop is delivered only when its own result says ok true, includes received_at, and the byte count matches the file.",
+  "conditions": [
+    "delivery",
+    "lan-inbox",
+    "receipt"
+  ],
+  "evidence_ids": [
+    "2026-11-15T11:32:09.369704+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-15T11:32:09.369704+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T11:32:09.369704+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T11:32:09.512656+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The 2026-11-15 inbox sidecars match bytes and have received_at, and every sidecar leaves ok null.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T11:32:09.369704+00:00"
+      ],
+      "lessons_sha": "ec8b58e0c354"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T11:32:09.512645+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The 2026-11-15 inbox sidecars match bytes and have received_at, and every sidecar leaves ok null."
+}

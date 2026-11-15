@@ -1,0 +1,40 @@
+{
+  "id": "fdfdc3d7ef81",
+  "key": "manual_fdfdc3",
+  "name": "manual_fdfdc3",
+  "claim": "Mac Ollama answers a LAN probe of port 11434 only when OLLAMA_HOST binds beyond loopback. The portal on HTTPS 8443 is a separate listener and can pass while Ollama on the LAN address is refused.",
+  "conditions": [
+    "lan-bind",
+    "ollama",
+    "portal"
+  ],
+  "evidence_ids": [
+    "2026-11-15T11:32:09.829904+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-15T11:32:09.829904+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T11:32:09.829904+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T11:32:09.964899+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The Windows probe passed the portal and failed Ollama until the server listened on all interfaces. Loopback had already answered.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T11:32:09.829904+00:00"
+      ],
+      "lessons_sha": "aef3f5ea24cb"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T11:32:09.964889+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The Windows probe passed the portal and failed Ollama until the server listened on all interfaces. Loopback had already answered."
+}

@@ -1,0 +1,42 @@
+{
+  "id": "e3bc6bf19d85",
+  "key": "manual_e3bc6b",
+  "name": "manual_e3bc6b",
+  "claim": "Fleet coordination story for the next agent, from the file inbox and the local gossip board, scrubbed. On 2026-06-28 a peer-file drop first returned 200. The fleet tested a markdown handoff against a websocket stream, joint auth across repeated drops, and a Windows local model after the file round-trip. Early July the probes were clean and the queues were empty. On 2026-07-23 the operator paused the scheduled monitors and told peers to unload them without deleting them. The local board still carries that pause. Do not re-enable those monitors unless the operator asks. On 2026-07-27 the mesh secret was harmonized from the hub outward and kept out of chat and git. August left two local notes, one unpushed. September left no inbox file. On 2026-10-23 resumption named about four months of drift and repeated that the monitors were still paused. Late October was review and canary work, with merges left to the operator. On 2026-11-10 a plain restart left the application ports answering and the TLS port with no listener. A health check that ignores the TLS port is a lie. An orphan portal had also written files into a scratch inbox; those files were recovered byte for byte. On 2026-11-15 this host repeated the missing listener, so the peer's queued files were not stored here. Learn these as durable rules. The file inbox and the local gossip board are two boards. A note on one is not a note on the other. A harness mailbox is not this board. A drop is delivered only when that drop's own result has ok true, received_at, and a byte count equal to the file. Portal acceptance is not storage. An outbox state word is not a receipt. A local sidecar is this host's store record, not the sender's result. Content-verified delivery also needs a matching receiver digest. Startup is ready only when the TLS front end is listening with the other services. The plain portal stays on loopback. The model server and the portal are separate listeners. Discovery order is discover, save, try, then mark stale. Ollama 11434 and LM Studio 1234 are defaults; save the port that answered. A remote call is a v2 effect, not a new transport and not a wrapper around a v1 command. The envelope header stays in perpetua-core. The oramasys controller commits the claim, the lease, and the redacted outbox together. Telos dials pinned TLS. Phylax admits the caller. Agate cannot authorize. Gossip replicates the event after commit and cannot claim or complete the work. If the mesh is off, the inbox drop is the whole call.",
+  "conditions": [
+    "gossip",
+    "inbox",
+    "mesh",
+    "synthesis",
+    "tls"
+  ],
+  "evidence_ids": [
+    "2026-11-15T12:17:51.561375+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-15T12:17:51.561375+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T12:17:51.561375+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T12:17:51.731810+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Woven from the LAN inbox, the local gossip index of the pause note and the June peer-file note and the TLS proof, and the receipt lessons that distinguish a sidecar and an outbox word from a sender result. The upstream gossip skill now requires that same delivery proof and treats the two boards as separate. These are the rules a future agent should reuse, not one-time restarts.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T12:17:51.561375+00:00"
+      ],
+      "lessons_sha": "81844f5ea027"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T12:17:51.731810+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Woven from the LAN inbox, the local gossip index of the pause note and the June peer-file note and the TLS proof, and the receipt lessons that distinguish a sidecar and an outbox word from a sender result. The upstream gossip skill now requires that same delivery proof and treats the two boards as separate. These are the rules a future agent should reuse, not one-time restarts."
+}
