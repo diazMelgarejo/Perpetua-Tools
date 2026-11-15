@@ -1,0 +1,27 @@
+{
+  "id": "f8fd3416c853",
+  "key": "manual_f8fd34",
+  "name": "manual_f8fd34",
+  "claim": "Transient CI install failures (PyPI IncompleteRead) are a failure CLASS: census every pip install call site in the script and protect all of them with one shared env-tunable retry helper with linear per-attempt backoff, keeping the owning scan explicit guarded failure.",
+  "conditions": [
+    "ci-retry",
+    "pypi-incomplete-read",
+    "coverage-census",
+    "env-tunable"
+  ],
+  "evidence_ids": [
+    "2026-11-15T23:12:49.074190+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-15T23:12:49.074190+00:00",
+  "status": "staged",
+  "decisions": [
+    {
+      "ts": "2026-11-15T23:12:49.074190+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    }
+  ],
+  "rejection_count": 0
+}
