@@ -1,0 +1,43 @@
+{
+  "id": "33ee404ee11f",
+  "key": "manual_33ee40",
+  "name": "manual_33ee40",
+  "claim": "Windows peer sends stay on plain HTTP until PEER_CA_SHA256 matches one CERTIFICATE block in mac-ca-*/orama-lan-ca.pem or PEER_CA_FILE. A mismatched or missing pin strips the bearer token. MAC_IP must equal the discovered Mac address or items queued on the plain portal port are not remapped to 8443. A flush is delivered only when that drop result has ok true, received_at, and a matching byte count.",
+  "conditions": [
+    "certificate",
+    "flush",
+    "outbox",
+    "peer",
+    "tls",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-11-15T09:22:03.162065+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-15T09:22:03.162065+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T09:22:03.162065+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T09:22:03.353976+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The first flush used HTTP because the pin was not loaded, and a later HTTPS flush still timed out against a stale discovery record. Queued files must stay queued until an authenticated receipt exists.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T09:22:03.162065+00:00"
+      ],
+      "lessons_sha": "9e5f891ce50f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T09:22:03.353976+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The first flush used HTTP because the pin was not loaded, and a later HTTPS flush still timed out against a stale discovery record. Queued files must stay queued until an authenticated receipt exists."
+}

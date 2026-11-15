@@ -1,0 +1,41 @@
+{
+  "id": "950bfe87d1a3",
+  "key": "manual_950bfe",
+  "name": "manual_950bfe",
+  "claim": "On Windows, Python subprocess cannot execute npm.cmd or npx.cmd. Resolve the shim with shutil.which and run it through cmd /c. WinError 2 after the shim is on PATH means the launcher found the command and then invoked it incorrectly.",
+  "conditions": [
+    "cmd",
+    "npm",
+    "subprocess",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-11-15T09:22:02.673880+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-15T09:22:02.673880+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T09:22:02.673880+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T09:22:02.860839+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "ensure_ai_cli_mcp.py reported Node supported and then could not execute npm list because CreateProcess does not run .cmd files from an argument list.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T09:22:02.673880+00:00"
+      ],
+      "lessons_sha": "16b6daa46f17"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T09:22:02.860839+00:00",
+  "reviewer": "learn.py",
+  "rationale": "ensure_ai_cli_mcp.py reported Node supported and then could not execute npm list because CreateProcess does not run .cmd files from an argument list."
+}
