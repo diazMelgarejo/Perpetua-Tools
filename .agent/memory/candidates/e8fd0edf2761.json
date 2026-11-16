@@ -1,7 +1,7 @@
 {
-  "id": "58d9facdf1cc",
-  "key": "manual_58d9fa",
-  "name": "manual_58d9fa",
+  "id": "e8fd0edf2761",
+  "key": "manual_e8fd0e",
+  "name": "manual_e8fd0e",
   "claim": "Gate-denied candidates skip their availability probe entirely: record the blocked entry and continue, so a denied candidate never reaches its backend (including one-shot cloud probes).",
   "conditions": [
     "probe-skip",

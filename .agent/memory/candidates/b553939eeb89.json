@@ -1,7 +1,7 @@
 {
-  "id": "898cadd837d7",
-  "key": "manual_898cad",
-  "name": "manual_898cad",
+  "id": "b553939eeb89",
+  "key": "manual_b55393",
+  "name": "manual_b55393",
   "claim": "Unavailable security configuration must not become permission: load ONE validated policy snapshot before route assembly and refuse dispatch (503) when it cannot be obtained; never convert a loader failure into a disabled gate.",
   "conditions": [
     "fail-secure",

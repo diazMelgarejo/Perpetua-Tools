@@ -1,7 +1,7 @@
 {
-  "id": "7ccdb7df3b2a",
-  "key": "manual_7ccdb7",
-  "name": "manual_7ccdb7",
+  "id": "ebba3f7b5d76",
+  "key": "manual_ebba3f",
+  "name": "manual_ebba3f",
   "claim": "OWNER RIGHTS (S-1-3-4) is owner-equivalent in a private-DACL invariant: Windows resolves it to the object owner at access-check time and ownership is already pinned to the current user, so the ACE cannot widen access; elevated runners default ownership to Administrators and must be skipped, not failed.",
   "conditions": [
     "owner-rights",

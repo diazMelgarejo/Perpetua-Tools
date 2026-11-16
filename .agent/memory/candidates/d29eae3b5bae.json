@@ -1,7 +1,7 @@
 {
-  "id": "517e21edffba",
-  "key": "manual_517e21",
-  "name": "manual_517e21",
+  "id": "d29eae3b5bae",
+  "key": "manual_d29eae",
+  "name": "manual_d29eae",
   "claim": "When one failure produces multiple partial fixes on multiple branches, classify the failure class, census all exposure points, synthesize the strengths on a trial branch from main, and retire the superseded PRs with superseded-by comments instead of stacking them linearly.",
   "conditions": [
     "fragment-synthesis",
