@@ -266,40 +266,64 @@ def test_audit_rows_store_sizes_only(policy, tmp_path: Path) -> None:
             pl.append_audit(log, {"ts": NOW.isoformat(), "estimated_usd": 0.0, forbidden: "x"})
 
 
-def test_attest_writes_a_complete_record_only_with_every_flag_and_the_phrase(policy, tmp_path: Path, monkeypatch) -> None:
+def _interactive(monkeypatch, answer: str, tty: bool = True) -> None:
+    monkeypatch.setattr(pl, "_is_interactive", lambda: tty)
+    monkeypatch.setattr("builtins.input", lambda prompt="": answer)
+
+
+_ATTEST_ARGS = ["attest", "wandb-inference", "--plan-free", "--payg-inactive", "--allowance-remaining", "--by", "operator"]
+
+
+def test_attest_writes_a_complete_record_from_an_interactive_terminal(policy, tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("OPENCLAW_STATE_DIR", str(tmp_path))
-    argv = ["attest", "wandb-inference", "--plan-free", "--payg-inactive", "--allowance-remaining",
-            "--by", "operator", "--confirm", pl.ATTEST_PHRASE]
-    assert pl.main(argv) == 0
-    record = json.loads(pl.attestation_path("wandb-inference").read_text())
+    _interactive(monkeypatch, pl.ATTEST_PHRASE)
+    assert pl.main(list(_ATTEST_ARGS)) == 0
+    path = pl.attestation_path("wandb-inference")
+    record = json.loads(path.read_text())
     assert pl.attestation_status(policy, record, datetime.now(timezone.utc))["ok"] is True
-    assert record["attested_by"] == "operator" and "key" not in json.dumps(record).lower()
+    assert record["attested_by"] == "operator" and oct(path.stat().st_mode & 0o777) == "0o600"
 
 
-_FULL_ATTEST = {
-    "--plan-free": None, "--payg-inactive": None, "--allowance-remaining": None,
-    "--by": "operator", "--confirm": None,   # the phrase is filled in at call time
-}
-
-
-@pytest.mark.parametrize("missing", ["--plan-free", "--payg-inactive", "--allowance-remaining", "--by", "--confirm"])
-def test_attest_refuses_when_anything_is_missing(tmp_path: Path, monkeypatch, missing: str) -> None:
+def test_attest_refuses_without_a_terminal_and_never_reads_input(tmp_path: Path, monkeypatch, capsys) -> None:
     monkeypatch.setenv("OPENCLAW_STATE_DIR", str(tmp_path))
-    argv = ["attest", "wandb-inference"]
-    for flag, value in _FULL_ATTEST.items():
-        if flag == missing:
-            continue
-        argv.append(flag)
-        if flag == "--confirm":
-            argv.append(pl.ATTEST_PHRASE)
-        elif value is not None:
-            argv.append(value)
-    assert pl.main(argv) != 0
+    _interactive(monkeypatch, pl.ATTEST_PHRASE, tty=False)
+    assert pl.main(list(_ATTEST_ARGS)) != 0
     assert not pl.attestation_path("wandb-inference").exists()
+    err = capsys.readouterr().err
+    assert "terminal" in err and pl.ATTEST_PHRASE not in err
 
 
-def test_attest_refuses_a_wrong_confirmation_phrase(tmp_path: Path, monkeypatch) -> None:
+def test_there_is_no_command_line_way_to_pass_the_confirmation(tmp_path: Path, monkeypatch, capsys) -> None:
     monkeypatch.setenv("OPENCLAW_STATE_DIR", str(tmp_path))
-    argv = ["attest", "wandb-inference", "--plan-free", "--payg-inactive", "--allowance-remaining",
-            "--by", "operator", "--confirm", "yes"]
+    _interactive(monkeypatch, "ignored")
+    assert pl.main(_ATTEST_ARGS + ["--confirm", pl.ATTEST_PHRASE]) != 0
+    assert not pl.attestation_path("wandb-inference").exists()
+    assert pl.ATTEST_PHRASE not in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("missing", ["--plan-free", "--payg-inactive", "--allowance-remaining", "--by"])
+def test_attest_refuses_when_a_flag_is_missing(tmp_path: Path, monkeypatch, missing: str) -> None:
+    monkeypatch.setenv("OPENCLAW_STATE_DIR", str(tmp_path))
+    _interactive(monkeypatch, pl.ATTEST_PHRASE)
+    argv = list(_ATTEST_ARGS)
+    i = argv.index(missing)
+    del argv[i:i + (2 if missing == "--by" else 1)]
     assert pl.main(argv) != 0 and not pl.attestation_path("wandb-inference").exists()
+
+
+@pytest.mark.parametrize("answer", ["yes", "", "i read the provider billing page myself", pl.ATTEST_PHRASE + " "])
+def test_attest_refuses_a_wrong_typed_phrase(tmp_path: Path, monkeypatch, answer: str) -> None:
+    monkeypatch.setenv("OPENCLAW_STATE_DIR", str(tmp_path))
+    _interactive(monkeypatch, answer)
+    assert pl.main(list(_ATTEST_ARGS)) != 0 and not pl.attestation_path("wandb-inference").exists()
+
+
+def test_the_usage_text_does_not_print_the_phrase_and_is_honest_about_the_limit(capsys) -> None:
+    assert pl.main(["bogus"]) == 2
+    err = capsys.readouterr().err
+    assert pl.ATTEST_PHRASE not in err and "--confirm" not in err
+
+
+def test_the_policy_says_attestation_is_a_speed_bump_not_a_boundary(policy) -> None:
+    note = policy["operator_attestation"]["note"].lower()
+    assert "terminal" in note and "same os user" in note

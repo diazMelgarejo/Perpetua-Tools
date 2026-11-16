@@ -238,6 +238,19 @@ def verify_live(
             "results": results, **counts}
 
 
+class _QuietParser(argparse.ArgumentParser):
+    """An argument parser that never echoes the arguments it rejected (one of them could be a secret)."""
+
+    def error(self, message: str):  # type: ignore[override]
+        print("refused: invalid arguments", file=sys.stderr)
+        raise SystemExit(2)
+
+
+def _is_interactive() -> bool:
+    """True only when both stdin and stdout are a terminal, i.e. a person is at the keyboard."""
+    return sys.stdin.isatty() and sys.stdout.isatty()
+
+
 def _attest(args: argparse.Namespace) -> int:
     policy = load_policy(args.provider)
     problems = []
@@ -246,10 +259,15 @@ def _attest(args: argparse.Namespace) -> int:
             problems.append(f"--{flag.replace('_', '-')} is required")
     if not (args.by and args.by.strip()):
         problems.append("--by is required")
-    if args.confirm != ATTEST_PHRASE:
-        problems.append(f'--confirm must be exactly "{ATTEST_PHRASE}"')
+    if not _is_interactive():
+        problems.append("attest needs an interactive terminal; it cannot be confirmed any other way")
     if problems:
         print("refused: " + "; ".join(problems), file=sys.stderr)
+        return 2
+    # The phrase is shown only here, on a terminal, to the person who must type it.
+    typed = input(f'Type exactly "{ATTEST_PHRASE}" to attest: ')
+    if typed != ATTEST_PHRASE:
+        print("refused: the typed confirmation did not match", file=sys.stderr)
         return 2
     record = {
         "provider": policy["provider"], "attested_at": datetime.now(timezone.utc).isoformat(),
@@ -266,14 +284,13 @@ def _attest(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
     if args and args[0] == "attest":
-        ap = argparse.ArgumentParser(prog="provider_limits attest", add_help=False)
+        ap = _QuietParser(prog="provider_limits attest", add_help=False)
         ap.add_argument("cmd")
         ap.add_argument("provider")
         ap.add_argument("--plan-free", action="store_true", dest="plan_free")
         ap.add_argument("--payg-inactive", action="store_true", dest="payg_inactive")
         ap.add_argument("--allowance-remaining", action="store_true", dest="allowance_remaining")
         ap.add_argument("--by", default="")
-        ap.add_argument("--confirm", default="")
         try:
             return _attest(ap.parse_args(args))
         except SystemExit:
@@ -281,7 +298,7 @@ def main(argv: list[str] | None = None) -> int:
     if len(args) != 2 or args[0] not in ("verify", "status"):
         print("usage: python3 -m orchestrator.provider_limits {verify|status} <provider>\n"
               "       python3 -m orchestrator.provider_limits attest <provider> --plan-free --payg-inactive "
-              "--allowance-remaining --by <name> --confirm \"" + ATTEST_PHRASE + "\"  (operator only)", file=sys.stderr)
+              "--allowance-remaining --by <name>   (operator only, interactive terminal)", file=sys.stderr)
         return 2
     policy = load_policy(args[1])
     if args[0] == "verify":

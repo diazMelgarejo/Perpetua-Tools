@@ -44,7 +44,7 @@
       "payg_inactive",
       "allowance_remaining"
     ],
-    "note": "Only the operator can read the Billing page. An agent must never write this file."
+    "note": "Only the operator can read the Billing page, so only the operator writes this file, from an interactive terminal prompt (there is no command-line or non-interactive way to confirm). This is a speed bump, not a security boundary: a process running as the same OS user can still write the file directly. Treat a hostile same-user process as out of scope, or move the attestation behind a separate OS user or a signed record."
   },
   "official_references": [
     {
