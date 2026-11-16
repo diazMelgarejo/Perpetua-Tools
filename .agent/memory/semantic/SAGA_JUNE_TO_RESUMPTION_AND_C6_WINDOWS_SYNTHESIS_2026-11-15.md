@@ -8,6 +8,7 @@ never has to rediscover why the v2 oramasys surfaces look the way they do.
 ## Part I - The saga
 
 ### Act 1: The co-orchestration founding (June 24-28)
+
 PT memory shows the era's shape: BRANCH_CATALOG_COMPLETE and BRANCH_COMPARISON
 (2026-06-27) inventoried every branch; VITEST_TDD_SESSION proved the TDD harness;
 CODEX_V142_DISPATCH brought Codex onto Windows; COORDINATED_CYCLE_002 through 019
@@ -19,6 +20,7 @@ pull on both repos. Joint auth = PT .state token + orama env lanes. Portal / 500
 cause (orama 435d27a) taught: /health can pass while / fails on a stale process.
 
 ### Act 2: Healthy idle and the last July handshake (July 3-8)
+
 win_next_action_2026-07-03: co-orchestration healthy, queues idle, accepting jobs via
 broadened win_job_queue.py, awaiting Mac assignment / H6 real-task on Win 27B LM Studio,
 cursor standalone validation deferred to 2026-08-02. July 8 (session-transition-fable5):
@@ -28,6 +30,7 @@ after operating in-place on a live checkout caused observed HEAD flicker. The ca
 do not trust a stale v1 DONE snapshot - re-orient from docs/LESSONS.md first.
 
 ### Act 3: The prolonged break (July 3 -> October 23 in the inbox)
+
 The LAN peer inbox record goes silent for 112 days. PT memory proves the break was in
 CROSS-HOST COORDINATION ONLY - local Windows work never stopped: July 15-16 agentic-stack
 upstream contribution plan and the learn-py manual; July 18 the CLINEPASS DeepSeek Flash
@@ -49,6 +52,7 @@ freshness < 60 s), and E1 dispatch permits (port-injected issuer signer). No new
 scheme was needed - server-minted opaque IDs already supply identity.
 
 ### Act 4: Resumption (October 23-28)
+
 The inbox wakes on 10-23 with the /gossip skill announcement and the AntiGravity cross-
 check. October 25-28 rebuilt the LAN fabric: dual-monarchy launch fixes, peer TLS with
 pinned Caddy on 8443, and the four-day recovery synthesis whose spine is: pin types are
@@ -60,6 +64,7 @@ separate from software probes; an authenticated CLI session with empty output is
 completed review.
 
 ### Act 5: The November convergence (11-03 to 11-15)
+
 November 4 is the Windows peer recovery chronicle: /api/status took 8-11 s (three serial
 phases, a gemini --version launch per request, an AlphaClaw port check per loopback
 family) fixed by orama PR 467 (cache CLI versions one hour, parallelize phases); then
@@ -88,6 +93,7 @@ executed - and this document's Part II records what it taught.
 ## Part II - The durable technical weave (v2 oramasys lessons)
 
 ### 1. The revocation availability architecture, now proven on two filesystems
+
 The Mac C6 found the cause: the revocation cache write lock was held 0.3-0.6 s by an
 in-lock signature pass, so lookups waiting over 100 ms failed closed. The candidate
 prepares signatures OUTSIDE the locks and reads via a WAL read-only lookup path. The
@@ -99,6 +105,7 @@ with hold is 0/400 in all three runs at p95 8.7-9.6 ms against the 60 ms budget.
 architecture is now filesystem-portable evidence, not a macOS anecdote.
 
 ### 2. The private-DACL slice and the OWNER RIGHTS invariant (the 2026-11-15 fix)
+
 The oramasys Windows slice (PR 98) refuses any store whose parent lacks a private DACL.
 The Tier 3 harness blocker was real and instructive: os.mkdir with NULL security
 attributes gives the child the process token DEFAULT DACL - SYSTEM, Administrators and
@@ -119,6 +126,7 @@ before widening anything - here the correct classification was owner-equivalence
 not a mask relaxation or a harness stub.
 
 ### 3. NTFS specifics the Mac cannot show
+
 os.replace onto a CLOSED target needed zero retries in 50 attempts; onto an OPEN target
 it raises PermissionError winerror 5 - the bounded jittered retry in the slice is
 REQUIRED, not optional. Junctions are refused fail-closed by prepare_private_store
@@ -128,6 +136,7 @@ without the longPathAware manifest. Defender exclusion state is not queryable
 non-elevated; treat data dirs as NOT excluded.
 
 ### 4. Interpreter and runtime truths
+
 Python's sqlite3.sqlite_version is the library LINKED into that interpreter; the CLI
 version proves nothing. The Q-SQLITE floor is mainline 3.51.3+ (WAL-reset fix) checked
 by receipt (scripts/c6_runtime.py with -I), which also fingerprints compile options and
@@ -137,6 +146,7 @@ venvs sit at 3.53.1 after the 11-15 compliance sweep; one broken unreferenced 3.
 orphan remains undeletable (WinError 5, no admin) and is neutralized.
 
 ### 5. Process lifecycle and transport on Windows
+
 Service starts must escape job objects: test breakaway with a suspended child and
 CREATE_BREAKAWAY_FROM_JOB, relaunch via WMI Win32_Process.Create with the environment
 passed in the startup block. localhost is IPv6-only on Windows - an IPv4-loopback TLS
@@ -149,6 +159,7 @@ Out-File -Encoding utf8 (BOM plus CRLF added, 10 became 16). Peer files are stor
 byte-exactly with SHA-256 sidecars, receipts report raw and LF-normalized hashes.
 
 ### 6. Governance invariants that held all the way through
+
 Serving stayed OFF in every command this arc; ORAMA_GRANT_SERVING unset. Agent
 diagnostics are not operator qualification; a completed refresh is not evidence of send
 availability; three consecutive operator passes with controls A/B are the Mac gate and
@@ -162,6 +173,7 @@ commit, lesson, review or board note - an unpublished secret is removed by REPLA
 the commits that contain it, because redaction leaves the patch.
 
 ### 7. What remains open after 11-15
+
 Windows Tier 3 p95/p99 numbers await: (a) the OWNER RIGHTS fix reaching main (branch
 2026-11-15-001-c6-windows-private-dacl-owner-rights, stacked locally on the merged PR 99
 tip, committed but NOT pushed per operator instruction), then (b) the three candidate
@@ -172,6 +184,7 @@ the Windows slice; the fix branch touches files disjoint from it and will rebase
 trivially when 80 lands.
 
 ## Part III - What the PT memory corpus says about all of this
+
 The .agent/memory tree carries this whole arc in three layers: working/ holds 130+
 session cards from the June coordinated cycles through today (the CO_ORCHESTRATOR_LAN_PEER
 platform-affinity card, the fable5 transition warning against stale snapshots, the July
@@ -188,7 +201,6 @@ file, the review thread and the runbook before treating a note as done. This doc
 written in that spirit: every number above comes from a file in tasks/c6_run/
 evidence-2026-11-15 or a cited memory card, and every governance boundary is stated as
 the runbook states it, not as any agent wishes it were.
-
 
 ## Part II addendum (same day, after the fix landed) - Tier 3 measured on native Windows
 
