@@ -1,0 +1,28 @@
+{
+  "id": "3290c3f34a2e",
+  "key": "manual_3290c3",
+  "name": "manual_3290c3",
+  "claim": "Enter a Python venv through an exec wrapper and build it from the uv minor-version link: CPython activates a venv only when pyvenv.cfg sits beside or one level above the invoked (undereferenced) executable path, so a symlink to <env>/bin/python3 from another directory runs the bare base interpreter, and uv venv --python 3.13.18 pins pyvenv.cfg home to the patch directory, which dangles once uv removes that patch.",
+  "conditions": [
+    "default-interpreter",
+    "python",
+    "pyvenv-cfg",
+    "uv",
+    "venv"
+  ],
+  "evidence_ids": [
+    "2026-11-16T16:10:43.395018+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T16:10:43.395018+00:00",
+  "status": "staged",
+  "decisions": [
+    {
+      "ts": "2026-11-16T16:10:43.395018+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    }
+  ],
+  "rejection_count": 0
+}

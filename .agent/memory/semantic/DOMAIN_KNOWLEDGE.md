@@ -663,3 +663,25 @@ tests, service-account qualification, acceptance and activation are separate.
 The earlier local-model observations remain host/prompt-specific. Unmatched
 template/settings and tiny samples do not establish a transport or model
 winner, nor prove a single causal explanation for measured latency differences.
+
+## Python venv resolution and the default environment (2026-11-17) — Exhibit B
+
+See `PYTHON_VENV_RESOLUTION_AND_DEFAULT_ENV_DOMAIN_KNOWLEDGE_2026-11-17.md` (same directory) for
+the verified mechanics, failure table and runbook. Core rules:
+
+- **Lookup.** CPython activates a venv only when `pyvenv.cfg` is adjacent to, or one directory
+  above, the **invoked** executable path; symlinks are not dereferenced for this lookup (PEP 405).
+  A link to `<env>/bin/python3` from another directory runs the bare base interpreter. Enter an
+  env through `exec "<env>/bin/python3" "$@"`.
+- **Anchor `home`.** A venv's `pyvenv.cfg` `home` must point at a path that outlives patch
+  upgrades. `uv venv --python 3.13.18` writes the patch directory (`cpython-3.13.18-…`), which
+  dangles when uv removes that patch; ten venvs broke that way. Build from the uv minor-version
+  link, `…/uv/python/cpython-3.13-<platform>/bin/python3.13`, so `home` stays valid.
+- **Default switch.** Changing the default `python3` is a dependency migration. A new interpreter
+  has no packages, and framework and standalone builds use different user-site directories. Carry
+  the old set over with `pip freeze --all` into an env, then a requirements file.
+- **Replace before remove.** Build the replacement beside the old one, verify it (version,
+  `sqlite3.sqlite_version` >= 3.51.3, critical imports, the board CLI), repoint atomically with
+  `mv -f` of a temp file, then delete the old one.
+- **Source-only packages.** Drop-in forks need checking against the callers; `netifaces` became
+  `netifaces-plus` (same import name).

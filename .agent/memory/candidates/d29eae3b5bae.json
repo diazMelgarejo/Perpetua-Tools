@@ -1,0 +1,27 @@
+{
+  "id": "d29eae3b5bae",
+  "key": "manual_d29eae",
+  "name": "manual_d29eae",
+  "claim": "When one failure produces multiple partial fixes on multiple branches, classify the failure class, census all exposure points, synthesize the strengths on a trial branch from main, and retire the superseded PRs with superseded-by comments instead of stacking them linearly.",
+  "conditions": [
+    "fragment-synthesis",
+    "trial-branch",
+    "retire-superseded",
+    "coverage-census"
+  ],
+  "evidence_ids": [
+    "2026-11-15T23:12:49.074190+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-15T23:12:49.074190+00:00",
+  "status": "staged",
+  "decisions": [
+    {
+      "ts": "2026-11-15T23:12:49.074190+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    }
+  ],
+  "rejection_count": 0
+}

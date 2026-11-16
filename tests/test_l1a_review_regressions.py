@@ -14,6 +14,7 @@ Deterministic barriers only: a mutable fake clock replaces ``time.time``.
 """
 from __future__ import annotations
 
+import asyncio
 import time
 from pathlib import Path
 
@@ -220,22 +221,47 @@ async def test_empty_capture_skips_task_history_fold(
     assert await cleanup_stale_queue_claims(bus, set()) == []
 
 
-async def test_fence_reads_liveness_on_the_release_connection(
-    bus: GossipBus, clock: dict, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Guard: the liveness recheck must not open a second connection."""
+async def _release_counting_connections(
+    bus: GossipBus,
+    clock: dict,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    background_connect: bool = False,
+) -> tuple[str, list[int]]:
+    """Run one fenced release and count connections the release itself opens.
+
+    Only connections opened from the release's own task are counted. Event
+    inserts earlier in the test schedule background embedding tasks, and when
+    embedding fails those tasks call ``bus.connect()`` to record the status.
+    Whether one of them runs while the release is awaiting is timing-dependent,
+    so counting them made this guard flaky (seen on CI, Python 3.11).
+    ``background_connect`` injects such a connection on purpose.
+    """
     task_id = await _claimed_task(bus, clock)
     clock["now"] = T_DEAD
     captured = await capture_stale_queue_claims(bus, {"w"})
     original = bus.connect
     opened: list[int] = []
+    release_task = asyncio.current_task()
 
     def _counting_connect(*args, **kwargs):
-        """Count connections opened while the fenced release runs."""
-        opened.append(1)
+        """Count connections opened by the fenced release's own task."""
+        if asyncio.current_task() is release_task:
+            opened.append(1)
         return original(*args, **kwargs)
 
+    async def _background_status_write() -> None:
+        """Stand-in for a post-commit embedding status update."""
+        await asyncio.sleep(0)
+        async with bus.connect() as db:
+            await db.execute("SELECT 1")
+
     monkeypatch.setattr(bus, "connect", _counting_connect)
+    background = (
+        asyncio.get_running_loop().create_task(_background_status_write())
+        if background_connect
+        else None
+    )
     result = await task_queue.release_claim_with_event(
         bus,
         task_id,
@@ -245,5 +271,26 @@ async def test_fence_reads_liveness_on_the_release_connection(
         expected_claimed_at=captured[0]["claimed_at"],
         liveness_floor_ts=captured[0]["captured_at"],
     )
-    assert result.name == "RELEASED"
+    if background is not None:
+        await background
+    return result.name, opened
+
+
+async def test_fence_reads_liveness_on_the_release_connection(
+    bus: GossipBus, clock: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Guard: the liveness recheck must not open a second connection."""
+    name, opened = await _release_counting_connections(bus, clock, monkeypatch)
+    assert name == "RELEASED"
+    assert len(opened) == 1
+
+
+async def test_release_connection_count_ignores_background_connections(
+    bus: GossipBus, clock: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A background status write during the release is not the release's connection."""
+    name, opened = await _release_counting_connections(
+        bus, clock, monkeypatch, background_connect=True
+    )
+    assert name == "RELEASED"
     assert len(opened) == 1

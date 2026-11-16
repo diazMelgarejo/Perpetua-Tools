@@ -91,7 +91,9 @@ dependencies = [
 recommended = [
     "lancedb>=0.6",
     "pyarrow>=14.0",
-    "netifaces>=0.11.0",
+    # netifaces-plus: maintained drop-in for netifaces (same `import netifaces`); netifaces 0.11.0
+    # has no cp313 wheel and fails to build from source (2026-11-17, Python 3.13.18 baseline).
+    "netifaces-plus>=0.12.5",
 ]
 rag = [
     # Semantic vector store for GossipBus (RAG backport 2026-05-22).
@@ -102,7 +104,9 @@ rag = [
 lan = [
     # LAN interface detection for NetworkAutoConfig (packages/net_utils/).
     # Falls back to socket-based IP detection if not installed.
-    "netifaces>=0.11.0",
+    # netifaces-plus: maintained drop-in for netifaces (same `import netifaces`); netifaces 0.11.0
+    # has no cp313 wheel and fails to build from source (2026-11-17, Python 3.13.18 baseline).
+    "netifaces-plus>=0.12.5",
 ]
 windows-security = [
     # Windows-only. Enforces a restrictive ACL (owner + Administrators,
