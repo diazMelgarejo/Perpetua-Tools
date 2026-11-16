@@ -53,6 +53,12 @@ once the pull request merges.
 - **Do not trust a push count from memory.** After the fix loop the orama-system branch was 6
   commits ahead of the pushed head, not 5; a commit I assumed had landed was still staged.
 
+- **A synthetic benchmark is not a live test.** The first live pair loop was set up with an invented
+  held-out corpus and an answer key I wrote. The operator corrected this: live turns exist to test
+  real-world situations. The run was stopped before its request completed (an attempt marker
+  existed, so one request may have been started and cut off). Real CodeRabbit comments on the
+  pair's own pull request were the right task; look for existing real feedback first.
+
 ## Open items
 
 Operator decisions: whether Wanda's soul card or the W&B Cline launcher governs the route; the
