@@ -29,3 +29,21 @@ Evidence and status only; not an approval to merge or deploy. Serving OFF all da
 - Native Windows scheduled p95 budget decision (re-ratify vs keep 60 ms).
 - oramasys PR 100 review; adversarial fail-open suite + service-account context for full Windows C6; R6-R8.
 - PR 514 review and merge (this branch).
+
+## Dated correction (2026-11-16, append-only)
+
+The timeline above is preserved as written. Live state checked 2026-11-16:
+
+- [oramasys PR 100](https://github.com/oramasys/oramasys/pull/100) is MERGED (2026-11-15 20:33
+  UTC, head `64afce32`, merge `4ecdfef8`), not draft. Its native-private-store jobs ran on
+  `64afce32` and passed on 3.11, 3.12 and 3.13.
+- [Perpetua-Tools PR 514](https://github.com/diazMelgarejo/Perpetua-Tools/pull/514) is MERGED
+  (2026-11-15 19:52 UTC, head `250d079c`, merge `5bca2748`); the "PR 514 review and merge"
+  owner-held item is done.
+- Native Windows scheduled p95 budget: the operator decided 150 ms for native Windows only on
+  2026-11-16. Mac and POSIX keep 60 ms (ratified 2026-11-07 in the oramasys budget proposal).
+  The value is provisional until re-measured in the service-account context, and it qualifies
+  no run.
+- Still open: the adversarial fail-open suite's native Windows cases and the service-account
+  context run (Windows-held), the live free-first provider qualification (needs a bounded,
+  approved run), and R6-R8.
