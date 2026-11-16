@@ -95,3 +95,20 @@ Reference cards updated in the same pass:
 (fail-secure snapshot),
 [17](https://github.com/diazMelgarejo/orama-system/blob/main/docs/wiki/17-line-endings-and-encoding.md)
 (PS 5.1 byte fidelity) — branch `docs/metabolize-48h-lessons`.
+
+## Exhibit B for elegance (operator earmark, 2026-11-17)
+
+Exhibit A above is a synthesis of fragmented fixes. **Exhibit B** is a fix at the resolution
+layer. The Mac's default `python3` was moved to uv CPython 3.13.18 (SQLite 3.53.1), which first
+dropped the old default's 229 packages and broke the board CLI. The fix keeps every `python3 …`
+caller unchanged:
+
+- `python3` is an `exec` wrapper into one venv built from the uv minor-version link, so its
+  `pyvenv.cfg` `home` survives 3.13.x patch upgrades.
+- The package set comes from one rebuild file.
+- Both base interpreters are untouched.
+- The replacement was verified before anything was removed, and undoing it means deleting two
+  wrappers.
+
+Details:
+[PYTHON_VENV_RESOLUTION_AND_DEFAULT_ENV_DOMAIN_KNOWLEDGE_2026-11-17.md](PYTHON_VENV_RESOLUTION_AND_DEFAULT_ENV_DOMAIN_KNOWLEDGE_2026-11-17.md).
