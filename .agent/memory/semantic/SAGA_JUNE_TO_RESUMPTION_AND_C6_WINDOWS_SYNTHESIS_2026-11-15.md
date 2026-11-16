@@ -107,11 +107,22 @@ architecture is now filesystem-portable evidence, not a macOS anecdote.
 ### 2. The private-DACL slice and the OWNER RIGHTS invariant (the 2026-11-15 fix)
 
 The oramasys Windows slice (PR 98) refuses any store whose parent lacks a private DACL.
-The Tier 3 harness blocker was real and instructive: os.mkdir with NULL security
-attributes gives the child the process token DEFAULT DACL - SYSTEM, Administrators and
-OWNER RIGHTS (S-1-3-4) - NOT parent inheritance (icacls showed no (I) flags). The
-former acl_is_private whitelist {user, SYSTEM, Administrators} rejected S-1-3-4 and
-therefore failed closed on every plain-mkdir directory. The durable fix classifies
+The Tier 3 harness blocker was real and instructive: the harness directories carried a
+protected DACL of SYSTEM, Administrators and OWNER RIGHTS (S-1-3-4), and icacls showed no
+(I) flags. That is an observation from the tested environment, not a general creation
+rule (corrected 2026-11-16, review 5915821862). A directory created with NULL security
+attributes inherits the parent's inheritable ACEs and uses the creator token's default
+DACL only when none are inherited
+([CreateDirectoryW](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createdirectoryw)).
+The observed ACE set matches CPython 3.13 `os.mkdir(mode=0o700)` on Windows, which
+applies the protected DACL `D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;OW)`
+([os.mkdir](https://docs.python.org/3/library/os.html#os.mkdir)); the C6 harness creates
+its attempt roots with `mkdir(mode=0o700)`
+([benchmark_revocation_availability.py](https://github.com/oramasys/oramasys/blob/main/scripts/benchmark_revocation_availability.py)),
+so the creation mode is the better-supported cause (reviewer inference). The parent
+directory's inheritance settings were not recorded in the run evidence. The former
+acl_is_private whitelist {user, SYSTEM, Administrators} rejected S-1-3-4 and therefore
+failed closed on every directory created that way. The durable fix classifies
 OWNER RIGHTS as OWNER-EQUIVALENT, not foreign: Windows resolves S-1-3-4 to the object
 owner at access-check time, and _check_windows_ownership already pins ownership to the
 current user, so an OWNER RIGHTS ACE cannot widen access to any principal the owner
@@ -149,8 +160,13 @@ orphan remains undeletable (WinError 5, no admin) and is neutralized.
 
 Service starts must escape job objects: test breakaway with a suspended child and
 CREATE_BREAKAWAY_FROM_JOB, relaunch via WMI Win32_Process.Create with the environment
-passed in the startup block. localhost is IPv6-only on Windows - an IPv4-loopback TLS
-upstream cannot reach a --host localhost listener. PowerShell 5.1 strips quotes in
+passed in the startup block. On the tested host, an IPv4-loopback TLS upstream could not
+reach the application's --host localhost listener; the exact bind address was not
+recorded. This is a host and application observation, not a Windows rule: Windows does
+not make localhost IPv6-only, getaddrinfo returns the loopback addresses for it
+([getaddrinfo](https://learn.microsoft.com/en-us/windows/win32/api/ws2tcpip/nf-ws2tcpip-getaddrinfo)),
+and which one a listener binds depends on the application (corrected 2026-11-16, review
+5915821862). PowerShell 5.1 strips quotes in
 native-exe arguments. Byte fidelity rules (verified 2026-11-15 on 5.1.26100.9818):
 ASCII scripts need no BOM; non-ASCII .ps1 needs a UTF-8 BOM and a real 5.1 parse
 (without BOM the same script prints mojibake); process bytes must never pass through
