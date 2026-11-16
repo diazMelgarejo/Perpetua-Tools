@@ -6,7 +6,7 @@ metaresearcher skill, `references/live-pair-loop-runbook.md`
 commits not yet pushed when this card was written). This card indexes the practices by theme and
 points at the lessons that hold the evidence. A lesson id is `lesson_<id>` in `lessons.jsonl`.
 
-## The live pair loop (four real turns, all free-tier W&B, high effort)
+## The live pair loop (four real turns on W&B Inference, operator-certified Free plan, high effort)
 
 Real task, real evaluator, show each seat what it is graded on, sandbox the scoring, reproduce
 every claim a model makes, incorporate test-first, report requests honestly. Results: turn 1 and
@@ -24,6 +24,19 @@ attempts.
 | A free dogfood proves boundaries, not model quality | `1fa650cb3860` |
 | Check memory before spending a limited provider request | `1326d9f7430d` |
 | Two-tier model and effort policy; two aliases that break the rule | `8846ef3fbb9a` |
+
+## Billing basis for the live turns (checked against the official docs)
+
+The operator certified the W&B account is on the Free plan with no payment method charged. The
+official CoreWeave Serverless Inference page (usage-limits, last modified 2026-11-09) says: priced
+per token; the plan allowance is used first; on the Free plan inference stops when the allowance is
+exhausted until pay-as-you-go is activated; billing is monthly and only after activation; activation
+does not charge a card; the Free cap is 100 dollars a month once active (a 402 means the cap was
+reached); concurrency limits per project and user return 429; location limits return 403. The page
+documents no per-hour or per-day request limits. The plan, remaining allowance and whether
+pay-as-you-go is active are visible only on the account's Billing page, which no agent can open, so
+the certification is the evidence. Rule: stop on any 402 or 429, never activate pay-as-you-go
+(`e024534a3096`).
 
 ## Code, tests and docs
 

@@ -1,0 +1,38 @@
+{
+  "id": "e024534a3096",
+  "key": "manual_e02453",
+  "name": "manual_e02453",
+  "claim": "State the billing basis of a live provider from the provider's official documentation and the operator's certification, not from an assumption. W&B Inference (CoreWeave Serverless Inference) is priced per token; each plan has an Inference allowance used first; on the Free plan inference stops when the allowance is used up until pay-as-you-go is activated, billing is monthly and only after activation, activation does not charge a card, the default Free spending cap is 100 dollars per month once active, and a 402 means the cap was reached. Limits that apply are concurrency limits per project and user (429) and geographic restrictions (403). The account's plan, allowance and whether pay-as-you-go is active are shown only on the Billing page, so the operator's certification is the evidence and the agent cannot confirm it. Stop on any 402 or 429 and never activate pay-as-you-go.",
+  "conditions": [
+    "wandb inference billing free plan allowance pay-as-you-go 402 429 concurrency limit official docs"
+  ],
+  "evidence_ids": [
+    "2026-11-16T23:11:46.035806+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T23:11:46.035806+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T23:11:46.035806+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T23:11:46.203845+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: a side agent noted about ten live requests had been called free-tier without checking billing; the operator certified the account is free with no payment method charged; the official CoreWeave usage-limits page (last modified 2026-11-09) was read and says the above.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T23:11:46.035806+00:00"
+      ],
+      "lessons_sha": "4726036bc17d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T23:11:46.203830+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: a side agent noted about ten live requests had been called free-tier without checking billing; the operator certified the account is free with no payment method charged; the official CoreWeave usage-limits page (last modified 2026-11-09) was read and says the above."
+}
