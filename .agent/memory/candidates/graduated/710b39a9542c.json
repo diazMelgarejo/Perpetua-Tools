@@ -1,0 +1,38 @@
+{
+  "id": "710b39a9542c",
+  "key": "manual_710b39",
+  "name": "manual_710b39",
+  "claim": "Keep a local spend estimate and stop before a monthly budget is passed, because an agent cannot read the provider's Billing page. Record size-only rows (characters over four per token, never prompts or answers) for every live request, including failed ones, at conservative list rates, project the next request with the full reasoning stream, refuse before launching when the month's estimate plus the projection would pass the budget, refuse a ledger with no budget, and stop on a corrupt row instead of skipping it. The operator's budget for W&B is an estimated 90 dollars a month, under the Free plan's 100-dollar cap. The estimate is not billing: the Billing page is the truth.",
+  "conditions": [
+    "budget spend ledger estimate monthly cap live request guard billing page"
+  ],
+  "evidence_ids": [
+    "2026-11-16T23:23:49.948605+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T23:23:49.948605+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T23:23:49.948605+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T23:23:50.114346+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: the operator set the 90-dollar estimate; spend_ledger and live_cycle(spend_ledger, budget_usd) were added test-first (20 tests); a retroactive reconstruction put the ten live requests at about 0.15 dollars, 0.17 percent of the budget, with the thinking stream assumed at nine times the answer.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T23:23:49.948605+00:00"
+      ],
+      "lessons_sha": "b668d9785910"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T23:23:50.114334+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: the operator set the 90-dollar estimate; spend_ledger and live_cycle(spend_ledger, budget_usd) were added test-first (20 tests); a retroactive reconstruction put the ten live requests at about 0.15 dollars, 0.17 percent of the budget, with the thinking stream assumed at nine times the answer."
+}

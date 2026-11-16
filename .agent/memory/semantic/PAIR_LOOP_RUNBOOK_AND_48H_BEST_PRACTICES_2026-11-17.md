@@ -1,9 +1,11 @@
 # Pair loop runbook index and the last 48 hours' best practices (2026-11-17)
 
-Author/actor: Claude Code, self-reported. Interim. The method is written up in the orama-system
-metaresearcher skill, `references/live-pair-loop-runbook.md`
-([orama-system pull request 519](https://github.com/diazMelgarejo/orama-system/pull/519), local
-commits not yet pushed when this card was written). This card indexes the practices by theme and
+Author/actor: Claude Code, self-reported. Interim. The step-by-step sequence, the prompt and
+evaluator skeletons and the failure table are in `PAIR_LOOP_PLAYBOOK_STEP_BY_STEP_2026-11-17.md`.
+The method is written up in the orama-system metaresearcher skill,
+`references/live-pair-loop-runbook.md`
+([orama-system pull request 519](https://github.com/diazMelgarejo/orama-system/pull/519), pushed
+the same day). This card indexes the practices by theme and
 points at the lessons that hold the evidence. A lesson id is `lesson_<id>` in `lessons.jsonl`.
 
 ## The live pair loop (four real turns on W&B Inference, operator-certified Free plan, high effort)
@@ -23,6 +25,12 @@ attempts.
 | Model-written code runs in a scrubbed, sandboxed, allowlisted harness | `9d1751cfa965`, `525d9111e521` |
 | A free dogfood proves boundaries, not model quality | `1fa650cb3860` |
 | Check memory before spending a limited provider request | `1326d9f7430d` |
+| Keep a local spend estimate and stop before the monthly budget | `710b39a9542c` |
+| Treat a side agent's note like a reviewer's output | `187f42233934` |
+| A reference answer that scores 0; compute prompt numbers | `e748c558ab73` |
+| Vetting is more than the score: dead code, bounded diagnostics | `fecadd5aaa5f` |
+| Do not edit a module a running process imports | `9c3f04b9a8fa` |
+| Persist the live-loop harness | `44cd8061bf99` |
 | Two-tier model and effort policy; two aliases that break the rule | `8846ef3fbb9a` |
 
 ## Billing basis for the live turns (checked against the official docs)
@@ -37,6 +45,13 @@ documents no per-hour or per-day request limits. The plan, remaining allowance a
 pay-as-you-go is active are visible only on the account's Billing page, which no agent can open, so
 the certification is the evidence. Rule: stop on any 402 or 429, never activate pay-as-you-go
 (`e024534a3096`).
+
+## Monthly budget
+
+The operator's estimated ceiling is 90 dollars a month of free use, under the 100-dollar default cap
+(`710b39a9542c`). The local guard is `bin/agents/spend_ledger.py` with `live_cycle(spend_ledger,
+budget_usd)`; the retroactive estimate for the live requests so far is about 0.15 dollars. The Billing
+page is the truth.
 
 ## Code, tests and docs
 
