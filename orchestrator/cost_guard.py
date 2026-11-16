@@ -5,6 +5,7 @@ import json
 import math
 import time
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict
 
@@ -57,13 +58,18 @@ class CostGuard:
     # 05-ORAMASYS-UNIFIED-ACTION-PLAN-2026-08-18.md Phase 4: refuse single calls at/above 199k to prevent 2x billing
     TOKEN_CLIFF_HARD_TOKENS = 199_000
 
+    PERIODS = ("daily", "monthly")
+
     def __init__(
-        self, state_dir: str = ".state", budget_file: str = "budget.json"
+        self, state_dir: str = ".state", budget_file: str = "budget.json", period: str = "daily"
     ) -> None:
+        if period not in self.PERIODS:
+            raise ValueError(f"period must be one of {self.PERIODS}, got {period!r}")
+        self.period = period
         self.state_dir = Path(state_dir)
         self.state_dir.mkdir(parents=True, exist_ok=True)
         self.budget_path = self.state_dir / budget_file
-        self._memory_state: Dict[str, float] = {**_DEFAULT_BUDGET, "last_reset": time.time()}
+        self._memory_state: Dict[str, float] = {**_DEFAULT_BUDGET, "last_reset": time.time(), "period": self.period}
         self._persist_enabled = True
         self._lock = asyncio.Lock()
         # reservation_id -> (amount, monotonic reserve() timestamp)
@@ -75,7 +81,7 @@ class CostGuard:
 
         try:
             if not self.budget_path.exists():
-                payload = {**_DEFAULT_BUDGET, "last_reset": time.time()}
+                payload = {**_DEFAULT_BUDGET, "last_reset": time.time(), "period": self.period}
                 self._save(payload)
                 return payload
             payload = json.loads(self.budget_path.read_text(encoding="utf-8"))
@@ -94,8 +100,24 @@ class CostGuard:
         except OSError:
             self._persist_enabled = False
 
+    @staticmethod
+    def _month_of(ts: float) -> tuple[int, int]:
+        dt = datetime.fromtimestamp(ts, tz=timezone.utc)
+        return dt.year, dt.month
+
+    def _period_elapsed(self, payload: Dict[str, float]) -> bool:
+        """True when the budget window has rolled over: 24 hours, or a UTC calendar month."""
+        now = time.time()
+        if self.period == "monthly":
+            return self._month_of(now) != self._month_of(payload["last_reset"])
+        return now - payload["last_reset"] >= 86400
+
     def _maybe_reset(self, payload: Dict[str, float]) -> Dict[str, float]:
-        if time.time() - payload["last_reset"] >= 86400:
+        stored = payload.get("period", "daily")
+        if stored != self.period:
+            raise ValueError(f"budget file is {stored!r} but this guard is {self.period!r}")
+        payload["period"] = self.period
+        if self._period_elapsed(payload):
             payload["daily_spend"] = 0.0
             payload["last_reset"] = time.time()
             self._save(payload)
@@ -119,6 +141,7 @@ class CostGuard:
         p = self._maybe_reset(self._load())
         out: Dict[str, Any] = dict(p)
         out["alert"] = self.alert_approaching()
+        out["period"] = self.period
         out["remaining"] = round(p["daily_budget"] - p["daily_spend"], 6)
         return out
 
