@@ -137,19 +137,38 @@ def _maybe_init_wandb_weave_tracing():
         _WANDB_WEAVE_INITIALIZED = True
 
 
+PROVIDER_STOP_STATUS = (402, 429)
+
+
+class ProviderLimitStop(RuntimeError):
+    """The provider answered 402 (allowance used up with pay-as-you-go inactive, or spending cap
+    reached) or 429 (concurrency limit). Stop the loop; never retry and never activate pay-as-you-go."""
+
+    def __init__(self, status):
+        super().__init__(f"provider limit: HTTP {status}")
+        self.status = status
+
+
 def _call_wandb(system, user, *, temperature, max_tokens, model):
     api_key = os.getenv("DEEPSEEK_V4_FLASH_WANDB", "")
     model = model or os.getenv("AGENT_MODEL", WANDB_DEFAULT_MODEL)
     _maybe_init_wandb_weave_tracing()
-    from openai import OpenAI
-    c = OpenAI(api_key=api_key, base_url=WANDB_BASE_URL)
-    r = c.chat.completions.create(
-        model=model,
-        temperature=temperature,
-        max_completion_tokens=max_tokens,
-        messages=[{"role": "system", "content": system},
-                  {"role": "user", "content": user}],
-    )
+    import openai
+    # One call is one request. The SDK retries a 429 twice by default, which would send extra
+    # requests after a rate-limit response; a 402 or 429 must stop the loop, not be retried.
+    c = openai.OpenAI(api_key=api_key, base_url=WANDB_BASE_URL, max_retries=0)
+    try:
+        r = c.chat.completions.create(
+            model=model,
+            temperature=temperature,
+            max_completion_tokens=max_tokens,
+            messages=[{"role": "system", "content": system},
+                      {"role": "user", "content": user}],
+        )
+    except openai.APIStatusError as exc:
+        if exc.status_code in PROVIDER_STOP_STATUS:
+            raise ProviderLimitStop(exc.status_code) from exc
+        raise
     return r.choices[0].message.content
 
 
