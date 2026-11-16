@@ -59,6 +59,11 @@ once the pull request merges.
   existed, so one request may have been started and cut off). Real CodeRabbit comments on the
   pair's own pull request were the right task; look for existing real feedback first.
 
+- **The first three candidates ran before anyone read them, with the provider key in the scorer's
+  environment.** A side agent flagged it; the denylist vet was bypassable. The scorer now runs
+  candidates through `sandbox_run` (scrubbed environment, kernel sandbox, allowlist vet). The first
+  three candidates were small and harmless; that was luck, not control.
+
 ## Open items
 
 Operator decisions: whether Wanda's soul card or the W&B Cline launcher governs the route; the
