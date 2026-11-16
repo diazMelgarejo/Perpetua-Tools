@@ -68,6 +68,16 @@ once the pull request merges.
   home folder, and a vet that a builtin-named default parameter beat. Three security reviews, three
   real findings; each reproduced and fixed. The runbook card is `PAIR_LOOP_RUNBOOK_AND_48H_BEST_PRACTICES_2026-11-17.md`.
 
+- **The first spend guard duplicated logic that already existed.** Perpetua-Tools had `CostGuard`, a
+  provider policy format and a frugality router; the orama-only ledger was replaced, unpushed, by one
+  shared guard (`4a87fb0199f1`). I had searched neither repository first.
+- **CodeRabbit found four real gaps in the billing notes** (a 402 has two causes, the certification did
+  not cover pay-as-you-go, the runbook relied on that certification alone, and the SDK retried a 429).
+  Fixed with an attestation requirement, a live-verified provider policy, and `max_retries=0`.
+- **Live turns are blocked until the operator attests.** That is the intended behavior of the
+  guard, not a
+  fault.
+
 ## Open items
 
 Operator decisions: whether Wanda's soul card or the W&B Cline launcher governs the route; the

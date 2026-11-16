@@ -10,7 +10,7 @@ that pull request. Lesson ids are `lesson_<id>` in `lessons.jsonl`.
 
 1. **Preconditions.** Operator gate and arm set for one command only. Spend guard on
    (`spend_ledger`, `budget_usd=90`). Scoring through the sandbox. Same-day read-only model list;
-   abort before any completion if the model is missing. (`710b39a9542c`, `9d1751cfa965`)
+   abort before any completion if the model is missing. (`15733a3316ad`, `9d1751cfa965`)
 2. **Find a real task.** `gh api repos/<o>/<r>/pulls/<n>/comments` and `/reviews`, open issues,
    failing CI, or a defect seen in the pair's own output. No invented corpus. (`00e2a1234aba`)
 3. **Reproduce it on the current code** with the reviewer's own input. If it does not reproduce, it is
@@ -94,14 +94,16 @@ def evaluate_answer(answer):
 | Allowlist accepted `getattr=getattr` | Parameter names counted as local | Refuse defaults and shadowing |
 | Sandbox profile fail-open | Allow-by-default; broad read root | Deny-by-default; exact roots |
 | Commit "done" but absent | A hook rejected it unseen | `git log -1` after every commit |
-| 402 or 429 from the provider | Cap or concurrency limit | Stop; never activate pay-as-you-go |
+| 402 or 429 from the provider | 402: allowance used up with pay-as-you-go inactive, or the cap; 429: concurrency | Stop; never activate pay-as-you-go; client `max_retries=0` |
+| `attestation-required` | No fresh operator attestation | The operator runs `provider_limits attest`; an agent must not |
 
 ## Budget
 
 Operator ceiling: an estimated 90 dollars a month, under the Free plan's 100-dollar cap. The guard is
-local and an estimate; the Billing page is the truth. Position on 2026-11-17: the ten live requests
-estimate at about 0.15 dollars (0.17 percent), thinking stream assumed at nine times the answer.
-(`710b39a9542c`, `e024534a3096`)
+shared (`CostGuard`, monthly, in this repository) and configured by the provider policy; its facts are
+re-verified live from the official references. It is an estimate; the Billing page is the truth. Position
+on 2026-11-17: about 0.15 dollars (0.17 percent), thinking stream assumed at nine times the answer.
+(`710b39a9542c` as corrected, `15733a3316ad`, `e024534a3096` as corrected)
 
 ## Results and what is not proven
 

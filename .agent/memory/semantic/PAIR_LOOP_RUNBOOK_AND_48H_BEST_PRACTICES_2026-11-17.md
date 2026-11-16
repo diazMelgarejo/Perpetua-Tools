@@ -25,7 +25,9 @@ attempts.
 | Model-written code runs in a scrubbed, sandboxed, allowlisted harness | `9d1751cfa965`, `525d9111e521` |
 | A free dogfood proves boundaries, not model quality | `1fa650cb3860` |
 | Check memory before spending a limited provider request | `1326d9f7430d` |
-| Keep a local spend estimate and stop before the monthly budget | `710b39a9542c` |
+| One shared spend guard in this repository; stop before the monthly budget | `710b39a9542c` (corrected) |
+| Live use needs a fresh operator attestation; two 402 causes; no SDK retries | `15733a3316ad` |
+| Search sibling repositories and reuse existing logic first | `4a87fb0199f1` |
 | Treat a side agent's note like a reviewer's output | `187f42233934` |
 | A reference answer that scores 0; compute prompt numbers | `e748c558ab73` |
 | Vetting is more than the score: dead code, bounded diagnostics | `fecadd5aaa5f` |
@@ -33,25 +35,33 @@ attempts.
 | Persist the live-loop harness | `44cd8061bf99` |
 | Two-tier model and effort policy; two aliases that break the rule | `8846ef3fbb9a` |
 
-## Billing basis for the live turns (checked against the official docs)
+## Billing basis for the live turns (confirmed live from the official references)
 
-The operator certified the W&B account is on the Free plan with no payment method charged. The
-official CoreWeave Serverless Inference page (usage-limits, last modified 2026-11-09) says: priced
-per token; the plan allowance is used first; on the Free plan inference stops when the allowance is
-exhausted until pay-as-you-go is activated; billing is monthly and only after activation; activation
-does not charge a card; the Free cap is 100 dollars a month once active (a 402 means the cap was
-reached); concurrency limits per project and user return 429; location limits return 403. The page
-documents no per-hour or per-day request limits. The plan, remaining allowance and whether
-pay-as-you-go is active are visible only on the account's Billing page, which no agent can open, so
-the certification is the evidence. Rule: stop on any 402 or 429, never activate pay-as-you-go
-(`e024534a3096`).
+The spend guard is shared and lives in this repository: `orchestrator/provider_limits.py`, the policy
+`config/provider-policies/wandb-inference.json`, and `orchestrator/cost_guard.py` in monthly mode. The
+policy's official references are re-checked live with
+`python3 -m orchestrator.provider_limits verify wandb-inference` (13 of 13 facts confirmed on
+2026-11-17). The CoreWeave usage-limits page (last modified 2026-11-09) says: priced per token; the plan
+allowance is used first; on the Free plan inference stops when it is used up until pay-as-you-go is
+activated; billing is monthly and only after activation; activation does not charge a card; the
+Free cap
+is 100 dollars a month once active. A 402 has two causes: allowance used up with pay-as-you-go inactive,
+or the cap reached. Concurrency limits return 429; location limits return 403; no per-hour or per-day
+limits are documented.
+
+"Free with no payment method charged" is not enough, because pay-as-you-go can be active without a card
+yet charged. The operator must attest the plan is Free, pay-as-you-go is inactive and allowance remains
+(`provider_limits attest`, operator only, valid seven days); the guard refuses every live request
+without it. Rules: stop on any 402 or 429, never activate pay-as-you-go, build the provider client with
+`max_retries=0`. (`15733a3316ad`, `e024534a3096` as corrected)
 
 ## Monthly budget
 
-The operator's estimated ceiling is 90 dollars a month of free use, under the 100-dollar default cap
-(`710b39a9542c`). The local guard is `bin/agents/spend_ledger.py` with `live_cycle(spend_ledger,
-budget_usd)`; the retroactive estimate for the live requests so far is about 0.15 dollars. The Billing
-page is the truth.
+The operator's estimated ceiling is 90 dollars a month of free use, under the 100-dollar cap. The guard
+is `CostGuard` (monthly period) driven by the provider policy; orama uses it through
+`bin/agents/spend_guard.py` and `PERPETUA_TOOLS_ROOT`. State: the operator state dir, `spend/`. The
+estimate so far is about 0.15 dollars, seeded as an upper bound. The Billing page is the truth.
+(`710b39a9542c` as corrected, `4a87fb0199f1`)
 
 ## Code, tests and docs
 
