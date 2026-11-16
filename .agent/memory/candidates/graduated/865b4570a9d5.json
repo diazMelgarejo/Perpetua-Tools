@@ -1,0 +1,38 @@
+{
+  "id": "865b4570a9d5",
+  "key": "manual_865b45",
+  "name": "manual_865b45",
+  "claim": "A seat's prompt must include the source and return type of every helper its target function calls, extracted automatically from the module. A model assumes a helper returns more than it does: a bool predicate (_text) was treated as a text getter, every case raised TypeError, and the whole attempt reverted at a score of 6639. The same task with helper source shown scored 0 failed cases.",
+  "conditions": [
+    "prompt helper source return type model assumption revert live turn"
+  ],
+  "evidence_ids": [
+    "2026-11-16T23:05:55.327798+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T23:05:55.327798+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T23:05:55.327798+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T23:05:55.489522+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: live turn 3 reverted for exactly this reason; turn 3b, identical except for a read-only helper-source block, passed 10 to 0 with no existing test failing.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T23:05:55.327798+00:00"
+      ],
+      "lessons_sha": "11fd6b6cf9df"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T23:05:55.489512+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: live turn 3 reverted for exactly this reason; turn 3b, identical except for a read-only helper-source block, passed 10 to 0 with no existing test failing."
+}

@@ -64,6 +64,10 @@ once the pull request merges.
   candidates through `sandbox_run` (scrubbed environment, kernel sandbox, allowlist vet). The first
   three candidates were small and harmless; that was luck, not control.
 
+- **The second sandbox commit was also flawed.** Allow-by-default, a read root that can become the
+  home folder, and a vet that a builtin-named default parameter beat. Three security reviews, three
+  real findings; each reproduced and fixed. The runbook card is `PAIR_LOOP_RUNBOOK_AND_48H_BEST_PRACTICES_2026-11-17.md`.
+
 ## Open items
 
 Operator decisions: whether Wanda's soul card or the W&B Cline launcher governs the route; the
