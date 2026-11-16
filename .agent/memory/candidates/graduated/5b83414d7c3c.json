@@ -1,0 +1,38 @@
+{
+  "id": "5b83414d7c3c",
+  "key": "manual_5b8341",
+  "name": "manual_5b8341",
+  "claim": "Run npm from a directory with no package.json and npm roots the install at the nearest ancestor that has a package.json or node_modules, which can be a home-directory project, and it will prune that project's undeclared packages. Always pass an explicit --prefix for a one-off tool install, for example npm install --prefix <repo> --no-save --no-package-lock --ignore-scripts markdownlint-cli2@0.17.2. CI works without the flag only because its checkout has no ancestor project. The lint-gate tests need that exact CI version installed inside the repo (a bare npx cache is not enough).",
+  "conditions": [
+    "npm prefix ancestor package-json markdownlint-cli2 ci-parity"
+  ],
+  "evidence_ids": [
+    "2026-11-16T22:24:09.417251+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T22:24:09.417251+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T22:24:09.417251+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T22:24:09.579452+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: a bare npm install from a repo worktree acted on the home project, left 88 packages renamed aside and failed with ENOTEMPTY; the same command with --prefix installed 0.17.2 in the repo and all 4 gate tests passed. A restore script was prepared and the operator was told.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T22:24:09.417251+00:00"
+      ],
+      "lessons_sha": "68cb42db383d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T22:24:09.579442+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: a bare npm install from a repo worktree acted on the home project, left 88 packages renamed aside and failed with ENOTEMPTY; the same command with --prefix installed 0.17.2 in the repo and all 4 gate tests passed. A restore script was prepared and the operator was told."
+}

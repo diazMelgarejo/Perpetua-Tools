@@ -1,0 +1,38 @@
+{
+  "id": "e01c3144855c",
+  "key": "manual_e01c31",
+  "name": "manual_e01c31",
+  "claim": "A pre-commit hook rejection means no commit exists, and a push after it publishes the old head. Check git log -1 after every commit, never background a commit whose hook output you need to see, and stage named files rather than git add -A, because add -A staged a generated __pycache__ file that the hygiene gate then rejected. Verify branch-ahead counts with git log against the remote branch, not from memory.",
+  "conditions": [
+    "pre-commit hook rejected commit push empty branch git add pycache"
+  ],
+  "evidence_ids": [
+    "2026-11-16T22:24:10.197399+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T22:24:10.197399+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T22:24:10.197399+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T22:24:10.368499+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: a lint failure blocked a commit while I pushed, which published an empty branch; a backgrounded commit failed unseen and left changes staged; a tracked pycache file failed repo hygiene. Re-committing after fixing lint and cleaning pycache landed each commit.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T22:24:10.197399+00:00"
+      ],
+      "lessons_sha": "cfc6d1761708"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T22:24:10.368488+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: a lint failure blocked a commit while I pushed, which published an empty branch; a backgrounded commit failed unseen and left changes staged; a tracked pycache file failed repo hygiene. Re-committing after fixing lint and cleaning pycache landed each commit."
+}
