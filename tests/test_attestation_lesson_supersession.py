@@ -42,3 +42,17 @@ def test_historical_correction_row_is_unchanged() -> None:
     raw = (MEMORY / "semantic" / "lessons.jsonl").read_text(encoding="utf-8")
     line = next(x for x in raw.splitlines() if f'"id": "{FIRST_CORRECTION}"' in x)
     assert hashlib.sha256(line.encode("utf-8")).hexdigest() == FIRST_CORRECTION_SHA256
+
+
+def test_original_attestation_overclaim_is_retired() -> None:
+    """lesson_15733a3316ad ('a file only the operator writes') must be retired."""
+    mapping = render_lessons.superseded_by_map(_rows())
+    assert "lesson_15733a3316ad" in mapping, "lesson_15733a3316ad is still active"
+    replacement = next(r for r in _rows() if r["id"] == mapping["lesson_15733a3316ad"])
+    assert replacement["status"] == "accepted"
+    claim = replacement["claim"]
+    for kept in ("Free", "pay-as-you-go", "seven days", "max_retries=0", "402", "429",
+                 "provider_limits verify"):
+        assert kept in claim, kept
+    assert "same OS user" in claim and "cannot prove who wrote" in claim
+    assert "over-claimed" in claim  # the quoted phrases are named only as the over-claim
