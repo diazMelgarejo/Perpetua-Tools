@@ -8,11 +8,13 @@ Model (the Mac consolidated contract):
   cRLSign critical, ~2 years). It is stable across DHCP changes. Its public
   certificate and the SHA-256 of that exact file are what the operator hands
   to a peer over a separate channel; trust stays process-scoped on the peer.
-* A 30-day leaf signed by that CA (CA:FALSE, digitalSignature +
+* A 60-day leaf signed by that CA (CA:FALSE, digitalSignature +
   keyEncipherment critical, serverAuth, SKI + AKI). It is reissued
   automatically (and logged) when fewer than 7 days remain, when its SANs no
   longer cover the configured names or the current local addresses, or when it
   was not issued by the current CA. Leaf rotation needs no re-pin.
+  (60-day validity per the 2026-11-17 renewal agreement v2; the T-7
+  auto-reissue keeps renewals routine instead of deadline-driven.)
 * The CA certificate fingerprint is pinned locally on first start. A later
   start with a different CA is refused: a CA change is an explicit two-sided
   migration, never an automatic one.
@@ -59,7 +61,7 @@ if _CRYPTOGRAPHY_AVAILABLE:
 _log = logging.getLogger(__name__)
 
 CA_VALIDITY_DAYS = 730
-LEAF_VALIDITY_DAYS = 30
+LEAF_VALIDITY_DAYS = 60  # 2026-11-17 agreement v2: 60-day leaves, T-7 auto-reissue
 LEAF_MIN_REMAINING_DAYS = 7
 CA_WARN_REMAINING_DAYS = 60
 _CLOCK_SKEW = timedelta(minutes=5)

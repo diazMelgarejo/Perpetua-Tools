@@ -4,7 +4,7 @@ TLS front end for the orama Portal (plain HTTP on loopback), so a LAN peer
 can send authenticated requests over https to this node.
 
 A thin configuration layer over ``AlphaClawTlsProxy`` using CA mode
-(``lan_control_plane_pki``): a dedicated local CA, a 30-day leaf signed by it
+(``lan_control_plane_pki``): a dedicated local CA, a 60-day leaf signed by it
 (reissued automatically when it nears expiry or the host's addresses change),
 a local pin on the CA (a different CA is refused, exit 3), WebSocket upgrade
 pass-through, and a key store outside any checkout. The proxy is transport
