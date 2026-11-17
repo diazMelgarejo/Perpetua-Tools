@@ -1,0 +1,42 @@
+{
+  "id": "48a315ffd841",
+  "key": "manual_48a315",
+  "name": "manual_48a315",
+  "claim": "A sentence that says refuses, forces, only X writes or never must name the code that enforces it and which entry point does. If the check lives in the command and not the guard, or in the live path and not the dry path, say so. A review bot keeps a thread open until the sentence matches the mechanism, and five threads in one round were this one defect.",
+  "conditions": [
+    "claim",
+    "documentation",
+    "enforcement",
+    "mechanism",
+    "review"
+  ],
+  "evidence_ids": [
+    "2026-11-17T05:22:33.253438+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-17T05:22:33.253438+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-17T05:22:33.253438+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-17T05:22:33.415192+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Reviewer follow-ups on 2026-11-17 kept the finding open because the doc, two lessons and a runbook line claimed more than the code enforced.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-17T05:22:33.253438+00:00"
+      ],
+      "lessons_sha": "d1d53de1512b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-17T05:22:33.415181+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Reviewer follow-ups on 2026-11-17 kept the finding open because the doc, two lessons and a runbook line claimed more than the code enforced."
+}
