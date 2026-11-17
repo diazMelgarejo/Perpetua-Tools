@@ -266,6 +266,33 @@ def test_audit_rows_store_sizes_only(policy, tmp_path: Path) -> None:
             pl.append_audit(log, {"ts": NOW.isoformat(), "estimated_usd": 0.0, forbidden: "x"})
 
 
+@pytest.mark.parametrize("bad", [
+    {"metadata": {"prompt": "secret"}},          # nested value under an unlisted key
+    {"extra": "x"},                               # any key outside the schema
+    {"input_chars": "10"},                        # a string where a size is required
+    {"output_chars": True},                       # a bool is not a size
+    {"output_chars": float("inf")},
+    {"outcome": {"nested": 1}},                   # non-scalar outcome
+    {"estimated": "yes"},
+])
+def test_audit_rows_follow_the_size_only_schema(tmp_path: Path, bad) -> None:
+    log = tmp_path / "audit.jsonl"
+    row = {"ts": NOW.isoformat(), "estimated_usd": 0.001, "seat": "inner", "input_chars": 1, "output_chars": 2,
+           "outcome": "ok", "estimated": True}
+    row.update(bad)
+    with pytest.raises(ValueError):
+        pl.append_audit(log, row)
+    assert not log.exists() or log.read_text() == ""
+
+
+def test_a_full_size_only_row_is_accepted(tmp_path: Path) -> None:
+    log = tmp_path / "audit.jsonl"
+    pl.append_audit(log, {"ts": NOW.isoformat(), "seat": "inner", "mode": "inner", "input_chars": 10,
+                          "output_chars": 20, "estimated_usd": 0.001, "estimated": True, "outcome": "ok",
+                          "provider": "wandb-inference", "policy_id": "p1"})
+    assert json.loads(log.read_text())["outcome"] == "ok"
+
+
 def _interactive(monkeypatch, answer: str, tty: bool = True) -> None:
     monkeypatch.setattr(pl, "_is_interactive", lambda: tty)
     monkeypatch.setattr("builtins.input", lambda prompt="": answer)
