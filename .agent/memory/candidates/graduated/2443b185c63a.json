@@ -1,0 +1,38 @@
+{
+  "id": "2443b185c63a",
+  "key": "manual_2443b1",
+  "name": "manual_2443b1",
+  "claim": "Make a live pair seat's target a pure decision function (facts in, decision out) and hand-write the lifecycle around it: the allowlist vet bans try and attribute calls by design, so a try/finally lifecycle can never be a pair target.",
+  "conditions": [
+    "pair"
+  ],
+  "evidence_ids": [
+    "2026-11-17T03:17:37.793810+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-17T03:17:37.793810+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-17T03:17:37.793810+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-17T03:17:37.907619+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Turn 5 of the pair loop: the first candidate target failed the vet on attribute calls; extracting _launch_decision made the seat's turn pass 7 failed cases to 0 for about 0.0025 USD while the lifecycle was written by hand.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-17T03:17:37.793810+00:00"
+      ],
+      "lessons_sha": "f1b3c76847cf"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-17T03:17:37.907612+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Turn 5 of the pair loop: the first candidate target failed the vet on attribute calls; extracting _launch_decision made the seat's turn pass 7 failed cases to 0 for about 0.0025 USD while the lifecycle was written by hand."
+}
