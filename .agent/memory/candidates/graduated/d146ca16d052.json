@@ -1,0 +1,42 @@
+{
+  "id": "d146ca16d052",
+  "key": "d146ca16d052",
+  "name": "d146ca16d052",
+  "claim": "Declaring a TLS fix complete after a chain check plus an unauthenticated health probe is partial evidence; the full gate set is chain verification, hostname-vs-SAN against the address the peer dials, an authenticated bearer round-trip to a real endpoint, and real delivery machinery with byte-exact receipts.",
+  "conditions": [
+    "verification",
+    "gates",
+    "tls",
+    "auth",
+    "evidence"
+  ],
+  "evidence_ids": [
+    "2026-11-17T05:05:00Z"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 9.5,
+  "staged_at": "2026-11-17T05:05:00Z",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-17T05:05:00Z",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-17T05:05:00Z",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Chain+health declared fixed; layers 2 and 3 were still failing (SAN missing, portal token mismatch) and the peer correctly rejected the fixed claim until all four gates passed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-17T05:05:00Z"
+      ],
+      "lessons_sha": "d146ca16d052_v1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-17T05:05:00Z",
+  "reviewer": "learn.py",
+  "rationale": "Each TLS/auth layer is independent; report per-gate PASS/FAIL with exact errors and never say fixed before the machinery gate passes on both directions."
+}

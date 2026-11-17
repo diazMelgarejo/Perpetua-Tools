@@ -1,0 +1,41 @@
+{
+  "id": "5b2fac9138da",
+  "key": "5b2fac9138da",
+  "name": "5b2fac9138da",
+  "claim": "Before claiming a pin or fingerprint matches nothing, inventory every CA, leaf and token file on disk including backups, worktrees and handoff archives, and maintain a TRUST-INVENTORY.md with one row per credential (DER sha256, path, role, valid-to).",
+  "conditions": [
+    "trust_inventory",
+    "hygiene",
+    "diagnostics",
+    "certificates"
+  ],
+  "evidence_ids": [
+    "2026-11-17T05:05:00Z"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 9.0,
+  "staged_at": "2026-11-17T05:05:00Z",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-17T05:05:00Z",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-17T05:05:00Z",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Two CA certificates with identical subjects existed across the machines and both sides mis-claimed matches from incomplete inventories; the shared inventory resolved it in minutes.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-17T05:05:00Z"
+      ],
+      "lessons_sha": "5b2fac9138da_v1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-17T05:05:00Z",
+  "reviewer": "learn.py",
+  "rationale": "Incomplete trust inventories produced wrong match-nothing claims on both sides this cycle; the inventory is the antidote."
+}
