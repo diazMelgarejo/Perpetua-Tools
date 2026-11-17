@@ -32,24 +32,30 @@ def guard(tmp_path):
 
 
 class TestCanSpend:
+    """can_spend() against the daily budget."""
     def test_can_spend_within_budget(self, guard):
+        """A spend well under the budget is allowed."""
         assert guard.can_spend(10.0) is True
 
     def test_can_spend_exact_budget(self, guard):
+        """A spend that lands exactly on the budget is allowed."""
         # spend 24.99 first, then check if 0.01 is allowed
         guard.record_spend(24.99)
         assert guard.can_spend(0.01) is True
 
     def test_cannot_spend_over_budget(self, guard):
+        """A spend that would exceed the budget is refused."""
         guard.record_spend(25.0)
         assert guard.can_spend(0.01) is False
 
     def test_cannot_spend_when_already_at_limit(self, guard):
+        """At the limit a zero spend passes and any positive spend is refused."""
         guard.record_spend(25.0)
         assert guard.can_spend(0.0) is True  # exactly at limit is still allowed
         assert guard.can_spend(1.0) is False
 
     def test_custom_budget(self, tmp_path):
+        """set_budget() changes the limit that can_spend() enforces."""
         g = CostGuard(state_dir=str(tmp_path / ".state2"))
         g.set_budget(10.0)
         assert g.can_spend(9.99) is True
@@ -57,18 +63,22 @@ class TestCanSpend:
 
 
 class TestRecordSpend:
+    """record_spend() accumulation and persistence."""
     def test_record_spend_accumulates(self, guard):
+        """Successive recorded spends add up in daily_spend."""
         guard.record_spend(5.0)
         guard.record_spend(3.0)
         snap = guard.snapshot()
         assert snap["daily_spend"] == pytest.approx(8.0)
 
     def test_record_spend_returns_state(self, guard):
+        """record_spend() returns the updated state including daily_spend."""
         result = guard.record_spend(7.5)
         assert "daily_spend" in result
         assert result["daily_spend"] == pytest.approx(7.5)
 
     def test_record_spend_persists_to_disk(self, tmp_path):
+        """Recorded spend survives reloading the guard from the same state directory."""
         g = CostGuard(state_dir=str(tmp_path / ".state"))
         g.record_spend(12.0)
         # Reload from disk
@@ -78,21 +88,27 @@ class TestRecordSpend:
 
 
 class TestAlertApproaching:
+    """alert_approaching() fires from 80 percent of the budget."""
     def test_no_alert_below_threshold(self, guard):
+        """Spend at 20 percent of the budget raises no alert."""
         guard.record_spend(5.0)  # 20% of 25
         assert guard.alert_approaching() is False
 
     def test_alert_at_threshold(self, guard):
+        """Spend at exactly 80 percent of the budget raises the alert."""
         guard.record_spend(20.0)  # exactly 80% of 25
         assert guard.alert_approaching() is True
 
     def test_alert_above_threshold(self, guard):
+        """Spend at 96 percent of the budget raises the alert."""
         guard.record_spend(24.0)  # 96% of 25
         assert guard.alert_approaching() is True
 
 
 class TestAutoReset:
+    """The daily spend resets once 24 hours have passed."""
     def test_reset_after_24h(self, guard):
+        """A snapshot taken 25 hours later shows daily_spend reset to zero."""
         guard.record_spend(20.0)
         # Simulate 25 hours having passed since last_reset
         with patch("orchestrator.cost_guard.time.time", return_value=time.time() + 90000):
@@ -101,13 +117,16 @@ class TestAutoReset:
         assert snap["daily_spend"] == 0.0
 
     def test_no_reset_within_24h(self, guard):
+        """A snapshot within 24 hours keeps the recorded spend."""
         guard.record_spend(15.0)
         snap = guard.snapshot()
         assert snap["daily_spend"] == pytest.approx(15.0)
 
 
 class TestSnapshot:
+    """snapshot() output shape and values."""
     def test_snapshot_keys(self, guard):
+        """The snapshot carries the budget, spend, reset, alert and remaining keys."""
         snap = guard.snapshot()
         assert "daily_budget" in snap
         assert "daily_spend" in snap
@@ -116,11 +135,13 @@ class TestSnapshot:
         assert "remaining" in snap
 
     def test_snapshot_remaining_calculation(self, guard):
+        """remaining equals the budget minus the recorded spend."""
         guard.record_spend(10.0)
         snap = guard.snapshot()
         assert snap["remaining"] == pytest.approx(15.0)
 
     def test_snapshot_alert_false_initially(self, guard):
+        """A fresh guard reports alert False."""
         snap = guard.snapshot()
         assert snap["alert"] is False
 
@@ -135,12 +156,14 @@ class TestAtomicReserveCommitRollback:
 
     @pytest.mark.asyncio
     async def test_reserve_commit_settles_spend(self, guard: CostGuard) -> None:
+        """Committing a reservation records its estimate as spend."""
         reservation_id = await guard.reserve(5.0)
         await guard.commit(reservation_id)
         assert guard.snapshot()["daily_spend"] == pytest.approx(5.0)
 
     @pytest.mark.asyncio
     async def test_reserve_rollback_does_not_settle_spend(self, guard: CostGuard) -> None:
+        """Rolling back a reservation leaves daily spend at zero."""
         reservation_id = await guard.reserve(5.0)
         await guard.rollback(reservation_id)
         assert guard.snapshot()["daily_spend"] == pytest.approx(0.0)
@@ -164,11 +187,13 @@ class TestAtomicReserveCommitRollback:
 
     @pytest.mark.asyncio
     async def test_commit_unknown_reservation_raises(self, guard: CostGuard) -> None:
+        """Committing an unknown reservation id raises UnknownReservationError."""
         with pytest.raises(UnknownReservationError):
             await guard.commit("not-a-real-reservation-id")
 
     @pytest.mark.asyncio
     async def test_rollback_unknown_reservation_raises(self, guard: CostGuard) -> None:
+        """Rolling back an unknown reservation id raises UnknownReservationError."""
         with pytest.raises(UnknownReservationError):
             await guard.rollback("not-a-real-reservation-id")
 
@@ -184,6 +209,7 @@ class TestAtomicReserveCommitRollback:
 
     @pytest.mark.asyncio
     async def test_commit_actual_cost_overrides_estimate(self, guard: CostGuard) -> None:
+        """commit() records actual_cost instead of the reserved estimate."""
         reservation_id = await guard.reserve(10.0)
         await guard.commit(reservation_id, actual_cost=3.5)
         assert guard.snapshot()["daily_spend"] == pytest.approx(3.5)
@@ -200,6 +226,7 @@ class TestAtomicReserveCommitRollback:
         guard.set_budget(10.0)
 
         async def try_reserve() -> str | None:
+            """Reserve 6.0, returning the reservation id or None when the budget refuses it."""
             try:
                 return await guard.reserve(6.0)
             except BudgetExceededError:
@@ -229,6 +256,7 @@ class TestAtomicReserveCommitRollback:
 
     @pytest.mark.asyncio
     async def test_reserve_rejects_infinite_cost(self, guard: CostGuard) -> None:
+        """An infinite estimated cost is rejected and nothing is held."""
         with pytest.raises(ValueError, match="non-negative"):
             await guard.reserve(float("inf"))
         assert guard.in_flight() == 0.0
@@ -254,6 +282,7 @@ class TestAtomicReserveCommitRollback:
 
     @pytest.mark.asyncio
     async def test_commit_rejects_nan_actual_cost_and_preserves_reservation(self, guard: CostGuard) -> None:
+        """A NaN actual_cost is rejected and the reservation stays committable."""
         reservation_id = await guard.reserve(5.0)
         with pytest.raises(ValueError, match="non-negative"):
             await guard.commit(reservation_id, actual_cost=float("nan"))
@@ -263,6 +292,7 @@ class TestAtomicReserveCommitRollback:
 
     @pytest.mark.asyncio
     async def test_commit_rejects_infinite_actual_cost_and_preserves_reservation(self, guard: CostGuard) -> None:
+        """An infinite actual_cost is rejected and the reservation stays rollback-able."""
         reservation_id = await guard.reserve(5.0)
         with pytest.raises(ValueError, match="non-negative"):
             await guard.commit(reservation_id, actual_cost=float("inf"))
@@ -272,6 +302,7 @@ class TestAtomicReserveCommitRollback:
 
     @pytest.mark.asyncio
     async def test_commit_accepts_zero_actual_cost(self, guard: CostGuard) -> None:
+        """A zero actual_cost is accepted and records no spend."""
         reservation_id = await guard.reserve(5.0)
         await guard.commit(reservation_id, actual_cost=0.0)
         assert guard.snapshot()["daily_spend"] == pytest.approx(0.0)
@@ -288,6 +319,7 @@ class TestReservationTTLSelfHeal:
     async def test_expired_reservation_no_longer_counts_against_budget(
         self, guard: CostGuard, monkeypatch: pytest.MonkeyPatch
     ) -> None:
+        """A reservation past the TTL is swept and no longer counts against the budget."""
         guard.set_budget(10.0)
         reservation_id = await guard.reserve(8.0)
 
@@ -336,11 +368,13 @@ class TestTokenCliffGate:
     199,000 tokens."""
 
     def test_check_token_cliff_returns_none_below_warn_threshold(self, guard: CostGuard) -> None:
+        """Token counts below the warning threshold return None."""
         assert guard.check_token_cliff(100_000) is None
         assert guard.check_token_cliff(0) is None
         assert guard.check_token_cliff(179_999) is None
 
     def test_check_token_cliff_returns_warning_string_at_warn_threshold(self, guard: CostGuard) -> None:
+        """Token counts at or above 180,000 return a warning string naming the count."""
         warn_at = guard.check_token_cliff(180_000)
         assert warn_at is not None
         assert "approaching the 199k billing cliff" in warn_at
@@ -352,29 +386,36 @@ class TestTokenCliffGate:
         assert "190000" in warn_above
 
     def test_check_token_cliff_raises_at_hard_threshold(self, guard: CostGuard) -> None:
+        """A token count of exactly 199,000 raises TokenCliffExceededError."""
         with pytest.raises(TokenCliffExceededError, match="199000"):
             guard.check_token_cliff(199_000)
 
     def test_check_token_cliff_raises_above_hard_threshold(self, guard: CostGuard) -> None:
+        """A token count above 199,000 raises TokenCliffExceededError."""
         with pytest.raises(TokenCliffExceededError, match="250000"):
             guard.check_token_cliff(250_000)
 
     def test_check_token_cliff_rejects_negative_tokens(self, guard: CostGuard) -> None:
+        """A negative token count raises ValueError."""
         with pytest.raises(ValueError, match="non-negative"):
             guard.check_token_cliff(-1)
 
     def test_check_token_cliff_rejects_nan_tokens(self, guard: CostGuard) -> None:
+        """A NaN token count raises ValueError."""
         with pytest.raises(ValueError, match="non-negative"):
             guard.check_token_cliff(float("nan"))  # type: ignore[arg-type]
 
 
 class TestSetBudget:
+    """set_budget() updates and persists the daily budget."""
     def test_set_budget_changes_limit(self, guard):
+        """set_budget() changes the daily_budget shown by snapshot()."""
         guard.set_budget(50.0)
         snap = guard.snapshot()
         assert snap["daily_budget"] == pytest.approx(50.0)
 
     def test_set_budget_persists(self, tmp_path):
+        """A budget set on one guard is read back by a new guard on the same state directory."""
         g = CostGuard(state_dir=str(tmp_path / ".state"))
         g.set_budget(100.0)
         g2 = CostGuard(state_dir=str(tmp_path / ".state"))
@@ -407,9 +448,11 @@ class TestCancellationRollback:
     async def test_cancellation_before_commit_rolls_back_reservation(
         self, guard: CostGuard
     ) -> None:
+        """Cancelling the task before commit() rolls its reservation back."""
         started = asyncio.Event()
 
         async def orchestrate_like() -> None:
+            """Reserve 5.0, wait, then commit; roll back in finally if not committed."""
             reservation_id = await guard.reserve(5.0)
             committed = False
             try:

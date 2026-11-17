@@ -628,6 +628,7 @@ async def _resolve_candidates(
             resolved.append(candidate)
 
     def _fallback() -> list[Any]:
+        """Return the candidates the qualification gate allows, used when probing resolved none."""
         # Probe-failure fallback retains only candidates the qualification
         # gate allows: a blocked catalog entry can never become an executable
         # fallback just because the probe path would have kept the chain.

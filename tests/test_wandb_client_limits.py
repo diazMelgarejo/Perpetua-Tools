@@ -21,6 +21,7 @@ REPO_ROOT = Path(__file__).parent.parent
 
 @pytest.fixture()
 def llm(monkeypatch, tmp_path):
+    """Load .agent/harness/llm.py fresh with a valid attestation and an isolated state directory."""
     spec = importlib.util.spec_from_file_location("agent_llm", REPO_ROOT / ".agent/harness/llm.py")
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -40,8 +41,11 @@ def llm(monkeypatch, tmp_path):
 
 
 def _client_factory(captured: dict, create):
+    """Build a fake OpenAI client class that records its kwargs and uses the given create."""
     class FakeOpenAI:
+        """Fake OpenAI client exposing chat.completions.create."""
         def __init__(self, **kwargs):
+            """Record the constructor kwargs and attach the fake chat object."""
             captured.update(kwargs)
             self.chat = SimpleNamespace(completions=SimpleNamespace(create=create))
 
@@ -49,16 +53,19 @@ def _client_factory(captured: dict, create):
 
 
 def _ok(**kwargs):
+    """Return a successful fake completion whose message content is hi."""
     return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content="hi"))], usage=None)
 
 
 def _status_error(code: int):
+    """Build an openai.APIStatusError carrying an HTTP response with the given status code."""
     request = httpx.Request("POST", "https://api.inference.wandb.ai/v1/chat/completions")
     response = httpx.Response(code, request=request, json={"error": "x"})
     return openai.APIStatusError(f"error {code}", response=response, body=None)
 
 
 def test_the_client_is_built_with_no_sdk_retries(llm, monkeypatch) -> None:
+    """The OpenAI client is constructed with max_retries 0, the W&B base URL and the API key."""
     seen: dict = {}
     monkeypatch.setattr(openai, "OpenAI", _client_factory(seen, _ok))
     assert llm._call_wandb("s", "u", temperature=0, max_tokens=5, model="m") == "hi"
@@ -68,9 +75,11 @@ def test_the_client_is_built_with_no_sdk_retries(llm, monkeypatch) -> None:
 
 @pytest.mark.parametrize("code", [402, 429])
 def test_a_limit_response_raises_a_typed_stop_and_is_not_retried(llm, monkeypatch, code: int) -> None:
+    """A 402 or 429 raises ProviderLimitStop with that status after exactly one call."""
     calls = []
 
     def create(**kwargs):
+        """Count the call and raise the status error."""
         calls.append(1)
         raise _status_error(code)
 
@@ -81,7 +90,9 @@ def test_a_limit_response_raises_a_typed_stop_and_is_not_retried(llm, monkeypatc
 
 
 def test_other_http_errors_still_propagate_unchanged(llm, monkeypatch) -> None:
+    """A 400 response propagates as the original openai.APIStatusError."""
     def create(**kwargs):
+        """Raise a 400 status error."""
         raise _status_error(400)
 
     monkeypatch.setattr(openai, "OpenAI", _client_factory({}, create))
