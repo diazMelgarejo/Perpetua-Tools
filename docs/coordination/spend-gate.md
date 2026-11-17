@@ -16,6 +16,11 @@ operator attestation, upper-bound projection, size-only audit) with the shared b
 - Then exactly one of: `settle(...)` (answer received, estimated cost), `settle_unknown(...)`
   (the request may have been sent but has no usable answer: the full reservation is charged and
   the audit row records output as unknown) or `release(...)` (nothing was sent; idempotent).
+- The W&B harness maps outcomes as follows: an answer settles; an HTTP status below 500 is a
+  definitive refusal before generation (402 allowance or cap, 429 rate limit, 400 invalid
+  request), so it releases and records nothing; status 500 and above, transport errors,
+  timeouts, interrupts and malformed responses may have been processed, so they call
+  `settle_unknown`. 402 and 429 still raise `ProviderLimitStop`.
 - The estimate is not billing; the provider's Billing page is.
 
 ## The shared ledger

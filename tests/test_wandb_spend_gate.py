@@ -215,20 +215,57 @@ def test_a_failure_after_the_request_may_have_been_sent_settles_the_full_reserva
     assert "output_chars" not in row and row["basis"] == "output-unknown"
 
 
-@pytest.mark.parametrize("code", [402, 429])
-def test_a_limit_response_still_stops_and_still_charges_the_unknown_reservation(llm, monkeypatch, code) -> None:
-    """A limit response still stops and still charges the unknown reservation."""
+@pytest.mark.parametrize("code", [400, 402, 429])
+def test_a_refusal_below_500_releases_the_reservation_and_records_nothing(llm, monkeypatch, code) -> None:
+    """A received HTTP status below 500 means the provider refused before generating: release, no spend."""
     _attest()
 
     def create(**kwargs):
-        """Test helper or double: create."""
+        """Test double: the provider refuses the request."""
         raise _status_error(code)
 
     created, sent = _install(monkeypatch, create)
+    expected = llm.ProviderLimitStop if code in (402, 429) else openai.APIStatusError
+    with pytest.raises(expected):
+        _call(llm)
+    assert len(sent) == 1
+    guard = _guard()
+    assert guard.in_flight() == 0.0 and guard.snapshot()["daily_spend"] == 0.0
+    assert not (pl.spend_dir() / "wandb-inference-spend-audit.jsonl").exists()
+
+
+@pytest.mark.parametrize("code", [402, 429])
+def test_a_limit_response_still_raises_the_typed_stop_with_its_status(llm, monkeypatch, code) -> None:
+    """ProviderLimitStop for 402 and 429 is unchanged."""
+    _attest()
+
+    def create(**kwargs):
+        """Test double: the provider answers with a limit status."""
+        raise _status_error(code)
+
+    _install(monkeypatch, create)
     with pytest.raises(llm.ProviderLimitStop) as info:
         _call(llm)
-    assert info.value.status == code and len(sent) == 1
-    assert _guard().in_flight() == 0.0 and _guard().snapshot()["daily_spend"] > 0.0
+    assert info.value.status == code
+
+
+@pytest.mark.parametrize("code", [500, 503])
+def test_a_server_error_may_have_been_processed_so_it_charges_the_full_reservation(llm, monkeypatch, code) -> None:
+    """Status 500 and above: the request may have been processed, so settle_unknown."""
+    _attest()
+
+    def create(**kwargs):
+        """Test double: the provider fails server-side."""
+        raise _status_error(code)
+
+    _install(monkeypatch, create)
+    with pytest.raises(openai.APIStatusError):
+        _call(llm)
+    projected = pl.projected_usd(pl.load_policy("wandb-inference"), len("sys") + len("user prompt"))
+    guard = _guard()
+    assert guard.in_flight() == 0.0 and guard.snapshot()["daily_spend"] == pytest.approx(projected, abs=1e-6)
+    row = json.loads((pl.spend_dir() / "wandb-inference-spend-audit.jsonl").read_text().splitlines()[-1])
+    assert row["basis"] == "output-unknown" and row["outcome"] == f"http-{code}"
 
 
 def test_a_failure_before_anything_is_sent_releases_the_reservation(llm, monkeypatch) -> None:

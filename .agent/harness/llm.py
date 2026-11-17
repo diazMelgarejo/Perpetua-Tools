@@ -148,6 +148,7 @@ class ProviderLimitStop(RuntimeError):
     reached) or 429 (concurrency limit). Stop the loop; never retry and never activate pay-as-you-go."""
 
     def __init__(self, status):
+        """Record the HTTP ``status`` (402 or 429) that stopped the loop."""
         super().__init__(f"provider limit: HTTP {status}")
         self.status = status
 
@@ -252,7 +253,11 @@ def _call_wandb(system, user, *, temperature, max_tokens, model):
         if isinstance(billed, int) and not isinstance(billed, bool) and billed > 0:
             output_chars = max(output_chars, billed * gate.policy["projection"]["chars_per_token"])
     except openai.APIStatusError as exc:
-        _settle_unknown_quietly(gate, reservation, input_chars, f"http-{exc.status_code}")
+        if exc.status_code < 500:
+            # A received status below 500 is definitive: the provider refused before generating anything.
+            gate.release(reservation)
+        else:
+            _settle_unknown_quietly(gate, reservation, input_chars, f"http-{exc.status_code}")
         if exc.status_code in PROVIDER_STOP_STATUS:
             raise ProviderLimitStop(exc.status_code) from exc
         raise
@@ -264,6 +269,7 @@ def _call_wandb(system, user, *, temperature, max_tokens, model):
 
 
 def _call_minimax(system, user, *, temperature, max_tokens, model):
+    """One MiniMax chat completion over the configured region and wire (openai or anthropic)."""
     region = _minimax_region()
     base_urls = MINIMAX_REGIONS[region]
     model = model or os.getenv("AGENT_MODEL", MINIMAX_DEFAULT_MODEL)
