@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import math
 import sqlite3
 import time
@@ -21,6 +22,8 @@ from typing import Any, Dict, Iterator
 
 from .private_sqlite import open_private_sqlite
 
+
+_LOG = logging.getLogger(__name__)
 
 _DEFAULT_BUDGET = {
     "daily_budget": 25.0,
@@ -66,6 +69,14 @@ class CostGuard:
     # just cancelled; a try/finally can't run if there's no interpreter left
     # to run it in). Generous relative to any real request duration.
     RESERVATION_TTL_SECONDS = 300.0
+
+    # A caller may declare a longer hold for a request that is allowed to run longer than the default,
+    # but not an unbounded one: a leaked multi-day hold would block the budget as surely as no hold at all.
+    MAX_HOLD_SECONDS = 86_400.0
+
+    # A swept reservation is remembered this long, so a commit that arrives after the sweep is still
+    # recognized and its spend recorded rather than dropped.
+    SWEPT_MEMORY_SECONDS = 30 * 86_400.0
 
     # 05-ORAMASYS-UNIFIED-ACTION-PLAN-2026-08-18.md Phase 4: warn approaching the 200k 2x-billing cliff
     TOKEN_CLIFF_WARN_TOKENS = 180_000
@@ -120,6 +131,9 @@ class CostGuard:
         db.execute(
             "CREATE TABLE IF NOT EXISTS reservations (id TEXT PRIMARY KEY, amount REAL NOT NULL,"
             " reserved_at REAL NOT NULL, expires_at REAL NOT NULL)"
+        )
+        db.execute(
+            "CREATE TABLE IF NOT EXISTS swept (id TEXT PRIMARY KEY, amount REAL NOT NULL, swept_at REAL NOT NULL)"
         )
         if db.execute("SELECT 1 FROM budget WHERE id = 1").fetchone() is None:
             seed = self._legacy_payload() or {**_DEFAULT_BUDGET, "last_reset": time.time(), "period": self.period}
@@ -189,8 +203,18 @@ class CostGuard:
         return payload
 
     def _sweep(self, db: sqlite3.Connection) -> None:
-        """Drop reservations whose hold has run out. Caller holds the write transaction."""
-        db.execute("DELETE FROM reservations WHERE expires_at < ?", (time.time(),))
+        """Release reservations whose own declared hold has run out. Caller holds the write transaction.
+
+        A swept reservation stops counting against the budget (an abandoned caller must not block it
+        forever) but is remembered, so a commit that still arrives is recorded as a late commit. Old
+        memories are forgotten after SWEPT_MEMORY_SECONDS.
+        """
+        now = time.time()
+        db.execute(
+            "INSERT OR REPLACE INTO swept SELECT id, amount, ? FROM reservations WHERE expires_at < ?", (now, now)
+        )
+        db.execute("DELETE FROM reservations WHERE expires_at < ?", (now,))
+        db.execute("DELETE FROM swept WHERE swept_at < ?", (now - self.SWEPT_MEMORY_SECONDS,))
 
     def _in_flight(self, db: sqlite3.Connection) -> float:
         """Dollars held by live (unexpired) reservations."""
@@ -265,7 +289,7 @@ class CostGuard:
 
     # -- atomic reserve / commit / rollback -------------------------------------------------------
 
-    def reserve_sync(self, estimated_cost: float) -> str:
+    def reserve_sync(self, estimated_cost: float, hold_seconds: float | None = None) -> str:
         """Atomically hold ``estimated_cost`` against the budget; the blocking core of reserve().
 
         Checks settled spend PLUS every live reservation (from any instance or process) and records the
@@ -274,9 +298,21 @@ class CostGuard:
         ``0.0`` for calls with no known cost estimate. A negative cost would LOWER the in-flight total
         and let others reserve past the budget; NaN makes every comparison False so the reservation
         would always "succeed" and poison settled spend on commit.
+
+        ``hold_seconds`` is how long this reservation is held before another reservation may sweep it
+        (default RESERVATION_TTL_SECONDS; at most MAX_HOLD_SECONDS). A caller whose request may run
+        longer than the default must declare that lifetime, or its reservation can be swept while the
+        request is still legitimately running.
         """
         if not math.isfinite(estimated_cost) or estimated_cost < 0:
             raise ValueError(f"estimated_cost must be a non-negative finite number, got {estimated_cost!r}")
+        if hold_seconds is None:
+            hold_seconds = self.RESERVATION_TTL_SECONDS
+        elif (
+            isinstance(hold_seconds, bool) or not isinstance(hold_seconds, (int, float))
+            or not math.isfinite(hold_seconds) or not 0 < hold_seconds <= self.MAX_HOLD_SECONDS
+        ):
+            raise ValueError(f"hold_seconds must be a finite number in (0, {self.MAX_HOLD_SECONDS:g}], got {hold_seconds!r}")
         with self._txn() as db:
             self._sweep(db)
             p = self._current(db)
@@ -291,7 +327,7 @@ class CostGuard:
             now = time.time()
             db.execute(
                 "INSERT INTO reservations VALUES (?, ?, ?, ?)",
-                (reservation_id, estimated_cost, now, now + self.RESERVATION_TTL_SECONDS),
+                (reservation_id, estimated_cost, now, now + hold_seconds),
             )
             return reservation_id
 
@@ -300,21 +336,31 @@ class CostGuard:
 
         ``actual_cost`` overrides the reserved estimate when the real cost is known. It is validated
         before the reservation is touched, so an invalid value leaves the reservation intact for retry.
-        Raises UnknownReservationError for an id that is not held (never reserved, already settled or
-        released, or reclaimed by the sweep).
+        A reservation the sweep already released still records its spend (the caller's request really
+        ran): the result then carries ``late_commit: True`` and a warning is logged. Accounting is never
+        dropped. The result always carries ``committed_usd``. Raises UnknownReservationError only for an
+        id that was never reserved, was already settled or released, or was forgotten long ago.
         """
         if actual_cost is not None and (not math.isfinite(actual_cost) or actual_cost < 0):
             raise ValueError(f"actual_cost must be a non-negative finite number, got {actual_cost!r}")
         with self._txn() as db:
+            self._sweep(db)
+            late = False
             row = db.execute("SELECT amount FROM reservations WHERE id = ?", (reservation_id,)).fetchone()
+            if row is None:
+                row = db.execute("SELECT amount FROM swept WHERE id = ?", (reservation_id,)).fetchone()
+                late = row is not None
             if row is None:
                 raise UnknownReservationError(reservation_id)
             amount = row[0] if actual_cost is None else actual_cost
             db.execute("DELETE FROM reservations WHERE id = ?", (reservation_id,))
+            db.execute("DELETE FROM swept WHERE id = ?", (reservation_id,))
             p = self._current(db)
             p["daily_spend"] = round(p["daily_spend"] + amount, 6)
             self._write(db, p)
-            return {**p, "committed_usd": amount}
+        if late:
+            _LOG.warning("late commit: reservation outlived its hold; $%.6f recorded", amount)
+        return {**p, "committed_usd": amount, "late_commit": late}
 
     def rollback_sync(self, reservation_id: str) -> None:
         """Release a reservation without charging the budget; the blocking core of rollback()."""
@@ -322,10 +368,10 @@ class CostGuard:
             if db.execute("DELETE FROM reservations WHERE id = ?", (reservation_id,)).rowcount != 1:
                 raise UnknownReservationError(reservation_id)
 
-    async def reserve(self, estimated_cost: float) -> str:
+    async def reserve(self, estimated_cost: float, hold_seconds: float | None = None) -> str:
         """Atomically hold ``estimated_cost`` against the shared budget. See reserve_sync()."""
         async with self._lock:
-            return self.reserve_sync(estimated_cost)
+            return self.reserve_sync(estimated_cost, hold_seconds)
 
     async def commit(self, reservation_id: str, actual_cost: float | None = None) -> Dict[str, Any]:
         """Settle a reservation into settled spend. See commit_sync()."""

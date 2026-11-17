@@ -313,19 +313,19 @@ class TestReservationTTLSelfHeal:
         assert guard.snapshot()["daily_spend"] == pytest.approx(3.0)
 
     @pytest.mark.asyncio
-    async def test_commit_after_ttl_expiry_raises_unknown_reservation(
+    async def test_commit_after_ttl_expiry_still_records_the_spend_as_late(
         self, guard: CostGuard
     ) -> None:
-        """The rare race a caller must tolerate: TTL sweep beats a very slow
-        commit() to the punch. Documented as benign in commit()'s docstring
-        -- orchestrator/fastapi_app.py's cleanup path catches this
-        specifically rather than crashing the response."""
+        """The race a caller must tolerate: the TTL sweep beats a very slow
+        commit() to the punch. The spend is still recorded (accounting is never
+        dropped) and the result says the commit was late -- orchestrator/fastapi_app.py
+        no longer needs a fallback for it."""
         reservation_id = await guard.reserve(1.0)
         with patch("orchestrator.cost_guard.time.time", return_value=time.time() + 301.0):
             await guard.reserve(0.0)  # triggers the sweep
-
-            with pytest.raises(UnknownReservationError):
-                await guard.commit(reservation_id)
+            result = await guard.commit(reservation_id)
+        assert result["late_commit"] is True
+        assert guard.snapshot()["daily_spend"] == pytest.approx(1.0)
 
 
 class TestTokenCliffGate:

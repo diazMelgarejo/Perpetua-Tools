@@ -1174,12 +1174,11 @@ async def orchestrate(req: OrchestrateRequest) -> Dict[str, Any]:
         try:
             await cost_guard.commit(reservation_id, actual_cost=req.estimated_cost)
         except UnknownReservationError:
-            # RESERVATION_TTL_SECONDS or a concurrent sweep already reclaimed
-            # the reservation before commit() could settle it. tracker.register()
-            # above already created the agent, so we still don't raise an
-            # uncaught 500 -- but the cost must not be silently dropped: fall
-            # back to the non-atomic record_spend() so a slow request doesn't
-            # both register an agent AND lose its billing entirely.
+            # commit() records the spend even when the sweep already released the
+            # hold (a late commit), so this fires only for an id that was never
+            # reserved or was already settled. tracker.register() above already
+            # created the agent, so we still don't raise an uncaught 500 -- but the
+            # cost must not be silently dropped: fall back to record_spend().
             cost_guard.record_spend(req.estimated_cost)
         committed = True
     finally:
