@@ -4,7 +4,8 @@ Settled spend and live reservations live in one private SQLite store beside the 
 CostGuard instance and every process that uses the same state directory and budget file shares one
 ledger. reserve() checks settled spend plus every live reservation and records the new hold inside one
 ``BEGIN IMMEDIATE`` transaction, so two callers cannot both pass the check against the same last dollars.
-An existing budget JSON is imported into the store once; it is never written again.
+An existing budget JSON is imported into the store once and renamed to ``<name>.migrated`` in the same
+transaction; it is never read or written again, and a missing store beside a ``.migrated`` file fails closed.
 """
 from __future__ import annotations
 
@@ -12,6 +13,7 @@ import asyncio
 import json
 import logging
 import math
+import os
 import sqlite3
 import time
 import uuid
@@ -136,12 +138,27 @@ class CostGuard:
             "CREATE TABLE IF NOT EXISTS swept (id TEXT PRIMARY KEY, amount REAL NOT NULL, swept_at REAL NOT NULL)"
         )
         if db.execute("SELECT 1 FROM budget WHERE id = 1").fetchone() is None:
-            seed = self._legacy_payload() or {**_DEFAULT_BUDGET, "last_reset": time.time(), "period": self.period}
+            migrated = self.budget_path.with_name(self.budget_path.name + ".migrated")
+            if migrated.exists():
+                # The legacy spend was imported into a store that is now gone or empty. Starting from
+                # zero (or importing a stale copy again) would forget or double real spend.
+                raise RuntimeError(
+                    f"spend store {self.store_path.name} is missing or empty but {migrated.name} shows the "
+                    f"legacy budget was already migrated; restore the store, or review {migrated.name} and "
+                    "move it back deliberately to import it again"
+                )
+            legacy = self._legacy_payload()
+            seed = legacy or {**_DEFAULT_BUDGET, "last_reset": time.time(), "period": self.period}
             db.execute(
                 "INSERT INTO budget VALUES (1, ?, ?, ?, ?)",
                 (float(seed["daily_budget"]), float(seed["daily_spend"]), float(seed["last_reset"]),
                  str(seed.get("period") or "daily")),
             )
+            if legacy:
+                # Inside the same open transaction: a failed rename rolls the import back, and the rename
+                # lands before COMMIT, so the JSON cannot be imported twice. A crash between the two leaves
+                # an empty store beside the .migrated file, which the check above refuses (fail closed).
+                os.replace(self.budget_path, migrated)
 
     def _legacy_payload(self) -> Dict[str, Any] | None:
         """The pre-store budget JSON, validated, or None when there is none. A malformed file raises: starting

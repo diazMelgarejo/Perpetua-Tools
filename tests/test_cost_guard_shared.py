@@ -128,3 +128,18 @@ def test_a_symlinked_store_is_refused(tmp_path: Path) -> None:
     target.symlink_to(moved)
     with pytest.raises(PermissionError):
         CostGuard(state_dir=str(tmp_path)).snapshot()
+
+
+def test_a_deleted_store_after_migration_fails_closed_instead_of_reimporting(tmp_path: Path) -> None:
+    """The legacy json is renamed on import; deleting the store must not resurrect or zero the spend."""
+    legacy = tmp_path / "budget.json"
+    legacy.write_text(json.dumps({"daily_budget": 50.0, "daily_spend": 12.5, "last_reset": 1.0e12, "period": "daily"}))
+    CostGuard(state_dir=str(tmp_path)).snapshot()
+    assert not legacy.exists() and (tmp_path / "budget.json.migrated").is_file()
+    for store in tmp_path.glob("budget.sqlite3*"):
+        store.unlink()
+    with pytest.raises(RuntimeError, match=r"budget\.json\.migrated"):
+        CostGuard(state_dir=str(tmp_path)).snapshot()
+    assert not legacy.exists()  # still not re-imported, and nothing was recreated from zero
+    with pytest.raises(RuntimeError):
+        CostGuard(state_dir=str(tmp_path)).snapshot()
