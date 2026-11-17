@@ -6,8 +6,8 @@ orama-system (consumer, stateless) pull request
 [519](https://github.com/diazMelgarejo/orama-system/pull/519), both on branch
 `2026-11-17-001-biafra-seat-canonical`. Both pull requests are OPEN and were NOT merged. The
 operator believed them merged, but their heads were still the reviewed `c90feebb` (PT) and
-`bd5931a2` (orama). No merge was made. Items 11 to 15 below are decided and in progress, not
-verified.
+`bd5931a2` (orama). No merge was made. Items 11 to 15 below came from the orama review and are
+implemented and tested on PR #519's branch.
 
 ## Inputs
 
@@ -122,7 +122,8 @@ These are decided and being implemented; they are not yet verified.
 - Orama integration (17 commits on `bd5931a2`): 421 passed, 18 skipped across the affected suites
   against the integrated PT. Docstrings are 100% on all touched files; docstring-only commits were
   proven by `ast.dump` equality with docstrings stripped. The independent orama review returned
-  request changes (items 11 to 15). Those fixes are in progress and unverified.
+  request changes (items 11 to 15). All five are implemented with failing-first tests; the orama
+  affected suites then gave 428 passed, 18 skipped (macOS-only sandbox tests).
 
 ## Behaviour changes operators must know
 

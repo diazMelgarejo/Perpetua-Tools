@@ -763,7 +763,8 @@ list confirms `grok-4.7`).
 only for the same digest and covers, otherwise "evaluator changed". A reviewed or graduated
 Mechanism Card needs a dry-run receipt `trace` that validates and carries the card's digest; a
 graduated card also needs `pinned_digest` equal to the card's digest. A receipt `delta` check
-against the trace (`metric_after - metric_before`) was added after the orama review (in progress).
+against the trace (`metric_after - metric_before`) was added after the orama review (implemented
+and tested).
 
 **Rationale:** Closes the three accepted G3 cases in doc 76 (no trace, receipt digest differs,
 never pinned). Binding by id alone would let a receipt for `X@1` promote a different card that
