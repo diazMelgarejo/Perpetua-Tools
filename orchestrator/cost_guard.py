@@ -1,13 +1,25 @@
+"""Durable, shared and atomic budget guard.
+
+Settled spend and live reservations live in one private SQLite store beside the budget file, so every
+CostGuard instance and every process that uses the same state directory and budget file shares one
+ledger. reserve() checks settled spend plus every live reservation and records the new hold inside one
+``BEGIN IMMEDIATE`` transaction, so two callers cannot both pass the check against the same last dollars.
+An existing budget JSON is imported into the store once; it is never written again.
+"""
 from __future__ import annotations
 
 import asyncio
 import json
 import math
+import sqlite3
 import time
 import uuid
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Iterator
+
+from .private_sqlite import open_private_sqlite
 
 
 _DEFAULT_BUDGET = {
@@ -32,16 +44,18 @@ class TokenCliffExceededError(Exception):
 
 class CostGuard:
     """
-    File-persisted daily budget guard.
-    Auto-resets every 24h. Blocks orchestration when daily_spend ≥ daily_budget.
-    Alert triggers at 80% of daily_budget (matching monitoring_config in strategy JSON).
+    Shared, durable daily or monthly budget guard.
+    Auto-resets every 24h (daily) or at the UTC calendar month (monthly). Blocks orchestration when
+    spend reaches the budget. Alert triggers at 80% of the budget (matching monitoring_config in the
+    strategy JSON).
 
-    reserve()/commit()/rollback() are the atomic path: reserve() holds
-    estimated_cost against the budget (counting other in-flight reservations,
-    not just settled daily_spend) before any await point, so two concurrent
-    callers cannot both pass a check-then-act gap and jointly overspend.
-    can_spend()/record_spend() remain for callers that don't need atomicity
-    across an await (e.g. a single synchronous accounting step).
+    reserve()/commit()/rollback() are the atomic path: reserve() holds estimated_cost against the budget
+    (counting every other live reservation, from any instance or process, not just settled spend) in one
+    transaction, so concurrent callers cannot jointly overspend. can_spend()/record_spend() remain for
+    callers that don't need atomicity across an await (e.g. a single synchronous accounting step).
+
+    The store fails closed: an unsafe or unwritable state directory raises instead of degrading to a
+    per-process in-memory budget, which would silently break the shared ceiling.
     """
 
     ALERT_RATIO = 0.80
@@ -63,92 +77,172 @@ class CostGuard:
     def __init__(
         self, state_dir: str = ".state", budget_file: str = "budget.json", period: str = "daily"
     ) -> None:
+        """Bind a guard to ``state_dir``/``budget_file``; guards with the same pair share one ledger."""
         if period not in self.PERIODS:
             raise ValueError(f"period must be one of {self.PERIODS}, got {period!r}")
         self.period = period
         self.state_dir = Path(state_dir)
         self.state_dir.mkdir(parents=True, exist_ok=True)
         self.budget_path = self.state_dir / budget_file
-        self._memory_state: Dict[str, float] = {**_DEFAULT_BUDGET, "last_reset": time.time(), "period": self.period}
-        self._persist_enabled = True
+        self.store_path = self.budget_path.with_suffix(".sqlite3")
+        # Serializes this instance's coroutines; cross-instance and cross-process atomicity comes from
+        # the store's BEGIN IMMEDIATE transactions, not from this lock.
         self._lock = asyncio.Lock()
-        # reservation_id -> (amount, monotonic reserve() timestamp)
-        self._reserved: Dict[str, tuple[float, float]] = {}
 
-    def _load(self) -> Dict[str, float]:
-        if not self._persist_enabled:
-            return dict(self._memory_state)
+    # -- store ---------------------------------------------------------------------------------
 
+    @contextmanager
+    def _txn(self) -> Iterator[sqlite3.Connection]:
+        """Open the private store and run one ``BEGIN IMMEDIATE`` transaction; commit or roll back."""
+        connection = open_private_sqlite(
+            self.state_dir, self.store_path.name,
+            dir_label="spend state", file_label="spend ledger", timeout=5,
+        )
         try:
-            if not self.budget_path.exists():
-                payload = {**_DEFAULT_BUDGET, "last_reset": time.time(), "period": self.period}
-                self._save(payload)
-                return payload
-            payload = json.loads(self.budget_path.read_text(encoding="utf-8"))
-            self._memory_state = dict(payload)
-            return payload
-        except OSError:
-            self._persist_enabled = False
-            return dict(self._memory_state)
+            connection.isolation_level = None  # explicit transaction control below
+            connection.execute("BEGIN IMMEDIATE")
+            try:
+                self._ensure_schema(connection)
+                yield connection
+            except BaseException:
+                connection.execute("ROLLBACK")
+                raise
+            connection.execute("COMMIT")
+        finally:
+            connection.close()
 
-    def _save(self, payload: Dict[str, float]) -> None:
-        self._memory_state = dict(payload)
-        if not self._persist_enabled:
-            return
+    def _ensure_schema(self, db: sqlite3.Connection) -> None:
+        """Create the tables, and import a legacy budget JSON the first time the store is empty."""
+        db.execute(
+            "CREATE TABLE IF NOT EXISTS budget (id INTEGER PRIMARY KEY CHECK (id = 1), daily_budget REAL NOT NULL,"
+            " daily_spend REAL NOT NULL, last_reset REAL NOT NULL, period TEXT NOT NULL)"
+        )
+        db.execute(
+            "CREATE TABLE IF NOT EXISTS reservations (id TEXT PRIMARY KEY, amount REAL NOT NULL,"
+            " reserved_at REAL NOT NULL, expires_at REAL NOT NULL)"
+        )
+        if db.execute("SELECT 1 FROM budget WHERE id = 1").fetchone() is None:
+            seed = self._legacy_payload() or {**_DEFAULT_BUDGET, "last_reset": time.time(), "period": self.period}
+            db.execute(
+                "INSERT INTO budget VALUES (1, ?, ?, ?, ?)",
+                (float(seed["daily_budget"]), float(seed["daily_spend"]), float(seed["last_reset"]),
+                 str(seed.get("period") or "daily")),
+            )
+
+    def _legacy_payload(self) -> Dict[str, Any] | None:
+        """The pre-store budget JSON, validated, or None when there is none. A malformed file raises: starting
+        from zero would silently forget real spend."""
         try:
-            self.budget_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-        except OSError:
-            self._persist_enabled = False
+            raw = self.budget_path.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            return None
+        try:
+            payload = json.loads(raw)
+            for key in ("daily_budget", "daily_spend", "last_reset"):
+                value = payload[key]
+                if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+                    raise ValueError(key)
+            if payload.get("period", "daily") not in self.PERIODS:
+                raise ValueError("period")
+        except (ValueError, KeyError, TypeError) as exc:
+            raise ValueError(f"legacy budget file {self.budget_path.name} is not a valid budget; fix or move it") from exc
+        return payload
+
+    @staticmethod
+    def _row(db: sqlite3.Connection) -> Dict[str, Any]:
+        """The single budget row as the dict shape callers have always seen."""
+        budget, spend, last_reset, period = db.execute(
+            "SELECT daily_budget, daily_spend, last_reset, period FROM budget WHERE id = 1"
+        ).fetchone()
+        return {"daily_budget": budget, "daily_spend": spend, "last_reset": last_reset, "period": period}
+
+    def _write(self, db: sqlite3.Connection, payload: Dict[str, Any]) -> None:
+        """Persist the budget row inside the open transaction."""
+        db.execute(
+            "UPDATE budget SET daily_budget = ?, daily_spend = ?, last_reset = ?, period = ? WHERE id = 1",
+            (payload["daily_budget"], payload["daily_spend"], payload["last_reset"], payload["period"]),
+        )
 
     @staticmethod
     def _month_of(ts: float) -> tuple[int, int]:
+        """The UTC (year, month) of a timestamp."""
         dt = datetime.fromtimestamp(ts, tz=timezone.utc)
         return dt.year, dt.month
 
-    def _period_elapsed(self, payload: Dict[str, float]) -> bool:
+    def _period_elapsed(self, payload: Dict[str, Any]) -> bool:
         """True when the budget window has rolled over: 24 hours, or a UTC calendar month."""
         now = time.time()
         if self.period == "monthly":
             return self._month_of(now) != self._month_of(payload["last_reset"])
         return now - payload["last_reset"] >= 86400
 
-    def _maybe_reset(self, payload: Dict[str, float]) -> Dict[str, float]:
-        stored = payload.get("period", "daily")
-        if stored != self.period:
-            raise ValueError(f"budget file is {stored!r} but this guard is {self.period!r}")
-        payload["period"] = self.period
+    def _current(self, db: sqlite3.Connection) -> Dict[str, Any]:
+        """The budget row for this guard's period, rolled over and persisted when the window has elapsed.
+        Raises ValueError when the store was created for a different period."""
+        payload = self._row(db)
+        if payload["period"] != self.period:
+            raise ValueError(f"budget file is {payload['period']!r} but this guard is {self.period!r}")
         if self._period_elapsed(payload):
             payload["daily_spend"] = 0.0
             payload["last_reset"] = time.time()
-            self._save(payload)
+            self._write(db, payload)
         return payload
 
+    def _sweep(self, db: sqlite3.Connection) -> None:
+        """Drop reservations whose hold has run out. Caller holds the write transaction."""
+        db.execute("DELETE FROM reservations WHERE expires_at < ?", (time.time(),))
+
+    def _in_flight(self, db: sqlite3.Connection) -> float:
+        """Dollars held by live (unexpired) reservations."""
+        return float(db.execute(
+            "SELECT COALESCE(SUM(amount), 0.0) FROM reservations WHERE expires_at >= ?", (time.time(),)
+        ).fetchone()[0])
+
+    # -- synchronous accounting ---------------------------------------------------------------
+
     def can_spend(self, estimated_cost: float) -> bool:
-        p = self._maybe_reset(self._load())
+        """True when settled spend plus ``estimated_cost`` stays within the budget."""
+        with self._txn() as db:
+            p = self._current(db)
         return (p["daily_spend"] + estimated_cost) <= p["daily_budget"]
 
     def alert_approaching(self) -> bool:
-        p = self._maybe_reset(self._load())
+        """True when settled spend has reached ALERT_RATIO of the budget."""
+        with self._txn() as db:
+            p = self._current(db)
         return p["daily_spend"] >= (p["daily_budget"] * self.ALERT_RATIO)
 
-    def record_spend(self, amount: float) -> Dict[str, float]:
-        p = self._maybe_reset(self._load())
-        p["daily_spend"] = round(p["daily_spend"] + amount, 6)
-        self._save(p)
+    def record_spend(self, amount: float) -> Dict[str, Any]:
+        """Add ``amount`` to settled spend atomically and return the new budget state."""
+        with self._txn() as db:
+            p = self._current(db)
+            p["daily_spend"] = round(p["daily_spend"] + amount, 6)
+            self._write(db, p)
         return p
 
     def snapshot(self) -> Dict[str, Any]:
-        p = self._maybe_reset(self._load())
+        """Budget, settled spend, window start, period, alert flag and remaining dollars."""
+        with self._txn() as db:
+            p = self._current(db)
         out: Dict[str, Any] = dict(p)
-        out["alert"] = self.alert_approaching()
+        out["alert"] = p["daily_spend"] >= (p["daily_budget"] * self.ALERT_RATIO)
         out["period"] = self.period
         out["remaining"] = round(p["daily_budget"] - p["daily_spend"], 6)
         return out
 
     def set_budget(self, daily_budget: float) -> None:
-        p = self._load()
-        p["daily_budget"] = daily_budget
-        self._save(p)
+        """Set the budget ceiling for the shared ledger."""
+        if not math.isfinite(daily_budget) or daily_budget < 0:
+            raise ValueError(f"daily_budget must be a non-negative finite number, got {daily_budget!r}")
+        with self._txn() as db:
+            p = self._row(db)
+            p["daily_budget"] = float(daily_budget)
+            self._write(db, p)
+
+    def in_flight(self) -> float:
+        """Dollars currently held by live reservations across every instance and process."""
+        with self._txn() as db:
+            return self._in_flight(db)
 
     def check_token_cliff(self, input_tokens: int) -> str | None:
         """Check if input_tokens approaches or exceeds the 199k billing cliff.
@@ -169,31 +263,24 @@ class CostGuard:
             return f"Token count {input_tokens} is approaching the 199k billing cliff (warn threshold: {self.TOKEN_CLIFF_WARN_TOKENS})"
         return None
 
-    async def reserve(self, estimated_cost: float) -> str:
-        """Atomically hold ``estimated_cost`` against the budget.
+    # -- atomic reserve / commit / rollback -------------------------------------------------------
 
-        Checks settled ``daily_spend`` PLUS every other currently-outstanding
-        reservation, so concurrent callers each see the others' in-flight
-        holds -- not just what's already been committed to disk. Raises
-        BudgetExceededError instead of returning bool, since the caller must
-        distinguish "no reservation was made" from "one was made and must be
-        rolled back."
+    def reserve_sync(self, estimated_cost: float) -> str:
+        """Atomically hold ``estimated_cost`` against the budget; the blocking core of reserve().
 
-        Rejects negative or non-finite ``estimated_cost`` before touching any
-        state: a negative value would LOWER ``in_flight``, letting other
-        concurrent callers reserve past the real budget; NaN makes the
-        Line-125-style comparison always False (Python: any comparison with
-        NaN is False), so the reservation would always "succeed" and poison
-        ``daily_spend`` with NaN on commit. Zero IS valid and common --
-        ``OrchestrateRequest.estimated_cost`` defaults to ``0.0`` for calls
-        with no known cost estimate.
+        Checks settled spend PLUS every live reservation (from any instance or process) and records the
+        hold in the same transaction. Raises BudgetExceededError when it does not fit, ValueError for a
+        negative or non-finite cost. Zero is valid: ``OrchestrateRequest.estimated_cost`` defaults to
+        ``0.0`` for calls with no known cost estimate. A negative cost would LOWER the in-flight total
+        and let others reserve past the budget; NaN makes every comparison False so the reservation
+        would always "succeed" and poison settled spend on commit.
         """
         if not math.isfinite(estimated_cost) or estimated_cost < 0:
             raise ValueError(f"estimated_cost must be a non-negative finite number, got {estimated_cost!r}")
-        async with self._lock:
-            self._sweep_expired_reservations_locked()
-            p = self._maybe_reset(self._load())
-            in_flight = sum(amount for amount, _ in self._reserved.values())
+        with self._txn() as db:
+            self._sweep(db)
+            p = self._current(db)
+            in_flight = self._in_flight(db)
             if p["daily_spend"] + in_flight + estimated_cost > p["daily_budget"]:
                 raise BudgetExceededError(
                     f"reserving ${estimated_cost:.4f} would exceed daily budget "
@@ -201,62 +288,51 @@ class CostGuard:
                     f"budget=${p['daily_budget']:.4f})"
                 )
             reservation_id = uuid.uuid4().hex
-            self._reserved[reservation_id] = (estimated_cost, time.monotonic())
+            now = time.time()
+            db.execute(
+                "INSERT INTO reservations VALUES (?, ?, ?, ?)",
+                (reservation_id, estimated_cost, now, now + self.RESERVATION_TTL_SECONDS),
+            )
             return reservation_id
 
-    def _sweep_expired_reservations_locked(self) -> None:
-        """Drop reservations older than RESERVATION_TTL_SECONDS. Caller must
-        already hold self._lock.
+    def commit_sync(self, reservation_id: str, actual_cost: float | None = None) -> Dict[str, Any]:
+        """Settle a reservation into settled spend; the blocking core of commit().
 
-        This is the self-healing half of the leak fix: a caller that never
-        reaches commit()/rollback() at all (process killed outright, not
-        just the task cancelled -- a try/finally can't run without an
-        interpreter left to run it in) would otherwise hold a phantom
-        budget block forever. An expired reservation is dropped, not
-        charged -- conservative in the operator's favor: if the original
-        request really did complete, its real cost was either never
-        significant (the common estimated_cost=0.0 case) or the caller's
-        own commit()/rollback() already ran well within the TTL window.
+        ``actual_cost`` overrides the reserved estimate when the real cost is known. It is validated
+        before the reservation is touched, so an invalid value leaves the reservation intact for retry.
+        Raises UnknownReservationError for an id that is not held (never reserved, already settled or
+        released, or reclaimed by the sweep).
         """
-        now = time.monotonic()
-        expired = [
-            rid for rid, (_, reserved_at) in self._reserved.items()
-            if now - reserved_at > self.RESERVATION_TTL_SECONDS
-        ]
-        for rid in expired:
-            del self._reserved[rid]
-
-    async def commit(self, reservation_id: str, actual_cost: float | None = None) -> Dict[str, float]:
-        """Settle a reservation into ``daily_spend``.
-
-        ``actual_cost`` overrides the original estimate when the real
-        provider cost is known (e.g. from usage metadata) -- defaults to the
-        reserved estimate when the caller has no better number. Validates
-        that ``actual_cost`` (or fallback estimate) is a non-negative finite
-        number before deleting the reservation, leaving it intact for retry
-        if validation fails. Raises UnknownReservationError both for a
-        never-reserved id and for one the TTL sweep already reclaimed (rare
-        -- see RESERVATION_TTL_SECONDS); callers that may race the sweep
-        should catch it and treat it as a no-op, not a hard failure.
-        """
-        async with self._lock:
-            if reservation_id not in self._reserved:
+        if actual_cost is not None and (not math.isfinite(actual_cost) or actual_cost < 0):
+            raise ValueError(f"actual_cost must be a non-negative finite number, got {actual_cost!r}")
+        with self._txn() as db:
+            row = db.execute("SELECT amount FROM reservations WHERE id = ?", (reservation_id,)).fetchone()
+            if row is None:
                 raise UnknownReservationError(reservation_id)
-            estimated, _ = self._reserved[reservation_id]
-            amount = estimated if actual_cost is None else actual_cost
-            if not math.isfinite(amount) or amount < 0:
-                raise ValueError(
-                    f"actual_cost must be a non-negative finite number, got {amount!r}"
-                )
-            del self._reserved[reservation_id]
-            p = self._maybe_reset(self._load())
+            amount = row[0] if actual_cost is None else actual_cost
+            db.execute("DELETE FROM reservations WHERE id = ?", (reservation_id,))
+            p = self._current(db)
             p["daily_spend"] = round(p["daily_spend"] + amount, 6)
-            self._save(p)
-            return p
+            self._write(db, p)
+            return {**p, "committed_usd": amount}
+
+    def rollback_sync(self, reservation_id: str) -> None:
+        """Release a reservation without charging the budget; the blocking core of rollback()."""
+        with self._txn() as db:
+            if db.execute("DELETE FROM reservations WHERE id = ?", (reservation_id,)).rowcount != 1:
+                raise UnknownReservationError(reservation_id)
+
+    async def reserve(self, estimated_cost: float) -> str:
+        """Atomically hold ``estimated_cost`` against the shared budget. See reserve_sync()."""
+        async with self._lock:
+            return self.reserve_sync(estimated_cost)
+
+    async def commit(self, reservation_id: str, actual_cost: float | None = None) -> Dict[str, Any]:
+        """Settle a reservation into settled spend. See commit_sync()."""
+        async with self._lock:
+            return self.commit_sync(reservation_id, actual_cost)
 
     async def rollback(self, reservation_id: str) -> None:
-        """Release a reservation without charging the budget."""
+        """Release a reservation without charging the budget. See rollback_sync()."""
         async with self._lock:
-            if reservation_id not in self._reserved:
-                raise UnknownReservationError(reservation_id)
-            del self._reserved[reservation_id]
+            self.rollback_sync(reservation_id)

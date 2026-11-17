@@ -95,11 +95,9 @@ class TestAutoReset:
     def test_reset_after_24h(self, guard):
         guard.record_spend(20.0)
         # Simulate 25 hours having passed since last_reset
-        p = guard._load()
-        p["last_reset"] = time.time() - 90000  # 25 hours ago
-        guard._save(p)
+        with patch("orchestrator.cost_guard.time.time", return_value=time.time() + 90000):
+            snap = guard.snapshot()
         # After auto-reset, daily_spend should be 0
-        snap = guard.snapshot()
         assert snap["daily_spend"] == 0.0
 
     def test_no_reset_within_24h(self, guard):
@@ -218,7 +216,7 @@ class TestAtomicReserveCommitRollback:
         on cost_guard.py:112-133."""
         with pytest.raises(ValueError, match="non-negative"):
             await guard.reserve(-5.0)
-        assert guard._reserved == {}
+        assert guard.in_flight() == 0.0
 
     @pytest.mark.asyncio
     async def test_reserve_rejects_nan_cost(self, guard: CostGuard) -> None:
@@ -227,13 +225,13 @@ class TestAtomicReserveCommitRollback:
         and poison daily_spend with NaN on commit."""
         with pytest.raises(ValueError, match="non-negative"):
             await guard.reserve(float("nan"))
-        assert guard._reserved == {}
+        assert guard.in_flight() == 0.0
 
     @pytest.mark.asyncio
     async def test_reserve_rejects_infinite_cost(self, guard: CostGuard) -> None:
         with pytest.raises(ValueError, match="non-negative"):
             await guard.reserve(float("inf"))
-        assert guard._reserved == {}
+        assert guard.in_flight() == 0.0
 
     @pytest.mark.asyncio
     async def test_reserve_accepts_zero_cost(self, guard: CostGuard) -> None:
@@ -295,14 +293,13 @@ class TestReservationTTLSelfHeal:
 
         # Simulate RESERVATION_TTL_SECONDS having elapsed without commit()/
         # rollback() ever being called (the leak scenario).
-        amount, _ = guard._reserved[reservation_id]
-        guard._reserved[reservation_id] = (amount, guard._reserved[reservation_id][1] - 301.0)
-
-        # A second reserve() that would have failed against the phantom
-        # 8.0 in-flight hold now succeeds, because the sweep drops it first.
-        second_id = await guard.reserve(8.0)
-        assert reservation_id not in guard._reserved
-        await guard.commit(second_id)
+        later = time.time() + 301.0
+        with patch("orchestrator.cost_guard.time.time", return_value=later):
+            # A second reserve() that would have failed against the phantom
+            # 8.0 in-flight hold now succeeds, because the sweep drops it first.
+            second_id = await guard.reserve(8.0)
+            assert guard.in_flight() == pytest.approx(8.0)
+            await guard.commit(second_id)
 
     @pytest.mark.asyncio
     async def test_fresh_reservation_is_not_swept(self, guard: CostGuard) -> None:
@@ -311,7 +308,7 @@ class TestReservationTTLSelfHeal:
         guard.set_budget(10.0)
         reservation_id = await guard.reserve(3.0)
         await guard.reserve(1.0)  # triggers a sweep pass; must not touch reservation_id
-        assert reservation_id in guard._reserved
+        assert guard.in_flight() == pytest.approx(4.0)
         await guard.commit(reservation_id)
         assert guard.snapshot()["daily_spend"] == pytest.approx(3.0)
 
@@ -324,12 +321,11 @@ class TestReservationTTLSelfHeal:
         -- orchestrator/fastapi_app.py's cleanup path catches this
         specifically rather than crashing the response."""
         reservation_id = await guard.reserve(1.0)
-        amount, _ = guard._reserved[reservation_id]
-        guard._reserved[reservation_id] = (amount, guard._reserved[reservation_id][1] - 301.0)
-        await guard.reserve(0.0)  # triggers the sweep
+        with patch("orchestrator.cost_guard.time.time", return_value=time.time() + 301.0):
+            await guard.reserve(0.0)  # triggers the sweep
 
-        with pytest.raises(UnknownReservationError):
-            await guard.commit(reservation_id)
+            with pytest.raises(UnknownReservationError):
+                await guard.commit(reservation_id)
 
 
 class TestTokenCliffGate:
@@ -434,4 +430,4 @@ class TestCancellationRollback:
         with pytest.raises(asyncio.CancelledError):
             await task
 
-        assert guard._reserved == {}
+        assert guard.in_flight() == 0.0
