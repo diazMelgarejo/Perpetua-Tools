@@ -753,3 +753,114 @@ list confirms `grok-4.7`).
   `config/model-governance.yml` name `grok-4.7` and ban `grok-4.6`. This memory PR does not change
   routing files; a separate stale-id refresh PR (ids only, policy text untouched) should fix it.
   Whether PT adopts the interim approval regime is a separate operator decision.
+
+---
+
+## 2026-11-17: Biafra G3 pin and receipt binding (orama `seat_contracts.py`)
+
+**Decision:** The evaluator digest covers exactly the verifier files given to `evaluator_digest`
+(by file name and bytes). `pin_evaluator` writes a one-time pin at run start; re-pinning succeeds
+only for the same digest and covers, otherwise "evaluator changed". A reviewed or graduated
+Mechanism Card needs a dry-run receipt `trace` that validates and carries the card's digest; a
+graduated card also needs `pinned_digest` equal to the card's digest. A receipt `delta` check
+against the trace (`metric_after - metric_before`) was added after the orama review (in progress).
+
+**Rationale:** Closes the three accepted G3 cases in doc 76 (no trace, receipt digest differs,
+never pinned). Binding by id alone would let a receipt for `X@1` promote a different card that
+reuses the id.
+
+**Alternatives considered:** none recorded beyond the first design, which lacked the `delta`
+comparison.
+
+**Status:** decided; the `delta` comparison and unique-temp-file pinning are being implemented.
+Reading the pin inside `live_cycle` before launch is a later TODO.
+
+---
+
+## 2026-11-17: Biafra G9 "no card, no promotion" instead of a mandatory input card
+
+**Decision:** Cycles stay usable without a card. A cycle that validated a card adds
+`card_id = "<mechanism_id>@<revision>"`. A reviewed or graduated card needs a receipt with
+`card_checked: true` and its own `card_id`.
+
+**Rationale:** The outer dry run produces the receipt the card is built from, so a mandatory input
+card would break the real flow. Binding at promotion keeps the flow and still ensures a mechanism
+is promoted only after a dry run that checked this card.
+
+**Alternatives considered:** a mandatory card on every cycle (rejected, circular).
+
+**Status:** decided by the operator's request to resolve G9 in this change; reversible.
+
+---
+
+## 2026-11-17: One PT-owned SpendGate with a shared atomic CostGuard
+
+**Decision:** `orchestrator/spend_gate.py` is the single spend gate. `CostGuard` keeps settled
+spend and live reservations in one private SQLite store per budget file, every operation in
+`BEGIN IMMEDIATE`, shared across instances and processes. Reservations carry a declared hold; a
+late commit still records the spend. Orama's `spend_guard.py` is a thin forwarder with no ledger.
+A missing store beside a `.migrated` legacy file fails closed.
+
+**Rationale:** Per-instance reservation locks do not share a ceiling, and a second ledger in orama
+would split the budget. PT is the runtime and state authority.
+
+**Alternatives considered:** keeping a ledger in orama (rejected: orama is stateless).
+
+**Status:** decided and implemented in the PT integration. Spend recorded after migration lives
+only in the SQLite store; reverting does not move it back.
+
+---
+
+## 2026-11-17: HTTP outcome mapping on the W&B path (below 500 releases, the rest settle unknown)
+
+**Decision:** An HTTP status below 500 is a definitive provider refusal and releases the
+reservation. A 5xx, transport error, timeout, interrupt or malformed response settles the full
+reservation via `settle_unknown`. If settling fails after a paid answer, keep the answer and fall
+back to `settle_unknown`.
+
+**Rationale:** Unavailable output is not evidence of zero billed output, so unknown outcomes
+charge in full. The first design charged every HTTP error; the integrator amended it.
+
+**Alternatives considered:** charge every HTTP error (rejected as over-charging definitive
+refusals).
+
+**Status:** decided and implemented.
+
+---
+
+## 2026-11-17: Popen and process-group lifecycle with a "sent" flag
+
+**Decision:** The live-cycle launcher starts with `Popen` (`start_new_session=True`) and is awaited
+with `communicate`. Only a failed `Popen` releases. After `Popen` succeeds the request counts as
+sent, and the `finally` never releases it. On timeout, pipe error or interrupt the whole group is
+SIGKILLed before a bounded reap, then the reservation settles unknown. If settling fails after
+send, the reservation is left to its declared hold and the error is surfaced. The sandbox never
+reaps the leader before signalling the group and checks that an exit probe exists before starting
+the child.
+
+**Rationale:** A grandchild holding the pipes must not hang the cycle past `timeout_s`, and a sent
+request must never be recorded as zero spend.
+
+**Alternatives considered:** a per-poll `ps` probe (rejected for cost).
+
+**Status:** the Popen and sent-flag design is decided; items 11, 12 and 15 of the orama review fix
+are being implemented and are not yet verified.
+
+---
+
+## 2026-11-17: PR-carried memory overrides lesson_94a6ff5363ae for this consolidation
+
+**Decision:** The operator ruled on 2026-11-17 to consolidate every change tonight, memory
+included, on the current pull requests (PT #516 and orama #519), and to open no new pull requests.
+The memory corrections (`lesson_d4ac6209ce38`, `lesson_7240bbe31030`) and this lane's memory
+records therefore ship in PT #516. The "PT memory commits belong on main only" guidance of
+accepted `lesson_94a6ff5363ae` was explicitly overridden for this consolidation. That lesson is
+not edited.
+
+**Rationale:** The defect was introduced in #516, so the correction belongs with it, and the
+operator chose a single consolidated delivery over a separate main-only memory commit.
+
+**Alternatives considered:** a separate main-only memory commit or a new pull request (declined by
+the operator).
+
+**Status:** decided by the operator for this work; not a general change to the main-only rule.
