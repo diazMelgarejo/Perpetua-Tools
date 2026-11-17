@@ -1,0 +1,44 @@
+{
+  "id": "d4ac6209ce38",
+  "key": "manual_d4ac62",
+  "name": "manual_d4ac62",
+  "claim": "Provider attestation has two separate layers, and only the first asks a human. The interactive 'attest' command (python3 -m orchestrator.provider_limits attest) refuses to run without a terminal and checks a typed confirmation phrase, so that flow is where a human is asked. The guard only reads the attestation file: it checks provider, attested_by, the required true fields and the timestamp age, so a process running as the same OS user can write a valid file directly and the guard cannot force a human confirmation. Describe the attest command as the step that requires a terminal and a typed phrase, and the guard as a content check; never say the guard forces or enforces a human step. This is the single current attestation wording and supersedes lesson_762380426dc7, whose sentence 'It still forces a deliberate human step' over-claimed; lesson_371473e17ad0 states the same correction in shorter form and stays unedited.",
+  "conditions": [
+    "attest",
+    "attestation",
+    "guard",
+    "same-user",
+    "speed-bump",
+    "supersession",
+    "wording"
+  ],
+  "evidence_ids": [
+    "2026-11-17T18:26:17.790843+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-17T18:26:17.790843+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-17T18:26:17.790843+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-17T18:26:20.514121+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Review finding 6: lesson_371473e17ad0 carried the corrected wording but no supersedes link, so lesson_762380426dc7 stayed active. This record is the explicitly linked replacement. Verified against orchestrator/provider_limits.py: the attest command requires a terminal and a typed phrase; attestation_status checks file contents only.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-17T18:26:17.790843+00:00"
+      ],
+      "lessons_sha": "18cb9b14494f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-17T18:26:20.514101+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Review finding 6: lesson_371473e17ad0 carried the corrected wording but no supersedes link, so lesson_762380426dc7 stayed active. This record is the explicitly linked replacement. Verified against orchestrator/provider_limits.py: the attest command requires a terminal and a typed phrase; attestation_status checks file contents only."
+}
