@@ -37,6 +37,7 @@ def guard(tmp_path: Path) -> CostGuard:
 
 
 def test_a_900_second_hold_is_not_swept_by_another_reservation_at_301_seconds(guard: CostGuard) -> None:
+    """A 900 second hold is not swept by another reservation at 301 seconds."""
     with _at(0):
         long_run = asyncio.run(guard.reserve(6.0, hold_seconds=900))
     with _at(301):
@@ -49,6 +50,7 @@ def test_a_900_second_hold_is_not_swept_by_another_reservation_at_301_seconds(gu
 
 
 def test_the_default_hold_is_unchanged_at_300_seconds(guard: CostGuard) -> None:
+    """The default hold is unchanged at 300 seconds."""
     with _at(0):
         rid = asyncio.run(guard.reserve(6.0))
     with _at(299):
@@ -60,6 +62,7 @@ def test_the_default_hold_is_unchanged_at_300_seconds(guard: CostGuard) -> None:
 
 
 def test_a_hold_is_swept_only_after_its_own_declared_lifetime(guard: CostGuard) -> None:
+    """A hold is swept only after its own declared lifetime."""
     with _at(0):
         asyncio.run(guard.reserve(6.0, hold_seconds=900))
     with _at(901):
@@ -68,6 +71,7 @@ def test_a_hold_is_swept_only_after_its_own_declared_lifetime(guard: CostGuard) 
 
 
 def test_a_commit_for_a_swept_reservation_still_records_the_spend_and_says_it_was_late(guard: CostGuard) -> None:
+    """A commit for a swept reservation still records the spend and says it was late."""
     with _at(0):
         rid = asyncio.run(guard.reserve(6.0))
     with _at(301):
@@ -78,6 +82,7 @@ def test_a_commit_for_a_swept_reservation_still_records_the_spend_and_says_it_wa
 
 
 def test_a_late_commit_without_an_amount_records_the_full_reserved_amount(guard: CostGuard) -> None:
+    """A late commit without an amount records the full reserved amount."""
     with _at(0):
         rid = asyncio.run(guard.reserve(6.0))
     with _at(301):
@@ -88,6 +93,7 @@ def test_a_late_commit_without_an_amount_records_the_full_reserved_amount(guard:
 
 
 def test_a_late_commit_is_single_use_and_a_swept_rollback_stays_an_unknown_reservation(guard: CostGuard) -> None:
+    """A late commit is single use and a swept rollback stays an unknown reservation."""
     with _at(0):
         rid = asyncio.run(guard.reserve(2.0))
         rid2 = asyncio.run(guard.reserve(2.0))
@@ -102,18 +108,21 @@ def test_a_late_commit_is_single_use_and_a_swept_rollback_stays_an_unknown_reser
 
 
 def test_a_never_reserved_id_is_still_unknown(guard: CostGuard) -> None:
+    """A never reserved id is still unknown."""
     with pytest.raises(UnknownReservationError):
         asyncio.run(guard.commit("nope", 1.0))
 
 
 @pytest.mark.parametrize("bad", [0, -1, float("nan"), float("inf"), 86401, True])
 def test_a_bad_hold_is_refused_without_holding_anything(guard: CostGuard, bad) -> None:
+    """A bad hold is refused without holding anything."""
     with pytest.raises(ValueError):
         asyncio.run(guard.reserve(1.0, hold_seconds=bad))
     assert guard.in_flight() == 0.0
 
 
 def test_the_hold_is_shared_with_other_instances(guard: CostGuard, tmp_path: Path) -> None:
+    """The hold is shared with other instances."""
     other = CostGuard(state_dir=str(tmp_path), period="monthly")
     with _at(0):
         asyncio.run(guard.reserve(6.0, hold_seconds=900))

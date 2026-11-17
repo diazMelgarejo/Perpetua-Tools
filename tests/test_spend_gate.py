@@ -44,10 +44,12 @@ def _attest(age_days: float = 0.0, **overrides) -> None:
 
 
 def _gate(**kw) -> SpendGate:
+    """Test helper or double: gate."""
     return SpendGate(now=lambda: NOW, **kw)
 
 
 def test_a_missing_attestation_is_refused_before_any_reservation(state: Path) -> None:
+    """A missing attestation is refused before any reservation."""
     gate = _gate()
     out = gate.preflight(1000, 900)
     assert out["ok"] is False and out["reason"] == "attestation-required" and out["stop"] is True
@@ -56,6 +58,7 @@ def test_a_missing_attestation_is_refused_before_any_reservation(state: Path) ->
 
 
 def test_a_stale_attestation_is_refused(state: Path) -> None:
+    """A stale attestation is refused."""
     _attest(age_days=30)
     out = _gate().preflight(1000, 900)
     assert out["ok"] is False and out["reason"] == "attestation-required"
@@ -63,11 +66,13 @@ def test_a_stale_attestation_is_refused(state: Path) -> None:
 
 
 def test_an_attestation_with_a_false_field_is_refused(state: Path) -> None:
+    """An attestation with a false field is refused."""
     _attest(payg_inactive=False)
     assert _gate().preflight(1000, 900)["reason"] == "attestation-required"
 
 
 def test_a_fresh_attestation_reserves_the_projected_cost(state: Path) -> None:
+    """A fresh attestation reserves the projected cost."""
     _attest()
     gate = _gate()
     out = gate.preflight(4000, 900)
@@ -76,6 +81,7 @@ def test_a_fresh_attestation_reserves_the_projected_cost(state: Path) -> None:
 
 
 def test_an_exhausted_budget_is_refused_with_the_budget_reason(state: Path) -> None:
+    """An exhausted budget is refused with the budget reason."""
     _attest()
     gate = _gate()
     gate.guard.record_spend(gate.policy["budget"]["operator_estimate_ceiling_usd"] - 0.01)
@@ -85,6 +91,7 @@ def test_an_exhausted_budget_is_refused_with_the_budget_reason(state: Path) -> N
 
 
 def test_two_gates_on_one_state_share_the_ceiling(state: Path) -> None:
+    """Two gates on one state share the ceiling."""
     _attest()
     first, second = _gate(), _gate()
     first.guard.record_spend(first.policy["budget"]["operator_estimate_ceiling_usd"] - 0.07)
@@ -93,6 +100,7 @@ def test_two_gates_on_one_state_share_the_ceiling(state: Path) -> None:
 
 
 def test_the_declared_hold_outlives_the_default_ttl(state: Path) -> None:
+    """The declared hold outlives the default ttl."""
     _attest()
     gate = _gate()
     gate.guard.record_spend(gate.policy["budget"]["operator_estimate_ceiling_usd"] - 0.07)
@@ -104,6 +112,7 @@ def test_the_declared_hold_outlives_the_default_ttl(state: Path) -> None:
 
 
 def test_a_bad_hold_or_size_is_refused(state: Path) -> None:
+    """A bad hold or size is refused."""
     _attest()
     for chars, hold in ((-1, 900), (float("nan"), 900), (10, 0), (10, -5), (10, float("inf"))):
         with pytest.raises(ValueError):
@@ -111,6 +120,7 @@ def test_a_bad_hold_or_size_is_refused(state: Path) -> None:
 
 
 def test_settle_commits_the_estimate_and_writes_a_size_only_audit_row(state: Path) -> None:
+    """Settle commits the estimate and writes a size only audit row."""
     _attest()
     gate = _gate()
     pre = gate.preflight(4000, 900)
@@ -124,6 +134,7 @@ def test_settle_commits_the_estimate_and_writes_a_size_only_audit_row(state: Pat
 
 
 def test_settle_unknown_commits_the_full_reserved_amount_and_records_output_as_unknown(state: Path) -> None:
+    """Settle unknown commits the full reserved amount and records output as unknown."""
     _attest()
     gate = _gate()
     pre = gate.preflight(4000, 900)
@@ -136,6 +147,7 @@ def test_settle_unknown_commits_the_full_reserved_amount_and_records_output_as_u
 
 
 def test_a_settle_after_the_hold_lapsed_still_records_the_spend_and_marks_the_row_late(state: Path) -> None:
+    """A settle after the hold lapsed still records the spend and marks the row late."""
     _attest()
     gate = _gate()
     start = datetime.now(timezone.utc).timestamp()
@@ -149,6 +161,7 @@ def test_a_settle_after_the_hold_lapsed_still_records_the_spend_and_marks_the_ro
 
 
 def test_release_frees_the_hold_and_is_idempotent(state: Path) -> None:
+    """Release frees the hold and is idempotent."""
     _attest()
     gate = _gate()
     pre = gate.preflight(4000, 900)
@@ -160,6 +173,7 @@ def test_release_frees_the_hold_and_is_idempotent(state: Path) -> None:
 
 
 def test_classify_uses_the_policy_stop_codes(state: Path) -> None:
+    """Classify uses the policy stop codes."""
     gate = _gate()
     assert gate.classify("HTTP 402 payment required") == "provider-payment-required"
     assert gate.classify("429 too many requests") == "provider-rate-limited"
@@ -167,11 +181,13 @@ def test_classify_uses_the_policy_stop_codes(state: Path) -> None:
 
 
 def test_the_ceiling_comes_from_the_policy_not_from_prior_state(state: Path) -> None:
+    """The ceiling comes from the policy not from prior state."""
     gate = _gate()
     assert gate.snapshot()["daily_budget"] == gate.policy["budget"]["operator_estimate_ceiling_usd"]
 
 
 def test_an_explicit_state_dir_holds_the_budget_and_audit(tmp_path: Path, state: Path) -> None:
+    """An explicit state dir holds the budget and audit."""
     _attest()
     gate = _gate(state_dir=tmp_path / "spend-elsewhere")
     pre = gate.preflight(100, 900)
@@ -181,6 +197,7 @@ def test_an_explicit_state_dir_holds_the_budget_and_audit(tmp_path: Path, state:
 
 
 def test_an_unknown_provider_policy_fails_closed(state: Path) -> None:
+    """An unknown provider policy fails closed."""
     with pytest.raises(pl.ProviderPolicyError):
         SpendGate(provider="no-such-provider")
 

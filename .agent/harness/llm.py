@@ -1,8 +1,11 @@
 """Shared model-call helper. Factored out of conductor so memory/ can reuse."""
+import importlib.util
 import json
 import os
+import pathlib
 import shutil
 import subprocess
+import sys
 
 
 # MiniMax regional endpoints. Each region exposes OpenAI- and Anthropic-compatible
@@ -149,15 +152,92 @@ class ProviderLimitStop(RuntimeError):
         self.status = status
 
 
+_WANDB_PROVIDER = "wandb-inference"
+# One request is allowed this long. The spend reservation is held for the timeout plus a margin, so a
+# request that runs to its full timeout is never swept while it is still legitimately in flight.
+_WANDB_REQUEST_TIMEOUT_SECONDS = 600.0
+_WANDB_HOLD_SECONDS = _WANDB_REQUEST_TIMEOUT_SECONDS + 300.0
+_WANDB_SEAT = "agent-harness"
+_WANDB_MODE = "call-model"
+_SPEND_GATE_MODULE = "pt_spend_gate"
+
+
+class ProviderSpendRefused(RuntimeError):
+    """The shared spend gate refused a paid request BEFORE it was dispatched: a missing or stale operator
+    attestation ("attestation-required"), an exhausted budget ("budget-exhausted") or an unusable guard
+    ("spend-guard-unavailable"). Nothing was sent and nothing was reserved. Stop; do not retry."""
+
+    def __init__(self, reason, detail=None):
+        """Record the machine-readable ``reason`` and an optional human ``detail``."""
+        super().__init__(f"spend refused: {reason}" + (f" ({detail})" if detail else ""))
+        self.reason = reason
+        self.detail = detail
+
+
+def _wandb_spend_gate():
+    """Build the shared Perpetua-Tools SpendGate for W&B Inference, or refuse.
+
+    The gate lives in this checkout's ``orchestrator/spend_gate.py`` and is loaded by file path, so the
+    harness needs no import path setup. Any failure to load it or to open its budget store (missing
+    policy, unsafe state directory, broken checkout) fails closed as ProviderSpendRefused: a paid request
+    never goes out without the guard.
+    """
+    try:
+        module = sys.modules.get(_SPEND_GATE_MODULE)
+        if module is None:
+            path = pathlib.Path(__file__).resolve().parents[2] / "orchestrator" / "spend_gate.py"
+            spec = importlib.util.spec_from_file_location(_SPEND_GATE_MODULE, path)
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[_SPEND_GATE_MODULE] = module
+            try:
+                spec.loader.exec_module(module)
+            except BaseException:
+                sys.modules.pop(_SPEND_GATE_MODULE, None)
+                raise
+        return module.SpendGate(provider=_WANDB_PROVIDER)
+    except Exception as exc:
+        raise ProviderSpendRefused("spend-guard-unavailable", f"{type(exc).__name__}: {exc}") from exc
+
+
+def _settle_unknown_quietly(gate, reservation, input_chars, outcome):
+    """Charge the full reservation for a request that may have been sent. Never raises: this runs while
+    another exception is propagating, and the original failure must not be masked. If accounting itself
+    fails, say so on stderr (the hold then lapses and is swept, which is why this is loud)."""
+    try:
+        gate.settle_unknown(reservation, input_chars, outcome, _WANDB_SEAT, _WANDB_MODE)
+    except Exception as exc:
+        print(f"spend accounting failed for a possibly-sent request: {type(exc).__name__}: {exc}", file=sys.stderr)
+
+
 def _call_wandb(system, user, *, temperature, max_tokens, model):
+    """One guarded W&B Inference chat completion.
+
+    The shared SpendGate admits the request first: a missing or stale operator attestation or an
+    exhausted budget raises ProviderSpendRefused before anything is dispatched. After admission exactly
+    one of settle (answer received), settle_unknown (the request may have been sent but there is no
+    usable answer: the full reservation is charged) or release (nothing was sent) runs. The SDK client is
+    built with retries disabled, so one call is one request, and a 402 or 429 raises ProviderLimitStop.
+    """
     api_key = os.getenv("DEEPSEEK_V4_FLASH_WANDB", "")
     model = model or os.getenv("AGENT_MODEL", WANDB_DEFAULT_MODEL)
-    _maybe_init_wandb_weave_tracing()
-    import openai
-    # One call is one request. The SDK retries a 429 twice by default, which would send extra
-    # requests after a rate-limit response; a 402 or 429 must stop the loop, not be retried.
-    c = openai.OpenAI(api_key=api_key, base_url=WANDB_BASE_URL, max_retries=0)
+    input_chars = len(system) + len(user)
+    gate = _wandb_spend_gate()
+    pre = gate.preflight(input_chars, _WANDB_HOLD_SECONDS)
+    if not pre["ok"]:
+        raise ProviderSpendRefused(pre["reason"], "; ".join(pre.get("reasons") or []) or pre.get("error"))
+    reservation = pre["reservation"]
     try:
+        _maybe_init_wandb_weave_tracing()
+        import openai
+        # One call is one request. The SDK retries a 429 twice by default, which would send extra
+        # requests after a rate-limit response; a 402 or 429 must stop the loop, not be retried.
+        c = openai.OpenAI(api_key=api_key, base_url=WANDB_BASE_URL, max_retries=0,
+                          timeout=_WANDB_REQUEST_TIMEOUT_SECONDS)
+    except BaseException:
+        gate.release(reservation)  # nothing has been sent yet
+        raise
+    try:
+        # From here the request may reach the provider, whatever happens next.
         r = c.chat.completions.create(
             model=model,
             temperature=temperature,
@@ -165,11 +245,22 @@ def _call_wandb(system, user, *, temperature, max_tokens, model):
             messages=[{"role": "system", "content": system},
                       {"role": "user", "content": user}],
         )
+        content = r.choices[0].message.content
+        output_chars = len(content or "")
+        # The reasoning stream is billed but not visible: prefer the billed token count when it is larger.
+        billed = getattr(getattr(r, "usage", None), "completion_tokens", None)
+        if isinstance(billed, int) and not isinstance(billed, bool) and billed > 0:
+            output_chars = max(output_chars, billed * gate.policy["projection"]["chars_per_token"])
     except openai.APIStatusError as exc:
+        _settle_unknown_quietly(gate, reservation, input_chars, f"http-{exc.status_code}")
         if exc.status_code in PROVIDER_STOP_STATUS:
             raise ProviderLimitStop(exc.status_code) from exc
         raise
-    return r.choices[0].message.content
+    except BaseException:
+        _settle_unknown_quietly(gate, reservation, input_chars, "request-failed")
+        raise
+    gate.settle(reservation, input_chars, output_chars, "ok", _WANDB_SEAT, _WANDB_MODE)
+    return content
 
 
 def _call_minimax(system, user, *, temperature, max_tokens, model):
@@ -208,6 +299,8 @@ def _call_minimax(system, user, *, temperature, max_tokens, model):
 
 
 def call_model(system, user, *, temperature=0.3, max_tokens=4096, model=None):
+    """Send one chat turn through the provider named by AGENT_PROVIDER. The wandb provider is admitted by the
+    shared spend gate (see _call_wandb) before anything is dispatched."""
     provider = os.getenv("AGENT_PROVIDER", "anthropic").lower()
     if provider == "anthropic":
         from anthropic import Anthropic

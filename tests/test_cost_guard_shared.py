@@ -35,6 +35,7 @@ def _guard(state: Path, **kw) -> CostGuard:
 
 
 def test_two_instances_on_one_state_dir_cannot_both_reserve_the_last_dollars(tmp_path: Path) -> None:
+    """Two instances on one state dir cannot both reserve the last dollars."""
     first, second = _guard(tmp_path), _guard(tmp_path)
     rid = asyncio.run(first.reserve(HOLD))
     with pytest.raises(BudgetExceededError):
@@ -45,6 +46,7 @@ def test_two_instances_on_one_state_dir_cannot_both_reserve_the_last_dollars(tmp
 
 
 def test_a_reservation_made_by_one_instance_can_be_settled_or_released_by_another(tmp_path: Path) -> None:
+    """A reservation made by one instance can be settled or released by another."""
     a, b = _guard(tmp_path), _guard(tmp_path)
     rid = asyncio.run(a.reserve(0.05))
     asyncio.run(b.commit(rid, 0.04))
@@ -70,6 +72,7 @@ _WORKER = textwrap.dedent(
 
 
 def test_two_processes_cannot_both_reserve_the_last_dollars(tmp_path: Path) -> None:
+    """Two processes cannot both reserve the last dollars."""
     _guard(tmp_path)
     procs = [
         subprocess.Popen(
@@ -84,6 +87,7 @@ def test_two_processes_cannot_both_reserve_the_last_dollars(tmp_path: Path) -> N
 
 
 def test_an_existing_budget_json_is_migrated_once_into_the_shared_store(tmp_path: Path) -> None:
+    """An existing budget json is migrated once into the shared store."""
     legacy = tmp_path / "budget.json"
     legacy.write_text(json.dumps({"daily_budget": 50.0, "daily_spend": 12.5, "last_reset": 1.0e12, "period": "daily"}))
     snap = CostGuard(state_dir=str(tmp_path)).snapshot()
@@ -94,17 +98,20 @@ def test_an_existing_budget_json_is_migrated_once_into_the_shared_store(tmp_path
 
 
 def test_a_malformed_legacy_budget_json_fails_closed(tmp_path: Path) -> None:
+    """A malformed legacy budget json fails closed."""
     (tmp_path / "budget.json").write_text("{not json")
     with pytest.raises(ValueError):
         CostGuard(state_dir=str(tmp_path)).snapshot()
 
 
 def test_the_snapshot_shape_is_unchanged(tmp_path: Path) -> None:
+    """The snapshot shape is unchanged."""
     snap = CostGuard(state_dir=str(tmp_path)).snapshot()
     assert set(snap) == {"daily_budget", "daily_spend", "last_reset", "period", "alert", "remaining"}
 
 
 def test_an_unwritable_store_fails_closed_instead_of_degrading_to_memory(tmp_path: Path) -> None:
+    """An unwritable store fails closed instead of degrading to memory."""
     state = tmp_path / "open"
     state.mkdir(mode=0o700)
     os.chmod(state, 0o777)
@@ -113,6 +120,7 @@ def test_an_unwritable_store_fails_closed_instead_of_degrading_to_memory(tmp_pat
 
 
 def test_a_symlinked_store_is_refused(tmp_path: Path) -> None:
+    """A symlinked store is refused."""
     CostGuard(state_dir=str(tmp_path)).snapshot()
     target = tmp_path / "budget.sqlite3"
     moved = tmp_path / "elsewhere.sqlite3"

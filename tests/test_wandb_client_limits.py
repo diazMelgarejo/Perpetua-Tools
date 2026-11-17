@@ -1,8 +1,14 @@
-"""_call_wandb must send one request: no SDK retries, and 402 or 429 stop the caller with a typed error."""
+"""_call_wandb must send one request: no SDK retries, and 402 or 429 stop the caller with a typed error.
+
+These tests run with a fresh operator attestation and an isolated state directory, so the shared spend
+gate admits the request (its refusals are covered in test_wandb_spend_gate.py).
+"""
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -14,7 +20,7 @@ REPO_ROOT = Path(__file__).parent.parent
 
 
 @pytest.fixture()
-def llm(monkeypatch):
+def llm(monkeypatch, tmp_path):
     spec = importlib.util.spec_from_file_location("agent_llm", REPO_ROOT / ".agent/harness/llm.py")
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -22,6 +28,14 @@ def llm(monkeypatch):
     spec.loader.exec_module(module)
     monkeypatch.setattr(module, "_maybe_init_wandb_weave_tracing", lambda: None)
     monkeypatch.setenv("DEEPSEEK_V4_FLASH_WANDB", "test-key")
+    monkeypatch.setenv("OPENCLAW_STATE_DIR", str(tmp_path / "operator"))
+    attestation = tmp_path / "operator" / "provider-attestations" / "wandb-inference.json"
+    attestation.parent.mkdir(parents=True)
+    attestation.write_text(json.dumps({
+        "provider": "wandb-inference", "attested_by": "operator",
+        "attested_at": datetime.now(timezone.utc).isoformat(),
+        "plan_is_free": True, "payg_inactive": True, "allowance_remaining": True,
+    }), encoding="utf-8")
     return module
 
 
@@ -35,7 +49,7 @@ def _client_factory(captured: dict, create):
 
 
 def _ok(**kwargs):
-    return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content="hi"))])
+    return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content="hi"))], usage=None)
 
 
 def _status_error(code: int):
