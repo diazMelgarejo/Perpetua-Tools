@@ -117,7 +117,8 @@ These are decided and being implemented; they are not yet verified.
   `23cdc03`; the same 5 fail at the base (the sandbox lacks Git state discovery). The independent
   PT review approved with no Critical or Important findings; its four Minor items were fixed or
   documented (settle fallback, `.migrated`, per-phase timeout documented, fail-closed default
-  documented). A rerun at the final PT head is in progress.
+  documented). The rerun at the final PT code head (`docs(spend-gate)` commit) gave 3674 passed,
+  13 skipped and the same 5 environment-only failures as the base.
 - Orama integration (17 commits on `bd5931a2`): 421 passed, 18 skipped across the affected suites
   against the integrated PT. Docstrings are 100% on all touched files; docstring-only commits were
   proven by `ast.dump` equality with docstrings stripped. The independent orama review returned
