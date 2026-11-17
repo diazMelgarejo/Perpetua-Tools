@@ -209,3 +209,14 @@ def test_the_module_loads_by_file_path_without_the_package(state: Path) -> None:
     spec.loader.exec_module(module)
     _attest()
     assert module.SpendGate(now=lambda: NOW).preflight(100, 900)["ok"] is True
+
+
+def test_the_exceptions_a_consumer_must_catch_are_public_module_attributes() -> None:
+    """Consumers catch these names from spend_gate instead of reaching into its private imports."""
+    import orchestrator.cost_guard as cg
+    import orchestrator.spend_gate as sg
+
+    assert sg.ProviderPolicyError is pl.ProviderPolicyError
+    assert sg.BudgetExceededError is cg.BudgetExceededError
+    assert sg.UnknownReservationError is cg.UnknownReservationError
+    assert {"ProviderPolicyError", "BudgetExceededError", "UnknownReservationError"} <= set(sg.__all__)

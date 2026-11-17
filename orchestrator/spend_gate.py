@@ -45,6 +45,18 @@ except ImportError:  # loaded by file path: bring the sibling modules in under a
     _cg = importlib.import_module(f"{_PRIVATE_PACKAGE}.cost_guard")
     _pl = importlib.import_module(f"{_PRIVATE_PACKAGE}.provider_limits")
 
+# Public names for the exceptions a consumer must handle, so no caller reaches into the private imports.
+# ProviderPolicyError: no valid policy (SpendGate() refuses). BudgetExceededError and
+# UnknownReservationError are what the underlying guard raises; PermissionError (an unsafe spend store)
+# is the builtin.
+ProviderPolicyError = _pl.ProviderPolicyError
+BudgetExceededError = _cg.BudgetExceededError
+UnknownReservationError = _cg.UnknownReservationError
+
+__all__ = [
+    "DEFAULT_PROVIDER", "SpendGate", "ProviderPolicyError", "BudgetExceededError", "UnknownReservationError",
+]
+
 DEFAULT_PROVIDER = "wandb-inference"
 
 
