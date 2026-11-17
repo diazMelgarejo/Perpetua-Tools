@@ -82,21 +82,21 @@ implemented and tested on PR #519's branch.
 
 ### Orama independent review (request changes) and the fixes it led to (lane O6)
 
-These are decided and being implemented; they are not yet verified.
+All five are implemented with failing-first tests and verified (see Verification below).
 
-11. A live-cycle abnormal exit kills the whole launcher process group. The launcher starts with
-    `start_new_session=True`; on timeout, pipe error or interrupt the group is SIGKILLed before a
-    bounded reap, so a grandchild holding the pipes cannot hang the cycle past `timeout_s`.
-12. After `Popen` succeeds the request counts as sent: the `finally` never releases a sent
-    reservation. If settling fails after send, the reservation is left to its declared hold and
-    the error is surfaced, so a sent request is never recorded as zero spend.
-13. Receipt binding also compares the card's `delta` with the receipt trace's
-    `metric_after - metric_before` (with a tolerance for float rounding), so a receipt for `X@1`
-    cannot promote a different card that reuses the id `X@1`.
-14. `pin_evaluator` uses a unique temp file (`mkstemp` in the pin's directory), so concurrent
-    pinning in one process cannot collide.
-15. The sandbox checks that an exit probe exists before starting the child, so a platform with no
-    probe fails closed before any model-written code runs.
+- **11.** A live-cycle abnormal exit kills the whole launcher process group. The launcher starts with
+  `start_new_session=True`; on timeout, pipe error or interrupt the group is SIGKILLed before a
+  bounded reap, so a grandchild holding the pipes cannot hang the cycle past `timeout_s`.
+- **12.** After `Popen` succeeds the request counts as sent: the `finally` never releases a sent
+  reservation. If settling fails after send, the reservation is left to its declared hold and
+  the error is surfaced, so a sent request is never recorded as zero spend.
+- **13.** Receipt binding also compares the card's `delta` with the receipt trace's
+  `metric_after - metric_before` (with a tolerance for float rounding), so a receipt for `X@1`
+  cannot promote a different card that reuses the id `X@1`.
+- **14.** `pin_evaluator` uses a unique temp file (`mkstemp` in the pin's directory), so concurrent
+  pinning in one process cannot collide.
+- **15.** The sandbox checks that an exit probe exists before starting the child, so a platform with
+  no probe fails closed before any model-written code runs.
 
 ## Changes per repository
 
@@ -110,6 +110,9 @@ These are decided and being implemented; they are not yet verified.
   hold, settle unknown); `bin/agents/sandbox_run.py` (group-first cleanup, exit probes); doc 76
   rows G3 and G9 move from Open to Resolved, with the metaresearcher skill and runbook updated.
   Files under `docs/v2/references/biafra/live-cycle-2026-11-17/harness/` were not touched.
+  `.gitignore` now ignores `__pycache__/` and `*.py[cod]` after the `!…/lib/**` negations (the last
+  matching rule wins), so test bytecode in the re-included lib directories stays untracked;
+  `tests/test_gitignore_bytecode.py` guards it.
 
 ## Verification so far
 
