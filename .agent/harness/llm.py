@@ -264,7 +264,14 @@ def _call_wandb(system, user, *, temperature, max_tokens, model):
     except BaseException:
         _settle_unknown_quietly(gate, reservation, input_chars, "request-failed")
         raise
-    gate.settle(reservation, input_chars, output_chars, "ok", _WANDB_SEAT, _WANDB_MODE)
+    try:
+        gate.settle(reservation, input_chars, output_chars, "ok", _WANDB_SEAT, _WANDB_MODE)
+    except Exception as exc:
+        # The answer is paid for: never lose it to an accounting failure. If the commit already happened
+        # (for example the audit write failed) settle_unknown finds no reservation and is a reported no-op;
+        # if it did not, the whole reservation is charged so the spend is not dropped.
+        print(f"spend accounting failed after a paid answer: {type(exc).__name__}: {exc}", file=sys.stderr)
+        _settle_unknown_quietly(gate, reservation, input_chars, "settle-failed")
     return content
 
 

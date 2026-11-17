@@ -308,3 +308,71 @@ def test_sdk_retries_stay_disabled(llm, monkeypatch) -> None:
     created, sent = _install(monkeypatch, _ok)
     _call(llm)
     assert next(k for tag, k in created if tag == "init")["max_retries"] == 0
+
+
+def _projected_charge() -> float:
+    """The full reservation the harness holds for the test prompt."""
+    return pl.projected_usd(pl.load_policy("wandb-inference"), len("sys") + len("user prompt"))
+
+
+def test_a_settle_failure_before_the_commit_keeps_the_answer_and_charges_the_reservation(
+    llm, monkeypatch, capsys
+) -> None:
+    """If settle raises before anything is committed, the paid answer is returned and the whole
+    reservation is charged through settle_unknown; the accounting error is reported on stderr."""
+    _attest()
+    _install(monkeypatch, _ok)
+    real = llm._wandb_spend_gate
+
+    def broken_gate():
+        """Test double: a gate whose commit fails once, before the spend is recorded."""
+        gate = real()
+
+        commit = gate.guard.commit_sync
+        calls = []
+
+        def fail_once(*args, **kwargs):
+            """Raise as the store would on the first commit, then behave normally."""
+            calls.append(args)
+            if len(calls) == 1:
+                raise RuntimeError("store write failed")
+            return commit(*args, **kwargs)
+
+        monkeypatch.setattr(gate.guard, "commit_sync", fail_once)
+        return gate
+
+    monkeypatch.setattr(llm, "_wandb_spend_gate", broken_gate)
+    assert _call(llm) == "hello"
+    guard = _guard()
+    assert guard.in_flight() == 0.0
+    assert guard.snapshot()["daily_spend"] == pytest.approx(_projected_charge(), abs=1e-6)
+    assert "RuntimeError: store write failed" in capsys.readouterr().err
+
+
+def test_a_settle_failure_after_the_commit_keeps_the_answer_and_does_not_double_charge(
+    llm, monkeypatch, capsys
+) -> None:
+    """If the audit write fails after the commit, the spend is already recorded: the answer is still
+    returned, nothing is charged twice, and the error is reported on stderr."""
+    _attest()
+    _install(monkeypatch, _ok)
+    real = llm._wandb_spend_gate
+
+    def audit_fails():
+        """Test double: a gate whose audit append raises after the commit."""
+        gate = real()
+
+        def fail(row):
+            """Raise as a full disk would."""
+            raise OSError("audit disk full")
+
+        monkeypatch.setattr(gate, "_audit", fail)
+        return gate
+
+    monkeypatch.setattr(llm, "_wandb_spend_gate", audit_fails)
+    assert _call(llm) == "hello"
+    guard = _guard()
+    assert guard.in_flight() == 0.0
+    spent = guard.snapshot()["daily_spend"]
+    assert 0.0 < spent < _projected_charge() + 1e-9  # the estimate, charged once
+    assert "audit disk full" in capsys.readouterr().err
