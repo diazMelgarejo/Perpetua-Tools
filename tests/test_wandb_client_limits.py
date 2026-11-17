@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import socket
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -28,6 +29,13 @@ def llm(monkeypatch, tmp_path):
     sys.modules["agent_llm"] = module
     spec.loader.exec_module(module)
     monkeypatch.setattr(module, "_maybe_init_wandb_weave_tracing", lambda: None)
+    monkeypatch.delenv("DEEPSEEK_V4_FLASH_WANDB_PROJECT", raising=False)
+    monkeypatch.setattr(socket.socket, "connect", lambda *args, **kwargs: pytest.fail("network forbidden"))
+    # Exercise the worker protocol offline with the SDK doubles installed by each test.
+    worker_spec = importlib.util.spec_from_file_location("wandb_worker_test", REPO_ROOT / "src/perpetua_tools/wandb_worker.py")
+    worker = importlib.util.module_from_spec(worker_spec)
+    worker_spec.loader.exec_module(worker)
+    monkeypatch.setattr(module, "_run_wandb_worker", lambda request, timeout: worker.complete(request))
     monkeypatch.setenv("DEEPSEEK_V4_FLASH_WANDB", "test-key")
     monkeypatch.setenv("OPENCLAW_STATE_DIR", str(tmp_path / "operator"))
     attestation = tmp_path / "operator" / "provider-attestations" / "wandb-inference.json"

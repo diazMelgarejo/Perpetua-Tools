@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import socket
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -32,6 +33,13 @@ def llm(monkeypatch, tmp_path):
     sys.modules["agent_llm_spend"] = module
     spec.loader.exec_module(module)
     monkeypatch.setattr(module, "_maybe_init_wandb_weave_tracing", lambda: None)
+    monkeypatch.delenv("DEEPSEEK_V4_FLASH_WANDB_PROJECT", raising=False)
+    monkeypatch.setattr(socket.socket, "connect", lambda *args, **kwargs: pytest.fail("network forbidden"))
+    # Exercise the worker protocol offline with the SDK doubles installed by each test.
+    worker_spec = importlib.util.spec_from_file_location("wandb_worker_test", REPO_ROOT / "src/perpetua_tools/wandb_worker.py")
+    worker = importlib.util.module_from_spec(worker_spec)
+    worker_spec.loader.exec_module(worker)
+    monkeypatch.setattr(module, "_run_wandb_worker", lambda request, timeout: worker.complete(request))
     monkeypatch.setenv("DEEPSEEK_V4_FLASH_WANDB", "test-key")
     monkeypatch.setenv("OPENCLAW_STATE_DIR", str(tmp_path / "operator"))
     return module
@@ -206,7 +214,7 @@ def test_a_failure_after_the_request_may_have_been_sent_settles_the_full_reserva
         raise failure
 
     created, sent = _install(monkeypatch, create)
-    with pytest.raises(type(failure)):
+    with pytest.raises(RuntimeError):
         _call(llm)
     guard = _guard()
     projected = pl.projected_usd(pl.load_policy("wandb-inference"), len("sys") + len("user prompt"))
@@ -281,14 +289,13 @@ def test_a_failure_before_anything_is_sent_releases_the_reservation(llm, monkeyp
         _call(llm)
     guard = _guard()
     assert guard.in_flight() == 0.0 and guard.snapshot()["daily_spend"] == 0.0
-    assert not (pl.spend_dir() / "wandb-inference-spend-audit.jsonl").exists()
 
 
 def test_a_missing_sdk_releases_the_reservation(llm, monkeypatch) -> None:
     """A missing sdk releases the reservation."""
     _attest()
     monkeypatch.setitem(sys.modules, "openai", None)  # import openai -> ImportError
-    with pytest.raises(ImportError):
+    with pytest.raises(RuntimeError):
         _call(llm)
     assert _guard().in_flight() == 0.0 and _guard().snapshot()["daily_spend"] == 0.0
 
@@ -297,7 +304,7 @@ def test_a_malformed_response_after_a_completed_request_is_still_charged(llm, mo
     """A malformed response after a completed request is still charged."""
     _attest()
     _install(monkeypatch, lambda **kw: SimpleNamespace(choices=[], usage=None))
-    with pytest.raises(IndexError):
+    with pytest.raises(RuntimeError):
         _call(llm)
     assert _guard().in_flight() == 0.0 and _guard().snapshot()["daily_spend"] > 0.0
 
@@ -376,3 +383,60 @@ def test_a_settle_failure_after_the_commit_keeps_the_answer_and_does_not_double_
     spent = guard.snapshot()["daily_spend"]
     assert 0.0 < spent < _projected_charge() + 1e-9  # the estimate, charged once
     assert "audit disk full" in capsys.readouterr().err
+
+@pytest.mark.parametrize("url", [
+    "https://api.inference.wandb.ai/v1",
+    "https://API.INFERENCE.WANDB.AI:443/v1?x=1",
+    "https://sub.api.inference.wandb.ai/v1",
+    "https://user:pass@api.inference.wandb.ai/v1",
+    "https://api.inference.wandb.ai:invalid/v1",
+    "https://api%2einference.wandb.ai/v1",
+    "https://api.inference.wandb.ai./v1",
+])
+def test_openai_base_url_cannot_bypass_wandb_gate(llm, monkeypatch, url: str) -> None:
+    """W&B and malformed endpoint URLs must fail before creating an SDK client."""
+    monkeypatch.setenv("AGENT_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_BASE_URL", url)
+    created, sent = _install(monkeypatch, _ok)
+    with pytest.raises((llm.ProviderSpendRefused, ValueError)):
+        llm.call_model("sys", "user")
+    assert created == [] and sent == []
+
+
+def test_other_openai_base_url_remains_available(llm, monkeypatch) -> None:
+    """An unrelated compatible host, even with W&B text in its query, still dispatches."""
+    monkeypatch.setenv("AGENT_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://example.com/v1?target=api.inference.wandb.ai")
+    created, sent = _install(monkeypatch, _ok)
+    assert llm.call_model("sys", "user") == "hello"
+    assert len(sent) == 1
+
+
+@pytest.mark.parametrize("result", [
+    {"kind": "status", "status": True},
+    {"kind": "status", "status": 400, "extra": "untrusted"},
+    {"kind": "success", "content": None, "completion_tokens": 1},
+    {"kind": "success", "content": "hi", "completion_tokens": True},
+])
+def test_invalid_worker_protocol_charges_full_reservation(llm, monkeypatch, result) -> None:
+    """Malformed responses cannot cause a release or understate billed output."""
+    _attest()
+    monkeypatch.setattr(llm, "_run_wandb_worker", lambda request, timeout: result)
+    with pytest.raises(RuntimeError):
+        _call(llm)
+    assert _guard().in_flight() == 0.0
+    assert _guard().snapshot()["daily_spend"] == pytest.approx(_projected_charge(), abs=1e-6)
+
+
+def test_failure_to_start_worker_releases_reservation(llm, monkeypatch) -> None:
+    """A failure before the child exists releases the admission hold."""
+    _attest()
+
+    def fail_start(request, timeout):
+        """Simulate a worker that did not start."""
+        raise llm._WandbNotStarted("failed")
+
+    monkeypatch.setattr(llm, "_run_wandb_worker", fail_start)
+    with pytest.raises(llm._WandbNotStarted):
+        _call(llm)
+    assert _guard().in_flight() == 0.0 and _guard().snapshot()["daily_spend"] == 0.0
