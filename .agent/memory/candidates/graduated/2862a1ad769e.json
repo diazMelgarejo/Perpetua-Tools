@@ -1,0 +1,63 @@
+{
+  "id": "2862a1ad769e",
+  "key": "manual_2862a1",
+  "name": "manual_2862a1",
+  "claim": "Once a request may have been sent, never release its reservation: after Popen succeeds the request counts as sent, so a failure releases nothing and settles unknown, and if settling itself fails leave the reservation to its declared hold and surface the error. A sent request must never be recorded as zero spend.",
+  "conditions": [
+    "after",
+    "counts",
+    "declared",
+    "error",
+    "fails",
+    "failure",
+    "hold",
+    "itself",
+    "leave",
+    "never",
+    "nothing",
+    "once",
+    "popen",
+    "recorded",
+    "release",
+    "releases",
+    "request",
+    "reservation",
+    "sent",
+    "settles",
+    "settling",
+    "spend",
+    "succeeds",
+    "surface",
+    "unknown",
+    "zero"
+  ],
+  "evidence_ids": [
+    "2026-11-17T18:51:16.196231+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-17T18:51:16.196231+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-17T18:51:16.196231+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-17T18:51:20.698648+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Decided in the 2026-11-17 Biafra lockstep remediation (see BIAFRA_LOCKSTEP_REMEDIATION_2026-11-17.md); reusable beyond this change. Orama review fixes 11-15 are decided and in progress, not verified.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-17T18:51:16.196231+00:00"
+      ],
+      "lessons_sha": "ccdecd9be5fb"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-17T18:51:20.698630+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Decided in the 2026-11-17 Biafra lockstep remediation (see BIAFRA_LOCKSTEP_REMEDIATION_2026-11-17.md); reusable beyond this change. Orama review fixes 11-15 are decided and in progress, not verified."
+}

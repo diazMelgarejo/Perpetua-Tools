@@ -1,0 +1,77 @@
+{
+  "id": "79ba3f2791c0",
+  "key": "manual_79ba3f",
+  "name": "manual_79ba3f",
+  "claim": "When cleaning up a launched process tree, never reap the group leader before signalling the process group: reaping frees the pid so the group can no longer be addressed safely and a grandchild holding the pipes can outlive the cycle. Start the child in its own session, arm cleanup immediately after Popen, SIGKILL the group first, then do a bounded reap; if no exit probe exists on the platform, fail closed before starting the child.",
+  "conditions": [
+    "addressed",
+    "after",
+    "arm",
+    "before",
+    "bounded",
+    "child",
+    "cleaning",
+    "cleanup",
+    "closed",
+    "cycle",
+    "exists",
+    "exit",
+    "fail",
+    "first",
+    "frees",
+    "grandchild",
+    "group",
+    "holding",
+    "immediately",
+    "launched",
+    "leader",
+    "longer",
+    "never",
+    "outlive",
+    "own",
+    "pid",
+    "pipes",
+    "platform",
+    "popen",
+    "probe",
+    "process",
+    "reap",
+    "reaping",
+    "safely",
+    "session",
+    "sigkill",
+    "signalling",
+    "start",
+    "starting",
+    "tree"
+  ],
+  "evidence_ids": [
+    "2026-11-17T18:51:16.087885+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-17T18:51:16.087885+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-17T18:51:16.087885+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-17T18:51:21.413425+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Decided in the 2026-11-17 Biafra lockstep remediation (see BIAFRA_LOCKSTEP_REMEDIATION_2026-11-17.md); reusable beyond this change. Orama review fixes 11-15 are decided and in progress, not verified.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-17T18:51:16.087885+00:00"
+      ],
+      "lessons_sha": "652716e10a62"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-17T18:51:21.413404+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Decided in the 2026-11-17 Biafra lockstep remediation (see BIAFRA_LOCKSTEP_REMEDIATION_2026-11-17.md); reusable beyond this change. Orama review fixes 11-15 are decided and in progress, not verified."
+}
