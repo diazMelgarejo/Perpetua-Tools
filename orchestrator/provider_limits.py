@@ -53,7 +53,11 @@ def spend_dir() -> Path:
     return state_dir() / "spend"
 
 
-_AUDIT_TEXT_FIELDS = {"ts", "seat", "mode", "outcome", "provider", "policy_id", "label", "basis"}
+# Free-text fields (except ts) are short identifiers only: no spaces or prose, so a prompt cannot be
+# stored under outcome/seat/label/etc. Enum vocabularies for seat/outcome are not defined in-repo yet.
+_AUDIT_ID_FIELDS = {"seat", "mode", "outcome", "provider", "policy_id", "label", "basis"}
+_AUDIT_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$")
+_AUDIT_TEXT_FIELDS = {"ts"} | _AUDIT_ID_FIELDS
 _AUDIT_SIZE_FIELDS = {"input_chars", "output_chars", "estimated_usd"}
 _AUDIT_BOOL_FIELDS = {"estimated"}
 _AUDIT_FIELDS = _AUDIT_TEXT_FIELDS | _AUDIT_SIZE_FIELDS | _AUDIT_BOOL_FIELDS
@@ -61,16 +65,18 @@ _AUDIT_FIELDS = _AUDIT_TEXT_FIELDS | _AUDIT_SIZE_FIELDS | _AUDIT_BOOL_FIELDS
 
 def append_audit(path: Path, row: Mapping[str, Any]) -> None:
     """Append one size-only audit row. Only the schema's fields are allowed, each with its own type, so a
-    prompt, answer, key or raw output cannot be smuggled in under any key name or inside a nested value."""
+    prompt, answer, key or raw output cannot be smuggled in under any key name, as nested values, or as
+    free prose in an identifier field."""
     bad = sorted(set(row) & _AUDIT_FORBIDDEN)
     if bad:
         raise ValueError(f"audit rows store sizes only; refused field(s): {', '.join(bad)}")
     extra = sorted(set(row) - _AUDIT_FIELDS)
     if extra:
         raise ValueError(f"audit rows store sizes only; unknown field(s): {', '.join(extra)}")
-    for name in _AUDIT_TEXT_FIELDS & set(row):
-        if not isinstance(row[name], str):
-            raise ValueError(f"{name} must be text")
+    for name in _AUDIT_ID_FIELDS & set(row):
+        value = row[name]
+        if not isinstance(value, str) or _AUDIT_ID.fullmatch(value) is None:
+            raise ValueError(f"{name} must be a short identifier (letters, digits, _.-; max 64)")
     for name in _AUDIT_BOOL_FIELDS & set(row):
         if not isinstance(row[name], bool):
             raise ValueError(f"{name} must be true or false")

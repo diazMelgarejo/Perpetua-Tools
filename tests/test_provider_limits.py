@@ -274,6 +274,9 @@ def test_audit_rows_store_sizes_only(policy, tmp_path: Path) -> None:
     {"output_chars": float("inf")},
     {"outcome": {"nested": 1}},                   # non-scalar outcome
     {"estimated": "yes"},
+    {"outcome": "sensitive prompt text"},         # prose / spaces under an id field
+    {"seat": "x" * 65},                           # identifier longer than 64
+    {"label": "has spaces"},
 ])
 def test_audit_rows_follow_the_size_only_schema(tmp_path: Path, bad) -> None:
     log = tmp_path / "audit.jsonl"
