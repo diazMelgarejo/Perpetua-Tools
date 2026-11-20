@@ -237,6 +237,7 @@
 - A portal rebuild started without its token env auto-generates a new inbound control-plane token and silently returns 401 to every peer holding the previously shared token; re-pin the shared contract token via the process env at restart, and keep one shared token in both directions with out-of-band rotation.  <!-- status=accepted confidence=0.9 evidence=1 id=7fe89fda8b0c -->
 - Before claiming a pin or fingerprint matches nothing, inventory every CA, leaf and token file on disk including backups, worktrees and handoff archives, and maintain a TRUST-INVENTORY.md with one row per credential (DER sha256, path, role, valid-to).  <!-- status=accepted confidence=0.9 evidence=1 id=5b2fac9138da -->
 - Correction 2026-11-17: after the portal rebuild the Mac portal listened on loopback only (loopback:8002) with PORTAL_BIND_LAN=1; all peer traffic used the 8443 TLS front end, and the earlier claim that PORTAL_BIND_LAN=1 binds 0.0.0.0:8002 did not hold on this host.  <!-- status=legacy confidence=0.7 evidence=0 id=lesson_legacy_13f6d7eab51e -->
+- Internal-classified project materials (handoffs, working folders, workbooks, clones and anything derived from them) stay off every repository, pull request, issue, commit message, lesson and memory file; only the data-free handoff and its checksummed bundle may be referenced by path and category, and nothing is pushed or published unless the operator explicitly commands that exact push or publish.  <!-- status=accepted confidence=0.95 evidence=1 id=efad435cee5c -->
 
 ### 2026-10
 

@@ -1,0 +1,42 @@
+{
+  "id": "efad435cee5c",
+  "key": "efad435cee5c",
+  "name": "efad435cee5c",
+  "claim": "Internal-classified project materials (handoffs, working folders, workbooks, clones and anything derived from them) stay off every repository, pull request, issue, commit message, lesson and memory file; only the data-free handoff and its checksummed bundle may be referenced by path and category, and nothing is pushed or published unless the operator explicitly commands that exact push or publish.",
+  "conditions": [
+    "privacy",
+    "boundary",
+    "data_free",
+    "operator_authority",
+    "eeg"
+  ],
+  "evidence_ids": [
+    "2026-11-20T05:45:00Z"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 9.5,
+  "staged_at": "2026-11-20T05:45:00Z",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-20T05:45:00Z",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-20T05:45:00Z",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Broadcast to all local agents during the EEG pickup; the rule restates the operator boundary already enforced on the public-side audit and adds the explicit push/publish gate.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-20T05:45:00Z"
+      ],
+      "lessons_sha": "efad435cee5c_v1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-20T05:45:00Z",
+  "reviewer": "learn.py",
+  "rationale": "Internal materials must never leak through memory, lessons or automation; sharing requires an explicit operator command naming the artifact."
+}
