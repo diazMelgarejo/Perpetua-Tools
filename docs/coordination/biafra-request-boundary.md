@@ -50,3 +50,18 @@ same-day provider-evidence checks. Operator persona and route decisions, real
 account billing state, native platform qualification and live activation remain
 separate. Final integrated test results and publication state are recorded in
 the execution handoff, not inferred from earlier PR descriptions.
+
+## November 20 publication and deferred debt
+
+The user released the earlier publication hold for the existing PT #516 and
+Orama #519, with one push per repository and no merge instruction. Publish PT
+first, then pin its actual remote head in Orama before the Orama push.
+
+The canonical deferred-debt inventory is in the paired Orama PR:
+`docs/v2/references/biafra/unrelated-failure-catalogue-2026-11-20.md`.
+It enumerates seven unchanged-base Orama failures (three TLS trust-isolation
+assertions and four POSIX process-containment assertions), resolved setup issues,
+historical-only reports and warning debt. The recorded PT full run passed 3700
+tests with 12 skips and 15 warnings; this is earlier run evidence, not a fresh
+full suite on the November 20 publication commit. Neither failures nor native
+qualification gates are waived by publication.
