@@ -46,10 +46,12 @@ def state_dir() -> Path:
 
 
 def attestation_path(provider: str) -> Path:
+    """Return the operator attestation file for the named provider."""
     return state_dir() / "provider-attestations" / f"{provider}.json"
 
 
 def spend_dir() -> Path:
+    """Return the shared state directory for spend ledgers and audits."""
     return state_dir() / "spend"
 
 
@@ -91,6 +93,7 @@ def append_audit(path: Path, row: Mapping[str, Any]) -> None:
 
 
 def _finite_positive(value: Any) -> bool:
+    """Accept finite positive numeric policy values, excluding booleans."""
     return (
         isinstance(value, (int, float)) and not isinstance(value, bool)
         and math.isfinite(value) and value > 0
@@ -98,13 +101,16 @@ def _finite_positive(value: Any) -> bool:
 
 
 def _size(value: Any, name: str) -> float:
+    """Validate a finite nonnegative size and return it as a float."""
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
         raise ValueError(f"{name} must be a finite number >= 0")
     return float(value)
 
 
 def _validate(policy: Mapping[str, Any]) -> None:
+    """Reject malformed or unsafe provider policy fields before use."""
     def need(cond: bool, msg: str) -> None:
+        """Raise a policy error when a required invariant is false."""
         if not cond:
             raise ProviderPolicyError(msg)
 
@@ -228,6 +234,7 @@ def _default_fetch(url: str, timeout: float) -> str:
 
 
 def _plain(markup: str) -> str:
+    """Normalize fetched HTML into plain text for reference matching."""
     text = re.sub(r"<(script|style)\b.*?</\1>", " ", markup, flags=re.S | re.I)
     text = re.sub(r"<[^>]+>", " ", text)
     text = html.unescape(text).replace("’", "'").replace("‘", "'").replace("`", "")
@@ -265,7 +272,8 @@ def verify_live(
 class _QuietParser(argparse.ArgumentParser):
     """An argument parser that never echoes the arguments it rejected (one of them could be a secret)."""
 
-    def error(self, message: str):  # type: ignore[override]
+    def error(self, message: str) -> None:  # type: ignore[override]
+        """Exit on invalid arguments without echoing potentially secret input."""
         print("refused: invalid arguments", file=sys.stderr)
         raise SystemExit(2)
 
@@ -276,6 +284,7 @@ def _is_interactive() -> bool:
 
 
 def _attest(args: argparse.Namespace) -> int:
+    """Require an interactive confirmation before writing an operator attestation."""
     policy = load_policy(args.provider)
     problems = []
     for flag in ("plan_free", "payg_inactive", "allowance_remaining"):
@@ -306,6 +315,7 @@ def _attest(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Dispatch the provider policy status, verification, or attestation command."""
     args = list(sys.argv[1:] if argv is None else argv)
     if args and args[0] == "attest":
         ap = _QuietParser(prog="provider_limits attest", add_help=False)

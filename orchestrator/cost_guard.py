@@ -4,8 +4,8 @@ Settled spend and live reservations live in one private SQLite store beside the 
 CostGuard instance and every process that uses the same state directory and budget file shares one
 ledger. reserve() checks settled spend plus every live reservation and records the new hold inside one
 ``BEGIN IMMEDIATE`` transaction, so two callers cannot both pass the check against the same last dollars.
-An existing budget JSON is imported into the store once and renamed to ``<name>.migrated`` in the same
-transaction; it is never read or written again, and a missing store beside a ``.migrated`` file fails closed.
+An existing budget JSON is imported into the store once and renamed to ``<name>.migrated`` after
+the import commits; it is never read or written again, and a missing store beside a ``.migrated`` file fails closed.
 """
 from __future__ import annotations
 
@@ -36,6 +36,10 @@ _DEFAULT_BUDGET = {
 
 class BudgetExceededError(Exception):
     """Raised by reserve() when settled spend + in-flight reservations would exceed budget."""
+
+
+class SpendReconciliationRequiredError(RuntimeError):
+    """An expired possibly sent request must be reconciled before further admissions."""
 
 
 class UnknownReservationError(Exception):
@@ -106,7 +110,10 @@ class CostGuard:
 
     @contextmanager
     def _txn(self) -> Iterator[sqlite3.Connection]:
-        """Open the private store and run one ``BEGIN IMMEDIATE`` transaction; commit or roll back."""
+        """Commit schema initialization first, then run the operation in its own transaction.
+
+        Initialization is independently durable so a refused operation cannot undo a legacy import.
+        """
         connection = open_private_sqlite(
             self.state_dir, self.store_path.name,
             dir_label="spend state", file_label="spend ledger", timeout=5,
@@ -116,6 +123,13 @@ class CostGuard:
             connection.execute("BEGIN IMMEDIATE")
             try:
                 self._ensure_schema(connection)
+                connection.execute("COMMIT")
+            except BaseException:
+                connection.execute("ROLLBACK")
+                raise
+            self._finish_legacy_migration(connection)
+            connection.execute("BEGIN IMMEDIATE")
+            try:
                 yield connection
             except BaseException:
                 connection.execute("ROLLBACK")
@@ -137,6 +151,16 @@ class CostGuard:
         db.execute(
             "CREATE TABLE IF NOT EXISTS swept (id TEXT PRIMARY KEY, amount REAL NOT NULL, swept_at REAL NOT NULL)"
         )
+        db.execute("CREATE TABLE IF NOT EXISTS migration (id INTEGER PRIMARY KEY CHECK(id = 1))")
+        columns = {row[1] for row in db.execute("PRAGMA table_info(reservations)")}
+        if "uncertain" not in columns:
+            db.execute("ALTER TABLE reservations ADD COLUMN uncertain INTEGER NOT NULL DEFAULT 0")
+            # Older ledgers do not distinguish sent from unsent work. Preserve all remaining
+            # holds and swept late-commit memories until someone reconciles their outcomes.
+            db.execute("UPDATE reservations SET uncertain = 1")
+            db.execute("INSERT INTO reservations (id, amount, reserved_at, expires_at, uncertain) "
+                       "SELECT id, amount, swept_at, 0, 1 FROM swept")
+            db.execute("DELETE FROM swept")
         if db.execute("SELECT 1 FROM budget WHERE id = 1").fetchone() is None:
             migrated = self.budget_path.with_name(self.budget_path.name + ".migrated")
             if migrated.exists():
@@ -155,10 +179,26 @@ class CostGuard:
                  str(seed.get("period") or "daily")),
             )
             if legacy:
-                # Inside the same open transaction: a failed rename rolls the import back, and the rename
-                # lands before COMMIT, so the JSON cannot be imported twice. A crash between the two leaves
-                # an empty store beside the .migrated file, which the check above refuses (fail closed).
-                os.replace(self.budget_path, migrated)
+                db.execute("INSERT INTO migration VALUES (1)")
+
+    def _finish_legacy_migration(self, db: sqlite3.Connection) -> None:
+        """Retry the post-commit rename without ever undoing the imported accounting."""
+        if db.execute("SELECT 1 FROM migration WHERE id = 1").fetchone() is None:
+            return
+        migrated = self.budget_path.with_name(self.budget_path.name + ".migrated")
+        if not migrated.exists():
+            try:
+                os.link(self.budget_path, migrated)
+            except FileExistsError:
+                pass
+            except FileNotFoundError:
+                if not migrated.exists():
+                    raise RuntimeError("legacy migration source disappeared")
+        try:
+            if os.path.samefile(self.budget_path, migrated):
+                self.budget_path.unlink(missing_ok=True)
+        except FileNotFoundError:
+            pass  # Another initializer completed the same rename.
 
     def _legacy_payload(self) -> Dict[str, Any] | None:
         """The pre-store budget JSON, validated, or None when there is none. A malformed file raises: starting
@@ -220,7 +260,7 @@ class CostGuard:
         return payload
 
     def _sweep(self, db: sqlite3.Connection) -> None:
-        """Release reservations whose own declared hold has run out. Caller holds the write transaction.
+        """Release expired ordinary reservations. Caller holds the write transaction.
 
         A swept reservation stops counting against the budget (an abandoned caller must not block it
         forever) but is remembered, so a commit that still arrives is recorded as a late commit. Old
@@ -228,15 +268,15 @@ class CostGuard:
         """
         now = time.time()
         db.execute(
-            "INSERT OR REPLACE INTO swept SELECT id, amount, ? FROM reservations WHERE expires_at < ?", (now, now)
+            "INSERT OR REPLACE INTO swept SELECT id, amount, ? FROM reservations WHERE expires_at < ? AND uncertain = 0", (now, now)
         )
-        db.execute("DELETE FROM reservations WHERE expires_at < ?", (now,))
+        db.execute("DELETE FROM reservations WHERE expires_at < ? AND uncertain = 0", (now,))
         db.execute("DELETE FROM swept WHERE swept_at < ?", (now - self.SWEPT_MEMORY_SECONDS,))
 
     def _in_flight(self, db: sqlite3.Connection) -> float:
-        """Dollars held by live (unexpired) reservations."""
+        """Dollars held by live reservations and all uncertain reservations."""
         return float(db.execute(
-            "SELECT COALESCE(SUM(amount), 0.0) FROM reservations WHERE expires_at >= ?", (time.time(),)
+            "SELECT COALESCE(SUM(amount), 0.0) FROM reservations WHERE expires_at >= ? OR uncertain = 1", (time.time(),)
         ).fetchone()[0])
 
     # -- synchronous accounting ---------------------------------------------------------------
@@ -272,11 +312,16 @@ class CostGuard:
         return out
 
     def set_budget(self, daily_budget: float) -> None:
-        """Set the budget ceiling for the shared ledger."""
+        """Set the ceiling only when the stored accounting period matches this guard.
+
+        Changing a ceiling does not reset spend, even if the current period has elapsed.
+        """
         if not math.isfinite(daily_budget) or daily_budget < 0:
             raise ValueError(f"daily_budget must be a non-negative finite number, got {daily_budget!r}")
         with self._txn() as db:
             p = self._row(db)
+            if p["period"] != self.period:
+                raise ValueError(f"budget file is {p['period']!r} but this guard is {self.period!r}")
             p["daily_budget"] = float(daily_budget)
             self._write(db, p)
 
@@ -306,7 +351,7 @@ class CostGuard:
 
     # -- atomic reserve / commit / rollback -------------------------------------------------------
 
-    def reserve_sync(self, estimated_cost: float, hold_seconds: float | None = None) -> str:
+    def reserve_sync(self, estimated_cost: float, hold_seconds: float | None = None, *, uncertain: bool = False) -> str:
         """Atomically hold ``estimated_cost`` against the budget; the blocking core of reserve().
 
         Checks settled spend PLUS every live reservation (from any instance or process) and records the
@@ -316,10 +361,12 @@ class CostGuard:
         and let others reserve past the budget; NaN makes every comparison False so the reservation
         would always "succeed" and poison settled spend on commit.
 
-        ``hold_seconds`` is how long this reservation is held before another reservation may sweep it
+        ``uncertain`` retains a potentially sent request until settlement or explicit release; an expired
+        uncertain hold blocks new admissions until reconciled. ``hold_seconds`` is how long this
+        reservation is held before another reservation may sweep it
         (default RESERVATION_TTL_SECONDS; at most MAX_HOLD_SECONDS). A caller whose request may run
-        longer than the default must declare that lifetime, or its reservation can be swept while the
-        request is still legitimately running.
+        longer than the default must declare that lifetime. Ordinary reservations can be swept after
+        expiry; uncertain reservations instead block further admissions until reconciled.
         """
         if not math.isfinite(estimated_cost) or estimated_cost < 0:
             raise ValueError(f"estimated_cost must be a non-negative finite number, got {estimated_cost!r}")
@@ -332,6 +379,8 @@ class CostGuard:
             raise ValueError(f"hold_seconds must be a finite number in (0, {self.MAX_HOLD_SECONDS:g}], got {hold_seconds!r}")
         with self._txn() as db:
             self._sweep(db)
+            if db.execute("SELECT 1 FROM reservations WHERE uncertain = 1 AND expires_at < ? LIMIT 1", (time.time(),)).fetchone():
+                raise SpendReconciliationRequiredError("expired uncertain spend requires reconciliation")
             p = self._current(db)
             in_flight = self._in_flight(db)
             if p["daily_spend"] + in_flight + estimated_cost > p["daily_budget"]:
@@ -343,8 +392,8 @@ class CostGuard:
             reservation_id = uuid.uuid4().hex
             now = time.time()
             db.execute(
-                "INSERT INTO reservations VALUES (?, ?, ?, ?)",
-                (reservation_id, estimated_cost, now, now + hold_seconds),
+                "INSERT INTO reservations (id, amount, reserved_at, expires_at, uncertain) VALUES (?, ?, ?, ?, ?)",
+                (reservation_id, estimated_cost, now, now + hold_seconds, int(uncertain)),
             )
             return reservation_id
 
@@ -363,7 +412,9 @@ class CostGuard:
         with self._txn() as db:
             self._sweep(db)
             late = False
-            row = db.execute("SELECT amount FROM reservations WHERE id = ?", (reservation_id,)).fetchone()
+            row = db.execute("SELECT amount, expires_at FROM reservations WHERE id = ?", (reservation_id,)).fetchone()
+            if row is not None:
+                late = row[1] < time.time()
             if row is None:
                 row = db.execute("SELECT amount FROM swept WHERE id = ?", (reservation_id,)).fetchone()
                 late = row is not None

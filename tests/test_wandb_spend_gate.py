@@ -190,10 +190,10 @@ def test_the_hold_covers_the_client_timeout(llm, monkeypatch) -> None:
         gate = real()
         original = gate.preflight
 
-        def preflight(chars, hold):
-            """Test helper or double: preflight."""
+        def preflight(chars: int, hold: float, max_tokens: int | None = None) -> dict:
+            """Observe the hold while forwarding the requested output limit."""
             seen.append(hold)
-            return original(chars, hold)
+            return original(chars, hold, max_tokens=max_tokens)
 
         gate.preflight = preflight
         return gate
@@ -381,7 +381,8 @@ def test_a_settle_failure_after_the_commit_keeps_the_answer_and_does_not_double_
     guard = _guard()
     assert guard.in_flight() == 0.0
     spent = guard.snapshot()["daily_spend"]
-    assert 0.0 < spent < _projected_charge() + 1e-9  # the estimate, charged once
+    expected = pl.estimate_usd(pl.load_policy("wandb-inference"), len("sys") + len("user prompt"), len("hello"))
+    assert spent == pytest.approx(expected, abs=1e-6)  # exactly one settled estimate
     assert "audit disk full" in capsys.readouterr().err
 
 @pytest.mark.parametrize("url", [
@@ -440,3 +441,28 @@ def test_failure_to_start_worker_releases_reservation(llm, monkeypatch) -> None:
     with pytest.raises(llm._WandbNotStarted):
         _call(llm)
     assert _guard().in_flight() == 0.0 and _guard().snapshot()["daily_spend"] == 0.0
+
+
+def test_failed_settlements_keep_durable_hold_after_expiry(llm, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A returned paid answer remains reserved when both settlement attempts fail."""
+    import sqlite3
+    _attest()
+    _install(monkeypatch, _ok)
+    real_gate = llm._wandb_spend_gate
+    def broken_gate():
+        """Simulate a ledger write failure before either settlement can commit."""
+        gate = real_gate()
+        def fail(*args: object, **kwargs: object) -> None:
+            """Reject the accounting write without changing durable state."""
+            raise OSError("ledger unavailable")
+        monkeypatch.setattr(gate, "settle", fail)
+        monkeypatch.setattr(gate, "settle_unknown", fail)
+        return gate
+    monkeypatch.setattr(llm, "_wandb_spend_gate", broken_gate)
+    assert _call(llm) == "hello"
+    guard = _guard()
+    with sqlite3.connect(guard.store_path) as db:
+        db.execute("UPDATE reservations SET expires_at = 0")
+    assert guard.in_flight() > 0
+    with pytest.raises(RuntimeError, match="reconcil"):
+        _guard().reserve_sync(0.01)

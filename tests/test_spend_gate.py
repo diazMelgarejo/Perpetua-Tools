@@ -154,7 +154,8 @@ def test_a_settle_after_the_hold_lapsed_still_records_the_spend_and_marks_the_ro
     with patch("orchestrator.cost_guard.time.time", return_value=start):
         pre = gate.preflight(4000, 100)
     with patch("orchestrator.cost_guard.time.time", return_value=start + 500):
-        gate.guard.reserve_sync(0.0)  # sweeps the lapsed hold
+        with pytest.raises(RuntimeError, match="reconcil"):
+            gate.guard.reserve_sync(0.0)  # uncertain holds require reconciliation
         usd = gate.settle(pre["reservation"], 4000, 100, "ok", "harness", "chat")
         assert gate.snapshot()["daily_spend"] == pytest.approx(usd, abs=1e-6)
     assert json.loads(gate.audit_path.read_text().splitlines()[-1])["basis"] == "late-commit"
@@ -220,3 +221,41 @@ def test_the_exceptions_a_consumer_must_catch_are_public_module_attributes() -> 
     assert sg.BudgetExceededError is cg.BudgetExceededError
     assert sg.UnknownReservationError is cg.UnknownReservationError
     assert {"ProviderPolicyError", "BudgetExceededError", "UnknownReservationError"} <= set(sg.__all__)
+
+
+def test_preflight_reserves_requested_output_limit(state: Path) -> None:
+    """The caller's output token limit contributes to the reserved ceiling."""
+    _attest()
+    gate = _gate()
+    output_tokens = 100000
+    pre = gate.preflight(1000, 900, max_tokens=output_tokens)
+    assert pre["projected_usd"] >= pl.estimate_usd(
+        gate.policy, 1000, output_tokens * gate.policy["projection"]["chars_per_token"]
+    )
+
+
+def test_expired_uncertain_hold_returns_structured_refusal(state: Path) -> None:
+    """An unresolved expired request refuses admission with a reconciliation reason."""
+    _attest()
+    gate = _gate()
+    start = datetime.now(timezone.utc).timestamp()
+    with patch("orchestrator.cost_guard.time.time", return_value=start):
+        pending = gate.preflight(100, 1)
+    with patch("orchestrator.cost_guard.time.time", return_value=start + 2):
+        refusal = _gate().preflight(100, 1)
+        assert refusal["ok"] is False and refusal["stop"] is True
+        assert refusal["reason"] == "spend-reconciliation-required"
+        gate.settle_unknown(pending["reservation"], 100, "reconcile", "test", "test")
+        assert _gate().preflight(100, 1)["ok"] is True
+
+
+def test_preflight_does_not_hide_unexpected_guard_errors(state: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Only the explicit reconciliation exception is converted to a refusal."""
+    _attest()
+    gate = _gate()
+    def fail(*args: object, **kwargs: object) -> None:
+        """Simulate an unexpected ledger failure."""
+        raise RuntimeError("unrelated failure")
+    monkeypatch.setattr(gate.guard, "reserve_sync", fail)
+    with pytest.raises(RuntimeError, match="unrelated failure"):
+        gate.preflight(100, 1)

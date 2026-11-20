@@ -167,7 +167,8 @@ _SPEND_GATE_MODULE = "pt_spend_gate"
 class ProviderSpendRefused(RuntimeError):
     """The shared spend gate refused a paid request BEFORE it was dispatched: a missing or stale operator
     attestation ("attestation-required"), an exhausted budget ("budget-exhausted") or an unusable guard
-    ("spend-guard-unavailable"). Nothing was sent and nothing was reserved. Stop; do not retry."""
+    ("spend-guard-unavailable"), or unresolved prior spend ("spend-reconciliation-required").
+    No new request was sent or reserved. Stop; do not retry."""
 
     def __init__(self, reason, detail=None):
         """Record the machine-readable ``reason`` and an optional human ``detail``."""
@@ -204,7 +205,7 @@ def _wandb_spend_gate():
 def _settle_unknown_quietly(gate, reservation, input_chars, outcome):
     """Charge the full reservation for a request that may have been sent. Never raises: this runs while
     another exception is propagating, and the original failure must not be masked. If accounting itself
-    fails, say so on stderr (the hold then lapses and is swept, which is why this is loud)."""
+    fails, say so on stderr; the durable uncertain hold requires reconciliation."""
     try:
         gate.settle_unknown(reservation, input_chars, outcome, _WANDB_SEAT, _WANDB_MODE)
     except Exception as exc:
@@ -256,7 +257,7 @@ def _call_wandb(system: str, user: str, *, temperature: float, max_tokens: int, 
     model = model or os.getenv("AGENT_MODEL", WANDB_DEFAULT_MODEL)
     input_chars = len(system) + len(user)
     gate = _wandb_spend_gate()
-    pre = gate.preflight(input_chars, _WANDB_HOLD_SECONDS)
+    pre = gate.preflight(input_chars, _WANDB_HOLD_SECONDS, max_tokens=max_tokens)
     if not pre["ok"]:
         raise ProviderSpendRefused(pre["reason"], "; ".join(pre.get("reasons") or []) or pre.get("error"))
     reservation = pre["reservation"]

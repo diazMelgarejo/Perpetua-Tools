@@ -101,21 +101,31 @@ class SpendGate:
         except (OSError, ValueError):
             return {}
 
-    def preflight(self, prompt_chars: int, hold_seconds: float) -> dict:
+    def preflight(self, prompt_chars: int, hold_seconds: float, max_tokens: int | None = None) -> dict:
         """Check the operator attestation, then reserve the projected cost for ``hold_seconds``.
 
-        ``hold_seconds`` must cover the request's whole allowed lifetime (including its timeout), or the
-        reservation can be swept while the request is still running. Returns ``{"ok": True, "reservation",
+        ``max_tokens``, when supplied, reserves at least the declared output limit using policy rates;
+        omitted values retain the legacy policy projection for compatible external callers. Reservations
+        remain uncertain until explicitly settled or released. ``hold_seconds`` covers the request's
+        allowed lifetime; after expiry an unresolved hold blocks admission until reconciled. Returns ``{"ok": True, "reservation",
         "projected_usd"}``, or ``{"ok": False, "stop": True, "reason": "attestation-required" |
-        "budget-exhausted", ...}``; in the refusal case nothing is reserved and the caller must not send.
+        "budget-exhausted" | "spend-reconciliation-required", ...}``; in the refusal case no new
+        reservation is created and the caller must not send.
         Raises ValueError for a negative or non-finite size or an invalid hold.
         """
         projected = _pl.projected_usd(self.policy, prompt_chars)
+        if max_tokens is not None:
+            if type(max_tokens) is not int or max_tokens <= 0:
+                raise ValueError("max_tokens must be a positive integer")
+            output_chars = max_tokens * self.policy["projection"]["chars_per_token"]
+            projected = max(projected, _pl.estimate_usd(self.policy, prompt_chars, output_chars))
         status = _pl.attestation_status(self.policy, self._attestation(), self._now())
         if not status["ok"]:
             return {"ok": False, "reason": "attestation-required", "stop": True, "reasons": status["reasons"]}
         try:
-            reservation = self.guard.reserve_sync(projected, hold_seconds)
+            reservation = self.guard.reserve_sync(projected, hold_seconds, uncertain=True)
+        except self.cg.SpendReconciliationRequiredError as exc:
+            return {"ok": False, "reason": "spend-reconciliation-required", "stop": True, "error": str(exc)}
         except self.cg.BudgetExceededError as exc:
             return {"ok": False, "reason": "budget-exhausted", "stop": True, "error": str(exc),
                     "projected_usd": projected}
