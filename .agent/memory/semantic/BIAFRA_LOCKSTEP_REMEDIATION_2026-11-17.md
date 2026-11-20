@@ -162,3 +162,21 @@ response. HTTP success alone establishes neither a refusal nor a valid answer;
 settle a valid paid answer and treat malformed or unavailable responses as
 unknown. The complete replacement guidance is `lesson_7ce658f9ed63`, which
 supersedes `lesson_5b533304f5a5`. The original item is preserved as history.
+
+## 2026-11-20 correction of item 12: liability is not settled spend
+
+Item 12's statement that a sent request is “never recorded as zero spend” is
+withdrawn as a settled-spend guarantee. Failed settlement can leave settled
+spend unchanged. The verified mechanism is a durable **uncertain reservation**,
+created by `SpendGate.preflight` before dispatch and retained by CostGuard across
+expiry and restart. It remains an outstanding liability, not a recorded charge.
+An expired uncertain liability blocks admission with
+`spend-reconciliation-required`; it is never swept into reusable capacity.
+
+Reconciliation explicitly settles the supported estimate, settles unknown output
+at the full reservation, or releases only with evidence that no charge occurred.
+No automatic retry or recovery fabricates billing evidence. Both PT's double
+settlement-failure regression and the paired Orama adapter/live-cycle regression
+exercise the retained-liability path; actual provider billing remains external
+evidence. This append supersedes item 12's accounting claim without rewriting
+the historical record or claiming the complete private authority exists.
