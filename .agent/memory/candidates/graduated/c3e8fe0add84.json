@@ -1,0 +1,41 @@
+{
+  "id": "c3e8fe0add84",
+  "key": "c3e8fe0add84",
+  "name": "c3e8fe0add84",
+  "claim": "Peer outbox delivery has no standalone flush script; the canonical entry point is the flush-outbox subcommand of lan_peer_assign.py (cmd_flush_outbox with its own argparse subparser), and every launcher or doc that flushes wraps that same subcommand, with remap and launcher behavior pinned by dedicated tests such as the flush-remap and start-sh peer-flush-control tests; prefer the documented subcommand over ad-hoc HTTP delivery scripts.",
+  "conditions": [
+    "flush_outbox",
+    "lan_peer_assign",
+    "canonical_entry_point",
+    "tests"
+  ],
+  "evidence_ids": [
+    "2026-11-15T11:40:00Z"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-15T11:40:00Z",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T11:40:00Z",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T11:40:00Z",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A repo-wide filename search for flush scripts returned only tests; the implementation lives as cmd_flush_outbox behind the flush-outbox subparser of lan_peer_assign.py, and both platform launchers plus the skill docs invoke that subcommand.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T11:40:00Z"
+      ],
+      "lessons_sha": "c3e8fe0add84_v1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T11:40:00Z",
+  "reviewer": "learn.py",
+  "rationale": "One canonical subcommand keeps delivery semantics, trust checks and receipts in one audited code path; ad-hoc delivery scripts would bypass those gates."
+}

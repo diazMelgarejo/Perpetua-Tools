@@ -1,0 +1,42 @@
+{
+  "id": "f489b6c25bf0",
+  "key": "f489b6c25bf0",
+  "name": "f489b6c25bf0",
+  "claim": "When the PEER_CA_SHA256 pin does not match the peer presented certificate, peer_tls.py strips the bearer token and fails the connection closed rather than forwarding an unauthenticated request.",
+  "conditions": [
+    "certificate",
+    "peer_tls",
+    "bearer",
+    "fail_closed",
+    "tls"
+  ],
+  "evidence_ids": [
+    "2026-11-15T09:56:41Z"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.5,
+  "staged_at": "2026-11-15T09:56:41Z",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T09:56:41Z",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T09:56:41Z",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A pin mismatch caused the launcher to fall back to plain HTTP and strip the bearer token; the Mac flush reported invalid PEER_CA_SHA256 and the token was refused.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T09:56:41Z"
+      ],
+      "lessons_sha": "f489b6c25bf0_v1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T09:56:41Z",
+  "reviewer": "learn.py",
+  "rationale": "Fail closed on trust mismatch; never downgrade to unauthenticated HTTP for peer bearer tokens."
+}

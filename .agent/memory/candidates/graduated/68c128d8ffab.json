@@ -1,0 +1,41 @@
+{
+  "id": "68c128d8ffab",
+  "key": "68c128d8ffab",
+  "name": "68c128d8ffab",
+  "claim": "Items queued on the plain portal port 8002 are remapped to TLS 8443 only when PEER_PORTAL_TLS_ENABLED=1 and the CA pin are set and --remap-port 8002:8443 maps the macOS portal port to 8443.",
+  "conditions": [
+    "port_remap",
+    "flush_outbox",
+    "tls",
+    "lan_peer"
+  ],
+  "evidence_ids": [
+    "2026-11-15T09:56:41Z"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.5,
+  "staged_at": "2026-11-15T09:56:41Z",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T09:56:41Z",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T09:56:41Z",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "flush-outbox with --remap-port 8002:8443 and correct TLS env passed verification; without the remap, port-8002 items target a non-TLS port.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T09:56:41Z"
+      ],
+      "lessons_sha": "68c128d8ffab_v1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T09:56:41Z",
+  "reviewer": "learn.py",
+  "rationale": "Port remap is required to deliver items queued against the plain portal port over the TLS front end."
+}

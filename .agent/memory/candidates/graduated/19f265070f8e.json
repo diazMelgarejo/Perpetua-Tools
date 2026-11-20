@@ -1,0 +1,40 @@
+{
+  "id": "19f265070f8e",
+  "key": "manual_19f265",
+  "name": "manual_19f265",
+  "claim": "Supersedes f489b6c25bf0: the historical note reports an HTTP fallback with the bearer token stripped after a pin mismatch, conflicting with its fail-closed claim. The historical transport outcome and the owning implementation remain unverified independently; the required behavior is to fail closed on trust mismatch without sending an unauthenticated downgrade request.",
+  "conditions": [
+    "correction",
+    "peer",
+    "review"
+  ],
+  "evidence_ids": [
+    "2026-11-20T09:47:39.144815+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-20T09:47:39.144815+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-20T09:47:39.144815+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-20T09:47:39.282547+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "PR 517 review: contradictory historical evidence is not proof of either behavior.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-20T09:47:39.144815+00:00"
+      ],
+      "lessons_sha": "222b7a4d9cda"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-20T09:47:39.282533+00:00",
+  "reviewer": "host-agent",
+  "rationale": "PR 517 review: contradictory historical evidence is not proof of either behavior."
+}

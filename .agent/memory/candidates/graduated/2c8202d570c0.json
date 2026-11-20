@@ -1,0 +1,41 @@
+{
+  "id": "2c8202d570c0",
+  "key": "2c8202d570c0",
+  "name": "2c8202d570c0",
+  "claim": "lan_peer_assign.py flush-outbox reads PEER_PORTAL_TLS_ENABLED, PEER_CA_FILE, PEER_CA_SHA256 and ORAMA_CONTROL_PLANE_TOKEN from os.environ, not .env.local; export them before a flush or every item stays queued with invalid PEER_CA_SHA256.",
+  "conditions": [
+    "flush_outbox",
+    "env_vars",
+    "lan_peer_assign",
+    "tls"
+  ],
+  "evidence_ids": [
+    "2026-11-15T09:56:41Z"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-15T09:56:41Z",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T09:56:41Z",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T09:56:41Z",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Flush attempts without exported TLS vars fell back to HTTP and stripped the bearer token; exporting them made TLS verification pass.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T09:56:41Z"
+      ],
+      "lessons_sha": "2c8202d570c0_v1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T09:56:41Z",
+  "reviewer": "learn.py",
+  "rationale": "The scheduled coord-pulse runs flush-outbox without sourcing .env.local, so TLS variables must be exported in the same shell or by the launcher."
+}
