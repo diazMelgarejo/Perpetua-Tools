@@ -153,3 +153,12 @@ All five are implemented with failing-first tests and verified (see Verification
   (persona draft), G7 (re-probe provider state before arming), G8 (`_finite` integer precision),
   G10 (metric registry), G11 (Wanda soul card versus Cline W&B route). Tri-level stays off.
 - Live gates and serving stay off; arming one bounded live cycle remains a separate operator act.
+
+## 2026-11-20 clarification of item 4
+
+Item 4's “HTTP status below 500” is overbroad. The recorded release rule
+applies to a provider status error below 500, not every successful HTTP
+response. HTTP success alone establishes neither a refusal nor a valid answer;
+settle a valid paid answer and treat malformed or unavailable responses as
+unknown. The complete replacement guidance is `lesson_7ce658f9ed63`, which
+supersedes `lesson_5b533304f5a5`. The original item is preserved as history.

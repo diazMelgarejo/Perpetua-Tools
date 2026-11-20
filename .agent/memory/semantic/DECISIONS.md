@@ -829,6 +829,18 @@ refusals).
 
 ---
 
+## 2026-11-20: Clarification of the 2026-11-17 HTTP outcome decision
+
+The earlier wording “an HTTP status below 500” is overbroad. The recorded
+release rule concerns a provider status error below 500, not all responses
+below 500. A successful response is not a refusal; HTTP success alone also
+does not establish a valid answer. Settle a valid paid answer and treat an
+unavailable or malformed response as unknown. See the additive replacement
+`lesson_7ce658f9ed63` for the complete spend guidance. The earlier decision
+remains here as historical evidence, not as an unrestricted status rule.
+
+---
+
 ## 2026-11-17: Popen and process-group lifecycle with a "sent" flag
 
 **Decision:** The live-cycle launcher starts with `Popen` (`start_new_session=True`) and is awaited
