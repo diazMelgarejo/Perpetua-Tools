@@ -1,5 +1,11 @@
 # Manual stale-claim cleanup: v1 characterization (2026-11-06)
 
+> **L-1r source amendment:** The observations below describe the historical
+> behavior. The pre-generation cleanup now holds both legacy and queue claims:
+> heartbeat silence or an `agent_killed` gossip event cannot prove a worker
+> stopped. The changed contract and outstanding qualification are recorded in
+> [the L-1r contract ledger](l1r-contract-migration-2026-11-20.md).
+
 Closure row C2, Perpetua-Tools part. Canonical register: Orama
 `docs/v2/MASTER-CLOSURE-AND-IMPLEMENTATION-PLAN-2026-11-06.md`. This record
 describes current behavior. It does not change it, approve it, or specify the

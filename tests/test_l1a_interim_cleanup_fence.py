@@ -4,9 +4,8 @@ and the in-transaction liveness recheck on the queue-claim release path.
 Governing plan: QUEUE-FENCING-AND-RECOVERY-CONSOLIDATED-PLAN-2026-11-11.md,
 sections 4.3 and 7. The defect tests assert the POST-repair behavior and are
 expected to FAIL against the unfenced code (a stale cleanup releases the
-claim of a worker that restarted between capture and release). Guard tests
-pin the cases that must keep working: clean release of a genuinely dead
-claim, and contention behavior.
+claim of a worker that restarted between capture and release). L-1r changes
+automatic cleanup to hold even when heartbeats indicate a dead claimant.
 
 Deterministic barriers only: a mutable fake clock replaces ``time.time``.
 There are no sleeps and no wall-clock dependence in the fence decisions; the
@@ -218,24 +217,13 @@ async def test_release_refuses_when_claimed_at_moved_after_capture(
 # ── guard tests: desired behavior that must survive the repair ─────────────
 
 
-async def test_cleanup_still_releases_truly_dead_claim(
-    bus: GossipBus, fake_clock: dict
-) -> None:
-    """No liveness after capture: the genuinely dead claim is released, the
-    row disappears, one requeue event is recorded and retry counters are
-    preserved in the folded state."""
+async def test_cleanup_holds_claim_without_execution_fence(bus: GossipBus, fake_clock: dict) -> None:
+    """A silent claimant remains held even after capture."""
     task_id = await _claimed_task(bus, fake_clock)
-    floor = fake_clock["now"]
     captured = await capture_stale_queue_claims(bus, {"w"})
-    released = await release_captured_queue_claims(bus, captured)
-    assert task_id in released
-    assert await _claim_row(bus, task_id) is None
-    assert await _task_event_count(bus, task_id, "task_failed") == 1
-    snapshots = await latest_task_snapshots(bus)
-    state = snapshots[task_id]
-    assert state.get("status") == "queued"
-    assert state.get("assigned_agent") is None
-    assert state.get("retry_count", 0) == 0
+    assert await release_captured_queue_claims(bus, captured) == []
+    assert await _claim_row(bus, task_id) == ("w", T_CLAIM)
+    assert await _task_event_count(bus, task_id, "task_failed") == 0
 
 
 async def test_cleanup_refuses_when_pulse_after_classification_before_capture(
@@ -257,22 +245,13 @@ async def test_cleanup_refuses_when_pulse_after_classification_before_capture(
     assert await _task_event_count(bus, task_id, "task_failed") == 0
 
 
-async def test_agent_killed_after_capture_does_not_refuse_release(
-    bus: GossipBus, fake_clock: dict
-) -> None:
-    """agent_killed is death evidence, not renewed liveness: it must not trip
-    the presence floor and block a legitimate dead-claim release."""
+async def test_kill_event_after_capture_does_not_prove_worker_stopped(bus: GossipBus, fake_clock: dict) -> None:
+    """A gossip kill event is not proof of process termination."""
     task_id = await _claimed_task(bus, fake_clock)
-    fake_clock["now"] = T_CAPTURE
     captured = await capture_stale_queue_claims(bus, {"w"})
-    fake_clock["now"] = T_PULSE
-    await bus.emit(
-        "heartbeat",
-        {"kind": "agent_killed", "agent_id": "w", "reason": "operator"},
-    )
-    released = await release_captured_queue_claims(bus, captured)
-    assert task_id in released
-    assert await _claim_row(bus, task_id) is None
+    await bus.emit("heartbeat", {"kind": "agent_killed", "agent_id": "w", "reason": "operator"})
+    assert await release_captured_queue_claims(bus, captured) == []
+    assert await _claim_row(bus, task_id) == ("w", T_CLAIM)
 
 
 async def test_cleanup_returns_immediately_when_capture_empty(

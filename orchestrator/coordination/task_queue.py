@@ -837,49 +837,12 @@ async def capture_stale_queue_claims(
 async def release_captured_queue_claims(
     bus: GossipBus, captured: list[dict]
 ) -> list[str]:
-    """Release (phase 2) captured stale queue-claim rows under the L-1a fence.
+    """Hold captured claims until an execution fence is available.
 
-    Each release is fenced with the captured ``claimed_at`` and the row's
-    ``liveness_floor_ts`` (classification boundary, else capture instant): a
-    worker that restarted and pulsed after that floor keeps its claim
-    (REFUSED), a row that changed owner or claimed_at yields LOST_RACE, and
-    a row whose task has no folded snapshot is held (legacy-unverified,
-    uncertain effects). Only rows actually released are returned; refused,
-    lost and held rows are left untouched and no event is emitted for them.
+    Heartbeat silence and claim timestamps do not stop a paused worker from
+    resuming, including after another process reuses the same agent name.
     """
-    if not captured:
-        # Nothing captured: skip the full task-history fold entirely.
-        return []
-    released: list[str] = []
-    snapshots = await latest_task_snapshots(bus)
-    for row in captured:
-        task_id = row["task_id"]
-        task_state = snapshots.get(task_id)
-        if not task_state:
-            continue
-        floor = row.get("liveness_floor_ts", row["captured_at"])
-        result = await release_claim_with_event(
-            bus,
-            task_id,
-            "heartbeat",
-            {
-                "kind": "task_failed",
-                "task_id": task_id,
-                "retry_count": int(task_state.get("retry_count", 0)),
-                "max_retries": int(task_state.get("max_retries", 3)),
-                "status": QueuedTaskState.QUEUED.value,
-                "assigned_agent": None,
-                "notes": (
-                    f"Auto-released: agent {row['agent_id']} dead; task returned to queue"
-                ),
-            },
-            expected_agent_id=row["agent_id"],
-            expected_claimed_at=row["claimed_at"],
-            liveness_floor_ts=floor,
-        )
-        if result == ReleaseResult.RELEASED:
-            released.append(task_id)
-    return released
+    return []
 
 
 async def cleanup_stale_queue_claims(
@@ -888,22 +851,9 @@ async def cleanup_stale_queue_claims(
     *,
     liveness_floor_by_agent: Optional[dict[str, float]] = None,
 ) -> list[str]:
-    """Re-queue tasks whose atomic ``task_claims`` row is held by dead agents.
+    """Capture stale candidates and hold them without releasing their claims.
 
-    ``heartbeat cleanup`` already auto-releases legacy ``agent_claim`` rows,
-    but the distributed queue's exclusion gate lives in ``task_claims``. A
-    dead claimant leaves that row behind forever unless we delete it and emit a
-    requeue event, which otherwise blocks every future ``queue claim``.
-
-    L-1a fence: this one-shot wrapper runs the capture and release phases
-    back to back. Prefer the DEAD-classification ``last_heartbeat_ts`` as the
-    liveness floor (via ``liveness_floor_by_agent``) so a worker that restarts
-    after classification but before capture keeps its claim; when omitted the
-    capture instant is the floor. The release transaction also rechecks
-    canonical liveness. Unknown-task rows are held. An empty capture returns
-    without folding task history. Callers that need a maintenance-window
-    barrier (plan section 7) call ``capture_stale_queue_claims`` and
-    ``release_captured_queue_claims`` separately around the window.
+    A heartbeat-derived DEAD classification does not prove the worker stopped.
     """
     captured = await capture_stale_queue_claims(
         bus,

@@ -152,7 +152,7 @@ include = ["orchestrator*", "perpetua*", "perpetua_tools*", "utils*", "observabi
 exclude = ["tests*", "vendor*", ".state*"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "src/tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
