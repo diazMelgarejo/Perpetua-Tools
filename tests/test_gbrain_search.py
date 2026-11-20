@@ -13,6 +13,7 @@ from orchestrator.gbrain_search import _normalise_hits, gbrain_search
 # ── _normalise_hits ────────────────────────────────────────────────────────────
 
 def test_normalise_hits_content_key():
+    """Map a hit’s content field into its text field."""
     raw = [{"content": "hello world", "score": 0.9}]
     out = _normalise_hits(raw, limit=5)
     assert len(out) == 1
@@ -20,18 +21,21 @@ def test_normalise_hits_content_key():
 
 
 def test_normalise_hits_text_key():
+    """Preserve text supplied directly by a search hit."""
     raw = [{"text": "foo bar"}]
     out = _normalise_hits(raw, limit=5)
     assert out[0]["text"] == "foo bar"
 
 
 def test_normalise_hits_title_fallback():
+    """Use the title when a hit has no content or text."""
     raw = [{"title": "my title"}]
     out = _normalise_hits(raw, limit=5)
     assert out[0]["text"] == "my title"
 
 
 def test_normalise_hits_skips_empty_text():
+    """Discard hits without usable text and retain valid hits."""
     raw = [{"content": ""}, {"content": "good"}]
     out = _normalise_hits(raw, limit=5)
     assert len(out) == 1
@@ -39,6 +43,7 @@ def test_normalise_hits_skips_empty_text():
 
 
 def test_normalise_hits_skips_non_dict():
+    """Ignore non-dictionary hits while retaining valid hits."""
     raw = ["string item", {"text": "ok"}]
     out = _normalise_hits(raw, limit=5)
     assert len(out) == 1
@@ -46,6 +51,7 @@ def test_normalise_hits_skips_non_dict():
 
 
 def test_normalise_hits_respects_limit():
+    """Limit the number of normalized hits returned."""
     raw = [{"text": f"item {i}"} for i in range(10)]
     out = _normalise_hits(raw, limit=3)
     assert len(out) == 3
@@ -55,6 +61,7 @@ def test_normalise_hits_respects_limit():
 
 @pytest.mark.asyncio
 async def test_gbrain_search_returns_empty_when_binary_missing():
+    """Return no results when the gbrain executable is unavailable."""
     with patch("orchestrator.gbrain_search._gbrain_binary", return_value=None):
         result = await gbrain_search("any query")
     assert result == []
@@ -62,18 +69,21 @@ async def test_gbrain_search_returns_empty_when_binary_missing():
 
 @pytest.mark.asyncio
 async def test_gbrain_search_returns_empty_for_blank_query():
+    """Return no results for a whitespace-only query."""
     result = await gbrain_search("   ")
     assert result == []
 
 
 @pytest.mark.asyncio
 async def test_gbrain_search_returns_empty_for_empty_query():
+    """Return no results for an empty query."""
     result = await gbrain_search("")
     assert result == []
 
 
 @pytest.mark.asyncio
 async def test_gbrain_search_parses_list_response():
+    """Parse and normalize a successful list response."""
     payload = json.dumps([{"text": "result A"}, {"text": "result B"}]).encode()
 
     mock_proc = MagicMock()
@@ -92,6 +102,7 @@ async def test_gbrain_search_parses_list_response():
 
 @pytest.mark.asyncio
 async def test_gbrain_search_parses_results_dict_response():
+    """Extract and normalize hits from a results object."""
     payload = json.dumps({"results": [{"content": "context snippet"}]}).encode()
 
     mock_proc = MagicMock()
@@ -110,6 +121,7 @@ async def test_gbrain_search_parses_results_dict_response():
 
 @pytest.mark.asyncio
 async def test_gbrain_search_returns_empty_on_nonzero_exit():
+    """Return no results when the subprocess exits unsuccessfully."""
     mock_proc = MagicMock()
     mock_proc.returncode = 1
     mock_proc.communicate = AsyncMock(return_value=(b"", b"error"))
@@ -125,6 +137,7 @@ async def test_gbrain_search_returns_empty_on_nonzero_exit():
 
 @pytest.mark.asyncio
 async def test_gbrain_search_returns_empty_on_bad_json():
+    """Return no results when subprocess output is invalid JSON."""
     mock_proc = MagicMock()
     mock_proc.returncode = 0
     mock_proc.communicate = AsyncMock(return_value=(b"not valid json", b""))
@@ -140,20 +153,30 @@ async def test_gbrain_search_returns_empty_on_bad_json():
 
 @pytest.mark.asyncio
 async def test_gbrain_search_returns_empty_on_timeout():
+    """Cancel communication, kill the process, and return no results on timeout."""
     mock_proc = MagicMock()
     mock_proc.kill = MagicMock()
-    mock_proc.communicate = AsyncMock(return_value=(b"", b""))
+    cancelled = False
 
     async def _timeout_communicate():
-        raise asyncio.TimeoutError
+        """Block until cancelled, then allow cleanup after the process is killed."""
+        nonlocal cancelled
+        if mock_proc.kill.called:
+            return b"", b""
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            cancelled = True
+            raise
 
     mock_proc.communicate = _timeout_communicate
 
     with (
         patch("orchestrator.gbrain_search._gbrain_binary", return_value="/usr/bin/gbrain"),
         patch("asyncio.create_subprocess_exec", return_value=mock_proc),
-        patch("asyncio.wait_for", side_effect=asyncio.TimeoutError),
     ):
         result = await gbrain_search("query", timeout=0.001)
 
     assert result == []
+    assert cancelled
+    mock_proc.kill.assert_called_once()
