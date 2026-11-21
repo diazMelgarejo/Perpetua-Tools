@@ -1,0 +1,40 @@
+{
+  "id": "de6dd9f7236c",
+  "key": "manual_de6dd9",
+  "name": "manual_de6dd9",
+  "claim": "Supersedes 459e45c3f2f5: for the documented TLS peer deployment use the TLS front end on port 8443 for /api/peer-inbox and keep the port 8002 upstream loopback-only. Check the actual listener on each host before any LAN bind change; a separate non-TLS deployment must be independently documented.",
+  "conditions": [
+    "correction",
+    "peer",
+    "review"
+  ],
+  "evidence_ids": [
+    "2026-11-20T09:47:39.325769+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-20T09:47:39.325769+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-20T09:47:39.325769+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-20T09:47:39.463087+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "PR 517 review: the earlier wildcard-bind claim is not supported by the recorded TLS deployment.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-20T09:47:39.325769+00:00"
+      ],
+      "lessons_sha": "7531ac51040b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-20T09:47:39.463073+00:00",
+  "reviewer": "host-agent",
+  "rationale": "PR 517 review: the earlier wildcard-bind claim is not supported by the recorded TLS deployment."
+}

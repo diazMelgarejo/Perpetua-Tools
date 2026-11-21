@@ -1,0 +1,41 @@
+{
+  "id": "7fe89fda8b0c",
+  "key": "7fe89fda8b0c",
+  "name": "7fe89fda8b0c",
+  "claim": "A portal rebuild started without its token env auto-generates a new inbound control-plane token and silently returns 401 to every peer holding the previously shared token; re-pin the shared contract token via the process env at restart, and keep one shared token in both directions with out-of-band rotation.",
+  "conditions": [
+    "auth",
+    "token",
+    "portal",
+    "rotation"
+  ],
+  "evidence_ids": [
+    "2026-11-17T05:05:00Z"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 9.0,
+  "staged_at": "2026-11-17T05:05:00Z",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-17T05:05:00Z",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-17T05:05:00Z",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The rebuilt portal auto-generated a 38-char token; the shared 43-char token returned 401 until the portal was restarted with the shared token as ORAMA_CONTROL_PLANE_TOKEN; the prior working token kept validating via the PT persisted-token lane.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-17T05:05:00Z"
+      ],
+      "lessons_sha": "7fe89fda8b0c_v1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-17T05:05:00Z",
+  "reviewer": "learn.py",
+  "rationale": "Inbound validation and outbound bearer must use the same shared value on both hosts; a portal validating a token no peer holds is broken by definition."
+}

@@ -1,0 +1,42 @@
+{
+  "id": "459e45c3f2f5",
+  "key": "459e45c3f2f5",
+  "name": "459e45c3f2f5",
+  "claim": "PORTAL_BIND_LAN=0 binds the Mac portal to localhost:8002 only; PORTAL_BIND_LAN=1 is required so LAN peers can reach /api/peer-inbox on the discovered Mac address; the portal is bound to 0.0.0.0:8002 when set to 1.",
+  "conditions": [
+    "lan_peer",
+    "portal_bind",
+    "tls",
+    "windows",
+    "macos"
+  ],
+  "evidence_ids": [
+    "2026-11-15T09:56:41Z"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 9.0,
+  "staged_at": "2026-11-15T09:56:41Z",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T09:56:41Z",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T09:56:41Z",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Mac portal health on HTTPS 8443 passed from the Windows probe once PORTAL_BIND_LAN=1; portal binds 0.0.0.0:8002 for LAN reachability.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T09:56:41Z"
+      ],
+      "lessons_sha": "459e45c3f2f5_v1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T09:56:41Z",
+  "reviewer": "learn.py",
+  "rationale": "MAC_IP must equal the discovered Mac address; PORTAL_BIND_LAN=1 is required for LAN peers to reach /api/peer-inbox."
+}

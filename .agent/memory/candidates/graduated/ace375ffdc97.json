@@ -1,0 +1,41 @@
+{
+  "id": "ace375ffdc97",
+  "key": "manual_ace375",
+  "name": "manual_ace375",
+  "claim": "Correction to the 2026-11-15T09:56:41Z recovery record: run start.sh on Mac and start.ps1 on Windows for the respective launcher steps; the recorded same-LAN prerequisite is session-specific and not an established universal delivery requirement. The pin history conflicts: one entry says the local value was already a DER digest, another says it changed from a raw-file hash; the available records do not establish which is true, so both the alleged repair and the root-cause wording at 2026-11-15T11:05:00Z remain unverified. That latter entry reports outbox delivery over pinned-CA TLS and an opposite-direction inbox arrival; it does not establish the transport of that arrival independently or content identity in either direction. Verify each receiver-computed digest against its sender digest and label both raw-byte or LF-normalized before claiming content-verified reciprocal delivery.",
+  "conditions": [
+    "evidence",
+    "peer",
+    "recovery",
+    "tls"
+  ],
+  "evidence_ids": [
+    "2026-11-20T09:47:48.028120+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-20T09:47:48.028120+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-20T09:47:48.028120+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-20T09:47:48.196445+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "PR 517 review: preserve the original entries, distinguish reported observations from independently established facts, and avoid recording certificate or token values.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-20T09:47:48.028120+00:00"
+      ],
+      "lessons_sha": "7e13783e2e58"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-20T09:47:48.196430+00:00",
+  "reviewer": "learn.py",
+  "rationale": "PR 517 review: preserve the original entries, distinguish reported observations from independently established facts, and avoid recording certificate or token values."
+}

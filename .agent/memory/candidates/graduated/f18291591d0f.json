@@ -1,0 +1,40 @@
+{
+  "id": "f18291591d0f",
+  "key": "manual_f18291",
+  "name": "manual_f18291",
+  "claim": "Supersedes 0a7eacd47c3a: the recorded cross-subnet flush failure does not establish that fleet_topology.cross_reachable gated delivery; in this checkout the flag selects fleet mode, not a flush path. Queueing alone does not prove receipt.",
+  "conditions": [
+    "fleet",
+    "flush",
+    "peer"
+  ],
+  "evidence_ids": [
+    "2026-11-20T09:47:12.511306+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-20T09:47:12.511306+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-20T09:47:12.511306+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-20T09:47:17.389341+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "PR 517 review: fleet mode selection in orchestrator/startup_intelligence.py does not establish a flush gate.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-20T09:47:12.511306+00:00"
+      ],
+      "lessons_sha": "5844781f8cab"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-20T09:47:17.389328+00:00",
+  "reviewer": "host-agent",
+  "rationale": "PR 517 review: fleet mode selection in orchestrator/startup_intelligence.py does not establish a flush gate."
+}

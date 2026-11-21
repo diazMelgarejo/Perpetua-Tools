@@ -1,0 +1,41 @@
+{
+  "id": "244112598bec",
+  "key": "244112598bec",
+  "name": "244112598bec",
+  "claim": "A mistyped stderr redirect such as 2> 8443 instead of 2>&1 silently creates a file named 8443 holding the CLI usage or error text; such stray untracked files inside a scripts directory can masquerade as configuration or evidence, so check git status untracked entries and their modification times when diagnosing odd tool behavior before trusting the directory.",
+  "conditions": [
+    "shell_redirect",
+    "stray_artifact",
+    "hygiene",
+    "diagnostics"
+  ],
+  "evidence_ids": [
+    "2026-11-15T11:40:00Z"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 7.5,
+  "staged_at": "2026-11-15T11:40:00Z",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T11:40:00Z",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T11:40:00Z",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A 416-byte argparse usage dump named 8443 sat untracked in the lan_peer_assign scripts directory; it matched an unrecognized-arguments error from an earlier run and was removed after inspection.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T11:40:00Z"
+      ],
+      "lessons_sha": "244112598bec_v1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T11:40:00Z",
+  "reviewer": "learn.py",
+  "rationale": "Untracked artifacts left by redirect typos pollute script directories and can mislead later diagnostics; verify against git status before treating directory contents as intentional."
+}
