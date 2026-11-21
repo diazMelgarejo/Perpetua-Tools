@@ -1,0 +1,38 @@
+{
+  "id": "d0cc3e46382e",
+  "key": "manual_d0cc3e",
+  "name": "manual_d0cc3e",
+  "claim": "Replacing a file from an anchor to the end of the file (s[i:] = new) silently deletes every definition after the anchor. After any tail replacement, confirm the later symbols still exist before running anything else, and prefer replacing between two anchors. A test run caught it (AttributeError on a function defined after the edited one); the deleted functions were restored from the committed version.",
+  "conditions": [
+    "scripted edit tail replacement deleted functions"
+  ],
+  "evidence_ids": [
+    "2026-11-16T22:24:09.941541+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T22:24:09.941541+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T22:24:09.941541+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T22:24:10.098584+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: editing the last section of seat_contracts.py removed select_effort, default_wandb_turn and plan_turn; 32 tests failed with AttributeError; restoring the tail from git HEAD fixed it.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T22:24:09.941541+00:00"
+      ],
+      "lessons_sha": "620f40d86e44"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T22:24:10.098573+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: editing the last section of seat_contracts.py removed select_effort, default_wandb_turn and plan_turn; 32 tests failed with AttributeError; restoring the tail from git HEAD fixed it."
+}

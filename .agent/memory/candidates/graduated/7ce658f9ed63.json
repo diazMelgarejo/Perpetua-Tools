@@ -1,0 +1,43 @@
+{
+  "id": "7ce658f9ed63",
+  "key": "manual_7ce658",
+  "name": "manual_7ce658",
+  "claim": "On the PT Weights and Biases spend path, distinguish a provider status error from a successful response: the recorded below-500 release rule applies to a provider status error, not every HTTP response below 500; HTTP success alone does not establish either a refusal or a valid answer. Settle a valid paid answer. Treat 5xx provider status errors, transport errors, timeouts, interrupts and malformed or unavailable responses as unknown and settle the full reservation, since unavailable output does not prove zero billed output. Refuse before dispatch when attestation or budget fails; if settling a paid answer fails, keep the answer and fall back to settle_unknown. PT owns the spend gate and ledger; orama forwards to it.",
+  "conditions": [
+    "HTTP",
+    "provider",
+    "refusal",
+    "reservation",
+    "spend",
+    "wandb"
+  ],
+  "evidence_ids": [
+    "2026-11-20T09:44:54.833615+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-20T09:44:54.833615+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-20T09:44:54.833615+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-20T09:44:59.413740+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Correct the overbroad HTTP wording in the 2026-11-17 record while retaining the compound spend guidance and PT ownership. A provider status error is a separate semantic outcome from HTTP success; status alone does not establish refusal or a valid answer.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-20T09:44:54.833615+00:00"
+      ],
+      "lessons_sha": "bbf45e7a0603"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-20T09:44:59.413725+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Correct the overbroad HTTP wording in the 2026-11-17 record while retaining the compound spend guidance and PT ownership. A provider status error is a separate semantic outcome from HTTP success; status alone does not establish refusal or a valid answer."
+}

@@ -1,0 +1,38 @@
+{
+  "id": "9c3f04b9a8fa",
+  "key": "manual_9c3f04",
+  "name": "manual_9c3f04",
+  "claim": "Do not edit a module that a running background process has imported or will import during its run. The sandbox module was edited while the turn-3 inner request was running, so its score came from the old module; the candidate had to be re-scored with the final code to be trusted. Wait for the run to finish, or re-score afterwards, and say which version produced a score.",
+  "conditions": [
+    "edit module during background run stale import rescore"
+  ],
+  "evidence_ids": [
+    "2026-11-16T23:23:50.964257+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T23:23:50.964257+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T23:23:50.964257+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T23:23:51.114200+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: sandbox_run.py was rewritten from allow-by-default to deny-by-default during turn 3; the saved candidate was re-scored with the hardened scorer and gave the same revert.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T23:23:50.964257+00:00"
+      ],
+      "lessons_sha": "4bf2d5f4ca6a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T23:23:51.114186+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: sandbox_run.py was rewritten from allow-by-default to deny-by-default during turn 3; the saved candidate was re-scored with the hardened scorer and gave the same revert."
+}

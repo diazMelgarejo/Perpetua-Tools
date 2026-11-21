@@ -25,17 +25,20 @@ class _FakeAlphaClawHandler(http.server.BaseHTTPRequestHandler):
     """Trivial upstream standing in for AlphaClaw's real HTTP server."""
 
     def do_GET(self) -> None:
+        """Serve a fixed JSON response from the fake upstream."""
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
         self.wfile.write(b'{"ok": true, "from": "fake-alphaclaw"}')
 
     def log_message(self, *args) -> None:  # noqa: A002 -- silence test output
+        """Keep the fake upstream from writing HTTP access logs."""
         pass
 
 
 @pytest.fixture
 def fake_upstream():
+    """Run a loopback HTTP server and close it after the test."""
     server = socketserver.TCPServer(("127.0.0.1", 0), _FakeAlphaClawHandler)
     port = server.server_address[1]
     thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -233,6 +236,7 @@ def test_fingerprint_mismatch_detected_when_cert_changes_but_pin_persists(tmp_pa
 
 
 def _free_port() -> int:
+    """Ask the operating system for an available loopback port."""
     import socket
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -244,8 +248,7 @@ def _free_port() -> int:
     not _CRYPTOGRAPHY_AVAILABLE, reason="'cryptography' library not installed"
 )
 def test_generate_cert_reuses_existing_cert_on_second_call(tmp_path, monkeypatch):
-    """Regression: cryptography exposes not_valid_after (naive UTC), not
-    not_valid_after_utc -- the reuse path must not crash on restart."""
+    """A still-valid certificate is reused on restart."""
     import orchestrator.alphaclaw_tls_proxy as mod
 
     monkeypatch.setattr(mod, "CERT_DIR", tmp_path / "alphaclaw_tls")
@@ -257,6 +260,37 @@ def test_generate_cert_reuses_existing_cert_on_second_call(tmp_path, monkeypatch
     cert2, _, mode2 = proxy._generate_cert()
     assert mode2 == "reused"
     assert cert1 == cert2
+
+
+@pytest.mark.skipif(not _CRYPTOGRAPHY_AVAILABLE, reason="cryptography not installed")
+@pytest.mark.parametrize("remaining_seconds, expected", [(8 * 86400, "reused"), (8 * 86400 - 1, "rotated")])
+def test_reuse_expiry_boundary_uses_aware_certificate_time(tmp_path, monkeypatch, remaining_seconds, expected):
+    """Reuse at eight days remaining and rotate one second below that boundary."""
+    from datetime import datetime, timedelta, timezone
+    import warnings
+    from cryptography import x509
+    from cryptography.utils import CryptographyDeprecationWarning
+    import orchestrator.alphaclaw_tls_proxy as mod
+
+    monkeypatch.setattr(mod, "CERT_DIR", tmp_path)
+    proxy = AlphaClawTlsProxy(upstream_port=9999, proxy_port=_free_port())
+    cert_path, _, _ = proxy._generate_cert()
+    expires = x509.load_pem_x509_certificate(cert_path.read_bytes()).not_valid_after_utc
+    fixed_now = expires - timedelta(seconds=remaining_seconds)
+
+    class Clock(datetime):
+        """Provide a fixed current time for the certificate expiry boundary."""
+
+        @classmethod
+        def now(cls, tz=None):
+            """Return the fixed time in the requested timezone."""
+            return fixed_now.astimezone(tz or timezone.utc)
+
+    monkeypatch.setattr(mod, "datetime", Clock)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", CryptographyDeprecationWarning)
+        _, _, mode = proxy._generate_cert()
+    assert mode == expected
 
 
 @pytest.mark.skipif(

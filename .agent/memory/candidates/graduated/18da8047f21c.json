@@ -1,0 +1,42 @@
+{
+  "id": "18da8047f21c",
+  "key": "manual_18da80",
+  "name": "manual_18da80",
+  "claim": "When a resolver gains a default location such as a CI checkout, neutralize that location in the shared test fixture for every test that asserts nothing is found, and add one test proving the fallback is used. CI has the location and a laptop does not, so the failure appears only in CI; create the location locally and run the suite before pushing.",
+  "conditions": [
+    "ci",
+    "fallback",
+    "fixture",
+    "isolation",
+    "resolver"
+  ],
+  "evidence_ids": [
+    "2026-11-17T05:22:33.524345+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-17T05:22:33.524345+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-17T05:22:33.524345+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-17T05:22:33.680130+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A new fallback path made four fail-closed tests stop raising in both CI jobs while they passed locally.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-17T05:22:33.524345+00:00"
+      ],
+      "lessons_sha": "4b52cfd60f46"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-17T05:22:33.680119+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A new fallback path made four fail-closed tests stop raising in both CI jobs while they passed locally."
+}

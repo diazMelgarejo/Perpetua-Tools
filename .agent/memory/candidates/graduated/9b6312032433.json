@@ -1,0 +1,38 @@
+{
+  "id": "9b6312032433",
+  "key": "manual_9b6312",
+  "name": "manual_9b6312",
+  "claim": "Treat saved harness drivers and run copies as immutable evidence: do not rewrite them to satisfy a review. Document the known limit in a README beside them and answer the comment with an evidence-backed decline.",
+  "conditions": [
+    "evidence"
+  ],
+  "evidence_ids": [
+    "2026-11-17T03:17:38.168795+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-17T03:17:38.168795+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-17T03:17:38.168795+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-17T03:17:38.274820+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Four review comments on saved evaluator and driver copies were answered by a README note, keeping the record of what was actually run intact.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-17T03:17:38.168795+00:00"
+      ],
+      "lessons_sha": "2eabb511b470"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-17T03:17:38.274815+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Four review comments on saved evaluator and driver copies were answered by a README note, keeping the record of what was actually run intact."
+}

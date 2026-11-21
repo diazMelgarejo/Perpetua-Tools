@@ -1,7 +1,7 @@
 """tests/test_agent_coordination_heartbeat.py
 
 Tests for heartbeat monitoring and liveness detection.
-Covers: heartbeat tracking, liveness status calculation, stale claim auto-cleanup.
+Covers: heartbeat tracking, liveness scoring, and holding stale claims safely.
 """
 from __future__ import annotations
 
@@ -449,7 +449,7 @@ async def test_cleanup_stale_claims_dead_agent(bus):
 
 @pytest.mark.asyncio
 async def test_cleanup_stale_claims_skips_restart_before_release(bus, monkeypatch):
-    """Do not auto-release when the holder restarts between snapshot and emit."""
+    """Hold an apparent dead claim without depending on a later liveness read."""
     agent_id = "restarted-agent"
     task = "task-restart"
     now = time.time()
@@ -480,12 +480,14 @@ async def test_cleanup_stale_claims_skips_restart_before_release(bus, monkeypatc
     claim_calls = {"n": 0}
 
     async def fake_heartbeats(_bus, _agent_id=None, *, connection=None):
+        """Make later reads active if cleanup attempts a second classification."""
         hb_calls["n"] += 1
         if hb_calls["n"] == 1:
             return dead_agents
         return alive_agents
 
     async def fake_claims(_bus, *, connection=None):
+        """Return a replacement identity only during a write transaction."""
         claim_calls["n"] += 1
         if connection is None:
             return [snapshot_claim]
@@ -496,8 +498,8 @@ async def test_cleanup_stale_claims_skips_restart_before_release(bus, monkeypatc
 
     released = await cleanup_stale_claims(bus)
     assert released == []
-    assert hb_calls["n"] >= 2
-    assert claim_calls["n"] >= 2
+    assert hb_calls["n"] == 1
+    assert claim_calls["n"] == 1
 
     events = await heartbeat_monitor._fetch_heartbeat_events(bus, ("agent_release",))
     auto_released = [
@@ -509,10 +511,11 @@ async def test_cleanup_stale_claims_skips_restart_before_release(bus, monkeypatc
 
 
 @pytest.mark.asyncio
-async def test_cleanup_stale_claims_releases_dead_agent_queue_claim(bus, monkeypatch):
-    """Queue claims must be released when the holding agent is DEAD."""
+async def test_cleanup_stale_claims_holds_dead_classified_queue_claim(bus, monkeypatch):
+    """Heartbeat silence leaves both the claim and retry state unchanged."""
     now = time.time()
     def _mock_time():
+        """Advance classification beyond the heartbeat silence threshold."""
         return now + LIVENESS_STALLED_SEC + 10
 
     await bus.emit("heartbeat", {
@@ -543,9 +546,7 @@ async def test_cleanup_stale_claims_releases_dead_agent_queue_claim(bus, monkeyp
 
     released = await cleanup_stale_claims(bus)
     
-    # Released array returns the raw task_id or task name for normal claims
-    # cleanup_stale_claims emits agent_release for each stale claim
-    assert "stale-work" in released or task_id in released
+    assert released == []
 
     async with bus.connect() as db:
         cursor = await db.execute(
@@ -553,14 +554,15 @@ async def test_cleanup_stale_claims_releases_dead_agent_queue_claim(bus, monkeyp
             (task_id,),
         )
         (claim_count,) = await cursor.fetchone()
-    assert claim_count == 0
+    assert claim_count == 1
 
     snapshots = await latest_task_snapshots(bus)
-    assert snapshots[task_id]["status"] == QueuedTaskState.QUEUED.value
+    assert snapshots[task_id]["status"] == QueuedTaskState.CLAIMED.value
+    assert snapshots[task_id].get("retry_count", 0) == 0
     
     # Remove monkeypatch for further operations
     monkeypatch.undo()
-    assert await queue_claim(bus, task_id, "agent-b") is None
+    assert await queue_claim(bus, task_id, "agent-b") is False
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -806,6 +808,7 @@ async def test_find_agent_heartbeats_survives_heartbeat_noise_beyond_tail_window
 
 @pytest.mark.asyncio
 async def test_find_open_claims_survives_heartbeat_noise_beyond_tail_window(bus):
+    """Retain an open claim after unrelated heartbeats exceed the tail window."""
     await bus.emit("heartbeat", {
         "kind": "agent_register",
         "agent_id": "claimer",

@@ -1,0 +1,38 @@
+{
+  "id": "534ac1055bf3",
+  "key": "manual_534ac1",
+  "name": "manual_534ac1",
+  "claim": "State in soul cards, READMEs and schema descriptions only what the code and tests enforce. An adversarial reviewer found four doc-versus-code contradictions in one diff: a seat id the validator rejected, a claim that every attempt is recorded when recording was opt-in, a soul card saying the validator rejects any card touching policy when it checked one field, and a schema note implying checks the validator lacked. Prefer a test that reads the document, so wording and behavior cannot drift apart.",
+  "conditions": [
+    "documentation claims enforcement parity soul card schema"
+  ],
+  "evidence_ids": [
+    "2026-11-16T22:24:11.002690+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T22:24:11.002690+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T22:24:11.002690+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T22:24:11.157807+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: all eight reviewer findings reproduced against the code before fixing; the fixes added tests that read the soul cards, README and schema for the corrected wording.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T22:24:11.002690+00:00"
+      ],
+      "lessons_sha": "e3db55eb7614"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T22:24:11.157795+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: all eight reviewer findings reproduced against the code before fixing; the fixes added tests that read the soul cards, README and schema for the corrected wording."
+}

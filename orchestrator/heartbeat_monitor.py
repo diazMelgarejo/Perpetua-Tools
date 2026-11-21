@@ -2,8 +2,8 @@
 
 Heartbeat monitoring and liveness detection for multi-agent coordination.
 
-Agents periodically emit heartbeat events to track liveness and enable automatic
-cleanup of stale claims from dead agents.
+Agents periodically emit heartbeat events to track liveness and identify stale
+claims for review. Silence alone does not authorize releasing a claim.
 
 Liveness rules:
   - ACTIVE:  last_heartbeat < 60 sec ago
@@ -11,18 +11,15 @@ Liveness rules:
   - STALLED: 300-1800 sec (5-30 min ago)
   - DEAD:    > 1800 sec (> 30 min ago)
 
-Stale claims from DEAD agents are automatically released to unblock other agents.
+Claims from DEAD-classified agents remain held until execution can be fenced.
 """
 from __future__ import annotations
 
 import json
-import sqlite3
 import time
 from typing import Any, Optional
 
-import aiosqlite
-
-from orchestrator.gossip_bus import GossipBus, GossipBusError
+from orchestrator.gossip_bus import GossipBus
 
 
 # Liveness thresholds (in seconds)
@@ -277,66 +274,13 @@ async def find_open_claims(
     return list(state.values())
 
 
-def _same_open_claim(claims: list[dict], claim: dict) -> bool:
-    """True when this exact claim identity is still open."""
-    return any(
-        item.get("task") == claim.get("task")
-        and item.get("agent_id") == claim.get("agent_id")
-        and item.get("claim_ts") == claim.get("claim_ts")
-        for item in claims
-    )
-
-
 async def _release_legacy_claim_atomically(bus: GossipBus, claim: dict) -> bool:
-    """Emit ``agent_release`` only while the same claim is still held by a DEAD agent.
-
-    The liveness read, the claim read, and the insert share one
-    ``BEGIN IMMEDIATE`` transaction. A restart that commits first is visible
-    here and the claim stays held. A restart that starts during this
-    transaction waits until the decision is committed.
-    """
-    await bus.init_db()
-    payload = {
-        "kind": "agent_release",
-        "agent_id": claim["agent_id"],
-        "task": claim["task"],
-        "worktree": claim.get("worktree", "?"),
-        "auto_released": True,
-        "reason": "agent dead for 30+ min",
-    }
-    async with bus.connect() as db:
-        try:
-            await db.execute("BEGIN IMMEDIATE")
-            live_agents = await find_agent_heartbeats(bus, connection=db)
-            live_claims = await find_open_claims(bus, connection=db)
-            current = live_agents.get(claim["agent_id"])
-            still_dead = current is not None and current.get("status") == "DEAD"
-            if not still_dead or not _same_open_claim(live_claims, claim):
-                await db.rollback()
-                return False
-            row_id, event_uuid, durable, inserted = await bus.insert_event(
-                db, "heartbeat", payload
-            )
-            await db.commit()
-        except Exception as exc:
-            await db.rollback()
-            if isinstance(exc, GossipBusError):
-                raise
-            if isinstance(exc, (aiosqlite.Error, sqlite3.Error, OSError)):
-                raise GossipBusError(
-                    f"failed to write legacy claim release: {exc}"
-                ) from exc
-            raise
-    if inserted:
-        bus.schedule_embedding(row_id, durable)
-        forward = getattr(bus, "forward_committed", None)
-        if forward is not None:
-            await forward("heartbeat", payload, event_uuid)
-    return True
+    """Hold legacy claims: heartbeat silence cannot prove execution stopped."""
+    return False
 
 
 async def cleanup_stale_claims(bus: GossipBus, max_age_seconds: int = 1800) -> list[str]:
-    """Auto-release claims held by DEAD agents."""
+    """Hold claims whose workers appear dead; silence does not prove termination."""
     agents = await find_agent_heartbeats(bus)
     dead_agents = {aid for aid, data in agents.items() if data['status'] == 'DEAD'}
 
@@ -348,10 +292,8 @@ async def cleanup_stale_claims(bus: GossipBus, max_age_seconds: int = 1800) -> l
         if await _release_legacy_claim_atomically(bus, claim):
             released_tasks.append(claim["task"])
 
-    # Queue claims use task_claims rows as the atomic gate; legacy cleanup
-    # above only handles agent_claim/agent_release heartbeats. Pass each
-    # DEAD agent's last scored heartbeat as the L-1a liveness floor so a
-    # restart between classification and capture still refuses release.
+    # Preserve the cleanup entrypoints and captured liveness metadata while
+    # both release routes hold claims pending an execution fence.
     from orchestrator.coordination.task_queue import cleanup_stale_queue_claims
 
     floors = {

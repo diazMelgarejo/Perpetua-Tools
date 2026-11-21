@@ -33,7 +33,7 @@ The local-first runtime frugality ladder below is unchanged.
 > **Canonical MVP wording:** For MVP/v1.0, orama remains stateless and has no Redis requirement. PT is the sole orchestration layer and owns agent instantiation, tracking, queueing, budget enforcement, and file-based runtime state. Redis-backed coordination is a future PT-only enhancement planned for multi-instance distributed deployments in v1.1 and above.
 
 **Rules:**
-- Single PT instance or LAN MVP per machine: file-based state only (`.state/agents.json`, `.state/budget.json`)
+- Single PT instance or LAN MVP per machine: file-based state only (`.state/agents.json`; spend in the private SQLite budget store `.state/budget.sqlite3`, see `docs/coordination/spend-gate.md`)
 - No Redis mentions in orama install/runtime requirements
 - Any future queue/cache/distributed lock support belongs to PT
 - Redis only activates when PT supports multi-instance distributed operation (v1.1+), not before

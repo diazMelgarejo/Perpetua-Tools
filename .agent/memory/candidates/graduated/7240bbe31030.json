@@ -1,0 +1,46 @@
+{
+  "id": "7240bbe31030",
+  "key": "manual_7240bb",
+  "name": "manual_7240bb",
+  "claim": "Live use of a free-plan provider requires a fresh operator attestation, and the guard refuses every live request (attestation-required) without a valid one. The operator must attest all three facts: the plan is Free, pay-as-you-go is inactive, and Inference allowance remains. A Free account can have pay-as-you-go active without a card yet charged, in which case turns can bill up to the spending cap, so 'free with no payment method charged' is not enough, as lesson_e024534a3096 and lesson_710b39a9542c treated it. The attestation expires after seven days. Who can write it matters: the guard checks the file's contents and age, so it cannot prove who wrote it, and a process running as the same OS user can write a valid file directly. Only the interactive attest command (python3 -m orchestrator.provider_limits attest) asks a human, by requiring a terminal and the exact typed confirmation phrase. A 402 has two documented causes (allowance used up with pay-as-you-go inactive, or the spending cap reached); stop on any 402 or 429, never retry, never activate pay-as-you-go, and disable SDK retries for the provider client (max_retries=0) so one call is one request. Provider facts are confirmed live from the official references with python3 -m orchestrator.provider_limits verify <provider>. This supersedes lesson_15733a3316ad, whose sentences 'a file only the operator writes' and 'the shared guard enforces it' over-claimed.",
+  "conditions": [
+    "402",
+    "429",
+    "attest",
+    "attestation",
+    "free-plan",
+    "guard",
+    "same-user",
+    "supersession",
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-11-17T18:27:15.503368+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-17T18:27:15.503368+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-17T18:27:15.503368+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-17T18:27:22.960253+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "lesson_15733a3316ad is the original over-claim behind the unresolved review thread (a file only the operator writes; the guard enforces it). This linked replacement keeps the still-true attestation, expiry, 402/429 and verify guidance and corrects only the who-writes and who-enforces wording, verified against orchestrator/provider_limits.py.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-17T18:27:15.503368+00:00"
+      ],
+      "lessons_sha": "a515b0f5f53b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-17T18:27:22.960232+00:00",
+  "reviewer": "learn.py",
+  "rationale": "lesson_15733a3316ad is the original over-claim behind the unresolved review thread (a file only the operator writes; the guard enforces it). This linked replacement keeps the still-true attestation, expiry, 402/429 and verify guidance and corrects only the who-writes and who-enforces wording, verified against orchestrator/provider_limits.py."
+}

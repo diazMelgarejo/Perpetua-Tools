@@ -12,18 +12,14 @@ configuration (``provider-default``) is not attested by this layer and is refuse
 for ClinePass, whose policy requires an explicit model. Unknown model
 tiers retain the canonical frugality gate's no-opinion behavior.
 
-POSIX state directories must be user-owned and not writable by other users. The
-file must be private and user-owned. Windows delegates to PT's existing allow-only
-ACL helper; native Windows ACL behavior has not been qualified in this change.
-POSIX mode bits make no claim about native Windows ACLs. SQLite reopens a pathname
-after descriptor validation: trusted ancestors and same-user processes remain
-an operational assumption; this is not a handle-relative filesystem sandbox.
+The private database opener (state directory and file checks, Windows ACL
+delegation, and their stated limits) lives in ``orchestrator/private_sqlite.py``,
+shared with the spend ledger.
 """
 from __future__ import annotations
 
 import hashlib
 import json
-import os
 import sqlite3
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -138,69 +134,12 @@ class DispatchGuard:
 
     def _connect(self) -> sqlite3.Connection:
         """Open private durable state, refusing symlinks and unsafe database files."""
-        from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISVTX
+        from .private_sqlite import open_private_sqlite
 
-        if self.state_dir.is_symlink():
-            raise PermissionError("dispatch state directory cannot be a symlink")
-        self.state_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
-        if os.name != "nt":
-            ancestors = list(self.state_dir.absolute().parents)
-            visited: set[Path] = set()
-            link_count = 0
-            while ancestors:
-                ancestor = ancestors.pop()
-                if ancestor in visited:
-                    continue
-                visited.add(ancestor)
-                info = ancestor.lstat()
-                if S_ISLNK(info.st_mode):
-                    if info.st_uid not in {0, os.getuid()}:
-                        raise PermissionError("dispatch state ancestor symlink must be trusted")
-                    link_count += 1
-                    if link_count > 40:
-                        raise PermissionError("dispatch state ancestor symlink chain is too long")
-                    target = Path(os.readlink(ancestor))
-                    if ".." in target.parts:
-                        raise PermissionError("dispatch state ancestor symlink target is not attestable")
-                    if not target.is_absolute():
-                        target = ancestor.parent / target
-                    ancestors.append(target)
-                    ancestors.extend(target.parents)
-                    continue
-                # Root-owned sticky temporary directories protect user-owned
-                # descendants from renaming by other unprivileged users.
-                sticky_root = info.st_uid == 0 and bool(info.st_mode & S_ISVTX)
-                if not S_ISDIR(info.st_mode) or info.st_uid not in {0, os.getuid()} or (info.st_mode & 0o022 and not sticky_root):
-                    raise PermissionError("dispatch state ancestor must be a trusted directory")
-        directory_info = self.state_dir.lstat()
-        if not S_ISDIR(directory_info.st_mode):
-            raise PermissionError("dispatch state directory must be a real directory")
-        if os.name != "nt" and (directory_info.st_uid != os.getuid() or directory_info.st_mode & 0o022):
-            raise PermissionError("dispatch state directory must be user-owned and not writable by others")
-        if os.name == "nt":
-            from .alphaclaw_tls_proxy import _secure_path
-
-            _secure_path(self.state_dir, is_directory=True)
-        path = self.state_dir / "dispatch_claims.sqlite3"
-        if path.is_symlink():
-            raise PermissionError("dispatch ledger cannot be a symlink")
-        fd = os.open(path, os.O_CREAT | os.O_RDWR | getattr(os, "O_NOFOLLOW", 0), 0o600)
-        try:
-            info = os.fstat(fd)
-            named = path.lstat()
-            if (named.st_dev, named.st_ino) != (info.st_dev, info.st_ino):
-                raise PermissionError("dispatch ledger changed while opening")
-            if not S_ISREG(info.st_mode) or info.st_nlink != 1:
-                raise PermissionError("dispatch ledger must be a private regular file")
-            if os.name != "nt" and (info.st_uid != os.getuid() or info.st_mode & 0o077):
-                raise PermissionError("dispatch ledger permissions must be private")
-        finally:
-            os.close(fd)
-        if os.name == "nt":
-            _secure_path(path)
-        connection = sqlite3.connect(path, timeout=2)
-        connection.execute("PRAGMA synchronous=FULL")
-        return connection
+        return open_private_sqlite(
+            self.state_dir, "dispatch_claims.sqlite3",
+            dir_label="dispatch state", file_label="dispatch ledger",
+        )
 
     async def execute(
         self, request: DispatchRequest, effect: Callable[[], Awaitable[dict[str, Any]]]

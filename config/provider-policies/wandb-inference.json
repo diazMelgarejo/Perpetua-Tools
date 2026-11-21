@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "policy_id": "wandb-inference-2026-11-17-v1",
+  "provider": "wandb-inference",
+  "status": "guard_implemented",
+  "note": "Loading this file does not authorize spend. Live use needs a fresh operator attestation that the plan is Free, pay-as-you-go is inactive and allowance remains. Rates are an upper bound, not the model's own price.",
+  "applicable_endpoint": {
+    "description": "W&B Inference (CoreWeave Serverless Inference) OpenAI-compatible host",
+    "base_url": "https://api.inference.wandb.ai/v1",
+    "parser_rule": "Do not invent a second URL parser. An unrecognized endpoint fails closed and does not inherit this policy."
+  },
+  "key_env_vars": {
+    "api_key": "DEEPSEEK_V4_FLASH_WANDB",
+    "project": "DEEPSEEK_V4_FLASH_WANDB_PROJECT"
+  },
+  "financial_mode": "free_plan_attested",
+  "paid_fallback_default": false,
+  "budget": {
+    "period": "monthly",
+    "operator_estimate_ceiling_usd": 90,
+    "provider_default_cap_usd_after_payg": 100,
+    "alert_ratio": 0.8
+  },
+  "rates_usd_per_million_tokens": {
+    "input": 0.5,
+    "output": 1.5,
+    "basis": "highest non-Pro DeepSeek per-million-token rates listed on the provider pricing page on 2026-11-17; leans high",
+    "verified_exactly": false
+  },
+  "projection": {
+    "chars_per_token": 4,
+    "assumed_output_chars": 160000,
+    "note": "40 thousand output tokens; the reasoning stream is billed"
+  },
+  "stop_on_http": [
+    402,
+    429
+  ],
+  "operator_attestation": {
+    "required": true,
+    "max_age_days": 7,
+    "fields": [
+      "plan_is_free",
+      "payg_inactive",
+      "allowance_remaining"
+    ],
+    "note": "Only the operator can read the Billing page, so only the operator writes this file, from an interactive terminal prompt (there is no command-line or non-interactive way to confirm). This is a speed bump, not a security boundary: a process running as the same OS user can still write the file directly. Treat a hostile same-user process as out of scope, or move the attestation behind a separate OS user or a signed record."
+  },
+  "official_references": [
+    {
+      "id": "usage-limits",
+      "url": "https://docs.coreweave.com/products/inference/serverless/usage-limits",
+      "retrieved_at": "2026-11-17",
+      "facts": [
+        {
+          "id": "priced_per_token",
+          "expect": "priced per token",
+          "sample": "Serverless Inference is priced per token, and the rate depends on the model."
+        },
+        {
+          "id": "allowance_used_first",
+          "expect": "allowance is used first",
+          "sample": "Your allowance is used first."
+        },
+        {
+          "id": "free_stops_at_allowance",
+          "expect": "Inference stops until you\\s+activate pay-as-you-go",
+          "sample": "Inference stops until you activate pay-as-you-go for Inference or upgrade your plan."
+        },
+        {
+          "id": "billing_only_after_activation",
+          "expect": "Monthly, after you activate pay-as-you-go",
+          "sample": "Monthly, after you activate pay-as-you-go."
+        },
+        {
+          "id": "activation_does_not_charge_card",
+          "expect": "Activation doesn.t charge your card",
+          "sample": "Activation doesn't charge your card."
+        },
+        {
+          "id": "free_cap_100",
+          "expect": "Free\\s+\\$100/month",
+          "sample": "Free $100/month"
+        },
+        {
+          "id": "concurrency_429",
+          "expect": "429 Concurrency limit reached for requests",
+          "sample": "the API returns a 429 Concurrency limit reached for requests response."
+        },
+        {
+          "id": "location_403",
+          "expect": "returns a\\s+`?403`?\\s+error",
+          "sample": "Serverless Inference determines your location from your IP address at the time of each request, and returns a 403 error for requests from other locations."
+        }
+      ]
+    },
+    {
+      "id": "error-402",
+      "url": "https://docs.coreweave.com/support/inference/articles/api-error-code-402-you-exceeded-your-cur",
+      "retrieved_at": "2026-11-17",
+      "facts": [
+        {
+          "id": "402_message",
+          "expect": "You exceeded your current quota",
+          "sample": "A 402 error with the message You exceeded your current quota, please check your plan and billing details"
+        },
+        {
+          "id": "402_allowance_exhausted_payg_inactive",
+          "expect": "used up its included Inference allowance and pay-as-you-go isn.t active",
+          "sample": "Your organization has used up its included Inference allowance and pay-as-you-go isn't active."
+        },
+        {
+          "id": "402_spending_cap_reached",
+          "expect": "reached its spending cap",
+          "sample": "Your organization has reached its spending cap."
+        }
+      ]
+    },
+    {
+      "id": "models",
+      "url": "https://docs.coreweave.com/products/inference/serverless/models",
+      "retrieved_at": "2026-11-17",
+      "facts": [
+        {
+          "id": "model_listed",
+          "expect": "deepseek-ai/DeepSeek-V4\\.1-Flash-1017",
+          "sample": "`deepseek-ai/DeepSeek-V4.1-Flash-1017`"
+        }
+      ]
+    },
+    {
+      "id": "pricing",
+      "url": "https://www.coreweave.com/forge-pricing/inference-agents",
+      "retrieved_at": "2026-11-17",
+      "facts": [
+        {
+          "id": "pricing_page_lists_models",
+          "expect": "DeepSeek V4-Pro-0813",
+          "sample": "DeepSeek V4-Pro-0813"
+        }
+      ]
+    }
+  ]
+}

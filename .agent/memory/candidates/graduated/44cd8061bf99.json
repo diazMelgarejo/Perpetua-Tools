@@ -1,0 +1,38 @@
+{
+  "id": "44cd8061bf99",
+  "key": "manual_44cd80",
+  "name": "manual_44cd80",
+  "claim": "Persist the live-loop harness; a session scratch directory is temporary. The evaluators, drivers and verifier files for the live pair turns were written into the session scratchpad, which disappears, so keep sanitized copies with the evidence: the evaluator, the driver, the prompt skeleton, the ledgers and the saved card, plus a step-by-step playbook, so the next pair can rebuild a turn without recalling it.",
+  "conditions": [
+    "harness persistence scratchpad evaluator driver playbook evidence"
+  ],
+  "evidence_ids": [
+    "2026-11-16T23:23:51.208858+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T23:23:51.208858+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T23:23:51.208858+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T23:23:51.361873+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: the harness for turns 1 to 3b existed only in the scratchpad; copies and a playbook were saved with the live-cycle evidence and in PT memory.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T23:23:51.208858+00:00"
+      ],
+      "lessons_sha": "4f316a599b3f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T23:23:51.361859+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: the harness for turns 1 to 3b existed only in the scratchpad; copies and a playbook were saved with the live-cycle evidence and in PT memory."
+}

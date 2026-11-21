@@ -1,0 +1,38 @@
+{
+  "id": "1326d9f7430d",
+  "key": "manual_1326d9",
+  "name": "manual_1326d9",
+  "claim": "Check PT memory and the launcher before spending a limited provider request. W&B rejects medium effort on the V4.1 models deterministically with HTTP 400 Invalid request and accepts high and low, so the free default turn is DeepSeek-V4.1-Flash-1017 at high; V4-Flash-0731 accepts medium. The model order is V4.1-Flash-1017, V4.1-Flash, V4-Flash-0731, pinned to launch_cline_wandb.py by a test. This was already recorded in lesson_d4ff6f4278ad, and one of two approved requests was wasted by not looking.",
+  "conditions": [
+    "wandb effort medium rejected v4.1 default high model order probe budget"
+  ],
+  "evidence_ids": [
+    "2026-11-16T22:24:11.259344+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T22:24:11.259344+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T22:24:11.259344+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T22:24:11.422342+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: a medium-effort review request returned error: Invalid request, exactly the recorded deterministic 400; the high-effort retry returned a full review. The model list was confirmed live with a read-only GET.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T22:24:11.259344+00:00"
+      ],
+      "lessons_sha": "43556c50fc57"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T22:24:11.422332+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: a medium-effort review request returned error: Invalid request, exactly the recorded deterministic 400; the high-effort retry returned a full review. The model list was confirmed live with a read-only GET."
+}

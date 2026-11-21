@@ -1,0 +1,38 @@
+{
+  "id": "7a1b41995876",
+  "key": "manual_7a1b41",
+  "name": "manual_7a1b41",
+  "claim": "Before choosing the next task from a model's review, run its reproducer. A review can contain a fabricated one: the outer seat chose a task whose reproducer called a delta() helper that does not exist, and Python compares large integers exactly, so the claimed defect was not real. Reproduce each claim, discount claims about code the seat was not shown, and keep only the reproduced ones.",
+  "conditions": [
+    "outer seat review fabricated reproducer verify claims task selection"
+  ],
+  "evidence_ids": [
+    "2026-11-16T23:05:55.604497+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T23:05:55.604497+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T23:05:55.604497+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T23:05:55.759597+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: checked each claim of the turn-2 outer review with a short script; two defects reproduced, three claims were false and the chosen task had no reproducer.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T23:05:55.604497+00:00"
+      ],
+      "lessons_sha": "642b637b3bd9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T23:05:55.759586+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: checked each claim of the turn-2 outer review with a short script; two defects reproduced, three claims were false and the chosen task had no reproducer."
+}

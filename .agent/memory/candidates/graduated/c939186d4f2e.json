@@ -1,0 +1,38 @@
+{
+  "id": "c939186d4f2e",
+  "key": "manual_c93918",
+  "name": "manual_c93918",
+  "claim": "Do every check that can refuse an attempt before claiming a once-only marker or any other irreversible side effect. Claiming the marker first meant a mistyped evaluator digest consumed the single permitted attempt and left no record. The refusal paths now run first, and the claim is the last step before work.",
+  "conditions": [
+    "once marker ordering validate before claim side effect"
+  ],
+  "evidence_ids": [
+    "2026-11-16T22:24:10.747902+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T22:24:10.747902+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T22:24:10.747902+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T22:24:10.902418+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: dry_cycle with a bad digest returned invalid-trace and the next call with a good digest returned already-ran; after reordering, the good call succeeds and a regression test covers it.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T22:24:10.747902+00:00"
+      ],
+      "lessons_sha": "a3611f021ef7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T22:24:10.902408+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: dry_cycle with a bad digest returned invalid-trace and the next call with a good digest returned already-ran; after reordering, the good call succeeds and a regression test covers it."
+}

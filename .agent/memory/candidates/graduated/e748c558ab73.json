@@ -1,0 +1,38 @@
+{
+  "id": "e748c558ab73",
+  "key": "manual_e748c5",
+  "name": "manual_e748c5",
+  "claim": "Before a live turn, check the evaluator with a reference answer that scores zero, and compute every number you put in a prompt from the evaluator instead of typing it. The reference answer proves the evaluator can be satisfied and caught my own wrong reference (the identifier check ran before the fixed-wall check, which broke six existing tests that require E_OWNER first). A case count typed into a prompt was 24 when the evaluator had 28, and the outer seat noticed.",
+  "conditions": [
+    "evaluator reference answer scores zero prompt numbers computed baseline"
+  ],
+  "evidence_ids": [
+    "2026-11-16T23:23:50.469410+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T23:23:50.469410+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T23:23:50.469410+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T23:23:50.619859+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: evaluator_real2 baseline 10 and reference 600 exposed the ordering mistake; with the fixed-wall check first the reference scored 0; the outer seat's turn-2 review flagged the 24-versus-28 mismatch.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T23:23:50.469410+00:00"
+      ],
+      "lessons_sha": "080edcdc81a0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T23:23:50.619845+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: evaluator_real2 baseline 10 and reference 600 exposed the ordering mistake; with the fixed-wall check first the reference scored 0; the outer seat's turn-2 review flagged the 24-versus-28 mismatch."
+}

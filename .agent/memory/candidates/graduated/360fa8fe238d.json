@@ -1,0 +1,38 @@
+{
+  "id": "360fa8fe238d",
+  "key": "manual_360fa8",
+  "name": "manual_360fa8",
+  "claim": "After a request may already have been sent, settle (record the spend) instead of releasing the reservation; release only when nothing could have been sent, and make release idempotent at the adapter boundary.",
+  "conditions": [
+    "spend"
+  ],
+  "evidence_ids": [
+    "2026-11-17T03:17:38.348463+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-17T03:17:38.348463+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-17T03:17:38.348463+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-17T03:17:38.455696+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "An interrupt mid-request can leave a real charge, so releasing loses spend; an idempotent release stops cleanup after a settle from masking the original failure.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-17T03:17:38.348463+00:00"
+      ],
+      "lessons_sha": "ee3973e34a7b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-17T03:17:38.455683+00:00",
+  "reviewer": "learn.py",
+  "rationale": "An interrupt mid-request can leave a real charge, so releasing loses spend; an idempotent release stops cleanup after a settle from masking the original failure."
+}

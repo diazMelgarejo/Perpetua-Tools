@@ -1,0 +1,38 @@
+{
+  "id": "a4a3cfaf0f51",
+  "key": "manual_a4a3cf",
+  "name": "manual_a4a3cf",
+  "claim": "Check a fixed-wall owner name by normalizing first, then matching: NFKC fold, drop format characters, NFKD, drop combining marks, casefold, strip non-alphanumerics, then test each wall name as a substring of each owner separately, and refuse any name that is non-ASCII or empty after folding. Comparing whole word tokens is bypassable by accents, glued names, fullwidth or zero-width characters and Cyrillic look-alikes. Over-refusal (a name containing agate) is deliberate and should be tested, not hidden.",
+  "conditions": [
+    "owner check normalization unicode lookalike fixed-wall mechanism card"
+  ],
+  "evidence_ids": [
+    "2026-11-16T22:24:10.479273+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T22:24:10.479273+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T22:24:10.479273+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T22:24:10.643820+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: an independent probe passed oramasys/phylax and phylax.admission through a token check; the automated security review then showed Phylax with an accent and phylaxpolicy also passed; the substring-after-normalization version refused all of them and the new tests pass.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T22:24:10.479273+00:00"
+      ],
+      "lessons_sha": "b66de546e519"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T22:24:10.643809+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: an independent probe passed oramasys/phylax and phylax.admission through a token check; the automated security review then showed Phylax with an accent and phylaxpolicy also passed; the substring-after-normalization version refused all of them and the new tests pass."
+}
