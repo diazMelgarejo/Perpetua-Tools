@@ -75,8 +75,8 @@ def migrate(ids: list[str], semantic: Path, candidates: Path) -> list[dict]:
             planned.append(row)
         for row in planned:
             _append_lesson_unlocked(stream, row)
-    if planned:
-        render_lessons(str(semantic))
+    # A prior run may have appended every row but failed to render.
+    render_lessons(str(semantic))
     return planned
 
 

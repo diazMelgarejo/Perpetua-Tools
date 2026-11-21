@@ -1,0 +1,77 @@
+{
+  "id": "b384360cc515",
+  "key": "manual_b38436",
+  "name": "manual_b38436",
+  "claim": "Before running a targeted flush-outbox, verify how the exact checked-out launcher and invocation load peer TLS, CA path and fingerprint, and bearer configuration. The November 15 report describes one invocation; it does not establish a general environment-only rule, a specific error for every missing value, or uniform behavior across launcher revisions. Refuse unverified transport and reconcile the targeted records before retrying.",
+  "conditions": [
+    "across",
+    "bearer",
+    "before",
+    "behavior",
+    "checked-out",
+    "configuration",
+    "describes",
+    "environment-only",
+    "error",
+    "establish",
+    "every",
+    "exact",
+    "fingerprint",
+    "flush-outbox",
+    "general",
+    "invocation",
+    "launcher",
+    "load",
+    "missing",
+    "november",
+    "one",
+    "path",
+    "peer",
+    "reconcile",
+    "records",
+    "refuse",
+    "report",
+    "retrying",
+    "revisions",
+    "rule",
+    "running",
+    "specific",
+    "targeted",
+    "tls",
+    "transport",
+    "uniform",
+    "unverified",
+    "value",
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-11-21T07:23:24.497943+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-21T07:23:24.497943+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-21T07:23:24.497943+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-21T07:23:24.674283+00:00",
+      "action": "graduated",
+      "reviewer": "codex",
+      "notes": "Preserve the historical observation and its lineage without treating an unverified configuration-loading claim as a general contract.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-21T07:23:24.497943+00:00"
+      ],
+      "lessons_sha": "14b983642907"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-21T07:23:24.674267+00:00",
+  "reviewer": "codex",
+  "rationale": "Preserve the historical observation and its lineage without treating an unverified configuration-loading claim as a general contract.",
+  "supersedes": "lesson_2c8202d570c0"
+}

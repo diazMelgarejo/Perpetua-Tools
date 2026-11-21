@@ -4,11 +4,45 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 TOOL = Path(__file__).resolve().parents[1] / '.agent/tools/migrate_lesson_identity.py'
 
 class IdentityMigrationTests(unittest.TestCase):
     """Preserve prior decisions and source bytes while normalizing identity."""
+    def test_retry_repairs_render_after_final_append(self) -> None:
+        """A retry renders durable rows without appending duplicates."""
+        spec = importlib.util.spec_from_file_location('migrate_lesson_identity', TOOL)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        cid = 'aaaaaaaaaaaa'
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            semantic = root / 'semantic'
+            candidates = root / 'candidates'
+            semantic.mkdir()
+            candidates.mkdir()
+            row = {'id': cid, 'source_candidate': cid, 'status': 'accepted',
+                   'claim': 'Preserve valid historical advice.'}
+            path = semantic / 'lessons.jsonl'
+            original = (json.dumps(row) + '\n').encode()
+            path.write_bytes(original)
+            (candidates / f'{cid}.json').write_text(
+                json.dumps({'id': cid, 'status': 'accepted'}), encoding='utf-8')
+            module.render_lessons(str(semantic))
+            markdown = semantic / 'LESSONS.md'
+            stale = markdown.read_bytes()
+            with patch.object(module, 'render_lessons', side_effect=OSError('render interrupted')):
+                with self.assertRaisesRegex(OSError, 'render interrupted'):
+                    module.migrate([cid], semantic, candidates)
+            appended = path.read_bytes()
+            self.assertTrue(appended.startswith(original))
+            self.assertEqual(len(appended.splitlines()), 2)
+            self.assertEqual(markdown.read_bytes(), stale)
+            self.assertEqual(module.migrate([cid], semantic, candidates), [])
+            self.assertEqual(path.read_bytes(), appended)
+            self.assertIn(f'id={cid} superseded_by=lesson_{cid}', markdown.read_text(encoding='utf-8'))
+
     def test_collision_refuses_batch_without_appending(self) -> None:
         """Reject an occupied canonical identity before appending any row."""
         spec = importlib.util.spec_from_file_location('migrate_lesson_identity', TOOL)

@@ -1,0 +1,69 @@
+{
+  "id": "0931c053642a",
+  "key": "manual_0931c0",
+  "name": "manual_0931c0",
+  "claim": "If a request may have been sent, do not release its reservation without evidence that no charge occurred. Failed settlement can leave settled spend unchanged while the durable uncertain reservation survives expiry and restart. An expired unresolved liability blocks new admission until explicit reconciliation; it is not a settled charge or evidence of provider billing.",
+  "conditions": [
+    "admission",
+    "billing",
+    "blocks",
+    "charge",
+    "durable",
+    "evidence",
+    "expired",
+    "expiry",
+    "explicit",
+    "failed",
+    "leave",
+    "liability",
+    "new",
+    "occurred",
+    "provider",
+    "reconciliation",
+    "release",
+    "request",
+    "reservation",
+    "restart",
+    "sent",
+    "settled",
+    "settlement",
+    "spend",
+    "survives",
+    "uncertain",
+    "unchanged",
+    "unresolved",
+    "until",
+    "while",
+    "without"
+  ],
+  "evidence_ids": [
+    "2026-11-21T07:23:24.228129+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-21T07:23:24.228129+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-21T07:23:24.228129+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-21T07:23:24.406175+00:00",
+      "action": "graduated",
+      "reviewer": "codex",
+      "notes": "The November 20 remediation verified retained liability across expiry and restart, not a nonzero settled-spend guarantee.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-21T07:23:24.228129+00:00"
+      ],
+      "lessons_sha": "69f6c1ef68ad"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-21T07:23:24.406165+00:00",
+  "reviewer": "codex",
+  "rationale": "The November 20 remediation verified retained liability across expiry and restart, not a nonzero settled-spend guarantee.",
+  "supersedes": "lesson_2862a1ad769e"
+}
