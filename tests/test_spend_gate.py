@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import shutil
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -259,3 +260,52 @@ def test_preflight_does_not_hide_unexpected_guard_errors(state: Path, monkeypatc
     monkeypatch.setattr(gate.guard, "reserve_sync", fail)
     with pytest.raises(RuntimeError, match="unrelated failure"):
         gate.preflight(100, 1)
+
+
+def test_file_path_loads_isolate_checkout_producers_and_share_ledger(
+    tmp_path: Path, state: Path, request: pytest.FixtureRequest
+) -> None:
+    """Each checkout supplies its own policy and modules while one state directory keeps one ledger."""
+    existing_modules = set(sys.modules)
+    def cleanup() -> None:
+        """Remove temporary checkout modules after the test."""
+        for name in set(sys.modules) - existing_modules:
+            if name.startswith("pt_orchestrator_spend_gate_"):
+                sys.modules.pop(name, None)
+    request.addfinalizer(cleanup)
+    roots = [tmp_path / "first", tmp_path / "second"]
+    modules = []
+    for index, root in enumerate(roots):
+        shutil.copytree(REPO_ROOT / "orchestrator", root / "orchestrator")
+        shutil.copytree(REPO_ROOT / "config" / "provider-policies", root / "config" / "provider-policies")
+        policy_path = root / "config" / "provider-policies" / "wandb-inference.json"
+        policy = json.loads(policy_path.read_text(encoding="utf-8"))
+        policy["policy_id"] = f"checkout-{index}"
+        policy_path.write_text(json.dumps(policy), encoding="utf-8")
+        for sibling in ("provider_limits", "cost_guard"):
+            with (root / "orchestrator" / f"{sibling}.py").open("a", encoding="utf-8") as handle:
+                handle.write(f"\nCHECKOUT_MARKER = {index}\n")
+        spec = importlib.util.spec_from_file_location(f"checkout_gate_{index}", root / "orchestrator" / "spend_gate.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        modules.append(module)
+
+    _attest()
+    first, second = [module.SpendGate(now=lambda: NOW) for module in modules]
+    assert [first.policy["policy_id"], second.policy["policy_id"]] == ["checkout-0", "checkout-1"]
+    for index, module in enumerate(modules):
+        for sibling in (module._pl, module._cg):
+            assert Path(sibling.__file__).resolve().parent == roots[index] / "orchestrator"
+            assert sibling.CHECKOUT_MARKER == index
+        sqlite_module = sys.modules[module._cg.__package__ + ".private_sqlite"]
+        assert Path(sqlite_module.__file__).resolve().parent == roots[index] / "orchestrator"
+        assert module.ProviderPolicyError is module._pl.ProviderPolicyError
+        assert module.BudgetExceededError is module._cg.BudgetExceededError
+    first.guard.record_spend(first.policy["budget"]["operator_estimate_ceiling_usd"] - 0.07)
+    assert first.preflight(4000, 900)["ok"] is True
+    assert second.preflight(4000, 900)["reason"] == "budget-exhausted"
+    spec = importlib.util.spec_from_file_location("checkout_gate_again", roots[0] / "orchestrator" / "spend_gate.py")
+    again = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(again)
+    assert again._pl is modules[0]._pl and again._cg is modules[0]._cg
+    assert list(pl.spend_dir().glob("*-budget.sqlite3")) == [pl.spend_dir() / "wandb-inference-budget.sqlite3"]

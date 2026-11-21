@@ -19,6 +19,7 @@ by file path (without the ``orchestrator`` package), which is how a consumer che
 """
 from __future__ import annotations
 
+import hashlib
 import importlib
 import importlib.util
 import json
@@ -31,9 +32,11 @@ try:
     from . import cost_guard as _cg
     from . import provider_limits as _pl
 except ImportError:  # loaded by file path: bring the sibling modules in under a private package name
-    _PRIVATE_PACKAGE = "pt_orchestrator_spend_gate"
+    _here = Path(__file__).resolve().parent
+    # Isolate sibling imports by checkout while reusing them for repeated loads of the same checkout.
+    _checkout_hash = hashlib.sha256(str(_here).encode("utf-8")).hexdigest()
+    _PRIVATE_PACKAGE = f"pt_orchestrator_spend_gate_{_checkout_hash}"
     if _PRIVATE_PACKAGE not in sys.modules:
-        _here = Path(__file__).resolve().parent
         _spec = importlib.util.spec_from_file_location(
             _PRIVATE_PACKAGE, _here / "__init__.py", submodule_search_locations=[str(_here)]
         )
