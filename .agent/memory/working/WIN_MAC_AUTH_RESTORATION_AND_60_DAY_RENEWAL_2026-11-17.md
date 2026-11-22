@@ -125,3 +125,21 @@ Timeline of the restoration session; the durable lessons live in
 - Final state: ONE CA (364490e8, Windows-held key), ONE pin (User-scope), ONE shared token
   (0f61c0c2...) both directions, 60-day leaves, CSR flow. ef080f01 retired from active use;
   Mac to destroy that key. Open: their 87-drain reconciliation; migration-plan steps 2-5.
+
+
+## Addendum 4 (2026-11-22, final): pending-task split + Mac focus directive delivered
+
+- Windows leaf auto-reissue VERIFIED: served leaf bb19e06a... (60-day, expires 2027-01-16,
+  SAN intact) - the T-7 regime is live on both sides now.
+- Migration plan status: step 1 CLOSED; fresh/empty-first confirmed; step 2 blocked on the
+  oramasys clone (NOT on this machine - verified; ultrathink-system is a different lineage);
+  step 3 Windows parts DONE (PT caller/old-writer inventory: .state/perpetua_core.db 4.1MB;
+  writers gossip_bus/lan_gossip_bridge/supervisor/heartbeat_monitor; consumer fastapi_app
+  :8000; deployment binding evidence for 8443/8002/8001/8000 recorded); steps 4-5 gated.
+- Delivered to the Mac via PURE standard machinery: migration-execution-status (push +
+  self-drop) and the MAC FOCUS DIRECTIVE (7 ordered tasks: ef080f01 key retirement, 87-drain
+  reconciliation, migration-2 offline proof, canonical-history/protected-routing tests,
+  controller track, Cline launcher limits, then C8-C11; explicit NOT-your-tasks list and
+  no-churn rule).
+- Windows owns: ef080f01 file retention until Mac confirms destruction; long-running process
+  restart note for the new pin; nothing else pending on this side.
