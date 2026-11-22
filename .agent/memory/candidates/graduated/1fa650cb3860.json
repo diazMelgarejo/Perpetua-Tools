@@ -1,0 +1,38 @@
+{
+  "id": "1fa650cb3860",
+  "key": "manual_1fa650",
+  "name": "manual_1fa650",
+  "claim": "A free pair dogfood (inner seat, Scout, outer seat Biafra, no model call, no gate, no network) proves the contracts and seat boundaries: distinct valid attempts, stall detection from the ledger, a validated Mechanism Card citing the stalled ids, an untouched evaluator digest, verifier paths refused, no retry. It does not prove a model proposes a good search rule; that needs a live cycle with the operator gate, a named budget and a same-day provider re-probe. State that limit wherever the dogfood is cited.",
+  "conditions": [
+    "dogfood pair biafra autoresearcher proves boundaries not model quality"
+  ],
+  "evidence_ids": [
+    "2026-11-16T22:24:12.064439+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T22:24:12.064439+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T22:24:12.064439+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T22:24:12.221797+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: tests/test_pair_dogfood.py passes 6 tests and produced a receipt; docs/v2/76 section 9 records the same limit.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T22:24:12.064439+00:00"
+      ],
+      "lessons_sha": "c2dca5d6f975"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T22:24:12.221786+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: tests/test_pair_dogfood.py passes 6 tests and produced a receipt; docs/v2/76 section 9 records the same limit."
+}

@@ -329,10 +329,7 @@ def _store_pinned_fingerprint(fingerprint: str, cert_dir: Optional[Path] = None)
 
 def _cert_not_after_utc(cert: x509.Certificate) -> datetime:
     """Return the certificate expiry as a timezone-aware UTC datetime."""
-    not_after = cert.not_valid_after
-    if not_after.tzinfo is None:
-        return not_after.replace(tzinfo=timezone.utc)
-    return not_after.astimezone(timezone.utc)
+    return cert.not_valid_after_utc
 
 
 def verify_or_pin_fingerprint(

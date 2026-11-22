@@ -1,0 +1,38 @@
+{
+  "id": "9d1751cfa965",
+  "key": "manual_9d1751",
+  "name": "manual_9d1751",
+  "claim": "Never run model-written code outside a real sandbox. A name denylist is a filter, not isolation: it accepted a getattr-built dunder walk, and the scorer's child processes inherited the parent environment, including the provider key, and had network access. Run candidates with an empty environment (copy no parent variable), inside a kernel sandbox that denies network, denies writes outside a scratch root and denies reads of secret directories, with a hard timeout that kills the process group, and fail closed when no sandbox exists. Gate with an allowlist of language constructs, not a denylist of names. Reading a candidate is a vetting step for incorporation, not a safety control for execution: in an automated loop the scorer runs the code before a human reads it.",
+  "conditions": [
+    "sandbox model-written code scorer environment secrets denylist allowlist sandbox-exec"
+  ],
+  "evidence_ids": [
+    "2026-11-16T22:55:16.246618+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T22:55:16.246618+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T22:55:16.246618+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T22:55:16.402277+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: a side agent flagged the exposure; verified by running the old vet on a getattr dunder walk (accepted) and by finding that the scorer's subprocess calls passed no env. Fixed with sandbox_run (scrubbed env, sandbox-exec, allowlist vet) and 26 tests, including kernel-level network, write and read denial.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T22:55:16.246618+00:00"
+      ],
+      "lessons_sha": "8f702d5d4fed"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T22:55:16.402268+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: a side agent flagged the exposure; verified by running the old vet on a getattr dunder walk (accepted) and by finding that the scorer's subprocess calls passed no env. Fixed with sandbox_run (scrubbed env, sandbox-exec, allowlist vet) and 26 tests, including kernel-level network, write and read denial."
+}

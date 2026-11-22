@@ -1,0 +1,38 @@
+{
+  "id": "fecadd5aaa5f",
+  "key": "manual_fecadd",
+  "name": "manual_fecadd",
+  "claim": "Vetting a candidate means more than checking the evaluator's score. Strip dead handlers (a try/except around a function that cannot raise for validated input, which would report a misleading reason if it ever fired), bound every diagnostic that prints user-controlled text (a 72-character cap per entry), and re-check that a candidate did not drop a guard the previous version had. The evaluator did not test either of these and both were found by reading the candidate before incorporating it.",
+  "conditions": [
+    "vet candidate dead code unbounded diagnostic regression incorporate"
+  ],
+  "evidence_ids": [
+    "2026-11-16T23:23:50.715571+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T23:23:50.715571+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T23:23:50.715571+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T23:23:50.867024+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: the turn-2 candidate carried a dead except Exception returning an E_OWNER message; the turn-3b candidate dropped the 72-character truncation so a 6000-character entry gave a huge message; both were fixed test-first at incorporation.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T23:23:50.715571+00:00"
+      ],
+      "lessons_sha": "e5ac57799ed7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T23:23:50.867013+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: the turn-2 candidate carried a dead except Exception returning an E_OWNER message; the turn-3b candidate dropped the 72-character truncation so a 6000-character entry gave a huge message; both were fixed test-first at incorporation."
+}

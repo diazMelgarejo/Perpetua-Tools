@@ -35,6 +35,7 @@ from orchestrator.heartbeat_monitor import (
     LIVENESS_STALLED_SEC,
     cleanup_stale_claims,
     find_agent_heartbeats,
+    find_open_claims,
     is_live_activity,
 )
 
@@ -102,19 +103,14 @@ async def test_restart_between_dead_classification_and_capture_keeps_claim(
     assert await _claim_row(bus, task_id) is not None
 
 
-async def test_agent_killed_after_capture_does_not_fence_release(
-    bus: GossipBus, clock: dict
-) -> None:
-    """An explicit kill recorded after capture is not liveness evidence."""
+async def test_agent_killed_after_capture_remains_held(bus: GossipBus, clock: dict) -> None:
+    """A kill event does not establish that execution has stopped."""
     task_id = await _claimed_task(bus, clock)
     clock["now"] = T_DEAD
     captured = await capture_stale_queue_claims(bus, {"w"})
-    await _emit(
-        bus, clock, T_DEAD + 30, {"kind": "agent_killed", "agent_id": "w", "reason": "ops"}
-    )
-    released = await release_captured_queue_claims(bus, captured)
-    assert released == [task_id]
-    assert await _claim_row(bus, task_id) is None
+    await _emit(bus, clock, T_DEAD + 30, {"kind": "agent_killed", "agent_id": "w", "reason": "ops"})
+    assert await release_captured_queue_claims(bus, captured) == []
+    assert await _claim_row(bus, task_id) is not None
 
 
 async def test_pulse_after_kill_still_fences_release(bus: GossipBus, clock: dict) -> None:
@@ -180,6 +176,7 @@ async def test_outer_dead_snapshot_does_not_release_a_live_worker(
     original = find_agent_heartbeats
 
     async def _outer_claims_dead(target, agent_id=None, *, connection=None):
+        """Simulate an obsolete outer DEAD classification without changing storage."""
         found = await original(target, agent_id, connection=connection)
         if connection is None and "w" in found:
             found = dict(found)
@@ -192,18 +189,14 @@ async def test_outer_dead_snapshot_does_not_release_a_live_worker(
     assert "legacy" not in await cleanup_stale_claims(bus)
 
 
-async def test_end_to_end_cleanup_releases_genuinely_dead_queue_claim(
-    bus: GossipBus, clock: dict
-) -> None:
-    """Guard: the monitor's own auto-releases must not block the queue release
-    that the same ``cleanup_stale_claims`` pass performs."""
+async def test_end_to_end_cleanup_holds_legacy_and_queue_claims(bus: GossipBus, clock: dict) -> None:
+    """Neither cleanup route releases claims based on heartbeat silence."""
     task_id = await _claimed_task(bus, clock)
     await _emit(bus, clock, T0, {"kind": "agent_claim", "agent_id": "w", "task": "legacy"})
     clock["now"] = T_DEAD
-    released = await cleanup_stale_claims(bus)
-    assert "legacy" in released
-    assert task_id in released
-    assert await _claim_row(bus, task_id) is None
+    assert await cleanup_stale_claims(bus) == []
+    assert await _claim_row(bus, task_id) is not None
+    assert [claim["task"] for claim in await find_open_claims(bus)] == ["legacy"]
 
 
 async def test_empty_capture_skips_task_history_fold(

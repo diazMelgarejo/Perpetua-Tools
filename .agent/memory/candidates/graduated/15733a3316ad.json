@@ -1,0 +1,38 @@
+{
+  "id": "15733a3316ad",
+  "key": "manual_15733a",
+  "name": "manual_15733a",
+  "claim": "Live use of a free-plan provider requires a fresh operator attestation, and the shared guard enforces it. This supersedes lesson_e024534a3096 and lesson_710b39a9542c where they treated 'free with no payment method charged' as enough. A Free account can have pay-as-you-go active without a card yet charged, in which case turns can bill up to the spending cap, so the operator must attest all three of: the plan is Free, pay-as-you-go is inactive, and Inference allowance remains. The attestation is a file only the operator writes (python3 -m orchestrator.provider_limits attest, with the exact confirmation phrase), expires after seven days, and without it the guard refuses every live request (attestation-required). A 402 has two documented causes (allowance used up with pay-as-you-go inactive, or the spending cap reached); stop on any 402 or 429, never retry, never activate pay-as-you-go, and disable SDK retries for the provider client (max_retries=0) so one call is one request. Provider facts are confirmed live from the official references with python3 -m orchestrator.provider_limits verify <provider>.",
+  "conditions": [
+    "free plan attestation pay-as-you-go 402 429 spend guard provider policy official references retries"
+  ],
+  "evidence_ids": [
+    "2026-11-16T23:37:07.343840+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T23:37:07.343840+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T23:37:07.343840+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T23:37:07.495700+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: CodeRabbit on PT 516 found four real gaps in the billing notes (two 402 causes, certification not covering pay-as-you-go, runbook relying on certification alone, SDK retrying 429). Fixed with provider_limits (policy, live verification, attestation), CostGuard monthly period, _call_wandb max_retries=0, and the adapter in orama; all tested.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T23:37:07.343840+00:00"
+      ],
+      "lessons_sha": "6173bee955b5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T23:37:07.495691+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: CodeRabbit on PT 516 found four real gaps in the billing notes (two 402 causes, certification not covering pay-as-you-go, runbook relying on certification alone, SDK retrying 429). Fixed with provider_limits (policy, live verification, attestation), CostGuard monthly period, _call_wandb max_retries=0, and the adapter in orama; all tested."
+}

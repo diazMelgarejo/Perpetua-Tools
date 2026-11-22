@@ -42,6 +42,7 @@ def _lesson_id(candidate):
 
 
 def main():
+    """Record a reviewed lesson and finish interrupted candidate moves."""
     p = argparse.ArgumentParser(description="Graduate a staged candidate.")
     p.add_argument("candidate_id")
     p.add_argument("--rationale", required=True,
@@ -110,6 +111,7 @@ def main():
         retry_reviewer = prior_lesson["reviewer"]
         retry_rationale = prior_lesson["rationale"]
         retry_provisional = (prior_lesson.get("status") == "provisional")
+        retry_supersedes = prior_lesson.get("supersedes")
 
         diffs = []
         if retry_reviewer != args.reviewer:
@@ -122,6 +124,8 @@ def main():
             diffs.append(
                 "rationale: overridden (see first-run text in lessons.jsonl)"
             )
+        if retry_supersedes != args.supersedes:
+            diffs.append("supersedes: overridden by the first-run record")
         if diffs:
             print(
                 f"note: retry invocation metadata differs from the "
@@ -134,7 +138,7 @@ def main():
 
         mark_graduated(
             args.candidate_id, retry_reviewer, retry_rationale, CANDIDATES,
-            provisional=retry_provisional,
+            provisional=retry_provisional, supersedes=retry_supersedes,
         )
         print(f"graduated {args.candidate_id} → lesson {lesson_id} (retry)")
         print(f"re-rendered: {md_path}")
@@ -184,7 +188,7 @@ def main():
     # Semantic writes survived — now move the candidate file.
     mark_graduated(
         args.candidate_id, args.reviewer, args.rationale, CANDIDATES,
-        provisional=args.provisional,
+        provisional=args.provisional, supersedes=lesson["supersedes"],
     )
 
     print(f"graduated {args.candidate_id} → lesson {lesson['id']}")

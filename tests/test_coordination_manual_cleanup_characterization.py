@@ -1,12 +1,8 @@
 """Characterization tests for PT's manual v1 stale-claim cleanup (closure C2).
 
-These tests pin the CURRENT behavior of ``heartbeat cleanup`` and its helpers
-so that later work can detect any drift. They are expected to pass on the
-code they were written against; passing is their purpose, not evidence that
-the behavior is desirable. Several of them pin known gaps (time-of-check /
-time-of-use liveness, retry-count resurrection, silently skipped contention)
-that ratified decision D1 assigns to the separate v2 Controller rather than
-to PT. PT remains manual: nothing here schedules or automates the cleanup.
+These tests cover the historical entry points and the L-1r hold: heartbeat
+silence is not proof a worker stopped. PT remains manual; no cleanup is
+scheduled or automated here.
 
 Reference: docs/coordination/manual-cleanup-characterization-2026-11-06.md.
 """
@@ -139,15 +135,12 @@ async def test_cleanup_handler_prints_and_returns_none_when_nothing_released(
     assert core_cli._exit_code(result) == 0
 
 
-async def test_cleanup_handler_lists_released_names(
-    bus: GossipBus, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    """Released legacy task names are printed comma-separated in claim order."""
+async def test_cleanup_handler_reports_no_releases_for_held_claims(bus: GossipBus, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    """A manual cleanup does not release claims merely classified DEAD."""
     await _legacy_claim(bus, "dead-a", "task-1")
-    await _legacy_claim(bus, "dead-b", "task-2")
     _advance_past_dead_threshold(monkeypatch)
     await _heartbeat_cleanup(bus)
-    assert capsys.readouterr().out.strip() == "released: task-1, task-2"
+    assert capsys.readouterr().out.strip() == "no stale claims released"
 
 
 def test_cli_cleanup_on_corrupt_database_exits_nonzero_without_traceback(
@@ -178,44 +171,30 @@ async def test_max_age_seconds_argument_is_accepted_but_ignored(bus: GossipBus) 
     assert [c["task"] for c in await find_open_claims(bus)] == ["task-fresh"]
 
 
-async def test_legacy_release_is_emitted_on_behalf_of_the_dead_holder(
-    bus: GossipBus, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """The release names the original holder and is marked auto_released."""
+async def test_legacy_dead_holder_is_held_without_release_event(bus: GossipBus, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Silence does not establish termination or emit an agent release."""
     await _legacy_claim(bus, "dead-agent", "task-x")
     _advance_past_dead_threshold(monkeypatch)
-    assert await cleanup_stale_claims(bus) == ["task-x"]
-    events = await heartbeat_monitor._fetch_heartbeat_events(bus, ("agent_release",))
-    assert len(events) == 1
-    payload = events[0]["payload"]
-    assert payload["agent_id"] == "dead-agent"
-    assert payload["task"] == "task-x"
-    assert payload["auto_released"] is True
-    assert payload["reason"] == "agent dead for 30+ min"
-    # Copied from the claim. find_open_claims stores None for a missing label,
-    # so the "?" default in cleanup_stale_claims is never reached.
-    assert payload["worktree"] is None
-    assert await find_open_claims(bus) == []
-
-
-async def test_repeated_manual_cleanup_is_idempotent(
-    bus: GossipBus, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """A second manual run finds nothing because the first closed the claim."""
-    await _legacy_claim(bus, "dead-agent", "task-x")
-    _advance_past_dead_threshold(monkeypatch)
-    assert await cleanup_stale_claims(bus) == ["task-x"]
     assert await cleanup_stale_claims(bus) == []
+    assert await heartbeat_monitor._fetch_heartbeat_events(bus, ("agent_release",)) == []
+    assert [c["task"] for c in await find_open_claims(bus)] == ["task-x"]
 
 
-async def test_kill_then_cleanup_releases_even_a_recent_claim(bus: GossipBus) -> None:
-    """``kill`` alone releases nothing; a separate ``cleanup`` call is required."""
+async def test_repeated_manual_cleanup_is_idempotent(bus: GossipBus, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Repeated cleanup retains the same claim."""
+    await _legacy_claim(bus, "dead-agent", "task-x")
+    _advance_past_dead_threshold(monkeypatch)
+    assert await cleanup_stale_claims(bus) == []
+    assert await cleanup_stale_claims(bus) == []
+    assert [c["task"] for c in await find_open_claims(bus)] == ["task-x"]
+
+
+async def test_kill_then_cleanup_holds_recent_claim(bus: GossipBus) -> None:
+    """A recorded kill is not an attestation that a process stopped."""
     await _legacy_claim(bus, "killed-agent", "task-k")
-    await bus.emit(
-        "heartbeat", {"kind": "agent_killed", "agent_id": "killed-agent", "reason": "manual"}
-    )
+    await bus.emit("heartbeat", {"kind": "agent_killed", "agent_id": "killed-agent", "reason": "manual"})
+    assert await cleanup_stale_claims(bus) == []
     assert [c["task"] for c in await find_open_claims(bus)] == ["task-k"]
-    assert await cleanup_stale_claims(bus) == ["task-k"]
 
 
 async def test_pulse_after_kill_revives_and_prevents_release(bus: GossipBus) -> None:
@@ -252,77 +231,44 @@ async def test_legacy_cleanup_rechecks_liveness_before_emit(
     assert [c["task"] for c in await find_open_claims(bus)] == ["task-late"]
 
 
-async def test_partial_failure_keeps_earlier_releases_and_propagates(
-    bus: GossipBus, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Releases are separate appends: a failure mid-sweep is not rolled back."""
+async def test_cleanup_never_attempts_legacy_release_write(bus: GossipBus, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A release insertion is not attempted when claims are held."""
     await _legacy_claim(bus, "dead-a", "task-1")
-    await _legacy_claim(bus, "dead-b", "task-2")
     _advance_past_dead_threshold(monkeypatch)
-    real_insert = bus.insert_event
-    calls = {"n": 0}
-
-    async def failing_second_insert(db, event_type: str, payload: dict, **kwargs: object):
-        """Fail the second release to expose already-persisted partial progress."""
-        if payload.get("kind") == "agent_release":
-            calls["n"] += 1
-            if calls["n"] == 2:
-                raise GossipBusError("injected write failure")
-        return await real_insert(db, event_type, payload, **kwargs)
-
-    monkeypatch.setattr(bus, "insert_event", failing_second_insert)
-    with pytest.raises(GossipBusError):
-        await cleanup_stale_claims(bus)
-    assert [c["task"] for c in await find_open_claims(bus)] == ["task-2"]
+    async def unexpected_insert(*args: object, **kwargs: object) -> None:
+        """Fail if held-claim cleanup attempts to publish a release."""
+        raise AssertionError("cleanup attempted a write")
+    monkeypatch.setattr(bus, "insert_event", unexpected_insert)
+    assert await cleanup_stale_claims(bus) == []
+    assert [c["task"] for c in await find_open_claims(bus)] == ["task-1"]
 
 
-async def test_release_database_error_is_gossip_bus_error(
-    bus: GossipBus, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """A failed release INSERT is reported as GossipBusError after rollback."""
+async def test_legacy_claim_remains_held_when_release_store_would_fail(bus: GossipBus, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A would-be release write cannot change the held claim."""
     await _legacy_claim(bus, "dead-db", "task-db")
     _advance_past_dead_threshold(monkeypatch)
-    real_insert = bus.insert_event
-
-    async def injected_lock(db, event_type: str, payload: dict, **kwargs: object):
-        if payload.get("kind") == "agent_release":
-            raise sqlite3.OperationalError("injected lock")
-        return await real_insert(db, event_type, payload, **kwargs)
-
+    async def injected_lock(*args: object, **kwargs: object) -> None:
+        """Model a release store that would reject writes if invoked."""
+        raise sqlite3.OperationalError("injected lock")
     monkeypatch.setattr(bus, "insert_event", injected_lock)
-    with pytest.raises(GossipBusError):
-        await cleanup_stale_claims(bus)
+    assert await cleanup_stale_claims(bus) == []
     assert [c["task"] for c in await find_open_claims(bus)] == ["task-db"]
 
 
-async def test_bridge_release_uses_public_init_and_forwards_once(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Cleanup on a LAN bridge does not call a private initializer or insert twice."""
+async def test_bridge_cleanup_does_not_forward_release(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Holding a claim does not forward a release over the LAN bridge."""
     from orchestrator.lan_gossip_bridge import LanGossipBridge
-
     bridge = LanGossipBridge(str(tmp_path / "bridge.db"), peers=[])
     forwarded: list[str] = []
-    real_forward = bridge.forward_committed
-
     async def spy(event_type: str, payload: dict, event_uuid: str) -> None:
-        if payload.get("kind") == "agent_release":
-            forwarded.append(event_uuid)
-        await real_forward(event_type, payload, event_uuid)
-
-    monkeypatch.setattr(bridge, "forward_committed", spy)
+        """Record forwarded event identities without contacting a peer."""
+        forwarded.append(event_uuid)
     await _legacy_claim(bridge, "dead-lan", "task-lan")
+    monkeypatch.setattr(bridge, "forward_committed", spy)
     _advance_past_dead_threshold(monkeypatch)
-    assert await cleanup_stale_claims(bridge) == ["task-lan"]
-    assert len(forwarded) == 1
-    releases = [
-        ev
-        for ev in await heartbeat_monitor._fetch_heartbeat_events(
-            bridge, ("agent_release",)
-        )
-        if ev["payload"].get("auto_released")
-    ]
-    assert [ev["uuid"] for ev in releases] == forwarded
+    assert await cleanup_stale_claims(bridge) == []
+    assert forwarded == []
+    assert [c["task"] for c in await find_open_claims(bridge)] == ["task-lan"]
 
 
 async def test_read_errors_after_initialization_are_not_wrapped(
@@ -339,41 +285,26 @@ async def test_read_errors_after_initialization_are_not_wrapped(
 # ── Distributed-queue (task_claims) cleanup ─────────────────────────────────
 
 
-async def test_queue_cleanup_requeues_dead_holder_without_touching_retry_count(
-    bus: GossipBus, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Known gap: the requeue keeps retry_count and always sets QUEUED."""
+async def test_queue_cleanup_holds_dead_holder_and_retry_count(bus: GossipBus, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The claim and folded state remain intact when the worker is silent."""
     task_id = await _queued_task_claimed_by(bus, "dead-q", "queue-work")
     _advance_past_dead_threshold(monkeypatch)
-    assert await cleanup_stale_claims(bus) == [task_id]
-    assert await _claim_row_holder(bus, task_id) is None
+    assert await cleanup_stale_claims(bus) == []
+    assert await _claim_row_holder(bus, task_id) == "dead-q"
     state = (await latest_task_snapshots(bus))[task_id]
-    assert state["status"] == QueuedTaskState.QUEUED.value
-    assert state["retry_count"] == 0
-    assert state["assigned_agent"] is None
-    assert state["notes"] == "Auto-released: agent dead-q dead; task returned to queue"
+    assert state["status"] == QueuedTaskState.CLAIMED.value
+    assert state.get("retry_count", 0) == 0
 
 
-async def test_queue_release_is_conditional_on_the_current_holder(
-    bus: GossipBus, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """If the row changed hands after the SELECT, the release is LOST_RACE."""
+async def test_queue_cleanup_does_not_fold_or_release_held_holder(bus: GossipBus, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A held claim requires no folded snapshot or release write."""
     task_id = await _queued_task_claimed_by(bus, "dead-q", "handover-work")
-    real_snapshots = task_queue.latest_task_snapshots
-
-    async def reassign_then_snapshot(target_bus: GossipBus) -> dict[str, dict]:
-        """Change the claim holder before returning the stale task snapshot."""
-        async with target_bus.connect() as db:
-            await db.execute(
-                "UPDATE task_claims SET agent_id = 'new-owner' WHERE task_id = ?",
-                (task_id,),
-            )
-            await db.commit()
-        return await real_snapshots(target_bus)
-
-    monkeypatch.setattr(task_queue, "latest_task_snapshots", reassign_then_snapshot)
+    async def unexpected_fold(target_bus: GossipBus) -> dict:
+        """Fail if cleanup folds task state instead of leaving the claim held."""
+        raise AssertionError("held claim should not be folded")
+    monkeypatch.setattr(task_queue, "latest_task_snapshots", unexpected_fold)
     assert await cleanup_stale_queue_claims(bus, {"dead-q"}) == []
-    assert await _claim_row_holder(bus, task_id) == "new-owner"
+    assert await _claim_row_holder(bus, task_id) == "dead-q"
 
 
 async def test_queue_release_contention_is_silently_skipped(

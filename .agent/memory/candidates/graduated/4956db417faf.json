@@ -1,0 +1,38 @@
+{
+  "id": "4956db417faf",
+  "key": "manual_4956db",
+  "name": "manual_4956db",
+  "claim": "Treat a reviewing model's output as untrusted and verify every finding by reproducing it against the code before acting. The single W&B review request returned eight findings and all eight reproduced; the author's own tests and an independent fuzz had found only three other defects. The productive pattern is one adversarial review request, then the evaluator reproduces each finding, fixes it test-first, and records the result.",
+  "conditions": [
+    "reviewer output untrusted verify findings reproduce adversarial review"
+  ],
+  "evidence_ids": [
+    "2026-11-16T22:24:11.540932+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T22:24:11.540932+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T22:24:11.540932+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T22:24:11.703873+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: each of the eight findings was reproduced with a short script (for example inner-scout rejected, constant attempt id, marker consumed by a bad digest, newline accepted by a hex pattern) before any fix.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T22:24:11.540932+00:00"
+      ],
+      "lessons_sha": "f3169b449c0a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T22:24:11.703864+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: each of the eight findings was reproduced with a short script (for example inner-scout rejected, constant attempt id, marker consumed by a bad digest, newline accepted by a hex pattern) before any fix."
+}

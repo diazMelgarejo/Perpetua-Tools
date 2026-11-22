@@ -20,16 +20,19 @@ _CANDIDATE_ID = re.compile(r"^[A-Za-z0-9_-]+$")
 
 
 def _now():
+    """Return the current UTC timestamp in ISO 8601 format."""
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
 def _validate_candidate_id(candidate_id):
+    """Reject IDs containing path separators or unsupported characters."""
     if not isinstance(candidate_id, str) or not _CANDIDATE_ID.fullmatch(candidate_id):
         raise ValueError(f"invalid candidate id: {candidate_id!r}")
     return candidate_id
 
 
 def _candidate_path(candidates_dir, candidate_id, lifecycle=None):
+    """Build a contained candidate path, rejecting invalid or escaping IDs."""
     candidate_id = _validate_candidate_id(candidate_id)
     base = os.path.abspath(candidates_dir)
     if lifecycle:
@@ -41,6 +44,7 @@ def _candidate_path(candidates_dir, candidate_id, lifecycle=None):
 
 
 def _touch(candidate, action, reviewer, notes="", **fields):
+    """Append a timestamped review decision to the candidate in memory."""
     candidate.setdefault("decisions", []).append({
         "ts": _now(),
         "action": action,
@@ -51,6 +55,7 @@ def _touch(candidate, action, reviewer, notes="", **fields):
 
 
 def _lessons_sha(candidates_dir):
+    """Return a short hash of rendered lessons, or an empty string if unavailable."""
     lessons_path = os.path.join(
         os.path.dirname(candidates_dir), "semantic", "LESSONS.md"
     )
@@ -64,6 +69,7 @@ def _lessons_sha(candidates_dir):
 
 
 def _stamp_evidence_and_lessons(candidate, candidates_dir):
+    """Attach the candidate's evidence and rendered lesson hash to its last decision."""
     if not candidate.get("decisions"):
         return
     last = candidate["decisions"][-1]
@@ -72,11 +78,13 @@ def _stamp_evidence_and_lessons(candidate, candidates_dir):
 
 
 def load_candidate(path):
+    """Read a candidate JSON file, propagating file and decoding errors."""
     with open(path, encoding="utf-8") as stream:
         return json.load(stream)
 
 
 def save_candidate(candidate, path):
+    """Sanitize candidate strings and write a formatted JSON snapshot."""
     sanitized = sanitize_json_strings(candidate)
     with open(path, "w", encoding="utf-8") as stream:
         json.dump(sanitized, stream, indent=2)
@@ -98,6 +106,7 @@ def _move_candidate(candidate, source, destination):
 
 
 def stage_candidate(candidate_path, reviewer="auto_dream"):
+    """Record a staging decision in an existing candidate file."""
     candidate = load_candidate(candidate_path)
     candidate.setdefault("status", "staged")
     _touch(candidate, "staged", reviewer)
@@ -105,10 +114,12 @@ def stage_candidate(candidate_path, reviewer="auto_dream"):
 
 
 def _default_queue_path(candidates_dir):
+    """Locate the working review queue beside the candidate directory."""
     return os.path.join(os.path.dirname(candidates_dir), "working", "REVIEW_QUEUE.md")
 
 
 def _refresh_queue(candidates_dir):
+    """Refresh the derived review queue, logging recoverable read or write failures."""
     try:
         write_review_queue_summary(candidates_dir, _default_queue_path(candidates_dir))
     except (OSError, ValueError, json.JSONDecodeError):
@@ -120,7 +131,13 @@ def _refresh_queue(candidates_dir):
 
 
 def mark_graduated(candidate_id, reviewer, rationale, candidates_dir,
-                    provisional=False):
+                    provisional=False, supersedes=None):
+    """Move and return a reviewed candidate, recording its superseded lesson ID.
+
+    ``supersedes`` is the semantic decision's ID or None for no known link.
+    A missing staged candidate raises FileNotFoundError; the derived review queue
+    is refreshed after the candidate moves.
+    """
     source = _candidate_path(candidates_dir, candidate_id)
     if not os.path.exists(source):
         raise FileNotFoundError(f"candidate not found: {candidate_id}")
@@ -129,6 +146,7 @@ def mark_graduated(candidate_id, reviewer, rationale, candidates_dir,
     candidate["accepted_at"] = _now()
     candidate["reviewer"] = reviewer
     candidate["rationale"] = rationale
+    candidate["supersedes"] = supersedes
     _touch(candidate, "graduated", reviewer, notes=rationale,
            provisional=provisional)
     _stamp_evidence_and_lessons(candidate, candidates_dir)
@@ -141,6 +159,7 @@ def mark_graduated(candidate_id, reviewer, rationale, candidates_dir,
 
 
 def mark_rejected(candidate_id, reviewer, reason, candidates_dir, **extra_stamp):
+    """Record a rejection, move the candidate, and refresh the derived queue."""
     source = _candidate_path(candidates_dir, candidate_id)
     if not os.path.exists(source):
         raise FileNotFoundError(f"candidate not found: {candidate_id}")
@@ -158,6 +177,7 @@ def mark_rejected(candidate_id, reviewer, reason, candidates_dir, **extra_stamp)
 
 
 def mark_reopened(candidate_id, reviewer, candidates_dir):
+    """Move a rejected candidate back to staging with a reopening decision."""
     source = _candidate_path(candidates_dir, candidate_id, "rejected")
     if not os.path.exists(source):
         raise FileNotFoundError(f"rejected candidate not found: {candidate_id}")
@@ -171,6 +191,7 @@ def mark_reopened(candidate_id, reviewer, candidates_dir):
 
 
 def _age_factor(staged_at):
+    """Scale priority with age, defaulting to one for invalid timestamps."""
     try:
         staged = datetime.datetime.fromisoformat(staged_at)
     except (ValueError, TypeError):
@@ -182,6 +203,7 @@ def _age_factor(staged_at):
 
 
 def candidate_priority(candidate):
+    """Rank a candidate using cluster size, salience, and time in staging."""
     return (
         max(1, candidate.get("cluster_size", 1))
         * max(0.1, candidate.get("canonical_salience", 0.1))
@@ -190,6 +212,11 @@ def candidate_priority(candidate):
 
 
 def list_candidates(candidates_dir, status="staged", sort_by="priority"):
+    """Read valid candidate files for a lifecycle state and sort the results.
+
+    Missing directories return an empty list; unreadable or invalid JSON files
+    are skipped.
+    """
     search_dir = candidates_dir if status == "staged" else os.path.join(candidates_dir, status)
     if not os.path.isdir(search_dir):
         return []
@@ -212,6 +239,7 @@ def list_candidates(candidates_dir, status="staged", sort_by="priority"):
 
 
 def _read_review_queue_preamble(summary_path):
+    """Preserve the static queue preamble ahead of generated candidate details."""
     if not os.path.exists(summary_path):
         return "# Review Queue\n\n"
     with open(summary_path, encoding="utf-8") as stream:
@@ -230,6 +258,7 @@ def _read_review_queue_preamble(summary_path):
 
 
 def write_review_queue_summary(candidates_dir, summary_path):
+    """Regenerate the queue projection and return the number of staged candidates."""
     pending = list_candidates(candidates_dir, status="staged")
     os.makedirs(os.path.dirname(summary_path), exist_ok=True)
     preamble = _read_review_queue_preamble(summary_path)

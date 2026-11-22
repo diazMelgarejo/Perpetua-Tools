@@ -63,7 +63,7 @@ Perpetua-Tools/
 │   ├── models.yml                    ← All models: local + online, per device + backend
 │   ├── LOCAL-RUNTIME-OVERLAY.md      ← discovery may write LAN IPs locally; never commit
 │   └── routing.yml                   ← task_type → role → model fallback chain
-├── .state/                           ← Runtime: agents.json, budget.json (gitignored)
+├── .state/                           ← Runtime: agents.json, budget.sqlite3 (gitignored)
 ├── .env.example
 ├── requirements.txt
 ├── multi_agent_labs_strategy.json    ← v1.0.0 strategy (inherited from main)

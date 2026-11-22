@@ -1,0 +1,42 @@
+{
+  "id": "762380426dc7",
+  "key": "manual_762380",
+  "name": "manual_762380",
+  "claim": "The operator attestation for a free-plan provider is an interactive speed bump, not an access control: the guard validates the attestation file by its contents, so any process running as the same OS user could write it directly. It still forces a deliberate human step, a terminal, and a typed confirmation, but it does not stop a same-user process. This corrects the wording 'a file only the operator writes' in lesson_15733a3316ad, which stays unedited.",
+  "conditions": [
+    "attestation",
+    "guard",
+    "operator",
+    "same-user",
+    "speed-bump"
+  ],
+  "evidence_ids": [
+    "2026-11-17T02:37:12.840950+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-17T02:37:12.840950+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-17T02:37:12.840950+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-17T02:37:12.954401+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Reviewer finding on the shared spend guard: the guard checks provider, attested_by, the required true fields and the timestamp age only. The policy file already states the attestation is a speed bump, not a security boundary; the lesson text overstated it.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-17T02:37:12.840950+00:00"
+      ],
+      "lessons_sha": "db46aba0950b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-17T02:37:12.954394+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Reviewer finding on the shared spend guard: the guard checks provider, attested_by, the required true fields and the timestamp age only. The policy file already states the attestation is a speed bump, not a security boundary; the lesson text overstated it."
+}

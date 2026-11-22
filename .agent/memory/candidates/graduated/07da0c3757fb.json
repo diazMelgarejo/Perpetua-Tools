@@ -1,0 +1,38 @@
+{
+  "id": "07da0c3757fb",
+  "key": "manual_07da0c",
+  "name": "manual_07da0c",
+  "claim": "Reproduce every review finding before fixing it and expect the reproduction to show it is real for a different reason than stated.",
+  "conditions": [
+    "review"
+  ],
+  "evidence_ids": [
+    "2026-11-17T03:17:37.989961+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-17T03:17:37.989961+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-17T03:17:37.989961+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-17T03:17:38.096266+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Rolling back a committed reservation raises UnknownReservationError, which made a double-release finding real; a NUL byte in an argv raises ValueError only after the one-attempt marker is claimed. Fixing from the comment alone would have missed both.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-17T03:17:37.989961+00:00"
+      ],
+      "lessons_sha": "4593176bf379"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-17T03:17:38.096258+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Rolling back a committed reservation raises UnknownReservationError, which made a double-release finding real; a NUL byte in an argv raises ValueError only after the one-attempt marker is claimed. Fixing from the comment alone would have missed both."
+}

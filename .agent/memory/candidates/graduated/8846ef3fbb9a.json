@@ -1,0 +1,38 @@
+{
+  "id": "8846ef3fbb9a",
+  "key": "manual_8846ef",
+  "name": "manual_8846ef",
+  "claim": "Keep the model and effort policy in two tiers and encode it in code with tests. Preferred paid models (Claude Fable 5.2 high and GPT-6 Astra high for the outer seat, Claude Opus 5.5 medium and GPT-6.1 Sol medium for the AutoResearcher seat) are human-gated and run only on an exact True approval. The default ladder medium, else high, else low, never xhigh or max, runs automatically on free W&B turns and as the no-paid-permission fallback. The CLI aliases claude-ultra (default effort max) and codex-ultra (default effort ultra) break the rule and must not be used.",
+  "conditions": [
+    "model effort policy human-gated default ladder xhigh max aliases"
+  ],
+  "evidence_ids": [
+    "2026-11-16T22:24:11.807442+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T22:24:11.807442+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T22:24:11.807442+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T22:24:11.963261+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: operator clarification; plan_turn and default_wandb_turn plus tests encode it; the live model list from the ai-cli tool showed the two aliases and their default efforts.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T22:24:11.807442+00:00"
+      ],
+      "lessons_sha": "5627ca66faf2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T22:24:11.963240+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: operator clarification; plan_turn and default_wandb_turn plus tests encode it; the live model list from the ai-cli tool showed the two aliases and their default efforts."
+}

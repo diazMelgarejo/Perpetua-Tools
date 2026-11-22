@@ -1,0 +1,70 @@
+{
+  "id": "0c6631df2b97",
+  "key": "manual_0c6631",
+  "name": "manual_0c6631",
+  "claim": "Do not make an input card mandatory for a flow whose output is the card: the outer dry run produces the receipt the card is built from, so a required input card breaks the real flow. Keep cycles usable without a card, have a cycle that validated a card record its card_id, and enforce 'no card, no promotion' at promotion time: a reviewed or graduated card needs a receipt with card_checked true and its own card_id.",
+  "conditions": [
+    "breaks",
+    "built",
+    "card",
+    "card_checked",
+    "card_id",
+    "cycle",
+    "cycles",
+    "dry",
+    "enforce",
+    "flow",
+    "graduated",
+    "input",
+    "keep",
+    "make",
+    "mandatory",
+    "needs",
+    "outer",
+    "output",
+    "own",
+    "produces",
+    "promotion",
+    "real",
+    "receipt",
+    "record",
+    "required",
+    "reviewed",
+    "run",
+    "time",
+    "true",
+    "usable",
+    "validated",
+    "whose",
+    "without"
+  ],
+  "evidence_ids": [
+    "2026-11-17T18:51:15.982553+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-17T18:51:15.982553+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-17T18:51:15.982553+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-17T18:51:20.264747+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Decided in the 2026-11-17 Biafra lockstep remediation (see BIAFRA_LOCKSTEP_REMEDIATION_2026-11-17.md); reusable beyond this change. Orama review fixes 11-15 are decided and in progress, not verified.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-17T18:51:15.982553+00:00"
+      ],
+      "lessons_sha": "afd858334c90"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-17T18:51:20.264726+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Decided in the 2026-11-17 Biafra lockstep remediation (see BIAFRA_LOCKSTEP_REMEDIATION_2026-11-17.md); reusable beyond this change. Orama review fixes 11-15 are decided and in progress, not verified."
+}

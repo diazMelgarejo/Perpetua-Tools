@@ -1,0 +1,42 @@
+{
+  "id": "371473e17ad0",
+  "key": "manual_371473",
+  "name": "manual_371473",
+  "claim": "The terminal and typed confirmation around a provider attestation are steps the attest command requires, not something the guard enforces: the guard accepts a valid file by its contents alone, so a process running as the same OS user could write it with no terminal. Say 'the command requires', never 'the guard forces'. This corrects the wording 'It still forces a deliberate human step' in lesson_762380426dc7, which stays unedited.",
+  "conditions": [
+    "attestation",
+    "guard",
+    "same-user",
+    "speed-bump",
+    "wording"
+  ],
+  "evidence_ids": [
+    "2026-11-17T05:22:32.976132+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-17T05:22:32.976132+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-17T05:22:32.976132+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-17T05:22:33.139337+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A second review round found the first correction repeated the over-claim it was fixing: it named the interactive flow as a guarantee of the guard.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-17T05:22:32.976132+00:00"
+      ],
+      "lessons_sha": "6d9743bab4ed"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-17T05:22:33.139326+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A second review round found the first correction repeated the over-claim it was fixing: it named the interactive flow as a guarantee of the guard."
+}

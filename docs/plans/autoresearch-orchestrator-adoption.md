@@ -44,6 +44,19 @@ The dry-run plan records these bounds:
 - serving grant: off
 
 This execution adds no bilevel runner, no tri-level runner, and no serving grant.
+
+Renewed 2026-11-17. The operator ratified the MetaResearcher seat name **Biafra** as the canonical
+agent for the outer seat. The change is additive in orama-system: display name and a
+`canonical_agent` record, with the seat ids unchanged. The bridge status stays
+`adopted-not-started`, because this bridge still starts neither seat. The seat contracts (trace
+entries, stall report, evaluator digest) and the Mechanism Card schema live in orama-system
+`docs/v2/76-biafra-outer-seat-canonical-plan.md`. One bounded live cycle is approved in principle
+and is not armed: it needs the operator gate, the explicit arm, a same-day provider re-probe, and
+the named provider, budget, request limit and deadline. Model and effort are explicit in two
+tiers. Preferred and human-gated: Claude Fable 5.2 high or GPT-6 Astra high for the outer seat,
+Claude Opus 5.5 medium or GPT-6.1 Sol medium for the AutoResearcher seat, only after explicit
+approval. Default and automatic: medium, else high, else low, never xhigh or max, on free W&B turns
+and as the fallback when no paid permission is granted.
 The plugin bridge and the single-track loop stay as they are.
 v2 repositories stay deferred.
 

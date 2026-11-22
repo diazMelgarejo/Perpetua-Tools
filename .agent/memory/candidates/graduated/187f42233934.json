@@ -1,0 +1,38 @@
+{
+  "id": "187f42233934",
+  "key": "manual_187f42",
+  "name": "manual_187f42",
+  "claim": "Treat a side agent's note like a reviewer's output: verify its facts, fix what is real, and correct what it got wrong. All three notes in this session found real problems (model-written code scored with no sandbox and the provider key in the child environment, the free-tier claim never checked, and later sandbox flaws), but one said the candidates had been read before use when the scorer had in fact run them first. Reproduce the claim, then fix before the next live turn.",
+  "conditions": [
+    "side agent note verify claims fix before next turn"
+  ],
+  "evidence_ids": [
+    "2026-11-16T23:23:50.223217+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T23:23:50.223217+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T23:23:50.223217+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T23:23:50.371905+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: each note was checked by running the old vet on a getattr dunder walk, reading the scorer's subprocess calls, and fetching the official billing page; the correction to the note's factual error was stated to the operator.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T23:23:50.223217+00:00"
+      ],
+      "lessons_sha": "c5095ddde060"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T23:23:50.371897+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: each note was checked by running the old vet on a getattr dunder walk, reading the scorer's subprocess calls, and fetching the official billing page; the correction to the note's factual error was stated to the operator."
+}

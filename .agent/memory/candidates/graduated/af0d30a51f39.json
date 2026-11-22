@@ -1,0 +1,38 @@
+{
+  "id": "af0d30a51f39",
+  "key": "manual_af0d30",
+  "name": "manual_af0d30",
+  "claim": "A compound shell command that begins with a bare cat > file and no heredoc blocks forever waiting on stdin, so everything after it never runs. A backgrounded gh pr create hung this way for minutes and the PR body file was never written. Write PR bodies with the file-writing tool, run gh with a hard timeout and stdin from /dev/null, and check that the body file exists before creating the PR.",
+  "conditions": [
+    "gh pr create hang stdin cat body-file timeout"
+  ],
+  "evidence_ids": [
+    "2026-11-16T22:24:09.685165+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T22:24:09.685165+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T22:24:09.685165+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T22:24:09.842515+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: the first PR-creation command hung on a stray cat; a retry showed the body files did not exist; after writing them with the Write tool and using timeout 90 with stdin from /dev/null both PRs were created.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T22:24:09.685165+00:00"
+      ],
+      "lessons_sha": "eb2ae3c2acdc"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T22:24:09.842504+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: the first PR-creation command hung on a stray cat; a retry showed the body files did not exist; after writing them with the Write tool and using timeout 90 with stdin from /dev/null both PRs were created."
+}

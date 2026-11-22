@@ -1,0 +1,38 @@
+{
+  "id": "a3239545e594",
+  "key": "manual_a32395",
+  "name": "manual_a32395",
+  "claim": "Biafra is the ratified canonical agent for the MetaResearcher outer seat (2026-11-17), added additively: display name and a canonical_agent record while the seat ids stay metaresearch-outer. The bridge status stays adopted-not-started, bi-level stays the default, tri-level stays optional, and serving stays off. Seat contracts and the Mechanism Card schema live in orama-system docs/v2/76; a card naming Phylax, Telos or Agate as owner is refused before measurement. A live cycle needs the operator gate, the explicit arm and a named provider, budget, request limit and deadline.",
+  "conditions": [
+    "biafra metaresearcher outer-seat canonical-agent"
+  ],
+  "evidence_ids": [
+    "2026-11-16T21:25:31.375486+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T21:25:31.375486+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T21:25:31.375486+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T21:25:31.538372+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Operator ratification 2026-11-17; orama-system PR for docs/v2/76; keeps ids stable and the outer seat gated.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T21:25:31.375486+00:00"
+      ],
+      "lessons_sha": "7fb7cb0c2041"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T21:25:31.538360+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Operator ratification 2026-11-17; orama-system PR for docs/v2/76; keeps ids stable and the outer seat gated."
+}

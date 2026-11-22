@@ -1,0 +1,38 @@
+{
+  "id": "525d9111e521",
+  "key": "manual_525d91",
+  "name": "manual_525d91",
+  "claim": "Design the model-code sandbox deny-by-default and keep its allowlist narrow. An allow-by-default macOS profile left Apple Events, launch services and exec of other programs reachable; a read root computed as the parent of the interpreter binary becomes the home folder or / on some layouts. Allow reads only from exact prefixes and stdlib directories, refuse any root that is /, home, an ancestor of home or shallower than three components, layer secret-directory denials on top, allow only the interpreter to exec, and note that Python then needs only a read of the root directory entry. In the vet, refuse parameter defaults, variadics and any name that shadows a builtin, because a parameter named getattr with getattr as its default otherwise passes.",
+  "conditions": [
+    "sandbox deny-by-default read roots allowlist vet shadowing builtins sandbox-exec"
+  ],
+  "evidence_ids": [
+    "2026-11-16T23:05:55.858984+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T23:05:55.858984+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T23:05:55.858984+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T23:05:56.012987+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: three consecutive automated security reviews of sandbox_run each found a real flaw; each was reproduced, fixed test-first and covered by kernel-level tests (56 tests).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T23:05:55.858984+00:00"
+      ],
+      "lessons_sha": "25a880b4eb9f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T23:05:56.012977+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: three consecutive automated security reviews of sandbox_run each found a real flaw; each was reproduced, fixed test-first and covered by kernel-level tests (56 tests)."
+}

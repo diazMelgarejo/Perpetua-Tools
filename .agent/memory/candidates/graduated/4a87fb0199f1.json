@@ -1,0 +1,38 @@
+{
+  "id": "4a87fb0199f1",
+  "key": "manual_4a87fb",
+  "name": "manual_4a87fb",
+  "claim": "Before writing a new module, search the sibling repositories for existing logic and reuse and upgrade it. The first spend guard in orama duplicated what Perpetua-Tools already had: CostGuard (atomic reserve, commit, rollback, a budget file), a provider policy format with official source urls (the BigModel free-first policy), and a frugality router. Perpetua-Tools is the runtime and state authority and orama is stateless, so shared state logic belongs in Perpetua-Tools and orama consumes it through a thin adapter that fails closed. Search order: code-review-graph, gbrain, then targeted grep for budget, spend, cost, policy and guard in both repositories, before the first line of new code.",
+  "conditions": [
+    "reuse existing logic search sibling repositories shared guard state authority adapter duplicate"
+  ],
+  "evidence_ids": [
+    "2026-11-16T23:38:56.329262+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-16T23:38:56.329262+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-16T23:38:56.329262+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-16T23:38:56.488871+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-17: the operator asked for the guard to be held in common and to reuse existing logic; a grep of both repositories found cost_guard.py, dispatch_guard.py, frugality_router.py, bigmodel-free-first-policy.json and model-governance.yml that the first version ignored; it was replaced before being pushed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-16T23:38:56.329262+00:00"
+      ],
+      "lessons_sha": "2f8fb3ee6983"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-16T23:38:56.488862+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-17: the operator asked for the guard to be held in common and to reuse existing logic; a grep of both repositories found cost_guard.py, dispatch_guard.py, frugality_router.py, bigmodel-free-first-policy.json and model-governance.yml that the first version ignored; it was replaced before being pushed."
+}
