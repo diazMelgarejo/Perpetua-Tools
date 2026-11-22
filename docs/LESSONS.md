@@ -145,3 +145,16 @@ Four new graduated lessons and the earlier records they qualify are indexed in
 [the memory closure](../.agent/memory/working/LOOP_GRAPH_REVISION4_CLOSURE_2026-10-09.md).
 Commit logical batches; publish each branch once with exact expected-head checks.
 Latest review replies and handoffs must identify fixing SHAs, not assume merges.
+
+## 2026-11-22 — Fence each transaction, qualify the boundary
+
+The [private queue core ledger](coordination/private-authority-core-2026-11-22.md)
+separates local generation continuity from a protected authority service. A
+storage core does not close direct writers, authenticate workers, or make
+unknown-effect recovery safe. Keep those limits explicit until the complete
+caller, migration and recovery slice is proved.
+
+Check supported store modes inside each locked transaction rather than only
+at object construction. SQLite transaction context managers commit or roll
+back; they do not close connections. Test closure after success and refusal,
+and preserve atomic task, audit and outbox writes on injected failure.
