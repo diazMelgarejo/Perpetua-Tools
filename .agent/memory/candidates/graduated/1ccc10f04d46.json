@@ -1,0 +1,41 @@
+{
+  "id": "1ccc10f04d46",
+  "key": "1ccc10f04d46",
+  "name": "1ccc10f04d46",
+  "claim": "windows-peer-ca.pem is byte-identical to the Mac orama-lan-ca-PHLab-H2LGBV3.pem (DER SHA-256 364490e8, valid Oct 2026 to Oct 2028); the 8443 portal serves a distinct self-signed CN=orama-mac.local (SHA-256 53c1ef1f, valid Nov 2026 to Dec 2026). Each direction must pin the correct peer cert, not assume one shared CA.",
+  "conditions": [
+    "certificate",
+    "ca_identity",
+    "tls",
+    "lan_peer"
+  ],
+  "evidence_ids": [
+    "2026-11-15T09:56:41Z"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 9.0,
+  "staged_at": "2026-11-15T09:56:41Z",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-15T09:56:41Z",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-15T09:56:41Z",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "diff confirmed windows-peer-ca.pem equals orama-lan-ca-PHLab-H2LGBV3.pem (364490e8 DER); openssl s_client on 8443 served CN=orama-mac.local (53c1ef1f).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-15T09:56:41Z"
+      ],
+      "lessons_sha": "1ccc10f04d46_v1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-15T09:56:41Z",
+  "reviewer": "learn.py",
+  "rationale": "Verify which cert each endpoint actually presents before pinning; do not assume the peer CA equals the portal cert."
+}

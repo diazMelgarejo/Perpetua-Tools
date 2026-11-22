@@ -1,0 +1,81 @@
+{
+  "id": "5fb3dba052e8",
+  "key": "manual_5fb3db",
+  "name": "manual_5fb3db",
+  "claim": "For queued LAN delivery over reachable pinned-CA TLS, reviewed remap options can override stale stored address and port on explicitly selected records. Verify the drop result, receipt timestamp and byte count, and reconcile the targeted queue separately. The November 15 record reports outbound delivery and an inbound arrival; it does not establish the reverse transport, reciprocal content identity or a CA-change cause.",
+  "conditions": [
+    "address",
+    "arrival",
+    "byte",
+    "ca-change",
+    "cause",
+    "content",
+    "count",
+    "delivery",
+    "drop",
+    "establish",
+    "explicitly",
+    "identity",
+    "inbound",
+    "lan",
+    "november",
+    "options",
+    "outbound",
+    "over",
+    "override",
+    "pinned-ca",
+    "port",
+    "queue",
+    "queued",
+    "reachable",
+    "receipt",
+    "reciprocal",
+    "reconcile",
+    "record",
+    "records",
+    "remap",
+    "reports",
+    "result",
+    "reverse",
+    "reviewed",
+    "selected",
+    "separately",
+    "stale",
+    "stored",
+    "targeted",
+    "timestamp",
+    "tls",
+    "transport",
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-11-21T07:23:23.958157+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-21T07:23:23.958157+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-21T07:23:23.958157+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-21T07:23:24.137599+00:00",
+      "action": "graduated",
+      "reviewer": "codex",
+      "notes": "Preserve documented remap and receipt checks from the accepted claim while applying the qualification in lesson_ace375ffdc97.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-21T07:23:23.958157+00:00"
+      ],
+      "lessons_sha": "7b15c50b24ac"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-21T07:23:24.137587+00:00",
+  "reviewer": "codex",
+  "rationale": "Preserve documented remap and receipt checks from the accepted claim while applying the qualification in lesson_ace375ffdc97.",
+  "supersedes": "lesson_876cd9da93f2"
+}

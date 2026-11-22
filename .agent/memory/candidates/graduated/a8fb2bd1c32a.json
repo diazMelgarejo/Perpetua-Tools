@@ -1,0 +1,65 @@
+{
+  "id": "a8fb2bd1c32a",
+  "key": "manual_a8fb2b",
+  "name": "manual_a8fb2b",
+  "claim": "PEER_CA_SHA256 identifies the DER-encoded CA certificate, not the raw PEM file. For the November 15 recovery, records disagree on whether the stored pin was already a DER digest or was changed from a file hash. Neither a pin repair nor its causal role in the subsequent delivery is established.",
+  "conditions": [
+    "already",
+    "causal",
+    "certificate",
+    "changed",
+    "delivery",
+    "der",
+    "der-encoded",
+    "digest",
+    "disagree",
+    "established",
+    "file",
+    "hash",
+    "identifies",
+    "neither",
+    "nor",
+    "november",
+    "peer_ca_sha256",
+    "pem",
+    "pin",
+    "raw",
+    "records",
+    "recovery",
+    "repair",
+    "role",
+    "stored",
+    "subsequent",
+    "whether"
+  ],
+  "evidence_ids": [
+    "2026-11-21T07:23:23.634519+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-21T07:23:23.634519+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-21T07:23:23.634519+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-21T07:23:23.853530+00:00",
+      "action": "graduated",
+      "reviewer": "codex",
+      "notes": "Preserve the verified fingerprint format; reconcile conflicting historical observations without asserting a repair.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-21T07:23:23.634519+00:00"
+      ],
+      "lessons_sha": "e246d4a5683d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-21T07:23:23.853511+00:00",
+  "reviewer": "codex",
+  "rationale": "Preserve the verified fingerprint format; reconcile conflicting historical observations without asserting a repair.",
+  "supersedes": "lesson_8a513897c8ed"
+}

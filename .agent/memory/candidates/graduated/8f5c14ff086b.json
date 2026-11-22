@@ -1,0 +1,41 @@
+{
+  "id": "8f5c14ff086b",
+  "key": "8f5c14ff086b",
+  "name": "8f5c14ff086b",
+  "claim": "A leaf signed from a CSR via openssl x509 -req does NOT inherit the CSR subjectAltName; the SAN must be re-asserted in the -extfile, and a CN-only leaf fails Python ssl hostname verification for IP connections (IP address mismatch) even when the chain verifies perfectly.",
+  "conditions": [
+    "x509",
+    "san",
+    "hostname_verification",
+    "tls"
+  ],
+  "evidence_ids": [
+    "2026-11-17T05:05:00Z"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 9.5,
+  "staged_at": "2026-11-17T05:05:00Z",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-17T05:05:00Z",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-17T05:05:00Z",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "First renewed leaf verified chain-only and passed; the peer flush then failed IP address mismatch because the extfile omitted subjectAltName; re-issue with SAN in the extfile cleared it.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-17T05:05:00Z"
+      ],
+      "lessons_sha": "8f5c14ff086b_v1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-17T05:05:00Z",
+  "reviewer": "learn.py",
+  "rationale": "SAN belongs in the signing extfile, not just the CSR; test hostname verification with the exact address the peer dials, not the chain alone."
+}

@@ -1,0 +1,40 @@
+{
+  "id": "34b8c8ba4f1a",
+  "key": "manual_34b8c8",
+  "name": "manual_34b8c8",
+  "claim": "Supersedes d8adbeebda53: GossipBus stores events locally; with peers configured, LanGossipBridge.emit persists locally and forwards best effort to peers. Inbox drops and metadata receipts describe the recorded delivery workflow, not a restriction on cross-machine gossip.",
+  "conditions": [
+    "correction",
+    "peer",
+    "review"
+  ],
+  "evidence_ids": [
+    "2026-11-20T09:47:38.939318+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-20T09:47:38.939318+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-20T09:47:38.939318+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-20T09:47:39.099605+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "orchestrator/lan_gossip_bridge.py documents and implements best-effort replication.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-20T09:47:38.939318+00:00"
+      ],
+      "lessons_sha": "b8ebccc54456"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-20T09:47:39.099588+00:00",
+  "reviewer": "host-agent",
+  "rationale": "orchestrator/lan_gossip_bridge.py documents and implements best-effort replication."
+}
