@@ -81,3 +81,29 @@ Timeline of the restoration session; the durable lessons live in
   (`public/orama-lan-ca-PHLab-H2LGBV3.pem`), not the Mac-direction CA file — wrong-CA
   verification fails with "self-signed certificate in chain" and wastes a diagnosis cycle.
 
+
+
+## Addendum 2 (2026-11-22): IP migration handled; convergence CSR SIGNED
+
+- Mac migrated 192.168.8.52 -> **192.168.8.51** (operator-confirmed). Windows discovery
+  updated; queued items retargeted. Their serving leaf still carries SAN .52, so IP-dial
+  Gate 2 fails at .51; the CN channel (server_hostname orama-mac.local) is the working
+  equal-security path. Their front end is now CADDY on 8443 (backend 127.0.0.1:8002).
+- **18/18 queued items DELIVERED over the CN channel to .51 - outbox CLEAR** (first full
+  Win->Mac delivery). Byte-exact receipt v2 (exactly the 18 rows) delivered.
+- The Mac's fresh-discovery 401 on OUR portal was their probe credential: our receiver
+  binding verified - joint mode accepting orama shared `0f61c0c2...` AND PT lane
+  `f2019d41...`, both 200 from localhost. Their configured credentials match neither.
+  Operator-only ferry file written with the VALUES
+  (`canonical-fixes/OPERATOR-ONLY-credential-ferry-2026-11-22.md`); the Mac adopts the
+  shared token outbound (rule 3).
+- **Convergence CSR received (mac8443.csr, file sha256 cea8b0a4...), VERIFIED (CN + SAN
+  DNS:orama-mac.local,IP:192.168.8.51, RSA-2048), SIGNED with the 364490e8 CA key:**
+  leaf `2e5fdcd0...`, 60-day (2026-11-22 -> 2027-01-21). Delivered to the Mac:
+  `mac8443-leaf-364490e8-20261122.pem` + `mac8443-fullchain-364490e8-20261122.pem` + signing
+  status + receipt v2 - all four DELIVERED (stored byte counts confirmed by their portal).
+- Remaining: Mac installs the leaf in Caddy -> Python Gate 1+2 vs .51 -> both directions
+  verify -> we drop the ef080f01 pin, they retire that key; 87-drain reconciliation (their
+  side); the migration-plan workstream (fresh/empty first - decision stated) continues.
+- GOTCHA: PowerShell wrappers abort on openssl's stderr (informational lines kill the
+  chain) - run openssl via python subprocess for reliable capture.
