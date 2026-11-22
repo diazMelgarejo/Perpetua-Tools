@@ -107,3 +107,21 @@ Timeline of the restoration session; the durable lessons live in
   side); the migration-plan workstream (fresh/empty first - decision stated) continues.
 - GOTCHA: PowerShell wrappers abort on openssl's stderr (informational lines kill the
   chain) - run openssl via python subprocess for reliable capture.
+
+
+## Addendum 3 (2026-11-22, later): CONVERGENCE COMPLETE - both directions green on standard machinery
+
+- Mac installed the signed convergence leaf; verified from Windows: served leaf on
+  192.168.8.51:8443 = 2e5fdcd0... (exact match), Gate 1+2 PASS with IP server_hostname and
+  the 364490e8 pin; authenticated pull from their portal with the shared token = 200 (358 files).
+- Their 18-row ack verified against our raw records: 18 parsed, 0 mismatches. Outbox 46
+  delivered / 0 pending. Ack-verification receipt delivered to them (direct POST; their
+  portal ok:true, 2884 bytes stored).
+- **PEER_CA_SHA256 pin switched ef080f01 -> 364490e8 at USER scope** (durable; profiles
+  clean). The machinery fail-closed correctly on the stale pin first ("PEER_CA_FILE does not
+  match PEER_CA_SHA256; refusing to trust it (token not sent)") - the pin discipline works.
+- **Gate 4 post-convergence proof: pure standard-machinery canary drop -> ok:true,
+  received_at present** (2026-11-22-win-convergence-canary.md). No CN fallback, no custom code.
+- Final state: ONE CA (364490e8, Windows-held key), ONE pin (User-scope), ONE shared token
+  (0f61c0c2...) both directions, 60-day leaves, CSR flow. ef080f01 retired from active use;
+  Mac to destroy that key. Open: their 87-drain reconciliation; migration-plan steps 2-5.
