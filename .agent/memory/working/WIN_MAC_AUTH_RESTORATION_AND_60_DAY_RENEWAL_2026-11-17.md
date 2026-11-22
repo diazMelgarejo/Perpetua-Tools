@@ -56,3 +56,28 @@ Timeline of the restoration session; the durable lessons live in
 - Windows: sign the Mac's CSR when it arrives (60-day, SAN `DNS:orama-mac.local,
   IP:192.168.8.52`); after they serve it, drop the `ef080f01` pin and keep only `364490e8`.
 - Both: maintain `TRUST-INVENTORY.md`; stagger renewals; 4 gates per renewal.
+
+## Addendum (same day, later): pull-publish adopted; Mac layers 2+3 PASS
+
+- Mac's 12:37 layer report (`2026-11-17-mac-layer-report-all-gates-green.md`): SAN omission
+  OWNED (CSR had it, x509 extfile didn't; `openssl x509 -req` doesn't copy); new leaf
+  `1a11ce8c...` WITH IP SAN + 60-day validity (v2 adopted); shared token re-pinned as their
+  portal's inbound credential (38-char rebuild token dead); Gate 4 outbound canary2 delivered.
+- Mac→Win outbound healthy (drops keep arriving); the 12:23 401 on our portal was their
+  inbound-token state during the rebuild window.
+- **Convergence decided (operator-confirmed): `364490e8...`, key custody Windows, CSR flow** —
+  resolves the contradiction the Mac flagged between the two earlier Windows files.
+- **Pull-publish institutionalized:** 4 CANONICAL files + FIX-INDEX self-dropped into the
+  Windows portal inbox (verified PRESENT via authenticated GET /api/peer-inbox, 340 files):
+  `CANONICAL-FIX-INDEX-for-peer-agents.md`, `CANONICAL-4-GATE-AUTH-CHECKLIST-and-standing-rules.md`,
+  `CANONICAL-RENEWAL-AGREEMENT-V2-60-DAY.md`, `CANONICAL-TRUST-INVENTORY.md`. Standing rule 6:
+  permanent fixes are PUBLISHED and PULLED; the operator ferries only out-of-band secrets.
+- Status line `2026-11-17-win-status-line-convergence-decided-364490e8.md` queued in the
+  outbox (portal_port 8443 recorded; first attempt had fallen back to plain 8002 — always
+  set `PEER_PORTAL_TLS_ENABLED/PORT` + `PEER_CA_FILE` when dropping).
+- Flush still pending: Mac portal UNREACHABLE (~12:45+, WinError 10060, likely mid-restart);
+  17 queued items retry automatically; byte-exact receipt follows on delivery.
+- GOTCHA added: verify OUR own portal with the `364490e8` public CA
+  (`public/orama-lan-ca-PHLab-H2LGBV3.pem`), not the Mac-direction CA file — wrong-CA
+  verification fails with "self-signed certificate in chain" and wastes a diagnosis cycle.
+
