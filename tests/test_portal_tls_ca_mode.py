@@ -112,7 +112,10 @@ def test_certificate_profile(tmp_path, upstream):
     assert list(eku) == [ExtendedKeyUsageOID.SERVER_AUTH]
     leaf.extensions.get_extension_for_class(x509.SubjectKeyIdentifier)
     leaf.extensions.get_extension_for_class(x509.AuthorityKeyIdentifier)
-    assert 29 <= (leaf.not_valid_after_utc - leaf.not_valid_before_utc).days <= 31
+    from orchestrator import lan_control_plane_pki as pki_mod
+
+    leaf_days = (leaf.not_valid_after_utc - leaf.not_valid_before_utc).days
+    assert abs(leaf_days - pki_mod.LEAF_VALIDITY_DAYS) <= 1
 
 
 def test_leaf_rotated_under_seven_days_ca_unchanged(tmp_path, upstream, monkeypatch, caplog):
@@ -127,7 +130,7 @@ def test_leaf_rotated_under_seven_days_ca_unchanged(tmp_path, upstream, monkeypa
     def fake(cert):  # the leaf (not the self-signed CA) has 3 days left
         """Report the leaf (not the self-signed CA) as having only 3 days left."""
         out = real(cert)
-        return out if cert.subject == cert.issuer else out - timedelta(days=27)
+        return out if cert.subject == cert.issuer else out - timedelta(days=pki_mod.LEAF_VALIDITY_DAYS - 3)
 
     monkeypatch.setattr(pki_mod, "_utc_after", fake)
     with caplog.at_level("INFO"):
@@ -136,6 +139,45 @@ def test_leaf_rotated_under_seven_days_ca_unchanged(tmp_path, upstream, monkeypa
     assert second.pki.leaf_event == "rotated"
     assert second.fingerprint == ca_fp and second.pki.leaf_fingerprint != leaf_fp
     assert any("rotated" in r.getMessage() for r in caplog.records)
+
+
+@pytest.mark.parametrize(
+    ("remaining", "event"),
+    [(timedelta(days=6, hours=21), "rotated"), (timedelta(days=7, hours=1), "reused")],
+    ids=["6d21h-rotated", "7d1h-reused"],
+)
+def test_reissue_threshold_applies_to_whole_days_remaining(tmp_path, upstream, monkeypatch, remaining, event):
+    """A leaf is reissued once fewer than 7 whole days remain; flooring never defers it."""
+    from orchestrator import lan_control_plane_pki as pki_mod
+
+    _make(tmp_path, upstream).ensure_certificate()
+    real = pki_mod._utc_after
+    shift = timedelta(days=pki_mod.LEAF_VALIDITY_DAYS) - remaining
+
+    def fake(cert):  # only the leaf (not the self-signed CA) is aged
+        """Report the leaf as having ``remaining`` left and leave the CA as it is."""
+        out = real(cert)
+        return out if cert.subject == cert.issuer else out - shift
+
+    monkeypatch.setattr(pki_mod, "_utc_after", fake)
+    second = _make(tmp_path, upstream)
+    second.ensure_certificate()
+    assert second.pki.leaf_event == event
+
+
+def test_leaf_never_outlives_a_short_lived_ca(tmp_path, upstream, monkeypatch):
+    """A leaf is capped at its CA's expiry, so the longer leaf lifetime cannot outlive a younger CA."""
+    from cryptography import x509
+
+    from orchestrator import lan_control_plane_pki as pki_mod
+
+    monkeypatch.setattr(pki_mod, "CA_VALIDITY_DAYS", 40)
+    proxy = _make(tmp_path, upstream)
+    proxy.ensure_certificate()
+    ca = x509.load_pem_x509_certificate(proxy.pki.ca_public_path.read_bytes())
+    leaf = x509.load_pem_x509_certificates(proxy.pki.leaf_chain_path.read_bytes())[0]
+    assert leaf.not_valid_after_utc <= ca.not_valid_after_utc
+    assert (leaf.not_valid_after_utc - leaf.not_valid_before_utc).days < pki_mod.LEAF_VALIDITY_DAYS
 
 
 def test_verifies_with_python_strict_x509_over_live_handshake(tmp_path, upstream):
