@@ -25,17 +25,19 @@ used as "proof" during this incident and both proved nothing. The real checklist
    compare the supplied CA with the recorded pin: `openssl x509 -in <ca> -outform DER |
    openssl dgst -sha256` must equal the pin in `ca-pin.json`. PASS only when both hold. Checked on
    OpenSSL 3.0.13 with a second CA in the default trust directory: `s_client -CAfile` alone already
-   replaces the default trust on that build, but keep `-no-CApath -no-CAstore` for portable Gate 1
-   runs. `openssl verify -CAfile` does not replace default trust (it said OK for the wrong CA); the
-   same `-no-CApath -no-CAstore` flags are required there. Re-check the flags on other builds (for
-   example LibreSSL) before relying on them.
+   replaces the default trust on that build; the extra flags are defence in depth. `openssl verify
+   -CAfile` does not replace default trust (it said OK for the wrong CA), so the flags are required
+   there. `-no-CAstore` is an OpenSSL 3.x option: on LibreSSL (the macOS system `openssl`) check
+   `openssl version` and drop it if it is rejected (not tested here).
 2. Address: the peer dials a raw IP, so verify the IP SAN with `-verify_ip <addr-peer-dials>
    -verify_return_error` → OK. `-verify_hostname` matches DNS names only and rejects a valid IP
    SAN with "hostname mismatch".
 3. Bearer: keep the token out of curl's argv (local users can read process
    arguments). Feed the header on stdin instead:
    `printf 'Authorization: Bearer %s\n' "$TOKEN" | curl --cacert <ca> -H @-
-   https://<host>:8443/api/peer-inbox` → 200 + JSON
+   https://<host>:8443/api/peer-inbox` → 200 + JSON. Tested on curl 8.5.0 (Linux); `-H @file`
+   needs curl 7.55 or newer. `printf` is a builtin in bash, zsh and Git Bash, so the token is
+   never in an argument list. The PowerShell form is not verified: check it on the host first.
 4. Machinery: `lan_peer_assign.py list --peer` + real canary drop, receiver sidecar hash match
 
 Report per-gate: `LAYER n: PASS/FAIL(<exact error>)`; the word "fixed" only after Gate 4.
