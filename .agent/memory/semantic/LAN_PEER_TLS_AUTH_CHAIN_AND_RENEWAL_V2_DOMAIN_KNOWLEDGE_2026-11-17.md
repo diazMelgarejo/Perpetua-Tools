@@ -30,7 +30,9 @@ used as "proof" during this incident and both proved nothing. The real checklist
 2. Address: the peer dials a raw IP, so verify the IP SAN with `-verify_ip <addr-peer-dials>
    -verify_return_error` → OK. `-verify_hostname` matches DNS names only and rejects a valid IP
    SAN with "hostname mismatch".
-3. Bearer: `curl --cacert <ca> -H "Authorization: Bearer $TOKEN"
+3. Bearer: keep the token out of curl's argv (local users can read process
+   arguments). Feed the header on stdin instead:
+   `printf 'Authorization: Bearer %s\n' "$TOKEN" | curl --cacert <ca> -H @-
    https://<host>:8443/api/peer-inbox` → 200 + JSON
 4. Machinery: `lan_peer_assign.py list --peer` + real canary drop, receiver sidecar hash match
 
@@ -130,4 +132,14 @@ leaf never outlives its CA (`test_leaf_never_outlives_a_short_lived_ca`). There 
 
 Trade-off: a stolen leaf key is usable for up to 60 days instead of 30. Mitigations in the code:
 the key store sits outside any checkout, the proxy pins the CA, and a CA change is refused.
-Revert path: set `LEAF_VALIDITY_DAYS` back to 30; the tests derive their numbers from it.
+Revert path for **future** issuance: set `LEAF_VALIDITY_DAYS` back to 30; the tests derive their
+numbers from it. That constant change does **not** shorten leaves already on disk — a fresh
+60-day leaf stays reusable until fewer than `LEAF_MIN_REMAINING_DAYS` (7) days remain (~53 days
+after a rollback). To reissue existing leaves under the shorter lifetime: remove the private
+`leaf.key` and `leaf.pem` for that node (paths under the LAN control-plane private state
+dir), then run `pki.ensure()` / restart the portal so `_leaf_problem` returns `missing` and
+`_issue_leaf` writes a new leaf capped at the current `LEAF_VALIDITY_DAYS`. Reissuing replaces
+the on-disk credential only; there is **no CRL/OCSP path** in `lan_control_plane_pki.py`, so a
+compromised old leaf that still chains to the pinned CA remains trusted until it expires. For a
+compromised leaf, plan a two-sided CA migration (new CA + new pin on both peers) rather than
+treating reissue as revocation.
