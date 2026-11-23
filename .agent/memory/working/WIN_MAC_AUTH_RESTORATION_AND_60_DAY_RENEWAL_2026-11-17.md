@@ -228,3 +228,23 @@ Timeline of the restoration session; the durable lessons live in
 - Gossip refresh broadcast emitted: addacd18f19e4d28a4ca4535a4df25ee.
 - 6 updated canonical files: pull surface self-drops ALL ok; Mac pushes ALL queued (portal
   down 10061; auto-retry). Queued push total now 7 files.
+
+
+## Addendum 9 (2026-11-23): Mac focus-directive results received; custodian actions executed
+
+- Mac delivered 4 work products at 10:33: focus-directive status lines (all 7 items),
+  87-DRAIN RECONCILIATION COMPLETE (47/47: 32 byte-exact, 15 CRLF-normalized with
+  restoration proof, 0 missing - board CLOSED), PICKUP-03 macOS run report (71/1/0 at
+  c65475e0), claims-and-takeovers (V1-1b + D0 reviews TAKEN by the Mac; V1-1c Mac-lane
+  accepted; MC2 self-claimed; PICKUP-09 not taken - correct, operator gate + Terra routing).
+- Custodian actions: 4 gossip dispositions emitted (PICKUP-03 COMPLETE 4ccba0e0; 87-drain
+  CLOSED 7728b0b9; ef080f01 DEFERRED e508bd22; V1-1b evidence QUEUED 10238ef7).
+- V1-1b evidence file hash-verified MATCH vs the Mac expectation (5ec54b5e...) before
+  queuing - their review unblocks on portal return.
+- QF-V1-1c authoritative definition provided: gossip row 448, task 83880a7d (intended
+  claimant Antigravity; brief BRIEFS-2026-11-11.md; read-only; never run cleanup).
+- MC2 confirmed: tests land in Perpetua-Tools (where the writers live).
+- Mac portal still down (10061): 8 files now queued for auto-delivery.
+- ef080f01 nuance: the Mac's local private/ca.key is the 8df85bdf interim key, NOT ef080f01
+  (pubkey comparison before any destructive step) - inventory correction queued on their
+  side. Windows pin remains 364490e8.
