@@ -924,7 +924,8 @@ today. `live_cycle()` refuses with `launcher-output-bound-unsupported`, and the 
 `legacy-live-path-disabled`, until the launcher can bound total output and request count. The
 Biafra seats are therefore designated to use Cline under the shared spend gate once that bound
 exists. Wanda keeps the OpenAI client, called directly by
-`bin/orama-system/skills/wanda-wandb/scripts/wanda_chat.py` in orama-system. Orama doc 76
+`bin/orama-system/skills/wanda-wandb/scripts/wanda_chat.py` in orama-system. That client stays
+outside the spend gate and is not an authorized unattended or paid path. Orama doc 76
 section 15 holds the canonical wording.
 
 **Rationale:** The original text was written from memory of earlier code and was not re-checked at
