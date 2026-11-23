@@ -16,6 +16,7 @@ import asyncio
 import os
 import subprocess
 import sys
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 
 import pytest
@@ -55,12 +56,17 @@ from coordination_test_helpers import emit_noise_batch
 
 
 @pytest.fixture
-def make_bus(tmp_path):
-    """Factory for temporary, freshly-initialised GossipBus instances."""
+def make_bus(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Callable[[], Awaitable[GossipBus]]:
+    """Build a temporary queue bus without unrelated background embeddings."""
 
-    async def _factory():
+    def skip_embedding(row_id: int, safe_payload: dict) -> None:
+        """Leave queue event persistence independent of embedding work."""
+
+    async def _factory() -> GossipBus:
+        """Initialize an isolated queue bus."""
         db_path = str(tmp_path / "queue_test.db")
         bus = GossipBus(db_path)
+        monkeypatch.setattr(bus, "schedule_embedding", skip_embedding)
         await bus.init_db()
         return bus
 
