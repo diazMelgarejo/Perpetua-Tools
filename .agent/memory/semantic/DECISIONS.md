@@ -936,3 +936,29 @@ the merged head. A test in orama now ties the doc wording to the launcher's refu
 
 **Status:** a correction of one factual claim; the operator's ruling is unchanged. The lesson is
 provisional until the launcher bound exists.
+
+---
+
+## 2026-11-23: LAN control-plane leaf validity of 60 days confirmed as current policy
+
+**Decision:** The operator confirmed the 60-day LAN control-plane leaf lifetime as current policy:
+renewal agreement v2 (2026-11-17), `LEAF_VALIDITY_DAYS = 60` in
+`orchestrator/lan_control_plane_pki.py`, a leaf reissued when under 7 days remain
+(`LEAF_MIN_REMAINING_DAYS`), and `not_after` capped at the CA's expiry. Until now it was only an
+assumption recorded in the domain-knowledge document
+`LAN_PEER_TLS_AUTH_CHAIN_AND_RENEWAL_V2_DOMAIN_KNOWLEDGE_2026-11-17.md` (section 8, policy
+lineage). It is the later decision in that lineage and does not invalidate the 2026-10-26 record,
+which described the earlier 30-day model and was correct for its date.
+
+**Rationale:** The 2026-11-15 to 11-17 outage showed the cost of the first model, and v2 replaced
+it. The trade-off is accepted: a stolen leaf key is usable for up to 60 days instead of 30, and
+`lan_control_plane_pki.py` has no CRL or OCSP path, so a compromised leaf that still chains to the
+pinned CA stays trusted until it expires. For a compromised leaf the answer is a two-sided CA
+migration (new CA and new pin on both peers), not reissue.
+
+**Alternatives considered:** revert to 30 days (set `LEAF_VALIDITY_DAYS` back to 30; the tests
+derive their numbers from it; existing leaves stay in service until under 7 days remain unless
+`leaf.key` and `leaf.pem` are removed, which forces reissue); leave it as an assumption (declined,
+since the operator has now ruled).
+
+**Status:** confirmed by the operator. No code change.
