@@ -49,9 +49,16 @@ done. Evidence and dated examples:
   outbox or log.
 
 - After a mechanical merge or generated file: parse every row or file, rerun the renderer, and check
-  for conflict markers in the staged content as well as the unmerged list: `git diff --cached
-  --check` and `git grep -n -E '^(<<<<<<<|=======|>>>>>>>)' -- <path>` (a file staged as resolved
-  can still hold markers, and `git diff --name-only --diff-filter=U` lists only unmerged files).
+  for conflict markers in the staged content as well as the unmerged list. `git diff --cached
+  --check` sees only the lines the staged diff adds. For one path in the working tree use
+  `git grep -n -E '^(<<<<<<<|=======|>>>>>>>)' -- <path>` (in a Markdown file, a hit directly under
+  a heading line is a setext underline). To scan the index (the staged blobs of tracked files, not
+  untracked files) use `git grep --cached -nE '^(<{7}|>{7}|\|{7})( |$)'`: opening, closing and diff3
+  ancestor markers. A partial resolution can leave a bare `=======`: outside Markdown scan for it
+  with `git grep --cached -nE '^={7}$' -- ':!*.md'`; in Markdown read the hits from
+  `git grep --cached -nE -B1 '^={7}$' -- '*.md'`, where a heading line above it is valid. A file
+  staged as resolved can still hold markers, and `git diff --name-only --diff-filter=U` lists only
+  unmerged files.
 
 - Append-only episodic logs: the previous PR's complete byte stream must stay an exact prefix
   (order, duplicates, line endings). Build a stacked branch as the prior tip's bytes followed by
