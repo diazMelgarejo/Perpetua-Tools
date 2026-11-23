@@ -20,13 +20,15 @@ Fail-closed invariant: tokens travel only after layers 1+2 passed (RFC 6750 §5.
 `openssl verify` checks chains ONLY (no hostname); `/health` is unauthenticated. Both were
 used as "proof" during this incident and both proved nothing. The real checklist:
 
-1. Chain: `openssl s_client -connect <host>:8443 -CAfile <ca> -verify_return_error -brief
-   </dev/null` → `Verification: OK` (non-zero exit on failure). Then compare the supplied CA with
-   the recorded pin: `openssl x509 -in <ca> -outform DER | openssl dgst -sha256` must equal the
-   pin in `ca-pin.json`. PASS only when both hold. Checked on OpenSSL 3.0.13 with a second CA in
-   the default trust directory: `s_client -CAfile` alone replaces the default trust, but
-   `openssl verify -CAfile` does not (it said OK for the wrong CA); add `-no-CApath -no-CAstore`
-   there. Re-check the flags on other builds (for example LibreSSL) before relying on them.
+1. Chain: `openssl s_client -connect <host>:8443 -CAfile <ca> -no-CApath -no-CAstore
+   -verify_return_error -brief </dev/null` → `Verification: OK` (non-zero exit on failure). Then
+   compare the supplied CA with the recorded pin: `openssl x509 -in <ca> -outform DER |
+   openssl dgst -sha256` must equal the pin in `ca-pin.json`. PASS only when both hold. Checked on
+   OpenSSL 3.0.13 with a second CA in the default trust directory: `s_client -CAfile` alone already
+   replaces the default trust on that build, but keep `-no-CApath -no-CAstore` for portable Gate 1
+   runs. `openssl verify -CAfile` does not replace default trust (it said OK for the wrong CA); the
+   same `-no-CApath -no-CAstore` flags are required there. Re-check the flags on other builds (for
+   example LibreSSL) before relying on them.
 2. Address: the peer dials a raw IP, so verify the IP SAN with `-verify_ip <addr-peer-dials>
    -verify_return_error` → OK. `-verify_hostname` matches DNS names only and rejects a valid IP
    SAN with "hostname mismatch".
